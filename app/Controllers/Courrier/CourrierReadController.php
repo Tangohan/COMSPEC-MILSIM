@@ -7,6 +7,7 @@ namespace App\Controllers\Courrier;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\CourrierRightGuard;
 use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Repositories\UserRepository;
@@ -31,6 +32,9 @@ class CourrierReadController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);

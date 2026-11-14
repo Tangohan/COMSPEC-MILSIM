@@ -45,6 +45,19 @@ final class EffectifsLmsAccess
         return self::canEditProfiles($gate) || $gate->allows('personnel.status.manage');
     }
 
+    /**
+     * Décerner une décoration depuis la fiche. Exactement les droits qui ouvrent l'écran des décorations
+     * (OrganizationAdminMiddleware, préfixe /back-office/referentiels/decorations) : aucun droit nouveau.
+     */
+    public static function canAwardDecorations(Gate $gate): bool
+    {
+        return $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('site.support')
+            || $gate->allows('personnel.awards.manage')
+            || $gate->allows('personnel.badges.manage');
+    }
+
     public static function canManageStatus(Gate $gate): bool
     {
         return $gate->allows('admin.organization')

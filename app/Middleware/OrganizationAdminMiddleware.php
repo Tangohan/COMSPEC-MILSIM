@@ -96,6 +96,10 @@ class OrganizationAdminMiddleware
                 || $gate->allows('admin.members.moderate')
             )) {
                 $scopedOrgAccess = true;
+            } elseif (($path === '/back-office/moderation' || str_starts_with($path, '/back-office/moderation/')) && $gate->allows('admin.members.moderate')) {
+                // « Sanctions & absences » : le menu la montre au droit de modération des membres, qui n'ouvre rien d'autre.
+                // TenantMemberModerationMiddleware revérifie ce droit sur la page.
+                $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/media') && (
                 $gate->allows('media.view')
                 || $gate->allows('media.upload')

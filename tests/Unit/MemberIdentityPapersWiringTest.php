@@ -45,9 +45,14 @@ final class MemberIdentityPapersWiringTest extends TestCase
 
     public function testMemberFileTabAndMemberSituationPageAreWired(): void
     {
-        self::assertStringContainsString("'memberPapers' => MemberIdentityPapersController::sectionFor(\$tenantId, \$user)", self::read('app/Controllers/Admin/EffectifsWorkspaceController.php'));
+        $controller = self::read('app/Controllers/Admin/EffectifsWorkspaceController.php');
+        self::assertStringContainsString('$memberPapers = MemberIdentityPapersController::sectionFor($tenantId, $user);', $controller);
+        self::assertStringContainsString("'memberPapers' => \$memberPapers", $controller);
         $member = self::read('views/admin/effectifs_workspace/member.php');
-        self::assertStringContainsString('<a href="#papiers">Identité &amp; papiers</a>', $member);
+        // L'onglet « Identité & papiers » n'existe que si le lecteur a accès aux papiers (MemberFicheTabs).
+        self::assertStringContainsString("'papiers' => ['label' => 'Identité & papiers'", self::read('app/Support/MemberFicheTabs.php'));
+        self::assertStringContainsString("is_array(\$memberPapers ?? null)", $member);
+        self::assertStringContainsString("\$panelOpen('papiers')", $member);
         self::assertStringContainsString("require __DIR__ . '/partials/member_papers.php';", $member);
         $partial = self::read('views/admin/effectifs_workspace/partials/member_papers.php');
         self::assertStringContainsString('id="papiers-kit"', $partial);

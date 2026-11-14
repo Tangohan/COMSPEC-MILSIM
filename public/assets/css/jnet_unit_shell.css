@@ -119,7 +119,8 @@
 
 /* —— Contenu —— */
 
-.us-main {
+.ja-main.us-main {
+  max-width: none;
   display: block;
   padding-bottom: 72px;
 }

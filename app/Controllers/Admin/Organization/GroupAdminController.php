@@ -9,9 +9,20 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Support\GuardsBackOfficeRight;
 
 class GroupAdminController
 {
+    use GuardsBackOfficeRight {
+        guardBackOfficeRight as private guardManagerRight;
+    }
+
+    /** Les mêmes actions servent /formation/groupes (TrainingTenantResourceMiddleware) : le droit de gestion ne vaut que sous /back-office. */
+    protected function guardBackOfficeRight(Request $request): ?Response
+    {
+        return str_starts_with($request->path(), '/back-office') ? $this->guardManagerRight($request) : null;
+    }
+
     private const TYPE = 'group';
 
     public function __construct(
@@ -21,6 +32,9 @@ class GroupAdminController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -40,6 +54,9 @@ class GroupAdminController
 
     public function create(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -58,6 +75,9 @@ class GroupAdminController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -107,6 +127,9 @@ class GroupAdminController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
@@ -135,6 +158,9 @@ class GroupAdminController
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
@@ -159,6 +185,9 @@ class GroupAdminController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
@@ -202,6 +231,9 @@ class GroupAdminController
 
     public function delete(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {

@@ -85,6 +85,8 @@ final class BackOfficeLegacyRedirectsTest extends TestCase
             ['/back-office/ressources/effectifs/elevations', ['all' => '1'], '/back-office/demandes-rh?all=1&onglet=elevations'],
             ['/back-office/personnel/corrections', ['vue' => 'historique'], '/back-office/demandes-rh?vue=historique&onglet=corrections'],
             ['/back-office/ressources/effectifs/mobilite', ['statut' => 'all'], '/back-office/demandes-rh?statut=all&onglet=mobilite'],
+            ['/back-office/organisation/grades', [], '/back-office/referentiels/grades?onglet=avancement'],
+            ['/back-office/referentiels/grades/catalogue', [], '/back-office/referentiels/grades?onglet=catalogue'],
         ];
     }
 

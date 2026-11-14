@@ -24,23 +24,6 @@ class EquipmentController
         $this->featureGate ??= \App\Core\Container::get(FeatureGateService::class);
     }
 
-    public function index(Request $request, array $params = []): Response
-    {
-        $tenantId = Session::get('tenant_id');
-        if (!$tenantId) {
-            return Response::redirect(url('login'));
-        }
-        if (!$this->featureGate->allows((int) $tenantId, 'equipment')) {
-            return PlanFeatureDenial::upgradeView('equipment', 'Gratuit');
-        }
-        $classes = $this->equipmentRepository->listForTenant((int) $tenantId);
-        return Response::view('layout.main', [
-            'content' => 'equipment.index',
-            'title' => 'Équipement',
-            'equipmentClasses' => $classes,
-        ]);
-    }
-
     public function show(Request $request, array $params = []): Response
     {
         $tenantId = Session::get('tenant_id');

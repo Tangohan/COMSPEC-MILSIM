@@ -15,9 +15,12 @@ use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Personnel\SeniorityPrePlatformService;
 use App\Services\Personnel\SeniorityTenantDefaultsService;
+use App\Support\GuardsBackOfficeRight;
 
 final class OrganizationSeniorityAdminController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private ?AuthService $authService = null,
         private ?SeniorityRepository $seniorityRepository = null,
@@ -32,6 +35,9 @@ final class OrganizationSeniorityAdminController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -70,6 +76,9 @@ final class OrganizationSeniorityAdminController
 
     public function seedDefaults(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -105,6 +114,9 @@ final class OrganizationSeniorityAdminController
 
     public function syncAllPersonnel(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -147,6 +159,9 @@ final class OrganizationSeniorityAdminController
 
     public function syncDossierInference(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -192,6 +207,9 @@ final class OrganizationSeniorityAdminController
 
     public function syncOrgFounding(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -254,6 +272,9 @@ final class OrganizationSeniorityAdminController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }

@@ -79,7 +79,7 @@ final class AdvancementAdminController
             Session::flash('error', $e->getMessage());
         }
 
-        return Response::redirect(url('back-office/organisation/grades'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
     }
 
     public function gradeEdit(Request $request, array $params = []): Response
@@ -93,7 +93,7 @@ final class AdvancementAdminController
         if ($grade === null) {
             Session::flash('error', 'Grade introuvable.');
 
-            return Response::redirect(url('back-office/organisation/grades'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
         }
 
         return $this->page('Modifier le grade', 'ORGANISATION · GRADES', 'Le code reste stable même si le libellé change.', 'admin.advancement.grade_form', [
@@ -122,7 +122,7 @@ final class AdvancementAdminController
             Session::flash('error', $e->getMessage());
         }
 
-        return Response::redirect(url('back-office/organisation/grades'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
     }
 
     public function gradeArchive(Request $request, array $params = []): Response
@@ -138,7 +138,7 @@ final class AdvancementAdminController
             return Response::redirect(url('back-office/referentiels/grades') . '?tab=perso');
         }
 
-        return Response::redirect(url('back-office/organisation/grades'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
     }
 
     public function gradeReorder(Request $request, array $params = []): Response
@@ -155,7 +155,7 @@ final class AdvancementAdminController
         $this->repository->reorderGrades($tenantId, array_map('intval', $order));
         Session::flash('success', 'Ordre hiérarchique enregistré.');
 
-        return Response::redirect(url('back-office/organisation/grades'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
     }
 
     public function gradeAutoOrder(Request $request, array $params = []): Response
@@ -168,7 +168,7 @@ final class AdvancementAdminController
         $out = $this->workflow->autoOrderGrades($tenantId);
         Session::flash('success', 'Ordre réaligné automatiquement (' . $out['reordered'] . ' grades). Les détections restent visibles sous le tableau.');
 
-        return Response::redirect(url('back-office/organisation/grades'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
     }
 
     public function filiereStore(Request $request, array $params = []): Response
@@ -183,7 +183,7 @@ final class AdvancementAdminController
         if ($code === '' || $label === '') {
             Session::flash('error', 'Code et libellé de filière sont requis.');
 
-            return Response::redirect(url('back-office/organisation/grades'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
         }
         try {
             $this->repository->saveFiliere($tenantId, [
@@ -196,7 +196,7 @@ final class AdvancementAdminController
             Session::flash('error', $e->getMessage());
         }
 
-        return Response::redirect(url('back-office/organisation/grades'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
     }
 
     public function importScale(Request $request, array $params = []): Response
@@ -214,7 +214,7 @@ final class AdvancementAdminController
                 : 'Aucun grade manquant : le référentiel de la communauté est à jour.'
         );
 
-        return Response::redirect(url('back-office/organisation/grades'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
     }
 
     public function assignInitial(Request $request, array $params = []): Response
@@ -237,7 +237,7 @@ final class AdvancementAdminController
             Session::flash('error', $e->getMessage());
         }
 
-        return Response::redirect(url('back-office/organisation/grades'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'));
     }
 
     public function campaigns(Request $request, array $params = []): Response
@@ -766,7 +766,7 @@ final class AdvancementAdminController
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url($back));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor($back));
         }
 
         return $ctx;

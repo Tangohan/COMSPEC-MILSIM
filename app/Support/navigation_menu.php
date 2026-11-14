@@ -253,7 +253,8 @@ function navigation_resolve_link(array $link): ?array
 
     $out = [
         'label' => (string) ($link['label'] ?? ''),
-        'href' => url($pathFragment),
+        // `path` reste l'ancienne adresse (droits, profil de communauté) ; le lien va à l'onglet qui la remplace.
+        'href' => \App\Support\BackOfficeTabs::urlFor($pathFragment),
         'path' => $routePath,
         'active_match' => $match,
         'description' => isset($link['description']) ? (string) $link['description'] : null,

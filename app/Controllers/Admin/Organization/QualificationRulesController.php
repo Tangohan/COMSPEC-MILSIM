@@ -16,6 +16,7 @@ use App\Services\Personnel\QualificationAwardRuleService;
 use App\Services\Personnel\QualificationBadgeStorageService;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use Throwable;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * Fiche d'une qualification (titulaires, en cours avec progression, historique), passage automatique à la demande,
@@ -23,6 +24,8 @@ use Throwable;
  */
 final class QualificationRulesController
 {
+    use GuardsBackOfficeRight;
+
     private const BASE = 'back-office/referentiels/qualifications';
 
     public function __construct(
@@ -36,6 +39,9 @@ final class QualificationRulesController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -71,6 +77,9 @@ final class QualificationRulesController
 
     public function evaluate(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
 
         return $this->post($request, url(self::BASE . '/' . $id), function (int $tenantId) use ($id): void {
@@ -88,6 +97,9 @@ final class QualificationRulesController
     /** Case de la matrice ou de la fiche : délivrer, mettre en formation, retirer. */
     public function cell(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $definitionId = (int) $request->input('definition_id', 0);
         $userId = (int) $request->input('user_id', 0);
         $back = $this->backUrl((string) $request->input('return_to', 'matrix'), $definitionId, $userId);
@@ -126,6 +138,9 @@ final class QualificationRulesController
 
     public function decide(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $awardId = (int) ($params['awardId'] ?? 0);
         $definitionId = (int) $request->input('definition_id', 0);
 
@@ -141,6 +156,9 @@ final class QualificationRulesController
 
     public function restore(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
 
         return $this->post($request, url(self::BASE . '/' . $id), function (int $tenantId) use ($id): void {
@@ -154,6 +172,9 @@ final class QualificationRulesController
     /** Rattache les attestations Academy restées sans qualification (une qualification par formation). */
     public function importAcademy(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         return $this->post($request, effectifs_workspace_url('qualifications'), function (int $tenantId): void {
             $r = (new AcademyQualificationImporter(Database::getPdo()))->run($tenantId);
             Session::flash('success', sprintf('%d qualification(s) Academy créée(s), %d attestation(s) rattachée(s).', $r['created'], $r['linked']));

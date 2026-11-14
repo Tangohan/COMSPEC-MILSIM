@@ -66,7 +66,7 @@ $val = static function (string $key, mixed $default = '') use ($grade): string {
         </label>
         <div class="adv-actions">
             <button class="ath-btn ath-btn--solid" type="submit"><?= $isEdit ? 'Enregistrer' : 'Créer' ?></button>
-            <a class="ath-btn" href="<?= adv_h(url('back-office/organisation/grades')) ?>">Retour</a>
+            <a class="ath-btn" href="<?= adv_h(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades')) ?>">Retour</a>
         </div>
     </form>
     <?php if ($isEdit && empty($grade['archived_at'])): ?>

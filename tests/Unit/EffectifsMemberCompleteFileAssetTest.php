@@ -15,7 +15,7 @@ final class EffectifsMemberCompleteFileAssetTest extends TestCase
         $nav = (string) file_get_contents($root . '/views/partials/member_hub_nav.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Admin/EffectifsWorkspaceController.php');
 
-        foreach (['Dossier RH complet', 'Qualifications', 'Absences', 'Documents RH', 'Mobilité et souhaits', 'Historique RH et bilans'] as $section) {
+        foreach (['Dossier RH complet', 'Qualifications', 'Absences', 'Documents RH', 'Mobilité et souhaits', 'Chronologie du dossier'] as $section) {
             self::assertStringContainsString($section, $view);
         }
         self::assertStringContainsString('bo-eff-jump', $view);

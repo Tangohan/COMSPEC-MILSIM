@@ -232,6 +232,10 @@ $renderItem = static function (array $item, string $sectionTitle) use ($h, $icon
         </p>
     </div>
 
+    <p class="bo-cfg-where" data-cfg-hide-on-search>
+        Où sont passés les réglages du menu ? Organisation, Référentiels, Droits et accès, ATAK, Intégrations et Réglages RH sont maintenant rangés dans le groupe « Configuration » du menu de gauche (replié, à déplier d’un clic). Les sanctions, signalements et fichiers en quarantaine sont sous « Discipline ». Aucune page n’a changé d’adresse.
+    </p>
+
     <div class="bo-cfg__layout">
         <nav class="bo-cfg-nav" aria-label="Sections de la configuration">
             <p class="bo-cfg-nav__kicker">Sections</p>
@@ -609,7 +613,7 @@ $renderItem = static function (array $item, string $sectionTitle) use ($h, $icon
                 <p class="bo-cfg-dev__text">
                     Met à jour les comptes liés aux <strong>candidatures acceptées</strong> :
                     statut <strong>membre actif</strong>, e-mail considéré comme vérifié,
-                    rôle <strong>Période d’essai</strong> (ou Visiteur, sinon Opérateur),
+                    rôle <strong>Période d’essai</strong> (ou Visiteur, sinon Membre),
                     et affectation comme <strong>Recrue</strong> sur la <strong>première unité</strong> de l’organigramme, s’il en existe une.
                 </p>
                 <form method="post" action="<?= $h(url('back-office/configuration/debug-recruit-sync')) ?>" class="bo-cfg-dev__form"

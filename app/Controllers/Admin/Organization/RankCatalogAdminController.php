@@ -11,12 +11,15 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Services\Rank\RankCatalogService;
 use App\Services\Rank\RankReferenceValidator;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * Audit / catalogue canonique des grades (OTAN non dérivé).
  */
 final class RankCatalogAdminController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private ?RankCatalogService $catalog = null,
         private ?RankReferenceValidator $validator = null,
@@ -27,6 +30,9 @@ final class RankCatalogAdminController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!(int) Session::get('tenant_id')) {
             return Response::redirect(url('login'));
         }
@@ -60,13 +66,16 @@ final class RankCatalogAdminController
 
     public function runAudit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!(int) Session::get('tenant_id')) {
             return Response::redirect(url('login'));
         }
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('back-office/referentiels/grades/catalogue'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/referentiels/grades/catalogue'));
         }
         $repair = (string) $request->input('repair', '0') === '1';
         $stats = $this->catalog->bootstrapAndAudit($repair);
@@ -81,6 +90,6 @@ final class RankCatalogAdminController
             )
         );
 
-        return Response::redirect(url('back-office/referentiels/grades/catalogue'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/referentiels/grades/catalogue'));
     }
 }

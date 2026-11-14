@@ -188,44 +188,133 @@
         }
     }
 
-    // Onglets de rubriques de la fiche : souligne la rubrique en cours de lecture.
-    function initSectionTabs() {
+    // Onglets de la fiche : un panneau à la fois. Sans ce script, le serveur affiche tous les panneaux à la suite
+    // (les onglets sont de simples liens ?onglet=…). Les anciennes ancres (#grade, #statut…) ouvrent l'onglet qui
+    // contient leur carte ; le clavier suit le motif WAI-ARIA des onglets (flèches, Début, Fin).
+    function initFicheTabs() {
         var nav = document.querySelector('[data-eff-fm-tabs]');
-        if (!nav || !('IntersectionObserver' in window)) {
+        var root = nav ? nav.closest('.eff-fm') : null;
+        if (!nav || !root) {
             return;
         }
-        var links = Array.prototype.slice.call(nav.querySelectorAll('a[href^="#"]'));
-        var byId = {};
-        links.forEach(function (link) {
-            var target = document.getElementById(link.getAttribute('href').slice(1));
-            var section = target ? (target.closest('section[id]') || target) : null;
-            if (section) {
-                byId[section.id] = link;
-            }
+        var tabs = Array.prototype.slice.call(nav.querySelectorAll('[data-eff-fm-tab]'));
+        var panels = {};
+        root.querySelectorAll('[data-eff-fm-panel]').forEach(function (panel) {
+            panels[panel.getAttribute('data-eff-fm-panel')] = panel;
         });
-        var setActive = function (link) {
-            links.forEach(function (l) {
-                l.classList.toggle('is-active', l === link);
-            });
-        };
-        var observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (entry.isIntersecting && byId[entry.target.id]) {
-                    setActive(byId[entry.target.id]);
+        tabs = tabs.filter(function (tab) {
+            return panels[tab.getAttribute('data-eff-fm-tab')];
+        });
+        if (tabs.length === 0) {
+            return;
+        }
+        root.classList.add('eff-fm--tabs');
+        nav.setAttribute('role', 'tablist');
+        tabs.forEach(function (tab) {
+            var slug = tab.getAttribute('data-eff-fm-tab');
+            tab.setAttribute('role', 'tab');
+            panels[slug].setAttribute('role', 'tabpanel');
+        });
+
+        var current = '';
+        var show = function (slug, focus) {
+            if (!panels[slug]) {
+                return;
+            }
+            current = slug;
+            tabs.forEach(function (tab) {
+                var on = tab.getAttribute('data-eff-fm-tab') === slug;
+                tab.classList.toggle('is-active', on);
+                tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                tab.tabIndex = on ? 0 : -1;
+                if (on && focus) {
+                    tab.focus();
                 }
             });
-        }, { rootMargin: '-20% 0px -70% 0px' });
-        Object.keys(byId).forEach(function (id) {
-            observer.observe(document.getElementById(id));
+            Object.keys(panels).forEach(function (key) {
+                panels[key].classList.toggle('is-active', key === slug);
+            });
+        };
+        var remember = function (slug, push) {
+            try {
+                var url = new URL(window.location.href);
+                url.searchParams.set('onglet', slug);
+                url.hash = '';
+                window.history[push ? 'pushState' : 'replaceState'](null, '', url.toString());
+            } catch (e) {
+                // Adresse non modifiable : l'onglet reste affiché, sans lien partageable.
+            }
+        };
+        // Ouvre l'onglet (et le <details> fermé) qui contient la cible d'une ancre, puis y fait défiler.
+        var revealAnchor = function () {
+            var id = decodeURIComponent(window.location.hash.replace('#', ''));
+            if (id === '' || /^eff-dlg-/i.test(id)) {
+                return false;
+            }
+            var target = document.getElementById(id);
+            var panel = target ? target.closest('[data-eff-fm-panel]') : null;
+            if (!target || !panel) {
+                return false;
+            }
+            if (panel.getAttribute('data-eff-fm-panel') !== current) {
+                show(panel.getAttribute('data-eff-fm-panel'), false);
+            }
+            var details = target.closest('details');
+            if (details && !details.open) {
+                details.open = true;
+            }
+            target.scrollIntoView();
+            return true;
+        };
+
+        tabs.forEach(function (tab, index) {
+            tab.addEventListener('click', function (event) {
+                if (event.ctrlKey || event.metaKey || event.shiftKey || event.button > 0) {
+                    return;
+                }
+                event.preventDefault();
+                var slug = tab.getAttribute('data-eff-fm-tab');
+                show(slug, false);
+                remember(slug, true);
+            });
+            tab.addEventListener('keydown', function (event) {
+                var next = -1;
+                if (event.key === 'ArrowRight') {
+                    next = (index + 1) % tabs.length;
+                } else if (event.key === 'ArrowLeft') {
+                    next = (index - 1 + tabs.length) % tabs.length;
+                } else if (event.key === 'Home') {
+                    next = 0;
+                } else if (event.key === 'End') {
+                    next = tabs.length - 1;
+                } else if (event.key === ' ') {
+                    event.preventDefault();
+                    tab.click();
+                    return;
+                }
+                if (next < 0) {
+                    return;
+                }
+                event.preventDefault();
+                var slug = tabs[next].getAttribute('data-eff-fm-tab');
+                show(slug, true);
+                remember(slug, false);
+            });
         });
-        if (links[0]) {
-            setActive(links[0]);
-        }
+
+        var serverTab = tabs.filter(function (tab) { return tab.classList.contains('is-active'); })[0] || tabs[0];
+        show(serverTab.getAttribute('data-eff-fm-tab'), false);
+        window.addEventListener('hashchange', revealAnchor);
+        window.addEventListener('popstate', function () {
+            var wanted = new URL(window.location.href).searchParams.get('onglet');
+            show(wanted && panels[wanted] ? wanted : tabs[0].getAttribute('data-eff-fm-tab'), false);
+        });
+        revealAnchor();
     }
 
     function init() {
         initDialogs();
-        initSectionTabs();
+        initFicheTabs();
         openDialogFromHash();
         initFilters();
         initElevationKind();

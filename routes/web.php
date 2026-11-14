@@ -2019,8 +2019,6 @@ return function (Router $router) {
     $router->post('/back-office/categories/store', [CategoryAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/categories/{id}/edit', [CategoryAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/categories/{id}/update', [CategoryAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/referentiels/grades', [GradeReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/referentiels/grades/catalogue', [RankCatalogAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/catalogue/audit', [RankCatalogAdminController::class, 'runAudit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/systeme', [GradeReferentielController::class, 'setSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/create', [GradeReferentielController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2044,7 +2042,6 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/delete', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'deleteGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/sur-mesure/grade/{id}/restore', [\App\Controllers\Admin\Organization\CustomGradeSystemController::class, 'restoreGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
-    $router->get('/back-office/organisation/grades', [AdvancementAdminController::class, 'grades'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/grades/create', [AdvancementAdminController::class, 'gradeCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/grades/store', [AdvancementAdminController::class, 'gradeStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/grades/filieres', [AdvancementAdminController::class, 'filiereStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

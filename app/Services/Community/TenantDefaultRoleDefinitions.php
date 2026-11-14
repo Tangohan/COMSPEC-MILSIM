@@ -560,7 +560,7 @@ final class TenantDefaultRoleDefinitions
         $fromDefs = [
             'community_owner' => 'Organization manager',
             'tenant_admin' => 'Organization administrator',
-            'member' => 'Operator',
+            'member' => 'Member',
             'officer' => 'Supervisory member',
             'forum_moderator' => 'Communications officer',
             'hr' => 'Human resources manager',

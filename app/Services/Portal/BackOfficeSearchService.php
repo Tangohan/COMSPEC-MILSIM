@@ -297,7 +297,7 @@ final class BackOfficeSearchService
         $recruit = $org || $gate->allows('organization.recruitment.manage');
         $moderation = function_exists('moderation_user_can_moderate') && moderation_user_can_moderate();
         $all = [
-            ['title' => 'Tableau de bord', 'subtitle' => 'Aperçu de la communauté', 'href' => url('back-office'), 'keywords' => 'accueil synthèse aperçu', 'ok' => true],
+            ['title' => 'Accueil', 'subtitle' => 'Aperçu de la communauté', 'href' => url('back-office'), 'keywords' => 'accueil synthèse aperçu', 'ok' => true],
             ['title' => 'Tableau opérationnel', 'subtitle' => 'Événements, articles, ATAK et mur de consignes', 'href' => url('back-office/tableau-operationnel'), 'keywords' => 'mur opérationnel tableau événements articles atak', 'ok' => $org],
             ['title' => 'Effectifs', 'subtitle' => 'Tableur des membres', 'href' => url('back-office/ressources/effectifs'), 'keywords' => 'effectifs roster tableur personnel rh membres ancienneté', 'ok' => $eff],
             ['title' => 'Ancienneté', 'subtitle' => 'Dates de fondation et d’arrivée', 'href' => url('back-office/organisation/anciennete'), 'keywords' => 'ancienneté anciennete fondation tenure organisation', 'ok' => $org],
@@ -378,7 +378,7 @@ final class BackOfficeSearchService
             ['title' => 'Bourse aux coopérations', 'subtitle' => 'Publier ou répondre à un besoin inter-team', 'href' => url('hub/bourse'), 'keywords' => 'bourse coopération inter-team renfort opfor besoin partenaire', 'ok' => true],
             ['title' => 'Comparer deux communautés', 'subtitle' => 'Indicateurs et organigrammes côte à côte', 'href' => url('hub/comparer'), 'keywords' => 'comparer comparaison structure organigramme orbat communautés', 'ok' => true],
             ['title' => 'Référentiel des grades', 'subtitle' => 'Grades disponibles et libellés', 'href' => url('back-office/referentiels/grades'), 'keywords' => 'grades référentiel français américain insignes rang', 'ok' => $org],
-            ['title' => 'Avancement et grades', 'subtitle' => 'Règles de promotion', 'href' => url('back-office/organisation/grades'), 'keywords' => 'avancement promotion grades ancienneté règles', 'ok' => $org],
+            ['title' => 'Avancement et grades', 'subtitle' => 'Règles de promotion', 'href' => \App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades'), 'keywords' => 'avancement promotion grades ancienneté règles', 'ok' => $org],
             ['title' => 'Campagnes d’avancement', 'subtitle' => 'Promotions à valider', 'href' => url('back-office/rh/avancement'), 'keywords' => 'avancement campagne promotion tableau', 'ok' => $org],
             ['title' => 'Progression et carrière', 'subtitle' => 'Parcours, grades et qualifications', 'href' => url('back-office/rh/avancement'), 'keywords' => 'progression carrière parcours grades qualifications', 'ok' => $org],
             ['title' => 'Référentiel des qualifications', 'subtitle' => 'Brevets, certifications et habilitations', 'href' => url('back-office/referentiels/qualifications'), 'keywords' => 'qualifications brevets certifications habilitations compétences', 'ok' => $org],

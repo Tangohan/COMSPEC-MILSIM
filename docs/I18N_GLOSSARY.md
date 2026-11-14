@@ -23,6 +23,7 @@ This glossary is normative for interface copy. Stored values, API identifiers, c
 | annuler | cancel | Action button. |
 | retour | back | Prefer a destination-specific label when context permits. |
 | supprimer | delete | “Remove” only when the underlying object is not deleted. |
+| Membre (niveau d’accès de base, slug `member`) | Member | Never “Opérateur” / “Operator” for this access level; “opérateur” stays for an ATAK or game operator. |
 
 ## Style
 

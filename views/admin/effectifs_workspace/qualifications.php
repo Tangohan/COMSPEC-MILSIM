@@ -67,11 +67,15 @@ $icon = [
 ?>
 <div class="qmx" data-qmx>
     <div class="qmx-ph">
+        <?php if (empty($qmxEmbedded)): ?>
         <div>
             <span class="qmx-k">Carrière</span>
             <h2>Qualifications</h2>
             <p>Qui sait faire quoi dans l’unité. Repérez les manques avant l’opération, renouvelez ce qui expire et délivrez les brevets. Cliquez une case pour la modifier.</p>
         </div>
+        <?php else: ?>
+        <p>Cliquez une case pour la modifier. Seuls les membres de la page affichée sont évalués.</p>
+        <?php endif; ?>
         <div class="qmx-acts">
             <a class="qmx-btn" href="<?= $h(url('academy')) ?>">Ouvrir l’Academy</a>
             <a class="qmx-btn" href="<?= $h(url('back-office/referentiels/qualifications')) ?>">Référentiel</a>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin\Organization;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -15,13 +16,24 @@ use App\Repositories\TenantDecorationMotifRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\DecorationMotifStorageService;
 use App\Services\Personnel\PersonnelServiceHistoryWriter;
+use App\Support\EffectifsLmsAccess;
 use App\Support\DecorationCatalog;
 use App\Support\DecorationImageImport;
 use RuntimeException;
 use Throwable;
+use App\Support\BackOfficeRightGuard;
+use App\Support\GuardsBackOfficeRight;
 
 final class AwardReferentielController
 {
+    use GuardsBackOfficeRight;
+
+    /** Décorations : OrganizationAdminMiddleware ouvre /back-office/referentiels/decorations à ces droits fins. */
+    protected function backOfficeRights(): array
+    {
+        return [...BackOfficeRightGuard::MANAGERS, 'personnel.awards.manage', 'personnel.badges.manage'];
+    }
+
     public function __construct(
         private AwardDefinitionRepository $definitions,
         private PersonnelAwardRepository $awards,
@@ -38,6 +50,9 @@ final class AwardReferentielController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->tenant();
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -72,6 +87,9 @@ final class AwardReferentielController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -125,6 +143,9 @@ final class AwardReferentielController
      */
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -192,6 +213,9 @@ final class AwardReferentielController
      */
     public function importImages(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -278,6 +302,9 @@ final class AwardReferentielController
 
     public function archive(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -290,23 +317,34 @@ final class AwardReferentielController
 
     public function grant(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
         }
         $personnelId = (int) $request->input('personnel_id', 0);
         $definitionId = (int) $request->input('definition_id', 0);
+        $back = $this->grantBackUrl($request, $personnelId);
+        // Le droit est vérifié ici aussi, pas seulement par le middleware de la zone : le formulaire de la fiche membre
+        // arrive sur cette même action.
+        if (!EffectifsLmsAccess::canAwardDecorations(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à décerner une décoration.');
+
+            return Response::redirect($back);
+        }
         if ($personnelId < 1 || $definitionId < 1) {
             Session::flash('error', 'Personnel et décoration obligatoires.');
 
-            return Response::redirect(url('back-office/referentiels/decorations'));
+            return Response::redirect($back);
         }
         // Le membre et la décoration doivent être de cette communauté (avant, rien ne le vérifiait : une décoration pouvait
         // être attribuée à un membre d'une autre communauté, ou avec la définition d'une autre).
         if ($this->users->findById($personnelId, $tenantId) === null || $this->definitions->find($tenantId, $definitionId) === null) {
             Session::flash('error', 'Membre ou décoration introuvable dans votre communauté.');
 
-            return Response::redirect(url('back-office/referentiels/decorations'));
+            return Response::redirect($back);
         }
         $awardedAt = (string) $request->input('awarded_at', date('Y-m-d'));
         $citation = trim((string) $request->input('citation_text', ''));
@@ -337,11 +375,24 @@ final class AwardReferentielController
         );
         Session::flash('success', 'Citation enregistrée.');
 
-        return Response::redirect(url('back-office/referentiels/decorations'));
+        return Response::redirect($back);
+    }
+
+    /** Retour au dossier du membre quand l'attribution vient de sa fiche (return_to=member), sinon au référentiel. */
+    private function grantBackUrl(Request $request, int $personnelId): string
+    {
+        if ($personnelId > 0 && trim((string) $request->input('return_to', '')) === 'member') {
+            return effectifs_workspace_url('membres/' . $personnelId) . '?onglet=qualifications#distinctions';
+        }
+
+        return url('back-office/referentiels/decorations');
     }
 
     public function storeMotif(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -403,6 +454,9 @@ final class AwardReferentielController
 
     public function updateMotif(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -476,6 +530,9 @@ final class AwardReferentielController
 
     public function archiveMotif(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;

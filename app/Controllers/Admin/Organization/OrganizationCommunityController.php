@@ -12,9 +12,12 @@ use App\Repositories\TenantRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Community\TenantOnboardingHealthService;
+use App\Support\GuardsBackOfficeRight;
 
 final class OrganizationCommunityController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private AuthService $authService,
         private TenantRepository $tenantRepository,
@@ -33,6 +36,9 @@ final class OrganizationCommunityController
 
     public function presentation(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -73,6 +79,9 @@ final class OrganizationCommunityController
 
     public function presentationUpdate(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -277,6 +286,9 @@ final class OrganizationCommunityController
     /** Assistant de rattrapage onboarding (communautés créées avant le parcours guidé complet). */
     public function onboardingRecovery(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -297,6 +309,9 @@ final class OrganizationCommunityController
 
     public function onboardingRecoveryApply(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }

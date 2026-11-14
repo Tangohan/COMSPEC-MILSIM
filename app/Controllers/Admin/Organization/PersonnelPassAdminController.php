@@ -14,9 +14,12 @@ use App\Services\Personnel\Pass\PassConditionEngine;
 use App\Services\Personnel\Pass\PassService;
 use App\Core\Database;
 use PDO;
+use App\Support\GuardsBackOfficeRight;
 
 final class PersonnelPassAdminController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private PersonnelPassRepository $passes,
         private PassService $passService,
@@ -27,6 +30,9 @@ final class PersonnelPassAdminController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -42,11 +48,17 @@ final class PersonnelPassAdminController
 
     public function create(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         return $this->form(null);
     }
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         $pass = $this->passes->find($tenantId, $id);
@@ -61,6 +73,9 @@ final class PersonnelPassAdminController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $redirect = url('back-office/organisation/passes');
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
@@ -92,6 +107,9 @@ final class PersonnelPassAdminController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         $redirect = url('back-office/organisation/passes/' . $id . '/edit');
@@ -124,6 +142,9 @@ final class PersonnelPassAdminController
 
     public function destroy(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
@@ -144,6 +165,9 @@ final class PersonnelPassAdminController
      */
     public function test(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if ($tenantId < 1) {

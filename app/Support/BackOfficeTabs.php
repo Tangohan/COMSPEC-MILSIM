@@ -15,10 +15,13 @@ use App\Controllers\Admin\EffectifsWorkspaceController;
 use App\Controllers\Admin\HrRequestsController;
 use App\Controllers\Admin\Organization\AdminDoctrineController;
 use App\Controllers\Admin\Organization\ConfigurationUpdateController;
+use App\Controllers\Admin\Organization\AdvancementAdminController;
 use App\Controllers\Admin\Organization\DoctrineAdminController;
+use App\Controllers\Admin\Organization\GradeReferentielController;
 use App\Controllers\Admin\Organization\MissionPlanningController;
 use App\Controllers\Admin\Organization\MissionsPortalController;
 use App\Controllers\Admin\Organization\PersonnelPhaseAdminController;
+use App\Controllers\Admin\Organization\RankCatalogAdminController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\RhDossierWorkspaceController;
 use App\Controllers\Web\PersonnelCorrectionController;
@@ -116,6 +119,17 @@ final class BackOfficeTabs
                 'conformite' => ['label' => 'Conformité', 'legacy' => 'back-office/documents/compliance', 'handler' => [AdminDoctrineController::class, 'compliance'], 'middleware' => self::ORG],
                 'nomenclature' => ['label' => 'Nomenclature', 'legacy' => 'back-office/documents/nomenclature', 'handler' => [AdminDoctrineController::class, 'nomenclature'], 'middleware' => self::ORG],
                 'types' => ['label' => 'Types de documents', 'legacy' => 'back-office/documents/types', 'handler' => [AdminDoctrineController::class, 'types'], 'middleware' => self::ORG],
+            ],
+        ],
+        // Référentiel des grades : l’échelle (systèmes, grades), les règles d’avancement (ordre et filières) et le catalogue OTAN.
+        'back-office/referentiels/grades' => [
+            'label' => 'Grades',
+            'handler' => [GradeReferentielController::class, 'index'],
+            'middleware' => self::ORG,
+            'bar' => true,
+            'tabs' => [
+                'avancement' => ['label' => 'Règles d’avancement', 'legacy' => 'back-office/organisation/grades', 'handler' => [AdvancementAdminController::class, 'grades'], 'middleware' => self::ORG],
+                'catalogue' => ['label' => 'Catalogue OTAN', 'legacy' => 'back-office/referentiels/grades/catalogue', 'handler' => [RankCatalogAdminController::class, 'index'], 'middleware' => self::ORG],
             ],
         ],
         'back-office/mise-a-niveau' => [

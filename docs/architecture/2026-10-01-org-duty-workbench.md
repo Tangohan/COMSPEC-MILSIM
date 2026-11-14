@@ -25,7 +25,7 @@ Réf. existante : `OrgDomainModel`, `docs/technique/personnel-progression-engine
 | `OWNER` | Propriétaire du tenant (`community_owner`) |
 | `ADMIN` | Configuration technique (`tenant_admin`) |
 | `MANAGER` | Organisation / missions (`hr`, presets commandement) |
-| `MEMBER` | Utilisateur normal (`member` / Opérateur) |
+| `MEMBER` | Utilisateur normal (`member` / Membre) |
 
 Les **postes** (billets) et **duty** portent le travail métier. Les admin ne cochent plus 40 permissions par rôle MILSIM.
 

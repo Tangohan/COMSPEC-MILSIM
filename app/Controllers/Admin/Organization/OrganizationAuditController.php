@@ -9,9 +9,19 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AuditLogRepository;
 use App\Services\Audit\AuditActionLabel;
+use App\Support\BackOfficeRightGuard;
+use App\Support\GuardsBackOfficeRight;
 
 final class OrganizationAuditController
 {
+    use GuardsBackOfficeRight;
+
+    /** Journal d'audit : OrganizationAdminMiddleware l'ouvre au droit admin.audit.view. */
+    protected function backOfficeRights(): array
+    {
+        return [...BackOfficeRightGuard::MANAGERS, 'admin.audit.view'];
+    }
+
     public function __construct(
         private ?AuditLogRepository $auditLogs = null
     ) {
@@ -20,6 +30,9 @@ final class OrganizationAuditController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 25;
@@ -74,6 +87,9 @@ final class OrganizationAuditController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
