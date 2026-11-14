@@ -34,6 +34,7 @@ use App\Repositories\MemberLanguageRepository;
 use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
+use App\Services\Effectifs\MemberChronology;
 use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Effectifs\PersonnelCommandChainService;
 use App\Services\Effectifs\UnitCodeService;
@@ -53,6 +54,7 @@ use App\Services\Export\TablePdfExportService;
 use App\Support\CommunityLanguages;
 use App\Support\EffectifsLmsAccess;
 use App\Support\GradeSelectOptions;
+use App\Support\MemberFicheTabs;
 use App\Support\OrganizationRoleLabels;
 use App\Support\PlanFeatureDenial;
 use App\Support\PersonnelJobCategoryTree;
@@ -1615,8 +1617,57 @@ class EffectifsWorkspaceController
             error_log('Effectifs member: insights failed: ' . $e->getMessage());
         }
 
+        // Décorations : liste du membre (visible comme l'étagère de la fiche) ; le choix des décorations à décerner
+        // n'est chargé que pour qui peut en décerner.
+        $canAwardDecorations = EffectifsLmsAccess::canAwardDecorations($gate);
+        $memberAwards = [];
+        $awardDefinitions = [];
+        try {
+            $memberAwards = (new \App\Repositories\PersonnelAwardRepository())->listForPersonnel($tenantId, $id);
+            if ($canAwardDecorations) {
+                $awardDefinitions = (new \App\Repositories\AwardDefinitionRepository())->listForTenant($tenantId, false);
+            }
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: decorations failed: ' . $e->getMessage());
+        }
+
+        // Chronologie : fusion en lecture de sources déjà chargées ci-dessus, restreintes à ce que le lecteur voit
+        // sur la fiche (sanctions, documents RH et départ suivent leur droit).
+        $canManageStatus = EffectifsLmsAccess::canManageStatus($gate);
+        $chronologyType = MemberChronology::sanitizeType((string) $request->queryString('type', ''));
+        $chronology = MemberChronology::build([
+            'grades' => is_array($insights['grades']['entries'] ?? null) ? $insights['grades']['entries'] : [],
+            'org_history' => $orgHistory,
+            'service_history' => $serviceHistory,
+            'stage_bilans' => $stageBilans,
+            'qualifications' => $qualifications,
+            'awards' => $memberAwards,
+            'elevations' => $elevationHistory,
+            'sanctions' => $canViewSanctions && is_array($insights['sanctions']['items'] ?? null) ? $insights['sanctions']['items'] : [],
+            'absences' => $absences,
+            'mobility' => $mobilityRequests,
+            'hr_documents' => $hrDocuments,
+            'departure' => $canManageStatus ? $latestDeparture : null,
+            'absence_reasons' => PersonnelAbsenceRepository::REASON_LABELS,
+            'mobility_types' => PersonnelMobilityRequestRepository::TYPE_LABELS,
+            'document_types' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
+            'departure_reasons' => ['end_of_engagement' => 'Fin d’engagement', 'exclusion' => 'Exclusion', 'pause' => 'Pause', 'other' => 'Autre'],
+        ]);
+
+        $memberPapers = MemberIdentityPapersController::sectionFor($tenantId, $user);
+        $ficheTabs = MemberFicheTabs::visible(['papers' => is_array($memberPapers)]);
+        $ficheTab = MemberFicheTabs::resolve((string) $request->queryString('onglet', ''), $ficheTabs);
+
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
+            'ficheTabs' => $ficheTabs,
+            'ficheTab' => $ficheTab,
+            'memberChronology' => $chronology,
+            'chronologyType' => $chronologyType,
+            'canViewHrDocuments' => EffectifsLmsAccess::canViewHrDocuments($gate),
+            'canAwardDecorations' => $canAwardDecorations,
+            'memberAwards' => $memberAwards,
+            'awardDefinitions' => $awardDefinitions,
             'memberLanguage' => $memberLanguage,
             'communityLanguageCodes' => CommunityLanguages::communityLanguages($languageCommunity),
             'effectifsNav' => 'roster',
@@ -1643,7 +1694,7 @@ class EffectifsWorkspaceController
             'canEditProfiles' => $canEditProfiles,
             'jobRolePickerGroups' => $jobRolePickerGroups,
             'civilStatusOptions' => $this->civilStatusOptions(),
-            'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
+            'canManageStatus' => $canManageStatus,
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
             'assignmentNeedsRepair' => $assignmentNeedsRepair,
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
@@ -1687,7 +1738,7 @@ class EffectifsWorkspaceController
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
             // Onglet « Identité & papiers » (COMSPEC IDENTITY) : null si le responsable n'y a pas accès.
-            'memberPapers' => MemberIdentityPapersController::sectionFor($tenantId, $user),
+            'memberPapers' => $memberPapers,
         ]);
     }
 
