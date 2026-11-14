@@ -53,6 +53,7 @@ if(!isset($roleById[$newParent]))$newParent=0;
                     <?php if($trail!==''): ?><small class="eff-jobs-parent">↳ <?= $h($trail) ?></small><?php endif ?><strong><?= \App\Support\JobRoleBadge::html($decor,false) ?><?= $h($role['name']) ?><?php if(!empty($roleMeta['code'])): ?><code><?= $h($roleMeta['code']) ?></code><?php endif ?> <?= \App\Support\JobRoleBadge::origin($roleOrigin) ?><?php if(!empty($decor['hidden'])): ?> <span class="job-hidden-flag">Masquée</span><?php endif ?></strong>
                     <span><?= $h($role['category_name']??'Organisation') ?> · <?= ($roleMeta['kind']??'employment')==='function'?'Fonction':'Emploi' ?></span>
                     <?= \App\Support\JobRoleBadge::tags($decor['tags']??[]) ?>
+                    <?php $catalogHint=($jobCatalogHints??[])[$rid]??null; if($catalogHint!==null): ?><small class="eff-jobs-catalog-note" title="<?= $h('Référentiel : '.$catalogHint['name'].' ('.$catalogHint['country_label'].')'.(($catalogHint['gains']??'')!==''?' · '.$catalogHint['gains']:'')) ?>">Information · existe dans le référentiel (<?= $h($catalogHint['country_label']) ?>)</small><?php endif ?>
                 </a>
             </li>
         <?php endforeach ?></ul>

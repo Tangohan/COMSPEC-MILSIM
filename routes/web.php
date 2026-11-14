@@ -2326,6 +2326,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/attributions/lot', [\App\Controllers\Admin\JobAssignmentBoardController::class, 'bulk'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions/attributions/export', [\App\Controllers\Admin\JobAssignmentBoardController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions/catalogue', [\App\Controllers\Admin\JobCatalogController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/fonctions/catalogue/detecter', [\App\Controllers\Admin\JobCatalogController::class, 'detect'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/collections', [\App\Controllers\Admin\JobCatalogController::class, 'saveCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/collections/supprimer', [\App\Controllers\Admin\JobCatalogController::class, 'deleteCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois', [\App\Controllers\Admin\JobCatalogController::class, 'saveEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

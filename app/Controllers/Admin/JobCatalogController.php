@@ -104,6 +104,45 @@ final class JobCatalogController
     }
 
     /**
+     * Détection à la saisie d’un emploi (« Hop hop ! Ça existe dans notre référentiel ») : les emplois du référentiel
+     * proches du nom, de l’abrégé, du code et de l’unité saisis, en tenant compte de la nation lue dans le nom ou l’unité
+     * et du pays de la communauté (JobCatalogMatcher).
+     */
+    public function detect(Request $request, array $params = []): Response
+    {
+        if ($denied = $this->denied()) {
+            return $denied;
+        }
+        $lang = JobCatalog::lang(function_exists('locale') ? locale() : 'fr');
+        $job = [
+            'name' => mb_substr(trim((string) $request->queryString('nom', '')), 0, 120),
+            'abbreviation' => mb_substr(trim((string) $request->queryString('abrege', '')), 0, 16),
+            'code' => mb_substr(trim((string) $request->queryString('code', '')), 0, 40),
+            'unit' => mb_substr(trim((string) $request->queryString('unite', '')), 0, 120),
+            'country' => $this->tenantCountry((int) Session::get('tenant_id')),
+        ];
+        $hints = \App\Support\JobCatalog\JobCatalogHints::for($job, $lang);
+        foreach ($hints as &$hint) {
+            $hint['gains'] = \App\Support\JobCatalog\JobCatalogHints::gains($hint['counts']);
+        }
+        unset($hint);
+
+        return Response::json(['ok' => true, 'hints' => $hints])->header('Cache-Control', 'private, no-cache')->header('Vary', 'Cookie');
+    }
+
+    /** Pays de la communauté (code ISO à deux lettres), vide s’il n’est pas renseigné. */
+    public function tenantCountry(int $tenantId): string
+    {
+        try {
+            $tenant = $this->tenants()->findById($tenantId);
+        } catch (\Throwable) {
+            return '';
+        }
+
+        return is_array($tenant) ? strtoupper(trim((string) ($tenant['country_code'] ?? ''))) : '';
+    }
+
+    /**
      * Catalogues de la communauté et catalogues partagés par d’autres, au format de la fenêtre.
      *
      * @return array{countries: list<array<string, mixed>>, packs: list<array<string, mixed>>, entries: list<array<string, mixed>>, referentiel: list<array{id: int, code: string, name: string}>}
