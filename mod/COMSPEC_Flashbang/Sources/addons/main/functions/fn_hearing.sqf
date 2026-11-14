@@ -3,6 +3,8 @@
     Avec ACE : passe par ace_common_fnc_setHearingCapability (ACE prend le plus bas de toutes les sources et règle
     lui-même sons, radio vanilla, ACRE2 et TFAR). Sans ACE : fadeSound / fadeSpeech, et la radio (fadeRadio, ACRE2,
     TFAR) si le réglage « Radio étouffée » est actif. _restore = true : rend les valeurs d'avant l'effet.
+    Les voix (fadeSpeech) et la radio vanilla baissent plus que les bruits (_vol ^ 1,5 et ^ 1,3) : après un bang on
+    entend encore, mais on comprend mal ce qui se dit.
     [_vol, _restore] call comspec_fb_fnc_hearing
 */
 params [["_vol", 1, [0]], ["_restore", false, [false]]];
@@ -17,7 +19,7 @@ if (!isNil "ace_common_fnc_setHearingCapability") exitWith {
     } else {
         ["comspec_fb", _vol, true, 0.3] call ace_common_fnc_setHearingCapability;
     };
-    if (_restore) then { 0.5 fadeSpeech 1 } else { 0.3 fadeSpeech _vol };
+    if (_restore) then { 0.5 fadeSpeech 1 } else { 0.3 fadeSpeech (_vol ^ 1.5) };
 };
 
 private _s0 = _orig getOrDefault ["sound", 1];
@@ -26,12 +28,12 @@ if (_restore) then {
     0.5 fadeSpeech 1;
 } else {
     0.3 fadeSound (_s0 * _vol);
-    0.3 fadeSpeech _vol;
+    0.3 fadeSpeech (_vol ^ 1.5);
 };
 if (missionNamespace getVariable ["comspec_fb_radioMuffle", true]) then {
     private _r0 = _orig getOrDefault ["radio", 1];
     private _rv = [_vol, 1] select _restore;
-    0.3 fadeRadio (_r0 * _rv);
+    0.3 fadeRadio (_r0 * (_rv ^ 1.3));
     if (!isNil "acre_api_fnc_setGlobalVolume") then {
         [(_orig getOrDefault ["acre", 1]) * (_rv ^ 0.33)] call acre_api_fnc_setGlobalVolume;
     };

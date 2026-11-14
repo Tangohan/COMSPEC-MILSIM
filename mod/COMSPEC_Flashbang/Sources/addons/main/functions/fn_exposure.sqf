@@ -15,7 +15,7 @@
       réglages « Portée de l'éblouissement en extérieur » (50 à 150 %, étire l'axe des distances de la table
       extérieure) et « Intensité des effets en extérieur » (multiplie le résultat dehors).
       Les réglages « Rayon plein effet » (3 m) et « Rayon maximal » (25 m) étirent l'axe des distances des deux tables.
-      adaptation de l'œil (fn_pupil, luminosité réelle = soleil x ciel) : plein soleil x0,45, aube / crépuscule x0,7,
+      adaptation de l'œil (fn_pupil, luminosité réelle = soleil x ciel) : plein soleil x0,30, aube / crépuscule x0,6,
         nuit ou local sombre x multiplicateur nuit (1,0) ; sous un toit, luminosité bornée à 0,25 ; sous 2 m le flash
         sature de toute façon (pas de réduction), elle s'installe jusqu'à 6 m ;
       ligne de vue : 2 rayons (centre et 35 cm au-dessus) ; murs, portes fermées, coques arrêtent le flash ;
@@ -58,6 +58,11 @@ private _prot = 0;
 if (_unit getVariable ["ACE_hasEarPlugsIn", false]) then { _prot = 1 };
 _prot = _prot max (getNumber (configFile >> "CfgWeapons" >> headgear _unit >> "ace_hearing_protection"));
 _prot = _prot max (getNumber (configFile >> "CfgGlasses" >> goggles _unit >> "ace_hearing_protection"));
+// Sans ACE : une mission peut déclarer une protection auditive (0 à 1) sur l'unité, comme comspec_fb_eyeProtection.
+_prot = _prot max (_unit getVariable ["comspec_fb_earProtection", 0]);
+// Sursaut (réflexe acoustique, fn_playerHit) : il dépend du niveau reçu, et la protection auditive ne le coupe qu'à
+// moitié (le réflexe part bien en dessous du seuil de gêne) : 125 dB = rien, 160 dB = plein sursaut.
+_info set ["startle", ((((_L - 0.5 * _protDb * (_prot min 1)) - 125) / 35) max 0) min 1];
 _L = _L - _protDb * (_prot min 1);
 private _aud = (((_L - 140) / 30) max 0) min 1;
 _aud = (_aud ^ 0.7) * _gain;
@@ -74,6 +79,10 @@ private _outdoor = !_enclosed;
 if (_outdoor) then { _dn = _dn / (((missionNamespace getVariable ["comspec_fb_outdoorRange", 1]) max 0.5) min 1.5) };
 _info set ["exterieur", _outdoor];
 private _fIn = ([_dn, 0, _outdoor] call comspec_fb_fnc_visionTable) select 1;
+// Luminosité vue par l'unité (soleil ou lune x ciel ; sous un toit, au plus 0,25) : pupille, et durée de récupération.
+private _lum = sunOrMoon * (1 - 0.3 * overcast);
+if (_indoorUnit) then { _lum = _lum min 0.25 };
+_info set ["lum", _lum];
 
 private _vis = 0;
 if (_fIn > 0) then {
@@ -94,11 +103,9 @@ if (_fIn > 0) then {
         if (_enclosed) then { _vis = _vis * _mult };
     };
     if (_vis > 0) then {
-        // Adaptation à la lumière (fn_pupil) : pupille fermée en plein soleil (x0,45), aube / crépuscule ou ciel très
-        // couvert (x0,7), grande ouverte la nuit ou dans un local sombre (x multiplicateur nuit). Luminosité réelle :
+        // Adaptation à la lumière (fn_pupil) : pupille fermée en plein soleil (x0,30), aube / crépuscule ou ciel très
+        // couvert (x0,6), grande ouverte la nuit ou dans un local sombre (x multiplicateur nuit). Luminosité réelle :
         // soleil ou lune levés x ciel dégagé ; sous un toit, au plus 0,25.
-        private _lum = sunOrMoon * (1 - 0.3 * overcast);
-        if (_indoorUnit) then { _lum = _lum min 0.25 };
         private _pupil = [_lum, _d, missionNamespace getVariable ["comspec_fb_nightMult", 1]] call comspec_fb_fnc_pupil;
         _vis = _vis * _pupil;
         _info set ["pupille", _pupil];

@@ -55,6 +55,7 @@ private _add = {
 ["comspec_fb_tinnitus", "CHECKBOX", "Tinnitus", "Hearing", true] call _add;
 ["comspec_fb_tinnitusMax", "SLIDER", "TinnitusMax", "Hearing", [10, 58, 45, 0]] call _add;
 ["comspec_fb_muffle", "CHECKBOX", "Muffle", "Hearing", true] call _add;
+["comspec_fb_startle", "CHECKBOX", "Startle", "Hearing", true] call _add;
 ["comspec_fb_radioMuffle", "CHECKBOX", "RadioMuffle", "Hearing", true] call _add;
 ["comspec_fb_earProtectionDb", "SLIDER", "EarProtection", "Hearing", [0, 40, 25, 0]] call _add;
 // Écho de pièce (expérimental, désactivé par défaut) : dans un local fermé, une seconde réflexion courte et atténuée.

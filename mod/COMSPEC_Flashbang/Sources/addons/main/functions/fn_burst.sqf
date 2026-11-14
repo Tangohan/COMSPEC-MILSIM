@@ -271,6 +271,8 @@ if (_dbg) then {
         _vis = _vis * _rv * _kVis;
         _aud = _aud * _ra * _kAud;
         _info set ["tirage", [_rv, _ra]];
+        // Sursaut : suit la règle du camp et l'option « Effets réduits » ; moitié moins pour le lanceur, qui s'y attend.
+        _info set ["startle", (_info getOrDefault ["startle", 0]) * _kAud * ([1, 0.5] select (!isNull _thrower && {_u == _thrower}))];
         // Mode Réduit : durées x coefficient (en plus de l'intensité).
         _info set ["durMult", (_info getOrDefault ["durMult", 1]) * _kDur];
         if (_isMe && {_ruleLevel == 2}) then { _meShielded = true };
@@ -282,7 +284,7 @@ if (_dbg) then {
                 ["aucun effet (trop faible : distance, mur ou dos tourné)", "effets appliqués"] select (_vis > 0.02 || {_aud > 0.02}),
                 _rv toFixed 2, _ra toFixed 2, side group _u, _ruleName]] call comspec_fb_fnc_log;
         };
-        if (_vis > 0.02 || {_aud > 0.02}) then {
+        if (_vis > 0.02 || {_aud > 0.02} || {_isMe && {(_info getOrDefault ["startle", 0]) > 0.15}}) then {
             if (_isMe) then {
                 _meHit = true;
                 _info set ["tPlan", _tPlan];
