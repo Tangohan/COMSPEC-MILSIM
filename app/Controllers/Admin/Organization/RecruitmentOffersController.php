@@ -21,9 +21,19 @@ use App\Services\EmailService;
 use App\Services\Recruitment\RecruitmentOpeningPresentation;
 use App\Services\Recruitment\RecruitmentOpeningReferenceService;
 use App\Services\Recruitment\TenantRecruitmentSettings;
+use App\Support\BackOfficeRightGuard;
+use App\Support\GuardsBackOfficeRight;
 
 class RecruitmentOffersController
 {
+    use GuardsBackOfficeRight;
+
+    /** Offres : OrganizationAdminMiddleware ouvre /back-office/recruitment/offers et reference-format à ces droits. */
+    protected function backOfficeRights(): array
+    {
+        return [...BackOfficeRightGuard::MANAGERS, 'organization.recruitment.openings.manage', 'organization.recruitment.manage'];
+    }
+
     public function __construct(
         private RecruitmentOpeningRepository $openings,
         private UnitRepository $unitRepository,
@@ -40,6 +50,9 @@ class RecruitmentOffersController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -73,6 +86,9 @@ class RecruitmentOffersController
 
     public function create(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $planBlock = PlanCreationQuota::blockMessage((int) Session::get('tenant_id'), PlanCreationQuota::OFFERS);
         if ($planBlock !== null) {
             Session::flash('error', $planBlock);
@@ -85,6 +101,9 @@ class RecruitmentOffersController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
@@ -121,6 +140,9 @@ class RecruitmentOffersController
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) Session::get('tenant_id');
         $row = $this->openings->findByIdForTenant($id, $tenantId);
@@ -135,6 +157,9 @@ class RecruitmentOffersController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
@@ -168,6 +193,9 @@ class RecruitmentOffersController
 
     public function publish(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
@@ -207,6 +235,9 @@ class RecruitmentOffersController
 
     public function close(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
@@ -222,6 +253,9 @@ class RecruitmentOffersController
 
     public function referenceFormat(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -266,6 +300,9 @@ class RecruitmentOffersController
 
     public function referenceFormatSave(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 

@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Services\Personnel\QualificationAwardRuleService;
 use App\Services\Personnel\QualificationPrerequisiteSuggester;
 use Throwable;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * « Prérequis détectés » : aperçu sur tout le référentiel (ou les fiches qui viennent d'être importées), ajout en un
@@ -19,6 +20,8 @@ use Throwable;
  */
 final class QualificationPrerequisiteController
 {
+    use GuardsBackOfficeRight;
+
     private const BASE = 'back-office/referentiels/qualifications';
 
     public function __construct(
@@ -30,6 +33,9 @@ final class QualificationPrerequisiteController
     /** Aperçu de masse : toutes les fiches qui ont des prérequis détectés, ou seulement celles de ?ids=. */
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -55,6 +61,9 @@ final class QualificationPrerequisiteController
     /** Ajout en masse depuis l'aperçu : pick[fiche][] = suggestion, value[fiche][suggestion] = valeur corrigée. */
     public function applyMany(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $ids = self::ids((string) $request->input('ids', ''));
         $back = url(self::BASE . '/prerequis-detectes') . ($ids !== [] ? '?ids=' . implode(',', $ids) : '');
 
@@ -89,6 +98,9 @@ final class QualificationPrerequisiteController
     /** Ajout depuis la fiche d'une qualification (formulaire du back-office ou fiche). */
     public function apply(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $back = (string) $request->input('return_to', '') === 'fiche'
             ? url(self::BASE . '/' . $id) : url(self::BASE . '/' . $id . '/edit') . '#prerequis-detectes';
@@ -105,6 +117,9 @@ final class QualificationPrerequisiteController
     /** Un instructeur atteste (ou retire) une condition non mesurée pour un membre. */
     public function attest(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
 
         return $this->post($request, url(self::BASE . '/' . $id) . '#attestations', function (int $tenantId) use ($request, $id): void {

@@ -11,9 +11,12 @@ use App\Core\Session;
 use App\Repositories\TenantMiniArticleRepository;
 use App\Services\Billing\PlanCreationQuota;
 use App\Support\MiniArticleHtml;
+use App\Support\GuardsBackOfficeRight;
 
 final class TenantMiniArticlesController
 {
+    use GuardsBackOfficeRight;
+
     private const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
     /** @var list<string> */
@@ -27,6 +30,9 @@ final class TenantMiniArticlesController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -42,6 +48,9 @@ final class TenantMiniArticlesController
 
     public function create(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -64,6 +73,9 @@ final class TenantMiniArticlesController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -106,6 +118,9 @@ final class TenantMiniArticlesController
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -128,6 +143,9 @@ final class TenantMiniArticlesController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -159,6 +177,9 @@ final class TenantMiniArticlesController
 
     public function delete(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));

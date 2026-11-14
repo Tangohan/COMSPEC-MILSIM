@@ -11,6 +11,8 @@ use App\Core\Session;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\RecruitmentInviteCodeRepository;
 use App\Repositories\RecruitmentOpeningRepository;
+use App\Support\BackOfficeRightGuard;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * Gestion des codes d’invitation prioritaires (accélération des candidatures).
@@ -18,6 +20,14 @@ use App\Repositories\RecruitmentOpeningRepository;
  */
 class RecruitmentInviteCodesController
 {
+    use GuardsBackOfficeRight;
+
+    /** Recrutement : OrganizationAdminMiddleware ouvre /back-office/recruitments à ce droit. */
+    protected function backOfficeRights(): array
+    {
+        return [...BackOfficeRightGuard::MANAGERS, 'organization.recruitment.manage'];
+    }
+
     private const BASE_PATH = 'back-office/recruitments/codes-invitation';
 
     public function __construct(
@@ -28,6 +38,9 @@ class RecruitmentInviteCodesController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -62,6 +75,9 @@ class RecruitmentInviteCodesController
 
     public function create(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -93,6 +109,9 @@ class RecruitmentInviteCodesController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId || !$request->isPost()) {
             return Response::redirect(url(self::BASE_PATH));
@@ -163,6 +182,9 @@ class RecruitmentInviteCodesController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -217,6 +239,9 @@ class RecruitmentInviteCodesController
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -265,6 +290,9 @@ class RecruitmentInviteCodesController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId || !$request->isPost()) {
             return Response::redirect(url(self::BASE_PATH));
@@ -328,6 +356,9 @@ class RecruitmentInviteCodesController
 
     public function delete(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId || !$request->isPost()) {
             return Response::redirect(url(self::BASE_PATH));

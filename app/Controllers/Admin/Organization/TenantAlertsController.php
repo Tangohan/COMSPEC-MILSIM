@@ -12,9 +12,12 @@ use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Integrations\DiscordWebhookService;
 use App\Support\TenantAlertVisuals;
+use App\Support\GuardsBackOfficeRight;
 
 final class TenantAlertsController
 {
+    use GuardsBackOfficeRight;
+
     private const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
     /** @var list<string> */
@@ -41,6 +44,9 @@ final class TenantAlertsController
      */
     public function updateUpcomingVisibility(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -71,6 +77,9 @@ final class TenantAlertsController
 
     public function create(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -88,6 +97,9 @@ final class TenantAlertsController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -136,6 +148,9 @@ final class TenantAlertsController
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -160,6 +175,9 @@ final class TenantAlertsController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
@@ -191,6 +209,9 @@ final class TenantAlertsController
 
     public function delete(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));

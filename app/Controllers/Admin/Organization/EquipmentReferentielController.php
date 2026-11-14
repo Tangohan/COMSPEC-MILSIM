@@ -17,9 +17,19 @@ use App\Services\GameEquipment\DotationOverviewService;
 use App\Services\GameEquipment\GameItemKinds;
 use App\Services\GameEquipment\GameItemUsageExtractor;
 use App\Support\AdvancementCodes;
+use App\Support\BackOfficeRightGuard;
+use App\Support\GuardsBackOfficeRight;
 
 final class EquipmentReferentielController
 {
+    use GuardsBackOfficeRight;
+
+    /** Dotation : OrganizationAdminMiddleware ouvre /back-office/referentiels/dotation à ces droits fins. */
+    protected function backOfficeRights(): array
+    {
+        return [...BackOfficeRightGuard::MANAGERS, 'personnel.equipment.manage', 'personnel.assignments.manage'];
+    }
+
     public function __construct(
         private EquipmentItemDefinitionRepository $definitions,
         private PersonnelEquipmentAssignmentRepository $assignments,
@@ -30,6 +40,9 @@ final class EquipmentReferentielController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->tenant();
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -87,6 +100,9 @@ final class EquipmentReferentielController
      */
     public function linkGameClass(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -132,6 +148,9 @@ final class EquipmentReferentielController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -183,6 +202,9 @@ final class EquipmentReferentielController
 
     public function archive(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -195,6 +217,9 @@ final class EquipmentReferentielController
 
     public function assign(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -224,6 +249,9 @@ final class EquipmentReferentielController
 
     public function changeStatus(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -254,6 +282,9 @@ final class EquipmentReferentielController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->tenant();
         if ($tenantId instanceof Response) {
             return $tenantId;

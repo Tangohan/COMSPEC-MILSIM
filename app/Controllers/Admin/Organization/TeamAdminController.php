@@ -9,9 +9,12 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Support\GuardsBackOfficeRight;
 
 class TeamAdminController
 {
+    use GuardsBackOfficeRight;
+
     private const TYPE = 'team';
 
     public function __construct(
@@ -21,6 +24,9 @@ class TeamAdminController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -40,6 +46,9 @@ class TeamAdminController
 
     public function create(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -56,6 +65,9 @@ class TeamAdminController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -105,6 +117,9 @@ class TeamAdminController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
@@ -133,6 +148,9 @@ class TeamAdminController
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
@@ -156,6 +174,9 @@ class TeamAdminController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {
@@ -199,6 +220,9 @@ class TeamAdminController
 
     public function delete(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if (!$tenantId || !$id) {

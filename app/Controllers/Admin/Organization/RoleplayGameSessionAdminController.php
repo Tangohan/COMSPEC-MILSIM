@@ -15,6 +15,7 @@ use App\Repositories\UserRepository;
 use App\Services\Personnel\RoleplayGameSessionService;
 use App\Services\Personnel\RoleplayGameSessionSettings;
 use App\Support\RoleplaySessionBoard;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * Sessions Arma (back-office/roleplay/sessions) : soirées de jeu dont le temps de présence alimente le suivi RH
@@ -23,6 +24,8 @@ use App\Support\RoleplaySessionBoard;
  */
 final class RoleplayGameSessionAdminController
 {
+    use GuardsBackOfficeRight;
+
     private const KINDS = ['officielle', 'entrainement', 'libre'];
 
     public function __construct(
@@ -35,6 +38,9 @@ final class RoleplayGameSessionAdminController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -92,6 +98,9 @@ final class RoleplayGameSessionAdminController
 
     public function saveSettings(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $redirect = url('back-office/roleplay/sessions') . '#regles';
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
@@ -110,6 +119,9 @@ final class RoleplayGameSessionAdminController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $redirect = url('back-office/roleplay/sessions');
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1 || !Csrf::validate((string) $request->input('_csrf_token'))) {
@@ -170,6 +182,9 @@ final class RoleplayGameSessionAdminController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         $session = $tenantId > 0 && $this->sessions->schemaReady() ? $this->sessions->findById($tenantId, $id) : null;
@@ -225,6 +240,9 @@ final class RoleplayGameSessionAdminController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         $redirect = url('back-office/roleplay/sessions/' . $id);
@@ -274,6 +292,9 @@ final class RoleplayGameSessionAdminController
     /** Démarrer, clôturer, annuler ou rouvrir une session. */
     public function changeState(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         $back = (string) $request->input('back', '') === 'liste' ? url('back-office/roleplay/sessions') : url('back-office/roleplay/sessions/' . $id);
@@ -308,6 +329,9 @@ final class RoleplayGameSessionAdminController
 
     public function memberAction(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         $memberId = (int) ($params['memberId'] ?? 0);

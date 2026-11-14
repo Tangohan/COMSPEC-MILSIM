@@ -10,9 +10,12 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakMarkerDetectionRuleRepository;
 use App\Support\AtakMarkerDetection;
+use App\Support\GuardsBackOfficeRight;
 
 final class AtakMarkerDetectionAdminController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private AtakMarkerDetectionRuleRepository $rules,
     ) {
@@ -20,6 +23,9 @@ final class AtakMarkerDetectionAdminController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -40,6 +46,9 @@ final class AtakMarkerDetectionAdminController
 
     public function save(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $redirect = url('back-office/atak/detection-marqueurs');
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {

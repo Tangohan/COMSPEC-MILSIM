@@ -18,12 +18,15 @@ use App\Services\Auth\AuthService;
 use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Community\TenantInitialSetupService;
 use App\Support\OrganizationRoleLabels;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * Cockpit de configuration initiale (non bloquant) après création de communauté.
  */
 final class TenantInitialSetupController
 {
+    use GuardsBackOfficeRight;
+
     private const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
     /** @var list<string> */
@@ -42,6 +45,9 @@ final class TenantInitialSetupController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -90,6 +96,9 @@ final class TenantInitialSetupController
 
     public function save(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -133,6 +142,9 @@ final class TenantInitialSetupController
 
     public function dismiss(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
@@ -158,6 +170,9 @@ final class TenantInitialSetupController
 
     public function complete(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
