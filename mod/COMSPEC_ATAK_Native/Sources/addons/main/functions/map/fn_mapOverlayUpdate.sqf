@@ -52,11 +52,11 @@ private _meUpdate = {
         private _inFt = (_ft get "id") isNotEqualTo "";
         // Indicatif tel quel (jamais traduit), raccourci proprement s'il est long.
         private _cs = ([player] call comspec_atak_native_fnc_unitCallsign) regexReplace ["[<>&]", ""];
-        if ((count _cs) > 12) then { _cs = (_cs select [0, 11]) + "…"; };
+        _cs = ["cut", _cs, 12] call comspec_atak_native_fnc_mapFmt;
         _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", _cs, [(COMSPEC_ATAK_Th get "hexMapOk"), _ft get "hex"] select _inFt];
         if (_inFt) then {
             private _fn = (toUpper ((_ft get "name") call comspec_atak_native_fnc_tr)) regexReplace ["[<>&]", ""];
-            if ((count _fn) > 8) then { _fn = _fn select [0, 8]; };
+            _fn = ["cut", _fn, 8] call comspec_atak_native_fnc_mapFmt;
             _l2 = _l2 + format [" <t color='%2'>%1</t>", _fn, _ft get "hex"];
         };
         if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {

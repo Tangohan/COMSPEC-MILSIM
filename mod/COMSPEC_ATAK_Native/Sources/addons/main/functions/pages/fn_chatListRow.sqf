@@ -45,7 +45,7 @@ _cTime ctrlSetText (_m getOrDefault ["time", ""]); // i18n:brut
 _cTime ctrlSetTextColor ([_dim, _acc] select _on);
 _cTime ctrlSetFont (COMSPEC_ATAK_FontSet select ([0, 1] select _on));
 private _bdW = [0, ((_fs * 1.25) / _ratio) max ((_fs * 0.55 * (count str _unread) + _fs * 0.6) / _ratio)] select _on;
-_cPrev ctrlSetText (_last select [0, 90]); // i18n:brut
+_cPrev ctrlSetText (["cut", _last, 90] call comspec_atak_native_fnc_mapFmt); // i18n:brut
 _cPrev ctrlSetTextColor ([_dim, [0.78, 0.84, 0.81, 1]] select _on);
 _cPrev ctrlSetPosition [_tx, _y + _rh * 0.52, _tw - _bdW - _pad * 0.4, _rh * 0.38];
 _cPrev ctrlCommit 0;

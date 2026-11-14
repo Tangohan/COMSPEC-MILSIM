@@ -389,7 +389,7 @@ private _drawList = {
         private _cTime = ["COMSPEC_RscTextRight", [_tx + _tw - _timeW, _y + _rh * 0.14, _timeW, _rh * 0.4], _time, _fs * 0.82, [_cDim, _acc] select (_unread > 0), _unread > 0, _grp] call _lbl;
         private _bdW = [0, ((_fs * 1.25) / _ratio) max ((_fs * 0.55 * (count str _unread) + _fs * 0.6) / _ratio)] select (_unread > 0);
         private _prevTxt = [_last, _sub] select (_last isEqualTo "");
-        private _cPrev = ["COMSPEC_RscText", [_tx, _y + _rh * 0.52, _tw - _bdW - _pad * 0.4, _rh * 0.38], _prevTxt select [0, 90], _fs * 0.9, [_cDim, [0.78, 0.84, 0.81, 1]] select (_unread > 0), false, _grp] call _lbl;
+        private _cPrev = ["COMSPEC_RscText", [_tx, _y + _rh * 0.52, _tw - _bdW - _pad * 0.4, _rh * 0.38], ["cut", _prevTxt, 90] call comspec_atak_native_fnc_mapFmt, _fs * 0.9, [_cDim, [0.78, 0.84, 0.81, 1]] select (_unread > 0), false, _grp] call _lbl;
         // Pastille toujours créée, masquée sans non-lu : fn_chatListRow l'affiche sans redessiner.
         private _b = ["COMSPEC_RscTextCenter", [_tx + _tw - _bdW, _y + _rh * 0.53, _bdW max pixelW, _fs * 1.15], str (_unread min 99), _fs * 0.78, [0.03, 0.05, 0.04, 1], true, _grp] call _lbl;
         _b ctrlSetBackgroundColor _acc;
