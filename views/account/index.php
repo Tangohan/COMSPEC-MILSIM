@@ -115,38 +115,6 @@ $acChar = is_array($accountCharacter ?? null) ? $accountCharacter : ['name' => '
 $acHasChar = trim((string) ($acChar['name'] ?? '')) !== '';
 $acDiscord = !empty($accountDiscordLinked);
 ?>
-<div class="ah-quick">
-    <section class="ah-quick__card" aria-labelledby="quick-char-heading">
-        <h2 id="quick-char-heading" class="ah-quick__title">Mon personnage</h2>
-        <?php if ($acHasChar): ?>
-        <div class="ah-quick__char">
-            <?php if (!empty($acChar['portrait_url'])): ?><img src="<?= $h($acChar['portrait_url']) ?>" alt="" class="ah-quick__portrait" width="56" height="56"><?php endif; ?>
-            <p class="ah-quick__desc"><strong><?= $h($acChar['name']) ?></strong><?= ($acChar['callsign'] ?? '') !== '' ? '<br>Indicatif : ' . $h($acChar['callsign']) : '' ?></p>
-        </div>
-        <a href="<?= $h(url('account/personnage')) ?>" class="account-hub__btn">Modifier</a>
-        <?php else: ?>
-        <p class="ah-quick__desc">Vous n’avez pas encore de personnage. Prénom, nom et indicatif suffisent.</p>
-        <a href="<?= $h(url('account/personnage')) ?>" class="account-hub__btn account-hub__btn--ink">Créer mon personnage</a>
-        <?php endif; ?>
-    </section>
-    <section class="ah-quick__card" aria-labelledby="quick-public-heading">
-        <h2 id="quick-public-heading" class="ah-quick__title">Ma page publique</h2>
-        <p class="ah-quick__desc">
-            <?php if ($ovPublicCvUrl !== null): ?>
-            Ouverte : <a href="<?= $h($ovPublicCvUrl) ?>"><?= $h($ovPublicCvUrl) ?></a>
-            <?php else: ?>
-            Fermée pour le moment.
-            <?php endif; ?>
-        </p>
-        <a href="<?= $h(url('account/page-publique')) ?>" class="account-hub__btn<?= $ovPublicCvUrl === null ? ' account-hub__btn--ink' : '' ?>"><?= $ovPublicCvUrl === null ? 'Ouvrir ma page' : 'Gérer ma page' ?></a>
-    </section>
-    <section class="ah-quick__card" aria-labelledby="quick-links-heading">
-        <h2 id="quick-links-heading" class="ah-quick__title">Mes liens et Discord</h2>
-        <p class="ah-quick__desc"><?= $acDiscord ? 'Discord est lié à votre compte.' : 'Discord n’est pas encore lié.' ?></p>
-        <a href="<?= $h(url('discord/roles-lies')) ?>" class="account-hub__btn<?= $acDiscord ? '' : ' account-hub__btn--ink' ?>"><?= $acDiscord ? 'Gérer' : 'Lier Discord' ?></a>
-    </section>
-</div>
-
 <?php if ($accountDeletionScheduledAt !== ''): ?>
 <div class="account-hub__ov-alert account-hub__ov-alert--danger" role="alert">
     <div>
@@ -157,85 +125,120 @@ $acDiscord = !empty($accountDiscordLinked);
 </div>
 <?php endif; ?>
 
-<?php if ($showOnboarding): ?>
-<div class="account-hub__ov-alert" aria-labelledby="onboarding-heading">
-    <div class="account-hub__ov-alert-main">
-        <strong id="onboarding-heading"><?= $h(function_exists('__') ? __('common.integration_account_heading') : 'Votre arrivée n’est pas terminée') ?></strong>
-        <span>
-            <?= $onboardingNudge !== '' && $onboardingNudge !== 'RAS'
-                ? $h($onboardingNudge)
-                : $h(function_exists('__') ? __('common.integration_account_nudge') : 'Les étapes restantes se trouvent dans Mon intégration, pas ici.') ?>
-        </span>
-        <span class="account-hub__ov-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $onboardingPercent ?>"><span style="width:<?= $onboardingPercent ?>%"></span></span>
-    </div>
-    <a href="<?= $h(url('mon-integration')) ?>" class="account-hub__btn account-hub__btn--ink"><?= $h(function_exists('__') ? __('common.integration_open') : 'Ouvrir Mon intégration') ?></a>
-</div>
-<?php endif; ?>
-
 <?php
-/* Accueil du profil : rappel discret tant que le parcours n'est ni complet ni terminé. */
+/*
+ * Une seule liste « à faire » : tout ce qui attend une action, du plus important au moins important. Avant, la même
+ * information revenait dans quatre blocs (cartes rapides, arrivée, profil, état du compte) : la page ne disait pas par où
+ * commencer. Ce qui est déjà en place tient sur une ligne, sous la liste.
+ */
 $pw = is_array($profileWelcome ?? null) ? $profileWelcome : null;
-if ($pw !== null && empty($pw['finished']) && ($pw['steps'] ?? []) !== []):
+$pwPending = $pw !== null && empty($pw['finished']) && ($pw['steps'] ?? []) !== [];
+$todo = [];
+if ($showOnboarding) {
+    $todo[] = [
+        'title' => function_exists('__') ? __('common.integration_account_heading') : 'Votre arrivée n’est pas terminée',
+        'why' => $onboardingNudge !== '' && $onboardingNudge !== 'RAS'
+            ? $onboardingNudge
+            : (function_exists('__') ? __('common.integration_account_nudge') : 'Les étapes restantes se trouvent dans Mon intégration, pas ici.'),
+        'href' => url('mon-integration'),
+        'cta' => function_exists('__') ? __('common.integration_open') : 'Ouvrir Mon intégration',
+        'pct' => $onboardingPercent,
+    ];
+}
+if ($pwPending) {
     $pwDone = (int) ($pw['progress']['done'] ?? 0);
     $pwTotal = (int) ($pw['progress']['total'] ?? 0);
-    $pwLeft = array_values(array_filter($pw['steps'], static fn (array $s): bool => $s['status'] !== 'done'));
-    $pwStarted = !empty($pw['state']['started_at']);
+    $pwLeft = array_values(array_filter($pw['steps'], static fn (array $st): bool => $st['status'] !== 'done'));
+    $todo[] = [
+        'title' => 'Complétez votre profil',
+        'why' => $pwDone . ' étape' . ($pwDone > 1 ? 's' : '') . ' sur ' . $pwTotal . '. Reste : '
+            . implode(', ', array_map(static fn (array $st): string => mb_strtolower((string) $st['short']), array_slice($pwLeft, 0, 3))) . (count($pwLeft) > 3 ? '…' : '.'),
+        'post' => url('account/bienvenue/reprendre'),
+        'cta' => !empty($pw['state']['started_at']) ? 'Reprendre' : 'Commencer',
+        'pct' => $pwTotal > 0 ? (int) round($pwDone * 100 / $pwTotal) : 0,
+    ];
+}
+if (!$acHasChar) {
+    $todo[] = ['title' => 'Créez votre personnage', 'why' => 'Prénom, nom et indicatif suffisent : une minute.', 'href' => url('account/personnage'), 'cta' => 'Créer mon personnage'];
+}
+foreach ($checks as $check) {
+    if (!$check['ok']) {
+        $todo[] = ['title' => $check['title'], 'why' => $check['warn'], 'href' => $check['href'], 'cta' => $check['cta']];
+    }
+}
+$todoCount = count($todo);
 ?>
-<section class="ah-wel-nudge" aria-labelledby="welcome-nudge-heading">
-    <div class="ah-wel-nudge__main">
-        <h2 id="welcome-nudge-heading" class="ah-wel-nudge__title">Complétez votre profil</h2>
-        <p class="ah-wel-nudge__desc">
-            <?= $pwDone ?> étape<?= $pwDone > 1 ? 's' : '' ?> sur <?= $pwTotal ?>.
-            Reste : <?= $h(implode(', ', array_map(static fn (array $s): string => mb_strtolower($s['short']), array_slice($pwLeft, 0, 3)))) ?><?= count($pwLeft) > 3 ? '…' : '.' ?>
-        </p>
-        <ol class="ah-wel-nudge__track" aria-hidden="true">
-            <?php foreach ($pw['steps'] as $s): ?><li class="is-<?= $h($s['status']) ?>"></li><?php endforeach; ?>
-        </ol>
+<section id="etat-du-compte" class="ah-todo is-<?= $todoCount === 0 ? 'ok' : 'todo' ?>" aria-labelledby="account-health-heading" data-locate-box>
+    <div class="ah-todo__head">
+        <h2 id="account-health-heading" class="ah-todo__title">État du compte</h2>
+        <p class="ah-todo__state"><?= $todoCount === 0 ? 'Tout est en place, rien à faire.' : $todoCount . ' chose' . ($todoCount > 1 ? 's' : '') . ' à faire' ?></p>
     </div>
-    <form method="post" action="<?= $h(url('account/bienvenue/reprendre')) ?>">
-        <?= \App\Core\Csrf::field() ?>
-        <button type="submit" class="account-hub__btn account-hub__btn--ink"><?= $pwStarted ? 'Reprendre' : 'Commencer' ?></button>
-    </form>
-</section>
-<?php endif; ?>
-
-<section id="etat-du-compte"class="ah-ov-health is-<?= $h($healthTone) ?>" aria-labelledby="account-health-heading" data-locate-box>
-    <div class="ah-ov-health__score">
-        <span class="ah-ov-health__ring" style="--pct:<?= $checksPct ?>" aria-hidden="true">
-            <span><?= $checksDone ?><small>/<?= $checksTotal ?></small></span>
-        </span>
-        <div>
-            <p class="ah-ov-health__label">État du compte</p>
-            <h2 id="account-health-heading" class="ah-ov-health__title"><?= $h($healthLabel) ?></h2>
-            <p class="ah-ov-health__desc">
-                <?= $checksDone === $checksTotal
-                    ? 'Les quatre protections sont en place.'
-                    : $h(($checksTotal - $checksDone) . ' point' . ($checksTotal - $checksDone > 1 ? 's' : '') . ' à régler, chacun en un clic.') ?>
-            </p>
-        </div>
-    </div>
-    <ul class="ah-ov-checks">
-        <?php foreach ($checks as $check): ?>
-        <li class="ah-ov-check<?= $check['ok'] ? ' is-ok' : ' is-todo' ?>">
-            <span class="ah-ov-check__mark" aria-hidden="true">
-                <?php if ($check['ok']): ?>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
-                <?php else: ?>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg>
+    <?php if ($todoCount > 0): ?>
+    <ol class="ah-todo__list">
+        <?php foreach ($todo as $i => $item): ?>
+        <li class="ah-todo__item">
+            <span class="ah-todo__n" aria-hidden="true"><?= $i + 1 ?></span>
+            <div class="ah-todo__text">
+                <p class="ah-todo__what"><?= $h($item['title']) ?></p>
+                <p class="ah-todo__why"><?= $h($item['why']) ?></p>
+                <?php if (isset($item['pct'])): ?>
+                <span class="account-hub__ov-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $item['pct'] ?>"><span style="width:<?= (int) $item['pct'] ?>%"></span></span>
                 <?php endif; ?>
-            </span>
-            <span class="ah-ov-check__text">
-                <span class="ah-ov-check__title"><?= $h($check['title']) ?><span class="account-hub__sr"><?= $check['ok'] ? ' : en place' : ' : à régler' ?></span></span>
-                <span class="ah-ov-check__detail<?= !empty($check['detail_mono']) ? ' is-mono' : '' ?>"><?= $h($check['detail']) ?></span>
-                <?php if (!$check['ok']): ?>
-                <span class="ah-ov-check__why"><?= $h($check['warn']) ?></span>
-                <?php endif; ?>
-            </span>
-            <a href="<?= $h($check['href']) ?>" class="ah-ov-check__cta"><?= $h($check['cta']) ?></a>
+            </div>
+            <?php if (isset($item['post'])): ?>
+            <form method="post" action="<?= $h($item['post']) ?>" class="ah-todo__act">
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="account-hub__btn account-hub__btn--ink"><?= $h($item['cta']) ?></button>
+            </form>
+            <?php else: ?>
+            <a href="<?= $h($item['href']) ?>" class="account-hub__btn account-hub__btn--ink ah-todo__act"><?= $h($item['cta']) ?></a>
+            <?php endif; ?>
+        </li>
+        <?php endforeach; ?>
+    </ol>
+    <?php endif; ?>
+    <?php $checksOk = array_values(array_filter($checks, static fn (array $c): bool => $c['ok'])); ?>
+    <?php if ($checksOk !== []): ?>
+    <ul class="ah-todo__done" aria-label="Déjà en place">
+        <?php foreach ($checksOk as $check): ?>
+        <li>
+            <a href="<?= $h($check['href']) ?>" title="<?= $h($check['detail'] . ' · ' . $check['cta']) ?>">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                <?= $h($check['title']) ?>
+            </a>
         </li>
         <?php endforeach; ?>
     </ul>
+    <?php endif; ?>
 </section>
+
+<div class="ah-spaces">
+    <a class="ah-space" href="<?= $h(url('account/personnage')) ?>">
+        <?php if ($acHasChar && !empty($acChar['portrait_url'])): ?><img src="<?= $h($acChar['portrait_url']) ?>" alt="" class="ah-space__img" width="44" height="44"><?php endif; ?>
+        <span class="ah-space__body">
+            <span class="ah-space__title">Mon personnage</span>
+            <span class="ah-space__state"><?= $acHasChar ? $h($acChar['name']) . (($acChar['callsign'] ?? '') !== '' ? ' · ' . $h($acChar['callsign']) : '') : 'Pas encore créé' ?></span>
+        </span>
+        <span class="ah-space__go"><?= $acHasChar ? 'Modifier' : 'Créer' ?></span>
+    </a>
+    <a class="ah-space" href="<?= $h(url('account/page-publique')) ?>">
+        <span class="ah-space__body">
+            <span class="ah-space__title">Ma page publique</span>
+            <span class="ah-space__state"><?= $ovPublicCvUrl !== null ? 'Ouverte à tous' : 'Fermée' ?></span>
+        </span>
+        <span class="ah-space__go"><?= $ovPublicCvUrl !== null ? 'Régler' : 'Ouvrir' ?></span>
+    </a>
+    <a class="ah-space" href="<?= $h(url('discord/roles-lies')) ?>">
+        <span class="ah-space__body">
+            <span class="ah-space__title">Discord</span>
+            <span class="ah-space__state"><?= $acDiscord ? 'Lié à votre compte' : 'Pas encore lié' ?></span>
+        </span>
+        <span class="ah-space__go"><?= $acDiscord ? 'Gérer' : 'Lier' ?></span>
+    </a>
+</div>
+<?php if ($ovPublicCvUrl !== null): ?>
+<p class="ah-spaces__link">Adresse de votre page : <a href="<?= $h($ovPublicCvUrl) ?>"><?= $h($ovPublicCvUrl) ?></a></p>
+<?php endif; ?>
 
 <div class="ah-ov-layout">
     <div class="ah-ov-layout__main">
@@ -303,6 +306,8 @@ if ($pw !== null && empty($pw['finished']) && ($pw['steps'] ?? []) !== []):
             <?php if ($accountActivity === []): ?>
             <p class="ah-ov-empty">Aucune activité enregistrée pour l’instant.</p>
             <?php else: ?>
+            <details class="ah-fold">
+            <summary>Afficher les <?= count($accountActivity) ?> dernières lignes</summary>
             <ol class="ah-ov-feed">
                 <?php foreach ($accountActivity as $event): ?>
                 <li class="ah-ov-event is-<?= $h($event['tone'] ?? 'muted') ?>">
@@ -315,6 +320,7 @@ if ($pw !== null && empty($pw['finished']) && ($pw['steps'] ?? []) !== []):
                 </li>
                 <?php endforeach; ?>
             </ol>
+            </details>
             <?php endif; ?>
         </section>
     </div>
@@ -338,17 +344,6 @@ if ($pw !== null && empty($pw['finished']) && ($pw['steps'] ?? []) !== []):
                             ? 'Aucun téléphone lié'
                             : $h($devicesActive . ' actif' . ($devicesActive > 1 ? 's' : '') . ($devicesActive === $devicesTotal ? '' : ' sur ' . $devicesTotal)) ?>
                         <a href="<?= $h(url('account/security/devices')) ?>">Gérer</a>
-                    </dd>
-                </div>
-                <div>
-                    <dt>Page publique</dt>
-                    <dd>
-                        <?= $ovPublicCvUrl !== null ? 'En ligne' : 'Fermée' ?>
-                        <?php if ($ovPublicCvUrl !== null): ?>
-                        <a href="<?= $h($ovPublicCvUrl) ?>" target="_blank" rel="noopener">Voir ma page publique</a>
-                        <?php else: ?>
-                        <a href="<?= $h(url('account/page-publique')) ?>">Ouvrir mon C.V. de joueur</a>
-                        <?php endif; ?>
                     </dd>
                 </div>
                 <div>
