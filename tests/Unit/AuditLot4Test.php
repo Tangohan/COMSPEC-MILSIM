@@ -81,7 +81,7 @@ final class AuditLot4Test extends TestCase
         foreach (['index', 'show', 'edit'] as $view) {
             self::assertFileDoesNotExist(self::root() . '/views/admin/organization/users/' . $view . '.php');
         }
-        self::assertFileExists(self::root() . '/views/atak.php');
+        self::assertFileDoesNotExist(self::root() . '/views/atak.php');
     }
 
     /**

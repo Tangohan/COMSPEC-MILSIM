@@ -107,7 +107,6 @@ final class ReconImageViewerTest extends TestCase
             self::assertStringContainsString($needle, $js);
         }
         self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/css/recon-viewer.css');
-        self::assertStringContainsString('recon-viewer.js', $this->read('views/atak.php'));
         self::assertStringContainsString('recon-viewer.js', $this->read('views/tacmap.php'));
         self::assertStringContainsString('recon-viewer.js', $this->read('views/atak-overwatch-beta.php'));
         self::assertStringContainsString('data-recon-viewer="rmt-att"', $this->read('views/admin/intel/intake_show.php'));

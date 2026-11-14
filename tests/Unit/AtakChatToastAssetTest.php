@@ -11,7 +11,6 @@ final class AtakChatToastAssetTest extends TestCase
     public function testIncomingChatShowsToastAfterHistorySeedNotOnLoad(): void
     {
         $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-chat.js');
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
 
         self::assertStringContainsString('function notifyIncomingChat', $js);
         self::assertStringContainsString("notifyIncomingChat(list, { notify: prevFp !== '' })", $js);
@@ -21,8 +20,6 @@ final class AtakChatToastAssetTest extends TestCase
         self::assertStringContainsString('window.ATAKShowNotification(msg, { silent: silent })', $js);
         self::assertStringContainsString('nouveaux messages', $js);
         self::assertStringContainsString('isSilentMode', $js);
-        self::assertStringContainsString("id=\"atak-notification-toast\"", $view);
-        self::assertStringContainsString('window.ATAKShowNotification = function', $view);
     }
 
     public function testChatToastSkipsOwnMessagesAndInitialHistory(): void

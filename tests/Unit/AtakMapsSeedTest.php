@@ -31,10 +31,8 @@ final class AtakMapsSeedTest extends TestCase
 
     public function testAtakMapSelectorUsesHumanLabelsNotTechnicalSlugsAlone(): void
     {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
         $admin = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/atak-config/index.php');
 
-        self::assertStringContainsString("\$m['label'] ?? \$m['slug'] ?? 'Carte'", $view);
         self::assertStringContainsString('Kimmirut', $admin);
         self::assertStringNotContainsString('sze_kimmirut', $admin);
     }

@@ -18,7 +18,6 @@ final class AtakRfHitsLot1AssetTest extends TestCase
         $run = (string) \Tests\Support\MigrationPipelineSource::read($root);
         $ops = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-ops.js');
         $beta = (string) file_get_contents($root . '/views/atak-overwatch-beta.php');
-        $atak = (string) file_get_contents($root . '/views/atak.php');
         $js = (string) file_get_contents($root . '/public/assets/js/atak-rf-hits.js');
         $dll = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         $scan = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_scanRfNearby.sqf');
@@ -40,8 +39,6 @@ final class AtakRfHitsLot1AssetTest extends TestCase
         self::assertStringContainsString('/api/atak/rf-hits?mode=markers', $ops);
         self::assertStringContainsString('id="ow-rf-list"', $beta);
         self::assertStringContainsString('id="ow-rf-layer"', $beta);
-        self::assertStringContainsString('id="atak-rf-list"', $atak);
-        self::assertStringContainsString('atak-rf-hits.js', $atak);
         self::assertStringContainsString('ATAKRFHITS', $js);
         self::assertStringContainsString('SendRfHit', $dll);
         self::assertStringContainsString('/api/atak/rf-hits', $dll);

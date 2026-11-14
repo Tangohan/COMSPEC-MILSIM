@@ -21,13 +21,6 @@ final class AtakScene3dAssetTest extends TestCase
         self::assertStringContainsString('atak-scene-3d-ready', $js);
     }
 
-    public function testSceneControlsAndAssetArePresent(): void
-    {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
-        self::assertStringContainsString('id="atak-scene-buildings"', $view);
-        self::assertStringContainsString('assets/js/atak-scene-3d.js', $view);
-    }
-
     public function testSceneRendererNeverFetchesPngPreviewsForObjectIds(): void
     {
         $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-scene-3d.js');

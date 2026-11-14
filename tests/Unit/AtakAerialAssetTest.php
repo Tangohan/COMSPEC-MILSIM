@@ -19,7 +19,6 @@ final class AtakAerialAssetTest extends TestCase
         $map = (string) file_get_contents($this->root() . '/public/assets/js/atak-map.js');
         $ops = (string) file_get_contents($this->root() . '/public/assets/js/comspec-operational-map.js');
         $helpers = (string) file_get_contents($this->root() . '/app/Support/helpers.php');
-        $atakView = (string) file_get_contents($this->root() . '/views/atak.php');
         $tacmap = (string) file_get_contents($this->root() . '/views/tacmap.php');
         $overwatch = (string) file_get_contents($this->root() . '/views/overwatch/index.php');
         // Fond de carte de l'Overwatch : construit par AtakOverwatchMapConfig (partagé avec la carte du téléphone).
@@ -43,10 +42,6 @@ final class AtakAerialAssetTest extends TestCase
 
         self::assertStringContainsString('window.ATAKAerial', $js);
         self::assertStringContainsString('maps/3/295/{z}/{x}/{y}.webp', $js);
-        self::assertStringContainsString('id="atak-settings-fond"', $atakView);
-        self::assertStringContainsString('name="atak-fond-calque"', $atakView);
-        self::assertStringContainsString('Carte du jeu', $atakView);
-        self::assertStringContainsString('Photo aérienne', $atakView);
         self::assertStringContainsString("STORAGE_KEY = 'athena:atak-fond'", $js);
         self::assertStringContainsString('fondLayers', $js);
         self::assertStringContainsString('maps/3/295/{z}/{x}/{y}.webp', $js);
@@ -64,16 +59,13 @@ final class AtakAerialAssetTest extends TestCase
         self::assertStringContainsString('ATAKAerial.attach', $map);
         self::assertStringContainsString('ATAKAerial.detach', $map);
         self::assertStringContainsString('ATAKAerial.attach', $ops);
-        self::assertStringContainsString('atak-aerial.js', $atakView);
         self::assertStringContainsString('atak-aerial.js', $tacmap);
         self::assertStringContainsString('atak-aerial.js', $overwatch);
-        self::assertStringContainsString('data-atak-aerial-fond', $atakView);
         self::assertStringContainsString('data-atak-aerial-fond', $tacmap);
         self::assertStringContainsString('data-atak-aerial-fond', $overwatch);
 
         self::assertStringContainsString('atak_with_aerial_layer', $controller);
         self::assertStringContainsString('atak_with_aerial_layer', $home);
-        self::assertStringContainsString('atak_with_aerial_layer', $atakView);
     }
 
     public function testAerialBulletinDescribesOperatorFacingBehaviour(): void

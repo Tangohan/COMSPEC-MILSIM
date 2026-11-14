@@ -10,21 +10,13 @@ final class AtakReplayControlsTest extends TestCase
 {
     public function testReplayOffersEventFilteringAndTemporalWindow(): void
     {
-        $view = file_get_contents(__DIR__ . '/../../views/atak.php');
         $script = file_get_contents(__DIR__ . '/../../public/assets/js/atak-replay.js');
 
-        self::assertIsString($view);
         self::assertIsString($script);
-        self::assertStringContainsString('id="atak-replay-event-filter"', $view);
-        self::assertStringContainsString('id="atak-replay-date-filter"', $view);
-        self::assertStringContainsString('id="atak-replay-operator-filter"', $view);
-        self::assertStringContainsString('id="atak-replay-zoom"', $view);
         self::assertStringContainsString("eventFilter = String(filter.value || 'all')", $script);
         self::assertStringContainsString("dateFilter = String(dateSel.value || 'all')", $script);
         self::assertStringContainsString("operatorFilter = String(opSel.value || 'all')", $script);
         self::assertStringContainsString('function applyFilters()', $script);
-        self::assertStringContainsString('Tous les opérateurs', $view);
-        self::assertStringContainsString('Toute la période', $view);
         self::assertStringContainsString('eventWindowSeconds * 1000', $script);
         self::assertStringContainsString('function escapeHtml(value)', $script);
         self::assertStringContainsString('class="atak-replay-event-target"', $script);
@@ -33,7 +25,6 @@ final class AtakReplayControlsTest extends TestCase
 
     public function testReplayPlaysContinuouslyWithInterpolation(): void
     {
-        $view = (string) file_get_contents(__DIR__ . '/../../views/atak.php');
         $script = (string) file_get_contents(__DIR__ . '/../../public/assets/js/atak-replay.js');
         $builder = (string) file_get_contents(__DIR__ . '/../../app/Services/Replay/ReplayTimelineBuilder.php');
 
@@ -46,8 +37,5 @@ final class AtakReplayControlsTest extends TestCase
         self::assertStringContainsString('public const HOLD_SECONDS = 90;', $builder);
         self::assertStringContainsString('ATAKTrackRendererC2', $script);
         self::assertStringContainsString('moveUnitMarkers', $script);
-        foreach (['1', '5', '20', '60'] as $speed) {
-            self::assertStringContainsString('<option value="' . $speed . '"', $view);
-        }
     }
 }

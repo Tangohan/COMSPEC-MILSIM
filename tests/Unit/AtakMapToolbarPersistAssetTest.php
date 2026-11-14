@@ -18,7 +18,6 @@ final class AtakMapToolbarPersistAssetTest extends TestCase
         $bridge = (string) file_get_contents($this->root() . '/public/assets/js/map/atak-c2-bridge.js');
         $liveCss = (string) file_get_contents($this->root() . '/public/assets/css/atak-map-c2-live.css');
         $v2Css = (string) file_get_contents($this->root() . '/public/assets/css/atak-map-c2-v2.css');
-        $view = (string) file_get_contents($this->root() . '/views/atak.php');
 
         self::assertStringNotContainsString('hideLegacyToolbarChrome', $bridge);
         self::assertStringContainsString('keepLegacyToolbarChrome', $bridge);
@@ -32,10 +31,6 @@ final class AtakMapToolbarPersistAssetTest extends TestCase
         self::assertStringContainsString('pointer-events: auto', $liveCss);
 
         self::assertStringNotContainsString('atak-map-tools--c2-legacy', $v2Css);
-        self::assertStringNotContainsString('id="atak-map-tools" hidden', $view);
-        self::assertStringNotContainsString('atak-map-tools--c2-legacy', $view);
-        self::assertStringContainsString('id="atak-map-tools"', $view);
-        self::assertStringContainsString('data-tool-ui="collapse"', $view);
     }
 
     public function testCollapseIsUserChosenAndPersisted(): void

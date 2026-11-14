@@ -17,7 +17,6 @@ final class AtakC2PlayerMarkerAppearanceAssetTest extends TestCase
         $symbol = (string) file_get_contents($root . '/public/assets/js/map/TacticalSymbol.js');
         $css = (string) file_get_contents($root . '/public/assets/css/atak-map-c2-v2.css');
         $map = (string) file_get_contents($root . '/public/assets/js/atak-map.js');
-        $view = (string) file_get_contents($root . '/views/atak.php');
 
         self::assertStringContainsString("new MarkerManager({ map: map, clustering: false })", $bridge);
         self::assertStringContainsString("addEventListener('atak:display-prefs-changed'", $bridge);
@@ -73,10 +72,5 @@ final class AtakC2PlayerMarkerAppearanceAssetTest extends TestCase
         // Une position joueur déjà reçue reste affichée (dernière position connue récente, 15 min) au lieu de disparaître.
         self::assertStringContainsString('window.ATAKUnits.isRecentlySeen(u)', $map);
         self::assertStringContainsString("if (live === 'offline' && !trackedAi && !recentLastKnown) return;", $map);
-
-        self::assertStringContainsString('Libellés des unités', $view);
-        self::assertStringContainsString('id="atak-settings-look-icon-size"', $view);
-        self::assertStringContainsString('max="28"', $view);
-        self::assertStringNotContainsString('Libellés infobulle', $view);
     }
 }

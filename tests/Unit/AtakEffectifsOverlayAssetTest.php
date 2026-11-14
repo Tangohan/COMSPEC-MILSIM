@@ -27,11 +27,8 @@ final class AtakEffectifsOverlayAssetTest extends TestCase
 
     public function testAnalysisJournalStartsCollapsedAndCompact(): void
     {
-        $view = (string) file_get_contents($this->root() . '/views/atak.php');
         $css = (string) file_get_contents($this->root() . '/public/assets/css/atak-map-c2-live.css');
 
-        self::assertStringContainsString('<details class="atak-timeline" id="atak-intel-timeline">', $view);
-        self::assertStringNotContainsString('id="atak-intel-timeline" open', $view);
         self::assertStringContainsString('max-height: 9.5rem', $css);
         self::assertStringContainsString('.atak-timeline__list', $css);
     }
@@ -39,11 +36,7 @@ final class AtakEffectifsOverlayAssetTest extends TestCase
     public function testUnitesRailRevealsEffectifsDrawerInsteadOfCop(): void
     {
         $bridge = (string) file_get_contents($this->root() . '/public/assets/js/map/atak-c2-bridge.js');
-        $view = (string) file_get_contents($this->root() . '/views/atak.php');
 
-        self::assertStringContainsString('data-tool="layers"', $view);
-        self::assertStringContainsString('>Unités</span>', $view);
-        self::assertStringContainsString('id="atak-effectifs-drawer"', $view);
         self::assertStringContainsString('function revealEffectifsDrawer()', $bridge);
         self::assertStringContainsString("if (tool === 'layers')", $bridge);
         self::assertStringContainsString('setDrawerOpen(true)', $bridge);

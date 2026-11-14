@@ -305,7 +305,7 @@ class AtakController
             }
         }
 
-        // Overwatch remplace l'ancienne interface ATAK web (views/atak.php n'est plus servie).
+        // Overwatch remplace l'ancienne interface ATAK web (sa vue a été retirée).
         return Response::view('atak-overwatch-beta', [
             'atakOverwatchBeta' => true,
             'atakToken' => $token,

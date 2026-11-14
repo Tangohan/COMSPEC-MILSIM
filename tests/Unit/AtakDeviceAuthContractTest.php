@@ -67,20 +67,11 @@ final class AtakDeviceAuthContractTest extends TestCase
 
     public function testAtakWebUsesDeviceInitiatedPairingInsteadOfLegacyCodeGeneration(): void
     {
-        $view = file_get_contents(base_path('views/atak.php'));
-        self::assertIsString($view);
         // Le code affiché par le terminal (« Associer ce terminal ») est validé depuis le site.
-        self::assertStringContainsString('id="atak-game-link-confirm"', $view);
-        self::assertStringContainsString('Valider un terminal ATAK', $view);
-        self::assertStringContainsString('id="atak-device-pair-pill"', $view);
-        self::assertStringContainsString("url('atak/game-link/confirm-pair')", $view);
         $routes = (string) file_get_contents(base_path('routes/web.php'));
         self::assertStringContainsString("'/atak/game-link/confirm-pair', [AtakController::class, 'confirmPairCode']", $routes);
         $ctrl = (string) file_get_contents(base_path('app/Controllers/Web/AtakController.php'));
         self::assertStringContainsString('->approveFromWeb($raw, $userId, $tenantId)', $ctrl);
-        self::assertStringNotContainsString('Sécurisé · 10 min', $view);
-        self::assertStringNotContainsString('function initGameLink()', $view);
-        self::assertStringNotContainsString('data-game-link-url=', $view);
     }
 
     public function testPairingPanelStylesAreOnTheServedStylesheet(): void
@@ -95,19 +86,10 @@ final class AtakDeviceAuthContractTest extends TestCase
 
     public function testAtakWebOffersRecoverySetupModalWhenNoCodesAreStored(): void
     {
-        $view = (string) file_get_contents(base_path('views/atak.php'));
         $js = (string) file_get_contents(base_path('public/assets/js/atak-recovery-setup.js'));
         $css = (string) file_get_contents(base_path('public/assets/css/atak.css'));
         $ctrl = (string) file_get_contents(base_path('app/Controllers/Web/AtakController.php'));
         $repo = (string) file_get_contents(base_path('app/Repositories/AtakDeviceAuthRepository.php'));
-
-        self::assertStringContainsString('id="atak-recovery-setup-modal"', $view);
-        self::assertStringContainsString('Aucun code de secours n’est enregistré', $view);
-        self::assertStringContainsString('Générer mes codes de secours', $view);
-        self::assertStringContainsString('#recovery', $view);
-        self::assertStringContainsString('atak-recovery-setup.js', $view);
-        self::assertStringContainsString('window.ATAK_DEVICE_SECURITY', $view);
-        self::assertStringNotContainsString('endpoint', $view);
 
         self::assertStringContainsString('needsRecoveryCodes', $js);
         self::assertStringContainsString('ATAKSessionProfile.onReady', $js);

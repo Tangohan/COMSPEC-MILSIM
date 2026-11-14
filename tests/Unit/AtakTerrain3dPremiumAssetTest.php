@@ -8,23 +8,6 @@ use PHPUnit\Framework\TestCase;
 
 final class AtakTerrain3dPremiumAssetTest extends TestCase
 {
-    public function testAtakPageEnablesPremiumTerrain3d(): void
-    {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
-
-        self::assertStringContainsString('window.ATAK_TERRAIN3D_PREMIUM = true', $view);
-        self::assertStringContainsString('id="terrain3d-container"', $view);
-        self::assertStringContainsString('atak-terrain3d-premium.css', $view);
-        self::assertStringContainsString('type="module" src="<?= $base ?>/assets/js/atak-terrain3d-premium.js', $view);
-        self::assertStringContainsString('Relief 3D', $view);
-        self::assertStringContainsString('"atak-terrain3d/initTerrain3D.js"', $view);
-        self::assertStringContainsString('"atak-terrain3d/TerrainMaterial.js"', $view);
-        self::assertStringContainsString('terrain3d/TerrainMaterial.js?v=', $view);
-        self::assertStringContainsString('atak-geo-network.js', $view);
-        self::assertStringContainsString('atak-geo-live.js', $view);
-        self::assertStringContainsString('atak-route-planner.js', $view);
-    }
-
     public function testPremiumBridgeDecodesHeightsAndTakesOverView3d(): void
     {
         $js = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain3d-premium.js');

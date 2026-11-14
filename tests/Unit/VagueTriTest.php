@@ -266,11 +266,18 @@ final class VagueTriTest extends TestCase
         'views/admin/organization/users/edit.php' => 'admin.organization.users.edit',
         'views/partials/member_hub_nav.php' => 'member_hub_nav',
         'public/assets/css/back-office-users.css' => 'back-office-users.css',
+        // Ancienne interface ATAK web : AtakController::index rend atak-overwatch-beta, plus rien ne rendait cette vue.
+        'views/atak.php' => 'views/atak.php',
     ];
 
-    /** Mentions tolérées : un test qui passe ce nom de vue comme simple étiquette à EmailPrivacy (aucun fichier lu). */
+    /** Mentions tolérées, par fichier : étiquette passée à EmailPrivacy (aucun fichier lu), vérifications d'absence, commentaires. */
     private const REMOVED_MENTION_ALLOWED = [
         'tests/Unit/EmailPrivacyTest.php' => ['admin.organization.users.show'],
+        // Tests qui vérifient justement l'absence de la vue, et commentaires de deux scripts de l'ancienne interface.
+        'tests/Unit/AtakOverwatchBetaAssetTest.php' => ['views/atak.php'],
+        'tests/Unit/AuditLot4Test.php' => ['views/atak.php'],
+        'public/assets/js/map/atak-c2-bridge.js' => ['views/atak.php'],
+        'public/assets/js/terrain3d/initTerrain3D.js' => ['views/atak.php'],
         'tests/Unit/VagueTriTest.php' => true,
     ];
 

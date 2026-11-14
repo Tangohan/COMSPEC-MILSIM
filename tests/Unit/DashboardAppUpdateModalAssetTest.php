@@ -22,7 +22,6 @@ final class DashboardAppUpdateModalAssetTest extends TestCase
         $atakDash = (string) file_get_contents($root . '/views/dashboard_atak.php');
         $effectifsDash = (string) file_get_contents($root . '/views/dashboard_effectifs.php');
         $layout = (string) file_get_contents($root . '/views/layout/main.php');
-        $atak = (string) file_get_contents($root . '/views/atak.php');
         $js = (string) file_get_contents($root . '/public/assets/js/app-version-check.js');
 
         self::assertFileExists($root . '/public/assets/css/app-update-modal.css');
@@ -40,7 +39,6 @@ final class DashboardAppUpdateModalAssetTest extends TestCase
 
         self::assertStringContainsString('assets/js/app-version-check.js', $layout);
         self::assertStringContainsString('app-update-modal.css', $layout);
-        self::assertStringContainsString('app-version-check.js', $atak);
 
         self::assertStringContainsString('Mise à jour', $js);
         self::assertStringContainsString('preview_update_modal', $js);
