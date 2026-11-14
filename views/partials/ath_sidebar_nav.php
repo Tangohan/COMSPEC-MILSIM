@@ -603,6 +603,24 @@ if (!$isOperatorBoNav || $isDelegatedStaff) {
                     'children' => $disciplineChildren,
                 ],
                 ['label' => 'Organigramme', 'href' => orbat_page_url(), 'icon' => 'orbat', 'active' => !empty($boNavStructure) || $p === 'orbat'],
+                [
+                    'label' => 'Organisation',
+                    'href' => url('back-office/groups'),
+                    'icon' => 'orbat',
+                    'children' => $orbatChildren,
+                ],
+                [
+                    'label' => 'Référentiels',
+                    'href' => url('back-office/referentiels/grades'),
+                    'icon' => 'cert',
+                    'children' => $referentialChildren,
+                ],
+                [
+                    'label' => 'Droits et accès',
+                    'href' => (string) $accessChildren[0]['href'],
+                    'icon' => 'shield',
+                    'children' => $accessChildren,
+                ],
             ],
         ],
         [
@@ -716,24 +734,6 @@ if (!$isOperatorBoNav || $isDelegatedStaff) {
             'collapsed' => true,
             'items' => array_values(array_filter([
                 ['label' => 'Configuration', 'href' => url('back-office/configuration'), 'icon' => 'gear', 'active' => $boNavConfig],
-                [
-                    'label' => 'Organisation',
-                    'href' => url('back-office/groups'),
-                    'icon' => 'orbat',
-                    'children' => $orbatChildren,
-                ],
-                [
-                    'label' => 'Référentiels',
-                    'href' => url('back-office/referentiels/grades'),
-                    'icon' => 'cert',
-                    'children' => $referentialChildren,
-                ],
-                [
-                    'label' => 'Droits et accès',
-                    'href' => (string) $accessChildren[0]['href'],
-                    'icon' => 'shield',
-                    'children' => $accessChildren,
-                ],
                 [
                     'label' => 'ATAK',
                     'href' => url('back-office/ressources/atak-config'),
