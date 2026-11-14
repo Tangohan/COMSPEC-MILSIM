@@ -313,12 +313,17 @@ final class RhDossierWorkspaceController
             $statusFilter = $status;
         }
 
+        $mobilityRows = $this->mobility->tableExists() ? $this->mobility->listForTenant($tenantId, $statusFilter, 80) : [];
+
         return $this->shell('admin.effectifs_workspace.rh_mobility', [
             'title' => 'Mobilité interne',
             'effectifsNav' => 'rh_mobility',
-            'mobilityRequests' => $this->mobility->tableExists()
-                ? $this->mobility->listForTenant($tenantId, $statusFilter, 80)
-                : [],
+            'mobilityRequests' => $mobilityRows,
+            'workflowSummaries' => \App\Services\Workflow\WorkflowHooks::summaries(
+                $tenantId,
+                \App\Services\Workflow\WorkflowEngine::SUBJECT_MOBILITY,
+                $mobilityRows
+            ),
             'mobilityPendingCount' => $this->mobility->tableExists() ? $this->mobility->countPending($tenantId) : 0,
             'mobilityStatusFilter' => $status,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
@@ -404,6 +409,11 @@ final class RhDossierWorkspaceController
         if (!in_array($type, PersonnelMobilityRequestRepository::TYPES, true)) {
             $type = 'career_wish';
         }
+        if (in_array($type, PersonnelMobilityRequestRepository::RETIRED_TYPES, true)) {
+            Session::flash('error', 'Un avancement se demande par une demande d’élévation (grade), plus par la mobilité.');
+
+            return Response::redirect(effectifs_workspace_url('mobilite'));
+        }
         $id = $this->mobility->create(
             $tenantId,
             $userId,
@@ -455,9 +465,25 @@ final class RhDossierWorkspaceController
             (int) Session::get('user_id'),
             $note !== '' ? mb_substr($note, 0, 500) : null
         );
+        $applyMessage = '';
         if ($ok && $status === 'applied') {
             $row = $this->mobility->findById($id, $tenantId);
             $uid = (int) ($row['user_id'] ?? 0);
+            // Une mutation prise en compte affecte vraiment le membre à l'unité visée (même effet qu'une élévation).
+            $targetUnitId = (int) ($row['target_unit_id'] ?? 0);
+            if ($uid > 0 && $targetUnitId > 0 && in_array((string) ($row['request_type'] ?? ''), ['unit_change', 'assignment'], true)) {
+                try {
+                    $approval = \App\Core\Container::get(\App\Services\Effectifs\ElevationApprovalService::class);
+                    assert($approval instanceof \App\Services\Effectifs\ElevationApprovalService);
+                    $applied = $approval->applyApprovedChanges($tenantId, $uid, ['unit_id' => $targetUnitId], (int) Session::get('user_id'));
+                    $applyMessage = !empty($applied['ok'])
+                        ? ' Le membre est affecté à sa nouvelle unité.'
+                        : ' L’affectation n’a pas pu être faite : ' . (string) ($applied['message'] ?? '') . ' Faites-la depuis sa fiche.';
+                } catch (\Throwable $e) {
+                    error_log('Mobilité #' . $id . ' : affectation impossible : ' . $e->getMessage());
+                    $applyMessage = ' L’affectation n’a pas pu être faite : faites-la depuis sa fiche.';
+                }
+            }
             if ($uid > 0) {
                 $target = trim((string) ($row['target_label'] ?? $row['target_unit_name'] ?? ''));
                 $this->hrPdf->maybeAutoIssue($tenantId, $uid, 'mobility', (int) Session::get('user_id'), [
@@ -467,7 +493,7 @@ final class RhDossierWorkspaceController
             }
         }
         Session::flash($ok ? 'success' : 'error', $ok
-            ? 'Demande de mobilité mise à jour.'
+            ? 'Demande de mobilité mise à jour.' . $applyMessage
             : 'Demande introuvable ou déjà traitée.');
 
         return Response::redirect(effectifs_workspace_url('mobilite'));

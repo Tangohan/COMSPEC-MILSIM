@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Csrf;
 use App\Core\Gate;
 use App\Core\Request;
@@ -15,6 +16,7 @@ use App\Services\Attendance\CommunityEventAttendanceService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Portal\MemberServiceContextService;
 use App\Services\Portal\UnifiedActionDigestService;
+use App\Services\Workflow\WorkflowEngine;
 use App\Services\Workflow\WorkTaskService;
 
 final class ActionCenterController
@@ -27,6 +29,7 @@ final class ActionCenterController
         private CommunityEventRepository $eventRepository,
         private CommunityEventAttendanceService $attendance,
         private FeatureGateService $featureGate,
+        private ?WorkflowEngine $workflow = null,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -66,45 +69,23 @@ final class ActionCenterController
 
     public function acknowledgeTask(Request $request, array $params = []): Response
     {
-        $returnUrl = url('mon-service');
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Merci de réessayer.');
-
-            return Response::redirect($returnUrl);
-        }
-        $tenantId = (int) Session::get('tenant_id', 0);
-        $taskId = (int) ($params['id'] ?? $request->input('task_id', 0));
-        if ($tenantId < 1 || $taskId < 1 || !$this->workTasks->acknowledge($tenantId, $taskId)) {
-            Session::flash('error', 'Tâche introuvable ou déjà traitée.');
-
-            return Response::redirect($returnUrl);
-        }
-        Session::flash('success', 'Tâche accusée réception.');
-
-        return Response::redirect($returnUrl);
+        return $this->changeTask($request, $params, 'acknowledged', 'Tâche accusée réception.', 'Tâche introuvable ou déjà traitée.');
     }
 
     public function startTask(Request $request, array $params = []): Response
     {
-        $returnUrl = url('mon-service');
-        if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Merci de réessayer.');
-
-            return Response::redirect($returnUrl);
-        }
-        $tenantId = (int) Session::get('tenant_id', 0);
-        $taskId = (int) ($params['id'] ?? $request->input('task_id', 0));
-        if ($tenantId < 1 || $taskId < 1 || !$this->workTasks->start($tenantId, $taskId)) {
-            Session::flash('error', 'Impossible de démarrer cette tâche.');
-
-            return Response::redirect($returnUrl);
-        }
-        Session::flash('success', 'Tâche en cours.');
-
-        return Response::redirect($returnUrl);
+        return $this->changeTask($request, $params, 'in_progress', 'Tâche en cours.', 'Impossible de démarrer cette tâche.');
     }
 
     public function completeTask(Request $request, array $params = []): Response
+    {
+        return $this->changeTask($request, $params, 'completed', 'Tâche terminée.', 'Impossible de clôturer cette tâche.');
+    }
+
+    /**
+     * Avis du chef d'unité sur une demande (élévation, mobilité) : favorable ou défavorable, avec un commentaire.
+     */
+    public function giveOpinion(Request $request, array $params = []): Response
     {
         $returnUrl = url('mon-service');
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -113,15 +94,78 @@ final class ActionCenterController
             return Response::redirect($returnUrl);
         }
         $tenantId = (int) Session::get('tenant_id', 0);
-        $taskId = (int) ($params['id'] ?? $request->input('task_id', 0));
-        if ($tenantId < 1 || $taskId < 1 || !$this->workTasks->complete($tenantId, $taskId)) {
-            Session::flash('error', 'Impossible de clôturer cette tâche.');
+        $userId = (int) Session::get('user_id', 0);
+        $instanceId = (int) ($params['id'] ?? 0);
+        $choice = (string) $request->input('avis', '');
+        if ($tenantId < 1 || $userId < 1 || $instanceId < 1 || !in_array($choice, ['favorable', 'defavorable'], true)) {
+            Session::flash('error', 'Choisissez un avis favorable ou défavorable.');
 
             return Response::redirect($returnUrl);
         }
-        Session::flash('success', 'Tâche terminée.');
+        $result = $this->workflow()->giveOpinion(
+            $tenantId,
+            $instanceId,
+            $userId,
+            $choice === 'favorable',
+            (string) $request->input('commentaire', '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect($returnUrl);
+    }
+
+    /**
+     * Seules les tâches de « Mon service » de la personne connectée (à son nom, à son billet ou à sa permanence)
+     * peuvent changer d'état. Une tâche d'avis se clôt en donnant l'avis, pas par « Terminer ».
+     *
+     * @param array<string, mixed> $params
+     */
+    private function changeTask(Request $request, array $params, string $status, string $success, string $failure): Response
+    {
+        $returnUrl = url('mon-service');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($returnUrl);
+        }
+        $tenantId = (int) Session::get('tenant_id', 0);
+        $userId = (int) Session::get('user_id', 0);
+        $taskId = (int) ($params['id'] ?? $request->input('task_id', 0));
+        $task = $tenantId > 0 && $userId > 0 && $taskId > 0 ? $this->ownTask($tenantId, $userId, $taskId) : null;
+        $isOpinion = $task !== null && (string) ($task['type'] ?? '') === WorkflowEngine::TASK_TYPE_OPINION;
+        $ok = $task !== null && !($isOpinion && $status === 'completed') && match ($status) {
+            'acknowledged' => $this->workTasks->acknowledge($tenantId, $taskId),
+            'in_progress' => $this->workTasks->start($tenantId, $taskId),
+            default => $this->workTasks->complete($tenantId, $taskId),
+        };
+        Session::flash($ok ? 'success' : 'error', $ok ? $success : $failure);
+
+        return Response::redirect($returnUrl);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function ownTask(int $tenantId, int $userId, int $taskId): ?array
+    {
+        $roleSlug = $this->userRepository->getRoleSlugForUser($userId) ?? '';
+        $context = $this->memberService->build($tenantId, $userId, $roleSlug);
+        foreach (is_array($context['tasks'] ?? null) ? $context['tasks'] : [] as $task) {
+            if (is_array($task) && (int) ($task['id'] ?? 0) === $taskId) {
+                return $task;
+            }
+        }
+
+        return null;
+    }
+
+    private function workflow(): WorkflowEngine
+    {
+        if ($this->workflow === null) {
+            $engine = Container::get(WorkflowEngine::class);
+            assert($engine instanceof WorkflowEngine);
+            $this->workflow = $engine;
+        }
+
+        return $this->workflow;
     }
 
     public function rsvp(Request $request, array $params = []): Response

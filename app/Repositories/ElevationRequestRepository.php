@@ -85,8 +85,20 @@ class ElevationRequestRepository
             );
             $stmt->execute([$tenantId, $targetUserId, $requestedBy, $kind, $note !== '' ? $note : null]);
         }
+        $id = (int) $this->pdo->lastInsertId();
+        if ($id > 0) {
+            // Circuit unique : le chef de l'unité du membre reçoit la demande pour avis (voir WorkflowEngine).
+            \App\Services\Workflow\WorkflowHooks::opened(
+                $tenantId,
+                \App\Services\Workflow\WorkflowEngine::SUBJECT_ELEVATION,
+                $id,
+                $targetUserId,
+                $requestedBy,
+                $note
+            );
+        }
 
-        return (int) $this->pdo->lastInsertId();
+        return $id;
     }
 
     /** @return list<array<string, mixed>> */
@@ -242,8 +254,19 @@ class ElevationRequestRepository
             $id,
             $tenantId,
         ]);
+        $ok = $stmt->rowCount() > 0;
+        if ($ok) {
+            \App\Services\Workflow\WorkflowHooks::statusChanged(
+                $tenantId,
+                \App\Services\Workflow\WorkflowEngine::SUBJECT_ELEVATION,
+                $id,
+                $status,
+                $resolvedBy,
+                $resolutionNote
+            );
+        }
 
-        return $stmt->rowCount() > 0;
+        return $ok;
     }
 
     /**

@@ -173,21 +173,29 @@ final class MemberAdvancementController
 
             return Response::redirect(url('back-office/ma-situation/avancement'));
         }
-        $id = $this->createMobility(
-            $tenantId,
-            $userId,
-            'advancement',
-            'career_wish',
-            $target !== null ? ($target['unit_id'] ?? null) : null,
-            $gradeLabel !== '' ? $gradeLabel : null,
-            $motivation !== '' ? $motivation : null,
-            $target
-        );
-        if ($id !== -1) {
-            Session::flash($id > 0 ? 'success' : 'error', $id > 0
-                ? 'Votre demande d’avancement a été transmise à l’encadrement.'
-                : 'La demande d’avancement n’a pas pu être enregistrée.');
+        // Hors campagne, un avancement est une demande d'élévation (grade) : un seul circuit, avis du chef d'unité
+        // puis décision des responsables des effectifs, qui changent le grade (voir WorkflowEngine).
+        $elevations = new \App\Repositories\ElevationRequestRepository();
+        if ($elevations->hasOpenForTarget($tenantId, $userId)) {
+            Session::flash('error', 'Une demande vous concernant est déjà en attente auprès des effectifs.');
+
+            return Response::redirect(url('back-office/ma-situation/avancement'));
         }
+        $note = trim(implode(' — ', array_filter([
+            $gradeLabel !== '' ? 'Grade visé : ' . $gradeLabel : '',
+            $motivation,
+        ], static fn (string $part): bool => $part !== '')));
+        $unitId = $target !== null ? (int) ($target['unit_id'] ?? 0) : 0;
+        try {
+            $id = $elevations->create($tenantId, $userId, $userId, 'grade', mb_substr($note, 0, 2000), [
+                'unit_id' => $unitId > 0 ? $unitId : null,
+            ]);
+        } catch (Throwable) {
+            $id = 0;
+        }
+        Session::flash($id > 0 ? 'success' : 'error', $id > 0
+            ? 'Votre demande d’avancement a été transmise à l’encadrement.'
+            : 'La demande d’avancement n’a pas pu être enregistrée.');
 
         return Response::redirect(url('back-office/ma-situation/avancement'));
     }

@@ -12,3 +12,6 @@ if (class_exists(\DG\BypassFinals::class)) {
     ]);
     \DG\BypassFinals::enable(bypassReadOnly: false);
 }
+
+// Moteur de circuits : aucun appel réel depuis les dépôts pendant les tests (un test peut injecter son moteur).
+\App\Services\Workflow\WorkflowHooks::useEngine(null);

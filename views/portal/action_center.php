@@ -111,6 +111,18 @@ $csrf = \App\Core\Csrf::token();
                                     <?php if ($due !== ''): ?> · échéance <?= htmlspecialchars($due, ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
                                 </p>
                             </div>
+                            <?php if ((string) ($task['type'] ?? '') === \App\Services\Workflow\WorkflowEngine::TASK_TYPE_OPINION && (int) ($task['linked_entity_id'] ?? 0) > 0): ?>
+                            <form method="post" class="w-full space-y-2 sm:w-72" action="<?= htmlspecialchars(url('mon-service/circuit/' . (int) $task['linked_entity_id'] . '/avis'), ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                                <label class="block text-[11px] font-semibold text-slate-600" for="avis-<?= $taskId ?>">Votre avis de chef d’unité (obligatoire s’il est défavorable)</label>
+                                <textarea id="avis-<?= $taskId ?>" name="commentaire" rows="2" maxlength="500" class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900"></textarea>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="submit" name="avis" value="favorable" class="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800">Avis favorable</button>
+                                    <button type="submit" name="avis" value="defavorable" class="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-bold text-rose-800 hover:border-rose-500">Avis défavorable</button>
+                                </div>
+                                <p class="text-[11px] text-slate-500">Votre avis est transmis aux responsables des effectifs, qui prennent la décision.</p>
+                            </form>
+                            <?php else: ?>
                             <div class="flex flex-wrap gap-2">
                                 <?php if ($status === 'open'): ?>
                                 <form method="post" action="<?= htmlspecialchars(url('mon-service/tache/' . $taskId . '/accuser'), ENT_QUOTES, 'UTF-8') ?>">
@@ -131,6 +143,7 @@ $csrf = \App\Core\Csrf::token();
                                 </form>
                                 <?php endif; ?>
                             </div>
+                            <?php endif; ?>
                         </div>
                     </li>
                 <?php endforeach; ?>

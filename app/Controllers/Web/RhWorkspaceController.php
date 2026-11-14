@@ -175,6 +175,11 @@ final class RhWorkspaceController
         if (!in_array($type, PersonnelMobilityRequestRepository::TYPES, true)) {
             $type = 'career_wish';
         }
+        if (in_array($type, PersonnelMobilityRequestRepository::RETIRED_TYPES, true)) {
+            Session::flash('error', 'Un avancement se demande par une demande d’élévation (grade), plus par la mobilité.');
+
+            return $this->rhFormRedirect($request, 'mobilite');
+        }
         $targetLabel = trim((string) $request->input('target_label', ''));
         $motivation = trim((string) $request->input('motivation', ''));
         if ($targetLabel === '' && $motivation === '') {

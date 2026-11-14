@@ -15,6 +15,14 @@ final class PersonnelMobilityRequestRepository
     /** @var list<string> */
     public const TYPES = ['unit_change', 'specialty_change', 'job_application', 'career_wish', 'assignment', 'advancement'];
 
+    /**
+     * Types qu'on ne propose plus pour une nouvelle demande (les anciennes restent lisibles) : un avancement passe par
+     * une demande d'élévation, seul circuit qui change le grade.
+     *
+     * @var list<string>
+     */
+    public const RETIRED_TYPES = ['advancement'];
+
     /** @var array<string, string> */
     public const TYPE_LABELS = [
         'unit_change' => 'Changement d’unité',
@@ -102,8 +110,25 @@ final class PersonnelMobilityRequestRepository
             'INSERT INTO personnel_mobility_requests (' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')'
         );
         $st->execute($vals);
+        $id = (int) $this->pdo->lastInsertId();
+        if ($id > 0) {
+            $summary = trim(implode(' — ', array_filter([
+                self::TYPE_LABELS[$requestType] ?? '',
+                $targetLabel !== null ? trim($targetLabel) : '',
+                $motivation !== null ? mb_substr(trim($motivation), 0, 300) : '',
+            ], static fn (string $part): bool => $part !== '')));
+            // Circuit unique : le chef de l'unité du membre reçoit la demande pour avis (voir WorkflowEngine).
+            \App\Services\Workflow\WorkflowHooks::opened(
+                $tenantId,
+                \App\Services\Workflow\WorkflowEngine::SUBJECT_MOBILITY,
+                $id,
+                $userId,
+                (int) ($requestedBy ?? $userId),
+                $summary
+            );
+        }
 
-        return (int) $this->pdo->lastInsertId();
+        return $id;
     }
 
     private function columnExists(string $column): bool
@@ -230,10 +255,12 @@ final class PersonnelMobilityRequestRepository
         if (!in_array($status, ['approved', 'rejected', 'cancelled', 'applied'], true)) {
             return false;
         }
+        // Une demande acceptée peut ensuite être prise en compte (mutation effectuée) ; tout le reste part d'« en attente ».
+        $from = $status === 'applied' ? "status IN ('pending', 'approved')" : "status = 'pending'";
         $st = $this->pdo->prepare(
             "UPDATE personnel_mobility_requests
              SET status = ?, reviewed_by = ?, reviewed_at = NOW(), resolution_note = ?, updated_at = NOW()
-             WHERE id = ? AND tenant_id = ? AND status = 'pending'"
+             WHERE id = ? AND tenant_id = ? AND " . $from
         );
         $st->execute([
             $status,
@@ -242,7 +269,18 @@ final class PersonnelMobilityRequestRepository
             $id,
             $tenantId,
         ]);
+        $ok = $st->rowCount() > 0;
+        if ($ok) {
+            \App\Services\Workflow\WorkflowHooks::statusChanged(
+                $tenantId,
+                \App\Services\Workflow\WorkflowEngine::SUBJECT_MOBILITY,
+                $id,
+                $status,
+                $reviewedBy,
+                (string) $note
+            );
+        }
 
-        return $st->rowCount() > 0;
+        return $ok;
     }
 }

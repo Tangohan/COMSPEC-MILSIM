@@ -175,6 +175,18 @@ final class ActivityHubPresentationService
 
                 return ['title' => $text['title'], 'detail' => mb_substr($text['detail'], 0, 400), 'href' => url($text['path']), 'unread' => $unread, 'at' => $at];
             })(),
+            // Moteur de circuits : une demande (élévation, mobilité) attend l'avis du chef d'unité, dans Mon service.
+            \App\Services\Workflow\WorkflowEngine::NOTIFY_OPINION_REQUEST => [
+                'title' => self::fr() ? 'Avis de chef d’unité demandé' : 'Unit commander opinion requested',
+                'detail' => mb_substr(trim(
+                    \App\Services\Workflow\WorkflowEngine::subjectLabel((string) ($payload['subject_type'] ?? ''), self::fr())
+                    . (trim((string) ($payload['member_label'] ?? '')) !== '' ? ' · ' . trim((string) $payload['member_label']) : '')
+                    . (trim((string) ($payload['summary'] ?? '')) !== '' ? ' · ' . trim((string) $payload['summary']) : '')
+                ), 0, 400),
+                'href' => url('mon-service'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             default => [
                 'title' => 'Notification',
                 'detail' => '',
