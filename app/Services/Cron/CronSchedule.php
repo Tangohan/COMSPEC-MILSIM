@@ -65,6 +65,8 @@ final class CronSchedule
         // Rôles liés Discord : chaque compte relié est renvoyé au plus une fois par 24 h, 50 par passage.
         'discord_linked_roles_sync' => 60,
         // E-mails reportés par le quota quotidien ou mis en file (MAIL_QUEUE).
+        // Données dérivées qui s'écrivaient à l'affichage de pages : matricules, codes d'unité, échelle de grades, terminaux ATAK.
+        'tenant_data_upkeep' => 60,
         'mail_queue' => 5,
         // Le récapitulatif vérifie sa propre cadence (Administration > Envois d'e-mails).
         'mail_ops_digest' => 5,

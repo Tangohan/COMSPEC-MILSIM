@@ -91,6 +91,9 @@ final class RhDossierWorkspaceController
         if ($request->queryString('vue', '') === 'identite') {
             return $this->identityPapers($request, $tenantId, $papersRights);
         }
+        if (!EffectifsLmsAccess::canViewHrDocuments(Gate::getInstance())) {
+            return $this->denyHrVault(!empty($papersRights['view']));
+        }
         $ready = $this->hrDocuments->tableExists();
         // ?user_id= : coffre d’un seul membre (lien « Pièces du dossier RH » de la fiche).
         $scopeId = (int) $request->query('user_id', 0);
@@ -240,6 +243,9 @@ final class RhDossierWorkspaceController
         $denied = $this->denyUnlessAccess();
         if ($denied !== null) {
             return $denied;
+        }
+        if (!EffectifsLmsAccess::canViewHrDocuments(Gate::getInstance())) {
+            return $this->denyHrVault(false);
         }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
@@ -846,6 +852,14 @@ final class RhDossierWorkspaceController
         }
 
         return Response::redirect(effectifs_workspace_url('reglages'));
+    }
+
+    /** Coffre RH sans droit sur les dossiers : l'onglet identité reste ouvert à qui y a droit, sinon retour au tableau de bord. */
+    private function denyHrVault(bool $identityAllowed): Response
+    {
+        Session::flash('error', 'Le coffre de documents RH est réservé aux responsables des dossiers.');
+
+        return Response::redirect($identityAllowed ? effectifs_workspace_url('documents-rh?vue=identite') : url('dashboard'));
     }
 
     private function denyUnlessAccess(): ?Response

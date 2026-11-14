@@ -650,6 +650,11 @@ class Container
             \App\Services\Email\MailBudgetGate::class => new \App\Services\Email\MailBudgetGate(
                 self::get(\App\Repositories\EmailDeliveryRepository::class)
             ),
+            \App\Services\Cron\Jobs\TenantDataUpkeepCronJob::class => new \App\Services\Cron\Jobs\TenantDataUpkeepCronJob(
+                self::get(TenantRepository::class),
+                self::get(\App\Services\Advancement\GradeScaleTemplateService::class),
+                self::get(\App\Repositories\AtakRealismRepository::class)
+            ),
             \App\Services\Cron\Jobs\MailQueueCronJob::class => new \App\Services\Cron\Jobs\MailQueueCronJob(
                 new \App\Services\Email\MailQueueProcessor(
                     self::get(\App\Repositories\AsyncJobRepository::class),
@@ -731,6 +736,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\YearReviewMailCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AcademyAutoValidationCronJob::class),
                     self::get(\App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\TenantDataUpkeepCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob::class),

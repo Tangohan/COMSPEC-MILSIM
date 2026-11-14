@@ -74,7 +74,7 @@ class GradeReferentielController
         $gradesFr = $gradesBySystem['FR_CLASSIC'];
         $gradesUs = $gradesBySystem['US_CLASSIC'];
         $allGrades = $this->gradeRepository->listActive();
-        $this->templates->completeForTenant($tenantId, $systemCode);
+        // Affichage seul : l'échelle se complète à l'import du catalogue (POST) ou par la tâche « tenant_data_upkeep ».
 
         return $this->gradeView($request, [
             'content' => 'admin.organization.referentiels.grades.index',

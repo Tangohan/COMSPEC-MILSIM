@@ -75,7 +75,7 @@ final class AdminAtakOperatorsController
 
         // Toutes les unités de la carte, hors ligne comprises : sinon un opérateur déconnecté perd son identité sur sa fiche.
         $roster = $this->buildRoster($tenantId, $request, 'tous');
-        $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
+        // Réparation des identités : tâche planifiée « tenant_data_upkeep », plus à l'affichage.
         $terminals = $this->realismRepository->listTerminals($tenantId);
         $certificates = $this->realismRepository->listCertificates($tenantId);
 

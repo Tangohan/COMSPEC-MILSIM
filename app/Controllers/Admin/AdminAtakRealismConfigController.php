@@ -43,18 +43,9 @@ final class AdminAtakRealismConfigController
         $schema = ConfigSchemaService::getSchema();
         $activeConfig = null;
         try {
+            // Aucune configuration enregistrée : l'écran montre les réglages par défaut du schéma ; la première
+            // sauvegarde (POST save) crée la configuration. Afficher l'écran n'écrit rien.
             $activeConfig = $this->configRepo->getActiveConfig($tenantId);
-            if ($activeConfig === null) {
-                // Première visite : configuration par défaut du schéma.
-                // (Les arguments étaient passés dans le désordre : TypeError, page en erreur.)
-                $this->configRepo->upsertConfig(
-                    $tenantId,
-                    ConfigSchemaService::buildDefaultConfig(),
-                    $this->userId() ?: null,
-                    'Configuration par défaut'
-                );
-                $activeConfig = $this->configRepo->getActiveConfig($tenantId);
-            }
         } catch (\Throwable $e) {
             error_log('[atak realism] ' . $e->getMessage());
         }

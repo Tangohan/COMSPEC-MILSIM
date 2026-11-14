@@ -1034,6 +1034,8 @@ class AdminRecruitmentsController
             'title' => 'Intégration — candidature #' . $id,
             'recruitmentLmsTitle' => 'Intégration #' . $id,
             'enlistment' => $row,
+            'canChooseGrade' => \App\Support\EffectifsLmsAccess::canManageGrades(\App\Core\Gate::getInstance()),
+            'canChooseAccessRole' => \App\Support\EffectifsLmsAccess::canManageRoles(\App\Core\Gate::getInstance()),
             'onboardingPrefill' => [
                 'first_name' => $first,
                 'last_name' => $last,
@@ -1096,6 +1098,17 @@ class AdminRecruitmentsController
             'nationality', 'birth_place', 'sex', 'blood_type', 'enlistment_date',
         ] as $key) {
             $input[$key] = $request->input($key, '');
+        }
+        // Grade et niveau d'accès : le droit de recrutement ne suffit pas. Sans le droit sur les grades, aucun grade
+        // n'est écrit ; sans le droit sur les rôles, le compte garde les niveaux qu'il a déjà (« Membre » à défaut).
+        $gate = \App\Core\Gate::getInstance();
+        if (!\App\Support\EffectifsLmsAccess::canManageGrades($gate)) {
+            $input['grade_id'] = '';
+        }
+        if (!\App\Support\EffectifsLmsAccess::canManageRoles($gate)) {
+            $submitterId = (int) ($row['submitter_user_id'] ?? 0);
+            $input['access_role_id'] = '';
+            $input['role_ids'] = $submitterId > 0 ? $this->userRepository->listOrganizationRoleIdsForUser($submitterId) : [];
         }
         $normalized = $this->onboardingFormService()->normalizeSubmission((int) $tenantId, $input);
         if ($normalized['error'] !== null) {

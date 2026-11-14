@@ -53,12 +53,14 @@ final class AtakRealismApiController
         $config = $this->realismConfigRepo->getActiveConfig($tenantId);
         
         if ($config === null) {
-            // Fallback : retourner une config par défaut si aucune n'existe
-            // (cas d'un tenant pas encore migré)
+            // Aucune configuration enregistrée (l'écran d'administration n'en crée plus à l'affichage) : réglages par
+            // défaut du schéma, ceux que la première visite de l'écran enregistrait jusqu'ici.
             return Response::json([
-                'ok' => false,
-                'error' => 'No realism config found for this tenant. Run migration seed first.',
-            ], 404);
+                'ok' => true,
+                'config' => ConfigSchemaService::buildDefaultConfig(),
+                'version' => '1.0.0',
+                'updated_at' => null,
+            ]);
         }
 
         // Complétée par les défauts du schéma : un réglage ajouté depuis le dernier enregistrement existe quand même.

@@ -202,8 +202,8 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
-        // Comptes créés sur le site avant l’attribution automatique : ils reçoivent leur matricule ici.
-        \App\Services\Personnel\NewMemberNumbers::assignMissing($tenantId);
+        // Les matricules manquants (comptes d'avant l'attribution automatique) sont attribués par la tâche
+        // planifiée « tenant_data_upkeep » : afficher cette page n'écrit plus rien.
 
         $search = trim((string) $request->query('q', ''));
         $status = trim((string) $request->query('status', ''));
@@ -1512,7 +1512,7 @@ class EffectifsWorkspaceController
         $absences = $this->personnelAbsenceRepository->tableExists()
             ? $this->personnelAbsenceRepository->listForUser($tenantId, $id, 40)
             : [];
-        $hrDocuments = $this->personnelHrDocumentRepository->tableExists()
+        $hrDocuments = $this->personnelHrDocumentRepository->tableExists() && \App\Support\EffectifsLmsAccess::canViewHrDocuments(Gate::getInstance())
             ? $this->personnelHrDocumentRepository->listForUser($tenantId, $id, true)
             : [];
         $mobilityRequests = $this->personnelMobilityRequestRepository->tableExists()

@@ -21,6 +21,11 @@ final class NewMemberNumbersTest extends TestCase
         }
         self::assertStringContainsString(
             'NewMemberNumbers::assignMissing(',
+            (string) file_get_contents($root . '/app/Services/Cron/Jobs/TenantDataUpkeepCronJob.php')
+        );
+        // Audit S16 : le tableur des effectifs n'écrit plus rien à l'affichage.
+        self::assertStringNotContainsString(
+            'NewMemberNumbers::assignMissing(',
             (string) file_get_contents($root . '/app/Controllers/Admin/EffectifsWorkspaceController.php')
         );
     }

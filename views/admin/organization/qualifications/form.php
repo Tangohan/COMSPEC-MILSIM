@@ -451,6 +451,7 @@ $examplePreview = \App\Support\QualificationExamples::numberPreview($v('certific
         <section id="droits" class="rq-card" aria-labelledby="rq-dr-t">
             <h2 id="rq-dr-t">Droits accordés à l’obtention <span class="rq-count"><?= count($permissionGrants) ?></span></h2>
             <p class="rq-help">Permissions données automatiquement aux détenteurs. <span class="rq-ex">Ex. trainings.create pour un instructeur</span> Les accès d’administration de la plateforme sont exclus.</p>
+            <p class="rq-help" data-qual-grants-inactive><strong>Pas encore appliqué :</strong> ces liens sont enregistrés, mais ils ne donnent aucun accès aujourd’hui. Les droits d’un membre viennent de son niveau d’accès (registre des droits).</p>
             <ul class="rq-list">
                 <?php foreach ($permissionGrants as $g): ?>
                     <li>
