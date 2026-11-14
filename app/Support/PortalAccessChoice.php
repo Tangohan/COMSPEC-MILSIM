@@ -215,10 +215,42 @@ final class PortalAccessChoice
         );
     }
 
+    /**
+     * Arrivée par défaut d'un membre sans accès à la gestion : l'extranet JNET (page « Une unité. Un espace. »).
+     * Null pour un compte sans organisation, pour l'encadrement (gestion, administration, support) et pour les
+     * profils de communauté qui n'ont pas de JNET : ils gardent leur arrivée actuelle.
+     */
+    public static function memberLandingUrl(): ?string
+    {
+        if (self::isNoOrganizationContext() || self::canAccessTba()) {
+            return null;
+        }
+        try {
+            /** @var TenantRepository $tenants */
+            $tenants = \App\Core\Container::get(TenantRepository::class);
+            $tenant = $tenants->findById((int) Session::get('tenant_id', 0));
+        } catch (\Throwable) {
+            return null;
+        }
+        $type = is_array($tenant) ? (string) ($tenant['tenant_type'] ?? 'full') : 'full';
+
+        return self::jnetOfferedTo($type) ? url('jnet') : null;
+    }
+
+    /** Le profil de communauté propose-t-il JNET ? (Effectifs et Carte ATAK le retirent de leurs menus.) */
+    public static function jnetOfferedTo(string $tenantType): bool
+    {
+        return !\App\Services\Community\TenantTypeConfig::backOfficePathHidden($tenantType, 'jnet');
+    }
+
     public static function redirectUrlFor(string $portal): string
     {
         if (self::isNoOrganizationContext()) {
             return url('dashboard');
+        }
+        $member = self::memberLandingUrl();
+        if ($member !== null) {
+            return $member;
         }
         $portal = self::normalize($portal) ?? self::PORTAL_JNET;
         if ($portal === self::PORTAL_TBA) {

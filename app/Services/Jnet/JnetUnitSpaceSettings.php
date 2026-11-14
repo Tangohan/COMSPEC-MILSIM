@@ -195,6 +195,61 @@ final class JnetUnitSpaceSettings
     }
 
     /**
+     * Réglages de tous les espaces de la communauté, en une requête (page d'accueil des membres).
+     *
+     * @return array<int, array<string, mixed>> unité => réglages au format de find()
+     */
+    public function findAll(int $tenantId): array
+    {
+        if (!$this->ready()) {
+            return [];
+        }
+        try {
+            $stmt = $this->db()->prepare('SELECT * FROM jnet_unit_spaces WHERE tenant_id = ?');
+            $stmt->execute([$tenantId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[(int) $row['unit_id']] = [
+                'custom' => true,
+                'theme' => isset(self::THEMES[(string) $row['theme']]) ? (string) $row['theme'] : self::DEFAULT_THEME,
+                'accent_color' => self::color((string) ($row['accent_color'] ?? '')),
+                'tagline' => (string) ($row['tagline'] ?? ''),
+                'welcome_text' => (string) ($row['welcome_text'] ?? ''),
+                'access_label' => (string) ($row['access_label'] ?? ''),
+                'emblem_path' => (string) ($row['emblem_path'] ?? ''),
+                'banner_path' => (string) ($row['banner_path'] ?? ''),
+                'entry_screen' => (int) ($row['entry_screen'] ?? 1) === 1,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Unités que le lecteur commande (commandant désigné dans l'ORBAT).
+     *
+     * @return list<int>
+     */
+    public function commandedUnitIds(int $tenantId, int $userId): array
+    {
+        if ($userId <= 0) {
+            return [];
+        }
+        try {
+            $stmt = $this->db()->prepare('SELECT id FROM units WHERE tenant_id = ? AND commander_user_id = ?');
+            $stmt->execute([$tenantId, $userId]);
+
+            return array_values(array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * @param array{theme: string, accent_color: string, tagline: string, welcome_text: string, access_label: string, entry_screen: bool} $values
      */
     public function save(int $tenantId, int $unitId, array $values, string $emblemPath, string $bannerPath, int $userId): void

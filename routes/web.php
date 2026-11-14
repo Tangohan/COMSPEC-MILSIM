@@ -471,6 +471,7 @@ return function (Router $router) {
     $router->post('/api/events/{id}/rsvp', [CommunityEventsController::class, 'rsvpApi'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
     $router->get('/jnet', [JnetPortalController::class, 'home'], [AuthMiddleware::class]);
+    $router->get('/jnet/espaces', [JnetPortalController::class, 'hub'], [AuthMiddleware::class]);
     $router->get('/jnet/unite', [JnetPortalController::class, 'unit'], [AuthMiddleware::class]);
     $router->get('/jnet/u/{id}', [JnetPortalController::class, 'unitSpace'], [AuthMiddleware::class]);
     $router->get('/jnet/u/{id}/entree', [JnetPortalController::class, 'unitEntry'], [AuthMiddleware::class]);
