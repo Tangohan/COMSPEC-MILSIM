@@ -152,6 +152,27 @@ final class OrganizationSettingsController
         ]);
     }
 
+    /**
+     * Réglages de la communauté : administration de la communauté ou des accès. Le compte d'assistance (site.support) passe
+     * le filtre du menu mais n'écrit pas ici ; le type de communauté (qui retire ou donne des droits aux membres) est
+     * réservé à l'administration de la communauté.
+     */
+    private function deniedUnlessManager(string $back, bool $ownerOnly): ?Response
+    {
+        $gate = \App\Core\Gate::getInstance();
+        $allowed = $ownerOnly
+            ? $gate->allows('admin.organization')
+            : ($gate->allows('admin.organization') || $gate->allows('admin.access'));
+        if ($allowed) {
+            return null;
+        }
+        Session::flash('error', $ownerOnly
+            ? 'Le type de communauté se change avec le droit d’administration de la communauté.'
+            : 'Les réglages de la communauté sont réservés aux responsables de la communauté ou des accès.');
+
+        return Response::redirect($back);
+    }
+
     public function inscription(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
@@ -165,6 +186,9 @@ final class OrganizationSettingsController
     {
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
+        }
+        if (($denied = $this->deniedUnlessManager($this->settingsHubUrl($request, 'inscription'), false)) !== null) {
+            return $denied;
         }
         $redirectTo = $this->settingsHubUrl($request, 'inscription');
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -192,6 +216,9 @@ final class OrganizationSettingsController
     {
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
+        }
+        if (($denied = $this->deniedUnlessManager($this->settingsHubUrl($request, 'profil'), true)) !== null) {
+            return $denied;
         }
         $redirectTo = $this->settingsHubUrl($request, 'profil');
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -257,6 +284,9 @@ final class OrganizationSettingsController
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
+        if (($denied = $this->deniedUnlessManager($this->settingsHubUrl($request), false)) !== null) {
+            return $denied;
+        }
         $redirectTo = $this->settingsHubUrl($request);
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
@@ -306,6 +336,9 @@ final class OrganizationSettingsController
         $back = $this->accueilSettingsUrl($request);
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
+        }
+        if (($denied = $this->deniedUnlessManager($this->accueilSettingsUrl($request), false)) !== null) {
+            return $denied;
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
@@ -370,6 +403,9 @@ final class OrganizationSettingsController
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
+        if (($denied = $this->deniedUnlessManager($this->accueilSettingsUrl($request), false)) !== null) {
+            return $denied;
+        }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
 
@@ -416,6 +452,9 @@ final class OrganizationSettingsController
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
+        if (($denied = $this->deniedUnlessManager($this->accueilSettingsUrl($request), false)) !== null) {
+            return $denied;
+        }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
 
@@ -439,6 +478,9 @@ final class OrganizationSettingsController
         $back = $this->accueilSettingsUrl($request);
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
+        }
+        if (($denied = $this->deniedUnlessManager($this->accueilSettingsUrl($request), false)) !== null) {
+            return $denied;
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
@@ -475,6 +517,9 @@ final class OrganizationSettingsController
         $back = $this->accueilSettingsUrl($request);
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
+        }
+        if (($denied = $this->deniedUnlessManager($this->accueilSettingsUrl($request), false)) !== null) {
+            return $denied;
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
