@@ -37,9 +37,9 @@ final class PersonnelDutyPositionService
     /**
      * @return list<string>
      */
-    public static function allSlugs(): array
+    public static function allSlugs(?int $tenantId = null): array
     {
-        return AdministrativePositionCatalog::slugs();
+        return AdministrativePositionCatalog::slugs($tenantId);
     }
 
     public function __construct(
@@ -50,9 +50,9 @@ final class PersonnelDutyPositionService
         private PDO $pdo,
     ) {}
 
-    public static function labelForSlug(string $slug): string
+    public static function labelForSlug(string $slug, ?int $tenantId = null): string
     {
-        return AdministrativePositionCatalog::label($slug);
+        return AdministrativePositionCatalog::label($slug, $tenantId);
     }
 
     /**
@@ -65,7 +65,9 @@ final class PersonnelDutyPositionService
         if ($forceActive) {
             return self::SLUG_ACTIVE;
         }
-        if ($currentDuty !== null && $currentDuty !== self::SLUG_TRAINING && AdministrativePositionCatalog::isKnown($currentDuty)) {
+        // Une position posée par un responsable, du site ou créée par la communauté, n'est jamais changée automatiquement.
+        if ($currentDuty !== null && $currentDuty !== self::SLUG_TRAINING
+            && (AdministrativePositionCatalog::isKnown($currentDuty, 0) || AdministrativePositionCatalog::isCustomSlug($currentDuty))) {
             return $currentDuty;
         }
         if ($isJoin) {
@@ -100,7 +102,7 @@ final class PersonnelDutyPositionService
         if (!$bypassMinimumDuration) {
             // Fin d’accueil automatique : ne réveille pas un membre placé non actif ou en renfort.
             $current = $this->currentDutySlug($tenantId, $userId);
-            if ($current === self::SLUG_INACTIVE || $current === self::SLUG_REINFORCEMENT) {
+            if ($current !== null && $current !== self::SLUG_TRAINING && $current !== self::SLUG_ACTIVE) {
                 return false;
             }
             if (!$this->trainingMinimumReached($tenantId, $userId)) {
@@ -124,7 +126,7 @@ final class PersonnelDutyPositionService
      */
     public function applyPosition(int $tenantId, int $userId, string $slug, int $actorUserId = 0): string
     {
-        if ($tenantId < 1 || $userId < 1 || !AdministrativePositionCatalog::isKnown($slug) || $this->users->isServiceAccount($userId)) {
+        if ($tenantId < 1 || $userId < 1 || !AdministrativePositionCatalog::isKnown($slug, $tenantId) || $this->users->isServiceAccount($userId)) {
             return self::RESULT_INVALID;
         }
         $current = $this->currentDutySlug($tenantId, $userId);
@@ -214,7 +216,7 @@ final class PersonnelDutyPositionService
             return null;
         }
         $map = $this->dutyRoleIdsBySlug($tenantId, false);
-        foreach (self::allSlugs() as $slug) {
+        foreach (self::allSlugs($tenantId) as $slug) {
             $rid = $map[$slug] ?? 0;
             if ($rid > 0 && in_array($rid, $ids, true)) {
                 return $slug;
@@ -228,7 +230,7 @@ final class PersonnelDutyPositionService
     {
         $slug = $this->currentDutySlug($tenantId, $userId);
 
-        return $slug !== null ? self::labelForSlug($slug) : '';
+        return $slug !== null ? self::labelForSlug($slug, $tenantId) : '';
     }
 
     public function countActiveMembersWithoutDuty(int $tenantId): int
@@ -256,7 +258,7 @@ final class PersonnelDutyPositionService
     {
         $ids = [];
         try {
-            $slugIn = SqlText::inLiterals($this->pdo, 'r.slug', self::allSlugs());
+            $slugIn = SqlText::inLiterals($this->pdo, 'r.slug', self::allSlugs($tenantId));
             $st = $this->pdo->prepare(
                 "SELECT ur.user_id FROM user_roles ur
                  INNER JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ?
@@ -268,7 +270,7 @@ final class PersonnelDutyPositionService
             $ids = [];
         }
         try {
-            $slugIn = SqlText::inLiterals($this->pdo, 'r.slug', self::allSlugs());
+            $slugIn = SqlText::inLiterals($this->pdo, 'r.slug', self::allSlugs($tenantId));
             $st = $this->pdo->prepare(
                 "SELECT tur.user_id FROM tenant_user_roles tur
                  INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = tur.tenant_id
@@ -291,7 +293,7 @@ final class PersonnelDutyPositionService
     public function dutyRoleIdsBySlug(int $tenantId, bool $createMissing = true): array
     {
         $out = [];
-        foreach (AdministrativePositionCatalog::all() as $position) {
+        foreach (AdministrativePositionCatalog::all($tenantId) as $position) {
             $slug = $position['slug'];
             $label = $position['label'];
             $id = $this->roles->getIdBySlug($tenantId, $slug);
@@ -340,7 +342,7 @@ final class PersonnelDutyPositionService
                 "INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, semantic_tier, is_visual_only, display_group, display_priority, created_at)
                  VALUES (?, ?, ?, ?, 1, 0, 'community', 'status', 1, 3, ?, NOW())"
             );
-            $position = AdministrativePositionCatalog::find($slug);
+            $position = AdministrativePositionCatalog::find($slug, $tenantId);
             $st->execute([
                 $tenantId,
                 $name,

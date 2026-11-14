@@ -23,6 +23,7 @@ $tabs = [
     ['roles', 'Accès', 'roles', 0, 'Organisation'],
     ['registre_droits', 'Registre des droits', 'registre-droits', (int) ($regCounts['expiring'] ?? 0), 'Organisation'],
     ['circuits', 'Circuits de validation', 'circuits', 0, 'Organisation'],
+    ['positions', 'Positions administratives', 'positions', 0, 'Organisation'],
     ['fonctions', 'Emplois', 'fonctions', 0, 'Organisation'],
     ['invitations', 'Invitations', 'invitations', 0, 'Suivi des dossiers'],
     ['sans_comptes', 'Sans compte', 'sans-comptes', 0, 'Suivi des dossiers'],
@@ -65,6 +66,7 @@ $lead = match ($active) {
     'tableaux' => 'Choisissez une source, les colonnes, les filtres : votre tableau se construit comme dans Excel.',
     'registre_droits' => 'Qui détient quel droit, sur quel périmètre, accordé par qui, depuis quand et jusqu’à quand.',
     'circuits' => 'Qui donne son avis sur chaque type de demande, dans quel ordre, avant la décision des responsables.',
+    'positions' => 'La situation de chaque membre dans la communauté : en formation, en service actif… et les positions que vous créez.',
     default => 'Dossiers des membres : tableur, accès, emplois et suivi.',
 };
 $showTools = empty($jobsReferenceWorkspace);
