@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\Workflow\WorkflowEngine;
+use App\Services\Workflow\WorkflowHooks;
 use App\Support\AarCustomForm;
 use PDO;
 
@@ -259,7 +261,7 @@ final class AarReportRepository
                 ]);
             }
 
-            return $this->findForTenant($tenantId, $id) ?? [];
+            return $this->followWorkflow($tenantId, $existing, $this->findForTenant($tenantId, $id) ?? [], $authorUserId);
         }
 
         if ($hasCustom) {
@@ -320,7 +322,35 @@ final class AarReportRepository
             ]);
         }
 
-        return $this->findForTenant($tenantId, (int) $this->pdo->lastInsertId()) ?? [];
+        return $this->followWorkflow($tenantId, null, $this->findForTenant($tenantId, (int) $this->pdo->lastInsertId()) ?? [], $authorUserId);
+    }
+
+    /**
+     * Circuit unique : un compte rendu créé ouvre son circuit, un changement de statut y est journalisé et l'auteur
+     * est prévenu quand son compte rendu est validé ou renvoyé.
+     *
+     * @param array<string, mixed>|null $before
+     * @param array<string, mixed> $after
+     * @return array<string, mixed>
+     */
+    private function followWorkflow(int $tenantId, ?array $before, array $after, int $actorUserId): array
+    {
+        $id = (int) ($after['id'] ?? 0);
+        if ($id < 1) {
+            return $after;
+        }
+        $author = (int) ($after['author_user_id'] ?? 0);
+        $status = (string) ($after['status'] ?? 'pending');
+        if ($before === null) {
+            WorkflowHooks::opened($tenantId, WorkflowEngine::SUBJECT_AAR, $id, $author, $actorUserId, (string) ($after['title'] ?? ''));
+            if ($status !== 'pending') {
+                WorkflowHooks::statusChanged($tenantId, WorkflowEngine::SUBJECT_AAR, $id, $status, $actorUserId, '', $author);
+            }
+        } elseif ((string) ($before['status'] ?? '') !== $status) {
+            WorkflowHooks::statusChanged($tenantId, WorkflowEngine::SUBJECT_AAR, $id, $status, $actorUserId, '', $author);
+        }
+
+        return $after;
     }
 
     /**
@@ -407,6 +437,7 @@ final class AarReportRepository
         }
         $status = $this->allowed($status);
         $validated = $status === 'validated';
+        $before = $this->findForTenant($tenantId, $id);
         $st = $this->pdo->prepare(
             'UPDATE aar_reports
              SET status = ?, validated_at = ' . ($validated ? 'UTC_TIMESTAMP()' : 'NULL') . ',
@@ -414,8 +445,12 @@ final class AarReportRepository
              WHERE tenant_id = ? AND id = ?'
         );
         $st->execute([$status, $validated && $userId > 0 ? $userId : null, $tenantId, $id]);
+        $changed = $st->rowCount() > 0;
+        if ($changed && $before !== null) {
+            $this->followWorkflow($tenantId, $before, array_merge($before, ['status' => $status]), $userId);
+        }
 
-        return $st->rowCount() > 0;
+        return $changed;
     }
 
     /**
@@ -729,8 +764,9 @@ final class AarReportRepository
             $this->nullableText($summary, 20000),
             $this->json($metrics),
         ]);
+        $created = $this->findForTenant($tenantId, (int) $this->pdo->lastInsertId());
 
-        return $this->findForTenant($tenantId, (int) $this->pdo->lastInsertId());
+        return $created === null ? null : $this->followWorkflow($tenantId, null, $created, $authorUserId);
     }
 
     private function hasMissionPlanColumn(): bool

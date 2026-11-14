@@ -24,6 +24,8 @@ class WorkflowEngine
 {
     public const SUBJECT_ELEVATION = 'elevation';
     public const SUBJECT_MOBILITY = 'mobility';
+    public const SUBJECT_CORRECTION = 'correction';
+    public const SUBJECT_AAR = 'aar';
 
     public const STATE_OPINION = 'opinion_pending';
     public const STATE_DECISION = 'decision_pending';
@@ -31,16 +33,33 @@ class WorkflowEngine
 
     public const TASK_TYPE_OPINION = 'workflow_opinion';
     public const NOTIFY_OPINION_REQUEST = 'workflow_opinion_request';
+    public const NOTIFY_DECISION = 'workflow_decision';
 
     /** Statuts métier qui clôturent le circuit, par type d'objet. */
     private const FINAL_STATUSES = [
         self::SUBJECT_ELEVATION => ['approved', 'rejected', 'withdrawn'],
         self::SUBJECT_MOBILITY => ['approved', 'rejected', 'cancelled', 'applied'],
+        self::SUBJECT_CORRECTION => ['approved', 'rejected', 'cancelled'],
+        self::SUBJECT_AAR => ['validated'],
+    ];
+
+    /** Objets qui passent par l'avis du chef d'unité avant la décision. Les autres sont seulement journalisés. */
+    private const OPINION_SUBJECTS = [self::SUBJECT_ELEVATION, self::SUBJECT_MOBILITY];
+
+    /**
+     * Statuts dont le membre concerné est averti par le moteur (avis unique dans Activité). Les élévations et les
+     * corrections ne sont pas listées : elles ont déjà leur propre avis (cloche des accès, e-mails des corrections).
+     */
+    private const MEMBER_NOTICES = [
+        self::SUBJECT_MOBILITY => ['approved', 'rejected', 'applied'],
+        self::SUBJECT_AAR => ['validated', 'pending'],
     ];
 
     private const SUBJECT_LABELS = [
         self::SUBJECT_ELEVATION => ['fr' => 'Demande d’élévation', 'en' => 'Elevation request'],
         self::SUBJECT_MOBILITY => ['fr' => 'Demande de mobilité', 'en' => 'Mobility request'],
+        self::SUBJECT_CORRECTION => ['fr' => 'Correction de dossier', 'en' => 'Record correction'],
+        self::SUBJECT_AAR => ['fr' => 'Compte rendu de mission', 'en' => 'After-action report'],
     ];
 
     /** @var (callable(): string)|null */
@@ -87,7 +106,9 @@ class WorkflowEngine
             return (int) $existing['id'];
         }
         $now = $this->now();
-        $commander = $this->resolver->commanderFor($tenantId, $memberUserId, $requestedBy);
+        $commander = in_array($subjectType, self::OPINION_SUBJECTS, true)
+            ? $this->resolver->commanderFor($tenantId, $memberUserId, $requestedBy)
+            : null;
         $state = $commander !== null ? self::STATE_OPINION : self::STATE_DECISION;
         $instanceId = $this->repository->createInstance($tenantId, $subjectType, $subjectId, [
             'state' => $state,
@@ -186,7 +207,8 @@ class WorkflowEngine
         int $subjectId,
         string $status,
         int $actorUserId,
-        string $comment = ''
+        string $comment = '',
+        int $memberUserId = 0
     ): void {
         if ($tenantId < 1 || $subjectId < 1 || !self::supports($subjectType) || !$this->ready()) {
             return;
@@ -196,14 +218,16 @@ class WorkflowEngine
         if ($instance === null) {
             $id = $this->repository->createInstance($tenantId, $subjectType, $subjectId, [
                 'state' => self::STATE_DECISION,
+                'member_user_id' => $memberUserId,
                 'opened_by' => $actorUserId,
             ], $now);
-            $instance = ['id' => $id, 'state' => self::STATE_DECISION, 'task_id' => null];
+            $instance = ['id' => $id, 'state' => self::STATE_DECISION, 'task_id' => null, 'member_user_id' => $memberUserId];
         }
         $instanceId = (int) $instance['id'];
         $from = (string) $instance['state'];
         $final = in_array($status, self::FINAL_STATUSES[$subjectType], true);
-        $to = $final ? self::STATE_CLOSED : ($from === self::STATE_CLOSED ? self::STATE_CLOSED : self::STATE_DECISION);
+        // Un statut non final rouvre un circuit clos (compte rendu validé repassé en relecture, par exemple).
+        $to = $final ? self::STATE_CLOSED : self::STATE_DECISION;
         if ($from === self::STATE_OPINION && $final) {
             $this->repository->addEvent($tenantId, $instanceId, 'opinion_skipped', $from, $to, $actorUserId, '', [], $now);
             $this->closeTask($tenantId, (int) ($instance['task_id'] ?? 0), 'cancelled');
@@ -219,6 +243,44 @@ class WorkflowEngine
             $changes['task_id'] = null;
         }
         $this->repository->updateInstance($tenantId, $instanceId, $changes, $now);
+
+        $memberId = (int) ($instance['member_user_id'] ?? 0) ?: $memberUserId;
+        if ($memberId > 0 && $memberId !== $actorUserId && in_array($status, self::MEMBER_NOTICES[$subjectType] ?? [], true)) {
+            try {
+                $this->notifications->create($tenantId, $memberId, self::NOTIFY_DECISION, [
+                    'subject_type' => $subjectType,
+                    'subject_id' => $subjectId,
+                    'status' => $status,
+                    'comment' => mb_substr(trim($comment), 0, 300),
+                ]);
+            } catch (\Throwable $e) {
+                error_log('Moteur de circuits : avis au membre impossible : ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Texte de l'avis de décision envoyé au membre (Activité).
+     *
+     * @param array<string, mixed> $payload
+     * @return array{title: string, detail: string, path: string}
+     */
+    public static function decisionNotice(array $payload, bool $fr = true): array
+    {
+        $type = (string) ($payload['subject_type'] ?? '');
+        $status = (string) ($payload['status'] ?? '');
+        $comment = trim((string) ($payload['comment'] ?? ''));
+        $title = match ($type . ':' . $status) {
+            'mobility:approved' => $fr ? 'Votre demande de mobilité est acceptée' : 'Your mobility request was approved',
+            'mobility:applied' => $fr ? 'Votre mutation est effectuée' : 'Your transfer is done',
+            'mobility:rejected' => $fr ? 'Votre demande de mobilité est refusée' : 'Your mobility request was declined',
+            'aar:validated' => $fr ? 'Votre compte rendu de mission est validé' : 'Your after-action report was approved',
+            'aar:pending' => $fr ? 'Votre compte rendu de mission est à reprendre' : 'Your after-action report needs changes',
+            default => self::subjectLabel($type, $fr),
+        };
+        $path = $type === self::SUBJECT_AAR ? 'back-office/atak/comptes-rendus' : 'personnel/mon-espace-rh';
+
+        return ['title' => $title, 'detail' => $comment, 'path' => $path];
     }
 
     /**

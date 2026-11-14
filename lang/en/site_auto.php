@@ -65204,4 +65204,7 @@ return [
     'La date de fin doit être dans le futur. Pour retirer le droit maintenant, utilisez « Retirer ».' => 'The end date must be in the future. To remove the right now, use "Remove".',
     'Registre complet des droits : qui a quel accès, sur quel périmètre, accordé par qui, depuis quand et jusqu’à quand, avec historique, revue et export CSV.' => 'Full rights register: who holds which access, on which scope, granted by whom, since when and until when, with history, review and CSV export.',
     'Registre des droits d’accès' => 'Access rights register',
+    'Correction de dossier validée' => 'Record correction approved',
+    'Correction de dossier' => 'Record correction',
+    'Compte rendu de mission' => 'After-action report',
 ];

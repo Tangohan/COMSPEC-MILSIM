@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\Workflow\WorkflowEngine;
+use App\Services\Workflow\WorkflowHooks;
 use App\Support\PersonnelCorrectionRequestsSchema;
 use PDO;
 
@@ -46,8 +48,11 @@ final class PersonnelCorrectionRequestRepository
             json_encode($proposed, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             json_encode($before, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ]);
+        $id = (int) $this->pdo->lastInsertId();
+        // Circuit unique : la correction est journalisée avec les autres demandes (pas d'avis du chef, le bureau décide).
+        WorkflowHooks::opened($tenantId, WorkflowEngine::SUBJECT_CORRECTION, $id, $targetUserId, $requestedBy, mb_substr($note, 0, 200));
 
-        return (int) $this->pdo->lastInsertId();
+        return $id;
     }
 
     /** @return array<string, mixed>|null */
@@ -185,8 +190,12 @@ final class PersonnelCorrectionRequestRepository
             $id,
             $tenantId,
         ]);
+        $done = $stmt->rowCount() > 0;
+        if ($done) {
+            WorkflowHooks::statusChanged($tenantId, WorkflowEngine::SUBJECT_CORRECTION, $id, $status, $resolvedBy, $resolutionNote);
+        }
 
-        return $stmt->rowCount() > 0;
+        return $done;
     }
 
     public function cancelPendingForTarget(int $tenantId, int $targetUserId, int $resolvedBy, string $note = ''): int
@@ -194,6 +203,11 @@ final class PersonnelCorrectionRequestRepository
         if ($tenantId < 1 || $targetUserId < 1) {
             return 0;
         }
+        $ids = $this->pdo->prepare(
+            "SELECT id FROM personnel_correction_requests WHERE tenant_id = ? AND target_user_id = ? AND status = 'pending'"
+        );
+        $ids->execute([$tenantId, $targetUserId]);
+        $pendingIds = array_map('intval', $ids->fetchAll(PDO::FETCH_COLUMN) ?: []);
         $stmt = $this->pdo->prepare(
             "UPDATE personnel_correction_requests
              SET status = 'cancelled', resolution_note = ?, resolved_by = ?, resolved_at = NOW(), updated_at = NOW()
@@ -205,8 +219,14 @@ final class PersonnelCorrectionRequestRepository
             $tenantId,
             $targetUserId,
         ]);
+        $count = $stmt->rowCount();
+        if ($count > 0) {
+            foreach ($pendingIds as $pendingId) {
+                WorkflowHooks::statusChanged($tenantId, WorkflowEngine::SUBJECT_CORRECTION, $pendingId, 'cancelled', $resolvedBy, $note);
+            }
+        }
 
-        return $stmt->rowCount();
+        return $count;
     }
 
     /** @param array<string, mixed> $row */

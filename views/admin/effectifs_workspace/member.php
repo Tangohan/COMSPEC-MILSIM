@@ -846,7 +846,11 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <ol class="eff-fm-tl eff-fm-tl--grades" aria-label="Frise des grades">
                 <?php foreach ($gradeEntries as $gi => $ge): ?>
                     <?php
-                    $geHow = $ge['source'] === 'elevation' ? 'Élévation validée' : 'Changement de grade';
+                    $geHow = match ($ge['source']) {
+                        'elevation' => 'Élévation validée',
+                        'correction' => 'Correction de dossier validée',
+                        default => 'Changement de grade',
+                    };
                     if ($ge['actor_label'] !== '') {
                         $geHow .= ' par ' . $ge['actor_label'];
                     }

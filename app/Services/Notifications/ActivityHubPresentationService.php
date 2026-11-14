@@ -187,6 +187,17 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            \App\Services\Workflow\WorkflowEngine::NOTIFY_DECISION => (static function () use ($payload, $unread, $at): array {
+                $notice = \App\Services\Workflow\WorkflowEngine::decisionNotice($payload, self::fr());
+
+                return [
+                    'title' => $notice['title'],
+                    'detail' => mb_substr($notice['detail'], 0, 400),
+                    'href' => url($notice['path']),
+                    'unread' => $unread,
+                    'at' => $at,
+                ];
+            })(),
             default => [
                 'title' => 'Notification',
                 'detail' => '',
