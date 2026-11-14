@@ -14,10 +14,13 @@ $internal = is_array($internal ?? null) ? $internal : [];
 $sentUp = is_array($sentUp ?? null) ? $sentUp : [];
 $members = is_array($members ?? null) ? $members : [];
 $spaceOps = is_array($spaceOps ?? null) ? $spaceOps : [];
-$unitAccent = (string) ($space['accent'] ?? '');
 $label = (string) ($space['label'] ?? 'Unité');
-$badge = (string) ($space['badge'] ?? '');
-$monogram = mb_strtoupper(mb_substr(preg_replace('/[^\p{L}\p{N}]/u', '', $label) ?: 'U', 0, 2));
+// Apparence de l'espace (JnetUnitSpaceSettings::look) : thème, couleur, insigne, bannière, devise, mot d'accueil.
+$look = is_array($spaceLook ?? null) ? $spaceLook : \App\Services\Jnet\JnetUnitSpaceSettings::look(\App\Services\Jnet\JnetUnitSpaceSettings::defaults(), $space);
+$unitAccent = (string) $look['accent'];
+$badge = is_string($look['emblem'] ?? null) ? (string) $look['emblem'] : '';
+$banner = is_string($look['banner'] ?? null) ? (string) $look['banner'] : '';
+$monogram = (string) $look['monogram'];
 $exBack = (string) ($space['href'] ?? url('jnet'));
 $parentLabel = (string) ($parent['label'] ?? '');
 $parentHref = (string) ($parent['href'] ?? '');
@@ -34,7 +37,7 @@ $face = static function (array $p) use ($h): string {
     return '<span>' . $h((string) ($p['initials'] ?? '?')) . '</span>';
 };
 ?>
-<div class="jn-layout"<?= $unitAccent !== '' ? ' style="--jn-unit: ' . $h($unitAccent) . '"' : '' ?>>
+<div class="jn-layout jn-space jn-space--<?= $h($look['theme']) ?>" style="<?= $h(\App\Services\Jnet\JnetUnitSpaceSettings::cssVars($look)) ?>">
     <?php require base_path('views/jnet/_spaces_rail.php'); ?>
 
     <div class="jn-main">
@@ -54,7 +57,16 @@ $face = static function (array $p) use ($h): string {
             </ol>
         </nav>
 
-        <section class="jn-head jn-head--unit" aria-labelledby="jn-space-title">
+        <section class="jn-head jn-head--unit jn-hero<?= $banner !== '' ? ' has-banner' : '' ?>" aria-labelledby="jn-space-title">
+            <?php if ($banner !== ''): ?>
+                <div class="jn-hero__banner" style="background-image: url('<?= $h($banner) ?>')" aria-hidden="true"></div>
+            <?php endif; ?>
+            <div class="jn-hero__tools">
+                <span class="jn-hero__access"><?= $h((string) $look['access_label']) ?></span>
+                <?php if (!empty($canCustomize)): ?>
+                    <a class="jn-hero__edit" href="<?= $h((string) ($customizeUrl ?? '')) ?>">Personnaliser l’espace</a>
+                <?php endif; ?>
+            </div>
             <div class="jn-head__id">
                 <?php if ($badge !== ''): ?>
                     <img class="jn-emblem jn-emblem--img" src="<?= $h($badge) ?>" alt="Insigne de <?= $h($label) ?>">
@@ -67,6 +79,9 @@ $face = static function (array $p) use ($h): string {
                 <div class="jn-head__text">
                     <p class="jn-chip"><?= $hasParentUnit ? 'Rattachée à ' . $h($parentLabel) : 'Espace d’unité' ?></p>
                     <h1 id="jn-space-title" class="jn-head__name"><?= $h($label) ?></h1>
+                    <?php if ((string) $look['tagline'] !== ''): ?>
+                        <p class="jn-hero__tagline">« <?= $h((string) $look['tagline']) ?> »</p>
+                    <?php endif; ?>
                     <p class="jn-head__lead">
                         Chef : <b><?= $h((string) ($space['leader'] ?? '') !== '' ? (string) $space['leader'] : 'non désigné') ?></b>
                         · Adjoint : <b><?= $h((string) ($space['deputy'] ?? '') !== '' ? (string) $space['deputy'] : 'non désigné') ?></b>
@@ -83,6 +98,10 @@ $face = static function (array $p) use ($h): string {
                 <div><dt>sous-unité<?= count($subTree) > 1 ? 's' : '' ?></dt><dd><?= count($subTree) ?></dd></div>
             </dl>
         </section>
+
+        <?php if ((string) $look['welcome'] !== ''): ?>
+            <p class="jn-hero__welcome"><?= nl2br($h((string) $look['welcome'])) ?></p>
+        <?php endif; ?>
 
         <?php require base_path('views/jnet/_guide.php'); ?>
 

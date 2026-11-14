@@ -473,6 +473,9 @@ return function (Router $router) {
     $router->get('/jnet', [JnetPortalController::class, 'home'], [AuthMiddleware::class]);
     $router->get('/jnet/unite', [JnetPortalController::class, 'unit'], [AuthMiddleware::class]);
     $router->get('/jnet/u/{id}', [JnetPortalController::class, 'unitSpace'], [AuthMiddleware::class]);
+    $router->get('/jnet/u/{id}/entree', [JnetPortalController::class, 'unitEntry'], [AuthMiddleware::class]);
+    $router->get('/jnet/u/{id}/personnaliser', [JnetPortalController::class, 'customizeSpace'], [AuthMiddleware::class]);
+    $router->post('/jnet/u/{id}/personnaliser', [JnetPortalController::class, 'customizeSpaceSave'], [AuthMiddleware::class]);
     $router->post('/jnet/u/{id}/echanges', [JnetPortalController::class, 'postExchange'], [AuthMiddleware::class]);
     $router->post('/jnet/echanges/{id}/lu', [JnetPortalController::class, 'acknowledgeExchange'], [AuthMiddleware::class]);
     $router->get('/jnet/personnel', [JnetPortalController::class, 'personnel'], [AuthMiddleware::class]);

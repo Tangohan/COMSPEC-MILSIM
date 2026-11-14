@@ -1,0 +1,475 @@
+/**
+ * JNET — espace dédié d'une unité (views/jnet/space.php) et sa personnalisation (views/jnet/customize.php).
+ * Le bandeau de l'espace prend le thème de l'unité (--jn-space-bg, --jn-space-panel, --jn-space-ink, posés sur
+ * .jn-space par JnetUnitSpaceSettings::cssVars), en clair comme en mode nuit : c'est l'identité de l'unité.
+ * Le reste de la page garde les jetons --ath-* du back-office.
+ */
+
+/* —— Bandeau de l'espace —— */
+
+.jnet-embed.jnet-embed .jn-space .jn-hero {
+  --jn-ink: var(--jn-space-ink);
+  --jn-muted: color-mix(in srgb, var(--jn-space-ink) 64%, transparent);
+  --jn-line: color-mix(in srgb, var(--jn-space-ink) 18%, transparent);
+  --jn-surface: var(--jn-space-panel);
+  --jn-shield-fill: var(--jn-space-panel);
+  --jn-ok: color-mix(in srgb, #2fd08f 85%, var(--jn-space-ink));
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 12rem;
+  padding: 3rem 1.6rem 1.4rem;
+  border: 0;
+  border-left: 4px solid var(--jn-unit);
+  background:
+    radial-gradient(ellipse at 15% 0%, color-mix(in srgb, var(--jn-unit) 26%, transparent), transparent 60%),
+    linear-gradient(160deg, var(--jn-space-panel), var(--jn-space-bg));
+  color: var(--jn-space-ink);
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--jn-space-ink) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--jn-space-ink) 7%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(90deg, transparent, #000 60%);
+  pointer-events: none;
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero__banner {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-position: center;
+  background-size: cover;
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero.has-banner {
+  min-height: 15rem;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--jn-space-bg) 94%, transparent) 0%, color-mix(in srgb, var(--jn-space-bg) 70%, transparent) 55%, color-mix(in srgb, var(--jn-space-bg) 35%, transparent)),
+    transparent;
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero__tools {
+  position: absolute;
+  top: 0.85rem;
+  right: 1rem;
+  left: 1.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero__access {
+  padding: 0.18rem 0.5rem;
+  border: 1px solid var(--jn-unit);
+  color: var(--jn-unit);
+  font: 600 0.68rem/1.2 var(--jn-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero__edit {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--jn-line);
+  background: color-mix(in srgb, var(--jn-space-bg) 60%, transparent);
+  color: var(--jn-space-ink);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero__edit:hover,
+.jnet-embed.jnet-embed .jn-space .jn-hero__edit:focus-visible {
+  border-color: var(--jn-unit);
+  color: var(--jn-unit);
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero .jn-head__name {
+  color: var(--jn-space-ink);
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero .jn-head__lead {
+  color: var(--jn-muted);
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero .jn-head__lead b {
+  color: var(--jn-space-ink);
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero .jn-emblem--img {
+  border-color: transparent;
+  background: transparent;
+  filter: drop-shadow(0 6px 18px color-mix(in srgb, var(--jn-unit) 40%, transparent));
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero__tagline {
+  margin: 0.3rem 0 0;
+  color: var(--jn-unit);
+  font-size: 0.95rem;
+  font-style: italic;
+  font-weight: 600;
+}
+
+.jnet-embed.jnet-embed .jn-space .jn-hero__welcome {
+  margin: 0.9rem 0 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--jn-line);
+  border-left: 3px solid var(--jn-unit);
+  background: var(--jn-surface);
+  color: var(--jn-ink);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .jnet-embed.jnet-embed .jn-space .jn-hero {
+    padding: 3.4rem 1rem 1.1rem;
+  }
+
+  .jnet-embed.jnet-embed .jn-space .jn-hero__tools {
+    left: 1rem;
+  }
+}
+
+/* —— Personnalisation —— */
+
+.jnet-embed.jnet-embed .jn-custom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.jnet-embed.jnet-embed .jn-custom__head {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.jnet-embed.jnet-embed .jn-custom__head h1 {
+  margin: 0;
+  color: var(--jn-ink);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.jnet-embed.jnet-embed .jn-custom__head p {
+  margin: 0.3rem 0 0;
+  color: var(--jn-muted);
+  font-size: 0.9rem;
+}
+
+.jnet-embed.jnet-embed .jn-custom__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.jnet-embed.jnet-embed .jn-custom__group {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-surface);
+}
+
+.jnet-embed.jnet-embed .jn-custom__group legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 0.2rem;
+  padding: 0;
+  color: var(--jn-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.jnet-embed.jnet-embed .jn-custom__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.jnet-embed.jnet-embed .jn-custom__field > label,
+.jnet-embed.jnet-embed .jn-custom__label {
+  color: var(--jn-ink);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.jnet-embed.jnet-embed .jn-custom__hint {
+  margin: 0;
+  color: var(--jn-muted);
+  font-size: 0.8125rem;
+}
+
+.jnet-embed.jnet-embed .jn-custom__field input[type="text"],
+.jnet-embed.jnet-embed .jn-custom__field textarea {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-bg);
+  color: var(--jn-ink);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.jnet-embed.jnet-embed .jn-custom__field textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+}
+
+.jnet-embed.jnet-embed .jn-custom__field input[type="text"]:focus,
+.jnet-embed.jnet-embed .jn-custom__field textarea:focus {
+  border-color: var(--jn-unit);
+  outline: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--jn-unit) 18%, transparent);
+}
+
+/* Thèmes : une pastille par thème. */
+.jnet-embed.jnet-embed .jn-themes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.6rem;
+}
+
+.jnet-embed.jnet-embed .jn-theme {
+  position: relative;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.5rem;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-bg);
+  cursor: pointer;
+}
+
+.jnet-embed.jnet-embed .jn-theme input {
+  position: absolute;
+  opacity: 0;
+}
+
+.jnet-embed.jnet-embed .jn-theme__swatch {
+  display: block;
+  height: 3rem;
+  background:
+    linear-gradient(90deg, transparent 72%, var(--sw-accent) 72%, var(--sw-accent) 100%),
+    linear-gradient(160deg, var(--sw-panel), var(--sw-bg));
+}
+
+.jnet-embed.jnet-embed .jn-theme__name {
+  color: var(--jn-ink);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.jnet-embed.jnet-embed .jn-theme:has(input:checked) {
+  border-color: var(--jn-unit);
+  box-shadow: 0 0 0 2px var(--jn-unit);
+}
+
+.jnet-embed.jnet-embed .jn-theme:has(input:focus-visible) {
+  outline: 2px solid var(--jn-unit);
+  outline-offset: 2px;
+}
+
+.jnet-embed.jnet-embed .jn-custom__color {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.jnet-embed.jnet-embed .jn-custom__color input[type="color"] {
+  width: 3rem;
+  height: 2.25rem;
+  padding: 0.15rem;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-bg);
+}
+
+.jnet-embed.jnet-embed .jn-check {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--jn-ink);
+  font-size: 0.875rem;
+}
+
+.jnet-embed.jnet-embed .jn-check input {
+  margin-top: 0.2rem;
+  accent-color: var(--jn-unit);
+}
+
+.jnet-embed.jnet-embed .jn-custom__image {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.jnet-embed.jnet-embed .jn-custom__thumb {
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-bg) center / contain no-repeat;
+}
+
+.jnet-embed.jnet-embed .jn-custom__thumb--wide {
+  width: 9rem;
+  background-size: cover;
+}
+
+.jnet-embed.jnet-embed .jn-custom__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.jnet-embed.jnet-embed .jn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 1.1rem;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-surface);
+  color: var(--jn-ink);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.jnet-embed.jnet-embed .jn-btn--primary {
+  border-color: var(--jn-unit);
+  background: var(--jn-unit);
+  color: var(--jn-space-bg, #fff);
+}
+
+.jnet-embed.jnet-embed .jn-btn:hover {
+  border-color: var(--jn-unit);
+}
+
+/* Aperçu : l'écran d'entrée en miniature, mis à jour en direct (jnet_unit_space.js). */
+.jnet-embed.jnet-embed .jn-preview {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.jnet-embed.jnet-embed .jn-preview__frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  min-height: 17rem;
+  padding: 2.2rem 1rem 1.4rem;
+  overflow: hidden;
+  border-left: 4px solid var(--jn-unit);
+  background:
+    radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--jn-unit) 24%, transparent), transparent 60%),
+    linear-gradient(160deg, var(--jn-space-panel), var(--jn-space-bg));
+  color: var(--jn-space-ink);
+  text-align: center;
+}
+
+.jnet-embed.jnet-embed .jn-preview__frame.has-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--pv-banner) center / cover no-repeat;
+  opacity: 0.35;
+}
+
+.jnet-embed.jnet-embed .jn-preview__frame > * {
+  position: relative;
+  z-index: 1;
+}
+
+.jnet-embed.jnet-embed .jn-preview__access {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  padding: 0.12rem 0.4rem;
+  border: 1px solid var(--jn-unit);
+  color: var(--jn-unit);
+  font: 600 0.6rem/1.2 var(--jn-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.jnet-embed.jnet-embed .jn-preview__emblem {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4.6rem;
+  border: 2px solid var(--jn-unit);
+  border-radius: 0 0 50% 50% / 0 0 40% 40%;
+  background: var(--jn-space-panel) center / contain no-repeat;
+  color: var(--jn-unit);
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+
+.jnet-embed.jnet-embed .jn-preview__emblem.has-img {
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  color: transparent;
+}
+
+.jnet-embed.jnet-embed .jn-preview__name {
+  margin: 0.2rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.jnet-embed.jnet-embed .jn-preview__tagline {
+  margin: 0;
+  color: var(--jn-unit);
+  font-size: 0.85rem;
+  font-style: italic;
+  font-weight: 600;
+}
+
+.jnet-embed.jnet-embed .jn-preview__bar {
+  width: 70%;
+  height: 2px;
+  margin-top: 0.6rem;
+  background: var(--jn-unit);
+}
+
+.jnet-embed.jnet-embed .jn-preview__note {
+  margin: 0;
+  color: var(--jn-muted);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 900px) {
+  .jnet-embed.jnet-embed .jn-custom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jnet-embed.jnet-embed .jn-preview {
+    position: static;
+    order: -1;
+  }
+}
