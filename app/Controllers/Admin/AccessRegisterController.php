@@ -34,6 +34,10 @@ final class AccessRegisterController
     public const VIEW_CURRENT = 'vigueur';
     public const VIEW_HISTORY = 'historique';
 
+    /** Affichage des droits en vigueur : une ligne par membre (défaut) ou une ligne par droit. */
+    public const DISPLAY_MEMBERS = 'membres';
+    public const DISPLAY_RIGHTS = 'droits';
+
     public function __construct(private ?AccessRegisterService $register = null)
     {
         $this->register ??= self::service();
@@ -75,12 +79,16 @@ final class AccessRegisterController
         $state = (string) $request->query('etat', '');
         $year = (string) $request->query('annee', '');
 
+        $view = $view === self::VIEW_HISTORY ? self::VIEW_HISTORY : self::VIEW_CURRENT;
+
         return [
-            'view' => $view === self::VIEW_HISTORY ? self::VIEW_HISTORY : self::VIEW_CURRENT,
+            'view' => $view,
             'q' => mb_substr(trim((string) $request->query('q', '')), 0, 120),
             'kind' => isset(AccessRegisterService::kindLabels()[$kind]) ? $kind : '',
             'state' => isset(AccessRegisterService::stateLabels()[$state]) ? $state : '',
             'year' => preg_match('/^\d{4}$/', $year) === 1 ? $year : '',
+            'display' => (string) $request->query('affichage', '') === self::DISPLAY_RIGHTS ? self::DISPLAY_RIGHTS : self::DISPLAY_MEMBERS,
+            'hide_positions' => $view === self::VIEW_CURRENT,
         ];
     }
 
@@ -112,14 +120,23 @@ final class AccessRegisterController
         }
         $dateKey = $isHistory ? 'date' : 'since';
         $rows = array_values(array_filter($all, static fn (array $r): bool => AccessRegisterService::matches($r, $filters, $dateKey)));
-        $counts = ['total' => count($all), 'expiring' => 0, 'upcoming' => 0, 'unreviewed' => 0, 'individual' => 0];
-        if (!$isHistory) {
+        $counts = ['total' => 0, 'expiring' => 0, 'upcoming' => 0, 'unreviewed' => 0, 'individual' => 0, 'members' => 0];
+        if ($isHistory) {
+            $counts['total'] = count($all);
+        } else {
+            $seen = [];
             foreach ($all as $r) {
+                $seen[(int) $r['user_id']] = true;
+                if ($r['kind'] === AccessRegisterService::KIND_POSITION) {
+                    continue;
+                }
+                $counts['total']++;
                 $counts['expiring'] += $r['state'] === AccessRegisterService::STATE_EXPIRING ? 1 : 0;
                 $counts['upcoming'] += $r['state'] === AccessRegisterService::STATE_UPCOMING ? 1 : 0;
                 $counts['unreviewed'] += $r['can_review'] && $r['reviewed'] === '' ? 1 : 0;
                 $counts['individual'] += in_array($r['kind'], [AccessRegisterService::KIND_GRANT, AccessRegisterService::KIND_DENY], true) ? 1 : 0;
             }
+            $counts['members'] = count($seen);
         }
         $members = [];
         if ($canManage && !$isHistory) {
