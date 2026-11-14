@@ -147,4 +147,18 @@ final class JnetAthenaUiTest extends TestCase
         self::assertSame('1 membre', JnetUi::count(1, 'membre'));
         self::assertSame('12 membres', JnetUi::count(12, 'membre'));
     }
+
+    /** Une vue qui appelle JnetUi:: sans le chemin complet doit l'importer (sinon erreur 500 : classe introuvable). */
+    public function testViewsImportJnetUiBeforeUsingIt(): void
+    {
+        $files = array_merge(glob(__DIR__ . '/../../views/jnet/*.php') ?: [], glob(__DIR__ . '/../../views/jnet/*/*.php') ?: [], glob(__DIR__ . '/../../views/partage/*.php') ?: []);
+        self::assertTrue($files !== []);
+        foreach ($files as $file) {
+            $src = (string) file_get_contents($file);
+            $bare = substr_count($src, 'JnetUi::') - substr_count($src, '\App\Support\JnetUi::');
+            if ($bare > 0) {
+                self::assertStringContainsString('use App\Support\JnetUi;', $src, basename($file));
+            }
+        }
+    }
 }
