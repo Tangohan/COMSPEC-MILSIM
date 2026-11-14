@@ -254,6 +254,102 @@ final class VagueTriTest extends TestCase
         self::assertCount(2, \App\Support\BackOfficeTabs::barFor('back-office/missions', 'planification'));
     }
 
+    /**
+     * Fichiers retirés parce que plus rien ne les servait : chemin => mention qui ne doit plus apparaître dans le code.
+     *
+     * @var array<string, string>
+     */
+    private const REMOVED_FILES = [
+        // Anciennes pages « Membres » du back-office : GET /back-office/users… redirigent vers Effectifs depuis longtemps.
+        'views/admin/organization/users/index.php' => 'admin.organization.users.index',
+        'views/admin/organization/users/show.php' => 'admin.organization.users.show',
+        'views/admin/organization/users/edit.php' => 'admin.organization.users.edit',
+        'views/partials/member_hub_nav.php' => 'member_hub_nav',
+        'public/assets/css/back-office-users.css' => 'back-office-users.css',
+    ];
+
+    /** Mentions tolérées : un test qui passe ce nom de vue comme simple étiquette à EmailPrivacy (aucun fichier lu). */
+    private const REMOVED_MENTION_ALLOWED = [
+        'tests/Unit/EmailPrivacyTest.php' => ['admin.organization.users.show'],
+        'tests/Unit/VagueTriTest.php' => true,
+    ];
+
+    /** @return list<string> fichiers de code (PHP, JS, CSS, JSON) du site, hors dépendances et hors mod */
+    private static function codeFiles(): array
+    {
+        $root = Map::root();
+        $out = [];
+        foreach (['app', 'bootstrap', 'config', 'database', 'lang', 'routes', 'views', 'tests', 'tools', 'scripts', 'public/assets/js', 'public/assets/css'] as $dir) {
+            if (!is_dir($root . '/' . $dir)) {
+                continue;
+            }
+            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root . '/' . $dir, \FilesystemIterator::SKIP_DOTS));
+            foreach ($it as $file) {
+                if ($file->isFile() && in_array(strtolower($file->getExtension()), ['php', 'js', 'css', 'json', 'py'], true)) {
+                    $out[] = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
+                }
+            }
+        }
+        foreach (['index.php', 'public/index.php'] as $front) {
+            if (is_file($root . '/' . $front)) {
+                $out[] = $front;
+            }
+        }
+
+        return $out;
+    }
+
+    public function testRemovedDeadFilesAreGoneWithTheirReferences(): void
+    {
+        $root = Map::root();
+        foreach (array_keys(self::REMOVED_FILES) as $path) {
+            self::assertFileDoesNotExist($root . '/' . $path);
+        }
+        $needles = array_values(array_unique(self::REMOVED_FILES));
+        $found = [];
+        foreach (self::codeFiles() as $rel) {
+            $allowed = self::REMOVED_MENTION_ALLOWED[$rel] ?? [];
+            if ($allowed === true) {
+                continue;
+            }
+            $src = (string) file_get_contents($root . '/' . $rel);
+            foreach ($needles as $needle) {
+                if (!in_array($needle, $allowed, true) && str_contains($src, $needle)) {
+                    $found[] = $rel . ' : ' . $needle;
+                }
+            }
+        }
+        self::assertSame([], $found, 'Référence à un fichier retiré par la vague de tri.');
+    }
+
+    /** Les méthodes de page sans route ont quitté UserAdminController ; ses actions (POST) et leurs routes restent. */
+    public function testUserAdminControllerKeepsOnlyRoutedActions(): void
+    {
+        $class = \App\Controllers\Admin\Organization\UserAdminController::class;
+        foreach (['index', 'show', 'edit'] as $gone) {
+            self::assertFalse(method_exists($class, $gone), $gone);
+        }
+        $routed = [];
+        foreach (Map::routes() as $route) {
+            if (is_array($route['handler']) && $route['handler'][0] === $class) {
+                $routed[$route['handler'][1]] = $route['method'];
+            }
+        }
+        ksort($routed);
+        self::assertSame([
+            'applyDutyPosition' => 'POST', 'applyRoleSet' => 'POST', 'assignPosition' => 'POST', 'backfillDutyPositions' => 'POST',
+            'deactivate' => 'POST', 'notifyProfileIncomplete' => 'POST', 'operatorPhoto' => 'POST', 'requestPurge' => 'POST',
+            'resendVerificationEmail' => 'POST', 'store' => 'POST', 'update' => 'POST',
+        ], $routed);
+        foreach (array_keys($routed) as $action) {
+            self::assertTrue(method_exists($class, $action), $action);
+        }
+        // Les anciennes adresses de page répondent toujours (301 vers Effectifs).
+        foreach (['/back-office/users', '/back-office/users/7', '/back-office/users/7/edit', '/back-office/users/create'] as $legacy) {
+            self::assertSame(301, Map::redirectOf(Map::match('GET', $legacy))[0], $legacy);
+        }
+    }
+
     /** Un cadre délégué ne voit « Overwatch » qu'une fois ; un simple membre le garde dans son espace. */
     public function testOverwatchAppearsOnceForEveryProfile(): void
     {

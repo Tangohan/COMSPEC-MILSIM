@@ -101,8 +101,8 @@ return [
         ]],
         ['path' => 'back-office/onboarding-members', 'group' => 'Communauté', 'title' => 'Intégration des nouveaux membres'],
         ['path' => 'back-office/onboarding-recovery', 'group' => 'Communauté', 'title' => 'Besoin d’aide pour démarrer ?', 'subtitle' => 'Les étapes pour finir d’installer votre communauté, et qui contacter si vous êtes bloqué.', 'css' => ['back-office-onboarding-recovery.css']],
-        ['path' => 'back-office/users/create', 'group' => 'Personnel', 'title' => 'Ajouter un membre', 'subtitle' => 'Créez son compte. Il recevra un e-mail pour choisir son mot de passe.', 'css' => ['back-office-users.css']],
-        ['path' => 'back-office/users', 'group' => 'Personnel', 'title' => 'Membres', 'subtitle' => 'Tous les membres : identité, affectation, statut et présence.', 'css' => ['back-office-users.css'], 'quick' => [
+        ['path' => 'back-office/users/create', 'group' => 'Personnel', 'title' => 'Ajouter un membre', 'subtitle' => 'Créez son compte. Il recevra un e-mail pour choisir son mot de passe.'],
+        ['path' => 'back-office/users', 'group' => 'Personnel', 'title' => 'Membres', 'subtitle' => 'Tous les membres : identité, affectation, statut et présence.', 'quick' => [
             ['label' => 'Inviter', 'href' => 'back-office/invitations'],
             ['label' => 'Ajouter un membre', 'href' => 'back-office/users/create'],
         ]],

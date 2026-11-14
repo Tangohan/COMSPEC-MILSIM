@@ -178,15 +178,10 @@ Post-check :
 
 | Fichier | Statut |
 |---|---|
-| `views/admin/organization/users/index.php` | ⚡ Hybride (`ath_kpis` + `ath_table`) |
-| `views/admin/organization/users/create.php` | 🔶 Legacy (coque ATHENA seulement) |
-| `views/admin/organization/users/edit.php` | 🔶 Legacy |
-| `views/admin/organization/users/show.php` | 🔶 Legacy |
 | `views/admin/organization/invitations.php` | ⚡ Hybride (KPIs ATHENA) |
 | `views/admin/organization/invitations_sent.php` | ⚡ Hybride (KPIs ATHENA) |
 | `app/Controllers/Admin/Organization/UserAdminController.php` | Contrôleur |
 | `app/Controllers/Admin/Organization/InvitationAdminController.php` | Contrôleur |
-| `public/assets/css/back-office-users.css` | CSS annuaire |
 | `public/assets/css/invitations-sheet.css` | CSS invitations |
 
 ### Rôles / Accès / Cellule S1

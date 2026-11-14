@@ -70,11 +70,6 @@ final class AccountPurgeRequestAssetTest extends TestCase
         self::assertStringContainsString('/admin/users/purge-requests/approve', $routes);
         self::assertStringContainsString('/admin/users/purge-requests/reject', $routes);
 
-        $orgShow = (string) file_get_contents($root . '/views/admin/organization/users/show.php');
-        self::assertStringContainsString('Demander la suppression du compte', $orgShow);
-        self::assertStringContainsString('request-purge', $orgShow);
-        self::assertStringContainsString('Compte supprimé', $orgShow);
-
         $platUsers = (string) file_get_contents($root . '/views/admin/system/users.php');
         self::assertStringContainsString('Demandes de suppression de compte', $platUsers);
         self::assertStringContainsString('purge-requests/approve', $platUsers);

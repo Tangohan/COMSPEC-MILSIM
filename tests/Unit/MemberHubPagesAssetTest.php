@@ -11,17 +11,10 @@ final class MemberHubPagesAssetTest extends TestCase
     public function testEffectifsMemberAndAccountShareHubAndRhActions(): void
     {
         $member = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/member.php');
-        $edit = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/users/edit.php');
-        $nav = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/member_hub_nav.php');
         $ctrl = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Admin/EffectifsWorkspaceController.php');
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
 
-        self::assertStringContainsString('member_hub_nav.php', $edit);
-        self::assertStringNotContainsString('member_hub_nav.php', $member);
-        self::assertStringContainsString('Fiche Effectifs', $nav);
         self::assertStringContainsString('bo-eff-jump', $member);
-        self::assertStringNotContainsString("url('back-office/users/' . \$memberHubUserId . '/edit')", $nav);
-        self::assertStringNotContainsString("url('personnel/' . \$memberHubUserId . '/edit')", $nav);
         self::assertStringContainsString('eff-fiche-hero', $member);
         self::assertStringContainsString('id="anciennete"', $member);
         self::assertStringContainsString('updateMemberRoles', $ctrl);
@@ -30,7 +23,6 @@ final class MemberHubPagesAssetTest extends TestCase
         self::assertStringContainsString('membres/{id}/roles', $routes);
         self::assertStringContainsString('membres/{id}/fonctions', $routes);
         self::assertStringContainsString('membres/{id}/grade', $routes);
-        self::assertStringContainsString('Situation RH', $edit);
         // Les rôles cochés sont devenus un niveau d’accès unique (radio access_role_id) posté sur /roles.
         self::assertStringContainsString("effectifs_workspace_url('membres/' . \$id . '/roles')", $member);
         self::assertStringContainsString('name="access_role_id"', $member);

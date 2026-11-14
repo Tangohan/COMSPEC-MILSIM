@@ -12,14 +12,11 @@ final class EffectifsMemberCompleteFileAssetTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $view = (string) file_get_contents($root . '/views/admin/effectifs_workspace/member.php');
-        $nav = (string) file_get_contents($root . '/views/partials/member_hub_nav.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Admin/EffectifsWorkspaceController.php');
 
         foreach (['Dossier RH complet', 'Qualifications', 'Absences', 'Documents RH', 'Mobilité et souhaits', 'Chronologie du dossier'] as $section) {
             self::assertStringContainsString($section, $view);
         }
         self::assertStringContainsString('bo-eff-jump', $view);
-        self::assertStringNotContainsString("url('personnel/' . \$memberHubUserId . '/edit')", $nav);
-        self::assertStringNotContainsString("url('back-office/users/' . \$memberHubUserId . '/edit')", $nav);
     }
 }
