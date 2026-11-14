@@ -301,6 +301,13 @@ final class AwardReferentielController
 
             return Response::redirect(url('back-office/referentiels/decorations'));
         }
+        // Le membre et la décoration doivent être de cette communauté (avant, rien ne le vérifiait : une décoration pouvait
+        // être attribuée à un membre d'une autre communauté, ou avec la définition d'une autre).
+        if ($this->users->findById($personnelId, $tenantId) === null || $this->definitions->find($tenantId, $definitionId) === null) {
+            Session::flash('error', 'Membre ou décoration introuvable dans votre communauté.');
+
+            return Response::redirect(url('back-office/referentiels/decorations'));
+        }
         $awardedAt = (string) $request->input('awarded_at', date('Y-m-d'));
         $citation = trim((string) $request->input('citation_text', ''));
         $authority = trim((string) $request->input('authority', ''));

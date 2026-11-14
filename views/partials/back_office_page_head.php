@@ -28,9 +28,7 @@ if ($headTitle === '' && $kicker === '' && $subtitle === '' && $quick === []) {
 ?>
 <section class="ath-page-head ath-rise" aria-labelledby="ath-page-title">
     <div class="ath-page-head__copy">
-        <?php if ($kicker !== ''): ?>
-        <p class="ath-page-head__kicker"><?= $h($kicker) ?></p>
-        <?php endif; ?>
+        <?php /* Pas de surtitre : le titre et le sous-titre suffisent (audit du back-office, 1.12). $boPageKicker reste lu pour l'état vide. */ ?>
         <?php if ($headTitle !== ''): ?>
         <h1 class="ath-page-head__title" id="ath-page-title"><?= $h($headTitle) ?></h1>
         <?php endif; ?>
