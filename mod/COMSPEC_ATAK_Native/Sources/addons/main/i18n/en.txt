@@ -24456,4 +24456,6 @@
 ["App épinglée sur la carte", "App pinned on the map"],
 ["Aucune par défaut. Choisissez Messages, SMS ou Ordres : un bandeau de la taille de celui des coordonnées, à sa droite sur la carte du téléphone, montre les non lus et le dernier message ou ordre avec l'expéditeur et l'heure. Touchez-le pour ouvrir l'app. Exemple : Ordres affiche « 2 à traiter » puis « TOC 14:32 · Rejoindre le point Alpha ». Aussi réglable dans Réglages > Carte.", "None by default. Pick Messages, SMS or Orders: a banner the size of the coordinates banner, to its right on the phone map, shows the unread count and the last message or order with the sender and the time. Touch it to open the app. Example: Orders shows ""2 to handle"" then ""TOC 14:32 · Move to point Alpha"". Also available in Settings > Map."],
 ["Un bandeau de la taille de celui des coordonnées, à sa droite : non lus et dernier message ou ordre. Un toucher ouvre l'app (aussi dans les options CBA, ATAK · Affichage)", "A banner the size of the coordinates banner, to its right: unread count and last message or order. One touch opens the app (also in the CBA options, ATAK · Display)"],
+["carte maillage et relais (image)", "mesh and relays map (frame)"],
+["carte plan de briefing (image)", "briefing plan on the map (frame)"],
 ]

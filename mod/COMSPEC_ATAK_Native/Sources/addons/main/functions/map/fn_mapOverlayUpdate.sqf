@@ -8,7 +8,10 @@
 params [["_cursorOnly", false], ["_compassOnly", false]];
 disableSerialization;
 private _ov = uiNamespace getVariable ["COMSPEC_ATAK_MapOverlay", createHashMap];
-private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Boussole à chaque image, cap inchangé (moins de 0,2°) : sortie ici, avant de poser les fonctions locales et de lire le
+// bandeau (fn_mapPrefs « band ») qui ne servent à rien dans ce cas. Même test que dans la branche boussole plus bas.
+if (_compassOnly && {(abs ((getDirVisual (vehicle player)) - (_ov getOrDefault ["compassH", -1]))) < 0.2}) exitWith { false };
+private _s =uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Points cardinaux sur 16 directions dans la langue du téléphone (fn_cardinal, même table partout).
 private _cardinal = { [_this select 0, 16] call comspec_atak_native_fnc_cardinal };
 // Textes des cases : seuls les libellés passent par la traduction (fn_tr), jamais le texte entier. Avant, un point

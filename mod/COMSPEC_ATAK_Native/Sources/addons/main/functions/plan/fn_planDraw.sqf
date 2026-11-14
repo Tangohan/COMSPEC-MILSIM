@@ -27,13 +27,27 @@ private _vx0 = ((_vtl select 0) min (_vbr select 0)) - _vmg;
 private _vx1 = ((_vtl select 0) max (_vbr select 0)) + _vmg;
 private _vy0 = ((_vtl select 1) min (_vbr select 1)) - _vmg;
 private _vy1 = ((_vtl select 1) max (_vbr select 1)) + _vmg;
+// Géométrie gardée d'une image à l'autre : boîte englobante et points 3D par signature des points (hashValue), refaits
+// seulement quand les points changent. Avant : chaque point de chaque élément relu à chaque image, même hors de la vue.
+// Aperçus en cours de tracé (id vide ou « _draft », points nouveaux à chaque image) : jamais gardés. Table bornée.
+private _geo = uiNamespace getVariable ["COMSPEC_ATAK_PlanGeo", createHashMap];
+if ((count _geo) > 600) then { _geo = createHashMap; };
+uiNamespace setVariable ["COMSPEC_ATAK_PlanGeo", _geo];
 {
     _x params [["_id", ""], ["_kind", ""], ["_pts", []], ["_text", ""], ["_ck", "WHITE"], ["_dashed", false], ["_arrow", false], ["_w", 2], ["_num", 0]];
     private _def = _kinds getOrDefault [_kind, []];
     if ((count _def) isEqualTo 0 || {(count _pts) isEqualTo 0}) then { continue };
     // Élément entièrement hors de la vue : rien à dessiner (boîte englobante de ses points).
-    private _bx0 = 1e9; private _bx1 = -1e9; private _by0 = 1e9; private _by1 = -1e9;
-    { _bx0 = _bx0 min (_x select 0); _bx1 = _bx1 max (_x select 0); _by0 = _by0 min (_x select 1); _by1 = _by1 max (_x select 1); } forEach _pts;
+    private _keep = !(_id in ["", "_draft"]);
+    private _gk = if (_keep) then { hashValue _pts } else { "" };
+    private _g = _geo getOrDefault [_gk, []];
+    if ((count _g) isEqualTo 0) then {
+        private _gx0 = 1e9; private _gx1 = -1e9; private _gy0 = 1e9; private _gy1 = -1e9;
+        { _gx0 = _gx0 min (_x select 0); _gx1 = _gx1 max (_x select 0); _gy0 = _gy0 min (_x select 1); _gy1 = _gy1 max (_x select 1); } forEach _pts;
+        _g = [_gx0, _gx1, _gy0, _gy1, _pts apply { [_x select 0, _x select 1, 0] }];
+        if (_keep) then { _geo set [_gk, _g]; };
+    };
+    _g params ["_bx0", "_bx1", "_by0", "_by1", "_p3"];
     // Point : son libellé part vers la droite (NOTE, CHECK) et peut dépasser la marge ; boîte élargie de sa largeur estimée.
     if ((_def select 3) isEqualTo "POINT") then {
         _bx1 = _bx1 + (((count _text) max (count (_def select 5))) * 0.52 * (_tsz / pixelH) + 40) * _mpx;
@@ -43,7 +57,6 @@ private _vy1 = ((_vtl select 1) max (_vbr select 1)) + _vmg;
     private _style = _def select 8;
     private _c = +(_colors getOrDefault [_ck, [1, 1, 1, 1]]);
     _c set [3, (_c select 3) * _alpha];
-    private _p3 = _pts apply { [_x select 0, _x select 1, 0] };
     private _isSel = _id isEqualTo _sel && {_sel isNotEqualTo ""};
     private _wPx = (_w max 1 min 3) * 1.2;
     switch (_geom) do {
