@@ -232,6 +232,10 @@ $renderItem = static function (array $item, string $sectionTitle) use ($h, $icon
         </p>
     </div>
 
+    <p class="bo-cfg-where" data-cfg-hide-on-search>
+        Où sont passés les réglages du menu ? Organisation, Référentiels, Droits et accès, ATAK, Intégrations et Réglages RH sont maintenant rangés dans le groupe « Configuration » du menu de gauche (replié, à déplier d’un clic). Les sanctions, signalements et fichiers en quarantaine sont sous « Discipline ». Aucune page n’a changé d’adresse.
+    </p>
+
     <div class="bo-cfg__layout">
         <nav class="bo-cfg-nav" aria-label="Sections de la configuration">
             <p class="bo-cfg-nav__kicker">Sections</p>

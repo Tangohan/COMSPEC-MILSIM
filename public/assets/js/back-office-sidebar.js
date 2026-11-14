@@ -113,7 +113,9 @@
       var stored = groupState[key];
       // Un groupe qui contient la page courante reste toujours ouvert.
       var hasCurrent = !!group.querySelector('.is-active');
-      var open = hasCurrent || stored !== false;
+      // Groupe de configuration : fermé tant que la personne ne l’a pas ouvert elle-même.
+      var closedByDefault = group.hasAttribute('data-ath-default-closed');
+      var open = hasCurrent || (closedByDefault ? stored === true : stored !== false);
 
       function setOpen(on, persist) {
         group.classList.toggle('is-open', on);
@@ -304,7 +306,8 @@
           } else if (group._athSetOpen) {
             // Recherche effacée : revenir à l’état choisi par l’utilisateur.
             var key = group.getAttribute('data-ath-nav-group') || '';
-            group._athSetOpen(!!group.querySelector('.is-active') || groupState[key] !== false, false);
+            var restored = group.hasAttribute('data-ath-default-closed') ? groupState[key] === true : groupState[key] !== false;
+            group._athSetOpen(!!group.querySelector('.is-active') || restored, false);
           }
         });
       }

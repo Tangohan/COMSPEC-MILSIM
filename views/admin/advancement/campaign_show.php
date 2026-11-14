@@ -101,7 +101,7 @@ usort($listed, static fn (array $a, array $b): int => ((int) ($a['preference_ran
                 <li><strong>PASS</strong><span>Les conditions du PASS lié au grade doivent être remplies.</span></li>
             <?php endif; ?>
         </ul>
-        <p class="advc-muted"><a href="<?= adv_h(url('back-office/organisation/grades')) ?>">Modifier les règles d’avancement</a></p>
+        <p class="advc-muted"><a href="<?= adv_h(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades')) ?>">Modifier les règles d’avancement</a></p>
     </section>
 
     <?php if (!$published): ?>

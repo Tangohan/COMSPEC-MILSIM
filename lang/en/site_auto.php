@@ -65250,4 +65250,8 @@ return [
     'Avis défavorable de l’échelon supérieur' => 'Unfavourable opinion from the next echelon up',
     'Avis favorable : %1' => 'Favourable opinion: %1',
     'Avis défavorable : %1' => 'Unfavourable opinion: %1',
+    'CONFIGURATION' => 'SETTINGS',
+    'Discipline' => 'Discipline',
+    'Droits et accès' => 'Rights and access',
+    'Où sont passés les réglages du menu ? Organisation, Référentiels, Droits et accès, ATAK, Intégrations et Réglages RH sont maintenant rangés dans le groupe « Configuration » du menu de gauche (replié, à déplier d’un clic). Les sanctions, signalements et fichiers en quarantaine sont sous « Discipline ». Aucune page n’a changé d’adresse.' => 'Where did the settings go? Organisation, Reference data, Rights and access, ATAK, Integrations and HR settings are now filed under the “Settings” group of the left menu (collapsed, one click to open). Sanctions, reports and quarantined files are under “Discipline”. No page has changed address.',
 ];

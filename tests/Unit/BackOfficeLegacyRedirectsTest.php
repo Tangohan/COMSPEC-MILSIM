@@ -81,6 +81,8 @@ final class BackOfficeLegacyRedirectsTest extends TestCase
             ['/back-office/documents/types', ['onglet' => 'vieux'], '/back-office/doctrine?onglet=types'],
             ['/back-office/nouveautes-organisation', [], '/back-office/mise-a-niveau?onglet=nouveautes'],
             ['/back-office/ressources/effectifs/alertes', [], '/back-office/ressources/effectifs/a-traiter?onglet=alertes'],
+            ['/back-office/organisation/grades', [], '/back-office/referentiels/grades?onglet=avancement'],
+            ['/back-office/referentiels/grades/catalogue', [], '/back-office/referentiels/grades?onglet=catalogue'],
         ];
     }
 

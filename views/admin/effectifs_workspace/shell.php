@@ -75,7 +75,7 @@ $heroCommunity = trim((string) ($communityName ?? ''));
 $statusFilterNow = is_array($rosterFilters ?? null) ? (string) ($rosterFilters['status'] ?? '') : '';
 // Raccourcis propres à la page ouverte.
 $pageActions = match ($active) {
-    'affectations', 'chaine' => [['Ouvrir l’ORBAT', url('back-office/organisation/structure'), '']],
+    'affectations', 'chaine' => [['Ouvrir l’ORBAT', orbat_page_url(), '']],
     'rh_inbox' => [['Membres sans unité', effectifs_workspace_url() . '?sans_affectation=1', '']],
     default => $isMember ? [['Retour au tableur', effectifs_workspace_url(), '']] : [],
 };

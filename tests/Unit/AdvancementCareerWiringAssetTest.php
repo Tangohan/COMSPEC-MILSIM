@@ -25,7 +25,9 @@ final class AdvancementCareerWiringAssetTest extends TestCase
         self::assertFileExists($root . '/bootstrap/advancement_grade_migration.php');
         self::assertStringContainsString("'advancement_seniority'", $cron);
 
-        self::assertStringContainsString("'/back-office/organisation/grades'", $routes);
+        // La liste des règles d'avancement est un onglet du référentiel des grades (BackOfficeTabs) : seules ses sous-pages ont leur route.
+        self::assertStringContainsString("'/back-office/organisation/grades/create'", $routes);
+        self::assertSame('back-office/referentiels/grades?onglet=avancement', \App\Support\BackOfficeLegacyRedirects::target('back-office/organisation/grades'));
         self::assertStringContainsString("'/back-office/rh/avancement'", $routes);
         self::assertStringContainsString("'/back-office/referentiels/decorations'", $routes);
         self::assertStringContainsString("'/back-office/referentiels/dotation'", $routes);

@@ -259,9 +259,9 @@ require __DIR__ . '/ath_sidebar_nav.php';
 ?>
 <nav class="ath-sidebar" id="ath-sidebar" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Navigation back-office') : 'Navigation back-office') ?>">
     <div class="ath-sidebar__head">
-        <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__logo" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">A</a>
+        <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__logo" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>">A</a>
         <div class="ath-sidebar__brand">
-            <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__brand-name" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">ATHENA<span>.</span></a>
+            <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__brand-name" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>">ATHENA<span>.</span></a>
             <div class="ath-sidebar__brand-sub"><?= $h(!empty($isDelegatedStaff) ? 'MON PÉRIMÈTRE' : (!empty($isOperatorBoNav) ? 'ESPACE OPÉRATEUR' : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'GESTION') : 'GESTION'))) ?> · <?= $h($tenantShort) ?></div>
         </div>
         <button type="button" class="ath-sidebar__toggle" data-ath-sidebar-toggle title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Plier le menu') : 'Plier le menu') ?>" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Plier le menu') : 'Plier le menu') ?>">
@@ -343,8 +343,21 @@ require __DIR__ . '/ath_sidebar_nav.php';
             </div>
         </div>
         <?php foreach ($athNavGroups as $navGroup): ?>
-            <div class="ath-sidebar__group is-open" data-ath-nav-group="<?= $h((string) $navGroup['key']) ?>">
-                <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true" aria-controls="ath-nav-group-<?= $h((string) $navGroup['key']) ?>">
+            <?php
+            // Groupe de niveau 3 (« collapsed ») : fermé d’emblée, sauf s’il contient la page courante.
+            $navGroupOpen = true;
+            if (!empty($navGroup['collapsed'])) {
+                $navGroupOpen = false;
+                foreach ($navGroup['items'] as $navGroupItem) {
+                    if (!empty($navGroupItem['active'])) {
+                        $navGroupOpen = true;
+                        break;
+                    }
+                }
+            }
+            ?>
+            <div class="ath-sidebar__group<?= $navGroupOpen ? ' is-open' : '' ?>" data-ath-nav-group="<?= $h((string) $navGroup['key']) ?>"<?= !empty($navGroup['collapsed']) ? ' data-ath-default-closed' : '' ?>>
+                <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="<?= $navGroupOpen ? 'true' : 'false' ?>" aria-controls="ath-nav-group-<?= $h((string) $navGroup['key']) ?>">
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#4b524e" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
                     <span class="ath-sidebar__group-label"><?= $h((string) $navGroup['label']) ?></span>
                 </button>
@@ -385,9 +398,9 @@ require __DIR__ . '/ath_sidebar_nav.php';
     </div>
     <?php endif; ?>
 
-    <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__portal" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">
+    <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__portal" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path></svg>
-        <span class="ath-sidebar__portal-label"><?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?></span>
+        <span class="ath-sidebar__portal-label"><?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?></span>
     </a>
 
     <div class="ath-sidebar__foot">

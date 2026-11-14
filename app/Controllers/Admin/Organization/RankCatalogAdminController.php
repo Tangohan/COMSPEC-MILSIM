@@ -66,7 +66,7 @@ final class RankCatalogAdminController
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('back-office/referentiels/grades/catalogue'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/referentiels/grades/catalogue'));
         }
         $repair = (string) $request->input('repair', '0') === '1';
         $stats = $this->catalog->bootstrapAndAudit($repair);
@@ -81,6 +81,6 @@ final class RankCatalogAdminController
             )
         );
 
-        return Response::redirect(url('back-office/referentiels/grades/catalogue'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/referentiels/grades/catalogue'));
     }
 }
