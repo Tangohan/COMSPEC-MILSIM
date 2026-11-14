@@ -51,6 +51,17 @@ final class AtakReleaseInfoTest extends TestCase
         self::assertSame(AtakReleaseInfo::latest($root)['link'], $m[1]);
     }
 
+    public function testNativeDllAnnouncesTheLinkVersion(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $csproj = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/COMSPECATAKNativeExtension.csproj');
+        self::assertSame(1, preg_match('#<InformationalVersion>([0-9.]+)-native</InformationalVersion>#', $csproj, $m));
+
+        // La DLL native annonce cette version au site (User-Agent) : en retard, le plancher de version des DLL la
+        // refuserait alors qu'elle porte le code et la preuve de la version courante.
+        self::assertSame(AtakReleaseInfo::latest($root)['link'], $m[1]);
+    }
+
     public function testBuildStampIsNeverCommitted(): void
     {
         $root = dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main';

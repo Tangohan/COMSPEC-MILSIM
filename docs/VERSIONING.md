@@ -52,6 +52,8 @@ support), dans le RPT et dans le check de démarrage Discord. Un main.pbo constr
 | `mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp` | `VERSION`, `VERSION_STR` (ATAK natif), `VERSION_NAME` (nom affiché), `LINK_VERSION_STR` (DLL attendue) |
 | `mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj` | `Version`, `InformationalVersion` (Link) |
 | `mod/UptoDate/COMSPECExtension/Extension.cs` | `ExtensionVersion` (Link) |
+| `mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/COMSPECATAKNativeExtension.csproj` | `Version`, `InformationalVersion` (`<Link>-native`) : la DLL native annonce cette version au site |
+| `mod/UptoDate/COMSPECExtension/ClientAttestMaterial.Local.cs` (ignoré par Git) | à régénérer : `php tools/embed-client-attest.php` (secret de cette version, voir docs/technique/module-officiel-seul.md) |
 | `CHANGELOG-ATAK.md` | titre de l'entrée : `(ATAK natif 1.94.0)` ou `(ATAK natif 1.94.0, COMSPEC Link 2.0.86)` + « Résumé joueur » |
 | Titre de la PR | la même version (l'annonce Discord la cherche dans le changelog) |
 

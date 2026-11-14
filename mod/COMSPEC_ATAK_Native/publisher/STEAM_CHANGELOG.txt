@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.15.1 Washington — mise à jour de sécurité / security update[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Sécurité[/b] : le lien entre le mod et Athena est mieux protégé contre les copies du mod. Rien ne change en jeu, rien à régler.
+[*] Les anciennes versions du mod finiront par être refusées : le téléphone demandera alors la mise à jour.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Security[/b]: the link between the mod and Athena is better protected against copies of the mod. Nothing changes in game, nothing to set up.
+[*] Older versions of the mod will eventually be refused: the phone will then ask you to update.
+[/list]
+
 [h1]COMSPEC ATAK 4.15.0 Washington — dossier mieux synchronisé, images gardées sur le PC, correctifs / dossier syncs better, images kept on your PC, fixes[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
