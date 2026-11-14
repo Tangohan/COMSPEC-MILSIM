@@ -628,24 +628,26 @@ switch (_act) do {
             private _e = _x select 1;
             private _id = _e getOrDefault ["id", ""];
             private _st = _e getOrDefault ["state", "NEW"];
+            // Jetons du thème (fn_theme), comme les ordres de la même page : lisibles en thème jour et en nuit JVN.
+            private _th = COMSPEC_ATAK_Th;
             (switch (true) do {
-                case (_st in ["SHOT", "SPLASH"]): { [[0.88, 0.25, 0.22, 1], "#e04038"] };
-                case (_st in ["ACK", "EXEC"]): { [[0.95, 0.67, 0.20, 1], "#f2ab33"] };
-                case (_st isEqualTo "DONE"): { [[0.36, 0.78, 0.42, 1], "#5cc76b"] };
-                case (_st in ["FAIL", "EOM"]): { [[0.58, 0.64, 0.60, 1], "#94a399"] };
-                default { [[0.50, 0.75, 1, 1], "#80bfff"] };
+                case (_st in ["SHOT", "SPLASH"]): { [_th get "alert", _th get "hexAlert"] };
+                case (_st in ["ACK", "EXEC"]): { [_th get "warn", _th get "hexWarn"] };
+                case (_st isEqualTo "DONE"): { [_th get "ok", _th get "hexOk"] };
+                case (_st in ["FAIL", "EOM"]): { [_th get "off", _th get "hexTextMuted"] };
+                default { [_th get "info", _th get "hexInfo"] };
             }) params ["_rgb", "_hex"];
             private _sol = _e getOrDefault ["sol", createHashMap];
             private _solTxt = if ((count _sol) > 0) then {
-                format ["<br/><t size='0.85' color='#d8f29e'>%1</t>", format [("AZ %1 MIL · %2 M · ÉLÉV %3 · CHARGE %4") call comspec_atak_native_fnc_tr, [_sol getOrDefault ["mils", 0], 4] call CBA_fnc_formatNumber, _sol getOrDefault ["dist", 0],
-                    [str (_sol getOrDefault ["elev", -1]), "—"] select ((_sol getOrDefault ["elev", -1]) < 0), [str (_sol getOrDefault ["charge", -1]), "—"] select ((_sol getOrDefault ["charge", -1]) < 0)]]
+                format ["<br/><t size='0.85' color='%2'>%1</t>", format [("AZ %1 MIL · %2 M · ÉLÉV %3 · CHARGE %4") call comspec_atak_native_fnc_tr, [_sol getOrDefault ["mils", 0], 4] call CBA_fnc_formatNumber, _sol getOrDefault ["dist", 0],
+                    [str (_sol getOrDefault ["elev", -1]), "—"] select ((_sol getOrDefault ["elev", -1]) < 0), [str (_sol getOrDefault ["charge", -1]), "—"] select ((_sol getOrDefault ["charge", -1]) < 0)], _th get "hexAccent"]
             } else { "" };
             private _t = ["type", _e getOrDefault ["type", ""]] call _fn;
-            private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2' size='0.85'>%3</t>%4<br/><t size='0.8' color='#8a9a93'>%5 · de %6 · cible %7 · %8 x%9</t><br/><t size='0.85'>%10</t>%11",
+            private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2' size='0.85'>%3</t>%4<br/><t size='0.8' color='%12'>%5 · de %6 · cible %7 · %8 x%9</t><br/><t size='0.85'>%10</t>%11",
                 [(_e getOrDefault ["gunName", "Appui"]) call comspec_atak_native_fnc_tr] call _esc, _hex, toUpper ((_stLbl getOrDefault [_st, _st]) call comspec_atak_native_fnc_tr),
-                ["", "  <t color='#e04038' size='0.85'>DANGER CLOSE</t>"] select (_e getOrDefault ["dcClose", false]),
+                ["", "  <t color='" + (_th get "hexAlert") + "' size='0.85'>DANGER CLOSE</t>"] select (_e getOrDefault ["dcClose", false]),
                 (_t getOrDefault ["label", "Appui générique"]) call comspec_atak_native_fnc_tr, [_e getOrDefault ["by", ""]] call _esc, _e getOrDefault ["grid", ""],
-                (_ammoLbl getOrDefault [_e getOrDefault ["ammo", "HE"], "HE"]) call comspec_atak_native_fnc_tr, _e getOrDefault ["rounds", 1], [(_e getOrDefault ["text", ""]) call comspec_atak_native_fnc_tr] call _esc, _solTxt];
+                (_ammoLbl getOrDefault [_e getOrDefault ["ammo", "HE"], "HE"]) call comspec_atak_native_fnc_tr, _e getOrDefault ["rounds", 1], [(_e getOrDefault ["text", ""]) call comspec_atak_native_fnc_tr] call _esc, _solTxt, _th get "hexTextMuted"];
             private _live = !(_st in ["EOM", "FAIL"]);
             private _btns = switch (true) do {
                 case ((_e getOrDefault ["gunnerUid", ""]) isEqualTo _me): {

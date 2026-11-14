@@ -13,13 +13,16 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _icon = "\z\comspec_atak_native\addons\main\data\app_tasks.paa";
 // DELIVERED = « vu » côté Athena (transmis au téléphone) ; TERMINÉ = DONE.
 private _labels = createHashMapFromArray [["ACK", "REÇU"], ["EXEC", "EN COURS"], ["DONE", "TERMINÉ"], ["DELIVERED", "VU"], ["PENDING", "TRANSMIS"], ["CANCELLED", "ANNULÉ"], ["FAILED", "IMPOSSIBLE"], ["SUCCEEDED", "RÉUSSIE"], ["CANCELED", "ANNULÉE"], ["CREATED", "NOUVELLE"], ["ASSIGNED", "ASSIGNÉE"], ["NEW", "NOUVEAU"]];
+// Couleurs d'état : jetons du thème (fn_theme), pastille et texte de la même famille dans les trois thèmes. Annulé ou
+// impossible : pastille « off », texte en encre de légende (le gris « off » ne se lit pas en petit texte).
 private _colorOf = {
     params ["_st"];
+    private _th = COMSPEC_ATAK_Th;
     switch (true) do {
-        case (_st in ["DONE", "SUCCEEDED"]): { [[0.36, 0.78, 0.42, 1], (COMSPEC_ATAK_Th get "hexOk")] };
-        case (_st in ["FAILED", "CANCELED", "CANCELLED"]): { [[0.58, 0.64, 0.60, 1], "#94a399"] };
-        case (_st in ["ACK", "EXEC", "ASSIGNED"]): { [[0.95, 0.67, 0.20, 1], (COMSPEC_ATAK_Th get "hexWarn")] };
-        default { [[0.88, 0.25, 0.22, 1], "#e04038"] };
+        case (_st in ["DONE", "SUCCEEDED"]): { [_th get "ok", _th get "hexOk"] };
+        case (_st in ["FAILED", "CANCELED", "CANCELLED"]): { [_th get "off", _th get "hexTextMuted"] };
+        case (_st in ["ACK", "EXEC", "ASSIGNED"]): { [_th get "warn", _th get "hexWarn"] };
+        default { [_th get "alert", _th get "hexAlert"] };
     }
 };
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };

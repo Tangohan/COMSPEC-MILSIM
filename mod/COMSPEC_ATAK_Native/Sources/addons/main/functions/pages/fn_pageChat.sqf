@@ -808,7 +808,7 @@ private _drawConv = {
         if (isNull _p) exitWith {};
         private _txt = trim _raw;
         if (_txt isEqualTo "" || {!((_txt select [0, 1]) isEqualTo "/") && {(_txt find "@") < 0}}) exitWith {
-            _p ctrlSetStructuredText parseText (("<t size='0.8' color='#5b6b63'>Astuce : /urgent, /contact, /sitrep… et @grille. Tapez /aide.</t>") call comspec_atak_native_fnc_tr);
+            _p ctrlSetStructuredText parseText (("<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Astuce : /urgent, /contact, /sitrep… et @grille. Tapez /aide.</t>") call comspec_atak_native_fnc_tr);
         };
         private _words = _txt splitString " ";
         private _last = _words select ((count _words) - 1);
