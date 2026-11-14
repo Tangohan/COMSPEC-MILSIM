@@ -75,7 +75,7 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
     if (_cStyle isEqualTo "TAPE") exitWith {};
     private _hd = ["COMSPEC_RscTextCenter", [_bx + _pad, _by + _pad + _ch + pixelH * 2, _cw max (_font * 3.6 * 0.7 / _ratio), _fs * 1.15]] call _mk;
     _hd ctrlSetFont "EtelkaMonospaceProBold";
-    _hd ctrlSetFontHeight (_fs * 0.9);
+    _hd ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
     _hd ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapPanel");
     _hd ctrlSetTextColor (COMSPEC_ATAK_Th get "mapText");
     _ov set ["heading", _hd];
@@ -99,8 +99,11 @@ private _mts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25
 private _panFs = _fs * ([0.78, 0.7] select _mini) * _mts * (_bc get "text");
 private _panW = ((((_mw * 0.34) min (_font * 9 / _ratio)) * ([1, 0.75] select _mini)) * (_mts max 1)) min (_mw * ([0.44, 0.62] select _mini));
 private _panIn = _pad * 0.6;
-// En main, la barre d'outils occupe le bord droit : le bandeau s'arrête avant.
-private _toolCol = [0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _pad] select _interactive;
+// En main, la barre d'outils occupe le bord droit : le bandeau s'arrête avant. Sa taille se choisit dans Réglages > Carte
+// (petite, normale, grande) : la réserve suit la barre GRANDE, sinon bandeaux et fiches passaient dessous.
+private _tbScale = profileNamespace getVariable ["COMSPEC_ATAK_MapToolbarScale", 1];
+if !(_tbScale isEqualType 0) then { _tbScale = 1; };
+private _toolCol = [0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1 * (_tbScale max 1))) / _ratio) + _pad] select _interactive;
 // Largeur d'un caractère à chasse fixe (taille 1) et marges intérieures d'une case.
 private _chW = _panFs * 0.6 / _ratio;
 private _cellIn = _panIn / _ratio * 1.2;
@@ -367,7 +370,7 @@ if (_interactive) then {
                 // Titre de section
                 private _h = ["COMSPEC_RscText", [_bx + _pad * 1.5, _y0 + _rh * 0.25, _mwid - _pad * 2, _rh * 0.75], _label] call _mk;
                 _h ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
-                _h ctrlSetFontHeight (_fs * 0.78);
+                _h ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
                 _h ctrlSetTextColor (COMSPEC_ATAK_Th get "mapDim");
                 private _ln = ["COMSPEC_RscText", [_bx + _pad * 1.5, _y0 + _rh - pixelH, _mwid - _pad * 2, pixelH]] call _mk;
                 _ln ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.25]);
@@ -400,14 +403,7 @@ if (_interactive) then {
         } forEach _items;
     };
 
-    // Barre d'outils à droite (taille choisie dans Réglages > Carte : petite, normale, grande)
-    private _tbScale = profileNamespace getVariable ["COMSPEC_ATAK_MapToolbarScale", 1];
-    if !(_tbScale isEqualType 0) then { _tbScale = 1; };
-    private _ihMax = (_mh - 2 * _pad) / 8;
-    // Normale : comme avant. Grande : jamais plus haute que la carte ne le permet.
-    private _ih = (((_ihMax min (_font * 2.1)) * _tbScale) min _ihMax);
-    private _iw = _ih / _ratio;
-    private _tx = _bx + _mw - _iw - _pad;
+    // Barre d'outils à droite (taille choisie dans Réglages > Carte : petite, normale, grande ; _tbScale, lu plus haut).
     // Par fréquence d'usage. Indicatifs et « Sur mon téléphone » sont dans OUTILS > AFFICHAGE.
     private _tools = [
         // Deux états : un appui centre sur moi, un second (dans les 8 s) suit ma position, l'appui suivant arrête tout suivi.
@@ -457,6 +453,13 @@ if (_interactive) then {
     if (alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
         _tools pushBack ["droneview", "app_drone", "Vue drone : carte, plein écran ou incrustée", { ["view"] call comspec_atak_native_fnc_droneAction; }];
     };
+    // Hauteur d'un bouton : la barre commence un demi-bouton sous le haut de la carte et compte 6 à 9 boutons (drone
+    // appairé : 9). Diviser par 8 la faisait dépasser en bas dès 8 boutons ; jusqu'à 7, la taille d'avant est gardée.
+    private _ihMax = (_mh - 2 * _pad) / (((count _tools) + 0.5) max 8);
+    // Normale : comme avant. Grande : jamais plus haute que la carte ne le permet.
+    private _ih = (((_ihMax min (_font * 2.1)) * _tbScale) min _ihMax);
+    private _iw = _ih / _ratio;
+    private _tx = _bx + _mw - _iw - _pad;
     private _ty0 = _by + _pad + _ih * 0.5;
     ["COMSPEC_RscMapPanel", [_tx - _pad / 2, _ty0 - _pad / 2, _iw + _pad, _ih * (count _tools) + _pad]] call _mk;
     {
@@ -597,8 +600,9 @@ if (_interactive) then {
             private _ho = { (_x getOrDefault ["affiliation", ""]) isEqualTo "hostile" } count _units;
             private _sitOpen = !("sit" in _folds);
             // Résumés d'en-tête courts (le volet est étroit) : alliés en bleu · contacts (en rouge s'il y en a), ou l'indicatif.
+            // Encres du thème, pas celles des calques de la carte : le volet SITUATION est une surface claire en thème jour.
             _rows pushBack ["fold", ["Situation", "Unité sélectionnée"] select ((count _sel) > 0),
-                [format ["<t color='#47b3ff'>%1</t> · <t color='%3'>%2</t>", _fr, _ho, [(COMSPEC_ATAK_Th get "hexMapDim"), (COMSPEC_ATAK_Th get "hexMapAlert")] select (_ho > 0)], _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0),
+                [format ["<t color='%4'>%1</t> · <t color='%3'>%2</t>", _fr, _ho, [(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexAlert")] select (_ho > 0), COMSPEC_ATAK_Th get "hexFriend"], _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0),
                 _sitOpen, "sit" call _foldCode];
             // Texte du résumé ou de la fiche : rafraîchi chaque seconde par fn_inspectorUpdate dans ce même contrôle.
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
@@ -628,7 +632,7 @@ if (_interactive) then {
                     [_t, format ["[%1] call comspec_atak_native_fnc_mapStyle; ['MAP'] call comspec_atak_native_fnc_pageRender;", str _k], _k isEqualTo _style, _desc]
                 };
                 for "_i" from 0 to ((count _opts) - 1) step 2 do { _rows pushBack ["segment", "", _opts select [_i, 2]]; };
-                private _hDim = COMSPEC_ATAK_Th get "hexMapDim";
+                private _hDim = COMSPEC_ATAK_Th get "hexTextMuted";
                 private _cur = _styles param [(_styles findIf { (_x select 1) isEqualTo _style }) max 0, []];
                 if ((count _cur) > 2) then { _rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", _hDim, _cur select 2]]; };
                 if (({ (_x select 1) isEqualTo "PHOTO" } count _styles) isEqualTo 0) then { _rows pushBack ["text", format ["<t size='0.75' color='%1'>SATELLITE : nécessite le mod COMSPEC ATAK Photo</t>", _hDim]]; };
@@ -790,8 +794,8 @@ if (_interactive) then {
         private _xw = _hh / _ratio;
         private _tx0 = _hx + pixelW * 10 + _hh * 0.7 / _ratio;
         private _txt = ["COMSPEC_RscStructuredText", [_tx0, _by + _pad + _hh * 0.12, (_hw - (_tx0 - _hx) - _xw) max 0, _hh * 0.88]] call _mk;
-        _txt ctrlSetFontHeight (_fs * 0.92);
-        _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexMapOk") + "'>%1</t>  <t color='#e6efe9'>%2</t>  <t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%3</t>",
+        _txt ctrlSetFontHeight ((_fs * 0.92) max COMSPEC_ATAK_FontMin);
+        _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexMapOk") + "'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexMapText") + "'>%2</t>  <t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%3</t>",
             _name, _what, "glisser : déplacer la carte · clic droit : quitter" call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
         private _xb = ["COMSPEC_RscButton", [_hx + _hw - _xw, _by + _pad, _xw, _hh], "✕"] call _mk;
         _xb ctrlSetFontHeight _fs;
@@ -1007,7 +1011,7 @@ if (_dv isNotEqualTo "OFF") then {
         // (retour de TTRD, 19/10 : l'incrustation prenait la moitié de l'écran), AGRANDIR la passe à la place de la carte.
         private _iw2 = _mw * ([0.42, 0.36] select _mini);
         private _ih2 = _iw2 * 0.5625 * _ratio;
-        private _ix = _bx + _mw - _iw2 - _pad - ([0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _pad] select _interactive);
+        private _ix = _bx + _mw - _iw2 - _pad - _toolCol;
         private _iy = _by + _pad;
         ["build", [_ix, _iy, _iw2, _ih2], "INSET", false] call comspec_atak_native_fnc_droneFlir;
         if (_interactive) then {
