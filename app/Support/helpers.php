@@ -1340,6 +1340,14 @@ if (!function_exists('back_office_nav_permission_rules')) {
                     'personnel.grades.manage', 'personnel.assignments.manage', 'personnel.status.manage',
                 ],
             ],
+            // Demandes RH : la file réunit élévations, corrections et mobilité ; visible de qui voyait l’un des trois
+            // anciens écrans (droits du bureau Effectifs et des corrections). La page ne liste que les types lisibles.
+            'back-office/demandes-rh' => [
+                'any_permissions' => [
+                    'organization.effectifs.hub.view', 'personnel.profile.update', 'personnel.assignments.manage',
+                    'personnel.grades.manage', 'personnel.status.manage', 'admin.organization', 'admin.access',
+                ],
+            ],
             'admin/system/advanced-fiche-edit' => [
                 'any_permissions' => ['admin.system'],
             ],

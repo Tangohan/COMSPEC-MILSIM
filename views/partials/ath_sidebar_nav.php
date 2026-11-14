@@ -152,22 +152,29 @@ $recruitChildren = array_values(array_filter([
     ['label' => 'Codes d’invitation prioritaires', 'href' => url('back-office/recruitments/codes-invitation'), 'active' => $navAt('back-office/recruitments/codes-invitation')],
 ], static fn (?array $row): bool => is_array($row)));
 
+// Demandes RH : une seule entrée pour les élévations, les corrections de fiches et la mobilité (back-office/demandes-rh,
+// un onglet par type). Elle est montrée à qui voyait au moins l’une des trois anciennes entrées.
+$hrRequestsLegacyPaths = ['back-office/personnel/corrections', $effPath . '/elevations', $effPath . '/mobilite'];
+$hrRequestsVisible = false;
+foreach ($hrRequestsLegacyPaths as $hrRequestsLegacyPath) {
+    $hrRequestsVisible = $hrRequestsVisible || $boHrefAllowed(url($hrRequestsLegacyPath));
+}
 $rhChildren = [
     [
         'label' => 'Suivi des dossiers',
-        'children' => [
+        'children' => array_values(array_filter([
             ['label' => 'À traiter', 'href' => effectifs_workspace_url('a-traiter'), 'active' => $navAt($effPath . '/a-traiter')],
-            ['label' => 'Corrections de fiches', 'href' => url('back-office/personnel/corrections'), 'active' => $navAt('back-office/personnel/corrections')],
-            ['label' => 'Demandes d’accès élevé', 'href' => effectifs_workspace_url('elevations'), 'active' => $navAt($effPath . '/elevations')],
+            $hrRequestsVisible
+                ? ['label' => 'Demandes RH', 'href' => url('back-office/demandes-rh'), 'active' => $navAt('back-office/demandes-rh', ...$hrRequestsLegacyPaths)]
+                : null,
             ['label' => 'Documents RH', 'href' => effectifs_workspace_url('documents-rh'), 'active' => $navAt($effPath . '/documents-rh')],
-        ],
+        ], static fn (?array $row): bool => is_array($row))),
     ],
     [
         'label' => 'Carrière',
         'children' => [
             ['label' => 'Avancement', 'href' => url('back-office/rh/avancement'), 'active' => $navAt('back-office/rh/avancement')],
             ['label' => 'Ancienneté', 'href' => url('back-office/organisation/anciennete'), 'active' => $navAt('back-office/organisation/anciennete')],
-            ['label' => 'Mobilité', 'href' => effectifs_workspace_url('mobilite'), 'active' => $navAt($effPath . '/mobilite')],
             ['label' => 'Vivier', 'href' => effectifs_workspace_url('vivier'), 'active' => $navAt($effPath . '/vivier')],
         ],
     ],
@@ -592,7 +599,7 @@ if (!$isOperatorBoNav || $isDelegatedStaff) {
                 ],
                 [
                     'label' => 'Dossiers RH',
-                    'href' => effectifs_workspace_url('a-traiter?onglet=surveiller'),
+                    'href' => effectifs_workspace_url('a-traiter'),
                     'icon' => 'path',
                     'children' => $rhChildren,
                 ],
@@ -767,6 +774,35 @@ if ($opNavGroups !== null) {
 
 // Droits : chaque page passe par $boHrefAllowed (type de communauté + Gate) — rien n’est ajouté au-delà.
 $athNavGroups = \App\Support\BackOfficeNavTree::filter($athNavGroups, $boHrefAllowed);
+if ($opNavGroups !== null) {
+    // Cadre délégué : une page déjà présente dans le menu de gestion (« Overwatch ») n’est pas répétée dans « Mon espace ».
+    $athManagedLinks = [];
+    $athCollectLinks = static function (array $nodes) use (&$athCollectLinks, &$athManagedLinks): void {
+        foreach ($nodes as $node) {
+            $kids = is_array($node['children'] ?? null) ? $node['children'] : [];
+            if ($kids === [] && (string) ($node['href'] ?? '') !== '') {
+                $athManagedLinks[(string) ($node['label'] ?? '') . '|' . (string) $node['href']] = true;
+            }
+            $athCollectLinks($kids);
+        }
+    };
+    foreach ($athNavGroups as $athGroup) {
+        if (!str_starts_with((string) ($athGroup['key'] ?? ''), 'mon-')) {
+            $athCollectLinks($athGroup['items'] ?? []);
+        }
+    }
+    foreach ($athNavGroups as $athGroupIndex => $athGroup) {
+        if (!str_starts_with((string) ($athGroup['key'] ?? ''), 'mon-')) {
+            continue;
+        }
+        $athNavGroups[$athGroupIndex]['items'] = array_values(array_filter(
+            $athGroup['items'] ?? [],
+            static fn (array $item): bool => ($item['children'] ?? []) !== []
+                || !isset($athManagedLinks[(string) ($item['label'] ?? '') . '|' . (string) ($item['href'] ?? '')])
+        ));
+    }
+    $athNavGroups = array_values(array_filter($athNavGroups, static fn (array $group): bool => ($group['items'] ?? []) !== []));
+}
 $athNavGroups = \App\Support\BackOfficeNavTree::resolve($athNavGroups, $p);
 if (function_exists('i18n_translate_nav_item')) {
     $athNavGroups = array_map('i18n_translate_nav_item', $athNavGroups);

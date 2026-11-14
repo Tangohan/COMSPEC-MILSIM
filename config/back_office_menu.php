@@ -10,6 +10,7 @@ declare(strict_types=1);
  *   - any_permissions la personne doit avoir l'un de ces droits ; la page doit aussi être visible dans son menu
  *   - tone            notif (compteur 1, 2, 3, 9+) ou important (rouge : urgent ou bloquant)
  *   - title           info-bulle, %d = le nombre
+ *   Plusieurs clés peuvent viser la même page (Demandes RH : corrections, élévations, mobilité) : elles s'additionnent.
  *   Le calcul est mis en cache `cache_seconds` par personne et par communauté, puis relu par l'endpoint JSON
  *   toutes les `poll_seconds` secondes tant que l'onglet est visible (0 : pas de mise à jour sans rechargement).
  *
@@ -40,21 +41,21 @@ return [
             'title' => '%d candidature(s) à instruire',
         ],
         'corrections' => [
-            'path' => 'back-office/personnel/corrections',
+            'path' => 'back-office/demandes-rh',
             'provider' => \App\Services\BackOffice\Menu\Badges\CorrectionsBadge::class,
             'any_permissions' => \App\Services\Personnel\PersonnelCorrectionRequestService::STAFF_PERMISSIONS,
             'tone' => 'notif',
             'title' => '%d correction(s) de fiche en attente',
         ],
         'elevations' => [
-            'path' => 'back-office/ressources/effectifs/elevations',
+            'path' => 'back-office/demandes-rh',
             'provider' => \App\Services\BackOffice\Menu\Badges\ElevationsBadge::class,
             'any_permissions' => ['admin.organization', 'admin.access'],
             'tone' => 'notif',
             'title' => '%d demande(s) d’accès élevé à décider',
         ],
         'mobilite' => [
-            'path' => 'back-office/ressources/effectifs/mobilite',
+            'path' => 'back-office/demandes-rh',
             'provider' => \App\Services\BackOffice\Menu\Badges\MobilityBadge::class,
             'any_permissions' => ['admin.organization', 'admin.access', 'personnel.assignments.manage'],
             'tone' => 'notif',

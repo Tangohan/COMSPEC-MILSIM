@@ -1,8 +1,8 @@
 # TABLEAU DE BORD ET SUIVI
-Tableau de bord | /back-office
+Accueil | /back-office
 Mon service | /mon-service
-# DROITS ET ACCÈS
-Rôles et habilitations | /back-office/ressources/effectifs/roles
+# MEMBRES ET SUIVI RH
+Droits et accès | /back-office/ressources/effectifs/roles
   Rôles et accès | /back-office/ressources/effectifs/roles
 # ATAK · CARTE ET TERMINAUX
 Overwatch | /atak
@@ -25,7 +25,6 @@ Mes papiers | /back-office/ma-situation/mes-papiers
 Musique | /back-office/ma-situation/musique
 Mon compte | /account
 # TERRAIN
-Overwatch | /atak
 Ma liaison ATAK | /back-office/ma-situation/liaison-atak
 Événements | /back-office/ma-situation/evenements
 # ADMINISTRATIF

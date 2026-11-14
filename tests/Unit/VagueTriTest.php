@@ -116,4 +116,130 @@ final class VagueTriTest extends TestCase
             $_SERVER = $server;
         }
     }
+
+    /**
+     * Liens du menu latéral pour un jeu de droits, sur une page donnée : [libellé, chemin (requête comprise), page courante].
+     *
+     * @param list<string> $permissions
+     * @return list<array{0:string,1:string,2:bool}>
+     */
+    private static function menuLinks(array $permissions, string $uri = '/back-office'): array
+    {
+        $server = $_SERVER;
+        $get = $_GET;
+        $_SERVER['REQUEST_URI'] = $uri;
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['HTTP_HOST'] = 'localhost';
+        parse_str((string) parse_url($uri, PHP_URL_QUERY), $_GET);
+        $root = Map::root();
+        require_once $root . '/app/Support/helpers.php';
+        if (is_file($root . '/app/Support/navigation_menu.php')) {
+            require_once $root . '/app/Support/navigation_menu.php';
+        }
+        \App\Core\Session::actAs(['tenant_id' => 0, 'user_id' => 0, 'display_name' => 'Profil de test']);
+        \App\Core\Gate::getInstance()->setPermissions($permissions);
+        // Le menu pose un jeton CSRF : pas de vraie session PHP dans un test (les en-têtes sont déjà partis).
+        $started = new \ReflectionProperty(\App\Core\Session::class, 'started');
+        $wasStarted = $started->getValue();
+        $started->setValue(null, true);
+        try {
+            $groups = (static function (string $root): array {
+                $isBackOfficeShell = true;
+                ob_start();
+                try {
+                    require $root . '/views/partials/back_office_sidebar.php';
+                } finally {
+                    ob_end_clean();
+                }
+
+                return $athNavGroups;
+            })($root);
+        } finally {
+            $started->setValue(null, $wasStarted);
+            \App\Core\Session::actAs([]);
+            \App\Core\Gate::getInstance()->setPermissions([]);
+            $_SERVER = $server;
+            $_GET = $get;
+        }
+        $out = [];
+        $walk = static function (array $nodes) use (&$walk, &$out): void {
+            foreach ($nodes as $node) {
+                $children = is_array($node['children'] ?? null) ? $node['children'] : [];
+                $href = (string) ($node['href'] ?? '');
+                if ($href !== '' && $children === []) {
+                    $query = (string) parse_url($href, PHP_URL_QUERY);
+                    $out[] = [(string) ($node['label'] ?? ''), Map::localPath($href) . ($query !== '' ? '?' . $query : ''), !empty($node['current'])];
+                }
+                $walk($children);
+            }
+        };
+        foreach ($groups as $group) {
+            $walk($group['items'] ?? []);
+        }
+
+        return $out;
+    }
+
+    /** Une seule entrée « Demandes RH » remplace Corrections de fiches, Demandes d'accès élevé et Mobilité. */
+    public function testMenuHasOneHrRequestsEntryInsteadOfThree(): void
+    {
+        $rh = ['personnel.status.manage', 'personnel.profile.update', 'personnel.assignments.manage', 'personnel.grades.manage', 'organization.effectifs.hub.view'];
+        foreach (['gestionnaire' => ['admin.organization', 'admin.access'], 'rh' => $rh, 'corrections seules' => ['personnel.profile.update']] as $profile => $permissions) {
+            $links = self::menuLinks($permissions);
+            $paths = array_column($links, 1);
+            self::assertSame(1, count(array_keys($paths, '/back-office/demandes-rh', true)), $profile);
+            self::assertContains(['Demandes RH', '/back-office/demandes-rh', false], $links, $profile);
+            foreach (['/back-office/personnel/corrections', '/back-office/ressources/effectifs/elevations', '/back-office/ressources/effectifs/mobilite'] as $old) {
+                self::assertNotContains($old, $paths, $profile . ' : ancienne entrée ' . $old);
+            }
+            foreach ($paths as $path) {
+                self::assertStringNotContainsString('onglet=surveiller', $path, $profile);
+            }
+        }
+        // Sans aucun des droits des trois anciens écrans : pas d'entrée.
+        foreach ([[], ['organization.recruitment.manage'], ['admin.members.moderate']] as $permissions) {
+            self::assertNotContains('/back-office/demandes-rh', array_column(self::menuLinks($permissions), 1));
+        }
+        // La page reste ouverte à ces profils : la route existe et n'est pas une redirection.
+        $route = Map::match('GET', '/back-office/demandes-rh');
+        self::assertNotNull($route);
+        self::assertFalse(Map::isRedirect($route));
+    }
+
+    /** L'entrée est surlignée sur la page et sur chacun de ses onglets. */
+    public function testHrRequestsEntryIsCurrentOnThePageAndItsTabs(): void
+    {
+        foreach (['/back-office/demandes-rh', '/back-office/demandes-rh?onglet=elevations', '/back-office/demandes-rh?onglet=corrections', '/back-office/demandes-rh?onglet=mobilite'] as $uri) {
+            $current = array_values(array_filter(self::menuLinks(['admin.organization', 'admin.access'], $uri), static fn (array $l): bool => $l[2]));
+            self::assertSame([['Demandes RH', '/back-office/demandes-rh', true]], $current, $uri);
+        }
+        // Ailleurs, elle ne l'est pas.
+        $elsewhere = array_filter(self::menuLinks(['admin.organization', 'admin.access'], '/back-office/ressources/effectifs/a-traiter'), static fn (array $l): bool => $l[2]);
+        self::assertSame(['À traiter'], array_column($elsewhere, 0));
+    }
+
+    /** Les trois pastilles (corrections, élévations, mobilité) s'additionnent sur l'entrée unique. */
+    public function testHrRequestBadgesFollowTheSingleEntry(): void
+    {
+        $badges = (require Map::root() . '/config/back_office_menu.php')['badges'];
+        foreach (['corrections', 'elevations', 'mobilite'] as $key) {
+            self::assertSame('back-office/demandes-rh', $badges[$key]['path'], $key);
+        }
+        $rule = back_office_nav_rule_for_path('back-office/demandes-rh');
+        self::assertIsArray($rule);
+        foreach (\App\Services\Personnel\PersonnelCorrectionRequestService::STAFF_PERMISSIONS as $permission) {
+            self::assertContains($permission, $rule['any_permissions']);
+        }
+        self::assertContains('organization.effectifs.hub.view', $rule['any_permissions']);
+    }
+
+    /** Un cadre délégué ne voit « Overwatch » qu'une fois ; un simple membre le garde dans son espace. */
+    public function testOverwatchAppearsOnceForEveryProfile(): void
+    {
+        foreach ([[], ['admin.organization', 'admin.access'], ['personnel.profile.update'], ['admin.members.moderate'], ['organization.recruitment.manage'], ['admin.roles.manage']] as $permissions) {
+            $overwatch = array_filter(self::menuLinks($permissions), static fn (array $l): bool => $l[1] === '/atak');
+            self::assertCount(1, $overwatch, implode(',', $permissions));
+        }
+    }
 }
