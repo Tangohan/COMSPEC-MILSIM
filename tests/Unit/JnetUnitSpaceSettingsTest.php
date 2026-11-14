@@ -100,6 +100,25 @@ final class JnetUnitSpaceSettingsTest extends TestCase
         self::assertStringContainsString('prefers-reduced-motion: reduce', $css);
     }
 
+    /** L'espace d'une unité a sa propre interface : page autonome au thème de l'unité, hors de la coque du back-office. */
+    public function testUnitSpaceHasItsOwnInterface(): void
+    {
+        $ctrl = (string) file_get_contents(self::ROOT . 'app/Controllers/Web/JnetPortalController.php');
+        self::assertStringContainsString("Response::view('jnet.unit_space'", $ctrl);
+        self::assertStringContainsString("private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'operations', 'sous-unites'];", $ctrl);
+        $view = (string) file_get_contents(self::ROOT . 'views/jnet/unit_space.php');
+        self::assertStringContainsString('<!DOCTYPE html>', $view);
+        self::assertStringNotContainsString('layout.main', $view);
+        self::assertStringNotContainsString('back-office-', $view);
+        foreach (['Ordres et échanges', 'Effectif', 'Opérations', 'Sous-unités', 'Changer d’espace', 'Personnaliser'] as $label) {
+            self::assertStringContainsString($label, $view, $label);
+        }
+        // Le thème de l'unité fixe tous les jetons, y compris ceux des composants d'échange repris.
+        $css = (string) file_get_contents(self::ROOT . 'public/assets/css/jnet_unit_shell.css');
+        self::assertStringContainsString('--ath-surface: var(--us-panel);', $css);
+        self::assertStringContainsString('--ath-accent: var(--jn-unit);', $css);
+    }
+
     public function testMigrationStepIsRegistered(): void
     {
         $registry = (string) file_get_contents(self::ROOT . 'database/steps/registry.php');

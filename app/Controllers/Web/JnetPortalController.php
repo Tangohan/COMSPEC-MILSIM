@@ -98,11 +98,38 @@ final class JnetPortalController
 
             return Response::redirect(url('jnet?commun=1'));
         }
-        $space['spaceLook'] = $look;
-        $space['canCustomize'] = $this->canCustomize($ctx['tenant_id'], $ctx['user_id'], $tree->chain($unitId));
-        $space['customizeUrl'] = url('jnet/u/' . $unitId . '/personnaliser');
+        $vue = (string) $request->query('vue', 'accueil');
 
-        return $this->render('space', (string) ($space['space']['label'] ?? 'Unité'), $space, 'home', ['jnet_unit_space.css']);
+        return $this->unitShell($ctx, $unitId, $space, $look, in_array($vue, self::UNIT_VIEWS, true) ? $vue : 'accueil', $tree->chain($unitId));
+    }
+
+    /** Rubriques de l'espace d'une unité (?vue=). */
+    private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'operations', 'sous-unites'];
+
+    /**
+     * Espace d'une unité dans son interface propre (views/jnet/unit_space.php) : page autonome au thème de l'unité,
+     * hors de la coque du back-office.
+     *
+     * @param array{tenant_id:int,user_id:int} $ctx
+     * @param array<string, mixed> $space données de JnetSpaceService::buildSpace
+     * @param array<string, mixed> $look
+     * @param list<int> $chain
+     * @param array<string, mixed> $extra
+     */
+    private function unitShell(array $ctx, int $unitId, array $space, array $look, string $view, array $chain, array $extra = []): Response
+    {
+        $tenant = $this->tenantRepository->findById($ctx['tenant_id']);
+        $callsign = trim((string) Session::get('callsign', ''));
+
+        return Response::view('jnet.unit_space', array_merge($space, [
+            'title' => (string) ($space['space']['label'] ?? 'Unité'),
+            'spaceLook' => $look,
+            'usView' => $view,
+            'usCommunity' => is_array($tenant) ? community_display_name($tenant) : '',
+            'usOperator' => $callsign !== '' ? $callsign : (string) Session::get('display_name', ''),
+            'canCustomize' => $this->canCustomize($ctx['tenant_id'], $ctx['user_id'], $chain),
+            'customizeUrl' => url('jnet/u/' . $unitId . '/personnaliser'),
+        ], $extra));
     }
 
     /**
@@ -174,7 +201,12 @@ final class JnetPortalController
             $settings = array_merge($settings, $draft);
         }
 
-        return $this->render('customize', 'Personnaliser ' . (string) ($node['label'] ?? 'l’unité'), [
+        $space = $this->spaces->buildSpace($ctx['tenant_id'], $ctx['user_id'], $unitId);
+        if ($space === null) {
+            return Response::redirect(url('jnet?commun=1'));
+        }
+
+        return $this->unitShell($ctx, $unitId, $space, JnetUnitSpaceSettings::look($settings, $node), 'personnaliser', $tree->chain($unitId), [
             'customizeUnitId' => $unitId,
             'customizeUnit' => (string) ($node['label'] ?? 'Unité'),
             'customizeSettings' => $settings,
@@ -184,7 +216,7 @@ final class JnetPortalController
             'customizeAction' => url('jnet/u/' . $unitId . '/personnaliser'),
             'customizeBack' => url('jnet/u/' . $unitId . '?direct=1'),
             'customizePreview' => url('jnet/u/' . $unitId . '/entree'),
-        ], 'home', ['jnet_unit_space.css']);
+        ]);
     }
 
     public function customizeSpaceSave(Request $request, array $params = []): Response
