@@ -8,20 +8,39 @@ use App\Repositories\MemberIntegrationRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
+use App\Support\AdministrativePositionCatalog;
 use App\Support\SqlText;
 use PDO;
 use Throwable;
 
 /**
- * Position de service unique : En formation à l’arrivée, puis En service actif.
+ * Position administrative unique : En formation à l’arrivée, puis En service actif.
+ * Un responsable peut aussi placer un membre En service non actif ou En service statutaire de renforcement.
+ * Libellés et explications : AdministrativePositionCatalog.
  */
 final class PersonnelDutyPositionService
 {
-    public const SLUG_TRAINING = 'status_in_training';
-    public const SLUG_ACTIVE = 'status_active_duty';
+    public const SLUG_TRAINING = AdministrativePositionCatalog::TRAINING;
+    public const SLUG_ACTIVE = AdministrativePositionCatalog::ACTIVE;
+    public const SLUG_INACTIVE = AdministrativePositionCatalog::INACTIVE;
+    public const SLUG_REINFORCEMENT = AdministrativePositionCatalog::REINFORCEMENT;
 
     public const LABEL_TRAINING = 'En formation';
     public const LABEL_ACTIVE = 'En service actif';
+
+    /** Résultats de applyPosition(). */
+    public const RESULT_CHANGED = 'changed';
+    public const RESULT_UNCHANGED = 'unchanged';
+    public const RESULT_TRAINING_MINIMUM = 'training_minimum';
+    public const RESULT_INVALID = 'invalid';
+
+    /**
+     * @return list<string>
+     */
+    public static function allSlugs(): array
+    {
+        return AdministrativePositionCatalog::slugs();
+    }
 
     public function __construct(
         private UserRepository $users,
@@ -33,24 +52,21 @@ final class PersonnelDutyPositionService
 
     public static function labelForSlug(string $slug): string
     {
-        return match ($slug) {
-            self::SLUG_TRAINING => self::LABEL_TRAINING,
-            self::SLUG_ACTIVE => self::LABEL_ACTIVE,
-            default => '',
-        };
+        return AdministrativePositionCatalog::label($slug);
     }
 
     /**
      * Règle unique, testable sans base : une seule position de service à la fois.
-     * Ne rétrograde jamais « En service actif » vers « En formation ».
+     * Ne rétrograde jamais « En service actif » vers « En formation », et ne touche jamais une position
+     * posée par un responsable (non actif, renforcement).
      */
     public static function decideSlug(?string $currentDuty, bool $isJoin, bool $forceActive, bool $hasOpenIntegration): string
     {
         if ($forceActive) {
             return self::SLUG_ACTIVE;
         }
-        if ($currentDuty === self::SLUG_ACTIVE) {
-            return self::SLUG_ACTIVE;
+        if ($currentDuty !== null && $currentDuty !== self::SLUG_TRAINING && AdministrativePositionCatalog::isKnown($currentDuty)) {
+            return $currentDuty;
         }
         if ($isJoin) {
             return self::SLUG_TRAINING;
@@ -82,6 +98,11 @@ final class PersonnelDutyPositionService
             return false;
         }
         if (!$bypassMinimumDuration) {
+            // Fin d’accueil automatique : ne réveille pas un membre placé non actif ou en renfort.
+            $current = $this->currentDutySlug($tenantId, $userId);
+            if ($current === self::SLUG_INACTIVE || $current === self::SLUG_REINFORCEMENT) {
+                return false;
+            }
             if (!$this->trainingMinimumReached($tenantId, $userId)) {
                 return false;
             }
@@ -95,6 +116,26 @@ final class PersonnelDutyPositionService
         }
 
         return $this->setDutySlug($tenantId, $userId, self::SLUG_ACTIVE, $actorUserId, true);
+    }
+
+    /**
+     * Choix d’un responsable depuis la fiche : n’importe quelle position du catalogue.
+     * Seul le passage de « En formation » à « En service actif » respecte la durée minimale de formation.
+     */
+    public function applyPosition(int $tenantId, int $userId, string $slug, int $actorUserId = 0): string
+    {
+        if ($tenantId < 1 || $userId < 1 || !AdministrativePositionCatalog::isKnown($slug) || $this->users->isServiceAccount($userId)) {
+            return self::RESULT_INVALID;
+        }
+        $current = $this->currentDutySlug($tenantId, $userId);
+        if ($current === $slug) {
+            return self::RESULT_UNCHANGED;
+        }
+        if ($slug === self::SLUG_ACTIVE && $current === self::SLUG_TRAINING && !$this->trainingMinimumReached($tenantId, $userId)) {
+            return self::RESULT_TRAINING_MINIMUM;
+        }
+
+        return $this->setDutySlug($tenantId, $userId, $slug, $actorUserId, true) ? self::RESULT_CHANGED : self::RESULT_UNCHANGED;
     }
 
     /**
@@ -173,7 +214,7 @@ final class PersonnelDutyPositionService
             return null;
         }
         $map = $this->dutyRoleIdsBySlug($tenantId, false);
-        foreach ([self::SLUG_ACTIVE, self::SLUG_TRAINING] as $slug) {
+        foreach (self::allSlugs() as $slug) {
             $rid = $map[$slug] ?? 0;
             if ($rid > 0 && in_array($rid, $ids, true)) {
                 return $slug;
@@ -215,7 +256,7 @@ final class PersonnelDutyPositionService
     {
         $ids = [];
         try {
-            $slugIn = SqlText::inLiterals($this->pdo, 'r.slug', [self::SLUG_TRAINING, self::SLUG_ACTIVE]);
+            $slugIn = SqlText::inLiterals($this->pdo, 'r.slug', self::allSlugs());
             $st = $this->pdo->prepare(
                 "SELECT ur.user_id FROM user_roles ur
                  INNER JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ?
@@ -227,7 +268,7 @@ final class PersonnelDutyPositionService
             $ids = [];
         }
         try {
-            $slugIn = SqlText::inLiterals($this->pdo, 'r.slug', [self::SLUG_TRAINING, self::SLUG_ACTIVE]);
+            $slugIn = SqlText::inLiterals($this->pdo, 'r.slug', self::allSlugs());
             $st = $this->pdo->prepare(
                 "SELECT tur.user_id FROM tenant_user_roles tur
                  INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = tur.tenant_id
@@ -250,7 +291,9 @@ final class PersonnelDutyPositionService
     public function dutyRoleIdsBySlug(int $tenantId, bool $createMissing = true): array
     {
         $out = [];
-        foreach ([self::SLUG_TRAINING => self::LABEL_TRAINING, self::SLUG_ACTIVE => self::LABEL_ACTIVE] as $slug => $label) {
+        foreach (AdministrativePositionCatalog::all() as $position) {
+            $slug = $position['slug'];
+            $label = $position['label'];
             $id = $this->roles->getIdBySlug($tenantId, $slug);
             if (($id === null || $id < 1) && $createMissing) {
                 $id = $this->createDutyRole($tenantId, $slug, $label);
@@ -297,15 +340,13 @@ final class PersonnelDutyPositionService
                 "INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, semantic_tier, is_visual_only, display_group, display_priority, created_at)
                  VALUES (?, ?, ?, ?, 1, 0, 'community', 'status', 1, 3, ?, NOW())"
             );
-            $priority = $slug === self::SLUG_ACTIVE ? 70 : 20;
+            $position = AdministrativePositionCatalog::find($slug);
             $st->execute([
                 $tenantId,
                 $name,
                 $slug,
-                $slug === self::SLUG_ACTIVE
-                    ? 'Engagement opérationnel à plein temps.'
-                    : 'Parcours de formation en cours.',
-                $priority,
+                (string) ($position['summary'] ?? ''),
+                (int) ($position['priority'] ?? 50),
             ]);
 
             return (int) $this->pdo->lastInsertId();

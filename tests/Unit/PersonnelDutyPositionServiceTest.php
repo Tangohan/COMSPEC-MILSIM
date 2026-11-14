@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Services\Personnel\PersonnelDutyPositionService;
+use App\Support\AdministrativePositionCatalog;
 use PHPUnit\Framework\TestCase;
 
 final class PersonnelDutyPositionServiceTest extends TestCase
@@ -77,6 +78,54 @@ final class PersonnelDutyPositionServiceTest extends TestCase
     {
         self::assertSame('En formation', PersonnelDutyPositionService::labelForSlug(PersonnelDutyPositionService::SLUG_TRAINING));
         self::assertSame('En service actif', PersonnelDutyPositionService::labelForSlug(PersonnelDutyPositionService::SLUG_ACTIVE));
+    }
+
+    public function testManagerPositionsAreNeverOverwrittenAutomatically(): void
+    {
+        foreach ([PersonnelDutyPositionService::SLUG_INACTIVE, PersonnelDutyPositionService::SLUG_REINFORCEMENT] as $slug) {
+            self::assertSame($slug, PersonnelDutyPositionService::decideSlug($slug, true, false, false));
+            self::assertSame($slug, PersonnelDutyPositionService::decideSlug($slug, false, false, true));
+            self::assertSame($slug, PersonnelDutyPositionService::decideSlug($slug, false, false, false));
+        }
+        self::assertSame(
+            PersonnelDutyPositionService::SLUG_TRAINING,
+            PersonnelDutyPositionService::decideSlug('status_unknown', true, false, false)
+        );
+    }
+
+    public function testCatalogListsFourPositionsWithExplanations(): void
+    {
+        $slugs = PersonnelDutyPositionService::allSlugs();
+        self::assertCount(4, $slugs);
+        self::assertSame(PersonnelDutyPositionService::SLUG_ACTIVE, $slugs[0], 'Active duty wins if a member holds two positions.');
+        $labels = [];
+        foreach (AdministrativePositionCatalog::all() as $row) {
+            self::assertContains($row['slug'], $slugs);
+            self::assertNotSame('', $row['summary']);
+            self::assertNotSame('', $row['detail']);
+            $labels[] = $row['label'];
+        }
+        self::assertSame(['En formation', 'En service actif', 'En service non actif', 'En service statutaire de renforcement'], $labels);
+        self::assertSame('En service non actif', PersonnelDutyPositionService::labelForSlug(PersonnelDutyPositionService::SLUG_INACTIVE));
+        self::assertSame(PersonnelDutyPositionService::SLUG_REINFORCEMENT, AdministrativePositionCatalog::findByLabel(' en service statutaire de renforcement ')['slug'] ?? null);
+        self::assertSame('', PersonnelDutyPositionService::labelForSlug('status_unknown'));
+        self::assertSame(['mission', 'service'], array_column(AdministrativePositionCatalog::dutySituations(), 'key'));
+    }
+
+    public function testEveryPositionTextHasAnEnglishTranslation(): void
+    {
+        $dict = require dirname(__DIR__, 2) . '/lang/en/site_auto.php';
+        self::assertIsArray($dict);
+        foreach (AdministrativePositionCatalog::all() as $row) {
+            foreach (['label', 'summary', 'detail', 'mission', 'service', 'strength'] as $key) {
+                self::assertArrayHasKey($row[$key], $dict, $row['slug'] . ' ' . $key);
+            }
+        }
+        foreach (AdministrativePositionCatalog::dutySituations() as $row) {
+            foreach (['label', 'summary', 'examples'] as $key) {
+                self::assertArrayHasKey($row[$key], $dict, $row['key'] . ' ' . $key);
+            }
+        }
     }
 
     public function testMandatoryTrainingDurationIsComputedInWholeDays(): void

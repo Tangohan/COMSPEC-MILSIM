@@ -109,7 +109,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         ? $h($onboardingNudge)
                         : 'Il reste des étapes à accomplir pour finaliser votre intégration.' ?>
                     <?php if ($dutyLabel !== ''): ?>
-                        · Position de service : <strong><?= $h($dutyLabel) ?></strong>
+                        · Position administrative : <strong><?= $h($dutyLabel) ?></strong>
                     <?php endif; ?>
                 </p>
                 <?php if ($onboardingRemaining !== []): ?>
@@ -185,8 +185,12 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                 <dd class="mt-1 font-semibold text-slate-900"><?= $functionLabel !== '' ? $h($functionLabel) : 'Non renseignée' ?></dd>
             </div>
             <div>
-                <dt class="<?= $h($dtClass) ?>">Position de service</dt>
+                <dt class="<?= $h($dtClass) ?>">Position administrative</dt>
                 <dd class="mt-1 font-semibold text-slate-900"><?= $dutyLabel !== '' ? $h($dutyLabel) : 'Non renseignée' ?></dd>
+                <?php $dutyInfo = \App\Support\AdministrativePositionCatalog::findByLabel($dutyLabel); ?>
+                <?php if ($dutyInfo !== null): ?>
+                <dd class="mt-1 text-xs text-slate-600"><?= $h($dutyInfo['summary']) ?> <a class="underline" href="<?= $h(url('documentation') . '#positions-administratives') ?>">En savoir plus</a></dd>
+                <?php endif; ?>
             </div>
         </dl>
     </section>

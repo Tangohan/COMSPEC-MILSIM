@@ -2742,14 +2742,9 @@ class UserRepository
         [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
         $extra = '';
         if ($this->hasUserRolesTable()) {
-            $dutySlugs = SqlText::inLiterals($this->pdo(), 'r3.slug', [
-                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_TRAINING,
-                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_ACTIVE,
-            ]);
-            $functionSlugs = SqlText::inLiterals($this->pdo(), 'r2.slug', [
-                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_TRAINING,
-                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_ACTIVE,
-            ]);
+            // Les quatre positions administratives (formation, actif, non actif, renforcement).
+            $dutySlugs = SqlText::inLiterals($this->pdo(), 'r3.slug', \App\Services\Personnel\PersonnelDutyPositionService::allSlugs());
+            $functionSlugs = SqlText::inLiterals($this->pdo(), 'r2.slug', \App\Services\Personnel\PersonnelDutyPositionService::allSlugs());
             $activeFirst = SqlText::equalsLiteral(
                 $this->pdo(),
                 'r3.slug',

@@ -68,7 +68,9 @@ final class CommunityAccessProfilesTest extends TestCase
         self::assertContains('member', $kept);
         self::assertContains(PersonnelDutyPositionService::SLUG_TRAINING, $kept);
         self::assertContains(PersonnelDutyPositionService::SLUG_ACTIVE, $kept);
-        self::assertCount(5, $kept);
+        self::assertContains(PersonnelDutyPositionService::SLUG_INACTIVE, $kept);
+        self::assertContains(PersonnelDutyPositionService::SLUG_REINFORCEMENT, $kept);
+        self::assertCount(7, $kept);
         self::assertTrue(CommunityAccessCollapseService::mayCreateTenantRoleSlug('member'));
         self::assertTrue(CommunityAccessCollapseService::mayCreateTenantRoleSlug('status_active_duty'));
         self::assertTrue(CommunityAccessCollapseService::mayCreateTenantRoleSlug('access-custom-recrutement'));
