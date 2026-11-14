@@ -135,6 +135,7 @@ createHashMapFromArray [
     ["scope", round ([_in getOrDefault ["scope", 0], 0, 0, 3] call _num)],
     ["live", [_in getOrDefault ["live", false], false] call _bool],
     ["vis", [_in getOrDefault ["vis", true], true] call _bool],
+    ["fence", [_in getOrDefault ["fence", false], false] call _bool],
     ["arma", [_in getOrDefault ["arma", false], false] call _bool],
     ["render", [_in getOrDefault ["render", "FILL"], ["FILL", "LINE", "POINT"], "FILL"] call _pick],
     ["aff", [_in getOrDefault ["aff", "GEN"], _types, "GEN"] call _pick],

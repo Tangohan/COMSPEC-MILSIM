@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : point estimé en goniométrie, plans diffusés à l'entrée d'une zone, liaison faible (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Trouver un émetteur en croisant deux relèvements, et des plans qui arrivent quand on entre dans la zone
+- Guerre électronique › GONIO : relevez la même émission depuis deux endroits (plus de 150 m d'écart, moins de 10 minutes) et le téléphone affiche un point estimé avec son cercle d'erreur, sur la page et sur la carte. Plus vous croisez de relèvements, plus le cercle se resserre.
+- Zones : l'auteur d'un plan peut cocher « Diffuser à l'entrée dans la zone ». Les autres ne reçoivent alors le plan, ses états et ses signalements qu'en entrant dans la zone ; celui qui arrive plus tard reçoit tout d'un coup à son entrée.
+- Réseau : avec une seule barre, les photos attendent en file et partent quand le réseau s'améliore. Messages, positions et rapports passent toujours. Un administrateur peut couper ce comportement (réglage « Liaison faible : gros envois retenus »).
+EN : Locate an emitter by crossing two bearings, and plans that arrive when you enter the area
+- Electronic warfare › DF: take a bearing on the same emission from two places (more than 150 m apart, within 10 minutes) and the phone shows an estimated point with its error circle, on the page and on the map. The more bearings you cross, the tighter the circle.
+- Zones: the author of a plan can tick "Deliver on entering the area". Others then only get the plan, its states and its reports when they enter the area; a late arrival gets everything at once on entering.
+- Network: with a single bar, photos wait in the queue and go when the network improves. Messages, positions and reports always pass. An administrator can turn this off (setting "Weak link: large transfers held").
+
+### Détail technique
+- Goniométrie : `fn_ewAction` « fixes » (intersection de demi-droites par paires du même type, bandes de distance à 30 % près, croisement de 15° ou plus, rayon 50 à 1500 m, regroupement des points voisins) et « locateFix » ; `fn_pageEw` (section Points estimés), `fn_ewDraw` (cercle et étiquette). Sans identité d'émetteur : deux émetteurs du même type peuvent donner un point fantôme.
+- Zones : clé de plan `fence` (empaquetée, `fn_zoneUnpack`), état `dormant` en mémoire chez le destinataire ; `fn_zoneAction` « inArea », « fenceTick » (5 s, `XEH_postInitClient`), réception « set » et « sit » muettes pour un plan en sommeil ; le rejeu du serveur passe par le même chemin.
+- Réseau : réglage serveur `comspec_atak_native_net_degraded` (coché) ; `fn_netSend` retient en file les envois de 100 Ko et plus sous 96 kbit/s ou à une barre ; la boucle de vidage ne renvoie que les petits tant que la liaison est faible. Le flux vidéo adaptatif (`fn_videoLink`) n'est pas changé.
+- Mesures `[PERF]` de plus : dessin du tableau et du panneau du TOC, rendu de la vue SAT, détection automatique des drones, calcul de la liaison.
+- Non essayé en jeu.
+
 ## À venir : contrôle et présentation des papiers entre joueurs (COMSPEC SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

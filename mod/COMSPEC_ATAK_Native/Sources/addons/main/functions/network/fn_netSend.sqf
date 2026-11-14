@@ -8,6 +8,9 @@
       suite se perdent, puis redevient bon) ; condition « Pertes de paquets » coupée (fn_netCond "loss") : rien ne se perd ;
     - surcharge : chaque envoi compte dans le trafic publié du téléphone (fn_netLoad "track") ;
     - réception seule (hors de portée d'émission, fn_linkQuality "tx" faux) : comme sans signal ;
+    - liaison faible (réglage serveur comspec_atak_native_net_degraded, actif) : une seule barre ou moins de
+      96 kbit/s : les gros envois (100 Ko et plus : photos, clichés) restent en file et partent quand la liaison
+      s'améliore ; messages, positions, rapports et ordres (1 à 2 Ko) passent toujours ;
     - aucun signal : mis en file, parti dès que le réseau revient (vidé par la boucle de XEH_postInitClient) ;
       un envoi avec une clé remplace celui de même clé déjà en file (marqueur modifié plusieurs fois : seul le dernier part) ;
       les envois urgents (MEDEVAC, alertes, JTAC, rapports…) passent devant les autres dans la file et ne sont jamais
@@ -55,6 +58,17 @@ if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])}) exitWith {
     ["EN FILE", _why] call _trace;
     missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue];
     ["WARNING", format [["Pas de réseau : %1 en attente (%2 dans la file)", "Réception seule, émission impossible : %1 en attente (%2 dans la file)"] select ((_q get "bars") > 0), _label, count _queue], 4, 40] call comspec_atak_native_fnc_notify;
+    "QUEUED"
+};
+// Liaison faible : un gros envoi occuperait le canal des dizaines de secondes ; il attend en file, le texte passe.
+if (_kb >= 100 && {missionNamespace getVariable ["comspec_atak_native_net_degraded", true]} && {(_q get "bars") <= 1 || {(_q get "kbps") < 96}}) exitWith {
+    private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
+    if (_key isNotEqualTo "") then { _queue = _queue select { (_x param [5, ""]) isNotEqualTo _key }; };
+    _queue pushBack [_code, _args, _label, _kb, 1, _key];
+    while { (count _queue) > 50 } do { _queue deleteAt 0; };
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue];
+    ["EN FILE", "liaison faible : gros envoi retenu"] call _trace;
+    ["WARNING", format ["Liaison faible : %1 retenu, il partira quand le réseau sera meilleur (messages et positions passent)", _label], 4, 40] call comspec_atak_native_fnc_notify;
     "QUEUED"
 };
 // Canal partagé : cet envoi attend la fin de ceux déjà en cours (COMSPEC_ATAK_NetBusyUntil, horloge time) ; latence

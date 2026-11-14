@@ -1,6 +1,7 @@
 /*
     Carte : couche guerre électronique (app EW). Appelé depuis fn_mapOnDraw. Params : [contrôle carte]
     - relèvements de goniométrie : trait depuis le point de relevé, cône d'erreur, bande de distance estimée en surbrillance ;
+      points estimés par recoupement (fn_ewAction "fixes") : cercle d'erreur et étiquette ;
       ils pâlissent puis disparaissent au bout de 15 min ;
     - brouilleurs de mon camp : cercle violet du rayon brouillé ;
     - mon erreur GPS (brouillage, dégâts, ciel masqué, pas de fix) : cercle d'incertitude autour de la position affichée,
@@ -27,6 +28,16 @@ private _none = "#(argb,8,8,3)color(0,0,0,0)";
     _map drawIcon [_none, _c, _from getPos [_b1, _brg], 0, 0, 0, format ["%1 %2°", _kind call comspec_atak_native_fnc_tr, round _brg], 1, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "right"];
     _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _c, _from, 10, 10, 0, "", 0];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]);
+{
+    _x params ["_fp", "_fr", "_fk", "_ft", "_fn"];
+    private _age = time - _ft;
+    if (_age > 900) then { continue; };
+    private _a = 1 - (_age / 900) * 0.7;
+    private _rgb = switch (_fk) do { case "BROUILLEUR": { [0.85, 0.25, 0.95] }; case "GONIO": { [0.9, 0.28, 0.23] }; default { [0.95, 0.67, 0.20] }; };
+    _map drawEllipse [_fp, _fr, _fr, 0, _rgb + [_a], ""];
+    _map drawEllipse [_fp, _fr, _fr, 0, _rgb + [_a * 0.15], _fill];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa", _rgb + [_a], _fp, 14, 14, 0, format [("%1 estimé · %2 m") call comspec_atak_native_fnc_tr, _fk call comspec_atak_native_fnc_tr, round _fr], 1, 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "right"];
+} forEach (missionNamespace getVariable ["COMSPEC_ATAK_EwFixes", []]);
 // Numéros tracés (fn_traceAction) : cercle d'incertitude orange, plein si le suivi est actif ; dernière position connue
 // (éteint, brouillé, hors couverture) en gris, cercle qui grandit avec son âge ; positions précédentes reliées.
 private _clock = [time, serverTime] select isMultiplayer;
