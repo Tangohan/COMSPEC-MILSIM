@@ -362,7 +362,7 @@ switch (_act) do {
         [["segment", "Apps épinglées sur la carte", ([["none", "AUCUNE"]] + _apps) apply {
             _x params ["_v", "_t"];
             [_t, format ["['toggle', [%1]] call comspec_atak_native_fnc_mapPinnedApp;", str _v], [_v in _sel, _sel isEqualTo []] select (_v isEqualTo "none")]
-        }, "Trois au plus : un bandeau par app, de la taille de celui des coordonnées (non lus, étape de l'itinéraire, mission de tir, MEDEVAC, dernière alerte, heure H) ; touchez-le pour ouvrir l'app"]]
+        }, "Trois au plus : un bandeau par app, de la taille de celui des coordonnées (non lus, étape de l'itinéraire, mission de tir, MEDEVAC, dernière alerte, heure H) ; touchez-le pour ouvrir l'app ; masquées en petit format ou si la carte est trop petite"]]
     };
     default { false };
 };
