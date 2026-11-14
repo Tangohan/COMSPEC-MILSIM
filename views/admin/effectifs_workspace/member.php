@@ -1054,7 +1054,31 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <div class="eff-fm-card__head">
             <h3>Statut du compte</h3>
         </div>
+        <?php
+        $dutyPositionSlug = isset($dutyPositionSlug) && is_string($dutyPositionSlug) ? $dutyPositionSlug : null;
+        $dutyPositionInfo = \App\Support\AdministrativePositionCatalog::find($dutyPositionSlug);
+        ?>
         <p class="eff-fm-lead">Position administrative : <strong><?= htmlspecialchars($dutyPosition !== '' ? $dutyPosition : 'Non attribuée', ENT_QUOTES, 'UTF-8') ?></strong>.</p>
+        <?php if ($dutyPositionInfo !== null): ?>
+            <p class="eff-fm-hint"><?= htmlspecialchars($dutyPositionInfo['summary'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
+        <?php if ($canManageStatus): ?>
+            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/position-service'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <label for="eff-duty-position">Changer la position administrative</label>
+                <select id="eff-duty-position" name="position" aria-describedby="eff-duty-position-help">
+                    <?php foreach (\App\Support\AdministrativePositionCatalog::all() as $positionOption): ?>
+                        <option value="<?= htmlspecialchars($positionOption['slug'], ENT_QUOTES, 'UTF-8') ?>" <?= $positionOption['slug'] === $dutyPositionSlug ? 'selected' : '' ?>><?= htmlspecialchars($positionOption['label'], ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p id="eff-duty-position-help" class="eff-fm-hint">Le grade, les fonctions et les niveaux d’accès ne changent pas.</p>
+                <button type="submit" class="eff-btn eff-btn--ghost">Enregistrer la position</button>
+            </form>
+        <?php endif; ?>
+        <details class="eff-card__edit">
+            <summary>Comprendre les positions administratives</summary>
+            <?php $apgCurrent = $dutyPositionSlug; $apgShowLink = true; require base_path('views/partials/administrative_positions_guide.php'); ?>
+        </details>
         <?php if ($dutyPosition === \App\Services\Personnel\PersonnelDutyPositionService::LABEL_TRAINING): ?>
             <?php if ($remainingTrainingDays > 0): ?>
                 <p class="eff-fm-hint">Passage en service actif dans <?= $remainingTrainingDays ?> jour(s), après clôture du parcours d’intégration.</p>

@@ -33,6 +33,8 @@ final class EnlistmentOnboardingFormService
     private const NON_ACCESS_SLUGS = [
         PersonnelDutyPositionService::SLUG_TRAINING,
         PersonnelDutyPositionService::SLUG_ACTIVE,
+        PersonnelDutyPositionService::SLUG_INACTIVE,
+        PersonnelDutyPositionService::SLUG_REINFORCEMENT,
     ];
 
     public function __construct(

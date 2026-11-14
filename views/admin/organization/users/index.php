@@ -109,6 +109,11 @@ require base_path('views/partials/ath_kpis.php');
 </div>
 <?php endif; ?>
 
+<details class="ath-card ath-rise" style="margin:0 0 1rem;padding:0.75rem 1rem;">
+    <summary style="cursor:pointer;font-weight:600;">Que veut dire la colonne Position ?</summary>
+    <?php $apgCurrent = null; $apgShowLink = true; require base_path('views/partials/administrative_positions_guide.php'); ?>
+</details>
+
 <?php
 $athTableRows = [];
 $athTableRowHrefs = [];

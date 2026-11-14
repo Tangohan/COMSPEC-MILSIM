@@ -287,7 +287,7 @@ class UserAdminController
             'usersTotalPages' => $totalPages,
             'missingDutyCount' => $missingDutyCount,
             'athUserKpis' => $this->buildUserListKpis($tenantId),
-            'backOfficePageCss' => ['back-office-users.css'],
+            'backOfficePageCss' => ['back-office-users.css', 'administrative-positions.css'],
             'showPortalFooter' => false,
         ]);
     }
@@ -434,7 +434,7 @@ class UserAdminController
             'dutyPositionSlug' => $dutySlug,
             'dutyPositionLabel' => $dutyLabel,
             'showPlatformDiagnostics' => $forPlatformOperator,
-            'backOfficePageCss' => ['back-office-users.css'],
+            'backOfficePageCss' => ['back-office-users.css', 'administrative-positions.css'],
             'showPortalFooter' => false,
         ]);
     }
@@ -963,7 +963,7 @@ class UserAdminController
             'organizationRoleLabelMode' => $this->organizationRoleLabelModeForTenant($tenantId),
             'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
             'rhSituation' => $rhSituation,
-            'backOfficePageCss' => ['back-office-users.css'],
+            'backOfficePageCss' => ['back-office-users.css', 'administrative-positions.css'],
             'showPortalFooter' => false,
         ]);
     }
@@ -1410,6 +1410,19 @@ class UserAdminController
         }
         try {
             $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+            $wanted = trim((string) $request->input('position', ''));
+            if ($wanted !== '') {
+                [$level, $message] = \App\Controllers\Admin\EffectifsWorkspaceController::positionChangeFlash(
+                    $duty,
+                    $duty->applyPosition($tenantId, $id, $wanted, $actorUserId),
+                    $wanted,
+                    $tenantId,
+                    $id
+                );
+                Session::flash($level, $message);
+
+                return Response::redirect($showUrl . '#position-administrative');
+            }
             $ok = $duty->applyActiveDuty($tenantId, $id, $actorUserId);
             $remainingDays = $ok ? 0 : $duty->remainingTrainingDays($tenantId, $id);
             Session::flash(

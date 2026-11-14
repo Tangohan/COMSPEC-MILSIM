@@ -1323,6 +1323,23 @@ class EffectifsWorkspaceController
         ));
     }
 
+    /** Effectifs › Registre des droits : qui détient quel droit, depuis quand, jusqu'à quand (module de formule). */
+    public function registreDroits(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!AccessRegisterController::allowedByPlan((int) Session::get('tenant_id'))) {
+            return PlanFeatureDenial::upgradeView(AccessRegisterController::FEATURE, 'Standard');
+        }
+
+        return $this->shell('admin.effectifs_workspace.registre_droits', array_merge(
+            ['title' => 'Registre des droits', 'effectifsNav' => 'registre_droits'],
+            (new AccessRegisterController())->pageData($request)
+        ));
+    }
+
     /**
      * Panneau « Invitations » de la fiche (liens, étapes faites, actions).
      *
@@ -1470,10 +1487,12 @@ class EffectifsWorkspaceController
             ? $this->personnelStageBilanRepository->listForUser($tenantId, $id, 40)
             : [];
         $dutyPosition = '';
+        $dutyPositionSlug = null;
         $remainingTrainingDays = 0;
         try {
             $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
-            $dutyPosition = $duty->currentDutyLabel($tenantId, $id);
+            $dutyPositionSlug = $duty->currentDutySlug($tenantId, $id);
+            $dutyPosition = \App\Services\Personnel\PersonnelDutyPositionService::labelForSlug((string) $dutyPositionSlug);
             $remainingTrainingDays = $duty->remainingTrainingDays($tenantId, $id);
         } catch (\Throwable) {
         }
@@ -1586,6 +1605,7 @@ class EffectifsWorkspaceController
             'memberStageBilans' => $stageBilans,
             'memberIndividualBilansOn' => $individualBilansOn,
             'dutyPosition' => $dutyPosition,
+            'dutyPositionSlug' => $dutyPositionSlug,
             'remainingTrainingDays' => $remainingTrainingDays,
             'memberCommandChain' => $commandChain,
             'memberAdequacy' => $memberAdequacy,
@@ -1597,7 +1617,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
@@ -2192,6 +2212,13 @@ class EffectifsWorkspaceController
             return Response::redirect(effectifs_workspace_url('membres/' . $id));
         }
         $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+        $wanted = trim((string) $request->input('position', ''));
+        if ($wanted !== '') {
+            [$level, $message] = self::positionChangeFlash($duty, $duty->applyPosition($tenantId, $id, $wanted, (int) Session::get('user_id')), $wanted, $tenantId, $id);
+            Session::flash($level, $message);
+
+            return Response::redirect(effectifs_workspace_url('membres/' . $id) . '#statut');
+        }
         $changed = $duty->applyActiveDuty($tenantId, $id, (int) Session::get('user_id'));
         $remaining = $duty->remainingTrainingDays($tenantId, $id);
         Session::flash(
@@ -2202,6 +2229,23 @@ class EffectifsWorkspaceController
         );
 
         return Response::redirect(effectifs_workspace_url('membres/' . $id));
+    }
+
+    /**
+     * Message après un changement de position choisi par un responsable (fiche effectifs ou fiche membre).
+     *
+     * @return array{0: string, 1: string}
+     */
+    public static function positionChangeFlash(\App\Services\Personnel\PersonnelDutyPositionService $duty, string $result, string $slug, int $tenantId, int $userId): array
+    {
+        $label = \App\Support\AdministrativePositionCatalog::label($slug);
+
+        return match ($result) {
+            \App\Services\Personnel\PersonnelDutyPositionService::RESULT_CHANGED => ['success', 'Position administrative mise à jour : ' . $label . '. Le grade, les fonctions et les niveaux d’accès sont inchangés.'],
+            \App\Services\Personnel\PersonnelDutyPositionService::RESULT_UNCHANGED => ['warning', 'Le membre a déjà cette position.'],
+            \App\Services\Personnel\PersonnelDutyPositionService::RESULT_TRAINING_MINIMUM => ['warning', 'Formation obligatoire : encore ' . $duty->remainingTrainingDays($tenantId, $userId) . ' jour(s) avant le passage en service actif.'],
+            default => ['error', 'Position inconnue ou membre introuvable.'],
+        };
     }
 
     public function updateOrgFounding(Request $request, array $params = []): Response
@@ -4469,7 +4513,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css', 'access-register.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'effKpi' => $kpi,

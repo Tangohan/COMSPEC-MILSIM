@@ -12,6 +12,7 @@ $tocGroups = [
             ['id' => 'etapes-de-mise-en-service', 'title' => 'Étapes de mise en service'],
             ['id' => 'droits-permissions-et-roles', 'title' => 'Droits, permissions & rôles'],
             ['id' => 'roles-communaute-et-metiers', 'title' => 'Rôles communauté & métiers'],
+            ['id' => 'positions-administratives', 'title' => 'Positions administratives'],
         ],
     ],
     [
