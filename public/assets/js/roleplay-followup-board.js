@@ -101,7 +101,16 @@
     setFact('function', d.function);
     setFact('track', d.track);
     setFact('origin', d.origin);
-    setFact('eligible', d.eligible ? 'Prêt' : 'À compléter');
+    setFact('eligible', d.eligible ? 'Prêt' : (d.followupOn === false ? 'Non évalué (suivi non activé)' : 'À compléter'));
+    // Ce qui manque : les contrôles non remplis de la dernière évaluation de la fiche.
+    var why = sheet.querySelector('[data-sheet-missing]');
+    if (why) {
+      var list = d.missing || [];
+      why.hidden = !!d.eligible || d.followupOn === false;
+      setFact('missing', d.evaluated ? (list.length ? list.join(' · ') : 'Évaluation à refaire : ouvrez le dossier et enregistrez-le.') : 'Jamais évalué : ouvrez le dossier et enregistrez-le.');
+    }
+    // Bilans coupés (Désactiver les bilans) : ni échéance, ni bouton, ni ligne de bilan dans la fenêtre.
+    Array.prototype.forEach.call(sheet.querySelectorAll('[data-sheet-bilan]'), function (el) { el.hidden = d.bilansOn === false; });
     setFact('interview', d.interview, d.interviewLate);
     setFact('medical', d.medical, d.medicalLate);
     setFact('rotation', d.rotation, d.rotationLate);

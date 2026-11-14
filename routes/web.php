@@ -2224,6 +2224,8 @@ return function (Router $router) {
     $router->post('/back-office/roleplay-followup/{id}/tutor', [RoleplayFollowupAdminController::class, 'updateTutor'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/validate', [RoleplayFollowupAdminController::class, 'validateStage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/bilan', [RoleplayFollowupAdminController::class, 'markBilanReviewed'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay-followup/bilans', [RoleplayFollowupAdminController::class, 'toggleBilans'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay-followup/activation', [RoleplayFollowupAdminController::class, 'toggleFollowup'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/deadline', [RoleplayFollowupAdminController::class, 'updateDeadline'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/immersion', [RoleplayFollowupAdminController::class, 'immersionSettingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/regles-phases', [PersonnelPhaseAdminController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

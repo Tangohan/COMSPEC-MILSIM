@@ -802,6 +802,17 @@ class PersonnelController
         $canStaffEdit = $this->canStaffEditPersonnel();
         $canStaffView = $this->canStaffViewPersonnel();
         $canSensitive = $this->canViewSensitivePersonnel();
+        // Aperçu de visibilité (preview_as) : le lecteur simulé n'a ni les droits du compte réel ni davantage. Avant, seuls les niveaux
+        // « restreint » et « masqué » changeaient : un profil ordinaire s'affichait pareil dans les trois aperçus, avec les notes de
+        // commandement, le dossier roleplay et l'identité privée visibles même en « membre standard ».
+        //   membre standard : ni vue d'encadrement, ni modification, ni données sensibles ;
+        //   cadre           : vue d'encadrement (suivi, dossier roleplay), sans modification ni données sensibles ;
+        //   commandement    : vue d'encadrement, modification et données sensibles.
+        if ($previewAs !== null) {
+            $canStaffView = $previewAs !== 'member';
+            $canStaffEdit = $previewAs === 'command';
+            $canSensitive = $previewAs === 'command';
+        }
         $canManageVisibility = $realCaps->managePersonnelVisibility || $realCaps->bypassAll;
         $rpDossierNeedsAttention = ($isSelf || $canStaffView || $canStaffEdit || $canSensitive)
             && CandidateRpSnapshotService::personnelRpDossierNeedsAttention(is_array($personnelProfile) ? $personnelProfile : []);
@@ -810,6 +821,9 @@ class PersonnelController
             $roleplayTimelineEvents = $this->personnelRoleplayTimelineRepository->listForUser((int) $tenantId, $uid, 80);
         }
         $isReportModerator = function_exists('moderation_user_can_moderate') && moderation_user_can_moderate();
+        if ($previewAs !== null) {
+            $isReportModerator = $previewAs === 'command';
+        }
         /** Accès commandement : tableau de suivi sur la même fiche (sans écran de choix). */
         $canAccessRhView = $canStaffView || $canStaffEdit || $canSensitive;
         $personnelViewRaw = strtolower(trim((string) ($request->query('view', '') ?? '')));

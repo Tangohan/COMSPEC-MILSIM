@@ -144,3 +144,7 @@ a.rps-guide__card:hover { border-color: var(--ath-accent); }
   .rps-guide, .rpp-radios { grid-template-columns: minmax(0, 1fr); }
   .rps-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Interrupteur des bilans et raison de « À compléter » (bureau de suivi). */
+.rps-bilans { margin: 0; }
+.rps-why { display: block; max-width: 26ch; margin-top: 4px; line-height: 1.3; }

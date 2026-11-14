@@ -153,6 +153,27 @@ EN : The WAVE RELAY app and the relays, redone
 - `fn_meshGraphView` : `layout`, `geo`, `model`, `draw` (dans un groupe de contrôles, à tout format), `open` (fenêtre Zeus). `fn_waveRelaySheet` : fiches. `fn_formRender` : lignes `meter` et `graph`.
 - Audit : `docs/audit/2026-11-relais-ux.md`. Tests : `tests/Unit/AtakRelaisUxTest.php`.
 
+## À venir : bureau de suivi roleplay lisible, bilans désactivables, aperçus de visibilité distincts (site Athena, version à attribuer)
+
+### Résumé joueur
+Type : correctif
+FR : Le bureau de suivi dit pourquoi, et les aperçus de profil se distinguent enfin
+- Bureau de suivi : un bouton « Désactiver les bilans » retire les échéances et les retards de bilan du bureau et des rappels. Les bilans déjà faits sont gardés.
+- Quand le suivi n'est pas activé, le bureau le dit et propose « Activer le suivi », au lieu d'afficher une liste vide où tout serait « à compléter ».
+- Un dossier « à compléter » dit ce qui lui manque (fiche à 50 %, tuteur, disponibilité...) ; un dossier jamais évalué le dit aussi.
+- Profils : les aperçus « membre standard », « cadre » et « commandement » changent maintenant ce qui s'affiche. Le membre standard ne voit ni les notes de commandement ni le dossier roleplay ; le cadre voit le suivi sans modifier ni voir les données sensibles ; le commandement voit tout.
+EN : The follow-up desk says why, and profile previews finally differ
+- Follow-up desk: a "Disable bilans" button removes bilan due dates and late flags from the desk and from reminders. Bilans already done are kept.
+- When follow-up is not enabled, the desk says so and offers "Enable follow-up", instead of a blank list where everything reads "to complete".
+- A dossier marked "to complete" says what it lacks (record at 50%, tutor, availability...); a dossier never evaluated says so too.
+- Profiles: the "standard member", "cadre" and "command" previews now change what is shown. The standard member sees neither command notes nor the roleplay dossier; the cadre sees follow-up without editing or sensitive data; command sees everything.
+
+### Détail technique
+- `RoleplayFollowupAdminController` : `index` lit `bilans.enabled` (bilanCadence) et coupe prochaine échéance et retard de bilan ; ajoute `missing` (contrôles non remplis de `rp_eligibility_snapshot_json`) et `evaluated` ; actions `toggleBilans` (POST `/back-office/roleplay-followup/bilans`) et `toggleFollowup` (POST `/back-office/roleplay-followup/activation`), CSRF vérifié, écrites par `RoleplayFollowupSettings::saveForTenant`.
+- Cause du « tout est à compléter » : `rp_eligibility_snapshot_json` n'est écrit qu'à l'enregistrement d'une fiche avec le suivi activé (`PersonnelController`) ; sans lui, `eligible` valait faux pour tout le monde, sans raison affichée.
+- Aperçu de visibilité (`PersonnelController::show`, `preview_as`) : `$canStaffView`, `$canStaffEdit`, `$canSensitive` et `$isReportModerator` suivent le niveau simulé ; avant, seuls les niveaux restreint et masqué changeaient.
+- Tests : `RoleplayFollowupBilansAssetTest`.
+
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
