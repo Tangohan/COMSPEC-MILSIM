@@ -59,6 +59,32 @@ final class JobCatalogMatcherTest extends TestCase
         self::assertSame('', M::nation('Responsable des transmissions'));
     }
 
+    /** Un nom tapé en français ne doit pas enfermer dans les postes français : nation jouée et choix du pays. */
+    public function testNationChoiceAndOtherCountries(): void
+    {
+        // Nation jouée US : le poste américain passe devant, même tapé en français.
+        self::assertSame('US', self::best(['name' => 'Infirmier', 'nation' => 'US'])['country']);
+        self::assertSame('GB', self::best(['name' => 'Tireur d’élite', 'nation' => 'GB'])['country']);
+        // « Voir dans : États-Unis » : seulement des postes américains.
+        $only = M::match(['name' => 'Infirmier', 'only' => 'US'], 5, M::SUGGEST);
+        self::assertNotSame([], $only);
+        foreach ($only as $hit) {
+            self::assertSame('US', $hit['country']);
+        }
+        // Le meilleur équivalent de chaque pays, un par pays.
+        $per = M::perCountry(['name' => 'Tireur d’élite']);
+        $countries = array_column($per, 'country');
+        self::assertSame(count($countries), count(array_unique($countries)));
+        foreach (['US', 'FR', 'GB', 'RU'] as $c) {
+            self::assertContains($c, $countries, $c);
+        }
+        $ctrl = (string) file_get_contents(self::ROOT . 'app/Controllers/Admin/JobCatalogController.php');
+        self::assertStringContainsString("'only' => self::countryParam((string) \$request->queryString('pays', ''))", $ctrl);
+        $js = (string) file_get_contents(self::ROOT . 'public/assets/js/job-catalog-detect.js');
+        self::assertStringContainsString('Voir dans :', $js);
+        self::assertStringContainsString('Le même poste dans un autre pays', (string) file_get_contents(self::ROOT . 'views/admin/effectifs_workspace/job_editor.php'));
+    }
+
     public function testUnrelatedJobsAreLeftAlone(): void
     {
         foreach (['Cuisinier', 'Community manager', 'Recruteur Discord', 'Chef'] as $name) {

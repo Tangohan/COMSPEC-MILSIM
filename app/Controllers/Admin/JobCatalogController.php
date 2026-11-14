@@ -120,14 +120,27 @@ final class JobCatalogController
             'code' => mb_substr(trim((string) $request->queryString('code', '')), 0, 40),
             'unit' => mb_substr(trim((string) $request->queryString('unite', '')), 0, 120),
             'country' => $this->tenantCountry((int) Session::get('tenant_id')),
+            // Nation jouée choisie dans la suggestion (gardée sur l'appareil) et pays demandé (« Voir dans : … »).
+            'nation' => self::countryParam((string) $request->queryString('nation', '')),
+            'only' => self::countryParam((string) $request->queryString('pays', '')),
         ];
-        $hints = \App\Support\JobCatalog\JobCatalogHints::for($job, $lang);
-        foreach ($hints as &$hint) {
-            $hint['gains'] = \App\Support\JobCatalog\JobCatalogHints::gains($hint['counts']);
+        // Pays choisi : la personne cherche dans ce pays, on montre aussi les postes un peu moins proches.
+        $hints = \App\Support\JobCatalog\JobCatalogHints::for($job, $lang, 3, $job['only'] !== '' ? 45 : \App\Support\JobCatalog\JobCatalogMatcher::SUGGEST);
+        $countries = [];
+        foreach (\App\Support\JobCatalog\JobCatalogHints::perCountry($job, $lang) as $alt) {
+            $countries[] = ['country' => $alt['country'], 'country_label' => $alt['country_label'], 'score' => $alt['score'], 'name' => $alt['name'], 'id' => $alt['id']];
         }
-        unset($hint);
 
-        return Response::json(['ok' => true, 'hints' => $hints])->header('Cache-Control', 'private, no-cache')->header('Vary', 'Cookie');
+        return Response::json(['ok' => true, 'hints' => $hints, 'countries' => $countries, 'pays' => $job['only'], 'nation' => $job['nation']])
+            ->header('Cache-Control', 'private, no-cache')->header('Vary', 'Cookie');
+    }
+
+    /** Code pays du référentiel (« US », « NATO »), vide si inconnu. */
+    private static function countryParam(string $raw): string
+    {
+        $raw = strtoupper(trim($raw));
+
+        return isset(JobCatalog::COUNTRIES[$raw]) ? $raw : '';
     }
 
     /** Pays de la communauté (code ISO à deux lettres), vide s’il n’est pas renseigné. */

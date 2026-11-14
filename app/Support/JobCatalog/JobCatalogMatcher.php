@@ -83,7 +83,9 @@ final class JobCatalogMatcher
     /**
      * Emplois du référentiel les plus proches, meilleur d'abord (au plus $limit, score >= $min).
      *
-     * @param array{name?: string, abbreviation?: string, code?: string, unit?: string, country?: string} $job
+     * @param array{name?: string, abbreviation?: string, code?: string, unit?: string, country?: string, nation?: string, only?: string} $job
+     *   nation : nation jouée choisie par la personne (« US ») : elle passe devant la nation lue dans le nom ou l'unité.
+     *   only : seulement les emplois de ce pays (« Voir dans : États-Unis »).
      * @return list<array{id: string, score: int, reasons: list<string>, country: string}>
      */
     public static function match(array $job, int $limit = 3, int $min = self::SUGGEST): array
@@ -96,12 +98,17 @@ final class JobCatalogMatcher
         }
         $q = self::profile($name);
         $nameCompact = self::compact($name);
-        $nation = self::nation($name . ' ' . (string) ($job['abbreviation'] ?? '') . ' ' . (string) ($job['unit'] ?? ''));
+        $chosen = strtoupper(trim((string) ($job['nation'] ?? '')));
+        $nation = $chosen !== '' ? $chosen : self::nation($name . ' ' . (string) ($job['abbreviation'] ?? '') . ' ' . (string) ($job['unit'] ?? ''));
+        $only = strtoupper(trim((string) ($job['only'] ?? '')));
         $home = strtoupper(trim((string) ($job['country'] ?? '')));
         $unitWords = array_diff(self::words((string) ($job['unit'] ?? '')), self::STOP);
 
         $hits = [];
         foreach (self::index() as $e) {
+            if ($only !== '' && $e['country'] !== $only) {
+                continue;
+            }
             $score = 0.0;
             $why = [];
             if ($code !== '' && $e['code'] !== '' && $code === $e['code']) {
@@ -162,6 +169,24 @@ final class JobCatalogMatcher
 
             return $h;
         }, array_slice($hits, 0, max(1, $limit)));
+    }
+
+    /**
+     * Le meilleur emploi proche dans chaque pays du référentiel (« le même poste chez les Américains, les Britanniques… »),
+     * meilleur score d'abord. Sans préférence de nation : chaque pays est jugé sur le nom seul.
+     *
+     * @param array{name?: string, abbreviation?: string, code?: string, unit?: string} $job
+     * @return list<array{id: string, score: int, reasons: list<string>, country: string}>
+     */
+    public static function perCountry(array $job, int $min = self::SUGGEST): array
+    {
+        unset($job['nation'], $job['only'], $job['country']);
+        $best = [];
+        foreach (self::match($job, 1000, $min) as $hit) {
+            $best[$hit['country']] ??= $hit;
+        }
+
+        return array_values($best);
     }
 
     /** Nation reconnue dans un texte (« SAS » → GB), ou chaîne vide. */

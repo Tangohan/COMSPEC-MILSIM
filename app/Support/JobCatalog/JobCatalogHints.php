@@ -17,8 +17,28 @@ final class JobCatalogHints
      */
     public static function for(array $job, string $lang, int $limit = 3, int $min = JobCatalogMatcher::SUGGEST): array
     {
+        return self::shape(JobCatalogMatcher::match($job, $limit, $min), $lang);
+    }
+
+    /**
+     * Le meilleur emploi proche dans chaque pays, au même format (sélecteur « Voir dans un autre pays »).
+     *
+     * @param array{name?: string, abbreviation?: string, code?: string, unit?: string} $job
+     * @return list<array<string, mixed>>
+     */
+    public static function perCountry(array $job, string $lang, int $min = JobCatalogMatcher::SUGGEST): array
+    {
+        return self::shape(JobCatalogMatcher::perCountry($job, $min), $lang);
+    }
+
+    /**
+     * @param list<array{id: string, score: int, reasons: list<string>, country: string}> $hits
+     * @return list<array<string, mixed>>
+     */
+    private static function shape(array $hits, string $lang): array
+    {
         $out = [];
-        foreach (JobCatalogMatcher::match($job, $limit, $min) as $hit) {
+        foreach ($hits as $hit) {
             $entry = JobCatalog::find($hit['id'], $lang);
             if ($entry === null) {
                 continue;
@@ -40,6 +60,7 @@ final class JobCatalogHints
                     'sources' => count($entry['sources']),
                 ],
             ];
+            $out[count($out) - 1]['gains'] = self::gains($out[count($out) - 1]['counts']);
         }
 
         return $out;
