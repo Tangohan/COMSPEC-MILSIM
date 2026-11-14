@@ -6,6 +6,8 @@ namespace App\Services\Courrier;
 
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Repositories\Courrier\DocumentWorkflowRepository;
+use App\Services\Workflow\WorkflowEngine;
+use App\Services\Workflow\WorkflowHooks;
 
 /**
  * Transitions de statut : brouillon → prêt à validation → validé → signé → envoyé → archivé ; refus.
@@ -80,6 +82,18 @@ class DocumentWorkflowService
         $this->documentRepository->update($documentId, $updates);
         $actionLabel = $this->getActionLabel($from, $toStatus);
         $this->workflowRepository->log($documentId, $from, $toStatus, $actionLabel, $comment, $actedBy);
+        // Circuit unique : l'étape du courrier rejoint le journal du moteur ; l'auteur est prévenu
+        // de la validation ou du refus. document_workflows garde le détail propre au courrier.
+        $docTenant = (int) ($doc['tenant_id'] ?? 0) ?: (int) $tenantId;
+        WorkflowHooks::statusChanged(
+            $docTenant,
+            WorkflowEngine::SUBJECT_COURRIER,
+            $documentId,
+            $toStatus,
+            (int) $actedBy,
+            (string) $comment,
+            (int) ($doc['created_by'] ?? 0)
+        );
         return true;
     }
 
