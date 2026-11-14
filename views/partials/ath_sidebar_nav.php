@@ -129,7 +129,6 @@ $membersChildren = array_values(array_filter([
         ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
         : null,
     ['label' => 'Anciens membres', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')],
-    ['label' => 'Fiches jumelles', 'href' => effectifs_workspace_url('doublons'), 'active' => $navAt($effPath . '/doublons')],
     ['label' => 'Sans compte', 'href' => effectifs_workspace_url('sans-comptes'), 'active' => $navAt($effPath . '/sans-comptes')],
     ['label' => 'Tableaux de données', 'href' => effectifs_workspace_url('tableaux'), 'active' => $navAt($effPath . '/tableaux')],
     ['label' => 'Registre des droits', 'href' => effectifs_workspace_url('registre-droits'), 'active' => $navAt($effPath . '/registre-droits')],
