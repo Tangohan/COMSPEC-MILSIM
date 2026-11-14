@@ -1340,6 +1340,29 @@ class EffectifsWorkspaceController
         ));
     }
 
+    /** Effectifs › Positions administratives : celles du site et celles de la communauté. */
+    public function positions(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $controller = new AdministrativePositionsController();
+        $data = $controller->pageData($tenantId);
+        $editId = (int) $request->queryString('modifier', '0');
+        foreach ($data['posCustom'] as $p) {
+            if ($p['id'] === $editId) {
+                $data['posEditing'] = $p;
+            }
+        }
+
+        return $this->shell('admin.effectifs_workspace.positions', array_merge(
+            ['title' => 'Positions administratives', 'effectifsNav' => 'positions'],
+            $data
+        ));
+    }
+
     /** Effectifs › Circuits de validation (module de formule « workflow_circuits »). */
     public function circuits(Request $request, array $params = []): Response
     {

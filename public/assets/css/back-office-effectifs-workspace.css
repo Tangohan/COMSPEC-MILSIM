@@ -1918,3 +1918,43 @@
     }
   }
 }
+
+/* —— Positions administratives : celles du site (lecture) et celles de la communauté. —— */
+
+.bo-eff-workspace .pos-hero { margin-bottom: 1rem; }
+.bo-eff-workspace .pos-section { margin: 1.5rem 0 0.2rem; color: var(--ath-ink, #0c1116); font-size: 1rem; font-weight: 800; }
+.bo-eff-workspace .pos-section__lead { margin: 0 0 0.8rem; max-width: 46rem; color: var(--ath-muted, #6d7a80); font-size: 0.875rem; }
+.bo-eff-workspace .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 0.85rem; }
+.bo-eff-workspace .pos-card { display: grid; align-content: start; gap: 0.55rem; padding: 1rem 1.05rem; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 10px; background: var(--ath-surface, #fff); }
+.bo-eff-workspace .pos-card__head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.bo-eff-workspace .pos-card__count { color: var(--ath-muted, #6d7a80); font-size: 0.8125rem; white-space: nowrap; }
+.bo-eff-workspace .pos-card__summary { margin: 0; color: var(--ath-ink, #0c1116); font-size: 0.875rem; font-weight: 600; }
+.bo-eff-workspace .pos-card__detail { margin: 0; color: var(--ath-muted, #6d7a80); font-size: 0.8125rem; line-height: 1.5; }
+.bo-eff-workspace .pos-card__facts { display: grid; gap: 0.25rem; margin: 0.2rem 0 0; padding-top: 0.55rem; border-top: 1px solid var(--ath-line-soft, #f1f4f5); font-size: 0.8125rem; }
+.bo-eff-workspace .pos-card__facts div { display: flex; justify-content: space-between; gap: 0.75rem; }
+.bo-eff-workspace .pos-card__facts dt { color: var(--ath-muted, #6d7a80); }
+.bo-eff-workspace .pos-card__facts dd { margin: 0; color: var(--ath-ink, #0c1116); font-weight: 600; text-align: right; }
+.bo-eff-workspace .pos-empty { color: var(--ath-subtle, #8c979b); font-weight: 400; }
+.bo-eff-workspace .pos-card__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; padding-top: 0.3rem; }
+.bo-eff-workspace .pos-card__actions form { margin: 0; }
+.bo-eff-workspace .pos-none { margin: 0; padding: 1rem; border: 1px dashed var(--ath-line, #e3e8ea); border-radius: 10px; color: var(--ath-muted, #6d7a80); font-size: 0.875rem; }
+.bo-eff-workspace .pos-form { display: grid; gap: 0.9rem; margin-top: 1.5rem; padding: 1.1rem 1.15rem; border: 1px solid var(--ath-line, #e3e8ea); border-left: 3px solid var(--ath-accent, #0b8a5c); border-radius: 10px; background: var(--ath-surface, #fff); scroll-margin-top: 5rem; }
+.bo-eff-workspace .pos-form h3 { margin: 0; color: var(--ath-ink, #0c1116); font-size: 1rem; font-weight: 800; }
+.bo-eff-workspace .pos-form__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem 1rem; }
+.bo-eff-workspace .pos-field { display: grid; gap: 0.3rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.bo-eff-workspace .pos-field > span, .bo-eff-workspace .pos-field legend { color: var(--ath-ink, #0c1116); font-size: 0.8125rem; font-weight: 650; }
+.bo-eff-workspace .pos-field--wide { grid-column: 1 / -1; }
+.bo-eff-workspace .pos-field input, .bo-eff-workspace .pos-field textarea { width: 100%; padding: 0.5rem 0.65rem; border: 1px solid var(--ath-line, #e3e8ea); border-radius: 6px; background: var(--ath-surface, #fff); color: var(--ath-ink, #0c1116); font: inherit; font-size: 0.875rem; }
+.bo-eff-workspace .pos-field input:focus, .bo-eff-workspace .pos-field textarea:focus { border-color: var(--ath-accent, #0b8a5c); outline: 0; box-shadow: 0 0 0 3px rgba(11, 138, 92, 0.12); }
+.bo-eff-workspace .pos-tones { grid-column: span 2; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.bo-eff-workspace .pos-tones legend { float: left; width: 100%; margin-bottom: 0.3rem; }
+.bo-eff-workspace .pos-tone { cursor: pointer; }
+.bo-eff-workspace .pos-tone input { position: absolute; opacity: 0; }
+.bo-eff-workspace .pos-tone .apg__pill { opacity: 0.55; }
+.bo-eff-workspace .pos-tone input:checked + .apg__pill { opacity: 1; box-shadow: 0 0 0 2px var(--ath-ink, #0c1116); }
+.bo-eff-workspace .pos-tone input:focus-visible + .apg__pill { outline: 2px solid var(--ath-accent, #0b8a5c); outline-offset: 2px; }
+.bo-eff-workspace .pos-form__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+@media (max-width: 720px) {
+  .bo-eff-workspace .pos-form__grid { grid-template-columns: minmax(0, 1fr); }
+  .bo-eff-workspace .pos-tones { grid-column: auto; }
+}

@@ -134,6 +134,7 @@ $membersChildren = array_values(array_filter([
     ['label' => 'Tableaux de données', 'href' => effectifs_workspace_url('tableaux'), 'active' => $navAt($effPath . '/tableaux')],
     ['label' => 'Registre des droits', 'href' => effectifs_workspace_url('registre-droits'), 'active' => $navAt($effPath . '/registre-droits')],
     ['label' => 'Circuits de validation', 'href' => effectifs_workspace_url('circuits'), 'active' => $navAt($effPath . '/circuits')],
+    ['label' => 'Positions administratives', 'href' => effectifs_workspace_url('positions'), 'active' => $navAt($effPath . '/positions')],
     // Profils sans recrutement : les invitations quittent le bloc « Recrutement » (masqué) pour rester sous la main.
     !$isFullTenant
         ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')]
