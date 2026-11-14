@@ -30,7 +30,7 @@ PREFIX = 'html[data-bo-theme="dark"]'
 SOURCES = sorted(
     {p.name for p in CSS.glob("back-office-*.css")}
     | {
-        "announce-tiles.css", "operational-board.css", "invitations-sheet.css", "jnet_bo_embed.css",
+        "announce-tiles.css", "operational-board.css", "invitations-sheet.css",
         "personnel-dossier.css", "personnel-file.css", "personnel-file-refresh.css",
         "personnel-edit-refresh.css", "personnel-directory.css", "member-integration.css",
         "document-fm.css", "effectifs_lms.css", "decorations-kit.css", "dashboard-impact.css",

@@ -170,7 +170,6 @@ Post-check :
 | `views/admin/organization/effectifs_hub.php` | ⚡ Hybride (KPIs ATHENA + tuiles legacy) |
 | `app/Controllers/Admin/Organization/PersonnelJobRoleAdminController.php` | Contrôleur |
 | `app/Repositories/PersonnelJobRoleRepository.php` | Accès BDD |
-| `public/assets/css/back-office-effectifs-hub.css` | CSS effectifs |
 | `public/assets/js/pjr_role_combobox.js` | JS combobox |
 | `public/assets/js/pjr_member_job_permissions.js` | JS modal autorisations |
 

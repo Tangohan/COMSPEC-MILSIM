@@ -8,16 +8,16 @@ declare(strict_types=1);
  */
 return [
     'pages' => [
-        ['path' => 'jnet/personnel', 'group' => 'Unité', 'title' => 'Personnel', 'subtitle' => 'Annuaire et fiches de l’unité.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet/operations', 'group' => 'Unité', 'title' => 'Opérations', 'subtitle' => 'Engagements et missions de l’unité.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet/renseignement', 'group' => 'Unité', 'title' => 'Renseignement', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet/cibles', 'group' => 'Unité', 'title' => 'Cibles prioritaires', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet/exploitation', 'group' => 'Unité', 'title' => 'Exploitation', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet/bibliotheque', 'group' => 'Unité', 'title' => 'Bibliothèque', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet/courrier', 'group' => 'Unité', 'title' => 'Messagerie d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet/systeme', 'group' => 'Unité', 'title' => 'Système', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet/unite', 'group' => 'Unité', 'title' => 'Fiche d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
-        ['path' => 'jnet', 'group' => 'Unité', 'title' => 'Tableau d’unité', 'subtitle' => 'Situation réelle de l’unité : personnel, opérations, renseignement et documents.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
+        ['path' => 'jnet/personnel', 'group' => 'Unité', 'title' => 'Personnel', 'subtitle' => 'Annuaire et fiches de l’unité.', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet/operations', 'group' => 'Unité', 'title' => 'Opérations', 'subtitle' => 'Engagements et missions de l’unité.', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet/renseignement', 'group' => 'Unité', 'title' => 'Renseignement', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet/cibles', 'group' => 'Unité', 'title' => 'Cibles prioritaires', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet/exploitation', 'group' => 'Unité', 'title' => 'Exploitation', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet/bibliotheque', 'group' => 'Unité', 'title' => 'Bibliothèque', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet/courrier', 'group' => 'Unité', 'title' => 'Messagerie d’unité', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet/systeme', 'group' => 'Unité', 'title' => 'Système', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet/unite', 'group' => 'Unité', 'title' => 'Fiche d’unité', 'css' => ['jnet_portal.css']],
+        ['path' => 'jnet', 'group' => 'Unité', 'title' => 'Tableau d’unité', 'subtitle' => 'Situation réelle de l’unité : personnel, opérations, renseignement et documents.', 'css' => ['jnet_portal.css']],
         ['path' => 'back-office', 'group' => 'Pilotage', 'title' => 'Tableau de bord', 'subtitle' => 'Synthèse de la communauté, indicateurs et accès rapides.'],
         ['path' => 'back-office/tableau-operationnel', 'group' => 'Opérations', 'title' => 'Tableau opérationnel', 'subtitle' => 'Préparez et publiez les fiches que vos membres lisent sur leur mur : permanences, consignes, événements et messages urgents.', 'css' => ['operational-board.css', 'back-office-tableau-operationnel.css'], 'quick' => [
             ['label' => 'Événements', 'href' => 'back-office/events'],

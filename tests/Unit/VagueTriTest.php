@@ -268,6 +268,32 @@ final class VagueTriTest extends TestCase
         'public/assets/css/back-office-users.css' => 'back-office-users.css',
         // Ancienne interface ATAK web : AtakController::index rend atak-overwatch-beta, plus rien ne rendait cette vue.
         'views/atak.php' => 'views/atak.php',
+        // JNET n'est plus affiché dans la coque back-office (pages autonomes jnet._page) : sa feuille d'habillage n'était plus chargée.
+        'public/assets/css/jnet_bo_embed.css' => 'jnet_bo_embed.css',
+        // Feuilles et scripts dont le nom n'apparaissait plus nulle part (vues, contrôleurs, config, scripts, tests, mod).
+        'public/assets/css/back-office-briefing-slides.css' => 'back-office-briefing-slides.css',
+        'public/assets/css/back-office-effectifs-hub.css' => 'back-office-effectifs-hub.css',
+        'public/assets/css/orbat-canvas.css' => 'orbat-canvas.css',
+        'public/assets/css/public-portal-day.css' => 'public-portal-day.css',
+        'public/assets/js/admin-ops-center.js' => 'admin-ops-center.js',
+        'public/assets/js/atak-assignments.js' => 'atak-assignments.js',
+        'public/assets/js/atak-c2-workspace.js' => 'atak-c2-workspace.js',
+        'public/assets/js/atak-explosive-timers.js' => 'atak-explosive-timers.js',
+        'public/assets/js/atak-map-shapes.js' => 'atak-map-shapes.js',
+        'public/assets/js/atak-phone-icon.js' => 'atak-phone-icon.js',
+        'public/assets/js/atak-phone-proximity.js' => 'atak-phone-proximity.js',
+        'public/assets/js/atak-realism-config-helper.js' => 'atak-realism-config-helper.js',
+        'public/assets/js/atak-realism-helper.js' => 'atak-realism-helper.js',
+        'public/assets/js/atak-realism-ui-generator.js' => 'atak-realism-ui-generator.js',
+        'public/assets/js/atak-session-workspace.js' => 'atak-session-workspace.js',
+        'public/assets/js/atak-shell-chrome.js' => 'atak-shell-chrome.js',
+        'public/assets/js/atak-symbol-picker.js' => 'atak-symbol-picker.js',
+        'public/assets/js/atak-vehicles.js' => 'atak-vehicles.js',
+        'public/assets/js/atak-waypoints.js' => 'atak-waypoints.js',
+        'public/assets/js/atak-web-log.js' => 'atak-web-log.js',
+        'public/assets/js/eff-sheets-pop.js' => 'eff-sheets-pop.js',
+        'public/assets/js/eff-table-filter.js' => 'eff-table-filter.js',
+        'public/assets/js/roles-graph.js' => 'roles-graph.js',
     ];
 
     /** Mentions tolérées, par fichier : étiquette passée à EmailPrivacy (aucun fichier lu), vérifications d'absence, commentaires. */
@@ -278,6 +304,8 @@ final class VagueTriTest extends TestCase
         'tests/Unit/AuditLot4Test.php' => ['views/atak.php'],
         'public/assets/js/map/atak-c2-bridge.js' => ['views/atak.php'],
         'public/assets/js/terrain3d/initTerrain3D.js' => ['views/atak.php'],
+        'tests/Unit/JnetAthenaUiTest.php' => ['jnet_bo_embed.css'],
+        'public/assets/css/jnet_spaces.css' => ['jnet_bo_embed.css'],
         'tests/Unit/VagueTriTest.php' => true,
     ];
 
@@ -327,6 +355,30 @@ final class VagueTriTest extends TestCase
             }
         }
         self::assertSame([], $found, 'Référence à un fichier retiré par la vague de tri.');
+    }
+
+    /**
+     * Le rail « déplié au survol » n'est jamais activé : le gabarit force $backOfficeHoverRail à false dès que la coque
+     * back-office est active, et BackOfficePageContext l'active aussi sur /formation. Ses règles ont quitté la feuille du rail.
+     */
+    public function testHoverRailRulesAreGoneAndWereNeverApplied(): void
+    {
+        $root = Map::root();
+        $layout = (string) file_get_contents($root . '/views/layout/main.php');
+        self::assertStringContainsString('&& empty($isBackOfficeShell);', $layout);
+        self::assertStringContainsString("\$vars['isBackOfficeShell'] = true;", (string) file_get_contents($root . '/app/Support/BackOfficePageContext.php'));
+        self::assertContains('formation', \App\Support\BackOfficePageContext::chromePathPrefixes());
+        $rail = (string) file_get_contents($root . '/public/assets/css/back-office-rail.css');
+        foreach (['.bo-aside--hover-rail', '.bo-shell--hover-rail', '.bo-shell-row--hover-rail', '--bo-hover-rail-w'] as $dead) {
+            self::assertStringNotContainsString($dead, $rail, $dead);
+        }
+        // Ce qui sert encore reste : largeur de l'aside et tuiles du rail.
+        self::assertStringContainsString('#back-office-sidebar.back-office-rail-aside', $rail);
+        self::assertStringContainsString('.dash-rail__tile', $rail);
+        $dark = (string) file_get_contents($root . '/public/assets/css/back-office-dark.generated.css');
+        self::assertStringNotContainsString('hover-rail', $dark);
+        self::assertStringNotContainsString('back-office-partage.css', $dark);
+        self::assertStringContainsString('/* ——— back-office-rail.css ——— */', $dark);
     }
 
     /** Les méthodes de page sans route ont quitté UserAdminController ; ses actions (POST) et leurs routes restent. */
