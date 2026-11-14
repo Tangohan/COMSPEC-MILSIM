@@ -87,10 +87,12 @@ if (isNull _netCtl || {(ctrlParent _netCtl) isNotEqualTo _d}) then {
 };
 private _netW = _iw * 2.6;
 _netCtl ctrlSetFontHeight (_fontS * 0.8);
-_netCtl ctrlSetPosition [_dx + _dw - _pad - _iw - _pad * 0.5 - _netW, _sy, _netW, _sh];
+// Téléphone en main : l'icône GPS (88526) est juste à gauche de la barre de signal, le libellé se range avant elle
+// (capture de TTRD du 14/11 : « SAT » écrit par-dessus l'icône GPS).
+_netCtl ctrlSetPosition [_dx + _dw - _pad - _iw - _pad * 0.5 - ([0, _ih / _ratio + _pad] select _interactive) - _netW, _sy, _netW, _sh];
 _netCtl ctrlCommit 0;
 private _rx0 = _dx + _dw * 0.58 + _pad * 2 + 2 * _ih / _ratio;
-private _rx1 = _dx + _dw - _pad * 3 - _iw - ([0, _ih / _ratio] select _interactive) - _netW;
+private _rx1 = _dx + _dw - _pad * 3 - _iw - ([0, _ih / _ratio + _pad] select _interactive) - _netW;
 // Cadenas et libellé du chiffrement (fn_meshKeys "link", mis à jour par fn_statusUpdate) : après le logo de liaison. Le libellé passe avant la mémoire vive.
 private _lock = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrl", controlNull];
 private _lockTxt = uiNamespace getVariable ["COMSPEC_ATAK_LockTxt", controlNull];

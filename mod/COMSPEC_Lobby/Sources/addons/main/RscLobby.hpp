@@ -122,7 +122,15 @@ class RscDisplayMultiplayerSetup: RscStandardDisplay {
         class MuteAll: RscCheckBox { y = XS(safezoneY + POOLTOP * GH); };
 
         // ---------------------------------------------------------------- dossier de l'opérateur (idc 9100 et plus)
-        DTEXT(DossierTitle, 9100, DX + 0.3 * GW, safezoneY + 6.05 * GH, 8 * GW, 0.8 * GH, "RobotoCondensedBold", 0.8 * GH, 0, COL_DIM);
+        // Synchroniser : redemande la carte Athena du joueur tout de suite (fn_lobbyOpen), message à sa droite.
+        class SyncButton: RscButtonTextOnly {
+            idc = 9108; style = 2; text = ""; font = "RobotoCondensedBold"; sizeEx = XS(0.55 * GH);
+            action = "[] call (uiNamespace getVariable ['COMSPEC_LOBBY_sync', {}])";
+            x = XS(DX + 0.3 * GW); y = XS(safezoneY + 6.05 * GH); w = XS(5.6 * GW); h = XS(0.75 * GH);
+            colorBackground[] = {1,1,1,0.07}; colorBackgroundActive[] = {0.94,0.65,0.23,0.30}; colorBackgroundDisabled[] = {1,1,1,0.03};
+            colorText[] = {1,1,1,0.9}; colorDisabled[] = {1,1,1,0.25}; colorFocused[] = {1,1,1,0.07};
+        };
+        DTEXT(SyncStatus, 9107, DX + 6.2 * GW, safezoneY + 6.1 * GH, DW - 6.2 * GW - 8.6 * GW, 0.7 * GH, "RobotoCondensed", 0.5 * GH, 0, COL_DIM);
         DTEXT(DossierRef, 9101, DX + DW - 8.3 * GW, safezoneY + 6.05 * GH, 8 * GW, 0.8 * GH, "EtelkaMonospacePro", 0.7 * GH, 1, COL_DIM);
 
         class Portrait: RscPicture {

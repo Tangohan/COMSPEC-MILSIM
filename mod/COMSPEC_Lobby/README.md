@@ -1,6 +1,6 @@
 ﻿# COMSPEC Lobby
 
-Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications). Aucune dépendance autre que le jeu. Version 0.2.0 (essayée en jeu sur serveur dédié : voir « État »).
+Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications). Aucune dépendance autre que le jeu. Version 0.3.0 (essayée en jeu sur serveur dédié : voir « État »).
 
 Le système de postes d'Arma est gardé tel quel : liste des rôles, camps, pool de joueurs, paramètres de mission, verrou, expulsion, Workshop, chat. Le mod restyle l'écran (fond noir, filets fins, un accent ambre), remonte le pool de joueurs sous le dossier, et ajoute le dossier. Rien n'est remplacé ni piloté par script.
 
@@ -48,6 +48,8 @@ Comment ça marche : à chaque partie, COMSPEC ATAK garde votre carte dans le pr
 - la toute première fois (aucune partie jouée avec ATAK 4.14.0 ou plus), le dossier montre seulement le texte du rôle ;
 - un changement de portrait ou d'indicatif sur le site apparaît à l'écran des rôles après la partie suivante ;
 - Arma refuse en texture une image hors d'un PBO : le portrait passe par le navigateur intégré du jeu (aucune adresse externe, image lue sur le disque par COMSPEC Link). Avec `-filePatching` il s'affiche en texture.
+
+Le bouton **Synchroniser**, en haut du dossier, redemande votre carte à Athena tout de suite, sans attendre la prochaine partie. Il marche quand COMSPEC Link a déjà une session Athena dans ce lancement du jeu (une partie jouée, puis retour à l'écran des rôles) ; sinon un message dit quoi faire. Le clic fige le jeu le temps de la réponse du site (quelques secondes au plus).
 
 Sans COMSPEC ATAK, rien ne change : le mod n'en dépend pas. Un autre module peut toujours poser des cartes par poste dans `uiNamespace COMSPEC_LOBBY_Cards` (HashMap étiquette vers HashMap aux clés `surname`, `given`, `rank`, `unit`, `role`, `quals`, `portrait`, `source`), prioritaires sur tout le reste.
 

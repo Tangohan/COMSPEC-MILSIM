@@ -8,6 +8,12 @@ T = {
     "Unit": ("Unité", "Unit"),
     "Role": ("Fonction", "Role"),
     "Quals": ("Qualifications", "Qualifications"),
+    "Sync": ("Synchroniser", "Synchronise"),
+    "SyncRunning": ("Synchronisation avec Athena…", "Synchronising with Athena…"),
+    "SyncDone": ("Dossier à jour.", "Dossier up to date."),
+    "SyncNoUid": ("Jouez une partie avec COMSPEC ATAK : votre dossier sera gardé à la fin.", "Play one game with COMSPEC ATAK: your dossier is saved at the end."),
+    "SyncNoAtak": ("COMSPEC ATAK n'est pas chargé : pas de dossier Athena.", "COMSPEC ATAK is not loaded: no Athena dossier."),
+    "SyncNoLink": ("Athena n'est pas joignable d'ici. Entrez en jeu : le dossier se met à jour pendant la partie.", "Athena cannot be reached from here. Join the game: the dossier updates during play."),
     "PortraitLocal": ("Portrait", "Portrait"),
 }
 

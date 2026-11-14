@@ -38,6 +38,51 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 4.15.0 Washington : bouton Synchroniser à l'écran des rôles, images gardées sur le PC, correctifs (ATAK natif 4.15.0.AG - Washington, COMSPEC Link 2.0.124, COMSPEC Lobby 0.3.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Votre dossier se synchronise mieux, les images restent sur votre PC
+- Écran des rôles (mod COMSPEC Lobby) : un bouton Synchroniser redemande votre dossier Athena tout de suite. Il marche après une première partie dans la session de jeu.
+- Votre dossier et votre portrait sont maintenant bien gardés à chaque partie : avant, la demande échouait souvent au démarrage et n'était jamais refaite.
+- Les portraits et les diapositives téléchargés restent dans Documents, dossier Arma 3 - COMSPEC : ils ne sont plus retéléchargés après une mise à jour du mod.
+- Barre d'état du téléphone : le type de liaison (SAT, relais) ne s'écrit plus par-dessus l'icône GPS.
+- Compte rendu de fin d'opération : les réglages envoyés par le site sont de nouveau pris en compte.
+- L'écran de chargement ATHENA laisse la place à celui d'un autre mod (déjà dans la 4.14.1).
+EN : Your dossier syncs better, images stay on your PC
+- Role screen (COMSPEC Lobby mod): a Synchronise button asks Athena for your dossier right away. It works after a first game in the play session.
+- Your dossier and portrait are now properly saved every game: before, the request often failed at start and was never retried.
+- Downloaded portraits and slides stay in Documents, folder Arma 3 - COMSPEC: they are no longer downloaded again after a mod update.
+- Phone status bar: the link type (SAT, relay) is no longer written over the GPS icon.
+- End-of-operation report: the settings sent by the site are taken into account again.
+- The ATHENA loading screen yields to another mod's (already in 4.14.1).
+
+### Détail technique
+- **Carte du joueur** (`XEH_postInitClient`, `fn_avatarPath`) : la demande du portrait partait une fois, 10 s après la liaison, et échouait en `uplink_hold` tant que le joueur n'avait pas de téléphone (journal de TTRD du 14/11) ; elle est refaite toutes les 45 s (40 fois au plus) jusqu'à la réponse du site. Le SteamID et la communauté sont gardés dans le profil (`COMSPEC_LOBBY_Uid`, `COMSPEC_LOBBY_Tenant`) pour le bouton Synchroniser.
+- **COMSPEC Lobby 0.3.0** : bouton Synchroniser (idc 9108) et message (idc 9107). Il appelle `GetPlayerAvatarInfo` puis `DownloadBriefingSlideImage` par COMSPEC Link, range la carte dans le profil et redessine le dossier. Sans session Athena dans ce lancement du jeu, ou sans SteamID connu, un message dit quoi faire. L'appel bloque le jeu le temps de la réponse.
+- **COMSPEC Link 2.0.124** : le cache des images (portraits, diapositives, QR) passe d'abord par `Documents\Arma 3 - COMSPEC\Cache` (`PersistentCacheRoot`), avant le dossier du mod et TEMP ; ce dossier est accepté par `ImageDataChunk` « local: » et par la lecture des images locales. Les diapositives Google gardent leur dossier d'avant.
+- **Barre d'état** (`fn_layoutApply`) : téléphone en main, le libellé du type de liaison se range à gauche de l'icône GPS (88526).
+- **Avis d'Athena** (`fn_adminNotices`) : découpe aux tabulations en gardant les colonnes vides, et identifiant « C<nombre> » accepté pour `debrief_cfg` (ligne « Avis illisible ignoré » à chaque relève, réglages du CR jamais appliqués).
+- Non essayé en jeu. Tests : `tests/Unit/AtakLoadingLogoAssetTest.php`, `tests/Unit/LobbyModAssetTest.php`, `tests/Unit/AtakPack4150AssetTest.php`.
+
+## L'écran de chargement ATHENA laisse la place à celui des autres mods (ATAK natif 4.14.1.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : L'écran de chargement ATHENA ne remplace plus celui d'un autre mod
+- Si un autre mod a son propre écran de chargement (pack d'unité, par exemple), il s'affiche normalement : le logo ATHENA plein écran ne passe plus par-dessus.
+- Dans ce cas, seule la petite marque COMSPEC apparaît dans le coin, comme avant.
+- Sans autre mod d'écran de chargement, rien ne change : le logo ATHENA en grand sur fond sombre.
+EN : The ATHENA loading screen no longer replaces another mod's
+- If another mod has its own loading screen (a unit pack, for example), it shows normally: the full-screen ATHENA logo no longer covers it.
+- In that case only the small COMSPEC mark appears in the corner, as before.
+- With no other loading screen mod, nothing changes: the large ATHENA logo on a dark background.
+
+### Détail technique
+- `fn_loadingLogo` reçoit le nom de la classe de l'écran (`RscDisplayLoadMission`, `RscDisplayLoading`). Il lit `configSourceAddonList` de cette classe et les gestionnaires `Extended_DisplayLoad_EventHandlers` du même écran : dès qu'un addon qui n'est ni le jeu (`a3_…`), ni CBA, ni un mod COMSPEC y figure, rien n'est masqué ni recouvert et seule la marque du coin (`fn_loadingBadge`) est posée. Décision gardée pour la session et écrite au RPT (`[CHARGEMENT]`, avec le nom des addons trouvés).
+- Non essayé en jeu avec un pack qui a son écran de chargement : si un mod change cet écran par un autre moyen (script lancé à part), il n'est pas reconnu.
+- Test : `tests/Unit/AtakLoadingLogoAssetTest.php`.
+
 ## Écran de chargement au logo ATHENA, votre dossier Athena à l'écran des rôles (ATAK natif 4.14.0.AG - Washington, COMSPEC Lobby 0.2.0)
 
 ### Résumé joueur

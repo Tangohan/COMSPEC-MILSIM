@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.123";
+    private const string ExtensionVersion = "2.0.124";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3983,9 +3983,10 @@ public static partial class Extension
         catch { return "ERR|path_not_allowed"; }
         var roots = new[]
         {
+            PersistentCacheRoot(),
             Path.Combine(AppContext.BaseDirectory, "comspec_cache"),
             Path.Combine(Path.GetTempPath(), "comspec_cache"),
-        }.Select(r => Path.GetFullPath(r).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+        }.Where(r => !string.IsNullOrEmpty(r)).Select(r => Path.GetFullPath(r).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
         if (!roots.Any(r => full.StartsWith(r, StringComparison.OrdinalIgnoreCase))) return "ERR|path_not_allowed";
         byte[] local;
         try { local = LoadImageChunkBytes(full); }
@@ -7892,6 +7893,13 @@ public static partial class Extension
     /// Dossier de cache local pour les diapositives téléchargées : à côté de la DLL en priorité
     /// (dossier du mod, généralement accessible en écriture), sinon dossier temporaire système.
     /// </summary>
+    /// <summary>Cache durable des images téléchargées : Documents\Arma 3 - COMSPEC\Cache ("" si le dossier Documents est inconnu).</summary>
+    private static string PersistentCacheRoot()
+    {
+        try { return LocalDocumentsPath("Arma 3 - COMSPEC", "Cache"); }
+        catch { return ""; }
+    }
+
     private static string? GetWritableCacheDir()
     {
         // Dossier déjà vérifié : réutilisé tant qu'il existe (un fichier test était écrit puis effacé à chaque
@@ -7899,13 +7907,18 @@ public static partial class Extension
         var known = _writableCacheDir;
         if (known != null && Directory.Exists(known))
             return known;
+        // Documents\Arma 3 - COMSPEC\Cache d'abord (COMSPEC Link 2.0.124) : il survit aux mises à jour du mod et au
+        // nettoyage de TEMP, donc portraits et diapositives ne sont plus retéléchargés à chaque fois (TTRD, 14/11).
+        var persistent = PersistentCacheRoot();
         var candidates = new[]
         {
+            persistent.Length > 0 ? Path.Combine(persistent, "briefing") : "",
             Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
             Path.Combine(Path.GetTempPath(), "comspec_cache", "briefing"),
         };
         foreach (var dir in candidates)
         {
+            if (dir.Length == 0) continue;
             try
             {
                 Directory.CreateDirectory(dir);
@@ -12010,6 +12023,8 @@ public static partial class Extension
         }
         if (Under(Path.Combine(AppContext.BaseDirectory, "comspec_cache"))) return true;
         if (Under(Path.Combine(Path.GetTempPath(), "comspec_cache"))) return true;
+        var persistentCache = PersistentCacheRoot();
+        if (persistentCache.Length > 0 && Under(persistentCache)) return true;
         return false;
     }
 

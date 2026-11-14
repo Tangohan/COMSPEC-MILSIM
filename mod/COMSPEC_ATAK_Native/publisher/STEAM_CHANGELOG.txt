@@ -1,3 +1,39 @@
+[h1]COMSPEC ATAK 4.15.0 Washington — dossier mieux synchronisé, images gardées sur le PC, correctifs / dossier syncs better, images kept on your PC, fixes[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Dossier Athena[/b] : il est bien gardé à chaque partie pour l'écran des rôles (mod COMSPEC Lobby, bouton Synchroniser).
+[*] [b]Images[/b] : portraits et diapositives téléchargés restent dans Documents, dossier Arma 3 - COMSPEC. Plus de nouveau téléchargement après une mise à jour.
+[*] [b]Barre d'état[/b] : le type de liaison ne s'écrit plus par-dessus l'icône GPS.
+[*] [b]Compte rendu de fin d'opération[/b] : les réglages du site sont de nouveau pris en compte.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Athena dossier[/b]: properly saved every game for the role screen (COMSPEC Lobby mod, Synchronise button).
+[*] [b]Images[/b]: downloaded portraits and slides stay in Documents, folder Arma 3 - COMSPEC. No new download after an update.
+[*] [b]Status bar[/b]: the link type is no longer written over the GPS icon.
+[*] [b]End-of-operation report[/b]: the site's settings are taken into account again.
+[/list]
+
+[h1]COMSPEC ATAK 4.14.1 Washington — l'écran de chargement ATHENA laisse la place aux autres mods / the ATHENA loading screen yields to other mods[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] Si un autre mod a son propre écran de chargement, il s'affiche normalement : le logo ATHENA plein écran ne passe plus par-dessus. Seule la petite marque COMSPEC apparaît dans le coin.
+[*] Sans autre mod d'écran de chargement, rien ne change.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] If another mod has its own loading screen, it shows normally: the full-screen ATHENA logo no longer covers it. Only the small COMSPEC mark appears in the corner.
+[*] With no other loading screen mod, nothing changes.
+[/list]
+
 [h1]COMSPEC ATAK 4.14.0 Washington — écran de chargement ATHENA, dossier Athena à l'écran des rôles / ATHENA loading screen, Athena dossier on the role screen[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

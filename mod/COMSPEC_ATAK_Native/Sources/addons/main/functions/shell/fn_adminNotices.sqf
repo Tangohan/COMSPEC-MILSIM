@@ -81,9 +81,25 @@ switch (_act) do {
             private _new = [];
             private _again = [];
             {
-                (_x splitString toString [9]) params [["_id", ""], ["_kind", "message"], ["_level", "info"], ["_title", ""], ["_body", ""], ["_ack", "1"], ["_meta", ""]];
+                // Découpe aux tabulations en gardant les colonnes vides : splitString les fusionne, et une ligne sans titre
+                // (réglages du CR de fin d'opération) décalait son contenu d'une colonne.
+                private _cols = [];
+                private _rest = _x;
+                private _ti = _rest find (toString [9]);
+                while {_ti >= 0} do {
+                    _cols pushBack (_rest select [0, _ti]);
+                    _rest = _rest select [_ti + 1];
+                    _ti = _rest find (toString [9]);
+                };
+                _cols pushBack _rest;
+                _cols params [["_id", ""], ["_kind", "message"], ["_level", "info"], ["_title", ""], ["_body", ""], ["_ack", "1"], ["_meta", ""]];
+                if (_kind isEqualTo "") then { _kind = "message"; };
+                if (_level isEqualTo "") then { _level = "info"; };
+                if (_ack isEqualTo "") then { _ack = "1"; };
                 // Ligne d'Athena vérifiée avant usage : identifiant numérique attendu, sinon ignorée avec une ligne [WARN].
-                if (_id isEqualTo "" || {(parseNumber _id) < 1}) then {
+                // Les réglages du CR de fin d'opération portent un identifiant « C<nombre> » : acceptés (journal du 14/11 :
+                // « Avis illisible ignoré : C1625425631 debrief_cfg » à chaque relève, réglages jamais appliqués).
+                if (_id isEqualTo "" || {(parseNumber _id) < 1 && {_kind isNotEqualTo "debrief_cfg"}}) then {
                     ["WARN", "ATHENA", format ["Avis illisible ignoré : %1", _x select [0, 60]]] call comspec_atak_native_fnc_log;
                     continue;
                 };

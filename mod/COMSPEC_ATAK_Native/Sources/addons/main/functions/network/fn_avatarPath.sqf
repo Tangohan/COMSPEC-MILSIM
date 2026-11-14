@@ -133,6 +133,8 @@ _cache set [_uid, [_path, diag_tickTime]];
                 ["surname", [_cs, _name] select (_cs isEqualTo "")], ["given", ["", _name] select (_cs isNotEqualTo "")],
                 ["unit", 3 call _col], ["quals", _qn], ["source", "ATHENA"], ["portrait", _pic]
             ]];
+            profileNamespace setVariable ["COMSPEC_LOBBY_Uid", _uid];
+            profileNamespace setVariable ["COMSPEC_LOBBY_Tenant", _tenant];
         };
         // Raison donnée par le site quand il n'envoie pas d'image (colonne « S: », COMSPEC Link 2.0.82+).
         private _st = _cols findIf { (_x select [0, 2]) isEqualTo "S:" };

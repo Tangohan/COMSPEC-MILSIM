@@ -22,6 +22,36 @@
                 <English>Role</English>
                 <French>Fonction</French>
             </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Sync">
+                <Original>Synchroniser</Original>
+                <English>Synchronise</English>
+                <French>Synchroniser</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_SyncDone">
+                <Original>Dossier à jour.</Original>
+                <English>Dossier up to date.</English>
+                <French>Dossier à jour.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_SyncNoAtak">
+                <Original>COMSPEC ATAK n'est pas chargé : pas de dossier Athena.</Original>
+                <English>COMSPEC ATAK is not loaded: no Athena dossier.</English>
+                <French>COMSPEC ATAK n'est pas chargé : pas de dossier Athena.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_SyncNoLink">
+                <Original>Athena n'est pas joignable d'ici. Entrez en jeu : le dossier se met à jour pendant la partie.</Original>
+                <English>Athena cannot be reached from here. Join the game: the dossier updates during play.</English>
+                <French>Athena n'est pas joignable d'ici. Entrez en jeu : le dossier se met à jour pendant la partie.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_SyncNoUid">
+                <Original>Jouez une partie avec COMSPEC ATAK : votre dossier sera gardé à la fin.</Original>
+                <English>Play one game with COMSPEC ATAK: your dossier is saved at the end.</English>
+                <French>Jouez une partie avec COMSPEC ATAK : votre dossier sera gardé à la fin.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_SyncRunning">
+                <Original>Synchronisation avec Athena…</Original>
+                <English>Synchronising with Athena…</English>
+                <French>Synchronisation avec Athena…</French>
+            </Key>
             <Key ID="STR_COMSPEC_LOBBY_Unit">
                 <Original>Unité</Original>
                 <English>Unit</English>

@@ -1305,8 +1305,19 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
 }] call CBA_fnc_waitUntilAndExecute;
 // Carte du joueur pour l'écran des rôles (mod COMSPEC Lobby) : son propre portrait est demandé dès la liaison prête, sans
 // attendre l'ouverture d'une page du téléphone (fn_avatarPath range la carte et le portrait dans le profil Arma).
+// Dix secondes après la liaison, la demande échouait souvent (« uplink_hold » : pas encore de téléphone, journal du 14/11)
+// et n'était jamais refaite : nouvel essai toutes les 45 s, 40 fois au plus, jusqu'à la réponse du site.
 [{ (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) && {!isNull player} }, {
-    [{ [player] call comspec_atak_native_fnc_avatarPath; }, [], 10] call comspec_atak_native_fnc_waitAndExec;
+    // SteamID gardé pour le bouton « Synchroniser » de l'écran des rôles (aucun moyen de le lire avant une mission).
+    profileNamespace setVariable ["COMSPEC_LOBBY_Uid", getPlayerUID player];
+    [] spawn {
+        sleep 10;
+        for "_i" from 1 to 40 do {
+            if ((getPlayerUID player) in (uiNamespace getVariable ["COMSPEC_ATAK_AvatarChecked", []])) exitWith {};
+            [player] call comspec_atak_native_fnc_avatarPath;
+            sleep 45;
+        };
+    };
 }] call CBA_fnc_waitUntilAndExecute;
 // Canaux de la messagerie : liste complète d'Athena (canaux web compris) relue dès la liaison prête, sans attendre la
 // première ouverture de Messages (qui n'affichait d'abord que les canaux par défaut, les autres 20 s plus tard).
