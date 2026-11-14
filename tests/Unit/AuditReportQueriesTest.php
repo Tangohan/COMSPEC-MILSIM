@@ -138,7 +138,7 @@ final class AuditReportQueriesTest extends TestCase
      * @param callable(\AuditReportKit, \AuditReadOnlyDb): int $report
      * @return array{code:int, sections:array<string, list<array<string,mixed>>>}
      */
-    private function run(callable $report, \AuditReadOnlyDb $db, int $tenant = 0): array
+    private function runReport(callable $report, \AuditReadOnlyDb $db, int $tenant = 0): array
     {
         $kit = new \AuditReportKit('test', 'test', 'test');
         $kit->capture = true;
@@ -210,13 +210,13 @@ final class AuditReportQueriesTest extends TestCase
             (3, 'C', 'c', '/c.png', '2026-01-01 10:00:00'),
             (4, 'D', 'd', NULL, NULL)");
         $pdo->exec("INSERT INTO tenant_branding (tenant_id, logo_url, updated_at) VALUES (1, '/a-new.png', '2026-03-01 10:00:00'), (2, '/same.png', NULL)");
-        $r = $this->run('audit_report_logos', $db);
+        $r = $this->runReport('audit_report_logos', $db);
         $rows = $r['sections']['Logos désynchronisés (RD-44)'];
         self::assertSame(3, $r['code']);
         self::assertSame([1, 3], array_map(static fn (array $x): int => (int) $x['tenant_id'], $rows));
         self::assertSame('tenant_branding.logo_url (plus récent)', $rows[0]['suggestion']);
         self::assertSame('logo seulement dans tenants (pas de ligne branding)', $rows[1]['problem']);
-        self::assertSame(1, count($this->run('audit_report_logos', $db, 3)['sections']['Logos désynchronisés (RD-44)']));
+        self::assertSame(1, count($this->runReport('audit_report_logos', $db, 3)['sections']['Logos désynchronisés (RD-44)']));
     }
 
     public function testGradesReportFindsPublishedGradesNotAppliedToTheFiche(): void
@@ -234,7 +234,7 @@ final class AuditReportQueriesTest extends TestCase
             $pdo->exec("INSERT INTO advancement_candidacies (id, campaign_id, personnel_id, decision) VALUES ($i, 5, $i, 'inscrit')");
             $pdo->exec("INSERT INTO personnel_grade_history (personnel_id, grade_id, obtained_at, obtained_via, candidacy_id) VALUES ($i, 100, '2026-03-01', 'choix', $i)");
         }
-        $r = $this->run('audit_report_grades_campagnes', $db);
+        $r = $this->runReport('audit_report_grades_campagnes', $db);
         $rows = $r['sections']['Grades publiés par campagne et non appliqués (RD-04)'];
         self::assertSame(3, $r['code']);
         self::assertSame(['Non appliqué', 'Sans grade'], array_map(static fn (array $x): string => (string) $x['display_name'], $rows));
@@ -255,7 +255,7 @@ final class AuditReportQueriesTest extends TestCase
         $pdo->exec("INSERT INTO orbat_billets (id, tenant_id, unit_id, code, title, is_active) VALUES (1, 1, 1, 'CHEF', 'Chef de section', 1), (2, 1, 1, 'ADJ', 'Adjoint', 1)");
         $pdo->exec("INSERT INTO orbat_billet_holders (tenant_id, billet_id, user_id, holder_role, starts_at) VALUES
             (1, 1, 1, 'PRIMARY', '2025-01-01'), (1, 2, 3, 'PRIMARY', '2025-01-01'), (1, 2, 4, 'ALTERNATE', '2025-01-01')");
-        $r = $this->run('audit_report_affectations_postes', $db);
+        $r = $this->runReport('audit_report_affectations_postes', $db);
         $a = $r['sections']['A. Affectations principales sans poste ORBAT dans la même unité (RD-21)'];
         $b = $r['sections']['B. Postes occupés sans affectation dans l’unité du poste (RD-21)'];
         self::assertSame(['Affecté sans poste', 'Poste, affecté ailleurs'], array_map(static fn (array $x): string => (string) $x['display_name'], $a));
@@ -274,7 +274,7 @@ final class AuditReportQueriesTest extends TestCase
             . implode(', ', [$ev(1, 'Opération Aigle'), $ev(2, 'Opération Faucon'), $ev(3, 'Opération Faucon'), $ev(4, 'Opération Éclair'), $ev(5, 'Sans compte rendu')]));
         $pdo->exec("INSERT INTO aar_reports (id, tenant_id, title, operation_label) VALUES
             (1, 1, 'CR Aigle', 'opération  aigle'), (2, 1, 'CR Faucon', 'Opération Faucon'), (3, 1, 'CR Eclair', 'Operation Eclair'), (4, 1, 'CR orphelin', 'Autre')");
-        $r = $this->run('audit_report_aar_liens', $db)['sections'];
+        $r = $this->runReport('audit_report_aar_liens', $db)['sections'];
         self::assertSame(['Sans compte rendu'], array_column($r['1. Événements passés sans compte rendu lié'], 'title'));
         self::assertSame(['Opération Faucon', 'Opération Faucon'], array_column($r['2. Liens ambigus (même titre)'], 'title'));
         self::assertSame(['Opération Éclair'], array_column($r['3. Quasi-correspondances : lien cassé par une retouche de titre'], 'title'));
@@ -293,7 +293,7 @@ final class AuditReportQueriesTest extends TestCase
         $pdo->exec("INSERT INTO users (id, tenant_id, email, password_hash, display_name, status) VALUES
             (1, 1, 'a@x', 'x', 'Chef', 'active'), (2, 1, 'b@x', 'x', 'RH et chef', 'active'), (3, 1, 'c@x', 'x', 'Ancien', 'inactive')");
         $pdo->exec("INSERT INTO tenant_user_roles (tenant_id, user_id, role_id, co_unit_id) VALUES (1, 1, 1, 0), (1, 1, 3, 0), (1, 2, 2, 0), (1, 2, 3, 0), (1, 3, 3, 0)");
-        $r = $this->run('audit_report_roles_semes', $db);
+        $r = $this->runReport('audit_report_roles_semes', $db);
         self::assertSame(3, $r['code']);
         $hidden = $r['sections']['A. Rôles non visibles qui portent des droits (RD-03)'];
         self::assertSame(['squad_leader'], array_column($hidden, 'slug'));
