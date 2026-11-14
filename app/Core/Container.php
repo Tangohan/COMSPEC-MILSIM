@@ -722,6 +722,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\SseAnalystDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseSyncMaintenanceCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MemberIntegrationDailyCronJob::class),
+                    new \App\Services\Cron\Jobs\AccessRegisterExpiryCronJob(self::get(TenantRepository::class)),
                     self::get(\App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PhotoCompressCronJob::class),

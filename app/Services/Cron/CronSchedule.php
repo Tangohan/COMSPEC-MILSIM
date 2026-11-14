@@ -48,6 +48,8 @@ final class CronSchedule
         'sse_analytical_nightly' => 1440,
         'sse_analyst_digest' => 1440,
         'member_integration_daily' => 1440,
+        // Registre des droits : droits échus retirés et inscrits à l'historique (le contrôle d'accès les ignore déjà).
+        'access_register_expiry' => 60,
         'personnel_auto_advancement' => 1440,
         'advancement_seniority' => 1440,
         // Passage borné à 90 s : le stock de photos se résorbe d'heure en heure.

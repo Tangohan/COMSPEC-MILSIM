@@ -21,6 +21,7 @@ $tabs = [
     ['qualifications', 'Qualifications', 'qualifications', (int) ($qualificationsExpiringCount ?? 0), ''],
     ['elevations', 'Élévations', 'elevations', (int) ($elevationOpenCount ?? 0), ''],
     ['roles', 'Accès', 'roles', 0, 'Organisation'],
+    ['registre_droits', 'Registre des droits', 'registre-droits', (int) ($regCounts['expiring'] ?? 0), 'Organisation'],
     ['fonctions', 'Emplois', 'fonctions', 0, 'Organisation'],
     ['invitations', 'Invitations', 'invitations', 0, 'Suivi des dossiers'],
     ['sans_comptes', 'Sans compte', 'sans-comptes', 0, 'Suivi des dossiers'],
@@ -61,6 +62,7 @@ $lead = match ($active) {
     'invitations' => 'Les liens envoyés pour compléter un profil : qui les a reçus, ouverts, et ce qu’il reste à faire.',
     'sans_comptes' => 'Les personnes qui n’ont pas (encore) de compte : leur fiche, leur invitation, leur rattachement à un compte.',
     'tableaux' => 'Choisissez une source, les colonnes, les filtres : votre tableau se construit comme dans Excel.',
+    'registre_droits' => 'Qui détient quel droit, sur quel périmètre, accordé par qui, depuis quand et jusqu’à quand.',
     default => 'Dossiers des membres : tableur, accès, emplois et suivi.',
 };
 $showTools = empty($jobsReferenceWorkspace);
