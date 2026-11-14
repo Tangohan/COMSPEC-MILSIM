@@ -2194,3 +2194,41 @@
 .ah-char-form label { display: grid; gap: 0.3rem; font-size: 0.85rem; font-weight: 700; color: var(--ah-ink); }
 .ah-char-form input { padding: 0.6rem 0.75rem; border-radius: 10px; border: 1px solid var(--ah-line); background: var(--ah-surface); color: var(--ah-ink); font: inherit; font-weight: 400; }
 .ah-char-form__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * Vue d'ensemble du compte, refaite : une seule liste « à faire » (état du compte), puis trois accès directs.
+ * ------------------------------------------------------------------------------------------------------------- */
+.ah-todo { margin: 0 0 1rem; padding: 1.35rem 1.4rem; border-radius: 18px; border: 1px solid var(--ah-line); background: var(--ah-surface); }
+.ah-todo.is-todo { border-color: var(--ah-warn-line); }
+.ah-todo__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.35rem 1rem; }
+.ah-todo__title { margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.015em; color: var(--ah-ink); }
+.ah-todo__state { margin: 0; font-size: 0.875rem; font-weight: 700; color: var(--ah-ok-ink); }
+.ah-todo.is-todo .ah-todo__state { color: var(--ah-warn-ink); }
+.ah-todo__list { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: 0.55rem; }
+.ah-todo__item { display: grid; grid-template-columns: 2rem minmax(0, 1fr); align-items: center; gap: 0.75rem 0.9rem; padding: 0.85rem 0.95rem; border-radius: 14px; border: 1px solid var(--ah-soft-line, var(--ah-line)); background: var(--ah-panel); }
+@media (min-width: 640px) { .ah-todo__item { grid-template-columns: 2rem minmax(0, 1fr) auto; } }
+.ah-todo__n { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 999px; background: var(--ah-warn-bg); color: var(--ah-warn-ink); font-size: 0.875rem; font-weight: 800; }
+.ah-todo__what { margin: 0; font-size: 0.95rem; font-weight: 800; color: var(--ah-ink); }
+.ah-todo__why { margin: 0.15rem 0 0; font-size: 0.8125rem; line-height: 1.45; color: var(--ah-muted); }
+.ah-todo__text .account-hub__ov-meter { display: block; max-width: 14rem; margin-top: 0.5rem; }
+.ah-todo__act { grid-column: 2; justify-self: start; white-space: nowrap; }
+@media (min-width: 640px) { .ah-todo__act { grid-column: auto; justify-self: end; } }
+.ah-todo__done { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.ah-todo__done a { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2rem; padding: 0.25rem 0.75rem; border-radius: 999px; border: 1px solid var(--ah-ok-line); background: var(--ah-ok-bg); color: var(--ah-ok-ink); font-size: 0.78rem; font-weight: 700; text-decoration: none; }
+.ah-todo__done a:hover { text-decoration: underline; }
+.ah-todo__done svg { width: 0.9rem; height: 0.9rem; flex: none; }
+
+.ah-spaces { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.7rem; margin: 0 0 0.5rem; }
+.ah-space { display: flex; align-items: center; gap: 0.8rem; min-height: 4.25rem; padding: 0.8rem 1rem; border-radius: 14px; border: 1px solid var(--ah-line); background: var(--ah-surface); text-decoration: none; transition: border-color 0.15s ease, background 0.15s ease; }
+.ah-space:hover { border-color: var(--ah-accent-strong); background: var(--ah-hover, var(--ah-panel)); }
+.ah-space__img { width: 2.75rem; height: 2.75rem; flex: none; border-radius: 10px; object-fit: cover; }
+.ah-space__body { display: grid; min-width: 0; flex: 1; }
+.ah-space__title { font-size: 0.95rem; font-weight: 800; color: var(--ah-ink); }
+.ah-space__state { font-size: 0.8125rem; color: var(--ah-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ah-space__go { flex: none; font-size: 0.8125rem; font-weight: 800; color: var(--ah-accent-strong); }
+.ah-spaces__link { margin: 0 0 1.25rem; font-size: 0.8125rem; color: var(--ah-muted); overflow-wrap: anywhere; }
+.ah-spaces__link a { color: var(--ah-accent-strong); font-weight: 700; }
+.ah-spaces + .ah-ov-layout { margin-top: 1.25rem; }
+
+.ah-fold > summary { cursor: pointer; font-size: 0.8125rem; font-weight: 700; color: var(--ah-accent-strong); }
+.ah-fold[open] > summary { margin-bottom: 0.8rem; }
