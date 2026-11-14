@@ -95,7 +95,8 @@ final class JnetPortalController
             $this->spaceSettings->commandedUnitIds($tenantId, $userId),
             $this->spaces->isOrgWideWriter(),
             $unread,
-            $this->spaceSettings->findAll($tenantId)
+            $this->spaceSettings->findAll($tenantId),
+            $this->spaces->strengthByUnit($tenantId, $userId)
         );
         $pilot = false;
         try {
@@ -112,6 +113,7 @@ final class JnetPortalController
             'hubOperator' => $callsign !== '' ? $callsign : (string) Session::get('display_name', ''),
             'hubMine' => $register['mine'],
             'hubOthers' => $register['others'],
+            'hubTree' => $register['tree'],
             'hubOrg' => [
                 'label' => (string) (($tree->node(JnetSpaceTree::ORG) ?? [])['label'] ?? 'Organisation'),
                 'href' => url('jnet?commun=1'),

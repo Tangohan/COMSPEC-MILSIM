@@ -6,6 +6,7 @@ namespace App\Services\Jnet;
 
 use App\Services\Community\TenantTypeConfig;
 use App\Support\JnetSpaceTree;
+use App\Support\JnetUi;
 
 /**
  * Page d'arrivée des membres sur JNET (« Une unité. Un espace. ») : le registre des unités avec le droit du lecteur et
@@ -61,13 +62,15 @@ final class JnetMemberHub
     }
 
     /**
-     * Registre des espaces : ceux du lecteur d'abord, puis les autres, chacun dans l'ordre de l'ORBAT.
+     * Registre des espaces : ceux du lecteur d'abord, puis les autres, chacun dans l'ordre de l'ORBAT ; `tree` reprend
+     * toutes les unités visibles dans l'ordre de la hiérarchie, avec leur profondeur et leur filiation.
      *
      * @param list<int> $viewerUnitIds unités d'appartenance
      * @param list<int> $commandedUnitIds
      * @param array<int, int> $unread non-lus par espace (JnetSpaceService::unreadByUnit)
      * @param array<int, array<string, mixed>> $settings réglages d'espace par unité (JnetUnitSpaceSettings::findAll)
-     * @return array{mine: list<array<string, mixed>>, others: list<array<string, mixed>>}
+     * @param array<int, array{total?: int, available?: int}> $strengths effectif par unité (JnetSpaceService::strengthByUnit)
+     * @return array{mine: list<array<string, mixed>>, others: list<array<string, mixed>>, tree: list<array<string, mixed>>}
      */
     public static function register(
         JnetSpaceTree $tree,
@@ -75,10 +78,12 @@ final class JnetMemberHub
         array $commandedUnitIds,
         bool $orgWriter,
         array $unread,
-        array $settings
+        array $settings,
+        array $strengths = []
     ): array {
         $mine = [];
         $others = [];
+        $all = [];
         $ordered = [];
         $walk = static function (int $id) use (&$walk, &$ordered, $tree): void {
             foreach ($tree->childrenOf($id) as $child) {
@@ -90,14 +95,18 @@ final class JnetMemberHub
         foreach ($ordered as $id) {
             $node = (array) $tree->node($id);
             $look = JnetUnitSpaceSettings::look($settings[$id] ?? JnetUnitSpaceSettings::defaults(), $node);
-            $strength = (int) ($node['strength'] ?? 0);
+            $members = (int) ($node['strength'] ?? 0);
+            $total = (int) ($strengths[$id]['total'] ?? 0);
+            $available = (int) ($strengths[$id]['available'] ?? 0);
+            $parent = self::parentLabel($tree, $id);
             $isMine = in_array($id, $viewerUnitIds, true);
             $row = [
                 'id' => $id,
                 'label' => (string) ($node['label'] ?? 'Unité'),
-                'kind' => (string) ($node['code'] ?? ''),
-                'members' => $strength,
-                'parent' => self::parentLabel($tree, $id),
+                'members' => $members,
+                'parent' => $parent,
+                'depth' => max(1, (int) ($node['depth'] ?? 1)),
+                'chain' => self::chainLabels($tree, $id),
                 'mine' => $isMine,
                 'right' => self::rightFor($tree, $id, $viewerUnitIds, $commandedUnitIds, $orgWriter),
                 'unread' => (int) ($unread[$id] ?? 0),
@@ -107,7 +116,9 @@ final class JnetMemberHub
                 'monogram' => (string) $look['monogram'],
                 'emblem' => $look['emblem'],
                 'banner' => $look['banner'],
-            ];
+                'photo' => JnetUi::genericPhoto($id),
+            ] + self::describe($node, $available, $total > 0 ? $total : $members, $parent, $total > 0);
+            $all[] = $row;
             if ($isMine) {
                 $mine[] = $row;
             } else {
@@ -115,7 +126,54 @@ final class JnetMemberHub
             }
         }
 
-        return ['mine' => $mine, 'others' => $others];
+        return ['mine' => $mine, 'others' => $others, 'tree' => $all];
+    }
+
+    /**
+     * Ce qu'on lit sous le nom d'une unité : son type (échelon, fonction) puis des faits (chef, effectif, parent).
+     * Jamais le code brut de l'ORBAT : sans échelon ni fonction connus, « Unité ».
+     *
+     * @param array<string, mixed> $node nœud de JnetSpaceTree
+     * @return array{kind: string, echelon: string, facts: list<string>}
+     */
+    public static function describe(array $node, int $available, int $total, string $parent, bool $hasAvailability): array
+    {
+        $echelon = JnetUi::echelonLabel((string) ($node['echelon'] ?? ''));
+        $function = JnetUi::functionLabel((string) ($node['function'] ?? ''));
+        $kind = implode(' · ', array_values(array_filter([$echelon, $function], static fn (string $v): bool => $v !== '')));
+        $facts = [];
+        $leader = trim((string) ($node['leader'] ?? ''));
+        if ($leader !== '') {
+            $facts[] = 'Chef : ' . $leader;
+        }
+        if ($total > 0) {
+            $facts[] = $hasAvailability
+                ? $available . ' / ' . $total . ' disponible' . ($available > 1 ? 's' : '')
+                : JnetUi::count($total, 'membre');
+        }
+        if ($parent !== '') {
+            $facts[] = 'Sous ' . $parent;
+        }
+
+        return ['kind' => $kind !== '' ? $kind : 'Unité', 'echelon' => $echelon, 'facts' => $facts];
+    }
+
+    /**
+     * Fil d'échelons au-dessus d'une unité, de l'Organisation à son parent.
+     *
+     * @return list<string>
+     */
+    private static function chainLabels(JnetSpaceTree $tree, int $id): array
+    {
+        $out = [];
+        foreach (array_reverse($tree->ancestors($id)) as $a) {
+            $label = trim((string) ($tree->node($a)['label'] ?? ''));
+            if ($label !== '') {
+                $out[] = $label;
+            }
+        }
+
+        return $out;
     }
 
     private static function parentLabel(JnetSpaceTree $tree, int $id): string
@@ -124,7 +182,6 @@ final class JnetMemberHub
 
         return $parent !== null && $parent !== JnetSpaceTree::ORG ? (string) ($tree->node($parent)['label'] ?? '') : '';
     }
-
     /**
      * Rubriques personnelles. Chaque entrée est une page existante ; celles d'un module que le profil de la communauté
      * ne propose pas sont retirées (même règle que les menus : TenantTypeConfig::uriAllowed).

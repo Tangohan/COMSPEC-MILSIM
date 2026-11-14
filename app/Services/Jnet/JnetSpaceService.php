@@ -270,6 +270,30 @@ final class JnetSpaceService
     }
 
     /**
+     * Effectif de chaque unité visible du lecteur (sous-unités comprises), pour le registre des espaces.
+     *
+     * @return array<int, array{total:int, available:int, off:int}>
+     */
+    public function strengthByUnit(int $tenantId, int $viewerUserId): array
+    {
+        try {
+            $tree = $this->tree($tenantId, $viewerUserId);
+            $byUserId = [];
+            foreach ($this->dashboard->loadPersonnelCards($tenantId) as $p) {
+                $byUserId[(int) ($p['id'] ?? 0)] = $p;
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($tree->unitIds() as $id) {
+            $out[$id] = $this->strengthOf($tree->memberIdsInSubtree($id), $byUserId);
+        }
+
+        return $out;
+    }
+
+    /**
      * Échanges à accuser que le lecteur n'a pas encore lus, par espace de sa filiation (0 = Organisation).
      * Un échange compte pour chaque espace où il apparaît comme « reçu » ou « interne » ; ceux que le lecteur a
      * publiés lui-même ne comptent pas.
