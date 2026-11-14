@@ -160,6 +160,11 @@ class AuthController
         if (PortalAccessChoice::isNoOrganizationContext()) {
             return url('dashboard');
         }
+        // Un membre (sans accès à la gestion) arrive directement sur l'extranet JNET : pas de sélecteur d'espace.
+        $memberLanding = PortalAccessChoice::memberLandingUrl();
+        if ($memberLanding !== null) {
+            return $memberLanding;
+        }
 
         $remembered = PortalAccessChoice::remembered();
         if ($remembered !== null) {
@@ -191,6 +196,10 @@ class AuthController
         if (!LoginWelcomeGate::isPending()) {
             if (PortalAccessChoice::isNoOrganizationContext()) {
                 return Response::redirect(url('dashboard'));
+            }
+            $memberLanding = PortalAccessChoice::memberLandingUrl();
+            if ($memberLanding !== null) {
+                return Response::redirect($memberLanding);
             }
             $remembered = PortalAccessChoice::remembered();
             if ($remembered !== null) {
@@ -272,6 +281,11 @@ class AuthController
         if (PortalAccessChoice::isNoOrganizationContext()) {
             return Response::redirect(url('dashboard'));
         }
+        // Un seul espace possible pour un membre : l'extranet JNET.
+        $memberLanding = PortalAccessChoice::memberLandingUrl();
+        if ($memberLanding !== null) {
+            return Response::redirect($memberLanding);
+        }
         $canTba = PortalAccessChoice::canAccessTba();
         $tenantId = (int) Session::get('tenant_id');
         $tenant = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
@@ -349,6 +363,14 @@ class AuthController
             }
             if (PortalAccessChoice::isNoOrganizationContext()) {
                 return Response::redirect(url('dashboard'));
+            }
+            $loggedUser = $this->authService->user();
+            if (is_array($loggedUser)) {
+                $this->rbacService->setPermissionsForGateFromUserRow($loggedUser, $this->userRepository);
+            }
+            $memberLanding = PortalAccessChoice::memberLandingUrl();
+            if ($memberLanding !== null) {
+                return Response::redirect($memberLanding);
             }
             $remembered = PortalAccessChoice::remembered();
             if ($remembered !== null) {

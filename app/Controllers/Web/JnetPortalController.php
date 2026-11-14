@@ -12,10 +12,12 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Jnet\JnetDashboardService;
+use App\Services\Jnet\JnetMemberHub;
 use App\Services\Jnet\JnetMessagingService;
 use App\Services\Jnet\JnetSpaceService;
 use App\Services\Jnet\JnetUnitSpaceSettings;
 use App\Services\Rbac\RbacService;
+use App\Support\JnetSpaceTree;
 use App\Support\PortalAccessChoice;
 
 final class JnetPortalController
@@ -45,29 +47,84 @@ final class JnetPortalController
     /** Espaces déjà franchis dans cette session (écran d'entrée montré une fois par espace et par session). */
     private const SESSION_ENTERED = 'jnet_spaces_entered';
 
-    /** Première arrivée sur le JNET dans la session : le membre est conduit à l'espace de son unité. */
-    private const SESSION_LANDED = 'jnet_landed';
-
     public function home(Request $request, array $params = []): Response
     {
         $ctx = $this->ensureAuth();
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        // Première arrivée de la session : un membre (pas l'encadrement de l'organisation) arrive dans l'espace de son
-        // unité, par son écran d'entrée. « Espace commun » (?commun=1) et les visites suivantes restent ici.
-        if (!Session::get(self::SESSION_LANDED) && (string) $request->query('commun', '') === '' && (string) $request->query('type', '') === '') {
-            Session::set(self::SESSION_LANDED, 1);
-            $own = $this->ownUnitId($ctx['tenant_id'], $ctx['user_id']);
-            if ($own > 0 && !$this->spaces->isOrgWideReader()) {
-                return Response::redirect(url('jnet/u/' . $own));
-            }
+        // Un membre (pas l'encadrement de l'organisation) arrive sur l'extranet « Une unité. Un espace. » ; l'espace
+        // commun reste à ?commun=1 et ?type=. L'encadrement garde l'espace commun comme arrivée.
+        if (!$this->spaces->isOrgWideReader() && (string) $request->query('commun', '') === '' && (string) $request->query('type', '') === '') {
+            return $this->hubResponse($ctx);
         }
         $dash = $this->jnet->buildHome($ctx['tenant_id'], $ctx['user_id']);
         $kind = (string) $request->query('type', '');
         $space = $this->spaces->buildSpace($ctx['tenant_id'], $ctx['user_id'], 0, $kind) ?? [];
 
         return $this->render('home', 'Espace commun', array_merge($dash, $space), 'home');
+    }
+
+    /** Extranet du membre pour tous les profils (l'encadrement l'ouvre depuis l'onglet « Mon extranet »). */
+    public function hub(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+
+        return $this->hubResponse($ctx);
+    }
+
+    /**
+     * « Une unité. Un espace. » : le registre des unités visibles du lecteur (droit, non-lus, Entrer), puis ses
+     * rubriques personnelles. Tout vient de l'arbre ORBAT déjà filtré pour lui et de pages qui se protègent seules.
+     *
+     * @param array{tenant_id:int,user_id:int} $ctx
+     */
+    private function hubResponse(array $ctx): Response
+    {
+        $tenantId = $ctx['tenant_id'];
+        $userId = $ctx['user_id'];
+        $tenant = $this->tenantRepository->findById($tenantId);
+        $tree = $this->spaces->tree($tenantId, $userId);
+        $unread = $this->spaces->unreadByUnit($tenantId, $userId);
+        $register = JnetMemberHub::register(
+            $tree,
+            $this->spaces->viewerUnitIds($tenantId, $userId),
+            $this->spaceSettings->commandedUnitIds($tenantId, $userId),
+            $this->spaces->isOrgWideWriter(),
+            $unread,
+            $this->spaceSettings->findAll($tenantId)
+        );
+        $pilot = false;
+        try {
+            $pilot = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)
+                ->allowsWithCatalogDefault($tenantId, \App\Services\Personnel\PilotQualificationService::FEATURE);
+        } catch (\Throwable) {
+        }
+        $unreadMail = $this->unreadMailCount($tenantId, $userId);
+        $callsign = trim((string) Session::get('callsign', ''));
+
+        return Response::view('jnet.hub', [
+            'title' => 'Mon extranet',
+            'hubCommunity' => is_array($tenant) ? community_display_name($tenant) : '',
+            'hubOperator' => $callsign !== '' ? $callsign : (string) Session::get('display_name', ''),
+            'hubMine' => $register['mine'],
+            'hubOthers' => $register['others'],
+            'hubOrg' => [
+                'label' => (string) (($tree->node(JnetSpaceTree::ORG) ?? [])['label'] ?? 'Organisation'),
+                'href' => url('jnet?commun=1'),
+                'unread' => (int) ($unread[JnetSpaceTree::ORG] ?? 0),
+            ],
+            'hubSections' => JnetMemberHub::sections([
+                'tenantType' => is_array($tenant) ? (string) ($tenant['tenant_type'] ?? 'full') : 'full',
+                'pilotLogbook' => $pilot,
+                'unreadMail' => $unreadMail,
+            ]),
+            'hubUnreadMail' => $unreadMail,
+            'hubCanTba' => PortalAccessChoice::canAccessTba(),
+        ]);
     }
 
     /** Espace d’une unité de l’ORBAT : reçu du commandement, fil interne, remonté vers l’échelon supérieur. */
@@ -85,7 +142,7 @@ final class JnetPortalController
         if (!$tree->has($unitId)) {
             Session::flash('error', 'Cet espace n’existe pas ou ne vous est pas accessible.');
 
-            return Response::redirect(url('jnet?commun=1'));
+            return Response::redirect($this->homeUrl());
         }
         $settings = $this->spaceSettings->find($ctx['tenant_id'], $unitId);
         $look = JnetUnitSpaceSettings::look($settings, (array) $tree->node($unitId));
@@ -96,7 +153,7 @@ final class JnetPortalController
         if ($space === null) {
             Session::flash('error', 'Cet espace n’existe pas ou ne vous est pas accessible.');
 
-            return Response::redirect(url('jnet?commun=1'));
+            return Response::redirect($this->homeUrl());
         }
         $vue = (string) $request->query('vue', 'accueil');
 
@@ -129,6 +186,8 @@ final class JnetPortalController
             'usOperator' => $callsign !== '' ? $callsign : (string) Session::get('display_name', ''),
             'canCustomize' => $this->canCustomize($ctx['tenant_id'], $ctx['user_id'], $chain),
             'customizeUrl' => url('jnet/u/' . $unitId . '/personnaliser'),
+            'usHome' => $this->homeUrl(),
+            'usHomeLabel' => $this->spaces->isOrgWideReader() ? 'Espace commun' : 'Mon extranet',
         ], $extra));
     }
 
@@ -147,7 +206,7 @@ final class JnetPortalController
         if ($unitId <= 0 || !$tree->has($unitId)) {
             Session::flash('error', 'Cet espace n’existe pas ou ne vous est pas accessible.');
 
-            return Response::redirect(url('jnet?commun=1'));
+            return Response::redirect($this->homeUrl());
         }
         $node = (array) $tree->node($unitId);
         $look = JnetUnitSpaceSettings::look($this->spaceSettings->find($ctx['tenant_id'], $unitId), $node);
@@ -173,7 +232,8 @@ final class JnetPortalController
             'entryOperator' => trim((string) Session::get('callsign', '')) !== '' ? (string) Session::get('callsign', '') : (string) Session::get('display_name', ''),
             'entryRole' => $isMember ? 'Membre de l’unité' : 'Visiteur autorisé',
             'entryNext' => url('jnet/u/' . $unitId . '?direct=1'),
-            'entryLeave' => url('jnet?commun=1'),
+            'entryLeave' => $this->homeUrl(),
+            'entryLeaveLabel' => $this->spaces->isOrgWideReader() ? 'Espace commun' : 'Mon extranet',
         ]);
     }
 
@@ -187,7 +247,7 @@ final class JnetPortalController
         $unitId = (int) ($params['id'] ?? 0);
         $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
         if ($unitId <= 0 || !$tree->has($unitId)) {
-            return Response::redirect(url('jnet?commun=1'));
+            return Response::redirect($this->homeUrl());
         }
         if (!$this->canCustomize($ctx['tenant_id'], $ctx['user_id'], $tree->chain($unitId))) {
             Session::flash('error', 'Seuls le chef de l’unité et l’encadrement de l’organisation personnalisent cet espace.');
@@ -203,7 +263,7 @@ final class JnetPortalController
 
         $space = $this->spaces->buildSpace($ctx['tenant_id'], $ctx['user_id'], $unitId);
         if ($space === null) {
-            return Response::redirect(url('jnet?commun=1'));
+            return Response::redirect($this->homeUrl());
         }
 
         return $this->unitShell($ctx, $unitId, $space, JnetUnitSpaceSettings::look($settings, $node), 'personnaliser', $tree->chain($unitId), [
@@ -229,7 +289,7 @@ final class JnetPortalController
         $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
         $back = url('jnet/u/' . $unitId . '/personnaliser');
         if ($unitId <= 0 || !$tree->has($unitId)) {
-            return Response::redirect(url('jnet?commun=1'));
+            return Response::redirect($this->homeUrl());
         }
         if (!\App\Core\Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré, rien n’a été enregistré.');
@@ -304,21 +364,10 @@ final class JnetPortalController
         return is_array($entered) && isset($entered[$unitId]);
     }
 
-    /** Unité du membre dont l'espace l'accueille (la première, dans l'ordre de l'ORBAT) ; 0 sans unité. */
-    private function ownUnitId(int $tenantId, int $userId): int
+    /** Où ramène « retour » : l'extranet du membre, ou l'espace commun pour l'encadrement de l'organisation. */
+    private function homeUrl(): string
     {
-        try {
-            $tree = $this->spaces->tree($tenantId, $userId);
-            foreach ($tree->viewerSpaces($this->spaces->viewerUnitIds($tenantId, $userId)) as $id) {
-                $id = (int) (is_array($id) ? ($id['id'] ?? 0) : $id);
-                if ($id > 0 && in_array($id, $this->spaces->viewerUnitIds($tenantId, $userId), true)) {
-                    return $id;
-                }
-            }
-        } catch (\Throwable) {
-        }
-
-        return 0;
+        return $this->spaces->isOrgWideReader() ? url('jnet?commun=1') : url('jnet');
     }
 
     /** @param list<int> $chain de l'organisation à l'unité */

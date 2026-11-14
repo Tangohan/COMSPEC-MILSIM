@@ -13,6 +13,7 @@ declare(strict_types=1);
  * @var string $entryRole
  * @var string $entryNext
  * @var string $entryLeave
+ * @var string $entryLeaveLabel
  */
 use App\Services\Jnet\JnetUnitSpaceSettings;
 
@@ -83,7 +84,7 @@ $welcome = (string) ($look['welcome'] ?? '');
 
         <div class="jx-actions">
             <a class="jx-enter" href="<?= $h($next) ?>" autofocus>Entrer dans l’espace</a>
-            <a class="jx-leave" href="<?= $h((string) ($entryLeave ?? url('jnet'))) ?>">Espace commun</a>
+            <a class="jx-leave" href="<?= $h((string) ($entryLeave ?? url('jnet'))) ?>"><?= $h((string) ($entryLeaveLabel ?? 'Espace commun')) ?></a>
         </div>
     </main>
 </body>

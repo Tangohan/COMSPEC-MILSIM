@@ -89,7 +89,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 <a class="us-skip" href="#us-main">Aller au contenu</a>
 
 <header class="us-top">
-    <a class="us-top__net" href="<?= $h(url('jnet?commun=1')) ?>" title="Retour à l’espace commun">
+    <a class="us-top__net" href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>" title="Retour : <?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?>">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         JNET
     </a>
@@ -326,7 +326,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 
 <footer class="us-foot">
     <span>JNET<?= (string) ($usCommunity ?? '') !== '' ? ' · ' . $h((string) $usCommunity) : '' ?></span>
-    <a href="<?= $h(url('jnet?commun=1')) ?>">Espace commun</a>
+    <a href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>"><?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?></a>
     <a href="<?= $h(url('jnet/courrier')) ?>">Messagerie</a>
     <a href="<?= $h(url('dashboard')) ?>">Quitter JNET</a>
 </footer>

@@ -274,7 +274,8 @@ $cooperationChildren = [
 ];
 
 $jnetChildren = [
-    ['label' => 'Espace commun', 'href' => url('jnet'), 'active' => $boNavJnetHome],
+    ['label' => 'Mon extranet', 'href' => url('jnet/espaces'), 'active' => $p === 'jnet/espaces'],
+    ['label' => 'Espace commun', 'href' => url('jnet?commun=1'), 'active' => $boNavJnetHome && $p !== 'jnet/espaces'],
     [
         'label' => 'Unité',
         'children' => [

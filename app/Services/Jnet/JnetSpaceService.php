@@ -269,6 +269,59 @@ final class JnetSpaceService
         return null;
     }
 
+    /**
+     * Échanges à accuser que le lecteur n'a pas encore lus, par espace de sa filiation (0 = Organisation).
+     * Un échange compte pour chaque espace où il apparaît comme « reçu » ou « interne » ; ceux que le lecteur a
+     * publiés lui-même ne comptent pas.
+     *
+     * @return array<int, int>
+     */
+    public function unreadByUnit(int $tenantId, int $viewerUserId): array
+    {
+        if (!$this->exchangesReady()) {
+            return [];
+        }
+        $tree = $this->tree($tenantId, $viewerUserId);
+        $viewerUnits = $this->viewerUnitIds($tenantId, $viewerUserId);
+        $pending = array_values(array_filter(
+            $this->visibleExchanges($tenantId, $viewerUserId, $tree, $viewerUnits, $this->isOrgWideReader()),
+            static fn (array $e): bool => !empty($e['requires_ack']) && (int) $e['author_user_id'] !== $viewerUserId
+        ));
+        if ($pending === []) {
+            return [];
+        }
+        $readers = $this->exchanges->readersFor(array_map(static fn (array $e): int => (int) $e['id'], $pending));
+        $spaces = $tree->viewerSpaces($viewerUnits);
+        $out = [];
+        foreach ($pending as $e) {
+            if (in_array($viewerUserId, $readers[(int) $e['id']] ?? [], true)) {
+                continue;
+            }
+            $from = (int) $e['from_unit_id'];
+            $targets = array_map('intval', (array) $e['targets']);
+            foreach ($spaces as $spaceId) {
+                if ($spaceId === JnetSpaceTree::ORG) {
+                    if (in_array(JnetSpaceTree::ORG, $targets, true)) {
+                        $out[$spaceId] = ($out[$spaceId] ?? 0) + 1;
+                    }
+                    continue;
+                }
+                $touches = false;
+                foreach (array_merge([$from], $targets) as $c) {
+                    if ($c === JnetSpaceTree::ORG || $tree->isWithin($c, $spaceId) || $tree->isWithin($spaceId, $c)) {
+                        $touches = true;
+                        break;
+                    }
+                }
+                if ($touches && in_array($tree->directionFor($spaceId, $from, $targets), [JnetSpaceTree::DIR_DOWN, JnetSpaceTree::DIR_INTERNAL], true)) {
+                    $out[$spaceId] = ($out[$spaceId] ?? 0) + 1;
+                }
+            }
+        }
+
+        return $out;
+    }
+
     public function acknowledge(int $tenantId, int $viewerUserId, int $exchangeId): bool
     {
         $row = $this->exchanges->find($tenantId, $exchangeId);

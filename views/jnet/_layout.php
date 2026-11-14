@@ -32,7 +32,8 @@ $zulu = gmdate('H:i:s') . 'Z';
 
 $navGroups = [
     ['label' => 'Situation', 'items' => [
-        ['id' => 'home', 'label' => 'Tableau d’unité', 'path' => 'jnet'],
+        ['id' => 'hub', 'label' => 'Mon extranet', 'path' => 'jnet/espaces'],
+        ['id' => 'home', 'label' => 'Tableau d’unité', 'path' => 'jnet?commun=1'],
         ['id' => 'unit', 'label' => 'Fiche d’unité', 'path' => 'jnet/unite'],
         ['id' => 'personnel', 'label' => 'Personnel', 'path' => 'jnet/personnel'],
     ]],

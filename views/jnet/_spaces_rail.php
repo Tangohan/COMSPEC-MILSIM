@@ -29,5 +29,5 @@ $rail = is_array($spacesRail ?? null) ? $spacesRail : [];
             </li>
         <?php endforeach; ?>
     </ul>
-    <a class="jn-rail__more" href="<?= $h(url('jnet') . '#jn-units') ?>">Toutes les unités →</a>
+    <a class="jn-rail__more" href="<?= $h(url('jnet?commun=1') . '#jn-units') ?>">Toutes les unités →</a>
 </nav>

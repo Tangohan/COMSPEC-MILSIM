@@ -21,7 +21,7 @@ $postureKey = strtolower((string) ($posture['key'] ?? 'green'));
 $postureClass = in_array($postureKey, ['red', 'amber'], true) ? $postureKey : 'green';
 $motto = trim((string) ($unitMotto ?? ''));
 $prioKey = static fn (array $t): string => preg_replace('/[^a-z]/', '', strtolower((string) ($t['priority_key'] ?? $t['priority'] ?? 'low'))) ?: 'low';
-$exBack = url('jnet');
+$exBack = url('jnet?commun=1');
 $label = (string) ($space['label'] ?? 'Organisation');
 $guideContext = 'org';
 $orgBadge = is_string($space['badge'] ?? null) ? (string) $space['badge'] : '';
@@ -90,9 +90,9 @@ $topCount = count($unitTree);
                     </div>
                 </div>
                 <nav class="jn-filters" aria-label="Filtrer le flux">
-                    <a href="<?= $h(url('jnet') . '#jn-flow-title') ?>" class="jn-filter<?= $flowFilter === '' ? ' is-active' : '' ?>"<?= $flowFilter === '' ? ' aria-current="true"' : '' ?>>Tout</a>
+                    <a href="<?= $h(url('jnet?commun=1') . '#jn-flow-title') ?>" class="jn-filter<?= $flowFilter === '' ? ' is-active' : '' ?>"<?= $flowFilter === '' ? ' aria-current="true"' : '' ?>>Tout</a>
                     <?php foreach ($exchangeKinds as $key => $kindLabel): ?>
-                        <a href="<?= $h(url('jnet?type=' . rawurlencode((string) $key)) . '#jn-flow-title') ?>" class="jn-filter<?= $flowFilter === $key ? ' is-active' : '' ?>"<?= $flowFilter === $key ? ' aria-current="true"' : '' ?>><?= $h($kindLabel) ?></a>
+                        <a href="<?= $h(url('jnet?commun=1&type=' . rawurlencode((string) $key)) . '#jn-flow-title') ?>" class="jn-filter<?= $flowFilter === $key ? ' is-active' : '' ?>"<?= $flowFilter === $key ? ' aria-current="true"' : '' ?>><?= $h($kindLabel) ?></a>
                     <?php endforeach; ?>
                 </nav>
                 <?php if (!empty($canPost)): ?>
