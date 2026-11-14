@@ -974,6 +974,33 @@
         if (box?.open) box.close();
     }
 
+    /**
+     * Ouvre la fenêtre sur un emploi précis (suggestion, note orange, « le même poste dans un autre pays »). La fiche est
+     * demandée seule et affichée tout de suite : le catalogue entier (plusieurs Mo) peut tarder ou échouer sans laisser
+     * la fenêtre vide. Une fois le catalogue chargé, la fiche est reprise depuis lui (liste et filtres à jour).
+     */
+    function showWanted(id, opening) {
+        const box = dialog();
+        if (!box) return;
+        const fromData = () => (data ? data.entries.find(e => e.id === id) || null : null);
+        const placeholder = box.querySelector('[data-job-catalog-placeholder]');
+        const idle = placeholder.textContent;
+        let shown = false;
+        const display = entry => { shown = true; placeholder.textContent = idle; show(entry); };
+        const ready = fromData();
+        if (ready) { display(ready); return; }
+        placeholder.textContent = 'Ouverture de la fiche…';
+        fetch(box.dataset.catalogUrl + (box.dataset.catalogUrl.includes('?') ? '&' : '?') + 'emploi=' + encodeURIComponent(id), {credentials: 'same-origin', headers: {'Accept': 'application/json'}})
+            .then(response => (response.ok ? response.json() : null))
+            .then(json => { if (json?.entry && !shown) display(json.entry); })
+            .catch(() => { /* la fiche viendra du catalogue complet */ });
+        opening.then(() => {
+            const entry = fromData();
+            if (entry) { display(entry); return; }
+            if (!shown) placeholder.textContent = data ? 'Cet emploi n’est plus dans le référentiel. Cherchez-le dans la liste.' : 'La fiche n’a pas pu être ouverte. Fermez la fenêtre et réessayez.';
+        });
+    }
+
     function setCountry(code) {
         if (state.country === code) return;
         state.country = code;
@@ -1182,10 +1209,8 @@
             event.preventDefault();
             // « Voir dans le référentiel » (suggestion, note orange) : la fenêtre s’ouvre sur cet emploi.
             const wanted = trigger.dataset.jobCatalogShow || '';
-            open(trigger).then(() => {
-                const entry = wanted && data ? data.entries.find(e => e.id === wanted) : null;
-                if (entry) show(entry);
-            });
+            const opening = open(trigger);
+            if (wanted) showWanted(wanted, opening);
             return;
         }
         const box = dialog();
