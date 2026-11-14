@@ -339,7 +339,13 @@ final class SseIdRealCountryTest extends TestCase
         $mrz = self::read('mod/@COMSPEC_SSE/addons/identity/functions/fn_idMrz.sqf');
         self::assertStringContainsString('getOrDefault ["mrzIssuer", ""]', $mrz);
         $viewer = self::read('mod/@COMSPEC_SSE/addons/identity/functions/fn_idViewerOnLoad.sqf');
-        self::assertStringContainsString('"eu", "am", "ot"', $viewer);
+        // Zone de style -> gabarit générique (eu, am, ot) : la fenêtre passe la zone à idDocTypes, qui choisit le fichier.
+        self::assertStringContainsString('["texture", [_type, _side, _lc, _zone]] call comspec_sse_fnc_idDocTypes', $viewer);
+        self::assertStringContainsString('_zone in ["europe", "americas", "other"]', $viewer);
+        self::assertStringContainsString(
+            '(["ot", "eu", "am"] select ((["other", "europe", "americas"] find (toLower _zone)) max 0))',
+            self::read('mod/@COMSPEC_SSE/addons/identity/functions/fn_idDocTypes.sqf')
+        );
         foreach (['eu', 'am', 'ot'] as $z) {
             foreach (["tpl_card_{$z}_recto_co", "tpl_card_{$z}_verso_co", "tpl_passport_{$z}_co", "tpl_license_{$z}_recto_co"] as $f) {
                 self::assertFileExists(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/identity/data/' . $f . '.paa');

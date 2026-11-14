@@ -353,6 +353,27 @@ final class AtakLinkTrustedHostAssetTest extends TestCase
             $guarded[] = [$gameAuthFile, $block];
         }
 
+        // Preuve du module officiel (OfficialClientProof.cs) : AddClientProof pose deux en-têtes dont le nom lui est
+        // passé (Key / Proof, puis Key2 / Proof2). Ce bloc n'est admis que parce que StampOfficialClient, son seul
+        // appelant, refuse un hôte non sûr avant toute écriture d'en-tête ; un appel ajouté ailleurs fait échouer ici.
+        $proofFile = $this->linkDir() . '/OfficialClientProof.cs';
+        $proof = $this->read($proofFile);
+        $stamp = self::blockAfter($proof, 'private static void StampOfficialClient(HttpRequestMessage req)');
+        $proofGuard = 'if (!IsSecretSafeUri(req.RequestUri)) return;';
+        $proofGuardAt = strpos($stamp, $proofGuard);
+        self::assertNotFalse($proofGuardAt, 'StampOfficialClient doit refuser un hôte non sûr');
+        self::assertStringNotContainsString('Headers.', substr($stamp, 0, (int) $proofGuardAt),
+            'StampOfficialClient : le filtre d\'hôte doit précéder tout en-tête');
+        self::assertSame(2, substr_count($stamp, 'AddClientProof(req, '), 'StampOfficialClient : deux preuves attendues');
+        self::assertLessThan((int) strpos($stamp, 'AddClientProof(req, '), (int) $proofGuardAt,
+            'StampOfficialClient : le filtre d\'hôte doit précéder les preuves');
+        $proofCalls = 0;
+        foreach ($this->dllSourceFiles() as $file) {
+            $proofCalls += substr_count($this->read($file), 'AddClientProof(');
+        }
+        self::assertSame(3, $proofCalls, 'AddClientProof : sa définition et les deux appels de StampOfficialClient, aucun autre');
+        $guarded[] = [$proofFile, self::blockAfter($proof, 'private static bool AddClientProof(HttpRequestMessage req,')];
+
         $secretName = '"(?:Authorization|X-ATAK-TOKEN|X-COMSPEC-KEY|X-COMSPEC-SESSION|X-COMSPEC-STEAM)"';
         $rules = [
             'en-tête secret posé' => '/\.(?:TryAddWithoutValidation|Add)\(\s*' . $secretName . '/i',

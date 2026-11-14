@@ -302,6 +302,7 @@ return [
     'inscriptions_en_cours' => 'Current enrolments',
     'inscriptions_publiques_et_etats_des_contacts' => 'Public sign-ups and contact statuses',
     'insights_presence_evenements' => 'Event attendance insights',
+    'bilan_de_participation' => 'Attendance review',
     'integration_des_nouveaux_membres' => 'New member integration',
     'integrations' => 'Integrations',
     'integrations_externes' => 'External integrations',

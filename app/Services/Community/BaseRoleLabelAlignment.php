@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Community;
 
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -36,12 +37,14 @@ final class BaseRoleLabelAlignment
 
     private static function rename(PDO $pdo, string $fromName, string $toName, string $fromEn, string $toEn): int
     {
-        $st = $pdo->prepare('UPDATE roles SET name = ? WHERE tenant_id IS NOT NULL AND slug = ? AND name = ?');
+        // Comparaison du slug sans mélange de collations (erreur 1267 sur MariaDB).
+        $slugEq = SqlText::equals($pdo, 'slug');
+        $st = $pdo->prepare('UPDATE roles SET name = ? WHERE tenant_id IS NOT NULL AND ' . $slugEq . ' AND name = ?');
         $st->execute([$toName, self::SLUG, $fromName]);
         $renamed = $st->rowCount();
 
         if (TenantDefaultRoleDefinitions::rolesTableHasLabelEnColumn($pdo)) {
-            $en = $pdo->prepare('UPDATE roles SET label_en = ? WHERE tenant_id IS NOT NULL AND slug = ? AND label_en = ?');
+            $en = $pdo->prepare('UPDATE roles SET label_en = ? WHERE tenant_id IS NOT NULL AND ' . $slugEq . ' AND label_en = ?');
             $en->execute([$toEn, self::SLUG, $fromEn]);
         }
 

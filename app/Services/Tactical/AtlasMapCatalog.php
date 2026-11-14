@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Tactical;
 
+use App\Support\SqlText;
 use PDO;
 
 /**
@@ -93,7 +94,7 @@ final class AtlasMapCatalog
     public static function import(PDO $pdo, ?string $json = null): array
     {
         $out = ['inserted' => 0, 'updated' => 0, 'kept' => 0];
-        $find = $pdo->prepare('SELECT id, config FROM atak_maps WHERE slug = ? LIMIT 1');
+        $find = $pdo->prepare('SELECT id, config FROM atak_maps WHERE ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $ins = $pdo->prepare('INSERT INTO atak_maps (slug, label, world_name, tile_pattern, config, display_order) VALUES (?, ?, ?, ?, ?, ?)');
         $upd = $pdo->prepare('UPDATE atak_maps SET label = ?, world_name = ?, tile_pattern = ?, config = ?, display_order = ? WHERE id = ?');
         foreach (self::rows($json) as $row) {
