@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.16.0 Washington — app épinglée sur la carte / pinned app on the map[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Carte[/b] : épinglez Messages, SMS ou Ordres dans un bandeau de la taille de celui des coordonnées, à sa droite : non lus et dernier message ou ordre. Touchez-le pour ouvrir l'app.
+[*] Choix dans le panneau SITUATION de la carte, dans Réglages > Carte, ou dans Options, Réglages de l'addon, COMSPEC, ATAK · Affichage (« App épinglée sur la carte »). Rien n'est épinglé par défaut.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Map[/b]: pin Messages, SMS or Orders in a banner the size of the coordinates banner, to its right: unread count and last message or order. Touch it to open the app.
+[*] Choose it in the map's SITUATION panel, in Settings > Map, or in Options, Addon settings, COMSPEC, ATAK · Display ("App pinned on the map"). Nothing is pinned by default.
+[/list]
+
 [h1]COMSPEC ATAK 4.15.2 Washington — flash de l'appareil photo adouci / softer camera flash[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
