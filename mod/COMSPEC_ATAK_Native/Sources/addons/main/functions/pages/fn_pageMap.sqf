@@ -224,45 +224,46 @@ switch (_bStyle) do {
 };
 // Hauteur prise en bas de la carte par le bandeau (boutons OUTILS / RECHERCHER, fiches et panneaux posés au-dessus).
 private _panH = [0, _bandH] select (!_bTop && {_bandH > 0});
-// App épinglée (4.16.0, fn_mapPinnedApp, réglage du joueur, aucune par défaut) : un bandeau de la hauteur de celui des
-// coordonnées, à sa droite, sur la même ligne ; sinon au-dessus (bas) ou en dessous (haut) ; masqué si la carte est trop
-// étroite ou trop basse, et en petit format. Il compte dans _panH quand il est en bas : fiches, RECHERCHER et menu le laissent libre.
-private _pinApp = ["app"] call comspec_atak_native_fnc_mapPinnedApp;
-if (_pinApp isNotEqualTo "" && {!_mini}) then {
+// Apps épinglées (4.16.0 ; trois au plus et mini-apps en 4.17.0 ; fn_mapPinnedApp, réglages du joueur, aucune par défaut) : des
+// bandeaux de la hauteur de celui des coordonnées. D'abord à sa droite, sur la même ligne, en se partageant la place ; ce qui
+// n'y tient pas (22 caractères au moins par bandeau) passe sur des rangées empilées, au-dessus (bas) ou en dessous (haut), tant
+// que la carte garde la moitié de sa hauteur ; le reste n'est pas dessiné. Rien en petit format. Les rangées du bas comptent
+// dans _panH : fiches, RECHERCHER et menu les laissent libres.
+private _pinApps = ["apps"] call comspec_atak_native_fnc_mapPinnedApp;
+if ((count _pinApps) > 0 && {!_mini}) then {
     private _pinH = ["height", [_panFs, _panIn]] call comspec_atak_native_fnc_mapPinnedApp;
     private _pinMin = 22 * _chW + _cellIn * 2;
-    private _pinW = (if (_stripW > 0) then { _stripW } else { 31 * _chW + _cellIn * 2 }) min ((_mw - 2 * _pad - _toolCol) max _pinMin);
+    private _pinMax = (if (_stripW > 0) then { _stripW } else { 31 * _chW + _cellIn * 2 }) min ((_mw - 2 * _pad - _toolCol) max _pinMin);
     private _pinTop = _bTop && {_bandH > 0};
     private _pinLim = _bx + _mw - _toolCol - _pad - ([0, _pad * 2 + _fs * 1.9 / _ratio] select (_pinTop && _interactive));
+    private _pinAlpha = _bc get "alpha";
+    if (_pinAlpha < 0) then { _pinAlpha = 0.86; };
+    // Rangée 0 : celle du bandeau (à sa droite, ou seule en bas à gauche quand il est masqué). _pinOff : distance entre le
+    // bord où le bandeau est posé (bas ou haut de la carte, marge comprise) et la rangée en cours.
     private _pinX = [_px0, _px0 + _stripW + _pad] select (_bandH > 0);
-    private _pinY = 0;
-    private _pinPan = 0;
-    private _pinOk = false;
-    if ((_pinLim - _pinX) >= _pinMin) then {
-        // À droite du bandeau (ou seul, en bas à gauche, quand le bandeau est masqué).
-        _pinOk = true;
-        _pinW = _pinW min (_pinLim - _pinX);
-        if (_pinTop) then { _pinY = _py0; } else {
-            _pinY = _by + _mh - _pad - _pinH;
-            _pinPan = _pinH max _panH;
+    private _pinOff = 0;
+    private _pinRow = 0;
+    while { (count _pinApps) > 0 } do {
+        private _room = _pinLim - _pinX + _pad;
+        private _n = (floor (_room / (_pinMin + _pad))) min (count _pinApps);
+        private _fit = _n > 0 && {_pinRow isEqualTo 0 || {(_pinOff + _pinH) < (_mh * 0.5)}};
+        // Rangée empilée sans place (ou bandeau masqué sur une carte trop étroite) : le reste n'est pas dessiné.
+        if (!_fit && {_pinRow > 0 || {_bandH <= 0}}) then { break };
+        if (_fit) then {
+            private _pinW = _pinMax min (_room / _n - _pad);
+            private _pinY = [_by + _mh - _pad - _pinOff - _pinH, _by + _pad + _pinOff] select _pinTop;
+            {
+                ["build", [_ov, _mk, [_pinX, _pinY, _pinW, _pinH], [_panFs, _panIn, _cellIn, _chW, _ratio], _interactive, _x, _pinAlpha]] call comspec_atak_native_fnc_mapPinnedApp;
+                _hud pushBack [_pinX - _bx, _pinY - _by, _pinX + _pinW - _bx, _pinY + _pinH - _by];
+                _pinX = _pinX + _pinW + _pad;
+            } forEach (_pinApps select [0, _n]);
+            _pinApps deleteRange [0, _n];
+            if (!_pinTop) then { _panH = _panH max (_pinOff + _pinH); };
         };
-    } else {
-        // Pas de place à droite : au-dessus du bandeau en bas, en dessous en haut, si la carte reste assez haute.
+        // Rangée suivante : au-delà du bandeau et de ce qui vient d'être posé.
+        _pinOff = (([_bandH, _pinOff] select (_pinRow > 0)) max ([0, _pinOff + _pinH] select _fit)) + _pad / 2;
+        _pinRow = _pinRow + 1;
         _pinX = _px0;
-        _pinW = _stripW min (_pinLim - _pinX);
-        if (_pinW >= _pinMin && {_bandH > 0}) then {
-            if (_pinTop) then { _pinOk = true; _pinY = _py0 + _bandH + _pad / 2; } else {
-                _pinPan = _panH + _pinH + _pad / 2;
-                if ((_mh - _pinPan) > (_mh * 0.5)) then { _pinOk = true; _pinY = _by + _mh - _pad - _pinPan; };
-            };
-        };
-    };
-    if (_pinOk) then {
-        private _pinAlpha = _bc get "alpha";
-        if (_pinAlpha < 0) then { _pinAlpha = 0.86; };
-        ["build", [_ov, _mk, [_pinX, _pinY, _pinW, _pinH], [_panFs, _panIn, _cellIn, _chW, _ratio], _interactive, _pinApp, _pinAlpha]] call comspec_atak_native_fnc_mapPinnedApp;
-        _hud pushBack [_pinX - _bx, _pinY - _by, _pinX + _pinW - _bx, _pinY + _pinH - _by];
-        _panH = _panH max _pinPan;
     };
 };
 // Rectangles de l'interface posée sur la carte, relatifs au coin de la carte, avec sa taille : fn_mapHudRects les
@@ -680,7 +681,7 @@ if (_interactive) then {
                     ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, "", "Couleurs selon l'altitude du terrain"]
                 ]]
             ];
-            // App épinglée sous le bandeau (réglage du joueur, fn_mapPinnedApp) : choix en un toucher, sans quitter la carte.
+            // Apps épinglées (réglages du joueur, fn_mapPinnedApp) : choix en un toucher, sans quitter la carte.
             _rows append (["rows"] call comspec_atak_native_fnc_mapPinnedApp);
             _rows pushBack ["title", "Calques"];
             {

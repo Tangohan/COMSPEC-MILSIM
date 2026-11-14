@@ -142,12 +142,20 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_photo_flash", "SLIDER",
     ["Puissance du flash", "Force du flash de l'appareil photo du téléphone. 100 % : réglage normal. Baissez si vos photos de nuit sont trop claires, montez si elles sont trop sombres."],
     ["COMSPEC", "ATAK · Affichage"], [0.25, 2, 1, 0, true], 0] call comspec_atak_native_fnc_addSetting;
-// App épinglée sur la carte (4.16.0, fn_mapPinnedApp), par joueur : un bandeau de la taille de celui des coordonnées qui résume
-// Messages, SMS ou Ordres. Aucune par défaut. Aussi dans Réglages > Carte et dans le panneau SITUATION de la carte.
-["comspec_atak_native_map_pinned_app", "LIST",
-    ["App épinglée sur la carte", "Aucune par défaut. Choisissez Messages, SMS ou Ordres : un bandeau de la taille de celui des coordonnées, à sa droite sur la carte du téléphone, montre les non lus et le dernier message ou ordre avec l'expéditeur et l'heure. Touchez-le pour ouvrir l'app. Exemple : Ordres affiche « 2 à traiter » puis « TOC 14:32 · Rejoindre le point Alpha ». Aussi réglable dans Réglages > Carte."],
-    ["COMSPEC", "ATAK · Affichage"], [["none", "CHAT", "SMS", "TASK"], ["Aucune", "Messages", "SMS", "Ordres"], 0], 0,
-    { ["refresh"] call comspec_atak_native_fnc_mapPinnedApp; }] call comspec_atak_native_fnc_addSetting;
+// Apps épinglées sur la carte (4.16.0 ; trois emplacements et mini-apps en 4.17.0 ; fn_mapPinnedApp), par joueur : un bandeau de
+// la taille de celui des coordonnées par app. Aucune par défaut. Le premier réglage est celui de la 4.16.0 (choix des joueurs
+// gardé). Mêmes clés, dans le même ordre, que la table de fn_mapPinnedApp. Aussi dans Réglages > Carte et dans le panneau
+// SITUATION de la carte.
+{
+    _x params ["_pinVar", "_pinTitle", "_pinHelp"];
+    [_pinVar, "LIST", [_pinTitle, _pinHelp],
+        ["COMSPEC", "ATAK · Affichage"], [["none", "CHAT", "SMS", "TASK", "WAYPOINTS", "FIRES", "MEDICAL", "ALERTS", "GARMIN"], ["Aucune", "Messages", "SMS", "Ordres", "Itinéraire (NAV)", "Feux", "MEDEVAC", "Alertes", "Heure H"], 0], 0,
+        { ["refresh"] call comspec_atak_native_fnc_mapPinnedApp; }] call comspec_atak_native_fnc_addSetting;
+} forEach [
+    ["comspec_atak_native_map_pinned_app", "App épinglée sur la carte", "Aucune par défaut. Un bandeau de la taille de celui des coordonnées, à sa droite sur la carte du téléphone, résume l'app choisie. Messages, SMS, Ordres : non lus et dernier message ou ordre. Itinéraire : étape active, distance et cap. Feux : mission de tir en cours. MEDEVAC : étape de la demande et LZ. Alertes : dernière alerte. Heure H : compte à rebours du groupe. Touchez-le pour ouvrir l'app. Exemple : Ordres affiche « 2 à traiter » puis « TOC 14:32 · Rejoindre le point Alpha ». Aussi réglable dans Réglages > Carte."],
+    ["comspec_atak_native_map_pinned_app_2", "App épinglée sur la carte (2)", "Deuxième bandeau, mêmes choix que le premier. Il se pose à côté du premier s'il y a la place, sinon sur une rangée de plus ; il n'est pas dessiné si la carte est trop petite."],
+    ["comspec_atak_native_map_pinned_app_3", "App épinglée sur la carte (3)", "Troisième bandeau, mêmes choix que le premier. Il se pose à côté des autres s'il y a la place, sinon sur une rangée de plus ; il n'est pas dessiné si la carte est trop petite."]
+];
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
 ["comspec_atak_native_full_scale", "SLIDER",
     ["Taille du téléphone en main", "Taille du téléphone quand vous l'avez en main (plein écran). 100 % = taille normale ; en dessous, il rétrécit en restant centré, texte et boutons compris."],
