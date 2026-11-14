@@ -225,13 +225,28 @@ final class AtakTerrainApiController
             return $this->tenantRequired();
         }
         $mapId = $this->mapId($request);
+        // Le fichier est servi tel quel : le relire, le décoder puis le réencoder dépassait la mémoire de PHP (14/11).
+        $path = null;
         try {
-            $geo = $this->cartography->contours($tenantId, $mapId);
+            $path = $this->cartography->contoursPath($tenantId, $mapId);
         } catch (Throwable) {
-            $geo = ['type' => 'FeatureCollection', 'features' => []];
+        }
+        $size = $path !== null ? (int) @filesize($path) : 0;
+        if ($path === null || $size < 2) {
+            return Response::json(['type' => 'FeatureCollection', 'features' => []]);
         }
 
-        return Response::json($geo);
+        return (new Response())
+            ->header('Content-Type', 'application/json; charset=utf-8')
+            ->header('Content-Length', (string) $size)
+            ->header('Cache-Control', 'private, max-age=300')
+            ->setBodyStream(static function () use ($path): void {
+                $h = @fopen($path, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
     }
 
     public function sample(Request $request, array $params = []): Response

@@ -15,6 +15,61 @@ final class AtakTerrainIsolines
      */
     public static function geoJson(array $grid, int $minorM = 10, int $majorM = 50): array
     {
+        $features = [];
+        self::stream($grid, $minorM, $majorM, static function (array $feature) use (&$features): void {
+            $features[] = $feature;
+        });
+
+        return ['type' => 'FeatureCollection', 'features' => $features];
+    }
+
+    /**
+     * Écrit le GeoJSON directement dans un fichier, une ligne à la fois : ni le tableau des lignes ni la chaîne JSON entière ne
+     * sont jamais en mémoire (avant : « Allowed memory size of 268435456 bytes exhausted » sur /api/atak/terrain/contours, 14/11).
+     * Le fichier n'apparaît sous son nom qu'une fois complet.
+     *
+     * @param array<string, mixed> $grid
+     */
+    public static function writeGeoJson(array $grid, string $path, int $minorM = 10, int $majorM = 50): bool
+    {
+        $tmp = $path . '.' . getmypid() . '.tmp';
+        $h = @fopen($tmp, 'wb');
+        if ($h === false) {
+            return false;
+        }
+        $first = true;
+        $ok = true;
+        fwrite($h, '{"type":"FeatureCollection","features":[');
+        self::stream($grid, $minorM, $majorM, static function (array $feature) use ($h, &$first, &$ok): void {
+            $json = json_encode($feature, JSON_UNESCAPED_UNICODE);
+            if (!is_string($json) || fwrite($h, ($first ? '' : ',') . $json) === false) {
+                $ok = false;
+
+                return;
+            }
+            $first = false;
+        });
+        fwrite($h, ']}');
+        fclose($h);
+        if (!$ok || !@rename($tmp, $path)) {
+            @unlink($tmp);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Isolignes en un seul passage sur la grille. Les segments d'un niveau sont gardés en binaire (4 réels de 8 octets, soit
+     * 32 octets par segment au lieu d'environ 500 en tableaux imbriqués) ; un niveau à la fois est ensuite décodé, joint en
+     * lignes, remis à $emit et libéré.
+     *
+     * @param array<string, mixed> $grid
+     * @param callable(array<string,mixed>): void $emit
+     */
+    private static function stream(array $grid, int $minorM, int $majorM, callable $emit): void
+    {
         $blob = is_string($grid['heights'] ?? null) ? (string) $grid['heights'] : '';
         $cols = (int) ($grid['cols'] ?? 0);
         $rows = (int) ($grid['rows'] ?? $grid['grid_rows'] ?? 0);
@@ -23,20 +78,19 @@ final class AtakTerrainIsolines
         $oy = (float) ($grid['origin_y'] ?? 0);
         $minorM = max(5, min(200, $minorM));
         $majorM = max($minorM, min(500, $majorM));
-        $features = [];
         if ($blob === '' || $cols < 2 || $rows < 2 || $cell <= 0) {
-            return ['type' => 'FeatureCollection', 'features' => $features];
+            return;
         }
         $bbox = AtakTerrainMath::filledBBox($blob, $cols, $rows);
         if ($bbox === null) {
-            return ['type' => 'FeatureCollection', 'features' => $features];
+            return;
         }
-        $minZ = $grid['min_z'] !== null ? (int) $grid['min_z'] : 0;
-        $maxZ = $grid['max_z'] !== null ? (int) $grid['max_z'] : 0;
+        $minZ = ($grid['min_z'] ?? null) !== null ? (int) $grid['min_z'] : 0;
+        $maxZ = ($grid['max_z'] ?? null) !== null ? (int) $grid['max_z'] : 0;
         $level0 = (int) (floor($minZ / $minorM) * $minorM);
         $level1 = (int) (ceil($maxZ / $minorM) * $minorM);
         if ($level1 < $level0) {
-            return ['type' => 'FeatureCollection', 'features' => $features];
+            return;
         }
 
         $c0 = max(0, $bbox['min_c'] - 1);
@@ -44,28 +98,33 @@ final class AtakTerrainIsolines
         $r0 = max(0, $bbox['min_r'] - 1);
         $r1 = min($rows - 2, $bbox['max_r']);
 
-        /** @var array<int, list<array{0:array{0:float,1:float},1:array{0:float,1:float}}>> $segs */
+        /** @var array<int, string> $segs segments binaires par niveau */
         $segs = [];
-
+        // Deux rangées de hauteurs lues une fois chacune (avant : quatre lectures par cellule).
+        $south = [];
+        for ($c = $c0; $c <= $c1 + 1; $c++) {
+            $south[$c] = AtakTerrainMath::cellZ($blob, $cols, $c, $r0);
+        }
         for ($r = $r0; $r <= $r1; $r++) {
+            $north = [];
+            for ($c = $c0; $c <= $c1 + 1; $c++) {
+                $north[$c] = AtakTerrainMath::cellZ($blob, $cols, $c, $r + 1);
+            }
+            $y0 = $oy + $r * $cell;
+            $y1 = $y0 + $cell;
             for ($c = $c0; $c <= $c1; $c++) {
-                $sw = AtakTerrainMath::cellZ($blob, $cols, $c, $r);
-                $se = AtakTerrainMath::cellZ($blob, $cols, $c + 1, $r);
-                $nw = AtakTerrainMath::cellZ($blob, $cols, $c, $r + 1);
-                $ne = AtakTerrainMath::cellZ($blob, $cols, $c + 1, $r + 1);
+                $sw = $south[$c];
+                $se = $south[$c + 1];
+                $nw = $north[$c];
+                $ne = $north[$c + 1];
                 if ($sw === null || $se === null || $nw === null || $ne === null) {
                     continue;
                 }
-                $x0 = $ox + $c * $cell;
-                $y0 = $oy + $r * $cell;
-                $x1 = $x0 + $cell;
-                $y1 = $y0 + $cell;
                 $lo = (int) (floor(min($sw, $se, $nw, $ne) / $minorM) * $minorM);
                 $hi = (int) (ceil(max($sw, $se, $nw, $ne) / $minorM) * $minorM);
-                for ($level = $lo; $level <= $hi; $level += $minorM) {
-                    if ($level < $level0 || $level > $level1) {
-                        continue;
-                    }
+                $x0 = $ox + $c * $cell;
+                $x1 = $x0 + $cell;
+                for ($level = max($lo, $level0); $level <= min($hi, $level1); $level += $minorM) {
                     $bits = 0;
                     if ($sw >= $level) {
                         $bits |= 1;
@@ -86,46 +145,42 @@ final class AtakTerrainIsolines
                     $right = self::lerp($x1, $y0, $x1, $y1, $se, $ne, (float) $level);
                     $top = self::lerp($x0, $y1, $x1, $y1, $nw, $ne, (float) $level);
                     $left = self::lerp($x0, $y0, $x0, $y1, $sw, $nw, (float) $level);
-                    $pair = self::casePair($bits, $bottom, $right, $top, $left, $sw, $se, $ne, $nw, (float) $level);
-                    if ($pair === []) {
-                        continue;
-                    }
-                    if (!isset($segs[$level])) {
-                        $segs[$level] = [];
-                    }
-                    foreach ($pair as $seg) {
-                        $segs[$level][] = $seg;
+                    foreach (self::casePair($bits, $bottom, $right, $top, $left, $sw, $se, $ne, $nw, (float) $level) as $seg) {
+                        if (!isset($segs[$level])) {
+                            $segs[$level] = '';
+                        }
+                        $segs[$level] .= pack('e4', $seg[0][0], $seg[0][1], $seg[1][0], $seg[1][1]);
                     }
                 }
             }
+            $south = $north;
         }
+        unset($south, $north);
 
         ksort($segs, SORT_NUMERIC);
-        foreach ($segs as $level => $list) {
-            if ($list === []) {
-                continue;
+        foreach (array_keys($segs) as $level) {
+            $flat = array_values(unpack('e*', $segs[$level]) ?: []);
+            unset($segs[$level]);
+            $list = [];
+            for ($i = 0, $n = count($flat); $i + 3 < $n; $i += 4) {
+                $list[] = [[$flat[$i], $flat[$i + 1]], [$flat[$i + 2], $flat[$i + 3]]];
             }
+            unset($flat);
             $lines = self::join($list);
+            unset($list);
             $major = $majorM > 0 && ($level % $majorM === 0);
             foreach ($lines as $coords) {
                 if (count($coords) < 2) {
                     continue;
                 }
-                $features[] = [
+                $emit([
                     'type' => 'Feature',
-                    'properties' => [
-                        'elevation' => $level,
-                        'major' => $major,
-                    ],
-                    'geometry' => [
-                        'type' => 'LineString',
-                        'coordinates' => $coords,
-                    ],
-                ];
+                    'properties' => ['elevation' => $level, 'major' => $major],
+                    'geometry' => ['type' => 'LineString', 'coordinates' => $coords],
+                ]);
             }
+            unset($lines);
         }
-
-        return ['type' => 'FeatureCollection', 'features' => $features];
     }
 
     /**
