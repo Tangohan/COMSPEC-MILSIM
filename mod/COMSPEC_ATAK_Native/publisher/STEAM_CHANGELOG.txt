@@ -1,3 +1,35 @@
+[h1]COMSPEC ATAK 4.13.0 Washington — goniométrie recoupée, relais refaits, vérification de la configuration / direction finding that locates, relays redone, configuration check[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Goniométrie[/b] : relevez la même émission depuis deux endroits et le téléphone place un point estimé, avec son cercle d'erreur, sur la carte.
+[*] [b]Zones[/b] : un plan peut n'arriver qu'à l'entrée dans la zone, et le TOC est prévenu quand un équipier y entre ou en sort.
+[*] [b]Réseau faible[/b] : les photos attendent, les messages passent. La barre d'état affiche FAIBLE.
+[*] [b]Statut[/b] : une vérification de la configuration liste le téléphone, le réseau, les relais et la batterie, avec le correctif sous chaque point. L'administrateur voit si sa mission a des relais.
+[*] [b]App Wave Relay refaite[/b] : elle dit où vous en êtes et pourquoi il n'y a pas de réseau. Sans relais en service à portée, pas de réseau radio.
+[*] [b]TOC[/b] : il voit qui parle à la radio et sur quelle fréquence, la console du poste est refaite et la vue satellite est plus fluide.
+[*] [b]Caméras IP[/b] posées dans l'éditeur : elles apparaissent dans Vidéo live et dans le TOC.
+[*] [b]Petit téléphone[/b] : il suit enfin les réglages d'icônes de la carte.
+[*] [b]Drones ennemis[/b] : plus détectés par défaut. Poser son téléphone sur un socle de recharge demande d'en avoir un sur soi.
+[*] [b]Alertes de camp[/b] : elles ne peuvent plus être envoyées au nom d'un autre camp.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Direction finding[/b]: take a bearing on the same emission from two places and the phone drops an estimated point, with its error circle, on the map.
+[*] [b]Zones[/b]: a plan can arrive only when you enter the area, and the TOC is told when a teammate enters or leaves it.
+[*] [b]Weak network[/b]: photos wait, messages go through. The status bar shows LOW.
+[*] [b]Status[/b]: a configuration check lists the phone, the network, the relays and the battery, with the fix under each point. The administrator sees whether the mission has relays.
+[*] [b]Wave Relay app redone[/b]: it tells you where you stand and why there is no network. With no working relay in range, there is no radio network.
+[*] [b]TOC[/b]: it sees who is talking on the radio and on which frequency, the station console is redone and the satellite view is smoother.
+[*] [b]IP cameras[/b] placed in the editor: they show up in Live Feed and in the TOC.
+[*] [b]Small phone[/b]: it finally follows the map icon settings.
+[*] [b]Enemy drones[/b]: no longer detected by default. Putting your phone on a charging dock requires carrying one.
+[*] [b]Side alerts[/b]: they can no longer be sent in the name of another side.
+[/list]
+
 [h1]COMSPEC ATAK 4.12.0 Washington — postes, droits et journal de la salle TOC, TOC pilotable par script / stations, rights and journal of the TOC room, TOC driven by script[/h1]
 
 [h2]Français[/h2]
