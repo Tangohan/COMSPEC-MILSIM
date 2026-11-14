@@ -119,6 +119,11 @@
 
 /* —— Contenu —— */
 
+/* Espace d'unité : en-tête, contenu et pied pleine largeur (pas de colonne centrée à 1320 px). */
+.ja.us {
+  --ja-gut: clamp(16px, 3vw, 40px);
+}
+
 .ja-main.us-main {
   max-width: none;
   display: block;
