@@ -21,7 +21,7 @@
 #define PORTW (0.8 * PORTH * pixelW / pixelH)
 #define TXTX (DX + PORTW + 0.8 * GW)
 #define TXTW (DW - PORTW - 0.8 * GW - 0.4 * GW)
-#define POOLTOP 14.7
+#define POOLTOP 12.9
 
 #define COL_DIM {1,1,1,0.55}
 #define COL_ACCENT {0.94,0.65,0.23,1}
@@ -38,7 +38,6 @@
 
 // Touche du pavé (code du poste) : texte seul, fond léger. TXT et ACT sont donnés en entier (un macro ne se développe pas dans
 // une chaîne) ; I est le rang de la touche dans la rangée de onze.
-#define DKEY(NAME,IDC,TXT,ACT,I)     class NAME: RscButtonTextOnly {         idc = IDC; style = 2; text = TXT; font = "RobotoCondensed"; action = ACT;         x = XS(DX + (I) * ((DW) / 11)); y = XS(safezoneY + 13.55 * GH); w = XS(((DW) / 11) - 0.12 * GW); h = XS(0.75 * GH);         colorBackground[] = {1,1,1,0.07}; colorBackgroundActive[] = {0.94,0.65,0.23,0.30}; colorBackgroundDisabled[] = {1,1,1,0.03};         colorText[] = {1,1,1,0.9}; colorDisabled[] = {1,1,1,0.25}; colorFocused[] = {1,1,1,0.07};     }
 
 // Déclarations des classes d'ui_f utilisées comme parents (la config du jeu les définit : elles sont fusionnées).
 class RscStandardDisplay;
@@ -154,35 +153,5 @@ class RscDisplayMultiplayerSetup: RscStandardDisplay {
         DTEXT(ValueRole, 9116, TXTX + 5 * GW, safezoneY + 11.1 * GH, TXTW - 5 * GW, 0.7 * GH, "RobotoCondensed", 0.7 * GH, 0, COL_WHITE);
         DTEXT(LabelQuals, 9113, TXTX, safezoneY + 11.85 * GH, 5 * GW, 0.6 * GH, "EtelkaMonospacePro", 0.5 * GH, 0, COL_DIM);
         DTEXT(ValueQuals, 9117, TXTX + 5 * GW, safezoneY + 11.8 * GH, TXTW - 5 * GW, 0.7 * GH, "RobotoCondensed", 0.7 * GH, 0, COL_WHITE);
-
-        // Code du poste : quatre chiffres, message, pavé d'une ligne (0 à 9 et effacer).
-        DTEXT(PinLabel, 9120, DX + 0.3 * GW, safezoneY + 12.7 * GH, 6 * GW, 0.7 * GH, "RobotoCondensedBold", 0.7 * GH, 0, COL_ACCENT);
-        DTEXT(PinD1, 9121, DX + 6.4 * GW, safezoneY + 12.55 * GH, 1.3 * GW, 0.85 * GH, "EtelkaMonospacePro", 0.85 * GH, 2, COL_WHITE);
-        DTEXT(PinD2, 9122, DX + 7.9 * GW, safezoneY + 12.55 * GH, 1.3 * GW, 0.85 * GH, "EtelkaMonospacePro", 0.85 * GH, 2, COL_WHITE);
-        DTEXT(PinD3, 9123, DX + 9.4 * GW, safezoneY + 12.55 * GH, 1.3 * GW, 0.85 * GH, "EtelkaMonospacePro", 0.85 * GH, 2, COL_WHITE);
-        DTEXT(PinD4, 9124, DX + 10.9 * GW, safezoneY + 12.55 * GH, 1.3 * GW, 0.85 * GH, "EtelkaMonospacePro", 0.85 * GH, 2, COL_WHITE);
-        DLINE(PinU1, DX + 6.4 * GW, safezoneY + 13.42 * GH, 1.3 * GW, pixelH, COL_LINE);
-        DLINE(PinU2, DX + 7.9 * GW, safezoneY + 13.42 * GH, 1.3 * GW, pixelH, COL_LINE);
-        DLINE(PinU3, DX + 9.4 * GW, safezoneY + 13.42 * GH, 1.3 * GW, pixelH, COL_LINE);
-        DLINE(PinU4, DX + 10.9 * GW, safezoneY + 13.42 * GH, 1.3 * GW, pixelH, COL_LINE);
-        DTEXT(PinMessage, 9125, DX + 12.7 * GW, safezoneY + 12.65 * GH, DW - 12.7 * GW - 0.3 * GW, 0.7 * GH, "RobotoCondensed", 0.55 * GH, 0, COL_DIM);
-
-        DKEY(Key1, 9131, "1", "['digit','1'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 0);
-        DKEY(Key2, 9132, "2", "['digit','2'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 1);
-        DKEY(Key3, 9133, "3", "['digit','3'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 2);
-        DKEY(Key4, 9134, "4", "['digit','4'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 3);
-        DKEY(Key5, 9135, "5", "['digit','5'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 4);
-        DKEY(Key6, 9136, "6", "['digit','6'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 5);
-        DKEY(Key7, 9137, "7", "['digit','7'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 6);
-        DKEY(Key8, 9138, "8", "['digit','8'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 7);
-        DKEY(Key9, 9139, "9", "['digit','9'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 8);
-        DKEY(Key0, 9130, "0", "['digit','0'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')", 9);
-        class KeyBack: RscButtonTextOnly {
-            idc = 9140; style = 2; text = "<"; font = "RobotoCondensed";
-            action = "['back'] call (uiNamespace getVariable 'COMSPEC_LOBBY_ui')";
-            x = XS(DX + 10 * ((DW) / 11)); y = XS(safezoneY + 13.55 * GH); w = XS(((DW) / 11) - 0.12 * GW); h = XS(0.75 * GH);
-            colorBackground[] = {1,1,1,0.07}; colorBackgroundActive[] = {0.94,0.65,0.23,0.30}; colorBackgroundDisabled[] = {1,1,1,0.03};
-            colorText[] = {1,1,1,0.9}; colorDisabled[] = {1,1,1,0.25}; colorFocused[] = {1,1,1,0.07};
-        };
     };
 };

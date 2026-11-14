@@ -1,12 +1,12 @@
 ﻿<#
 .SYNOPSIS
-    Essai en jeu de COMSPEC Lobby : un serveur dédié local (mission de test à postes étiquetés, codes dans userconfig) et un client
+    Essai en jeu de COMSPEC Lobby : un serveur dédié local (mission de test à postes étiquetés) et un client
     qui s'y connecte et tombe sur l'écran des rôles. Par étapes, parce que l'écran se pilote à la souris :
       Start   lance le serveur puis le client, attend l'écran des rôles, prend une capture
       Shot    <nom>                       capture de la fenêtre du client (captures\<nom>.jpg)
       Click   <nom> <x> <y> [<ms>]        vrai clic gauche (x et y : fractions de la fenêtre, 0 à 1), puis capture
       Report                              lignes [COMSPEC LOBBY] et erreurs de script du client et du serveur
-      Stop                                ferme le client et le serveur, rend les fichiers partagés, retire la mission et les codes de test
+      Stop                                ferme le client et le serveur, rend les fichiers partagés, retire la mission de test
     Rien n'est lancé si Arma tourne déjà (code 3). Profil de test : -name=COMSPECTest (les fichiers du profil de l'utilisateur ne
     sont pas ouverts ; Arma3.cfg et COMSPEC_Local\config.json sont sauvegardés puis rendus).
 .EXAMPLE
@@ -137,32 +137,21 @@ switch ($Action) {
     $clientExe = Join-Path $ArmaDir 'arma3_x64.exe'
     foreach ($f in $serverExe, $clientExe) { if (-not (Test-Path -LiteralPath $f)) { Sortir 4 "Introuvable : $f" } }
     if (-not (Test-Path -LiteralPath (Join-Path $LobbyDir 'addons\comspec_lobby_main.pbo'))) { Sortir 4 "Build du mod introuvable : $LobbyDir (build_mod.bat)" }
-    $cba = Join-Path $WorkshopDir '450814997'
-    if (-not (Test-Path -LiteralPath (Join-Path $cba 'addons\cba_main.pbo'))) { Sortir 4 "CBA introuvable : $cba" }
     if (Get-Process -Name steam -ErrorAction SilentlyContinue) { } else { Write-Host '[ATTENTION] Steam ne tourne pas.' }
 
     if (Test-Path $Work) { Remove-Item -Recurse -Force $Work }
     [void](New-Item -ItemType Directory -Force -Path $Work, (Join-Path $Work 'captures'), (Join-Path $Work 'srvprof'), (Join-Path $Work 'mods'))
     # Le mod est copié : le dossier du dépôt reste libre (changement de branche, nouveau build).
     Copy-Item -LiteralPath $LobbyDir -Destination (Join-Path $Work 'mods\@COMSPEC_Lobby') -Recurse
-    $modsArg = '"-mod=' + $cba + ';' + (Join-Path $Work 'mods\@COMSPEC_Lobby') + '"'
+    $modsArg = '"-mod=' + (Join-Path $Work 'mods\@COMSPEC_Lobby') + '"'
 
     # Mission de test : copiée dans MPMissions, retirée par Stop.
     $src = Join-Path $ModRoot "missions\$NomMission"
     $dst = Join-Path $ArmaDir "MPMissions\$NomMission"
     if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
     Copy-Item -LiteralPath $src -Destination $dst -Recurse
-    # Codes de test (poste HQ-1 = 1234, poste A-1 = 4821), dans userconfig du serveur : retirés par Stop.
-    $uc = Join-Path $ArmaDir 'userconfig\comspec_lobby'
-    $ucAvant = Test-Path -LiteralPath (Join-Path $uc 'pins.txt')
-    if ($ucAvant) { Sortir 4 "$uc\pins.txt existe déjà : je ne l'écrase pas." }
-    [void](New-Item -ItemType Directory -Force -Path $uc)
-    [IO.File]::WriteAllText((Join-Path $uc 'pins.txt'), "# codes de l'essai COMSPEC Lobby`r`nHQ-1=1234`r`nA-1=4821`r`n", (New-Object Text.UTF8Encoding($false)))
-    # Essai : la copie du mod porte aussi son userconfig (le moteur ne voit userconfig que par là).
-    $mu = Join-Path $Work 'mods\@COMSPEC_Lobby\userconfig\comspec_lobby'; [void](New-Item -ItemType Directory -Force -Path $mu); Copy-Item -LiteralPath (Join-Path $uc 'pins.txt') -Destination $mu
-
-    # État écrit tout de suite : Stop sait retirer la mission et les codes de test même si le lancement échoue plus loin.
-    @{ clientPid = 0; serverPid = 0; start = (Get-Date).ToString('o'); mission = $dst; pins = (Join-Path $uc 'pins.txt'); ucDir = $uc; sauv = @{} } | ConvertTo-Json -Depth 4 | Set-Content $StateFile -Encoding UTF8
+    # État écrit tout de suite : Stop sait retirer la mission de test même si le lancement échoue plus loin.
+    @{ clientPid = 0; serverPid = 0; start = (Get-Date).ToString('o'); mission = $dst; sauv = @{} } | ConvertTo-Json -Depth 4 | Set-Content $StateFile -Encoding UTF8
 
     $cfg = @"
 hostName = "COMSPEC Lobby Test";
@@ -192,7 +181,7 @@ class Missions {
     foreach ($f in $partages) { if (Test-Path -LiteralPath $f) { $i++; $c = Join-Path $Work ("sauv_{0}_{1}" -f $i, (Split-Path -Leaf $f)); Copy-Item -LiteralPath $f -Destination $c; $sauv[$f] = $c } }
 
     $t0 = Get-Date
-    $srvArgs = "-port=$Port `"-config=$(Join-Path $Work 'server.cfg')`" `"-cfg=$(Join-Path $Work 'basic.cfg')`" `"-profiles=$(Join-Path $Work 'srvprof')`" -name=lobbysrv -filePatching -autoInit -noSound $modsArg"
+    $srvArgs = "-port=$Port `"-config=$(Join-Path $Work 'server.cfg')`" `"-cfg=$(Join-Path $Work 'basic.cfg')`" `"-profiles=$(Join-Path $Work 'srvprof')`" -name=lobbysrv -autoInit -noSound $modsArg"
     $srv = Start-Process -FilePath $serverExe -ArgumentList $srvArgs -WorkingDirectory $ArmaDir -PassThru
     Write-Host "Serveur lancé (PID $($srv.Id)), attente de la mission..."
     $pret = $false
@@ -211,7 +200,7 @@ class Missions {
     $cliArgs = "-connect=127.0.0.1 -port=$Port -skipIntro -noSplash -world=empty -showScriptErrors -noPause -noPauseAudio -noSound -window -x=$Largeur -y=$Hauteur -posX=0 -posY=0 -name=$Profil $modsArg"
     $cli = Start-Process -FilePath $clientExe -ArgumentList $cliArgs -WorkingDirectory $ArmaDir -PassThru
     Write-Host "Client lancé (PID $($cli.Id))."
-    @{ clientPid = $cli.Id; serverPid = $srv.Id; start = $t0.ToString('o'); mission = $dst; pins = (Join-Path $uc 'pins.txt'); ucDir = $uc; sauv = $sauv } | ConvertTo-Json -Depth 4 | Set-Content $StateFile -Encoding UTF8
+    @{ clientPid = $cli.Id; serverPid = $srv.Id; start = $t0.ToString('o'); mission = $dst; sauv = $sauv } | ConvertTo-Json -Depth 4 | Set-Content $StateFile -Encoding UTF8
 
     $vu = $false
     $limite = (Get-Date).AddSeconds($AttenteMaxSecondes)
@@ -273,9 +262,7 @@ class Missions {
             if ((Test-Path -LiteralPath $prop.Name) -and ((Get-FileHash $prop.Name).Hash -ne (Get-FileHash $prop.Value).Hash)) { Copy-Item -LiteralPath $prop.Value -Destination $prop.Name -Force; Write-Host "Rendu : $($prop.Name)" }
         }
         if (Test-Path -LiteralPath $st.mission) { Remove-Item -Recurse -Force -LiteralPath $st.mission }
-        if (Test-Path -LiteralPath $st.pins) { Remove-Item -Force -LiteralPath $st.pins }
-        if ((Test-Path -LiteralPath $st.ucDir) -and -not (Get-ChildItem -LiteralPath $st.ucDir)) { Remove-Item -Force -LiteralPath $st.ucDir }
     }
-    Write-Host 'Arma fermé, mission et codes de test retirés.'
+    Write-Host 'Arma fermé, mission de test retirée.'
 }
 }

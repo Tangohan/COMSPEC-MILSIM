@@ -1,6 +1,6 @@
 author = "COMSPEC";
 onLoadName = "COMSPEC Lobby : mission d'essai";
-onLoadMission = "Écran des rôles, dossier de l'opérateur et code du poste. Ne pas publier.";
+onLoadMission = "Écran des rôles, dossier de l'opérateur. Ne pas publier.";
 briefing = 0;
 debriefing = 0;
 saving = 0;
@@ -14,8 +14,8 @@ class Header {
 // Identité des postes (dossier de l'opérateur) : voir README, « Identité du poste ».
 class ComspecLobby {
     class Slots {
-        class HQ1 { tag = "HQ-1"; surname = "Marchetti"; given = "Julien"; rank = "Capitaine"; unit = "CO"; role = "Chef de section"; quals = "JTAC · Chef"; pin = 1; };
-        class A1 { tag = "A-1"; surname = "Vasseur"; given = "Thomas"; rank = "Sergent-chef"; unit = "ALPHA"; role = "Chef de groupe"; quals = "Chef de groupe"; pin = 1; };
+        class HQ1 { tag = "HQ-1"; surname = "Marchetti"; given = "Julien"; rank = "Capitaine"; unit = "CO"; role = "Chef de section"; quals = "JTAC · Chef"; };
+        class A1 { tag = "A-1"; surname = "Vasseur"; given = "Thomas"; rank = "Sergent-chef"; unit = "ALPHA"; role = "Chef de groupe"; quals = "Chef de groupe"; };
         class A3 { tag = "A-3"; surname = "Benali"; given = "Sofia"; rank = "1re classe"; unit = "ALPHA"; role = "Infirmier"; quals = "Combat Life Saver"; };
     };
 };

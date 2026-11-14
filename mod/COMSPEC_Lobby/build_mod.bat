@@ -1,6 +1,6 @@
 @echo off
 setlocal
-:: COMSPEC Lobby : mod independant (seule dependance CBA_A3). Build HEMTT (config rapifiee, p3d binarises),
+:: COMSPEC Lobby : mod independant (aucune dependance). Build HEMTT (config rapifiee, p3d binarises),
 :: copie dans @COMSPEC_Lobby, signature avec la cle propre au mod (hors depot : %APPDATA%\COMSPEC\signing\lobby, creee une fois puis reutilisee : a garder).
 :: Lancer depuis PowerShell : cmd /c "<chemin>\mod\COMSPEC_Lobby\build_mod.bat"
 set "ROOT=%~dp0"

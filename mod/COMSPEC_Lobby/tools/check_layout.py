@@ -391,7 +391,7 @@ def main():
                     if area > 0.02 * min(r[2] * r[3], o[2] * o[3]) and area > 1e-6:
                         bad.append("dossier %s recouvre idc %d (%.1f %%)" % ("/".join(p)[-24:], idc, 100 * area / min(r[2] * r[3], o[2] * o[3])))
         # éléments du dossier entre eux (le portrait, ses coins et le fond du dossier se superposent par construction)
-        items = [(p, r) for p, r in dossier.items() if r[4] not in (9102, 9103) and not p[-1].startswith("corn") and not p[-1].startswith("pinu")]
+        items = [(p, r) for p, r in dossier.items() if r[4] not in (9102, 9103) and not p[-1].startswith("corn")]
         for i in range(len(items)):
             for j in range(i + 1, len(items)):
                 a_, b_ = items[i], items[j]
