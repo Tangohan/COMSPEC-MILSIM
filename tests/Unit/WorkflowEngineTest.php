@@ -32,6 +32,9 @@ final class WorkflowEngineTest extends TestCase
     /** @var list<array{0: int, 1: string}> */
     private array $notified = [];
 
+    /** @var list<array<string, mixed>> */
+    private array $payloads = [];
+
     protected function setUp(): void
     {
         $this->pdo = new PDO('sqlite::memory:');
@@ -46,6 +49,7 @@ final class WorkflowEngineTest extends TestCase
         $this->createdTasks = [];
         $this->taskStatuses = [];
         $this->notified = [];
+        $this->payloads = [];
     }
 
     private function engine(?array $commander): WorkflowEngine
@@ -64,8 +68,9 @@ final class WorkflowEngineTest extends TestCase
         $resolver = $this->createMock(ApproverResolver::class);
         $resolver->method('commanderFor')->willReturn($commander);
         $notifications = $this->createMock(MemberNotificationRepository::class);
-        $notifications->method('create')->willReturnCallback(function (int $tenantId, int $userId, string $type): int {
+        $notifications->method('create')->willReturnCallback(function (int $tenantId, int $userId, string $type, array $payload = []): int {
             $this->notified[] = [$userId, $type];
+            $this->payloads[] = $payload;
 
             return 1;
         });
@@ -188,5 +193,59 @@ final class WorkflowEngineTest extends TestCase
         $engine->recordStatus(self::TENANT, 'courrier', 1, 'sent', 2);
 
         self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM workflow_instances')->fetchColumn());
+    }
+
+    public function testCorrectionsJoinTheJournalWithoutCommanderOpinion(): void
+    {
+        $engine = $this->engine(self::commander());
+
+        $id = $engine->open(self::TENANT, WorkflowEngine::SUBJECT_CORRECTION, 5, self::MEMBER, 2, 'Grade erroné');
+        self::assertGreaterThan(0, $id);
+        self::assertSame([], $this->createdTasks, 'pas d’avis du chef pour une correction');
+        $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_CORRECTION, 5, 'approved', 3, 'OK');
+
+        self::assertSame(WorkflowEngine::STATE_CLOSED, $engine->summaries(self::TENANT, WorkflowEngine::SUBJECT_CORRECTION, [5])[5]['state']);
+        self::assertSame([], $this->notified, 'la correction prévient déjà le membre elle-même');
+        self::assertSame(['submitted', 'status:approved'], $this->actions());
+    }
+
+    public function testAarAuthorIsToldWhenTheReportIsValidatedOrSentBack(): void
+    {
+        $engine = $this->engine(self::commander());
+        $engine->open(self::TENANT, WorkflowEngine::SUBJECT_AAR, 8, self::MEMBER, self::MEMBER, 'Op Granite');
+        self::assertSame([], $this->createdTasks);
+
+        $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_AAR, 8, 'in_review', 2);
+        self::assertSame([], $this->notified, 'la mise en relecture ne dérange pas l’auteur');
+
+        $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_AAR, 8, 'validated', 2, 'Bon travail');
+        self::assertSame([[self::MEMBER, WorkflowEngine::NOTIFY_DECISION]], $this->notified);
+        self::assertSame(WorkflowEngine::STATE_CLOSED, $engine->summaries(self::TENANT, WorkflowEngine::SUBJECT_AAR, [8])[8]['state']);
+
+        $notice = WorkflowEngine::decisionNotice($this->payloads[0]);
+        self::assertSame('Votre compte rendu de mission est validé', $notice['title']);
+        self::assertSame('Bon travail', $notice['detail']);
+        self::assertSame('back-office/atak/comptes-rendus', $notice['path']);
+
+        // Renvoyé à l'auteur : le circuit se rouvre et l'auteur est prévenu.
+        $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_AAR, 8, 'pending', 2);
+        self::assertSame(WorkflowEngine::STATE_DECISION, $engine->summaries(self::TENANT, WorkflowEngine::SUBJECT_AAR, [8])[8]['state']);
+        self::assertCount(2, $this->notified);
+
+        // L'auteur qui valide lui-même ne se notifie pas.
+        $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_AAR, 8, 'validated', self::MEMBER);
+        self::assertCount(2, $this->notified);
+    }
+
+    public function testMobilityDecisionNoticeGoesToTheMember(): void
+    {
+        $engine = $this->engine(null);
+        $engine->open(self::TENANT, WorkflowEngine::SUBJECT_MOBILITY, 3, self::MEMBER, self::MEMBER);
+        $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_MOBILITY, 3, 'applied', 2);
+
+        self::assertSame([[self::MEMBER, WorkflowEngine::NOTIFY_DECISION]], $this->notified);
+        $notice = WorkflowEngine::decisionNotice($this->payloads[0], false);
+        self::assertSame('Your transfer is done', $notice['title']);
+        self::assertSame('personnel/mon-espace-rh', $notice['path']);
     }
 }

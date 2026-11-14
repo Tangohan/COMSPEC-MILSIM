@@ -19,6 +19,8 @@ class MemberGradeChangeRepository
 
     public const SOURCE_MANUAL = 'manual';
     public const SOURCE_ELEVATION = 'elevation';
+    /** Correction de dossier validée (ou appliquée directement) par le bureau des effectifs. */
+    public const SOURCE_CORRECTION = 'correction';
 
     /** Origine appliquée aux changements enregistrés pendant withSource(). */
     private static ?string $currentSource = null;
@@ -123,7 +125,7 @@ class MemberGradeChangeRepository
         if ($tenantId < 1 || $userId < 1 || $fromGradeId === $toGradeId || !$this->ensureTable()) {
             return false;
         }
-        $source = in_array($source ?? self::currentSource(), [self::SOURCE_MANUAL, self::SOURCE_ELEVATION], true)
+        $source = in_array($source ?? self::currentSource(), [self::SOURCE_MANUAL, self::SOURCE_ELEVATION, self::SOURCE_CORRECTION], true)
             ? ($source ?? self::currentSource())
             : self::SOURCE_MANUAL;
         $clip = static fn (?string $v): ?string => ($v = trim((string) $v)) === '' ? null : mb_substr($v, 0, 150);

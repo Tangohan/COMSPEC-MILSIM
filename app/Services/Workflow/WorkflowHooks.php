@@ -9,7 +9,8 @@ use App\Core\Container;
 /**
  * Point d'entrée des tables métier vers le moteur de circuits.
  *
- * Les dépôts des demandes (élévations, mobilités) l'appellent après chaque création et chaque changement de statut :
+ * Les dépôts (élévations, mobilités, corrections de dossier, comptes rendus) l'appellent après chaque création et
+ * chaque changement de statut :
  * tous les chemins qui créent ou traitent une demande passent ainsi par le même circuit, sans modifier chaque écran.
  * Un échec du moteur ne bloque jamais la demande elle-même : il est seulement écrit dans le journal d'erreurs.
  */
@@ -57,14 +58,15 @@ final class WorkflowHooks
         int $subjectId,
         string $status,
         int $actorUserId,
-        string $comment = ''
+        string $comment = '',
+        int $memberUserId = 0
     ): void {
         $engine = self::engine();
         if ($engine === null) {
             return;
         }
         try {
-            $engine->recordStatus($tenantId, $subjectType, $subjectId, $status, $actorUserId, $comment);
+            $engine->recordStatus($tenantId, $subjectType, $subjectId, $status, $actorUserId, $comment, $memberUserId);
         } catch (\Throwable $e) {
             error_log('Moteur de circuits : statut non journalisé (' . $subjectType . ' #' . $subjectId . ') : ' . $e->getMessage());
         }

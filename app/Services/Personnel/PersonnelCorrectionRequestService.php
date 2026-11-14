@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Personnel;
 
 use App\Repositories\GradeRepository;
+use App\Repositories\MemberGradeChangeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelCorrectionRequestRepository;
 use App\Repositories\PersonnelJobRoleRepository;
@@ -425,7 +426,10 @@ final class PersonnelCorrectionRequestService
             if ($payload === []) {
                 return ['ok' => false, 'message' => 'Aucun champ valide à appliquer.'];
             }
-            $this->applyApprovedPayload($tenantId, $targetUserId, $payload);
+            MemberGradeChangeRepository::withSource(
+                MemberGradeChangeRepository::SOURCE_CORRECTION,
+                fn () => $this->applyApprovedPayload($tenantId, $targetUserId, $payload)
+            );
             $this->serviceHistoryWriter->recordCorrectionApplied(
                 $targetUserId,
                 $this->diffLinesForDisplay($payload, $beforeSnap, $tenantId),
@@ -559,7 +563,10 @@ final class PersonnelCorrectionRequestService
             $note = mb_substr($note, 0, 1000);
         }
 
-        $this->applyApprovedPayload($tenantId, $targetUserId, $proposed);
+        MemberGradeChangeRepository::withSource(
+            MemberGradeChangeRepository::SOURCE_CORRECTION,
+            fn () => $this->applyApprovedPayload($tenantId, $targetUserId, $proposed)
+        );
         $this->serviceHistoryWriter->recordCorrectionApplied(
             $targetUserId,
             $this->diffLinesForDisplay($proposed, $before, $tenantId),
