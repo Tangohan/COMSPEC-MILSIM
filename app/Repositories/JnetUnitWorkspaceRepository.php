@@ -186,8 +186,15 @@ class JnetUnitWorkspaceRepository
              WHERE tenant_id = ? AND unit_id = ? AND id = ? AND deleted_at IS NULL AND updated_at = ?'
         );
         $st->execute([$title, $blocksJson, $userId, $tenantId, $unitId, $pageId, $expectedUpdatedAt]);
+        if ($st->rowCount() === 1) {
+            return true;
+        }
+        // Rien n'a changé (même texte, même auteur) : la ligne n'est pas « modifiée » pour MySQL, mais la page n'a pas bougé
+        // non plus depuis son ouverture, ce qui n'est pas un conflit.
+        $same = $this->pdo()->prepare('SELECT 1 FROM jnet_unit_pages WHERE tenant_id = ? AND unit_id = ? AND id = ? AND deleted_at IS NULL AND updated_at = ?');
+        $same->execute([$tenantId, $unitId, $pageId, $expectedUpdatedAt]);
 
-        return $st->rowCount() === 1;
+        return $same->fetchColumn() !== false;
     }
 
     /** Écrit les blocs sans contrôle de version (case cochée, vote : gestes courts qui ne perdent rien). */

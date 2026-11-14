@@ -138,14 +138,17 @@ final class JnetUnitWorkspaceController
         $title = JnetUnitWorkspaceService::clean((string) $request->input('title', ''), JnetUnitWorkspaceService::TITLE_MAX, true);
         $saved = $repo->savePage($g['tenant'], $g['unit'], $pageId, $g['user'], $title, JnetUnitWorkspaceService::blocksToJson($blocks), (string) $request->input('version', ''));
         if (!$saved) {
-            return $this->done($request, $edit, 'La page a été modifiée par quelqu’un d’autre depuis son ouverture : rechargez-la pour reprendre sa dernière version, puis refaites votre modification.', null);
+            return $this->done($request, $edit, 'La page a été modifiée par quelqu’un d’autre depuis son ouverture : rechargez-la pour reprendre sa dernière version, puis refaites votre modification.', null, ['conflict' => true]);
         }
         if ($act !== 'save') {
             // Geste de l'éditeur : retour sur le formulaire, au même endroit.
             return Response::redirect($edit . '#blocks');
         }
 
-        return $this->done($request, $g['base'] . '?vue=page&p=' . $pageId . '&direct=1', null, 'Page enregistrée.');
+        // Enregistrement automatique de l'éditeur (réponse JSON) : le nouvel horodatage devient la version à renvoyer.
+        $fresh = $this->wantsJson($request) ? $repo->page($g['tenant'], $g['unit'], $pageId) : null;
+
+        return $this->done($request, $g['base'] . '?vue=page&p=' . $pageId . '&direct=1', null, 'Page enregistrée.', ['version' => (string) ($fresh['updated_at'] ?? '')]);
     }
 
     public function deletePage(Request $request, array $params = []): Response
@@ -202,7 +205,7 @@ final class JnetUnitWorkspaceController
         unset($b);
         $this->workspace->repo()->touchBlocks($g['tenant'], $g['unit'], $pageId, $g['user'], JnetUnitWorkspaceService::blocksToJson($blocks));
 
-        return Response::redirect($back . '#b-' . rawurlencode($blockId));
+        return $this->done($request, $back . '#b-' . rawurlencode($blockId), null, null);
     }
 
     public function vote(Request $request, array $params = []): Response
@@ -226,7 +229,7 @@ final class JnetUnitWorkspaceController
             }
         }
 
-        return Response::redirect($back . '#b-' . rawurlencode($blockId));
+        return $this->done($request, $back . '#b-' . rawurlencode($blockId), null, null);
     }
 
     public function react(Request $request, array $params = []): Response
@@ -242,7 +245,7 @@ final class JnetUnitWorkspaceController
             $this->workspace->repo()->toggleReaction($pageId, $g['user'], $kind);
         }
 
-        return Response::redirect($back);
+        return $this->done($request, $back, null, null);
     }
 
     public function comment(Request $request, array $params = []): Response
