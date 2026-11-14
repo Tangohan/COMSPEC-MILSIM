@@ -1191,7 +1191,9 @@ class PersonnelController
                     );
                     if ($staffRetro !== null) {
                         $personnelRecruitmentBilans[] = array_merge($staffRetro, [
-                            'source_label' => 'Bilan équipe (recrutement)',
+                            'source_label' => \App\Support\EnlistmentRetroAutoClose::isAutoClosed($staffRetro)
+                                ? 'Bilan équipe (recrutement) · ' . \App\Support\EnlistmentRetroAutoClose::BADGE_LABEL . ' (néant)'
+                                : 'Bilan équipe (recrutement)',
                             'enlistment_id' => $enlistmentId,
                         ]);
                     }

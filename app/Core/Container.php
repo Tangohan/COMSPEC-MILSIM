@@ -650,6 +650,15 @@ class Container
             \App\Services\Email\MailBudgetGate::class => new \App\Services\Email\MailBudgetGate(
                 self::get(\App\Repositories\EmailDeliveryRepository::class)
             ),
+            \App\Services\Recruitment\EnlistmentRetroAutoCloseService::class => new \App\Services\Recruitment\EnlistmentRetroAutoCloseService(
+                self::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class),
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\MemberNotificationRepository::class)
+            ),
+            \App\Services\Cron\Jobs\RecruitmentRetroAutoCloseCronJob::class => new \App\Services\Cron\Jobs\RecruitmentRetroAutoCloseCronJob(
+                self::get(\App\Services\Recruitment\EnlistmentRetroAutoCloseService::class)
+            ),
             \App\Services\Cron\Jobs\TenantDataUpkeepCronJob::class => new \App\Services\Cron\Jobs\TenantDataUpkeepCronJob(
                 self::get(TenantRepository::class),
                 self::get(\App\Services\Advancement\GradeScaleTemplateService::class),
@@ -710,6 +719,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\SenioritySyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\ModerationQuarantineExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RecruitmentRetroRemindersCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\RecruitmentRetroAutoCloseCronJob::class),
                     self::get(\App\Services\Cron\Jobs\HrWeeklyDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AccountDeletionAnonymizeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\TrainingForgottenDocsDigestCronJob::class),

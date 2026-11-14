@@ -21,7 +21,7 @@ use App\Support\EnlistmentStatusCatalog;
  * Clés ajoutées à chaque ligne :
  *   status_meta, stage, delay, retro (tableaux de EnlistmentStatusCatalog),
  *   submitted_age_hours, submitted_sla_breached, enlistment_sla_hours, last_action_at, enlistment_age_days,
- *   staff_retro_done_at, staff_retro_status (done | due | waiting | pending_decision | not_applicable | unavailable | unknown),
+ *   staff_retro_done_at, staff_retro_auto (le bilan est un néant posé par Athena), staff_retro_status (done | due | waiting | pending_decision | not_applicable | unavailable | unknown),
  *   instructor_user_id, instructor_label,
  *   assignment_unit_label, assignment_role_label, assignment_opening_title, assignment_source (opening | member | ''),
  *   dossier_url, assignment_define_url, bilan_url.
@@ -65,7 +65,7 @@ final class EnlistmentStaffRowEnricher
 
         $reviewers = $this->reviewers($tenantId, array_values($reviewerIds));
         [$openings, $jobRoleLabels] = $this->openings($tenantId, array_values($openingIds));
-        [$retroDone, $retroReady] = $this->retroDoneMap($tenantId, array_values($enlistmentIds));
+        [$retroDone, $retroReady, $retroAuto] = $this->retroDoneMap($tenantId, array_values($enlistmentIds));
         $memberUnits = $memberIds !== [] ? $this->memberUnitLabels($tenantId) : [];
 
         foreach ($rows as &$row) {
@@ -90,7 +90,9 @@ final class EnlistmentStaffRowEnricher
 
             $doneAt = $eid > 0 && array_key_exists($eid, $retroDone) ? (string) $retroDone[$eid] : null;
             $row['staff_retro_done_at'] = $doneAt !== null && trim($doneAt) !== '' ? trim($doneAt) : null;
-            $retro = EnlistmentStatusCatalog::retro($row, $doneAt, $retroReady, $now);
+            // Néant posé par Athena : le dossier n'est plus « à faire », mais ce n'est pas un bilan rédigé.
+            $row['staff_retro_auto'] = $eid > 0 && isset($retroAuto[$eid]);
+            $retro = EnlistmentStatusCatalog::retro($row, $doneAt, $retroReady, $now, $row['staff_retro_auto']);
             $row['retro'] = $retro;
             $row['staff_retro_status'] = $retro['key'];
 
@@ -207,20 +209,23 @@ final class EnlistmentStaffRowEnricher
      * Bilans d'équipe déjà saisis (table dédiée, puis chronologie du dossier en secours).
      *
      * @param list<int> $ids
-     * @return array{0: array<int, string>, 1: bool}
+     * @return array{0: array<int, string>, 1: bool, 2: array<int, true>} dates, table prête, dossiers dont le bilan est un néant d'Athena
      */
     private function retroDoneMap(int $tenantId, array $ids): array
     {
         $map = [];
+        $auto = [];
         $ready = false;
         try {
             $engagement = Container::get(EnlistmentRecruitmentEngagementRepository::class);
             $ready = $engagement->retroTableExists();
             if ($ready && $ids !== []) {
                 $map = $engagement->mapStaffRetroDoneIds($tenantId, $ids);
+                $auto = $engagement->mapStaffRetroAutoClosedIds($tenantId, $ids);
             }
         } catch (\Throwable) {
             $map = [];
+            $auto = [];
             $ready = false;
         }
         if ($ids !== []) {
@@ -238,7 +243,7 @@ final class EnlistmentStaffRowEnricher
             }
         }
 
-        return [$map, $ready];
+        return [$map, $ready, $auto];
     }
 
     /**

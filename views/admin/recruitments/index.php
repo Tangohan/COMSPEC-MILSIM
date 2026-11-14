@@ -559,7 +559,8 @@ $baseListForPills = $baseList;
 
                                     $retro = is_array($e['retro'] ?? null) ? $e['retro'] : ['label' => '—', 'tone' => 'muted', 'meta' => '', 'actionable' => false];
                                     $bilanLabel = (string) $retro['label'];
-                                    $bilanBadge = $retroStatus === 'done' ? 'recruitment-sheets__badge--done' : $sheetBadge((string) $retro['tone']);
+                                    // Un néant posé par Athena (« Clos par Athena ») reste neutre : ce n'est pas un bilan rédigé.
+                                    $bilanBadge = ($retroStatus === 'done' && empty($retro['auto'])) ? 'recruitment-sheets__badge--done' : $sheetBadge((string) $retro['tone']);
                                     $bilanMeta = (string) $retro['meta'];
                                     $bilanHref = !empty($retro['actionable']) ? url('back-office/recruitments/' . $fid . '?dossier=1#bilan-recrutement') : null;
                                     $stageInfo = is_array($e['stage'] ?? null) ? $e['stage'] : null;
@@ -709,6 +710,8 @@ $baseListForPills = $baseList;
                                             <?php endif; ?>
                                             <?php if ($retroStatus === 'due'): ?>
                                                 <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid . '?dossier=1#bilan-recrutement'), ENT_QUOTES, 'UTF-8') ?>" class="recruitment-sheets__badge recruitment-sheets__badge--late">Bilan à faire · <?= htmlspecialchars((string) (($e['retro'] ?? [])['meta'] ?? '')) ?></a>
+                                            <?php elseif ($retroStatus === 'done' && !empty($e['staff_retro_auto'])): ?>
+                                                <span class="recruitment-sheets__badge recruitment-sheets__badge--muted"><?= htmlspecialchars(\App\Support\EnlistmentRetroAutoClose::BADGE_LABEL, ENT_QUOTES, 'UTF-8') ?></span>
                                             <?php elseif ($retroStatus === 'done'): ?>
                                                 <span class="recruitment-sheets__badge recruitment-sheets__badge--done">Bilan fait<?= !empty($e['staff_retro_done_at']) ? ' · ' . date('d/m', strtotime((string) $e['staff_retro_done_at']) ?: time()) : '' ?></span>
                                             <?php endif; ?>

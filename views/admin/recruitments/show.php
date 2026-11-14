@@ -55,6 +55,8 @@ $retroDueDate = is_string($retroDueDate ?? null) ? $retroDueDate : null;
 $enlistmentEngagementTablesReady = !empty($enlistmentEngagementTablesReady);
 $recruiterPicksTableReady = !empty($recruiterPicksTableReady);
 $staffRetroFeedback = is_array($staffRetroFeedback ?? null) ? $staffRetroFeedback : null;
+// Néant posé par le système Athena (et non bilan rédigé par un membre) : un vrai bilan peut le remplacer.
+$staffRetroIsAuto = \App\Support\EnlistmentRetroAutoClose::isAutoClosed($staffRetroFeedback);
 $candidateRetroFeedback = is_array($candidateRetroFeedback ?? null) ? $candidateRetroFeedback : null;
 $enlistmentAnalyticsRecent = is_array($enlistmentAnalyticsRecent ?? null) ? $enlistmentAnalyticsRecent : [];
 $analyticsEventLabels = [
@@ -495,6 +497,8 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                                 <span class="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200">Bilan attendu</span>
                             <?php elseif (!$staffRetroFeedback && $statusRaw === 'reviewed'): ?>
                                 <span class="rounded-full bg-sky-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-200">Prévu<?= $retroDueDate !== null ? ' le ' . htmlspecialchars($retroDueDate, ENT_QUOTES, 'UTF-8') : '' ?></span>
+                            <?php elseif ($staffRetroIsAuto): ?>
+                                <span class="rounded-full bg-slate-400/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-100"><?= htmlspecialchars(\App\Support\EnlistmentRetroAutoClose::BADGE_LABEL, ENT_QUOTES, 'UTF-8') ?></span>
                             <?php elseif ($staffRetroFeedback): ?>
                                 <span class="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-200">Bilan enregistré</span>
                             <?php endif; ?>
@@ -540,7 +544,18 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                             <?php if (!$enlistmentEngagementTablesReady): ?>
                                 <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Le formulaire de bilan sera disponible après la prochaine mise à jour technique côté hébergement.</p>
                             <?php else: ?>
-                                <?php if ($staffRetroFeedback): ?>
+                                <?php if ($staffRetroIsAuto): ?>
+                                <?php $autoAt = trim((string) ($staffRetroFeedback['auto_closed_at'] ?? '')); ?>
+                                <div class="rounded-xl border border-slate-300 bg-slate-50 p-4">
+                                    <p class="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-900">
+                                        <span class="rounded-full bg-slate-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"><?= htmlspecialchars(\App\Support\EnlistmentRetroAutoClose::BADGE_LABEL, ENT_QUOTES, 'UTF-8') ?></span>
+                                        Néant, sans note<?= $autoAt !== '' ? ' · le ' . htmlspecialchars(date('d/m/Y H:i', strtotime($autoAt) ?: time()), ENT_QUOTES, 'UTF-8') : '' ?>
+                                    </p>
+                                    <div class="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700"><?= htmlspecialchars((string) ($staffRetroFeedback['comment'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                    <p class="mt-3 text-xs text-slate-500">Validé par le système Athena. Ce néant n’est pas un bilan rédigé : si vous renseignez un bilan ci-dessous, il le remplace (le néant reste dans le journal du dossier).</p>
+                                </div>
+                                <?php endif; ?>
+                                <?php if ($staffRetroFeedback && !$staffRetroIsAuto): ?>
                                 <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
                                     <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-800">Bilan équipe déjà enregistré</p>
                                     <p class="mt-2 text-sm font-bold text-slate-900">
@@ -569,7 +584,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                                         <textarea id="retro_staff_comment" name="retro_staff_comment" rows="4" required class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="Exemples : délais vécus par le candidat, clarté des échanges, points à améliorer…"></textarea>
                                     </div>
                                     <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
-                                        Enregistrer le bilan
+                                        <?= $staffRetroIsAuto ? 'Enregistrer le bilan (remplace le néant)' : 'Enregistrer le bilan' ?>
                                     </button>
                                 </form>
                                 <?php endif; ?>
