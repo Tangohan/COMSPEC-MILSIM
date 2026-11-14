@@ -1,0 +1,35 @@
+{
+    "blocking_scripts": {
+        "views/layout/leave.php": 1,
+        "views/partials/cdn_media_libs.php": 1,
+        "views/partials/halo_loader.php": 1,
+        "views/partials/tailwind_cdn_or_build.php": 1
+    },
+    "eager_images": {
+        "views/auth/register-check-email.php": 1,
+        "views/auth/register.php": 1,
+        "views/auth/welcome.php": 1,
+        "views/home/index.php": 1,
+        "views/partials/account/shell_open.php": 1,
+        "views/partials/atak_qr_phone_preview.php": 2,
+        "views/partials/auth/visual.php": 1,
+        "views/partials/back_office_sidebar.php": 1,
+        "views/partials/dashboard_catalog_showcase.php": 3,
+        "views/partials/home_topbar.php": 1,
+        "views/partials/public_portal_auth_frame.php": 1
+    },
+    "unversioned_assets": {
+        "views/partials/halo_loader.php": 1
+    },
+    "heavy_images": {
+        "assets/images/academy-hero.jpg": 362377,
+        "assets/images/fog-banner.jpg": 432838,
+        "assets/images/fog-team.jpg": 799138,
+        "assets/images/formation-de-specialite.jpg": 9532996,
+        "assets/images/night-team.jpg": 326060,
+        "assets/images/opt/fog-team-2048.webp": 452668,
+        "assets/img/atak-fx/broken-screen.png": 4325058,
+        "assets/img/atak-fx/glitch-hud.png": 2901644,
+        "assets/img/connect-device/comspec_phone_bg_ca.png": 968678
+    }
+}

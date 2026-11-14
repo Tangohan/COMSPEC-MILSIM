@@ -99,11 +99,17 @@
         closeAllPanels();
     });
 
-    window.addEventListener('resize', function () {
-        document.querySelectorAll('[data-portal-alerts-wrap]').forEach(placePanel);
-    }, { passive: true });
+    // Une seule mise en place par image affichée : le défilement et le redimensionnement émettent en rafale.
+    var placeQueued = false;
+    function queuePlace() {
+        if (placeQueued) return;
+        placeQueued = true;
+        (window.requestAnimationFrame || window.setTimeout)(function () {
+            placeQueued = false;
+            document.querySelectorAll('[data-portal-alerts-wrap]').forEach(placePanel);
+        });
+    }
 
-    window.addEventListener('scroll', function () {
-        document.querySelectorAll('[data-portal-alerts-wrap]').forEach(placePanel);
-    }, { passive: true });
+    window.addEventListener('resize', queuePlace, { passive: true });
+    window.addEventListener('scroll', queuePlace, { passive: true });
 })();

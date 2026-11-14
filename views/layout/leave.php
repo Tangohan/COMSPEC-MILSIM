@@ -12,7 +12,7 @@ $baseUrl = url('');
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
-    <link href="<?= $baseUrl ?>/assets/css/styles.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/styles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <style>
         :root { color-scheme: light; }

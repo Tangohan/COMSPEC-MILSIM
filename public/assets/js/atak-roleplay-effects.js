@@ -63,7 +63,7 @@
       div.id = 'atak-roleplay-error';
       div.className = 'atak-roleplay-error';
       div.innerHTML = `
-        <div class="atak-roleplay-error-icon"><img src="${window.ATAK_ASSETS_BASE || ''}/assets/img/atak-link-lost-icon.png" alt="" width="32" height="32" onerror="this.outerHTML='⚠'"></div>
+        <div class="atak-roleplay-error-icon"><img src="${window.ATAK_ASSETS_BASE || ''}/assets/img/atak-link-lost-icon-96.png" alt="" width="32" height="32" onerror="this.outerHTML='⚠'"></div>
         <div class="atak-roleplay-error-text">${message}</div>
       `;
       

@@ -106,7 +106,35 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<?php
+    /* Polices Google : une seule feuille par page. Chaque <link> vers fonts.googleapis.com bloque l'affichage ;
+       les familles propres à un gabarit (back-office, vitrine, documentation, fiche, documents) rejoignent donc
+       celle d'Inter au lieu d'ouvrir une requête de plus. Les graisses demandées restent celles d'avant. */
+    $gfFamilies = ['Inter' => 'Inter:wght@400;500;600;700;900'];
+    if ($communityShowcasePage || $communityRecruitmentOpeningPage || $communityRegistryPage || $communityReelsPage) {
+        $gfFamilies['Archivo'] = 'Archivo:wght@400;500;600;700;800;900';
+        $gfFamilies['JetBrains Mono'] = 'JetBrains+Mono:wght@400;500;700';
+    }
+    if (!empty($siteDocsPage) || !empty($siteDocsRefsPage) || !empty($overwatchModDocsPage)) {
+        $gfFamilies['Manrope'] = 'Manrope:wght@400;500;600;700;800';
+        $gfFamilies['Space Grotesk'] = 'Space+Grotesk:wght@500;600;700';
+    }
+    if (!empty($personnelFilePage) && is_file(base_path('public/assets/css/personnel-file.css')) && is_file(base_path('public/assets/css/personnel-file-refresh.css'))) {
+        $gfFamilies['Barlow Semi Condensed'] = 'Barlow+Semi+Condensed:wght@600;700';
+    }
+    if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
+        $gfFamilies['Archivo'] = 'Archivo:wght@400;500;600;700;800;900';
+        if (is_file(base_path('public/assets/css/back-office-shell.css'))) {
+            $gfFamilies['Barlow Semi Condensed'] = 'Barlow+Semi+Condensed:wght@600;700';
+            $gfFamilies['IBM Plex Sans'] = 'IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400';
+        }
+    }
+    if (!empty($documentFmPage) && is_file(base_path('public/assets/css/document-fm.css'))) {
+        $gfFamilies['Libre Baskerville'] = 'Libre+Baskerville:ital,wght@0,400;0,700;1,400';
+        $gfFamilies['Pinyon Script'] = 'Pinyon+Script';
+    }
+?>
+    <link href="https://fonts.googleapis.com/css2?family=<?= htmlspecialchars(implode('&family=', $gfFamilies), ENT_QUOTES, 'UTF-8') ?>&display=swap" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/design-system.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/design-system.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -120,7 +148,6 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     require base_path('views/partials/cdn_media_libs.php');
 ?>
     <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage || $communityRegistryPage || $communityReelsPage): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <?php
       /* Vitrine : LiteSpeed a mis en cache un 404 sur community-landing.css (et alias).
          On injecte le CSS lu par PHP (inline) plutôt que de pointer vers l’asset HTTP cassé. */
@@ -196,7 +223,6 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if (!empty($siteDocsPage) || !empty($siteDocsRefsPage) || !empty($overwatchModDocsPage)): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/site-docs.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/site-docs.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -229,7 +255,6 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (!empty($personnelFilePage) && is_file(base_path('public/assets/css/personnel-file.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/personnel-file.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/personnel-file-refresh.css'))): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/personnel-file-refresh.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php endif; ?>
@@ -254,7 +279,8 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <script defer src="<?= htmlspecialchars($alpineSrc, ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <?php if (is_file(base_path('public/assets/js/img-fallback.js'))): ?>
-    <script src="<?= htmlspecialchars(asset_url('assets/js/img-fallback.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php /* Différé : le script rattrape à son démarrage les images déjà en échec (bind : complete + naturalWidth 0). */ ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/img-fallback.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <script>
       window.APP_VERSION = <?= json_encode(platform_app_version(), JSON_UNESCAPED_UNICODE) ?>;
@@ -335,7 +361,6 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-rail.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) && is_file(base_path('public/assets/css/back-office-shell.css'))): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/back-office-refresh.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-refresh.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
@@ -346,11 +371,8 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/css/back-office-legacy.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-legacy.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
-    <?php elseif (!empty($isPlatformAdminShell)): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
     <?php endif; ?>
     <?php if (!empty($documentFmPage) && is_file(base_path('public/assets/css/document-fm.css'))): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Pinyon+Script&display=swap" rel="stylesheet">
     <link href="<?= htmlspecialchars(asset_url('assets/css/document-fm.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php
@@ -372,11 +394,39 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <link href="<?= htmlspecialchars(asset_url('assets/css/' . $boCssRel), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endforeach; ?>
     <?php if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($accountHubPage)): ?>
-    <?php foreach (['back-office-dark.generated.css', 'back-office-dark.css'] as $boDarkCss): ?>
-    <?php if (is_file(base_path('public/assets/css/' . $boDarkCss))): ?>
-    <link href="<?= htmlspecialchars(asset_url('assets/css/' . $boDarkCss), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<?php
+    /* Mode nuit. back-office-dark.generated.css (environ 390 Ko) ne contient que des règles préfixées par
+       html[data-bo-theme="dark"] (tools/build-bo-dark-css.py), donc sans effet en mode jour : en mode nuit la
+       feuille reste bloquante (pas de flash clair) ; en mode jour elle arrive avec media="print", sans retarder
+       l'affichage, puis est activée dès que le thème passe à la nuit. document.write : seul moyen d'obtenir une
+       feuille bloquante choisie d'après localStorage. Sans JavaScript, le thème n'est jamais posé : rien à charger.
+       back-office-dark.css porte aussi l'interrupteur de thème (règles sans préfixe) : il reste chargé normalement. */
+    $boDarkGeneratedHref = is_file(base_path('public/assets/css/back-office-dark.generated.css'))
+        ? asset_url('assets/css/back-office-dark.generated.css')
+        : '';
+?>
+    <?php if ($boDarkGeneratedHref !== ''): ?>
+    <link rel="preload" as="style" href="<?= htmlspecialchars($boDarkGeneratedHref, ENT_QUOTES, 'UTF-8') ?>">
+    <script>
+    (function () {
+        var root = document.documentElement;
+        var dark = root.getAttribute('data-bo-theme') === 'dark';
+        var href = <?= json_encode($boDarkGeneratedHref, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+        document.write('<link href="' + href + '" rel="stylesheet" data-bo-dark-css' + (dark ? '' : ' media="print"') + '>');
+        if (dark || !window.MutationObserver) { return; }
+        var mo = new MutationObserver(function () {
+            if (root.getAttribute('data-bo-theme') !== 'dark') { return; }
+            var link = document.querySelector('link[data-bo-dark-css]');
+            if (link) { link.media = 'all'; }
+            mo.disconnect();
+        });
+        mo.observe(root, { attributes: true, attributeFilter: ['data-bo-theme'] });
+    })();
+    </script>
     <?php endif; ?>
-    <?php endforeach; ?>
+    <?php if (is_file(base_path('public/assets/css/back-office-dark.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-dark.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php endif; ?>
 </head>
 <?php
