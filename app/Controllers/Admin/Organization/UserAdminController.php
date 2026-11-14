@@ -1397,6 +1397,12 @@ class UserAdminController
 
             return Response::redirect($showUrl);
         }
+        // Même droit que la fiche du membre (avant, aucun contrôle fin ici).
+        if (!\App\Support\EffectifsLmsAccess::canManageStatus(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à changer la position administrative.');
+
+            return Response::redirect($showUrl);
+        }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
             Session::flash('error', 'Membre introuvable.');
@@ -1450,6 +1456,11 @@ class UserAdminController
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($listUrl);
+        }
+        if (!\App\Support\EffectifsLmsAccess::canManageStatus(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à changer les positions administratives.');
 
             return Response::redirect($listUrl);
         }
