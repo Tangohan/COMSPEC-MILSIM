@@ -38,6 +38,40 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 4.13.0 Washington : goniométrie recoupée, plans diffusés par zone, vérification de la configuration, relais et TOC refaits (ATAK natif 4.13.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : Goniométrie qui localise, relais refaits, vérification de la configuration
+- Guerre électronique : relevez la même émission depuis deux endroits et le téléphone place un point estimé, avec son cercle d'erreur, sur la carte.
+- Zones : un plan peut n'arriver qu'à l'entrée dans la zone, et le TOC est prévenu quand un équipier y entre ou en sort.
+- Réseau : avec un signal faible, les photos attendent et les messages passent. La barre d'état affiche FAIBLE.
+- Statut : une nouvelle vérification de la configuration liste le téléphone, le réseau, les relais et la batterie, avec le correctif sous chaque point. L'administrateur voit si sa mission a des relais.
+- App Wave Relay refaite : elle dit où vous en êtes et pourquoi il n'y a pas de réseau. Sans relais en service à portée, pas de réseau radio.
+- TOC : il voit qui parle à la radio et sur quelle fréquence, la console du poste est refaite et la vue satellite est plus fluide.
+- Les caméras IP posées dans l'éditeur apparaissent dans Vidéo live et dans le TOC.
+- Le petit téléphone suit enfin les réglages d'icônes de la carte.
+- Les drones ennemis ne sont plus détectés par défaut, et il faut avoir un téléphone sur soi pour en poser un sur un socle de recharge.
+- Les alertes de camp ne peuvent plus être envoyées au nom d'un autre camp.
+EN : Direction finding that locates, relays redone, configuration check
+- Electronic warfare: take a bearing on the same emission from two places and the phone drops an estimated point, with its error circle, on the map.
+- Zones: a plan can arrive only when you enter the area, and the TOC is told when a teammate enters or leaves it.
+- Network: with a weak signal, photos wait and messages go through. The status bar shows LOW.
+- Status: a new configuration check lists the phone, the network, the relays and the battery, with the fix under each point. The administrator sees whether the mission has relays.
+- Wave Relay app redone: it tells you where you stand and why there is no network. With no working relay in range, there is no radio network.
+- TOC: it sees who is talking on the radio and on which frequency, the station console is redone and the satellite view is smoother.
+- IP cameras placed in the editor show up in Live Feed and in the TOC.
+- The small phone finally follows the map icon settings.
+- Enemy drones are no longer detected by default, and you need a phone on you to put one on a charging dock.
+- Side alerts can no longer be sent in the name of another side.
+
+### Détail technique
+- Regroupe les parties ci-dessous : goniométrie recoupée, plans diffusés par zone, vérification de la configuration, liaison faible (cette entrée), réglages d'icônes du petit téléphone, activité radio du TOC, caméras IP, app Wave Relay et relais refaits, plus les PR #1572 (drones OPFOR non détectés par défaut, socles de recharge), #1573 (indicateur réseau SAT en bleu, onglet KIT lisible) et #1575 (console du poste TOC et vue SAT fluide, réglage de qualité SAT).
+- Pas de nouvelle version de COMSPEC Link : la DLL reste 2.0.123.
+- Flashbang (mod à part, 1.0.0) : texture de la vignette, option Effets réduits, sursaut, récupération selon la lumière, audition en deux temps.
+
+---
+
 ## Goniométrie recoupée, plans diffusés par zone, vérification de la configuration, liaison faible (ATAK natif, regroupé dans 4.13.0)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -196,40 +230,6 @@ EN : A TOC console and operation plans on Athena
 ### Détail technique
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
-
-## Pack 4.13.0 Washington : goniométrie recoupée, plans diffusés par zone, vérification de la configuration, relais et TOC refaits (ATAK natif 4.13.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
-
-### Résumé joueur
-Type : nouveauté
-FR : Goniométrie qui localise, relais refaits, vérification de la configuration
-- Guerre électronique : relevez la même émission depuis deux endroits et le téléphone place un point estimé, avec son cercle d'erreur, sur la carte.
-- Zones : un plan peut n'arriver qu'à l'entrée dans la zone, et le TOC est prévenu quand un équipier y entre ou en sort.
-- Réseau : avec un signal faible, les photos attendent et les messages passent. La barre d'état affiche FAIBLE.
-- Statut : une nouvelle vérification de la configuration liste le téléphone, le réseau, les relais et la batterie, avec le correctif sous chaque point. L'administrateur voit si sa mission a des relais.
-- App Wave Relay refaite : elle dit où vous en êtes et pourquoi il n'y a pas de réseau. Sans relais en service à portée, pas de réseau radio.
-- TOC : il voit qui parle à la radio et sur quelle fréquence, la console du poste est refaite et la vue satellite est plus fluide.
-- Les caméras IP posées dans l'éditeur apparaissent dans Vidéo live et dans le TOC.
-- Le petit téléphone suit enfin les réglages d'icônes de la carte.
-- Les drones ennemis ne sont plus détectés par défaut, et il faut avoir un téléphone sur soi pour en poser un sur un socle de recharge.
-- Les alertes de camp ne peuvent plus être envoyées au nom d'un autre camp.
-EN : Direction finding that locates, relays redone, configuration check
-- Electronic warfare: take a bearing on the same emission from two places and the phone drops an estimated point, with its error circle, on the map.
-- Zones: a plan can arrive only when you enter the area, and the TOC is told when a teammate enters or leaves it.
-- Network: with a weak signal, photos wait and messages go through. The status bar shows LOW.
-- Status: a new configuration check lists the phone, the network, the relays and the battery, with the fix under each point. The administrator sees whether the mission has relays.
-- Wave Relay app redone: it tells you where you stand and why there is no network. With no working relay in range, there is no radio network.
-- TOC: it sees who is talking on the radio and on which frequency, the station console is redone and the satellite view is smoother.
-- IP cameras placed in the editor show up in Live Feed and in the TOC.
-- The small phone finally follows the map icon settings.
-- Enemy drones are no longer detected by default, and you need a phone on you to put one on a charging dock.
-- Side alerts can no longer be sent in the name of another side.
-
-### Détail technique
-- Regroupe les parties ci-dessous : goniométrie recoupée, plans diffusés par zone, vérification de la configuration, liaison faible (cette entrée), réglages d'icônes du petit téléphone, activité radio du TOC, caméras IP, app Wave Relay et relais refaits, plus les PR #1572 (drones OPFOR non détectés par défaut, socles de recharge), #1573 (indicateur réseau SAT en bleu, onglet KIT lisible) et #1575 (console du poste TOC et vue SAT fluide, réglage de qualité SAT).
-- Pas de nouvelle version de COMSPEC Link : la DLL reste 2.0.123.
-- Flashbang (mod à part, 1.0.0) : texture de la vignette, option Effets réduits, sursaut, récupération selon la lumière, audition en deux temps.
-
----
 
 ## Pack 4.12.0 Washington : postes, droits et journal de la salle TOC, TOC pilotable par script (ATAK natif 4.12.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
