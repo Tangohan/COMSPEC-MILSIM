@@ -73,11 +73,11 @@ return [
         ]],
         ['path' => 'back-office/dashboard-tenues/create', 'group' => 'Communauté', 'title' => 'Mettre une tenue en avant', 'css' => ['dashboard-impact.css'], 'quick' => [
             ['label' => 'Vitrine', 'href' => 'back-office/dashboard-tenues'],
-            ['label' => 'Tableau de bord', 'href' => 'dashboard'],
+            ['label' => 'Portail', 'href' => 'dashboard'],
         ]],
         ['path' => 'back-office/dashboard-tenues', 'group' => 'Communauté', 'title' => 'Tenues mises en avant', 'subtitle' => 'Les tenues mises en avant sur le tableau de bord des membres, avec leur visuel et leur fond.', 'css' => ['dashboard-impact.css'], 'quick' => [
             ['label' => 'Ajouter', 'href' => 'back-office/dashboard-tenues/create'],
-            ['label' => 'Tableau de bord', 'href' => 'dashboard'],
+            ['label' => 'Portail', 'href' => 'dashboard'],
         ]],
         ['path' => 'back-office/integration-membres/modeles/nouveau', 'group' => 'Communauté', 'title' => 'Nouveau modèle de parcours', 'subtitle' => 'Nom, durée, règle de référent et étapes proposées aux nouvelles arrivées.', 'css' => ['member-integration.css'], 'quick' => [
             ['label' => 'Modèles', 'href' => 'back-office/integration-membres/modeles'],

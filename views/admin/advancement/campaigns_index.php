@@ -33,7 +33,7 @@ foreach ($overview as $row) {
         </div>
         <div class="advc-intro__acts">
             <a class="ath-btn ath-btn--solid" href="<?= adv_h(url('back-office/rh/avancement/create')) ?>">Nouvelle campagne</a>
-            <a class="ath-btn" href="<?= adv_h(url('back-office/organisation/grades')) ?>">Règles d’avancement</a>
+            <a class="ath-btn" href="<?= adv_h(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades')) ?>">Règles d’avancement</a>
             <a class="ath-btn" href="<?= adv_h(url('back-office/referentiels/grades')) ?>">Référentiel des grades</a>
         </div>
     </section>
@@ -98,7 +98,7 @@ foreach ($overview as $row) {
         <?php if ($overview === []): ?>
             <div class="advc-empty">
                 <p><strong>Aucun grade n’est ouvert à la voie choix.</strong> Cochez « Voie choix » sur les grades concernés dans les règles d’avancement.</p>
-                <a class="ath-btn" href="<?= adv_h(url('back-office/organisation/grades')) ?>">Règles d’avancement</a>
+                <a class="ath-btn" href="<?= adv_h(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades')) ?>">Règles d’avancement</a>
             </div>
         <?php else: ?>
             <ul class="advc-grades">

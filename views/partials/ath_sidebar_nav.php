@@ -70,7 +70,10 @@ $navAtakSessionsActive = $boNavAtakOperators;
 $navAtakOpActive = str_starts_with($p, 'back-office/atak/fiche-operateur');
 $navAtakControlActive = str_starts_with($p, 'back-office/atak/controle-serveur');
 $navAtakRelaysActive = str_starts_with($p, 'back-office/atak/relays-network');
-$navAtakRoleplayActive = str_starts_with($p, 'back-office/atak/roleplay') || str_starts_with($p, 'back-office/atak/roleplay');
+$navAtakRoleplayActive = str_starts_with($p, 'back-office/atak/roleplay');
+$navOverwatchActive = $p === 'atak';
+// Départs : la page exige « statut des comptes » ; sans ce droit l’entrée du menu est masquée (le contrôle de la page ne change pas).
+$canManageMemberStatus = \App\Support\EffectifsLmsAccess::canManageStatus($gate);
 $navRolesActive = $boNavRolesPermissions;
 $navRolesTableActive = $boNavRoles;
 $navProfilsActive = $boNavRolesPresets;
@@ -125,15 +128,12 @@ $membersChildren = array_values(array_filter([
     ['label' => 'Affectations', 'href' => effectifs_workspace_url('affectations'), 'active' => $navAt($effPath . '/affectations')],
     ['label' => 'Chaîne de commandement', 'href' => effectifs_workspace_url('chaine'), 'active' => $navAt($effPath . '/chaine')],
     ['label' => 'Qualifications des membres', 'href' => effectifs_workspace_url('qualifications'), 'active' => $navAt($effPath . '/qualifications')],
-    $canMemberModeration
-        ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
+    $canManageMemberStatus
+        ? ['label' => 'Anciens membres', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')]
         : null,
-    ['label' => 'Anciens membres', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')],
     ['label' => 'Sans compte', 'href' => effectifs_workspace_url('sans-comptes'), 'active' => $navAt($effPath . '/sans-comptes')],
     ['label' => 'Tableaux de données', 'href' => effectifs_workspace_url('tableaux'), 'active' => $navAt($effPath . '/tableaux')],
-    ['label' => 'Registre des droits', 'href' => effectifs_workspace_url('registre-droits'), 'active' => $navAt($effPath . '/registre-droits')],
-    ['label' => 'Circuits de validation', 'href' => effectifs_workspace_url('circuits'), 'active' => $navAt($effPath . '/circuits')],
-    ['label' => 'Positions administratives', 'href' => effectifs_workspace_url('positions'), 'active' => $navAt($effPath . '/positions')],
+    // Sanctions : groupe « Discipline ». Registre des droits et circuits : « Droits et accès ». Positions : « Référentiels » (Configuration).
     // Profils sans recrutement : les invitations quittent le bloc « Recrutement » (masqué) pour rester sous la main.
     !$isFullTenant
         ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')]
@@ -171,15 +171,17 @@ $rhChildren = [
             ['label' => 'Vivier', 'href' => effectifs_workspace_url('vivier'), 'active' => $navAt($effPath . '/vivier')],
         ],
     ],
-    ['label' => 'Réglages RH', 'href' => effectifs_workspace_url('reglages'), 'active' => $navAt($effPath . '/reglages')],
 ];
 
-// ——— ORGANISATION ———
+// Réglages RH : entrée de Configuration (il était le dernier lien de « Dossiers RH »).
+$rhSettingsItem = ['label' => 'Réglages RH', 'href' => effectifs_workspace_url('reglages'), 'icon' => 'users', 'active' => $navAt($effPath . '/reglages')];
+
+// ——— ORGANISATION (Configuration) ———
+// L’organigramme reste au quotidien, sous Effectifs ; le reste se règle rarement et vit dans Configuration.
 $orbatChildren = [
     [
         'label' => 'Structure',
         'children' => [
-            ['label' => 'Organigramme', 'href' => orbat_page_url(), 'active' => !empty($boNavStructure) || $p === 'orbat'],
             ['label' => 'Groupes', 'href' => url('back-office/groups'), 'active' => $navAt('back-office/groups')],
             ['label' => 'Équipes', 'href' => url('back-office/teams'), 'active' => $navAt('back-office/teams')],
             ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
@@ -216,12 +218,18 @@ $referentialChildren = [
         ],
     ],
     ['label' => 'Fonctions et emplois', 'href' => effectifs_workspace_url('fonctions'), 'active' => $navJobsActive],
+    ['label' => 'Positions administratives', 'href' => effectifs_workspace_url('positions'), 'active' => $navAt($effPath . '/positions')],
     ['label' => 'Dotation', 'href' => url('back-office/referentiels/dotation'), 'active' => $navAt('back-office/referentiels/dotation')],
 ];
 
+// ——— DROITS ET ACCÈS (Configuration) ———
 $accessChildren = [
     ['label' => 'Rôles et accès', 'href' => effectifs_workspace_url('roles'), 'active' => $navAccessActive && !$navAt($effPath . '/droits')],
+    ['label' => 'Registre des droits', 'href' => effectifs_workspace_url('registre-droits'), 'active' => $navAt($effPath . '/registre-droits')],
+    ['label' => 'Circuits de validation', 'href' => effectifs_workspace_url('circuits'), 'active' => $navAt($effPath . '/circuits')],
     ['label' => 'Accès au renseignement', 'href' => url('back-office/renseignement/acces'), 'active' => $navAt('back-office/renseignement') && !$navAt('back-office/renseignement/fichiers')],
+    ['label' => 'Sécurité et blocages', 'href' => url('back-office/security-indicators'), 'active' => $navAt('back-office/security-indicators')],
+    ['label' => 'Journal d’audit', 'href' => url('back-office/audit'), 'active' => $boNavAudit],
 ];
 
 // ——— PILOTAGE ———
@@ -425,7 +433,7 @@ if ($isOperatorBoNav) {
             'key' => 'pilotage',
             'label' => 'TABLEAU DE BORD ET SUIVI',
             'items' => [
-                ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
+                ['label' => 'Accueil', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
                 // Mon service (tâches, avis demandés par les circuits, agenda) : joignable depuis le back-office.
                 ['label' => 'Mon service', 'href' => url('mon-service'), 'icon' => 'pulse', 'active' => str_starts_with($p, 'mon-service')],
             ],
@@ -471,7 +479,7 @@ if ($isOperatorBoNav) {
             'key' => 'terrain',
             'label' => 'TERRAIN',
             'items' => [
-                ['label' => 'Overwatch', 'href' => url('atak'), 'icon' => 'ops', 'active' => $p === 'atak'],
+                ['label' => 'Overwatch', 'href' => url('atak'), 'icon' => 'ops', 'active' => $navOverwatchActive],
                 ['label' => 'Ma liaison ATAK', 'href' => url('back-office/ma-situation/liaison-atak'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/liaison-atak') || str_starts_with($p, 'back-office/ma-situation/appareils') || str_starts_with($p, 'back-office/ma-situation/premiere-liaison')],
                 [
                     'label' => 'Événements',
@@ -534,21 +542,25 @@ if ($isOperatorBoNav) {
 $opNavGroups = $isDelegatedStaff ? $athNavGroups : null;
 if (!$isOperatorBoNav || $isDelegatedStaff) {
     // Pastilles des pages de gestion : config/back_office_menu.php (MenuDecorator), plus de compteur en dur ici.
-    $moderationChildren = [
+    // Discipline : sanctions et absences, signalements, quarantaine — chaque page garde son propre contrôle d’accès.
+    $disciplineChildren = array_values(array_filter([
+        $canMemberModeration
+            ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
+            : null,
         [
             'label' => 'Signalements membres',
             'href' => url('back-office/signalements'),
             'active' => $navAt('back-office/signalements'),
         ],
         ['label' => 'Fichiers en quarantaine', 'href' => url('back-office/content-moderation'), 'active' => $navAt('back-office/content-moderation')],
-    ];
+    ], static fn (?array $row): bool => is_array($row)));
 
     $athNavGroups = [
         [
             'key' => 'pilotage',
             'label' => 'TABLEAU DE BORD ET SUIVI',
             'items' => array_values(array_filter([
-                ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
+                ['label' => 'Accueil', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
                 // Mon service (tâches, avis demandés par les circuits, agenda) : joignable depuis le back-office.
                 ['label' => 'Mon service', 'href' => url('mon-service'), 'icon' => 'pulse', 'active' => str_starts_with($p, 'mon-service')],
                 $canMurOperationnel
@@ -585,43 +597,12 @@ if (!$isOperatorBoNav || $isDelegatedStaff) {
                     'children' => $rhChildren,
                 ],
                 [
-                    'label' => 'Modération',
-                    'href' => url('back-office/signalements'),
+                    'label' => 'Discipline',
+                    'href' => (string) ($disciplineChildren[0]['href'] ?? url('back-office/signalements')),
                     'icon' => 'shield',
-                    'children' => $moderationChildren,
+                    'children' => $disciplineChildren,
                 ],
-            ],
-        ],
-        [
-            'key' => 'organisation',
-            'label' => 'UNITÉS ET RÉFÉRENTIELS',
-            'items' => [
-                [
-                    'label' => 'Organisation',
-                    'href' => orbat_page_url(),
-                    'icon' => 'orbat',
-                    'children' => $orbatChildren,
-                ],
-                [
-                    'label' => 'Référentiels',
-                    'href' => url('back-office/referentiels/grades'),
-                    'icon' => 'cert',
-                    'children' => $referentialChildren,
-                ],
-            ],
-        ],
-        [
-            'key' => 'acces',
-            'label' => 'DROITS ET ACCÈS',
-            'items' => [
-                [
-                    'label' => 'Rôles et habilitations',
-                    'href' => (string) $accessChildren[0]['href'],
-                    'icon' => 'shield',
-                    'children' => $accessChildren,
-                ],
-                ['label' => 'Sécurité et blocages', 'href' => url('back-office/security-indicators'), 'icon' => 'cert', 'active' => $navAt('back-office/security-indicators')],
-                ['label' => 'Journal d’audit', 'href' => url('back-office/audit'), 'icon' => 'audit', 'active' => $boNavAudit],
+                ['label' => 'Organigramme', 'href' => orbat_page_url(), 'icon' => 'orbat', 'active' => !empty($boNavStructure) || $p === 'orbat'],
             ],
         ],
         [
@@ -676,7 +657,7 @@ if (!$isOperatorBoNav || $isDelegatedStaff) {
             'key' => 'atak',
             'label' => 'ATAK · CARTE ET TERMINAUX',
             'items' => [
-                ['label' => 'Overwatch', 'href' => url('atak'), 'icon' => 'radio', 'active' => false],
+                ['label' => 'Overwatch', 'href' => url('atak'), 'icon' => 'radio', 'active' => $navOverwatchActive],
                 ['label' => 'Poste de situation', 'href' => url('back-office/atak'), 'icon' => 'ops', 'active' => $navAtakHubActive],
                 ['label' => 'Contrôle de mission', 'href' => url('back-office/atak/controle-serveur'), 'icon' => 'gear', 'active' => $navAtakControlActive],
                 [
@@ -696,12 +677,6 @@ if (!$isOperatorBoNav || $isDelegatedStaff) {
                     'href' => url('back-office/equipement-joueurs'),
                     'icon' => 'box',
                     'children' => $materielChildren,
-                ],
-                [
-                    'label' => 'Configuration et mods',
-                    'href' => url('back-office/ressources/atak-config'),
-                    'icon' => 'plug',
-                    'children' => $atakResChildren,
                 ],
             ],
         ],
@@ -734,14 +709,42 @@ if (!$isOperatorBoNav || $isDelegatedStaff) {
             ], static fn (?array $row): bool => is_array($row))),
         ],
         [
-            'key' => 'systeme',
-            'label' => 'RÉGLAGES ET INTÉGRATIONS',
+            // Niveau 3 : ce qu’on règle à l’installation puis rarement. Replié par défaut, sauf s’il contient la page courante
+            // ou si la personne l’a ouvert elle-même (back-office-sidebar.js). La page « Configuration » reste le sommaire.
+            'key' => 'configuration',
+            'label' => 'CONFIGURATION',
+            'collapsed' => true,
             'items' => array_values(array_filter([
                 ['label' => 'Configuration', 'href' => url('back-office/configuration'), 'icon' => 'gear', 'active' => $boNavConfig],
-                ['label' => 'Configuration initiale', 'href' => url('back-office/configuration-initiale'), 'icon' => 'rocket', 'active' => $boNavInitialSetup],
+                [
+                    'label' => 'Organisation',
+                    'href' => url('back-office/groups'),
+                    'icon' => 'orbat',
+                    'children' => $orbatChildren,
+                ],
+                [
+                    'label' => 'Référentiels',
+                    'href' => url('back-office/referentiels/grades'),
+                    'icon' => 'cert',
+                    'children' => $referentialChildren,
+                ],
+                [
+                    'label' => 'Droits et accès',
+                    'href' => (string) $accessChildren[0]['href'],
+                    'icon' => 'shield',
+                    'children' => $accessChildren,
+                ],
+                [
+                    'label' => 'ATAK',
+                    'href' => url('back-office/ressources/atak-config'),
+                    'icon' => 'plug',
+                    'children' => $atakResChildren,
+                ],
                 $canIntegrationsBo
                     ? ['label' => 'Intégrations', 'href' => url('back-office/integrations'), 'icon' => 'plug', 'active' => $boNavInteg]
                     : null,
+                $rhSettingsItem,
+                ['label' => 'Configuration initiale', 'href' => url('back-office/configuration-initiale'), 'icon' => 'rocket', 'active' => $boNavInitialSetup],
                 ['label' => 'Mises à jour', 'href' => url('back-office/mise-a-niveau'), 'icon' => 'rocket', 'active' => $navAt('back-office/mise-a-niveau')],
                 ['label' => 'Messages de la plateforme', 'href' => url('back-office/messages-plateforme'), 'icon' => 'radio', 'active' => $navAt('back-office/messages-plateforme')],
                 ['label' => 'Traçabilité du courrier', 'href' => url('back-office/courrier/traceabilite'), 'icon' => 'mail', 'active' => $navAt('back-office/courrier/traceabilite')],

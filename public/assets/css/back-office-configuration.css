@@ -117,6 +117,14 @@
   color: var(--ath-muted);
 }
 
+.bo-cfg-where {
+  margin: 10px 0 0;
+  max-width: 78ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ath-muted);
+}
+
 /* ── Mise en page : navigation + contenu ───────────────────────────── */
 
 .bo-cfg__layout {

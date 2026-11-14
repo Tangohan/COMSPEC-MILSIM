@@ -35,7 +35,7 @@ $closeDefault = date('Y-m-d', strtotime('+30 days'));
         <section class="advc-panel">
             <div class="advc-empty">
                 <p><strong>Aucun grade n’est ouvert à la voie choix.</strong> Ouvrez la voie choix sur au moins un grade dans les règles d’avancement, puis revenez ici.</p>
-                <a class="ath-btn ath-btn--solid" href="<?= adv_h(url('back-office/organisation/grades')) ?>">Règles d’avancement</a>
+                <a class="ath-btn ath-btn--solid" href="<?= adv_h(\App\Support\BackOfficeTabs::urlFor('back-office/organisation/grades')) ?>">Règles d’avancement</a>
             </div>
         </section>
     <?php else: ?>

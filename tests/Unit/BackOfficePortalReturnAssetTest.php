@@ -21,7 +21,7 @@ final class BackOfficePortalReturnAssetTest extends TestCase
         );
 
         self::assertStringContainsString("url('dashboard')", $sidebar);
-        self::assertStringContainsString('Retour au tableau de bord', $sidebar);
+        self::assertStringContainsString('Retour au portail', $sidebar);
         self::assertStringContainsString('ath-sidebar__portal', $sidebar);
         self::assertMatchesRegularExpression(
             '/<a href="<\?= \$h\(url\(\'dashboard\'\)\) \?>" class="ath-sidebar__logo"[^\n]*>A<\/a>/',
@@ -33,7 +33,7 @@ final class BackOfficePortalReturnAssetTest extends TestCase
         );
 
         self::assertStringContainsString("url('dashboard')", $topbar);
-        self::assertStringContainsString('Tableau de bord', $topbar);
+        self::assertStringContainsString('Portail', $topbar);
         self::assertStringContainsString('ath-topbar__portal', $topbar);
 
         self::assertStringContainsString('.ath-sidebar__portal', $css);
