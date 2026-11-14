@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Carte : épinglez Messages, SMS ou Ordres à côté des coordonnées (ATAK natif 4.16.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : Épinglez une app sur la carte
+- Sur la carte du téléphone, vous pouvez épingler Messages, SMS ou Ordres : un bandeau de la même taille que celui des coordonnées s'affiche à sa droite.
+- Il montre le nombre de non lus (ou d'ordres à traiter) et le dernier message ou ordre, avec son expéditeur et son heure. Il se met à jour tout seul, sans toucher à la carte.
+- Touchez le bandeau pour ouvrir l'app en entier.
+- Pour choisir : dans le panneau SITUATION de la carte, ligne « App épinglée sous le bandeau », ou dans Réglages > Carte, ou dans les options du jeu (Réglages de l'addon, COMSPEC, ATAK · Affichage). Rien n'est épinglé par défaut et votre choix est retenu d'une partie à l'autre.
+- Le bandeau ne cache ni les coordonnées, ni les boutons, ni RECHERCHER : s'il n'y a pas la place à droite, il passe au-dessus (ou en dessous si les coordonnées sont en haut) et il disparaît sur le petit téléphone porté.
+EN : Pin an app on the map
+- On the phone map you can pin Messages, SMS or Orders: a banner the same size as the coordinates banner appears to its right.
+- It shows the unread count (or the orders to handle) and the last message or order, with its sender and time. It updates by itself without redrawing the map.
+- Touch the banner to open the full app.
+- To choose: in the map's SITUATION panel, "App pinned under the banner" row, or in Settings > Map, or in the game options (Addon settings, COMSPEC, ATAK · Display). Nothing is pinned by default and your choice is kept from one session to the next.
+- The banner never covers the coordinates, the buttons or SEARCH: if there is no room on the right it moves above (or below when the coordinates are at the top), and it is hidden on the small worn phone.
+
+### Détail technique
+- **Nouvelle fonction** `fn_mapPinnedApp` (dossier `map`, déclarée dans `config.cpp`) : `app`, `height`, `build`, `tick`, `set`, `refresh`, `rows`. Réglage CBA par joueur `comspec_atak_native_map_pinned_app` (LIST `none` / `CHAT` / `SMS` / `TASK`, catégorie « COMSPEC / ATAK · Affichage », défaut `none`) ; son rappel redessine la carte si elle est ouverte (anti-rebond de 0,3 s avec `set`).
+- **Placement** (`fn_pageMap`) : hauteur = deux lignes comme le bandeau NEW (`_l1H` + `_l2H`), alignée sur le bas du bandeau des coordonnées ; à sa droite si `_pinMin` (22 caractères) y tient, sinon au-dessus (bas) ou en dessous (haut) tant que la carte garde la moitié de sa hauteur ; sans bandeau, à sa place en bas à gauche. Ajouté à `_panH` quand il est en bas (fiches, RECHERCHER, menu OUTILS restent au-dessus) et à `COMSPEC_ATAK_MapHudRects` (les étiquettes l'évitent). Masqué en mini ; bouton de recouvrement seulement en main (`fn_navigate` vers `CHAT`, `SMS` ou `TASK`).
+- **Contenu** : Messages = canaux (dernier message de `fn_messagesAll`, non lus = badge CHAT moins badge SMS) ; SMS = dernier `p2p` ; Ordres = non traités (`fn_appBadge TASK`) et dernier ordre à traiter de `fn_tasksAll`. Textes tronqués à la largeur (chasse fixe), balises retirées, libellés par `fn_tr` (nouvelles entrées dans `i18n/en.txt`).
+- **Mise à jour** : `tick` appelé depuis le passage complet de `fn_mapOverlayUpdate` (une fois par seconde, pas par image) ; texte réécrit seulement s'il a changé (variable `txt` du contrôle), aucun contrôle recréé ; coût mesuré sous la clé `carte : app épinglée` de `fn_perfAcc`. Aucune notification ni popup.
+- **Choix dans l'interface** : ligne de segments « App épinglée sous le bandeau » dans le panneau SITUATION (`rows`), et dans Réglages > Carte (`_cbaSegment`).
+- Non essayé en jeu (aucun test en jeu possible dans ce fil) : à regarder en plein écran et en mini, avec bandeau NEW, CLASSIC, COMPACT et masqué, bandeau en haut, et avec la fiche d'une unité sélectionnée. Test : `tests/Unit/AtakPinnedAppMapAssetTest.php`.
+
 ## Appareil photo : le flash ne brûle plus les photos (ATAK natif 4.15.2.AG - Washington)
 
 ### Résumé joueur

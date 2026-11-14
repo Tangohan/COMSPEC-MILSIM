@@ -382,6 +382,8 @@ private _hd = _ov getOrDefault ["heading", controlNull];
 if (!isNull _hd) then { _hd ctrlSetText (format ["%1° %2", [_h] call _az3, [_h] call _cardinal]); }; // i18n:brut
 
 [_h] call _meUpdate;
+// App épinglée (fn_mapPinnedApp) : une fois par seconde avec ce passage complet ; texte réécrit seulement s'il a changé.
+["tick"] call comspec_atak_native_fnc_mapPinnedApp;
 
 private _bar = _ov getOrDefault ["databar", controlNull];
 if (!isNull _bar) then {

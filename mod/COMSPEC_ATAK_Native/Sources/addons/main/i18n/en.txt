@@ -24444,4 +24444,16 @@
 ["Ces joueurs n'ont pas de réseau en jeu : posez un relais de leur camp (ou sans camp).", "These players have no network in game: place a relay for their side (or with no side)."],
 ["Puissance du flash", "Flash power"],
 ["Force du flash de l'appareil photo du téléphone. 100 % : réglage normal. Baissez si vos photos de nuit sont trop claires, montez si elles sont trop sombres.", "Strength of the phone camera flash. 100%: normal setting. Lower it if your night photos are too bright, raise it if they are too dark."]
+["SMS", "SMS"],
+["Aucun SMS", "No SMS"],
+["%1 non lu(s)", "%1 unread"],
+["%1 à traiter", "%1 to handle"],
+["Aucun non lu", "None unread"],
+["Ouvrir l'app épinglée", "Open the pinned app"],
+["Messages", "Messages"],
+["App épinglée sous le bandeau", "App pinned under the banner"],
+["Résumé de l'app (non lus, dernier message ou ordre) dans un bandeau de la taille de celui des coordonnées ; touchez-le pour ouvrir l'app", "App summary (unread, last message or order) in a banner the size of the coordinates banner; touch it to open the app"],
+["App épinglée sur la carte", "App pinned on the map"],
+["Aucune par défaut. Choisissez Messages, SMS ou Ordres : un bandeau de la taille de celui des coordonnées, à sa droite sur la carte du téléphone, montre les non lus et le dernier message ou ordre avec l'expéditeur et l'heure. Touchez-le pour ouvrir l'app. Exemple : Ordres affiche « 2 à traiter » puis « TOC 14:32 · Rejoindre le point Alpha ». Aussi réglable dans Réglages > Carte.", "None by default. Pick Messages, SMS or Orders: a banner the size of the coordinates banner, to its right on the phone map, shows the unread count and the last message or order with the sender and the time. Touch it to open the app. Example: Orders shows ""2 to handle"" then ""TOC 14:32 · Move to point Alpha"". Also available in Settings > Map."],
+["Un bandeau de la taille de celui des coordonnées, à sa droite : non lus et dernier message ou ordre. Un toucher ouvre l'app (aussi dans les options CBA, ATAK · Affichage)", "A banner the size of the coordinates banner, to its right: unread count and last message or order. One touch opens the app (also in the CBA options, ATAK · Display)"],
 ]
