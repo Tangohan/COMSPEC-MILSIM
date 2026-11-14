@@ -4,17 +4,65 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AthenaTacticalRepository;
 use App\Support\ComspecApiKeyAuth;
 
+/**
+ * Marqueurs de la carte tactique Athena. Lecture : session du portail (marqueurs publiés) ou clé communauté du jeu.
+ * Écriture (création, modification, retrait) et brouillons : seulement ceux qui tiennent l'éditeur de la carte
+ * (admin.system, admin.organization ou admin.access, comme la page Opérations › Carte tactique), avec le jeton CSRF
+ * en en-tête X-CSRF-Token. Avant, n'importe quel membre connecté pouvait écrire.
+ */
 final class AthenaTacticalApiController
 {
+    /** @var (callable(): bool)|null Droit d'éditer (tests) ; null : droits Gate de la session. */
+    private $editGate;
+
     public function __construct(private ?AthenaTacticalRepository $repository = null)
     {
         $this->repository ??= new AthenaTacticalRepository();
+    }
+
+    /** Tests : impose la décision du droit d'éditer. */
+    public function setEditGate(?callable $gate): void
+    {
+        $this->editGate = $gate;
+    }
+
+    private function canEdit(): bool
+    {
+        if ($this->editGate !== null) {
+            return (bool) ($this->editGate)();
+        }
+        if ((int) Session::get('user_id', 0) < 1) {
+            return false;
+        }
+        (new \App\Services\Sse\SseAccessCodeService())->ensureGateHydrated();
+        $gate = Gate::getInstance();
+
+        return $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
+    }
+
+    /** Écriture : session de communauté, droit d'éditeur, jeton CSRF. */
+    private function writeGuard(Request $request): int|Response
+    {
+        $tenant = $this->webTenant();
+        if ($tenant instanceof Response) {
+            return $tenant;
+        }
+        if (!$this->canEdit()) {
+            return Response::json(['error' => 'forbidden', 'message' => 'Réservé aux éditeurs de la carte tactique.'], 403);
+        }
+        if (!Csrf::validate($request->header('X-CSRF-Token'))) {
+            return Response::json(['error' => 'csrf', 'message' => 'Session expirée. Rechargez la page.'], 419);
+        }
+
+        return $tenant;
     }
 
     public function index(Request $request, array $params = []): Response
@@ -25,8 +73,9 @@ final class AthenaTacticalApiController
         }
         $world = $this->world($request);
 
+        // Les brouillons ne sont montrés qu'aux éditeurs de la carte.
         return Response::json([
-            'data' => $this->repository->markers($tenant, $world, $this->isWeb()),
+            'data' => $this->repository->markers($tenant, $world, $this->isWeb() && $this->canEdit()),
             'world_name' => $world,
         ]);
     }
@@ -71,7 +120,7 @@ final class AthenaTacticalApiController
 
     public function store(Request $request, array $params = []): Response
     {
-        $tenant = $this->webTenant();
+        $tenant = $this->writeGuard($request);
         if ($tenant instanceof Response) {
             return $tenant;
         }
@@ -89,7 +138,7 @@ final class AthenaTacticalApiController
 
     public function update(Request $request, array $params = []): Response
     {
-        $tenant = $this->webTenant();
+        $tenant = $this->writeGuard($request);
         if ($tenant instanceof Response) {
             return $tenant;
         }
@@ -112,7 +161,7 @@ final class AthenaTacticalApiController
 
     public function delete(Request $request, array $params = []): Response
     {
-        $tenant = $this->webTenant();
+        $tenant = $this->writeGuard($request);
         if ($tenant instanceof Response) {
             return $tenant;
         }

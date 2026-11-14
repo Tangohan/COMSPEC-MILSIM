@@ -1825,6 +1825,11 @@ class CommunityController
         if ($user) {
             $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
+        if (!$this->maySetupCommunity()) {
+            Session::flash('error', 'La configuration de départ est réservée aux responsables de la communauté.');
+
+            return Response::redirect(url('c/' . $slug));
+        }
         $settings = [];
         if (!empty($tenant['settings'])) {
             $decoded = json_decode((string) $tenant['settings'], true);
@@ -1842,6 +1847,14 @@ class CommunityController
             'tenant' => $tenant,
             'settings' => $settings,
         ]);
+    }
+
+    /** Configuration de départ d'une communauté : responsables seulement (administration de la communauté ou des accès). */
+    private function maySetupCommunity(): bool
+    {
+        $gate = \App\Core\Gate::getInstance();
+
+        return $gate->allows('admin.organization') || $gate->allows('admin.access');
     }
 
     public function setupStore(Request $request, array $params = []): Response
@@ -1864,8 +1877,21 @@ class CommunityController
 
             return Response::redirect(url('c/' . $slug));
         }
+        $setupUser = $this->authService->user();
+        if ($setupUser) {
+            $this->rbacService->setPermissionsForGateFromUserRow($setupUser, $this->userRepository);
+        }
+        // Avant : n'importe quel membre pouvait changer le fuseau horaire et le marqueur de fin de configuration.
+        if (!$this->maySetupCommunity()) {
+            Session::flash('error', 'La configuration de départ est réservée aux responsables de la communauté.');
+
+            return Response::redirect(url('c/' . $slug));
+        }
         $tz = trim((string) $request->input('timezone'));
         if ($tz === '') {
+            $tz = 'Europe/Paris';
+        }
+        if (!in_array($tz, \DateTimeZone::listIdentifiers(), true)) {
             $tz = 'Europe/Paris';
         }
         $this->tenantRepository->mergeSettings((int) $tenant['id'], [

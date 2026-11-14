@@ -4411,6 +4411,13 @@ class EffectifsWorkspaceController
         };
 
         if ($status === 'approved') {
+            // Accorder un niveau d'accès ou des droits est l'affaire des responsables des accès : qui ne gère que les
+            // statuts (RH) peut accepter un grade, un emploi ou une unité, pas donner un rôle ni des permissions.
+            if (\App\Services\Effectifs\ElevationApprovalService::proposalGrantsAccess($proposal) && !EffectifsLmsAccess::canManageRoles($gate)) {
+                Session::flash('error', 'Cette demande accorde un niveau d’accès ou des droits : seuls les responsables des accès peuvent l’accepter. Retirez-les de la proposition, ou passez la demande à un responsable des accès.');
+
+                return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            }
             if ($request->input('confirm_apply') !== '1') {
                 Session::flash('error', 'Confirmez l’application des changements avant d’accepter la demande.');
 

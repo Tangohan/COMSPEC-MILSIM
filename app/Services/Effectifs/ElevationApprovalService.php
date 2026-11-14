@@ -358,6 +358,19 @@ class ElevationApprovalService
      * } $proposal
      * @return array{ok:bool,message:string,applied:list<string>,record?:string}
      */
+    /**
+     * La proposition accorde-t-elle un niveau d'accès ou des droits ? Grade, emploi et unité n'en accordent pas.
+     * Sert à réserver ces décisions aux responsables des accès (voir EffectifsWorkspaceController).
+     *
+     * @param array<string, mixed> $proposal
+     */
+    public static function proposalGrantsAccess(array $proposal): bool
+    {
+        $permissionIds = is_array($proposal['permission_ids'] ?? null) ? $proposal['permission_ids'] : [];
+
+        return (int) ($proposal['role_id'] ?? 0) > 0 || array_filter(array_map('intval', $permissionIds)) !== [];
+    }
+
     public function applyApprovedChanges(
         int $tenantId,
         int $targetUserId,

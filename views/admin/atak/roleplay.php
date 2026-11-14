@@ -384,7 +384,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                     Annuler
                 </a>
                 <div class="flex gap-3">
-                    <button type="button" onclick="if(confirm('Réinitialiser toute la configuration roleplay ?')) { window.location.href='<?= $h($roleplayResetUrl) ?>'; }" 
+                    <button type="submit" formaction="<?= $h($roleplayResetUrl) ?>" formmethod="post" formnovalidate onclick="return confirm('Réinitialiser toute la configuration roleplay ?');" 
                             class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition-colors">
                         Réinitialiser
                     </button>

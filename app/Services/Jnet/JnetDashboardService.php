@@ -38,6 +38,39 @@ final class JnetDashboardService
     /** @var array<string, mixed> Mémo par requête : la page commune et l’espace partagent ORBAT, personnel et opérations. */
     private array $memo = [];
 
+    /** @var (callable(): bool)|null Droit de lire le renseignement (tests) ; null : mêmes règles que le portail SSE. */
+    private $intelGate = null;
+
+    /** Tests : impose la décision du droit de lire le renseignement. */
+    public function setIntelligenceGate(?callable $gate): void
+    {
+        $this->intelGate = $gate;
+        unset($this->memo['intel']);
+    }
+
+    /**
+     * Le lecteur peut-il voir les dossiers du renseignement SSE (dossiers d'intérêt, événements, fiches terrain) ?
+     * Mêmes deux portes que le portail SSE : le droit d'y entrer (membre habilité ou encadrement), puis l'engagement de
+     * confidentialité de la session. Sans elles JNET n'en montre rien : il ne doit pas ouvrir ce que le portail protège.
+     */
+    public function mayReadIntelligence(): bool
+    {
+        if (!array_key_exists('intel', $this->memo)) {
+            try {
+                if ($this->intelGate !== null) {
+                    $this->memo['intel'] = (bool) ($this->intelGate)();
+                } else {
+                    $sse = new \App\Services\Sse\SseAccessCodeService();
+                    $this->memo['intel'] = $sse->canEnterWithoutCode() && $sse->hasAcceptedConfidentiality();
+                }
+            } catch (\Throwable) {
+                $this->memo['intel'] = false;
+            }
+        }
+
+        return (bool) $this->memo['intel'];
+    }
+
     public function __construct(
         private ?UserRepository $users = null,
         private ?TenantRepository $tenants = null,
@@ -204,20 +237,22 @@ final class JnetDashboardService
         $notes = 0;
         $cases = 0;
         $interests = 0;
+        $open = $this->mayReadIntelligence();
         try {
-            $notes = count($this->fieldNotes->listForTenant($tenantId, ['limit' => 200]));
+            $notes = $open ? count($this->fieldNotes->listForTenant($tenantId, ['limit' => 200])) : 0;
         } catch (\Throwable) {
         }
         try {
-            $cases = count($this->sseCases->listForTenant($tenantId, null, []));
+            $cases = $open ? count($this->sseCases->listForTenant($tenantId, null, [])) : 0;
         } catch (\Throwable) {
         }
         try {
-            $interests = count($this->interestCases->listForTenant($tenantId, []));
+            $interests = $open ? count($this->interestCases->listForTenant($tenantId, [])) : 0;
         } catch (\Throwable) {
         }
 
         return [
+            'intelLocked' => !$open,
             'counts' => [
                 'notes' => $notes,
                 'cases' => $cases,
@@ -696,6 +731,10 @@ final class JnetDashboardService
     public function loadTargets(int $tenantId): array
     {
         $out = [];
+        // Dossiers du renseignement SSE : réservés à ceux qui peuvent entrer au bureau SSE (voir mayReadIntelligence).
+        if (!$this->mayReadIntelligence()) {
+            return $out;
+        }
         try {
             $cases = $this->interestCases->listForTenant($tenantId, []);
             foreach ($cases as $c) {
@@ -1011,8 +1050,9 @@ final class JnetDashboardService
     {
         $feed = [];
 
+        $intelOpen = $this->mayReadIntelligence();
         try {
-            foreach ($this->intelEvents->listForTenant($tenantId, ['limit' => 8]) as $ev) {
+            foreach ($intelOpen ? $this->intelEvents->listForTenant($tenantId, ['limit' => 8]) : [] as $ev) {
                 $summary = trim((string) ($ev['summary'] ?? ''));
                 $title = trim((string) ($ev['event_type_label'] ?? $ev['event_type'] ?? 'Événement'));
                 $href = url('atak/sse');
@@ -1028,7 +1068,7 @@ final class JnetDashboardService
         }
 
         try {
-            foreach ($this->fieldNotes->listForTenant($tenantId, ['limit' => 6]) as $note) {
+            foreach ($intelOpen ? $this->fieldNotes->listForTenant($tenantId, ['limit' => 6]) : [] as $note) {
                 $title = trim((string) ($note['title'] ?? $note['note_kind_label'] ?? 'Fiche terrain'));
                 $place = trim((string) ($note['place_label'] ?? ''));
                 $when = (string) ($note['observed_at'] ?? $note['created_at'] ?? '');
