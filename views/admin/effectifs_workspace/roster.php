@@ -497,7 +497,10 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         } else {
                             $gTitle = $unitId > 0 ? ($unit !== '' ? $unit : $assignmentLeaf) : 'Sans unité';
                             $gCode = $unitId > 0 ? ($unitCodesMap[$unitId] ?? null) : null;
-                            $gPath = $unitId > 0 ? $assignmentPath : '';
+                            // Unités mères seulement : le nom de l'unité est déjà le titre du groupe.
+                            $gPathParts = $unitId > 0 ? array_map('trim', explode(' / ', $assignmentPath)) : [];
+                            array_pop($gPathParts);
+                            $gPath = implode(' › ', $gPathParts);
                             $gChief = $unitId > 0 ? trim((string) ($unitCommanders[$unitId] ?? '')) : '';
                         }
                         ?>
@@ -513,7 +516,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <span><?= (int) $gStat['n'] ?> membre<?= $gStat['n'] > 1 ? 's' : '' ?><?= $totalPages > 1 ? ' sur cette page' : '' ?></span>
                                 <?php if ($gChief !== ''): ?><span>Chef : <b><?= htmlspecialchars($gChief, ENT_QUOTES, 'UTF-8') ?></b></span><?php endif; ?>
                                 <span>Présence moy. <b class="<?= $gAvgClass ?>"><?= $gAvg ?> %</b></span>
-                                <?php if ($gPath !== '' && str_contains($gPath, '/')): ?><span class="eff-mq-gh__path"><?= htmlspecialchars(str_replace(' / ', ' › ', $gPath), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                                <?php if ($gPath !== ''): ?><span class="eff-mq-gh__path"><?= htmlspecialchars($gPath, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             </span>
                         </td>
                     </tr>
@@ -657,7 +660,10 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         </td>
                         <td data-label="Affectation">
                             <div class="eff-sheets__assign">
-                                <?php if ($assignmentPath !== ''): ?>
+                                <?php if ($assignmentPath !== '' && $groupMode === 'unite'): ?>
+                                    <?php /* Rangé par unité : nom, code et unités mères sont dans l'en-tête du groupe, pas répétés à chaque ligne. */ ?>
+                                    <span class="eff-das__muted" title="<?= htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') ?>">—</span>
+                                <?php elseif ($assignmentPath !== ''): ?>
                                     <span class="eff-das__unit-wrap" title="<?= htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') ?>">
                                         <span class="eff-das__unit"><?= htmlspecialchars($assignmentLeaf, ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php if (is_array($rowUnitCode)): ?>
@@ -710,6 +716,23 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         $rowJobLabel = $rowJobs !== [] ? (string) ($rowJobs[0]['label'] ?? '') : $fonction;
                         $rowJobTitle = implode(' · ', array_map(static fn (array $rj): string => (string) ($rj['label'] ?? ''), $rowJobs));
                         $assignmentRole = trim((string) ($row['assignment_role_name'] ?? ''));
+                        // Rôle qui répète l'unité ou l'emploi (« 24th STS Gold Team SOF TACP », « PJ (Pararescue Jumper) ») : affiché en retrait,
+                        // la valeur reste modifiable et lisible au survol.
+                        $effNorm = static fn (string $v): string => trim((string) preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower($v)));
+                        $roleNorm = $effNorm($assignmentRole);
+                        $roleEcho = false;
+                        if ($roleNorm !== '') {
+                            foreach ([$assignmentLeaf, $unit, $rowJobLabel] as $other) {
+                                $o = $effNorm((string) $other);
+                                if ($o === '') {
+                                    continue;
+                                }
+                                if ($o === $roleNorm || (min(strlen($o), strlen($roleNorm)) >= 6 && (str_contains($roleNorm, $o) || str_contains($o, $roleNorm)))) {
+                                    $roleEcho = true;
+                                    break;
+                                }
+                            }
+                        }
                         $memberData = 'data-eff-member-id="' . $id . '" data-eff-member-name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '"';
                         ?>
                         <td data-label="Emploi">
@@ -728,7 +751,9 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         </td>
                         <td data-label="Rôle">
                             <div class="eff-sheets__assign">
-                                <?php if ($assignmentRole !== ''): ?>
+                                <?php if ($assignmentRole !== '' && $roleEcho): ?>
+                                    <span class="eff-das__muted" title="<?= htmlspecialchars('Rôle : ' . $assignmentRole . ' (déjà indiqué par l’unité ou l’emploi)', ENT_QUOTES, 'UTF-8') ?>">—</span>
+                                <?php elseif ($assignmentRole !== ''): ?>
                                     <span class="eff-sheets__fonction"><?= htmlspecialchars($assignmentRole, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php else: ?>
                                     <span class="eff-das__muted">—</span>
