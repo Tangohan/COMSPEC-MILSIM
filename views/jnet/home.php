@@ -1,243 +1,85 @@
 <?php
 /**
- * JNET — Espace commun de l’organisation : arbre des unités, flux d’échanges, opérations.
- * Aucun contenu de démonstration : chaque bloc affiche un état vide honnête.
+ * JNET — Espace commun : centre de commandement de l'organisation, à la Discord.
+ * À gauche la barre des salons (sections repliables, pastilles de non-lus), au centre le salon actif en pleine largeur,
+ * à droite (grands écrans, repliable) les éléments épinglés et l'activité récente des unités.
+ * Chaque salon est une page servie par le serveur (?salon=) ; jnet_commun.js ne fait que changer de salon sans rechargement.
+ * Tout vient de données réelles : un bloc sans donnée affiche un état vide honnête.
+ *
+ * @var array<string, mixed> $cm données de JnetCommonSpaceService::page()
  */
+
+use App\Services\Jnet\JnetCommonRules;
+
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-$space = is_array($space ?? null) ? $space : ['id' => 0, 'label' => (string) ($unitName ?? 'Organisation'), 'isOrg' => true];
-$orgStats = is_array($orgStats ?? null) ? $orgStats : ['units' => 0, 'members' => 0, 'available' => 0, 'ops' => 0, 'exchanges24h' => 0];
-$posture = is_array($posture ?? null) ? $posture : ['key' => (string) ($opsStatus ?? 'GREEN'), 'label' => (string) ($opsStatusLabel ?? 'Posture verte')];
-$unitTree = is_array($unitTree ?? null) ? $unitTree : [];
-$flow = is_array($flow ?? null) ? $flow : [];
-$flowFilter = (string) ($flowFilter ?? '');
-$exchangeKinds = is_array($exchangeKinds ?? null) ? $exchangeKinds : [];
-$currentOps = is_array($currentOps ?? null) ? $currentOps : [];
-$priorityTargets = is_array($priorityTargets ?? null) ? $priorityTargets : [];
-$recentArticles = is_array($recentArticles ?? null) ? $recentArticles : [];
-$recentDocuments = is_array($recentDocuments ?? null) ? $recentDocuments : [];
-$quickLinks = is_array($quickLinks ?? null) ? $quickLinks : [];
-$targetsTotal = (int) ($targetsTotal ?? count($priorityTargets));
-$postureKey = strtolower((string) ($posture['key'] ?? 'green'));
-$postureClass = in_array($postureKey, ['red', 'amber'], true) ? $postureKey : 'green';
-$motto = trim((string) ($unitMotto ?? ''));
-$prioKey = static fn (array $t): string => preg_replace('/[^a-z]/', '', strtolower((string) ($t['priority_key'] ?? $t['priority'] ?? 'low'))) ?: 'low';
-$exBack = url('jnet?commun=1');
-$label = (string) ($space['label'] ?? 'Organisation');
-$guideContext = 'org';
-$orgBadge = is_string($space['badge'] ?? null) ? (string) $space['badge'] : '';
-$topCount = count($unitTree);
+$cm = is_array($cm ?? null) ? $cm : [];
+$salon = JnetCommonRules::salon((string) ($cm['salon'] ?? ''));
+$meta = JnetCommonRules::SALONS[$salon];
+$salons = is_array($cm['salons'] ?? null) ? $cm['salons'] : [];
+$view = is_array($cm['view'] ?? null) ? $cm['view'] : [];
+$pins = is_array($cm['pins'] ?? null) ? $cm['pins'] : [];
+$canPin = !empty($cm['canPin']) && !empty($cm['pinsReady']);
 ?>
-<div class="jn-layout">
-    <?php require base_path('views/jnet/_spaces_rail.php'); ?>
+<div class="jc" data-jc data-salon="<?= $h($salon) ?>">
+    <details class="jc-drawer">
+        <summary class="jc-drawer__btn">
+            <span class="jc-drawer__cur"><?= JnetCommonRules::icon($meta['icon']) ?><span><?= $h($meta['label']) ?></span></span>
+            <span class="jc-drawer__more">Changer de salon</span>
+        </summary>
+        <nav class="jc-drawer__list" aria-label="Salons (mobile)">
+            <?php foreach ($salons as $s): ?>
+                <a class="jc-ch<?= !empty($s['active']) ? ' is-active' : '' ?>" href="<?= $h((string) $s['href']) ?>"<?= !empty($s['active']) ? ' aria-current="page"' : '' ?>>
+                    <?= JnetCommonRules::icon((string) $s['icon']) ?><span class="jc-ch__t"><?= $h((string) $s['label']) ?></span>
+                    <?php if ((int) $s['badge'] > 0): ?><em class="jc-badge<?= !empty($s['badgeIsUnread']) ? ' is-unread' : '' ?>"><?= min(99, (int) $s['badge']) ?></em><?php endif; ?>
+                </a>
+            <?php endforeach; ?>
+        </nav>
+    </details>
 
-    <div class="jn-main">
-        <?php $diffusionText = 'Échelon organisation — diffusion : tous les membres'; require base_path('views/jnet/_diffusion.php'); ?>
+    <?php require base_path('views/jnet/commun/_rail.php'); ?>
 
-        <section class="jn-head jn-head--org" aria-labelledby="jn-space-title">
-            <div class="jn-head__id">
-                <?php if ($orgBadge !== ''): ?>
-                    <img class="jn-emblem jn-emblem--img jn-emblem--round" src="<?= $h($orgBadge) ?>" alt="Insigne de <?= $h($label) ?>">
-                <?php else: ?>
-                    <span class="jn-emblem jn-emblem--round" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="30" height="30"><path fill="currentColor" d="M12 2.5l2.8 6.1 6.7.7-5 4.5 1.4 6.6L12 17l-5.9 3.4 1.4-6.6-5-4.5 6.7-.7z"/></svg>
-                    </span>
-                <?php endif; ?>
-                <div class="jn-head__text">
-                    <h1 id="jn-space-title" class="jn-head__name"><?= $h($label) ?></h1>
-                    <p class="jn-head__lead">
-                        <?= $topCount ?> commandement<?= $topCount > 1 ? 's' : '' ?> · <?= (int) $orgStats['units'] ?> unité<?= (int) $orgStats['units'] > 1 ? 's' : '' ?>
-                        · <span class="jn-posture jn-posture--<?= $postureClass ?>"><?= $h((string) ($posture['label'] ?? '')) ?></span>
-                    </p>
-                    <?php if ($motto !== ''): ?><p class="jn-head__motto"><?= $h($motto) ?></p><?php endif; ?>
-                </div>
-            </div>
-            <dl class="jn-figures jn-figures--big">
-                <div><dt>membres</dt><dd><?= (int) $orgStats['members'] ?></dd></div>
-                <div class="is-ok"><dt>disponibles</dt><dd><?= (int) $orgStats['available'] ?></dd></div>
-                <div class="is-accent"><dt>opérations</dt><dd><?= (int) $orgStats['ops'] ?></dd></div>
-                <div><dt>échanges 24 h</dt><dd><?= (int) $orgStats['exchanges24h'] ?></dd></div>
-            </dl>
-        </section>
-
-        <?php require base_path('views/jnet/_guide.php'); ?>
-
-        <section class="jn-section" id="jn-units" aria-labelledby="jn-units-title">
-            <div class="jn-section__head">
+    <section class="jc-main" id="jc-view" data-jc-view tabindex="-1" aria-labelledby="jc-title">
+        <header class="jc-head">
+            <div class="jc-head__id">
+                <span class="jc-head__ic"><?= JnetCommonRules::icon($meta['icon']) ?></span>
                 <div>
-                    <h2 id="jn-units-title">Situation des unités</h2>
-                    <p class="jn-section__lead">Cliquez sur une unité pour ouvrir son espace. L’organigramme montre toute la chaîne de commandement.</p>
+                    <h1 id="jc-title" class="jc-head__title"><?= $h($meta['label']) ?></h1>
+                    <p class="jc-head__desc"><?= $h($meta['desc']) ?></p>
                 </div>
-                <a class="jn-link" href="<?= $h(url('jnet/unite')) ?>">Fiche d’unité complète →</a>
             </div>
-            <?php if ($unitTree === []): ?>
-                <div class="jn-empty">
-                    <p><strong>L’organigramme n’est pas encore renseigné.</strong></p>
-                    <p>Chaque unité de la chaîne de commandement aura ici son propre espace.</p>
-                    <p><a class="jn-btn" href="<?= $h(effectifs_workspace_url('chaine')) ?>">Ouvrir la chaîne de commandement</a></p>
-                </div>
-            <?php else: ?>
-                <?php $viewNodes = $unitTree; $viewId = 'jn-org-units'; $viewGrouped = true; require base_path('views/jnet/_unit_views.php'); ?>
-            <?php endif; ?>
-        </section>
+            <div class="jc-head__act">
+                <button type="button" class="jc-iconbtn" data-jc-aside-toggle aria-pressed="true" aria-controls="jc-aside" title="Afficher ou masquer le panneau des épinglés">
+                    <?= JnetCommonRules::icon('panel') ?><span class="jc-iconbtn__t">Panneau</span>
+                </button>
+            </div>
+        </header>
 
-        <div class="jn-split">
-            <section class="jn-section" aria-labelledby="jn-flow-title">
-                <div class="jn-section__head">
-                    <div>
-                        <h2 id="jn-flow-title">Flux commun</h2>
-                        <p class="jn-section__lead">Les échanges de toutes les unités que vous êtes autorisé à voir.</p>
-                    </div>
-                </div>
-                <nav class="jn-filters" aria-label="Filtrer le flux">
-                    <a href="<?= $h(url('jnet?commun=1') . '#jn-flow-title') ?>" class="jn-filter<?= $flowFilter === '' ? ' is-active' : '' ?>"<?= $flowFilter === '' ? ' aria-current="true"' : '' ?>>Tout</a>
-                    <?php foreach ($exchangeKinds as $key => $kindLabel): ?>
-                        <a href="<?= $h(url('jnet?commun=1&type=' . rawurlencode((string) $key)) . '#jn-flow-title') ?>" class="jn-filter<?= $flowFilter === $key ? ' is-active' : '' ?>"<?= $flowFilter === $key ? ' aria-current="true"' : '' ?>><?= $h($kindLabel) ?></a>
-                    <?php endforeach; ?>
-                </nav>
-                <?php if (!empty($canPost)): ?>
-                    <?php $composeLabel = 'Publier pour toute l’organisation'; require base_path('views/jnet/_exchange_composer.php'); ?>
-                <?php endif; ?>
-                <?php if (empty($exchangesReady)): ?>
-                    <div class="jn-empty">
-                        <p><strong>Les échanges entre espaces ne sont pas encore activés.</strong></p>
-                        <p>Un administrateur doit appliquer les migrations.</p>
-                    </div>
-                <?php elseif ($flow === []): ?>
-                    <div class="jn-empty">
-                        <p><strong><?= $flowFilter !== '' ? 'Aucun échange de ce type.' : 'Aucun échange pour le moment.' ?></strong></p>
-                        <p>Ouvrez l’espace de votre unité dans l’arbre ci-dessus et publiez le premier : il apparaîtra ici pour l’encadrement concerné.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="jn-stack jn-stack--rows">
-                        <?php $exVariant = 'row'; $exPerspective = ''; ?>
-                        <?php foreach ($flow as $ex): ?>
-                            <?php require base_path('views/jnet/_exchange.php'); ?>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </section>
+        <?php
+        // Les épinglés du salon, en tête (le salon « Épinglés » les liste tous, plus bas).
+        if ($salon !== 'epingles') {
+            require base_path('views/jnet/commun/_pinned_top.php');
+        }
+        switch ($salon) {
+            case 'annonces':
+                require base_path('views/jnet/commun/_annonces.php');
+                break;
+            case 'taches':
+                require base_path('views/jnet/commun/_taches.php');
+                break;
+            case 'voie':
+                require base_path('views/jnet/commun/_voie.php');
+                break;
+            case 'renseignements':
+                require base_path('views/jnet/commun/_renseignements.php');
+                break;
+            case 'cibles':
+                require base_path('views/jnet/commun/_cibles.php');
+                break;
+            default:
+                require base_path('views/jnet/commun/_epingles.php');
+        }
+        ?>
+    </section>
 
-            <aside class="jn-side">
-                <section class="jn-section" aria-labelledby="jn-ops-title">
-                    <div class="jn-section__head">
-                        <h2 id="jn-ops-title">Opérations en cours</h2>
-                        <a class="jn-link" href="<?= $h(url('jnet/operations')) ?>">Toutes →</a>
-                    </div>
-                    <?php if ($currentOps === []): ?>
-                        <div class="jn-empty">
-                            <p><strong>Aucune opération engagée.</strong></p>
-                            <p>Les missions ouvertes sur le tableau opérationnel apparaissent ici.</p>
-                            <p><a class="jn-btn" href="<?= $h(url('back-office/tableau-operationnel')) ?>">Ouvrir le tableau opérationnel</a></p>
-                        </div>
-                    <?php else: ?>
-                        <ul class="jn-list">
-                            <?php foreach ($currentOps as $op): ?>
-                                <li>
-                                    <a class="jn-op" href="<?= $h(url('jnet/operations/' . (int) ($op['id'] ?? 0))) ?>">
-                                        <strong><?= $h((string) ($op['title'] ?? '')) ?></strong>
-                                        <span class="jn-badge<?= ($op['state_key'] ?? '') === 'active' ? ' jn-badge--ok' : '' ?>"><?= $h((string) ($op['state'] ?? '')) ?></span>
-                                    </a>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </section>
-
-                <section class="jn-section" aria-labelledby="jn-intel-title">
-                    <div class="jn-section__head">
-                        <h2 id="jn-intel-title">Renseignement suivi</h2>
-                        <a class="jn-link" href="<?= $h(url('jnet/cibles')) ?>">Voir tout<?= $targetsTotal > 0 ? ' (' . $targetsTotal . ')' : '' ?> →</a>
-                    </div>
-                    <?php if ($priorityTargets === []): ?>
-                        <div class="jn-empty">
-                            <p><strong>Aucun dossier de renseignement ouvert.</strong></p>
-                            <p>Les personnes et objectifs suivis par le bureau SSE apparaissent ici.</p>
-                        </div>
-                    <?php else: ?>
-                        <ul class="jn-list">
-                            <?php foreach ($priorityTargets as $t): ?>
-                                <li>
-                                    <a class="jn-target jn-target--<?= $h($prioKey($t)) ?>" href="<?= $h((string) ($t['href'] ?? '#')) ?>">
-                                        <span class="jn-target__mark" aria-hidden="true"><?= $h(mb_strtoupper(mb_substr((string) ($t['name'] ?? '?'), 0, 2))) ?></span>
-                                        <span class="jn-target__text">
-                                            <strong><?= $h((string) ($t['name'] ?? '')) ?><?php if (trim((string) ($t['code'] ?? '')) !== ''): ?> <small><?= $h((string) $t['code']) ?></small><?php endif; ?></strong>
-                                            <em><?= $h(trim(implode(' · ', array_filter([(string) ($t['priority'] ?? ''), (string) ($t['lastKnown'] ?? '')])))) ?></em>
-                                        </span>
-                                    </a>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </section>
-
-                <?php if ($quickLinks !== []): ?>
-                    <section class="jn-section" aria-labelledby="jn-quick-title">
-                        <div class="jn-section__head"><h2 id="jn-quick-title">Accès rapides</h2></div>
-                        <nav class="jnet-shortcuts jn-quick" aria-labelledby="jn-quick-title">
-                            <?php foreach ($quickLinks as $link): ?>
-                                <a class="jn-quick__item" href="<?= $h((string) ($link['href'] ?? '#')) ?>">
-                                    <strong><?= $h((string) ($link['label'] ?? '')) ?></strong>
-                                    <span><?= $h((string) ($link['desc'] ?? '')) ?></span>
-                                </a>
-                            <?php endforeach; ?>
-                        </nav>
-                    </section>
-                <?php endif; ?>
-            </aside>
-        </div>
-
-        <div class="jn-split jn-split--even">
-            <section class="jn-section" aria-labelledby="jn-articles-title">
-                <div class="jn-section__head">
-                    <h2 id="jn-articles-title">Articles de l’unité</h2>
-                    <a class="jn-link" href="<?= $h(url('articles')) ?>">Tous les articles →</a>
-                </div>
-                <?php if ($recentArticles === []): ?>
-                    <div class="jn-empty">
-                        <p><strong>Aucun article publié.</strong></p>
-                        <p>Les notes d’unité mises en ligne apparaîtront ici.</p>
-                    </div>
-                <?php else: ?>
-                    <ul class="jnet-linklist jn-linklist">
-                        <?php foreach ($recentArticles as $article): ?>
-                            <li>
-                                <a href="<?= $h((string) ($article['href'] ?? '#')) ?>">
-                                    <strong><?= $h((string) ($article['title'] ?? '')) ?></strong>
-                                    <?php if (trim((string) ($article['excerpt'] ?? '')) !== ''): ?>
-                                        <span><?= $h((string) $article['excerpt']) ?></span>
-                                    <?php endif; ?>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </section>
-
-            <section class="jn-section" aria-labelledby="jn-docs-title">
-                <div class="jn-section__head">
-                    <h2 id="jn-docs-title">Documents publiés</h2>
-                    <a class="jn-link" href="<?= $h(url('jnet/bibliotheque')) ?>">Bibliothèque →</a>
-                </div>
-                <?php if ($recentDocuments === []): ?>
-                    <div class="jn-empty">
-                        <p><strong>Aucun document publié.</strong></p>
-                        <p>Les consignes et doctrines mises à disposition apparaîtront ici.</p>
-                    </div>
-                <?php else: ?>
-                    <ul class="jnet-linklist jn-linklist">
-                        <?php foreach ($recentDocuments as $doc): ?>
-                            <li>
-                                <a href="<?= $h((string) ($doc['href'] ?? '#')) ?>">
-                                    <strong><?= $h((string) ($doc['title'] ?? '')) ?></strong>
-                                    <?php if (trim((string) ($doc['category'] ?? '')) !== ''): ?>
-                                        <span><?= $h((string) $doc['category']) ?></span>
-                                    <?php endif; ?>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </section>
-        </div>
-    </div>
+    <?php require base_path('views/jnet/commun/_aside.php'); ?>
 </div>

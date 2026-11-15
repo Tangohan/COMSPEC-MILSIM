@@ -1459,6 +1459,24 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
             return [$fmtDate((string) ($r['created_at'] ?? '')), $mobilityTypeLabels[$type] ?? $type, ($target !== '' ? $target . ' · ' : '') . $statusText];
         }); ?>
     </article>
+    <article class="eff-fm-card" id="fiabilisation">
+        <div class="eff-fm-card__head">
+            <h3>Fiabilisation des données</h3>
+        </div>
+        <?php
+        $reliability = is_array($dataReliability ?? null) ? $dataReliability : null;
+        if ($reliability === null): ?>
+            <p class="eff-fm-lead">Cette fiche n’a pas encore été confirmée par le membre dans une campagne de fiabilisation.</p>
+        <?php else:
+            $relDate = strtotime((string) ($reliability['confirmed_at'] ?? ''));
+            $relChanged = is_array($reliability['changed'] ?? null) ? $reliability['changed'] : [];
+            ?>
+            <p class="eff-fm-lead"><b>Fiabilisée le <?= $h($relDate !== false ? date('d/m/Y', $relDate) : '—') ?></b> par le membre (campagne <?= (int) ($reliability['year'] ?? 0) ?>).</p>
+            <?php if ($relChanged !== []): ?>
+                <p class="eff-fm-lead">Modifié depuis cette confirmation : <?= $h(implode(', ', $relChanged)) ?>. La fiche reste valable, mais le membre n’a pas confirmé la nouvelle valeur.</p>
+            <?php endif; ?>
+        <?php endif; ?>
+    </article>
         </div>
     </section>
     </div>

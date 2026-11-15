@@ -38,6 +38,9 @@ final class JnetSpaceService
     /** @var array<string, list<array<string, mixed>>> liaisons d'unités effectives, par communauté et espace */
     private array $linkCache = [];
 
+    /** @var array<string, list<array<string, mixed>>> échanges visibles par lecteur, lus une seule fois par requête */
+    private array $visibleCache = [];
+
     private ?JnetLinksRepository $links = null;
 
     public function __construct(
@@ -171,6 +174,54 @@ final class JnetSpaceService
     public function isOrgWideWriter(): bool
     {
         return PortalAccessChoice::canAccessTba();
+    }
+
+    /**
+     * Échanges que ce lecteur voit (mêmes filtres que tous les écrans : ORBAT filtré, portée de diffusion), du plus récent
+     * au plus ancien, lus une seule fois par requête. Données brutes : les destinataires sont des identifiants d'unités.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function visibleExchangesFor(int $tenantId, int $viewerUserId): array
+    {
+        $key = $tenantId . ':' . $viewerUserId;
+        if (!isset($this->visibleCache[$key])) {
+            $this->visibleCache[$key] = $this->visibleExchanges(
+                $tenantId,
+                $viewerUserId,
+                $this->tree($tenantId, $viewerUserId),
+                $this->viewerUnitIds($tenantId, $viewerUserId),
+                $this->isOrgWideReader()
+            );
+        }
+
+        return $this->visibleCache[$key];
+    }
+
+    /**
+     * Prépare des échanges pour l'affichage (unité émettrice, destinataires, auteur, accusés « lu par x / N »).
+     *
+     * @param list<array<string, mixed>> $rows échanges bruts de visibleExchangesFor()
+     * @return list<array<string, mixed>>
+     */
+    public function decorateExchanges(int $tenantId, int $viewerUserId, array $rows, int $spaceId = JnetSpaceTree::ORG): array
+    {
+        $byUserId = [];
+        foreach ($this->dashboard->loadPersonnelCards($tenantId) as $p) {
+            $byUserId[(int) ($p['id'] ?? 0)] = $p;
+        }
+
+        return $this->decorate($this->tree($tenantId, $viewerUserId), $rows, $viewerUserId, $spaceId, $byUserId);
+    }
+
+    /**
+     * Destinataires qu'un auteur peut choisir pour publier depuis l'organisation (pour le composeur « Publier »).
+     *
+     * @return list<array{id:int,label:string,relation:string}>
+     */
+    public function publishTargets(int $tenantId, int $viewerUserId, int $spaceId = JnetSpaceTree::ORG): array
+    {
+        return $this->postTargets($this->tree($tenantId, $viewerUserId), $spaceId);
     }
 
     /**
@@ -765,7 +816,7 @@ final class JnetSpaceService
         $tree = $this->tree($tenantId, $viewerUserId);
         $viewerUnits = $this->viewerUnitIds($tenantId, $viewerUserId);
         $pending = array_values(array_filter(
-            $this->visibleExchanges($tenantId, $viewerUserId, $tree, $viewerUnits, $this->isOrgWideReader()),
+            $this->visibleExchangesFor($tenantId, $viewerUserId),
             static fn (array $e): bool => !empty($e['requires_ack']) && (int) $e['author_user_id'] !== $viewerUserId
         ));
         if ($pending === []) {
@@ -932,6 +983,7 @@ final class JnetSpaceService
                 'link' => (string) ($r['link_url'] ?? ''),
                 'when' => self::relativeTime((string) $r['created_at']),
                 'stamp' => self::zuluStamp((string) $r['created_at']),
+                'createdAt' => (string) $r['created_at'],
                 'from' => [
                     'id' => $from,
                     'label' => (string) ($fromNode['label'] ?? 'Organisation'),

@@ -1637,6 +1637,18 @@ class EffectifsWorkspaceController
         // sur la fiche (sanctions, documents RH et départ suivent leur droit).
         $canManageStatus = EffectifsLmsAccess::canManageStatus($gate);
         $chronologyType = MemberChronology::sanitizeType((string) $request->queryString('type', ''));
+        // Fiabilisation des données : confirmations du membre (lecture seule) et mention « Fiabilisée le … » de la fiche.
+        $campaignHistory = [];
+        $dataReliability = null;
+        try {
+            $campaigns = \App\Core\Container::get(\App\Repositories\DataCampaignRepository::class);
+            if ($campaigns->schemaReady()) {
+                $campaignHistory = array_values(array_filter($campaigns->historyForUser($tenantId, $id), static fn (array $h): bool => trim((string) ($h['confirmed_at'] ?? '')) !== ''));
+                $dataReliability = \App\Core\Container::get(\App\Services\DataCampaign\DataCampaignService::class)->ficheStatus($tenantId, $id);
+            }
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: fiabilisation failed: ' . $e->getMessage());
+        }
         $chronology = MemberChronology::build([
             'grades' => is_array($insights['grades']['entries'] ?? null) ? $insights['grades']['entries'] : [],
             'org_history' => $orgHistory,
@@ -1649,6 +1661,7 @@ class EffectifsWorkspaceController
             'absences' => $absences,
             'mobility' => $mobilityRequests,
             'hr_documents' => $hrDocuments,
+            'data_campaigns' => $campaignHistory,
             'departure' => $canManageStatus ? $latestDeparture : null,
             'absence_reasons' => PersonnelAbsenceRepository::REASON_LABELS,
             'mobility_types' => PersonnelMobilityRequestRepository::TYPE_LABELS,
@@ -1667,6 +1680,7 @@ class EffectifsWorkspaceController
             'ficheTabs' => $ficheTabs,
             'ficheTab' => $ficheTab,
             'memberChronology' => $chronology,
+            'dataReliability' => $dataReliability,
             'chronologyType' => $chronologyType,
             'canViewHrDocuments' => EffectifsLmsAccess::canViewHrDocuments($gate),
             'canAwardDecorations' => $canAwardDecorations,

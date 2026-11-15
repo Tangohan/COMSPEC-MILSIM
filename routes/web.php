@@ -517,6 +517,11 @@ return function (Router $router) {
     $router->post('/jnet/courrier/{id}/reponse', [JnetPortalController::class, 'mailReply'], [AuthMiddleware::class]);
     $router->get('/jnet/systeme', [JnetPortalController::class, 'system'], [AuthMiddleware::class]);
     $router->post('/jnet/systeme/bascule', [JnetPortalController::class, 'switchPortal'], [AuthMiddleware::class]);
+    // Espace commun : éléments épinglés (le droit de publier pour l'organisation et la visibilité sont revérifiés côté serveur).
+    $router->post('/jnet/commun/epingles', [\App\Controllers\Web\JnetCommonController::class, 'pin'], [AuthMiddleware::class]);
+    $router->post('/jnet/commun/epingles/ordre', [\App\Controllers\Web\JnetCommonController::class, 'reorder'], [AuthMiddleware::class]);
+    $router->post('/jnet/commun/epingles/{id}/retirer', [\App\Controllers\Web\JnetCommonController::class, 'unpin'], [AuthMiddleware::class]);
+    $router->post('/jnet/commun/epingles/{id}/deplacer', [\App\Controllers\Web\JnetCommonController::class, 'move'], [AuthMiddleware::class]);
     /*
      * Pages « Ma situation » du membre dans JNET (/jnet/moi/*), en un seul bloc. Mêmes contrôleurs, mêmes droits et mêmes données
      * qu'avant : la connexion et un contexte de communauté réelle (l'ancienne exception ma-situation d'OrganizationAdminMiddleware,
@@ -570,6 +575,11 @@ return function (Router $router) {
     $router->post('/jnet/moi/musique/playlists/{id}/ajouter', $moi(MusicLibraryController::class, 'playlistAdd'), $mwMoi);
     $router->post('/jnet/moi/musique/playlists/{id}/retirer', $moi(MusicLibraryController::class, 'playlistRemove'), $mwMoi);
     $router->post('/jnet/moi/musique/playlists/{id}/deplacer', $moi(MusicLibraryController::class, 'playlistMove'), $mwMoi);
+    // Fiabilisation des données : la fiche du membre, relue bloc par bloc (adresse construite par JnetMemberPaths, hors table des 17 pages).
+    $moiCampaign = \App\Controllers\Web\MemberDataCampaignController::class;
+    $router->get('/' . \App\Support\JnetMemberPaths::path('fiabilisation'), $moi($moiCampaign, 'index'), $mwMoi);
+    $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/repondre'), $moi($moiCampaign, 'answer'), $mwMoi);
+    $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/confirmer'), $moi($moiCampaign, 'confirm'), $mwMoi);
     // Anciennes adresses à paramètres (téléchargements, flux audio) : 301 en un saut, requête conservée. Les pages sans paramètre
     // sont dans BackOfficeLegacyRedirects (JnetMemberPaths::legacyRedirects()).
     foreach (\App\Support\JnetMemberPaths::DOWNLOADS as $moiDownload) {
@@ -2109,6 +2119,16 @@ return function (Router $router) {
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/telecharger', [OrganizationDataQualityController::class, 'downloadData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/supprimer', [OrganizationDataQualityController::class, 'purgeData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/postes/{id}/restaurer', [OrganizationDataQualityController::class, 'restoreBillet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Fiabilisation des données (campagne annuelle de relecture des fiches) : mêmes droits que la qualité des données.
+    $router->get('/back-office/organisation/fiabilisation', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/creer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/reglages', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/fiabilisation/{id}', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/fiabilisation/{id}/export', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/ouvrir', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'open'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/cloturer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'close'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/relancer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'remind'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/signalements/{flagId}/traiter', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'handleFlag'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/assign-position', [UserAdminController::class, 'assignPosition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/apply-role-set', [UserAdminController::class, 'applyRoleSet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/categories', [CategoryAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
