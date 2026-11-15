@@ -83,8 +83,7 @@ final class FakeImapServer implements ImapConnection
     {
         $this->closed = true;
         // Une nouvelle session sur le même serveur repart d'un message d'accueil.
-        $this->out = "* OK IMAP ready
-";
+        $this->out = "* OK IMAP ready\r\n";
         $this->in = '';
         $this->pendingLiteral = null;
     }

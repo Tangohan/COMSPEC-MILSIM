@@ -193,7 +193,7 @@ final class ContactMailboxTest extends TestCase
 
         $words = MimeParser::decodeHeader('=?UTF-8?B?' . base64_encode('Bon') . '?=   =?UTF-8?B?' . base64_encode('jour') . '?=');
         self::assertSame('Bonjour', $words, 'blancs entre deux mots encodés supprimés');
-        self::assertSame('abc', MimeParser::decodeHeader("a\r\nb\tc") === 'a b c' ? 'abc' : 'x', 'retours à la ligne neutralisés');
+        self::assertSame('a b c', MimeParser::decodeHeader("a\r\nb\tc"), 'retours à la ligne neutralisés');
     }
 
     public function testHtmlOnlyMessageGetsATextVersionAndBrokenBoundariesDoNotCrash(): void
@@ -698,7 +698,7 @@ final class ContactMailboxTest extends TestCase
         $f = ImapClient::parseFetch("* 3 FETCH (UID 9 FLAGS (\\Seen) BODY[] {11}\r\nab) \"c\" d\r\n x)");
         self::assertNotNull($f);
         self::assertSame('9', $f['UID']);
-        self::assertSame("ab) \"c\" d\r\n", substr((string) $f['BODY[]'], 0, 11 + 0) === (string) $f['BODY[]'] ? "ab) \"c\" d\r\n" : 'x');
+        self::assertSame("ab) \"c\" d\r\n", $f['BODY[]']);
         self::assertNull(ImapClient::parseFetch('* SEARCH 1 2'));
     }
 
@@ -907,13 +907,13 @@ final class ContactMailboxTest extends TestCase
             self::assertStringContainsString('DROP TABLE IF EXISTS ' . $t . ';', $down);
         }
         self::assertLessThan(strpos($down, 'contact_mail_messages;'), strpos($down, 'contact_mail_attachments;'), 'enfants d’abord');
-        $step = $this->read('database/steps/4580_contact_mailbox.php');
+        $step = $this->read('database/steps/4565_contact_mailbox.php');
         self::assertStringContainsString('tableExists', $step);
         self::assertStringContainsString('2026_11_15_010_contact_mailbox.sql', $step);
         $registry = $this->read('database/steps/registry.php');
         self::assertStringContainsString("'id' => 'contact_mailbox'", $registry);
-        self::assertSame(1, substr_count($registry, '4580_contact_mailbox.php'));
-        self::assertFileExists(self::ROOT . 'database/steps/4580_contact_mailbox.php');
+        self::assertSame(1, substr_count($registry, '4565_contact_mailbox.php'));
+        self::assertFileExists(self::ROOT . 'database/steps/4565_contact_mailbox.php');
         // Les statuts du schéma sont ceux que le code écrit.
         $repo = $this->read('app/Services/ContactMail/ContactMailRepository.php');
         foreach (['contact_mail_threads', 'contact_mail_messages', 'contact_mail_attachments', 'contact_mail_sync_state'] as $t) {
