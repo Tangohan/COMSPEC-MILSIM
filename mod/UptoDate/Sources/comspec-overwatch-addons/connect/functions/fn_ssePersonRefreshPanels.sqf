@@ -430,14 +430,15 @@ private _sig = uiNamespace getVariable ["COMSPEC_SsePerson_Signature", []];
 private _signed = (_sig isEqualType []) && {(count _sig) >= 4};
 private _sigTxt = if (_signed) then {
     format [
-        "<t size='0.56' font='TahomaB' color='%4'>Signé  %1</t><br/><t size='0.48' color='%5'>%2  ·  %3</t>",
+        "<t size='0.56' font='TahomaB' color='%4'>Signé  %1%6</t><br/><t size='0.48' color='%5'>%2  ·  %3</t>",
         _sig select 0,
         _sig select 1,
         _sig select 3,
-        _cOk, _cSub
+        _cOk, _cSub,
+        if ((["json"] call comspec_overwatch_connect_fnc_seekSignPad) isNotEqualTo "") then { " · tracé" } else { "" }
     ]
 } else {
-    format ["<t size='0.56' font='TahomaB' color='%1'>Non signé</t><br/><t size='0.48' color='%2'>La fiche partira sans procès-verbal (touche SIGN).</t>", _cWarn, _cSub]
+    format ["<t size='0.56' font='TahomaB' color='%1'>Non signé</t><br/><t size='0.48' color='%2'>Appuyez sur SIGNER pour tracer votre signature.</t>", _cWarn, _cSub]
 };
 (_disp displayCtrl 9520) ctrlSetStructuredText parseText ((_sigTxt) call comspec_overwatch_connect_fnc_tr);
 

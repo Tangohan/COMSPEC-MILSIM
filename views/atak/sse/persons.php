@@ -230,6 +230,9 @@ $total = count($persons);
                                 <?php if (!empty($sig['terminal_uid'])): ?>
                                     · terminal <?= $h($sig['terminal_uid']) ?>
                                 <?php endif; ?>
+                                <?php if (!empty($sig['image_path'])): ?>
+                                    <img src="<?= $h(url((string) $sig['image_path'])) ?>" alt="Signature tracée au SEEK II" loading="lazy" style="height:28px;vertical-align:middle;margin-left:6px">
+                                <?php endif; ?>
                             </span>
                         <?php else: ?>
                             <span class="sse-sig">Non signé</span>

@@ -1,4 +1,13 @@
 [
+["Tracez votre signature à la souris, bouton gauche maintenu.", "Draw your signature with the mouse, left button held down."],
+["Tracé effacé. Signez de nouveau.", "Drawing cleared. Sign again."],
+["Trop de traits : effacez et signez plus simplement.", "Too many strokes: clear it and sign more simply."],
+["Signature assez longue : validez ou effacez.", "Signature long enough: confirm or clear it."],
+["Signature trop courte : tracez-la en entier.", "Signature too short: draw it in full."],
+["Appuyez sur SIGNER pour tracer votre signature.", "Press SIGN to draw your signature."],
+["Signer la fiche : tracez votre signature à la souris.", "Sign the record: draw your signature with the mouse."],
+["Signer la fiche avec ce tracé", "Sign the record with this drawing"],
+["Effacer le tracé", "Clear the drawing"],
 ["Contexte d’acquisition", "Acquisition context"],
 ["Exploitation de site sensible (SSE)", "Sensitive site exploitation (SSE)"],
 ["Action directe : assaut sur l’objectif", "Direct action: assault on the objective"],

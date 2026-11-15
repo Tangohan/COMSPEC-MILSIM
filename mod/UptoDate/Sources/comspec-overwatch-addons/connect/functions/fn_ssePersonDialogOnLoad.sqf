@@ -284,6 +284,9 @@ if (_resume && {_idCache isEqualType []} && {(count _idCache) >= 6}) then {
     ]];
 };
 
+// Pad de signature : accroche la souris du dialogue.
+["init"] call comspec_overwatch_connect_fnc_seekSignPad;
+
 // Le terminal s'ouvre sur son accueil ; après un relevé, on revient à la biométrie.
 if (_resume) then {
     uiNamespace setVariable ["COMSPEC_SsePerson_ResumeCollect", false];
