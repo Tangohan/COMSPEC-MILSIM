@@ -55,7 +55,7 @@ final class SseFieldNoteService
      * @param array<string, mixed> $input
      * @return list<string> Messages destinés au rédacteur, vide si tout va bien
      */
-    public function validate(array $input): array
+    public function validate(array $input, bool $hasCategoryTag = false): array
     {
         $errors = [];
 
@@ -76,7 +76,8 @@ final class SseFieldNoteService
             }
         }
 
-        if (SseFieldNoteCatalog::normalizeThemes($input['themes'] ?? []) === []) {
+        // Une catégorie propre à la communauté (étiquette de la famille « category ») vaut un thème.
+        if (!$hasCategoryTag && SseFieldNoteCatalog::normalizeThemes($input['themes'] ?? []) === []) {
             $errors[] = 'Choisissez au moins un thème : c’est ce qui orientera la fiche vers le bon analyste.';
         }
 

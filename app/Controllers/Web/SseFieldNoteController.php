@@ -15,6 +15,8 @@ use App\Services\Intel\IntelIntakeService;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseFieldNoteService;
+use App\Services\Sse\SseFieldNoteTagService;
+use App\Support\SseFieldNoteTagCatalog;
 use App\Support\SseFieldNoteCatalog;
 use App\Services\Sse\SseAccessPolicy;
 use App\Support\SseAccessCatalog;
@@ -34,7 +36,9 @@ final class SseFieldNoteController
         private ?SseAccessCodeService $access = null,
         private ?SseCaseRepository $cases = null,
         private ?UserRepository $users = null,
+        private ?SseFieldNoteTagService $tagService = null,
     ) {
+        $this->tagService ??= new SseFieldNoteTagService();
         $this->noteService ??= new SseFieldNoteService();
         $this->notes ??= $this->noteService->repository();
         $this->access ??= new SseAccessCodeService();
@@ -51,21 +55,51 @@ final class SseFieldNoteController
             'note_kind' => strtoupper(trim((string) $request->query('note_kind', ''))),
             'theme' => strtolower(trim((string) $request->query('theme', ''))),
             'urgency' => strtolower(trim((string) $request->query('urgency', ''))),
+            'tag' => strtolower(trim((string) $request->query('tag', ''))),
+            'tag_family' => strtolower(trim((string) $request->query('tag_family', ''))),
         ];
 
         $tenantId = $this->tenantId();
+        $lang = self::lang();
+        $query = array_merge($filters, ['limit' => 150], $this->tagService->noteFilters($tenantId, $filters));
+        $notes = $this->present($tenantId, $this->notes->listForTenant($tenantId, $query));
+        $noteTags = $this->tagService->tagsForNotes($tenantId, array_map(static fn (array $n): int => (int) ($n['id'] ?? 0), $notes), $lang);
+        foreach ($notes as $i => $note) {
+            $notes[$i] = $this->tagService->decorate($tenantId, $note, $lang, $noteTags[(int) ($note['id'] ?? 0)] ?? []);
+        }
+        $kindOptions = [];
+        foreach ($this->tagService->kinds($tenantId) as $code => $kind) {
+            $kindOptions[$code] = $kind['label'];
+        }
+        $themeOptions = [];
+        foreach ($this->tagService->activeThemes($tenantId, $lang) as $code => $theme) {
+            $themeOptions[$code] = $code . ' — ' . $theme['label'];
+        }
 
         return $this->view('atak.sse.field_notes', [
             'title' => 'Fiches de renseignement',
             'activeNav' => 'fiches',
-            'notes' => $this->present($tenantId, $this->notes->listForTenant($tenantId, array_merge($filters, ['limit' => 150]))),
+            'notes' => $notes,
             'counters' => $this->notes->counters($tenantId),
             'filters' => $filters,
-            'kindOptions' => SseFieldNoteCatalog::kindOptions(),
-            'themeOptions' => SseFieldNoteCatalog::themeOptions(),
+            'kindOptions' => $kindOptions,
+            'themeOptions' => $themeOptions,
             'urgencyOptions' => SseFieldNoteCatalog::urgencyOptions(),
             'statusOptions' => SseFieldNoteCatalog::STATUSES,
+            'tagFamilies' => $this->tagService->pickerFamilies($tenantId, $lang, false),
+            'tagsReady' => $this->tagService->ready(),
         ]);
+    }
+
+    private static function lang(): string
+    {
+        return function_exists('locale') && locale() === 'en' ? 'en' : 'fr';
+    }
+
+    /** Auteur des changements, pour le journal SSE. @return array{user_id: ?int, label: string} */
+    private function actor(): array
+    {
+        return ['user_id' => (int) Session::get('user_id') ?: null, 'label' => $this->authorLabel()];
     }
 
     /** Rédacteur plein écran (même surface que l'ATAK). */
@@ -81,16 +115,27 @@ final class SseFieldNoteController
         $draft = Session::getFlash('sse_field_note_draft');
         $errors = Session::getFlash('sse_field_note_errors');
 
+        $tenantId = $this->tenantId();
+        $lang = self::lang();
+        $kindSettings = $this->tagService->kinds($tenantId);
+        $activeKinds = $this->tagService->activeKinds($tenantId);
+
         return Response::view('atak.sse.field_note_composer', [
             'title' => 'Nouvelle fiche de renseignement',
-            'kinds' => SseFieldNoteCatalog::KINDS,
-            'themes' => SseFieldNoteCatalog::THEMES,
+            'kinds' => $activeKinds,
+            'themes' => $this->tagService->activeThemes($tenantId, $lang),
+            'tagFamilies' => $this->tagService->pickerFamilies($tenantId, $lang),
+            'tagsReady' => $this->tagService->ready(),
+            'tagsMax' => SseFieldNoteTagCatalog::TAGS_PER_NOTE,
+            'tagSuggestions' => array_map(static fn (array $k): array => $k['suggested'], $kindSettings),
+            'kindTemplates' => array_filter(array_map(static fn (array $k): string => $k['template'], $kindSettings), static fn (string $t): bool => $t !== ''),
+            'relToDefault' => $this->tagService->rules($tenantId)['rel_to'],
             'urgencies' => SseFieldNoteCatalog::URGENCIES,
             'sources' => SseFieldNoteCatalog::SOURCES,
             'bodyMaxLength' => SseFieldNoteCatalog::BODY_MAX_LENGTH,
             'attachmentsMax' => SseFieldNoteCatalog::ATTACHMENTS_MAX,
             'themesMax' => SseFieldNoteCatalog::THEMES_MAX,
-            'defaultKind' => SseFieldNoteCatalog::DEFAULT_KIND,
+            'defaultKind' => isset($activeKinds[SseFieldNoteCatalog::DEFAULT_KIND]) ? SseFieldNoteCatalog::DEFAULT_KIND : (string) (array_key_first($activeKinds) ?? SseFieldNoteCatalog::DEFAULT_KIND),
             'authorLabel' => $this->authorLabel(),
             'observedInputValue' => date('Y-m-d\TH:i'),
             'errors' => is_array($errors) ? $errors : [],
@@ -129,10 +174,21 @@ final class SseFieldNoteController
             'status' => SseFieldNoteCatalog::DEFAULT_STATUS,
         ];
 
-        $errors = $this->noteService->validate($input);
+        // Étiquettes de la communauté : sélection nettoyée, règles du type de fiche (champs et étiquettes obligatoires).
+        $tenantId = $this->tenantId();
+        $picked = $this->tagService->normalizeSelection($tenantId, $request->input('tags', []), $request->input('tag_qualifier', []));
+        $selection = $picked['selection'];
+        $hasCategoryTag = false;
+        foreach ($selection as $link) {
+            $hasCategoryTag = $hasCategoryTag || ($this->tagService->find($tenantId, $link['slug'])['family'] ?? '') === 'category';
+        }
+
+        $errors = $this->noteService->validate($input, $hasCategoryTag);
+        $errors = array_merge($errors, $picked['errors'], $this->tagService->validateForKind($tenantId, $input['note_kind'], $input, $selection));
         if ($errors !== []) {
             Session::flash('sse_field_note_errors', $errors);
             Session::flash('sse_field_note_draft', [
+                'tags' => $selection,
                 'body' => $input['body'],
                 'title' => $input['title'],
                 'note_kind' => $input['note_kind'],
@@ -146,13 +202,16 @@ final class SseFieldNoteController
             return Response::redirect(url('atak/sse/fiches/nouvelle'));
         }
 
-        $tenantId = $this->tenantId();
         $created = $this->noteService->create($tenantId, $input);
         $noteId = (int) ($created['note']['id'] ?? 0);
         if ($noteId < 1) {
             Session::flash('error', 'La fiche n’a pas pu être enregistrée. Réessayez.');
 
             return Response::redirect(url('atak/sse/fiches/nouvelle'));
+        }
+        $selection = $this->tagService->withDefaults($tenantId, $selection);
+        if ($selection !== []) {
+            $this->tagService->setNoteTags($tenantId, $noteId, $selection, $this->actor());
         }
 
         $message = 'Fiche ' . (string) ($created['note']['reference_code'] ?? '') . ' transmise au bureau SSE.';
@@ -237,16 +296,67 @@ final class SseFieldNoteController
             }
         }
 
+        $lang = self::lang();
+        $note = $this->tagService->decorate($tenantId, $note, $lang);
+
         return $this->view('atak.sse.field_note_show', [
             'title' => (string) ($note['reference_code'] ?? 'Fiche de renseignement'),
             'activeNav' => 'fiches',
             'note' => $note,
+            'tagFamilies' => $this->canWrite() ? $this->tagService->pickerFamilies($tenantId, $lang, true, array_column($note['tags'], 'key')) : [],
+            'tagsReady' => $this->tagService->ready(),
+            'tagsMax' => SseFieldNoteTagCatalog::TAGS_PER_NOTE,
+            'tagSuggestions' => [(string) $note['note_kind'] => $this->tagService->kinds($tenantId)[(string) $note['note_kind']]['suggested'] ?? []],
+            'relToDefault' => $this->tagService->rules($tenantId)['rel_to'],
             'linkedCase' => $case,
             'openCases' => $openCases,
             'statusOptions' => SseFieldNoteCatalog::STATUSES,
             'attachmentsMax' => SseFieldNoteCatalog::ATTACHMENTS_MAX,
             'history' => $history,
         ]);
+    }
+
+    /** Étiquettes d'une fiche (mentions : aucun droit d'accès ne change). */
+    public function tags(Request $request, array $params = []): Response
+    {
+        $noteId = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/fiches/' . $noteId) . '#etiquettes';
+        if (!$this->canWrite() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée ou session expirée.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = $this->tenantId();
+        $note = $this->notes->findForTenant($tenantId, $noteId);
+        // Une fiche que la session ne peut pas lire (autre communauté, supprimée, au-dessus de son habilitation) ne s'étiquette pas.
+        if ($note === null || $this->present($tenantId, [$note]) === []) {
+            Session::flash('error', 'Fiche introuvable.');
+
+            return Response::redirect(url('atak/sse/fiches'));
+        }
+        if (!$this->tagService->ready()) {
+            Session::flash('error', SseFieldNoteTagService::notReadyMessage());
+
+            return Response::redirect($back);
+        }
+        $uid = (int) Session::get('user_id');
+        if ((new \App\Services\Security\FileRateLimiter())->tooManyAttempts('sse_fiche_tags|' . $tenantId . '|' . ($uid > 0 ? $uid : 'g' . sha1((string) session_id())), 120, 3600)) {
+            Session::flash('error', 'Trop de changements en peu de temps : réessayez dans quelques minutes.');
+
+            return Response::redirect($back);
+        }
+        $current = [];
+        foreach ($this->tagService->tagsForNotes($tenantId, [$noteId])[$noteId] ?? [] as $tag) {
+            $current[(string) $tag['key']] = (string) $tag['qualifier'];
+        }
+        $picked = $this->tagService->normalizeSelection($tenantId, $request->input('tags', []), $request->input('tag_qualifier', []), $current);
+        $this->tagService->setNoteTags($tenantId, $noteId, $picked['selection'], $this->actor());
+        if ($picked['errors'] !== []) {
+            Session::flash('error', implode(' ', $picked['errors']));
+        }
+        Session::flash('success', count($picked['selection']) > 0 ? 'Étiquettes de la fiche enregistrées.' : 'La fiche ne porte plus aucune étiquette.');
+
+        return Response::redirect($back);
     }
 
     /** Ajout d'une pièce jointe après coup. */

@@ -1444,11 +1444,17 @@ return function (Router $router) {
     $router->post('/atak/sse/campagnes/{id}', [SseCampaignController::class, 'action'], $mwSsePortal);
     $router->get('/atak/sse/fiches', [SseFieldNoteController::class, 'index'], $mwSsePortal);
     $router->get('/atak/sse/fiches/nouvelle', [SseFieldNoteController::class, 'composer'], $mwSsePortal);
+    // Gestion des fiches : référentiel de la communauté (étiquettes, catégories, types, trames, règles, import et export).
+    // « gestion » est un segment fixe : déclaré avant /{id}.
+    $router->get('/atak/sse/fiches/gestion', [\App\Controllers\Web\SseFieldNoteAdminController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/fiches/gestion/export', [\App\Controllers\Web\SseFieldNoteAdminController::class, 'export'], $mwSsePortal);
+    $router->post('/atak/sse/fiches/gestion/{action}', [\App\Controllers\Web\SseFieldNoteAdminController::class, 'save'], $mwSsePortal);
     $router->post('/atak/sse/fiches', [SseFieldNoteController::class, 'store'], $mwSsePortal);
     $router->get('/atak/sse/fiches/{id}', [SseFieldNoteController::class, 'show'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/pieces', [SseFieldNoteController::class, 'attachmentStore'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/pieces/{attachmentId}/supprimer', [SseFieldNoteController::class, 'attachmentDelete'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/suivi', [SseFieldNoteController::class, 'triage'], $mwSsePortal);
+    $router->post('/atak/sse/fiches/{id}/etiquettes', [SseFieldNoteController::class, 'tags'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/rattachement', [SseFieldNoteController::class, 'attachCase'], $mwSsePortal);
     $router->get('/atak/sse/collecte', [SsePortalController::class, 'collecteHub'], $mwSsePortal);
     $router->get('/atak/sse/validation', [SsePortalController::class, 'validationQueue'], $mwSsePortal);
