@@ -17,6 +17,7 @@ use App\Support\SseAccessCatalog;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\SseFilesSqlite;
+use Tests\Support\SseIdentitySqlite;
 
 /**
  * Images des membres classées TRÈS SECRET (TS) : classification (calculée sur les liens existants, fail-closed), accès (titulaire,
@@ -375,7 +376,10 @@ final class SseMemberImageGateTest extends TestCase
         $url = (string) SseSeekPhotoService::photoUrl(['id' => 7, 'path' => 'uploads/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg', 'confidential' => true]);
         self::assertStringContainsString('atak/sse/fichiers/photos/7/image', $url);
         self::assertStringNotContainsString('uploads/', $url);
-        self::assertStringContainsString('uploads/', (string) SseSeekPhotoService::photoUrl(['id' => 7, 'path' => 'uploads/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg']));
+        // Même une image héritée non confidentielle d'un dossier sensible passe par la route (jamais d'adresse publique).
+        self::assertStringContainsString('atak/sse/fichiers/photos/7/image', (string) SseSeekPhotoService::photoUrl(['id' => 7, 'path' => 'uploads/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg']));
+        self::assertStringContainsString('atak/sse/fichiers/photos/7/image', (string) SseSeekPhotoService::photoUrl(['id' => 7, 'path' => 'sse-private/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg']));
+        self::assertStringContainsString('uploads/', (string) SseSeekPhotoService::photoUrl(['id' => 7, 'path' => 'uploads/sse/evidence/ev_1_abc.png']), 'dossier non couvert : adresse publique inchangée');
     }
 
     public function testMaskIdentityForScreens(): void
@@ -512,6 +516,134 @@ final class SseMemberImageGateTest extends TestCase
         [$status, $body] = $serve(self::PEER, $w['civil']);
         self::assertSame(200, $status, 'non membre : inchangé');
         self::assertStringContainsString('TEST-CIVIL-ID-BYTES', $body);
+    }
+
+    // ------------------------------------------------------------------ espace privé (storage/private/sse-images)
+
+    /** Dépose un fichier factice dans l'espace privé SSE (nettoyé à la fin du test). */
+    private function privateFile(string $folder, string $name, string $bytes): void
+    {
+        $dir = base_path('storage/private/sse-images/' . $folder);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+            $this->dirs[] = $dir;
+            $this->dirs[] = dirname($dir);
+        }
+        file_put_contents($dir . '/' . $name, $bytes);
+        $this->files[] = $dir . '/' . $name;
+    }
+
+    /** @return array{0: int, 1: string, 2: \App\Core\Response} */
+    private function serveIdentity(int $viewer, int $identityId, string $kind = 'photo', int $tenant = 1): array
+    {
+        Session::set('user_id', $viewer);
+        Session::set('tenant_id', $tenant);
+        Session::set('sse_tenant_id', $tenant);
+        SseMemberImageGate::useForSession($this->gate($viewer));
+        $resp = (new SseFileRecordController())->identityImage(new Request(), ['id' => (string) $identityId, 'kind' => $kind]);
+
+        return [$resp->statusCode(), self::bytesOf($resp), $resp];
+    }
+
+    public function testPrivateIdentityImageIsServedOnlyThroughTheGateWithSafeHeaders(): void
+    {
+        $repo = new SseIdentityRepository();
+        $member = $this->identity(1, 'Prive', self::OWNER, 'civil', 'sse-private/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg');
+        $repo->setImages($member, 1, ['signature_path' => 'sse-private/sse-id-signatures/1_bbbbbbbbbbbbbbbb.png']);
+        $png = "\x89PNG\r\n\x1a\nTEST-PRIVATE-BYTES";
+        $this->privateFile('sse-id-photos', '1_aaaaaaaaaaaaaaaa.jpg', $png); // extension .jpg, contenu PNG : le contenu décide
+        $this->privateFile('sse-id-signatures', '1_bbbbbbbbbbbbbbbb.png', $png);
+
+        foreach ([self::PEER, self::MANAGER] as $viewer) {
+            [$status, $body] = $this->serveIdentity($viewer, $member);
+            self::assertSame(404, $status, 'viewer ' . $viewer);
+            self::assertStringNotContainsString('TEST-PRIVATE-BYTES', $body, 'aucun octet sans autorisation');
+        }
+        [$status, $body, $resp] = $this->serveIdentity(self::CMD1, $member);
+        self::assertSame(200, $status);
+        self::assertStringContainsString('TEST-PRIVATE-BYTES', $body);
+        self::assertSame('image/png', $resp->headerValue('Content-Type'), 'type réel, pas l’extension');
+        self::assertSame('nosniff', $resp->headerValue('X-Content-Type-Options'));
+        self::assertSame('private, no-store', $resp->headerValue('Cache-Control'));
+        self::assertSame('no-referrer', $resp->headerValue('Referrer-Policy'));
+        self::assertStringStartsWith('inline;', (string) $resp->headerValue('Content-Disposition'));
+        [$status, $body] = $this->serveIdentity(self::OWNER, $member, 'signature');
+        self::assertSame(200, $status);
+        self::assertStringContainsString('TEST-PRIVATE-BYTES', $body);
+        self::assertSame('member_image.view', $this->audit[count($this->audit) - 1]['action'], 'consultation journalisée');
+        [$status, $body] = $this->serveIdentity(self::CMD1, $member, 'photo', 2);
+        self::assertSame(404, $status, 'autre communauté');
+        self::assertStringNotContainsString('TEST-PRIVATE-BYTES', $body);
+    }
+
+    public function testPrivateRouteRefusesNonImagesTraversalAndForeignTenantNames(): void
+    {
+        $repo = new SseIdentityRepository();
+        $fake = $this->identity(1, 'Faux', null, 'civil', 'sse-private/sse-id-photos/1_cccccccccccccccc.jpg');
+        $this->privateFile('sse-id-photos', '1_cccccccccccccccc.jpg', "<?php echo 'TEST-NOT-AN-IMAGE';");
+        [$status, $body] = $this->serveIdentity(self::PEER, $fake);
+        self::assertSame(404, $status, 'contenu non image : jamais servi');
+        self::assertStringNotContainsString('TEST-NOT-AN-IMAGE', $body);
+
+        $this->privateFile('sse-id-photos', '2_dddddddddddddddd.jpg', "\xFF\xD8\xFFTEST-OTHER-TENANT\xFF\xD9");
+        foreach ([
+            'sse-private/sse-id-photos/../../../../../etc/passwd',
+            'sse-private/sse-id-photos/1_cccccccccccccccc.jpg/../2_dddddddddddddddd.jpg',
+            'sse-private/sse-id-photos/2_dddddddddddddddd.jpg',
+            'sse-private/other/1_cccccccccccccccc.jpg',
+        ] as $bad) {
+            $repo->setImages($fake, 1, ['photo_path' => $bad]);
+            [$status, $body] = $this->serveIdentity(self::OWNER, $fake);
+            self::assertSame(404, $status, $bad);
+            self::assertStringNotContainsString('TEST-OTHER-TENANT', $body, $bad);
+        }
+    }
+
+    public function testBackgroundRouteFollowsTheIdentityRulesAndNeverTheirPublicAddress(): void
+    {
+        SseIdentitySqlite::migrate($this->pdo);
+        $member = $this->identity(1, 'Fond', self::OWNER, 'civil');
+        $docs = new \App\Repositories\SseIdDocumentRepository();
+        $docId = $docs->create(1, ['identity_id' => $member, 'doc_type' => 'id_card', 'country_code' => 'ALT', 'doc_number' => 'TEST-1', 'workflow' => 'draft'], null);
+        $docs->setBackground($docId, 1, 'sse-private/sse-id-backgrounds/1_eeeeeeeeeeeeeeee.jpg');
+        $this->privateFile('sse-id-backgrounds', '1_eeeeeeeeeeeeeeee.jpg', "\xFF\xD8\xFFTEST-BACKGROUND\xFF\xD9");
+        $serve = function (int $viewer, int $doc, int $tenant = 1): array {
+            Session::set('user_id', $viewer);
+            Session::set('tenant_id', $tenant);
+            Session::set('sse_tenant_id', $tenant);
+            SseMemberImageGate::useForSession($this->gate($viewer));
+            $resp = (new SseFileRecordController())->documentBackground(new Request(), ['id' => (string) $doc]);
+
+            return [$resp->statusCode(), self::bytesOf($resp), $resp];
+        };
+        [$status, $body] = $serve(self::PEER, $docId);
+        self::assertSame(404, $status);
+        self::assertStringNotContainsString('TEST-BACKGROUND', $body);
+        [$status, $body, $resp] = $serve(self::CMD1, $docId);
+        self::assertSame(200, $status);
+        self::assertStringContainsString('TEST-BACKGROUND', $body);
+        self::assertSame('image/jpeg', $resp->headerValue('Content-Type'));
+        self::assertSame('private, no-store', $resp->headerValue('Cache-Control'));
+        self::assertSame('nosniff', $resp->headerValue('X-Content-Type-Options'));
+        self::assertSame(404, $serve(self::CMD1, $docId, 2)[0], 'autre communauté');
+        self::assertSame(404, $serve(self::CMD1, 987654)[0], 'papier inconnu');
+        self::assertStringContainsString('/atak/sse/fichiers/documents/' . $docId . '/fond', (string) \App\Support\SseImageStorage::backgroundUrl(['id' => $docId, 'background_path' => 'sse-private/sse-id-backgrounds/1_eeeeeeeeeeeeeeee.jpg']));
+    }
+
+    public function testPrivatePhotothequeImageGoesThroughThePhotoRoute(): void
+    {
+        $civil = $this->identity(1, 'Phototheque', null, 'civil');
+        $id = $this->photo(1, $civil, 'sse-private/sse-id-photos/1_ffffffffffffffff.jpg', 'upload');
+        $this->privateFile('sse-id-photos', '1_ffffffffffffffff.jpg', "\xFF\xD8\xFFTEST-LIBRARY\xFF\xD9");
+        Session::set('user_id', self::PEER);
+        Session::set('tenant_id', 1);
+        Session::set('sse_tenant_id', 1);
+        SseMemberImageGate::useForSession($this->gate(self::PEER));
+        $resp = (new SseFileRecordController())->photoImage(new Request(), ['id' => (string) $id]);
+        self::assertSame(200, $resp->statusCode());
+        self::assertStringContainsString('TEST-LIBRARY', self::bytesOf($resp));
+        self::assertSame('nosniff', $resp->headerValue('X-Content-Type-Options'));
+        self::assertStringContainsString('/atak/sse/fichiers/photos/' . $id . '/image', (string) SseSeekPhotoService::photoUrl(['id' => $id, 'path' => 'sse-private/sse-id-photos/1_ffffffffffffffff.jpg']));
     }
 
     public function testRoutesAndSealedSectionAreWired(): void

@@ -286,13 +286,7 @@ final class SseIdWorkshopService
     /** Chemin disque d'une image rangée sous public/uploads (null sinon). */
     private static function localUpload(string $path): ?string
     {
-        $path = str_replace('\\', '/', trim($path));
-        if (preg_match('#(?:^|/)(uploads/[A-Za-z0-9_\-./]+\.(?:png|jpe?g|webp))$#i', $path, $m) !== 1 || str_contains($m[1], '..')) {
-            return null;
-        }
-        $file = base_path('public/' . $m[1]);
-
-        return is_file($file) ? $file : null;
+        return \App\Support\SseImageStorage::readable($path);
     }
 
     /** @param array<string, mixed> $country */
@@ -363,7 +357,7 @@ final class SseIdWorkshopService
             'doc_type' => (string) ($doc['doc_type'] ?? 'id_card'),
             'doc_type_label' => SseIdentityCatalog::label(SseIdentityCatalog::DOC_TYPES, (string) ($doc['doc_type'] ?? 'id_card')),
             'layout' => SseIdWorkshopCatalog::layout($doc['layout'] ?? null),
-            'background_url' => ($doc['background_path'] ?? null) !== null ? (string) url((string) $doc['background_path']) : null,
+            'background_url' => \App\Support\SseImageStorage::backgroundUrl($doc),
             'country' => [
                 'code' => (string) ($country['code'] ?? ($doc['country_code'] ?? '')),
                 'name' => (string) ($country['name'] ?? ($doc['country_code'] ?? '')),
@@ -382,8 +376,8 @@ final class SseIdWorkshopService
                 'birth_place' => (string) ($identity['birth_place'] ?? ''),
                 'nationality' => (string) ($identity['nationality'] ?? ''),
                 'profession' => (string) ($identity['profession'] ?? ''),
-                'photo_url' => ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null,
-                'signature_url' => ($identity['signature_path'] ?? null) !== null ? (string) url((string) $identity['signature_path']) : null,
+                'photo_url' => \App\Support\SseImageStorage::identityUrl($identity, 'photo'),
+                'signature_url' => \App\Support\SseImageStorage::identityUrl($identity, 'signature'),
             ],
             'doc' => [
                 'ref' => (string) ($doc['ref'] ?? ''),

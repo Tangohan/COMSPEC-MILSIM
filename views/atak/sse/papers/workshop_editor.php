@@ -163,7 +163,7 @@ require __DIR__ . '/_subnav.php';
                                 'label' => 'Signature du titulaire (fictive)',
                                 'file_name' => 'signature',
                                 'file_attrs' => 'data-bind-img="signature"',
-                                'current_url' => !empty($identity['signature_path']) ? (string) url((string) $identity['signature_path']) : '',
+                                'current_url' => (string) \App\Support\SseImageStorage::identityUrl($identity, 'signature'),
                                 'theme' => 'dark',
                                 'ink' => '#14202e',
                                 'name_hint' => trim((string) ($identity['first_name'] ?? '') . ' ' . (string) ($identity['last_name'] ?? '')),

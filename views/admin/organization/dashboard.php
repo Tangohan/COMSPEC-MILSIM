@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @var array<string, mixed>|null $initialSetupBanner
  * @var int $configurationUpdateBadge
  * @var bool $discordInviteMissing
+ * @var bool $discordBotNudge
  * @var int $missingMediaCount
  * @var array<string, mixed> $orgActivityChart
  * @var list<array<string, mixed>> $orgMessagesRecent
@@ -81,6 +82,18 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
 <div class="pil" data-pilotage>
 
     <?php require base_path('views/partials/platform_messages_cards.php'); ?>
+
+    <?php if (!empty($discordBotNudge)): ?>
+    <div class="pil-banner" role="status">
+        <?= $pilIcon('spark') ?>
+        <span class="pil-banner__text"><b>Ajoutez le bot Athena à votre serveur Discord.</b> Il accompagne votre bureau des effectifs : résumés, candidatures, événements et rappels, sans quitter Discord.</span>
+        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/discord-bot')) ?>">Ajouter le bot</a>
+        <form method="post" action="<?= $pilH(url('back-office/discord-bot/rappel/fermer')) ?>" class="pil-banner__form">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="pil-banner__later">Plus tard</button>
+        </form>
+    </div>
+    <?php endif; ?>
 
     <?php if ($discordInviteMissing): ?>
     <div class="pil-banner pil-banner--warn" role="alert">

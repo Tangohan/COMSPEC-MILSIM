@@ -539,7 +539,7 @@ final class SseFileSearchService
         if (!$decision['confidential']) {
             $hit['photo_src'] = $hit['photo'] !== null && isset($hit['photo']['path'])
                 ? SseSeekPhotoService::photoUrl($hit['photo'])
-                : ($legacy && function_exists('user_media_public_url') ? user_media_public_url((string) $hit['identity']['photo_path']) : null);
+                : ($legacy ? \App\Support\SseImageStorage::photoSrc((string) $hit['identity']['photo_path'], (int) ($hit['identity']['id'] ?? 0)) : null);
 
             return $hit;
         }

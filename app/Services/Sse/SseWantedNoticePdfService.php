@@ -251,12 +251,8 @@ final class SseWantedNoticePdfService
      */
     public static function imageBytes(string $path, bool $flatten): ?string
     {
-        $path = str_replace('\\', '/', trim($path));
-        if (preg_match('#(?:^|/)(uploads/[A-Za-z0-9_\-./]+\.(?:png|jpe?g|webp))$#i', $path, $m) !== 1 || str_contains($m[1], '..')) {
-            return null;
-        }
-        $file = base_path('public/' . $m[1]);
-        if (!is_file($file) || filesize($file) > 6 * 1024 * 1024) {
+        $file = \App\Support\SseImageStorage::readable($path);
+        if ($file === null || filesize($file) > 6 * 1024 * 1024) {
             return null;
         }
         $raw = (string) file_get_contents($file);

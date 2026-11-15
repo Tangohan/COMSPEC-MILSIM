@@ -498,6 +498,10 @@ $renderToggle = static function (
                 <p class="bo-setup__more-title">Invitations</p>
                 <p class="bo-setup__more-desc">Invitez vos premiers membres par e-mail.</p>
             </a>
+            <a href="<?= $h(url('back-office/discord-bot')) ?>" class="bo-setup__more-link">
+                <p class="bo-setup__more-title">Bot Discord Athena</p>
+                <p class="bo-setup__more-desc">Ajoutez le bot à votre serveur Discord : effectifs, candidatures, événements et rappels.</p>
+            </a>
             <a href="<?= $h(url('back-office/community/presentation')) ?>" class="bo-setup__more-link">
                 <p class="bo-setup__more-title">Vitrine &amp; candidature</p>
                 <p class="bo-setup__more-desc">Textes détaillés de la page d’accueil publique.</p>

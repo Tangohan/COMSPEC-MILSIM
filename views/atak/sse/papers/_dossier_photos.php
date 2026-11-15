@@ -43,7 +43,7 @@ $gTitle = static function (array $it) use ($gKinds): string {
 $gSeekSig = static function (array $it): string {
     $sig = is_array($it['seek'] ?? null) ? trim((string) ($it['seek']['signature_image'] ?? '')) : '';
 
-    return $sig !== '' ? (string) url($sig) : '';
+    return $sig !== '' ? \App\Support\SseImageStorage::inlineSrc($sig) : '';
 };
 /** Une vignette : lien ouvrant la visionneuse + légende + fiche cachée reprise par la visionneuse. */
 $gTile = static function (array $it, bool $hero = false) use ($h, $day, $gTitle, $gKinds, $gSources, $gManage, $gSeekSig, $gPhotothequeUrl): string {

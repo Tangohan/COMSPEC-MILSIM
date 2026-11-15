@@ -83,7 +83,7 @@ final class DiscordCompanionRepository
         return $this->pdo->query("SELECT d.*, e.title, e.description, e.location, e.starts_at, e.ends_at, e.cancelled_at, g.guild_id, g.channel_id AS default_channel_id
             FROM community_event_discord d JOIN community_events e ON e.id = d.event_id AND e.tenant_id = d.tenant_id
             JOIN discord_companion_guilds g ON g.tenant_id = d.tenant_id
-            WHERE d.destination = 'companion' AND e.starts_at < DATE_ADD(NOW(), INTERVAL 30 DAY)
+            WHERE d.destination = 'companion' AND (g.channel_id <> '' OR d.channel_id IS NOT NULL) AND e.starts_at < DATE_ADD(NOW(), INTERVAL 30 DAY)
               AND COALESCE(e.ends_at, e.starts_at) >= DATE_SUB(NOW(), INTERVAL 1 DAY)
             ORDER BY e.starts_at ASC LIMIT 200")->fetchAll(PDO::FETCH_ASSOC);
     }

@@ -254,10 +254,7 @@ final class SseIdOperationRepository
                 'zone' => (string) ($r['identity_zone'] ?? ''),
                 'notes' => (string) ($r['notes'] ?? ''),
                 // Photo d'un membre : TRÈS SECRET (TS), jamais l'adresse publique (SseMemberImageGate::maskIdentity).
-                'photo_path' => \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity((int) $r['tenant_id'], [
-                    'id' => (int) $r['identity_id'], 'tenant_id' => (int) $r['tenant_id'], 'user_id' => $r['user_id'] ?? null,
-                    'photo_path' => ($r['photo_path'] ?? null) !== null && $r['photo_path'] !== '' ? (string) $r['photo_path'] : null,
-                ])['photo_path'],
+                'photo_path' => self::screenPhoto($r),
                 'batch_id' => ($r['batch_id'] ?? null) !== null ? (int) $r['batch_id'] : null,
                 'documents' => $docs[(int) $r['identity_id']] ?? [],
             ];
@@ -597,5 +594,24 @@ final class SseIdOperationRepository
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => $row['updated_at'] ?? null,
         ];
+    }
+
+    /**
+     * Photo d'une ligne « recherchés » pour l'écran : membre = jamais l'adresse publique (SseMemberImageGate::maskIdentity) ;
+     * fichier de l'espace privé SSE = toujours la route protégée de l'identité, jamais un chemin disque.
+     *
+     * @param array<string, mixed> $r
+     */
+    private static function screenPhoto(array $r): ?string
+    {
+        $tenantId = (int) $r['tenant_id'];
+        $photo = \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity($tenantId, [
+            'id' => (int) $r['identity_id'], 'tenant_id' => $tenantId, 'user_id' => $r['user_id'] ?? null,
+            'photo_path' => ($r['photo_path'] ?? null) !== null && $r['photo_path'] !== '' ? (string) $r['photo_path'] : null,
+        ])['photo_path'];
+
+        return is_string($photo) && \App\Support\SseImageStorage::isStoredPath($photo)
+            ? \App\Services\Sse\SseMemberImageGate::identityImagePath((int) $r['identity_id'], 'photo')
+            : $photo;
     }
 }

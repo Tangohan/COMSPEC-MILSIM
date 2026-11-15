@@ -813,6 +813,9 @@ final class SseCasePdfService
 
     private function resolvePublicFile(string $relative): ?string
     {
+        if (\App\Support\SseImageStorage::isPrivatePath(trim($relative))) {
+            return \App\Support\SseImageStorage::absolute(trim($relative));
+        }
         $rel = ltrim(str_replace(['\\', '..'], ['/', ''], $relative), '/');
         $candidates = [
             base_path('public/' . $rel),

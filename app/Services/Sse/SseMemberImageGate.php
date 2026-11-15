@@ -214,14 +214,18 @@ final class SseMemberImageGate
     }
 
     /**
-     * Chemin disque d'une ancienne image rangée sous public/uploads (envoi de membre, ATAK), pour la servir par la route protégée quand
+     * Chemin disque d'une image rangée sous public/uploads (hérité : envoi de membre, ATAK) ou dans l'espace privé SSE, pour la servir par la route protégée quand
      * elle est TRÈS SECRET (TS) (jamais depuis SseSeekPhotoService, qui ne touche pas au dossier public). Même exigence de nom qu'à l'envoi ; null hors de ce dossier ou si le fichier manque.
      *
      * @param array<string, mixed> $photo
      */
-    public static function publicAbsolutePath(array $photo, ?string $publicDir = null): ?string
+    public static function publicAbsolutePath(array $photo, ?string $publicDir = null, ?string $privateDir = null): ?string
     {
         $path = (string) ($photo['path'] ?? '');
+        // Espace privé (storage/private/sse-images) : même contrôle de chemin, même route protégée.
+        if (\App\Support\SseImageStorage::isPrivatePath($path)) {
+            return \App\Support\SseImageStorage::absolute($path, $publicDir, $privateDir);
+        }
         if (preg_match('#^uploads/[a-z0-9_-]{1,40}/[0-9]{1,10}_[a-f0-9]{16}\.(jpg|png|webp)$#', $path) !== 1) {
             return null;
         }

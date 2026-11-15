@@ -12,8 +12,8 @@ declare(strict_types=1);
  *                          que le formulaire, replié
  */
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-$imgPhoto = ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null;
-$imgSign = ($identity['signature_path'] ?? null) !== null ? (string) url((string) $identity['signature_path']) : null;
+$imgPhoto = \App\Support\SseImageStorage::identityUrl($identity, 'photo');
+$imgSign = \App\Support\SseImageStorage::identityUrl($identity, 'signature');
 $imagesDocId = (int) ($imagesDocId ?? 0);
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-id-images.js')) . '"></script>';

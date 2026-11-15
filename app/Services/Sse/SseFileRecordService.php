@@ -95,7 +95,7 @@ final class SseFileRecordService
             $imageBanner = $imageAccess['reason'];
             $ident['photo_src'] = $legacyPhoto ? SseMemberImageGate::identityImageUrl($identityId, 'photo') : null;
         } else {
-            $ident['photo_src'] = $legacyPhoto && function_exists('user_media_public_url') ? user_media_public_url((string) $ident['photo_path']) : null;
+            $ident['photo_src'] = $legacyPhoto ? \App\Support\SseImageStorage::photoSrc((string) $ident['photo_path'], $identityId) : null;
         }
         $byKind = ['address' => [], 'vehicle' => [], 'phone' => [], 'email' => [], 'associate' => []];
         foreach ($links as $l) {

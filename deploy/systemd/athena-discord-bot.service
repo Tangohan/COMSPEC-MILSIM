@@ -1,0 +1,70 @@
+# Bot Discord Athena (ATHENA Companion), service supervisé par systemd.
+# Installé par deploy/discord-bot/install.sh ; procédure complète dans docs/discord-bot-vps.md.
+# Le jeton Discord et la clé de l'API ne sont jamais ici : ils vivent dans /etc/athena-discord-bot/bot.env (hors dépôt).
+
+[Unit]
+Description=Athena Discord bot (ATHENA Companion)
+Documentation=file:/opt/athena-discord-bot/docs/discord-bot-vps.md
+After=network-online.target
+Wants=network-online.target
+# Après dix échecs en dix minutes, systemd arrête d'insister : voir « systemctl status » et les journaux.
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=athena-bot
+Group=athena-bot
+WorkingDirectory=/opt/athena-discord-bot/app
+EnvironmentFile=/etc/athena-discord-bot/bot.env
+Environment=PYTHONUNBUFFERED=1
+Environment=ATHENA_COMPANION_STATE=/var/lib/athena-discord-bot/state.sqlite3
+Environment=ATHENA_COMPANION_HEARTBEAT=/run/athena-discord-bot/heartbeat
+Environment=ATHENA_COMPANION_HEALTH_PORT=8765
+ExecStart=/opt/athena-discord-bot/venv/bin/python main.py
+
+# Redémarrage automatique, y compris après un arrêt propre du processus.
+Restart=always
+RestartSec=10
+TimeoutStopSec=30
+
+# Dossiers gérés par systemd, propriété du compte du service.
+RuntimeDirectory=athena-discord-bot
+StateDirectory=athena-discord-bot
+LogsDirectory=athena-discord-bot
+StandardOutput=append:/var/log/athena-discord-bot/bot.log
+StandardError=inherit
+UMask=0077
+
+# Limites de ressources (le bot tient dans quelques dizaines de Mo).
+MemoryHigh=250M
+MemoryMax=350M
+TasksMax=64
+CPUQuota=50%
+LimitNOFILE=4096
+
+# Durcissement de base.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+
+[Install]
+WantedBy=multi-user.target

@@ -228,8 +228,9 @@ final class SseIdentityPhotoGalleryTest extends TestCase
 
         $ok = SseIdWorkshopService::copyFilePhoto(1, 15, $row, $images, $seek);
         self::assertTrue($ok['ok'], (string) ($ok['error'] ?? ''));
-        self::assertStringStartsWith('uploads/sse-id-photos/1_', (string) $ok['path']);
-        self::assertFileExists($this->dir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, (string) $ok['path']));
+        self::assertStringStartsWith('sse-private/sse-id-photos/1_', (string) $ok['path']);
+        self::assertNotNull(\App\Support\SseImageStorage::absolute((string) $ok['path'], $this->dir . DIRECTORY_SEPARATOR . 'public', $this->dir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . '.private-sse-images'));
+        self::assertFalse(is_dir($this->dir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads'), 'rien sous public/uploads');
 
         $other = SseIdWorkshopService::copyFilePhoto(2, 15, $row, $images, $seek);
         self::assertFalse($other['ok'], 'le cliché d’une autre communauté ne se copie pas');
