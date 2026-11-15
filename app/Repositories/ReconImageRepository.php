@@ -221,6 +221,10 @@ class ReconImageRepository
         if ($this->hasColumn('source_name')) {
             $cols['source_name'] = $data['source_name'] ?? null;
         }
+        // Compte de l'auteur quand le jeu l'a identifié (photothèque : droits de l'auteur) ; colonne ajoutée par l'étape photo_library.
+        if ($this->hasColumn('author_user_id')) {
+            $cols['author_user_id'] = isset($data['author_user_id']) && (int) $data['author_user_id'] > 0 ? (int) $data['author_user_id'] : null;
+        }
         // Fiche du cliché (NotifyNewPhoto de COMSPEC Link 2.0.66) : colonnes ajoutées par atak_recon_images_photo_meta_migration.
         foreach (self::PHOTO_META_COLUMNS as $column => $default) {
             if ($this->hasColumn($column)) {

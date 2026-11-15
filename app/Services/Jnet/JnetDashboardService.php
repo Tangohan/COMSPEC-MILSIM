@@ -278,6 +278,12 @@ final class JnetDashboardService
                     'count' => $cases,
                 ],
                 [
+                    'label' => 'Photothèque',
+                    'desc' => 'Photos terrain : visages étiquetés, zones masquées, commentaires, versement au dossier SSE',
+                    'href' => url('jnet/photos'),
+                    'count' => 0,
+                ],
+                [
                     'label' => 'Fiches terrain',
                     'desc' => $notes > 0
                         ? $notes . ' fiche' . ($notes > 1 ? 's' : '') . ' de renseignement'

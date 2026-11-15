@@ -58,6 +58,16 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'photo_library_mention', 'photo_library_comment' => [
+                'title' => $type === 'photo_library_mention'
+                    ? trim((string) ($payload['by'] ?? 'Un membre')) . ' vous a cité sur une photo'
+                    : trim((string) ($payload['by'] ?? 'Un membre')) . ' a commenté votre photo',
+                'detail' => mb_substr(trim((string) ($payload['excerpt'] ?? '')), 0, 240),
+                'href' => is_string($payload['path'] ?? null) && preg_match('#^jnet/photos/[0-9]{1,10}$#', (string) $payload['path']) === 1
+                    ? url((string) $payload['path']) : url('jnet/photos'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'sse_file_watch' => [
                 'title' => 'Surveillance des fichiers : ' . mb_substr(trim((string) ($payload['label'] ?? 'nouvelle mention')), 0, 80),
                 'detail' => mb_substr(trim((string) ($payload['detail'] ?? 'Un nouveau document cite ce que vous surveillez.')), 0, 240),
