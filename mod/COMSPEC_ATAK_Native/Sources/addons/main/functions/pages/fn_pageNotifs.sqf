@@ -114,6 +114,17 @@ if (_byApp) then {
     } forEach _grouped;
 };
 
+// Perf (lot 3) : le code « ouvrir » et « fermer » de chaque notification était recompilé à chaque rendu de la page (deux
+// compilations par ligne, toutes les lignes, à chaque notification fermée ou filtre changé). Il est gardé par texte
+// source (uiNamespace COMSPEC_ATAK_NotifCode, 400 entrées au plus) : même code, compilé une seule fois.
+private _codeMemo = uiNamespace getVariable "COMSPEC_ATAK_NotifCode";
+if (isNil "_codeMemo" || {(count _codeMemo) > 400}) then { _codeMemo = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_NotifCode", _codeMemo]; };
+private _codeOf = {
+    private _src = _this;
+    private _c = _codeMemo getOrDefault [_src, 0];
+    if (_c isEqualType 0) then { _c = compile _src; _codeMemo set [_src, _c]; };
+    _c
+};
 // Heure relative : « à l'instant », « il y a 12 min », sinon l'heure du jeu.
 private _ago = {
     params ["_n"];
@@ -138,14 +149,14 @@ private _ago = {
     private _new = _idx < _fresh;
     private _meta = format ["%1%2%3", ["", "<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexAccent") + "'>" + (("NOUVEAU") call comspec_atak_native_fnc_tr) + "</t>  ·  "] select _new, [_n] call _ago, ["", format ["  ·  ×%1", _times]] select (_times > 1)];
     private _page = _m get "page";
-    private _open = if (_page isEqualTo "") then { {} } else { compile format ["['%1'] call comspec_atak_native_fnc_navigate;", _page] };
+    private _open = if (_page isEqualTo "") then { {} } else { (format ["['%1'] call comspec_atak_native_fnc_navigate;", _page]) call _codeOf };
     // Fermer : par identifiant (fn_notify), à défaut par texte et heure (entrées d'avant la mise à jour).
-    private _close = compile format ["
+    private _close = (format ["
         private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap];
         private _id = %1; private _msg = %2; private _tm = %3;
         _s set ['notifHistory', (_s getOrDefault ['notifHistory', []]) select { if (_id >= 0) then { (_x getOrDefault ['id', -1]) isNotEqualTo _id } else { !((_x getOrDefault ['message', '']) isEqualTo _msg && {(_x getOrDefault ['time', '']) isEqualTo _tm}) } }];
         [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;",
-        _n getOrDefault ["id", -1], str (_n getOrDefault ["message", ""]), str (_n getOrDefault ["time", ""])];
+        _n getOrDefault ["id", -1], str (_n getOrDefault ["message", ""]), str (_n getOrDefault ["time", ""])]) call _codeOf;
     _rows pushBack ["notif", _m get "icon", _m get "rgb", _m get "title", _meta, _m get "body", _open, _close,
         ["", format ["Ouvrir %1", _m get "title"]] select (_page isNotEqualTo ""), _new];
 } forEach _shown;
