@@ -87,7 +87,7 @@ if ($dossierMissing !== []) {
         'text' => $rhEn
             ? $nMissing . ' item' . ($nMissing > 1 ? 's' : '') . ' missing: ' . implode(', ', $missingLabels) . '.'
             : 'Il manque ' . $nMissing . ' élément' . ($nMissing > 1 ? 's' : '') . ' : ' . implode(', ', $missingLabels) . '.',
-        'href' => url('personnel/me/edit'),
+        'href' => jnet_moi_url('ma-fiche/modifier'),
         'cta' => 'Compléter ma fiche',
     ];
 }
@@ -401,11 +401,11 @@ $rhFlashError = \App\Core\Session::getFlash('error');
 
             <nav class="dm-card dm-links" aria-label="Voir aussi">
                 <h2 class="dm-card__title">Voir aussi</h2>
-                <a href="<?= $e(url('back-office/ma-situation/ma-fiche')) ?>">Ma fiche <span aria-hidden="true">→</span></a>
+                <a href="<?= $e(jnet_moi_url('ma-fiche')) ?>">Ma fiche <span aria-hidden="true">→</span></a>
                 <?php if ($trainingAllowed): ?>
                 <a href="<?= $e(url('formations/mes-formations')) ?>">Mes formations <span aria-hidden="true">→</span></a>
                 <?php endif; ?>
-                <a href="<?= $e(url('back-office/ma-situation/coffre')) ?>">Mon coffre <span aria-hidden="true">→</span></a>
+                <a href="<?= $e(jnet_moi_url('coffre')) ?>">Mon coffre <span aria-hidden="true">→</span></a>
             </nav>
         </aside>
     </div>

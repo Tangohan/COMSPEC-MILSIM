@@ -1,0 +1,15 @@
+/**
+ * JNET — Événements du membre (/jnet/moi/evenements). Chargé après tailwind.css et back-office-member-events.css.
+ * La liste communautaire (community/events.php) garde ses utilitaires Tailwind ; la coque JNET porte déjà gouttières et fond.
+ */
+
+.jp .jnet-moi-events.ath-main__body {
+  background: transparent;
+  color: inherit;
+}
+
+.jp .jnet-moi-events > div {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}

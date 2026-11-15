@@ -67,7 +67,7 @@ $scopeLabels = ['default' => 'Par défaut', 'map' => 'Pour une carte', 'operatio
     <?php if (!empty($coverPanel)): ?>
         <?php
         $coverSelf = true;
-        $coverPostUrl = url('back-office/ma-situation/mes-papiers/couverture');
+        $coverPostUrl = jnet_moi_url('mes-papiers/couverture');
         $coverDownloadBase = $coverPostUrl;
         $coverCsrf = \App\Core\Csrf::token();
         require dirname(__DIR__, 2) . '/partials/sse_cover_export.php';

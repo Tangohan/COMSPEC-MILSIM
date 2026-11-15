@@ -51,7 +51,7 @@ $aeroTabs = [
             </div>
             <?php endif; ?>
             <div class="aero-hero__acts">
-                <a class="aero-hb2" href="<?= $aeroH(url('back-office/ma-situation/carnet-de-vol')) ?>"><?= $aeroIcon('plus') ?>Noter un vol</a>
+                <a class="aero-hb2" href="<?= $aeroH(jnet_moi_url('carnet-de-vol')) ?>"><?= $aeroIcon('plus') ?>Noter un vol</a>
                 <form method="post" action="<?= $aeroH(url('back-office/referentiels/qualifications/cursus-pilote/evaluer')) ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="retour" value="<?= $aeroTab === 'reglages' ? 'back-office/referentiels/qualifications/cursus-pilote' : 'back-office/espace-aerien' ?>">

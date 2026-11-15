@@ -248,8 +248,18 @@ function navigation_resolve_link(array $link): ?array
         return null;
     }
     $pathFragment = (string) ($link['path'] ?? '');
+    // Entrée « Mon back-office » : un membre sans rôle de gestion va à son espace JNET (rien si son arrivée est le tableau de bord).
+    $memberHome = null;
+    if (!empty($link['plain_member_home']) && \App\Support\PortalAccessChoice::isPlainMember()) {
+        $memberHome = \App\Support\PortalAccessChoice::plainMemberHome();
+        if ($memberHome === url('dashboard')) {
+            return null;
+        }
+        $link['label'] = 'Mon espace JNET';
+        $pathFragment = 'jnet/moi';
+    }
     $routePath = navigation_route_path($pathFragment);
-    $match = $link['active_match'] ?? navigation_infer_active_match($routePath);
+    $match =$link['active_match'] ?? navigation_infer_active_match($routePath);
 
     $out = [
         'label' => (string) ($link['label'] ?? ''),
@@ -259,6 +269,9 @@ function navigation_resolve_link(array $link): ?array
         'active_match' => $match,
         'description' => isset($link['description']) ? (string) $link['description'] : null,
     ];
+    if ($memberHome !== null) {
+        $out['href'] = $memberHome;
+    }
     if (!empty($link['skip_i18n'])) {
         $out['skip_i18n'] = true;
     }

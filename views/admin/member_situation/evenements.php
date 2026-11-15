@@ -16,7 +16,7 @@ $events = is_array($events ?? null) ? $events : [];
 $past = is_array($memberEventsPast ?? null) ? $memberEventsPast : [];
 $cal = is_array($memberEventsCalendar ?? null) ? $memberEventsCalendar : null;
 $vue = (string) ($memberEventsVue ?? 'a_venir');
-$base = url('back-office/ma-situation/evenements');
+$base = jnet_moi_url('evenements');
 $subUrl = (string) ($calendar_subscription_url ?? '');
 
 $typeLabels = ['operation' => 'Opération', 'formation' => 'Formation', 'autre' => 'Autre', 'evenement' => 'Événement'];
@@ -78,7 +78,6 @@ $tabs = [
 <div class="mev">
     <section class="mev-summary" aria-label="Résumé">
         <article class="mev-next<?= $next === null ? ' mev-next--empty' : '' ?>">
-            <p class="mev-next__kicker">Prochain rendez-vous</p>
             <?php if (is_array($next)): ?>
             <h2 class="mev-next__title"><?= $h((string) ($next['title'] ?? 'Événement')) ?></h2>
             <p class="mev-next__when">

@@ -33,10 +33,10 @@ final class OperatorBackOfficeClarityAssetTest extends TestCase
         self::assertStringContainsString('Mes démarches', $view);
         self::assertStringContainsString('Votre parcours', $view);
         self::assertStringContainsString('Ouvrir le suivi complet', $view);
-        self::assertStringContainsString('back-office/ma-situation/ma-fiche', $view);
-        self::assertStringContainsString('back-office/ma-situation/unite', $view);
-        self::assertStringContainsString('back-office/ma-situation/qualifications', $view);
-        self::assertStringContainsString('back-office/ma-situation/evenements', $view);
+        self::assertStringContainsString('jnet/moi/ma-fiche', $view);
+        self::assertStringContainsString('jnet/moi/unite', $view);
+        self::assertStringContainsString('jnet/moi/qualifications', $view);
+        self::assertStringContainsString('jnet/moi/evenements', $view);
         self::assertStringContainsString('url(\'boite-reception\')', $view);
         self::assertStringContainsString('En service', $view);
         self::assertStringContainsString('Il ne donne aucun droit d’administration.', $view);

@@ -50,6 +50,10 @@ final class TenantTypeProfilesAccessTest extends TestCase
             'missions inter-unités' => ['admin/interteam-missions', 'cooperation'],
             'arsenal' => ['equipment', 'equipment'],
             'liaison ATAK perso' => ['back-office/ma-situation/liaison-atak', 'atak'],
+            'ma fiche dans JNET' => ['jnet/moi/ma-fiche', 'personnel'],
+            'liaison ATAK dans JNET' => ['jnet/moi/liaison-atak', 'atak'],
+            'appareils dans JNET' => ['jnet/moi/appareils', 'atak'],
+            'événements dans JNET' => ['jnet/moi/evenements', 'operations'],
         ];
     }
 

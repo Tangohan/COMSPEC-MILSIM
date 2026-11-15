@@ -17,10 +17,10 @@ final class OperatorBackOfficeAccessAssetTest extends TestCase
         $profiles = (string) file_get_contents($root . '/app/Services/Rbac/CommunityAccessProfiles.php');
         $matrixSvc = (string) file_get_contents($root . '/app/Services/Rbac/RolePermissionMatrixService.php');
 
-        self::assertStringContainsString("['label' => 'Mon back-office', 'path' => 'back-office', 'auth_only' => true]", $navigation);
-        // La racine (et désormais les pages « ma-situation ») reste ouverte à tout membre authentifié.
+        self::assertStringContainsString("['label' => 'Mon back-office', 'path' => 'back-office', 'auth_only' => true, 'plain_member_home' => true]", $navigation);
+        // La racine, les pages « ma-situation » (ancienne adresse) et /jnet/moi restent ouvertes à tout membre authentifié.
         self::assertMatchesRegularExpression(
-            "/if \\(\\\$path === 'back-office'(?: \\|\\| str_starts_with\\(\\\$path, 'back-office\\/ma-situation'\\))?\\) \\{\\s*return null;/",
+            "/if \\(\\\$path === 'back-office'(?: \\|\\| str_starts_with\\(\\\$path, 'back-office\\/ma-situation'\\))?(?: \\|\\| [^)]*JnetMemberPaths::isMemberPath\\(\\\$path\\))?\\) \\{\\s*return null;/",
             $helpers
         );
         self::assertStringContainsString('$canOpenBackOffice', $header);

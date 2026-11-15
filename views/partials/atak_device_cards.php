@@ -8,7 +8,7 @@ use App\Support\AtakDevicePresenter as Dev;
 
 /**
  * Fiches « téléphone ATAK » d'un opérateur : visuel, identité, liaison réseau, certificat et diagnostic.
- * Partagé par le back-office membre (Mes appareils) et la page compte Appareils ATAK.
+ * Partagé par « Mes appareils » (JNET, /jnet/moi/appareils) et la page compte Appareils ATAK.
  *
  * Variables : $devices, $gamePhone, $deviceLogDigests, $appActivity, $revokeUrl, $setupUrl,
  * et $linkEvents (optionnel, ajoute l'onglet Liaison : contrôles et historique).
@@ -18,8 +18,8 @@ $gamePhone = is_array($gamePhone ?? null) ? $gamePhone : null;
 $deviceLogDigests = is_array($deviceLogDigests ?? null) ? $deviceLogDigests : [];
 $appActivity = is_array($appActivity ?? null) ? $appActivity : [];
 $linkEvents = is_array($linkEvents ?? null) ? $linkEvents : null;
-$revokeUrl = (string) ($revokeUrl ?? url('back-office/ma-situation/appareils/retirer'));
-$setupUrl = (string) ($setupUrl ?? url('back-office/ma-situation/premiere-liaison'));
+$revokeUrl = (string) ($revokeUrl ?? jnet_moi_url('appareils/retirer'));
+$setupUrl = (string) ($setupUrl ?? jnet_moi_url('premiere-liaison'));
 $checkIcons = ['ok' => '✓', 'warn' => '!', 'bad' => '✕'];
 $levelLabel = static fn (string $level): string => \App\Support\AtakDeviceLog::levelLabel($level);
 $ago = static function (?int $ts): string {
@@ -134,10 +134,10 @@ if (!$phoneAttached && $gamePhone !== null) {
     <article class="bo-member-situation__card atk-dev__card">
         <header class="atk-dev__head">
             <div>
-                <p class="bo-member-situation__kicker"><?= $h(Dev::typeLabel($type)) ?></p>
                 <h2><?= $h($title) ?></h2>
             </div>
             <div class="atk-dev__chips">
+                <span class="atk-chip atk-chip--muted"><?= $h(Dev::typeLabel($type)) ?></span>
                 <span class="atk-chip atk-chip--<?= $h($link['key']) ?>"><i></i><?= $h($link['label']) ?><?= $link['ago'] !== '' ? ' · ' . $h($link['ago']) : '' ?></span>
                 <?php if ($t !== []): ?>
                     <span class="atk-chip <?= $status === 'active' ? 'atk-chip--ok' : ($status === 'revoked' || $status === 'lost' ? 'atk-chip--bad' : 'atk-chip--muted') ?>"><?= $h($statusLabel($status)) ?></span>

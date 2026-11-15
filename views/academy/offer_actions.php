@@ -8,7 +8,7 @@
 $actionsInDetail = $actionsInDetail ?? false;
 $award = is_array($it['award'] ?? null) ? $it['award'] : null;
 $brevetUrl = $award !== null && trim((string) ($award['certificate_document_path'] ?? '')) !== '' && in_array($it['state'], ['held', 'expiring', 'renew'], true)
-    ? url('back-office/ma-situation/qualifications/' . (int) $award['id'] . '/brevet') : '';
+    ? url('jnet/moi/qualifications/' . (int) $award['id'] . '/brevet') : '';
 $courseLink = '';
 foreach ($it['how'] ?? [] as $line) {
     if (($line['type'] ?? '') === 'course' && ($line['url'] ?? '') !== '' && empty($line['met'])) {

@@ -90,7 +90,7 @@ $closeNotice = static function () use ($personnelFileNoticesBare): void {
         </ul>
         <?php if (!empty($personnelIsSelf)): ?>
             <p class="mt-3 text-xs">
-                <a href="<?= htmlspecialchars(url('back-office/ma-situation/mes-demarches'), ENT_QUOTES, 'UTF-8') ?>#absences" class="font-semibold text-amber-950 underline decoration-amber-300 underline-offset-2 hover:decoration-amber-600">Gérer mes absences</a>
+                <a href="<?= htmlspecialchars(jnet_moi_url('mes-demarches'), ENT_QUOTES, 'UTF-8') ?>#absences" class="font-semibold text-amber-950 underline decoration-amber-300 underline-offset-2 hover:decoration-amber-600">Gérer mes absences</a>
             </p>
         <?php endif; ?>
     </div>

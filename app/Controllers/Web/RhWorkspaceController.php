@@ -22,6 +22,8 @@ use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Platform\FeatureGateService;
+use App\Support\JnetMemberPaths;
+use App\Support\JnetMemberShell;
 use App\Support\PersonnelDossierCompleteness;
 use App\Support\PersonnelHrDocumentStorage;
 
@@ -44,13 +46,16 @@ final class RhWorkspaceController
         $this->hrDocuments ??= new PersonnelHrDocumentRepository();
     }
 
-    /** Adresse unique de « Mes démarches » : l’espace opérateur du back-office. */
-    public const WORKSPACE_PATH = 'back-office/ma-situation/mes-demarches';
+    /** Rend sa page dans la coque JNET (JnetMemberShell) : voir JnetMemberBridge. */
+    public const JNET_MOI_READY = true;
+
+    /** Adresse unique de « Mes démarches » : les pages du membre dans JNET. */
+    public const WORKSPACE_PATH = JnetMemberPaths::BASE . '/mes-demarches';
 
     public function index(Request $request, array $params = []): Response
     {
-        // Ancienne page publique /personnel/mon-espace-rh : migrée dans le back-office.
-        if (!str_starts_with($request->path(), '/back-office/')) {
+        // Ancienne page publique /personnel/mon-espace-rh : migrée dans JNET (/jnet/moi/mes-demarches).
+        if (!JnetMemberPaths::isMemberPath($request->path())) {
             return Response::redirect(url(self::WORKSPACE_PATH));
         }
         $user = $this->authService->user();
@@ -120,7 +125,7 @@ final class RhWorkspaceController
         } catch (\Throwable) {
         }
 
-        return Response::view('layout.main', [
+        return JnetMemberShell::view($request, [
             'title' => 'Mes démarches',
             'content' => 'personnel.rh_workspace',
             'isBackOfficeShell' => true,

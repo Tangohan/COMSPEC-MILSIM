@@ -33,6 +33,9 @@ final class CsrfPostMiddleware
         // extension — 66 validaient déjà explicitement, les autres émettent bien un jeton
         // depuis leur formulaire, et aucun appel AJAX ne vise /admin/ (le JS passe par /api/admin/).
         '/admin/',
+        // Pages « Ma situation » du membre (ex-/back-office/ma-situation/, déjà couvertes par '/back-office/') : chaque contrôleur
+        // valide son jeton ; ceci est la ceinture en plus.
+        '/jnet/moi/',
     ];
 
     /**

@@ -12,8 +12,8 @@ use App\Repositories\PilotQualificationRuleRepository;
 use App\Services\Personnel\PilotLogbookService;
 use App\Services\Personnel\PilotQualificationService;
 use App\Services\Platform\FeatureGateService;
+use App\Support\JnetMemberShell;
 use App\Support\PilotSyllabusCatalog;
-use App\Support\PlanFeatureDenial;
 use Throwable;
 
 /**
@@ -21,7 +21,10 @@ use Throwable;
  */
 final class PilotLogbookController
 {
-    private const MINE = 'back-office/ma-situation/carnet-de-vol';
+    /** Rend sa page « mon carnet » dans la coque JNET (JnetMemberShell) : voir JnetMemberBridge. La vue instructeur reste dans le back-office. */
+    public const JNET_MOI_READY = true;
+
+    private const MINE = 'jnet/moi/carnet-de-vol';
     private const SYLLABUS = 'back-office/referentiels/qualifications/cursus-pilote';
 
     public function __construct(
@@ -38,10 +41,11 @@ final class PilotLogbookController
             return Response::redirect(url('login'));
         }
         if (!$this->features->allowsWithCatalogDefault($tenantId, PilotQualificationService::FEATURE)) {
-            return PlanFeatureDenial::upgradeView(PilotQualificationService::FEATURE);
+            // Page de formules du portail (même renvoi que les envois du carnet) : la coque JNET ne charge pas le style de cette page.
+            return Response::redirect(url('platform/upgrade') . '?from=' . PilotQualificationService::FEATURE);
         }
 
-        return $this->page($tenantId, $userId, true, 'Mon carnet de vol', 'OPÉRATEUR · CARNET DE VOL', 'Vos vols relevés en jeu, et ceux que vous notez vous-même. Un instructeur contresigne ce que vous déclarez.');
+        return $this->page($request, $tenantId, $userId, true, 'Mon carnet de vol', 'OPÉRATEUR · CARNET DE VOL', 'Vos vols relevés en jeu, et ceux que vous notez vous-même. Un instructeur contresigne ce que vous déclarez.');
     }
 
     public function member(Request $request, array $params = []): Response
@@ -59,17 +63,17 @@ final class PilotLogbookController
         }
         $who = trim($name['display_name']) !== '' ? $name['display_name'] : $name['callsign'];
 
-        return $this->page($tenantId, $memberId, false, 'Carnet de vol de ' . $who, 'PERSONNEL · CARNET DE VOL', 'Vols relevés en jeu et vols déclarés par le pilote. Contresignez ce qui a été vérifié en vol.');
+        return $this->page($request, $tenantId, $memberId, false, 'Carnet de vol de ' . $who, 'PERSONNEL · CARNET DE VOL', 'Vols relevés en jeu et vols déclarés par le pilote. Contresignez ce qui a été vérifié en vol.');
     }
 
-    private function page(int $tenantId, int $userId, bool $mine, string $title, string $kicker, string $subtitle): Response
+    private function page(Request $request, int $tenantId, int $userId, bool $mine, string $title, string $kicker, string $subtitle): Response
     {
         $ready = $this->logbook->schemaReady();
         $entries = $ready ? $this->logbook->entries($tenantId, $userId) : [];
         $legacy = $this->rules->pilotRowsByUser($tenantId)[$userId] ?? [];
         $actorId = (int) Session::get('user_id');
 
-        return Response::view('layout.main', [
+        return JnetMemberShell::view($request, [
             'content' => 'admin.member_situation.pilot_logbook',
             'backOfficePageCss' => ['referentiel-qualifications.css', 'referentiel-pilot-syllabus.css'],
             'title' => $title,

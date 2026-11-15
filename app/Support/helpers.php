@@ -846,6 +846,19 @@ if (!function_exists('registration_alert_inbox_email')) {
     }
 }
 
+if (!function_exists('jnet_moi_url')) {
+    /**
+     * Adresse d'une page « Ma situation » du membre dans JNET (/jnet/moi/…) : jnet_moi_url('qualifications'),
+     * jnet_moi_url('avancement', [], 'mav-aff-title'). La table des pages est App\Support\JnetMemberPaths.
+     *
+     * @param array<string, scalar> $query
+     */
+    function jnet_moi_url(string $slug = '', array $query = [], string $fragment = ''): string
+    {
+        return \App\Support\JnetMemberPaths::url($slug, $query, $fragment);
+    }
+}
+
 if (!function_exists('url')) {
     function url(string $path = ''): string
     {
@@ -1438,7 +1451,7 @@ if (!function_exists('back_office_nav_rule_for_path')) {
     {
         $path = trim($path, '/');
         // La racine et les pages personnelles opérateur sont ouvertes à tout membre authentifié.
-        if ($path === 'back-office' || str_starts_with($path, 'back-office/ma-situation')) {
+        if ($path === 'back-office' || str_starts_with($path, 'back-office/ma-situation') || \App\Support\JnetMemberPaths::isMemberPath($path)) {
             return null;
         }
         if ($path === '') {

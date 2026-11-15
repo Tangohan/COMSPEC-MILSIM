@@ -277,7 +277,7 @@ $aeroTabCounts = ['ligne' => count($queue), 'carnet' => (int) ($counts['declared
         ?>
     <div class="aero-ph">
         <div><span class="aero-k">Heures contresignées</span><h2>Carnet de vol</h2><p>La durée est relevée par le mod. Le pilote déclare ses heures de nuit, aux instruments ou en patrouille ; un instructeur de la filière les contresigne avant qu’elles comptent.</p></div>
-        <a class="aero-btn dark" href="<?= $h(url('back-office/ma-situation/carnet-de-vol')) ?>">Noter un vol</a>
+        <a class="aero-btn dark" href="<?= $h(jnet_moi_url('carnet-de-vol')) ?>">Noter un vol</a>
     </div>
     <div class="aero-bar">
         <div class="aero-seg" role="group" aria-label="Statut">

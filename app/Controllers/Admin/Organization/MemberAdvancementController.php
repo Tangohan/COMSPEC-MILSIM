@@ -13,6 +13,7 @@ use App\Repositories\PersonnelMobilityRequestRepository;
 use App\Repositories\UnitRepository;
 use App\Services\Advancement\AdvancementWorkflowService;
 use App\Services\Personnel\AssignmentTargetCatalog;
+use App\Support\JnetMemberShell;
 use Throwable;
 
 /**
@@ -20,6 +21,9 @@ use Throwable;
  */
 final class MemberAdvancementController
 {
+    /** Rend sa page dans la coque JNET (JnetMemberShell) : voir JnetMemberBridge. */
+    public const JNET_MOI_READY = true;
+
     public function __construct(
         private AdvancementRepository $repository,
         private AdvancementWorkflowService $workflow,
@@ -69,7 +73,7 @@ final class MemberAdvancementController
         } catch (Throwable) {
         }
 
-        return Response::view('layout.main', [
+        return JnetMemberShell::view($request, [
             'title' => 'Mon avancement',
             'content' => 'admin.member_situation.avancement',
             'isBackOfficeShell' => true,
@@ -100,14 +104,14 @@ final class MemberAdvancementController
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/ma-situation/avancement'));
+            return Response::redirect(jnet_moi_url('avancement'));
         }
         $campaignId = (int) ($params['campaignId'] ?? $request->input('campaign_id', 0));
         $campaign = $this->repository->findCampaign($campaignId, $tenantId);
         if ($campaign === null) {
             Session::flash('error', 'Campagne introuvable.');
 
-            return Response::redirect(url('back-office/ma-situation/avancement'));
+            return Response::redirect(jnet_moi_url('avancement'));
         }
         try {
             $this->workflow->createCandidacy($tenantId, $campaignId, $userId, $userId, [
@@ -120,7 +124,7 @@ final class MemberAdvancementController
             Session::flash('error', $e->getMessage());
         }
 
-        return Response::redirect(url('back-office/ma-situation/avancement'));
+        return Response::redirect(jnet_moi_url('avancement'));
     }
 
     public function requestAdvancement(Request $request, array $params = []): Response
@@ -133,7 +137,7 @@ final class MemberAdvancementController
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/ma-situation/avancement'));
+            return Response::redirect(jnet_moi_url('avancement'));
         }
         $panel = $this->workflow->personnelPanel($tenantId, $userId);
         $next = is_array($panel['next'] ?? null) ? $panel['next'] : null;
@@ -157,7 +161,7 @@ final class MemberAdvancementController
                 Session::flash('error', $e->getMessage());
             }
 
-            return Response::redirect(url('back-office/ma-situation/avancement'));
+            return Response::redirect(jnet_moi_url('avancement'));
         }
 
         $gradeLabel = trim((string) ($request->input('target_label', '')));
@@ -171,7 +175,7 @@ final class MemberAdvancementController
         if ($gradeLabel === '' && $motivation === '' && $target === null) {
             Session::flash('error', 'Indiquez le grade visé, une cible ou une motivation.');
 
-            return Response::redirect(url('back-office/ma-situation/avancement'));
+            return Response::redirect(jnet_moi_url('avancement'));
         }
         // Hors campagne, un avancement est une demande d'élévation (grade) : un seul circuit, avis du chef d'unité
         // puis décision des responsables des effectifs, qui changent le grade (voir WorkflowEngine).
@@ -179,7 +183,7 @@ final class MemberAdvancementController
         if ($elevations->hasOpenForTarget($tenantId, $userId)) {
             Session::flash('error', 'Une demande vous concernant est déjà en attente auprès des effectifs.');
 
-            return Response::redirect(url('back-office/ma-situation/avancement'));
+            return Response::redirect(jnet_moi_url('avancement'));
         }
         $note = trim(implode(' — ', array_filter([
             $gradeLabel !== '' ? 'Grade visé : ' . $gradeLabel : '',
@@ -197,7 +201,7 @@ final class MemberAdvancementController
             ? 'Votre demande d’avancement a été transmise à l’encadrement.'
             : 'La demande d’avancement n’a pas pu être enregistrée.');
 
-        return Response::redirect(url('back-office/ma-situation/avancement'));
+        return Response::redirect(jnet_moi_url('avancement'));
     }
 
     public function requestAssignment(Request $request, array $params = []): Response
@@ -210,7 +214,7 @@ final class MemberAdvancementController
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/ma-situation/avancement'));
+            return Response::redirect(jnet_moi_url('avancement'));
         }
         $unitId = (int) $request->input('target_unit_id', 0);
         $targetLabel = trim((string) $request->input('target_label', ''));
@@ -227,7 +231,7 @@ final class MemberAdvancementController
         if ($unitId < 1 && $targetLabel === '' && $motivation === '' && $target === null) {
             Session::flash('error', 'Indiquez un poste, un AAV, une offre, une unité ou une motivation.');
 
-            return Response::redirect(url('back-office/ma-situation/avancement'));
+            return Response::redirect(jnet_moi_url('avancement'));
         }
         if ($targetLabel === '' && $unitId > 0) {
             try {
@@ -266,7 +270,7 @@ final class MemberAdvancementController
                 : 'La demande d’affectation n’a pas pu être enregistrée.');
         }
 
-        return Response::redirect(url('back-office/ma-situation/avancement'));
+        return Response::redirect(jnet_moi_url('avancement'));
     }
 
     private function createMobility(

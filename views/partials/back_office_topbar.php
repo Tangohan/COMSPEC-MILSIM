@@ -58,7 +58,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             'bg' => '#fff6e8',
             'bd' => '#f2ddb4',
             'title' => $boEvtN . ' réponse' . ($boEvtN > 1 ? 's' : '') . ' de participation en attente',
-            'href' => url('back-office/ma-situation/evenements'),
+            'href' => url('jnet/moi/evenements'),
         ];
     }
     if ($boQualN > 0) {
@@ -70,7 +70,7 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             'bg' => '#eaf2fb',
             'bd' => '#c9dcf0',
             'title' => 'Qualification à renouveler bientôt',
-            'href' => url('back-office/ma-situation/qualifications'),
+            'href' => url('jnet/moi/qualifications'),
         ];
     }
     if (!empty($boBadges['show_staff_recruitment']) && $boRecN > 0) {

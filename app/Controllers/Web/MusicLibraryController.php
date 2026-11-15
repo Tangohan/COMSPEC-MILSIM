@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\MusicLibraryRepository;
 use App\Services\Auth\AuthService;
+use App\Support\JnetMemberShell;
 use App\Support\MusicTrackStorage;
 
 /**
@@ -27,7 +28,10 @@ use App\Support\MusicTrackStorage;
  */
 final class MusicLibraryController
 {
-    private const BASE = 'back-office/ma-situation/musique';
+    /** Rend sa page dans la coque JNET (JnetMemberShell) : voir JnetMemberBridge. */
+    public const JNET_MOI_READY = true;
+
+    private const BASE = 'jnet/moi/musique';
 
     private const VIEWS = ['global', 'community', 'org', 'playlists', 'mine', 'moderation'];
 
@@ -165,18 +169,14 @@ final class MusicLibraryController
         // Playlists où je peux ajouter un morceau : les miennes, plus la globale pour l'admin plateforme.
         $editable = array_values(array_filter($playlists, fn (array $p): bool => self::canEditPlaylist($p, $tenantId, $userId)));
 
-        return Response::view('layout.main', [
+        return JnetMemberShell::view($request, [
             'title' => 'Musique',
             'content' => 'admin.member_situation.musique',
             'boPageTitle' => 'Musique',
-            'boPageKicker' => 'OPÉRATEUR · BIBLIOTHÈQUE MUSICALE',
             'boPageSubtitle' => 'Mettez en ligne vos morceaux, composez vos playlists et écoutez-les en jeu dans l\'app Musique de l\'ATAK.',
-            'backOfficePageCss' => ['back-office-music.css'],
+            'backOfficePageCss' => ['back-office-music.css', 'jnet_moi_musique.css'],
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
-            'isBackOfficeShell' => true,
-            'boPageGroup' => 'Opérateur',
-            'boSkipPageHead' => false,
             'view' => $view,
             'q' => $q,
             'tracks' => $tracks,

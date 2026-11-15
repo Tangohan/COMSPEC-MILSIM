@@ -87,6 +87,24 @@ final class BackOfficeLegacyRedirectsTest extends TestCase
             ['/back-office/ressources/effectifs/mobilite', ['statut' => 'all'], '/back-office/demandes-rh?statut=all&onglet=mobilite'],
             ['/back-office/organisation/grades', [], '/back-office/referentiels/grades?onglet=avancement'],
             ['/back-office/referentiels/grades/catalogue', [], '/back-office/referentiels/grades?onglet=catalogue'],
+            // Pages « Ma situation » : passées dans JNET (/jnet/moi), un seul saut, requête conservée (détail : JnetMaSituationFoundationTest).
+            ['/back-office/ma-situation/ma-fiche', ['onglet' => 'suivi'], '/jnet/moi/ma-fiche?onglet=suivi'],
+            ['/back-office/ma-situation/ma-fiche/modifier', [], '/jnet/moi/ma-fiche/modifier'],
+            ['/back-office/ma-situation/mes-demarches', [], '/jnet/moi/mes-demarches'],
+            ['/back-office/ma-situation/unite', [], '/jnet/moi/unite'],
+            ['/back-office/ma-situation/evenements', ['vue' => 'calendrier', 'mois' => '2026-12'], '/jnet/moi/evenements?vue=calendrier&mois=2026-12'],
+            ['/back-office/ma-situation/avancement', [], '/jnet/moi/avancement'],
+            ['/back-office/ma-situation/carriere', [], '/jnet/moi/carriere'],
+            ['/back-office/ma-situation/decorations', [], '/jnet/moi/decorations'],
+            ['/back-office/ma-situation/qualifications', [], '/jnet/moi/qualifications'],
+            ['/back-office/ma-situation/coffre', [], '/jnet/moi/coffre'],
+            ['/back-office/ma-situation/dotation', [], '/jnet/moi/dotation'],
+            ['/back-office/ma-situation/carnet-de-vol', [], '/jnet/moi/carnet-de-vol'],
+            ['/back-office/ma-situation/mes-papiers', [], '/jnet/moi/mes-papiers'],
+            ['/back-office/ma-situation/liaison-atak', [], '/jnet/moi/liaison-atak'],
+            ['/back-office/ma-situation/appareils', [], '/jnet/moi/appareils'],
+            ['/back-office/ma-situation/premiere-liaison', [], '/jnet/moi/premiere-liaison'],
+            ['/back-office/ma-situation/musique', [], '/jnet/moi/musique'],
         ];
     }
 

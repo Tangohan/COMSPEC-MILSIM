@@ -140,10 +140,10 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                 <p class="mt-2 text-sm text-slate-600">Cet espace affiche uniquement vos données et les informations partagées par votre communauté. Il ne donne aucun droit d’administration.</p>
             </div>
             <div class="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-end">
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche')) ?>">Voir ma fiche</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=suivi') ?>">Mon suivi</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>">Mon unité</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/qualifications')) ?>">Mes qualifications</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/ma-fiche')) ?>">Voir ma fiche</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/ma-fiche') . '?onglet=suivi') ?>">Mon suivi</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/unite')) ?>">Mon unité</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/qualifications')) ?>">Mes qualifications</a>
             </div>
         </div>
         <dl class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -159,7 +159,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                 <dt class="<?= $h($dtClass) ?>">Unité</dt>
                 <dd class="mt-1 font-semibold text-slate-900">
                     <?php if ($unitName !== ''): ?>
-                        <a class="inline-flex items-center gap-2 <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>">
+                        <a class="inline-flex items-center gap-2 <?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/unite')) ?>">
                             <?php if ($unitBadge !== ''): ?>
                                 <img src="<?= $h($unitBadge) ?>" alt="" class="h-7 w-7 rounded-lg object-cover ring-1 ring-slate-200" width="28" height="28">
                             <?php elseif ($unitAccent !== ''): ?>
@@ -172,7 +172,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         <?php endif; ?>
                     <?php else: ?>
                         Non affecté
-                        · <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/unite')) ?>">Voir</a>
+                        · <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/unite')) ?>">Voir</a>
                     <?php endif; ?>
                 </dd>
             </div>
@@ -213,7 +213,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                     <?php endif; ?>
                 </p>
             </div>
-            <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
+            <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/ma-fiche') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
         </div>
         <?php if ($followupDeadlines !== []): ?>
         <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -266,7 +266,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                             <p class="font-semibold text-slate-900">Absence en cours<?= $reason !== '' ? ' — ' . $h($reason) : '' ?></p>
                             <?php if ($period !== ''): ?><p class="mt-1 text-sm text-slate-600"><?= $h($period) ?></p><?php endif; ?>
-                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Voir dans Mes démarches</a>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/mes-demarches')) ?>">Voir dans Mes démarches</a>
                         </li>
                     <?php endforeach; ?>
                     <?php foreach ($elevations as $elevation): ?>
@@ -277,7 +277,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                             <p class="font-semibold text-slate-900">Demande d’élévation — <?= $h($kindLabel) ?></p>
                             <p class="mt-1 text-sm text-slate-600"><?= $h($elevationStatusLabel((string) ($elevation['status'] ?? ''))) ?></p>
-                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Voir dans Mes démarches</a>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/mes-demarches')) ?>">Voir dans Mes démarches</a>
                         </li>
                     <?php endforeach; ?>
                     <?php foreach ($mobility as $wish): ?>
@@ -288,7 +288,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                         <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                             <p class="font-semibold text-slate-900"><?= $h($typeLabel) ?></p>
                             <p class="mt-1 text-sm text-slate-600">En attente de réponse.</p>
-                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/mes-demarches')) ?>">Voir dans Mes démarches</a>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/mes-demarches')) ?>">Voir dans Mes démarches</a>
                         </li>
                     <?php endforeach; ?>
                     <?php if ($followupAttention): ?>
@@ -308,7 +308,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
                                 <?php endforeach; ?>
                             </ul>
                             <?php endif; ?>
-                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
+                            <a class="mt-2 inline-block <?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/ma-fiche') . '?onglet=suivi') ?>">Ouvrir le suivi complet</a>
                         </li>
                     <?php endif; ?>
                     <?php foreach ($alerts as $alert): ?>
@@ -326,7 +326,7 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
         <section class="<?= $h($cardClass) ?>">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg font-black text-slate-950">Agenda opérationnel</h2>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/evenements')) ?>">Voir le calendrier</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/evenements')) ?>">Voir le calendrier</a>
             </div>
             <?php if (!$hasAgenda): ?>
                 <div class="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
@@ -379,12 +379,12 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
     <section class="<?= $h($cardClass) ?>">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h2 class="text-lg font-black text-slate-950">
-                <a class="hover:underline" href="<?= $h(url('back-office/ma-situation/liaison-atak')) ?>">Ma liaison ATAK</a>
+                <a class="hover:underline" href="<?= $h(url('jnet/moi/liaison-atak')) ?>">Ma liaison ATAK</a>
             </h2>
             <div class="flex flex-wrap gap-3">
                 <a class="<?= $h($linkClass) ?>" href="<?= $h(url('atak')) ?>">Ouvrir la carte</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/appareils')) ?>">Gérer les appareils</a>
-                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('back-office/ma-situation/premiere-liaison')) ?>">Configurer ATAK</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/appareils')) ?>">Gérer les appareils</a>
+                <a class="<?= $h($linkClass) ?>" href="<?= $h(url('jnet/moi/premiere-liaison')) ?>">Configurer ATAK</a>
             </div>
         </div>
         <?php if ($terminals === []): ?>
@@ -429,16 +429,16 @@ $dtClass = 'text-xs font-bold uppercase tracking-wider text-slate-500';
         <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <?php
             $shortcuts = [
-                ['label' => 'Ma fiche', 'hint' => 'Identité, suivi et unité', 'href' => url('back-office/ma-situation/ma-fiche')],
-                ['label' => 'Mon unité', 'hint' => 'Affectation dans la communauté', 'href' => url('back-office/ma-situation/unite')],
-                ['label' => 'Mes qualifications', 'hint' => 'Brevets et qualifications du dossier', 'href' => url('back-office/ma-situation/qualifications')],
-                ['label' => 'Dossier de carrière', 'hint' => 'Timeline grades, postes, décorations', 'href' => url('back-office/ma-situation/carriere')],
-                ['label' => 'Mes décorations', 'hint' => 'Citations distinctes des qualifications', 'href' => url('back-office/ma-situation/decorations')],
-                ['label' => 'Ma dotation', 'hint' => 'Matériel nominatif et n° de série', 'href' => url('back-office/ma-situation/dotation')],
-                ['label' => 'Mon coffre', 'hint' => 'Toutes les pièces de votre dossier', 'href' => url('back-office/ma-situation/coffre')],
-                ['label' => 'Ma liaison ATAK', 'hint' => 'Terminaux et certificat de liaison', 'href' => url('back-office/ma-situation/liaison-atak')],
-                ['label' => 'Mes démarches', 'hint' => 'Absences, élévation et documents', 'href' => url('back-office/ma-situation/mes-demarches')],
-                ['label' => 'Événements', 'hint' => 'Manœuvres et inscriptions', 'href' => url('back-office/ma-situation/evenements')],
+                ['label' => 'Ma fiche', 'hint' => 'Identité, suivi et unité', 'href' => url('jnet/moi/ma-fiche')],
+                ['label' => 'Mon unité', 'hint' => 'Affectation dans la communauté', 'href' => url('jnet/moi/unite')],
+                ['label' => 'Mes qualifications', 'hint' => 'Brevets et qualifications du dossier', 'href' => url('jnet/moi/qualifications')],
+                ['label' => 'Dossier de carrière', 'hint' => 'Timeline grades, postes, décorations', 'href' => url('jnet/moi/carriere')],
+                ['label' => 'Mes décorations', 'hint' => 'Citations distinctes des qualifications', 'href' => url('jnet/moi/decorations')],
+                ['label' => 'Ma dotation', 'hint' => 'Matériel nominatif et n° de série', 'href' => url('jnet/moi/dotation')],
+                ['label' => 'Mon coffre', 'hint' => 'Toutes les pièces de votre dossier', 'href' => url('jnet/moi/coffre')],
+                ['label' => 'Ma liaison ATAK', 'hint' => 'Terminaux et certificat de liaison', 'href' => url('jnet/moi/liaison-atak')],
+                ['label' => 'Mes démarches', 'hint' => 'Absences, élévation et documents', 'href' => url('jnet/moi/mes-demarches')],
+                ['label' => 'Événements', 'hint' => 'Manœuvres et inscriptions', 'href' => url('jnet/moi/evenements')],
                 ['label' => 'Carte ATAK', 'hint' => 'Situation tactique', 'href' => url('atak')],
                 ['label' => 'Boîte de réception', 'hint' => $inboxUnread > 0 ? ($inboxUnread === 1 ? '1 message à lire' : $inboxUnread . ' messages à lire') : 'Messages de la communauté', 'href' => url('boite-reception')],
                 ['label' => 'Mon compte', 'hint' => 'Portrait, sécurité et préférences', 'href' => url('account')],

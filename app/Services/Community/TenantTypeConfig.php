@@ -234,6 +234,14 @@ final class TenantTypeConfig
             return null;
         }
 
+        // Les pages « Ma situation » du membre (jnet/moi/…) suivent les règles de leur ancienne adresse
+        // (back-office/ma-situation/…) : sans cette traduction, le préfixe « jnet », toujours ouvert, ferait échapper la
+        // ligne ATAK, les effectifs et les opérations au profil de la communauté.
+        $legacy = \App\Support\JnetMemberPaths::toLegacy($uri);
+        if ($legacy !== null) {
+            $uri = $legacy;
+        }
+
         // Préfixes toujours ouverts (compte, auth, navigation transversale).
         foreach ([
             'account',
@@ -518,6 +526,9 @@ final class TenantTypeConfig
         if ($path === '') {
             return false;
         }
+        // Les pages du membre (jnet/moi/…) ne sont pas l'extranet JNET : elles suivent la règle de leur ancienne adresse,
+        // sinon le profil qui retire « jnet » (effectifs, carte ATAK) les masquerait toutes.
+        $path = \App\Support\JnetMemberPaths::toLegacy($path) ?? $path;
         foreach (self::hiddenBackOfficePaths($tenantType) as $prefix) {
             if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
                 return true;

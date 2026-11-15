@@ -426,11 +426,11 @@ $tactPackVersion = (string) (($steam['version'] ?? '') !== '' ? $steam['version'
 
         <?php
         $dashQuickLinks = [
-            ['href' => url('back-office/ma-situation/ma-fiche'), 'label' => 'Ma fiche', 'hint' => 'Dossier, parcours et historique', 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
-            ['href' => url('back-office/ma-situation/mes-demarches'), 'label' => 'Mes démarches', 'hint' => 'Absence, évolution, mutation', 'icon' => 'M9 12h6M9 16h6M9 8h2M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z'],
-            ['href' => url('back-office/ma-situation/evenements'), 'label' => 'Agenda', 'hint' => 'Manœuvres et présences', 'icon' => 'M3 10h18M8 3v4M16 3v4M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z'],
-            ['href' => url('back-office/ma-situation/qualifications'), 'label' => 'Qualifications', 'hint' => 'Brevets et échéances', 'icon' => 'M12 15a6 6 0 100-12 6 6 0 000 12zM8.5 14l-1.5 7 5-3 5 3-1.5-7'],
-            ['href' => url('back-office/ma-situation/avancement'), 'label' => 'Avancement', 'hint' => 'Grade et prochaines étapes', 'icon' => 'M5 15l7-7 7 7M5 20l7-7 7 7'],
+            ['href' => url('jnet/moi/ma-fiche'), 'label' => 'Ma fiche', 'hint' => 'Dossier, parcours et historique', 'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
+            ['href' => url('jnet/moi/mes-demarches'), 'label' => 'Mes démarches', 'hint' => 'Absence, évolution, mutation', 'icon' => 'M9 12h6M9 16h6M9 8h2M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z'],
+            ['href' => url('jnet/moi/evenements'), 'label' => 'Agenda', 'hint' => 'Manœuvres et présences', 'icon' => 'M3 10h18M8 3v4M16 3v4M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z'],
+            ['href' => url('jnet/moi/qualifications'), 'label' => 'Qualifications', 'hint' => 'Brevets et échéances', 'icon' => 'M12 15a6 6 0 100-12 6 6 0 000 12zM8.5 14l-1.5 7 5-3 5 3-1.5-7'],
+            ['href' => url('jnet/moi/avancement'), 'label' => 'Avancement', 'hint' => 'Grade et prochaines étapes', 'icon' => 'M5 15l7-7 7 7M5 20l7-7 7 7'],
             ['href' => url('boite-reception'), 'label' => 'Messagerie', 'hint' => 'Échanges avec l’encadrement', 'icon' => 'M4 6h16v12H4zM4 7l8 6 8-6'],
         ];
         ?>

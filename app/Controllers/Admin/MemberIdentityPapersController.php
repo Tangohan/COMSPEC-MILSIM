@@ -20,6 +20,7 @@ use App\Services\Sse\MemberIdentitySyncService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Support\EffectifsLmsAccess;
+use App\Support\JnetMemberShell;
 use App\Support\SseIdentityCatalog;
 
 /**
@@ -31,6 +32,9 @@ use App\Support\SseIdentityCatalog;
  */
 final class MemberIdentityPapersController
 {
+    /** « Mes papiers » (mine) rend sa page dans la coque JNET (JnetMemberShell) : voir JnetMemberBridge. */
+    public const JNET_MOI_READY = true;
+
     /** Requête servie par le bureau SSE (« Papiers des membres ») plutôt que par la fiche membre. */
     private bool $sse = false;
 
@@ -456,7 +460,7 @@ final class MemberIdentityPapersController
         return Response::redirect($this->back($userId) . '-kit');
     }
 
-    /** « Ma situation › Mes papiers » : lecture seule de ses propres papiers. */
+    /** « Mes papiers » (JNET, /jnet/moi/mes-papiers) : lecture seule de ses propres papiers. */
     public function mine(Request $request, array $params = []): Response
     {
         $userId = (int) Session::get('user_id');
@@ -494,16 +498,12 @@ final class MemberIdentityPapersController
             error_log('Mes papiers : couvertures générées indisponibles : ' . $e->getMessage());
         }
 
-        return Response::view('layout.main', [
+        return JnetMemberShell::view($request, [
             'title' => 'Mes papiers',
             'content' => 'admin.member_situation.mes_papiers',
-            'isBackOfficeShell' => true,
-            'boPageGroup' => 'Opérateur',
-            'boSkipPageHead' => false,
             'boPageTitle' => 'Mes papiers',
-            'boPageKicker' => 'OPÉRATEUR · MES PAPIERS',
             'boPageSubtitle' => 'Les papiers d’identité fictifs que votre personnage porte en mission. Ils sont gérés par les responsables de votre communauté.',
-            'backOfficePageCss' => ['back-office-member-situation.css', 'sse-papers.css', 'back-office-member-papers.css'],
+            'backOfficePageCss' => ['back-office-member-situation.css', 'sse-papers.css', 'back-office-member-papers.css', 'jnet_moi_mes_papiers.css'],
             'papers' => $data,
             'briefs' => $briefs,
             'gameCovers' => $gameCovers,

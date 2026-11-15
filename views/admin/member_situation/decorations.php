@@ -26,7 +26,6 @@ $date = static function (array $row) use ($tsOf): string {
 $iconMedal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="15" r="5"/><path d="M8.5 11 6 3h4l2 5 2-5h4l-2.5 8"/></svg>';
 
 $summary = [
-    'kicker' => 'Dossier individuel · Décorations',
     'focus' => [
         'label' => $latest !== null ? 'Dernière distinction' : 'Distinctions',
         'value' => $latest !== null ? (string) ($latest['definition_name'] ?? '') : 'Aucune pour l’instant',
@@ -37,8 +36,8 @@ $summary = [
         'empty' => $latest === null,
     ],
     'links' => [
-        ['label' => 'Mes qualifications', 'href' => url('back-office/ma-situation/qualifications')],
-        ['label' => 'Dossier de carrière', 'href' => url('back-office/ma-situation/carriere')],
+        ['label' => 'Mes qualifications', 'href' => jnet_moi_url('qualifications')],
+        ['label' => 'Dossier de carrière', 'href' => jnet_moi_url('carriere')],
     ],
     'stats' => [
         ['label' => 'Décorations', 'value' => count($awards), 'note' => 'Citations et médailles enregistrées.'],
@@ -54,7 +53,6 @@ $summary = [
     <section class="msd-card" aria-labelledby="msd-decorations-title">
         <header class="msd-card__head">
             <div>
-                <p class="msd-card__kicker">Reconnaissance</p>
                 <h2 class="msd-card__title" id="msd-decorations-title">Mes décorations</h2>
             </div>
             <?php if ($awards !== []): ?>
@@ -79,7 +77,6 @@ $summary = [
                             <?php endif; ?>
                         </div>
                         <div>
-                            <p class="msd-item__kicker">Décoration</p>
                             <h3 class="msd-item__title"><?= $h((string) ($row['definition_name'] ?? '')) ?></h3>
                         </div>
                         <?php if (trim((string) ($row['citation_text'] ?? '')) !== ''): ?>

@@ -13,9 +13,13 @@ use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\UserRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Support\AtakReleaseInfo;
+use App\Support\JnetMemberShell;
 
 final class AtakFirstLinkController
 {
+    /** Rend sa page dans la coque JNET sous /jnet/moi/premiere-liaison (JnetMemberShell) ; /atak/premiere-liaison garde la coque du portail. */
+    public const JNET_MOI_READY = true;
+
     public function index(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
@@ -28,6 +32,11 @@ final class AtakFirstLinkController
         $gate = Container::get(FeatureGateService::class);
         // Liaison de base (formule Gratuit) : relier le jeu reste possible sans la carte complète.
         if (!$gate->allows($tenantId, 'atak') && !\App\Support\AtakPlanAccess::allowsBasic($tenantId)) {
+            if (JnetMemberShell::wants($request)) {
+                // La coque JNET ne charge pas le style de la page de formules : renvoi vers celle du portail.
+                return Response::redirect(url('platform/upgrade') . '?from=atak');
+            }
+
             return Response::view('layout.main', [
                 'title' => 'ATAK / Overwatch',
                 'content' => 'platform.upgrade',
@@ -63,7 +72,7 @@ final class AtakFirstLinkController
         $release = AtakReleaseInfo::latest();
         $en = function_exists('locale') && locale() === 'en';
 
-        return Response::view('layout.main', [
+        return JnetMemberShell::view($request, [
             'title' => 'Première liaison ATAK',
             // Les balises meta ne passent pas par HtmlTranslator : texte choisi selon la langue ici.
             'meta_description' => $en
@@ -77,11 +86,10 @@ final class AtakFirstLinkController
                 ? 'Native ATAK phone in Arma 3, apps screen'
                 : 'Téléphone ATAK natif dans Arma 3, écran des applications',
             'content' => 'atak.first_link',
-            'isBackOfficeShell' => str_starts_with($request->path(), '/back-office/ma-situation'),
-            'boPageGroup' => 'Opérateur',
-            'boPageKicker' => 'OPÉRATEUR · LIAISON',
             'boPageTitle' => 'Configurer ATAK',
             'boPageSubtitle' => 'Première liaison du téléphone ou du poste de jeu à votre compte Athena.',
+            // Feuille de la coque JNET seulement : le portail (/atak/premiere-liaison) n'en a pas besoin.
+            'backOfficePageCss' => JnetMemberShell::wants($request) ? ['jnet_moi_premiere_liaison.css'] : [],
             'firstLink' => [
                 'display_name' => $displayName,
                 'callsign' => $callsign,

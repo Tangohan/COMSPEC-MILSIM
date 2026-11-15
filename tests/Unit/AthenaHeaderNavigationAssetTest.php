@@ -13,9 +13,12 @@ final class AthenaHeaderNavigationAssetTest extends TestCase
         $header = $this->headerSource();
 
         self::assertStringContainsString("'abbr' => 'BO'", $header);
-        // Administrators see "Back-office"; other members see their own "Mon back-office".
-        self::assertStringContainsString('\'label\' => $canAdmin ? \'Back-office\' : \'Mon back-office\'', $header);
-        self::assertStringContainsString("'href' => url('back-office')", $header);
+        // Administrators see "Back-office"; managers without admin rights see their own "Mon back-office"; a plain member
+        // goes to their JNET space and never through the back-office.
+        self::assertStringContainsString('\'label\' => $canAdmin ? \'Back-office\' : ($boPlainMember ? \'Mon espace JNET\' : \'Mon back-office\')', $header);
+        self::assertStringContainsString("\$boHref = url('back-office');", $header);
+        self::assertStringContainsString("'href' => \$boHref", $header);
+        self::assertStringContainsString('PortalAccessChoice::plainMemberHome()', $header);
     }
 
     public function testQuickNavigationMenuIsNotRendered(): void

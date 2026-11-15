@@ -163,7 +163,7 @@ final class AcademyOfferTest extends TestCase
         $catalogue = Response::view('academy.space', $base + ['space' => 'catalogue', 'offerFilters' => AcademyOffer::filters([]), 'offerDetail' => ''])->body();
         self::assertStringContainsString('Brevets et licences', $catalogue);
         self::assertStringContainsString('aria-current="page"', $catalogue);
-        self::assertStringContainsString('back-office/ma-situation/qualifications/91/brevet', $catalogue);
+        self::assertStringContainsString('jnet/moi/qualifications/91/brevet', $catalogue);
         $dashboard = Response::view('academy.space', $base + ['space' => 'dashboard', 'offerFilters' => AcademyOffer::filters([]), 'offerDetail' => ''])->body();
         self::assertStringContainsString('Où j’en suis', $dashboard);
         self::assertStringContainsString('Passer l’évaluation', $dashboard);

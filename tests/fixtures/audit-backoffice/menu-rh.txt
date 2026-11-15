@@ -31,24 +31,24 @@ Matériel | /equipment
 # CONFIGURATION
 Réglages RH | /back-office/ressources/effectifs/reglages
 # MA SITUATION
-Ma fiche | /back-office/ma-situation/ma-fiche
-Mon unité | /back-office/ma-situation/unite
-Mes qualifications | /back-office/ma-situation/qualifications
-Mon carnet de vol | /back-office/ma-situation/carnet-de-vol
-Mon avancement | /back-office/ma-situation/avancement
-Dossier de carrière | /back-office/ma-situation/carriere
-Décorations | /back-office/ma-situation/decorations
-Ma dotation | /back-office/ma-situation/dotation
-Mon suivi | /back-office/ma-situation/ma-fiche?onglet=suivi
-Mon coffre | /back-office/ma-situation/coffre
-Mes papiers | /back-office/ma-situation/mes-papiers
-Musique | /back-office/ma-situation/musique
+Ma fiche | /jnet/moi/ma-fiche
+Mon unité | /jnet/moi/unite
+Mes qualifications | /jnet/moi/qualifications
+Mon carnet de vol | /jnet/moi/carnet-de-vol
+Mon avancement | /jnet/moi/avancement
+Dossier de carrière | /jnet/moi/carriere
+Décorations | /jnet/moi/decorations
+Ma dotation | /jnet/moi/dotation
+Mon suivi | /jnet/moi/ma-fiche?onglet=suivi
+Mon coffre | /jnet/moi/coffre
+Mes papiers | /jnet/moi/mes-papiers
+Musique | /jnet/moi/musique
 Mon compte | /account
 # TERRAIN
-Ma liaison ATAK | /back-office/ma-situation/liaison-atak
-Événements | /back-office/ma-situation/evenements
+Ma liaison ATAK | /jnet/moi/liaison-atak
+Événements | /jnet/moi/evenements
 # ADMINISTRATIF
-Mes démarches | /back-office/ma-situation/mes-demarches
+Mes démarches | /jnet/moi/mes-demarches
 Boîte de réception | /boite-reception
 # RÉGLAGES ET INTÉGRATIONS
 Paramètres | /account/preferences
