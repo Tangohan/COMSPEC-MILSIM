@@ -52,6 +52,10 @@ class MatriculeService
             return null;
         }
         $matricule = $this->generateNext($tenantId);
+        // Ancienne communauté aux matricules saisis à la main : un numéro déjà porté par un autre membre est sauté (50 essais au plus).
+        for ($try = 0; $try < 50 && $this->personnelExtrasRepo->serviceNumberTaken($tenantId, $matricule, $userId); $try++) {
+            $matricule = $this->generateNext($tenantId);
+        }
         $this->personnelExtrasRepo->updateServiceNumber($userId, $matricule);
         $this->personnelProfileRepo->updateMatricule($userId, $matricule);
         return $matricule;

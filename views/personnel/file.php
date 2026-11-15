@@ -1085,7 +1085,7 @@ if ($personnelFileIsRhFull) {
                             <?php endif; ?>
                         </div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= \App\Support\ConfidentialDisplay::text((string) $unitName, (string) $missingLabel) ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef direct</p><p class="text-sm font-black text-slate-900"><?= $commander ? htmlspecialchars($commander['display_name'] ?? $commander['callsign'] ?? '') : '—' ?></p></div>
+                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef direct</p><p class="text-sm font-black text-slate-900"><?= $commander ? htmlspecialchars(member_label(['id' => (int) ($commander['id'] ?? 0), 'display_name' => (string) ($commander['display_name'] ?? ''), 'callsign' => (string) ($commander['callsign'] ?? '')], 'list')) : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date d'incorporation</p><p class="text-sm font-black text-slate-900"><?= $enlistmentFormatted ?? '—' ?></p></div>
                         <?php if ($showLegacyServiceNumber): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Ancienne référence dossier</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($legacyServiceNumber) ?></p></div>

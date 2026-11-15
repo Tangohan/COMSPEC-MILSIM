@@ -658,10 +658,7 @@ final class JnetSpaceService
                 if (!$touches) {
                     continue;
                 }
-                $by = trim((string) ($e['author_callsign'] ?? ''));
-                if ($by === '') {
-                    $by = trim((string) ($e['author_display_name'] ?? ''));
-                }
+                $by = self::authorLabel($e);
                 $source = (string) ($e['source_kind'] ?? '');
                 $image = trim((string) ($e['image_url'] ?? ''));
                 $link = trim((string) ($e['link_url'] ?? ''));
@@ -931,8 +928,23 @@ final class JnetSpaceService
             $e['targets'] = $targets;
             $out[] = $e;
         }
+        // Noms des auteurs : règle unique, chargés d'un coup (authorLabel).
+        \App\Support\MemberIdentity::preload($tenantId, array_map(static fn (array $e): int => (int) ($e['author_user_id'] ?? 0), $out));
 
         return $out;
+    }
+
+    /** Auteur d'un échange : prénom + nom du personnage, sinon indicatif, sinon nom du compte (règle unique). @param array<string, mixed> $r */
+    private static function authorLabel(array $r): string
+    {
+        $id = (int) ($r['author_user_id'] ?? 0);
+        $callsign = trim((string) ($r['author_callsign'] ?? ''));
+        $account = trim((string) ($r['author_display_name'] ?? ''));
+        if ($id < 1 && $callsign === '' && $account === '') {
+            return '';
+        }
+
+        return member_label(['id' => $id, 'display_name' => $account, 'callsign' => $callsign], 'list');
     }
 
     /**
@@ -961,10 +973,7 @@ final class JnetSpaceService
                     $readCount++;
                 }
             }
-            $author = trim((string) ($r['author_callsign'] ?? ''));
-            if ($author === '') {
-                $author = trim((string) ($r['author_display_name'] ?? ''));
-            }
+            $author = self::authorLabel($r);
             $out[] = [
                 'id' => (int) $r['id'],
                 'kind' => (string) $r['kind'],
