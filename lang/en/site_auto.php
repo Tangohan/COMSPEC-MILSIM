@@ -68532,6 +68532,8 @@ return [
     'Un modèle règle le bandeau, les titres, le pied de page et l’aspect du papier des documents du bureau. Créez le premier pour qu’il habille la rédaction et l’aperçu papier.' => 'A template sets the banner, titles, footer and paper style of office documents. Create the first one so it dresses writing and the paper preview.',
     'Voir la feuille complète' => 'View the full sheet',
     'créés par le bureau' => 'created by the office',
+    'Fiches SSE' => 'SSE records',
+    'Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre' => 'SSE portal records: wanted notices, vigilance, intelligence, with reasons and action to be taken',
 
     // Avis de recherche : codification, signalement physique, pièces jointes.
     'Aucune image jointe à cet avis.' => 'No image attached to this notice.',
