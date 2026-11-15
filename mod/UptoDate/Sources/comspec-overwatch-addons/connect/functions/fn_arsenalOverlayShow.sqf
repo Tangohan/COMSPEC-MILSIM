@@ -25,10 +25,14 @@
     Icônes : imgrsenal du mod (aucun glyphe Unicode) ; tailles de texte avec un plancher en pixels.
     Actions : comspec_overwatch_connect_fnc_arsenalOverlayAction. Contenu : arsenalOverlayRefresh / arsenalOverlayFill.
 */
-params [["_display", displayNull, [displayNull]]];
+// Paresseux : à l'ouverture de l'arsenal ([_display]), seul le bouton est posé. Le panneau entier (plusieurs centaines
+// de contrôles) était construit 0,35 s après chaque ouverture de l'arsenal, même s'il n'était jamais ouvert ; il est
+// maintenant construit au premier clic sur le bouton ([_display, true]), qui reste en place.
+params [["_display", displayNull, [displayNull]], ["_panel", false, [true]]];
 if (isNull _display) exitWith {};
+private _tPerf = diag_tickTime;
 
-{ private _c = _display getVariable [_x, controlNull]; if (!isNull _c) then { ctrlDelete _c; }; } forEach ["COMSPEC_ArsenalOverlay", "COMSPEC_ArsenalToggle"];
+{ private _c = _display getVariable [_x, controlNull]; if (!isNull _c) then { ctrlDelete _c; }; } forEach (["COMSPEC_ArsenalOverlay", "COMSPEC_ArsenalToggle"] select [0, [2, 1] select _panel]);
 uiNamespace setVariable ["ace_arsenal_display", _display];
 
 (missionNamespace getVariable ["COMSPEC_ATAK_FontSet", ["RobotoCondensed", "RobotoCondensedBold", "RobotoCondensedLight"]]) params [["_fR", "RobotoCondensed"], ["_fB", "RobotoCondensedBold"], ["_fL", "RobotoCondensedLight"]];
@@ -59,15 +63,28 @@ private _btnW = 0.16 * safezoneW;
 private _btnH = _u * 1.15;
 private _btnX = safeZoneX + (safeZoneW - _btnW) / 2;
 private _btnY = safeZoneY + 0.008;
-private _tog = _display ctrlCreate ["COMSPEC_RscButtonAtakPrimary", 884400];
+private _tog = _display getVariable ["COMSPEC_ArsenalToggle", controlNull];
+if (isNull _tog) then {
+_tog = _display ctrlCreate ["COMSPEC_RscButtonAtakPrimary", 884400];
 _tog ctrlSetPosition [_btnX, _btnY, _btnW, _btnH];
 _tog ctrlSetText (("ATHENA · TENUES") call comspec_overwatch_connect_fnc_tr);
 _tog ctrlSetTooltip (("Tenues de votre organisation : importer, partager, enfiler. Rien n'est synchronisé tant que le panneau est fermé.") call comspec_overwatch_connect_fnc_tr);
 _tog ctrlSetFont _fB;
 _tog ctrlSetFontHeight (_u * 0.86);
-_tog ctrlAddEventHandler ["ButtonClick", { ["toggle"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+_tog ctrlAddEventHandler ["ButtonClick", {
+    params ["_btn"];
+    // Premier clic : le panneau est construit maintenant (le bouton, lui, n'est pas recréé).
+    private _d = ctrlParent _btn;
+    if (isNull (_d getVariable ["COMSPEC_ArsenalOverlay", controlNull])) then { [_d, true] call comspec_overwatch_connect_fnc_arsenalOverlayShow; };
+    ["toggle"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+}];
 _tog ctrlCommit 0;
 _display setVariable ["COMSPEC_ArsenalToggle", _tog];
+};
+if (!_panel) exitWith {
+    _display setVariable ["COMSPEC_ArsenalOverlayOpen", false];
+    if (!isNil "comspec_atak_native_fnc_perfAcc") then { ["arsenal : bouton COMSPEC", _tPerf] call comspec_atak_native_fnc_perfAcc; };
+};
 
 // Panneau : entre les colonnes d'ACE, lues sur ses listes (taille d'interface du joueur), sinon estimées.
 private _px0 = safeZoneX + _sideW + _gap;
@@ -681,3 +698,5 @@ _grp setVariable ["COMSPEC_ArsenalColl", ""];
 _grp setVariable ["COMSPEC_ArsenalStateKey", "all"];
 _grp setVariable ["COMSPEC_ArsenalChipOffset", 0];
 [_display, [], ""] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
+if (!isNil "comspec_atak_native_fnc_perfAcc") then { ["arsenal : panneau COMSPEC (construction)", _tPerf] call comspec_atak_native_fnc_perfAcc; };
+diag_log format ["[COMSPEC Overwatch][PERF] Arsenal : panneau COMSPEC construit au premier clic en %1 ms", ((diag_tickTime - _tPerf) * 1000) toFixed 1];

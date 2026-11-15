@@ -391,6 +391,7 @@ class CfgFunctions {
             class applyOperatorProfileResponse {};
             class syncOperatorProfile {};
             class operatorProfileTick {};
+            class operatorProfileUidGate {};
             class initOperatorProfileSync {};
             class setCallsign {};
             class applyGroupIdFromCallsign {};
@@ -575,6 +576,7 @@ class CfgFunctions {
             class resolveBceMarkerText {};
             class resolveMarkerEhName {};
             class syncMapMarker {};
+            class markerEhQueue {};
             class isSyncableMapMarker {};
             class forceSyncMapMarkers {};
             class syncNearbyMapMarkers {};

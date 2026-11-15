@@ -17,6 +17,9 @@ private _bs = toString [92];
 private _fncEsc = {
     params ["_s"];
     if (!(_s isEqualType "")) then { _s = str _s; };
+    // Rien à échapper (noms de classes, clés : presque toutes les chaînes d'une fiche) : un test natif au lieu de la
+    // boucle par caractère ci-dessous. Sortie identique (même test que fn_hashMapToJson).
+    if (_s regexMatch "[^\x00-\x1f""\\]*") exitWith { _dq + _s + _dq };
     // Caractère par caractère : SQF n'a pas d'échappement (« \\n » = 3 caractères), et
     // splitString écarte les segments vides (guillemets en tête / doublés perdus).
     private _out = [];

@@ -4,6 +4,14 @@
 */
 params [["_reason", "manuel", [""]]];
 
+// Instantané de démarrage (CBA_settingsInitialized) : environ 80 lignes, chacune un diag_log et un appel à la DLL
+// (LogWrite), plus le tampon, écrites dans une seule image. Relancé dans un script ordonnancé : les mêmes lignes,
+// réparties sur plusieurs images (3 ms par image au plus). Les autres instantanés (Échap, commande) restent immédiats.
+if (_reason isEqualTo "boot" && {!canSuspend}) exitWith {
+    [_reason] spawn comspec_overwatch_connect_fnc_logDump;
+    true
+};
+
 if (
     _reason isEqualTo "boot"
     && {
