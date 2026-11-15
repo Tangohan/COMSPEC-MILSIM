@@ -277,7 +277,7 @@ final class AccessRightsCatalog
     /**
      * Fiche complète d’un droit pour l’écran.
      *
-     * @return array{slug: string, name: string, domain: string, action: string|null, explanation: string, sensitivity: string, requires: list<string>}
+     * @return array{slug: string, code: string, name: string, domain: string, action: string|null, explanation: string, curated: bool, sensitivity: string, requires: list<string>}
      */
     public static function meta(string $slug, string $name = '', string $module = ''): array
     {
@@ -291,6 +291,7 @@ final class AccessRightsCatalog
             'domain' => self::domainFor($slug, $module !== '' ? $module : (string) ($def['module'] ?? '')),
             'action' => $action,
             'explanation' => self::explanationFor($slug, $action),
+            'curated' => isset(self::EXPLAIN[$slug]),
             'sensitivity' => self::sensitivityFor($slug, $action),
             'requires' => self::requiresFor($slug),
         ];

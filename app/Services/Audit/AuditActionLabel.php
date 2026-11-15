@@ -68,6 +68,7 @@ final class AuditActionLabel
         // Rôles & permissions
         'role.permissions_updated' => 'Permissions du rôle mises à jour',
         'access_role.created' => 'Niveau d’accès créé',
+        'access_role.members_changed' => 'Membres copiés ou déplacés vers un niveau d’accès',
         'access_role.removed' => 'Niveau d’accès supprimé ou masqué',
         'permission.scope_migration' => 'Migration des périmètres de permissions',
         'site_role.assigned' => 'Rôle site attribué',

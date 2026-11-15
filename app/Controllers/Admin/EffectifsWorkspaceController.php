@@ -49,6 +49,7 @@ use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Authorization\SystemReservedPermissions;
 use App\Services\Admin\RolePermissionService;
 use App\Services\Rbac\AccessRightsCatalog;
+use App\Services\Rbac\AccessRoleColor;
 use App\Services\Rbac\AccessRoleRules;
 use App\Services\Audit\AuditAction;
 use App\Services\Rbac\CommunityAccessProfiles;
@@ -3331,6 +3332,7 @@ class EffectifsWorkspaceController
             $slugs = $snapshot['perms'][$rid] ?? [];
             $cards[$rid] = [
                 'kind' => $this->accessRoleKind($row),
+                'color' => AccessRoleColor::hexFor($row['badge_style'] ?? null),
                 'hidden' => RoleRepository::isHiddenAccessRow($row),
                 'members' => count($snapshot['members'][$rid] ?? []),
                 'rights' => count($slugs),
@@ -3344,7 +3346,7 @@ class EffectifsWorkspaceController
         if ($selectedId > 0) {
             $holderIds = $snapshot['members'][$selectedId] ?? [];
             $holdersTotal = count($holderIds);
-            $holders = $this->roleRepository->memberIdentities($tenantId, $holderIds, 40);
+            $holders = $this->roleRepository->memberIdentities($tenantId, $holderIds, 300);
         }
 
         $compareId = (int) $request->query('compare', 0);
@@ -3379,6 +3381,8 @@ class EffectifsWorkspaceController
             'accessRoleCards' => $cards,
             'accessHolders' => $holders,
             'accessHoldersTotal' => $holdersTotal,
+            'accessSelectedColor' => AccessRoleColor::inputFor($selected['badge_style'] ?? null),
+            'accessColorPresets' => AccessRoleColor::presets(),
             'accessCompare' => $compare,
             'accessSpaces' => $spaces,
             'accessTemplates' => AccessRoleRules::templates(),
@@ -3695,7 +3699,21 @@ class EffectifsWorkspaceController
 
             return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
         }
+        $color = AccessRoleColor::normalize((string) $request->input('role_color', ''));
+        if ($color === null) {
+            Session::flash('error', 'Cette couleur n’est pas valide (choisissez une pastille ou un code #RRGGBB) : rien n’a été enregistré.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
         $this->roleRepository->updateAccessRoleLabel($tenantId, $roleId, $name, (string) $request->input('description', ''));
+        $current = [];
+        if (is_string($role['badge_style'] ?? null) && $role['badge_style'] !== '') {
+            $decoded = json_decode((string) $role['badge_style'], true);
+            $current = is_array($decoded) ? $decoded : [];
+        }
+        unset($current['color'], $current['hex']);
+        $style = $current + $color;
+        $this->roleRepository->updateOrganizationRoleBadgeStyle($tenantId, $roleId, $style === [] ? null : $style);
         try {
             $permSvc->setPermissionsForAccessRole($tenantId, $roleId, $permissionIds);
         } catch (\InvalidArgumentException $e) {
@@ -3789,6 +3807,154 @@ class EffectifsWorkspaceController
             'last_admin' => $lastAdmin,
             'requirements' => $requirements,
         ]);
+    }
+
+    /**
+     * Plan de copie ou de déplacement de membres (sans rien écrire) : titulaires du niveau source seulement.
+     *
+     * @return array<string, mixed>
+     */
+    private function roleMembersPlan(Request $request, int $tenantId): array
+    {
+        $sourceId = (int) $request->input('source_id', 0);
+        $targetId = (int) $request->input('target_id', 0);
+        $op = (string) $request->input('op', 'copy_sel');
+        $move = $op === 'move_sel';
+        $all = $op === 'copy_all';
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId, true);
+        $byId = [];
+        foreach ($roles as $row) {
+            $byId[(int) ($row['id'] ?? 0)] = $row;
+        }
+        if (!isset($byId[$sourceId]) || !isset($byId[$targetId])) {
+            return ['error' => 'Niveau introuvable dans votre communauté.'];
+        }
+        if ($sourceId === $targetId) {
+            return ['error' => 'Choisissez un autre niveau comme destination.'];
+        }
+        $index = $this->accessPermissionIndex($tenantId);
+        $snapshot = $this->accessSnapshot($tenantId, $roles, $index['slugById']);
+        $rawIds = $request->input('user_ids', []);
+        $selected = $all ? null : (is_array($rawIds) ? array_map('intval', $rawIds) : []);
+        if ($selected !== null && $selected === []) {
+            return ['error' => 'Cochez au moins un membre à copier ou à déplacer.'];
+        }
+        $plan = AccessRoleRules::planTransfer($snapshot['members'][$sourceId] ?? [], $snapshot['members'][$targetId] ?? [], $selected, $move);
+
+        return [
+            'source' => $byId[$sourceId], 'target' => $byId[$targetId], 'plan' => $plan, 'move' => $move,
+            'perms' => $snapshot['perms'], 'members' => $snapshot['members'], 'names' => $index['nameBySlug'],
+        ];
+    }
+
+    /** Aperçu « N membres recevront ce niveau » avant copie ou déplacement. N'écrit rien. */
+    public function previewRoleMembers(Request $request, array $params = []): Response
+    {
+        unset($params);
+        if (!(int) Session::get('user_id') || !(int) Session::get('tenant_id')) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée.'], 401);
+        }
+        if (!EffectifsLmsAccess::allows(Gate::getInstance()) || !EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
+            return Response::json(['ok' => false, 'error' => 'Droits insuffisants.'], 403);
+        }
+        if (!Csrf::verify($request)) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée. Rechargez la page.'], 419);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $ctx = $this->roleMembersPlan($request, $tenantId);
+        if (isset($ctx['error'])) {
+            return Response::json(['ok' => false, 'error' => $ctx['error']], 422);
+        }
+        $gate = Gate::getInstance();
+        $blocked = AccessRoleRules::escalation([], $ctx['perms'][(int) $ctx['target']['id']] ?? [], static fn (string $s): bool => $gate->allows($s));
+
+        return Response::json([
+            'ok' => true,
+            'receive' => count($ctx['plan']['receive']),
+            'already' => count($ctx['plan']['already']),
+            'leave' => count($ctx['plan']['leave']),
+            'escalation' => array_map(static fn (string $s): string => $ctx['names'][$s] ?? $s, $blocked),
+            'target' => (string) ($ctx['target']['name'] ?? ''),
+        ]);
+    }
+
+    /** Copie ou déplace des membres d'un niveau vers un autre (cohérence des rôles exclusifs vérifiée par personne). */
+    public function moveRoleMembers(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyAccessWrite($request, 'Vous n’êtes pas habilité à attribuer des niveaux d’accès.');
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $back = effectifs_workspace_url('roles') . '?role=' . (int) $request->input('source_id', 0) . '#rl-members';
+        $ctx = $this->roleMembersPlan($request, $tenantId);
+        if (isset($ctx['error'])) {
+            Session::flash('error', $ctx['error']);
+
+            return Response::redirect($back);
+        }
+        $source = $ctx['source'];
+        $target = $ctx['target'];
+        $sourceId = (int) $source['id'];
+        $targetId = (int) $target['id'];
+        $plan = $ctx['plan'];
+        $move = (bool) $ctx['move'];
+        $gate = Gate::getInstance();
+        $blocked = AccessRoleRules::escalation([], $ctx['perms'][$targetId] ?? [], static fn (string $s): bool => $gate->allows($s));
+        if ($blocked !== []) {
+            Session::flash('error', 'Vous ne pouvez pas attribuer ce niveau : il donne des droits que vous n’avez pas vous-même (' . $this->accessRightNames($blocked, $ctx['names']) . ').');
+
+            return Response::redirect($back);
+        }
+        if ($move && strtolower((string) ($source['slug'] ?? '')) === CommunityAccessProfiles::SLUG_MEMBER) {
+            Session::flash('error', 'Tout le monde porte Membre : on ne le retire à personne. Utilisez « Copier ».');
+
+            return Response::redirect($back);
+        }
+        $newMembers = $ctx['members'];
+        $newMembers[$targetId] = array_values(array_unique(array_merge($newMembers[$targetId] ?? [], $plan['receive'])));
+        if ($move) {
+            $newMembers[$sourceId] = array_values(array_diff($newMembers[$sourceId] ?? [], $plan['leave']));
+        }
+        if (AccessRoleRules::membersChangeRemovesLastAdmin($ctx['perms'], $ctx['members'], $newMembers)) {
+            Session::flash('error', 'Ce déplacement retirerait « Gérer les rôles » à la dernière personne qui peut gérer les accès. Rien n’a été modifié.');
+
+            return Response::redirect($back);
+        }
+        $actorId = (int) Session::get('user_id');
+        $done = 0;
+        $refused = 0;
+        $firstError = '';
+        $touched = array_values(array_unique(array_merge($plan['receive'], $move ? $plan['leave'] : [])));
+        foreach ($touched as $uid) {
+            $ids = $this->userRepository->listOrganizationRoleIdsForUser($uid, $tenantId);
+            if (in_array($uid, $plan['receive'], true)) {
+                $ids[] = $targetId;
+            }
+            if ($move && in_array($uid, $plan['leave'], true)) {
+                $ids = array_values(array_filter($ids, static fn (int $rid): bool => $rid !== $sourceId));
+            }
+            try {
+                $this->userRepository->syncOrganizationRoles($uid, $tenantId, $ids, $actorId);
+                $done++;
+            } catch (\InvalidArgumentException $e) {
+                $refused++;
+                $firstError = $firstError !== '' ? $firstError : $e->getMessage();
+            }
+        }
+        $this->logAccessRoleChange($tenantId, $targetId, AuditAction::ACCESS_ROLE_MEMBERS, [], [], [
+            'event' => $move ? 'move' : 'copy', 'from' => $sourceId, 'members' => $done, 'refused' => $refused,
+        ]);
+        if ($done === 0 && $refused > 0) {
+            Session::flash('error', 'Aucun membre n’a été modifié : ' . $firstError);
+        } elseif ($done === 0) {
+            Session::flash('success', 'Rien à faire : les membres choisis ont déjà ce niveau.');
+        } else {
+            Session::flash('success', ($move ? 'Membres déplacés' : 'Membres copiés') . ' vers « ' . (string) ($target['name'] ?? '') . ' » : ' . $done . ($refused > 0 ? '. Refusés (rôles incompatibles) : ' . $refused : '') . '.');
+        }
+
+        return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $sourceId . '#rl-members');
     }
 
     public function restoreAccessRole(Request $request, array $params = []): Response
