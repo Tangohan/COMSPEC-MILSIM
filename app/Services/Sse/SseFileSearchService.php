@@ -515,10 +515,53 @@ final class SseFileSearchService
             $visiblePhotos = V::field($profiles[$iid] ?? null, 'photo', $phase)
                 ? array_values(array_filter($photos[$iid] ?? [], static fn (array $ph): bool => V::row($ph, $phase)))
                 : [];
-            $hits[$k]['photo'] = $visiblePhotos[0] ?? null;
+            $hits[$k] = $this->applyImageGate($tenantId, $hits[$k], $visiblePhotos);
             $hits[$k]['mentions'] = array_values(array_unique($mentions[$iid] ?? []));
             $hits[$k]['checks'] = $lastCheck[$iid] ?? null;
         }
+    }
+
+    /**
+     * Images d'une correspondance : celles d'un membre (CONFIDENTIEL ÉLEVÉ) ne sont ni listées ni adressables sans autorisation
+     * hiérarchique (SseMemberImageGate). Ajoute « photo » (cliché montré), « photo_src » (adresse prête à l'emploi : protégée pour un
+     * membre, jamais le dossier public) et, quand l'image est masquée, « image_lock » pour le cadre « CONFIDENTIEL ÉLEVÉ ».
+     *
+     * @param array<string, mixed> $hit
+     * @param list<array<string, mixed>> $visiblePhotos
+     * @return array<string, mixed>
+     */
+    private function applyImageGate(int $tenantId, array $hit, array $visiblePhotos): array
+    {
+        $gate = SseMemberImageGate::forSession();
+        $legacy = ($hit['identity']['photo_path'] ?? null) !== null && $hit['identity']['photo_path'] !== '';
+        $decision = $gate->forIdentity($tenantId, $hit['identity']);
+        $hit['photo'] = $visiblePhotos[0] ?? null;
+        if (!$decision['confidential']) {
+            $hit['photo_src'] = $hit['photo'] !== null && isset($hit['photo']['path'])
+                ? SseSeekPhotoService::photoUrl($hit['photo'])
+                : ($legacy && function_exists('user_media_public_url') ? user_media_public_url((string) $hit['identity']['photo_path']) : null);
+
+            return $hit;
+        }
+        if (!$decision['allowed']) {
+            // Ni le cliché, ni le chemin de l'image ne quittent le serveur.
+            $hit['has_image'] = $hit['photo'] !== null || $legacy;
+            $hit['photo'] = null;
+            $hit['photo_src'] = null;
+            $hit['identity']['photo_path'] = null;
+            $hit['image_lock'] = $gate->lockInfo($tenantId, $decision['owner'], $hit['has_image']);
+
+            return $hit;
+        }
+        if ($hit['photo'] !== null) {
+            $hit['photo']['confidential'] = true;
+        }
+        $hit['photo_src'] = $hit['photo'] !== null && isset($hit['photo']['path'])
+            ? SseSeekPhotoService::photoUrl($hit['photo'])
+            : ($legacy ? SseMemberImageGate::identityImageUrl((int) $hit['identity']['id'], 'photo') : null);
+        $hit['image_banner'] = $decision['reason'];
+
+        return $hit;
     }
 
     /**

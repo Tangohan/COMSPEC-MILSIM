@@ -18,11 +18,12 @@ $initials = mb_strtoupper(mb_substr((string) $i['first_name'], 0, 1) . mb_substr
 $age = \App\Services\Sse\SseFileSearchService::age($i['birth_date'] ?? null, gmdate('Y-m-d'));
 $tone = static fn (string $m): string => in_array($m, ['armed_dangerous', 'warrant', 'wanted'], true) ? 'r' : ($m === 'caution' ? 'a' : 'b');
 $mentionLabel = static fn (string $m): string => \App\Support\SseFileCatalog::label(\App\Support\SseFileCatalog::MENTIONS, $m, $m);
-$photoUrl = isset($hit['photo']['path']) ? \App\Services\Sse\SseSeekPhotoService::photoUrl($hit['photo']) : (($i['photo_path'] ?? null) ? user_media_public_url((string) $i['photo_path']) : null);
+$photoUrl = $hit['photo_src'] ?? (isset($hit['photo']['path']) ? \App\Services\Sse\SseSeekPhotoService::photoUrl($hit['photo']) : null); // jamais le chemin public d'une identité : adresse calculée par SseFileSearchService (image d'un membre : route protégée ou cadre masqué)
+$imageLock = is_array($hit['image_lock'] ?? null) ? $hit['image_lock'] : null;
 $href = url('atak/sse/fichiers/sujet/' . (int) $i['id']) . (($purpose ?? '') !== '' ? '?motif=' . rawurlencode((string) $purpose) : '');
 ?>
 <a class="fx-hit" href="<?= $h($href) ?>">
-    <span class="fx-mug"><?php if ($photoUrl !== null): ?><img src="<?= $h($photoUrl) ?>" alt="" loading="lazy"><?php else: ?><b><?= $h($initials !== '' ? $initials : '?') ?></b><small>SANS PHOTO</small><?php endif; ?></span>
+    <span class="fx-mug"><?php if ($imageLock !== null): ?><?php $lock = $imageLock; require __DIR__ . '/_image_lock.php'; ?><?php elseif ($photoUrl !== null): ?><img src="<?= $h($photoUrl) ?>" alt="" loading="lazy"><?php else: ?><b><?= $h($initials !== '' ? $initials : '?') ?></b><small>SANS PHOTO</small><?php endif; ?></span>
     <span style="min-width:0">
         <span class="fx-hn">
             <b translate="no"><?= $h(mb_strtoupper((string) $i['last_name'])) ?><?= ($i['first_name'] ?? '') !== '' ? ', ' . $h($i['first_name']) : '' ?></b>

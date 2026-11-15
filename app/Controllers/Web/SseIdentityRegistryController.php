@@ -206,6 +206,10 @@ final class SseIdentityRegistryController
             return Response::redirect(url(self::BASE));
         }
         $identity = $this->identities->find((int) $doc['identity_id'], $tenantId) ?? [];
+        // Photo et signature d'un membre : CONFIDENTIEL ÉLEVÉ (affichage seulement).
+        if (($identity['id'] ?? 0) > 0) {
+            $identity = \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity($tenantId, $identity);
+        }
         $country = $this->countries->findByCode($tenantId, (string) $doc['country_code']);
         $holder = ($pid = (int) ($doc['holder_person_id'] ?? 0)) > 0 ? $this->persons->findById($pid, $tenantId) : null;
 
@@ -775,6 +779,8 @@ final class SseIdentityRegistryController
             return Response::redirect(url(self::BASE . '/identites'));
         }
         $person = ($identity['person_id'] ?? 0) > 0 ? $this->persons->findById((int) $identity['person_id'], $tenantId) : null;
+        // Photo et signature d'un membre : CONFIDENTIEL ÉLEVÉ (photo_path vidé si refusé, route protégée si autorisé ; affichage seulement).
+        $identity = \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity($tenantId, $identity);
 
         // Fiche en dossier : avis de recherche, détections, chronologie, signalement (jamais bloquant : une source qui
         // manque donne une section vide).

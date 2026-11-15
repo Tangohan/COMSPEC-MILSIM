@@ -431,7 +431,7 @@ final class SseAccessSimpleSubjectsTest extends TestCase
         $bySource = array_unique(array_map(static fn (array $r): string => (string) $r['source'], $ok['rules']));
         self::assertSame(['recipe:renseignement'], array_values($bySource));
         $voir = array_filter($ok['rules'], static fn (array $r): bool => $r['subject_type'] === 'position' && $r['level'] === 'read');
-        self::assertCount(count(array_filter(array_keys(C::SECTIONS), static fn (string $k): bool => $k !== 'lore')), $voir, 'voir : toutes les sections que le gestionnaire voit (pas le lore, qu’il ne possède pas)');
+        self::assertCount(count(array_filter(array_keys(C::SECTIONS), static fn (string $k): bool => $k !== 'lore' && empty(C::SECTIONS[$k]['sealed']))), $voir, 'voir : toutes les sections que le gestionnaire voit (pas le lore, qu’il ne possède pas, ni la section fermée « Identités de service des membres », jamais comprise dans « toutes »)');
         $ecrire = array_filter($ok['rules'], static fn (array $r): bool => $r['subject_type'] === 'qualif' && $r['level'] === 'write');
         self::assertCount(7, $ecrire);
         self::assertSame('Renseignement', C::sourceLabel('recipe:renseignement'));

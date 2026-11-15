@@ -79,6 +79,24 @@ final class SseFileRecordService
         $links = array_values(array_filter($this->records->linksFor($tenantId, [$identityId])[$identityId] ?? [], $keepRow));
         $photoAllowed = $gm || V::field($rawProfile, 'photo', $phase);
         $photos = $photoAllowed ? array_values(array_filter($this->records->photosFor($tenantId, [$identityId])[$identityId] ?? [], $keepRow)) : [];
+        // Images d'un membre : CONFIDENTIEL ÉLEVÉ (SseMemberImageGate). Refusées, ni cliché ni chemin ne sortent de la fiche.
+        $gate = SseMemberImageGate::forSession();
+        $imageAccess = $gate->forIdentity($tenantId, $identity);
+        $imageLock = null;
+        $imageBanner = null;
+        $legacyPhoto = ($ident['photo_path'] ?? null) !== null && $ident['photo_path'] !== '';
+        if ($imageAccess['confidential'] && !$imageAccess['allowed']) {
+            $imageLock = $gate->lockInfo($tenantId, $imageAccess['owner'], $photos !== [] || $legacyPhoto);
+            $photos = [];
+            $ident['photo_path'] = null;
+            $ident['photo_src'] = null;
+        } elseif ($imageAccess['confidential']) {
+            $photos = array_map(static fn (array $ph): array => $ph + ['confidential' => true], $photos);
+            $imageBanner = $imageAccess['reason'];
+            $ident['photo_src'] = $legacyPhoto ? SseMemberImageGate::identityImageUrl($identityId, 'photo') : null;
+        } else {
+            $ident['photo_src'] = $legacyPhoto && function_exists('user_media_public_url') ? user_media_public_url((string) $ident['photo_path']) : null;
+        }
         $byKind = ['address' => [], 'vehicle' => [], 'phone' => [], 'email' => [], 'associate' => []];
         foreach ($links as $l) {
             $byKind[$l['kind']][] = $l;
@@ -127,6 +145,8 @@ final class SseFileRecordService
             'links' => $byKind,
             'associates' => $associates,
             'photos' => $photos,
+            'image_lock' => $imageLock,
+            'image_banner' => $imageBanner,
             'documents' => $docs,
             'mentions' => $mentions,
             'flags' => $flags,

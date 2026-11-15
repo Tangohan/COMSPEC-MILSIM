@@ -67,7 +67,7 @@ $display = (string) ($identity['display_name'] ?? '');
 $photoUrl = ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null;
 if ($photoUrl === null) {
     foreach ($filePhotos as $fp) {
-        $photoUrl = (string) user_media_public_url((string) $fp['path']);
+        $photoUrl = (string) \App\Services\Sse\SseSeekPhotoService::photoUrl($fp);
         break;
     }
 }
@@ -327,7 +327,7 @@ require __DIR__ . '/_subnav.php';
                 <div class="panel-header"><div class="panel-title">Photos du dossier</div><div class="panel-meta"><?= count($filePhotos) ?> photo(s)</div></div>
                 <div class="panel-body dos-photos">
                     <?php foreach ($filePhotos as $fp): ?>
-                        <figure><img src="<?= $h(user_media_public_url((string) $fp['path'])) ?>" alt="Photo du dossier" loading="lazy"><figcaption><?= $h($photoKinds[(string) $fp['kind']] ?? (string) $fp['kind']) ?> · <?= $h($day($fp['created_at'])) ?></figcaption></figure>
+                        <figure><img src="<?= $h(\App\Services\Sse\SseSeekPhotoService::photoUrl($fp)) ?>" alt="Photo du dossier" loading="lazy"><figcaption><?= $h($photoKinds[(string) $fp['kind']] ?? (string) $fp['kind']) ?> · <?= $h($day($fp['created_at'])) ?></figcaption></figure>
                     <?php endforeach; ?>
                 </div>
             </div>

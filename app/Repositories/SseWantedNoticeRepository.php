@@ -174,7 +174,7 @@ final class SseWantedNoticeRepository
         $offset = max(0, (int) ($filters['offset'] ?? 0));
 
         return array_map([self::class, 'hydrate'], $this->db->fetchAll(
-            'SELECT n.*, i.last_name AS identity_last_name, i.first_name AS identity_first_name, i.photo_path AS identity_photo,
+            'SELECT n.*, i.last_name AS identity_last_name, i.first_name AS identity_first_name, NULL AS identity_photo,
                     i.nationality AS identity_nationality
              FROM sse_wanted_notices n
              LEFT JOIN sse_identities i ON i.id = n.identity_id AND i.tenant_id = n.tenant_id
