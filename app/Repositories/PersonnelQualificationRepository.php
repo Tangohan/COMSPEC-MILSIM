@@ -102,6 +102,8 @@ class PersonnelQualificationRepository
              VALUES (' . $placeholders . ', NOW(), NOW())'
         );
         $stmt->execute($values);
+        // Les droits d'accès du portail SSE suivent les qualifications valides du membre.
+        \App\Services\Sse\SseAccessPolicy::forgetMember(0, $userId);
 
         return (int) $this->pdo->lastInsertId();
     }

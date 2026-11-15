@@ -111,3 +111,24 @@ Lecture de section (intergiciel `SseSectionAccessMiddleware`, après la porte) ;
 ## Tests
 
 `tests/Unit/SseAccessPolicyTest.php` (résolution, matrice avant/après des gardes d'origine sur des profils types, garde-fous, historique, simulation), `tests/Unit/SseAccessRightsWiringTest.php` (câblage, CSRF, communautés, gardes remplacées, migration, vues, traductions).
+
+## Droits simples : position, qualification, identité
+
+L'onglet s'ouvre sur « Qui peut quoi » (`/atak/sse/droits`) : une ligne par section, trois colonnes (voir, écrire, gérer), des puces par bénéficiaire. La grille à sept niveaux reste à `/atak/sse/droits/grille`. Aucune migration : la colonne `subject_type` (VARCHAR(12)) reçoit trois valeurs de plus.
+
+| Bénéficiaire | `subject_type` | `subject_id` | Qui est couvert |
+| --- | --- | --- | --- |
+| Position de service | `position` | `roles.id` du rôle d'affichage (position administrative : « En service actif »… et positions créées par la communauté) | tous ceux qui portent la position, dans n'importe quelle unité |
+| Fonction (emploi) | `job` | `personnel_job_roles.id` | tous ceux qui ont la fonction (chef de section, adjoint, instructeur…) |
+| Qualification | `qualif` | `personnel_qualification_definitions.id` | titulaires VALIDES : statut obtenue, valide ou bientôt échue, et échéance non passée ; expirée, suspendue, révoquée ou en cours : aucun accès |
+| Identité | `user` | `users.id` | un membre précis, nommé comme l'annuaire le montre (jamais un membre masqué ou anonymisé) |
+
+Un accès simple pose plusieurs niveaux : voir (existence, lecture), écrire (+ écriture, versement), gérer (tout). Chaque puce apparaît dans sa colonne la plus haute. Les « modèles en situation » (Renseignement, Fiches de renseignement ouvertes, Une position gère les dossiers) demandent un bénéficiaire par étape. Avant tout enregistrement, une phrase donne l'effet (« 14 personnes gagneraient l'accès »).
+
+« Par identité » couvre le membre précis. Limiter un droit à une identité SSE précise du registre (un seul dossier) n'est pas livré : les gardes jugent la section, pas l'enregistrement, il faudrait une portée par fiche dans chaque garde.
+
+Évaluation : les positions se lisent avec les niveaux d'accès déjà chargés ; fonctions et qualifications valides ne sont lues que si une règle de ce type existe, une fois par membre, en une requête pour tous les membres évalués (« qui a accès », aperçu). Rien n'est gardé d'une requête à l'autre ; un changement de position ou de qualification oublie la lecture en cours (`SseAccessPolicy::forgetMember`).
+
+## Bloc « Accès SSE » de la fiche effectif
+
+Fiche d'un membre (`/back-office/ressources/effectifs/membres/{id}`), onglet « Accès », carte « Accès SSE » ; la fenêtre s'ouvre aussi par `?ouvrir=acces-sse`. Réservée au droit de gestion SSE (invisible sinon). Elle montre les droits par section (voir, écrire, gérer) avec leur origine (droit d'origine, position, fonction, qualification, identité, unité, niveau d'accès), « Donner un accès » et « Retirer un accès » (règle d'identité datée avec motif, aperçu en une phrase), « Retirer » en un clic sur une règle d'identité du membre, et l'historique. Tout passe par `SseAccessMemberRights` puis `SseAccessRuleService` : mêmes garde-fous, communauté de la session.

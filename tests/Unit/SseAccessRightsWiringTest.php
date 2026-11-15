@@ -128,13 +128,16 @@ final class SseAccessRightsWiringTest extends TestCase
         foreach ($m as [, $verb, $path, $method, $mw]) {
             self::assertSame('$mwSsePortal', trim($mw), $path . ' : derrière le portail SSE');
             $body = self::methodBody($src, $method);
-            self::assertStringContainsString($verb === 'post' ? '$this->guardWrite(' : '$this->guard()', $body, $path . ' : garde du droit de gestion' . ($verb === 'post' ? ', jeton CSRF et plafond' : ''));
+            // La recherche de personnes répond en JSON : même garde, sans redirection (guardJson).
+            $expected = $verb === 'post' ? '$this->guardWrite(' : ($method === 'people' ? '$this->guardJson()' : '$this->guard()');
+            self::assertStringContainsString($expected, $body, $path . ' : garde du droit de gestion' . ($verb === 'post' ? ', jeton CSRF et plafond' : ''));
         }
         $guard = self::methodBody($src, 'guardWrite');
         self::assertStringContainsString('Csrf::validate(', $guard);
         self::assertStringContainsString('isPost()', $guard);
         self::assertStringContainsString('FileRateLimiter', $guard);
         self::assertStringContainsString('canManageRights(', self::methodBody($src, 'guard'));
+        self::assertStringContainsString('canManageRights(', self::methodBody($src, 'guardJson'));
     }
 
     public function testTheTabShowsNoSseContentAndNoEyebrow(): void
