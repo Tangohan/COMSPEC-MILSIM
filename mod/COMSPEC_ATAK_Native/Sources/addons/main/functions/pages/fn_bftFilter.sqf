@@ -11,21 +11,30 @@
       COMSPEC_ATAK_BftHideOffline  masquer les pistes hors ligne
       COMSPEC_ATAK_BftMaxDist      distance max en m (0 : tout)
     « Seulement mon groupe / mon unité » : réglage existant COMSPEC_ATAK_AllyFilter (GROUP / ORBAT), appliqué à la source.
+    Perf lot 2 : "cfg" rend les six réglages [IA, aériens, véhicules, anciennes, hors ligne, distance, aucun filtre actif],
+    lus une fois par passage de fn_localDataRefresh et repassés en second paramètre (avant : six lectures du profil par
+    piste, deux à quatre fois par seconde). Sans second paramètre : lus ici, comme avant.
 */
-params [["_u", objNull]];
+params [["_u", objNull], ["_cfg", []]];
+if (_u isEqualTo "cfg") exitWith {
+    private _m = profileNamespace getVariable ["COMSPEC_ATAK_BftMaxDist", 0];
+    if !(_m isEqualType 0) then { _m = 0; };
+    private _c = [
+        profileNamespace getVariable ["COMSPEC_ATAK_HideAllyAi", false], profileNamespace getVariable ["COMSPEC_ATAK_BftHideAir", false],
+        profileNamespace getVariable ["COMSPEC_ATAK_BftHideVeh", false], profileNamespace getVariable ["COMSPEC_ATAK_BftHideLost", false],
+        profileNamespace getVariable ["COMSPEC_ATAK_BftHideOffline", false], _m
+    ];
+    _c pushBack (!(_c select 0) && {!(_c select 1)} && {!(_c select 2)} && {!(_c select 3)} && {!(_c select 4)} && {_m <= 0});
+    _c
+};
 private _e = createHashMap;
 private _obj = objNull;
 if (_u isEqualType objNull) then { _obj = _u; } else { if (_u isEqualType createHashMap) then { _e = _u; _obj = _e getOrDefault ["object", objNull]; }; };
 if (_obj isEqualTo player || {_e getOrDefault ["self", false]}) exitWith { true };
 if (!isNull _obj && {(side group _obj) isNotEqualTo (side group player)}) exitWith { true };
 if ((_e getOrDefault ["affiliation", "friend"]) isNotEqualTo "friend") exitWith { true };
-private _hAi = profileNamespace getVariable ["COMSPEC_ATAK_HideAllyAi", false];
-private _hAir = profileNamespace getVariable ["COMSPEC_ATAK_BftHideAir", false];
-private _hVeh = profileNamespace getVariable ["COMSPEC_ATAK_BftHideVeh", false];
-private _hLost = profileNamespace getVariable ["COMSPEC_ATAK_BftHideLost", false];
-private _hOff = profileNamespace getVariable ["COMSPEC_ATAK_BftHideOffline", false];
-private _max = profileNamespace getVariable ["COMSPEC_ATAK_BftMaxDist", 0];
-if !(_max isEqualType 0) then { _max = 0; };
+if ((count _cfg) < 7) then { _cfg = ["cfg"] call comspec_atak_native_fnc_bftFilter; };
+_cfg params ["_hAi", "_hAir", "_hVeh", "_hLost", "_hOff", "_max"];
 // Aucun filtre actif (cas courant) : appelé pour chaque piste à chaque rafraîchissement, sortie sans calculer le type.
 if (!_hAi && {!_hAir} && {!_hVeh} && {!_hLost} && {!_hOff} && {_max <= 0}) exitWith { true };
 private _type = _e getOrDefault ["type", ""];
