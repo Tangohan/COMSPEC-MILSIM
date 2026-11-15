@@ -255,8 +255,9 @@ final class AtakPhotoModeCleanupAssetTest extends TestCase
 
         $steam = str_replace("\r\n", "\n", (string) file_get_contents(self::ROOT . 'mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
         // Note Steam de la 4.18.0 : mode Essentiel et ce correctif, dans le même bloc.
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.18.0 Washington', $steam);
-        $block = substr($steam, 0, (int) strpos($steam, '[h1]COMSPEC ATAK 4.17.0 Washington'));
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.18.0 Washington', $steam);
+        $from = (int) strpos($steam, '[h1]COMSPEC ATAK 4.18.0 Washington');
+        $block = substr($steam, $from, (int) strpos($steam, '[h1]COMSPEC ATAK 4.17.0 Washington') - $from);
         self::assertStringContainsString('[b]Appareil photo[/b]', $block);
         self::assertStringContainsString('[b]Camera[/b]', $block);
         self::assertStringContainsString('[h2]Français[/h2]', $block);

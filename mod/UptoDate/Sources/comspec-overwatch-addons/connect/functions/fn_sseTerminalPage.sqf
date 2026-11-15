@@ -31,7 +31,7 @@ if !(["can"] call comspec_overwatch_connect_fnc_seekBattery) exitWith { ["render
 // superposerait au libellé de la page suivante, posé sur la même ligne.
 private _pages = [
     ["ACCUEIL",   [9530, 9531, 9532, 9533, 9534, 9535, 9545, 9546, 9547, 9548, 9549, 9550,
-                   9670, 9671, 9672, 9673, 9674, 9675, 9676]],
+                   9670, 9671, 9672, 9673, 9674, 9675, 9676, 9710, 9711, 9712]],
     ["SUJET",     [9501, 9502, 9503, 9504, 9507, 9508, 9511, 9558,
                    9551, 9552, 9553, 9554, 9555, 9556]],
     ["CONTEXTE",  [9505, 9506, 9509, 9510, 9560, 9561, 9562, 9563]],

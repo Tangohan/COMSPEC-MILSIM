@@ -53,7 +53,10 @@ $tone = ['concordant' => 'g', 'discordant' => 'r', 'signale' => 'a', 'inconnu' =
                             <td translate="no"><?= $s['subject_unknown'] ? 'Inconnu' : $h($s['display_name'] !== '' ? $s['display_name'] : '—') ?></td>
                             <td class="m" translate="no"><?= $h(trim(($s['doc_country'] ?? '') . ' ' . ($s['doc_number'] ?? '')) ?: '—') ?></td>
                             <td><span class="fx-flg <?= $tone[$s['verdict']] ?? '' ?>"><?= $h($s['verdict_label']) ?></span></td>
-                            <td><?= $h($mods($s['modalities'])) ?></td>
+                            <td><?= $h($mods($s['modalities'])) ?>
+                                <?php foreach ((is_array($s['capture'] ?? null) ? $s['capture'] : []) as $capMod => $cap): ?>
+                                    <?php foreach (($cap['notes'] ?? []) as $capNote): ?><br><span class="fx-help" translate="no"><?= $h(\App\Support\SseCaptureNotes::label((string) $capMod) . ' : ' . $capNote) ?></span><?php endforeach; ?>
+                                <?php endforeach; ?></td>
                             <?php $imgs = $photos[(string) $s['rec']] ?? []; ?>
                             <td class="m">
                                 <?php if ($imgs !== [] && (string) ($imgs[0]['url'] ?? '') !== ''): ?>
@@ -62,7 +65,8 @@ $tone = ['concordant' => 'g', 'discordant' => 'r', 'signale' => 'a', 'inconnu' =
                                 <?php elseif (!empty($s['modalities']['face'])): ?><span class="fx-help">Visage relevé, image non reçue</span>
                                 <?php else: ?>—<?php endif; ?>
                             </td>
-                            <td translate="no"><?= $h($s['grid'] ?? '—') ?><?= ($s['controller_callsign'] ?? '') !== '' ? ' · ' . $h($s['controller_callsign']) : '' ?></td>
+                            <td translate="no"><?= $h($s['grid'] ?? '—') ?><?= ($s['controller_callsign'] ?? '') !== '' ? ' · ' . $h($s['controller_callsign']) : '' ?>
+                                <?php if (!empty($s['signature_image'])): ?><br><img src="<?= $h(url((string) $s['signature_image'])) ?>" alt="Signature tracée au SEEK II, fiche <?= $h($s['rec']) ?>" loading="lazy" style="height:28px;background:#fff;border-radius:3px"><?php endif; ?></td>
                             <td>
                                 <?php if ($s['identity_id'] !== null): ?><a href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $s['identity_id'])) ?>">Fiche</a> · <?php endif; ?>
                                 <?php if ($s['check_id'] !== null): ?><a href="<?= $h(url('atak/sse/papiers/controles/' . (int) $s['check_id'])) ?>">Contrôle N4</a> · <?php endif; ?>

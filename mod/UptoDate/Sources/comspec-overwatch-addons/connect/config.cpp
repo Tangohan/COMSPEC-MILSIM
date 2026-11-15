@@ -95,6 +95,8 @@ class CfgFunctions {
             class seekState {};
             class seekEnroll {};
             class seekSend {};
+            class seekFx {};
+            class seekScale {};
             class seekBattery {};
             // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
             class intelNoteCatalog {};

@@ -39,6 +39,8 @@ use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseCorrelationService;
 use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseMeshService;
+use App\Services\Sse\SsePersonRegistryLinkService;
+use App\Services\Sse\SseWantedAccess;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
 use App\Services\Sse\SseTerrainService;
@@ -4000,8 +4002,28 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/identites'));
         }
+        // La fiche du registre (avis de recherche, notice PDF, historique, détections, images du sujet) est la fiche de référence :
+        // une personne qui en a une y mène ; « ?fiche=personne » garde la vue de la personne elle-même.
+        $registry = [];
+        try {
+            $wantedRights = SseWantedAccess::fromSession($this->access, $this->clearance);
+            $registryLinks = new SsePersonRegistryLinkService();
+            if ($request->queryString('fiche') !== 'personne') {
+                $target = $registryLinks->target($this->tenantId(), $id, $wantedRights->canSeeTruth());
+                if ($target !== null) {
+                    return Response::redirect(url('atak/sse/papiers/identites/' . (int) $target['id']));
+                }
+            }
+            $registry = $registryLinks->pageData($this->tenantId(), $person, $wantedRights, $this->access->isGuest());
+        } catch (\Throwable $e) {
+            error_log('Fiche personne : lien au registre indisponible : ' . $e->getMessage());
+        }
         $people = $this->clearance->redactPeopleForScreens([$person], $this->tenantId(), null);
         $person = $people[0] ?? $person;
+        // Sans photo de la personne, le premier cliché SEEK II de son identité tient lieu de portrait.
+        if (empty($person['primary_photo']) && !empty($registry['seekImages'][0]['url'])) {
+            $person['primary_photo'] = ['url' => (string) $registry['seekImages'][0]['url']];
+        }
 
         $terrain = [];
         try {
@@ -4090,6 +4112,7 @@ final class SsePortalController
             'timeline' => $timeline,
             'provenance' => [],
             'idPapers' => SseIdentityRegistryController::personPapers($this->tenantId(), $id),
+            'registry' => $registry,
             'canManage' => $this->canManage(),
             'activeNav' => 'identites',
         ]);

@@ -1,4 +1,4 @@
-[h1]COMSPEC ATAK 4.20.0 Washington — listes du SEEK II lues sur le site / SEEK II lists read from the site[/h1]
+[h1]COMSPEC ATAK 4.21.0 Washington — listes du SEEK II lues sur le site / SEEK II lists read from the site[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
 
@@ -18,6 +18,28 @@
 [*] Lists are read when the mission starts, then when the terminal opens if they are more than ten minutes old.
 [/list]
 
+[h1]COMSPEC ATAK 4.20.0 Washington — lecteur d'empreintes animé, mini-jeux, terminal réductible / animated reader, mini-games, shrinkable terminal[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]SEEK II[/b] : les empreintes se prennent doigt par doigt sur la vitre verte (main droite, main gauche, pouces) avec balayage lumineux, crêtes qui apparaissent et jauge de qualité ; un doigt mal posé ou humide rejette la lecture.
+[*] Mini-jeux à la souris, facultatifs : doigt tenu dans la zone, réticule sur l'iris, câbles USB et ALIM à brancher, vitre à essuyer. PASSER ne bloque jamais.
+[*] Réglage « Interactions SEEK II » : aucune, simples ou complètes ; bouton INTERACTIONS sur l'accueil.
+[*] Terminal réductible : boutons TAILLE et PLACE sur l'accueil, touches + et - du pavé numérique.
+[*] Les blessures comptent : garrot, attelle, bandage, brûlure ou plaie d'un bras, bandage de tête ; les motifs apparaissent sur la fiche SEEK.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]SEEK II[/b]: fingerprints are taken finger by finger on the green glass (right hand, left hand, thumbs) with a light scan, ridges appearing and a quality gauge; a badly placed or wet finger rejects the read.
+[*] Optional mouse mini-games: finger held in the zone, reticle on the iris, USB and POWER cables to plug, glass to wipe. SKIP never blocks.
+[*] "SEEK II interactions" setting: none, basic or full; INTERACTIONS button on the home page.
+[*] Shrinkable terminal: SIZE and POSITION buttons on the home page, numpad + and - keys.
+[*] Injuries matter: tourniquet, splint, bandage, burn or wound on an arm, head bandage; the reasons show on the SEEK record.
+[/list]
+
 [h1]COMSPEC ATAK 4.19.0 Washington — signature tracée au SEEK II / drawn signature on the SEEK II[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
@@ -25,7 +47,8 @@
 [h2]Français[/h2]
 [list]
 [*] [b]SEEK II[/b] : le bouton SIGNER de la page ENVOI ouvre un pad ; tracez votre signature à la souris, EFFACER pour recommencer, VALIDER pour signer la fiche.
-[*] La signature tracée part avec la fiche et s'affiche sur la fiche de l'identité dans le Bureau SSE.
+[*] La touche SIGN de l'appareil ouvre le même pad puis envoie la fiche avec votre signature.
+[*] La signature tracée part avec la fiche et s'affiche sur la fiche SEEK II et sur la fiche de l'identité dans le Bureau SSE.
 [*] Les écrans du SEEK II parlent comme les forces spéciales américaines : pièces, rapports de collecte, sujets, cibles, vérification d'identité, point de contrôle.
 [*] Signature trop courte ou trop chargée : l'écran du SEEK le dit sur sa ligne d'état, sans fenêtre ni alerte.
 [/list]
@@ -33,7 +56,8 @@
 [h2]English[/h2]
 [list]
 [*] [b]SEEK II[/b]: the SIGN button on the SUBMIT page opens a pad; draw your signature with the mouse, CLEAR to start over, CONFIRM to sign the record.
-[*] The drawn signature is sent with the record and shown on the identity record in the SSE Office.
+[*] The SIGN key on the device opens the same pad, then sends the record with your signature.
+[*] The drawn signature is sent with the record and shown on the SEEK II record and on the identity record in the SSE Office.
 [*] SEEK II screens now use US special forces wording: evidence items, collection reports, subjects, targets, identity verification, checkpoint.
 [*] Signature too short or too crowded: the SEEK II says so on its status line, with no popup or alert.
 [/list]

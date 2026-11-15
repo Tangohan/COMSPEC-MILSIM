@@ -265,9 +265,8 @@ final class AtakEssentialModeAssetTest extends TestCase
     public function testVersionAndChangelogs(): void
     {
         $hpp = $this->main('script_component.hpp');
-        self::assertStringContainsString('#define VERSION 4.18.0', $hpp);
-        self::assertStringContainsString('#define VERSION_STR "4.18.0"', $hpp);
-        self::assertStringContainsString('#define VERSION_NAME "4.18.0.AG - Washington"', $hpp);
+        // Sortie en 4.18.0 ; les versions suivantes (4.19.0, signature du SEEK II) la contiennent.
+        self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(1[89]\.\d+|[2-9]\d\.\d+)"/', $hpp);
         // La DLL COMSPEC Link ne change pas dans cette version.
         self::assertStringContainsString('#define LINK_VERSION_STR "2.0.125"', $hpp);
 
@@ -298,8 +297,9 @@ final class AtakEssentialModeAssetTest extends TestCase
         self::assertStringContainsString('`fn_setSetting`', $entry);
 
         $steam = $this->read(self::ROOT . 'mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.18.0 Washington', $steam);
-        $block = substr($steam, 0, (int) strpos($steam, '[h1]COMSPEC ATAK 4.17.0 Washington'));
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.18.0 Washington', $steam);
+        $from = (int) strpos($steam, '[h1]COMSPEC ATAK 4.18.0 Washington');
+        $block = substr($steam, $from, (int) strpos($steam, '[h1]COMSPEC ATAK 4.17.0 Washington') - $from);
         self::assertStringContainsString('[h2]Français[/h2]', $block);
         self::assertStringContainsString('[h2]English[/h2]', $block);
         self::assertSame(2, substr_count($block, '[list]'));

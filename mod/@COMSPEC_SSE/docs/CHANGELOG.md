@@ -7,7 +7,7 @@
 - **Éditeur Eden :** les listes sont lues sur le site seulement si la connexion Athena du menu COMSPEC SSE est ouverte sur le poste. Sinon la valeur enregistrée est gardée (marquée « hors liste ») et appliquée par le serveur au lancement de la mission.
 - **Origine des listes :** chaque formulaire l'écrit en pied (site et heure de la dernière synchro, listes gardées sur le poste, ou listes du mod) ; bouton ACTUALISER. Aucune alerte.
 - **Transmission :** la fiche personne envoie le contexte d'acquisition, le dossier et l'avis de recherche choisis pour le sujet. La file hors ligne et ses clés d'idempotence sont inchangées : un envoi rejoué ne crée pas de doublon.
-- Demande COMSPEC ATAK 4.20.0 (c'est lui qui lit le site). Sans lui, les modules gardent leurs listes locales.
+- Demande COMSPEC ATAK 4.21.0 (c'est lui qui lit le site). Sans lui, les modules gardent leurs listes locales.
 - Contrat : `docs/technical/ICD-SSE-CATALOGUE.md`.
 
 ## À venir · Profils d'IA, éditeur SSE en Zeus, papiers et contrôle (version attribuée à la publication)

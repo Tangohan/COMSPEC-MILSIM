@@ -9,6 +9,7 @@ use App\Repositories\SseIdCheckRepository;
 use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SsePersonRepository;
+use App\Support\SseCaptureNotes;
 use App\Support\SseFileCatalog;
 use App\Support\SseIdentityCatalog;
 
@@ -510,7 +511,7 @@ final class SseFileQueryService
      * des contrôles (il apparaît dans « Contrôles subis » de la personne), rattaché au registre de la même façon.
      *
      * @param array<string, mixed> $body
-     * @return array{id: int, ref: string, check_ref: string, duplicate: bool}|array{error: string}
+     * @return array{id: int, ref: string, check_ref: string, duplicate: bool, signature_drawn?: array<string, mixed>}|array{error: string}
      */
     public function storeSeek(int $tenantId, int $mapId, array $body): array
     {
@@ -580,7 +581,22 @@ final class SseFileQueryService
             'unit' => self::str($body['unit'] ?? null, 80),
             'context_id' => $mapId > 0 ? $mapId : null,
             'op_key' => $op,
+            'capture_json' => SseCaptureNotes::encode($body['capture'] ?? null),
         ]);
+
+        // Signature tracée au pad du SEEK II : traits validés, PNG dessiné par le serveur. Un refus ne bloque jamais la fiche.
+        $signatureDrawn = null;
+        if (is_array($body['signature'] ?? null) && array_key_exists('strokes', $body['signature'])) {
+            $signed = SseSignatureStrokes::store($body['signature'], $tenantId);
+            $signatureDrawn = ['ok' => (bool) ($signed['ok'] ?? false)];
+            if (!empty($signed['ok']) && !empty($signed['path']) && $this->files->setSeekSignatureImage($stored['id'], $tenantId, (string) $signed['path'])) {
+                $signatureDrawn['path'] = (string) $signed['path'];
+            } elseif (!empty($signed['ok'])) {
+                $signatureDrawn['ok'] = false;
+            } else {
+                $signatureDrawn['error'] = (string) ($signed['error'] ?? 'Signature refusée.');
+            }
+        }
 
         // Contrôle N4 : même service, mêmes rattachements (papier, fiche, clé biométrique) que les autres contrôles.
         $checkKey = strlen($key) <= 75 ? 'seek:' . $key : 'seek:' . sha1($key);
@@ -625,7 +641,12 @@ final class SseFileQueryService
             }
         }
 
-        return ['id' => $stored['id'], 'ref' => $stored['rec'], 'check_ref' => $checkRef, 'duplicate' => false];
+        $out = ['id' => $stored['id'], 'ref' => $stored['rec'], 'check_ref' => $checkRef, 'duplicate' => false];
+        if ($signatureDrawn !== null) {
+            $out['signature_drawn'] = $signatureDrawn;
+        }
+
+        return $out;
     }
 
     /**

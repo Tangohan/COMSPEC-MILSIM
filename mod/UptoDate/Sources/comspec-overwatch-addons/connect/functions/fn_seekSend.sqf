@@ -78,6 +78,12 @@ if (_prev isEqualType createHashMap && {(_prev getOrDefault ["target", objNull])
     && {(_prev getOrDefault ["sig", ""]) isEqualTo str (uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []])}) exitWith {
     [_prev, _prev get "state", ""] call _ack;
 };
+// Signature tracée : SIGN ouvre d'abord le pad ; VALIDER signe puis relance « send » (fn_seekSignPad « accept »),
+// et le tracé part avec la fiche. Un tracé déjà validé dans cette partie sert pour les fiches suivantes.
+private _strokesSaved = uiNamespace getVariable ["COMSPEC_SsePerson_SignStrokes", []];
+if (!(_strokesSaved isEqualType []) || {(count _strokesSaved) < 2} || {count (_strokesSaved select 0) == 0}) exitWith {
+    ["open", [true]] call comspec_overwatch_connect_fnc_seekSignPad;
+};
 ["use", 0.5] call comspec_overwatch_connect_fnc_seekBattery;
 
 // --- Signature : l'identité du joueur, sans saisie ----------------------------------------------
@@ -173,6 +179,20 @@ if (isNil "comspec_sse_fnc_fileSubmit") exitWith {
 };
 private _subj = createHashMapFromArray [["last", _last], ["first", _first], ["dob", _dob], ["unknown", _unknown], ["netid", netId _target]];
 if (isPlayer _target) then { _subj set ["steam_id", getPlayerUID _target]; };
+// Motifs de capture par modalité (empreintes, iris) : main non capturable, bandage, post-mortem, gestes passés…
+// Champ facultatif « capture » : le site le range avec la fiche SEEK II et l'affiche.
+private _capture = createHashMap;
+{
+    if ((_x isEqualType []) && {(count _x) >= 3} && {(_x select 0) in ["empreintes", "iris"]}) then {
+        private _det = _x param [3, []];
+        private _nts = _x param [5, _x param [4, []]];
+        _capture set [_x select 0, createHashMapFromArray [
+            ["quality", _x select 1],
+            ["detail", [_det, []] select (!(_det isEqualType []))],
+            ["notes", [_nts, []] select (!(_nts isEqualType []))]
+        ]];
+    };
+} forEach (uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []]);
 private _payload = createHashMapFromArray [
     ["kind", "seek_record"], ["idempotency_key", _idem], ["rec", _rec], ["bio_key", _bioKey], ["verdict", _verdict], ["enroll", _enroll],
     ["subject", _subj],
@@ -181,10 +201,12 @@ private _payload = createHashMapFromArray [
     ["quality", createHashMapFromArray [["fp", _qFp], ["iris", _qIr], ["face", _qFace]]],
     ["grid", _grid], ["game_time", _stamp],
     ["controller", createHashMapFromArray [["callsign", _callsign], ["steam_id", _uid]]],
+    ["signature", createHashMapFromArray [["strokes", _strokesSaved select 0], ["aspect", _strokesSaved select 1]]],
     ["reason", _reason], ["unit", _unitName],
     ["map", str (missionNamespace getVariable ["COMSPEC_MapId", 1])],
     ["op", missionNamespace getVariable ["comspec_sse_id_opKey", ""]]
 ];
+if ((count _capture) > 0) then { _payload set ["capture", _capture]; };
 [_snd, "sending"] call _ack;
 [_payload] call comspec_sse_fnc_fileSubmit;
 

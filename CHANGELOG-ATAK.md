@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## SEEK II et modules SSE : les listes viennent du site de la communauté (ATAK natif 4.20.0.AG - Washington)
+## SEEK II et modules SSE : les listes viennent du site de la communauté (ATAK natif 4.21.0.AG - Washington)
 
 ### Résumé joueur
 Type : nouveauté
@@ -63,24 +63,55 @@ EN : SEEK II and SSE modules, lists now come from your community's site
 
 ---
 
+## SEEK II : lecteur d'empreintes animé, mini-jeux facultatifs, terminal réductible, blessures prises en compte (ATAK natif 4.20.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : SEEK II, un lecteur qui vit : doigts, câbles, iris et blessures
+- La capture des empreintes se fait doigt par doigt sur la vitre verte : main droite, main gauche, puis les pouces. Le doigt se pose, un balayage lumineux passe, les crêtes apparaissent, une jauge donne la qualité. Un doigt mal posé, humide ou une vitre sale rejette la lecture et il faut recommencer.
+- Mini-jeux à la souris, tous facultatifs et rejouables : tenir le doigt dans la zone pendant le balayage, garder le réticule sur l'iris, brancher le câble USB et le câble ALIM sur le bon port, essuyer la vitre. Le bouton PASSER ne bloque jamais la capture ; la qualité du geste compte dans la qualité relevée.
+- Le réglage « Interactions SEEK II » choisit aucune (capture automatique comme avant), simples (animation seule) ou complètes ; le bouton INTERACTIONS de l'accueil le change aussi.
+- Le terminal se réduit : boutons TAILLE (100, 75, 55, 40 %) et PLACE (centre, gauche, droite) sur l'accueil, ou les touches + et - du pavé numérique. On voit alors l'appareil entier, lecteur compris. Le choix est gardé dans votre profil.
+- Les blessures comptent : garrot, attelle, bandage, brûlure ou plaie sur un bras rendent la main du sujet inutilisable ou moins lisible ; un bandage ou une blessure à la tête dégrade l'iris et le visage. Les motifs apparaissent sur la fiche SEEK. Vos propres bras blessés font trembler les mini-jeux.
+EN : SEEK II, a reader that comes alive: fingers, cables, iris and injuries
+- Fingerprints are captured finger by finger on the green glass: right hand, left hand, then thumbs. The finger lands, a light scan passes, ridges appear, a gauge shows the quality. A badly placed or wet finger, or a dirty glass, rejects the read and you start again.
+- Optional, replayable mouse mini-games: hold the finger in the zone during the scan, keep the reticle on the iris, plug the USB and POWER cables into the right port, wipe the glass. SKIP never blocks the capture; how well you do counts in the quality captured.
+- The "SEEK II interactions" setting picks none (automatic capture as before), basic (animation only) or full; the INTERACTIONS button on the home page changes it too.
+- The terminal can shrink: SIZE (100, 75, 55, 40%) and POSITION (center, left, right) buttons on the home page, or the numpad + and - keys. You then see the whole device, reader included. Your choice is kept in your profile.
+- Injuries matter: a tourniquet, splint, bandage, burn or wound on an arm makes the subject's hand unusable or harder to read; a head bandage or injury degrades the iris and the face. The reasons show on the SEEK record. Your own injured arms make the mini-games shake.
+
+### Détail technique
+- **Lecteur et mini-jeux** : `fn_seekFx` (dossier connect, enregistrée dans `config.cpp`). Opérations `mode`, `cycleMode`, `hook`, `capture`. Le panneau est créé par `ctrlCreate` (aucun IDC fixe ajouté pour l'animation) sur la vitre verte du châssis, ou dans une fenêtre fixe en bas de l'écran quand la vitre sort de l'écran (terminal grand format). Séquence 4 + 4 + 2 ; mini-jeux `_hold`, `_track`, `_cables`, `_wipe`, `_auto` ; tout est mesuré par `diag_tickTime` (indépendant de la fréquence d'images), chaque mini-jeu a un délai maximum et un bouton PASSER. État local au joueur : seul le résultat part avec la fiche. Aucune notification, aucun toast ni message de chat.
+- **Branchement** : `fn_sseBiometricSample` lance `["capture", …] spawn fn_seekFx` pour les empreintes et l'iris faits avec le SEEK COMSPEC quand le mode n'est pas « aucune » ; le dialogue reste ouvert (animation du sujet et de l'opérateur par `comspec_sse_fnc_bioAnimate` comme avant) ; la qualité du geste module le NFIQ par doigt et la qualité des yeux calculés par `comspec_sse_fnc_bioCapture`. Mode « aucune », kits BII et ADN : déroulé d'avant (barre ACE). Le contrôle rapide A1 reste automatique.
+- **Réglages CBA** (client, imposables par le serveur ou la mission) : `comspec_seek_fx_mode` (0 aucune, 1 simples, 2 complètes ; défaut 2), `comspec_seek_fx_medical` (blessures prises en compte, défaut coché), `comspec_seek_scale` (0,4 à 1), `comspec_seek_anchor`. Le profil du joueur garde `COMSPEC_SeekFxMode`, `COMSPEC_SeekScale`, `COMSPEC_SeekAnchor`.
+- **Taille** : `fn_seekScale` relève une fois la position de chaque contrôle, les replace autour du centre de l'appareil et applique `ctrlSetScale` ; IDC inchangés, rien n'est touché à 100 % centré. Boutons 9710 à 9712 sur la page ACCUEIL.
+- **Médical** : `comspec_sse_fnc_bioMedical` (pack SSE) lit ACE Medical (`ace_medical_bodyPartDamage`, `tourniquets`, `fractures`, `openWounds`, `bandagedWounds`), tient compte de KAT et d'ACM par présence de `CfgPatches`, et se replie sur `getHitPointDamage`. « ACM » n'est défini nulle part dans le dépôt : reconnu seulement par les noms de patch `acm_*`. `fn_bioCapture` en tire, par main et pour la tête, état (ok, dégradé, bloqué), points et motif, et rend `reasons`.
+- **Site** : les échantillons du SEEK portent `detail` et `notes` (facultatifs) ; la fiche SEEK II reçoit `capture` (empreintes, iris : qualité, détail, motifs), borné par `App\Support\SseCaptureNotes` et rangé dans `sse_seek_records.capture_json` (étape `sse_seek_capture_notes`, retour arrière `migrations/rollback/sse_seek_capture_notes_down.sql`). Sans la colonne, la fiche part quand même. Affichage sur la liste des fiches SEEK II et sur l'identité liée.
+- Tests : `tests/Unit/SeekRealismeTest.php`. Non essayé en jeu : voir la liste « à vérifier en jeu » de la PR.
+
+---
+
 ## SEEK II : la signature se trace à la souris, vocabulaire forces spéciales (ATAK natif 4.19.0.AG - Washington)
 
 ### Résumé joueur
 Type : nouveauté
 FR : SEEK II, signez la fiche à la souris
 - Sur la page ENVOI du SEEK II, le bouton SIGNER ouvre un pad : tracez votre signature à la souris, EFFACER pour recommencer, VALIDER pour signer la fiche.
-- La signature tracée est envoyée avec la fiche et s'affiche sur la fiche de l'identité dans le Bureau SSE.
+- La touche SIGN de l'appareil (et le bouton SIGNER ET ENVOYER) ouvre le même pad, puis envoie la fiche avec votre signature.
+- La signature tracée est envoyée avec la fiche et s'affiche sur la fiche SEEK II et sur la fiche de l'identité dans le Bureau SSE.
 - Les écrans du SEEK II et du Bureau SSE parlent maintenant comme les forces spéciales américaines : pièces et rapports de collecte, sujets et cibles, vérification d'identité, point de contrôle.
 - Si le pad est trop chargé ou la signature trop courte, l'écran du SEEK le dit sur la ligne d'état, sans fenêtre ni alerte.
 EN : SEEK II, sign the record with the mouse
 - On the SEEK II SUBMIT page, the SIGN button opens a pad: draw your signature with the mouse, CLEAR to start over, CONFIRM to sign the record.
-- The drawn signature is sent with the record and shown on the identity record in the SSE Office.
+- The SIGN key on the device (and the SIGN AND SEND button) opens the same pad, then sends the record with your signature.
+- The drawn signature is sent with the record and shown on the SEEK II record and on the identity record in the SSE Office.
 - The SEEK II and SSE Office screens now use US special forces wording: evidence items and collection reports, subjects and targets, identity verification, checkpoint.
 - If the pad is too crowded or the signature too short, the SEEK II says so on its status line, with no popup or alert.
 
 ### Détail technique
 - **Pad** : page 11 « SIGNATURE » de `display_sse_person.hpp` (IDC 9700 à 9704), fonction `fn_seekSignPad` (`init`, `open`, `back`, `clear`, `accept`, `show`, `json`, `down`, `move`, `up`). Le dialogue accroche `MouseButtonDown`, `MouseMoving` et `MouseButtonUp` (évènements d'affichage, donc insensibles aux points dessinés par-dessus) ; le tracé s'affiche avec de petits contrôles créés à la volée et détruits avec le dialogue. Bornes côté jeu : 8 traits, 150 points par trait, 300 points au total, point gardé tous les 5 pixels.
 - **Envoi** : `fn_ssePersonDialogSubmit` ajoute `strokes` (points entiers 0 à 1000 dans le pad) et `aspect` (largeur / hauteur du pad) à l'objet `signature` de `POST /api/sse/persons` ; `fn_seekSignPad "json"` fabrique le fragment. Le bouton SIGNER ne signe plus d'un coup : il ouvre le pad, VALIDER appelle ensuite `fn_sseSignAtak` comme avant.
+- **Touche SIGN** : `fn_seekSend` ouvre le pad (`["open", [true]]`) tant qu'aucun tracé n'est validé ; VALIDER relance `send` et la fiche `seek_record` part avec `signature.strokes` et `signature.aspect` (le tracé validé sert aux fiches suivantes de la partie). `SseFileQueryService::storeSeek` valide par `SseSignatureStrokes`, range le PNG (`sse_seek_records.signature_image`, même étape de migration) et répond `signature_drawn` ; il apparaît sur la liste des fiches SEEK II et sur l'identité liée. Les trois entrées SIGN (bouton, touche logicielle, touche du châssis, F4/S) passaient déjà par `send` : aucune défaillance de câblage trouvée, le geste signait seulement sans rien tracer.
 - **Site** : `App\Services\Sse\SseSignatureStrokes` valide strictement les traits (12 traits, 400 points par trait, 800 au total, entiers ou décimaux finis de 0 à 1000, proportions de 1 à 6, tracé d'au moins 20 sur 1000), dessine le PNG sans GD puis le range par `SignatureImageService::fromDataUrl` (même rangement et mêmes contrôles que le pad du site, `uploads/sse-id-signatures`). `SseApiController::personsStore` retire les traits du journal de transmission, range l'image sur la fiche créée ou complétée (`sse_persons.signature_image`, colonne ajoutée par `bootstrap/atak_sse_persons_migration.php`) et répond `signature_drawn`. Une signature refusée ne bloque jamais la fiche. Affichage : liste des fiches et fiche de l'identité du Bureau SSE.
 - **Vocabulaire** : libellés affichés seulement, aucune clé, colonne, route, permission ni code de statut renommés ; les anciens codes restent acceptés. Dictionnaire anglais `i18n/en.txt` et `lang/en/site_auto.php` à jour.
 - Tests : `tests/Unit/SseSignatureStrokesTest.php`. Non essayé en jeu : voir la liste « à vérifier en jeu » de la PR.
