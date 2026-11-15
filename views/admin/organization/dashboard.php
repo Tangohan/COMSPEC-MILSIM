@@ -536,13 +536,51 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </div>
             <?php else: ?>
             <ul class="home-tasks">
-                <?php foreach ($homeTasks as $homeTask): ?>
+                <?php foreach ($homeTasks as $homeTaskN => $homeTask): ?>
+                <?php $homeTd = ($homeTask['detail'] ?? null) instanceof \App\Services\BackOffice\Menu\PendingTaskDetail ? $homeTask['detail'] : null; ?>
+                <?php if ($homeTd !== null): ?>
+                <?php
+                // Textes déjà composés dans la langue de la personne (formule) : protégés de la traduction de la page.
+                $homeTdNo = $homeTd->localized ? ' translate="no" lang="' . $pilH($homeTd->lang) . '"' : '';
+                $homeTdHelpId = 'home-task-help-' . (int) $homeTaskN;
+                ?>
+                <li class="home-task<?= !empty($homeTask['important']) ? ' is-important' : '' ?>">
+                    <div class="home-task__head">
+                        <span class="ath-mbadge <?= !empty($homeTask['important']) ? 'ath-mbadge--important' : 'ath-mbadge--notif' ?>"><?= $pilH(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format((int) $homeTask['count'])) ?></span>
+                        <h3 class="home-task__title"<?= $homeTdNo ?>><?= $pilH($homeTd->title !== '' ? $homeTd->title : (string) $homeTask['title']) ?></h3>
+                    </div>
+                    <p class="home-task__why"<?= $homeTdNo ?>><?= $pilH($homeTd->explain) ?></p>
+                    <dl class="home-task__facts">
+                        <div>
+                            <dt>Si vous ne faites rien</dt>
+                            <dd<?= $homeTdNo ?>><?= $pilH($homeTd->consequence) ?></dd>
+                        </div>
+                        <div>
+                            <dt>Ce qu’il faut faire</dt>
+                            <dd<?= $homeTdNo ?>><?= $pilH($homeTd->action) ?></dd>
+                        </div>
+                    </dl>
+                    <a class="pil-btn pil-btn--accent home-task__btn" href="<?= $pilH(url($homeTd->path)) ?>"><span<?= $homeTdNo ?>><?= $pilH($homeTd->button) ?></span></a>
+                    <?php if ($homeTd->help !== '' || $homeTd->who !== ''): ?>
+                    <details class="home-task__more" id="<?= $pilH($homeTdHelpId) ?>">
+                        <summary><?= $homeTd->help !== '' ? 'Qu’est-ce que c’est ?' : 'Qui peut le faire ?' ?></summary>
+                        <?php if ($homeTd->help !== ''): ?>
+                        <p<?= $homeTdNo ?>><?= $pilH($homeTd->help) ?></p>
+                        <?php endif; ?>
+                        <?php if ($homeTd->who !== ''): ?>
+                        <p><?php if ($homeTd->help !== ''): ?><b>Qui peut le faire ?</b> <?php endif; ?><span<?= $homeTdNo ?>><?= $pilH($homeTd->who) ?></span></p>
+                        <?php endif; ?>
+                    </details>
+                    <?php endif; ?>
+                </li>
+                <?php else: ?>
                 <li>
                     <a href="<?= $pilH(url($homeTask['path'])) ?>" class="home-tasks__it">
                         <span class="ath-mbadge <?= !empty($homeTask['important']) ? 'ath-mbadge--important' : 'ath-mbadge--notif' ?>"><?= $pilH(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format((int) $homeTask['count'])) ?></span>
                         <span><?= $pilH((string) $homeTask['title']) ?></span>
                     </a>
                 </li>
+                <?php endif; ?>
                 <?php endforeach; ?>
             </ul>
             <?php endif; ?>
