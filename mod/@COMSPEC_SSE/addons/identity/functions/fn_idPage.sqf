@@ -129,6 +129,17 @@ if (_tab isEqualTo "history") then {
             _rows pushBack ["banner", format ["<t color='%1'>%2</t>", _vc, _vt call _tr], _vbg];
         };
     };
+    // Avis de recherche actif lu sur le site (fn_idWantedCheck) : référence, type, menace, armé et mesure à prendre.
+    private _wanted = _cur getOrDefault ["wanted", []];
+    if (_wanted isEqualType [] && {(count _wanted) >= 5}) then {
+        _wanted params ["_wRef", "_wType", "_wThreat", "_wArmed", "_wInstr"];
+        private _wLvl = createHashMapFromArray [["low", "FAIBLE"], ["medium", "MOYEN"], ["high", "ÉLEVÉ"], ["critical", "CRITIQUE"]] getOrDefault [_wThreat, ""];
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='#ff5a5a'>%1</t> %2%3%4%5", "AVIS DE RECHERCHE" call _tr, [_wRef] call _esc,
+            ["", format [" · %1 %2", "MENACE" call _tr, _wLvl call _tr]] select (_wLvl isNotEqualTo ""),
+            ["", format [" · <t color='#ff5a5a'>%1</t>", "ARMÉ ET DANGEREUX" call _tr]] select (_wArmed isEqualTo "yes"),
+            ["", format ["<br/><t size='0.85' color='#f2ab33'>%1 : %2</t>", "Mesure à prendre" call _tr, [_wInstr] call _esc]] select (_wInstr isNotEqualTo "")],
+            [0.3, 0.02, 0.02, 1]];
+    };
     _rows pushBack ["steps", _steps];
     _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",
         format ["<t size='1.1' font='COMSPEC_BarlowBold'>%1 %2</t><br/><t size='0.8' color='#8b98a7'>%3 · %4 · %5</t>",

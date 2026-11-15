@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Étape « Suivi du dossier des membres : étapes personnalisées, compléments et historique » (Schéma).
  *
  * Crée, quand elles manquent, les tables member_dossier_steps et member_dossier_step_events (CREATE TABLE IF NOT EXISTS,
- * depuis migrations/2026_11_15_020_member_dossier_steps.sql), puis déclare dans chaque communauté les deux droits
+ * depuis migrations/2026_11_19_100_member_dossier_steps.sql), puis déclare dans chaque communauté les deux droits
  * effectifs.suivi.view et effectifs.suivi.manage pour qu'ils soient cochables dans Niveaux d'accès. Aucun niveau n'est
  * modifié : personne ne reçoit ces droits automatiquement, aucune donnée existante n'est touchée. Idempotente.
  * Retour arrière : migrations/rollback/member_dossier_steps_down.sql.
@@ -18,7 +18,7 @@ $mdsMissing = array_values(array_filter($mdsTables, static fn (string $t): bool 
 if ($mdsMissing === []) {
     echo "  [OK] Tables du suivi de dossier déjà présentes.\n";
 } else {
-    $mdsSchema->runSqlFile($root . '/migrations/2026_11_15_020_member_dossier_steps.sql');
+    $mdsSchema->runSqlFile($root . '/migrations/2026_11_19_100_member_dossier_steps.sql');
     foreach ($mdsTables as $mdsTable) {
         if (!$mdsSchema->tableExists($mdsTable)) {
             throw new RuntimeException('Création de la table ' . $mdsTable . ' impossible.');

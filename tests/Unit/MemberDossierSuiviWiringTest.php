@@ -82,7 +82,7 @@ final class MemberDossierSuiviWiringTest extends TestCase
         foreach (['app/Services/Community/TenantDefaultRoleDefinitions.php', 'app/Services/Community/TenantSeedHelper.php', 'migrations/20260903090000_simplified_community_roles.sql'] as $file) {
             self::assertStringNotContainsString('effectifs.suivi', self::read($file), $file);
         }
-        self::assertStringNotContainsString('INSERT INTO role_permissions', self::read('database/steps/4690_member_dossier_steps.php'));
+        self::assertStringNotContainsString('INSERT INTO role_permissions', self::read('database/steps/4720_member_dossier_steps.php'));
     }
 
     public function testViewAndManageRulesFollowTheExistingFicheAccess(): void
@@ -123,16 +123,16 @@ final class MemberDossierSuiviWiringTest extends TestCase
     {
         $registry = self::read('database/steps/registry.php');
         self::assertSame(1, substr_count($registry, "'id' => 'member_dossier_steps'"));
-        self::assertStringContainsString("'file' => '4690_member_dossier_steps.php'", $registry);
-        self::assertSame(1, substr_count($registry, "'file' => '4690_"), 'numéro libre sur main');
-        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4690_member_dossier_steps.php');
-        self::assertFileExists(dirname(__DIR__, 2) . '/migrations/2026_11_15_020_member_dossier_steps.sql');
+        self::assertStringContainsString("'file' => '4720_member_dossier_steps.php'", $registry);
+        self::assertSame(1, substr_count($registry, "'file' => '4720_"), 'numéro libre sur main');
+        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4720_member_dossier_steps.php');
+        self::assertFileExists(dirname(__DIR__, 2) . '/migrations/2026_11_19_100_member_dossier_steps.sql');
         self::assertFileExists(dirname(__DIR__, 2) . '/migrations/rollback/member_dossier_steps_down.sql');
     }
 
     public function testMigrationSqlIsSqliteCompatibleAndDeclaresTheDocumentedColumns(): void
     {
-        $sql = self::read('migrations/2026_11_15_020_member_dossier_steps.sql');
+        $sql = self::read('migrations/2026_11_19_100_member_dossier_steps.sql');
         self::assertDoesNotMatchRegularExpression('/ALTER\s+TABLE[^;]*ADD\s+(UNIQUE|CONSTRAINT|FOREIGN)/i', $sql);
         self::assertStringContainsString('UNIQUE KEY uq_mds_source', $sql, 'unique dans le CREATE TABLE');
         self::assertSame(2, substr_count($sql, 'CREATE TABLE IF NOT EXISTS'));
@@ -164,7 +164,7 @@ final class MemberDossierSuiviWiringTest extends TestCase
         self::assertStringContainsString('DROP TABLE IF EXISTS member_dossier_steps', $down);
         self::assertStringContainsString("slug IN ('effectifs.suivi.view', 'effectifs.suivi.manage')", $down);
         self::assertDoesNotMatchRegularExpression('/DROP TABLE IF EXISTS (member_integration|users|enlistments|data_campaign)/', $down);
-        $step = self::read('database/steps/4690_member_dossier_steps.php');
+        $step = self::read('database/steps/4720_member_dossier_steps.php');
         self::assertStringContainsString('tableExists', $step, 'étape rejouable');
         self::assertStringContainsString("'effectifs.suivi.manage'", $step);
     }

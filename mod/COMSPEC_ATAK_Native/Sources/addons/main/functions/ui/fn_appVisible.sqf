@@ -21,7 +21,7 @@ if (_id isEqualTo "Admin") exitWith { ["visible"] call comspec_atak_native_fnc_a
 private _inst = ["state", _id] call comspec_atak_native_fnc_appInstall;
 if (_inst isEqualTo "forbidden") exitWith { false };
 // Service Athéna refusé (ATAK local) : pas d'apps qui ne marchent qu'avec Athena.
-if (_id in ["Athena", "Resynch", "Discord", "Wanted"] && {([] call comspec_atak_native_fnc_athenaMode) isEqualTo "off"}) exitWith { false };
+if (_id in ["Athena", "Resynch", "Discord", "Wanted", "Fiches"] && {([] call comspec_atak_native_fnc_athenaMode) isEqualTo "off"}) exitWith { false };
 // Poste TOC : seulement au PC portable de TOC (fn_tocPost).
 if (_id isEqualTo "Toc") exitWith { ([player] call comspec_atak_native_fnc_vehicleTerminal) isEqualTo "toc" };
 if ((_app getOrDefault ["section", ""]) isEqualTo "Civil" && {!(missionNamespace getVariable ["comspec_atak_native_civil_apps", true])}) exitWith { false };

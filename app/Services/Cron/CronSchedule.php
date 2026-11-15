@@ -18,6 +18,20 @@ final class CronSchedule
 
     public const STUCK_RUNNING_MINUTES = 30;
 
+    /**
+     * Tâches d'envoi de « digests » par e-mail désactivées par défaut (décision de la plateforme, 15/11/2026) :
+     * résumé hebdomadaire RH, brouillons oubliés de la formation, point quotidien des analystes SSE.
+     * Les réactiver : CRON_ENABLED_JOBS=hr_weekly_digest,training_forgotten_docs_digest,sse_analyst_digest dans l'environnement.
+     * En désactiver d'autres : CRON_DISABLED_JOBS=clé1,clé2. Un passage manuel depuis l'administration reste possible.
+     *
+     * @var list<string>
+     */
+    public const DISABLED_BY_DEFAULT = [
+        'hr_weekly_digest',
+        'training_forgotten_docs_digest',
+        'sse_analyst_digest',
+    ];
+
     /** @var array<string, int> */
     private const INTERVALS = [
         'atak_report_routing_escalations' => 5,
@@ -89,6 +103,19 @@ final class CronSchedule
     /**
      * @param array<string, mixed>|null $latest
      */
+    /** La tâche est-elle coupée pour les passages planifiés ? (liste par défaut + variables CRON_DISABLED_JOBS / CRON_ENABLED_JOBS) */
+    public static function isDisabled(string $jobKey): bool
+    {
+        $split = static fn (string $v): array => array_values(array_filter(array_map('trim', explode(',', strtolower($v))), static fn (string $x): bool => $x !== ''));
+        $key = strtolower($jobKey);
+        if (in_array($key, $split((string) env('CRON_ENABLED_JOBS', '')), true)) {
+            return false;
+        }
+
+        return in_array($key, self::DISABLED_BY_DEFAULT, true)
+            || in_array($key, $split((string) env('CRON_DISABLED_JOBS', '')), true);
+    }
+
     public static function isDue(string $jobKey, ?array $latest, bool $force = false, ?int $now = null): bool
     {
         if ($force) {

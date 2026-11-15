@@ -1487,6 +1487,9 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
     </section>
     </div>
 
+    <?= $panelOpen('disponibilite') ?>
+    <?php require __DIR__ . '/partials/member_availability.php'; ?>
+    </div>
     <?php if (is_array($memberSuivi ?? null)): ?>
         <?= $panelOpen('suivi') ?>
         <?php // Portée isolée : le partiel ne doit pas écraser les variables de la fiche.

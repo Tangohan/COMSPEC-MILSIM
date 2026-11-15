@@ -31,6 +31,7 @@ final class MemberFicheTabs
         'acces' => ['label' => 'Accès', 'anchors' => ['acces-niveau', 'acces', 'acces-sse']],
         'statut' => ['label' => 'Position et statut', 'anchors' => ['statut-position', 'statut', 'depart']],
         'suivi-rh' => ['label' => 'Suivi RH', 'anchors' => ['suivi-rh', 'presence', 'absences', 'sanctions', 'documents-rh', 'mobilite', 'fiabilisation']],
+        'disponibilite' => ['label' => 'Disponibilité', 'anchors' => ['disponibilite']],
         'suivi' => ['label' => 'Suivi du dossier', 'anchors' => ['suivi'], 'needs' => 'suivi'],
         'historique' => ['label' => 'Historique', 'anchors' => ['historique', 'historique-rh', 'chronologie']],
     ];

@@ -39,7 +39,7 @@ final class DossierFixture
     /** Applique la vraie migration SQL du suivi de dossier. */
     public static function migrate(PDO $pdo): void
     {
-        $sql = (string) file_get_contents(self::root() . '/migrations/2026_11_15_020_member_dossier_steps.sql');
+        $sql = (string) file_get_contents(self::root() . '/migrations/2026_11_19_100_member_dossier_steps.sql');
         $sql = preg_replace('/^--.*$/m', '', $sql) ?? '';
         foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
             $pdo->exec($statement);

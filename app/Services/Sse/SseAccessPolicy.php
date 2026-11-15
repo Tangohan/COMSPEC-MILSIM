@@ -228,8 +228,8 @@ final class SseAccessPolicy
     }
 
     /**
-     * Droit d'ouvrir et de modifier les droits d'accès SSE : le droit de gestion SSE existant (attribution des accès), rien
-     * d'autre. Aucune règle ne l'étend ni ne le retire : les gestionnaires ne peuvent donc jamais être verrouillés dehors.
+     * Droit d'ouvrir et de modifier les droits d'accès SSE : le droit de gestion SSE existant (attribution des accès) ou
+     * l'administration de l'organisation / de la plateforme. Aucune règle ne l'étend ni ne le retire : les gestionnaires ne peuvent donc jamais être verrouillés dehors.
      */
     public function canManageRights(?int $userId = null, array $context = []): bool
     {
@@ -237,7 +237,18 @@ final class SseAccessPolicy
         $tenantId = $this->tenantOf($context);
         $guest = array_key_exists('guest', $context) ? (bool) $context['guest'] : $this->sessionGuest();
 
-        return $this->legacyAllows($uid > 0 ? $uid : 0, $tenantId, 'grant', $guest, self::DOOR_ENTRY);
+        if ($this->legacyAllows($uid > 0 ? $uid : 0, $tenantId, 'grant', $guest, self::DOOR_ENTRY)) {
+            return true;
+        }
+
+        // Les administrateurs de l'organisation et de la plateforme, qui entrent déjà au bureau sans code (hasEntryRight),
+        // gèrent aussi les droits d'accès : sinon le propriétaire d'une communauté sans le droit « attribution des accès »
+        // se voit refuser sa propre page de droits. Une session invitée (code) ne gère jamais.
+        if ($guest || $uid < 1 || $tenantId < 1) {
+            return false;
+        }
+
+        return $this->isPlatformAdmin($uid, $tenantId) || $this->permissionOf($uid, $tenantId, 'admin.organization');
     }
 
     /**

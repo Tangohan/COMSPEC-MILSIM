@@ -73,6 +73,36 @@ final class MemberAvailabilityRate
         ];
     }
 
+    /**
+     * Ajoute à un taux de disponibilité la présence sur le serveur : sessions d'au moins le seuil de la communauté
+     * (PlayerSessionService::summarize) sur 30 jours. Sans donnée de session (table absente) le taux est rendu tel quel,
+     * sans clé « server » : le calcul d'avant reste intact. Le pourcentage ne change pas : une connexion de quelques
+     * minutes n'ajoute rien, ni au taux ni au compte de sessions.
+     *
+     * @param array<string, mixed> $rate retour de fromCounts
+     * @param array<string, mixed>|null $sessions retour de PlayerSessionService::summarize, null si la table est absente
+     * @return array<string, mixed>
+     */
+    public static function withSessions(array $rate, ?array $sessions): array
+    {
+        if ($sessions === null) {
+            return $rate;
+        }
+        $w = is_array($sessions['windows'][30] ?? null) ? $sessions['windows'][30] : [];
+        $rate['server'] = [
+            'sessions' => (int) ($w['sessions'] ?? 0),
+            'days' => (int) ($w['days'] ?? 0),
+            'seconds' => (int) ($w['seconds'] ?? 0),
+            'short' => (int) ($w['short'] ?? 0),
+            'min_minutes' => (int) ($sessions['min_minutes'] ?? PlayerSessionService::DEFAULT_MIN_MINUTES),
+            'active' => !empty($sessions['active']),
+            'linked' => !empty($sessions['linked']),
+            'reliability' => (string) ($sessions['reliability'] ?? PlayerSessionService::RELIABILITY_NO_DATA),
+        ];
+
+        return $rate;
+    }
+
     public static function barHue(int $pct): int
     {
         return (int) round(max(0, min(100, $pct)) * 1.2);

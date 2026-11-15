@@ -1,0 +1,123 @@
+/*
+ * Bureau SSE — barre latérale : bouton « À trier » et pastilles des files.
+ * Styles isolés (--sb-*), sans toucher aux autres styles de la barre latérale. Aucune animation : une pastille ne clignote pas.
+ * Ton : neutre (un compte), ambre (la file a plus de 7 jours), rouge (élément critique ou délai dépassé). Le nombre et le
+ * nom accessible disent la même chose que la couleur.
+ */
+.iw-nav,
+.sb-inbox {
+    --sb-accent: #12d18e;
+    --sb-warn: #e0a233;
+    --sb-bad: #ff6b5e;
+    --sb-neutral: #8a979e;
+}
+
+.sb-badge,
+.sb-pill {
+    --sb-c: var(--sb-neutral);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--sb-c) 36%, transparent);
+    background: color-mix(in srgb, var(--sb-c) 15%, transparent);
+    color: var(--sb-c);
+    font: 700 12px/1 var(--sans, system-ui, sans-serif);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+}
+.sb-badge[hidden],
+.sb-pill[hidden] { display: none; }
+.sb-badge--warn, .sb-pill--warn { --sb-c: var(--sb-warn); }
+.sb-badge--bad, .sb-pill--bad { --sb-c: var(--sb-bad); }
+
+/* Section repliée : somme de ses files, discrète. Dépliée : les pastilles des entrées suffisent. */
+.sb-pill {
+    height: 18px;
+    min-width: 20px;
+    margin-left: auto;
+    padding: 0 5px;
+    border-color: transparent;
+    font-size: 11px;
+}
+.sx-nav__group[open] > .sx-nav__head > .sb-pill { display: none; }
+.sx-nav__group:not([open]) > .sx-nav__head:has(> .sb-pill:not([hidden]))::after { margin-left: 8px; }
+
+/* Bouton « À trier » : tête de la barre latérale, cible de 44 px au moins. */
+.iw-nav .sb-triage {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    box-sizing: border-box;
+    min-height: 44px;
+    margin: 0 8px 10px;
+    padding: 0 .8rem;
+    border: 1px solid var(--sx-line-2, rgba(238, 242, 240, 0.16));
+    border-radius: .6rem;
+    background: var(--sx-panel-2, #151c24);
+    color: var(--sx-ink, #eef2f0);
+    font: 700 .86rem/1.2 var(--sans, system-ui, sans-serif);
+    text-decoration: none;
+}
+.iw-nav .sb-triage svg { flex: 0 0 auto; color: var(--sb-accent); }
+.iw-nav .sb-triage__label { flex: 1; min-width: 0; }
+.iw-nav .sb-triage:hover { border-color: color-mix(in srgb, var(--sb-accent) 55%, transparent); }
+.iw-nav .sb-triage:focus-visible { outline: 2px solid var(--sb-accent); outline-offset: 2px; }
+.iw-nav .sb-triage.is-active {
+    border-color: color-mix(in srgb, var(--sb-accent) 70%, transparent);
+    background: color-mix(in srgb, var(--sb-accent) 10%, var(--sx-panel-2, #151c24));
+}
+
+/* Page « À trier » */
+.sb-inbox { display: grid; gap: 14px; }
+.sb-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.sb-tabs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--sx-line-2, rgba(238, 242, 240, 0.16));
+    border-radius: 999px;
+    color: var(--sx-dim, rgba(238, 242, 240, 0.7));
+    font: 600 .8rem var(--sans, system-ui, sans-serif);
+    text-decoration: none;
+}
+.sb-tabs a[aria-current="true"] { border-color: var(--sb-accent); color: var(--sx-ink, #eef2f0); }
+.sb-tabs a:hover { color: var(--sx-ink, #eef2f0); }
+.sb-tabs a:focus-visible { outline: 2px solid var(--sb-accent); outline-offset: 2px; }
+.sb-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--sx-line, rgba(238, 242, 240, 0.09)); border-radius: .8rem; overflow: hidden; background: var(--sx-panel, #10151b); }
+.sb-list li + li { border-top: 1px solid var(--sx-line, rgba(238, 242, 240, 0.09)); }
+.sb-row {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 14px;
+    min-height: 56px;
+    padding: 10px 16px;
+    color: inherit;
+    text-decoration: none;
+}
+.sb-row:hover { background: rgba(238, 242, 240, 0.04); }
+.sb-row:focus-visible { outline: 2px solid var(--sb-accent); outline-offset: -2px; }
+.sb-row__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sb-neutral); }
+.sb-row--warn .sb-row__dot { background: var(--sb-warn); }
+.sb-row--bad .sb-row__dot { background: var(--sb-bad); }
+.sb-row__title { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-row__meta { display: block; margin-top: 2px; color: var(--sx-dim, rgba(238, 242, 240, 0.58)); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-row__src { color: var(--sx-dim, rgba(238, 242, 240, 0.58)); font-size: .76rem; white-space: nowrap; }
+.sb-row__age { min-width: 64px; text-align: right; color: var(--sx-dim, rgba(238, 242, 240, 0.58)); font-size: .78rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sb-row__age--warn { color: var(--sb-warn); }
+.sb-row__age--bad { color: var(--sb-bad); }
+.sb-empty { padding: 44px 20px; text-align: center; border: 1px dashed var(--sx-line-2, rgba(238, 242, 240, 0.16)); border-radius: .8rem; }
+.sb-empty strong { display: block; font-size: 1.05rem; }
+.sb-empty p { margin: 6px 0 0; color: var(--sx-dim, rgba(238, 242, 240, 0.58)); }
+@media (max-width: 720px) {
+    .sb-row { grid-template-columns: 8px minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; }
+    .sb-row__src { display: none; }
+}
