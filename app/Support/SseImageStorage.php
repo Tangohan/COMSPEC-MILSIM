@@ -22,8 +22,8 @@ final class SseImageStorage
 
     public const PATH_PREFIX = 'sse-private/';
 
-    /** Dossiers d'images sensibles (les drapeaux de pays, publics par nature, restent sous public/uploads/sse-flags). */
-    public const FOLDERS = ['sse-id-photos', 'sse-id-signatures', 'sse-id-backgrounds'];
+    /** Dossiers d'images sensibles (« sse-wanted » : pièces jointes des avis de recherche, servies par la route des avis). */
+    public const FOLDERS = ['sse-id-photos', 'sse-id-signatures', 'sse-id-backgrounds', 'sse-wanted'];
 
     private const NAME = '[0-9]{1,10}_[a-f0-9]{16}\.(?:jpg|png|webp)';
 

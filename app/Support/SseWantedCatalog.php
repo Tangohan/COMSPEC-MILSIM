@@ -86,6 +86,8 @@ final class SseWantedCatalog
         'notice.captured' => ['Personne capturée', 'Subject captured', 'ok'],
         'notice.expired' => ['Avis de recherche expiré', 'Wanted notice expired', 'muted'],
         'notice.pdf' => ['Notice PDF générée', 'PDF notice generated', 'muted'],
+        'notice.attachment_added' => ['Image jointe à l’avis', 'Image attached to the notice', 'info'],
+        'notice.attachment_removed' => ['Image retirée de l’avis', 'Image removed from the notice', 'muted'],
         'document.issued' => ['Document PDF émis', 'PDF document issued', 'muted'],
         'detection.raised' => ['Détection système', 'System detection', 'bad'],
         'detection.handled' => ['Détection traitée', 'Detection handled', 'muted'],
@@ -97,7 +99,7 @@ final class SseWantedCatalog
         'record' => ['Fiche', 'Record', ['identity.created', 'identity.updated', 'identity.photo', 'file.photo', 'audit']],
         'papers' => ['Papiers', 'Documents', ['document.created', 'document.issued']],
         'checks' => ['Contrôles et consultations', 'Checks and queries', ['check.recorded', 'query.recorded']],
-        'notices' => ['Avis de recherche', 'Wanted notices', ['notice.placed', 'notice.lifted', 'notice.captured', 'notice.expired', 'notice.pdf', 'file.mention']],
+        'notices' => ['Avis de recherche', 'Wanted notices', ['notice.placed', 'notice.lifted', 'notice.captured', 'notice.expired', 'notice.pdf', 'notice.attachment_added', 'notice.attachment_removed', 'file.mention']],
         'detections' => ['Détections', 'Detections', ['detection.raised', 'detection.handled']],
     ];
 
