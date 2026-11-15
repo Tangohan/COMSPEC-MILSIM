@@ -157,6 +157,7 @@ final class MailBudget
         EmailEvents::ORG_LOW_MEMBERS_REMINDER => 'Communauté à un ou deux membres (rappel aux responsables)',
         EmailEvents::ORG_LOW_MEMBERS_ADMIN_DIGEST => 'Organisations à supprimer (résumé admin)',
         EmailEvents::YEAR_REVIEW_READY => 'Rétrospective annuelle prête',
+        EmailEvents::DATA_CAMPAIGN_REMINDER => 'Fiabilisation des données : rappel au membre',
         EmailEvents::PLAN_PAYMENT_DECLARED => 'Paiement PayPal à vérifier (admin)',
         EmailEvents::PLAN_PAYMENT_DECIDED => 'Paiement PayPal confirmé ou refusé',
         EmailEvents::TENANT_INTERNAL_MESSAGE_THREAD => 'Messagerie interne',

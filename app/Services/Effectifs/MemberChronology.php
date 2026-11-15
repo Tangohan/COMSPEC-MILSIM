@@ -28,6 +28,7 @@ final class MemberChronology
         'mobilite' => 'Mobilité',
         'document' => 'Documents RH',
         'depart' => 'Départs',
+        'fiabilisation' => 'Fiabilisation',
     ];
 
     /** Carte de la fiche qui détaille chaque type (ancre conservée de la fiche d'origine). */
@@ -44,6 +45,7 @@ final class MemberChronology
         'mobilite' => 'mobilite',
         'document' => 'documents-rh',
         'depart' => 'depart',
+        'fiabilisation' => 'fiabilisation',
     ];
 
     /**
@@ -169,6 +171,10 @@ final class MemberChronology
             $type = (string) ($d['doc_type'] ?? 'autre');
             $title = trim((string) ($d['title'] ?? '')) ?: (string) ($documentTypes[$type] ?? 'Document RH');
             $add('document', (string) ($d['created_at'] ?? ''), $title, (string) ($documentTypes[$type] ?? ''));
+        }
+        // Campagnes de fiabilisation des données : une ligne par confirmation de la fiche par le membre.
+        foreach ($rows('data_campaigns') as $d) {
+            $add('fiabilisation', (string) ($d['confirmed_at'] ?? ''), 'Fiche fiabilisée — campagne ' . (int) ($d['campaign_year'] ?? 0), trim((string) ($d['title'] ?? '')));
         }
         if (is_array($sources['departure'] ?? null)) {
             $dep = $sources['departure'];

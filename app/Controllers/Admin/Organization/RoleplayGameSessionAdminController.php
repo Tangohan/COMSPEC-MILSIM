@@ -212,12 +212,14 @@ final class RoleplayGameSessionAdminController
         }
         $roster = [];
         try {
-            foreach ($this->users->allForTenant($tenantId) as $u) {
+            $allUsers = $this->users->allForTenant($tenantId);
+            \App\Support\MemberIdentity::preload($tenantId, array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $allUsers));
+            foreach ($allUsers as $u) {
                 $uid = (int) ($u['id'] ?? 0);
                 if ($uid < 1 || isset($inSession[$uid]) || (string) ($u['status'] ?? 'active') !== 'active') {
                     continue;
                 }
-                $label = trim((string) ($u['display_name'] ?? '')) ?: (trim((string) ($u['callsign'] ?? '')) ?: (string) ($u['email'] ?? ''));
+                $label = member_label(['id' => $uid, 'display_name' => (string) ($u['display_name'] ?? ''), 'callsign' => (string) ($u['callsign'] ?? '')], 'list', null);
                 $roster[] = ['id' => $uid, 'label' => $label];
             }
             usort($roster, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));

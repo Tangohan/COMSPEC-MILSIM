@@ -22,6 +22,9 @@ $csrfToken = (string) ($csrfToken ?? '');
 /** @var list<array<string, mixed>> $missingMediaUsers */
 $missingMediaUsers = is_array($missingMediaUsers ?? null) ? array_values($missingMediaUsers) : [];
 
+/** @var array<string, mixed> $legacy Section « Données anciennes à vérifier » (LegacyDataScreen::build). */
+$legacy = is_array($legacy ?? null) ? $legacy : [];
+
 /** @var array<string, mixed> $storage */
 $storage = is_array($storage ?? null) ? $storage : [];
 $storageSets = is_array($storage['sets'] ?? null) ? $storage['sets'] : [];
@@ -119,6 +122,7 @@ $nav = [
     ['id' => 'versions', 'icon' => 'versions', 'title' => 'Versions de l’ORBAT', 'count' => count($snapshots)],
     ['id' => 'stockage', 'icon' => 'archive', 'title' => 'Espace et données du jeu', 'count' => count($storageSets)],
     ['id' => 'photos', 'icon' => 'camera', 'title' => 'Photos perdues', 'count' => count($missingMediaUsers), 'tone' => $missingMediaUsers !== [] ? 'warn' : null],
+    ['id' => 'donnees-anciennes', 'icon' => 'versions', 'title' => 'Données anciennes à vérifier', 'count' => count(is_array($legacy['lines'] ?? null) ? $legacy['lines'] : []), 'tone' => !empty($legacy['lines']) ? 'warn' : null],
     ['id' => 'reperes', 'icon' => 'model', 'title' => 'Modèle des données'],
 ];
 ?>
@@ -558,6 +562,8 @@ $nav = [
                 <?php endif; ?>
                 <?php endif; ?>
             </section>
+
+            <?php require base_path('views/admin/organization/partials/legacy_data.php'); ?>
 
             <!-- Repères -->
             <section class="bo-dq-section bo-dq-section--soft" id="dq-reperes" data-dq-section="reperes">

@@ -74,8 +74,8 @@ final class MemberNameTest extends TestCase
     public function testFallbackToPseudoWhenNamesAreMissing(): void
     {
         $pseudo = ['first_name' => '', 'last_name' => '', 'display_name' => 'Ghost', 'callsign' => 'Reaper'];
-        self::assertSame('Ghost', MemberName::full($pseudo));
-        self::assertSame('Ghost', MemberName::short($pseudo));
+        self::assertSame('Reaper', MemberName::full($pseudo));
+        self::assertSame('Reaper', MemberName::short($pseudo));
         self::assertSame('GHO', MemberName::pickTrigram($pseudo, []));
         self::assertSame('Reaper', MemberName::short(['callsign' => 'Reaper']));
         self::assertSame(MemberName::FALLBACK, MemberName::short([]));

@@ -22,7 +22,7 @@ final class PersonnelRpIdentityAssetTest extends TestCase
         self::assertStringContainsString('>Prénom</label>', $edit);
         self::assertStringContainsString('>Nom</label>', $edit);
         self::assertStringContainsString('Présentation du personnage', $edit);
-        self::assertStringContainsString('Identité en jeu', $edit);
+        self::assertStringContainsString('État civil du personnage', $edit);
         self::assertStringNotContainsString('hors personnage', $edit);
         self::assertStringNotContainsString('Identité nominative', $edit);
         self::assertStringNotContainsString('civil_first_name', $edit);
