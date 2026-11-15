@@ -1,12 +1,20 @@
 /*
     comspec_fb_fnc_aiBatch : traite une tranche de 6 IA locales d'une détonation (règle du camp, exposition, réaction),
     puis confie le reste à l'image suivante (CBA_fnc_execNextFrame) : jamais plus de 6 IA par image, aucune attente.
+    Le plafond de 6 par image est COMMUN à toutes les détonations en cours sur ce poste (comspec_fb_aiFrame = [image,
+    IA déjà traitées dans cette image]) : en rafale (un flash toutes les 65 ms), chaque détonation ouvrait sa propre
+    suite de tranches et plusieurs tombaient dans la même image (12 à 18 IA, 2 à 3 rayons chacune). Une tranche qui
+    n'a plus de place attend l'image suivante ; aucune IA n'est perdue, l'ordre de chaque détonation est gardé.
     Même calcul que pour le joueur (fn_exposure) avec le rayon et le plancher de pupille des IA (fn_aiParams) ;
     les lignes de journal « unité » gardent leur format (la mission d'autotest les compte).
     [_file, _ctx, _posASL, _env, _force, _centre, _réglages] call comspec_fb_fnc_aiBatch
 */
 params ["_queue", "_ctx", "_pos", "_env", "_g", "_center", "_cfg"];
 private _n = 6 min count _queue;
+if (isNil "comspec_fb_aiFrame") then { comspec_fb_aiFrame = [-1, 0] };
+if ((comspec_fb_aiFrame select 0) != diag_frameNo) then { comspec_fb_aiFrame = [diag_frameNo, 0] };
+_n = _n min ((6 - (comspec_fb_aiFrame select 1)) max 0);
+comspec_fb_aiFrame set [1, (comspec_fb_aiFrame select 1) + _n];
 private _side = _ctx get "side";
 private _thrower = _ctx getOrDefault ["thrower", objNull];
 private _area = (_ctx get "kind") == "area";

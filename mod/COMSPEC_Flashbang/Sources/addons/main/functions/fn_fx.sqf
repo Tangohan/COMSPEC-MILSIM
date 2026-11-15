@@ -14,7 +14,8 @@
     orange-blanc par les évents (0,15 - 0,3 s), lueur chaude très atténuée mêlée au flash ; aucun feu, aucun dégât.
     Budget et rafales : au plus 8 lumières à la fois sur ce poste ; une détonation à moins de 0,12 s de la précédente
     de la même grenade ne crée pas de nouvelle lumière ni de flammes : elle relance la lumière en cours à son pic, avec
-    une nouvelle teinte. En rafale (_fast) la lumière retombe très vite entre deux coups (pic 18 ms, constante 22 ms :
+    une nouvelle teinte. Dans ce même cas elle ne recrée ni l'onde de choc ni la poussière au sol : celles du coup
+    précédent sont encore à l'écran (0,25 s et 1,2 s de vie) ; boule de flash, étincelles et fumée restent à chaque coup. En rafale (_fast) la lumière retombe très vite entre deux coups (pic 18 ms, constante 22 ms :
     à 65 ms d'écart elle redescend sous 15 % avant le coup suivant) : N coups = N éclats visibles (stroboscope).
     Couleur (fn_tint) : température tirée à chaque détonation autour du blanc ; la lumière, les étincelles et le halo
     suivent. Halo à l'écran (fn_halo) : 8 modèles, rotation, taille, durée et étirement tirés au hasard.
@@ -160,8 +161,8 @@ if (_drill) exitWith {
     [[1, 1, 1, 1], [1, 1, 1, 0.6], [1, 1, 1, 0]], [1], 0, 0, "", "", "", 0, false, 0, [[60, 60, 60, 1], [10, 10, 10, 0]]],
  [0, [0, 0, 0], [0, 0, 0], 0, 0.2, [0, 0, 0, 0], 0, 0], 0.04, 0.05] call _emit;
 
-// Onde de choc (réfraction) qui s'étale au ras du sol.
-if (_q >= 1) then {
+// Onde de choc (réfraction) qui s'étale au ras du sol (rafale : celle du coup précédent est encore là).
+if (_q >= 1 && {!_fused}) then {
     [[["\A3\data_f\ParticleEffects\Universal\Refract", 1, 0, 1], "", "Billboard", 1, 0.25, [0, 0, 0.3], [0, 0, 0], 0, 1, 1, 0,
         [0.5, 4.5], [[1, 1, 1, 0.9], [1, 1, 1, 0]], [1], 0, 0, "", "", ""],
      [0, [0, 0, 0], [0, 0, 0], 0, 0, [0, 0, 0, 0], 0, 0], 0.1, 0.05] call _emit;
@@ -175,7 +176,8 @@ private _sparkInterval = ([0.02, 0.008, 0.004] select _q) / (_k max 0.5);
  [0.2, [0.05, 0.05, 0.05], [7, 7, 4], 0, 0.02, [0, 0, 0, 0], 0, 0], _sparkInterval, 0.06] call _emit;
 
 // Poussière soulevée au sol (dehors) ou débris légers (dedans), puis fumée blanche brève.
-if (_q >= 1) then {
+// Rafale : la poussière du coup précédent (1,2 s de vie) est encore là, pas de nouvelle source.
+if (_q >= 1 && {!_fused}) then {
     [[_smoke, "", "Billboard", 1, 1.2, [0, 0, 0.05], [0, 0, 0.2], 0, 1.3, 1, 0.5, [0.4, 1.6, 2.4],
         [[0.62, 0.58, 0.5, 0.35], [0.62, 0.58, 0.5, 0.15], [0.62, 0.58, 0.5, 0]], [1], 0.1, 0.1, "", "", ""],
      [0.3, [0.2, 0.2, 0], [2.5, 2.5, 0.2] apply { _x * _sz }, 0, 0.3, [0, 0, 0, 0.05], 0, 0], [0.04, 0.02] select (_q - 1), 0.1] call _emit;
