@@ -105,9 +105,20 @@ final class ActivityHubPresentationService
                     'validate' => 'Avis de recherche à valider : ',
                     'validated' => 'Avis de recherche validé : ',
                     'rejected' => 'Avis de recherche refusé : ',
+                    'report' => 'Nouveau signalement : ',
+                    'proposal' => 'Alerte proposée à valider : ',
+                    'proposal_accepted' => 'Proposition d’alerte acceptée : ',
+                    'proposal_rejected' => 'Proposition d’alerte refusée : ',
                     default => 'Nouvel avis de recherche : ',
                 } . mb_substr(trim((string) (($payload['label'] ?? '') !== '' ? $payload['label'] : ($payload['ref'] ?? ''))), 0, 80),
-                'detail' => 'Avis ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ((string) ($payload['event'] ?? '') === 'validate' ? ' : un responsable doit le valider avant sa diffusion.' : '.'),
+                'detail' => match ((string) ($payload['event'] ?? '')) {
+                    // Point d'accroche Discord : un signalement ou une proposition n'envoie rien sur Discord pour l'instant.
+                    'report' => 'Signalement ' . mb_substr(trim((string) ($payload['report'] ?? '')), 0, 40) . ' sur ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ' : à traiter dans les signalements.',
+                    'proposal' => 'Proposition ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ' : un responsable doit l’accepter ou la refuser.',
+                    'proposal_accepted' => 'Votre proposition est devenue l’alerte ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . '.',
+                    'proposal_rejected' => 'Proposition ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ' : refusée par un responsable.',
+                    default => 'Avis ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ((string) ($payload['event'] ?? '') === 'validate' ? ' : un responsable doit le valider avant sa diffusion.' : '.'),
+                },
                 'href' => is_string($payload['path'] ?? null) && preg_match('#^atak/sse/avis[A-Za-z0-9/_\-?=&]*$#', (string) $payload['path']) === 1
                     ? url((string) $payload['path']) : url('atak/sse/avis'),
                 'unread' => $unread,

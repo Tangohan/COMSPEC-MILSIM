@@ -25,6 +25,13 @@ use App\Support\SseSheetCatalog as D;
 use App\Support\SseUsClassification;
 use App\Support\SseWantedCatalog as W;
 
+// Fiche de vigilance : écran d'émission en étapes (niveau, consignes, cadre, service à informer, aperçu et émission).
+if ($model === 'vigilance') {
+    require __DIR__ . '/vigilance_editor.php';
+
+    return;
+}
+
 ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $ui = ($readerLang ?? 'fr') === 'en' ? 1 : 0;

@@ -179,7 +179,7 @@ final class SseSheetFactsService
             'hair' => $hair !== '' ? ($en ? self::HAIR_EN[$hair] ?? $hair : S::HAIR[$hair] ?? $hair) : '',
             'eyes' => $eyes !== '' ? ($en ? self::EYES_EN[$eyes] ?? $eyes : S::EYES[$eyes] ?? $eyes) : '',
             'id_document' => $idDoc,
-            'photos' => $this->photoPaths($person, $identity, $dossier),
+            'photos' => $this->photoPaths($tenantId, $person, $identity, $dossier),
             'bio' => $bio,
             'last_seen_place' => implode(' · ', array_slice($placeParts, 0, 2)),
             'last_seen_at' => $seenAt,
@@ -406,8 +406,12 @@ final class SseSheetFactsService
      * @param array<string, mixed> $dossier
      * @return list<string>
      */
-    private function photoPaths(array $person, array $identity, array $dossier): array
+    private function photoPaths(int $tenantId, array $person, array $identity, array $dossier): array
     {
+        // Identité d'un membre : aucune image sans autorisation hiérarchique (même règle que la notice de recherche).
+        if ((int) ($identity['user_id'] ?? 0) > 0 && !$this->memberImagesAllowed($tenantId, $identity)) {
+            return [];
+        }
         $out = [];
         $primary = is_array($person['primary_photo'] ?? null) ? (string) ($person['primary_photo']['image_path'] ?? '') : '';
         foreach ([$primary, (string) ($identity['photo_path'] ?? '')] as $p) {
@@ -423,6 +427,29 @@ final class SseSheetFactsService
         }
 
         return array_slice(array_values(array_unique(array_filter($out, static fn (string $p): bool => $p !== ''))), 0, 6);
+    }
+
+    /** @param array<string, mixed> $identity */
+    private function memberImagesAllowed(int $tenantId, array $identity): bool
+    {
+        try {
+            $gate = SseMemberImageGate::forSession();
+            $access = $gate->forIdentity($tenantId, $identity);
+            if (!$access['allowed']) {
+                $gate->recordDenied($tenantId, $gate->viewerId(), 'sheet_pdf', (int) ($identity['id'] ?? 0), $access['owner']);
+
+                return false;
+            }
+            if ($access['confidential'] && $access['reason'] !== SseMemberImageGate::WHY_HOLDER) {
+                $gate->recordConsultation($tenantId, (int) $gate->viewerId(), 'sheet_pdf', (int) ($identity['id'] ?? 0), $access['owner'], $access['reason']);
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('Fiches PDF : image d’un membre omise (autorisation ou journal indisponible) : ' . $e->getMessage());
+
+            return false;
+        }
     }
 
     private function day(string $value): string

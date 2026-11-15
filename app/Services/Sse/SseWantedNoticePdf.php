@@ -37,6 +37,9 @@ use App\Support\TrainingCertificatePdfEngine;
  */
 final class SseWantedNoticePdf
 {
+    use SsePdfAlertArt;
+    use SseWantedNoticePdfColor;
+
     private const RED = [176, 18, 31];
     private const INK = [24, 30, 38];
     private const MUTED = [98, 108, 120];
@@ -197,8 +200,24 @@ final class SseWantedNoticePdf
 
         $verso = $d['faces'] === '2' || ($d['faces'] === 'auto' && self::needsVerso($d));
         $pages = $verso ? 2 : 1;
+        self::$framedPages = 0;
+        self::$framedColor = '';
 
         $pdf->AddPage();
+        if (is_array($d['notice_color'] ?? null)) {
+            // Notice de couleur : cadre plein sur tout le contour, recto et verso, rubriques numérotées.
+            // Le verso s'ajoute aussi quand un texte du recto a dû être coupé : rien n'est perdu.
+            $truncated = $this->colorFront($d);
+            $verso = $verso || ($d['faces'] !== '1' && in_array(true, $truncated, true));
+            $pages = $verso ? 2 : 1;
+            $this->colorChrome($d, 1, $pages);
+            if ($verso) {
+                $pdf->AddPage();
+                $this->colorBack($d, $truncated, $pages);
+            }
+
+            return (string) $pdf->Output('notice.pdf', 'S');
+        }
         $truncated = $this->front($d);
         $this->footer($d, 1, $pages);
         if ($verso) {
@@ -353,10 +372,17 @@ final class SseWantedNoticePdf
         $y += $actionH + 2.5;
         $pdf->SetFont($this->sans, '', 7.8);
         $pdf->SetTextColor(...self::INK);
+        // Adresse de signalement : QR code à droite des lignes du service (gabarit sans cadre de couleur).
+        $url = (string) ($d['report_url'] ?? '');
+        $lineW = self::CONTENT_W;
+        if ($url !== '' && $y + 15.0 <= 274.0 && $this->artQr($url, $l + self::CONTENT_W - 15.0, $y, 15.0)) {
+            $lineW -= 19.0;
+            $line[] = ($this->lang === 1 ? 'Online report' : 'Signalement en ligne') . ' : ' . $url;
+        }
         foreach ($line as $one) {
-            [$one] = $this->fitOrCut($one, self::CONTENT_W, 4.0, 7.8, 6.6, '');
+            [$one] = $this->fitOrCut($one, $lineW, 4.0, 7.8, 5.6, '');
             $pdf->SetXY($l, $y);
-            $pdf->MultiCell(self::CONTENT_W, 3.9, $one, 0, 'L', false, 1, null, null, true, 0, false, true, 4.0, 'T', true);
+            $pdf->MultiCell($lineW, 3.9, $one, 0, 'L', false, 1, null, null, true, 0, false, true, 4.0, 'T', true);
             $y += 4.2;
         }
 
@@ -616,14 +642,23 @@ final class SseWantedNoticePdf
 
             return;
         }
-        // Silhouette neutre.
-        $pdf->SetFillColor(215, 219, 224);
-        $pdf->Circle($x + $w / 2, $y + $h * 0.38, $w * 0.19, 0, 360, 'F');
-        $pdf->Ellipse($x + $w / 2, $y + $h * 0.82, $w * 0.34, $h * 0.2, 0, 0, 360, 'F');
-        $pdf->SetFont($this->sans, '', 6.6);
-        $pdf->SetTextColor(...self::MUTED);
-        $pdf->SetXY($x, $y + $h - 7.0);
-        $pdf->MultiCell($w, 3.0, mb_strtoupper($this->t('photo_none')[$this->lang], 'UTF-8'), 0, 'C', false, 1, null, null, true, 0, false, true, 6.0, 'T', true);
+        // Cadre « photo indisponible » : silhouette neutre rognée et bandeau sombre, mention dans les deux langues.
+        $strip = 8.4;
+        $pdf->SetFillColor(206, 211, 217);
+        $pdf->Circle($x + $w / 2, $y + $h * 0.36, $w * 0.19, 0, 360, 'F');
+        $pdf->StartTransform();
+        $pdf->Rect($x + 0.4, $y + 0.4, $w - 0.8, $h - $strip - 0.4, 'CNZ');
+        $pdf->Ellipse($x + $w / 2, $y + $h * 0.86, $w * 0.36, $h * 0.26, 0, 0, 360, 'F');
+        $pdf->StopTransform();
+        $pdf->SetFillColor(...self::INK);
+        $pdf->Rect($x, $y + $h - $strip, $w, $strip, 'F');
+        $pdf->SetFont($this->sans, 'B', 6.8);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetXY($x, $y + $h - $strip + 1.0);
+        $pdf->Cell($w, 3.2, mb_strtoupper($this->t('photo_none')[$this->lang], 'UTF-8'), 0, 0, 'C');
+        $pdf->SetFont($this->sans, '', 5.8);
+        $pdf->SetXY($x, $y + $h - $strip + 4.4);
+        $pdf->Cell($w, 2.8, mb_strtoupper($this->t('photo_none')[1 - $this->lang], 'UTF-8'), 0, 0, 'C');
         $pdf->SetLineWidth(0.25);
     }
 

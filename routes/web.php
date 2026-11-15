@@ -1236,6 +1236,8 @@ return function (Router $router) {
     $router->get('/atak/sse/identites/{id}', [SsePortalController::class, 'identityShow'], $mwSsePortal);
     $router->post('/atak/sse/identites/{id}/registre', [\App\Controllers\Web\SsePersonRegistryController::class, 'create'], $mwSsePortal);
     // Fiches PDF d'une personne ou d'une identité (identification, vigilance, renseignement, contrôle, avis) : éditeur, brouillons, aperçu, émission.
+    $router->post('/atak/sse/identites/emission/vigilances/{id}/renouveler', [\App\Controllers\Web\SseVigilanceController::class, 'renew'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/vigilances/{id}/lever', [\App\Controllers\Web\SseVigilanceController::class, 'lift'], $mwSsePortal);
     $router->get('/atak/sse/identites/emission/phrases', [\App\Controllers\Web\SseSheetController::class, 'phrases'], $mwSsePortal);
     $router->post('/atak/sse/identites/emission/phrases', [\App\Controllers\Web\SseSheetController::class, 'phraseSave'], $mwSsePortal);
     $router->post('/atak/sse/identites/emission/phrases/{id}/supprimer', [\App\Controllers\Web\SseSheetController::class, 'phraseDelete'], $mwSsePortal);
@@ -1255,6 +1257,15 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/identites/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/images', [\App\Controllers\Web\SseIdWorkshopController::class, 'identityImages'], $mwSsePortal);
+    // Signalements des alertes SSE : page ouverte depuis le QR code (compte requis), QR en SVG, liste, états, révocation, propositions, photo.
+    $router->get('/atak/sse/signalement/{token}', [\App\Controllers\Web\SseAlertReportController::class, 'show'], $mwSsePortal);
+    $router->post('/atak/sse/signalement/{token}', [\App\Controllers\Web\SseAlertReportController::class, 'submit'], $mwSsePortal);
+    $router->get('/atak/sse/signalement/{token}/qr.svg', [\App\Controllers\Web\SseAlertReportController::class, 'qr'], $mwSsePortal);
+    $router->get('/atak/sse/avis/signalements', [\App\Controllers\Web\SseAlertReportController::class, 'index'], $mwSsePortal);
+    $router->post('/atak/sse/avis/signalements/{id}/statut', [\App\Controllers\Web\SseAlertReportController::class, 'status'], $mwSsePortal);
+    $router->get('/atak/sse/avis/signalements/{id}/photo', [\App\Controllers\Web\SseAlertReportController::class, 'photo'], $mwSsePortal);
+    $router->post('/atak/sse/avis/liens/{id}/revoquer', [\App\Controllers\Web\SseAlertReportController::class, 'revoke'], $mwSsePortal);
+    $router->post('/atak/sse/avis/propositions/{id}/decision', [\App\Controllers\Web\SseAlertReportController::class, 'decide'], $mwSsePortal);
     // Avis de recherche posés depuis la fiche d'une identité fictive (jeu de rôle), notice PDF, détections système.
     $router->get('/atak/sse/papiers/identites/{id}/avis/nouveau', [\App\Controllers\Web\SseWantedNoticeController::class, 'placeForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/avis', [\App\Controllers\Web\SseWantedNoticeController::class, 'place'], $mwSsePortal);
@@ -1263,6 +1274,14 @@ return function (Router $router) {
     $router->post('/atak/sse/avis/reglages', [\App\Controllers\Web\SseWantedNoticeController::class, 'settingsSave'], $mwSsePortal);
     $router->post('/atak/sse/avis/reglages/services', [\App\Controllers\Web\SseWantedNoticeController::class, 'servicesSave'], $mwSsePortal);
     $router->get('/atak/sse/avis/reglages/services/export', [\App\Controllers\Web\SseWantedNoticeController::class, 'servicesExport'], $mwSsePortal);
+    // Personnalisation des services demandeurs (fiche, surcharge d'un service livré, emblème téléversé) et service d'un avis émis.
+    $router->post('/atak/sse/avis/services/nouveau', [\App\Controllers\Web\SseWantedServiceController::class, 'create'], $mwSsePortal);
+    $router->post('/atak/sse/avis/services/{code}/modifier', [\App\Controllers\Web\SseWantedServiceController::class, 'update'], $mwSsePortal);
+    $router->post('/atak/sse/avis/services/{code}/retablir', [\App\Controllers\Web\SseWantedServiceController::class, 'reset'], $mwSsePortal);
+    $router->get('/atak/sse/avis/services/{code}/embleme', [\App\Controllers\Web\SseWantedServiceController::class, 'emblem'], $mwSsePortal);
+    $router->post('/atak/sse/avis/services/{code}/embleme', [\App\Controllers\Web\SseWantedServiceController::class, 'emblemUpload'], $mwSsePortal);
+    $router->post('/atak/sse/avis/services/{code}/embleme/retirer', [\App\Controllers\Web\SseWantedServiceController::class, 'emblemRemove'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/service', [\App\Controllers\Web\SseWantedServiceController::class, 'noticeRefresh'], $mwSsePortal);
     $router->get('/atak/sse/avis/detections', [\App\Controllers\Web\SseWantedNoticeController::class, 'detections'], $mwSsePortal);
     $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
     $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
@@ -3474,6 +3493,17 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // classification et l'habilitation du porteur ; une référence qui porte « / » s'écrit %2F (ou ?ref=).
     $router->get('/api/game/v1/sse/fiches', [\App\Controllers\Api\Game\GameSseFichesApiController::class, 'show']);
     $router->get('/api/game/v1/sse/fiches/{ref}', [\App\Controllers\Api\Game\GameSseFichesApiController::class, 'detail']);
+    // Alertes SSE (ICD-SSE-ALERTES-001) : avis, notices de couleur et fiches de vigilance lus, émis, renouvelés, levés, accusés et
+    // signalés depuis le jeu. Mêmes gardes que les fiches ; « catalog » avant « {ref} » ; une référence qui porte « / » s'écrit %2F.
+    $router->get('/api/game/v1/sse/alertes/catalog', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'catalog']);
+    $router->get('/api/game/v1/sse/alertes', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'index']);
+    $router->get('/api/game/v1/sse/alertes/propositions', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'proposalStates']);
+    $router->get('/api/game/v1/sse/alertes/{ref}', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'detail']);
+    $router->post('/api/game/v1/sse/alertes', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'create']);
+    $router->post('/api/game/v1/sse/alertes/{ref}/report', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'report']);
+    $router->post('/api/game/v1/sse/alertes/{ref}/renew', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'renew']);
+    $router->post('/api/game/v1/sse/alertes/{ref}/lift', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'lift']);
+    $router->post('/api/game/v1/sse/alertes/{ref}/ack', [\App\Controllers\Api\Game\GameSseAlertesApiController::class, 'ack']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.

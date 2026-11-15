@@ -515,13 +515,13 @@ final class SseWantedProcessTest extends TestCase
         self::assertStringContainsString('Proposer à la validation', (new SseWantedNoticeController(null, null, null, null, null, null, null, self::analyst()))->placeForm(new Request(), ['id' => $id])->body(), 'Le bouton annonce le circuit de validation');
 
         $settingsPage = $controller->settings(new Request())->body();
-        foreach (['id="wc-pane-services"', 'Nouveau service', 'Importer', 'Exporter', 'SVC-JIFC', 'CSV-COD', 'data-ws-drawer', 'Circuit de validation', 'name="process_timezone"'] as $needle) {
+        foreach (['id="wc-pane-services"', 'Nouveau service', 'Importer', 'Exporter', 'SVC-JIFC', 'CSV-COD', 'data-svc-modal', 'Circuit de validation', 'name="process_timezone"'] as $needle) {
             self::assertStringContainsString($needle, $settingsPage, $needle);
         }
         $readOnly = (new SseWantedNoticeController(null, null, null, null, null, null, null, self::analyst()))->settings(new Request())->body();
         self::assertStringContainsString('SVC-JIFC', $readOnly);
-        self::assertStringNotContainsString('data-ws-new', $readOnly, 'Sans le niveau Gérer, aucun bouton de création');
-        self::assertStringNotContainsString('data-ws-drawer', $readOnly);
+        self::assertStringNotContainsString('data-svc-new', $readOnly, 'Sans le niveau Gérer, aucun bouton de création');
+        self::assertStringNotContainsString('data-svc-save', $readOnly, 'Lecture seule : aucun bouton d’enregistrement');
 
         $list = (function () use ($controller): string {
             $_GET = ['statut' => 'a_valider'];

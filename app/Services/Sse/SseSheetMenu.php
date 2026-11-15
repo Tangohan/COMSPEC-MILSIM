@@ -28,6 +28,7 @@ final class SseSheetMenu
             'kind' => $kind, 'id' => $id, 'subject_ref' => (string) $subject['ref'], 'lang' => $lang, 'allowed' => [], 'locked' => [], 'reason' => null,
             'notice' => null, 'issues' => [], 'ready' => SseSheetRepository::ready(), 'canPhrases' => $access->canManagePhrases(), 'primary' => null,
             'phrasesUrl' => url('atak/sse/identites/emission/phrases'), 'level' => $access->level(),
+            'vigilances' => [], 'banner' => null,
         ];
         try {
             $out['default_level'] = SseSheetService::clampLevel((new \App\Repositories\SseWantedSettingsRepository())->get($tenantId)['default_classification'] ?? '', $access);
@@ -36,6 +37,16 @@ final class SseSheetMenu
         }
         if ($id < 1) {
             return $out;
+        }
+        // Fiches de vigilance émises et bandeau d'avertissement : jamais plus que l'habilitation du lecteur (SseVigilanceFollow).
+        if (!$guest) {
+            try {
+                $follow = SseVigilanceFollow::forSubject($tenantId, $subject, $access, $lang === 'en' ? 1 : 0);
+                $out['vigilances'] = $follow['list'];
+                $out['banner'] = $follow['banner'];
+            } catch (\Throwable $e) {
+                error_log('Fiches de vigilance : liste indisponible : ' . $e->getMessage());
+            }
         }
         if (!$access->canDraft()) {
             $out['reason'] = $access->denial('identification') ?? 'Droit manquant.';

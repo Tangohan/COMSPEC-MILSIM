@@ -39,6 +39,14 @@ $ilabels = static function (string $model) use ($ilang): array {
 
     return $out;
 };
+// Fiches de vigilance : listées à part (niveau, état, actions) ; le tableau ne garde que les autres documents.
+$vigList = is_array($sheetMenu['vigilances'] ?? null) ? $sheetMenu['vigilances'] : [];
+$m = is_array($sheetMenu ?? null) ? $sheetMenu : [];
+if ($vigList !== []) {
+    $issuesList = array_values(array_filter($issuesList, static fn (array $i): bool => (string) $i['model'] !== 'vigilance'));
+    $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-vigilance.css')) . '">';
+    $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-vigilance.js')) . '" defer></script>';
+}
 $idt = static function (string $v): string {
     $ts = strtotime($v . ' UTC');
 
@@ -47,10 +55,20 @@ $idt = static function (string $v): string {
 $lvlStyle = static fn (array $i): string => '--lv-bg:rgb(' . implode(',', array_map('intval', (array) ($i['rgb'] ?? [80, 40, 120]))) . ');--lv-ink:' . ($i['ink'] ?? '#ffffff');
 ?>
 <section class="panel shx-issues"<?= empty($issuesEmbedded) ? ' id="documents-emis"' : '' ?> style="margin-top:12px">
-    <div class="panel-header"><div class="panel-title">Documents émis</div><div class="panel-meta"><?= count($issuesList) ?> document(s)</div></div>
+    <div class="panel-header"><div class="panel-title">Documents émis</div><div class="panel-meta"><?= count($issuesList) + count($vigList) ?> document(s)</div></div>
     <div class="panel-body">
-        <p class="shx-issues__intro">Chaque document garde le texte réellement imprimé. Les passages masqués dépendent du niveau de diffusion choisi à l’émission.</p>
-        <?php if ($issuesList === []): ?>
+        <?php if ($vigList !== []): ?>
+            <?php if ($issuesList !== []): ?>
+                <div class="vig-seg" role="tablist" aria-label="Type de document" data-vig-seg>
+                    <button type="button" role="tab" class="is-on" aria-selected="true" data-vig-tab="vigilances">Fiches de vigilance <span class="vig-seg__n"><?= count($vigList) ?></span></button>
+                    <button type="button" role="tab" aria-selected="false" data-vig-tab="autres">Autres documents <span class="vig-seg__n"><?= count($issuesList) ?></span></button>
+                </div>
+            <?php endif; ?>
+            <?php require __DIR__ . '/_vigilance_list.php'; ?>
+        <?php endif; ?>
+        <?php if ($vigList !== [] && $issuesList !== []): ?><div id="vig-others" data-vig-panel="autres"><?php endif; ?>
+        <?php if ($issuesList === [] && $vigList !== []): ?>
+        <?php elseif ($issuesList === []): ?>
             <p class="muted">Aucun document n’a encore été émis pour cette fiche. L’émission d’un PDF ne modifie jamais la fiche : elle est seulement notée ici et dans l’historique.</p>
         <?php else: ?>
             <div class="table-wrap"><table>
@@ -194,5 +212,6 @@ $lvlStyle = static fn (array $i): string => '--lv-bg:rgb(' . implode(',', array_
                 <?php endif; ?>
             <?php endforeach; ?>
         <?php endif; ?>
+        <?php if ($vigList !== [] && $issuesList !== []): ?></div><?php endif; ?>
     </div>
 </section>

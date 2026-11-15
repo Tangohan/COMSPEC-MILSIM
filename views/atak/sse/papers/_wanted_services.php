@@ -1,23 +1,27 @@
 <?php
 declare(strict_types=1);
 /**
- * Réglages de la notice > onglet « Services » : catalogue de services demandeurs livré (fictif) et services créés par la communauté.
- * Création, modification, duplication d'un service du catalogue, activation, ordre, service par défaut, import et export JSON.
+ * Réglages de la notice > onglet « Services » : services demandeurs (et « à informer ») des avis, notices et fiches de vigilance.
+ * Liste dense, triable et filtrable ; fiche du service choisi avec l'aperçu de l'en-tête de document qu'il produit ; édition dans
+ * une fenêtre à onglets (_service_modal.php). Un service livré se personnalise comme un service créé (surcharge par communauté).
  * Lecture pour qui ouvre les réglages ; écriture réservée au niveau « Gérer » de la section Fichiers et sujets.
  *
  * @var array<string,mixed> $config
  * @var array<string,array<string,mixed>> $serviceList
  * @var array<string,array{fr:string,en:string}> $serviceFamilies
  * @var array<string,string> $servicePalette
- * @var list<string> $serviceEmblems
  * @var array<string,int> $serviceUse
  * @var bool $serviceStoreReady
+ * @var bool $serviceEmblemReady
+ * @var array<string,array<string,mixed>> $serviceEmblemList
  * @var array<string,mixed> $serviceState
  */
 use App\Core\Csrf;
+use App\Services\Sse\SseServiceEmblems;
 use App\Support\SseUsClassification;
-use App\Support\SseWantedCatalog as W;
 use App\Support\SseWantedServices;
+
+require_once __DIR__ . '/_service_emblem.php';
 
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $lang = (string) ($lang ?? 'fr') === 'en' ? 'en' : 'fr';
@@ -26,232 +30,220 @@ $serviceFamilies = is_array($serviceFamilies ?? null) ? $serviceFamilies : [];
 $servicePalette = is_array($servicePalette ?? null) ? $servicePalette : [];
 $serviceUse = is_array($serviceUse ?? null) ? $serviceUse : [];
 $serviceState = is_array($serviceState ?? null) ? $serviceState : [];
+$serviceEmblemReady = !empty($serviceEmblemReady);
+$serviceEmblemList = is_array($serviceEmblemList ?? null) ? $serviceEmblemList : [];
+$serviceStoreReady = !empty($serviceStoreReady);
 $canAdmin = isset($rights) && is_object($rights) && $rights->canAdmin();
 $defaultCode = SseWantedServices::defaultCode($config);
-$typeChoices = W::types($config);
 $svcAction = url('atak/sse/avis/reglages/services');
 $csrf = Csrf::field();
+$jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
 $stateErrors = is_array($serviceState['errors'] ?? null) ? $serviceState['errors'] : [];
 $report = is_array($serviceState['report'] ?? null) ? $serviceState['report'] : null;
-$opened = $serviceState !== [] && ($stateErrors !== [] || $report !== null) ? (($serviceState['op'] ?? '') === 'import' ? 'import' : 'service') : '';
+$importOpen = ($serviceState['op'] ?? '') === 'import' && ($stateErrors !== [] || $report !== null);
 $active = count(array_filter($serviceList, static fn (array $s): bool => $s['enabled'] === true));
 $roleNames = [];
 foreach (SseWantedServices::ROLES as $rk => $rl) {
     $roleNames[$rk] = $rl[$lang === 'en' ? 1 : 0];
 }
-$oneService = static function (array $s) use ($lang, $roleNames, $servicePalette): array {
-    return [
-        'code' => $s['code'], 'source' => $s['source'], 'family' => $s['family'], 'fr' => $s['fr'], 'en' => $s['en'], 'ac' => $s['ac'], 'roles' => $s['roles'],
-        'auth_fr' => $s['auth_fr'], 'auth_en' => $s['auth_en'], 'radio' => $s['radio'], 'tel' => $s['tel'], 'mail' => $s['mail'], 'max' => $s['max'],
-        'class' => $s['class'], 'thr' => $s['thr'], 'exp' => $s['exp'], 'threats' => $s['threats'], 'types' => $s['types'], 'color' => $s['color'],
-        'emblem' => $s['emblem'], 'lang' => $s['lang'], 'ins_fr' => $s['ins_fr'], 'ins_en' => $s['ins_en'], 'enabled' => $s['enabled'],
+$position = 0;
+$rowData = static function (array $s, int $pos) use ($lang, $roleNames, $servicePalette, $serviceFamilies, $serviceUse, $serviceEmblemList, $defaultCode): array {
+    $code = (string) $s['code'];
+    $emblem = $serviceEmblemList[$code] ?? null;
+    $data = array_intersect_key($s, array_flip(array_merge(['code', 'source', 'enabled', 'overridden', 'print_address'], SseWantedServices::OVERRIDE_FIELDS)));
+
+    return $data + [
+        'hex' => $servicePalette[$s['color']] ?? '#1F3A5F',
+        'family_label' => $serviceFamilies[$s['family']][$lang] ?? $s['family'],
+        'max_label' => SseUsClassification::abbr((string) $s['max']),
+        'roles_label' => implode(', ', array_map(static fn (string $r): string => $roleNames[$r] ?? $r, $s['roles'])),
+        'use' => (int) ($serviceUse[$code] ?? 0),
+        'pos' => $pos,
+        'is_default' => $code === $defaultCode,
+        'image' => $emblem !== null ? [
+            'url' => SseServiceEmblems::url($code, false, (int) $emblem['version']), 'thumb' => SseServiceEmblems::url($code, true, (int) $emblem['version']),
+            'by' => (string) $emblem['confirmed_by_label'], 'at' => (string) ($emblem['confirmed_at'] ?? ''),
+        ] : null,
+        'update_url' => url('atak/sse/avis/services/' . $code . '/modifier'),
+        'reset_url' => url('atak/sse/avis/services/' . $code . '/retablir'),
+        'emblem_url' => url('atak/sse/avis/services/' . $code . '/embleme'),
     ];
 };
+$sortIcon = '<svg class="svc-sort__i" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false"><path d="M6 1.5l3.2 3.6H2.8zM6 10.5L2.8 6.9h6.4z" fill="currentColor"/></svg>';
 ?>
-<div class="wc-settings-pane ws-admin" id="wc-pane-services" data-wc-pane="services" role="tabpanel" aria-labelledby="wc-stab-services" data-ws-admin>
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-services.css')) ?>">
+<div class="wc-settings-pane ws-admin svc" id="wc-pane-services" data-wc-pane="services" role="tabpanel" aria-labelledby="wc-stab-services" data-svc-admin data-svc-lang="<?= $h($lang) ?>" data-svc-can="<?= $canAdmin ? '1' : '0' ?>" data-svc-shapes="<?= $h(json_encode(sse_service_emblem_shapes(), $jsonFlags)) ?>">
     <div>
         <h2 class="ws-admin__title">Services demandeurs</h2>
-        <p class="ws-admin__desc">Les services qui peuvent demander un avis : le catalogue livré, tout fictif, et ceux que votre communauté crée. Choisir un service dans le formulaire remplit ses coordonnées et ses valeurs par défaut.</p>
+        <p class="ws-admin__desc">Les services qui demandent un avis ou qu’un document dit d’informer : nom, emblème, description et coordonnées se règlent ici pour votre communauté.</p>
     </div>
     <?php if (!$canAdmin): ?>
-        <div class="dos-note dos-note--info">Vous pouvez consulter les services. Les créer, les modifier ou les masquer demande le niveau « Gérer » de la section Fichiers et sujets.</div>
+        <div class="dos-note dos-note--info">Vous consultez les services. Les créer, les personnaliser ou les masquer demande le niveau « Gérer » de la section Fichiers et sujets.</div>
     <?php endif; ?>
     <?php if (!$serviceStoreReady): ?>
-        <div class="dos-note dos-note--info">Les services créés par votre communauté fonctionnent déjà. L’étape de base de données « processus des avis » n’est pas encore passée : le code du service n’est pas gardé avec l’avis, et un service créé est désactivé plutôt que supprimé.</div>
+        <div class="dos-note dos-note--info">L’étape de base de données « processus des avis » n’est pas encore passée : le nombre d’avis par service n’est pas connu, et un service créé est désactivé plutôt que supprimé.</div>
+    <?php endif; ?>
+    <?php if (!$serviceEmblemReady): ?>
+        <div class="dos-note dos-note--info" data-svc-noemblem><?= $h(SseServiceEmblems::NOT_READY) ?></div>
     <?php endif; ?>
     <?php if (!empty($serviceState['saved'])): ?>
         <div class="dos-note dos-note--info"><?= $h($serviceState['saved']) ?></div>
     <?php endif; ?>
+    <?php if ($stateErrors !== [] && !$importOpen): ?>
+        <ul class="ws-errors" role="alert"><?php foreach ($stateErrors as $e): ?><li><?= $h($e) ?></li><?php endforeach; ?></ul>
+    <?php endif; ?>
 
-    <div class="ws-bar" role="search">
-        <div class="ws-bar__grow"><label class="sr-only" for="ws-q">Rechercher un service</label><input id="ws-q" type="search" placeholder="Rechercher un service, un sigle ou un code" autocomplete="off" data-ws-q></div>
-        <div><label class="sr-only" for="ws-fam">Famille</label>
-            <select id="ws-fam" data-ws-fam><option value="">Toutes les familles</option>
+    <div class="svc-tools" role="search">
+        <div class="svc-tools__q"><label class="sr-only" for="svc-q">Rechercher un service</label><input id="svc-q" type="search" placeholder="Rechercher un nom, un sigle ou un code" autocomplete="off" data-svc-q></div>
+        <div class="svc-tools__sel"><label class="sr-only" for="svc-fam">Famille</label>
+            <select id="svc-fam" data-svc-fam><option value="">Toutes les familles</option>
                 <?php foreach ($serviceFamilies as $k => $f): ?><option value="<?= $h($k) ?>"><?= $h($f[$lang]) ?></option><?php endforeach; ?>
             </select></div>
-        <div><label class="sr-only" for="ws-src">Origine</label>
-            <select id="ws-src" data-ws-src><option value="">Toutes les origines</option><option value="catalogue">Catalogue livré</option><option value="custom">Créés par la communauté</option><option value="off">Masqués</option></select></div>
-    </div>
-    <div class="ws-bar">
-        <span class="ws-count" data-ws-count aria-live="polite" data-total="<?= count($serviceList) ?>"><?= count($serviceList) ?> service(s), <?= $active ?> proposé(s)</span>
-        <span class="ws-bar__grow"></span>
+        <div class="svc-tools__sel"><label class="sr-only" for="svc-state">État</label>
+            <select id="svc-state" data-svc-state><option value="">Tous les états</option><option value="on">Actifs</option><option value="off">Masqués</option><option value="custom">Créés par la communauté</option><option value="changed">Personnalisés</option></select></div>
         <?php if ($canAdmin): ?>
-            <a class="btn btn--ghost ws-btn" href="<?= $h(url('atak/sse/avis/reglages/services/export')) ?>">Exporter</a>
-            <button class="btn btn--ghost ws-btn" type="button" data-ws-open="#ws-drawer-import">Importer</button>
-            <button class="btn ws-btn" type="button" data-ws-new data-ws-open="#ws-drawer-service">Nouveau service</button>
+            <div class="svc-tools__acts">
+                <a class="btn btn--ghost ws-btn" href="<?= $h(url('atak/sse/avis/reglages/services/export')) ?>">Exporter</a>
+                <button class="btn btn--ghost ws-btn" type="button" data-svc-open="#svc-import">Importer</button>
+                <button class="btn ws-btn" type="button" data-svc-new>Nouveau service</button>
+            </div>
         <?php endif; ?>
     </div>
 
-    <div class="ws-table-wrap">
-        <table class="ws-table" data-ws-table>
-            <caption class="sr-only">Services demandeurs</caption>
-            <thead><tr><th scope="col">Service</th><th scope="col" class="ws-hide-md">Famille</th><th scope="col" class="ws-hide-md ws-hide-lg">Rôle</th><th scope="col">Classification max.</th><th scope="col">Avis</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
-            <tbody>
-            <?php foreach ($serviceList as $code => $s):
-                $isCustom = $s['source'] === 'custom';
-                $search = mb_strtolower($s['fr'] . ' ' . $s['en'] . ' ' . $s['ac'] . ' ' . $code);
-                $used = (int) ($serviceUse[$code] ?? 0);
-                ?>
-                <tr class="<?= $s['enabled'] ? '' : 'is-off' ?>" data-ws-row data-family="<?= $h($s['family']) ?>" data-source="<?= $h($s['source']) ?>" data-enabled="<?= $s['enabled'] ? '1' : '0' ?>" data-search="<?= $h($search) ?>" data-ws-json="<?= $h(json_encode($oneService($s), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>">
-                    <td class="ws-cell-name">
-                        <div class="ws-name">
-                            <span class="ws-name__dot" style="background:<?= $h($servicePalette[$s['color']] ?? '#1F3A5F') ?>"></span>
-                            <span class="ws-name__text"><strong translate="no"><?= $h($lang === 'en' ? $s['en'] : $s['fr']) ?></strong><span translate="no"><?= $h(($s['ac'] !== '' ? $s['ac'] . ' · ' : '') . $code) ?></span></span>
-                        </div>
-                        <div class="ws-chips">
-                            <?php if ($isCustom): ?><span class="ws-badge ws-badge--custom">Communauté</span><?php endif; ?>
-                            <?php if ($code === $defaultCode): ?><span class="ws-badge ws-badge--default">Par défaut</span><?php endif; ?>
-                            <?php if (!$s['enabled']): ?><span class="ws-badge ws-badge--off"><?= $isCustom ? 'Désactivé' : 'Masqué' ?></span><?php endif; ?>
-                        </div>
-                    </td>
-                    <td class="ws-hide-md" data-label="Famille"><?= $h($serviceFamilies[$s['family']][$lang] ?? $s['family']) ?></td>
-                    <td class="ws-hide-md ws-hide-lg" data-label="Rôle"><?= $h(implode(', ', array_map(static fn (string $r): string => $roleNames[$r] ?? $r, $s['roles']))) ?></td>
-                    <td data-label="Classification max."><span class="ws-badge" translate="no"><?= $h(SseUsClassification::abbr((string) $s['max'])) ?></span></td>
-                    <td data-label="Avis"><?= $used > 0 ? (int) $used : '—' ?></td>
-                    <td class="ws-cell-actions">
-                        <?php if ($canAdmin): ?>
-                            <div class="ws-actions">
-                                <?php if ($isCustom): ?>
-                                    <button class="btn btn--ghost ws-btn" type="button" data-ws-edit data-ws-open="#ws-drawer-service">Modifier</button>
-                                <?php else: ?>
-                                    <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="duplicate"><input type="hidden" name="code" value="<?= $h($code) ?>"><button class="btn btn--ghost ws-btn" type="submit" aria-label="Dupliquer <?= $h($s['fr']) ?> pour le personnaliser">Dupliquer</button></form>
-                                <?php endif; ?>
-                                <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="toggle"><input type="hidden" name="code" value="<?= $h($code) ?>"><input type="hidden" name="enabled" value="<?= $s['enabled'] ? '0' : '1' ?>"><button class="btn btn--ghost ws-btn" type="submit"><?= $s['enabled'] ? ($isCustom ? 'Désactiver' : 'Masquer') : 'Proposer' ?></button></form>
-                                <details class="ws-more">
-                                    <summary class="btn btn--ghost ws-btn" aria-label="Plus d’actions pour <?= $h($s['fr']) ?>">Plus</summary>
-                                    <div class="ws-more__menu">
-                                        <?php if ($isCustom): ?>
-                                            <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="duplicate"><input type="hidden" name="code" value="<?= $h($code) ?>"><button class="ws-menuitem" type="submit">Dupliquer</button></form>
-                                        <?php endif; ?>
-                                        <?php if ($s['enabled'] && $code !== $defaultCode): ?>
-                                            <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="default"><input type="hidden" name="code" value="<?= $h($code) ?>"><button class="ws-menuitem" type="submit">Définir par défaut</button></form>
-                                        <?php endif; ?>
-                                        <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="move"><input type="hidden" name="code" value="<?= $h($code) ?>"><input type="hidden" name="direction" value="up"><button class="ws-menuitem" type="submit">Monter dans la liste</button></form>
-                                        <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="move"><input type="hidden" name="code" value="<?= $h($code) ?>"><input type="hidden" name="direction" value="down"><button class="ws-menuitem" type="submit">Descendre dans la liste</button></form>
-                                    </div>
-                                </details>
-                            </div>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-        <p class="ws-empty" data-ws-none hidden>Aucun service ne correspond à ces filtres.</p>
+    <div class="svc-layout">
+        <div class="svc-list">
+            <p class="svc-count" data-svc-count aria-live="polite" data-total="<?= count($serviceList) ?>"><?= count($serviceList) ?> services, <?= $active ?> actifs</p>
+            <div class="svc-table-wrap">
+                <table class="svc-table" data-svc-table>
+                    <caption class="sr-only">Services demandeurs de la communauté</caption>
+                    <thead><tr>
+                        <th scope="col" class="svc-col-name" aria-sort="none"><button type="button" class="svc-sort" data-svc-sort="name">Service <?= $sortIcon ?></button></th>
+                        <th scope="col" class="svc-col-ac" aria-sort="none"><button type="button" class="svc-sort" data-svc-sort="ac">Sigle <?= $sortIcon ?></button></th>
+                        <th scope="col" class="svc-col-fam" aria-sort="none"><button type="button" class="svc-sort" data-svc-sort="family">Famille <?= $sortIcon ?></button></th>
+                        <th scope="col" class="svc-col-use" aria-sort="none"><button type="button" class="svc-sort" data-svc-sort="use">Avis <?= $sortIcon ?></button></th>
+                        <th scope="col" class="svc-col-state" aria-sort="none"><button type="button" class="svc-sort" data-svc-sort="state">État <?= $sortIcon ?></button></th>
+                    </tr></thead>
+                    <tbody>
+                    <?php foreach ($serviceList as $code => $s):
+                        $position++;
+                        $data = $rowData($s, $position);
+                        $name = (string) ($lang === 'en' ? $s['en'] : $s['fr']);
+                        $search = mb_strtolower($s['fr'] . ' ' . $s['en'] . ' ' . $s['ac'] . ' ' . $code);
+                        $used = (int) $data['use'];
+                        ?>
+                        <tr class="svc-row<?= $s['enabled'] ? '' : ' is-off' ?>" data-svc-row data-code="<?= $h($code) ?>" data-family="<?= $h($s['family']) ?>" data-source="<?= $h($s['source']) ?>" data-enabled="<?= $s['enabled'] ? '1' : '0' ?>" data-changed="<?= !empty($s['overridden']) ? '1' : '0' ?>" data-search="<?= $h($search) ?>" data-svc-json="<?= $h(json_encode($data, $jsonFlags)) ?>">
+                            <td class="svc-col-name">
+                                <button type="button" class="svc-pick" data-svc-pick aria-label="Ouvrir la fiche du service <?= $h($name) ?>">
+                                    <span class="svc-pick__mark" data-svc-mark><?php if ($data['image'] !== null): ?><img src="<?= $h($data['image']['thumb']) ?>" alt="" width="40" height="40" loading="lazy" decoding="async"><?php else: ?><?= sse_service_emblem_svg((string) $s['emblem'], (string) $data['hex'], (string) ($s['ac'] !== '' ? $s['ac'] : $name), 40) ?><?php endif; ?></span>
+                                    <span class="svc-pick__text">
+                                        <strong translate="no"><?= $h($name) ?></strong>
+                                        <span class="svc-pick__meta"><span class="svc-mono" translate="no"><?= $h($code) ?></span><?php if ($s['ac'] !== ''): ?><span class="svc-mono svc-only-sm" translate="no"><?= $h($s['ac']) ?></span><?php endif; ?><span class="svc-pick__fam"><?= $h($data['family_label']) ?></span><?php if ($code === $defaultCode): ?><span class="svc-tag svc-tag--ok">Par défaut</span><?php endif; ?><?php if ($s['source'] === 'custom'): ?><span class="svc-tag svc-tag--info">Communauté</span><?php elseif (!empty($s['overridden'])): ?><span class="svc-tag svc-tag--info">Personnalisé</span><?php endif; ?></span>
+                                    </span>
+                                </button>
+                            </td>
+                            <td class="svc-col-ac" data-label="Sigle"><span class="svc-mono" translate="no"><?= $h($s['ac'] !== '' ? $s['ac'] : '—') ?></span></td>
+                            <td class="svc-col-fam" data-label="Famille"><?= $h($data['family_label']) ?><?php if ($used > 0): ?><span class="svc-only-sm"> · <?= $used ?> avis</span><?php endif; ?></td>
+                            <td class="svc-col-use" data-label="Avis"><?= $used > 0 ? $used : '—' ?></td>
+                            <td class="svc-col-state" data-label="État"><span class="svc-state<?= $s['enabled'] ? ' is-on' : '' ?>"><?= $s['enabled'] ? 'Actif' : 'Masqué' ?></span></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p class="ws-empty" data-svc-none hidden>Aucun service ne correspond à ces filtres.</p>
+            </div>
+        </div>
+
+        <aside class="svc-card" data-svc-card aria-label="Fiche du service" hidden>
+            <div class="svc-card__head">
+                <div class="svc-card__titles">
+                    <h3 class="svc-card__name" data-b="name" translate="no"></h3>
+                    <p class="svc-card__desc" data-b="desc"></p>
+                </div>
+                <?php if ($canAdmin): ?><button class="btn ws-btn" type="button" data-svc-edit>Modifier</button><?php else: ?><button class="btn btn--ghost ws-btn" type="button" data-svc-edit>Voir la fiche</button><?php endif; ?>
+            </div>
+            <div class="svc-card__block">
+                <h4 class="svc-card__sub">Aperçu de l’en-tête</h4>
+                <p class="svc-card__hint">Ce que portent les documents émis par ce service.</p>
+                <div class="svc-doc" data-svc-doc></div>
+            </div>
+            <dl class="svc-facts">
+                <div><dt>Famille</dt><dd data-b="family_label"></dd></div>
+                <div><dt>Origine</dt><dd data-b="origin"></dd></div>
+                <div><dt>Rôle</dt><dd data-b="roles_label"></dd></div>
+                <div><dt>Classification maximale</dt><dd data-b="max_label" translate="no"></dd></div>
+                <div><dt>Avis qui l’utilisent</dt><dd data-b="use"></dd></div>
+                <div><dt>Emblème</dt><dd data-b="emblem_state"></dd></div>
+            </dl>
+            <?php if ($canAdmin): ?>
+                <div class="svc-card__acts">
+                    <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="toggle"><input type="hidden" name="code" data-b-val="code"><input type="hidden" name="enabled" data-b-val="toggle_to"><button class="btn btn--ghost ws-btn" type="submit" data-b="toggle_label"></button></form>
+                    <form method="post" action="<?= $h($svcAction) ?>" data-b-show="can_default"><?= $csrf ?><input type="hidden" name="op" value="default"><input type="hidden" name="code" data-b-val="code"><button class="btn btn--ghost ws-btn" type="submit">Définir par défaut</button></form>
+                    <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="duplicate"><input type="hidden" name="code" data-b-val="code"><button class="btn btn--ghost ws-btn" type="submit">Dupliquer</button></form>
+                </div>
+            <?php endif; ?>
+        </aside>
+    </div>
+
+    <div hidden data-svc-words>
+        <span data-k="count_all"><?= count($serviceList) ?> services, <?= $active ?> actifs</span>
+        <span data-k="shown">affichés sur</span>
+        <span data-k="origin_catalogue">Livré</span>
+        <span data-k="origin_changed">Livré, personnalisé par votre communauté</span>
+        <span data-k="origin_custom">Créé par votre communauté</span>
+        <span data-k="no_desc">Aucune description pour l’instant.</span>
+        <span data-k="hide">Masquer</span>
+        <span data-k="show">Rendre actif</span>
+        <span data-k="emblem_image">Image téléversée</span>
+        <span data-k="emblem_generic">Générique : forme, couleur et sigle</span>
+        <span data-k="inform">Service à informer</span>
+        <span data-k="no_channel">Aucun canal affiché</span>
+        <span data-k="title_create">Nouveau service</span>
+        <span data-k="title_update">Modifier le service</span>
+        <span data-k="title_read">Fiche du service</span>
+        <span data-k="save_create">Créer le service</span>
+        <span data-k="save_update">Enregistrer</span>
+        <span data-k="saving">Enregistrement…</span>
+        <span data-k="sending">Téléversement…</span>
+        <span data-k="net_error">La demande n’a pas abouti : vérifiez la connexion puis recommencez.</span>
+        <span data-k="need_file">Choisissez une image à téléverser.</span>
+        <span data-k="need_confirm">Cochez la confirmation avant de téléverser.</span>
+        <span data-k="too_big">Image refusée : 1 Mo au plus.</span>
+        <span data-k="name_default">Nom du service</span>
+        <span data-k="uploaded_by">Téléversé par</span>
+        <span data-k="none">Aucun</span>
     </div>
 </div>
 
-<?php if ($canAdmin): ?>
-    <dialog class="ws-dialog ws-dialog--wide" id="ws-drawer-service" aria-labelledby="ws-drawer-title" data-title-create="Nouveau service" data-title-update="Modifier le service" data-ws-drawer data-ws-old="<?= $h(json_encode(['op' => (string) ($serviceState['op'] ?? ''), 'code' => (string) ($serviceState['code'] ?? ''), 'old' => $serviceState['old'] ?? null], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>" <?= $opened === 'service' ? 'data-ws-autoopen' : '' ?>>
-        <form method="post" action="<?= $h($svcAction) ?>" data-ws-form>
-            <?= $csrf ?>
-            <input type="hidden" name="op" value="create" data-ws-op>
-            <input type="hidden" name="code" value="" data-ws-code>
-            <div class="ws-dialog__head">
-                <div>
-                    <h2 id="ws-drawer-title" data-ws-title>Nouveau service</h2>
-                    <p>Un service fictif de votre communauté : aucun nom, sigle, adresse ni numéro réel.</p>
-                </div>
-                <button type="button" class="ws-iconbtn" data-ws-close aria-label="Fermer"><?= '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>' ?></button>
-            </div>
-            <div class="ws-dialog__body">
-                <?php if ($opened === 'service' && $stateErrors !== []): ?>
-                    <ul class="ws-errors" role="alert"><?php foreach ($stateErrors as $e): ?><li><?= $h($e) ?></li><?php endforeach; ?></ul>
-                <?php endif; ?>
-                <div class="ws-tabs" role="tablist" aria-label="Sections du service" data-ws-tabs>
-                    <button class="ws-tab" type="button" role="tab" aria-selected="true" data-ws-tab="id">Identité</button>
-                    <button class="ws-tab" type="button" role="tab" aria-selected="false" data-ws-tab="contact">Coordonnées</button>
-                    <button class="ws-tab" type="button" role="tab" aria-selected="false" data-ws-tab="issue">Émission</button>
-                    <button class="ws-tab" type="button" role="tab" aria-selected="false" data-ws-tab="look">Apparence</button>
-                </div>
-                <div class="ws-pane" data-ws-pane="id">
-                    <div class="ws-field-grid ws-field-grid--2">
-                        <div><label for="wsf-fr">Nom français</label><input id="wsf-fr" type="text" name="fr" maxlength="120" required minlength="3" data-f="fr"></div>
-                        <div><label for="wsf-en">Nom anglais</label><input id="wsf-en" type="text" name="en" maxlength="120" data-f="en"></div>
-                    </div>
-                    <div class="ws-field-grid ws-field-grid--2">
-                        <div><label for="wsf-ac">Sigle fictif</label><input id="wsf-ac" type="text" name="ac" maxlength="12" pattern="[A-Za-z0-9\-]{2,12}" data-f="ac"><p class="ws-hint">2 à 12 lettres ou chiffres. Un sigle réel est refusé.</p></div>
-                        <div><label for="wsf-family">Famille</label>
-                            <select id="wsf-family" name="family" data-f="family"><?php foreach ($serviceFamilies as $k => $f): ?><option value="<?= $h($k) ?>"><?= $h($f[$lang]) ?></option><?php endforeach; ?></select></div>
-                    </div>
-                    <fieldset><legend>Rôle : qui émet</legend>
-                        <div class="ws-checks"><?php foreach ($roleNames as $rk => $rn): ?><label class="ws-check"><input type="checkbox" name="roles[]" value="<?= $h($rk) ?>" data-f="roles"> <?= $h($rn) ?></label><?php endforeach; ?></div></fieldset>
-                    <fieldset><legend>Langues de rédaction</legend>
-                        <div class="ws-checks"><label class="ws-check"><input type="checkbox" name="lang[]" value="fr" data-f="lang"> Français</label><label class="ws-check"><input type="checkbox" name="lang[]" value="en" data-f="lang"> English</label></div></fieldset>
-                </div>
-                <div class="ws-pane" data-ws-pane="contact" hidden>
-                    <div class="ws-field-grid ws-field-grid--2">
-                        <div><label for="wsf-afr">Autorité émettrice (français)</label><input id="wsf-afr" type="text" name="auth_fr" maxlength="160" data-f="auth_fr"></div>
-                        <div><label for="wsf-aen">Autorité émettrice (anglais)</label><input id="wsf-aen" type="text" name="auth_en" maxlength="160" data-f="auth_en"></div>
-                    </div>
-                    <div><label for="wsf-radio">Canal radio (indicatif inventé)</label><input id="wsf-radio" type="text" name="radio" maxlength="80" placeholder="HAMMER ACTUAL · canal TAC 1" data-f="radio"></div>
-                    <div class="ws-field-grid ws-field-grid--2">
-                        <div><label for="wsf-tel">Téléphone fictif</label><input id="wsf-tel" type="text" name="tel" maxlength="24" placeholder="+1 555 0142" data-f="tel"><p class="ws-hint">Une ligne « 555 01xx », réservée à la fiction.</p></div>
-                        <div><label for="wsf-mail">Courriel fictif</label><input id="wsf-mail" type="text" name="mail" maxlength="80" placeholder="veille@service.invalid" data-f="mail"><p class="ws-hint">Domaine en « .invalid », « .example » ou « .test ».</p></div>
-                    </div>
-                </div>
-                <div class="ws-pane" data-ws-pane="issue" hidden>
-                    <div class="ws-field-grid ws-field-grid--3">
-                        <div><label for="wsf-max">Classification maximale émissible</label>
-                            <select id="wsf-max" name="max" data-f="max"><?php foreach (SseUsClassification::codes() as $cc): ?><option value="<?= $h($cc) ?>"><?= $h(SseUsClassification::abbr($cc)) ?></option><?php endforeach; ?></select></div>
-                        <div><label for="wsf-class">Classification par défaut</label>
-                            <select id="wsf-class" name="class" data-f="class"><?php foreach (SseUsClassification::codes() as $cc): ?><option value="<?= $h($cc) ?>"><?= $h(SseUsClassification::abbr($cc)) ?></option><?php endforeach; ?></select></div>
-                        <div><label for="wsf-thr">Menace par défaut</label>
-                            <select id="wsf-thr" name="thr" data-f="thr"><?php foreach (W::THREATS as $tk => $tl): ?><option value="<?= $h($tk) ?>"><?= $h($tl[$lang === 'en' ? 1 : 0]) ?></option><?php endforeach; ?></select></div>
-                    </div>
-                    <div><label for="wsf-exp">Durée de validité par défaut (jours, 0 : celle de la communauté)</label><input id="wsf-exp" type="number" name="exp" min="0" max="3650" data-f="exp"></div>
-                    <fieldset><legend>Niveaux de menace habituels</legend>
-                        <div class="ws-checks"><?php foreach (W::THREATS as $tk => $tl): ?><label class="ws-check"><input type="checkbox" name="threats[]" value="<?= $h($tk) ?>" data-f="threats"> <?= $h($tl[$lang === 'en' ? 1 : 0]) ?></label><?php endforeach; ?></div></fieldset>
-                    <fieldset><legend>Types d’avis habituels</legend>
-                        <div class="ws-checks"><?php foreach ($typeChoices as $tk => $tl): ?><label class="ws-check"><input type="checkbox" name="types[]" value="<?= $h($tk) ?>" data-f="types"> <?= $h($tl[$lang === 'en' ? 1 : 0]) ?></label><?php endforeach; ?></div></fieldset>
-                    <div class="ws-field-grid ws-field-grid--2">
-                        <div><label for="wsf-ifr">Consigne par défaut (français)</label><textarea id="wsf-ifr" name="ins_fr" rows="4" maxlength="<?= (int) W::INSTRUCTIONS_MAX ?>" data-f="ins_fr"></textarea></div>
-                        <div><label for="wsf-ien">Consigne par défaut (anglais)</label><textarea id="wsf-ien" name="ins_en" rows="4" maxlength="<?= (int) W::INSTRUCTIONS_MAX ?>" data-f="ins_en"></textarea></div>
-                    </div>
-                </div>
-                <div class="ws-pane" data-ws-pane="look" hidden>
-                    <fieldset><legend>Couleur d’en-tête de la notice</legend>
-                        <div class="ws-swatches"><?php foreach ($servicePalette as $ck => $hex): ?><label class="ws-swatch"><input type="radio" name="color" value="<?= $h($ck) ?>" data-f="color"><i style="background:<?= $h($hex) ?>"></i> <?= $h(ucfirst($ck)) ?></label><?php endforeach; ?></div>
-                        <p class="ws-hint">Palette sobre : jamais un insigne ni un logo réel.</p></fieldset>
-                    <fieldset><legend>Forme générique de l’emblème</legend>
-                        <div class="ws-checks"><?php foreach (SseWantedServices::emblems() as $ek): ?><label class="ws-check"><input type="radio" name="emblem" value="<?= $h($ek) ?>" data-f="emblem"> <?= $h(ucfirst($ek)) ?></label><?php endforeach; ?></div></fieldset>
-                    <label class="ws-check"><input type="checkbox" name="enabled" value="1" checked data-f="enabled"> Proposé dans le formulaire d’avis</label>
-                </div>
-            </div>
-            <div class="ws-dialog__foot">
-                <button class="btn btn--danger ws-danger" type="submit" name="op" value="delete" formnovalidate data-ws-delete hidden>Supprimer</button>
-                <button class="btn btn--ghost" type="button" data-ws-close>Annuler</button>
-                <button class="btn" type="submit" data-ws-save data-label-create="Créer le service" data-label-update="Enregistrer">Créer le service</button>
-            </div>
-        </form>
-    </dialog>
+<?php require __DIR__ . '/_service_modal.php'; ?>
 
-    <dialog class="ws-dialog" id="ws-drawer-import" aria-labelledby="ws-import-title" <?= $opened === 'import' ? 'data-ws-autoopen' : '' ?>>
+<?php if ($canAdmin): ?>
+    <dialog class="ws-dialog" id="svc-import" aria-labelledby="svc-import-title" <?= $importOpen ? 'data-svc-autoopen' : '' ?>>
         <form method="post" action="<?= $h($svcAction) ?>" enctype="multipart/form-data">
             <?= $csrf ?>
             <input type="hidden" name="op" value="import">
             <div class="ws-dialog__head">
                 <div>
-                    <h2 id="ws-import-title">Importer des services</h2>
+                    <h2 id="svc-import-title">Importer des services</h2>
                     <p>Un export JSON d’une autre communauté. Chaque service passe le même contrôle qu’une création : un nom réel est refusé.</p>
                 </div>
-                <button type="button" class="ws-iconbtn" data-ws-close aria-label="Fermer"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+                <button type="button" class="ws-iconbtn" data-svc-close aria-label="Fermer"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
             </div>
             <div class="ws-dialog__body">
-                <?php if ($stateErrors !== []): ?><ul class="ws-errors" role="alert"><?php foreach ($stateErrors as $e): ?><li><?= $h($e) ?></li><?php endforeach; ?></ul><?php endif; ?>
+                <?php if ($importOpen && $stateErrors !== []): ?><ul class="ws-errors" role="alert"><?php foreach ($stateErrors as $e): ?><li><?= $h($e) ?></li><?php endforeach; ?></ul><?php endif; ?>
                 <?php if ($report !== null): ?>
                     <ul class="ws-report" aria-label="Résultat de l’import">
                         <li><strong><?= (int) $report['added'] ?> ajouté(s)</strong>, <?= (int) $report['skipped'] ?> déjà présent(s), <?= count($report['rejected']) ?> refusé(s).</li>
                         <?php foreach ($report['rejected'] as $rej): ?><li><strong translate="no"><?= $h($rej['name']) ?></strong> : <?= $h(implode(' ', $rej['reasons'])) ?></li><?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
-                <div><label for="ws-import-file">Fichier d’export (.json)</label><input id="ws-import-file" type="file" name="import_file" accept="application/json,.json"></div>
-                <div><label for="ws-import-json">Ou collez son contenu</label><textarea id="ws-import-json" name="import_json" rows="8" spellcheck="false" translate="no"></textarea><p class="ws-hint">200 Ko au plus. Les services déjà présents (même nom) sont ignorés.</p></div>
+                <div><label for="svc-import-file">Fichier d’export (.json)</label><input id="svc-import-file" type="file" name="import_file" accept="application/json,.json"></div>
+                <div><label for="svc-import-json">Ou collez son contenu</label><textarea id="svc-import-json" name="import_json" rows="8" spellcheck="false" translate="no"></textarea><p class="ws-hint">200 Ko au plus. Les services déjà présents (même nom) sont ignorés.</p></div>
             </div>
             <div class="ws-dialog__foot">
-                <button class="btn btn--ghost" type="button" data-ws-close>Annuler</button>
+                <button class="btn btn--ghost" type="button" data-svc-close>Annuler</button>
                 <button class="btn" type="submit">Importer</button>
             </div>
         </form>
     </dialog>
 <?php endif; ?>
+<script src="<?= $h(asset_url('assets/js/sse-services.js')) ?>" defer></script>

@@ -148,7 +148,10 @@ final class SseWantedServicesTest extends TestCase
         self::assertTrue($edited['ok'], implode(' ', $edited['errors']));
         self::assertSame('Cellule du Détroit (renommée)', SseWantedServices::find('CSV-COD', $edited['config'])['fr']);
         self::assertSame('olive', SseWantedServices::find('CSV-COD', $edited['config'])['color']);
-        self::assertFalse(SseWantedServiceAdmin::update($config, 'SVC-JIFC', self::form())['ok'], 'Un service du catalogue se duplique, il ne se modifie pas');
+        $over = SseWantedServiceAdmin::update($config, 'SVC-JIFC', self::form());
+        self::assertTrue($over['ok'], 'Un service du catalogue se surcharge pour la communauté');
+        self::assertSame('catalogue', SseWantedServices::find('SVC-JIFC', $over['config'])['source']);
+        self::assertSame('Cellule des opérations du Détroit', SseWantedServices::find('SVC-JIFC', $over['config'])['fr']);
         self::assertFalse(SseWantedServiceAdmin::update($config, 'CSV-ABSENT', self::form())['ok']);
     }
 

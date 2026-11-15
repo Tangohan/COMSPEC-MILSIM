@@ -109,6 +109,9 @@ final class SseWantedSettingsRepository
             'codes' => SseWantedCodes::normalizeSettings($data['codes'] ?? []),
             'services' => SseWantedServices::normalizeSettings($data['services'] ?? []),
             'process' => self::normalizeProcess($data['process'] ?? []),
+            // Compte rendu des signalements : canal de la communauté (indicatif, fréquence, ligne) et délai attendu par défaut.
+            'report_channel' => C::line($data['report_channel'] ?? '', 200),
+            'report_delay' => isset(\App\Support\SseAlertLevel::DELAYS[(string) ($data['report_delay'] ?? '')]) ? (string) $data['report_delay'] : 'now',
         ];
     }
 

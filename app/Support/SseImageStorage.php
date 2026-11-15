@@ -24,9 +24,11 @@ final class SseImageStorage
 
     /**
      * Dossiers d'images sensibles (« sse-wanted » : pièces jointes des avis de recherche, servies par la route des avis ;
-     * « sse-id-checks » : photo du papier d'un contrôle d'identité, servie par la route du contrôle).
+     * « sse-id-checks » : photo du papier d'un contrôle d'identité, servie par la route du contrôle ;
+     * « sse-service-emblems » : emblème téléversé d'un service demandeur, servi par la route des services ;
+     * « sse-alert-reports » : photo jointe à un signalement, servie aux gestionnaires par la route des signalements).
      */
-    public const FOLDERS = ['sse-id-photos', 'sse-id-signatures', 'sse-id-backgrounds', 'sse-wanted', 'sse-id-checks'];
+    public const FOLDERS = ['sse-id-photos', 'sse-id-signatures', 'sse-id-backgrounds', 'sse-wanted', 'sse-id-checks', 'sse-service-emblems', 'sse-alert-reports'];
 
     private const NAME = '[0-9]{1,10}_[a-f0-9]{16}\.(?:jpg|png|webp)';
 

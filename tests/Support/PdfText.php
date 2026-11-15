@@ -28,6 +28,8 @@ final class PdfText
         if (preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $pdf, $m) > 0) {
             foreach ($m[1] as $stream) {
                 $plain = @gzuncompress($stream);
+                // Un flux dont le dernier octet compressé est un retour chariot le perd dans l'expression ci-dessus : on le rend.
+                $plain = $plain !== false ? $plain : @gzuncompress($stream . chr(13));
                 $content = $plain !== false ? $plain : $stream;
                 // Seuls les flux de dessin (opérateurs de texte) sont lus : ni polices, ni images.
                 if (!str_contains($content, 'BT') || preg_match('/\b(?:Tj|TJ)\b/', $content) !== 1) {

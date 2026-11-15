@@ -136,8 +136,45 @@ final class SseWantedNoticePdfService
             }
         }
 
+        // Notice de couleur (cadre plein, titre du type), service à informer et adresse de signalement (QR code).
+        $color = \App\Support\SseAlertLevel::noticeColor((string) $notice['notice_type'], $config);
+        if ($color !== null) {
+            $banner = $color['title'];
+        }
+        $alerts = new SseAlertService(null, null, $this->settings);
+        $report = $this->safe(fn (): array => $alerts->noticeReport($tenantId, $notice)) ?? [];
+        $link = (string) ($notice['status'] ?? 'active') === 'active' ? $this->safe(fn (): ?array => $alerts->noticeLink($tenantId, $notice)) : $this->safe(fn (): ?array => $alerts->alerts()->linkFor($tenantId, \App\Repositories\SseAlertRepository::DOC_NOTICE, (int) $notice['id']));
+        if (is_array($link) && ($link['report'] ?? []) !== []) {
+            $report = \App\Support\SseAlertReportTo::read($link['report']);
+        }
+        if (($report['code'] ?? '') !== '') {
+            $report['emblem_bytes'] = SseSheetService::serviceEmblem($tenantId, (string) $report['code']);
+        }
+        $reportUrl = is_array($link) && ($link['revoked_at'] ?? null) === null ? \App\Support\SseAlertReportTo::url((string) $link['token']) : '';
+        // Véhicules et personnes associées : libellés courts des fichiers, personnes selon la classification de l'avis, jamais un membre.
+        $vehicles = [];
+        $associates = [];
+        $fileLinks = $this->safe(fn (): array => ($this->records ??= new SseFileRecordRepository())->linksFor($tenantId, [(int) $identity['id']])[(int) $identity['id']] ?? []);
+        foreach (is_array($fileLinks) ? $fileLinks : [] as $fl) {
+            if (($fl['visibility'] ?? 'known') === 'hidden' || trim((string) ($fl['value'] ?? '')) === '') {
+                continue;
+            }
+            if (($fl['kind'] ?? '') === 'vehicle' && count($vehicles) < 3) {
+                $vehicles[] = (string) $fl['value'];
+            } elseif (($fl['kind'] ?? '') === 'associate' && count($associates) < 3 && SseRedactionService::visibleAt('identite', $classCode) && !$this->isMemberIdentity($tenantId, (int) ($fl['linked_identity_id'] ?? 0))) {
+                $associates[] = (string) $fl['value'];
+            }
+        }
+        $measureCodes = array_map(static fn (array $c): string => (string) $c['code'], $wanted['measures']);
+
         return [
             'lang' => $lang,
+            'notice_color' => $color,
+            'report' => $report,
+            'report_url' => $reportUrl,
+            'vehicles' => $vehicles,
+            'associates' => $associates,
+            'flight_risk' => (string) $notice['notice_type'] === 'escaped' || array_intersect($measureCodes, ['A-EXF', 'A-CHK', 'A-NAV']) !== [],
             'banner' => [$banner[0], $banner[1]],
             'authority' => [(string) ($snap['auth_fr'] ?? $config['authority_fr']), (string) ($snap['auth_en'] ?? $config['authority_en'])],
             'service' => $service,
@@ -234,6 +271,17 @@ final class SseWantedNoticePdfService
         }
 
         return ['bytes' => $bytes, 'filename' => self::filename((string) $notice['ref'], (string) $data['lang'])];
+    }
+
+    /** Cette identité liée est-elle celle d'un membre (jamais nommée sur une notice) ? Identité introuvable : oui (fail-closed). */
+    private function isMemberIdentity(int $tenantId, int $identityId): bool
+    {
+        if ($identityId < 1) {
+            return false;
+        }
+        $row = $this->safe(fn (): ?array => $this->identities->find($identityId, $tenantId));
+
+        return !is_array($row) || (int) ($row['user_id'] ?? 0) > 0;
     }
 
     /** @param array<string, mixed> $identity */

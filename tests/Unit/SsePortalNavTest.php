@@ -142,7 +142,7 @@ final class SsePortalNavTest extends TestCase
     public function testIdentityAndFilesSectionsListTheirPagesByRight(): void
     {
         $withMembers = self::section(SsePortalNav::sections(true, false, false, true), 'identite');
-        self::assertSame(['papiers-tableau', 'papiers', 'papiers-identites', 'avis-recherche', 'avis-detections', 'papiers-membres', 'papiers-pays', 'papiers-atelier', 'papiers-kits', 'papiers-briefs', 'papiers-echanges'], array_keys($withMembers));
+        self::assertSame(['papiers-tableau', 'papiers', 'papiers-identites', 'avis-recherche', 'avis-detections', 'avis-signalements', 'papiers-membres', 'papiers-pays', 'papiers-atelier', 'papiers-kits', 'papiers-briefs', 'papiers-echanges'], array_keys($withMembers));
         self::assertArrayNotHasKey('papiers-membres', self::section(SsePortalNav::sections(false, false, true), 'identite'), 'Papiers des membres : droit dédié');
         self::assertArrayNotHasKey('papiers-membres', self::section(SsePortalNav::sections(true, true), 'identite'));
 

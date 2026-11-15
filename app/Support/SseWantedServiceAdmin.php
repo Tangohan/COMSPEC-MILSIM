@@ -7,9 +7,10 @@ namespace App\Support;
 use App\Support\SseWantedCatalog as C;
 
 /**
- * Gestion des services demandeurs d'une communauté : création, modification, duplication d'un service du catalogue, activation,
- * suppression (refusée si des avis le portent), ordre, service par défaut, export et import JSON. Fonctions pures sur les réglages
- * de la communauté : l'enregistrement, les droits, le jeton CSRF et le journal d'audit sont ceux de SseWantedNoticeController.
+ * Gestion des services demandeurs d'une communauté : création, modification (un service livré est surchargé, jamais réécrit),
+ * retour aux valeurs livrées, duplication, activation, suppression (refusée si des avis le portent), ordre, service par défaut,
+ * export et import JSON. Fonctions pures sur les réglages de la communauté : l'enregistrement, les droits, le jeton CSRF et le
+ * journal d'audit sont ceux de SseWantedNoticeController et de SseWantedServiceController.
  *
  * Chaque opération renvoie les réglages mis à jour (« config »), la liste des erreurs et un message ; en cas d'erreur, les
  * réglages sont rendus tels quels.
@@ -46,8 +47,99 @@ final class SseWantedServiceAdmin
         if ($checked['service'] === null || $checked['errors'] !== []) {
             return self::fail($config, $checked['errors']);
         }
+        if ($checked['service']['source'] === 'catalogue') {
+            return self::override($config, $checked['service']);
+        }
 
         return self::store($config, $checked['service'], 'Service « ' . $checked['service']['fr'] . ' » modifié.');
+    }
+
+    /**
+     * Surcharge d'un service livré : seuls les champs qui diffèrent du catalogue sont gardés dans les réglages de la communauté.
+     *
+     * @param array<string, mixed> $config
+     * @param array<string, mixed> $service service validé (source « catalogue »)
+     * @return Result
+     */
+    private static function override(array $config, array $service): array
+    {
+        $code = (string) $service['code'];
+        $s = SseWantedServices::normalizeSettings($config['services'] ?? []);
+        $diff = SseWantedServices::overrideDiff($code, $service);
+        unset($s['overrides'][$code]);
+        if ($diff !== []) {
+            $s['overrides'][$code] = $diff;
+        }
+        $s['hidden'] = array_values(array_diff($s['hidden'], [$code]));
+        if (array_key_exists('enabled', $service) && $service['enabled'] === false) {
+            $s['hidden'][] = $code;
+            if ($s['default'] === $code) {
+                $s['default'] = '';
+            }
+        }
+        $config['services'] = SseWantedServices::normalizeSettings($s);
+
+        return self::ok($config, 'Service « ' . $service['fr'] . ' » modifié pour votre communauté.', $code);
+    }
+
+    /**
+     * « Rétablir les valeurs livrées » : efface la surcharge d'un service du catalogue (l'emblème téléversé n'est pas touché).
+     *
+     * @param array<string, mixed> $config
+     * @return Result
+     */
+    public static function reset(array $config, string $code): array
+    {
+        $code = strtoupper($code);
+        $s = SseWantedServices::normalizeSettings($config['services'] ?? []);
+        if (!isset(SseWantedServices::catalogue()[$code])) {
+            return self::fail($config, ['Seuls les services livrés se rétablissent.']);
+        }
+        if (!isset($s['overrides'][$code])) {
+            return self::fail($config, ['Ce service porte déjà ses valeurs livrées.']);
+        }
+        unset($s['overrides'][$code]);
+        $config['services'] = SseWantedServices::normalizeSettings($s);
+
+        return self::ok($config, 'Valeurs livrées rétablies.', $code);
+    }
+
+    /**
+     * Place un service à un rang donné (1 : en tête) de la liste de la communauté.
+     *
+     * @param array<string, mixed> $config
+     * @return Result
+     */
+    public static function setPosition(array $config, string $code, int $position): array
+    {
+        $code = strtoupper($code);
+        $codes = array_keys(SseWantedServices::all($config));
+        if (!in_array($code, $codes, true)) {
+            return self::fail($config, ['Service introuvable.']);
+        }
+        $codes = array_values(array_diff($codes, [$code]));
+        array_splice($codes, max(0, min(count($codes), $position - 1)), 0, [$code]);
+
+        return self::reorder($config, $codes);
+    }
+
+    /**
+     * Note (ou efface, version 0) la version de l'emblème téléversé d'un service : donne « emblem_ref » aux documents.
+     *
+     * @param array<string, mixed> $config
+     * @return array<string, mixed> réglages mis à jour
+     */
+    public static function setEmblemVersion(array $config, string $code, int $version): array
+    {
+        $code = strtoupper($code);
+        $s = SseWantedServices::normalizeSettings($config['services'] ?? []);
+        unset($s['emblems'][$code]);
+        if ($version > 0) {
+            $s['emblems'][$code] = $version;
+        }
+        $config['services'] = SseWantedServices::normalizeSettings($s);
+
+        return $config;
     }
 
     /**
@@ -71,6 +163,7 @@ final class SseWantedServiceAdmin
         $copy['fr'] = mb_substr($name, 0, 120);
         $copy['en'] = mb_substr($source['en'] . ' (copy)', 0, 120);
         $copy['enabled'] = true;
+        unset($copy['emblem_ref'], $copy['overridden']);
         // L'autorité suit le nom : une copie garde celle de son modèle, que la communauté ajuste ensuite.
         $checked = SseWantedServices::validate($copy, $config);
         if ($checked['service'] === null || $checked['errors'] !== []) {
@@ -210,7 +303,7 @@ final class SseWantedServiceAdmin
         $s = SseWantedServices::normalizeSettings($config['services'] ?? []);
         $rows = [];
         foreach ($s['custom'] as $svc) {
-            unset($svc['source'], $svc['enabled']);
+            unset($svc['source'], $svc['enabled'], $svc['emblem_ref'], $svc['print_address'], $svc['overridden']);
             $rows[] = $svc;
         }
 

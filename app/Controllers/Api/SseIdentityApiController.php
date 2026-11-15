@@ -197,6 +197,10 @@ final class SseIdentityApiController
         if (in_array($body['kind'] ?? null, [\App\Services\Sse\SseFichesGameService::KIND, \App\Services\Sse\SseFichesGameService::KIND_SHARE], true)) {
             return (new \App\Controllers\Api\Game\GameSseFichesApiController())->kindResponse($body);
         }
+        // Alertes SSE (ICD-SSE-ALERTES-001) : avis, notices et fiches de vigilance lus, émis, levés et signalés depuis le jeu.
+        if (($body['kind'] ?? null) === \App\Services\Sse\SseAlertGameService::KIND) {
+            return (new \App\Controllers\Api\Game\GameSseAlertesApiController())->kindResponse($body);
+        }
         if (in_array($body['kind'] ?? null, SseEditorLibraryService::KINDS, true)) {
             return $this->editorLibraryResponse($tenantId, $body);
         }

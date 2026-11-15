@@ -25,6 +25,8 @@ use App\Support\TrainingCertificatePdfEngine;
  */
 final class SseSheetPdf
 {
+    use SsePdfAlertArt;
+    use SseSheetPdfVigilance;
     use SseSheetPdfRedaction;
 
     private const INK = [24, 30, 38];
@@ -78,6 +80,7 @@ final class SseSheetPdf
         'source' => ['Source et fiabilité', 'Source and reliability'], 'reliab' => ['Fiabilité de la source', 'Source reliability'], 'cred' => ['Crédibilité de l’information', 'Information credibility'],
         'classified_by' => ['Classifié par', 'Classified by'], 'derived' => ['Dérivé de', 'Derived from'], 'declass' => ['Déclassification', 'Declassify on'],
         'sources_multi' => ['Sources multiples', 'Multiple sources'], 'declass_na' => ['Sans objet', 'N/A'],
+        'physical_line' => ['Signalement', 'Description'],
     ];
 
     /** Fiabilité de la source (A à F) et crédibilité de l'information (1 à 6), échelle de l'Amirauté : [fr, en]. */
@@ -175,7 +178,11 @@ final class SseSheetPdf
         $pdf->setCellHeightRatio(1.22);
 
         $pdf->AddPage();
-        $this->front();
+        if ($d['model'] === 'vigilance') {
+            $this->vigilanceFront();
+        } else {
+            $this->front();
+        }
         $this->rxBlock();
         match ($d['model']) {
             'identification' => $this->identification(),
@@ -426,20 +433,6 @@ final class SseSheetPdf
         $this->textSection('description');
         $this->textSection('remarks');
         $this->listSection('addresses', (array) $f['links']['address'], 2);
-        $this->textSection('mention', false);
-    }
-
-    private function vigilance(): void
-    {
-        $f = $this->facts();
-        $this->identityBlock(false);
-        $this->threatRow(true);
-        $this->textSection('reason');
-        $this->textSection('instructions', true, true);
-        $this->textSection('behaviour');
-        $this->seenBlock();
-        $this->twoLists([['vehicles', (array) $f['links']['vehicle']], ['addresses', (array) $f['links']['address']]]);
-        $this->twoLists([['linked', (array) $f['links']['associate']], ['phones', array_merge((array) $f['links']['phone'], (array) $f['links']['email'])]]);
         $this->textSection('mention', false);
     }
 

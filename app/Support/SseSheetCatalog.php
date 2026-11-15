@@ -29,7 +29,7 @@ final class SseSheetCatalog
         ],
         'vigilance' => [
             'label' => ['Fiche de vigilance', 'Vigilance notice (BOLO)'],
-            'hint' => ['Personne à surveiller : motif, comportement, véhicules, adresses, consignes, durée de validité.', 'Person to watch: reason, behaviour, vehicles, addresses, instructions, validity.'],
+            'hint' => ['Avertissement au terrain : niveau d’alerte, conduite à tenir, motif, service à informer, validité.', 'Warning to the field: alert level, what to do, reason, service to report to, validity.'],
             'prefix' => 'FV', 'needs' => [['fichiers', 'write'], ['papiers', 'export']],
         ],
         'profile' => [
@@ -59,9 +59,9 @@ final class SseSheetCatalog
             ['mention', 300, ['Commentaires', 'Comments'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
         ],
         'vigilance' => [
-            ['reason', 700, ['Motif de la vigilance', 'Reason for vigilance'], ['Pourquoi cette personne est à surveiller.', 'Why this person is to be watched.']],
+            ['reason', 700, ['Motif de la vigilance', 'Reason for vigilance'], ['Pourquoi cette personne est à surveiller, en plus des motifs cochés.', 'Why this person is to be watched, on top of the ticked grounds.']],
             ['behaviour', 700, ['Comportement observé', 'Observed behaviour'], ['Habitudes, déplacements, attitude.', 'Habits, movements, attitude.']],
-            ['instructions', 900, ['Conduite à tenir', 'Instructions'], ['Consignes aux équipes : ne pas intervenir, signaler, etc.', 'Instructions to teams: do not engage, report, etc.']],
+            ['instructions', 500, ['Consignes complémentaires', 'Additional instructions'], ['Une consigne par ligne, à l’impératif, en plus des consignes cochées.', 'One instruction per line, in the imperative, on top of the ticked ones.']],
             ['mention', 300, ['Commentaires', 'Comments'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
         ],
         'profile' => [
@@ -92,17 +92,12 @@ final class SseSheetCatalog
         ],
         'vigilance' => [
             'reason' => [
-                'Personne à surveiller : {nom_complet} (alias {alias}). Niveau de menace : {menace}. Affiliation : {affiliation}.',
-                'Person to watch: {nom_complet} (alias {alias}). Threat level: {menace}. Affiliation: {affiliation}.',
+                'Personne à surveiller : {nom_complet} (alias {alias}). Affiliation : {affiliation}.',
+                'Person to watch: {nom_complet} (alias {alias}). Affiliation: {affiliation}.',
             ],
-            'behaviour' => [
-                'Dernier lieu connu : {dernier_lieu}. Comportement observé : à compléter.',
-                'Last known location: {dernier_lieu}. Observed behaviour: to be completed.',
-            ],
-            'instructions' => [
-                "- Ne pas intervenir seul : **observer et rendre compte**.\n- Relever l’heure, le lieu, le véhicule et les personnes accompagnantes.\n- Signaler toute observation au service {service}.",
-                "- Do not engage alone: **observe and report**.\n- Note time, place, vehicle and accompanying persons.\n- Report every sighting to {service}.",
-            ],
+            // Comportement et consignes complémentaires : vides par défaut (la conduite à tenir vient des mesures codifiées A-…).
+            'behaviour' => ['', ''],
+            'instructions' => ['', ''],
             'mention' => ['', ''],
         ],
         'profile' => [
@@ -131,6 +126,12 @@ final class SseSheetCatalog
     public const VALIDITY_DAYS = [7, 14, 30, 60, 90, 180];
 
     public const DEFAULT_VALIDITY = 30;
+
+    /** Durées courtes (heures) acceptées en plus des jours : 6 h, 24 h, 72 h ; « jusqu'à levée » = sans échéance (`until_lifted`). */
+    public const VALIDITY_HOURS = [6, 24, 72];
+
+    /** Codes de motifs ou de mesures retenus sur une fiche de vigilance (au plus). */
+    public const MAX_CODES = 6;
 
     public const FACES = ['auto', '1', '2'];
 
@@ -177,6 +178,26 @@ final class SseSheetCatalog
     public static function default(string $model, string $key, string $lang): string
     {
         return self::DEFAULTS[$model][$key][$lang === 'en' ? 1 : 0] ?? '';
+    }
+
+    /**
+     * Durée demandée : `until_lifted` (sans échéance), `validity_hours` (6, 24, 72) ou `validity` en jours.
+     *
+     * @param array<string, mixed> $input
+     * @return array{days: ?int, hours: ?int, lifted: bool}
+     */
+    public static function term(array $input): array
+    {
+        $lifted = ($input['until_lifted'] ?? false) === true || ($input['until_lifted'] ?? '') === '1' || ($input['validity'] ?? '') === 'until_lifted';
+        if ($lifted) {
+            return ['days' => null, 'hours' => null, 'lifted' => true];
+        }
+        $h = is_numeric($input['validity_hours'] ?? null) ? (int) $input['validity_hours'] : 0;
+        if (in_array($h, self::VALIDITY_HOURS, true)) {
+            return ['days' => null, 'hours' => $h, 'lifted' => false];
+        }
+
+        return ['days' => self::validity($input['validity'] ?? self::DEFAULT_VALIDITY), 'hours' => null, 'lifted' => false];
     }
 
     /** Durée de validité retenue (jours) : une des durées proposées, sinon 30. */
