@@ -55,7 +55,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                             <tr><th scope="row">Reçu le</th><td><?= $h(P::when((string) $it['at'])) ?></td></tr>
                             <?php if (!empty($row['event_timestamp'])): ?><tr><th scope="row">Événement</th><td><?= $h(P::when((string) $row['event_timestamp'])) ?></td></tr><?php endif; ?>
                             <tr><th scope="row">Lieu</th><td><?= ($pl = $text('location_description')) !== '' ? $pl : 'Non précisé' ?></td></tr>
-                            <tr><th scope="row">Position</th><td><?= $grid !== '' ? 'Repère <span class="fnr-mono">' . $h($grid) . '</span>' : 'Aucune position transmise' ?></td></tr>
+                            <tr><th scope="row">Position</th><td><?= $grid !== '' ? 'Repère <span class="fnr-mono">' . $h($grid) . '</span>' : '<span>Aucune position transmise</span>' ?></td></tr>
                             <tr><th scope="row">Rédacteur</th><td translate="no"><?= $h($it['author']) ?><?= trim((string) ($row['submitter_unit'] ?? '')) !== '' ? ' · ' . $h($row['submitter_unit']) : '' ?></td></tr>
                         </tbody>
                     </table>

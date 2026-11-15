@@ -105,7 +105,7 @@ $isInfo = is_array($isIt['state_info'] ?? null) ? $isIt['state_info'] : [];
             <?php foreach (array_reverse($isd['timeline']) as $entry): ?>
                 <?php if ($entry['type'] === 'read'): $r = $entry['read']; ?>
                     <li class="fnr-history__read">
-                        <p class="fnr-history__what"><strong translate="no"><?= $h($r['label']) ?></strong> a lu la remontée (<?= $h(P::CHANNELS[$r['channel']] ?? $r['channel']) ?><?= $r['count'] > 1 ? ', ' . (int) $r['count'] . ' fois' : '' ?>)</p>
+                        <p class="fnr-history__what"><strong translate="no"><?= $h($r['label']) ?></strong> <span>a lu la remontée</span> <span>(<?= $h(P::CHANNELS[$r['channel']] ?? $r['channel']) ?><?= $r['count'] > 1 ? ', ' . (int) $r['count'] . ' fois' : '' ?>)</span></p>
                         <p class="fnr-history__when"><?= $h(P::when((string) $r['first'])) ?></p>
                     </li>
                 <?php else: $e = $entry['event']; if (in_array($e['kind'], ['steam'], true)) { continue; } ?>

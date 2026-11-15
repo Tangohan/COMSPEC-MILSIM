@@ -284,7 +284,7 @@ $delay = $d['delay'];
                         <?php elseif ($entry['type'] === 'read'): $r = $entry['read']; ?>
                             <li class="rmt-tl rmt-tl--read">
                                 <span class="rmt-tl__dot" aria-hidden="true"></span>
-                                <div class="rmt-tl__body"><p><strong><?= $h($r['label']) ?></strong> a lu la remontée (<?= $h($channels[$r['channel']] ?? $r['channel']) ?><?= $r['count'] > 1 ? ', ' . (int) $r['count'] . ' fois' : '' ?>) <span class="rmt-dim" title="<?= $h(P::when((string) $r['first'])) ?>"><?= $h(P::ago((string) $r['first'])) ?></span></p></div>
+                                <div class="rmt-tl__body"><p><strong><?= $h($r['label']) ?></strong> <span>a lu la remontée</span> <span>(<?= $h($channels[$r['channel']] ?? $r['channel']) ?><?= $r['count'] > 1 ? ', ' . (int) $r['count'] . ' fois' : '' ?>)</span> <span class="rmt-dim" title="<?= $h(P::when((string) $r['first'])) ?>"><?= $h(P::ago((string) $r['first'])) ?></span></p></div>
                             </li>
                         <?php else: $e = $entry['event']; ?>
                             <li class="rmt-tl rmt-tl--<?= $h($e['kind']) ?>">
