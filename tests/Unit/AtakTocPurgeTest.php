@@ -100,7 +100,7 @@ final class AtakTocPurgeTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function run(array $scope, bool $archive = true, bool $keepPinned = true): array
+    private function executePurge(array $scope, bool $archive = true, bool $keepPinned = true): array
     {
         $scope['archiveFirst'] = $archive;
         $scope['keepPinned'] = $keepPinned;
@@ -168,7 +168,7 @@ final class AtakTocPurgeTest extends TestCase
             $this->archives = new InMemoryMarkerCycleStore();
             $this->seedMap();
             $before = $this->live();
-            $r = $this->run($scope);
+            $r = $this->executePurge($scope);
             self::assertSame('done', $r['job']['status'], $name);
             self::assertGreaterThan(0, $r['pre']['total'], $name . ' : le jeu d\'essai doit couvrir le périmètre');
             self::assertSame($r['pre']['total'], $r['job']['deleted'], $name . ' : aperçu = suppression réelle');
@@ -250,7 +250,7 @@ final class AtakTocPurgeTest extends TestCase
     public function testWithoutArchiveOptionNothingIsWritten(): void
     {
         $this->seedMap();
-        $r = $this->run(['types' => ['marker']], false);
+        $r = $this->executePurge(['types' => ['marker']], false);
         self::assertSame('done', $r['job']['status']);
         self::assertSame([], $this->archives->archives);
         self::assertNull($r['job']['archiveId']);
@@ -421,7 +421,7 @@ final class AtakTocPurgeTest extends TestCase
         $m = F::marker($this->pdo, 1, 1, ['pos' => [1, 1], 'text' => 'a', 'author' => 'Alpha']);
         $s = F::shape($this->pdo, 1, 1, 'LINE', ['coordinates' => [[0, 0], [9, 9]]]);
         F::ping($this->pdo, 1, 1, 'Alpha', '2026-11-15 13:00:00');
-        $r = $this->run(['types' => ['marker', 'route', 'ping']], false);
+        $r = $this->executePurge(['types' => ['marker', 'route', 'ping']], false);
         self::assertSame(3, $r['job']['deleted']);
         self::assertSame(0, $this->live());
         $undo = (new TocDeletionService(new TocElementStore($this->pdo, true), fn (): int => $this->now + 120, fn () => null))
@@ -441,7 +441,7 @@ final class AtakTocPurgeTest extends TestCase
         $this->seedMap(1, 2);
         $before2 = $this->live(2, 1);
         $beforeMap2 = $this->live(1, 2);
-        $r = $this->run(['types' => ['marker', 'form', 'route', 'zone', 'ping'], 'archiveFirst' => false], false);
+        $r = $this->executePurge(['types' => ['marker', 'form', 'route', 'zone', 'ping'], 'archiveFirst' => false], false);
         self::assertSame('done', $r['job']['status']);
         self::assertSame($before2, $this->live(2, 1), 'autre communauté intacte');
         self::assertSame($beforeMap2, $this->live(1, 2), 'autre carte intacte');
@@ -487,7 +487,7 @@ final class AtakTocPurgeTest extends TestCase
     {
         F::unit($this->pdo, 1, 1, 'LIVE-1', '2026-11-15 13:30:00');
         F::unit($this->pdo, 1, 1, 'DEAD-1', '2026-11-15 11:00:00');
-        $r = $this->run(['types' => ['track']], false);
+        $r = $this->executePurge(['types' => ['track']], false);
         self::assertSame(1, $r['job']['deleted']);
         self::assertSame('LIVE-1', $this->pdo->query('SELECT call_sign FROM atak_units')->fetchColumn());
     }
