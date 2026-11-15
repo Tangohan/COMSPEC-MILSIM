@@ -36,7 +36,7 @@ final class DiscordBotBureau
     public const RATE_PER_MINUTE = 12;
     public const OPEN_APPLICATION_STATUSES = ['submitted', 'interview_scheduled', 'on_hold', 'acceptance_onboarding'];
     public const OPEN_INTEGRATION_STATUSES = ['to_start', 'in_progress', 'waiting_member', 'waiting_staff', 'blocked'];
-    public const REMINDER_KINDS = ['applications_new', 'integration_validate', 'qualification_due', 'campaign', 'retro30', 'qualification_staff'];
+    public const REMINDER_KINDS = ['applications_new', 'integration_validate', 'qualification_due', 'campaign', 'retro30', 'qualification_staff', 'remontee'];
 
     /** @var \Closure(int, list<string>): list<int> */
     private \Closure $permissionLookup;
@@ -232,11 +232,18 @@ final class DiscordBotBureau
             return [];
         }
         $s = $this->repo()->settings($tenant);
+        // Remontées du renseignement : réglage à part (salon, événements, rôle), indépendant des rappels de gestion.
+        $out = [];
+        try {
+            foreach ((new \App\Services\Intel\IntelIntakeDiscord($this->db(), $this->repo(), null, fn (string $p): string => $this->url($p)))->pending($tenant, $now, 10) as $m) {
+                $out[] = ['kind' => 'remontee', 'ref' => $m['ref'], 'target' => 'channel', 'to' => $m['to'], 'data' => $m['data']];
+            }
+        } catch (\Throwable) {
+        }
         if (empty($s['reminders_enabled'])) {
-            return [];
+            return $out;
         }
         $staffChannel = (string) ($s['applications_channel_id'] ?: $s['log_channel_id'] ?: $s['announce_channel_id'] ?: '');
-        $out = [];
         $add = function (string $kind, string $ref, string $target, string $to, array $data) use (&$out, $tenant, $limit): void {
             if (count($out) >= $limit || $to === '' || $this->repo()->reminderSent($tenant, $kind, $ref)) {
                 return;

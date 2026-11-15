@@ -168,6 +168,37 @@ $pill = '<span class="dbot-pill dbot-pill--' . $h($statusTone) . '">' . $h($stat
         <p class="dbot-actions"><button class="ath-btn ath-btn--solid" type="submit">Enregistrer</button></p>
     </form>
 
+    <?php
+    $intake = is_array($bot['intake'] ?? null) ? $bot['intake'] : [];
+    $intakeEvents = is_array($intake['events'] ?? null) ? $intake['events'] : [];
+    ?>
+    <form method="post" action="<?= $h(url('back-office/discord-bot/remontees')) ?>" class="ath-card dbot-card dbot-form" id="dbot-remontees">
+        <?= \App\Core\Csrf::field() ?>
+        <h2 class="dbot-h2">Remontées du renseignement</h2>
+        <p class="dbot-fine">Le bot prévient un salon quand une remontée arrive, presse ou change de main. Le message donne la référence, le type, l’urgence et un lien vers la fiche : jamais le texte, jamais un passage caviardé, jamais un nom ni un identifiant Steam.</p>
+        <div class="dbot-grid">
+            <div class="dbot-field"><label for="dbot-intake-channel">Salon des remontées</label>
+                <?= $select('intake_channel_id', 'dbot-intake-channel', $channels, (string) ($intake['channel_id'] ?? ''), 'Aucun salon') ?>
+            </div>
+            <div class="dbot-field"><label for="dbot-intake-role">Rôle mentionné (facultatif)</label>
+                <?= $select('intake_role_id', 'dbot-intake-role', $roles, (string) ($intake['role_id'] ?? ''), 'Aucun rôle') ?>
+            </div>
+        </div>
+        <div class="dbot-checks">
+            <?= $check('intake_enabled', 'dbot-intake-on', !empty($intake['enabled']), 'Activer les notifications des remontées', 'Rien de ce qui est arrivé avant l’activation n’est envoyé.') ?>
+            <?php foreach ([
+                'new' => ['Nouvelle remontée', 'Chaque compte rendu ou fiche qui arrive.'],
+                'urgent' => ['Remontée urgente ou critique', 'Seulement les urgences hautes : remplace « Nouvelle remontée » pour elles.'],
+                'ack' => ['Prise en compte', 'Quand quelqu’un répond de la remontée.'],
+                'forward' => ['Transmise', 'Quand elle part vers un échelon ou un dossier.'],
+                'late' => ['En retard', 'Quand le délai de prise en compte est dépassé.'],
+            ] as $code => [$label, $help]): ?>
+                <label class="dbot-check" for="dbot-intake-<?= $h($code) ?>"><input type="checkbox" id="dbot-intake-<?= $h($code) ?>" name="intake_events[]" value="<?= $h($code) ?>"<?= in_array($code, $intakeEvents, true) ? ' checked' : '' ?>><span><b><?= $h($label) ?></b><small><?= $h($help) ?></small></span></label>
+            <?php endforeach; ?>
+        </div>
+        <p class="dbot-actions"><button class="ath-btn ath-btn--solid" type="submit">Enregistrer</button></p>
+    </form>
+
     <section class="ath-card dbot-card" aria-labelledby="dbot-cmd-title">
         <h2 id="dbot-cmd-title" class="dbot-h2">Ce que vos équipes peuvent faire sur Discord</h2>
         <table class="dbot-table">

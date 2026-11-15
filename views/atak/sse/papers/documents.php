@@ -129,7 +129,7 @@ require __DIR__ . '/_subnav.php';
                         </td>
                         <td><span class="badge<?= $d['workflow'] === 'issued' ? '' : ' badge--gray' ?>"><?= $h($d['workflow_label']) ?></span><?php if ($d['expired']): ?> <span class="badge badge--amber">Expiré</span><?php endif; ?></td>
                         <?php if ($canSeeTruth): ?><td><?= $h(C::label(C::ORIGINS, $d['st_origin'])) ?></td><?php endif; ?>
-                        <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'])) ?>">Ouvrir</a></td>
+                        <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'])) ?>">Ouvrir</a><?php if ($canSeeTruth || !in_array($d['st_origin'], ['alias', 'cover', 'forged'], true) && !in_array($d['identity']['kind'] ?? '', ['alias', 'cover', 'forged'], true)): ?> <a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'] . '/telecharger/pdf')) ?>" aria-label="Télécharger la pièce complète <?= $h($d['ref']) ?> (PDF)">Télécharger</a><?php endif; ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

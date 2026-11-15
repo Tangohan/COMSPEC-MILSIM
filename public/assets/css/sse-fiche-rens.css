@@ -372,3 +372,45 @@ body.sse-iw .sx-main .fnr-dialog__foot .btn { min-height: 44px; }
     .fnr-sec, .fnr-sign { break-inside: avoid; }
     .fnr-sec--text { break-inside: auto; }
 }
+
+/* ——— Suivi de la remontée (views/atak/sse/_intake_suivi.php) et file des remontées (intake_index.php) ——— */
+.fnr-cycle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; counter-reset: fnr-step; }
+.fnr-cycle li { counter-increment: fnr-step; display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--fnr-line); border-radius: 10px; color: var(--fnr-dim); font-size: 0.875rem; }
+.fnr-cycle li strong { color: inherit; font-weight: 600; }
+.fnr-cycle li strong::before { content: counter(fnr-step) ". "; font-variant-numeric: tabular-nums; }
+.fnr-cycle li span { font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+.fnr-cycle li.is-done { border-color: var(--fnr-line-strong); color: var(--fnr-text); }
+.fnr-cycle li.is-done strong::before { content: "✓ "; color: var(--fnr-accent); }
+.fnr-cycle li.is-current { border-color: var(--fnr-accent); color: var(--fnr-ink); background: var(--fnr-surface-2); }
+.fnr-cycle li.is-current strong { font-weight: 800; }
+.fnr-cycle.is-late li.is-current { border-color: #f87171; }
+.fnr-delay { margin: 10px 0 0; color: var(--fnr-dim); font-size: 0.875rem; }
+.fnr-delay strong { color: var(--fnr-ink); }
+.fnr-delay.is-late strong { color: #fca5a5; }
+.fnr-chips--suivi { margin-top: 12px; }
+.fnr-suivi-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.fnr-suivi-actions form { display: contents; }
+body.sse-iw .sx-main .fnr-suivi-actions .btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin: 0; text-align: center; }
+.fnr-suivi-actions > form:first-child .btn, .fnr-suivi-actions > .btn:first-child { grid-column: 1 / -1; }
+.fnr-proposal { display: grid; gap: 4px; margin-top: 12px; padding: 12px 14px; border: 1px dashed var(--fnr-line-strong); border-radius: 10px; background: var(--fnr-surface-2); }
+.fnr-proposal p { margin: 0; color: var(--fnr-text); font-size: 0.875rem; }
+.fnr-proposal strong { color: var(--fnr-ink); }
+body.sse-iw .sx-main .fnr-proposal .fnr-mini { justify-self: start; }
+.fnr-cerbere { display: inline-block; padding: 1px 8px; border: 1px solid var(--fnr-accent); border-radius: 999px; color: var(--fnr-accent); font-size: 0.8125rem; font-weight: 700; white-space: nowrap; }
+.fnr-comment { margin-top: 18px; }
+.fnr-history__read .fnr-history__what { color: var(--fnr-dim); }
+.fnr-history li.fnr-history__read::before { border-color: var(--fnr-line-strong); }
+.fnr-queue-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+body.sse-iw .sx-main .fnr-queue-tabs a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--fnr-line-strong); border-radius: 999px; background: var(--fnr-surface); color: var(--fnr-text); font-size: 0.875rem; font-weight: 600; text-decoration: none; }
+body.sse-iw .sx-main .fnr-queue-tabs a strong { color: var(--fnr-dim); font-variant-numeric: tabular-nums; }
+body.sse-iw .sx-main .fnr-queue-tabs a:hover { border-color: var(--fnr-accent); color: var(--fnr-ink); }
+body.sse-iw .sx-main .fnr-queue-tabs a.is-active { border-color: var(--fnr-accent); background: var(--fnr-surface-2); color: var(--fnr-ink); }
+.fnr-queue { margin-top: 14px; }
+.fnr-queue .fnr-chips { margin: 0; }
+.fnr-queue__title { display: block; color: var(--fnr-ink); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+.fnr-queue__ref { display: block; margin-top: 2px; color: var(--fnr-dim); font-size: 0.8125rem; }
+.fnr-queue .is-late { color: #fca5a5; font-weight: 700; }
+.fnr-cr dl { margin: 0; }
+.fnr-cr__text { white-space: pre-line; }
+.fnr-mark { padding: 0 2px; background: #fde9a8; border-bottom: 2px solid #b98900; color: inherit; }
+.fnr-barre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -0.08em; user-select: none; }

@@ -97,7 +97,6 @@ $periodLabel = IntelPlayerFeedService::PERIODS[$period] ?? $period;
 <div class="rmj">
     <header class="rmj__head">
         <div class="rmj__head-txt">
-            <p class="rmj__kicker">Renseignement · Suivi</p>
             <h1 class="rmj__title">Remontées par joueur</h1>
             <p class="rmj__lead">Tout ce que chaque joueur a envoyé du jeu, compté par catégorie. Ouvrez un joueur pour son fil chronologique, ou cliquez un compteur pour ne voir que cette catégorie.</p>
         </div>
@@ -198,7 +197,7 @@ $periodLabel = IntelPlayerFeedService::PERIODS[$period] ?? $period;
                                             <?php if ($href !== null): ?><a class="rmj__name" href="<?= $h($href) ?>"><?= $h($name) ?></a><?php else: ?><span class="rmj__name"><?= $h($name) ?></span><?php endif; ?>
                                             <span class="rmj__who-sub">
                                                 <?php if ($p['kind'] === 'user'): ?><span title="Compte rattaché"><?= $h($p['account']) ?></span><?php else: ?><span class="rmj__tag">Sans compte</span><?php endif; ?>
-                                                <?php if ($p['steam'] !== ''): ?><span class="rmj__mono" title="Identifiant Steam"><?= $h($p['steam']) ?></span><?php endif; ?>
+                                                <?php if ($p['steam'] !== ''): ?><span class="rmj__mono" title="Identifiant Steam, masqué"><?= $h(\App\Services\Intel\IntelIntakePresenter::maskSteam((string) $p['steam'])) ?></span><?php endif; ?>
                                             </span>
                                             <?php if ($others !== []): ?><span class="rmj__who-sub rmj__who-alt" title="Autres indicatifs vus dans les remontées">aussi : <?= $h(implode(', ', array_slice($others, 0, 4))) ?></span><?php endif; ?>
                                         </div>

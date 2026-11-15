@@ -1290,6 +1290,8 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 [{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 15] call comspec_atak_native_fnc_waitAndExec;
 // Fiches du portail SSE (app Fiches) : lues au démarrage de la mission, puis à l'ouverture de l'app et au bouton ACTUALISER.
 [{ ["ensure"] call comspec_atak_native_fnc_fichesAction; }, [], 50] call comspec_atak_native_fnc_waitAndExec;
+// Avis et vigilance : même lecture au démarrage, puis battement d'une minute (file d'envoi, relecture, alertes de niveau élevé).
+[{ ["ensure"] call comspec_atak_native_fnc_alertesAction; }, [], 55] call comspec_atak_native_fnc_waitAndExec;
 // Profil : ce qui attend un moment calme (fn_profileSave) est écrit en fin de mission.
 {
     // Fin de mission normale : le marqueur d'étape à risque (fn_deviceGuard) ne doit pas passer pour un plantage.

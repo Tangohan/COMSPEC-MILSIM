@@ -77,6 +77,7 @@ class CfgFunctions {
             class idInitQueue {};
             class idAthenaSubmit {};
             class idWantedCheck {};
+            class idAlertReport {};
             class idPaperPhoto {};
             class idFrm {};
             class idModuleGive {};

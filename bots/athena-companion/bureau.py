@@ -122,7 +122,24 @@ def format_reminder(item, locale):
         return tr('r_qualification_due', locale), tr('r_qualification_due_body', locale, name=str(data.get('name', ''))[:80], expires_at=data.get('expires_at', '')), ''
     if kind == 'test':
         return tr('r_test', locale), tr('r_test_body', locale), ''
+    if kind == 'remontee':
+        # Remontée du renseignement : référence, type, urgence, émetteur. Jamais le texte (le site ne l'envoie pas).
+        event = data.get('event') if data.get('event') in ('new', 'urgent', 'ack', 'forward', 'late', 'manual') else 'manual'
+        urgency = data.get('urgency') if data.get('urgency') in ('critical', 'high', 'medium', 'low') else 'low'
+        lines = [tr('r_remontee_ref', locale, ref=str(data.get('ref') or '-')[:60], type=str(data.get('type') or '-')[:80]),
+                 tr('r_remontee_urgency', locale, urgency=tr('r_remontee_u_' + urgency, locale))]
+        if data.get('emitter'):
+            lines.append(tr('r_remontee_emitter', locale, emitter=str(data['emitter'])[:40]))
+        if data.get('title'):
+            lines.append(str(data['title'])[:120])
+        return tr('r_remontee_' + event, locale), chr(10).join(lines), data.get('link', '')
     return None
+
+
+def reminder_mention(item):
+    """Rôle à mentionner avec un rappel (remontées seulement) : identifiant numérique, sinon rien."""
+    role = str((item.get('data') or {}).get('role') or '')
+    return role if item.get('kind') == 'remontee' and role.isdigit() and 5 <= len(role) <= 24 else ''
 
 
 def dangerous_role(permissions):
