@@ -66339,4 +66339,5 @@ return [
     'sous' => 'under',
     'Renseignements' => 'Intelligence',
     'Page' => 'Page',
+    'Nom non renseigné' => 'Name not provided',
 ];

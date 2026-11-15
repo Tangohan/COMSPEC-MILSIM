@@ -709,7 +709,8 @@ final class JnetDashboardService
         $cards = [];
         foreach ($raw as $row) {
             $id = (int) ($row['id'] ?? 0);
-            $e = $byId[$id] ?? $row;
+            // Le roster enrichi n'a pas le prénom ni le nom d'état civil de l'annuaire : on garde ceux de la ligne d'annuaire.
+            $e = ($byId[$id] ?? []) + $row;
             $cards[] = $this->normalizePersonCard($e);
         }
 
@@ -1189,9 +1190,28 @@ final class JnetDashboardService
         $display = trim((string) ($row['display_name'] ?? ''));
         $character = trim((string) ($row['character_name'] ?? ''));
         $callsign = trim((string) ($row['callsign'] ?? ''));
-        $name = $character !== ''
-            ? $character
-            : ($callsign !== '' ? $callsign : ($display !== '' ? $display : 'Opérateur'));
+        // Même nom que la fiche du membre (prénom + nom au format de la communauté, member_name) ; à défaut le nom du
+        // personnage, puis l'indicatif, puis le nom du compte.
+        $first = trim((string) ($row['first_name'] ?? ''));
+        $last = trim((string) ($row['last_name'] ?? ''));
+        $civil = '';
+        if (($first !== '' || $last !== '') && function_exists('member_name')) {
+            $civil = trim(member_name([
+                'first_name' => $first,
+                'last_name' => $last,
+                'display_name' => $display,
+                'callsign' => $callsign,
+                'trigram' => trim((string) ($row['trigram'] ?? '')),
+            ], 'card', null, false));
+            if ($civil === \App\Support\MemberName::FALLBACK) {
+                $civil = '';
+            }
+        }
+        $name = $civil !== ''
+            ? $civil
+            : ($character !== ''
+                ? $character
+                : ($callsign !== '' ? $callsign : ($display !== '' ? $display : 'Opérateur')));
         $grade = trim((string) ($row['grade_short'] ?? $row['grade_long'] ?? ''));
         $unit = trim((string) ($row['unit_name'] ?? $row['unit_code'] ?? ''));
         $function = trim((string) ($row['job_role_display'] ?? $row['role_name'] ?? ''));
