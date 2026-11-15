@@ -24747,5 +24747,14 @@
 ["Votre téléphone sonne (%1 s)", "", "Your phone is ringing (%1 s)"],
 ["Votre téléphone vibre (%1 s)", "", "Your phone is vibrating (%1 s)"],
 ["Localisé par le TOC à %1", "", "Located by the TOC at %1"],
-["Triangulé par le TOC à %1", "", "Triangulated by the TOC at %1"]
+["Triangulé par le TOC à %1", "", "Triangulated by the TOC at %1"],
+["Athena : envoi en cours…", "", "Athena: sending…"],
+["Bilan transmis au camp · envoi à Athena en cours", "", "BDA sent to the camp · sending to Athena"],
+["Bilan transmis au camp · Athena non connecté (RENVOYER dans la liste)", "", "BDA sent to the camp · Athena not connected (RESEND in the list)"],
+["Bilan transmis au camp", "", "BDA sent to the camp"],
+["Athena n'a pas reçu le bilan (RENVOYER dans la liste)", "", "Athena did not receive the BDA (RESEND in the list)"],
+["Bilan enregistré sur Athena", "", "BDA saved on Athena"],
+["Envoi déjà en cours", "", "Already sending"],
+["RENVOYER", "", "RESEND"],
+["Renvoie ce bilan à Athena", "", "Sends this BDA to Athena again"]
 ]

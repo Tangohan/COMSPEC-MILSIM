@@ -341,6 +341,36 @@ class AtakTacticalReportRepository
         return $this->db->fetchAll($sql, $params);
     }
 
+    /**
+     * Compte rendu déjà enregistré pour cet identifiant client (structured_data.client_id posé par le mod) : un renvoi
+     * après un échec d'envoi ne crée pas de doublon. Même communauté, même carte, même joueur.
+     */
+    public function findByClientId(int $tenantId, int $contextId, string $steamId, string $clientId): ?array
+    {
+        if ($tenantId < 1 || $steamId === '' || preg_match('/^[A-Za-z0-9_-]{8,80}$/', $clientId) !== 1) {
+            return null;
+        }
+        try {
+            $row = $this->db->fetchOne(
+                'SELECT id FROM atak_tactical_reports
+                 WHERE tenant_id = :tenant_id AND context_id = :context_id AND submitter_steam_id = :steam
+                   AND (structured_data LIKE :needle OR structured_data LIKE :needle_sp) AND deleted_at IS NULL
+                 ORDER BY id DESC LIMIT 1',
+                [
+                    'tenant_id' => $tenantId,
+                    'context_id' => $contextId,
+                    'steam' => $steamId,
+                    'needle' => '%"client_id":"' . $clientId . '"%',
+                    'needle_sp' => '%"client_id": "' . $clientId . '"%',
+                ]
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return is_array($row) ? $this->findById((int) $row['id'], $tenantId) : null;
+    }
+
     public function findBySourceChatId(int $tenantId, int $chatId): ?array
     {
         if ($tenantId < 1 || $chatId < 1) {
