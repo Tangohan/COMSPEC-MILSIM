@@ -1,3 +1,20 @@
+[h1]COMSPEC SSE 1.14.0 — motifs et mesures au contrôle, date et autorité des papiers / reasons and measures at the check, paper dates and authority (15/11/2026)[/h1]
+[b]Relance Arma complètement. / Fully restart Arma.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Avis de recherche plus complet au contrôle[/b] : la carte « AVIS DE RECHERCHE » du contrôle d'identité ajoute les motifs et les mesures codifiés de l'avis (code et libellé) ainsi que le service demandeur, quand le portail les donne.
+[*] [b]Date de délivrance et autorité des papiers[/b] : quand le papier présenté les porte, le contrôle transmis à Athena envoie aussi la date de délivrance et l'autorité émettrice. L'écran « Consigner depuis les contrôles » du portail les préremplit.
+[*] Aucune image de papier n'est envoyée : Arma ne sait pas en sortir une. Aucune DLL à changer ; un portail plus ancien fonctionne comme avant.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Fuller wanted notice at the check[/b]: the "WANTED NOTICE" card of the identity check now adds the notice's coded reasons and measures (code and label) and the requesting service, when the portal provides them.
+[*] [b]Issue date and authority of papers[/b]: when the presented paper carries them, the check sent to Athena also sends the issue date and the issuing authority. The portal's "Record from checks" screen pre-fills them.
+[*] No paper image is sent: Arma cannot export one. No DLL to change; an older portal works as before.
+[/list]
+
 [h1]COMSPEC SSE 1.13.0 — « recherchée » au contrôle d'identité / "wanted" at the identity check (15/11/2026)[/h1]
 [b]Relance Arma complètement. / Fully restart Arma.[/b]
 

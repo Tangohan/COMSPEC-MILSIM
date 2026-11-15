@@ -257,7 +257,7 @@ final class GameSseFichesApiController
 
         return Response::json([
             'id' => $checkId,
-            'ref' => SseLoreService::sqf([SseFichesGameService::VERSION, 'wanted', $w['wanted'], $w['ref'] ?? '', $w['type'] ?? '', $w['threat'] ?? '', $w['armed'] ?? '', $w['instruction'] ?? '']),
+            'ref' => SseLoreService::sqf([SseFichesGameService::VERSION, 'wanted', $w['wanted'], $w['ref'] ?? '', $w['type'] ?? '', $w['threat'] ?? '', $w['armed'] ?? '', $w['instruction'] ?? '', $w['reasons'] ?? [], $w['measures'] ?? [], $w['service'] ?? '', $w['physical'] ?? '']),
             'page' => 0, 'next' => 0, 'pages' => 1,
         ]);
     }

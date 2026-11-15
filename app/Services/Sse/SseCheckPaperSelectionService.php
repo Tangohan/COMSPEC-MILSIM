@@ -235,6 +235,8 @@ final class SseCheckPaperSelectionService
     private function fields(array $check, array $edits): array
     {
         $n0 = is_array($check['results']['N0'] ?? null) ? $check['results']['N0'] : [];
+        // Délivrance et autorité lues sur le papier par le terminal (results.paper), sinon rien : l'opérateur les saisit.
+        $paper = is_array($check['results']['paper'] ?? null) ? $check['results']['paper'] : [];
         $visual = strtolower((string) ($n0['visual'] ?? ''));
         $date = static fn (mixed $v): string => preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string) $v)) === 1 ? trim((string) $v) : '';
         $str = static fn (mixed $v, int $max): string => mb_substr(trim(str_replace(["\r", "\n", "\t"], ' ', is_scalar($v) ? (string) $v : '')), 0, $max);
@@ -249,9 +251,9 @@ final class SseCheckPaperSelectionService
             'doc_type' => $type,
             'country_code' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', (string) $pick('country_code', (string) ($check['country_code'] ?? ''))) ?? '', 0, 3)),
             'doc_number' => SseIdDocumentRepository::normalizeNumber((string) $pick('doc_number', (string) ($check['doc_number'] ?? ''))),
-            'issued_on' => $date($pick('issued_on', '')),
+            'issued_on' => $date($pick('issued_on', $date($paper['issued'] ?? ''))),
             'expires_on' => $date($pick('expires_on', $date($n0['expires'] ?? ''))),
-            'authority' => $str($pick('authority', ''), 160),
+            'authority' => $str($pick('authority', (string) ($paper['authority'] ?? '')), 160),
             'authenticity' => isset(SseIdentityCatalog::AUTHENTICITY[$auth]) ? $auth : 'authentic',
             'seen_on' => $date($pick('seen_on', $createdDate)) ?: gmdate('Y-m-d'),
             'place' => $str($pick('place', $place), 120),

@@ -129,15 +129,19 @@ if (_tab isEqualTo "history") then {
             _rows pushBack ["banner", format ["<t color='%1'>%2</t>", _vc, _vt call _tr], _vbg];
         };
     };
-    // Avis de recherche actif lu sur le site (fn_idWantedCheck) : référence, type, menace, armé et mesure à prendre.
+    // Avis de recherche actif lu sur le site (fn_idWantedCheck) : référence, type, menace, armé et mesure à prendre, puis motifs et
+    // mesures codifiés et service demandeur quand le site les donne.
     private _wanted = _cur getOrDefault ["wanted", []];
     if (_wanted isEqualType [] && {(count _wanted) >= 5}) then {
-        _wanted params ["_wRef", "_wType", "_wThreat", "_wArmed", "_wInstr"];
+        _wanted params ["_wRef", "_wType", "_wThreat", "_wArmed", "_wInstr", ["_wReasons", [], [[]]], ["_wMeasures", [], [[]]], ["_wService", "", [""]]];
         private _wLvl = createHashMapFromArray [["low", "FAIBLE"], ["medium", "MOYEN"], ["high", "ÉLEVÉ"], ["critical", "CRITIQUE"]] getOrDefault [_wThreat, ""];
-        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='#ff5a5a'>%1</t> %2%3%4%5", "AVIS DE RECHERCHE" call _tr, [_wRef] call _esc,
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='#ff5a5a'>%1</t> %2%3%4%5%6%7%8", "AVIS DE RECHERCHE" call _tr, [_wRef] call _esc,
             ["", format [" · %1 %2", "MENACE" call _tr, _wLvl call _tr]] select (_wLvl isNotEqualTo ""),
             ["", format [" · <t color='#ff5a5a'>%1</t>", "ARMÉ ET DANGEREUX" call _tr]] select (_wArmed isEqualTo "yes"),
-            ["", format ["<br/><t size='0.85' color='#f2ab33'>%1 : %2</t>", "Mesure à prendre" call _tr, [_wInstr] call _esc]] select (_wInstr isNotEqualTo "")],
+            ["", format ["<br/><t size='0.85' color='#f2ab33'>%1 : %2</t>", "Mesure à prendre" call _tr, [_wInstr] call _esc]] select (_wInstr isNotEqualTo ""),
+            ["", format ["<br/><t size='0.8' color='#c9d3dd'>%1 : %2</t>", "Motif" call _tr, [_wReasons joinString " · "] call _esc]] select (_wReasons isNotEqualTo []),
+            ["", format ["<br/><t size='0.8' color='#c9d3dd'>%1 : %2</t>", "Mesures à prendre" call _tr, [_wMeasures joinString " · "] call _esc]] select (_wMeasures isNotEqualTo []),
+            ["", format ["<br/><t size='0.8' color='#8b98a7'>%1 : %2</t>", "Service" call _tr, [_wService] call _esc]] select (_wService isNotEqualTo "")],
             [0.3, 0.02, 0.02, 1]];
     };
     _rows pushBack ["steps", _steps];

@@ -2,7 +2,7 @@
     Point d'entrée unique d'un relevé de document (bouton « RELEVER » de la fenêtre du document, scripts, autres mods).
     [_pairs] call comspec_sse_fnc_controlRecord -> clé du relevé ("" si rien d'exploitable)
       _pairs : tableau de paires [["clé", valeur]…] ou HashMap. Clés : type (id_card | passport | driving_license |
-        military_id), country, number, last, first, dob (AAAA-MM-JJ), expires, holder (objet : personne qui présente,
+        military_id), country, number, last, first, dob (AAAA-MM-JJ), expires, issued (date de délivrance), authority (autorité émettrice), holder (objet : personne qui présente,
         facultatif), place (grille, sinon celle du joueur), clock (HH:MM, sinon l'heure du jeu), visual (résultat de
         l'examen visuel : ras | doute | faux | expire…), docId (identifiant SSE du document, facultatif).
     Effets : (1) fiche du vérification d'identité en cours complétée (« Document relevé », historique de l'app Contrôle ID),
@@ -26,7 +26,7 @@ private _cur = ["current"] call comspec_sse_fnc_idHistory;
 private _same = (count _cur) > 0 && {((_cur get "doc") getOrDefault ["number", ""]) isEqualTo (_r getOrDefault ["number", ""])};
 if (!_same) then {
     private _doc = createHashMap;
-    { _doc set [_x, _r getOrDefault [_x, ""]]; } forEach ["type", "country", "number", "last", "first", "dob", "expires"];
+    { _doc set [_x, _r getOrDefault [_x, ""]]; } forEach ["type", "country", "number", "last", "first", "dob", "expires", "issued", "authority"];
     _doc set ["id", _r getOrDefault ["docId", format ["REL%1", (_r getOrDefault ["number", ""]) regexReplace ["[^A-Za-z0-9]", ""]]]];
     _cur = ["start", [_doc, _holder, _hKey, createHashMap]] call comspec_sse_fnc_idHistory;
 };
@@ -39,7 +39,7 @@ _srv deleteAt "holder";
 // (3) Athena : contrôle subi (relevé) et journal du passage aux fichiers.
 [createHashMapFromArray [
     ["kind", "id_record"], ["idempotency_key", _key],
-    ["document", createHashMapFromArray [["type", _r getOrDefault ["type", ""]], ["country", _r getOrDefault ["country", ""]], ["number", _r getOrDefault ["number", ""]], ["local_id", _r getOrDefault ["docId", ""]]]],
+    ["document", createHashMapFromArray [["type", _r getOrDefault ["type", ""]], ["country", _r getOrDefault ["country", ""]], ["number", _r getOrDefault ["number", ""]], ["local_id", _r getOrDefault ["docId", ""]], ["issued", _r getOrDefault ["issued", ""]], ["authority", _r getOrDefault ["authority", ""]]]],
     ["presented_name", createHashMapFromArray [["last", _r getOrDefault ["last", ""]], ["first", _r getOrDefault ["first", ""]], ["dob", _r getOrDefault ["dob", ""]]]],
     ["expires", _r getOrDefault ["expires", ""]], ["visual", _r getOrDefault ["visual", ""]],
     ["subject", createHashMapFromArray [["netid", [netId _holder, ""] select (isNull _holder)], ["bio_key", _hKey], ["steam_id", [getPlayerUID _holder, ""] select (isNull _holder || {!isPlayer _holder})]]],
