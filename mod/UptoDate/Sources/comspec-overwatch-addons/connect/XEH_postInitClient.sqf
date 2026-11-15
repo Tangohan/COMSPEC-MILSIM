@@ -58,3 +58,9 @@ if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") then {
     [] call comspec_overwatch_connect_fnc_aceLoadoutsRepair;
     [] call comspec_overwatch_connect_fnc_arsenalInitOverlay;
 }, [], 12] call CBA_fnc_waitAndExecute;
+
+// Catalogue SSE du site (listes du SEEK II, des modules Zeus et d'Eden) : les listes vivantes de la partie précédente
+// sont oubliées, puis le site est lu une fois la liaison établie. Le SEEK II ouvert se remet à jour à chaque lecture.
+["reset"] call comspec_overwatch_connect_fnc_sseCatalogue;
+[{ ["ensure"] call comspec_overwatch_connect_fnc_sseCatalogue; }, [], 25] call CBA_fnc_waitAndExecute;
+["comspec_sse_catalogueUpdated", { [false] call comspec_overwatch_connect_fnc_sseCatalogueSeek; }] call CBA_fnc_addEventHandler;

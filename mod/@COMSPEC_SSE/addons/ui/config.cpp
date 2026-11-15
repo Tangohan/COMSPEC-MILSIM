@@ -52,6 +52,7 @@ class CfgFunctions {
             class uiGrid {};
             class uiForm {};
             class uiFormConfirm {};
+            class uiFormCatalog {};
         };
     };
 };

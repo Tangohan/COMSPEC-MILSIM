@@ -39,6 +39,19 @@ class COMSPEC_SSE_FormDialog {
             idc = 93610;
             SSE_FPOS(9.5,7.3,21,12.7);
         };
+        // Origine des listes venues du site (site et heure de synchro, ou repli) : montrée quand le formulaire en contient.
+        class CatalogStatus: COMSPEC_SSE_RscStructuredText {
+            idc = 93603;
+            size = SSE_TXT_S;
+            SSE_FPOS(9.5,20.5,6.4,1.8);
+        };
+        class BtnCatalogRefresh: COMSPEC_SSE_RscButton {
+            idc = 93622;
+            text = "ACTUALISER";
+            tooltip = "Relire les listes sur le site de la communauté";
+            action = "['refresh'] call comspec_sse_fnc_uiFormCatalog";
+            SSE_FPOS(16.0,20.7,3.2,1.4);
+        };
         class BtnOk: COMSPEC_SSE_RscButtonZeus {
             idc = 93620;
             text = "VALIDER";

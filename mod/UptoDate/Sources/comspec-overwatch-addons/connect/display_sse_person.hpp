@@ -808,9 +808,16 @@ class COMSPEC_SsePerson_Dialog {
         };
         class EditCase: EditLast {
             idc = 9518;
-            x = IN_X; y = (CASE_TOP + LBL_H); w = IN_W; h = CASE_EDIT_H;
+            x = IN_X; y = (CASE_TOP + LBL_H); w = HALF_W; h = CASE_EDIT_H;
             font = "TahomaB";
             sizeEx = (0.026 * SEEK_K);
+        };
+        // Dossiers ouverts sur le site de la communauté (fn_sseCatalogueSeek) : en choisir un remplit le code.
+        class ComboCase: ComboStatus {
+            idc = 9569;
+            x = IN_X2; y = (CASE_TOP + LBL_H); w = HALF_W; h = CASE_EDIT_H;
+            tooltip = "Dossiers ouverts sur le site de la communauté";
+            onLBSelChanged = "params ['_c', '_i']; private _ref = _c lbData _i; if (_ref isNotEqualTo '') then { ((ctrlParent _c) displayCtrl 9518) ctrlSetText _ref; };";
         };
         class SigCard: RscText {
             idc = 9568;

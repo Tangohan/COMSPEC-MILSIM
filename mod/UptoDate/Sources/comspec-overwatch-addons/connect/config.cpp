@@ -84,6 +84,8 @@ class CfgFunctions {
             class sseUnitSeed {};
             class sseTerminalPage {};
             class sseActiveCase {};
+            class sseCatalogue {};
+            class sseCatalogueSeek {};
             class sseApplyProfile {};
             class sseProfilePreset {};
             class sseEdenWriteField {};

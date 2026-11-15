@@ -1,3 +1,23 @@
+[h1]COMSPEC ATAK 4.20.0 Washington — listes du SEEK II lues sur le site / SEEK II lists read from the site[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]SEEK II[/b] : le statut et le contexte d'acquisition proposés sont ceux que votre communauté a réglés sur le site.
+[*] Page ENVOI : une liste montre les dossiers ouverts sur le site ; en choisir un remplit le code dossier, la saisie à la main reste possible.
+[*] Le terminal dit d'où vient la liste : « Listes du site » avec l'heure de la synchro, ou les listes du mod si le site ne répond pas.
+[*] Les listes sont lues au début de la mission, puis à l'ouverture du terminal quand elles ont plus de dix minutes.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]SEEK II[/b]: the status and acquisition context offered are the ones your community set up on the site.
+[*] SUBMIT page: a list shows the cases open on the site; picking one fills in the case code, and you can still type it by hand.
+[*] The terminal says where the list comes from: "Site lists" with the sync time, or the mod's own lists if the site does not answer.
+[*] Lists are read when the mission starts, then when the terminal opens if they are more than ten minutes old.
+[/list]
+
 [h1]COMSPEC ATAK 4.19.0 Washington — signature tracée au SEEK II / drawn signature on the SEEK II[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
