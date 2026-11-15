@@ -72,6 +72,8 @@ final class CronSchedule
         'mail_queue' => 5,
         // Boîte de contact de la plateforme : nouveaux messages IMAP, un passage à chaque tick (rien tant que le mot de passe manque).
         'contact_mail_sync' => 5,
+        // Fiabilisation des données : ouverture annuelle (si activée), clôture des campagnes échues, rappels J-14, J-3 et jour J.
+        'data_campaign' => 60,
         // Le récapitulatif vérifie sa propre cadence (Administration > Envois d'e-mails).
         'mail_ops_digest' => 5,
         'athena_heritage_snapshot' => 1440,

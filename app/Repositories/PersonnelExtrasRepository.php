@@ -110,6 +110,37 @@ class PersonnelExtrasRepository
         $stmt->execute([$userId]);
     }
 
+    /**
+     * Ce matricule est-il déjà porté, dans cette communauté, par un autre membre (matricule de service ou de dossier) ?
+     * Sert à ne jamais attribuer automatiquement un numéro déjà saisi à la main dans une ancienne communauté.
+     */
+    public function serviceNumberTaken(int $tenantId, string $serviceNumber, int $exceptUserId = 0): bool
+    {
+        $serviceNumber = trim($serviceNumber);
+        if ($tenantId < 1 || $serviceNumber === '') {
+            return false;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM personnel_extras pe INNER JOIN users u ON u.id = pe.user_id
+                 WHERE u.tenant_id = ? AND pe.user_id <> ? AND TRIM(pe.service_number) = ? LIMIT 1'
+            );
+            $stmt->execute([$tenantId, $exceptUserId, $serviceNumber]);
+            if ($stmt->fetchColumn() !== false) {
+                return true;
+            }
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM personnel_profiles pp INNER JOIN users u ON u.id = pp.user_id
+                 WHERE u.tenant_id = ? AND pp.user_id <> ? AND TRIM(pp.matricule_internal) = ? LIMIT 1'
+            );
+            $stmt->execute([$tenantId, $exceptUserId, $serviceNumber]);
+
+            return $stmt->fetchColumn() !== false;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function updateServiceNumber(int $userId, string $serviceNumber): bool
     {
         $this->ensureRecord($userId);

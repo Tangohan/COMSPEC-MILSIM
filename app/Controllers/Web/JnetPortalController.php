@@ -247,7 +247,8 @@ final class JnetPortalController
         if (in_array($view, ['accueil', 'taches'], true) && $shown['taches']) {
             $w['tasks'] = $repo->tasks($tenantId, $unitId);
             foreach ($memberCards as $p) {
-                $w['assignees'][(int) $p['id']] = (string) (($p['callsign'] ?? '') !== '' ? $p['callsign'] : ($p['name'] ?? ''));
+                // Nom de la carte (prénom + nom du personnage, sinon indicatif) : la règle unique, comme l'annuaire.
+                $w['assignees'][(int) $p['id']] = (string) (($p['name'] ?? '') !== '' ? $p['name'] : ($p['callsign'] ?? ''));
             }
         }
         if (in_array($view, ['accueil', 'pages'], true) && $shown['pages']) {
@@ -1447,6 +1448,12 @@ final class JnetPortalController
             }
         } catch (\Throwable) {
             $badges = [];
+        }
+
+        // Fiabilisation des données : « à faire » tant que la campagne ouverte n'est pas terminée par ce membre.
+        try {
+            $badges['data_campaign_pending'] = \App\Core\Container::get(\App\Services\DataCampaign\DataCampaignService::class)->pendingBadge($tenantId, $userId);
+        } catch (\Throwable) {
         }
 
         return [

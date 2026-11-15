@@ -752,6 +752,12 @@ class AccountController
                 'group' => 'Événements',
             ],
             [
+                'key' => EmailEvents::DATA_CAMPAIGN_REMINDER,
+                'label' => 'Fiabilisation des données',
+                'hint' => 'Un rappel quand une campagne de vérification des fiches est ouverte et que vous n’avez pas encore confirmé la vôtre.',
+                'group' => 'Événements',
+            ],
+            [
                 'key' => EmailEvents::COMMUNITY_REPORT_RECEIPT,
                 'label' => 'Accusé de réception de votre signalement',
                 'hint' => 'Confirmation que votre signalement ou demande a bien été transmis à l’équipe.',

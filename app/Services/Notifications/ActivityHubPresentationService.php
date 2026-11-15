@@ -155,10 +155,17 @@ final class ActivityHubPresentationService
                 'at' => $at,
             ],
             \App\Support\EnlistmentRetroAutoClose::NOTIFICATION_TYPE => [
-                'title' => 'Bilan 30 jours clos automatiquement (néant)',
-                'detail' => 'Pour ' . (trim((string) ($payload['candidate'] ?? '')) !== '' ? trim((string) $payload['candidate']) : 'un candidat accepté')
-                    . ' : bilan non renseigné dans les délais. Vous pouvez rédiger un bilan qui le remplace.',
-                'href' => (int) ($payload['enlistment_id'] ?? 0) > 0
+                // Une seule information par passage et par instructeur : « count » dossiers regroupés (anciennes notifications : un dossier).
+                'title' => (int) ($payload['count'] ?? 1) > 1
+                    ? (int) $payload['count'] . ' bilans 30 jours clos automatiquement (néant)'
+                    : 'Bilan 30 jours clos automatiquement (néant)',
+                'detail' => (int) ($payload['count'] ?? 1) > 1
+                    ? 'Pour ' . implode(', ', array_map('strval', array_slice(array_values((array) ($payload['candidates'] ?? [])), 0, 3)))
+                        . ((int) $payload['count'] > 3 ? ' et ' . ((int) $payload['count'] - 3) . ' autre(s)' : '')
+                        . ' : bilans non renseignés dans les délais. Vous pouvez rédiger un bilan qui remplace chaque néant.'
+                    : 'Pour ' . (trim((string) ($payload['candidate'] ?? '')) !== '' ? trim((string) $payload['candidate']) : 'un candidat accepté')
+                        . ' : bilan non renseigné dans les délais. Vous pouvez rédiger un bilan qui le remplace.',
+                'href' => ((int) ($payload['count'] ?? 1) <= 1 && (int) ($payload['enlistment_id'] ?? 0) > 0)
                     ? url('back-office/recruitments/' . (int) $payload['enlistment_id'] . '?dossier=1#bilan-recrutement')
                     : url('back-office/recruitments'),
                 'unread' => $unread,
@@ -194,6 +201,29 @@ final class ActivityHubPresentationService
                 $text = \App\Services\Operator\OperatorAccessRequestService::notificationText($type, $payload, self::fr());
 
                 return ['title' => $text['title'], 'detail' => mb_substr($text['detail'], 0, 400), 'href' => url($text['path']), 'unread' => $unread, 'at' => $at];
+            })(),
+            // Campagne de fiabilisation des données : ouverture, rappel, réponse de l'encadrement à un signalement.
+            \App\Services\DataCampaign\DataCampaignService::NOTIFY_OPEN,
+            \App\Services\DataCampaign\DataCampaignService::NOTIFY_REMINDER,
+            \App\Services\DataCampaign\DataCampaignService::NOTIFY_FLAG_HANDLED => (static function () use ($type, $payload, $unread, $at): array {
+                $due = trim((string) ($payload['due_on'] ?? ''));
+                $dueText = $due !== '' && strtotime($due) !== false ? date('d/m/Y', (int) strtotime($due)) : '';
+                if ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_FLAG_HANDLED) {
+                    $title = self::fr() ? 'Votre signalement sur votre fiche a reçu une réponse' : 'Your report on your record has been answered';
+                    $detail = self::fr() ? 'L’encadrement a traité ce que vous avez signalé : la réponse est sur la page de vérification de votre fiche.' : 'The staff handled what you reported: the answer is on your record check page.';
+                } elseif ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_OPEN) {
+                    $title = self::fr() ? 'Vérifiez votre fiche' : 'Check your record';
+                    $detail = self::fr()
+                        ? 'Une campagne de fiabilisation des données est ouverte' . ($dueText !== '' ? ' jusqu’au ' . $dueText : '') . ' : relisez votre fiche et confirmez-la.'
+                        : 'A data reliability campaign is open' . ($dueText !== '' ? ' until ' . $dueText : '') . ': review your record and confirm it.';
+                } else {
+                    $title = self::fr() ? 'Rappel : votre fiche n’est pas encore confirmée' : 'Reminder: your record is not yet confirmed';
+                    $detail = self::fr()
+                        ? 'La campagne de fiabilisation des données se termine' . ($dueText !== '' ? ' le ' . $dueText : ' bientôt') . '. Quelques minutes suffisent.'
+                        : 'The data reliability campaign ends' . ($dueText !== '' ? ' on ' . $dueText : ' soon') . '. A few minutes are enough.';
+                }
+
+                return ['title' => $title, 'detail' => $detail, 'href' => jnet_moi_url('fiabilisation'), 'unread' => $unread, 'at' => $at];
             })(),
             // Moteur de circuits : une demande (élévation, mobilité) attend l'avis du chef d'unité, dans Mon service.
             \App\Services\Workflow\WorkflowEngine::NOTIFY_OPINION_REQUEST => [

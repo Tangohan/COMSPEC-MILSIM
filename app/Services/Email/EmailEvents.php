@@ -27,6 +27,8 @@ final class EmailEvents
     public const ORG_LOW_MEMBERS_ADMIN_DIGEST = 'ORG_LOW_MEMBERS_ADMIN_DIGEST';
     /** Rétrospective annuelle publiée — e-mail au joueur (une fois par année). */
     public const YEAR_REVIEW_READY = 'YEAR_REVIEW_READY';
+    /** Campagne de fiabilisation des données : rappel au membre qui n'a pas encore confirmé sa fiche. */
+    public const DATA_CAMPAIGN_REMINDER = 'DATA_CAMPAIGN_REMINDER';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';
     /** Membre a quitté la communauté — notification aux responsables. */
     public const MEMBER_LEFT_COMMUNITY_STAFF = 'MEMBER_LEFT_COMMUNITY_STAFF';
@@ -283,5 +285,6 @@ final class EmailEvents
         self::MEMBER_INTEGRATION_REFERENT_MESSAGE,
         self::MEMBER_INTEGRATION_COMPLETED,
         self::YEAR_REVIEW_READY,
+        self::DATA_CAMPAIGN_REMINDER,
     ];
 }

@@ -171,7 +171,7 @@ $commentsCount = count($courseComments);
                     <ul class="space-y-4">
                         <?php foreach ($courseReviews as $rv): ?>
                         <?php
-                        $who = (string) ($rv['display_name'] ?? $rv['callsign'] ?? 'Membre');
+                        $who = member_label(['id' => (int) ($rv['user_id'] ?? 0), 'display_name' => (string) ($rv['display_name'] ?? ''), 'callsign' => (string) ($rv['callsign'] ?? '')], 'list');
                         $initial = $exInitial($who);
                         ?>
                         <li class="flex gap-4 rounded-2xl border border-slate-100 bg-white/80 p-5 shadow-sm">

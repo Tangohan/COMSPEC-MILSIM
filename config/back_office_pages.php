@@ -140,6 +140,10 @@ return [
         ['path' => 'back-office/organisation/catalogue/modele', 'group' => 'Personnel', 'title' => 'Modèle d’organisation', 'css' => ['back-office-catalog.css']],
         ['path' => 'back-office/organisation/catalogue/apercu', 'group' => 'Personnel', 'title' => 'Aperçu du modèle', 'css' => ['back-office-catalog.css']],
         ['path' => 'back-office/organisation/structure', 'group' => 'Personnel', 'title' => 'Organigramme', 'subtitle' => 'Unités, sections et postes de votre communauté. Glissez un poste pour le déplacer.'],
+        ['path' => 'back-office/organisation/fiabilisation', 'group' => 'Personnel', 'title' => 'Fiabilisation des données', 'subtitle' => 'Chaque membre relit sa fiche (identité, matricules, affectation, qualifications, heures) et confirme qu’elle est exacte ou signale ce qui ne l’est pas. Rien n’est modifié sans validation.', 'css' => ['data-campaign.css'], 'quick' => [
+            ['label' => 'Qualité des données', 'href' => 'back-office/organisation/qualite-donnees'],
+            ['label' => 'Corrections de fiches', 'href' => 'back-office/demandes-rh'],
+        ]],
         ['path' => 'back-office/organisation/qualite-donnees', 'group' => 'Personnel', 'title' => 'Qualité des données', 'subtitle' => 'Postes vacants, titulaires en trop, qualifications manquantes : ce qui ne colle pas dans votre organigramme, et l’historique pour le corriger.', 'css' => ['back-office-data-quality.css'], 'quick' => [
             ['label' => 'ORBAT', 'href' => 'orbat'],
             ['label' => 'Organigramme', 'href' => 'back-office/organisation/structure'],

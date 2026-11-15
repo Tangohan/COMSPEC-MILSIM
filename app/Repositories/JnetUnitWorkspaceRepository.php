@@ -63,13 +63,17 @@ class JnetUnitWorkspaceRepository
         );
         $st->execute([$tenantId, $unitId]);
 
-        return array_map(static function (array $r): array {
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $this->preloadMembers($tenantId, array_map(static fn (array $r): int => (int) ($r['assignee_user_id'] ?? 0), $rows));
+
+        return array_map(function (array $r) use ($tenantId): array {
             $r['id'] = (int) $r['id'];
             $r['assignee_user_id'] = $r['assignee_user_id'] !== null ? (int) $r['assignee_user_id'] : null;
             $r['created_by'] = (int) $r['created_by'];
+            $r['assignee_label'] = $this->memberLabel($tenantId, (int) ($r['assignee_user_id'] ?? 0), (string) ($r['assignee_label'] ?? ''));
 
             return $r;
-        }, $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        }, $rows);
     }
 
     /**
@@ -267,12 +271,16 @@ class JnetUnitWorkspaceRepository
         );
         $st->execute([$tenantId, $unitId]);
 
-        return array_map(static function (array $r): array {
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $this->preloadMembers($tenantId, array_map(static fn (array $r): int => (int) ($r['updated_by'] ?? 0), $rows));
+
+        return array_map(function (array $r) use ($tenantId): array {
             $r['id'] = (int) $r['id'];
             $r['comment_count'] = (int) $r['comment_count'];
+            $r['updated_by_label'] = $this->memberLabel($tenantId, (int) ($r['updated_by'] ?? 0), (string) ($r['updated_by_label'] ?? ''));
 
             return $r;
-        }, $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        }, $rows);
     }
 
     /** @return array<string, mixed>|null */
@@ -295,6 +303,7 @@ class JnetUnitWorkspaceRepository
         }
         $row['id'] = (int) $row['id'];
         $row['created_by'] = (int) $row['created_by'];
+        $row['updated_by_label'] = $this->memberLabel($tenantId, (int) ($row['updated_by'] ?? 0), (string) ($row['updated_by_label'] ?? ''));
 
         return $row;
     }
@@ -439,13 +448,17 @@ class JnetUnitWorkspaceRepository
         );
         $st->execute([$pageId]);
 
-        return array_map(static fn (array $r): array => [
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $tenantId = (int) \App\Core\Session::get('tenant_id');
+        $this->preloadMembers($tenantId, array_map(static fn (array $r): int => (int) ($r['user_id'] ?? 0), $rows));
+
+        return array_map(fn (array $r): array => [
             'id' => (int) $r['id'],
             'user_id' => (int) $r['user_id'],
-            'label' => trim((string) ($r['label'] ?? '')) !== '' ? (string) $r['label'] : 'Membre',
+            'label' => $this->memberLabel($tenantId, (int) $r['user_id'], (string) ($r['label'] ?? '')) ?: 'Membre',
             'body' => (string) $r['body'],
             'created_at' => (string) $r['created_at'],
-        ], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        ], $rows);
     }
 
     public function addComment(int $pageId, int $userId, string $body): void
@@ -483,7 +496,7 @@ class JnetUnitWorkspaceRepository
             ->execute([$pageId, $blockId, $userId, $option]);
     }
 
-    /** Membres de la communauté par identifiant : libellé court (indicatif, sinon nom affiché). @param list<int> $ids @return array<int,string> */
+    /** Membres de la communauté par identifiant : libellé court par la règle unique (prénom et nom du personnage, indicatif, nom du compte). @param list<int> $ids @return array<int,string> */
     public function userLabels(int $tenantId, array $ids): array
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $i): bool => $i > 0)));
@@ -498,10 +511,28 @@ class JnetUnitWorkspaceRepository
             return [];
         }
         $out = [];
-        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
-            $out[(int) $r['id']] = (string) $r['label'];
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $this->preloadMembers($tenantId, array_map(static fn (array $r): int => (int) $r['id'], $rows));
+        foreach ($rows as $r) {
+            $out[(int) $r['id']] = $this->memberLabel($tenantId, (int) $r['id'], (string) $r['label']);
         }
 
         return $out;
+    }
+
+    /** @param list<int> $userIds */
+    private function preloadMembers(int $tenantId, array $userIds): void
+    {
+        \App\Support\MemberIdentity::preload($tenantId, $userIds);
+    }
+
+    /** Nom d'un membre par la règle unique (prénom + nom du personnage, indicatif, nom du compte) ; $fallback = libellé SQL. */
+    private function memberLabel(int $tenantId, int $userId, string $fallback): string
+    {
+        if ($userId < 1) {
+            return trim($fallback);
+        }
+
+        return member_label(['id' => $userId, 'callsign' => trim($fallback)], 'list', $tenantId > 0 ? $tenantId : null);
     }
 }
