@@ -183,7 +183,7 @@ final class SseWantedNoticePdfContentTest extends TestCase
         self::assertStringContainsString('A-DNG', SseWantedNoticePdf::actionText($fr));
     }
 
-    public function testPdfWearsTheClassificationBannerAndTheFictionMentionAndHasTwoPagesWithPieces(): void
+    public function testPdfWearsTheClassificationBannerWithoutAnyFictionMentionAndHasTwoPagesWithPieces(): void
     {
         $notice = $this->notice(null, ['classification' => 'tres_restreint']);
         $att = $this->attachments(self::PEER);
@@ -205,7 +205,11 @@ final class SseWantedNoticePdfContentTest extends TestCase
         self::assertStringStartsWith('%PDF-', $pdf);
         self::assertGreaterThanOrEqual(4, self::imageObjects($pdf), 'portrait et 3 miniatures');
         self::assertNotFalse(strpos($pdf, self::utf16('TOP SECRET//SCI//NOFORN')), 'bandeau de classification');
-        self::assertNotFalse(strpos($pdf, self::utf16('Document de fiction — jeu de rôle Arma 3')));
+        self::assertStringContainsString('TOP SECRET//SCI//NOFORN', \Tests\Support\PdfText::of($pdf), 'le bandeau de classification reste sur les pages');
+        self::assertNull(\Tests\Support\PdfText::fictionMention($pdf), 'aucune mention de jeu sur la notice');
+        $en = $svc->build(1, $notice, 'en');
+        self::assertNotNull($en);
+        self::assertNull(\Tests\Support\PdfText::fictionMention($en['bytes']), 'aucune mention de jeu sur la notice en anglais');
         self::assertSame(2, (int) preg_match_all('~/Type\s*/Page\b(?!s)~', $pdf));
     }
 
@@ -244,7 +248,7 @@ final class SseWantedNoticePdfContentTest extends TestCase
             'birth_place' => null, 'nationality' => '', 'height_cm' => null, 'weight_kg' => null, 'eyes' => '', 'hair' => '', 'marks' => '', 'aliases' => [],
             'languages' => '', 'type_label' => 'Recherche', 'threat_level' => 'low', 'threat_label' => 'Faible', 'armed' => 'no', 'reason' => 'Motif.',
             'instructions' => 'Signaler.', 'zone' => '', 'last_seen_place' => '', 'last_seen_at' => null, 'contact_label' => '', 'contact_detail' => '',
-            'photo' => null, 'extra_photos' => [], 'signature' => null, 'emblem_path' => null, 'watermark' => false, 'footer' => true, 'faces' => 'auto',
+            'photo' => null, 'extra_photos' => [], 'signature' => null, 'emblem_path' => null, 'faces' => 'auto',
             'generated_at' => '15/11/2026 10:00 UTC',
         ];
         $pdf = (new SseWantedNoticePdf())->render($old);

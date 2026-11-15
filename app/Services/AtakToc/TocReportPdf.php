@@ -11,10 +11,10 @@ use App\Support\TrainingCertificatePdfEngine;
 /**
  * Rapport tactique du poste TOC web en PDF : gabarit sobre inspiré des rapports militaires américains (bandeaux de
  * classification en haut et en bas de chaque page, bloc À / DE / OBJET / DIFFUSION, GDH, paragraphes numérotés), même
- * moteur (TCPDF), mêmes niveaux américains fictifs (SseUsClassification) et mêmes polices que les fiches SSE (SseSheetPdf).
+ * moteur (TCPDF), mêmes niveaux américains (SseUsClassification) et mêmes polices que les fiches SSE (SseSheetPdf).
  *
- * Règle de fond : accessoire de JEU DE RÔLE. Aucun nom, logo ni sceau d'organisation, de service ou de gouvernement réels ;
- * le service émetteur est le poste TOC de la communauté. Chaque page porte « Document de fiction — jeu de rôle Arma 3 ».
+ * Règle de fond : aucun nom, logo ni sceau d'organisation, de service ou de gouvernement réels ; le service émetteur est
+ * le poste TOC de la communauté. Le rapport ne porte aucune mention de jeu (ni en-tête, ni pied, ni diffusion).
  *
  * Le gabarit ne reçoit que la fiche déjà lue avec les droits de l'opérateur (TocReportService::find) : un passage caviardé
  * arrive sous forme de blocs pleins (U+2588) et sort en RECTANGLE noir de largeur fixe, jamais en glyphe (la police n'a pas
@@ -93,7 +93,6 @@ final class TocReportPdf
         $level = (string) ($r['required_level'] ?? 'interne');
         $ctrl = strtoupper((string) ($r['key'] ?? 'TR-0'));
         $sans = $this->sans;
-        $fiction = $this->lang === 1 ? 'Fictional document — Arma 3 role-play' : 'Document de fiction — jeu de rôle Arma 3';
         $generated = (string) ($opts['generated'] ?? gmdate('Y-m-d H:i') . ' UTC');
         $operator = trim((string) ($opts['operator'] ?? ''));
 
@@ -123,8 +122,7 @@ final class TocReportPdf
         $pdf->SetCreator('Athena');
         $pdf->SetAuthor($this->l('issuer'));
         $pdf->SetTitle($this->tr((string) ($r['type_label'] ?? 'Rapport')) . ' ' . $ctrl);
-        $pdf->SetSubject($fiction . ' — ' . $banner);
-        $pdf->SetKeywords('fiction, jeu de rôle, role-play, Arma 3');
+        $pdf->SetSubject($banner);
         $pdf->setPrintHeader(true);
         $pdf->setPrintFooter(true);
         $pdf->SetMargins(14.0, 16.0, 14.0);
@@ -149,10 +147,9 @@ final class TocReportPdf
         $lblPage = $this->l('page');
         $lblOf = $this->l('of');
         $lblGen = $this->l('gen');
-        $dissem = $banner === 'UNCLASSIFIED'
-            ? ($this->lang === 1 ? 'ROLE-PLAY USE ONLY' : 'USAGE JEU DE RÔLE UNIQUEMENT')
-            : implode(' / ', SseUsClassification::dissemination($level));
-        $pdf->drawFooter = function (\TCPDF $p) use ($band, $ctrl, $sans, $fiction, $generated, $lblPage, $lblOf, $lblGen, $dissem): void {
+        // Un rapport sans restriction ne porte aucune mention de diffusion (le bandeau UNCLASSIFIED suffit).
+        $dissem = $banner === 'UNCLASSIFIED' ? '' : implode(' / ', SseUsClassification::dissemination($level));
+        $pdf->drawFooter = function (\TCPDF $p) use ($band, $ctrl, $sans, $generated, $lblPage, $lblOf, $lblGen, $dissem): void {
             $p->SetDrawColor(24, 30, 38);
             $p->SetLineWidth(0.3);
             $p->Line(14.0, 272.4, 196.0, 272.4);
@@ -160,8 +157,6 @@ final class TocReportPdf
             $p->SetTextColor(98, 108, 120);
             $p->SetXY(14.0, 274.2);
             $p->Cell(60.0, 3.6, $ctrl, 0, 0, 'L');
-            $p->SetXY(60.0, 274.2);
-            $p->Cell(90.0, 3.6, $fiction, 0, 0, 'C');
             $p->SetXY(150.0, 274.2);
             $p->Cell(46.0, 3.6, $lblPage . ' ' . $p->getAliasNumPage() . ' ' . $lblOf . ' ' . $p->getAliasNbPages(), 0, 0, 'R');
             $p->SetFont($sans, '', 6.6);
@@ -174,14 +169,14 @@ final class TocReportPdf
 
         $pdf->AddPage();
         $pdf->SetY(11.0);
-        $this->front($pdf, $r, $ctrl, $operator, $dissem);
+        $this->front($pdf, $r, $ctrl, $operator, $dissem, $banner);
         $this->body($pdf, $r);
 
         return (string) $pdf->Output('rapport.pdf', 'S');
     }
 
-    /** En-tête du document : service émetteur fictif, numéro de contrôle, titre, bloc À / DE / OBJET / DIFFUSION. @param array<string, mixed> $r */
-    private function front(\TCPDF $pdf, array $r, string $ctrl, string $operator, string $dissem): void
+    /** En-tête du document : service émetteur, numéro de contrôle, titre, bloc À / DE / OBJET / DIFFUSION. @param array<string, mixed> $r */
+    private function front(\TCPDF $pdf, array $r, string $ctrl, string $operator, string $dissem, string $banner): void
     {
         $sans = $this->sans;
         $l = 14.0;
@@ -194,12 +189,10 @@ final class TocReportPdf
         $pdf->Line($l + 0.6, 18.0, $l + 11.4, 18.0);
         $pdf->SetFont($sans, 'B', 11.0);
         $pdf->SetTextColor(24, 30, 38);
-        $pdf->SetXY($l + 15.0, 12.6);
+        // Nom du service seul, centré sur l'emblème.
+        $pdf->SetXY($l + 15.0, 15.5);
         $pdf->Cell(110.0, 5.0, mb_strtoupper($this->l('issuer') . ' · ATHENA', 'UTF-8'), 0, 1, 'L');
-        $pdf->SetFont($sans, 'I', 7.2);
         $pdf->SetTextColor(98, 108, 120);
-        $pdf->SetXY($l + 15.0, 18.2);
-        $pdf->Cell(110.0, 3.4, $this->lang === 1 ? 'Fictional document — Arma 3 role-play' : 'Document de fiction — jeu de rôle Arma 3', 0, 1, 'L');
         // Numéro de contrôle et GDH.
         $pdf->SetLineWidth(0.3);
         $pdf->Rect(150.0, 10.6, 46.0, 14.0, 'D');
@@ -229,7 +222,7 @@ final class TocReportPdf
             ['to', $this->l('tosrc')],
             ['from', $from],
             ['subj', (string) ($r['title'] ?? '')],
-            ['dist', $dissem . ' · ' . (string) ($r['classification'] ?? '')],
+            ['dist', implode(' · ', array_filter([$dissem, trim((string) ($r['classification'] ?? ''))], static fn (string $v): bool => $v !== '')) ?: $banner],
         ];
         $pdf->SetDrawColor(200, 205, 211);
         $pdf->SetLineWidth(0.2);

@@ -64,14 +64,14 @@ final class SseWantedServicesTest extends TestCase
         self::assertStringContainsString('JCTC', $fr['contact_label']);
         self::assertStringContainsString('FALCON NET', $fr['contact_detail']);
         self::assertStringContainsString('555 0121', $fr['contact_detail']);
-        self::assertSame('Cellule de contre-terrorisme interarmées (fictive)', $fr['authority']);
+        self::assertSame('Cellule de contre-terrorisme interarmées', $fr['authority']);
         self::assertSame('confidentiel', $fr['classification']);
         self::assertSame('critical', $fr['threat_level']);
         self::assertSame(14, $fr['expiry_days']);
         self::assertNotEmpty($fr['instructions']);
         $en = SseWantedServices::prefill($service, 'en');
         self::assertStringContainsString('Joint Counter-Terrorism Cell', $en['contact_label']);
-        self::assertSame('Joint Counter-Terrorism Cell (fictional)', $en['authority']);
+        self::assertSame('Joint Counter-Terrorism Cell', $en['authority']);
         self::assertNull(SseWantedServices::find('SVC-INCONNU', self::config()));
     }
 

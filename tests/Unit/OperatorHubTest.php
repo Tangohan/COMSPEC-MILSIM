@@ -427,18 +427,23 @@ final class OperatorHubTest extends TestCase
 
         $c->documents(new Request());
         $html = $this->view('identite', $base + $this->rendered);
-        foreach (['Carte d’identité', 'Demande en attente', 'Annuler ma demande', 'Voir le verso', 'SPÉCIMEN · SIMULATION', 'Télécharger le spécimen', 'Demander un papier', '<svg', 'Remise en jeu'] as $needle) {
+        foreach (['Carte d’identité', 'Demande en attente', 'Annuler ma demande', 'Voir le verso', 'Télécharger le spécimen', 'Demander un papier', '<svg', 'Remise en jeu'] as $needle) {
             self::assertStringContainsString($needle, $html, $needle);
         }
         foreach (['Origine', 'Falsifi', 'st_origin'] as $secret) {
             self::assertStringNotContainsString($secret, $html, $secret);
         }
 
-        // Spécimen : page seule, mention sur les deux faces, jamais mise en cache.
+        // Papier d'un pays imaginaire : aucune mention de jeu sur l'aperçu.
+        self::assertStringNotContainsString('SPÉCIMEN · SIMULATION', $html);
+        // Spécimen : page seule, deux faces sans mention de jeu (pays imaginaire), jamais mise en cache.
         $docId = (int) $this->pdo->query('SELECT id FROM sse_id_documents')->fetchColumn();
         $specimen = $c->documentSpecimen(new Request(), ['id' => (string) $docId]);
         self::assertSame('no-store', $specimen->headerValue('Cache-Control'));
-        self::assertSame(2, substr_count($specimen->body(), 'SPÉCIMEN · SIMULATION'));
+        self::assertSame(2, substr_count($specimen->body(), 'class="opx-specimen__face"'));
+        self::assertSame(0, substr_count($specimen->body(), 'SIMULATION'));
+        self::assertStringNotContainsString('sans aucune valeur', $specimen->body());
+        self::assertStringContainsString('opx-specimen__head--screen', $specimen->body(), 'l’en-tête de la page ne s’imprime pas');
         self::assertStringContainsString('noindex', $specimen->body());
     }
 
@@ -630,7 +635,9 @@ final class OperatorHubTest extends TestCase
         self::assertStringNotContainsString('javascript:', $recto);
         self::assertStringNotContainsString('" onload="', $recto);
         self::assertStringContainsString('#AABBCC', $recto);
-        self::assertStringContainsString('SPÉCIMEN · SIMULATION', $recto);
+        // Pays imaginaire : aucune mention ; pays réel stylisé : la mention reste.
+        self::assertStringNotContainsString('SIMULATION', $recto);
+        self::assertStringContainsString('SPÉCIMEN · SIMULATION', $opxDocSvg(['country_real' => true] + $doc, 'recto', null));
         $verso = $opxDocSvg($doc, 'verso', null);
         self::assertStringContainsString('P&lt;ALT&lt;&lt;', $verso);
         self::assertStringContainsString('182 cm', $verso);
@@ -664,7 +671,7 @@ final class OperatorHubTest extends TestCase
         self::assertStringNotContainsString('monospace', $plain);
         self::assertStringContainsString('<text x="36" y="146"', $plain);
         self::assertStringContainsString('CERTIFICAT D’IMMATRICULATION', $plain);
-        self::assertStringContainsString('SPÉCIMEN · SIMULATION', $plain);
+        self::assertStringNotContainsString('SIMULATION', $plain);
 
         // Type inconnu du miroir : mise en page d'une carte (photo, bande au verso).
         $unknown = ['doc_type' => 'inconnu', 'doc_type_label' => 'Papier', 'mrz' => ['LIGNE1']];
@@ -701,7 +708,8 @@ final class OperatorHubTest extends TestCase
 
         $docId = (int) $this->pdo->query('SELECT id FROM sse_id_documents')->fetchColumn();
         $specimen = $c->documentSpecimen(new Request(), ['id' => (string) $docId])->body();
-        self::assertSame(1, substr_count($specimen, 'SPÉCIMEN · SIMULATION'));
+        self::assertSame(1, substr_count($specimen, 'class="opx-specimen__face"'), 'une seule face');
+        self::assertSame(0, substr_count($specimen, 'SIMULATION'));
         self::assertStringNotContainsString('data-opx-png="verso"', $specimen);
         self::assertStringContainsString('data-opx-png="recto"', $specimen);
     }

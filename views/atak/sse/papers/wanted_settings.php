@@ -131,12 +131,6 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('as
                     </div>
                 </div>
             </fieldset>
-            <fieldset>
-                <legend>Aspect de la notice</legend>
-                <label class="check"><input type="checkbox" name="watermark" value="1" <?= !empty($config['watermark']) ? 'checked' : '' ?>> Filigrane discret « Fiction » sur chaque page</label>
-                <label class="check"><input type="checkbox" name="footer" value="1" <?= !empty($config['footer']) ? 'checked' : '' ?>> Mention « Document de fiction — jeu de rôle Arma 3 » en pied de chaque page</label>
-                <p class="hint">Ne retirez cette mention que pour un usage strictement interne à la communauté : la notice ne doit jamais sortir du jeu de rôle. Le fichier PDF garde toujours cette mention dans ses propriétés.</p>
-            </fieldset>
             </div>
             <div class="wc-settings-pane" id="wc-pane-codes" data-wc-pane="codes" role="tabpanel" aria-labelledby="wc-stab-codes">
                 <input type="hidden" name="codes_present" value="1">

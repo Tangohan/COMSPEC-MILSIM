@@ -141,7 +141,7 @@ private _statusRow = {
     ["strip", format ["<t font='EtelkaMonospacePro' size='0.85'>%1</t>", _left], format ["<t font='EtelkaMonospacePro' size='0.85'>%1</t>", _right], _bg]
 };
 private _footer = {
-    ["text", format ["<t size='0.72' color='%1'>%2</t>", _muted, "Document de fiction — jeu de rôle Arma 3. Les fiches viennent du portail Athena et sont filtrées selon votre habilitation."]]
+    ["text", format ["<t size='0.72' color='%1'>%2</t>", _muted, "Les fiches viennent du portail Athena et sont filtrées selon votre habilitation."]]
 };
 
 // ---------------------------------------------------------------------------------------------------------------- Détail

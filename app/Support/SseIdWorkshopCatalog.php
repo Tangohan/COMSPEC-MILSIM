@@ -101,7 +101,7 @@ final class SseIdWorkshopCatalog
             'name' => 'Diplomatique — personnel d’ambassade', 'doc_types' => ['passport', 'id_card'], 'identity_mode' => 'alias',
             'profession' => 'Attaché', 'legend' => 'Attaché auprès d’une représentation étrangère, protégé par son statut.',
             'instructions' => 'Invoquez votre statut diplomatique ; refusez toute fouille de vos documents.',
-            'print' => ['service' => 'Corps diplomatique', 'remarks' => 'Titulaire bénéficiant d’un statut diplomatique (fictif)'],
+            'print' => ['service' => 'Corps diplomatique', 'remarks' => 'Titulaire bénéficiant d’un statut diplomatique'],
         ],
         'journalist' => [
             'name' => 'Journaliste — correspondant', 'doc_types' => ['passport'], 'identity_mode' => 'alias',
@@ -126,7 +126,7 @@ final class SseIdWorkshopCatalog
             'name' => 'Humanitaire — employé d’une association', 'doc_types' => ['passport', 'residence_permit'], 'identity_mode' => 'alias',
             'profession' => 'Logisticien', 'legend' => 'Employé d’une association d’entraide, venu suivre une distribution.',
             'instructions' => 'Présentez votre ordre de mission ; ne quittez pas le convoi sans prévenir votre coordinateur.',
-            'print' => ['service' => 'Association d’entraide', 'remarks' => 'Personnel humanitaire (fictif)'],
+            'print' => ['service' => 'Association d’entraide', 'remarks' => 'Personnel humanitaire'],
         ],
         'trader' => [
             'name' => 'Négociant — import-export', 'doc_types' => ['id_card', 'passport'], 'identity_mode' => 'alias',
@@ -144,7 +144,7 @@ final class SseIdWorkshopCatalog
             'name' => 'Marin — équipage d’un caboteur', 'doc_types' => ['passport', 'id_card'], 'identity_mode' => 'alias',
             'profession' => 'Marin', 'legend' => 'Membre d’équipage d’un caboteur, à terre le temps d’une escale.',
             'instructions' => 'Citez le nom du navire et le quai ; votre capitaine garde le rôle d’équipage.',
-            'print' => ['service' => 'Armement côtier', 'remarks' => 'Gens de mer (fictif)'],
+            'print' => ['service' => 'Armement côtier', 'remarks' => 'Gens de mer'],
         ],
         'official' => [
             'name' => 'Agent public local — service des titres', 'doc_types' => ['id_card', 'driving_license'], 'identity_mode' => 'alias',

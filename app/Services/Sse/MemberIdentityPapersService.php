@@ -172,6 +172,7 @@ final class MemberIdentityPapersService
             $identity = $identityById[$d['identity_id']] ?? null;
             $country = $byCode[$d['country_code']] ?? null;
             $documents[$k]['country_name'] = (string) ($country['name'] ?? $d['country_code']);
+            $documents[$k]['country_real'] = \App\Support\SseIdMarking::isRealCountry($country, (string) $d['country_code']);
             $documents[$k]['mrz'] = $identity !== null ? SseMrzService::forDocument($d, $identity, (string) ($country['mrz_code'] ?? '')) : [];
             $documents[$k]['holder_name'] = $identity !== null ? self::displayName($identity) : '';
             $documents[$k]['secret'] = self::docIsSecret($d);
@@ -359,6 +360,7 @@ final class MemberIdentityPapersService
                 'doc_type_label' => $d['doc_type_label'],
                 'country_code' => $d['country_code'],
                 'country_name' => (string) ($country['name'] ?? $d['country_code']),
+                'country_real' => \App\Support\SseIdMarking::isRealCountry($country, (string) $d['country_code']),
                 'doc_number' => $d['doc_number'],
                 'issued_on' => $d['issued_on'],
                 'expires_on' => $d['expires_on'],

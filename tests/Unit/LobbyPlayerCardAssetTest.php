@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\ModVersion;
 
 /**
- * Dossier du joueur à l'écran des rôles (COMSPEC Lobby 0.3.1, ATAK natif 4.26.1, COMSPEC Link 2.0.128) :
+ * Dossier du joueur à l'écran des rôles (COMSPEC Lobby 0.3.1, ATAK natif 4.27.1, COMSPEC Link 2.0.128) :
  *  - la fonction est celle du membre sur Athena, jamais le texte du poste ; grade affiché ; ligne vide masquée ;
  *  - la photo : le cache d'images de la DLL revient dans le dossier du jeu (lu par Arma), plus dans Documents.
  * Lecture des fichiers sans dépendre des fins de ligne du checkout.
@@ -192,14 +192,14 @@ final class LobbyPlayerCardAssetTest extends TestCase
         self::assertStringContainsString('private const string ExtensionVersion = "' . $link . '";', self::read('mod/UptoDate/COMSPECExtension/Extension.cs'));
         self::assertStringContainsString("<Version>{$link}</Version>", self::read('mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj'));
         self::assertStringContainsString("<InformationalVersion>{$link}-native</InformationalVersion>", self::read('mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/COMSPECATAKNativeExtension.csproj'));
-        ModVersion::assertAtLeast('4.26.1', ModVersion::match('/#define VERSION_STR "([0-9.]+)"/', $atakHpp));
+        ModVersion::assertAtLeast('4.27.1', ModVersion::match('/#define VERSION_STR "([0-9.]+)"/', $atakHpp));
 
         $log = self::read('CHANGELOG-ATAK.md');
-        self::assertStringContainsString('(ATAK natif 4.26.1.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.3.1)', $log);
+        self::assertStringContainsString('(ATAK natif 4.27.1.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.3.1)', $log);
         $entry = substr($log, (int) strpos($log, 'COMSPEC Lobby 0.3.1)'), 2500);
         self::assertStringContainsString("### Résumé joueur\nType : correctif\nFR : ", $entry);
         self::assertStringContainsString("\nEN : ", $entry);
-        self::assertStringContainsString('[h1]COMSPEC ATAK 4.26.1 Washington', self::read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.27.1 Washington', self::read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
     }
 
     public function testNewLabelsExistInFrenchAndEnglish(): void

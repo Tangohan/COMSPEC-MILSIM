@@ -267,13 +267,28 @@ final class SseSheetTest extends TestCase
         self::assertNotSame([], $res['overflow']);
     }
 
-    public function testSheetsCarryTheFictionMentionAndNameNoRealOrganisation(): void
+    public function testSheetsCarryNoFictionMentionAndNameNoRealOrganisation(): void
     {
         self::requirePdfEngine();
         $p = $this->person();
+        // Chaque modèle de fiche, en français et en anglais, sur une et deux pages : aucune mention de jeu, ni sur les
+        // pages (en-tête, pied, filigrane, bloc de classification) ni dans les propriétés du fichier.
+        foreach (array_keys(\App\Support\SseSheetCatalog::MODELS) as $model) {
+            foreach (['fr', 'en'] as $lang) {
+                foreach (['1', '2'] as $faces) {
+                    $res = (new SseSheetService())->preview(1, $this->subject($p), $model, ['lang' => $lang, 'faces' => $faces], self::access());
+                    if (!$res['ok']) {
+                        continue;
+                    }
+                    $text = \Tests\Support\PdfText::of((string) $res['bytes']);
+                    self::assertStringContainsString('ksnevad', $text, "$model $lang : le texte des pages est bien lu");
+                    self::assertNull(\Tests\Support\PdfText::fictionMention((string) $res['bytes']), "$model $lang $faces : mention de jeu sur la fiche");
+                }
+            }
+        }
         $res = (new SseSheetService())->preview(1, $this->subject($p), 'identification', [], self::access());
-        $needle = mb_convert_encoding('Document de fiction', 'UTF-16BE', 'UTF-8');
-        self::assertNotFalse(strpos((string) $res['bytes'], $needle), 'Mention de jeu absente du fichier');
+        self::assertTrue($res['ok'], implode(' | ', $res['errors']));
+        self::assertNull(\Tests\Support\PdfText::fictionMention((string) $res['bytes']));
 
         $root = dirname(__DIR__, 2) . '/app/';
         foreach (['Services/Sse/SseSheetPdf.php', 'Services/Sse/SseSheetService.php', 'Services/Sse/SseSheetFactsService.php', 'Support/SseSheetCatalog.php', 'Support/SseSheetText.php', 'Services/Sse/SseSheetMenu.php'] as $file) {
@@ -284,8 +299,10 @@ final class SseSheetTest extends TestCase
             }
         }
         $template = (string) file_get_contents($root . 'Services/Sse/SseSheetPdf.php');
-        self::assertStringContainsString('Document de fiction — jeu de rôle Arma 3', $template);
-        self::assertStringContainsString('Fictional document — Arma 3 role-play', $template);
+        self::assertStringNotContainsString('Document de fiction', $template);
+        self::assertStringNotContainsString('Fictional document', $template);
+        self::assertStringNotContainsString('FICTION - RP', $template);
+        self::assertStringNotContainsStringIgnoringCase('role-play', $template);
         self::assertStringNotContainsString('->Image(\'http', $template, 'Aucun logo téléchargé');
     }
 

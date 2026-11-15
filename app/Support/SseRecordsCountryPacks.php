@@ -63,7 +63,7 @@ final class SseRecordsCountryPacks
         'missing' => 'DISPARU',
         'flagged' => 'SIGNALÉ',
         'caution' => 'PRUDENCE',
-        'watchlist' => 'FICHE S (FICTIVE)',
+        'watchlist' => 'FICHE S',
         'hvt' => 'CIBLE PRIORITAIRE',
     ];
 

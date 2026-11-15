@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## Photo du joueur de retour, fonction et grade sur le dossier de l'écran des rôles (ATAK natif 4.26.1.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.3.1)
+## Photo du joueur de retour, fonction et grade sur le dossier de l'écran des rôles (ATAK natif 4.27.1.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.3.1)
 
 ### Résumé joueur
 Type : correctif
@@ -56,10 +56,32 @@ EN : Your photo shows again, and the role screen dossier shows your real role
 ### Détail technique
 - **Cause de la photo absente (régression de COMSPEC Link 2.0.124)** : le cache des images téléchargées était passé de `comspec_cache` du dossier du jeu à `Documents\Arma 3 - COMSPEC\Cache`. Arma ne lit pas une texture dans ce dossier : `fn_texUsable` rendait un chemin vide (initiales sur le téléphone) et l'écran des rôles passait par le navigateur intégré, qui refuse le `.paa` (`ImageDataChunk local:` répond `invalid_image`). Journal du 15/11 : « Image refusée par Arma » et « portrait indisponible (invalid_image) », alors que le téléchargement réussit. Le site n'est pas en cause : le portrait opérateur (`uploads/portraits`) n'a pas été touché par le rangement privé des images SSE.
 - **DLL (COMSPEC Link 2.0.128)** : `ImageCacheDirs()` remet `comspec_cache\briefing` du dossier du jeu en premier, puis Documents, puis TEMP. Un portrait déjà téléchargé dans un autre dossier de cache est copié dans le dossier du jeu, sans nouvelle requête.
-- **ATAK natif 4.26.1** : `fn_texUsable` essaie le chemin relatif `comspec_cache\…` après `fileExists`, et n'appelle plus `getTextureInfo` sur un chemin qu'Arma ne lit pas (fenêtre « Picture … not found »). `fn_avatarPath` range le grade et la fonction du membre (profil de la liaison Athena) dans la carte de l'écran des rôles. `LINK_VERSION_STR` 2.0.128.
+- **ATAK natif 4.27.1** : `fn_texUsable` essaie le chemin relatif `comspec_cache\…` après `fileExists`, et n'appelle plus `getTextureInfo` sur un chemin qu'Arma ne lit pas (fenêtre « Picture … not found »). `fn_avatarPath` range le grade et la fonction du membre (profil de la liaison Athena) dans la carte de l'écran des rôles. `LINK_VERSION_STR` 2.0.128.
 - **COMSPEC Lobby 0.3.1** : la fonction du dossier est celle du membre (carte Athena), jamais le texte du poste ; « Synchroniser » lit le grade et la fonction gardés par la DLL (`GetAuthState`, sans réseau) et prend la copie JPEG du site quand la texture n'est pas lisible ; lignes vides masquées, qualifications coupées à la largeur (`getTextWidth`), « Sans photo » et raison sur la ligne d'état.
 - **Site** : `GameAuthService` lit le grade de la communauté de la session (profil de communauté compris), plus seulement celui de la communauté d'origine du compte ; `OperatorPortraits` ne sert jamais au jeu un chemin d'image SSE privée.
 - **Non vérifié en jeu** : aucun binaire n'est livré dans cette PR. À tester après reconstruction : portrait sur le téléphone et à l'écran des rôles (dossier du jeu inscriptible ou non), lignes Grade et Fonction, membre sans fonction, longue liste de qualifications en 16:9 et 4:3.
+
+---
+
+## App Fiches : plus de mention « document de fiction » sous les fiches (ATAK natif 4.27.0.AG - Washington, COMSPEC Link 2.0.127)
+
+### Résumé joueur
+Type : patch
+FR : Les fiches du téléphone ne portent plus de mention « fiction »
+- Dans l'app Fiches, la ligne « Document de fiction — jeu de rôle Arma 3 » a disparu du bas des fiches. Il reste la provenance : les fiches viennent du portail Athena et sont filtrées selon ton habilitation.
+- Avec COMSPEC SSE 1.16.0, les fiches SSE consultées en jeu n'affichent plus « usage RP » en bas de page, et le terminal des fichiers s'appelle simplement FICHIERS.
+- Mets à jour le mod, puis redémarre complètement Arma 3.
+EN : Phone records no longer carry a "fiction" notice
+- In the Records app, the line "Fictional document — Arma 3 role-play" is gone from the bottom of records. The origin stays: records come from the Athena portal and are filtered by your clearance.
+- With COMSPEC SSE 1.16.0, SSE records read in game no longer show "RP use" at the bottom, and the records terminal is simply called RECORDS.
+- Update the mod, then restart Arma 3 completely.
+
+### Détail technique
+- `fn_pageFiches.sqf` : le pied des listes et du détail ne garde que « Les fiches viennent du portail Athena et sont filtrées selon votre habilitation. ».
+- Dictionnaire `i18n/en.txt`, `zh_cn.txt`, `fr.txt` et gabarit `localisation/template` : entrées remplacées en place pour ce pied, pour l'en-tête « FICHIERS » du terminal du SSE et pour l'aide du module « Présentation des documents SSE » (clé `STR_COMSPEC_SSE_CFG_08AA395002`). L'entrée « Simulation : données fictives du registre… » est retirée.
+- Site : les PDF (fiches, avis de recherche, rapports du TOC), les documents de rédaction et les papiers des pays imaginaires ne portent plus aucune mention de jeu (détail dans la description de la demande de fusion). Le marquage des papiers des pays réels stylisés reste.
+- **DLL** : aucune modification, COMSPEC Link reste 2.0.127.
+- **À tester en jeu** : ouvrir l'app Fiches (liste et détail), téléphone en français puis en anglais ; le pied tient sur une ligne, sans mention de fiction.
 
 ---
 

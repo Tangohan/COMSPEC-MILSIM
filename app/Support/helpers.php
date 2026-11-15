@@ -42,15 +42,12 @@ if (!function_exists('platform_app_version')) {
 
 if (!function_exists('sse_fiction_footer')) {
     /**
-     * Mention unique et discrète du portail SSE : une ligne de pied en petit texte gris, jamais un bandeau.
-     * $printed = true pour les documents imprimés ou exportés (« Document de fiction — jeu de rôle Arma 3 »).
+     * Mention unique et discrète de l'accueil du portail SSE : une ligne de pied en petit texte gris, jamais un bandeau.
+     * Elle ne figure sur AUCUN document, fiche imprimée ni PDF.
      */
-    function sse_fiction_footer(bool $printed = false): string
+    function sse_fiction_footer(): string
     {
-        $text = $printed ? 'Document de fiction — jeu de rôle Arma 3' : 'Jeu de rôle Arma 3 — données fictives';
-        $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
-
-        return $printed ? $text : '<p class="sse-fiction-footer">' . $text . '</p>';
+        return '<p class="sse-fiction-footer">' . htmlspecialchars('Jeu de rôle Arma 3 — données fictives', ENT_QUOTES, 'UTF-8') . '</p>';
     }
 }
 

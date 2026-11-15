@@ -262,13 +262,12 @@ $td = 'px-4 py-2 align-top text-sm text-slate-800 dark:text-slate-200';
                 <p class="mt-1 text-xs <?= $muted ?>">« Après validation » : une nouvelle extraction reste « à valider » ici avant d’être lue par les membres.</p>
             </div>
             <div>
-                <label class="block text-sm font-bold text-slate-900 dark:text-white" for="fx-pm">Marquage des images exportées de l’atelier de papiers</label>
+                <label class="block text-sm font-bold text-slate-900 dark:text-white" for="fx-pm">Marquage des papiers des pays réels stylisés</label>
                 <select id="fx-pm" class="<?= $input ?> mt-1 max-w-sm" name="papers_marking">
                     <option value="discreet"<?= ($st['papers_marking'] ?? 'discreet') === 'discreet' ? ' selected' : '' ?>>Discret (micro-texte en bas de l’image)</option>
                     <option value="standard"<?= ($st['papers_marking'] ?? '') === 'standard' ? ' selected' : '' ?>>Standard (filigrane diagonal et bandeau)</option>
-                    <option value="none"<?= ($st['papers_marking'] ?? '') === 'none' ? ' selected' : '' ?>>Aucune marque visible (pays imaginaires seulement)</option>
                 </select>
-                <p class="mt-1 text-xs <?= $muted ?>">La mention « Document de jeu – sans valeur » reste toujours dans les métadonnées du fichier. Les papiers des pays réels stylisés gardent au minimum le marquage discret, quel que soit ce réglage.</p>
+                <p class="mt-1 text-xs <?= $muted ?>">Les papiers des pays imaginaires ne portent aucune marque visible. Ceux des pays réels stylisés gardent au minimum le marquage discret.</p>
             </div>
             <div><button class="<?= $pri ?>" type="submit">Enregistrer les réglages</button></div>
         </form>

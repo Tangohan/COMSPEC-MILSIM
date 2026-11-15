@@ -3,7 +3,7 @@
     texture hors d'un PBO (« Cannot load texture », journal de TTRD du 26/10 : texture [-1,-1]) : un RscPicture posé
     sur ce chemin restait noir. Seul le fichier rangé dans comspec_cache du dossier du jeu est lisible, par son chemin
     relatif (comspec_cache\…) : c'est là que COMSPEC Link 2.0.128 range les images.
-    4.26.1 : le chemin absolu n'est plus essayé. Sur un dossier qu'Arma ne lit pas (Documents, où COMSPEC Link 2.0.124 à
+    4.27.1 : le chemin absolu n'est plus essayé. Sur un dossier qu'Arma ne lit pas (Documents, où COMSPEC Link 2.0.124 à
     2.0.127 rangeait les images : portrait remplacé par les initiales), getTextureInfo ouvrait la fenêtre « Picture …
     not found » (journal du 15/11). fileExists d'abord, et seulement sur le chemin relatif.
     Params : [chemin]. Renvoie le chemin utilisable, ou "" (l'appelant affiche alors l'initiale ou un autre rendu).

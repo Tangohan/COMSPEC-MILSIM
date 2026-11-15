@@ -33,7 +33,7 @@ $guideFace = static function (bool $good): string {
 };
 ?>
 <?= $dialogOpen('dlg-photo-guide', 'Comment faire ma photo ?', 'La photo d’identité de votre personnage, façon photomaton, avec un générateur d’image (ChatGPT ou autre).') ?>
-    <p class="opx-note"><strong>Uniquement des personnages du jeu.</strong> N’envoyez jamais la photo d’une vraie personne, ni la vôtre : la photo sert au jeu de rôle et reste sous le filigrane SIMULATION.</p>
+    <p class="opx-note"><strong>Uniquement des personnages du jeu.</strong> N’envoyez jamais la photo d’une vraie personne, ni la vôtre.</p>
     <ol class="opx-steps">
         <li>
             <h3>Capturez votre personnage dans Arma 3</h3>
