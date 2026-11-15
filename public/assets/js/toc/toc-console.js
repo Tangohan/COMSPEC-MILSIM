@@ -16,7 +16,7 @@
 
   // Rubriques et onglets : la situation, la conduite de l'opération, les plans, la salle.
   var NAV = [
-    ['situation', 'Situation', [['groupes', 'Groupes'], ['orbat', 'ORBAT'], ['reseau', 'Réseau'], ['flux', 'Flux']]],
+    ['situation', 'Situation', [['groupes', 'Groupes'], ['orbat', 'ORBAT'], ['reseau', 'Réseau'], ['telephones', 'Téléphones'], ['flux', 'Flux'], ['rapports', 'Rapports']]],
     ['conduite', 'Conduite', [['ordres', 'Ordres'], ['demandes', 'Demandes'], ['chronos', 'Chronos'], ['excheck', 'EXCHECK'], ['main', 'Main courante'], ['pertes', 'Pertes']]],
     ['plans', 'Plans', [['plans', 'Plans web'], ['camp', 'Camp']]],
     ['salle', 'Salle', [['salle', 'Écrans'], ['sat', 'SAT'], ['radio', 'Radio']]]
@@ -135,6 +135,8 @@
       }
       setBanner('');
       S.serverOffset = (j.now || Date.now() / 1000) - Date.now() / 1000;
+      // Canal de synchro du panneau Rapports : l'empreinte change quand un rapport arrive ou évolue.
+      if (S.reports && j.reports) S.reports.onStamp(j.reports.stamp);
       var sig = JSON.stringify([j.state, j.game]);
       S.game = j.game;
       if (sig === S.roomVersion) { renderLink(); return; }
@@ -204,6 +206,7 @@
   function badgeFor(id) {
     var r = S.room || {};
     if (id === 'demandes') return (r.requests || []).filter(function (q) { return q.status === 'RECUE'; }).length;
+    if (id === 'rapports') return S.reports ? S.reports.unread() : 0;
     return 0;
   }
   function renderTabs() {
@@ -220,6 +223,7 @@
   }
   function setTab(id) {
     if (!TAB_GROUP[id]) return;
+    if (S.tab === 'telephones' && id !== 'telephones' && window.TocPhones) window.TocPhones.left();
     S.tab = id;
     setPref('tab', id);
     S.isr = id === 'sat';
@@ -508,8 +512,9 @@
   }
 
   var PANELS = {
-    groupes: panelGroupes, orbat: panelOrbat, flux: panelFlux, ordres: panelOrdres, camp: panelCamp, reseau: panelReseau, radio: panelRadio, plans: panelPlans,
-    sat: panelSat, salle: panelSalle, chronos: panelChronos, main: panelMain, excheck: panelExcheck, pertes: panelPertes, demandes: panelDemandes
+    groupes: panelGroupes, orbat: panelOrbat, flux: panelFlux, rapports: function () { return S.reports ? S.reports.panel() : ''; }, ordres: panelOrdres, camp: panelCamp, reseau: panelReseau, radio: panelRadio, plans: panelPlans,
+    sat: panelSat, salle: panelSalle, chronos: panelChronos, main: panelMain, excheck: panelExcheck, pertes: panelPertes, demandes: panelDemandes,
+    telephones: function () { return window.TocPhones ? window.TocPhones.panel() : ''; }
   };
   function renderPanel() {
     var body = $('#toc-panel');
@@ -527,8 +532,10 @@
     });
     if (focusName) { var f = body.querySelector('[name="' + focusName + '"]'); if (f) { f.focus(); if (caret != null && f.setSelectionRange) { try { f.setSelectionRange(caret, caret); } catch (e) {} } } }
     body.scrollTop = scroll;
+    if (S.tab === 'telephones' && window.TocPhones) window.TocPhones.attached();
     if (S.tab === 'plans' && !S.plansLoaded) loadPlans();
     if (S.tab === 'reseau') loadJournal();
+    if (S.tab === 'rapports' && S.reports && !S.reports.loaded()) S.reports.load();
   }
   function loadPlans() {
     api('/atak/toc/api/plans').then(function (j) {
@@ -593,7 +600,8 @@
     var btns = '<button type="button" class="toc-btn is-small is-primary" data-pick="center">Centrer</button>';
     if (d.type === 'track') {
       btns += '<button type="button" class="toc-btn is-small' + (following ? ' is-on' : '') + '" data-pick="follow" aria-pressed="' + following + '">' + (following ? 'Ne plus suivre' : 'Suivre') + '</button>' +
-        '<button type="button" class="toc-btn is-small" data-pick="message">Message</button><button type="button" class="toc-btn is-small" data-pick="order">Ordre</button>';
+        '<button type="button" class="toc-btn is-small" data-pick="message">Message</button><button type="button" class="toc-btn is-small" data-pick="order">Ordre</button>' +
+        (d.track && d.track.src === 'unit' ? '<button type="button" class="toc-btn is-small" data-pick="phone">Téléphone</button>' : '');
     } else if (canEditMarker(d)) {
       btns += '<button type="button" class="toc-btn is-small" data-pick="edit">Modifier</button><button type="button" class="toc-btn is-small" data-pick="pin" aria-pressed="' + isPinned(d) + '">' + (isPinned(d) ? 'Désépingler' : 'Épingler') + '</button><button type="button" class="toc-btn is-small is-danger" data-pick="delete">Supprimer</button>';
     }
@@ -617,6 +625,7 @@
     else if (a === 'here') S.tm.map.panTo(S.tm.toLL(pos));
     else if (a === 'details' && it) setPick(it.id, false);
     else if (a === 'follow' && it) { var ov = S.layers.overlay; ov.follow(ov.following() === it.id ? null : it.id); renderPick(); say(ov.following() ? 'La carte suit ' + it.title + ' (déplacer la carte arrête le suivi).' : 'Suivi arrêté.'); }
+    else if (a === 'phone') { if (t && window.TocPhones) window.TocPhones.openByCallsign(t.callsign); }
     else if (a === 'message') openWindow('message', { pour: t ? (t.group || t.callsign) : '' });
     else if (a === 'order') openWindow('ordre', { pour: t ? (t.group || t.callsign) : '' });
     else if (a === 'trail') { var on = !S.layers.isOn('trails'); S.layers.setLayerOn('trails', on); say(on ? 'Traces affichées (depuis l’ouverture du poste).' : 'Traces masquées.'); }
@@ -906,6 +915,7 @@
       var c = p.carte.split(',').map(Number);
       if (isFinite(c[0]) && isFinite(c[1])) S.tm.centerOn([c[0], c[1]], Math.max(S.tm.map.getZoom(), S.tm.map.getMaxZoom() - 3));
     }
+    if (p.rapport && S.reports && UI.drawer.current() !== 'rapport') S.reports.open(p.rapport);
     if (p.fenetre && WINDOWS[p.fenetre] && UI.drawer.current() !== p.fenetre) {
       var id = p.fenetre;
       delete p.fenetre; delete p.carte;
@@ -986,7 +996,7 @@
     if (!row) return;
     var kind = row.getAttribute('data-sel'), id = row.getAttribute('data-id');
     if (kind === 'unit') { var u = trackById(id); if (u && u.pos) setPick(u.id, true); else say('Pas de position connue pour ce nœud.', true); return; }
-    if (kind === 'feed') { var f = (S.layers ? S.layers.feed() : []).filter(function (x) { return String(x.id) === id; })[0]; if (f && f.pos) { S.tm.centerOn(f.pos); if (S.layers.overlay.get('rp' + f.id)) setPick('rp' + f.id, false); } return; }
+    if (kind === 'feed') { if (S.reports && /^(tr|nl)-\d+$/.test(id)) { S.reports.open(id); return; } var f = (S.layers ? S.layers.feed() : []).filter(function (x) { return String(x.id) === id; })[0]; if (f && f.pos) { S.tm.centerOn(f.pos); if (S.layers.overlay.get('rp' + f.id)) setPick('rp' + f.id, false); } return; }
     if (kind === 'grp') {
       var gg = groups().filter(function (x) { return x.name === id; })[0];
       S.sel.grp = id;
@@ -1175,7 +1185,9 @@
       },
       onCounts: renderLayerCount,
       onPanel: function (open) { $('#toc-layers-btn').setAttribute('aria-expanded', String(open)); $('#toc-layers-btn').classList.toggle('is-on', open); },
-      onSelect: function (it) { setPick(it.id, false); },
+      // Une épingle de rapport ouvre la fiche dans le tiroir (panneau Rapports), pas la bulle de la carte.
+      onSelect: function (it) { if (it.data && it.data.type === 'report' && it.data.key && S.reports) { S.reports.open(it.data.key); return; } setPick(it.id, false); },
+      reportsFeed: function () { return S.reports && S.reports.loaded() ? S.reports.pins() : null; },
       onFollow: function () { renderPick(); },
       onLayout: function (st) {
         var el = $('#toc-declutter');
@@ -1185,6 +1197,7 @@
     });
     // Calques SSE (contrôles d’identité, lieux, pistes de téléphones) : module partagé, désactivés au départ, proposés seulement si le lecteur y a droit.
     if (window.SseMapLayers) S.sse = window.SseMapLayers.mountToc(S.tm, S.mapId);
+    if (window.TocPhones) window.TocPhones.mapReady(S.tm);
     var map = S.tm.map;
     map.on('contextmenu', function (e) {
       if (e.originalEvent) e.originalEvent.preventDefault();
@@ -1244,11 +1257,25 @@
     if (!terrain()) S.mapId = BOOT.defaultMap;
     mapSel.value = String(S.mapId);
     $('#toc-side').value = S.side;
+    S.reports = window.TocReports.create({
+      base: BOOT.base, userId: BOOT.userId, api: api, say: say, copy: copyText, setHash: setHash, now: serverNow,
+      mapId: function () { return S.mapId; }, terrains: function () { return BOOT.terrains || []; },
+      grid: function (p) { return G.grid(p[0], p[1], 8); },
+      center: function (p) { if (S.tm) S.tm.centerOn(p, Math.max(S.tm.map.getZoom(), S.tm.map.getMaxZoom() - 3)); },
+      isOpenTab: function () { return S.tab === 'rapports'; }, renderPanel: renderPanel, renderBadges: renderTabs,
+      onData: function () { if (S.layers) S.layers.reload('reports'); },
+      openDrawer: function (cfg) { UI.drawer.open(cfg); }, closeDrawer: function () { UI.drawer.close(); },
+      drawerBody: UI.drawer.body, drawerId: UI.drawer.current, drawerMessage: UI.drawer.message,
+      drawerTitle: function (title, sub) { var h = $('#toc-drawer-title'); if (h) { h.innerHTML = window.TocReports.rich(title); var p = h.parentNode.querySelector('p'); if (p) p.textContent = sub || ''; } },
+      inDrawer: function (n) { var d = $('#toc-drawer'); return !!d && d.contains(n); }
+    });
+    S.reports.bind($('#toc-panel'));
     renderTabs();
     renderTop();
     buildMap();
     renderPanel();
     renderStatus();
+    S.reports.load();
     tickClocks();
     setInterval(tickClocks, 1000);
     setInterval(renderLink, 15000);
@@ -1269,7 +1296,7 @@
     $('#toc-flash-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendFlash(); } });
     $('#toc-flash-clear').addEventListener('click', function () { act('flashClear', {}); });
     $('#toc-side').addEventListener('change', function () { S.side = this.value; setPref('side', S.side); S.roomVersion = ''; S.room = null; S.sel = {}; setPick(null); if (S.layers) S.layers.setSide(S.side); renderTop(); renderPanel(); renderStatus(); loadRoom(); });
-    $('#toc-terrain').addEventListener('change', function () { S.mapId = Number(this.value); setPref('map', S.mapId); S.roomVersion = ''; S.room = null; S.plansLoaded = false; S.sel = {}; buildMap(); renderTop(); renderPanel(); renderStatus(); loadRoom(); });
+    $('#toc-terrain').addEventListener('change', function () { S.mapId = Number(this.value); setPref('map', S.mapId); S.roomVersion = ''; S.room = null; S.plansLoaded = false; S.sel = {}; buildMap(); S.reports.setMap(); renderTop(); renderPanel(); renderStatus(); loadRoom(); });
     $('#toc-bg').addEventListener('change', function () { S.tm.setBackground(this.value); setPref('bg', this.value); });
     $('#toc-layers-btn').addEventListener('click', function () { toggleLayers(); });
     document.querySelector('.toc-mapctl').addEventListener('click', function (e) { var b = e.target.closest('[data-map]'); if (b) mapCommand(b.getAttribute('data-map')); });
@@ -1294,6 +1321,9 @@
     window.addEventListener('hashchange', applyHash);
     bindKeys();
   }
+
+  // Pont pour les modules de la console qui vivent dans leur propre fichier (onglet « Téléphones »).
+  window.TocHost = { api: api, say: say, renderPanel: renderPanel, state: function () { return { mapId: S.mapId, side: S.side, tab: S.tab }; } };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
