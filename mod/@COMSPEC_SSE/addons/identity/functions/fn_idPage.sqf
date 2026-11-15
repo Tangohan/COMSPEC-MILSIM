@@ -143,6 +143,20 @@ if (_tab isEqualTo "history") then {
             ["", format ["<br/><t size='0.8' color='#c9d3dd'>%1 : %2</t>", "Mesures à prendre" call _tr, [_wMeasures joinString " · "] call _esc]] select (_wMeasures isNotEqualTo []),
             ["", format ["<br/><t size='0.8' color='#8b98a7'>%1 : %2</t>", "Service" call _tr, [_wService] call _esc]] select (_wService isNotEqualTo "")],
             [0.3, 0.02, 0.02, 1]];
+        // SIGNALER : la personne recherchée est devant moi. Position et grille du contrôle ; l'app « Avis et vigilance » de l'ATAK
+        // porte le signalement, sinon il part directement (fn_idAlertReport). L'état s'écrit ici, jamais en alerte à l'écran.
+        (_cur getOrDefault ["alertReport", []]) params [["_arState", ""], ["_arInfo", ""]];
+        private _arLabel = switch (_arState) do {
+            case "wait": { "SIGNALEMENT EN COURS…" };
+            case "ok": { "SIGNALÉ" };
+            case "ko": { "RENVOYER LE SIGNALEMENT" };
+            default { "SIGNALER" };
+        };
+        _rows pushBack ["buttons", [[_arLabel call _tr, ["alertReport"] call _act, true, !(_arState in ["wait", "ok"]), "Signale au service à informer que la personne est ici, avec la position du contrôle."]]];
+        if (_arState in ["ok", "ko"]) then {
+            _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2 %3</t>", ["#ff5a5a", "#34d399"] select (_arState isEqualTo "ok"),
+                (["Signalement non reçu :", "Signalement reçu par le bureau :"] select (_arState isEqualTo "ok")) call _tr, [_arInfo] call _esc]];
+        };
     };
     _rows pushBack ["steps", _steps];
     _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",

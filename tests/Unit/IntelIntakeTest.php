@@ -59,7 +59,10 @@ final class IntelIntakeTest extends TestCase
     {
         self::assertSame('exploitee', IntelIntakeService::defaultState('fiche', 'exploitee'));
         self::assertSame('non_exploitable', IntelIntakeService::defaultState('fiche', 'sans_suite'));
-        self::assertSame('en_cours', IntelIntakeService::defaultState('cr', 'ACKNOWLEDGED'));
+        self::assertSame('prise_en_compte', IntelIntakeService::defaultState('cr', 'ACKNOWLEDGED'));
+        self::assertSame('prise_en_compte', IntelIntakeService::defaultState('fiche', 'prise_en_compte'));
+        self::assertSame('ACKNOWLEDGED', IntelIntakeService::sourceStatusFor('cr', 'prise_en_compte'));
+        self::assertContains('prise_en_compte', IntelIntakeService::OPEN_STATES);
         self::assertSame('close', IntelIntakeService::defaultState('cr', 'ARCHIVED'));
         self::assertSame('a_traiter', IntelIntakeService::defaultState('cr', 'SUBMITTED'));
         self::assertSame('ACTIONED', IntelIntakeService::sourceStatusFor('cr', 'exploitee'));

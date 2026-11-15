@@ -143,6 +143,10 @@ class CfgFunctions {
         class fiches { file="z\comspec_atak_native\addons\main\functions\fiches";
             class fichesAction {}; class pageFiches {};
         };
+        // App « Avis et vigilance » (ICD-SSE-ALERTES-001) : alertes du portail SSE, émission, signalement.
+        class alertes { file="z\comspec_atak_native\addons\main\functions\alertes";
+            class alertesAction {}; class alertesSend {}; class alertesDraft {}; class alertesQr {}; class pageAlertes {}; class pageAlertesNew {};
+        };
         class dock { file="z\comspec_atak_native\addons\main\functions\dock";
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
@@ -209,6 +213,7 @@ class COMSPEC_ATAK_Apps {
     class LinkAlly    { name="Liaison allié"; short="Liaison"; page="LINKALLY"; function="comspec_atak_native_fnc_pageLinkAlly"; section="Spécialités"; order=82; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_linkally.paa"; desc="Liaison avec une unité alliée"; };
     class Fiches      { name="Fiches SSE"; short="Fiches"; page="FICHES"; new=1; function="comspec_atak_native_fnc_pageFiches"; section="Renseignement"; order=123; dock=0; icon="\z\comspec_atak_native\addons\main\data\ui_clip.paa"; desc="Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre"; };
     class Wanted      { name="Recherchés"; short="Rech."; page="WANTED"; section="Renseignement"; order=122; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_wanted.paa"; desc="Personnes recherchées (HVT) de la communauté"; };
+    class SseAlert    { name="Avis et vigilance"; short="Avis"; page="SSEALERT"; new=1; function="comspec_atak_native_fnc_pageAlertes"; section="Renseignement"; order=124; dock=0; icon="\z\comspec_atak_native\addons\main\data\ui_warning.paa"; desc="Avis de recherche, notices et fiches de vigilance : consulter, émettre, signaler une observation"; };
     class Toc         { name="Poste TOC"; short="TOC"; page="TOC"; new=1; function="comspec_atak_native_fnc_pageToc"; section="Mission"; order=199; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_toc.paa"; desc="Écrans du poste de commandement (TOC)"; };
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; desc="Tâches et ordres reçus"; };
     class Reports     { name="Comptes rendus"; short="CR"; page="REPORTS"; section="Mission"; order=202; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; desc="Comptes rendus de fin de mission"; };

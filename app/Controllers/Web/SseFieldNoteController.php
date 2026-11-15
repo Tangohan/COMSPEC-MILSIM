@@ -299,9 +299,30 @@ final class SseFieldNoteController
         $lang = self::lang();
         $note = $this->tagService->decorate($tenantId, $note, $lang);
 
+        // Suivi de la remontée (même service que le back-office Remontées) : états, délais, fil et actions selon les droits.
+        $intakeDesk = null;
+        $intakeMembers = [];
+        try {
+            if ($this->intake()->schemaReady()) {
+                try {
+                    $level = (new SseClearanceService($this->access))->maxLevel();
+                } catch (\Throwable) {
+                    $level = SseCaseRepository::CLASS_INTERNAL;
+                }
+                $rights = SseIntakeController::sessionRights($this->access->isGuest(), $tenantId);
+                $intakeDesk = (new \App\Services\Intel\IntelIntakeDesk($this->intake()))->view($tenantId, 'fiche', (int) $note['id'], ['id' => (int) Session::get('user_id'), 'level' => $level], $rights);
+                $intakeMembers = $rights['treat'] ? $this->intake()->members($tenantId) : [];
+            }
+        } catch (\Throwable) {
+            $intakeDesk = null;
+        }
+
         return $this->view('atak.sse.field_note_show', [
             'title' => (string) ($note['reference_code'] ?? 'Fiche de renseignement'),
             'activeNav' => 'fiches',
+            'intakeDesk' => $intakeDesk,
+            'intakeMembers' => $intakeMembers,
+            'intakeTypes' => IntelIntakeService::typeOptions('fiche'),
             'note' => $note,
             'tagFamilies' => $this->canWrite() ? $this->tagService->pickerFamilies($tenantId, $lang, true, array_column($note['tags'], 'key')) : [],
             'tagsReady' => $this->tagService->ready(),

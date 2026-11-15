@@ -1473,6 +1473,11 @@ return function (Router $router) {
     $router->post('/atak/sse/fiches/{id}/suivi', [SseFieldNoteController::class, 'triage'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/etiquettes', [SseFieldNoteController::class, 'tags'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/rattachement', [SseFieldNoteController::class, 'attachCase'], $mwSsePortal);
+    // Remontées vues du bureau SSE : même service que le back-office (IntelIntakeDesk), habillage du portail.
+    $router->get('/atak/sse/remontees', [\App\Controllers\Web\SseIntakeController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/remontees/{source}/{id}', [\App\Controllers\Web\SseIntakeController::class, 'show'], $mwSsePortal);
+    $router->get('/atak/sse/remontees/{source}/{id}/suggestions', [\App\Controllers\Web\SseIntakeController::class, 'suggestions'], $mwSsePortal);
+    $router->post('/atak/sse/remontees/{source}/{id}/{action}', [\App\Controllers\Web\SseIntakeController::class, 'action'], $mwSsePortal);
     $router->get('/atak/sse/collecte', [SsePortalController::class, 'collecteHub'], $mwSsePortal);
     $router->get('/atak/sse/validation', [SsePortalController::class, 'validationQueue'], $mwSsePortal);
     $router->get('/atak/sse/rapports', [SsePortalController::class, 'reportsHub'], $mwSsePortal);
@@ -2160,6 +2165,7 @@ return function (Router $router) {
     $router->get('/back-office/discord-bot', [OrganizationDiscordBotController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/discord-bot/retour', [OrganizationDiscordBotController::class, 'callback'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/discord-bot/reglages', [OrganizationDiscordBotController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/discord-bot/remontees', [OrganizationDiscordBotController::class, 'saveIntake'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/discord-bot/tester', [OrganizationDiscordBotController::class, 'test'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/discord-bot/delier', [OrganizationDiscordBotController::class, 'unlink'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/discord-bot/rappel/fermer', [OrganizationDiscordBotController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2907,6 +2913,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/remontees/joueurs', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'players'], [AuthMiddleware::class]);
     $router->get('/back-office/remontees/joueurs/{key}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'player'], [AuthMiddleware::class]);
     $router->get('/back-office/remontees/{source}/{id}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'show'], [AuthMiddleware::class]);
+    $router->get('/back-office/remontees/{source}/{id}/suggestions', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'suggestions'], [AuthMiddleware::class]);
     $router->post('/back-office/remontees/{source}/{id}/{action}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'action'], [AuthMiddleware::class]);
     $router->get('/back-office/atak/fire-teams/create', [AdminFireTeamsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/fire-teams/store', [AdminFireTeamsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

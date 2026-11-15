@@ -211,7 +211,7 @@ final class SseAccessCatalog
         'terrain' => [
             'label' => 'Fiches de renseignement',
             'hint' => 'Notes libres remontées du terrain, avec pièces jointes, tri et rattachement aux dossiers.',
-            'paths' => ['fiches'],
+            'paths' => ['fiches', 'remontees'],
             'legacy' => ['read' => 'entrant', 'write' => 'field_write', 'add' => 'field_write', 'delete' => 'manage', 'export' => 'export', 'manage' => 'manage'],
         ],
         'identites_service' => [
