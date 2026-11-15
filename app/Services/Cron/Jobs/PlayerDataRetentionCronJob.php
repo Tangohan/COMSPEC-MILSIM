@@ -59,8 +59,8 @@ final class PlayerDataRetentionCronJob implements CronJobInterface
     public function description(): string
     {
         return 'Efface les traces de jeu des comptes supprimés (carte, registre opérateur, mods, statistiques) '
-            . 'et les données de jeu périmées : unités sans signe de vie depuis 30 jours, sessions mortes, '
-            . 'demandes de liaison expirées, relevés anciens.';
+            . 'et les données de jeu périmées : unités sans signe de vie depuis 30 jours (24 heures dans la communauté '
+            . 'par défaut des comptes sans communauté), sessions mortes, demandes de liaison expirées, relevés anciens.';
     }
 
     /** @return array{ok: bool, summary: string, details: array<string, mixed>} */
@@ -96,6 +96,28 @@ final class PlayerDataRetentionCronJob implements CronJobInterface
             if ($n > 0) {
                 $details['retention'][$table] = $n;
             }
+        }
+
+        // Communauté par défaut (comptes sans communauté) : pistes sans signe de vie depuis 24 h, et fichiers d'état
+        // des cartes réservées aux parties. Les communautés réelles gardent la règle des 30 jours ci-dessus.
+        try {
+            $defaultTenants = \App\Support\AtakPartyScope::defaultTenantIds($this->pdo);
+            $n = 0;
+            foreach ($defaultTenants as $tenantId) {
+                $n += \App\Support\AtakPartyScope::purgeStaleDefaultUnits($this->pdo, $tenantId, true)['deleted'];
+            }
+            if ($n > 0) {
+                $details['retention']['atak_units_default_community'] = $n;
+            }
+            if ($defaultTenants !== [] && function_exists('base_path')) {
+                $details['default_community_files'] = \App\Support\AtakPartyScope::sweepReservedMapFiles(
+                    base_path('storage/cache'),
+                    $defaultTenants,
+                    true
+                )['deleted'];
+            }
+        } catch (\Throwable $e) {
+            $details['errors']['atak_units_default_community'] = mb_substr($e->getMessage(), 0, 160);
         }
 
         $ret = array_sum($details['retention']);

@@ -22038,6 +22038,8 @@ return [
     'et les blocs affichés. Pour la mise en page complète (photos, étapes de recrutement, FAQ, témoignages…), ouvrez la' => 'and the blocks shown. For the full layout (photos, recruitment steps, FAQ, testimonials…), open the',
     'et les commentaires' => 'and the comments',
     'et les données de jeu périmées : unités sans signe de vie depuis 30 jours, sessions mortes,' => 'and stale game data: units with no sign of life for 30 days, dead sessions,',
+    'et les données de jeu périmées : unités sans signe de vie depuis 30 jours (24 heures dans la communauté' => 'and stale game data: units with no sign of life for 30 days (24 hours in the default',
+    'par défaut des comptes sans communauté), sessions mortes, demandes de liaison expirées, relevés anciens.' => 'community of accounts without a community), dead sessions, expired link requests, old readings.',
     'et leur' => 'and their',
     'et listes de surveillance rapprochent des signaux ; les' => 'and watchlists bring signals together; the',
     'et l’' => 'and the',

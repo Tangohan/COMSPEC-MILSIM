@@ -115,6 +115,12 @@ class Request
         return $this->query[$key] ?? $default;
     }
 
+    /** Valeur imposée par le serveur à la place de celle du client (carte réservée d'une partie : AtakPartyScope). */
+    public function overrideQuery(string $key, mixed $value): void
+    {
+        $this->query[$key] = $value;
+    }
+
     /** Alias query string (compat repositories ATAK Phase 2). */
     public function get(string $key, mixed $default = null): mixed
     {
