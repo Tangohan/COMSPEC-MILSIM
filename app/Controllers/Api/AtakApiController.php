@@ -5356,7 +5356,7 @@ class AtakApiController
      */
     private function sharedUnitsList(int $tenantId, int $mapId): array
     {
-        $rows = $this->unitsForTransmission($tenantId, $mapId);
+        $rows = \App\Services\Atak\AtakUnitRowDedupe::byCallSign($this->unitsForTransmission($tenantId, $mapId));
         $this->logStaleUnitDisconnects($tenantId, $mapId);
         try {
             $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
