@@ -580,6 +580,8 @@ return function (Router $router) {
     $router->get('/' . \App\Support\JnetMemberPaths::path('fiabilisation'), $moi($moiCampaign, 'index'), $mwMoi);
     $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/repondre'), $moi($moiCampaign, 'answer'), $mwMoi);
     $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/confirmer'), $moi($moiCampaign, 'confirm'), $mwMoi);
+    $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/tout-confirmer'), $moi($moiCampaign, 'confirmAll'), $mwMoi);
+    $router->get('/' . \App\Support\JnetMemberPaths::path('fiabilisation/plus-tard'), $moi($moiCampaign, 'later'), $mwMoi);
     // Anciennes adresses à paramètres (téléchargements, flux audio) : 301 en un saut, requête conservée. Les pages sans paramètre
     // sont dans BackOfficeLegacyRedirects (JnetMemberPaths::legacyRedirects()).
     foreach (\App\Support\JnetMemberPaths::DOWNLOADS as $moiDownload) {

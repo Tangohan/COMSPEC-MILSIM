@@ -132,6 +132,8 @@ class AuthController
         $this->loginSecurityNotifications->onSuccessfulLogin($request, $user);
 
         $continueUrl = $this->resolvePostLoginContinueUrl();
+        // Campagne de fiabilisation ouverte : la page de vue d'ensemble passe avant la destination, gardée en session.
+        $continueUrl = \App\Support\DataCampaignLoginPrompt::prepare($user, $continueUrl) ?? $continueUrl;
         LoginWelcomeGate::arm($continueUrl);
 
         return Response::redirect(url('login/accueil'));
