@@ -14,6 +14,7 @@ use App\Services\Auth\AuthService;
 use App\Services\DataCampaign\DataCampaignService;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignLoginPrompt;
+use App\Support\DataCampaignPage;
 use App\Support\DataCampaignScope;
 use App\Support\JnetMemberShell;
 
@@ -61,9 +62,9 @@ final class MemberDataCampaignController
         return JnetMemberShell::view($request, [
             'title' => 'Fiabilisation des données',
             'content' => 'admin.member_situation.data_campaign',
-            'boPageTitle' => 'Fiabilisation des données',
-            'boPageSubtitle' => 'Relisez votre fiche, partie par partie : dites si c’est exact ou ce qui est à corriger. Rien n’est modifié sans validation de l’encadrement.',
-            'backOfficePageCss' => ['back-office-member-situation.css', 'back-office-member-dossier.css', 'data-campaign.css'],
+            'boPageTitle' => DataCampaignPage::pageTitle(),
+            'boPageSubtitle' => DataCampaignPage::pageLead(),
+            'backOfficePageCss' => ['data-campaign-member.css'],
             'schemaReady' => $ready,
             'campaign' => $active['campaign'] ?? null,
             'member' => $active['member'] ?? null,
