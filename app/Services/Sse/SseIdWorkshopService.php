@@ -18,7 +18,7 @@ use App\Support\SseIdWorkshopCatalog;
  *
  * Règles : seul un brouillon se modifie (données imprimées, modèle, champs en plus) ; les statuts se changent à tout
  * moment ; l'identité ne se modifie plus dès qu'un autre de ses papiers est validé ou émis (il est déjà en jeu).
- * Vérité de jeu (nature de l'identité, origine du papier, falsification) : habilitation Confidentiel seulement.
+ * Vérité de jeu (nature de l'identité, origine du papier, falsification) : habilitation Secret (S) seulement.
  */
 final class SseIdWorkshopService
 {

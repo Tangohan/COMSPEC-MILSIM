@@ -109,7 +109,7 @@ final class SsePortalNav
     /**
      * Navigation de la session courante, avec les mêmes droits que les pages : papiers des membres
      * et atelier (gestion SSE ou habilitation Encadrement, hors invité), bibliothèque de l'éditeur
-     * (compte identifié et habilitation Confidentiel).
+     * (compte identifié et habilitation Secret).
      *
      * @return array{sections: list<array<string, mixed>>, restricted: list<array{label: string, reason: string}>}
      */
@@ -202,11 +202,11 @@ final class SsePortalNav
         if (!$canMemberPapers) {
             $out[] = [
                 'label' => 'Papiers des membres, atelier de documents, kits types, briefs, import et export, profils IA, préparation de mission',
-                'reason' => $isGuest ? 'Fermés aux sessions invitées : entrez avec votre compte.' : 'Réservés à la gestion SSE ou à l’habilitation Encadrement.',
+                'reason' => $isGuest ? 'Fermés aux sessions invitées : entrez avec votre compte.' : 'Réservés à la gestion SSE ou à l’habilitation Confidentiel (C).',
             ];
         }
         if (!$canEditorLibrary) {
-            $out[] = ['label' => 'Bibliothèque de l’éditeur', 'reason' => 'Demande un compte identifié et l’habilitation Confidentiel.'];
+            $out[] = ['label' => 'Bibliothèque de l’éditeur', 'reason' => 'Demande un compte identifié et l’habilitation Secret (S).'];
         }
         if (!$canManage) {
             $out[] = ['label' => 'Maître du jeu', 'reason' => 'Réservé à la gestion SSE.'];

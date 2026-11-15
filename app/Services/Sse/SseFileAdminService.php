@@ -55,7 +55,7 @@ final class SseFileAdminService
             foreach (['aliases_count', 'links_count', 'photos_count', 'queries_count', 'merged_into_id'] as $k) {
                 $h[$k] = (int) ($r[$k] ?? 0);
             }
-            // Images d'un membre : CONFIDENTIEL ÉLEVÉ, pas comptées pour qui n'a pas le droit de les voir (gérer les fichiers ne suffit pas).
+            // Images d'un membre : TRÈS SECRET (TS), pas comptées pour qui n'a pas le droit de les voir (gérer les fichiers ne suffit pas).
             if (!SseMemberImageGate::forSession()->forIdentity($tenantId, $h)['allowed']) {
                 $h['photos_count'] = 0;
             }

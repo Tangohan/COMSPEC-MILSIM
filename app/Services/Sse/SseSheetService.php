@@ -13,6 +13,7 @@ use App\Repositories\SseWantedSettingsRepository;
 use App\Support\Pdf\AthenaPdfTheme;
 use App\Support\SseSheetCatalog as D;
 use App\Support\SseSheetText as T;
+use App\Support\SseUsClassification;
 use App\Support\SseWantedCatalog as C;
 
 /**
@@ -50,6 +51,19 @@ final class SseSheetService
         return array_values(array_filter(array_keys(SseRedactionService::LEVELS), static fn (string $l): bool => SseRedactionService::levelRank($l) <= $own));
     }
 
+    /**
+     * Saisie de la génération rapide : aucun texte à remplir (trames par défaut du modèle, dans la langue du lecteur), classification
+     * par défaut de la communauté ramenée à l'habilitation du rédacteur. `quick` : le PDF part même sans l'étape « fiches PDF ».
+     *
+     * @return array<string, mixed>
+     */
+    public function quickInput(int $tenantId, SseSheetAccess $access, string $lang): array
+    {
+        $config = $this->settings->get($tenantId);
+
+        return ['lang' => D::lang($lang), 'classification' => self::clampLevel($config['default_classification'] ?? '', $access), 'faces' => 'auto', 'quick' => true];
+    }
+
     /** Niveau demandé, ramené à l'habilitation du rédacteur. */
     public static function clampLevel(mixed $requested, SseSheetAccess $access): string
     {
@@ -64,12 +78,10 @@ final class SseSheetService
     /** @return array{0: string, 1: string} libellés français et anglais d'un niveau de diffusion */
     public static function levelLabels(string $level): array
     {
-        $en = [
-            SseCaseRepository::CLASS_INTERNAL => 'Internal distribution', SseCaseRepository::CLASS_COMMAND => 'Command staff',
-            SseCaseRepository::CLASS_CONFIDENTIAL => 'Confidential', SseCaseRepository::CLASS_RESTRICTED => 'Highly restricted distribution',
+        return [
+            SseCaseRepository::CLASSIFICATION_LABELS[$level] ?? $level,
+            isset(SseUsClassification::SCALE[$level]) ? SseUsClassification::label($level, 'en') : $level,
         ];
-
-        return [SseCaseRepository::CLASSIFICATION_LABELS[$level] ?? $level, $en[$level] ?? $level];
     }
 
     /**
@@ -152,7 +164,7 @@ final class SseSheetService
             'model' => $model, 'lang' => $lang, 'faces' => $faces, 'ref' => $ref,
             'title' => D::MODELS[$model]['label'], 'accent' => SseSheetPdf::ACCENTS[$model] ?? [55, 65, 81],
             'authority' => $authority, 'service' => $service,
-            'issued_at' => $issued, 'valid_until' => $validUntil, 'classification' => $labels,
+            'issued_at' => $issued, 'issued_dt' => gmdate('Y-m-d H:i:s'), 'valid_until' => $validUntil, 'classification' => $labels, 'level' => $level,
             'facts' => $facts, 'texts' => $texts, 'text_labels' => $this->textLabels($model),
             'watermark' => (bool) $config['watermark'], 'footer' => (bool) $config['footer'],
             'emblem' => (string) $config['emblem'],
@@ -236,7 +248,8 @@ final class SseSheetService
         if ($denial !== null) {
             return $fail('forbidden', [$denial]);
         }
-        if ($model !== 'notice' && !SseSheetRepository::ready()) {
+        $quick = !empty($input['quick']);
+        if ($model !== 'notice' && !$quick && !SseSheetRepository::ready()) {
             return $fail('unavailable', ['Les fiches PDF seront disponibles dès que l’étape de base de données « fiches PDF » aura été passée par l’équipe technique.']);
         }
         $userId = $access->userId();
@@ -264,7 +277,8 @@ final class SseSheetService
                 $pages = $built['pages'];
                 $notice = $built['notice'];
             } else {
-                $ref = $this->repo->nextRef($tenantId, $model, null, $attempt);
+                // Génération rapide sans l'étape « fiches PDF » : référence locale non enregistrée, le PDF part directement.
+                $ref = SseSheetRepository::ready() ? $this->repo->nextRef($tenantId, $model, null, $attempt) : ['ref' => (D::MODELS[$model]['prefix'] ?? 'FX') . '-' . gmdate('Y') . '-Q' . strtoupper(bin2hex(random_bytes(3))), 'year' => (int) gmdate('Y'), 'seq' => 0];
                 $p = $this->prepare($tenantId, $subject, $model, $input, $access, $ref['ref']);
                 if (!$p['ok'] || $p['data'] === null) {
                     return $fail('invalid', $p['errors']);
@@ -341,6 +355,9 @@ final class SseSheetService
             }
             $data['ref'] = $issue['ref'];
             $data['texts'] = $issue['texts'];
+            // Documents émis avant les niveaux américains : le code stocké donne le marquage (mêmes codes, nouveaux libellés).
+            $data['level'] = SseUsClassification::normalize((string) $issue['classification']);
+            $data['classification'] = self::levelLabels($data['level']);
             $data['facts']['photos'] = is_array($snap['photos'] ?? null) ? $snap['photos'] : [];
             $data['emblem'] = (string) $this->settings->get($tenantId)['emblem'];
             $bytes = $this->render($tenantId, $data)['bytes'] ?? null;

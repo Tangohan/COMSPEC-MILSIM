@@ -84,7 +84,7 @@ final class SseIdSubjectMatchService
 
     /**
      * « Possiblement la même personne » : autres fiches et identités qui partagent une clé avec cette personne.
-     * Vérité de jeu : à ne servir qu'avec l'habilitation Confidentiel.
+     * Vérité de jeu : à ne servir qu'avec l'habilitation Secret (S).
      *
      * @return list<array{type: string, id: int, name: string, ref: string}>
      */

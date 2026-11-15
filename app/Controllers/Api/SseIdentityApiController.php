@@ -188,6 +188,11 @@ final class SseIdentityApiController
         if (($body['kind'] ?? null) === \App\Services\Sse\SseGameCatalogueService::KIND) {
             return (new \App\Controllers\Api\Game\GameSseCatalogueApiController())->kindResponse($body);
         }
+        // Fiches du portail pour le téléphone (ICD-SSE-FICHES-001) : lecture filtrée par l'habilitation du porteur, avis d'un contrôle,
+        // journal d'un partage. Même canal, aucune nouvelle DLL.
+        if (in_array($body['kind'] ?? null, [\App\Services\Sse\SseFichesGameService::KIND, \App\Services\Sse\SseFichesGameService::KIND_SHARE], true)) {
+            return (new \App\Controllers\Api\Game\GameSseFichesApiController())->kindResponse($body);
+        }
         if (in_array($body['kind'] ?? null, SseEditorLibraryService::KINDS, true)) {
             return $this->editorLibraryResponse($tenantId, $body);
         }
@@ -284,7 +289,7 @@ final class SseIdentityApiController
                 if (!$allowed) {
                     return Response::json([
                         'error' => 'clearance_required',
-                        'message' => 'Compte relié et habilitation Confidentiel requis pour la bibliothèque de l’éditeur.',
+                        'message' => 'Compte relié et habilitation Secret (S) requis pour la bibliothèque de l’éditeur.',
                     ], 403);
                 }
             }
@@ -318,7 +323,7 @@ final class SseIdentityApiController
                 default => $sessionUser > 0 && $this->clearance->allows(SseCaseRepository::CLASS_CONFIDENTIAL),
             };
             if (!$allowed) {
-                return Response::json(['error' => 'clearance_required', 'message' => 'Compte relié et habilitation Confidentiel requis pour les profils d’IA.'], 403);
+                return Response::json(['error' => 'clearance_required', 'message' => 'Compte relié et habilitation Secret (S) requis pour les profils d’IA.'], 403);
             }
             $result = (new \App\Services\Sse\SseAiProfileService())->handle($tenantId, $gameUser ?? ($sessionUser > 0 ? $sessionUser : null), $mapId, $body);
         } catch (\PDOException) {

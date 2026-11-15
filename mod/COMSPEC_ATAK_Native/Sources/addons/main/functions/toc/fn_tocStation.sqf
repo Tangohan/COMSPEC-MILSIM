@@ -257,7 +257,7 @@ switch (_mode) do {
         if (!hasInterface || {isNil "ace_interact_menu_fnc_createAction"} || {missionNamespace getVariable ["COMSPEC_ATAK_TocStationMenu", false]}) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocStationMenu", true];
         private _root = ["COMSPEC_ATAK_TocDesk", "Poste TOC", "", {}, {
-            !isNull (["near"] call comspec_atak_native_fnc_tocPost) || {(["of", _player] call comspec_atak_native_fnc_tocStation) isNotEqualTo []} || {["can", [_player, "diag", ""]] call comspec_atak_native_fnc_tocAccess}
+            missionNamespace getVariable ["comspec_atak_native_ace_root", true] && {!isNull (["near"] call comspec_atak_native_fnc_tocPost) || {(["of", _player] call comspec_atak_native_fnc_tocStation) isNotEqualTo []} || {["can", [_player, "diag", ""]] call comspec_atak_native_fnc_tocAccess}}
         }, {
             params ["_target", "_player"];
             private _out = [];

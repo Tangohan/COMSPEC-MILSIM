@@ -9,7 +9,7 @@ use PDO;
 /**
  * Base sqlite en mémoire du widget « Liaisons » : registre d'identités, papiers, contrôles, fiches SEEK II, photos, avis de
  * recherche et documents émis (SseSheetSqlite), plus les tables minimales des dossiers, fiches de renseignement, sites,
- * transmissions et campagnes, et la vraie table des liens de provenance créée depuis le fichier SQL de l'étape 4690.
+ * transmissions et campagnes, et la vraie table des liens de provenance créée depuis le fichier SQL de l'étape 4710.
  */
 final class SseLinksSqlite
 {

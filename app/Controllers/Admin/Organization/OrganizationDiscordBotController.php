@@ -47,6 +47,7 @@ final class OrganizationDiscordBotController
         return Response::view('layout.main', [
             'title' => 'Bot Discord Athena',
             'content' => 'admin.organization.discord_bot',
+            'boPageSubtitle' => 'Le bot accompagne votre bureau des effectifs directement sur le serveur Discord de votre communauté : résumés, candidatures, événements, rappels et accueil des nouveaux arrivants.',
             'backOfficePageCss' => ['back-office-discord-bot.css'],
             'bot' => [
                 'ready' => $ready,

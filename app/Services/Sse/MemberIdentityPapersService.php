@@ -20,7 +20,7 @@ use App\Support\SseIdentityCatalog;
  * rattachées au compte (sse_identities.user_id) ; papiers de ces identités ; kit porté en mission
  * (sse_id_kits, envoyé au serveur de jeu avec le Steam ID) ; contrôles subis.
  *
- * Vérité de jeu (alias, couverture, faux, qualité du faux) : seulement avec l'habilitation Confidentiel. Sans elle, les
+ * Vérité de jeu (alias, couverture, faux, qualité du faux) : seulement avec l'habilitation Secret (S). Sans elle, les
  * identités d'emprunt ou falsifiées et leurs papiers n'apparaissent pas du tout : consulter une fiche ne démasque pas un
  * infiltré (ni identité, ni papier, ni kit, ni contrôle présenté sous un autre nom). Le joueur voit ses propres
  * papiers, couverture comprise (il la porte), mais jamais la nature de l'identité ni l'origine du papier.
@@ -63,7 +63,7 @@ final class MemberIdentityPapersService
      *
      * - voir : gestion SSE, modification des dossiers RH, ou habilitation Encadrement ;
      * - gérer (créer, émettre, révoquer, kit) : gestion SSE, ou modification des dossiers + habilitation Encadrement ;
-     * - vérité de jeu, alias et couvertures : habilitation Confidentiel.
+     * - vérité de jeu, alias et couvertures : habilitation Secret (S).
      *
      * @return array{view: bool, manage: bool, truth: bool, cover: bool}
      */
@@ -109,7 +109,8 @@ final class MemberIdentityPapersService
             str_starts_with($sexRaw, 'f') => 'F',
             default => 'X',
         };
-        $dob = trim((string) ($userProfile['birth_date'] ?? ''));
+        // Date de naissance du PERSONNAGE d'abord (étape 4700) ; à défaut l'ancien champ du profil (à relire : il peut être la date réelle du joueur).
+        $dob = trim((string) (($userProfile['character_birth_date'] ?? '') !== '' ? $userProfile['character_birth_date'] : ($userProfile['birth_date'] ?? '')));
 
         return [
             'last_name' => trim((string) ($userProfile['last_name'] ?? '')),
@@ -442,7 +443,7 @@ final class MemberIdentityPapersService
     }
 
     /**
-     * Identité d'emprunt (alias ou couverture) : habilitation Confidentiel, sans laquelle elle serait aussitôt masquée.
+     * Identité d'emprunt (alias ou couverture) : habilitation Secret (S), sans laquelle elle serait aussitôt masquée.
      *
      * @param array<string, mixed> $data
      * @return array{ok: bool, id?: int, error?: string}
@@ -454,7 +455,7 @@ final class MemberIdentityPapersService
             $kind = 'alias';
         }
         if (!$truth) {
-            return ['ok' => false, 'error' => 'Une identité d’emprunt demande l’habilitation Confidentiel.'];
+            return ['ok' => false, 'error' => 'Une identité d’emprunt demande l’habilitation Secret (S).'];
         }
         if (trim((string) ($data['last_name'] ?? '')) === '' || trim((string) ($data['first_name'] ?? '')) === '') {
             return ['ok' => false, 'error' => 'Le nom et le prénom sont obligatoires.'];

@@ -215,6 +215,28 @@ final class AtakModReportClientState
     }
 
     /**
+     * Pistes de lecture du rapport, une ligne FR · EN chacune : identifiant de demande mal formé (nombre SQF en
+     * notation scientifique, ex. « /api/cas/B7656…6.35867e+06/status »), version du mod ancienne.
+     *
+     * @param array<string, mixed> $report
+     * @param array{atak:?string, link:?string, connect:?string, sse:?string}|null $latest
+     * @return list<string>
+     */
+    public static function hints(array $report, ?array $latest = null): array
+    {
+        $hints = [];
+        $text = (string) ($report['message'] ?? '') . ' ' . (string) ($report['detail_text'] ?? '');
+        if (preg_match('#/api/cas/[^\s/]*\d(?:\.\d+)?e(?:\+|%2B)\d+[^\s/]*/#i', $text) === 1) {
+            $hints[] = '🔎 id mal formé (notation scientifique) : id de CAS fabriqué par une ancienne version du mod · malformed id (scientific notation) built by an old mod version';
+        }
+        if (self::isOutdated($report, $latest)) {
+            $hints[] = '⬆️ version du mod ancienne : mettre à jour · mod version outdated: please update';
+        }
+
+        return $hints;
+    }
+
+    /**
      * Pastilles du titre : version périmée, client non vérifié. Vide si rien à signaler.
      *
      * @param array<string, mixed> $report

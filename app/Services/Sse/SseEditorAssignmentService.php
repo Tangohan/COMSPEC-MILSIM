@@ -17,7 +17,7 @@ use App\Repositories\SseIdOperationRepository;
  *
  * Même chemin qu'un kit type (SseIdKitAssignmentService) : identité d'emprunt rattachée au compte, papiers émis, kit de
  * mission et brief de la portée choisie. Le serveur de jeu les reçoit avec le paquet (fn_idKit, fn_idLegend). L'identité
- * reste du genre alias, cover ou forged : sans habilitation Confidentiel, ni elle ni ses papiers n'apparaissent
+ * reste du genre alias, cover ou forged : sans habilitation Secret (S), ni elle ni ses papiers n'apparaissent
  * (MemberIdentityPapersService::SECRET), et le joueur n'y voit jamais la nature de ce qu'il porte.
  * Déjà attribué au même joueur et pour la même portée : pas de nouvelle identité, le brief suit le dernier texte.
  */

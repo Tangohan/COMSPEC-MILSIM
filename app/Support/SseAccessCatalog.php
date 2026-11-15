@@ -216,7 +216,7 @@ final class SseAccessCatalog
         ],
         'identites_service' => [
             'label' => 'Identités de service des membres',
-            'hint' => 'Images des membres (portrait, identité, couverture, papiers, clichés SEEK) classées Confidentiel élevé. Fermé à tous par défaut : en plus de l’habilitation Très restreint, le titulaire, sa hiérarchie ou une règle d’accord explicite ici donnent la lecture.',
+            'hint' => 'Images des membres (portrait, identité, couverture, papiers, clichés SEEK) classées Très secret (TS). Fermé à tous par défaut : en plus de l’habilitation Très secret (TS), le titulaire, sa hiérarchie ou une règle d’accord explicite ici donnent la lecture.',
             'paths' => ['identites-service'],
             'sealed' => true,
             'legacy' => ['read' => 'sealed', 'write' => 'none', 'add' => 'none', 'delete' => 'none', 'export' => 'none', 'manage' => 'none'],

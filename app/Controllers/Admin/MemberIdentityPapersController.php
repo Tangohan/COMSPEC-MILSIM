@@ -17,6 +17,7 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Sse\MemberIdentityPapersService;
 use App\Services\Sse\MemberIdentitySyncService;
+use App\Services\Sse\SseMemberCivilIdentityService;
 use App\Services\Sse\SseAccessPolicy;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
@@ -29,7 +30,7 @@ use App\Support\SseIdentityCatalog;
  * Effectifs › fiche membre › onglet « Identité & papiers », et « Ma situation › Mes papiers » (lecture seule).
  *
  * Gestion : responsables RENS (gestion SSE) ou responsables des effectifs habilités Encadrement ; vérité de jeu
- * (couvertures, faux) avec l'habilitation Confidentiel. Toutes les écritures : POST + jeton CSRF, communauté de la
+ * (couvertures, faux) avec l'habilitation Secret (S). Toutes les écritures : POST + jeton CSRF, communauté de la
  * session, membre de cette communauté, journal d'audit SSE.
  */
 final class MemberIdentityPapersController
@@ -107,7 +108,7 @@ final class MemberIdentityPapersController
             $userId = (int) ($member['id'] ?? 0);
             $service = new MemberIdentityPapersService();
             $data = $service->section($tenantId, $userId, (string) ($member['steam_id'] ?? ''), $rights['truth']);
-            // Photos et signatures des identités du membre : CONFIDENTIEL ÉLEVÉ. Gérer les papiers ne suffit pas à les lire (affichage seulement).
+            // Photos et signatures des identités du membre : TRÈS SECRET (TS). Gérer les papiers ne suffit pas à les lire (affichage seulement).
             $gate = \App\Services\Sse\SseMemberImageGate::forSession();
             foreach (['identities'] as $listKey) {
                 if (is_array($data[$listKey] ?? null)) {
@@ -120,9 +121,11 @@ final class MemberIdentityPapersController
                 (new PersonnelProfileRepository())->getByUserId($userId, $tenantId) ?? [],
                 $data['countries']
             );
+            // Identité officielle et état civil du membre : écarts, aperçu avant/après de l'alignement.
+            $data['civil'] = (new SseMemberCivilIdentityService())->inspect($tenantId, $userId);
             $data['maps'] = self::maps();
             $data['base'] = self::baseUrl($userId, $sse);
-            // Couverture née en jeu : vérité de jeu, habilitation Confidentiel seulement.
+            // Couverture née en jeu : vérité de jeu, habilitation Secret (S) seulement.
             $data['game_covers'] = [];
             if ($rights['truth']) {
                 try {
@@ -263,6 +266,63 @@ final class MemberIdentityPapersController
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok'] ? 'Identité principale enregistrée.' : (string) $res['error']);
 
         return Response::redirect($this->back($userId));
+    }
+
+    /**
+     * « Aligner sur l'état civil » : l'identité officielle du membre reprend son état civil (aperçu avant/après et confirmation dans la
+     * fiche). L'identité vue à l'écran est renvoyée (identity_id) : si elle a changé entre-temps, rien n'est fait. Aucune identité
+     * n'est désignée par la requête : seule l'identité officielle de CE membre de CETTE communauté peut être modifiée.
+     */
+    public function civilAlign(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId] = $ctx;
+        $res = (new SseMemberCivilIdentityService())->align($tenantId, $userId, $this->actorId(), 'manual', (int) $request->input('identity_id', 0) ?: null, true);
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->civilBack($request, $userId));
+    }
+
+    /** « Nom volontairement différent » : l'identité n'est plus alignée (poser ou retirer le réglage). */
+    public function civilOverride(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId] = $ctx;
+        $res = (new SseMemberCivilIdentityService())->setOverride($tenantId, $userId, (int) $request->input('identity_id', 0), $request->inputString('on') === '1', $this->actorId());
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->civilBack($request, $userId));
+    }
+
+    /** « Mon identité officielle » (Mes papiers) : le membre aligne sa propre identité officielle sur son état civil. Rien d'autre que la sienne. */
+    public function alignMine(Request $request, array $params = []): Response
+    {
+        $userId = (int) Session::get('user_id');
+        $tenantId = (int) Session::get('tenant_id');
+        if ($userId < 1 || $tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(jnet_moi_url('mes-papiers'));
+        }
+        $res = (new SseMemberCivilIdentityService())->align($tenantId, $userId, $userId, 'manual', (int) $request->input('identity_id', 0) ?: null, false);
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect(jnet_moi_url('mes-papiers'));
+    }
+
+    /** Retour après un alignement : la liste des papiers du registre si la demande en vient, sinon la fiche papiers du membre. */
+    private function civilBack(Request $request, int $userId): string
+    {
+        return $this->sse && $request->inputString('back') === 'documents' ? url('atak/sse/papiers') : $this->back($userId);
     }
 
     public function createAlias(Request $request, array $params = []): Response
@@ -502,6 +562,14 @@ final class MemberIdentityPapersController
             error_log('Mes papiers : couvertures du jeu indisponibles : ' . $e->getMessage());
         }
 
+        $civil = null;
+        try {
+            // « Mon identité officielle » : suit-elle mon état civil ?
+            $civil = (new SseMemberCivilIdentityService())->inspect($tenantId, $userId);
+        } catch (\Throwable $e) {
+            error_log('Mes papiers : identité officielle indisponible : ' . $e->getMessage());
+        }
+
         $coverPanel = null;
         try {
             $coverPanel = (new \App\Services\Sse\SseCoverExportService())->panel($tenantId, $userId, false, true);
@@ -521,6 +589,7 @@ final class MemberIdentityPapersController
             'coverStatus' => \App\Services\Sse\SseIdGameCoverService::status($data['steam_linked'], $briefs, $data['kits'], $gameCovers),
             'maps' => self::maps(),
             'coverPanel' => $coverPanel,
+            'civil' => $civil,
         ]);
     }
 

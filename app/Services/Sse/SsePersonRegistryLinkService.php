@@ -15,7 +15,7 @@ use App\Services\Sse\MemberIdentityPapersService;
  * (sse_identities, adresse /atak/sse/papiers/identites/{id}) qui porte l'avis de recherche, la notice PDF, l'historique, les
  * détections et les images du sujet. Le lien est sse_identities.person_id.
  *
- * Une identité de couverture, d'emprunt ou falsifiée ne se révèle qu'avec l'habilitation Confidentiel (même règle que la
+ * Une identité de couverture, d'emprunt ou falsifiée ne se révèle qu'avec l'habilitation Secret (S) (même règle que la
  * fiche du registre) : sans elle, elle n'est ni proposée ni ouverte.
  */
 final class SsePersonRegistryLinkService

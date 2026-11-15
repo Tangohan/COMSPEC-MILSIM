@@ -24,7 +24,7 @@ use App\Repositories\SseIdKitRepository;
  * 3. Envoyer la version Athena vers le jeu (sendToGame) : kit par défaut composé des papiers valables de l'identité.
  *
  * Confidentialité : une identité d'emprunt, une couverture (remontée sans origine ou d'origine cover / import / game) ne
- * sont lues et traitées qu'avec la vérité de jeu (habilitation Confidentiel), comme le reste de l'onglet.
+ * sont lues et traitées qu'avec la vérité de jeu (habilitation Secret), comme le reste de l'onglet.
  */
 final class MemberIdentitySyncService
 {
@@ -273,7 +273,7 @@ final class MemberIdentitySyncService
      * Ce qui est réellement arrivé en jeu, d'après la dernière remontée du téléphone du joueur (cover_report : origine,
      * étape de livraison du paquet, relais, serveur). Sans remontée : rien n'est affirmé.
      * state : received (papiers d'Athena remis) | not_received (étape où la chaîne s'est arrêtée) | other (autre identité
-     * en jeu, habilitation Confidentiel seulement) | unknown.
+     * en jeu, habilitation Secret (S) seulement) | unknown.
      *
      * @param list<array<string, mixed>> $gameCovers SseIdGameCoverService::forUser(), le plus récent d'abord
      * @return array{state: string, title: string, why: string, todo: string, at: string, server: string, identity_ref: string, docs: list<string>}
@@ -499,7 +499,7 @@ final class MemberIdentitySyncService
             }
         }
         if ($report === null) {
-            return ['ok' => false, 'message' => 'Cette identité du jeu demande l’habilitation Confidentiel.'];
+            return ['ok' => false, 'message' => 'Cette identité du jeu demande l’habilitation Secret (S).'];
         }
         $identity = $report['identity'];
         $countryCodes = array_column((new \App\Repositories\SseIdCountryRepository())->listForTenant($tenantId, false), 'code');
@@ -585,7 +585,14 @@ final class MemberIdentitySyncService
         $this->history->markRestored($tenantId, $historyId, $actorId);
         $this->log($tenantId, $actorId, 'id_member.sync_restore', (int) $identity['id'], $userId, ['history' => $historyId, 'field' => $field]);
 
-        return ['ok' => true, 'message' => self::FIELDS[$field][0] . ' restauré ; la valeur remplacée est dans l’historique.'];
+        $message = self::FIELDS[$field][0] . ' restauré ; la valeur remplacée est dans l’historique.';
+        // Remettre à la main un nom écarté par l'alignement sur l'état civil est un choix : l'identité n'est plus alignée d'office.
+        if (($h['decision'] ?? '') === 'civil' && in_array($field, ['last_name', 'first_name'], true)
+            && (new SseMemberCivilIdentityService())->setOverride($tenantId, $userId, (int) $identity['id'], true, $actorId)['ok']) {
+            $message .= ' L’identité est marquée « nom volontairement différent » : elle ne suit plus l’état civil tant que ce réglage reste posé.';
+        }
+
+        return ['ok' => true, 'message' => $message];
     }
 
     /**

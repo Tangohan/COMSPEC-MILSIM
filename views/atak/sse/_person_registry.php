@@ -38,7 +38,7 @@ if ($registry === []) {
                 <?php endif; ?>
             </div>
         <?php elseif (!empty($registry['hidden'])): ?>
-            <p class="muted">Le dossier d’identité de cette personne relève de la vérité de jeu : il demande l’habilitation Confidentiel.</p>
+            <p class="muted">Le dossier d’identité de cette personne relève de la vérité de jeu : il demande l’habilitation Secret (S).</p>
         <?php else: ?>
             <p class="muted">Aucune identité du registre n’est rattachée à cette personne. Créez-la pour pouvoir placer un avis de recherche, éditer la notice PDF et suivre l’historique et les détections.</p>
             <?php if (!empty($registry['canCreate'])): ?>

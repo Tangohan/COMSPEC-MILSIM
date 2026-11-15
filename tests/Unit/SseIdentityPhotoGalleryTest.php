@@ -307,7 +307,7 @@ final class SseIdentityPhotoGalleryTest extends TestCase
     public function testEnglishDictionaryCoversTheNewTexts(): void
     {
         $en = self::read('lang/en/site_auto.php');
-        foreach (['Aucune photo pour cette identité', 'Définir comme portrait', 'Voir dans la photothèque', 'Afficher les %1 autres', 'Photos réservées à l’habilitation Confidentiel', 'Visionneuse de photos'] as $fr) {
+        foreach (['Aucune photo pour cette identité', 'Définir comme portrait', 'Voir dans la photothèque', 'Afficher les %1 autres', 'Photos réservées à l’habilitation Secret (S)', 'Visionneuse de photos'] as $fr) {
             self::assertStringContainsString("'" . $fr . "' =>", $en, $fr);
         }
     }

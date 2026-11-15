@@ -27,7 +27,44 @@ $mapLabel = static function (?int $ctx) use ($maps): string {
 $scopeLabels = ['default' => 'Par défaut', 'map' => 'Pour une carte', 'operation' => 'Pour une opération'];
 ?>
 <div class="bo-member-situation">
-    <p class="idm-sim"><strong>SIMULATION</strong> Papiers fictifs pour le jeu, émis par des pays imaginaires. Aucune valeur réelle.</p>
+
+    <?php
+    // « Mon identité officielle » : suit-elle mon état civil ? (le responsable peut aussi l'aligner depuis ma fiche papiers).
+    $civil = isset($civil) && is_array($civil) ? $civil : null;
+    $civilShown = $civil !== null && in_array($civil['state'], ['aligned', 'misaligned'], true) && is_array($civil['identity'] ?? null);
+    ?>
+    <?php if ($civilShown): ?>
+        <section class="idm-cover" aria-labelledby="idm-civil-title">
+            <h2 id="idm-civil-title">Mon identité officielle</h2>
+            <?php
+            $civilName = trim(mb_strtoupper((string) $civil['identity']['last_name']) . ' ' . (string) $civil['identity']['first_name']);
+            $civilTarget = trim(mb_strtoupper((string) ($civil['target']['last_name'] ?? '')) . ' ' . (string) ($civil['target']['first_name'] ?? ''));
+            ?>
+            <?php if ($civil['state'] === 'aligned'): ?>
+                <p class="idm-cover__todo">Votre identité officielle reprend votre état civil.</p>
+                <p class="idm-cover__todo">Identité officielle : <b translate="no"><?= $h($civilName) ?></b></p>
+            <?php else: ?>
+                <p class="idm-cover__todo">Votre identité officielle ne reprend pas votre état civil.</p>
+                <p class="idm-cover__todo">Identité officielle : <b translate="no"><?= $h($civilName) ?></b></p>
+                <p class="idm-cover__todo">État civil : <b translate="no"><?= $h($civilTarget) ?></b></p>
+                <?php
+                $cal = [
+                    'dom' => 'civil-align-moi',
+                    'post' => url('jnet/moi/mes-papiers/etat-civil'),
+                    'csrf' => \App\Core\Csrf::token(),
+                    'identity_id' => (int) $civil['identity']['id'],
+                    'name' => $civilName,
+                    'member' => $civilTarget,
+                    'changes' => $civil['changes'],
+                    'documents' => $civil['documents'],
+                    'button' => 'Aligner sur mon état civil',
+                    'self' => true,
+                ];
+                require dirname(__DIR__, 2) . '/partials/sse_civil_align.php';
+                ?>
+            <?php endif; ?>
+        </section>
+    <?php endif; ?>
 
     <section class="idm-cover" aria-labelledby="idm-cover-title">
         <h2 id="idm-cover-title">Ma couverture</h2>

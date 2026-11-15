@@ -23,7 +23,7 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
 <section class="shx" id="emettre" aria-labelledby="shx-title">
     <div class="shx__head">
         <h2 id="shx-title" class="shx__title">Émettre un document</h2>
-        <p class="shx__sub">Fiches PDF de jeu de rôle, à partir de cette fiche : vous rédigez les textes, puis vous émettez.</p>
+        <p class="shx__sub">Fiches PDF de jeu de rôle, générées d’un clic à partir de cette fiche : les textes sont rédigés automatiquement, sans rien remplir.</p>
     </div>
     <?php if (($m['reason'] ?? null) !== null): ?>
         <p class="shx__note" role="note"><?= $h($m['reason']) ?></p>
@@ -34,7 +34,15 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
             <div class="shx__buttons">
                 <?php foreach ($mAllowed as $a): ?>
                     <?php $primary = ($a['model'] ?? '') === ($m['primary'] ?? null); ?>
-                    <?php if (($a['action'] ?? 'link') === 'create_identity'): ?>
+                    <?php if (!empty($a['quick_url'])): ?>
+                        <div class="shx__item">
+                            <form method="post" action="<?= $h($a['quick_url']) ?>" class="shx__form">
+                                <?= Csrf::field() ?>
+                                <button type="submit" class="btn shx__btn<?= $primary ? ' shx__btn--primary' : '' ?>" title="<?= $h($a['hint']) ?>"><?= $h($a['label']) ?></button>
+                            </form>
+                            <a class="link shx__custom" href="<?= $h($a['url']) ?>">Personnaliser les textes</a>
+                        </div>
+                    <?php elseif (($a['action'] ?? 'link') === 'create_identity'): ?>
                         <form method="post" action="<?= $h($a['url']) ?>" class="shx__form">
                             <?= Csrf::field() ?>
                             <button type="submit" class="btn shx__btn" title="<?= $h($a['hint']) ?>"><?= $h($a['label']) ?></button>

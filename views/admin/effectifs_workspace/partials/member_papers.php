@@ -155,6 +155,7 @@ $photoField = static function (array $i) use ($ph, $manage, $base, $csrfToken, $
         <?php else: ?>
             <p class="eff-fm-lead">Pas encore d’identité de jeu. Elle reprend la fiche du personnage (nom, prénom, naissance, nationalité).</p>
         <?php endif; ?>
+        <?php require __DIR__ . '/member_papers_civil.php'; ?>
         <?php if ($manage): ?>
             <details class="eff-card__edit"<?= $primary === null ? ' open' : '' ?>>
                 <summary><?= $primary === null ? 'Créer l’identité principale' : 'Modifier l’identité principale' ?></summary>
@@ -166,17 +167,6 @@ $photoField = static function (array $i) use ($ph, $manage, $base, $csrfToken, $
                     <?php endif; ?>
                     <button type="submit" class="eff-btn eff-btn--primary">Enregistrer</button>
                 </form>
-                <?php if ($primary !== null): ?>
-                    <form method="post" action="<?= $ph($base . '/identite-principale') ?>" class="eff-card__form">
-                        <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
-                        <?php foreach (['last_name', 'first_name', 'sex', 'birth_date', 'birth_place'] as $k): ?>
-                            <input type="hidden" name="<?= $ph($k) ?>" value="<?= $ph($proposal[$k] !== '' ? $proposal[$k] : ($primary[$k] ?? '')) ?>">
-                        <?php endforeach; ?>
-                        <input type="hidden" name="nationality" value="<?= $ph($proposal['nationality'] !== '' ? $proposal['nationality'] : ($primary['nationality'] ?? '')) ?>">
-                        <input type="hidden" name="profession" value="<?= $ph($primary['profession'] ?? '') ?>">
-                        <button type="submit" class="eff-fm-btn is-sm">Reprendre la fiche du personnage</button>
-                    </form>
-                <?php endif; ?>
             </details>
         <?php endif; ?>
     </article>
@@ -204,7 +194,7 @@ $photoField = static function (array $i) use ($ph, $manage, $base, $csrfToken, $
             </ul>
         <?php endif; ?>
         <?php if (!$truth): ?>
-            <p class="eff-card__hint">Les alias et identités de couverture ne sont visibles qu’avec l’habilitation Confidentiel.</p>
+            <p class="eff-card__hint">Les alias et identités de couverture ne sont visibles qu’avec l’habilitation Secret (S).</p>
         <?php endif; ?>
         <?php if ($manage && $truth): ?>
             <details class="eff-card__edit">

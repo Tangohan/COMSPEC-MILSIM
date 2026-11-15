@@ -109,7 +109,7 @@ private _prune = {
 };
 private _play = ["snd", "mus"];
 private _files = createHashMapFromArray [["pho", "photo"], ["mp3", "music"]];
-private _kindName = { params ["_k"]; switch (_k) do { case "snd": { "son" }; case "mus": { "musique" }; case "mp3": { "morceau" }; case "pho": { "photo" }; case "pos": { "position" }; case "wp": { "itinéraire" }; case "plan": { "plan" }; case "seek": { "fiche SEEK" }; case "sse": { "fiche SSE" }; case "note": { "note" }; case "idc": { "fiche contrôle ID" }; default { "élément" }; } };
+private _kindName = { params ["_k"]; switch (_k) do { case "snd": { "son" }; case "mus": { "musique" }; case "mp3": { "morceau" }; case "pho": { "photo" }; case "pos": { "position" }; case "wp": { "itinéraire" }; case "plan": { "plan" }; case "seek": { "fiche SEEK" }; case "sse": { "fiche SSE" }; case "note": { "note" }; case "idc": { "fiche contrôle ID" }; case "fiche": { "fiche du site" }; default { "élément" }; } };
 private _sentSet = {
     params ["_id", "_state"];
     { if ((_x select 0) isEqualTo _id) then { _x set [3, _state]; }; } forEach (_bt get "sent");
@@ -272,6 +272,16 @@ switch (_act) do {
         if !([_u] call _reach) exitWith { ["WARNING", format ["%1 hors de portée Bluetooth (%2 m) ou Bluetooth éteint", (_bt get "paired") getOrDefault [_uid, "L'appareil"], round _range]] call _say; };
         [_u, "idc", _key, trim format ["%1 %2", toUpper (_c get "last"), _c get "first"]] call _offer;
         call _rerender;
+    };
+    // Fiche du portail (app Fiches) : seule la référence part (fn_btItems « fiche »), le destinataire la lit selon son habilitation.
+    case "ficheSend": {
+        _arg params [["_ref", ""], ["_uid", ""]];
+        if (_ref isEqualTo "" || {!(call _usable)}) exitWith { false };
+        private _u = [_uid] call _byUid;
+        if !([_u] call _reach) exitWith { false };
+        [_u, "fiche", _ref, ["title", _ref] call comspec_atak_native_fnc_fichesAction] call _offer;
+        call _rerender;
+        true
     };
     case "idcNfc": {
         private _c = ["idcGet", _arg] call comspec_atak_native_fnc_btItems;

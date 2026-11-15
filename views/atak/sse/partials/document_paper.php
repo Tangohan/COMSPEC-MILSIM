@@ -18,7 +18,7 @@ if ($unitLabel === '') {
 }
 $sectionLabel = trim((string) ($sectionLabel ?? 'Bureau SSE — Renseignement'));
 $livePreview = (bool) ($livePreview ?? false);
-$classLabel = (string) ($document['classification_label'] ?? 'Confidentiel');
+$classLabel = (string) ($document['classification_label'] ?? 'Secret (S)');
 $classUpper = mb_strtoupper($classLabel, 'UTF-8');
 $ref = (string) ($document['reference_code'] ?? 'DOC-····-····');
 $title = (string) ($document['title'] ?? '');
@@ -49,7 +49,7 @@ $footerDisclaimer = (string) ($chrome['footer'] ?? 'Ne constitue pas une preuve 
     <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?> sse-doc-paper-style--<?= $h($paperStyle) ?>" aria-label="Aperçu du document" data-classification="<?= $h($classCode) ?>">
         <div class="sse-doc-paper__wear" aria-hidden="true"></div>
         <div class="sse-doc-paper__banner">
-            <span><?= $h((string) ($chrome['banner'] ?? 'DIFFUSION RESTREINTE — EXPLOITATION TERRAIN')) ?></span>
+            <span><?= $h((string) ($chrome['banner'] ?? 'CUI — EXPLOITATION TERRAIN')) ?></span>
             <strong><?= $h($classUpper) ?></strong>
             <span>Exemplaire <?= (int) $marks['copy_index'] ?>/<?= (int) $marks['copy_total'] ?></span>
         </div>
