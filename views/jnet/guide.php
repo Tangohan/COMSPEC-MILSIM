@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Guide de l'extranet JNET pour les membres (JnetPortalController::guide), dans la coque views/jnet/_page.php : sommaire
- * cliquable à gauche, recherche dans la page, neuf chapitres à ancres. Rédigé d'après ce que le code propose réellement ;
+ * cliquable à gauche, recherche dans la page, dix chapitres à ancres. Rédigé d'après ce que le code propose réellement ;
  * les rubriques personnelles du hub (Mon profil, Mon ATAK, Mes données, Mon service) sont décrites sans adresse précise.
  * Le script public/assets/js/jnet_guide.js filtre le sommaire et les chapitres.
  */
@@ -22,6 +22,7 @@ $toc = [
     'securite' => '7. Sécurité et confidentialité',
     'faq' => '8. Questions fréquentes',
     'glossaire' => '9. Glossaire',
+    'identites' => '10. Mes identités',
 ];
 /** Sous-rubriques de l'espace d'unité (chapitre 3) : ancre => titre. */
 $tabs = [
@@ -703,6 +704,45 @@ $tabs = [
                         <dt>SSE</dt>
                         <dd>Le portail de renseignement et de suivi d’Athena, protégé par un droit d’entrée et un engagement de confidentialité.</dd>
                     </dl>
+                </article>
+            </section>
+
+            <!-- 10. Mes identités -->
+            <section class="jg-sec" id="identites" aria-labelledby="identites-t" data-jg-sec>
+                <h2 id="identites-t">10. Mes identités</h2>
+                <article class="jg-sub" data-jg-sub>
+                    <h3>Quel nom s’affiche pour moi ?</h3>
+                    <p>Un même membre peut avoir plusieurs noms. Sur le site, un seul est montré à la fois, toujours selon le même ordre :</p>
+                    <ol>
+                        <li>Vos prénom et nom (l’état civil du personnage), tels que la communauté les affiche.</li>
+                        <li>Sinon votre indicatif.</li>
+                        <li>Sinon le nom de votre compte (jamais une adresse e-mail).</li>
+                        <li>Sinon simplement « Membre ».</li>
+                    </ol>
+                    <p>Sur la carte tactique, dans l’ATAK et en jeu, c’est l’inverse : votre indicatif passe en premier.</p>
+                    <p>Si l’identité d’un membre est masquée pour vous, il apparaît sous un libellé anonymisé et rien d’autre n’est montré.</p>
+                </article>
+                <article class="jg-sub" data-jg-sub>
+                    <h3>Les champs, un par un</h3>
+                    <dl class="jg-dl">
+                        <dt>Prénom et Nom (État civil du personnage)</dt>
+                        <dd>C’est le nom que tout le monde voit : fiche, annuaire, JNET, messages et notifications.</dd>
+                        <dt>Indicatif</dt>
+                        <dd>Votre nom de radio. Il sert sur la carte et en jeu. Il remplace votre nom ailleurs seulement si vos prénom et nom ne sont pas renseignés.</dd>
+                        <dt>Nom du compte</dt>
+                        <dd>Votre pseudo, souvent celui de Discord. Il ne s’affiche que si ni vos prénom et nom ni votre indicatif ne sont renseignés ; sur votre fiche, il apparaît en complément.</dd>
+                        <dt>Trigramme</dt>
+                        <dd>Trois lettres uniques dans la communauté, utilisées dans les paraphes, l’organigramme et certaines listes quand la communauté a choisi ce format. Il reste le même si votre nom change.</dd>
+                        <dt>Surnom</dt>
+                        <dd>Un nom d’usage montré sur la fiche. Il ne remplace jamais vos prénom, nom ou indicatif.</dd>
+                        <dt>Numéro de membre et matricules</dt>
+                        <dd>Des numéros qui vous identifient (numéro de membre, matricule d’unité, matricule interne). Ils ne servent pas de nom.</dd>
+                    </dl>
+                    <p>Votre adresse e-mail n’est jamais utilisée comme nom.</p>
+                </article>
+                <article class="jg-sub" data-jg-sub>
+                    <h3>Les modifier</h3>
+                    <p>Ouvrez votre fiche, puis « Modifier » : les champs Prénom, Nom, Indicatif, Trigramme et Surnom s’y trouvent, avec un aperçu de l’affichage en liste, sur la fiche et sur la carte. Les responsables des effectifs peuvent corriger l’état civil du personnage depuis la fiche du membre.</p>
                 </article>
             </section>
         </div>
