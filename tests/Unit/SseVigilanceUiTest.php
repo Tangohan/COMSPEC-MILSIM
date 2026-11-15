@@ -119,7 +119,7 @@ final class SseVigilanceUiTest extends TestCase
         return $res;
     }
 
-    private function count(string $table): int
+    private function rowCount(string $table): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM ' . $table)->fetchColumn();
     }
@@ -180,7 +180,7 @@ final class SseVigilanceUiTest extends TestCase
         ]);
         $res = $ctl->issue($req, ['kind' => 'personne', 'id' => (string) $pid, 'model' => 'vigilance']);
         self::assertSame(302, $res->statusCode());
-        self::assertSame(1, $this->count('sse_doc_issues'));
+        self::assertSame(1, $this->rowCount('sse_doc_issues'));
         $view = (new SseAlertService())->findVigilance(1, 1);
         self::assertNotNull($view);
         self::assertSame(['danger', 4, 'active'], [$view['level'], $view['rank'], $view['state']]);
@@ -199,7 +199,7 @@ final class SseVigilanceUiTest extends TestCase
         $ctl = new SseSheetController(null, null, null, null, null, self::access());
         $res = $ctl->issue($this->post(['lang' => 'fr', 'classification' => 'confidentiel', 'level' => 'watch', 'service' => 'OTHER', 'service_other' => 'FBI']), ['kind' => 'personne', 'id' => (string) $pid, 'model' => 'vigilance']);
         self::assertSame(422, $res->statusCode());
-        self::assertSame(0, $this->count('sse_doc_issues'));
+        self::assertSame(0, $this->rowCount('sse_doc_issues'));
         self::assertStringContainsString('organisation réelle', $res->body());
     }
 
@@ -209,12 +209,12 @@ final class SseVigilanceUiTest extends TestCase
         $ctl = new SseSheetController(null, null, null, null, null, self::access());
         $res = $ctl->issue($this->post(['lang' => 'fr', 'level' => 'watch'], false), ['kind' => 'personne', 'id' => (string) $pid, 'model' => 'vigilance']);
         self::assertSame(419, $res->statusCode());
-        self::assertSame(0, $this->count('sse_doc_issues'));
+        self::assertSame(0, $this->rowCount('sse_doc_issues'));
 
         $read = self::access('confidentiel', false, 1, 7, static fn (string $s, string $l): bool => $l === 'read');
         $res = (new SseSheetController(null, null, null, null, null, $read))->issue($this->post(['lang' => 'fr', 'classification' => 'confidentiel', 'level' => 'watch']), ['kind' => 'personne', 'id' => (string) $pid, 'model' => 'vigilance']);
         self::assertSame(403, $res->statusCode());
-        self::assertSame(0, $this->count('sse_doc_issues'));
+        self::assertSame(0, $this->rowCount('sse_doc_issues'));
         self::assertStringContainsString('Droit manquant', $res->body());
         self::assertStringContainsString('Vous pouvez préparer la fiche, pas l’émettre.', (new SseSheetController(null, null, null, null, null, $read))->editor($this->getReq(), ['kind' => 'personne', 'id' => (string) $pid, 'model' => 'vigilance'])->body());
     }
@@ -233,7 +233,7 @@ final class SseVigilanceUiTest extends TestCase
         $ctl = new SseSheetController(null, null, null, null, null, self::access());
         $ctl->issue($this->post(['lang' => 'fr', 'classification' => 'confidentiel', 'level' => 'watch', 'validity' => 'h24']), ['kind' => 'personne', 'id' => (string) $pid, 'model' => 'vigilance']);
         $ctl->issue($this->post(['lang' => 'fr', 'classification' => 'confidentiel', 'level' => 'watch', 'validity' => 'until_lifted']), ['kind' => 'personne', 'id' => (string) $pid, 'model' => 'vigilance']);
-        self::assertSame(2, $this->count('sse_doc_issues'));
+        self::assertSame(2, $this->rowCount('sse_doc_issues'));
         $h = (new SseAlertService())->findVigilance(1, 1);
         $l = (new SseAlertService())->findVigilance(1, 2);
         self::assertNotSame('', $h['expires_at']);
@@ -252,13 +252,13 @@ final class SseVigilanceUiTest extends TestCase
         $ctl = new SseVigilanceController(null, null, null, self::access());
 
         $ctl->renew($this->post(['days' => '90'], false), ['id' => (string) $first['id']]);
-        self::assertSame(1, $this->count('sse_doc_issues'));
+        self::assertSame(1, $this->rowCount('sse_doc_issues'));
         self::assertStringContainsString('trop longtemps', (string) $this->flash('error'));
 
         $res = $ctl->renew($this->post(['days' => '90', 'from' => 'personne']), ['id' => (string) $first['id']]);
         self::assertSame(302, $res->statusCode());
         self::assertStringContainsString('#documents-emis', (string) $res->headerValue('Location'));
-        self::assertSame(2, $this->count('sse_doc_issues'));
+        self::assertSame(2, $this->rowCount('sse_doc_issues'));
         $svc = new SseAlertService();
         self::assertSame('lifted', $svc->findVigilance(1, (int) $first['id'])['state']);
         $new = $svc->findVigilance(1, 2);
@@ -272,7 +272,7 @@ final class SseVigilanceUiTest extends TestCase
         $first = $this->issueDirect($pid);
         $reader = self::access('confidentiel', false, 1, 7, static fn (string $s, string $l): bool => $l === 'read');
         (new SseVigilanceController(null, null, null, $reader))->renew($this->post(['days' => '30']), ['id' => (string) $first['id']]);
-        self::assertSame(1, $this->count('sse_doc_issues'));
+        self::assertSame(1, $this->rowCount('sse_doc_issues'));
         $msg = (string) $this->flash('error');
         self::assertStringContainsString('Droit manquant', $msg);
         self::assertStringNotContainsString('Action non autorisée', $msg);
@@ -314,7 +314,7 @@ final class SseVigilanceUiTest extends TestCase
         self::assertStringContainsString('introuvable', (string) $this->flash('error'));
         $foreign->renew($this->post(['days' => '30']), ['id' => (string) $first['id']]);
         self::assertStringContainsString('introuvable', (string) $this->flash('error'));
-        self::assertSame(1, $this->count('sse_doc_issues'));
+        self::assertSame(1, $this->rowCount('sse_doc_issues'));
         self::assertSame('active', (new SseAlertService())->findVigilance(1, (int) $first['id'])['state']);
         // Un identifiant qui n'existe pas : même réponse.
         $mine = new SseVigilanceController(null, null, null, self::access());
