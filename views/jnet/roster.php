@@ -2,6 +2,10 @@
 /** @var list<array<string,mixed>> $rosterMembers */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $members = is_array($rosterMembers ?? null) ? $rosterMembers : [];
+\App\Support\MemberIdentity::preload(
+    (int) \App\Core\Session::get('tenant_id'),
+    array_map(static fn ($m): int => is_array($m) ? (int) ($m['id'] ?? $m['user_id'] ?? 0) : 0, $members)
+);
 ?>
 <section class="jnet-panel">
     <div class="jnet-panel__head">
@@ -15,7 +19,7 @@ $members = is_array($rosterMembers ?? null) ? $rosterMembers : [];
             <table class="jnet-table">
                 <thead>
                     <tr>
-                        <th>Indicatif / nom</th>
+                        <th>Nom</th>
                         <th>Statut</th>
                         <th>Rôle</th>
                     </tr>
@@ -23,10 +27,12 @@ $members = is_array($rosterMembers ?? null) ? $rosterMembers : [];
                 <tbody>
                     <?php foreach ($members as $m): ?>
                         <?php
-                        $label = trim((string) ($m['callsign'] ?? ''));
-                        if ($label === '') {
-                            $label = (string) ($m['display_name'] ?? 'Membre');
-                        }
+                        // Règle unique : prénom + nom du personnage, puis indicatif, puis nom du compte.
+                        $label = member_label([
+                            'id' => (int) ($m['id'] ?? $m['user_id'] ?? 0),
+                            'display_name' => (string) ($m['display_name'] ?? ''),
+                            'callsign' => (string) ($m['callsign'] ?? ''),
+                        ], 'list');
                         $status = (string) ($m['status'] ?? '');
                         $statusLabel = match ($status) {
                             'active' => 'Actif',

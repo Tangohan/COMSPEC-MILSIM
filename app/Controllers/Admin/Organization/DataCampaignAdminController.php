@@ -58,6 +58,7 @@ final class DataCampaignAdminController
             'schemaReady' => $ready,
             'campaigns' => $ready ? $this->repo->listCampaigns($tenantId) : [],
             'settings' => $this->repo->settings($tenantId),
+            'openNowPlan' => $ready ? $this->openNowPlan($tenantId) : null,
             'units' => $ready ? $this->repo->units($tenantId) : [],
             'blockCatalog' => DataCampaignBlocks::CATALOG,
             'defaultYear' => (int) date('Y'),
@@ -135,6 +136,48 @@ final class DataCampaignAdminController
         return Response::redirect(url('back-office/organisation/fiabilisation' . (isset($result['id']) ? '/' . $result['id'] : '')));
     }
 
+    /**
+     * « Ouvrir maintenant » : même passage que la tâche planifiée et que la commande data-campaign.php (--open-now), limité à
+     * cette communauté. Le nombre de membres concernés est annoncé avant l'envoi (confirmation en ligne du bouton).
+     */
+    public function openNow(Request $request, array $params = []): Response
+    {
+        $ctx = $this->writeContext($request, url('back-office/organisation/fiabilisation'));
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $actorId] = $ctx;
+        $result = $this->service->runScheduled([
+            'force' => true,
+            'tenant' => $tenantId,
+            'actor' => $actorId,
+            'deadline' => $request->input('deadline') !== null ? (string) $request->input('deadline') : null,
+        ]);
+        $plan = $result['plan'][0] ?? null;
+        if ($result['opened'] > 0) {
+            Session::flash('success', 'Campagne ouverte par Athena : ' . (int) ($plan['members'] ?? 0) . ' membre(s) concerné(s), les notifications partent par lots.');
+        } else {
+            Session::flash('error', 'Aucune campagne ouverte : ' . (string) ($plan['reason'] ?? 'rien à faire.'));
+        }
+
+        return Response::redirect(url('back-office/organisation/fiabilisation'));
+    }
+
+    public function update(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('back-office/organisation/fiabilisation/' . $id);
+        $ctx = $this->writeContext($request, $back);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $actorId] = $ctx;
+        $result = $this->service->updateCampaign($tenantId, $actorId, $id, (string) $request->input('title', ''), (string) $request->input('due_on', ''));
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect($back);
+    }
+
     public function saveSettings(Request $request, array $params = []): Response
     {
         $ctx = $this->writeContext($request, url('back-office/organisation/fiabilisation'));
@@ -143,7 +186,8 @@ final class DataCampaignAdminController
         }
         [$tenantId, $actorId] = $ctx;
         $result = $this->service->saveSettings($tenantId, $actorId, [
-            'auto_enabled' => $request->input('auto_enabled', '0'),
+            'auto_enabled' => $request->input('auto_enabled', '1'),
+            'emails_enabled' => $request->input('emails_enabled', '1'),
             'open_md' => self::md($request->input('open_day'), $request->input('open_month')),
             'close_md' => self::md($request->input('close_day'), $request->input('close_month')),
             'blocks' => $request->input('blocks'),
@@ -230,6 +274,20 @@ final class DataCampaignAdminController
             ->header('Content-Type', 'text/csv; charset=UTF-8')
             ->header('Content-Disposition', 'attachment; filename="fiabilisation-' . (int) $campaign['campaign_year'] . '-' . (int) $campaign['id'] . '.csv"')
             ->setBody($csv);
+    }
+
+    /**
+     * Ce que ferait « Ouvrir maintenant » (sans rien écrire) : nombre de membres concernés ou raison du refus.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function openNowPlan(int $tenantId): ?array
+    {
+        try {
+            return $this->service->runScheduled(['force' => true, 'dry_run' => true, 'tenant' => $tenantId])['plan'][0] ?? null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** @param array<string, string> $params */

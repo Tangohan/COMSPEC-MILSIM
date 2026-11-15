@@ -38,7 +38,7 @@ final class SseLoreController
 
     public function index(Request $request, array $params = []): Response
     {
-        if (!$this->ctx->canLore()) {
+        if (!$this->ctx->allows('lore', 'read')) {
             return $this->ctx->denied($request);
         }
 
@@ -52,7 +52,7 @@ final class SseLoreController
 
     public function store(Request $request, array $params = []): Response
     {
-        if (!$this->ctx->canLore() || !$this->ctx->csrfOk($request)) {
+        if (!$this->ctx->allows('lore', 'add') || !$this->ctx->csrfOk($request)) {
             return $this->ctx->denied($request, self::BASE);
         }
         $tenantId = $this->ctx->tenantId();
@@ -79,7 +79,7 @@ final class SseLoreController
 
     public function show(Request $request, array $params = []): Response
     {
-        $session = $this->session($params);
+        $session = $this->session($params, 'read');
         if ($session === null) {
             return $this->ctx->denied($request, self::BASE);
         }
@@ -115,7 +115,7 @@ final class SseLoreController
 
     public function update(Request $request, array $params = []): Response
     {
-        $session = $this->session($params);
+        $session = $this->session($params, 'write');
         if ($session === null || !$this->ctx->csrfOk($request)) {
             return $this->ctx->denied($request, self::BASE);
         }
@@ -148,7 +148,7 @@ final class SseLoreController
     /** Créer une personne à la main (avant la mission, sans passer par le jeu), éventuellement générée pour le pays. */
     public function personCreate(Request $request, array $params = []): Response
     {
-        $session = $this->session($params);
+        $session = $this->session($params, 'add');
         if ($session === null || !$this->ctx->csrfOk($request) || $session['locked']) {
             Session::flash('error', $session !== null && $session['locked'] ? 'Session verrouillée.' : 'Action non autorisée.');
 
@@ -202,7 +202,7 @@ final class SseLoreController
 
     public function person(Request $request, array $params = []): Response
     {
-        $session = $this->session($params);
+        $session = $this->session($params, 'read');
         $tenantId = $this->ctx->tenantId();
         $iid = (int) ($params['identityId'] ?? 0);
         if ($session === null || !$this->service()->lore()->isMember($tenantId, (int) $session['id'], $iid)) {
@@ -232,7 +232,7 @@ final class SseLoreController
 
     public function personUpdate(Request $request, array $params = []): Response
     {
-        $session = $this->session($params);
+        $session = $this->session($params, 'write');
         $tenantId = $this->ctx->tenantId();
         $iid = (int) ($params['identityId'] ?? 0);
         if ($session === null || !$this->ctx->csrfOk($request) || !$this->service()->lore()->isMember($tenantId, (int) $session['id'], $iid)) {
@@ -339,7 +339,7 @@ final class SseLoreController
 
     public function personRemove(Request $request, array $params = []): Response
     {
-        $session = $this->session($params);
+        $session = $this->session($params, 'delete');
         $tenantId = $this->ctx->tenantId();
         $iid = (int) ($params['identityId'] ?? 0);
         if ($session === null || !$this->ctx->csrfOk($request) || $session['locked']) {
@@ -356,7 +356,7 @@ final class SseLoreController
 
     public function import(Request $request, array $params = []): Response
     {
-        $session = $this->session($params);
+        $session = $this->session($params, 'add');
         if ($session === null || !$this->ctx->csrfOk($request)) {
             return $this->ctx->denied($request, self::BASE);
         }
@@ -381,7 +381,7 @@ final class SseLoreController
 
     public function export(Request $request, array $params = []): Response
     {
-        $session = $this->session($params);
+        $session = $this->session($params, 'export');
         if ($session === null) {
             return $this->ctx->denied($request, self::BASE);
         }
@@ -399,10 +399,10 @@ final class SseLoreController
 
     // ------------------------------------------------------------ Outils
 
-    /** @return array<string, mixed>|null session de la communauté, si le compte est MJ */
-    private function session(array $params): ?array
+    /** @return array<string, mixed>|null session de la communauté, si le compte a ce niveau de droit sur le lore */
+    private function session(array $params, string $level = 'write'): ?array
     {
-        if (!$this->ctx->canLore()) {
+        if (!$this->ctx->allows('lore', $level)) {
             return null;
         }
 

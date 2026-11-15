@@ -16,6 +16,7 @@ use App\Services\Sse\SseAutomationService;
 use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseDigitalLabService;
 use App\Services\Sse\SseIntelFoundationService;
+use App\Services\Sse\SseSeekPhotoService;
 use App\Services\Sse\SseTerrainService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
@@ -484,6 +485,13 @@ final class SseApiController
             return $actor;
         }
 
+        // Cliché du terminal SEEK II envoyé avec la référence de la fiche signée (REC-…) : « SIGNER ET ENVOYER » ne crée pas
+        // de fiche personne, la photo n'avait donc aucun identifiant numérique où se joindre.
+        $recRef = (string) ($params['id'] ?? '');
+        if (SseSeekPhotoService::isRecReference($recRef)) {
+            return $this->seekPhotoStore($tenantId, $recRef, $actor);
+        }
+
         $person = $this->persons->findById($personId, $tenantId);
         if ($person === null) {
             return Response::json(['error' => 'not_found', 'message' => 'Fiche introuvable.'], 404);
@@ -607,6 +615,49 @@ final class SseApiController
         );
 
         return Response::json($photo ?? ['id' => $photoId, 'image_path' => $relative], 201);
+    }
+
+    /**
+     * Cliché du visage d'une fiche SEEK II (POST /api/sse/persons/REC-…/photos). Rangé à la photothèque SSE, hors du dossier
+     * public, et relié à l'identité de la fiche ; voir SseSeekPhotoService.
+     *
+     * @param array<string, mixed> $actor
+     */
+    private function seekPhotoStore(int $tenantId, string $recRef, array $actor): Response
+    {
+        $file = TerrainUploadedImage::fromGlobals();
+        if ($file === null && TerrainUploadedImage::declaredBodyExceedsPostMax()) {
+            return Response::json(['error' => 'file_too_large', 'message' => 'La photo est trop lourde. Essayez une capture plus légère.'], 400);
+        }
+        if ($file === null) {
+            return Response::json(['error' => 'missing_image', 'message' => 'Aucune photo reçue. Reprenez la capture du visage.'], 400);
+        }
+        $author = trim((string) ($_POST['author'] ?? $_POST['author_callsign'] ?? $actor['callsign'] ?? ''));
+        try {
+            $result = (new SseSeekPhotoService())->store($tenantId, $recRef, $file, [
+                'angle' => (string) ($_POST['angle'] ?? 'face'),
+                'author' => $author,
+                'grid' => (string) ($_POST['grid_reference'] ?? $_POST['grid_ref'] ?? ''),
+                'caption' => (string) ($_POST['caption'] ?? ''),
+                'user_id' => isset($actor['user_id']) ? (int) $actor['user_id'] : null,
+            ]);
+        } catch (\PDOException $e) {
+            error_log('[sse/photos] fiche SEEK II : photo non enregistrée : ' . $e->getMessage());
+
+            return Response::json(['error' => 'unavailable', 'message' => 'Photo non enregistrée pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            return Response::json(['error' => $result['error'], 'message' => 'Photo refusée : rien n’a été enregistré.'], $result['status']);
+        }
+        $this->activityLog->record(
+            $tenantId,
+            self::DEFAULT_MAP_ID,
+            'SSE_PHOTO',
+            sprintf('Photo du visage jointe à la fiche SEEK II %s', $result['rec']),
+            $author !== '' ? $author : 'Terrain'
+        );
+
+        return Response::json(['id' => $result['id'], 'rec' => $result['rec'], 'identity_id' => $result['identity_id'], 'duplicate' => $result['duplicate']], $result['duplicate'] ? 200 : 201);
     }
 
     public function personsBiometricsSim(Request $request, array $params = []): Response

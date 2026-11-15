@@ -33,8 +33,18 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('as
                 <?php if ($imagesDocId > 0): ?><input type="hidden" name="document_id" value="<?= $imagesDocId ?>"><?php endif; ?>
                 <?php $photoDis = ''; $hasPhoto = $imgPhoto !== null; require __DIR__ . '/_photo_input.php'; ?>
                 <div>
-                    <label for="idi-signature">Signature (image PNG, JPG ou WebP, fond transparent conseillé, <?= (int) \App\Services\Sse\SseIdImageService::maxMb('signature') ?> Mo maximum)</label>
-                    <input id="idi-signature" type="file" name="signature" accept="image/png,image/jpeg,image/webp">
+                    <?php
+                    $sigpad = [
+                        'id' => 'idi-signature',
+                        'label' => 'Signature du titulaire (fictive)',
+                        'file_name' => 'signature',
+                        'theme' => 'dark',
+                        'ink' => '#14202e',
+                        'name_hint' => trim((string) ($identity['first_name'] ?? '') . ' ' . (string) ($identity['last_name'] ?? '')),
+                    ];
+                    require dirname(__DIR__, 3) . '/partials/signature_pad.php';
+                    ?>
+                    <p class="idw-note">Dessinez-la ou chargez une image (PNG, JPG ou WebP, fond transparent conseillé, <?= (int) \App\Services\Sse\SseIdImageService::maxMb('signature') ?> Mo maximum). Elle reste une donnée de jeu de rôle.</p>
                     <?php if ($imgSign !== null): ?><label class="idw-check"><input type="checkbox" name="signature_remove" value="1"> Retirer la signature importée</label><?php endif; ?>
                 </div>
                 <div class="idp-actions"><button class="btn" type="submit">Enregistrer les images</button></div>

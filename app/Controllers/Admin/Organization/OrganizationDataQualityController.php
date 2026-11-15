@@ -75,6 +75,8 @@ final class OrganizationDataQualityController
             'schemaReady' => $this->billetService->schemaReady(),
             'csrfToken' => Csrf::token(),
             'missingMediaUsers' => $this->missingMediaUsers($tenantId),
+            // Données anciennes à vérifier : lecture seule ; la simulation de la reprise des noms se lit avec ?simuler=1.
+            'legacy' => \App\Services\LegacyData\LegacyDataScreen::build($tenantId, (string) $request->query('simuler', '') === '1'),
             'storage' => $this->storage()->overview($tenantId),
             'canPurge' => $gate->allows('organization.data.purge'),
             'confirmWord' => self::CONFIRM_WORD,

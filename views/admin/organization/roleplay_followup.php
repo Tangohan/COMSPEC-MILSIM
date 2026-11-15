@@ -13,6 +13,7 @@ use App\Support\RoleplayFollowupBoard;
 $rpFeatureEnabled = !empty($rpFeatureEnabled);
 $rpBilansEnabled = !isset($rpBilansEnabled) || !empty($rpBilansEnabled);
 $rpRows = is_array($rpRows ?? null) ? $rpRows : [];
+member_labels_preload($rpRows, 'user_id');
 $rpTrackedCount = (int) ($rpTrackedCount ?? 0);
 $rpEligibleCount = (int) ($rpEligibleCount ?? 0);
 $rpTotalActiveMembers = (int) ($rpTotalActiveMembers ?? count($rpRows));
@@ -126,7 +127,7 @@ $filters = [
             <tbody data-rps-rows>
                 <?php foreach ($rpRows as $row):
                     $uid = (int) $row['user_id'];
-                    $name = trim((string) ($row['display_name'] ?? '')) ?: trim((string) ($row['callsign'] ?? '')) ?: ('Compte n°' . $uid);
+                    $name = \App\Support\MemberIdentity::numberedLabelForUser(['id' => $uid, 'display_name' => (string) ($row['display_name'] ?? ''), 'callsign' => (string) ($row['callsign'] ?? '')], 'list');
                     $stage = trim((string) ($row['stage'] ?? ''));
                     $pos = RoleplayFollowupBoard::stagePosition($stage, $rpStagesOptions);
                     $action = RoleplayFollowupBoard::nextAction($row, $today);

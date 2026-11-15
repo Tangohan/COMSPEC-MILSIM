@@ -44,7 +44,7 @@ final class RoleplayPageController
         if ($tutorId > 0) {
             $tutor = $this->userRepository->findById($tutorId, $tenantId);
             if ($tutor) {
-                $tutorLabel = trim((string) ($tutor['display_name'] ?? '')) ?: trim((string) ($tutor['callsign'] ?? ''));
+                $tutorLabel = member_label(['id' => $tutorId, 'display_name' => (string) ($tutor['display_name'] ?? ''), 'callsign' => (string) ($tutor['callsign'] ?? '')], 'list', $tenantId);
             }
         }
 

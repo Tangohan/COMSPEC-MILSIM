@@ -18,7 +18,7 @@ $initials = mb_strtoupper(mb_substr((string) $i['first_name'], 0, 1) . mb_substr
 $age = \App\Services\Sse\SseFileSearchService::age($i['birth_date'] ?? null, gmdate('Y-m-d'));
 $tone = static fn (string $m): string => in_array($m, ['armed_dangerous', 'warrant', 'wanted'], true) ? 'r' : ($m === 'caution' ? 'a' : 'b');
 $mentionLabel = static fn (string $m): string => \App\Support\SseFileCatalog::label(\App\Support\SseFileCatalog::MENTIONS, $m, $m);
-$photoUrl = isset($hit['photo']['path']) ? user_media_public_url((string) $hit['photo']['path']) : (($i['photo_path'] ?? null) ? user_media_public_url((string) $i['photo_path']) : null);
+$photoUrl = isset($hit['photo']['path']) ? \App\Services\Sse\SseSeekPhotoService::photoUrl($hit['photo']) : (($i['photo_path'] ?? null) ? user_media_public_url((string) $i['photo_path']) : null);
 $href = url('atak/sse/fichiers/sujet/' . (int) $i['id']) . (($purpose ?? '') !== '' ? '?motif=' . rawurlencode((string) $purpose) : '');
 ?>
 <a class="fx-hit" href="<?= $h($href) ?>">

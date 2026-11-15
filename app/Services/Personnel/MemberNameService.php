@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Personnel;
 
 use App\Core\Database;
+use App\Support\MemberIdentity;
 use App\Support\MemberName;
 use PDO;
 
@@ -131,6 +132,58 @@ final class MemberNameService
                 $row['trigram'] = '';
             }
             $out[$id] = MemberName::format($row, $format, $settings['show_grade']);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Pose sur chaque ligne de membre le prénom, le nom et le trigramme du PERSONNAGE (user_profiles). Les prénom et nom
+     * déjà présents dans la ligne (jointure user_legal_identities de UserRepository : identité légale du joueur)
+     * sont retirés : ils ne servent jamais à l'affichage. Une ligne masquée reste telle quelle.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public function withIdentities(int $tenantId, array $rows, string $idKey = 'id'): array
+    {
+        $ids = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row[$idKey] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        try {
+            $identities = $this->identitiesFor($tenantId, $ids);
+        } catch (\Throwable) {
+            $identities = [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row[$idKey] ?? 0);
+            $out[] = MemberName::withIdentity(array_diff_key($row, ['first_name' => 1, 'last_name' => 1, 'trigram' => 1]), $identities[$id] ?? null);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Identité affichable complète (nom principal, ligne secondaire, indicatif, trigramme, origine) des membres
+     * demandés, par la règle unique {@see MemberIdentity}. Sert aux écrans dont la requête ne charge que
+     * users.display_name et users.callsign.
+     *
+     * @param list<int> $userIds
+     * @param array<int, string> $gradeShortByUser grade abrégé par membre, si l’appelant l’a déjà
+     * @return array<int, array{primary: string, secondary: string, callsign: string, trigram: string, source: string}>
+     */
+    public function displayFor(int $tenantId, array $userIds, string $context = 'list', array $gradeShortByUser = []): array
+    {
+        $settings = MemberNameSettings::forTenant($tenantId);
+        $out = [];
+        foreach ($this->identitiesFor($tenantId, $userIds) as $id => $row) {
+            $row['grade_short'] = $gradeShortByUser[$id] ?? '';
+            $out[$id] = MemberIdentity::display($row, $context, $tenantId, true, $settings);
         }
 
         return $out;

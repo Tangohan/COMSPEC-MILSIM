@@ -6,6 +6,7 @@ namespace App\Services\Courrier;
 
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Repositories\Courrier\UserSignatureRepository;
+use App\Services\Media\SignatureImageService;
 
 /**
  * Signature de documents courrier : enregistrement image, hash d'authenticité, réutilisation des signatures utilisateur.
@@ -282,14 +283,19 @@ class DocumentSignatureService
         return $relativePath;
     }
 
+    /**
+     * PNG propre d'un dessin de signature (data URL, ou base64 nu) : contrôlé et reconstruit par SignatureImageService
+     * (vrai PNG, taille et dimensions bornées, image non vide, aucune métadonnée). Null si le dessin est refusé.
+     */
     private function decodeBase64Image(string $base64): ?string
     {
-        if (preg_match('/^data:image\/(\w+);base64,(.+)$/s', $base64, $m)) {
-            $raw = base64_decode(str_replace(["\r", "\n"], '', $m[2]), true);
-            return $raw !== false ? $raw : null;
+        $base64 = str_replace(["\r", "\n"], '', trim($base64));
+        if (!str_starts_with($base64, 'data:')) {
+            $base64 = SignatureImageService::PREFIX . $base64;
         }
-        $raw = base64_decode(str_replace(["\r", "\n"], '', $base64), true);
-        return $raw !== false ? $raw : null;
+        $clean = SignatureImageService::normalize($base64);
+
+        return $clean['ok'] && isset($clean['png']) ? $clean['png'] : null;
     }
 
     /**

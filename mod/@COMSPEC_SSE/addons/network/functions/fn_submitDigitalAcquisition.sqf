@@ -89,5 +89,34 @@ if (_ok) then {
     [_uid, "digital", _src, "QUEUED", _q, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 
+// Contenu relevé (contacts, messages, appels, images, positions, comptes, pièces) : l'envoi ci-dessus ne porte que des
+// totaux, ce qui laissait les écrans téléphone, ordinateur, communications et chronologie du labo numérique vides. Le
+// contenu part par la file du SSE (SubmitIdCheck, kind digital_detail : découpé, reprise hors ligne), en morceaux
+// idempotents rattachés au même support (record_id). Seulement ce que le joueur a extrait.
+if (
+    !isNull _entity
+    && {!isNil "comspec_sse_fnc_buildAthenaDigitalDetail"}
+    && {!isNil "comspec_sse_fnc_fileSubmit"}
+) then {
+    private _chunks = [_entity, _fog] call comspec_sse_fnc_buildAthenaDigitalDetail;
+    {
+        _x params ["_dataKey", "_rubric", "_items"];
+        private _data = createHashMap;
+        _data set [_rubric, _items];
+        private _env = createHashMapFromArray [
+            ["kind", "digital_detail"],
+            ["record_id", _uid],
+            ["idempotency_key", (format ["DIGD-%1-%2-%3-%4", _uid, _rubric, _forEachIndex, count (str _items)]) select [0, 80]]
+        ];
+        _env set [_dataKey, _data];
+        {
+            private _v = _payload getOrDefault [_x, ""];
+            if !(_v isEqualTo "") then { _env set [_x, _v]; };
+        } forEach ["mission_id", "source_type", "collector", "grid_reference", "case_reference", "phone_summary", "computer_summary", "origin"];
+        [_env] call comspec_sse_fnc_fileSubmit;
+    } forEach _chunks;
+    [format ["submitDigitalAcquisition detail uid=%1 morceaux=%2", _uid, count _chunks]] call comspec_sse_fnc_log;
+};
+
 [format ["submitDigitalAcquisition uid=%1 ok=%2 raw=%3", _uid, _ok, missionNamespace getVariable ["comspec_sse_lastExtRaw", ""]]] call comspec_sse_fnc_log;
 _ok

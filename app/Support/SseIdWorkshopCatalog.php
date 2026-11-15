@@ -33,7 +33,7 @@ final class SseIdWorkshopCatalog
     public const POP_CATEGORIES = [
         'civilian' => 'Civils',
         'military' => 'Militaires',
-        'suspect' => 'Suspects',
+        'suspect' => 'Personnes d’intérêt (PoI)',
         'hvt' => 'Cibles prioritaires (HVT)',
     ];
 

@@ -197,7 +197,7 @@ final class AuditReportQueriesTest extends TestCase
         $kit = (string) file_get_contents(self::ROOT . '/tools/lib/audit-report-kit.php');
         self::assertStringContainsString('START TRANSACTION READ ONLY', $kit);
         self::assertStringContainsString('PHP_SAPI !== \'cli\'', $kit);
-        self::assertSame(5, count((array) glob(self::ROOT . '/tools/audit-report-*.php')), 'cinq rapports : RD-04, RD-21, RD-44/45, RD-19, RD-03');
+        self::assertSame(7, count((array) glob(self::ROOT . '/tools/audit-report-*.php')), 'sept rapports : RD-04, RD-21, RD-44/45, RD-19, RD-03, les identités des membres et les anciennes communautés');
     }
 
     public function testLogosReportFindsDesynchronisedLogos(): void

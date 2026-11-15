@@ -39,7 +39,7 @@ final class SseCampaignService
 
     public const SHARE_SCOPES = [
         'structure' => 'Structure seule (personnages, organisations, rôles ; rien de découvert, aucune pièce)',
-        'complete' => 'Campagne complète (avec ce que les joueurs ont découvert et le registre des scellés)',
+        'complete' => 'Campagne complète (avec ce que les joueurs ont découvert et le registre de chaîne de possession)',
     ];
 
     public const KINDS = [

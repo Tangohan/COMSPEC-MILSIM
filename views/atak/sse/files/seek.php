@@ -7,6 +7,8 @@ ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 /** @var list<array<string,mixed>> $records */
 /** @var array<string,string> $filters */
+/** @var array<string,list<array<string,mixed>>> $photos clichés du visage par fiche (REC) */
+$photos = is_array($photos ?? null) ? $photos : [];
 $filesTab = 'seek';
 require __DIR__ . '/_nav.php';
 $mods = static function (array $m): string {
@@ -42,7 +44,7 @@ $tone = ['concordant' => 'g', 'discordant' => 'r', 'signale' => 'a', 'inconnu' =
         <?php else: ?>
             <div class="fx-tbw">
                 <table class="fx-tb resp">
-                    <thead><tr><th>Enregistrement</th><th>Reçu le</th><th>Nom déclaré</th><th>Papier présenté</th><th>Verdict</th><th>Relevés</th><th>Lieu, contrôleur</th><th></th></tr></thead>
+                    <thead><tr><th>Enregistrement</th><th>Reçu le</th><th>Nom déclaré</th><th>Papier présenté</th><th>Verdict</th><th>Relevés</th><th>Image</th><th>Lieu, contrôleur</th><th></th></tr></thead>
                     <tbody>
                     <?php foreach ($records as $s): ?>
                         <tr class="<?= $s['verdict'] === 'discordant' ? 'fl' : '' ?>">
@@ -52,6 +54,14 @@ $tone = ['concordant' => 'g', 'discordant' => 'r', 'signale' => 'a', 'inconnu' =
                             <td class="m" translate="no"><?= $h(trim(($s['doc_country'] ?? '') . ' ' . ($s['doc_number'] ?? '')) ?: '—') ?></td>
                             <td><span class="fx-flg <?= $tone[$s['verdict']] ?? '' ?>"><?= $h($s['verdict_label']) ?></span></td>
                             <td><?= $h($mods($s['modalities'])) ?></td>
+                            <?php $imgs = $photos[(string) $s['rec']] ?? []; ?>
+                            <td class="m">
+                                <?php if ($imgs !== [] && (string) ($imgs[0]['url'] ?? '') !== ''): ?>
+                                    <a href="<?= $h((string) $imgs[0]['url']) ?>" target="_blank" rel="noopener"><img src="<?= $h((string) $imgs[0]['url']) ?>" alt="Photo du visage, fiche <?= $h($s['rec']) ?>" loading="lazy" style="width:48px;height:64px;object-fit:cover;border-radius:4px;display:block"></a>
+                                    <?php if (count($imgs) > 1): ?><span class="fx-help">+<?= count($imgs) - 1 ?></span><?php endif; ?>
+                                <?php elseif (!empty($s['modalities']['face'])): ?><span class="fx-help">Visage relevé, image non reçue</span>
+                                <?php else: ?>—<?php endif; ?>
+                            </td>
                             <td translate="no"><?= $h($s['grid'] ?? '—') ?><?= ($s['controller_callsign'] ?? '') !== '' ? ' · ' . $h($s['controller_callsign']) : '' ?></td>
                             <td>
                                 <?php if ($s['identity_id'] !== null): ?><a href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $s['identity_id'])) ?>">Fiche</a> · <?php endif; ?>

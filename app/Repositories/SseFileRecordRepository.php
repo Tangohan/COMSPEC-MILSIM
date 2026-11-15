@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\SilentSchemaMigration;
+use App\Support\SseAcquisitionContexts;
 use App\Support\SseFileSubjectCatalog as S;
 use App\Support\SseFileText;
 
@@ -637,6 +638,21 @@ final class SseFileRecordRepository
         foreach ($this->db->fetchAll("SELECT * FROM sse_file_photos WHERE tenant_id = :t AND identity_id IN ({$in}) ORDER BY CASE kind WHEN 'front' THEN 0 WHEN 'profile' THEN 1 ELSE 2 END, id DESC", $params) as $r) {
             $out[(int) $r['identity_id']][] = self::hydratePhoto($r);
         }
+        // Clichés du terminal SEEK II arrivés avant leur fiche (photo sans identité, même REC que la fiche rattachée).
+        try {
+            $seekRows = $this->db->fetchAll(
+                "SELECT p.*, s.identity_id AS seek_identity_id FROM sse_file_photos p
+                 JOIN sse_seek_records s ON s.tenant_id = p.tenant_id AND s.rec = p.source_ref
+                 WHERE p.tenant_id = :t AND p.source = 'seek' AND p.identity_id IS NULL AND s.identity_id IN ({$in}) ORDER BY p.id DESC",
+                $params
+            );
+            foreach ($seekRows as $r) {
+                $r['identity_id'] = $r['seek_identity_id'];
+                $out[(int) $r['identity_id']][] = self::hydratePhoto($r);
+            }
+        } catch (\Throwable) {
+            // Fiches SEEK II absentes sur cette installation : seules les photos rattachées comptent.
+        }
 
         return $out;
     }
@@ -795,6 +811,10 @@ final class SseFileRecordRepository
         'member_photo_upload' => true,
         'xref_enabled' => true,
         'purpose_required' => true,
+        // Contextes d'acquisition (App\Support\SseAcquisitionContexts) : jeu, réglages des contextes de base, ajouts.
+        'acquisition_set' => 'us_sof',
+        'acquisition_overrides' => [],
+        'acquisition_custom' => [],
     ];
 
     /** @return array<string, mixed> */
@@ -838,6 +858,9 @@ final class SseFileRecordRepository
             'member_photo_upload' => $bool($data['member_photo_upload'] ?? null, true),
             'xref_enabled' => $bool($data['xref_enabled'] ?? null, true),
             'purpose_required' => $bool($data['purpose_required'] ?? null, true),
+            'acquisition_set' => SseAcquisitionContexts::normalizeSet($data['acquisition_set'] ?? null),
+            'acquisition_overrides' => SseAcquisitionContexts::normalizeOverrides($data['acquisition_overrides'] ?? []),
+            'acquisition_custom' => SseAcquisitionContexts::normalizeCustom($data['acquisition_custom'] ?? []),
         ];
     }
 

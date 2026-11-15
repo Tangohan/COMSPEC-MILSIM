@@ -10,7 +10,9 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseFileRecordRepository;
 use App\Services\Sse\SseAccessCodeService;
+use App\Services\Sse\SseAccessPolicy;
 use App\Services\Sse\SseClearanceService;
+use App\Support\SseAccessCatalog;
 use App\Support\SseFileCatalog;
 use App\Support\SseIdentityCatalog;
 
@@ -59,25 +61,48 @@ final class SseFilesContext
         return $this->access->isGuest();
     }
 
-    /** Écrire (annoter, surveiller, envoyer une photo) : un compte, pas une session invitée. */
+    /**
+     * Droit d'une section du portail (SseAccessPolicy) : par défaut celui des anciennes gardes, étendu ou restreint par
+     * les règles de la communauté. Sert tous les écrans des fichiers : fichiers, photothèque, extractions, lore, journal.
+     */
+    public function allows(string $section, string $level, ?bool $legacy = null): bool
+    {
+        $context = ['guest' => $this->isGuest(), 'tenant_id' => $this->tenantId()];
+        if ($legacy !== null) {
+            $context['legacy'] = $legacy;
+        }
+
+        return SseAccessPolicy::sessionAllows($section, $level, $context);
+    }
+
+    /** Garde d'origine d'un profil du catalogue pour la session (action qui garde sa propre garde d'origine). */
+    public function profile(string $profile): bool
+    {
+        return SseAccessPolicy::sessionProfile($profile, ['guest' => $this->isGuest(), 'tenant_id' => $this->tenantId()]);
+    }
+
+    /** Écrire (annoter, surveiller, envoyer une photo) : un compte, pas une session invitée (section Fichiers, niveau « verser »). */
     public function canWrite(): bool
     {
-        return !$this->isGuest() && $this->userId() !== null;
+        return $this->allows('fichiers', SseAccessCatalog::LEVEL_ADD);
     }
 
+    /** Modifier une fiche (signalement, alias, liens, mentions) : section Fichiers, niveau « écrire » (gestion des dossiers ou des fichiers). */
     public function canManage(): bool
     {
-        return $this->canWrite() && self::can(['atak.sse.case.manage', 'atak.sse.grant', 'atak.sse.files.admin', 'admin.access']);
+        return $this->allows('fichiers', SseAccessCatalog::LEVEL_WRITE);
     }
 
+    /** Administrer les fichiers (modération des extractions, réglages) : section Fichiers, niveau « gérer » (gestion des fichiers SSE). */
     public function canAdmin(): bool
     {
-        return $this->canWrite() && self::can(['atak.sse.files.admin', 'admin.access']);
+        return $this->allows('fichiers', SseAccessCatalog::LEVEL_MANAGE);
     }
 
+    /** Préparer le lore des sessions : section Lore, niveau « écrire » (atak.sse.lore.manage ou administrateur). */
     public function canLore(): bool
     {
-        return $this->canWrite() && self::can(['atak.sse.lore.manage', 'admin.access']);
+        return $this->allows('lore', SseAccessCatalog::LEVEL_WRITE);
     }
 
     /** @param list<string> $perms */

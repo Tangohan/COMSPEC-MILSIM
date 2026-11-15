@@ -227,7 +227,7 @@ require __DIR__ . '/_subnav.php';
                 <div class="dl-empty">
                     <span class="dl-empty__icon"><?= $icon('phone') ?></span>
                     <strong>Aucun support enregistré</strong>
-                    <p>Commencez par créer la fiche du matériel saisi sur le terrain.</p>
+                    <p>Commencez par créer la fiche du matériel saisi sur le terrain. Un support arrive aussi tout seul quand un joueur exploite un téléphone ou un ordinateur en jeu puis le transmet (terminal SEEK ou app SSE de l’ATAK) ; ses contacts, messages, appels, images et positions relevés se rangent alors dans les écrans du support. Les extractions des téléphones ATAK sont dans Fichiers › Téléphones.</p>
                     <?php if ($canManage): ?>
                         <a class="dl-btn dl-btn--ghost" href="<?= $h($labUrl('supports/nouveau')) ?>"><?= $icon('plus') ?><span>Enregistrer un support</span></a>
                     <?php endif; ?>

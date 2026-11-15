@@ -18,6 +18,8 @@ use App\Services\Sse\SseAnalysisService;
 use App\Services\Sse\SseSyncService;
 use App\Services\Sse\SseTerrainService;
 use App\Support\ComspecApiKeyAuth;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * API SSE v1 — fondations Intelligence Workspace.
@@ -54,6 +56,10 @@ final class SseIntelApiController
         if ($r instanceof Response) {
             return $r;
         }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
+        }
 
         return Response::json($this->workspace->apiSummary($r));
     }
@@ -63,6 +69,10 @@ final class SseIntelApiController
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
+        }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
         }
 
         $list = $this->entities->search($r, [
@@ -81,6 +91,10 @@ final class SseIntelApiController
         if ($r instanceof Response) {
             return $r;
         }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
+        }
         $uuid = trim((string) ($params['uuid'] ?? ''));
         $entity = $this->entities->findByUuid($r, $uuid);
         if ($entity === null) {
@@ -95,6 +109,10 @@ final class SseIntelApiController
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
+        }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
         }
 
         $list = $this->events->listForTenant($r, [
@@ -116,6 +134,10 @@ final class SseIntelApiController
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
+        }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
         }
 
         $list = $this->foundation->listRelations($r, [
@@ -185,6 +207,10 @@ final class SseIntelApiController
         if ($r instanceof Response) {
             return $r;
         }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
+        }
         $uid = (int) (Session::get('user_id') ?? 0);
         $items = $this->workspace->inbox($r, $uid > 0 ? $uid : null);
 
@@ -224,6 +250,10 @@ final class SseIntelApiController
         if ($r instanceof Response) {
             return $r;
         }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
+        }
         $graph = $this->workspace->buildGraph(
             $r,
             $request->query('root') ? $request->queryString('root') : null,
@@ -240,6 +270,10 @@ final class SseIntelApiController
         if ($r instanceof Response) {
             return $r;
         }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
+        }
         $q = trim((string) ($request->query('q') ?? ''));
         $result = $this->workspace->universalSearch($r, $q);
 
@@ -251,6 +285,10 @@ final class SseIntelApiController
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
+        }
+        $denied = $this->readDenied('dossiers');
+        if ($denied !== null) {
+            return $denied;
         }
         $caseId = (int) ($params['id'] ?? 0);
         $folder = $this->workspace->caseFolder($r, $caseId);
@@ -355,6 +393,10 @@ final class SseIntelApiController
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
+        }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
         }
         $caseId = $request->query('case_id') ? (int) $request->query('case_id') : null;
 
@@ -558,6 +600,10 @@ final class SseIntelApiController
         if ($r instanceof Response) {
             return $r;
         }
+        $denied = $this->readDenied('analyse');
+        if ($denied !== null) {
+            return $denied;
+        }
         $caseId = $request->query('case_id') ? (int) $request->query('case_id') : null;
         $entity = trim((string) ($request->query('entity_uuid') ?? ''));
         $days = $request->query('days') ? (int) $request->query('days') : 14;
@@ -711,6 +757,29 @@ final class SseIntelApiController
             : Response::json(['error' => 'resolve_failed', 'message' => $result['error'] ?? 'Échec'], 422);
     }
 
+    /**
+     * Lecture d'une section par une personne connectée : aucune garde n'existait (la garde d'origine est « ouvert »), seul un refus
+     * explicite des règles de la communauté la ferme. La clé de l'API du jeu et les sessions sans compte ne sont pas concernées.
+     */
+    private function readDenied(string $section): ?Response
+    {
+        if (ComspecApiKeyAuth::armaInlineAuthOk()) {
+            return null;
+        }
+        $uid = (int) (Session::get('user_id') ?? 0);
+        if ($uid < 1) {
+            return null;
+        }
+        $allowed = SseAccessPolicy::forSession()->allows($uid, $section, SseAccessCatalog::LEVEL_READ, [
+            'guest' => false,
+            'legacy' => true,
+            'door_mode' => SseAccessPolicy::DOOR_ENTRY,
+            'tenant_id' => (int) (Session::get('tenant_id') ?? 0),
+        ]);
+
+        return $allowed ? null : Response::json(['error' => 'forbidden', 'message' => 'Votre accès à cette section du renseignement est restreint.'], 403);
+    }
+
     private function canWrite(): bool
     {
         if (ComspecApiKeyAuth::armaInlineAuthOk()) {
@@ -721,7 +790,18 @@ final class SseIntelApiController
             return false;
         }
 
-        return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access') || can('atak.access'));
+        // Garde d'origine de l'API (gestion des dossiers SSE ou accès ATAK), jugée par la politique d'accès de la section Analyse :
+        // les règles de la communauté peuvent la restreindre (refus) ou l'étendre (accord) ; la clé de l'API du jeu n'est pas concernée.
+        $legacy = function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access') || can('atak.access'));
+
+        $section = 'analyse';
+
+        return SseAccessPolicy::forSession()->allows($uid, $section, SseAccessCatalog::LEVEL_WRITE, [
+            'guest' => false,
+            'legacy' => $legacy,
+            'door_mode' => SseAccessPolicy::DOOR_ENTRY,
+            'tenant_id' => (int) (Session::get('tenant_id') ?? 0),
+        ]);
     }
 
     private function requireTenant(Request $request): int|Response

@@ -85,7 +85,7 @@ $flags = [
                     <input id="seized_by_label" name="seized_by_label" type="text" autocomplete="off">
                 </div>
                 <div class="lab-form-field">
-                    <label for="seal_label">Scellé</label>
+                    <label for="seal_label">Étiquette de chaîne de possession</label>
                     <input id="seal_label" name="seal_label" type="text" autocomplete="off">
                 </div>
                 <div class="lab-form-field">

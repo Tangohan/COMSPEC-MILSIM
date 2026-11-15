@@ -23,7 +23,7 @@ require __DIR__ . '/_subnav.php';
     <div class="toolbar-field"><label for="event_type">Type</label>
         <select id="event_type" name="event_type">
             <option value="">Tous</option>
-            <?php foreach (['message'=>'Message','call'=>'Appel','photo'=>'Photo','wifi'=>'Wi-Fi','acquisition'=>'Acquisition','seizure'=>'Saisie'] as $k=>$lab): ?>
+            <?php foreach (['message'=>'Message','call'=>'Appel','photo'=>'Photo','media'=>'Image','location'=>'Position','wifi'=>'Wi-Fi','acquisition'=>'Acquisition','seizure'=>'Saisie'] as $k=>$lab): ?>
                 <option value="<?= $h($k) ?>" <?= ($filters['event_type'] ?? '') === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
             <?php endforeach; ?>
         </select>
@@ -39,7 +39,7 @@ require __DIR__ . '/_subnav.php';
 </form>
 <section class="panel">
     <div class="panel-body">
-        <?php if ($events === []): ?><p class="muted">Aucun événement.</p>
+        <?php if ($events === []): ?><p class="muted">Aucun événement. La chronologie se remplit à chaque acquisition, et avec les messages, appels, images et positions datés d’un support relevé en jeu (exploitation complète puis transmission). Un élément sans date relevée sur le support n’y figure pas : aucune date n’est inventée.</p>
         <?php else: ?><ul class="iw-feed"><?php foreach ($events as $e): ?>
             <li>
                 <time><?= $h(substr((string) ($e['event_at'] ?? ''), 0, 16)) ?></time>

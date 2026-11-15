@@ -61,6 +61,7 @@ $tocKeys = [
     <section class="toc-left" aria-label="Carte commune">
       <div class="toc-toolbar">
         <button type="button" class="toc-btn" id="toc-layers-btn" title="Calques du jeu et du web (L)" aria-expanded="false"><span>Calques</span><b class="toc-count" id="toc-layers-count">0</b></button>
+        <button type="button" class="toc-btn" id="toc-sse-ml-btn" hidden aria-expanded="false" aria-controls="toc-sse-ml" title="Calques SSE : contrôles d’identité, lieux, pistes de téléphones"><span>Calques SSE</span></button>
         <label class="toc-sr" for="toc-bg">Fond de carte</label>
         <select id="toc-bg" class="toc-select" title="Fond de carte (B)"></select>
         <div class="toc-search" role="search">
@@ -73,6 +74,7 @@ $tocKeys = [
       <div class="toc-mapwrap" id="toc-mapwrap">
         <div class="toc-map" id="toc-map" aria-label="Carte du terrain" tabindex="0"></div>
         <div class="toc-layers" id="toc-layers" hidden aria-label="Calques"></div>
+<?php $sseMlId = 'toc-sse-ml'; $sseMlFloating = true; $sseMlBase = rtrim(url(''), '/'); require base_path('views/partials/sse_map_layers.php'); ?>
         <div class="toc-mapctl" role="group" aria-label="Commandes de la carte">
           <button type="button" class="toc-mapbtn" data-map="north" title="Nord en haut : voir toutes les pistes (T)" aria-label="Voir toutes les pistes"><svg width="18" height="20" viewBox="0 0 18 20" aria-hidden="true"><path d="M9 1 L16 18 L9 13 L2 18 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
           <button type="button" class="toc-mapbtn" data-map="in" title="Rapprocher (+)" aria-label="Rapprocher">+</button>

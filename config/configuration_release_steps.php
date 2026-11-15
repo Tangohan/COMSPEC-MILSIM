@@ -74,7 +74,7 @@ return [
         'code' => 'SSE_IDENTITY_AUTO_SEND_V1',
         'version' => '4.0.0',
         'title' => 'COMSPEC Identity : envoi automatique des contrôles',
-        'description' => 'Choisissez si les contrôles d’identité faits en jeu sont envoyés automatiquement à Athena pour toute la communauté.',
+        'description' => 'Choisissez si les vérifications d’identité faites en jeu sont envoyées automatiquement à Athena pour toute la communauté.',
         'path' => 'atak/sse/papiers/controles',
         'applies' => 'sse',
         'level' => 'recommended',

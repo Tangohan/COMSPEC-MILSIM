@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\AtakMapRepository;
 use App\Repositories\SseAuditLogRepository;
 use App\Repositories\SseCaseRepository;
+use App\Repositories\SseFileRepository;
 use App\Repositories\SseIdCheckRepository;
 use App\Repositories\SseIdCountryRepository;
 use App\Repositories\SseIdDocumentRepository;
@@ -24,9 +25,12 @@ use App\Services\Sse\SseIdCheckInsightService;
 use App\Services\Sse\SseIdSubjectMatchService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Services\Sse\SseMrzService;
+use App\Services\Sse\SseSeekPhotoService;
 use App\Support\SseIdCountryCatalog;
 use App\Support\SseIdRealCountryCatalog;
 use App\Support\SseIdentityCatalog;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Portail SSE — RENS › Identités & documents (COMSPEC IDENTITY, Lot 1).
@@ -770,6 +774,19 @@ final class SseIdentityRegistryController
         }
         $person = ($identity['person_id'] ?? 0) > 0 ? $this->persons->findById((int) $identity['person_id'], $tenantId) : null;
 
+        // Images des fiches SEEK II de cette identité (cliché du visage pris au terminal) et mentions aux fichiers : jamais
+        // pour une identité couverture ou fausse sans l'habilitation Confidentiel (même règle que le reste de la fiche).
+        $seekImages = [];
+        $fileMentions = [];
+        if ($this->canSeeTruth() || !in_array($identity['kind'], ['cover', 'forged'], true)) {
+            $seekImages = (new SseSeekPhotoService())->forIdentity($tenantId, (int) $identity['id'], $identity['bio_key'] ?? null);
+            try {
+                $fileMentions = (new SseFileRepository())->activeMentionsFor($tenantId, [(int) $identity['id']], []);
+            } catch (\Throwable) {
+                $fileMentions = [];
+            }
+        }
+
         return $this->view('atak.sse.papers.identity_show', [
             'title' => $identity['ref'] . ' — ' . $identity['display_name'],
             'identity' => $identity,
@@ -778,6 +795,8 @@ final class SseIdentityRegistryController
             'countries' => $this->countries->listForTenant($tenantId),
             'papersTab' => 'identites',
             'personPhotos' => \App\Services\Sse\SseIdWorkshopService::personPhotos($tenantId, $identity['person_id']),
+            'seekImages' => $seekImages,
+            'fileMentions' => $fileMentions,
         ]);
     }
 
@@ -910,7 +929,7 @@ final class SseIdentityRegistryController
         ];
 
         return $this->view('atak.sse.papers.checks', [
-            'title' => 'Contrôles d’identité',
+            'title' => 'Vérifications d’identité sur le terrain',
             'checks' => $this->checks->list($this->tenantId(), $filters),
             'filters' => $filters,
             'papersTab' => 'controles',
@@ -1141,11 +1160,7 @@ final class SseIdentityRegistryController
 
     private function canManage(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('papiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     private function canSeeTruth(): bool

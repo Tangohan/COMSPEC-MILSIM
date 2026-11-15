@@ -91,7 +91,7 @@ final class RoleplayBilanDueCronJob implements CronJobInterface
             $membersByTutor = [];
             $allMembers = [];
             foreach ($due as $row) {
-                $displayName = trim((string) ($row['display_name'] ?? '')) ?: (trim((string) ($row['callsign'] ?? '')) ?: (string) ($row['email'] ?? 'Membre'));
+                $displayName = member_label(['id' => (int) ($row['user_id'] ?? $row['id'] ?? 0), 'display_name' => (string) ($row['display_name'] ?? ''), 'callsign' => (string) ($row['callsign'] ?? '')], 'list', $tenantId);
                 $nextDueAt = (string) ($row['next_due_at'] ?? '');
                 $nextDueLabel = $nextDueAt !== '' ? date('d/m/Y', strtotime($nextDueAt) ?: time()) : '—';
                 $entry = [
@@ -124,7 +124,7 @@ final class RoleplayBilanDueCronJob implements CronJobInterface
                 if (!$this->notificationPreferences->isEmailEventEnabled($tutorId, EmailEvents::ROLEPLAY_BILAN_DUE)) {
                     continue;
                 }
-                $tutorName = trim((string) ($tutor['display_name'] ?? '')) ?: (trim((string) ($tutor['callsign'] ?? '')) ?: $tutorEmail);
+                $tutorName = member_label(['id' => (int) $tutorId, 'display_name' => (string) ($tutor['display_name'] ?? ''), 'callsign' => (string) ($tutor['callsign'] ?? '')], 'list', $tenantId);
                 if ($this->emailService->sendRoleplayBilanDueAlert($tutorEmail, $tutorName, $tenantName, $members, $roleplayFollowupUrl, $tenantId)) {
                     $sent++;
                 }

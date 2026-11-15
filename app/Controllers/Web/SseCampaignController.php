@@ -12,6 +12,8 @@ use App\Repositories\SseCampaignRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCampaignService;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Bureau SSE › Campagnes : les campagnes du mod COMSPEC SSE (personnages récurrents,
@@ -260,12 +262,7 @@ final class SseCampaignController
 
     private function canManage(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can')
-            && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('outils', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     private function actor(): string

@@ -15,6 +15,7 @@ use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SseIdKitTemplateRepository;
 use App\Repositories\SseIdOperationRepository;
+use App\Services\Media\SignatureImageService;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
@@ -372,7 +373,7 @@ final class SseIdWorkshopController
                 return Response::redirect($back);
             }
         }
-        $signature = $images->storeUpload($_FILES['signature'] ?? null, 'signature', $tenantId);
+        $signature = $this->storeSignature($request, $images, $tenantId);
         $background = $images->storeUpload($_FILES['background'] ?? null, 'background', $tenantId);
         foreach (['Signature' => $signature, 'Image de fond' => $background] as $label => $res) {
             if (!$res['ok'] && empty($res['none'])) {
@@ -526,7 +527,7 @@ final class SseIdWorkshopController
         if (isset($photo['path']) || $request->inputString('photo_remove') === '1') {
             $set['photo_path'] = $photo['path'] ?? null;
         }
-        $signature = $images->storeUpload($_FILES['signature'] ?? null, 'signature', $tenantId);
+        $signature = $this->storeSignature($request, $images, $tenantId);
         if (!$signature['ok'] && empty($signature['none'])) {
             Session::flash('error', 'Signature : ' . ($signature['error'] ?? 'image refusée.'));
 
@@ -1054,7 +1055,7 @@ final class SseIdWorkshopController
         } catch (\Throwable) {
             $command = $confidential = false;
         }
-        $sseManage = function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        $sseManage = \App\Services\Sse\SseAccessPolicy::sessionAllows('papiers', \App\Support\SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->access->tenantId()]);
 
         return self::rightsFor($this->access->isGuest() || $this->userId() === null, $sseManage, $command, $confidential);
     }
@@ -1078,6 +1079,22 @@ final class SseIdWorkshopController
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Signature du titulaire : le dessin du pad (signature_data_url, PNG validé par SignatureImageService) l'emporte
+     * sur un fichier envoyé en même temps ; sans dessin, l'envoi de fichier reste inchangé.
+     *
+     * @return array{ok: bool, path?: string, error?: string, none?: bool}
+     */
+    private function storeSignature(Request $request, SseIdImageService $images, int $tenantId): array
+    {
+        $dataUrl = $request->inputString('signature_data_url');
+        if (trim($dataUrl) !== '') {
+            return (new SignatureImageService($images))->fromDataUrl($dataUrl, $tenantId, 'sse_identity');
+        }
+
+        return $images->storeUpload($_FILES['signature'] ?? null, 'signature', $tenantId);
     }
 
     private function denied(?string $back = null): Response

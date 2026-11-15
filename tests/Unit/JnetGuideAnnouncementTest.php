@@ -36,10 +36,10 @@ final class JnetGuideAnnouncementTest extends TestCase
 
     // —— Guide ——
 
-    public function testGuideHasTheNineChaptersWithTheirAnchors(): void
+    public function testGuideHasAllChaptersWithTheirAnchors(): void
     {
         $view = $this->read('views/jnet/guide.php');
-        $chapters = ['cest-quoi', 'premiers-pas', 'espace-unite', 'personnaliser', 'liaisons', 'outils', 'securite', 'faq', 'glossaire'];
+        $chapters = ['cest-quoi', 'premiers-pas', 'espace-unite', 'personnaliser', 'liaisons', 'outils', 'securite', 'faq', 'glossaire', 'identites'];
         foreach ($chapters as $id) {
             self::assertStringContainsString("'" . $id . "' =>", $view, 'sommaire : ' . $id);
             self::assertStringContainsString('<section class="jg-sec" id="' . $id . '"', $view, 'ancre : ' . $id);
