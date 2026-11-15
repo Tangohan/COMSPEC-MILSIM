@@ -15,6 +15,7 @@ declare(strict_types=1);
 use App\Controllers\Web\SseFileController;
 use App\Repositories\SseAiProfileRepository;
 use App\Services\Sse\SseFileSearchService;
+use App\Services\Sse\SseIdentityHolderService;
 use App\Services\Sse\SseIdentityPhotoGallery;
 use App\Services\Sse\SseWantedAccess;
 use App\Support\SseFileSubjectCatalog as S;
@@ -46,6 +47,8 @@ $fileMentions = is_array($fileMentions ?? null) ? $fileMentions : [];
 $detectionCounts = is_array($detectionCounts ?? null) ? $detectionCounts : ['new' => 0];
 $timelineFilter = (string) ($timelineFilter ?? '');
 $iid = (int) $identity['id'];
+// Sujet contrôlé ou remonté du terrain : on y constate des papiers, on n'en génère pas.
+$observedOnly = SseIdentityHolderService::isObservedOnly($identity);
 $self = 'atak/sse/papiers/identites/' . $iid;
 $filesSubject = 'atak/sse/fichiers/sujet/' . $iid;
 $dt = static function (?string $v) use ($dlang): string {
@@ -114,7 +117,7 @@ $photoGallery = SseIdentityPhotoGallery::build(
 $photoCount = ($canSeeTruth || !$secret) ? $photoGallery['total'] : 0;
 $tabs = [
     ['synthese', 'Synthèse', null, false],
-    ['papiers', 'Papiers et documents', count($documents), false],
+    ['papiers', $observedOnly ? 'Papiers constatés' : 'Papiers et documents', count($documents), false],
     ['photos', 'Photos', $photoCount, false],
     ['relations', 'Relations et affiliations', count($fileLinks) + count($fileBackLinks) + count($aiLinks), false],
     ['historique', 'Historique', count($timeline), false],
@@ -163,7 +166,7 @@ require __DIR__ . '/_subnav.php';
                 <?php endif; ?>
             <?php endif; ?>
             <?php if (!empty($canManage)): ?>
-                <a class="btn" href="<?= $h(url($self . '#papiers')) ?>" data-dos-go>Générer un papier</a>
+                <a class="btn" href="<?= $h(url($self . '#papiers')) ?>" data-dos-go><?= $observedOnly ? 'Consigner un papier constaté' : 'Générer un papier' ?></a>
             <?php endif; ?>
             <details class="dos-menu">
                 <summary>Autres actions</summary>
@@ -283,10 +286,13 @@ require __DIR__ . '/_subnav.php';
     </section>
 
     <section class="dos-panel" id="papiers" role="tabpanel" aria-labelledby="tab-papiers" tabindex="-1">
-        <h2 class="dos-panel__title">Papiers et documents</h2>
+        <h2 class="dos-panel__title"><?= $observedOnly ? 'Papiers constatés' : 'Papiers et documents' ?></h2>
+        <p class="muted" style="margin:0 0 10px"><?= $observedOnly
+            ? 'Papiers constatés au contrôle : ce qui a été relevé sur ce sujet. Papiers émis par le service : seulement pour les identités des membres, les couvertures et les faux préparés, jamais pour un sujet contrôlé.'
+            : 'Papiers émis par le service : ils partent en jeu une fois émis. Les papiers relevés sur un sujet contrôlé se consignent à part, sur sa fiche.' ?></p>
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">Papiers émis ou préparés</div>
+                <div class="panel-title"><?= $observedOnly ? 'Papiers constatés au contrôle' : 'Papiers émis ou préparés' ?></div>
                 <div class="panel-meta"><?= count($documents) ?> papier(s)</div>
             </div>
             <?php if ($documents === []): ?>
@@ -294,7 +300,7 @@ require __DIR__ . '/_subnav.php';
             <?php else: ?>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>Référence</th><th>Type</th><th>Pays</th><th>Numéro</th><th>Expire le</th><th>État</th><th></th></tr></thead>
+                        <thead><tr><th>Référence</th><th>Type</th><th>Pays</th><th>Numéro</th><th>Expire le</th><th>État</th><?php if ($observedOnly): ?><th>Authenticité</th><?php endif; ?><th></th></tr></thead>
                         <tbody>
                         <?php foreach ($documents as $d): ?>
                             <tr>
@@ -303,7 +309,8 @@ require __DIR__ . '/_subnav.php';
                                 <td data-label="Pays"><?= $h($d['country_code']) ?></td>
                                 <td data-label="Numéro"><code><?= $h($d['doc_number']) ?></code></td>
                                 <td data-label="Expire le"><?= $h($d['expires_on'] ?? '—') ?></td>
-                                <td data-label="État"><?= $h($d['workflow_label']) ?></td>
+                                <td data-label="État"><?= $h($d['workflow_label']) ?><?php if ($observedOnly && $d['workflow'] !== 'observed'): ?> <span class="badge badge--gray">Généré avant : lecture seule</span><?php endif; ?></td>
+                                <?php if ($observedOnly): ?><td data-label="Authenticité"><?= $d['workflow'] === 'observed' ? $h(C::label(C::AUTHENTICITY, SseIdentityHolderService::authenticityOf($d))) : '—' ?></td><?php endif; ?>
                                 <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'])) ?>">Ouvrir</a></td>
                             </tr>
                         <?php endforeach; ?>
@@ -311,7 +318,34 @@ require __DIR__ . '/_subnav.php';
                     </table>
                 </div>
             <?php endif; ?>
-            <?php if (!empty($canManage)): ?>
+            <?php if (!empty($canManage) && $observedOnly): ?>
+                <form class="panel-body idp-actions" method="post" action="<?= $h(url($self . '/constates')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <label for="obs_doc_type" class="muted">Papier constaté</label>
+                    <select id="obs_doc_type" name="doc_type">
+                        <?php foreach (C::DOC_TYPES as $k => $label): ?>
+                            <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input name="country_code" maxlength="3" size="4" placeholder="Pays" aria-label="Pays lu sur le papier" required>
+                    <input name="doc_number" maxlength="20" placeholder="Numéro" aria-label="Numéro lu sur le papier" required>
+                    <input name="issued_on" type="date" aria-label="Délivré le">
+                    <input name="expires_on" type="date" aria-label="Expire le">
+                    <select name="authenticity" aria-label="Authenticité constatée">
+                        <?php foreach (C::AUTHENTICITY as $k => $label): ?>
+                            <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <select name="source" aria-label="Source du constat">
+                        <?php foreach (C::OBSERVED_SOURCES as $k => $label): ?>
+                            <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input name="seen_on" type="date" aria-label="Date du constat" value="<?= $h(gmdate('Y-m-d')) ?>">
+                    <input name="place" maxlength="120" placeholder="Lieu du constat" aria-label="Lieu du constat">
+                    <button class="btn" type="submit">Consigner le papier constaté</button>
+                </form>
+            <?php elseif (!empty($canManage)): ?>
                 <form class="panel-body idp-actions" method="get" action="<?= $h(url('atak/sse/papiers/documents/nouveau')) ?>">
                     <input type="hidden" name="identity_id" value="<?= $iid ?>">
                     <label for="new_doc_type" class="muted">Nouveau papier</label>

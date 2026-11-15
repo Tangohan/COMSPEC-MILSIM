@@ -12,7 +12,7 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
 <section class="panel" style="margin-top:10px" id="documents-controles">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">I.07</span> Documents et contrôles</div>
-        <div class="panel-meta"><span class="badge badge--amber">Simulation</span> Papiers fictifs</div>
+        <div class="panel-meta">Papiers fictifs</div>
     </div>
     <div class="panel-body">
         <?php if ($idPapers['identities'] === [] && $idPapers['documents'] === []): ?>

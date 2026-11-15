@@ -138,13 +138,13 @@
       var url = (cfg.graphUrl || '') + '?depth=' + encodeURIComponent(depthSel.value);
       if (cfg.caseId) url += '&case_id=' + encodeURIComponent(cfg.caseId);
       fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (r) { if (!r.ok) { var e = new Error(String(r.status)); e.status = r.status; throw e; } return r.json(); })
         .then(function (data) {
           rawNodes = data.nodes || [];
           rawEdges = data.edges || [];
           render();
         })
-        .catch(function () { /* silence */ });
+        .catch(function (err) { if (window.SseNotify) { SseNotify.failure(err); } });
     });
   }
 

@@ -456,6 +456,7 @@ $icon = static function (string $path): string {
         <label class="ow-row">Opacité de la chaleur
           <input type="range" id="ow-heat-opacity" min="10" max="80" step="5" value="40">
         </label>
+<?php $cycleId = 'ow-cycle'; $cycleMap = (int) ($overwatchContext['defaultMapId'] ?? 1); $cycleMapSelector = ''; $cycleClass = ''; $cycleFloating = true; require base_path('views/partials/atak_marker_cycle.php'); ?>
 <?php $sseMlId = 'ow-sse-ml'; $sseMlFloating = false; $sseMlBase = rtrim($base, '/'); require base_path('views/partials/sse_map_layers.php'); ?>
         <p class="ow-kicker">Personnalisation</p>
         <label class="ow-row">Police de l’interface

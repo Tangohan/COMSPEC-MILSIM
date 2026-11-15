@@ -178,7 +178,7 @@ final class SseIdImageServiceTest extends TestCase
             $copy = (array) $docs->find((int) $svc->duplicate(1, $doc, 3), 1);
             self::assertSame($doc['background_path'], $copy['background_path'], 'la copie garde le fond');
 
-            $preview = SseIdWorkshopService::previewModel($doc, $identity, null);
+            $preview = SseIdWorkshopService::previewModel($doc, $identity, null, 'standard');
             self::assertStringContainsString('1_aaaaaaaaaaaaaaaa.jpg', (string) $preview['identity']['photo_url']);
             self::assertStringContainsString('1_bbbbbbbbbbbbbbbb.png', (string) $preview['identity']['signature_url']);
             self::assertStringContainsString('1_cccccccccccccccc.jpg', (string) $preview['background_url']);
@@ -203,6 +203,8 @@ final class SseIdImageServiceTest extends TestCase
             self::assertStringContainsString('src="' . $preview['identity']['photo_url'] . '"', $html);
             // CSS : le filigrane a le plus grand z-index des faces.
             $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/sse-id-workshop.css');
+            // Hors impression : le marquage discret imprimé (pseudo-élément du bloc @media print) a son propre calque.
+            $css = (string) preg_replace('#@media print \{.*\z#s', '', $css);
             preg_match('#\.idw-face \.idw-watermark \{ z-index: (\d+); \}#', $css, $wm);
             preg_match_all('#z-index:\s*(\d+)#', $css, $all);
             self::assertSame(max(array_map('intval', $all[1])), (int) ($wm[1] ?? 0));

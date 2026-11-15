@@ -84,7 +84,7 @@ final class SseIdentityRegistryController
 
         return $this->view('atak.sse.papers.documents', [
             'title' => 'Papiers d’identité',
-            'documents' => $this->documents->list($tenantId, $filters),
+            'documents' => (new \App\Services\Sse\SseIdentityHolderService())->annotate($tenantId, $this->documents->list($tenantId, $filters), $truth),
             'filters' => $filters,
             'counts' => $this->documents->counts($tenantId),
             'countries' => $this->countries->listForTenant($tenantId),
@@ -103,6 +103,9 @@ final class SseIdentityRegistryController
             Session::flash('error', 'Choisissez d’abord l’identité qui portera ce papier.');
 
             return Response::redirect(url(self::BASE . '/identites'));
+        }
+        if (\App\Services\Sse\SseIdentityHolderService::isObservedOnly($identity)) {
+            return $this->noIssue($identity);
         }
         $countries = $this->countries->listForTenant($tenantId);
         $countryCode = strtoupper($request->queryString('country', (string) ($identity['nationality'] ?? '')));
@@ -140,6 +143,9 @@ final class SseIdentityRegistryController
         }
         $tenantId = $this->tenantId();
         $identity = $this->identities->find((int) $request->input('identity_id', 0), $tenantId);
+        if ($identity !== null && \App\Services\Sse\SseIdentityHolderService::isObservedOnly($identity)) {
+            return $this->noIssue($identity);
+        }
         $country = $this->countries->findByCode($tenantId, $request->inputString('country_code'));
         if ($identity === null || $country === null || !$country['active']) {
             Session::flash('error', 'Identité ou pays introuvable.');
@@ -194,6 +200,87 @@ final class SseIdentityRegistryController
         Session::flash('success', 'Papier enregistré en brouillon. Validez-le, puis émettez-le pour qu’il parte en jeu.');
 
         return Response::redirect(url(self::BASE . '/documents/' . $id));
+    }
+
+    /**
+     * POST …/identites/{id}/constates : consigne un papier constaté au contrôle sur un sujet (ce qui a été vu : type, pays, numéro,
+     * dates, authenticité, source, date et lieu). Aucun rendu officiel, aucune émission, jamais envoyé en jeu. Réservé aux sujets.
+     */
+    public function documentObserve(Request $request, array $params = []): Response
+    {
+        $iid = (int) ($params['id'] ?? 0);
+        $back = url(self::BASE . '/identites/' . $iid) . '#papiers';
+        if (!Csrf::verify($request)) {
+            Session::flash('error', 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la page puis recommencez.');
+
+            return Response::redirect($back);
+        }
+        if (!$this->canManage()) {
+            Session::flash('error', 'Droit manquant : écrire dans « Papiers et couvertures » (gestion des dossiers SSE). Demandez-le à un gestionnaire des accès SSE.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = $this->tenantId();
+        $identity = $this->identities->find($iid, $tenantId);
+        if ($identity === null) {
+            Session::flash('error', 'Identité introuvable.');
+
+            return Response::redirect(url(self::BASE . '/identites'));
+        }
+        if (!\App\Services\Sse\SseIdentityHolderService::isObservedOnly($identity)) {
+            Session::flash('error', 'Les papiers constatés se consignent sur un sujet contrôlé ; pour cette identité, préparez un papier.');
+
+            return Response::redirect($back);
+        }
+        $country = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $request->inputString('country_code')) ?? '', 0, 3));
+        $number = SseIdDocumentRepository::normalizeNumber($request->inputString('doc_number'));
+        if ($country === '' || $number === '') {
+            Session::flash('error', 'Indiquez le pays et le numéro lus sur le papier.');
+
+            return Response::redirect($back);
+        }
+        $type = SseIdentityCatalog::pick(SseIdentityCatalog::DOC_TYPES, $request->inputString('doc_type'), 'id_card');
+        if ($this->documents->numberExists($tenantId, $country, $type, $number)) {
+            Session::flash('error', 'Ce numéro est déjà enregistré pour ce pays et ce type de papier : ouvrez le papier existant.');
+
+            return Response::redirect($back);
+        }
+        $auth = SseIdentityCatalog::pick(SseIdentityCatalog::AUTHENTICITY, $request->inputString('authenticity'), 'authentic');
+        $source = SseIdentityCatalog::pick(SseIdentityCatalog::OBSERVED_SOURCES, $request->inputString('source'), 'check');
+        $seenOn = preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->inputString('seen_on')) === 1 ? $request->inputString('seen_on') : gmdate('Y-m-d');
+        $place = trim($request->inputString('place'));
+        $remark = trim($request->inputString('remark'));
+        $notes = 'Constaté le ' . $seenOn . ($place !== '' ? ' · ' . mb_substr($place, 0, 120) : '') . ' · source : ' . SseIdentityCatalog::OBSERVED_SOURCES[$source]
+            . ($remark !== '' ? "\n" . mb_substr($remark, 0, 1500) : '');
+        $id = $this->documents->create($tenantId, [
+            'identity_id' => (int) $identity['id'],
+            'holder_person_id' => $identity['person_id'],
+            'workflow' => 'observed',
+            'doc_type' => $type,
+            'country_code' => $country,
+            'doc_number' => $number,
+            'issued_on' => $request->inputString('issued_on'),
+            'expires_on' => $request->inputString('expires_on'),
+            'authority' => $request->inputString('authority'),
+            'st_origin' => $auth === 'fake' ? 'forged' : 'official',
+            'st_integrity' => match ($auth) {
+                'fake' => 'counterfeit',
+                'doubtful' => 'altered',
+                default => 'intact',
+            },
+            'notes' => $notes,
+        ], $this->userId());
+        Session::flash('success', 'Papier constaté consigné. Il ne part pas en jeu : c’est ce qui a été vu au contrôle.');
+
+        return Response::redirect(url(self::BASE . '/documents/' . $id));
+    }
+
+    /** @param array<string, mixed> $identity */
+    private function noIssue(array $identity): Response
+    {
+        Session::flash('error', \App\Services\Sse\SseIdentityHolderService::NO_ISSUE);
+
+        return Response::redirect(url(self::BASE . '/identites/' . (int) $identity['id']) . '#papiers');
     }
 
     public function documentShow(Request $request, array $params = []): Response
@@ -273,6 +360,12 @@ final class SseIdentityRegistryController
         $to = SseIdentityCatalog::pick(SseIdentityCatalog::WORKFLOWS, $request->inputString('to'), '');
         if ($to === 'revoked' && trim($request->inputString('reason')) === '') {
             Session::flash('error', 'Indiquez le motif de la révocation.');
+
+            return Response::redirect($back);
+        }
+        $current = $this->documents->find($id, $this->tenantId());
+        if ($current !== null && \App\Services\Sse\SseIdentityHolderService::isObservedOnly($current['identity'] ?? []) && $to !== 'revoked') {
+            Session::flash('error', \App\Services\Sse\SseIdentityHolderService::NO_ISSUE);
 
             return Response::redirect($back);
         }

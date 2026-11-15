@@ -26,7 +26,7 @@ class TrainingAssignmentService
         private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
 
-    public function assignUser(int $courseId, int $userId, int $tenantId, ?int $assignedBy = null, string $assignmentType = 'manual', ?string $expiresAt = null, ?string $motivationText = null): int
+    public function assignUser(int $courseId, int $userId, int $tenantId, ?int $assignedBy = null, string $assignmentType = 'manual', ?string $expiresAt = null, ?string $motivationText = null, bool $notify = true): int
     {
         $course = $this->courseRepository->findByIdForViewer($courseId, $tenantId);
         if (!$course) {
@@ -72,7 +72,7 @@ class TrainingAssignmentService
                 ]);
                 if ($initialStatus === 'pending_approval' && $assignmentType === 'self_enroll') {
                     $this->notifyEnrollmentPendingApproval($tenantId, $userId, $course, $existing['id']);
-                } else {
+                } elseif ($notify) {
                     $this->notifyEnrollmentAssigned($tenantId, $userId, $course, $assignmentType);
                 }
 
@@ -99,7 +99,8 @@ class TrainingAssignmentService
         ]);
         if ($initialStatus === 'pending_approval' && $assignmentType === 'self_enroll') {
             $this->notifyEnrollmentPendingApproval($tenantId, $userId, $course, $enrollmentId);
-        } else {
+        } elseif ($notify) {
+            // $notify faux : le paquet d'intégration envoie un seul récapitulatif au nouveau membre.
             $this->notifyEnrollmentAssigned($tenantId, $userId, $course, $assignmentType);
         }
 

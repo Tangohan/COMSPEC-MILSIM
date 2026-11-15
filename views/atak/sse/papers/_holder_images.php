@@ -26,7 +26,7 @@ $holderEditOnly = !empty($holderEditOnly);
     <div class="idg-edit__body">
 <?php else: ?>
 <section class="panel" style="margin-top:10px" id="images">
-    <div class="panel-header"><div class="panel-title"><span class="panel-index">IMG</span> Photo et signature du titulaire</div><div class="panel-meta">Affichées sur chaque papier, sous le filigrane SIMULATION</div></div>
+    <div class="panel-header"><div class="panel-title"><span class="panel-index">IMG</span> Photo et signature du titulaire</div><div class="panel-meta">Affichées sur chaque papier</div></div>
     <div class="panel-body">
         <?php endif; ?>
         <?php if (!$holderEditOnly): ?>

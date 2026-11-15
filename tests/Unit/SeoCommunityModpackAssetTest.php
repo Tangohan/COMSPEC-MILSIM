@@ -95,7 +95,7 @@ final class SeoCommunityModpackAssetTest extends TestCase
         $editor = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/effectifs_workspace/job_editor.php');
 
         self::assertStringContainsString('function moduleDescription', $profiles);
-        self::assertStringContainsString('eff-access-group__desc', $roles);
+        self::assertStringContainsString('rl-group__desc', $roles);
         // L'ancienne aide « recherche portail » n'est pas reprise : la recherche portail
         // (UserRepository::searchForPortal) porte sur le nom de l'emploi, pas sur sa description.
         // Le champ description n'est plus replié dans un <details> : il est affiché directement sous son libellé.

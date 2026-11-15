@@ -152,7 +152,7 @@
             timer = window.setTimeout(function () {
                 var mine = ++seq;
                 fetch(peopleUrl + '?q=' + encodeURIComponent(q), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
-                    .then(function (res) { return res.ok ? res.json() : { items: [] }; })
+                    .then(function (res) { if (!res.ok) { if (window.SseNotify) { SseNotify.failure(res); } return { items: [] }; } return res.json(); })
                     .then(function (json) {
                         if (mine !== seq) {
                             return;
@@ -160,7 +160,7 @@
                         people = (json.items || []).map(function (p) { return { ref: p.ref, label: p.label, group: p.group, hint: p.hint, kind: 'user' }; });
                         render();
                     })
-                    .catch(function () { people = []; });
+                    .catch(function (err) { people = []; if (window.SseNotify) { SseNotify.failure(err); } });
             }, 250);
         }
 
@@ -218,4 +218,18 @@
     }
 
     document.querySelectorAll('[data-sar-pick]').forEach(init);
+
+    // Un seul envoi par formulaire : le bouton se bloque dès le premier clic (le serveur ignore de toute façon un second envoi).
+    document.querySelectorAll('.sar form[method="post"]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (form.getAttribute('data-sar-sent') === '1') {
+                event.preventDefault();
+                return;
+            }
+            form.setAttribute('data-sar-sent', '1');
+            window.setTimeout(function () {
+                form.querySelectorAll('button[type="submit"]').forEach(function (b) { b.disabled = true; });
+            }, 0);
+        });
+    });
 })();

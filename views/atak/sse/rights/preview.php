@@ -96,6 +96,7 @@ $levels = array_values(array_map('strval', (array) ($input['levels'] ?? [])));
         <form method="post" action="<?= $h(url($action)) ?>" class="sar-form">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
             <input type="hidden" name="do" value="save">
+            <input type="hidden" name="submit_token" value="<?= $h($submitToken ?? '') ?>">
             <?php foreach ($hidden as $k => $v): ?><input type="hidden" name="<?= $h($k) ?>" value="<?= $h($v) ?>"><?php endforeach; ?>
             <?php foreach ($levels as $lv): ?><input type="hidden" name="levels[]" value="<?= $h($lv) ?>"><?php endforeach; ?>
             <?php foreach ($hiddenLists['sections'] as $sec): ?><input type="hidden" name="sections[]" value="<?= $h($sec) ?>"><?php endforeach; ?>

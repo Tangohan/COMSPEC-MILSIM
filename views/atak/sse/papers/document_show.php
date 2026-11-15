@@ -55,12 +55,11 @@ if ($aiLinks !== []): ?>
 <?php endif; ?>
 
 <section class="panel">
-    <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Spécimen</div><div class="panel-meta">Document fictif — mention SIMULATION</div></div>
+    <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Aperçu</div><div class="panel-meta">Document fictif</div></div>
     <div class="panel-body">
         <div class="idp-card">
             <div class="idp-card__head">
                 <span><?= $h($country['name'] ?? $doc['country_code']) ?> · <?= $h($doc['doc_type_label']) ?></span>
-                <span>SIMULATION</span>
             </div>
             <?php if (!empty($identity['photo_path'])): ?><img class="idp-card__photo" src="<?= $h(url((string) $identity['photo_path'])) ?>" alt="Photo du titulaire"><?php endif; ?>
             <div class="idp-card__name"><?= $h(mb_strtoupper((string) ($identity['last_name'] ?? ''))) ?> <?= $h($identity['first_name'] ?? '') ?></div>

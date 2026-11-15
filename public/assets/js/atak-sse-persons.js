@@ -153,7 +153,7 @@
       .then(function (data) {
         paint((data && data.persons) || []);
       })
-      .catch(function () {});
+      .catch(function (err) { if (window.SseNotify) { SseNotify.failure(err); } });
   }
 
   function start() {

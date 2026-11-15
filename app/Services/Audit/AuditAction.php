@@ -94,6 +94,10 @@ final class AuditAction
     public const SECURITY_EVENT = 'security.event';
 
     public const ROLE_PERMISSIONS_UPDATED = 'role.permissions_updated';
+    /** Niveau d’accès de la communauté créé, supprimé ou masqué depuis Effectifs > Accès. */
+    public const ACCESS_ROLE_CREATED = 'access_role.created';
+    public const ACCESS_ROLE_REMOVED = 'access_role.removed';
+    public const ACCESS_ROLE_MEMBERS = 'access_role.members_changed';
 
     public const SITE_ROLE_ASSIGNED = 'site_role.assigned';
     public const SITE_ROLE_REVOKED = 'site_role.revoked';

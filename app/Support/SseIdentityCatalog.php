@@ -99,6 +99,22 @@ final class SseIdentityCatalog
         'validated' => 'Validé',
         'issued' => 'Émis',
         'revoked' => 'Révoqué',
+        // Papier constaté au contrôle sur un sujet : saisie de ce qui a été vu, jamais émis, jamais envoyé en jeu.
+        'observed' => 'Constaté',
+    ];
+
+    /** Authenticité constatée d'un papier relevé au contrôle (stockée dans l'intégrité et l'origine du papier). */
+    public const AUTHENTICITY = [
+        'authentic' => 'Authentique',
+        'doubtful' => 'Douteux',
+        'fake' => 'Faux détecté',
+    ];
+
+    /** D'où vient un papier constaté. */
+    public const OBSERVED_SOURCES = [
+        'check' => 'Contrôle sur le terrain',
+        'seek' => 'SEEK',
+        'other' => 'Autre',
     ];
 
     /** Transitions autorisées : état actuel → états suivants possibles. */
@@ -107,6 +123,7 @@ final class SseIdentityCatalog
         'validated' => ['issued', 'draft'],
         'issued' => ['revoked'],
         'revoked' => [],
+        'observed' => [],
     ];
 
     /** Verdict d'une vérification (contrat lookup) et d'un contrôle. */
