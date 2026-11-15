@@ -175,7 +175,7 @@ final class SseClearanceService
             return SseCaseRepository::CLASS_INTERNAL;
         }
 
-        return self::resolve('can', $this->profileClearanceLevel())['level'];
+        return self::resolve('can', fn (): ?string => $this->profileClearanceLevel())['level'];
     }
 
     /**
@@ -183,10 +183,11 @@ final class SseClearanceService
      * la session courante (maxLevel) comme pour la fiche d'un membre (SseMemberClearance).
      *
      * @param callable(string): bool $can droit d'origine : slug => oui / non
-     * @param string|null $profileLevel niveau de la fiche opérateur (déjà normalisé, voir normalizeProfileLevel)
+     * @param string|(\Closure(): ?string)|null $profileLevel niveau de la fiche opérateur (déjà normalisé, voir normalizeProfileLevel) ; une fonction
+     *        n'est appelée qu'au besoin : une habilitation explicite dispense de lire la fiche
      * @return array{level: string, source: string} source : explicit, role, profile ou floor
      */
-    public static function resolve(callable $can, ?string $profileLevel): array
+    public static function resolve(callable $can, string|\Closure|null $profileLevel): array
     {
         // 1. Habilitation explicite — la plus haute accordée l'emporte.
         $explicit = null;
@@ -210,6 +211,9 @@ final class SseClearanceService
         }
 
         // 3. Habilitation inscrite sur la fiche opérateur — le plus haut l'emporte.
+        if ($profileLevel instanceof \Closure) {
+            $profileLevel = $profileLevel();
+        }
         if ($profileLevel !== null && SseRedactionService::levelRank($profileLevel) > SseRedactionService::levelRank($fromRole)) {
             return ['level' => $profileLevel, 'source' => 'profile'];
         }
