@@ -522,8 +522,8 @@ final class SseMemberImageGateTest extends TestCase
             self::assertStringContainsString("/atak/sse/fichiers/{$needle}'", $routes);
         }
         $registry = (string) file_get_contents($root . '/database/steps/registry.php');
-        self::assertStringContainsString("'file' => '4650_sse_member_image_grants.php'", $registry);
-        self::assertFileExists($root . '/database/steps/4650_sse_member_image_grants.php');
+        self::assertStringContainsString("'file' => '4660_sse_member_image_grants.php'", $registry);
+        self::assertFileExists($root . '/database/steps/4660_sse_member_image_grants.php');
         self::assertFileExists($root . '/migrations/rollback/sse_member_image_grants_down.sql');
         // Aucun accès direct au dossier public pour une image de membre dans les écrans des fichiers.
         foreach (['_hit.php', 'photobook.php'] as $view) {

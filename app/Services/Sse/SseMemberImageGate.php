@@ -516,7 +516,7 @@ final class SseMemberImageGate
 
     /**
      * « Demander l'accès » : demande tracée (table des demandes, journal d'audit) adressée à la chaîne hiérarchique du membre
-     * (centre de notifications). Sans table des demandes (étape 4650 pas lancée), la demande est seulement journalisée et notifiée.
+     * (centre de notifications). Sans table des demandes (étape 4660 pas lancée), la demande est seulement journalisée et notifiée.
      *
      * @return array{ok: bool, message: string}
      */

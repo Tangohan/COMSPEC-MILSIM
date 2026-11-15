@@ -13,7 +13,7 @@ Les images d'une identité du registre (`sse_identities.photo_path`, sous `publi
 `SseMemberImageGate` classe CONFIDENTIEL ÉLEVÉ toute image dont le propriétaire est un membre (`sse_identities.user_id`, photo rattachée ou fiche SEEK II rattachée ; identité introuvable = classée aussi), et ne l'ouvre qu'au titulaire, à sa hiérarchie (organigramme), à une habilitation Très restreint avec la section fermée `identites_service`, ou à une dérogation datée avec motif. Aucun octet n'est servi sans autorisation ; chaque consultation est journalisée. Cadre « CONFIDENTIEL ÉLEVÉ » et « Demander l'accès » dans l'interface. Voir `docs/sse-droits-acces.md`.
 
 ## Fichiers touchés
-`app/Services/Sse/SseMemberImageGate.php`, `app/Repositories/SseFileRecordRepository.php`, `app/Services/Sse/SseFileSearchService.php`, `SseFileRecordService.php`, `SseSeekPhotoService.php`, `app/Controllers/Web/SseFileRecordController.php`, `views/atak/sse/files/*`, `views/atak/sse/papers/identity_show.php`, `database/steps/4650_sse_member_image_grants.php`.
+`app/Services/Sse/SseMemberImageGate.php`, `app/Repositories/SseFileRecordRepository.php`, `app/Services/Sse/SseFileSearchService.php`, `SseFileRecordService.php`, `SseSeekPhotoService.php`, `app/Controllers/Web/SseFileRecordController.php`, `views/atak/sse/files/*`, `views/atak/sse/papers/identity_show.php`, `database/steps/4660_sse_member_image_grants.php`.
 
 ## Vérification
 `tests/Unit/SseMemberImageGateTest.php` (refus sans octet, titulaire, supérieur direct et indirect, collègue, gestionnaire SSE, habilitation, dérogation, non membre inchangé, fail-closed, isolation des communautés, journal). Captures de la planche avec données fictives.

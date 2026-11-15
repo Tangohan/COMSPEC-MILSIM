@@ -7,7 +7,7 @@ namespace App\Repositories;
 use App\Core\Database;
 
 /**
- * Demandes d'accès et dérogations datées aux images confidentielles d'un membre (table sse_member_image_grants, étape 4650).
+ * Demandes d'accès et dérogations datées aux images confidentielles d'un membre (table sse_member_image_grants, étape 4660).
  *
  * Toute lecture est bornée à la communauté. Table absente ou illisible : aucune dérogation (fail-closed) ; l'appelant
  * décide de ce qu'il fait d'une écriture impossible.
