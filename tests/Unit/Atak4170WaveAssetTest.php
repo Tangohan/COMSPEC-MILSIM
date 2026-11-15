@@ -462,4 +462,48 @@ final class Atak4170WaveAssetTest extends TestCase
         self::assertStringContainsString($cba . ', "None by default. ', $en);
         self::assertStringContainsString('Hidden in small format or when the map is too small. Also available in Settings > Map."]', $en);
     }
+
+    // ── Version et notes ────────────────────────────────────────────────────────────────────────────────────────
+
+    public function testVersionAndChangelogs(): void
+    {
+        $hpp = $this->read('script_component.hpp');
+        self::assertStringContainsString('#define VERSION 4.17.0', $hpp);
+        self::assertStringContainsString('#define VERSION_STR "4.17.0"', $hpp);
+        self::assertStringContainsString('#define VERSION_NAME "4.17.0.AG - Washington"', $hpp);
+        // La DLL COMSPEC Link ne change pas dans cette version.
+        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.125"', $hpp);
+
+        $cl = str_replace("\r\n", "\n", (string) file_get_contents(self::ROOT . 'CHANGELOG-ATAK.md'));
+        $title = '(ATAK natif 4.17.0.AG - Washington)';
+        self::assertSame(1, substr_count($cl, $title));
+        // Entrée en tête du journal, au-dessus de la 4.16.0.
+        self::assertLessThan(strpos($cl, '(ATAK natif 4.16.0.AG - Washington)'), strpos($cl, $title));
+        $entry = substr($cl, (int) strpos($cl, $title));
+        $entry = substr($entry, 0, (int) strpos($entry, "\n## ", 10));
+        self::assertStringContainsString("### Résumé joueur\nType : nouveauté\nFR : Mini-apps sur la carte et interface renforcée\n- ", $entry);
+        self::assertStringContainsString("\nEN : Mini apps on the map and a stronger interface\n- ", $entry);
+        // Résumé joueur : mêmes puces dans les deux langues, aucun nom interne.
+        $summary = substr($entry, 0, (int) strpos($entry, '### Détail technique'));
+        $fr = substr($summary, 0, (int) strpos($summary, "\nEN : "));
+        $en = substr($summary, (int) strpos($summary, "\nEN : "));
+        self::assertSame(substr_count($fr, "\n- "), substr_count($en, "\n- "));
+        self::assertGreaterThanOrEqual(4, substr_count($fr, "\n- "));
+        foreach (['fn_', 'comspec_atak_native', 'COMSPEC_ATAK_', 'CBA', '.sqf', 'AssetTest', '`'] as $internal) {
+            self::assertStringNotContainsString($internal, $summary, $internal);
+        }
+        foreach (['NAV', 'FEUX', 'MEDEVAC', 'ALERTES', 'HEURE H', 'SITUATION', 'Réglages > Carte'] as $word) {
+            self::assertStringContainsString($word, $fr, $word);
+        }
+        self::assertStringContainsString('### Détail technique', $entry);
+        self::assertStringContainsString('`fn_setSetting`', $entry);
+
+        $steam = str_replace("\r\n", "\n", (string) file_get_contents(self::ROOT . 'mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
+        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.17.0 Washington', $steam);
+        $block = substr($steam, 0, (int) strpos($steam, '[h1]COMSPEC ATAK 4.16.0 Washington'));
+        self::assertStringContainsString('[h2]Français[/h2]', $block);
+        self::assertStringContainsString('[h2]English[/h2]', $block);
+        self::assertSame(2, substr_count($block, '[list]'));
+        self::assertSame(2, substr_count($block, '[/list]'));
+    }
 }

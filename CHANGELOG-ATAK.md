@@ -38,6 +38,37 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Carte : mini-apps épinglées, interface renforcée, correctifs et dessin allégé (ATAK natif 4.17.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : Mini-apps sur la carte et interface renforcée
+- Cinq mini-apps à épingler sur la carte du téléphone : NAV (prochaine étape de l'itinéraire, distance et cap), FEUX (mission de tir en cours), MEDEVAC (où en est l'évacuation, distance de la zone de poser), ALERTES (dernière alerte) et HEURE H (compte à rebours du groupe).
+- Vous pouvez épingler jusqu'à trois apps à la fois, Messages, SMS et Ordres compris : dans le panneau SITUATION de la carte ou dans Réglages > Carte, touchez une app pour l'épingler, retouchez-la pour la retirer. Touchez un bandeau pour ouvrir l'app.
+- Les réglages changés depuis le téléphone (apps épinglées, langue, police, taille du téléphone, noms sur la carte) sont maintenant gardés d'une partie à l'autre.
+- Interface plus lisible : la barre d'outils ne dépasse plus de la carte, les petits textes sont plus lisibles, les textes trop longs se terminent par « … » et les couleurs d'état suivent le thème (sombre, jour, nuit JVN).
+- Erreurs corrigées : couleurs de la fiche d'un relais, 9-LINE et 5-LINE envoyés à Athena, recherche de l'App Store en anglais, filtres de l'app Debug, téléphone et batterie remis à neuf à la réapparition quand vous rejoignez en cours de partie.
+- La carte se dessine plus vite quand le calque Relais ou un plan de briefing est affiché.
+EN : Mini apps on the map and a stronger interface
+- Five mini apps to pin on the phone map: NAV (next step of the route, distance and bearing), FIRES (current fire mission), MEDEVAC (how far the evacuation is, distance to the landing zone), ALERTS (last alert) and H-HOUR (the group countdown).
+- You can pin up to three apps at once, Messages, SMS and Orders included: in the map's SITUATION panel or in Settings > Map, touch an app to pin it, touch it again to remove it. Touch a banner to open the app.
+- Settings changed from the phone (pinned apps, language, font, phone size, names on the map) are now kept from one session to the next.
+- A more readable interface: the toolbar no longer runs past the map, small texts are easier to read, texts that are too long end with "…" and status colours follow the theme (dark, day, NVG night).
+- Errors fixed: colours on a relay's sheet, 9-LINE and 5-LINE sent to Athena, App Store search in English, Debug app filters, phone and battery reset on respawn when you join a game in progress.
+- The map draws faster when the Relays layer or a briefing plan is shown.
+
+### Détail technique
+- **Mini-apps** (`fn_mapPinnedApp`) : table unique des apps épinglables (clé = page ouverte au toucher) ; NAV lit `COMSPEC_ATAK_Waypoints`, FEUX `COMSPEC_ATAK_FsMsns` (appui feu typé décoché : état local de l'app CAS), MEDEVAC `COMSPEC_ATAK_MedevacReqs` (la mienne d'abord), ALERTES `COMSPEC_ATAK_AlertLog`, HEURE H `COMSPEC_ATAK_WatchM` (sinon chrono ou minuteur de la montre). Appels changés : `app` devient `apps`, `set` devient `toggle`.
+- **Trois emplacements** : `comspec_atak_native_map_pinned_app` (celui de la 4.16.0, premier emplacement : le choix déjà fait est gardé) et ses jumeaux `_2` et `_3` (`XEH_preInit.sqf`, même liste, `none` par défaut, par joueur). Ligne de boutons à bascule dans le panneau SITUATION et dans Réglages > Carte ; une quatrième app remplace la troisième. Seules les apps que le joueur peut ouvrir sont proposées ; une app interdite, retirée ou désinstallée déjà épinglée reste dans la ligne, avec une info-bulle, pour pouvoir la retirer.
+- **Placement** (`fn_pageMap`) : les bandeaux se partagent la place à droite du bandeau des coordonnées (22 caractères au moins chacun), puis passent sur des rangées empilées tant que la carte garde la moitié de sa hauteur ; chacun réserve sa place (`_hud`, `_panH`). Une fois par seconde (`tick`), texte réécrit seulement s'il change, coût toujours sous la clé `carte : app épinglée`.
+- **Réglages gardés, sans écriture immédiate du profil** : nouvelle fonction `fn_setSetting` (dossier `ui`). Sur main, un réglage CBA changé depuis le téléphone n'était pas rangé dans le profil ; le 5e paramètre de `CBA_settings_fnc_set` le range mais lance `saveProfileNamespace` à chaque appel. `fn_setSetting` pose le réglage par CBA, le range dans `cba_settings_hash` comme CBA le fait, puis passe par `fn_saveProfile` (écriture regroupée, forcée en fin de mission). Appelée par `fn_mapPinnedApp` (`toggle`), `fn_pageSettings` (interrupteurs et choix CBA, modèle, police, taille en main, langue) et `fn_pageMap` (calques de noms).
+- **Redessin des apps épinglées** : `refresh` dédoublonne par image (`diag_frameNo`) et non plus par tranche de 0,3 s, qui avalait le redessin d'un deuxième toucher rapproché.
+- **Correctifs** : bandeau Ordres aligné sur la liste de `fn_appBadge` ; coupe du bandeau en caractères (`forceUnicode`) ; `fn_waveRelaySheet` (parenthèses autour de `apply`) ; `fn_firesAction` et `fn_reportAuto` (`_forEachIndex` lu dans un `apply`) ; `fn_pageStore` (`toLower` sur un tableau) ; `fn_pageDebug` et bouton vidéo du drone (`find ... isEqualTo 0`) ; `fn_mapCapture` (`spawn` d'un code local) ; `fn_perfLog` ; `XEH_postInitClient` (gestionnaires du joueur et action « Changer la batterie » posés quand `player` existe, pour une arrivée en cours de partie) ; deux virgules de `i18n/en.txt`.
+- **Performance** : `fn_meshDraw` (vue calculée une fois par image, étiquette sautée pour un relais hors vue), `fn_planDraw` (géométrie gardée dans `COMSPEC_ATAK_PlanGeo`, clé `hashValue` des points), `fn_mapOverlayUpdate` (sortie « cap inchangé » avant le préambule). Pas de chiffre avant/après : ces blocs n'avaient pas de clé de mesure. Deux clés ajoutées pour les chiffrer en jeu : « carte maillage et relais (image) » et « carte plan de briefing (image) ».
+- **Interface** : barre d'outils de la carte dimensionnée d'après son nombre de boutons et réserve suivant la taille GRANDE ; plancher `COMSPEC_ATAK_FontMin` sur les titres du menu OUTILS, le cap sous la rose et la consigne d'outil ; coupes de texte par `fn_mapFmt` (`cut`) ; états de l'app Ordres, barre d'état et astuce de Messages aux jetons du thème ; vent par `fn_cardinal` (W et NW en anglais) ; encres choisies d'après le fond réel (carte sombre : `hexMap…`, surfaces du thème : encres de page ; le texte du volet SITUATION, sur fond sombre fixe, garde `hexMapFriend`).
+- **Écarté** : mini-app ÉQUIPE (double la réglette d'effectif, coût non mesurable sans le jeu) ; signature des non-lus de la messagerie et reprise des données COMSPEC Link (à reprendre avec une mesure en jeu) ; couleurs en dur du journal JTAC et du tableau des missions de tir.
+- Non essayé en jeu (aucun test en jeu possible dans ce fil) : voir la liste « à vérifier en jeu » de la PR. Tests : `tests/Unit/Atak4170WaveAssetTest.php`, `tests/Unit/AtakPinnedAppMapAssetTest.php`.
+
 ## Carte : épinglez Messages, SMS ou Ordres à côté des coordonnées (ATAK natif 4.16.0.AG - Washington)
 
 ### Résumé joueur

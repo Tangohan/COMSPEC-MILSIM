@@ -1,3 +1,27 @@
+[h1]COMSPEC ATAK 4.17.0 Washington — mini-apps sur la carte, interface renforcée / mini apps on the map, stronger interface[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Carte[/b] : cinq mini-apps à épingler, NAV (prochaine étape, distance et cap), FEUX (mission de tir en cours), MEDEVAC (étape de l'évacuation, zone de poser), ALERTES (dernière alerte) et HEURE H (compte à rebours du groupe).
+[*] Jusqu'à trois apps épinglées à la fois, Messages, SMS et Ordres compris. Dans le panneau SITUATION de la carte ou dans Réglages > Carte : touchez une app pour l'épingler, retouchez-la pour la retirer.
+[*] [b]Réglages[/b] : ceux changés depuis le téléphone (apps épinglées, langue, police, taille du téléphone, noms sur la carte) sont gardés d'une partie à l'autre.
+[*] [b]Interface[/b] : barre d'outils gardée dans la carte, petits textes plus lisibles, textes longs terminés par « … », couleurs d'état qui suivent le thème (sombre, jour, nuit JVN).
+[*] [b]Correctifs[/b] : fiche d'un relais, 9-LINE et 5-LINE vers Athena, recherche de l'App Store en anglais, filtres de l'app Debug, téléphone et batterie à la réapparition après une arrivée en cours de partie.
+[*] [b]Performance[/b] : carte plus rapide avec le calque Relais ou un plan de briefing affiché.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Map[/b]: five mini apps to pin, NAV (next step, distance and bearing), FIRES (current fire mission), MEDEVAC (evacuation step, landing zone), ALERTS (last alert) and H-HOUR (the group countdown).
+[*] Up to three pinned apps at once, Messages, SMS and Orders included. In the map's SITUATION panel or in Settings > Map: touch an app to pin it, touch it again to remove it.
+[*] [b]Settings[/b]: those changed from the phone (pinned apps, language, font, phone size, names on the map) are kept from one session to the next.
+[*] [b]Interface[/b]: toolbar kept inside the map, more readable small texts, long texts ending with "…", status colours that follow the theme (dark, day, NVG night).
+[*] [b]Fixes[/b]: relay sheet, 9-LINE and 5-LINE to Athena, App Store search in English, Debug app filters, phone and battery on respawn after joining a game in progress.
+[*] [b]Performance[/b]: faster map with the Relays layer or a briefing plan shown.
+[/list]
+
 [h1]COMSPEC ATAK 4.16.0 Washington — app épinglée sur la carte / pinned app on the map[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

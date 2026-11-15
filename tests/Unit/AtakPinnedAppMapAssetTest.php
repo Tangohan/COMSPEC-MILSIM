@@ -112,10 +112,9 @@ final class AtakPinnedAppMapAssetTest extends TestCase
 
     public function testVersionAndChangelogs(): void
     {
+        // Version courante : figée par le test de la dernière version (Atak4170WaveAssetTest) ; ici, 4.16.0 au moins.
         $hpp = $this->read(self::MAIN . 'script_component.hpp');
-        self::assertStringContainsString('#define VERSION 4.16.0', $hpp);
-        self::assertStringContainsString('#define VERSION_STR "4.16.0"', $hpp);
-        self::assertStringContainsString('#define VERSION_NAME "4.16.0.AG - Washington"', $hpp);
+        self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(1[6-9]|[2-9]\d)\.\d+"/', $hpp);
 
         $cl = $this->read(self::ROOT . 'CHANGELOG-ATAK.md');
         self::assertStringContainsString('(ATAK natif 4.16.0.AG - Washington)', $cl);
@@ -129,6 +128,6 @@ final class AtakPinnedAppMapAssetTest extends TestCase
         self::assertStringNotContainsString('comspec_atak_native', $summary);
 
         $steam = $this->read(self::ROOT . 'mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.16.0 Washington', $steam);
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.16.0 Washington', $steam);
     }
 }
