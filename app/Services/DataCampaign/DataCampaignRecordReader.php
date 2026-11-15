@@ -122,7 +122,6 @@ class DataCampaignRecordReader
             ['label' => 'Prénom', 'value' => self::text($s['first_name'] ?? ''), 'required' => true],
             ['label' => 'Nom', 'value' => self::text($s['last_name'] ?? ''), 'required' => true],
             ['label' => 'Nom affiché', 'value' => self::text($ctx['user']['display_name'] ?? '')],
-            ['label' => 'Nom du personnage', 'value' => self::text($p['character_name'] ?? '')],
             ['label' => 'Indicatif', 'value' => self::text($s['callsign'] ?? ($ctx['user']['callsign'] ?? ''))],
             ['label' => 'Surnom principal', 'value' => self::text($s['nickname_primary'] ?? '')],
         ];
