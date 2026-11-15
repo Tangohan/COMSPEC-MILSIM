@@ -105,8 +105,11 @@ final class VagueTriTest extends TestCase
         // Entrée de module vers sa page par défaut : ce n'est pas une page déplacée.
         self::assertSame(302, Map::redirectOf(Map::match('GET', '/back-office/renseignement'))[0]);
 
+        // La redirection conserve la requête en cours ($_GET) : un test précédent qui laisse ?tenant_id=1 ne doit pas la polluer.
         $server = $_SERVER;
+        $get = $_GET;
         try {
+            $_GET = [];
             $_SERVER['REQUEST_METHOD'] = 'POST';
             $_SERVER['REQUEST_URI'] = '/back-office/ressources/training/studio';
             $response = training_lms_redirect_legacy_bo_training_to_formation(new \App\Core\Request());
@@ -114,6 +117,7 @@ final class VagueTriTest extends TestCase
             self::assertStringEndsWith('/formation/studio', (string) $response->headerValue('Location'));
         } finally {
             $_SERVER = $server;
+            $_GET = $get;
         }
     }
 

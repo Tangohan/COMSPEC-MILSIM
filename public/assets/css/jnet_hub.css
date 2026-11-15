@@ -16,6 +16,41 @@
   font-size: 17px;
 }
 
+/* Espace commun : une destination nommée, à côté du choix d'unité. */
+.hb-common {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 100%;
+  margin-top: 26px;
+  padding: 14px 18px;
+  border: 1px solid var(--ja-rule);
+  background: var(--ja-c1);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.hb-common:hover {
+  border-color: var(--u);
+  background: var(--ja-c2);
+}
+
+.hb-common__t b {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.hb-common__t small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ja-muted);
+  font-size: 13px;
+}
+
+.hb-common .ja-i {
+  color: var(--u);
+}
+
 /* —— Onglets de rubriques —— */
 
 .hb-tabs {

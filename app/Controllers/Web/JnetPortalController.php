@@ -828,29 +828,69 @@ final class JnetPortalController
         }
         $filter = trim((string) $request->query('filtre', 'all'));
         $all = $this->jnet->loadPersonnelCards($ctx['tenant_id']);
-        $needle = mb_strtoupper($filter);
-        $filtered = array_values(array_filter($all, static function (array $p) use ($filter, $needle): bool {
-            if ($filter === '' || strcasecmp($filter, 'all') === 0) {
-                return true;
-            }
-            if (strcasecmp($filter, 'off') === 0) {
-                return ($p['duty'] ?? '') === 'off';
-            }
-            $unit = mb_strtoupper(trim((string) ($p['unit'] ?? '')));
-            if ($unit !== '' && $unit === $needle) {
-                return true;
-            }
-            $hay = mb_strtoupper((string) ($p['unit'] ?? '') . ' ' . ($p['function'] ?? '') . ' ' . ($p['role'] ?? '') . ' ' . ($p['name'] ?? '') . ' ' . ($p['callsign'] ?? ''));
-
-            return str_contains($hay, $needle);
-        }));
+        $fils = $this->unitFils($ctx['tenant_id'], $ctx['user_id']);
+        // Tous les membres sont rendus : l'annuaire se filtre et se trie dans la page ; « match » reprend le filtre de l'adresse
+        // (?filtre=) pour que la page reste juste sans JavaScript.
+        $cards = [];
+        foreach ($all as $p) {
+            $p['match'] = $this->personnelMatches($p, $filter);
+            $p['fil'] = $fils[(int) ($p['unit_id'] ?? 0)] ?? null;
+            $cards[] = $p;
+        }
 
         return $this->render('personnel', 'Personnel', [
-            'personnel' => $filtered,
+            'personnel' => $cards,
             'personnelFilter' => $filter,
             'personnelFilters' => $this->jnet->personnelFilterOptions($all),
             'personnelTotal' => count($all),
-        ], 'personnel');
+        ], 'personnel', ['jnet_personnel.css'], ['jnet_personnel.js']);
+    }
+
+    /** @param array<string, mixed> $p */
+    private function personnelMatches(array $p, string $filter): bool
+    {
+        if ($filter === '' || strcasecmp($filter, 'all') === 0) {
+            return true;
+        }
+        if (strcasecmp($filter, 'off') === 0) {
+            return ($p['duty'] ?? '') === 'off';
+        }
+        $needle = mb_strtoupper($filter);
+        $unit = mb_strtoupper(trim((string) ($p['unit'] ?? '')));
+        if ($unit !== '' && $unit === $needle) {
+            return true;
+        }
+        $hay = mb_strtoupper((string) ($p['unit'] ?? '') . ' ' . ($p['function'] ?? '') . ' ' . ($p['role'] ?? '') . ' ' . ($p['name'] ?? '') . ' ' . ($p['callsign'] ?? ''));
+
+        return str_contains($hay, $needle);
+    }
+
+    /**
+     * Fil hiérarchique et lien de chaque unité que le lecteur voit dans l'ORBAT (arbre déjà filtré pour lui, confidentialité
+     * comprise) : une unité absente de son arbre s'affiche sans fil ni lien.
+     *
+     * @return array<int, array{chain: list<string>, href: string}>
+     */
+    private function unitFils(int $tenantId, int $userId): array
+    {
+        $out = [];
+        try {
+            $tree = $this->spaces->tree($tenantId, $userId);
+            foreach ($tree->unitIds() as $id) {
+                $labels = [];
+                foreach ($tree->chain($id) as $step) {
+                    if ($step === JnetSpaceTree::ORG || $step === $id) {
+                        continue;
+                    }
+                    $labels[] = (string) (($tree->node($step) ?? [])['label'] ?? '');
+                }
+                $out[$id] = ['chain' => array_values(array_filter($labels, static fn (string $l): bool => $l !== '')), 'href' => url('jnet/u/' . $id)];
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return $out;
     }
 
     public function personnelShow(Request $request, array $params = []): Response
@@ -866,10 +906,11 @@ final class JnetPortalController
 
             return Response::redirect(url('jnet/personnel'));
         }
+        $card['fil'] = $this->unitFils($ctx['tenant_id'], $ctx['user_id'])[(int) ($card['unit_id'] ?? 0)] ?? null;
 
         return $this->render('personnel_show', (string) ($card['name'] ?? 'Personnel'), [
             'person' => $card,
-        ], 'personnel');
+        ], 'personnel', ['jnet_personnel.css']);
     }
 
     public function operations(Request $request, array $params = []): Response
@@ -1333,6 +1374,12 @@ final class JnetPortalController
             'canTba' => PortalAccessChoice::canAccessTba(),
             'preferredPortal' => PortalAccessChoice::remembered(),
         ], 'system');
+    }
+
+    /** Guide de l'extranet : ce que JNET propose, rubrique par rubrique, rédigé pour les membres (views/jnet/guide.php). */
+    public function guide(Request $request, array $params = []): Response
+    {
+        return $this->render('guide', 'Guide de l’extranet JNET', [], 'guide', ['jnet_guide.css'], ['jnet_guide.js']);
     }
 
     public function switchPortal(Request $request, array $params = []): Response

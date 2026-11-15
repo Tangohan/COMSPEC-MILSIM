@@ -1,0 +1,350 @@
+/**
+ * Annonce de JNET sur le portail : la fenêtre « JNET arrive » (.jna, views/partials/jnet_announce_modal.php) et le bandeau
+ * du tableau de bord (.jnb, views/partials/jnet_dashboard_banner.php). Même habillage que l'extranet : noir Athena, vert,
+ * Inter. La fenêtre est masquée tant que le script ne l'ouvre pas ; le bandeau ne dépend d'aucun script pour s'afficher.
+ */
+
+.jna,
+.jna *,
+.jnb,
+.jnb *,
+.jnb-back,
+.jnb-back * {
+  box-sizing: border-box;
+}
+
+.jna[hidden],
+.jnb[hidden],
+.jnb-back[hidden] {
+  display: none !important;
+}
+
+/* —— Fenêtre —— */
+
+.jna {
+  position: fixed;
+  inset: 0;
+  z-index: 9995;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.jna__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 5, 0.72);
+}
+
+.jna__card {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 32px 30px 24px;
+  border: 1px solid rgba(244, 244, 240, 0.14);
+  border-top: 3px solid #34d399;
+  border-radius: 4px;
+  background: #050505;
+  color: #f4f4f0;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+  outline: none;
+}
+
+.jna__x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: rgba(244, 244, 240, 0.65);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.jna__x:hover {
+  color: #f4f4f0;
+}
+
+.jna__title {
+  margin: 0 36px 10px 0;
+  font-size: 26px;
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+.jna__lead {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(244, 244, 240, 0.72);
+}
+
+.jna__list {
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(244, 244, 240, 0.12);
+}
+
+.jna__list li {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(244, 244, 240, 0.12);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.jna__n {
+  flex: 0 0 auto;
+  font: 500 12px 'JetBrains Mono', ui-monospace, monospace;
+  color: #34d399;
+}
+
+.jna__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.jna__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid rgba(244, 244, 240, 0.3);
+  border-radius: 4px;
+  background: transparent;
+  color: #f4f4f0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.jna__btn:hover {
+  border-color: #34d399;
+  color: #34d399;
+}
+
+.jna__btn--solid {
+  border-color: #34d399;
+  background: #34d399;
+  color: #050505;
+}
+
+.jna__btn--solid:hover {
+  background: #6ee7b7;
+  border-color: #6ee7b7;
+  color: #050505;
+}
+
+.jna__btn--ghost {
+  border-color: transparent;
+  color: rgba(244, 244, 240, 0.7);
+}
+
+.jna__hint {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  color: rgba(244, 244, 240, 0.5);
+}
+
+.jna :focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .jna__card {
+    padding: 26px 20px 20px;
+  }
+
+  .jna__title {
+    font-size: 22px;
+  }
+
+  .jna__actions {
+    flex-direction: column;
+  }
+
+  .jna__btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .jna.is-open .jna__card {
+    animation: jna-in 0.22s ease-out;
+  }
+
+  @keyframes jna-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+}
+
+/* —— Bandeau du tableau de bord —— */
+
+.jnb {
+  position: relative;
+  max-width: 100rem;
+  margin: 16px auto 0;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.jnb__in {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 28px;
+  overflow: hidden;
+  padding: 22px 64px 22px 28px;
+  border-left: 4px solid #34d399;
+  background: #050505;
+  color: #f4f4f0;
+}
+
+.jnb__in::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 0% 0%, rgba(4, 120, 87, 0.4), transparent 60%);
+  pointer-events: none;
+}
+
+.jnb__text {
+  position: relative;
+  flex: 1 1 340px;
+  min-width: 0;
+}
+
+.jnb__title {
+  margin: 0 0 4px;
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.jnb__lead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(244, 244, 240, 0.72);
+}
+
+.jnb__actions {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+
+.jnb__btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 22px;
+  border-radius: 4px;
+  background: #34d399;
+  color: #050505;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.jnb__btn:hover {
+  background: #6ee7b7;
+}
+
+.jnb__link {
+  color: #f4f4f0;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.jnb__link:hover {
+  color: #34d399;
+}
+
+.jnb__x {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: rgba(244, 244, 240, 0.65);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.jnb__x:hover {
+  color: #f4f4f0;
+}
+
+.jnb :focus-visible,
+.jnb-back :focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 2px;
+}
+
+/* Bandeau masqué : un lien discret pour le réafficher. */
+
+.jnb-back {
+  max-width: 100rem;
+  margin: 8px auto 0;
+  text-align: right;
+}
+
+.jnb-back button {
+  min-height: 32px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.jnb-back button:hover {
+  color: #047857;
+}
+
+@media (max-width: 640px) {
+  .jnb__in {
+    padding: 20px 52px 20px 18px;
+  }
+
+  .jnb__btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

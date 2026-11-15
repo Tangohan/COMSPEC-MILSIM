@@ -1200,6 +1200,8 @@ final class JnetDashboardService
             'callsign' => $callsign,
             'grade' => $grade,
             'unit' => $unit,
+            'unit_id' => (int) ($row['unit_id'] ?? 0),
+            'grade_rank' => (int) ($row['grade_sort_order'] ?? 999),
             'function' => $function,
             'role' => (string) ($row['role_name'] ?? ''),
             'status' => (string) ($row['status'] ?? 'active'),
