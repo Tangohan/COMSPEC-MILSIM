@@ -93,7 +93,7 @@ $linkRow = static function (array $r) use ($h): void { ?>
                 <?php if (!empty($t['truncated'])): ?><p class="cw-note">Le parcours est limité : la page de l’élément montre la suite.</p><?php endif; ?>
 
             <?php elseif ($t['id'] === 'auto'): ?>
-                <?php if ($t['treatments'] === []): ?><p class="cw-empty">L’état des automatismes n’est pas lisible pour le moment.</p><?php endif; ?>
+                <?php if ($t['treatments'] === []): ?><p class="cw-empty">L’état des Cerbères n’est pas lisible pour le moment.</p><?php endif; ?>
                 <ul class="cw-list">
                 <?php foreach ($t['treatments'] as $tr): ?>
                     <li class="cw-row">

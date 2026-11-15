@@ -28,7 +28,7 @@ $maxHour = max(1, ...(array_map('intval', array_values($byHour)) ?: [1]));
 
 <p class="muted" style="margin:0 0 12px">
     Rythme d’activité, densités de présence, contradictions et rapprochements —
-    propositions automatiques à arbitrer, jamais des faits confirmés.
+    propositions de Cerbère-Validation à arbitrer, jamais des faits confirmés.
 </p>
 
 <section class="iw-cycle-block">

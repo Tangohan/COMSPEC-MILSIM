@@ -90,7 +90,7 @@ $entriesCount = count($entries);
                 <strong><?= $searchQuery !== '' ? 'Aucun résultat' : 'Aucune correspondance' ?></strong>
                 <p><?= $searchQuery !== ''
                     ? 'Aucune correspondance ne correspond à cette recherche.'
-                    : 'Ajoutez des entrées surveillées, puis laissez le moteur comparer aux fiches terrain.' ?></p>
+                    : 'Ajoutez des entrées surveillées, puis laissez Cerbère-Corrélation comparer aux fiches terrain.' ?></p>
                 <?php if ($canManage && $entriesCount < 1): ?>
                     <button type="button" class="btn" data-sse-modal-open="sse-modal-watchlist-add">
                         Ajouter une première entrée
