@@ -110,14 +110,14 @@
       });
       var seq = ++mrzSeq;
       fetch(url + '?' + q.toString(), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (r) { if (!r.ok) { if (window.SseNotify) { SseNotify.failure(r); } return null; } return r.json(); })
         .then(function (data) {
           if (!data || seq !== mrzSeq || !Array.isArray(data.lines)) return;
           setText('mrz', data.lines.join('\n'));
           var state = document.getElementById('idw-mrz-state');
           if (state) state.textContent = (data.valid ? 'Bande de lecture valide' : 'Bande de lecture incomplète') + (data.format ? ' · ' + data.format : '');
         })
-        .catch(function () {});
+        .catch(function (err) { if (window.SseNotify) { SseNotify.failure(err); } });
     }, 250);
   }
 
@@ -244,7 +244,7 @@
           });
         }, Promise.resolve());
       }).catch(function () {
-        window.alert('Export impossible dans ce navigateur.');
+        if (window.SseNotify) { SseNotify.error('Export impossible dans ce navigateur.'); }
       }).then(function () { exportBtn.disabled = false; });
     });
   }
