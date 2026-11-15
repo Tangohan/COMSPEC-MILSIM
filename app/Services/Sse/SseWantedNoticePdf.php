@@ -29,7 +29,11 @@ use App\Support\TrainingCertificatePdfEngine;
  *   reason: string, instructions: string, zone: string, last_seen_place: string, last_seen_at: ?string, contact_label: string,
  *   contact_detail: string, photo: ?string, extra_photos: list<string>, signature: ?string, emblem_path: ?string,
  *   watermark: bool, footer: bool, faces: string, generated_at: string,
- *   service?: ?array{code: string, ac: string, color: ?array{0: int, 1: int, 2: int}}
+ *   service?: ?array{code: string, ac: string, color: ?array{0: int, 1: int, 2: int}, name?: string},
+ *   classification?: array{code: string, banner: string, rgb: array{0: int, 1: int, 2: int}},
+ *   reasons?: list<array{code: string, label: string}>, measures?: list<array{code: string, label: string}>,
+ *   physical_rows?: list<array{field: string, label: string, value: string}>, physical_line?: string,
+ *   attached?: array{main: ?string, thumbs: list<array{bytes: string, caption: string}>}
  * }
  */
 final class SseWantedNoticePdf
@@ -79,6 +83,10 @@ final class SseWantedNoticePdf
         'general' => ['Instructions générales', 'General instructions'],
         'identity_more' => ['Renseignements complémentaires', 'Additional particulars'],
         'page' => ['Page', 'Page'],
+        'reasons' => ['Motifs', 'Grounds'],
+        'measures' => ['Mesures', 'Measures'],
+        'physical' => ['Signalement', 'Description'],
+        'physical_full' => ['Signalement physique', 'Physical description'],
     ];
 
     private const SEX = ['M' => ['Masculin', 'Male'], 'F' => ['Féminin', 'Female'], 'X' => ['Non précisé', 'Unspecified']];
@@ -132,8 +140,39 @@ final class SseWantedNoticePdf
      */
     public static function needsVerso(array $d): bool
     {
-        return mb_strlen($d['reason'], 'UTF-8') > 520 || mb_strlen($d['instructions'], 'UTF-8') > 360 || $d['extra_photos'] !== [] || $d['signature'] !== null
-            || mb_strlen($d['marks'], 'UTF-8') > 140 || count($d['aliases']) > 4;
+        return mb_strlen(self::factsText($d), 'UTF-8') > 520 || mb_strlen(self::actionText($d), 'UTF-8') > 360 || $d['extra_photos'] !== [] || $d['signature'] !== null
+            || mb_strlen($d['marks'], 'UTF-8') > 140 || count($d['aliases']) > 4 || ($d['attached']['thumbs'] ?? []) !== [];
+    }
+
+    /**
+     * Faits : motifs codifiés (code et libellé), puis le texte libre de l'avis.
+     *
+     * @param Notice $d
+     */
+    public static function factsText(array $d): string
+    {
+        return self::withCodes($d['reasons'] ?? [], 'reasons', (string) $d['lang'], (string) $d['reason']);
+    }
+
+    /**
+     * Mesures à prendre : mesures codifiées (code et libellé), puis les instructions de l'avis.
+     *
+     * @param Notice $d
+     */
+    public static function actionText(array $d): string
+    {
+        return self::withCodes($d['measures'] ?? [], 'measures', (string) $d['lang'], (string) $d['instructions']);
+    }
+
+    /** @param list<array{code: string, label: string}> $codes */
+    private static function withCodes(array $codes, string $key, string $lang, string $text): string
+    {
+        if ($codes === []) {
+            return $text;
+        }
+        $head = self::L[$key][$lang === 'en' ? 1 : 0] . ' : ' . implode(' ; ', array_map(static fn (array $c): string => $c['code'] . ' ' . $c['label'], $codes));
+
+        return trim($text) === '' ? $head : $head . "\n" . $text;
     }
 
     /** @param Notice $d */
@@ -154,7 +193,7 @@ final class SseWantedNoticePdf
         $pdf->SetAuthor($d['authority'][$this->lang]);
         $pdf->SetTitle($d['banner'][$this->lang] . ' ' . $d['ref']);
         $pdf->SetSubject(self::footerText(0) . ' / ' . self::footerText(1));
-        $pdf->SetKeywords('fiction, jeu de rôle, role-play, Arma 3');
+        $pdf->SetKeywords('fiction, jeu de rôle, role-play, Arma 3' . (($d['classification']['banner'] ?? '') !== '' ? ', ' . $d['classification']['banner'] : ''));
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
         $pdf->SetMargins(self::MARGIN, self::MARGIN, self::MARGIN);
@@ -190,10 +229,11 @@ final class SseWantedNoticePdf
         $l = self::MARGIN;
         $this->watermark($d);
         // Couleur d'en-tête du service demandeur : filet en haut de page et autorité (sobre, jamais un insigne).
+        $this->classification($d);
         $tint = is_array($d['service']['color'] ?? null) ? $d['service']['color'] : self::INK;
         if ($tint !== self::INK) {
             $pdf->SetFillColor(...$tint);
-            $pdf->Rect(0, 0, self::PAGE_W, 3.0, 'F');
+            $pdf->Rect(0, 5.0, self::PAGE_W, 1.6, 'F');
         }
 
         // En-tête blanc : pictogramme, autorité, référence.
@@ -280,8 +320,10 @@ final class SseWantedNoticePdf
 
         // Lignes du service demandeur, du dernier lieu connu, de la zone et de l'expiration (réservées en bas de page).
         $line = [];
-        if ($d['contact_label'] !== '' || $d['contact_detail'] !== '') {
-            $line[] = $this->t('contact')[$this->lang] . ' : ' . trim($d['contact_label'] . ($d['contact_detail'] !== '' ? ' — ' . $d['contact_detail'] : ''));
+        $serviceName = (string) ($d['service']['name'] ?? '');
+        $serviceLabel = $d['contact_label'] !== '' ? $d['contact_label'] : ($serviceName !== '' ? $serviceName . (($d['service']['ac'] ?? '') !== '' ? ' (' . $d['service']['ac'] . ')' : '') : '');
+        if ($serviceLabel !== '' || $d['contact_detail'] !== '') {
+            $line[] = $this->t('contact')[$this->lang] . ' : ' . trim($serviceLabel . ($d['contact_detail'] !== '' ? ' — ' . $d['contact_detail'] : ''));
         }
         $seen = trim($d['last_seen_place'] . ($d['last_seen_at'] !== null ? ' (' . $this->date($d['last_seen_at']) . ')' : ''));
         if ($seen !== '') {
@@ -306,14 +348,14 @@ final class SseWantedNoticePdf
         $avail = max(34.0, 273.0 - $y - 7.5 - 5.0 - $contactH - 1.0);
         $actionMax = min(24.0, max(13.0, $avail * 0.34));
         $factsMax = min(41.0, $avail - $actionMax);
-        [$reason, $reasonSize, $reasonCut] = $this->fitOrCut($d['reason'], self::CONTENT_W - 8.0, $factsMax - 3.0, 9.2, 7.2, '');
+        [$reason, $reasonSize, $reasonCut] = $this->fitOrCut(self::factsText($d), self::CONTENT_W - 8.0, $factsMax - 3.0, 9.2, 7.2, '');
         $factsH = min($factsMax, max(18.0, $this->boxHeight($reason, $reasonSize, self::CONTENT_W - 8.0) + 6.0));
         $this->textBox($reason, $reasonSize, $l, $y, self::CONTENT_W, $factsH);
         $y += $factsH + 5.0;
 
         $this->heading($this->t('action'), $l, $y);
         $y += 7.5;
-        [$instr, $instrSize, $instrCut] = $this->fitOrCut($d['instructions'], self::CONTENT_W - 8.0, $actionMax - 3.0, 8.8, 7.0, '');
+        [$instr, $instrSize, $instrCut] = $this->fitOrCut(self::actionText($d), self::CONTENT_W - 8.0, $actionMax - 3.0, 8.8, 7.0, '');
         $actionH = min($actionMax, max(13.0, $this->boxHeight($instr, $instrSize, self::CONTENT_W - 8.0) + 6.0));
         $this->textBox($instr, $instrSize, $l, $y, self::CONTENT_W, $actionH);
         $y += $actionH + 2.5;
@@ -362,6 +404,9 @@ final class SseWantedNoticePdf
         if ($d['marks'] !== '') {
             $rows[] = ['marks', $d['marks'], true];
         }
+        if (($d['physical_line'] ?? '') !== '') {
+            $rows[] = ['physical', $d['physical_line'], true];
+        }
 
         return $rows;
     }
@@ -379,16 +424,17 @@ final class SseWantedNoticePdf
         $bottom = 255.0;
         $this->watermark($d);
         $pdf->SetFillColor(...self::RED);
-        $pdf->Rect(0, 0, self::PAGE_W, 16.0, 'F');
+        $pdf->Rect(0, 5.0, self::PAGE_W, 13.0, 'F');
         $pdf->SetTextColor(255, 255, 255);
         $pdf->setFontSpacing(1.0);
         $pdf->SetFont($this->sans, 'B', 13);
-        $pdf->SetXY($l, 4.2);
+        $pdf->SetXY($l, 7.4);
         $pdf->Cell(110.0, 7.0, $d['banner'][$this->lang], 0, 0, 'L');
         $pdf->setFontSpacing(0);
         $pdf->SetFont($this->sans, 'B', 11);
-        $pdf->SetXY(120.0, 4.8);
+        $pdf->SetXY(120.0, 8.0);
         $pdf->Cell(78.0, 6.0, $d['ref'], 0, 0, 'R');
+        $this->classification($d);
         $pdf->SetTextColor(...self::INK);
         [$title, $titleSize] = $this->fit(mb_strtoupper($this->t('verso')[$this->lang], 'UTF-8') . ' — ' . mb_strtoupper($d['last_name'], 'UTF-8') . ' ' . $d['first_name'], self::CONTENT_W, 5.5, 10.5, 7.5, 'B');
         $pdf->SetFont($this->sans, 'B', $titleSize);
@@ -397,8 +443,12 @@ final class SseWantedNoticePdf
 
         $y = 31.0;
         // Textes complets (le recto les résume).
-        $this->block($this->t('facts'), $d['reason'], 9.2, 7.4, 52.0, $y);
-        $this->block($this->t('action'), $d['instructions'], 8.8, 7.4, 28.0, $y);
+        $this->block($this->t('facts'), self::factsText($d), 9.2, 7.4, 52.0, $y);
+        $this->block($this->t('action'), self::actionText($d), 8.8, 7.4, 28.0, $y);
+        if (($d['physical_rows'] ?? []) !== []) {
+            $phys = implode("\n", array_map(static fn (array $r): string => $r['label'] . ' : ' . $r['value'], $d['physical_rows']));
+            $this->block($this->t('physical_full'), $phys, 8.8, 7.2, 30.0, $y);
+        }
         $others = [];
         if (count($d['aliases']) > 4) {
             $others[] = $this->t('alias')[$this->lang] . ' : ' . implode(' ; ', $d['aliases']);
@@ -412,12 +462,22 @@ final class SseWantedNoticePdf
         }
 
         // Autres photographies.
-        if ($d['extra_photos'] !== [] && $y + 52.0 <= $bottom) {
+        $thumbs = $d['attached']['thumbs'] ?? [];
+        if (($d['extra_photos'] !== [] || $thumbs !== []) && $y + 52.0 <= $bottom) {
             $this->heading($this->t('photos'), $l, $y);
             $y += 7.5;
             $x = $l;
-            foreach (array_slice($d['extra_photos'], 0, 5) as $photo) {
+            foreach (array_slice($d['extra_photos'], 0, 3) as $photo) {
                 $this->drawPhoto($photo, $x, $y, 30.0, 38.0);
+                $x += 34.0;
+            }
+            // Pièces de l'avis : miniatures légendées (3 au plus).
+            foreach (array_slice($thumbs, 0, 3) as $thumb) {
+                $this->drawPhoto($thumb['bytes'], $x, $y, 30.0, 33.0);
+                $pdf->SetFont($this->sans, '', 6.2);
+                $pdf->SetTextColor(...self::MUTED);
+                $pdf->SetXY($x, $y + 34.0);
+                $pdf->MultiCell(30.0, 2.8, $thumb['caption'], 0, 'C', false, 1, null, null, true, 0, false, true, 5.6, 'T', true);
                 $x += 34.0;
             }
             $y += 43.0;
@@ -516,6 +576,32 @@ final class SseWantedNoticePdf
         $pdf->SetFont($this->sans, '', 6.4);
         $pdf->SetXY(150.0, 284.2);
         $pdf->Cell(48.0, 3.2, $d['generated_at'], 0, 0, 'R');
+    }
+
+    /**
+     * Bandeaux de classification (fictifs) en haut et en bas de page, au marquage et à la couleur du niveau.
+     *
+     * @param Notice $d
+     */
+    private function classification(array $d): void
+    {
+        $c = $d['classification'] ?? null;
+        if (!is_array($c) || ($c['banner'] ?? '') === '') {
+            return;
+        }
+        $pdf = $this->pdf;
+        $rgb = $c['rgb'];
+        $light = ($rgb[0] * 299 + $rgb[1] * 587 + $rgb[2] * 114) / 1000 > 140;
+        $pdf->SetFillColor(...$rgb);
+        $pdf->SetTextColor(...($light ? [0, 0, 0] : [255, 255, 255]));
+        $pdf->SetFont($this->sans, 'B', 7.4);
+        $pdf->setFontSpacing(0.5);
+        foreach ([0.0, 292.2] as $y) {
+            $pdf->Rect(0, $y, self::PAGE_W, 4.8, 'F');
+            $pdf->SetXY(0, $y + 0.8);
+            $pdf->Cell(self::PAGE_W, 3.2, (string) $c['banner'], 0, 0, 'C');
+        }
+        $pdf->setFontSpacing(0);
     }
 
     /** @param Notice $d */
