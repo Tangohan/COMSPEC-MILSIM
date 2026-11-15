@@ -91,11 +91,11 @@ final class SseInterestCaseModuleTest extends TestCase
     public function testStepIsRegisteredIdempotentAndReversible(): void
     {
         $registry = self::read('database/steps/registry.php');
-        self::assertStringContainsString("'file' => '4710_sse_interest_case_suite.php'", $registry);
-        self::assertSame(1, substr_count($registry, "'file' => '4710_"), 'numéro libre');
+        self::assertStringContainsString("'file' => '4770_sse_interest_case_suite.php'", $registry);
+        self::assertSame(1, substr_count($registry, "'file' => '4770_"), 'numéro libre');
         self::assertFileExists(self::ROOT . 'migrations/rollback/sse_interest_case_suite_down.sql');
         self::assertFileExists(self::ROOT . 'migrations/2026_11_18_100_sse_interest_case_suite.sql');
-        self::assertStringNotContainsString('ADD UNIQUE KEY', self::read('database/steps/4710_sse_interest_case_suite.php'));
+        self::assertStringNotContainsString('ADD UNIQUE KEY', self::read('database/steps/4770_sse_interest_case_suite.php'));
 
         $pdo = new MysqlDdlSqlitePdo();
         $pdo->exec('CREATE TABLE tenants (id INT UNSIGNED NOT NULL, PRIMARY KEY (id))');
@@ -103,7 +103,7 @@ final class SseInterestCaseModuleTest extends TestCase
         $root = rtrim(self::ROOT, '/');
         $run = static function () use ($pdo, $root): string {
             ob_start();
-            require $root . '/database/steps/4710_sse_interest_case_suite.php';
+            require $root . '/database/steps/4770_sse_interest_case_suite.php';
 
             return (string) ob_get_clean();
         };

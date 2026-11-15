@@ -58,15 +58,15 @@ final class SseLinkSessionViewer implements SseLinkViewer
 
     public function canRead(string $section): bool
     {
-        return $this->allows($section, SseAccessCatalog::LEVEL_READ);
+        return $this->holds($section, SseAccessCatalog::LEVEL_READ);
     }
 
     public function canWrite(string $section): bool
     {
-        return !$this->isGuest() && $this->allows($section, SseAccessCatalog::LEVEL_WRITE);
+        return !$this->isGuest() && $this->holds($section, SseAccessCatalog::LEVEL_WRITE);
     }
 
-    private function allows(string $section, string $level): bool
+    private function holds(string $section, string $level): bool
     {
         $key = $section . ':' . $level;
         if (!isset($this->sections[$key])) {
@@ -128,7 +128,7 @@ final class SseLinkSessionViewer implements SseLinkViewer
             }
             $uid = (int) Session::get('user_id');
 
-            return (new SseInterestCaseRepository())->userCanAccessCase($row, $uid > 0 ? $uid : null, $this->allows('dossiers', SseAccessCatalog::LEVEL_MANAGE));
+            return (new SseInterestCaseRepository())->userCanAccessCase($row, $uid > 0 ? $uid : null, $this->holds('dossiers', SseAccessCatalog::LEVEL_MANAGE));
         } catch (\Throwable) {
             return false;
         }
