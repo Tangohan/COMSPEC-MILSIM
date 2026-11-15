@@ -48673,6 +48673,7 @@ return [
     'Supprimer ce bloc ?' => 'Delete this block?',
     'Supprimer ce bloc ? Vous pourrez encore annuler en abandonnant le brouillon.' => 'Delete this block? You can still undo it by discarding the draft.',
     'Supprimer ce canal ? Les sujets éventuels doivent être vides ou déplacés avant.' => 'Delete this channel? Any topics must be empty or moved beforehand.',
+    'Supprimer ce paquet ?' => 'Delete this package?',
     'Supprimer ce catalogue et tous ses emplois ? Les emplois déjà copiés dans votre communauté ne changent pas.' => 'Delete this catalog and all its jobs? Jobs already copied into your community do not change.',
     'Supprimer ce grade ?' => 'Delete this rank?',
     'Supprimer ce grade ? Impossible tant que des membres le portent.' => 'Delete this rank? Not possible while members hold it.',
