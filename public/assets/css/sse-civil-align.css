@@ -63,20 +63,28 @@
     border-collapse: collapse;
     margin: 0 0 12px;
 }
-.civil-align__table th,
-.civil-align__table td {
+.civil-align .civil-align__table th,
+.civil-align .civil-align__table td {
     text-align: left;
-    padding: 6px 8px;
+    height: auto;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--ca-line);
-    vertical-align: top;
+    vertical-align: middle;
+    background: transparent;
+    font-size: 14px;
+    text-transform: none;
+    letter-spacing: normal;
     overflow-wrap: anywhere;
 }
-.civil-align__table thead th {
+.civil-align .civil-align__table thead th {
     color: var(--ca-muted);
     font-weight: 600;
-    font-size: 0.85em;
+    font-size: 13px;
 }
-.civil-align__table td:last-child {
+.civil-align .civil-align__table tbody th {
+    font-weight: 600;
+}
+.civil-align .civil-align__table td:last-child {
     color: var(--ca-accent);
 }
 .civil-align__docs {
@@ -96,6 +104,9 @@
 }
 
 /* Carte « Identité officielle et état civil » de la fiche papiers du membre. */
+.civil-card {
+    margin-top: 14px;
+}
 .civil-card__state {
     margin: 0 0 8px;
     font-weight: 600;
