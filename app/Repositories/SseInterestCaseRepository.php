@@ -11,7 +11,7 @@ final class SseInterestCaseRepository
 {
     public const STATUSES = [
         'brouillon' => 'Brouillon', 'signalement_recu' => 'Signalement reçu',
-        'a_qualifier' => 'À qualifier', 'en_collecte' => 'En collecte',
+        'a_qualifier' => 'À qualifier', 'en_attente' => 'En attente', 'en_collecte' => 'En collecte',
         'en_analyse' => 'En analyse', 'rapprochements_detectes' => 'Rapprochements détectés',
         'en_validation' => 'En validation', 'correspondance_probable' => 'Correspondance probable',
         'identite_consolidee' => 'Identité consolidée', 'identite_infirme' => 'Identité infirmée',
@@ -32,6 +32,19 @@ final class SseInterestCaseRepository
         'publish' => ['seconds' => 600, 'label' => 'Soumettre à validation'],
     ];
 
+    /** Colonnes ajoutées par l'étape sse_interest_case_suite (database/steps/4690_sse_interest_case_suite.php). */
+    public const EXTENDED_COLUMNS = ['version', 'classification', 'case_type', 'assignee_user_id', 'due_at', 'tags', 'archive_from_status', 'deleted_at', 'deleted_by', 'delete_reason'];
+
+    /** Colonnes qu'une mise à jour peut poser (liste blanche : jamais un nom de colonne venu de la saisie). */
+    private const WRITABLE = [
+        'temporary_designation', 'suspected_alias', 'suspected_affiliation', 'apparent_sex', 'estimated_age_range', 'suspected_nationality',
+        'status', 'confidence_level', 'interest_level', 'opening_reason', 'description', 'archived_at', 'validated_by', 'validated_at',
+        'classification', 'case_type', 'assignee_user_id', 'due_at', 'tags', 'archive_from_status', 'deleted_at', 'deleted_by', 'delete_reason',
+    ];
+
+    /** @var array{columns: bool, history: bool, links: bool, watchers: bool, acl: bool}|null */
+    private ?array $caps = null;
+
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
@@ -41,11 +54,51 @@ final class SseInterestCaseRepository
         ]);
     }
 
+    /**
+     * Ce que la base sait faire. Sans l'étape sse_interest_case_suite, le module reste utilisable (liste, création, fiche,
+     * changement d'état) mais sans version, responsable, échéance, classification, corbeille, historique ni éléments liés.
+     *
+     * @return array{columns: bool, history: bool, links: bool, watchers: bool, acl: bool}
+     */
+    public function capabilities(): array
+    {
+        if ($this->caps !== null) {
+            return $this->caps;
+        }
+        $probe = function (string $sql): bool {
+            try {
+                $this->db->fetchAll($sql);
+
+                return true;
+            } catch (\Throwable) {
+                return false;
+            }
+        };
+
+        return $this->caps = [
+            'columns' => $probe('SELECT ' . implode(', ', self::EXTENDED_COLUMNS) . ' FROM sse_interest_cases WHERE 1 = 0'),
+            'history' => $probe('SELECT id, old_value, new_value FROM sse_interest_case_history WHERE 1 = 0'),
+            'links' => $probe('SELECT id, label FROM sse_interest_case_links WHERE 1 = 0'),
+            'watchers' => $probe('SELECT id FROM sse_interest_case_watchers WHERE 1 = 0'),
+            'acl' => $probe('SELECT id FROM sse_interest_case_acl WHERE 1 = 0'),
+        ];
+    }
+
+    public function isFullySupported(): bool
+    {
+        $caps = $this->capabilities();
+
+        return $caps['columns'] && $caps['history'] && $caps['links'] && $caps['watchers'];
+    }
+
     /** @return list<array<string,mixed>> */
     public function listForTenant(int $tenantId, array $filters = []): array
     {
         $where = ['tenant_id = :tenant'];
         $params = ['tenant' => $tenantId];
+        if ($this->capabilities()['columns']) {
+            $where[] = 'deleted_at IS NULL';
+        }
         if (isset(self::STATUSES[(string) ($filters['status'] ?? '')])) {
             $where[] = 'status = :status'; $params['status'] = $filters['status'];
         }
@@ -59,6 +112,198 @@ final class SseInterestCaseRepository
         }
         $rows = $this->db->fetchAll('SELECT * FROM sse_interest_cases WHERE ' . implode(' AND ', $where) . ' ORDER BY updated_at DESC LIMIT 200', $params);
         return array_map(fn (array $r): array => $this->hydrate($r), $rows);
+    }
+
+    /**
+     * Page de la file « ticketing » : onglet, recherche plein texte, filtres, tri, pagination, compteurs par onglet.
+     * Le lecteur (accès nominatifs et plafond d'habilitation) filtre dans la requête : une page n'est jamais « trouée ».
+     *
+     * @param array{tab?: string, q?: string, priority?: string, type?: string, assignee?: int, classification?: string, overdue?: bool, status?: string} $filters
+     * @param array{user_id?: ?int, bypass_acl?: bool, max_rank?: ?int} $viewer
+     * @return array{rows: list<array<string,mixed>>, total: int, page: int, pages: int, per_page: int, counts: array<string,int>}
+     */
+    public function queryPage(int $tenantId, array $filters, array $viewer, string $sort = 'recent', int $page = 1, int $perPage = 25): array
+    {
+        $perPage = max(5, min(100, $perPage));
+        $caps = $this->capabilities();
+        $tab = (string) ($filters['tab'] ?? '');
+
+        $params = [];
+        $base = $this->whereClause($tenantId, $filters, $viewer, $params);
+        $where = $base;
+        if ($caps['columns'] && $tab === 'corbeille') {
+            $where[] = 'c.deleted_at IS NOT NULL';
+        } else {
+            if ($caps['columns']) {
+                $where[] = 'c.deleted_at IS NULL';
+            }
+            $statuses = \App\Support\SseInterestCaseCatalog::statusesOf($tab);
+            if ($statuses !== []) {
+                $marks = [];
+                foreach ($statuses as $i => $st) {
+                    $marks[] = ':tab' . $i;
+                    $params['tab' . $i] = $st;
+                }
+                $where[] = 'c.status IN (' . implode(',', $marks) . ')';
+            }
+        }
+
+        $total = (int) ($this->db->fetchOne('SELECT COUNT(*) AS n FROM sse_interest_cases c WHERE ' . implode(' AND ', $where), $params)['n'] ?? 0);
+        $pages = max(1, (int) ceil($total / $perPage));
+        $page = max(1, min($pages, $page));
+        $rows = $this->db->fetchAll(
+            'SELECT c.* FROM sse_interest_cases c WHERE ' . implode(' AND ', $where)
+            . ' ORDER BY ' . $this->orderBy($sort, $caps['columns']) . ' LIMIT ' . $perPage . ' OFFSET ' . (($page - 1) * $perPage),
+            $params
+        );
+
+        // Compteurs : mêmes filtres que la file, sans l'onglet.
+        $countParams = [];
+        $countWhere = $this->whereClause($tenantId, $filters, $viewer, $countParams);
+        if ($caps['columns']) {
+            $countWhere[] = 'c.deleted_at IS NULL';
+        }
+        $byStatus = [];
+        foreach ($this->db->fetchAll('SELECT c.status AS st, COUNT(*) AS n FROM sse_interest_cases c WHERE ' . implode(' AND ', $countWhere) . ' GROUP BY c.status', $countParams) as $row) {
+            $byStatus[(string) $row['st']] = (int) $row['n'];
+        }
+        $counts = [];
+        foreach (\App\Support\SseInterestCaseCatalog::TABS as $key => $meta) {
+            $counts[$key] = array_sum(array_map(static fn (string $s): int => $byStatus[$s] ?? 0, $meta['statuses']));
+        }
+        $counts['corbeille'] = 0;
+        if ($caps['columns']) {
+            $trashParams = [];
+            $trashWhere = $this->whereClause($tenantId, $filters, $viewer, $trashParams);
+            $trashWhere[] = 'c.deleted_at IS NOT NULL';
+            $counts['corbeille'] = (int) ($this->db->fetchOne('SELECT COUNT(*) AS n FROM sse_interest_cases c WHERE ' . implode(' AND ', $trashWhere), $trashParams)['n'] ?? 0);
+        }
+
+        return [
+            'rows' => array_map(fn (array $r): array => $this->hydrate($r), $rows),
+            'total' => $total,
+            'page' => $page,
+            'pages' => $pages,
+            'per_page' => $perPage,
+            'counts' => $counts,
+        ];
+    }
+
+    /**
+     * Conditions communes (communauté, recherche, filtres, lecteur) ; le tenant vient toujours de l'appelant, jamais de la requête.
+     *
+     * @param array<string,mixed> $params
+     * @return list<string>
+     */
+    private function whereClause(int $tenantId, array $filters, array $viewer, array &$params): array
+    {
+        $caps = $this->capabilities();
+        $where = ['c.tenant_id = :tenant'];
+        $params['tenant'] = $tenantId;
+
+        $status = (string) ($filters['status'] ?? '');
+        if ($status !== '' && isset(self::STATUSES[$status])) {
+            $where[] = 'c.status = :f_status';
+            $params['f_status'] = $status;
+        }
+        $priority = (string) ($filters['priority'] ?? '');
+        if (isset(self::INTEREST[$priority])) {
+            $where[] = 'c.interest_level = :f_priority';
+            $params['f_priority'] = $priority;
+        }
+        if ($caps['columns']) {
+            $type = (string) ($filters['type'] ?? '');
+            if ($type !== '') {
+                $where[] = 'c.case_type = :f_type';
+                $params['f_type'] = $type;
+            }
+            $assignee = (int) ($filters['assignee'] ?? 0);
+            if ($assignee > 0) {
+                $where[] = 'c.assignee_user_id = :f_assignee';
+                $params['f_assignee'] = $assignee;
+            } elseif ($assignee === -1) {
+                $where[] = 'c.assignee_user_id IS NULL';
+            }
+            $class = (string) ($filters['classification'] ?? '');
+            if ($class !== '' && isset(\App\Services\Sse\SseRedactionService::LEVELS[$class])) {
+                $where[] = 'c.classification = :f_class';
+                $params['f_class'] = $class;
+            }
+            if (!empty($filters['overdue'])) {
+                $done = array_merge(\App\Support\SseInterestCaseCatalog::statusesOf('clos'), \App\Support\SseInterestCaseCatalog::statusesOf('archives'));
+                $marks = [];
+                foreach ($done as $i => $st) {
+                    $marks[] = ':od' . $i;
+                    $params['od' . $i] = $st;
+                }
+                $where[] = 'c.due_at IS NOT NULL AND c.due_at < :f_now AND c.status NOT IN (' . implode(',', $marks) . ')';
+                $params['f_now'] = date('Y-m-d H:i:s');
+            }
+            $maxRank = $viewer['max_rank'] ?? null;
+            if ($maxRank !== null) {
+                $allowed = array_keys(array_filter(\App\Services\Sse\SseRedactionService::LEVELS, static fn (int $rank): bool => $rank <= (int) $maxRank));
+                $marks = [];
+                foreach ($allowed as $i => $lv) {
+                    $marks[] = ':lv' . $i;
+                    $params['lv' . $i] = $lv;
+                }
+                $where[] = '(c.classification IS NULL OR c.classification IN (' . implode(',', $marks ?: ["'interne'"]) . '))';
+            }
+        }
+
+        $words = preg_split('/\s+/u', trim((string) ($filters['q'] ?? ''))) ?: [];
+        $fields = ['c.reference_code', 'c.temporary_designation', 'c.suspected_alias', 'c.suspected_affiliation', 'c.opening_reason', 'c.description'];
+        if ($caps['columns']) {
+            $fields[] = 'c.tags';
+        }
+        foreach (array_slice(array_values(array_filter($words, static fn (string $w): bool => $w !== '')), 0, 6) as $i => $word) {
+            $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_substr($word, 0, 60)) . '%';
+            $ors = [];
+            foreach ($fields as $j => $field) {
+                $ors[] = $field . ' LIKE :q' . $i . '_' . $j . " ESCAPE '!'";
+                $params['q' . $i . '_' . $j] = $like;
+            }
+            $where[] = '(' . implode(' OR ', $ors) . ')';
+        }
+
+        if (empty($viewer['bypass_acl']) && $caps['acl']) {
+            $uid = (int) ($viewer['user_id'] ?? 0);
+            $where[] = "NOT EXISTS (SELECT 1 FROM sse_interest_case_acl x WHERE x.interest_case_id = c.id AND x.user_id = :acl_u1 AND x.access_mode = 'interdit')"
+                . " AND (c.created_by = :acl_u2 OR NOT EXISTS (SELECT 1 FROM sse_interest_case_acl y WHERE y.interest_case_id = c.id AND y.access_mode = 'destinataire')"
+                . " OR EXISTS (SELECT 1 FROM sse_interest_case_acl z WHERE z.interest_case_id = c.id AND z.user_id = :acl_u3 AND z.access_mode = 'destinataire'))";
+            $params['acl_u1'] = $uid;
+            $params['acl_u2'] = $uid;
+            $params['acl_u3'] = $uid;
+        }
+
+        return $where;
+    }
+
+    private function orderBy(string $sort, bool $columns): string
+    {
+        return match ($sort) {
+            'priorite' => "CASE c.interest_level WHEN 'critique' THEN 1 WHEN 'prioritaire' THEN 2 WHEN 'a_surveiller' THEN 3 ELSE 4 END ASC, c.updated_at DESC, c.id DESC",
+            'echeance' => $columns ? 'CASE WHEN c.due_at IS NULL THEN 1 ELSE 0 END ASC, c.due_at ASC, c.id DESC' : 'c.updated_at DESC, c.id DESC',
+            'reference' => 'c.reference_code ASC',
+            'titre' => 'c.temporary_designation ASC, c.id ASC',
+            default => 'c.updated_at DESC, c.id DESC',
+        };
+    }
+
+    /**
+     * Dossiers que la session courante peut lire (habilitation, accès nominatifs, hors corbeille) : pour la recherche globale, JNET et
+     * les tableaux de bord, qui ne doivent jamais lister un dossier que la file n'afficherait pas.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function listForSession(int $tenantId, string $q = '', int $limit = 100): array
+    {
+        $actor = \App\Services\Sse\SseInterestActor::fromSession();
+        if (!$actor->canRead || $actor->tenantId !== $tenantId) {
+            return [];
+        }
+
+        return $this->queryPage($tenantId, ['tab' => '', 'q' => $q], $actor->viewer(), 'recent', 1, $limit)['rows'];
     }
 
     /**
@@ -85,13 +330,18 @@ final class SseInterestCaseRepository
         return $row ? $this->hydrate($row) : null;
     }
 
+    /**
+     * Ouvre un dossier. La référence DI-AAAA-NNNNNN dérive de l'identifiant inséré (jamais d'un MAX() : deux ouvertures
+     * simultanées ne peuvent pas se voir attribuer la même).
+     */
     public function create(int $tenantId, array $data): int
     {
-        $year = date('Y');
-        $last = $this->db->fetchOne('SELECT MAX(id) AS id FROM sse_interest_cases WHERE tenant_id = :tenant', ['tenant' => $tenantId]);
-        $reference = sprintf('DI-%s-%06d', $year, ((int) ($last['id'] ?? 0)) + 1);
         $fields = ['tenant_id','reference_code','temporary_designation','suspected_alias','apparent_sex','estimated_age_range','suspected_nationality','suspected_affiliation','status','confidence_level','interest_level','opening_reason','description','origin_operator','observed_elements','analysis_facts','analysis_assumptions','analysis_contradictions','analysis_questions','collection_needs','operational_risk','recommendations','source_label','source_reliability','signed_by_label','signed_at','acquisition_at','mission_label','created_by'];
-        $values = ['tenant_id' => $tenantId, 'reference_code' => $reference, 'status' => 'signalement_recu'];
+        if ($this->capabilities()['columns']) {
+            array_push($fields, 'version', 'classification', 'case_type', 'assignee_user_id', 'due_at', 'tags');
+        }
+        $status = (string) ($data['status'] ?? 'signalement_recu');
+        $values = ['tenant_id' => $tenantId, 'reference_code' => 'DI-tmp-' . bin2hex(random_bytes(8)), 'status' => isset(self::STATUSES[$status]) ? $status : 'signalement_recu', 'version' => 1];
         foreach ($fields as $field) {
             if (!array_key_exists($field, $values)) {
                 $values[$field] = $data[$field] ?? null;
@@ -99,22 +349,24 @@ final class SseInterestCaseRepository
         }
         $values['confidence_level'] = isset(self::CONFIDENCE[(string) $values['confidence_level']]) ? $values['confidence_level'] : 'non_evalue';
         $values['interest_level'] = isset(self::INTEREST[(string) $values['interest_level']]) ? $values['interest_level'] : 'courant';
-        if (!empty($values['acquisition_at'])) {
-            $values['acquisition_at'] = str_replace('T', ' ', (string) $values['acquisition_at']);
+        if (isset($values['classification']) && $values['classification'] === null) {
+            $values['classification'] = 'interne';
         }
-        if (!empty($values['signed_at'])) {
-            $values['signed_at'] = str_replace('T', ' ', (string) $values['signed_at']);
-        }
-        try {
-            return (int) $this->db->insert('INSERT INTO sse_interest_cases (' . implode(',', $fields) . ') VALUES (:' . implode(',:', $fields) . ')', $values);
-        } catch (\Throwable) {
-            // Colonnes enrichies absentes sur un tenant pas encore migré.
-            foreach (['description', 'signed_by_label', 'signed_at'] as $optional) {
-                unset($values[$optional]);
-                $fields = array_values(array_filter($fields, static fn (string $f): bool => $f !== $optional));
+        foreach (['acquisition_at', 'signed_at', 'due_at'] as $dt) {
+            if (!empty($values[$dt])) {
+                $values[$dt] = str_replace('T', ' ', (string) $values[$dt]);
             }
-            return (int) $this->db->insert('INSERT INTO sse_interest_cases (' . implode(',', $fields) . ') VALUES (:' . implode(',:', $fields) . ')', $values);
         }
+        $values = array_intersect_key($values, array_flip($fields));
+        $id = (int) $this->db->insert('INSERT INTO sse_interest_cases (' . implode(',', $fields) . ') VALUES (:' . implode(',:', $fields) . ')', $values);
+        if ($id > 0) {
+            $this->db->execute(
+                'UPDATE sse_interest_cases SET reference_code = :ref WHERE id = :id AND tenant_id = :t',
+                ['ref' => sprintf('DI-%s-%06d', date('Y'), $id), 'id' => $id, 't' => $tenantId]
+            );
+        }
+
+        return $id;
     }
 
     public function updateDescription(int $id, int $tenantId, ?string $description): bool
@@ -142,6 +394,108 @@ final class SseInterestCaseRepository
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    /**
+     * Mise à jour avec verrou optimiste : n'écrit que si le dossier est encore à la version (ou à l'horodatage, sans colonne
+     * version) que l'auteur a lue. Retourne le nombre de lignes modifiées : 0 = quelqu'un est passé entre-temps.
+     *
+     * @param array<string, mixed> $set colonne => valeur (liste blanche WRITABLE)
+     */
+    public function updateGuarded(int $id, int $tenantId, array $set, ?int $expectedVersion, ?string $expectedUpdatedAt = null): int
+    {
+        $cols = [];
+        $params = ['id' => $id, 't' => $tenantId, 'now' => date('Y-m-d H:i:s')];
+        foreach ($set as $col => $value) {
+            if (!in_array($col, self::WRITABLE, true)) {
+                throw new \InvalidArgumentException('Colonne non modifiable : ' . $col);
+            }
+            $cols[] = $col . ' = :s_' . $col;
+            $params['s_' . $col] = $value;
+        }
+        $cols[] = 'updated_at = :now';
+        $where = 'id = :id AND tenant_id = :t';
+        if ($this->capabilities()['columns']) {
+            $cols[] = 'version = COALESCE(version, 1) + 1';
+            if ($expectedVersion !== null) {
+                $where .= ' AND COALESCE(version, 1) = (:ev + 0)';
+                $params['ev'] = $expectedVersion;
+            }
+        } elseif ($expectedUpdatedAt !== null && $expectedUpdatedAt !== '') {
+            $where .= ' AND updated_at = :eu';
+            $params['eu'] = $expectedUpdatedAt;
+        }
+
+        return $this->db->execute('UPDATE sse_interest_cases SET ' . implode(', ', $cols) . ' WHERE ' . $where, $params);
+    }
+
+    /** Dernière activité : avance updated_at sans toucher à la version. */
+    public function touch(int $id, int $tenantId): void
+    {
+        $this->db->execute('UPDATE sse_interest_cases SET updated_at = :now WHERE id = :id AND tenant_id = :t', ['now' => date('Y-m-d H:i:s'), 'id' => $id, 't' => $tenantId]);
+    }
+
+    /** Corbeille : dossiers supprimés (restaurables jusqu'au délai). @return list<array<string,mixed>> */
+    public function listTrashed(int $tenantId, array $viewer, int $limit = 200): array
+    {
+        return $this->queryPage($tenantId, ['tab' => 'corbeille'], $viewer, 'recent', 1, min(100, $limit))['rows'];
+    }
+
+    /** @return list<int> identifiants dont la mise à la corbeille dépasse le délai */
+    public function expiredTrashIds(int $tenantId, string $cutoff): array
+    {
+        if (!$this->capabilities()['columns']) {
+            return [];
+        }
+        $rows = $this->db->fetchAll('SELECT id FROM sse_interest_cases WHERE tenant_id = :t AND deleted_at IS NOT NULL AND deleted_at < :c', ['t' => $tenantId, 'c' => $cutoff]);
+
+        return array_map(static fn (array $r): int => (int) $r['id'], $rows);
+    }
+
+    /** Suppression définitive : le dossier et tout ce qui s'y rattache. La trace reste au journal d'audit SSE. */
+    public function purge(int $id, int $tenantId): bool
+    {
+        foreach (['sse_interest_case_history', 'sse_interest_case_links', 'sse_interest_case_watchers', 'sse_interest_case_updates', 'sse_interest_case_acl', 'sse_interest_case_cooldowns'] as $table) {
+            try {
+                $this->db->execute('DELETE FROM ' . $table . ' WHERE interest_case_id = :c AND tenant_id = :t', ['c' => $id, 't' => $tenantId]);
+            } catch (\Throwable) {
+                // table absente : rien à retirer
+            }
+        }
+
+        return $this->db->execute('DELETE FROM sse_interest_cases WHERE id = :id AND tenant_id = :t', ['id' => $id, 't' => $tenantId]) > 0;
+    }
+
+    /**
+     * Noms des membres de la communauté pour une liste d'identifiants (responsables, auteurs).
+     *
+     * @param list<int> $ids
+     * @return array<int, string>
+     */
+    public function memberLabels(int $tenantId, array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $i): bool => $i > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $params = ['t' => $tenantId];
+        $marks = [];
+        foreach ($ids as $i => $id) {
+            $marks[] = ':u' . $i;
+            $params['u' . $i] = $id;
+        }
+        try {
+            $rows = $this->db->fetchAll('SELECT id, display_name, callsign FROM users WHERE tenant_id = :t AND id IN (' . implode(',', $marks) . ')', $params);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $name = trim((string) ($row['display_name'] ?? ''));
+            $out[(int) $row['id']] = $name !== '' ? $name : (trim((string) ($row['callsign'] ?? '')) ?: 'Membre');
+        }
+
+        return $out;
     }
 
     /**
@@ -428,6 +782,18 @@ final class SseInterestCaseRepository
         $row['confidence_label'] = self::CONFIDENCE[$row['confidence_level'] ?? ''] ?? 'Non évalué';
         $row['interest_label'] = self::INTEREST[$row['interest_level'] ?? ''] ?? 'Courant';
         $row['description'] = $row['description'] ?? null;
+        $row['priority_code'] = \App\Support\SseInterestCaseCatalog::priorityCode((string) ($row['interest_level'] ?? ''));
+        $row['tab'] = \App\Support\SseInterestCaseCatalog::tabOf((string) ($row['status'] ?? ''));
+        $row['version'] = max(1, (int) ($row['version'] ?? 1));
+        $classification = (string) ($row['classification'] ?? '');
+        $row['classification'] = isset(\App\Services\Sse\SseRedactionService::LEVELS[$classification]) ? $classification : 'interne';
+        $row['tag_list'] = \App\Support\SseInterestCaseCatalog::splitTags(isset($row['tags']) ? (string) $row['tags'] : null);
+        $row['assignee_user_id'] = isset($row['assignee_user_id']) && (int) $row['assignee_user_id'] > 0 ? (int) $row['assignee_user_id'] : null;
+        $row['is_deleted'] = !empty($row['deleted_at']);
+        $row['is_overdue'] = !empty($row['due_at'])
+            && strtotime((string) $row['due_at']) !== false
+            && strtotime((string) $row['due_at']) < time()
+            && !in_array((string) ($row['status'] ?? ''), ['identite_consolidee', 'identite_infirme', 'sans_suite', 'archive'], true);
 
         return $row;
     }
