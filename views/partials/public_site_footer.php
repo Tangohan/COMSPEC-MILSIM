@@ -42,6 +42,7 @@ $psfColumns = [
             ['href' => url('sse'), 'label' => __('site.sse')],
             ['href' => url('atak-natif'), 'label' => __('site.atak_native')],
             ['href' => url('contribuer'), 'label' => __('site.contrib_crumb')],
+            ['href' => \App\Support\PublicLinks::discordInviteUrl(), 'label' => __('home.footer_discord'), 'external' => true],
         ],
     ],
     [
@@ -89,7 +90,7 @@ $psfColumns = [
                     <p class="psf__heading"><?= $psfH((string) $psfColumn['title']) ?></p>
                     <ul>
                         <?php foreach ($psfColumn['links'] as $psfLink): ?>
-                            <li><a href="<?= $psfH((string) $psfLink['href']) ?>"><?= $psfH((string) $psfLink['label']) ?></a></li>
+                            <li><a href="<?= $psfH((string) $psfLink['href']) ?>"<?= !empty($psfLink['external']) ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= $psfH((string) $psfLink['label']) ?></a></li>
                         <?php endforeach; ?>
                         <?php if (!empty($psfColumn['cookies'])): ?>
                             <li><button type="button" data-cookie-preferences><?= $psfH(__('common.cookie_prefs')) ?></button></li>

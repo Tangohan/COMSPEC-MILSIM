@@ -2438,3 +2438,104 @@
 @media (prefers-reduced-motion: reduce) {
   .home-impact .hd-panel, .home-impact .hd-chart__col i { animation: none; }
 }
+
+/* --- Discord : un lien, pas de widget tiers. Carte papier le jour, nuit selon le système. */
+.home-impact .hd {
+  --hd-bg: #f8faf5;
+  --hd-ink: #16201a;
+  --hd-muted: #4a584f;
+  --hd-line: #cdd5c8;
+  --hd-accent: #0b7f55;
+  --hd-on-accent: #ffffff;
+  background: var(--hd-bg);
+  color: var(--hd-ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  .home-impact .hd {
+    --hd-bg: #0c120f;
+    --hd-ink: #e6ece4;
+    --hd-muted: #a3b0a6;
+    --hd-line: #26332c;
+    --hd-accent: #3ddc97;
+    --hd-on-accent: #052e1c;
+  }
+}
+
+.home-impact .hd__grid {
+  display: grid;
+  gap: 2.25rem;
+}
+
+@media (min-width: 900px) {
+  .home-impact .hd__grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 4rem;
+    align-items: start;
+  }
+}
+
+.home-impact .hd__title {
+  margin: 0;
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(2rem, 4.6vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.home-impact .hd__lead {
+  margin: 1rem 0 0;
+  color: var(--hd-muted);
+  line-height: 1.6;
+  max-width: 30rem;
+}
+
+.home-impact .hd__cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  margin-top: 1.5rem;
+  padding: 0.8rem 1.6rem;
+  background: var(--hd-accent);
+  color: var(--hd-on-accent);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.home-impact .hd__cta:hover {
+  filter: brightness(1.08);
+}
+
+.home-impact .hd__cta:focus-visible {
+  outline: 2px solid var(--hd-accent);
+  outline-offset: 3px;
+}
+
+.home-impact .hd__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hd-line);
+}
+
+.home-impact .hd__list li {
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--hd-line);
+}
+
+.home-impact .hd__list h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.home-impact .hd__list p {
+  margin: 0.3rem 0 0;
+  color: var(--hd-muted);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}

@@ -57,6 +57,10 @@ foreach ($sseTriage['entries'] as $sseTriageEntry) {
     $sseTriageTone = \App\Support\SseTriageBadges::worst($sseTriageTone, $sseTriageEntry['tone']);
 }
 $sseTriageOn = str_contains((string) parse_url($currentPath, PHP_URL_PATH), '/atak/sse/a-trier');
+// Widget Cerbère (bouton flottant en bas à droite) : jamais dans un cadre (aperçus de documents), jamais bloquant.
+$sseCerbere = strtolower((string) ($_SERVER['HTTP_SEC_FETCH_DEST'] ?? '')) === 'iframe'
+    ? ['enabled' => false]
+    : \App\Services\Sse\Cerbere\SseCerbereWidget::shell($sseNav, $currentPath);
 $sseNavActive = SsePortalNav::activeId($sseNav, $currentPath, $activeNav);
 $sseNavOpenSection = SsePortalNav::sectionOf($sseNav, $sseNavActive);
 $sseUrl = static fn (string $p): string => (string) url($p);
@@ -114,6 +118,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_ui.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_notify.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-aside-badges.css')) ?>">
+    <?php if (!empty($sseCerbere['enabled'])): ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-cerbere-widget.css')) ?>"><?php endif; ?>
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/app-update-modal.css')) ?>">
     <?php if (!empty($sseNeedLeaflet)): ?>
         <link rel="stylesheet" href="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
@@ -300,6 +305,10 @@ window.SSE_CTX = {
         <p class="sx-palette__foot"><kbd>↑</kbd><kbd>↓</kbd> choisir · <kbd>Entrée</kbd> ouvrir · <kbd>Échap</kbd> fermer</p>
     </div>
 </dialog>
+<?php if (!empty($sseCerbere['enabled'])): ?>
+<?php require __DIR__ . '/_cerbere_widget.php'; ?>
+<script src="<?= $h(asset_url('assets/js/sse-cerbere-widget.js')) ?>" defer></script>
+<?php endif; ?>
 <script type="application/json" id="sx-palette-data"><?= json_encode($ssePalette, $jsonFlags | JSON_HEX_QUOT) ?></script>
 <script src="<?= $h(asset_url('assets/js/sse-context-menu.js')) ?>"></script>
 <script src="<?= $h(asset_url('assets/js/sse-shell.js')) ?>"></script>
