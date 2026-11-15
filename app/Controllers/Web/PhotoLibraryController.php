@@ -12,8 +12,10 @@ use App\Services\PhotoLibrary\PhotoLibraryService;
 use App\Services\PhotoLibrary\PhotoViewer;
 use App\Services\Security\FileRateLimiter;
 use App\Services\Sse\SseAccessCodeService;
+use App\Services\Sse\SseAccessPolicy;
 use App\Services\Sse\SseClearanceService;
 use App\Repositories\SseCaseRepository;
+use App\Support\SseAccessCatalog;
 
 /**
  * Photothèque de l'extranet (JNET) : la galerie des photos terrain envoyées par l'ATAK (recon_images), dans l'habillage
@@ -259,6 +261,7 @@ class PhotoLibraryController
         $manager = false;
         $door = false;
         $manage = false;
+        $transfer = null;
         $clear = false;
         try {
             $manager = function_exists('moderation_user_can_moderate') && moderation_user_can_moderate();
@@ -269,12 +272,21 @@ class PhotoLibraryController
             // l'engagement de confidentialité de la session, dans cette communauté, hors session invitée.
             $sse = new SseAccessCodeService();
             $door = !$sse->isGuest() && $sse->canEnterWithoutCode() && $sse->hasAcceptedConfidentiality() && $sse->tenantId() === $tenant;
-            $manage = $door && SseFilesContext::can(['atak.sse.case.manage', 'atak.sse.grant', 'atak.sse.files.admin', 'admin.access']);
+            if ($door) {
+                // Droits de la section Photothèque (SseAccessPolicy) : sans règle, ce sont les anciennes portes (lire et verser :
+                // la porte SSE ; retirer un versement ou un visage SSE : la gestion des fichiers ou des dossiers).
+                $ctx = ['guest' => false, 'tenant_id' => $tenant];
+                $policy = SseAccessPolicy::forSession();
+                $section = 'photos';
+                $door = $policy->allows($user, $section, SseAccessCatalog::LEVEL_READ, $ctx);
+                $transfer = $door && $policy->allows($user, $section, SseAccessCatalog::LEVEL_ADD, $ctx);
+                $manage = $door && $policy->allows($user, $section, SseAccessCatalog::LEVEL_DELETE, $ctx);
+            }
             $clear = (new SseClearanceService($sse))->allows(SseCaseRepository::CLASS_CONFIDENTIAL);
         } catch (\Throwable) {
         }
 
-        return new PhotoViewer($user, $tenant, $manager, $door, $manage, $clear);
+        return new PhotoViewer($user, $tenant, $manager, $door, $manage, $clear, $transfer);
     }
 
     private function actorLabel(): string

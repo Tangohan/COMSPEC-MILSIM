@@ -51,19 +51,24 @@ final class SseFilesAccessWiringTest extends TestCase
                 self::assertMatchesRegularExpression('/csrfOk\(/', $body, $path . ' : jeton CSRF vérifié');
             }
             if ($ctrl === '$sseLore') {
-                self::assertMatchesRegularExpression('/canLore\(\)|\$this->session\(/', $body, $path . ' : réservé au MJ');
+                self::assertMatchesRegularExpression("/canLore\\(\\)|\\\$this->session\\(|allows\\('lore'/", $body, $path . ' : réservé au MJ');
             }
         }
         // Écrire demande un compte (jamais une session invitée) ; modifier une fiche demande la gestion.
         $rec = $controllers['$sseRec'];
-        foreach (['profileUpdate', 'aliasStore', 'aliasDelete', 'linkStore', 'linkDelete', 'phoneAttach'] as $method) {
+        foreach (['profileUpdate', 'aliasStore', 'aliasDelete', 'linkStore', 'linkDelete'] as $method) {
             self::assertStringContainsString('canManage()', self::methodBody($rec, $method), $method);
         }
-        foreach (['noteStore', 'xrefDecide', 'watchSubject', 'watchStore', 'photoUpload'] as $method) {
+        foreach (['noteStore', 'xrefDecide', 'watchSubject', 'watchStore'] as $method) {
             self::assertStringContainsString('canWrite()', self::methodBody($rec, $method), $method);
         }
-        self::assertStringContainsString('return $this->canWrite() && self::can([\'atak.sse.case.manage\'', self::read('app/Controllers/Web/SseFilesContext.php'));
-        self::assertStringContainsString("return !\$this->isGuest() && \$this->userId() !== null;", self::read('app/Controllers/Web/SseFilesContext.php'));
+        // Photothèque et extractions : leur propre section des droits d'accès (SseAccessPolicy), mêmes droits d'origine.
+        self::assertStringContainsString("allows('extractions', 'write'", self::methodBody($rec, 'phoneAttach'));
+        self::assertStringContainsString("allows('photos', 'add')", self::methodBody($rec, 'photoUpload'));
+        $ctx = self::read('app/Controllers/Web/SseFilesContext.php');
+        self::assertStringContainsString('SseAccessPolicy::sessionAllows($section, $level', $ctx);
+        self::assertStringContainsString("allows('fichiers', SseAccessCatalog::LEVEL_ADD)", $ctx, 'écrire = un compte, jamais une session invitée (profil d’origine « account »)');
+        self::assertStringContainsString("allows('fichiers', SseAccessCatalog::LEVEL_WRITE)", $ctx);
     }
 
     public function testBackOfficeRoutesRequireTheFilesPermission(): void
