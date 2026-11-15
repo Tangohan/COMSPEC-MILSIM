@@ -94,14 +94,14 @@ final class SeekRealismeTest extends TestCase
             'mod_fingers' => 1, 'mod_iris' => 0, 'mod_face' => 0,
             'capture_json' => SseCaptureNotes::encode(['empreintes' => ['quality' => 61, 'detail' => [2, 3, -2], 'notes' => ['main gauche : non capturable (garrot posé)']]]),
         ]);
-        $row = $files->findSeek($stored['id'], 1);
-        self::assertIsArray($row);
-        $seek = SseFileRepository::hydrateSeek($row);
+        // findSeek rend déjà la fiche hydratée (motifs décodés).
+        $seek = $files->findSeek($stored['id'], 1);
+        self::assertIsArray($seek);
         self::assertSame(['main gauche : non capturable (garrot posé)'], $seek['capture']['empreintes']['notes']);
         self::assertSame(61, $seek['capture']['empreintes']['quality']);
         // Fiche sans motifs : champ vide, jamais d'erreur.
         $other = $files->upsertSeek(1, ['rec' => 'REC-20261115-0043', 'idempotency_key' => 'SEEK-CAP-2', 'verdict' => 'inconnu', 'subject_unknown' => 1, 'enrolled' => 0, 'mod_fingers' => 0, 'mod_iris' => 0, 'mod_face' => 0]);
-        self::assertSame([], SseFileRepository::hydrateSeek((array) $files->findSeek($other['id'], 1))['capture']);
+        self::assertSame([], (array) ($files->findSeek($other['id'], 1) ?? [])['capture']);
     }
 
     // ------------------------------------------------------------------ jeu : médical et capture
