@@ -104,7 +104,7 @@ $exchangeTools = static function (array $ex) use ($h, $base, $exBack, $shareTarg
     if ($shareTargets !== []) {
         echo '<a class="uw-link" href="' . $h($base . '?vue=partager&kind=exchange&item=' . (int) $ex['id'] . '&titre=' . rawurlencode(mb_substr((string) $ex['title'], 0, 120)) . '&direct=1') . '" data-uw-share data-kind="exchange" data-item="' . (int) $ex['id'] . '" data-title="' . $h((string) $ex['title']) . '" data-back="' . $h($exBack . '#ex-' . (int) $ex['id']) . '">Partager avec une autre unité</a>';
     }
-    $linkBlock = $linkBlockFor('echange', (int) $ex['id'], $items, 'operation,page,tache,cible,document,unite,membre');
+    $linkBlock = $linkBlockFor('echange', (int) $ex['id'], $items, 'operation,page,tache,cible,document,unite,membre,sse');
     $linkMode = 'inline';
     $linkUid = 'ex' . (int) $ex['id'];
     require base_path('views/jnet/_linked.php');

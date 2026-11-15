@@ -1,3 +1,33 @@
+[h1]COMSPEC Flashbang -BetterFlash- 1.0.1 — les IA réagissent enfin / AI finally react[/h1]
+
+[h2]Français[/h2]
+[b]Résumé joueur[/b] : les IA touchées par une flashbang réagissent maintenant de façon visible. Éblouies, elles ne repèrent et ne visent plus pendant 2 à 10 s, s'arrêtent net un instant, se baissent ou portent les mains au visage, puis tirent mal 5 à 20 s. Réglable par l'administrateur du serveur (Discrète = comme avant, Réaliste par défaut, Forte).
+[list]
+[*] [b]Aveuglement[/b] : plus de ciblage tant que dure l'éblouissement ; elles oublient les ennemis proches.
+[*] [b]Désorientation[/b] : arrêt net de 0,5 à 3,5 s (à pied), geste réflexe (mains au visage, animation du jeu) ou posture basse.
+[*] [b]Précision[/b] : visée, stabilité, repérage, courage et transmission des contacts très réduits 5 à 20 s ; elles cherchent un abri.
+[*] [b]Pourquoi si peu avant[/b] : de jour dehors, la pupille réduisait trop l'effet, et au-delà de 10 m il restait sous le seuil de réaction ; la portée sur les IA est maintenant x1,5 et la pupille ne descend pas sous 55 %.
+[*] [b]Variété[/b] : durées propres à chaque IA, 8 % d'IA immunisées par grenade (plus pour les bons soldats, lunettes teintées, protection auditive).
+[*] [b]Sûr[/b] : valeurs d'origine rendues exactement ; un réglage changé entre-temps par un autre mod ou la mission n'est jamais écrasé ; IA inconsciente, passée sur un autre poste, morte ou supprimée gérée.
+[*] [b]Performances[/b] : 20 IA au plus par détonation (réglable), les plus proches d'abord, 6 par image.
+[*] [b]Réglages[/b] (serveur, catégorie IA) : Réaction des IA, Intensité, Portée, Durée, Immunité, IA traitées par détonation, Geste réflexe, Journal des IA (désactivé par défaut). 59 réglages au total.
+[*] [b]À savoir[/b] : l'effet s'applique sur la machine qui possède l'IA ; le mod doit être chargé sur le serveur (et les clients headless) pour toucher leurs IA.
+[/list]
+
+[h2]English[/h2]
+[b]Player summary[/b]: AI hit by a flashbang now react visibly. Dazzled, they cannot spot or aim for 2 to 10 s, stop dead for a moment, duck or raise their hands to their face, then shoot badly for 5 to 20 s. Set by the server admin (Discreet = as before, Realistic by default, Strong).
+[list]
+[*] [b]Blindness[/b]: no targeting while the dazzle lasts; they forget nearby enemies.
+[*] [b]Disorientation[/b]: stop dead for 0.5 to 3.5 s (on foot), reflex gesture (hands to face, game animation) or a low stance.
+[*] [b]Accuracy[/b]: aim, stability, spotting, courage and contact reporting greatly reduced for 5 to 20 s; they look for cover.
+[*] [b]Why so little before[/b]: outdoors by day the pupil cut the effect too much, and beyond 10 m it fell under the reaction threshold; AI range is now x1.5 and the pupil never goes under 55%.
+[*] [b]Variety[/b]: each AI has its own durations, 8% of AI are immune to a given grenade (more for good soldiers, tinted glasses, hearing protection).
+[*] [b]Safe[/b]: original values restored exactly; a value changed meanwhile by another mod or the mission is never overwritten; unconscious, transferred, dead or deleted AI are handled.
+[*] [b]Performance[/b]: at most 20 AI per detonation (setting), nearest first, 6 per frame.
+[*] [b]Settings[/b] (server, AI category): AI reaction, intensity, range, duration, immunity, AI per detonation, reflex gesture, AI log (off by default). 59 settings in total.
+[*] [b]Note[/b]: the effect applies on the machine that owns the AI; the mod must be loaded on the server (and headless clients) to affect their AI.
+[/list]
+
 [h1]COMSPEC Flashbang -BetterFlash- 1.0.0 — sursaut, lumière, audition, effets réduits / startle, light, hearing, reduced effects[/h1]
 
 [h2]Français[/h2]

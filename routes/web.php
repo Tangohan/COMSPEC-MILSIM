@@ -1224,6 +1224,11 @@ return function (Router $router) {
     $router->post('/atak/sse/avis/pieces/{id}/retirer', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentRemove'], $mwSsePortal);
     $router->post('/atak/sse/avis/pieces/{id}/principale', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentMain'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/pieces', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentAdd'], $mwSsePortal);
+    // Widget « Liaisons » (chemin de liaison, liens manuels) et page « Cerbères ».
+    $router->get('/atak/sse/liaisons/recherche', [\App\Controllers\Web\SseLinksController::class, 'search'], $mwSsePortal);
+    $router->post('/atak/sse/liaisons', [\App\Controllers\Web\SseLinksController::class, 'store'], $mwSsePortal);
+    $router->post('/atak/sse/liaisons/{id}/retirer', [\App\Controllers\Web\SseLinksController::class, 'remove'], $mwSsePortal);
+    $router->get('/atak/sse/cerberes', [\App\Controllers\Web\SseLinksController::class, 'cerberes'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);
@@ -2600,6 +2605,11 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/sanctions', [EffectifsWorkspaceController::class, 'declareSanction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/sanctions/{sanctionId}/lever', [EffectifsWorkspaceController::class, 'liftSanction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/departs', [EffectifsWorkspaceController::class, 'departures'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/suivi', [EffectifsWorkspaceController::class, 'suivi'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/suivi/export', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'exportTeam'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/suivi/relancer', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'bulkRemind'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/membres/{id}/suivi/export', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'exportMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/suivi/{action}', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'act'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/departs/{id}/archiver', [EffectifsWorkspaceController::class, 'archiveDepartureDossier'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/departs/{id}/reintegrer', [EffectifsWorkspaceController::class, 'reinstateDeparture'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // GET .../effectifs/elevations : onglet « Élévations » de Demandes RH (BackOfficeTabs), l'ancienne adresse répond 301.

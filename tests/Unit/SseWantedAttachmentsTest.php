@@ -27,7 +27,7 @@ use Tests\Support\SseWantedSqlite;
 
 /**
  * Pièces jointes des avis de recherche : types vérifiés par le contenu, taille, métadonnées retirées, miniature, espace privé,
- * route contrôlée, droits, identité de membre (TRÈS SECRET (TS)), anti-traversée, historique de l'identité, photothèque, et
+ * route contrôlée, droits, identité de membre (CONFIDENTIEL ÉLEVÉ), anti-traversée, historique de l'identité, photothèque, et
  * signalement instantané (la fiche et l'avis gardent chacun leur copie).
  */
 final class SseWantedAttachmentsTest extends TestCase
@@ -383,7 +383,7 @@ final class SseWantedAttachmentsTest extends TestCase
         $stranger = $this->service(self::PEER);
         $refused = $stranger->addFile(1, $notice, $bytes, [], self::manager());
         self::assertFalse($refused['ok']);
-        self::assertStringContainsString('TRÈS SECRET (TS)', $refused['error']);
+        self::assertStringContainsString('CONFIDENTIEL ÉLEVÉ', $refused['error']);
         self::assertSame([], $this->privateFiles());
 
         // Le supérieur du membre peut joindre ; les autres ne voient, ne servent et n'exposent rien.
@@ -595,7 +595,7 @@ final class SseWantedAttachmentsTest extends TestCase
         $this->realFiles = array_merge($this->realFiles, $this->rowPaths());
         SseMemberImageGate::useForSession($this->gate(self::PEER));
         $locked = (new \App\Controllers\Web\SseIdentityRegistryController())->identityShow(new Request(), ['id' => $member])->body();
-        self::assertStringContainsString('TRÈS SECRET (TS)', $locked);
+        self::assertStringContainsString(\App\Services\Sse\SseMemberImageGate::LABEL, $locked);
         self::assertStringNotContainsString('Photo de membre', $locked);
         self::assertStringNotContainsString('data-wc-gal-open', $locked);
         // Formulaire d'un membre : pas de joint, pas de préremplissage.

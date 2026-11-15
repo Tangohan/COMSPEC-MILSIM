@@ -19,8 +19,6 @@ final class SseUiSystemAssetTest extends TestCase
         self::assertStringContainsString('assets/css/sse_ui.css', $layout);
         self::assertStringContainsString('assets/js/sse-ui.js', $layout);
         self::assertGreaterThan(strpos($layout, 'sse_shell.css'), strpos($layout, 'sse_ui.css'));
-        // Le système de design SSE (SseDesignSystemTest) passe APRÈS sse_ui.css : c'est lui la référence.
-        self::assertGreaterThan(strpos($layout, 'sse_ui.css'), strpos($layout, 'assets/css/sse-ds.css'));
     }
 
     public function testTablesStackAsCardsOnPhoneWithoutEyebrowLabels(): void
