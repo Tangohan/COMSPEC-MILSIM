@@ -69,6 +69,7 @@ $renderOrg = static function (string $id, int $depth) use (&$renderOrg, $orgs, $
         <a class="btn btn--ghost" href="<?= $h($base . '/texte') ?>">Télécharger le texte</a>
     </div>
 </div>
+<?php \App\Services\Sse\Links\SseLinksWidget::render('campaign', (int) ($row['id'] ?? 0)); ?>
 
 <?php if (!empty($detail['error'])): ?>
     <div class="flash flash--error">Campagne illisible : <?= $h($detail['error']) ?></div>

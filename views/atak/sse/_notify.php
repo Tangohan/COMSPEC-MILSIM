@@ -26,7 +26,7 @@ $closeIcon = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
 <section class="sse-notify" id="sse-notify" aria-label="Messages du portail">
     <div class="sse-notify__stack" data-sse-stack="error" role="alert">
         <?php foreach ($notes as [$kind, $title, $text]): if ($kind !== 'error') { continue; } ?>
-            <div class="sse-note sse-toast sse-note--error" data-sse-note="error" tabindex="-1">
+            <div class="sse-note sse-note--error" data-sse-note="error" tabindex="-1">
                 <span class="sse-note__icon"><?= $icons['error'] ?></span>
                 <div class="sse-note__body"><strong class="sse-note__title"><?= $h($title) ?></strong><p class="sse-note__detail"><?= $h($text) ?></p></div>
                 <button type="button" class="sse-note__close" data-sse-close aria-label="Fermer ce message"><?= $closeIcon ?></button>
@@ -35,7 +35,7 @@ $closeIcon = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
     </div>
     <div class="sse-notify__stack" data-sse-stack="status" role="status">
         <?php foreach ($notes as [$kind, $title, $text]): if ($kind !== 'success') { continue; } ?>
-            <div class="sse-note sse-toast sse-note--success" data-sse-note="success" tabindex="-1">
+            <div class="sse-note sse-note--success" data-sse-note="success" tabindex="-1">
                 <span class="sse-note__icon"><?= $icons['success'] ?></span>
                 <div class="sse-note__body"><strong class="sse-note__title"><?= $h($title) ?></strong><p class="sse-note__detail"><?= $h($text) ?></p></div>
                 <button type="button" class="sse-note__close" data-sse-close aria-label="Fermer ce message"><?= $closeIcon ?></button>

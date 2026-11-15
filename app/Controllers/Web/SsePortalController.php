@@ -1563,7 +1563,7 @@ final class SsePortalController
         $caseFilter = $caseId > 0 ? $caseId : null;
 
         return $this->portalView('atak.sse.suggestions', [
-            'title' => 'Rapprochements moteur',
+            'title' => 'Propositions de Cerbère',
             'suggestions' => $this->suggestions->listSuggestions($tenantId, [
                 'case_id' => $caseFilter,
                 'status' => 'pending',
@@ -1652,7 +1652,7 @@ final class SsePortalController
         $tenantId = $this->tenantId();
         // Plus d'e-mail aux analystes après un passage manuel : les résultats sont dans la boîte du portail.
         $result = $this->engine->runForTenant($tenantId);
-        Session::flash('success', 'Passage moteur terminé — ' . ($result['summary'] ?? ''));
+        Session::flash('success', 'Passage de Cerbère terminé — ' . ($result['summary'] ?? ''));
 
         return Response::redirect(url('atak/sse/rapprochements'));
     }
@@ -2684,7 +2684,7 @@ final class SsePortalController
         }
 
         return $this->portalView('atak.sse.cross', [
-            'title' => 'Croisements — listes de surveillance',
+            'title' => 'Croisements Cerbère — listes de surveillance',
             'matches' => $matches,
             'entries' => $entries,
             'searchQuery' => $q,

@@ -1,21 +1,21 @@
 /*
- * Bureau SSE — messages du portail (erreur, succès, avertissement, validation de formulaire) = « toasts » du système de design.
- * Chargé après sse-ds.css : les couleurs viennent des jetons --sse-* (tons bad / ok / warn), pas de valeurs propres.
- * Message d'erreur : bordure de ton, icône, titre et détail ; collé sous les barres fixes. L'API (window.SseNotify) ne change pas.
+ * Bureau SSE — messages du portail (erreur, succès, avertissement, validation de formulaire).
+ * Chargé après sse_ui.css. Erreur : rouge clair sur fond rouge très sombre (contraste > 10:1), bordure de 2 px,
+ * icône, titre et détail ; collante sous les barres fixes. Succès vert, avertissement ambre.
  */
 body.sse-iw {
-    --nt-err-bg: var(--sse-raised);
-    --nt-err-line: var(--sse-bad);
-    --nt-err-ink: var(--sse-text);
-    --nt-err-icon: var(--sse-bad);
-    --nt-ok-bg: var(--sse-raised);
-    --nt-ok-line: var(--sse-ok-bd);
-    --nt-ok-ink: var(--sse-text);
-    --nt-ok-icon: var(--sse-ok);
-    --nt-warn-bg: var(--sse-raised);
-    --nt-warn-line: var(--sse-warn);
-    --nt-warn-ink: var(--sse-text);
-    --nt-warn-icon: var(--sse-warn);
+    --nt-err-bg: #2b0d11;
+    --nt-err-line: #ef4444;
+    --nt-err-ink: #ffe4e4;
+    --nt-err-icon: #ff8b8b;
+    --nt-ok-bg: #0a2619;
+    --nt-ok-line: #34d399;
+    --nt-ok-ink: #dcfce9;
+    --nt-ok-icon: #6ee7b7;
+    --nt-warn-bg: #2d2008;
+    --nt-warn-line: #f5b042;
+    --nt-warn-ink: #fff0cf;
+    --nt-warn-icon: #fbbf24;
 }
 
 .sse-notify { margin: 0 0 8px; }
@@ -31,35 +31,32 @@ body.sse-iw {
 }
 .sse-notify__ph { height: 0; }
 .sse-notify:not(:has(.sse-note)) { margin: 0; }
-.sse-notify .sse-note { margin-bottom: 12px; }
+.sse-notify .sse-note { margin-bottom: 8px; }
 
-/* Toast du système de design : surface relevée, fine bordure du ton, teinte légère, rayon 6 px, marges généreuses. */
 .sse-note,
-.sse-toast,
 .sse-formsummary {
     --nt-bg: var(--nt-err-bg);
     --nt-line: var(--nt-err-line);
     --nt-ink: var(--nt-err-ink);
     --nt-icon: var(--nt-err-icon);
-    --nt-tint: var(--sse-bad-bg);
     display: flex;
     align-items: flex-start;
-    gap: 16px;
-    padding: 16px 12px 16px 20px;
-    border: 1px solid var(--nt-line);
-    border-radius: var(--sse-radius, 6px);
-    background: linear-gradient(var(--nt-tint), var(--nt-tint)), var(--nt-bg);
+    gap: 12px;
+    padding: 12px 8px 12px 14px;
+    border: 2px solid var(--nt-line);
+    border-radius: 10px;
+    background: var(--nt-bg);
     color: var(--nt-ink);
-    font: 400 14px/1.5 var(--sse-font, var(--sans, system-ui, sans-serif));
-    box-shadow: var(--sse-shadow, 0 12px 32px rgba(0, 0, 0, .38));
+    font: 500 .95rem/1.45 var(--sans, system-ui, sans-serif);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .55);
 }
-.sse-note--success { --nt-bg: var(--nt-ok-bg); --nt-line: var(--nt-ok-line); --nt-ink: var(--nt-ok-ink); --nt-icon: var(--nt-ok-icon); --nt-tint: var(--sse-ok-bg); }
-.sse-note--warning { --nt-bg: var(--nt-warn-bg); --nt-line: var(--nt-warn-line); --nt-ink: var(--nt-warn-ink); --nt-icon: var(--nt-warn-icon); --nt-tint: var(--sse-warn-bg); }
+.sse-note--success { --nt-bg: var(--nt-ok-bg); --nt-line: var(--nt-ok-line); --nt-ink: var(--nt-ok-ink); --nt-icon: var(--nt-ok-icon); }
+.sse-note--warning { --nt-bg: var(--nt-warn-bg); --nt-line: var(--nt-warn-line); --nt-ink: var(--nt-warn-ink); --nt-icon: var(--nt-warn-icon); }
 .sse-note:focus-visible,
-.sse-formsummary:focus-visible { outline: 2px solid var(--sse-accent, #fff); outline-offset: 2px; }
+.sse-formsummary:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .sse-note__icon { flex: none; display: inline-flex; margin-top: 1px; color: var(--nt-icon); }
 .sse-note__body { flex: 1 1 auto; min-width: 0; }
-.sse-note__title { display: block; font-weight: 600; font-size: 14px; color: var(--sse-strong, #fff); }
+.sse-note__title { display: block; font-weight: 800; font-size: 1rem; color: #fff; }
 .sse-note__detail { margin: 2px 0 0; overflow-wrap: anywhere; }
 .sse-note__close {
     flex: none;
@@ -68,10 +65,10 @@ body.sse-iw {
     justify-content: center;
     min-width: 44px;
     min-height: 44px;
-    margin: -12px 0;
+    margin: -6px 0;
     padding: 0;
     border: 0;
-    border-radius: var(--sse-radius, 6px);
+    border-radius: 8px;
     background: transparent;
     color: var(--nt-ink);
     cursor: pointer;
@@ -80,7 +77,7 @@ body.sse-iw {
 .sse-note__close:focus-visible { outline: 3px solid #fff; outline-offset: -2px; }
 
 /* —— Récapitulatif en tête de formulaire —— */
-.sse-formsummary { margin: 0 0 24px; padding-right: 20px; }
+.sse-formsummary { margin: 0 0 18px; padding-right: 14px; }
 .sse-formsummary__list { margin: 6px 0 0; padding-left: 1.1rem; }
 .sse-formsummary__list li + li { margin-top: 4px; }
 .sse-formsummary__list a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
@@ -100,18 +97,18 @@ body.sse-iw {
 /* —— Anciens messages posés dans les pages : même gabarit visible —— */
 body.sse-iw .sx-main .flash {
     position: relative;
-    padding: 16px 20px 16px 52px;
-    border: 1px solid var(--nt-warn-line);
-    border-radius: var(--sse-radius, 6px);
-    background: linear-gradient(var(--sse-warn-bg), var(--sse-warn-bg)), var(--nt-warn-bg);
+    padding: 12px 14px 12px 46px;
+    border: 2px solid var(--nt-warn-line);
+    border-radius: 10px;
+    background: var(--nt-warn-bg);
     color: var(--nt-warn-ink);
     font: 500 .95rem/1.45 var(--sans, system-ui, sans-serif);
 }
 body.sse-iw .sx-main .flash::before {
     content: "!";
     position: absolute;
-    left: 20px;
-    top: 16px;
+    left: 14px;
+    top: 12px;
     width: 22px;
     height: 22px;
     border: 2px solid currentColor;
@@ -119,8 +116,8 @@ body.sse-iw .sx-main .flash::before {
     font: 800 .8rem/18px var(--sans, system-ui, sans-serif);
     text-align: center;
 }
-body.sse-iw .sx-main .flash--error { border-color: var(--nt-err-line); background: linear-gradient(var(--sse-bad-bg), var(--sse-bad-bg)), var(--nt-err-bg); color: var(--nt-err-ink); }
-body.sse-iw .sx-main .flash--ok { border-color: var(--nt-ok-line); background: linear-gradient(var(--sse-ok-bg), var(--sse-ok-bg)), var(--nt-ok-bg); color: var(--nt-ok-ink); }
+body.sse-iw .sx-main .flash--error { border-color: var(--nt-err-line); background: var(--nt-err-bg); color: var(--nt-err-ink); }
+body.sse-iw .sx-main .flash--ok { border-color: var(--nt-ok-line); background: var(--nt-ok-bg); color: var(--nt-ok-ink); }
 
 @media (prefers-reduced-motion: no-preference) {
     .sse-note, .sse-formsummary { animation: sse-note-in .22s ease-out; }
