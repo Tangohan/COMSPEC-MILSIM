@@ -249,7 +249,9 @@ private _fitQuals = {
 // Redemande tout de suite la carte du joueur à Athena, par COMSPEC Link, sans attendre la prochaine partie. Possible
 // seulement si COMSPEC Link a déjà une session Athena dans ce lancement du jeu (une partie jouée) et si le SteamID est connu
 // (gardé par COMSPEC ATAK : rien ne permet de le lire avant une mission). Sinon le message dit quoi faire.
-// L'appel bloque le jeu le temps de la réponse du site (quelques secondes au plus) : il part d'un clic du joueur.
+// Les deux appels qui attendent le site (carte du joueur, portrait) passent par la relève de COMSPEC Link (_extBg :
+// « AsyncKeep » puis « AsyncPoll ») : la requête tourne hors du fil du jeu, l'écran reste réactif. COMSPEC Link plus
+// ancien (pas de relève) : appel direct comme avant, qui bloque le jeu le temps de la réponse du site.
 // Un seul passage à la fois : chaque clic lançait sa propre synchronisation, et dix clics d'impatience enchaînaient dix
 // séries d'appels bloquants (carte, portrait). Un clic pendant qu'une synchronisation tourne est ignoré.
 uiNamespace setVariable ["COMSPEC_LOBBY_SyncBusy", false];
@@ -260,7 +262,7 @@ uiNamespace setVariable ["COMSPEC_LOBBY_sync", {
         private _t0 = diag_tickTime;
         [] call (uiNamespace getVariable ["COMSPEC_LOBBY_syncRun", {}]);
         uiNamespace setVariable ["COMSPEC_LOBBY_SyncBusy", false];
-        // Durée du passage (appels à COMSPEC Link compris : ce sont eux qui bloquent l'écran, voir ci-dessus).
+        // Durée du passage, attentes de la relève comprises (l'écran ne se fige que sur un appel « (direct) »).
         diag_log format ["[COMSPEC LOBBY][PERF] Synchroniser : %1 ms", round ((diag_tickTime - _t0) * 1000)];
     };
 }];
@@ -286,7 +288,40 @@ uiNamespace setVariable ["COMSPEC_LOBBY_syncRun", {
         if !(_r isEqualType "") then { _r = ""; };
         _r
     };
-    private _raw = ["GetPlayerAvatarInfo", [_uid, _tenant]] call _ext;
+    // Relève : ["AsyncKeep", [ticket, commande, arguments…]] rend « QUEUED|ticket » tout de suite, puis
+    // ["AsyncPoll", [ticket]] rend « PENDING|ticket » tant que la commande tourne et sa réponse exacte une seule fois.
+    // Attente par uiSleep 0.1 (code ordonnancé : le jeu continue de s'afficher), bornée à 20 s. Pas de « QUEUED| »
+    // (COMSPEC Link plus ancien, relève pleine ou refusée) : repli sur l'appel direct.
+    private _extBg = {
+        params [["_cmd", ""], ["_args", []]];
+        private _t = diag_tickTime;
+        private _seq = (uiNamespace getVariable ["COMSPEC_LOBBY_SyncSeq", 0]) + 1;
+        uiNamespace setVariable ["COMSPEC_LOBBY_SyncSeq", _seq];
+        private _ticket = format ["lobby_%1_%2", _seq, round (diag_tickTime * 1000)];
+        private _txt = {
+            private _v = _this;
+            if (_v isEqualType []) then { _v = _v param [0, ""]; };
+            if !(_v isEqualType "") then { _v = ""; };
+            _v
+        };
+        private _r = ("COMSPECExtension" callExtension ["AsyncKeep", [_ticket, _cmd] + _args]) call _txt;
+        if ((_r select [0, 7]) isNotEqualTo "QUEUED|") exitWith { [_cmd, _args] call _ext };
+        private _out = "ERR|async_timeout";
+        private _wait = true;
+        while { _wait && {diag_tickTime - _t < 20} } do {
+            uiSleep 0.1;
+            _r = ("COMSPECExtension" callExtension ["AsyncPoll", [_ticket]]) call _txt;
+            if ((_r select [0, 8]) isNotEqualTo "PENDING|") then { _out = _r; _wait = false; };
+        };
+        private _ms = round ((diag_tickTime - _t) * 1000);
+        if (_wait) then {
+            diag_log format ["[COMSPEC LOBBY][PERF] DLL %1 : sans réponse après %2 ms (relève abandonnée)", _cmd, _ms];
+        } else {
+            if (_ms >= 20) then { diag_log format ["[COMSPEC LOBBY][PERF] DLL %1 : %2 ms (relève, écran non figé)", _cmd, _ms]; };
+        };
+        _out
+    };
+    private _raw = ["GetPlayerAvatarInfo", [_uid, _tenant]] call _extBg;
     if (_raw isEqualTo "") exitWith { "STR_COMSPEC_LOBBY_SyncNoAtak" call _say; };
     if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
         diag_log ("[COMSPEC LOBBY] synchronisation refusée : " + (_raw select [0, 60]));
@@ -313,7 +348,7 @@ uiNamespace setVariable ["COMSPEC_LOBBY_syncRun", {
     if (_url isEqualTo "") then { _pic = ""; } else {
         private _get = {
             params ["_u"];
-            private _dl = (["DownloadBriefingSlideImage", [_u, format ["avatar_%1_%2", _uid, hashValue _u]]] call _ext) splitString "|";
+            private _dl = (["DownloadBriefingSlideImage", [_u, format ["avatar_%1_%2", _uid, hashValue _u]]] call _extBg) splitString "|";
             if ((_dl param [0, ""]) isEqualTo "OK" && {(_dl param [1, ""]) isNotEqualTo ""}) then { ((_dl select 1) splitString (toString [92])) joinString "/" } else { "" }
         };
         private _got = [_url] call _get;

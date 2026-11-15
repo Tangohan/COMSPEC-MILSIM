@@ -1,4 +1,11 @@
-/* Unités suivies par Athena (BFT web). Avec COMSPEC Link, on reprend sa liste d'effectifs (même session). */
+/*
+    Unités suivies par Athena (BFT web). Avec COMSPEC Link, on reprend sa liste d'effectifs (même session).
+    Empreinte (perf lot 2) : avec COMSPEC Link, la table était convertie en texte à chaque sondage (fn_storeSet sans
+    signature : « str » de toutes les pistes, toutes les 3 s) et l'était pour rien, l'heure de chaque piste changeant à
+    chaque fois. Désormais une empreinte des lignes sans leur âge (hashValue, un appel) : lignes identiques, seule l'heure
+    des pistes déjà en mémoire avance (même résultat qu'une relecture) ; sinon la table est refaite et rangée avec cette
+    empreinte. Mesures au RPT : « Athena : sondage des unités » (fn_schedulerTick) et, dedans, « Athena : unités (liste Link) ».
+*/
 private _units = createHashMap;
 private _now = diag_tickTime;
 private _sig = "";
@@ -21,10 +28,28 @@ private _add = {
 };
 if ([] call comspec_atak_native_fnc_bridge) then {
     if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
+    private _tL = diag_tickTime;
+    private _list = [] call comspec_overwatch_connect_fnc_getUnitsList;
+    ["Athena : unités (liste Link)", _tL] call comspec_atak_native_fnc_perfAcc;
+    // Lignes des autres (moi : dessiné par le jeu), dans l'ordre de la liste ; empreinte de tout sauf l'âge.
+    private _rows = [];
+    private _print = [];
     {
         _x params [["_cs", ""], "", "", ["_self", false], ["_wx", 0], ["_wy", 0], ["_role", ""], ["_age", 0], ["_status", ""]];
-        if (!_self) then { [_cs, _wx, _wy, _role, _age, _status] call _add; };
-    } forEach ([] call comspec_overwatch_connect_fnc_getUnitsList);
+        if (!_self) then { _rows pushBack [_cs, _wx, _wy, _role, _age, _status]; _print pushBack [_cs, _wx, _wy, _role, _status]; };
+    } forEach _list;
+    _sig = "L|" + (hashValue _print);
+    private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap];
+    private _known = _data getOrDefault ["remoteUnits",createHashMap];
+    if (((_data getOrDefault ["signatures",createHashMap]) getOrDefault ["remoteUnits",""]) isEqualTo _sig) exitWith {
+        // Mêmes lignes qu'au sondage précédent : heure de réception de chaque piste, comme une relecture (maintenant - âge).
+        _same = true;
+        {
+            private _u = _known get ("athena:" + toLower (trim (_x select 0)));
+            if (!isNil "_u") then { _u set ["updated", _now - (_x select 4)]; };
+        } forEach _rows;
+    };
+    { _x call _add; } forEach _rows;
 } else {
     private _raw = ["GetUnits", []] call comspec_atak_native_fnc_extensionCall;
     if ((_raw find "OK|") isNotEqualTo 0) exitWith {};
@@ -41,7 +66,10 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 if (_same) exitWith {
     private _dt = _now - (uiNamespace getVariable ["COMSPEC_ATAK_UnitsPollAt", _now]);
     uiNamespace setVariable ["COMSPEC_ATAK_UnitsPollAt", _now];
-    { _y set ["updated", (_y getOrDefault ["updated", _now]) + _dt]; } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["remoteUnits",createHashMap]);
+    // COMSPEC Link : heures déjà posées ci-dessus, ligne par ligne ; DLL native : toutes avancent du temps écoulé.
+    if ((_sig select [0, 2]) isNotEqualTo "L|") then {
+        { _y set ["updated", (_y getOrDefault ["updated", _now]) + _dt]; } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["remoteUnits",createHashMap]);
+    };
     true
 };
 uiNamespace setVariable ["COMSPEC_ATAK_UnitsPollAt", _now];

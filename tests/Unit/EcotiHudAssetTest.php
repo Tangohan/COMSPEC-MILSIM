@@ -137,13 +137,13 @@ final class EcotiHudAssetTest extends TestCase
         self::assertStringContainsString('ecotiIconPath', $hud);
         self::assertStringContainsString('CBA_fnc_addPerFrameHandler', $init);
         self::assertFileExists(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/img/ecoti/ecoti_icon_bracket_ca.png'
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/img/ecoti/ecoti_icon_bracket_ca.paa'
         );
         self::assertFileExists(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/img/ecoti/ecoti_vignette_ca.png'
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/img/ecoti/ecoti_vignette_ca.paa'
         );
         self::assertFileExists(
-            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/img/ecoti/ecoti_glow_ca.png'
+            $root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/img/ecoti/ecoti_glow_ca.paa'
         );
         self::assertStringContainsString('COMSPEC_EcotiCutAtLook', $ace);
         self::assertStringContainsString('idc = 9873', $page);

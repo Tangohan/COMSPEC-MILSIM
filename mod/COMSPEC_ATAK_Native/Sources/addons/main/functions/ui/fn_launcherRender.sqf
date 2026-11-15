@@ -39,6 +39,11 @@ private _th = _tw * _ratio * ([0.92, 0.8] select (_l get "mini")); // mode PETIT
 private _secH = _font * 1.6;
 private _gw = _bw - 0.012 - 2 * _pad;
 private _apps = ["filter", ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible }] call comspec_atak_native_fnc_appSpaces;
+// Dossier SSE (fn_sseHub) : les apps qu'il regroupe ne sont plus à la racine des sections, une seule tuile « SSE » les
+// ouvre. Elles restent dans ÉPINGLÉES, RÉCENTES, mes groupes et la recherche, et leurs pages s'ouvrent comme avant.
+private _hubIds = ["rootHidden", _apps] call comspec_atak_native_fnc_sseHub;
+private _rootApps = _apps select { !((_x get "id") in _hubIds) };
+private _hubApps = _apps select { (_x get "id") in _hubIds };
 private _interactive = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false];
 // Mode PETIT : champ de recherche compact (hauteur d'un en-tête de section), sans les puces de filtre.
 private _mini = _l get "mini";
@@ -135,7 +140,7 @@ private _pins = profileNamespace getVariable ["COMSPEC_ATAK_PinnedApps", []];
 if !(_pins isEqualType []) then { _pins = []; };
 private _secSel = [uiNamespace getVariable ["COMSPEC_ATAK_LauncherSection", ""], ""] select !_chipsOn;
 private _sections = [];
-{ _sections pushBackUnique (_x get "section"); } forEach _apps;
+{ _sections pushBackUnique (_x get "section"); } forEach _rootApps;
 // Filtre GROUPES (*FOLD) gardé : il était remis à TOUT ici (pas une section d'apps), le filtre ne filtrait rien.
 if (_secSel isNotEqualTo "" && {!(_secSel in ["*PIN", "*FOLD"])} && {!(_secSel in _sections)}) then { _secSel = ""; };
 if (_secSel isEqualTo "*PIN" && {(count _pins) isEqualTo 0}) then { _secSel = ""; };
@@ -367,7 +372,9 @@ private _byPage = createHashMap;
 { _byPage set [_x get "page", _x]; } forEach _apps;
 private _pinApps = (_pins apply { _byPage getOrDefault [_x, createHashMap] }) select { (count _x) > 0 };
 private _groups = [];
-private _secGroups = { { private _sec = _x; _groups pushBack [_sec, _sec, _apps select { (_x get "section") isEqualTo _sec }, _this, true]; } forEach _sections; };
+// Apps du dossier SSE : groupe montré seulement par la recherche (taper « Recherchés » trouve l'app, pas seulement le dossier).
+private _hubGroup = { if (_searchOn && {(count _this) > 0}) then { _groups pushBack ["", "SSE", _this, false, true]; }; };
+private _secGroups = { { private _sec = _x; _groups pushBack [_sec, _sec, _rootApps select { (_x get "section") isEqualTo _sec }, _this, true]; } forEach _sections; _hubApps call _hubGroup; };
 switch (true) do {
     case (_secSel isEqualTo "*PIN"): { _groups pushBack ["", "Épinglées", _pinApps, true, true]; };
     case (_secSel isEqualTo "*FOLD"): {
@@ -375,7 +382,10 @@ switch (true) do {
         // Recherche depuis GROUPES : toutes les apps, par section.
         if (_searchOn) then { false call _secGroups; };
     };
-    case (_secSel isNotEqualTo ""): { _groups pushBack ["", _secSel, _apps select { (_x get "section") isEqualTo _secSel }, true, true]; };
+    case (_secSel isNotEqualTo ""): {
+        _groups pushBack ["", _secSel, _rootApps select { (_x get "section") isEqualTo _secSel }, true, true];
+        (_hubApps select { (_x get "section") isEqualTo _secSel }) call _hubGroup;
+    };
     default {
         if ((count _pinApps) > 0) then { _groups pushBack ["*PIN", "Épinglées", _pinApps, true, false]; };
         private _rec = profileNamespace getVariable ["COMSPEC_ATAK_AppRecent", []];

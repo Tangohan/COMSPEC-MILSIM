@@ -144,7 +144,14 @@ private _unitOf = {
     if (_id isEqualTo "") exitWith { objNull };
     objectFromNetId _id
 };
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
+// Perf (lot 3) : un seul rendu de la page par image. Chaque « call _render » déposait son propre rendu complet pour
+// l'image suivante : une action qui en enchaîne plusieurs (ou le passage d'une seconde, avec l'armement et le journal)
+// redessinait toute la page autant de fois dans la même image (33 ms le rendu, 124 au pire).
+private _render = {
+    if ((missionNamespace getVariable ["COMSPEC_ATAK_DroneRenderFrame", -1]) isEqualTo diag_frameNo) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneRenderFrame", diag_frameNo];
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
+};
 private _send = {
     params ["_cmd", ["_args", []]];
     // Zones interdites au drone (fn_noFly) : un ordre dont le but y tombe est refusé (le retour automatique passe toujours).
@@ -1866,19 +1873,33 @@ switch (_act) do {
         };
         // Capteur : seulement en vol et avec le retour vidéo.
         // Réglage serveur « Repérage automatique par drone » (désactivé par défaut) : sinon le pilote repère lui-même.
-        if ((_l select 2) && {((getPosATL _d) select 2) > 3} && {_m isNotEqualTo "STANDBY"} && {missionNamespace getVariable ["comspec_atak_native_drone_autospot", false]}) then { call _scan; };
+        if ((_l select 2) && {((getPosATL _d) select 2) > 3} && {_m isNotEqualTo "STANDBY"} && {missionNamespace getVariable ["comspec_atak_native_drone_autospot", false]}) then {
+            private _scanT0 = diag_tickTime;
+            call _scan;
+            ["drone : repérage", _scanT0] call comspec_atak_native_fnc_perfAcc;
+        };
         // Ordre qui n'avance pas : reprise automatique, une fois (pas en pilotage manuel ni en veille).
         if ((_l select 2) && {!(_m in ["MANUAL", "STANDBY", "STICK"])}) then { call _watch; };
         // Ordre du clic droit en attente : accusé ou silence du drone, à chaque seconde (liaison ou non, veille comprise).
         call _watchMap;
+        // Perf (lot 3) : télémétrie et incrustations réécrites seulement quand leur texte change (texte brut gardé sur le
+        // contrôle). Avant, les six textes étaient traduits, analysés et reposés à chaque seconde, changés ou non.
+        private _osdT0 = diag_tickTime;
+        private _osdPut = {
+            params ["_c", "_raw"];
+            if (isNull _c || {(_c getVariable ["cs_osd", 0]) isEqualTo _raw}) exitWith {};
+            _c setVariable ["cs_osd", _raw];
+            _c ctrlSetStructuredText parseText ((_raw) call comspec_atak_native_fnc_tr);
+        };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_DroneOsd", controlNull];
-        if (!isNull _osd) then { _osd ctrlSetStructuredText parseText ((([_d, _l] call comspec_atak_native_fnc_droneOsd)) call comspec_atak_native_fnc_tr); };
+        if (!isNull _osd) then { [_osd, [_d, _l] call comspec_atak_native_fnc_droneOsd] call _osdPut; };
         private _feed = uiNamespace getVariable ["COMSPEC_ATAK_DroneFeedTxt", []];
         if ((count _feed) isEqualTo 5 && {!isNull (_feed select 0)}) then {
             private _t = [_d, _l, uiNamespace getVariable ["COMSPEC_ATAK_DroneFeedKind", "FEED"]] call comspec_atak_native_fnc_droneOsd;
-            { _x ctrlSetStructuredText parseText (((_t select _forEachIndex)) call comspec_atak_native_fnc_tr); } forEach _feed;
+            { [_x, _t select _forEachIndex] call _osdPut; } forEach _feed;
         };
         ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
+        ["drone : OSD", _osdT0] call comspec_atak_native_fnc_perfAcc;
         // Journal de performance (retour de TTRD : le jeu rame avec le drone ou les photos) : toutes les 30 s, les caméras
         // qui rendent dans une texture (chacune redessine la scène à chaque image) et les images par seconde.
         if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PerfLogAt", 0])) then {
@@ -1903,8 +1924,13 @@ switch (_act) do {
         // lignes écrites, pas taille du journal : plafonné à 100 lignes, il ne se redessinait plus une fois plein.
         private _sig = [missionNamespace getVariable ["COMSPEC_ATAK_DroneLogN", 0], count (missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap])];
         if (_sig isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DroneSig", []])) then {
+            // Perf (lot 3) : au plus un rendu complet toutes les 2 s pour ces deux onglets (journal bavard, pistes qui
+            // défilent). La signature n'est retenue qu'une fois la page redessinée : la ligne arrivée entre-temps n'est
+            // pas perdue, elle s'affiche au passage suivant (une seconde plus tard au plus).
+            private _menus = (_s getOrDefault ["droneTab", "PILOT"]) in ["TARGETS", "LOG"] && {uiNamespace getVariable ["COMSPEC_ATAK_DroneMenusShown", false]};
+            if (_menus && {diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_DroneSigAt", -10]) < 2}) exitWith {};
             missionNamespace setVariable ["COMSPEC_ATAK_DroneSig", _sig];
-            if ((_s getOrDefault ["droneTab", "PILOT"]) in ["TARGETS", "LOG"] && {uiNamespace getVariable ["COMSPEC_ATAK_DroneMenusShown", false]}) then { call _render; };
+            if (_menus) then { missionNamespace setVariable ["COMSPEC_ATAK_DroneSigAt", diag_tickTime]; call _render; };
         };
     };
 };

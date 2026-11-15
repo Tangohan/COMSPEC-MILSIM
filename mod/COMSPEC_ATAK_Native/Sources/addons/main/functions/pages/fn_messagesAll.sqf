@@ -22,6 +22,8 @@ private _memo = uiNamespace getVariable ["COMSPEC_ATAK_MsgMemo", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_MsgMemo", _memo];
 private _hit = _memo getOrDefault [_channel, []];
 if ((count _hit) isEqualTo 3 && {(_hit select 0) isEqualTo _sig} && {diag_tickTime - (_hit select 1) < 5}) exitWith { _hit select 2 };
+// Mesure (fn_perfAcc, RPT) : relecture complète du fil d'un canal (sources changées, ou mémoire de plus de 5 s).
+private _msgT0 = diag_tickTime;
 private _me = [] call comspec_atak_native_fnc_unitCallsign;
 private _names = [toLower _me, toLower name player];
 private _out = [];
@@ -70,4 +72,5 @@ private _keyed = [];
 _keyed sort true;
 private _res = _keyed apply { _x select 2 };
 _memo set [_channel, [_sig, diag_tickTime, _res]];
+["messages (relecture)", _msgT0] call comspec_atak_native_fnc_perfAcc;
 _res

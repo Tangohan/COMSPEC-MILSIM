@@ -9,8 +9,17 @@
       POLYLINE   trait d'un pixel (les traits épais ou fléchés sont repassés par fn_strokeDraw).
     Style tactique (fn_mapColors « tac ») : cercle fin autour des symboles nommés (points clés, couleur gardée avec l'entrée) ;
     zones pleines hachurées (brosse du moteur), contour doublé d'un pixel ; les brosses choisies par la mission restent.
-    Propriétés relues pour le seul marqueur créé, modifié ou supprimé (relecture complète toutes les 5 min) ; position des symboles lue
+    Propriétés relues pour le seul marqueur créé, modifié ou supprimé ; position des symboles lue
     à chaque image (une cible suivie bouge). Les noms sont écrits par fn_mapMarkerText.
+    Perf lot 2 :
+      - relecture de sécurité (toutes les 5 min, ou carnet des changements débordé téléphone rangé) par tranches de 24
+        marqueurs par image, l'ancienne liste restant dessinée ; avant, tous les marqueurs étaient relus dans une seule
+        image (pics de la carte dans les journaux). Relecture complète immédiate gardée au premier dessin et au changement
+        de fond, de style ou du calque des zones. Mesure au RPT : « marqueurs : reconstruction complète ».
+      - présélection par zone (index spatial) : seules les entrées proches de la vue (vue élargie d'un quart de chaque
+        côté) sont parcourues à chaque image, dans l'ordre de la liste ; refaite quand la liste change, quand la vue
+        sort de la zone et toutes les 0,5 s. Le test exact de la vue reste fait à chaque image, comme avant : mêmes
+        symboles, même ordre d'empilement, mêmes regroupements « +n ». Avant : toutes les entrées à chaque image.
     Params : [carte, facteur des symboles (écran x réglage)]
 */
 params ["_map", "_mk"];
@@ -38,8 +47,33 @@ private _dead = missionNamespace getVariable "COMSPEC_ATAK_GmDead";
 if (isNil "_dead") then { _dead = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_GmDead", _dead]; };
 private _pendDue = (count _pend) > 0 && {_now > (missionNamespace getVariable ["COMSPEC_ATAK_GmPendAt", 0])};
 private _zonesOn = profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true];
-private _full = _now > (_cache select 0) || {"" in _dirty} || {(_cache param [3, false]) isNotEqualTo (_pal get "dark")} || {(_cache param [4, false]) isNotEqualTo _tac} || {(_cache param [5, true]) isNotEqualTo _zonesOn};
-if (_full || {(count _dirty) > 0} || {_pendDue}) then {
+// Relecture complète dans l'image : premier dessin (aucune liste), ou changement de fond, de style, du calque des zones
+// (toutes les couleurs changent). Échéance de 5 min ou carnet débordé (clé "") : file de relecture par tranches.
+private _styleChg = (_cache param [3, false]) isNotEqualTo (_pal get "dark") || {(_cache param [4, false]) isNotEqualTo _tac} || {(_cache param [5, true]) isNotEqualTo _zonesOn};
+private _due = _now > (_cache select 0) || {"" in _dirty};
+private _full = _styleChg || {_due && {(_cache select 0) < 0}};
+private _queue = missionNamespace getVariable ["COMSPEC_ATAK_GmQueue", []];
+if (_due && {!_full}) then {
+    // Liste trouée par les marqueurs supprimés (elle n'est plus recompactée toutes les 5 min) : refaite d'un coup, rare.
+    private _holes = { (count _x) isEqualTo 0 } count (_cache select 1);
+    if (_holes > 200 && {_holes * 2 > (count (_cache select 1))}) then { _full = true; } else {
+        // Tous les marqueurs du jeu dans leur ordre, puis ceux de la liste qui n'existent plus (entrée à vider).
+        _queue = +allMapMarkers;
+        _queue insert [-1, keys (_cache select 2), true];
+        missionNamespace setVariable ["COMSPEC_ATAK_GmQueue", _queue];
+        _cache set [0, _now + 300];
+        // Carnet débordé : ses marqueurs sont dans la file, rien n'est relu en bloc.
+        if ("" in _dirty) then { _dirty = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyGm", _dirty]; };
+    };
+};
+if (_full && {(count _queue) > 0}) then { _queue = []; missionNamespace setVariable ["COMSPEC_ATAK_GmQueue", _queue]; };
+// Tranche de cette image : 24 marqueurs, pris en tête de file (ordre des marqueurs du jeu gardé pour les nouveaux).
+private _slice = [];
+if ((count _queue) > 0) then {
+    _slice = _queue select [0, 24];
+    _queue deleteRange [0, (count _queue) min 24];
+};
+if (_full || {(count _dirty) > 0} || {_pendDue} || {(count _slice) > 0}) then {
     missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyGm", createHashMap];
     if (_pendDue) then {
         missionNamespace setVariable ["COMSPEC_ATAK_GmPendAt", _now + 0.5];
@@ -142,6 +176,7 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
     };
     if (_full) then {
         // Relecture complète : au premier dessin, si trop de marqueurs ont changé d'un coup, et toutes les 5 min par sécurité (les EH marqueurs couvrent le reste).
+        private _tFull = diag_tickTime;
         _dead = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_GmDead", _dead];
         private _list = [];
         private _index = createHashMap;
@@ -149,7 +184,10 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
             private _e = call _entry;
             if ((count _e) > 0) then { _index set [_x, count _list]; _list pushBack _e; };
         } forEach allMapMarkers;
+        private _ver = _cache param [6, 0];
         _cache = [_now + 300, _list, _index, _pal get "dark", _tac, _zonesOn];
+        _cache pushBack _ver;
+        ["marqueurs : reconstruction complète", _tFull, 5, -1, format ["marqueurs : reconstruction complète (%1 marqueurs)", count allMapMarkers]] call comspec_atak_native_fnc_perfAcc;
     } else {
         // Marqueur changé : son entrée est remplacée à sa place (ordre de dessin gardé), ajoutée s'il est nouveau,
         // vidée s'il a disparu ; la liste est recompactée à la prochaine relecture complète.
@@ -160,8 +198,10 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
             if (_i >= 0) then { _list set [_i, _e]; } else {
                 if ((count _e) > 0) then { _index set [_x, count _list]; _list pushBack _e; };
             };
-        } forEach (keys _dirty);
+        } forEach ((keys _dirty) + _slice);
     };
+    // Numéro de version de la liste : la présélection par zone (ci-dessous) est refaite quand il change.
+    _cache set [6, (_cache param [6, 0]) + 1];
     missionNamespace setVariable ["COMSPEC_ATAK_GmList", _cache];
 };
 
@@ -192,6 +232,32 @@ private _lky = _LF getOrDefault ["ky", 1];
 private _frN = 0;
 // Un pixel en mètres, une fois par image et seulement en style tactique (contour doublé des zones).
 private _wpx = if (_tac) then { (((_view select 2) - (_view select 0)) / (_mw + 2 * _mg)) * pixelW } else { 0 };
+// Présélection par zone, gardée par contrôle de carte : [version de la liste, échéance, zone [xmin, ymin, xmax, ymax], entrées].
+private _cand = _map getVariable ["comspec_gmCand", []];
+if ((count _cand) < 4 || {(_cand select 0) isNotEqualTo (_cache param [6, 0])} || {_now > (_cand select 1)}
+    || {(_view select 0) < ((_cand select 2) select 0)} || {(_view select 1) < ((_cand select 2) select 1)}
+    || {(_view select 2) > ((_cand select 2) select 2)} || {(_view select 3) > ((_cand select 2) select 3)}) then {
+    private _tC = diag_tickTime;
+    private _zw = ((_view select 2) - (_view select 0)) * 0.25;
+    private _zh = ((_view select 3) - (_view select 1)) * 0.25;
+    private _zone = [(_view select 0) - _zw, (_view select 1) - _zh, (_view select 2) + _zw, (_view select 3) + _zh];
+    private _keep = [];
+    {
+        if ((count _x) isEqualTo 0) then { continue };
+        if ((_x select 0) isEqualTo 0) then {
+            // Symbole : position du moment dans la zone.
+            private _p = getMarkerPos (_x select 1);
+            if ((_p select 0) >= (_zone select 0) && {(_p select 0) <= (_zone select 2)} && {(_p select 1) >= (_zone select 1)} && {(_p select 1) <= (_zone select 3)}) then { _keep pushBack _x; };
+        } else {
+            // Trait (boîte au rang 4) ou zone (rang 9) : boîte qui touche la zone ; sans boîte, toujours gardé.
+            private _bb = _x param [[9, 4] select ((_x select 0) isEqualTo 1), []];
+            if ((count _bb) < 4 || {!((_bb select 2) < (_zone select 0) || {(_bb select 0) > (_zone select 2)} || {(_bb select 3) < (_zone select 1)} || {(_bb select 1) > (_zone select 3)})}) then { _keep pushBack _x; };
+        };
+    } forEach (_cache select 1);
+    _cand = [_cache param [6, 0], _now + 0.5, _zone, _keep];
+    _map setVariable ["comspec_gmCand", _cand];
+    ["carte marqueurs mission (présélection)", _tC] call comspec_atak_native_fnc_perfAcc;
+};
 {
     if ((count _x) isEqualTo 0) then { continue };
     switch (_x select 0) do {
@@ -248,7 +314,7 @@ private _wpx = if (_tac) then { (((_view select 2) - (_view select 0)) / (_mw + 
             };
         };
     };
-} forEach (_cache select 1);
+} forEach (_cand select 3);
 // Relevé de diagnostic toutes les 30 s dans le RPT (retour « les images et zones n'apparaissent plus ») : entrées gardées
 // par genre (symbole, trait, rectangle, ellipse) et marqueurs du jeu, pour savoir si le manque vient de la lecture ou du dessin.
 if (_now > (missionNamespace getVariable ["COMSPEC_ATAK_GmDiagAt", 0])) then {

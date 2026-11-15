@@ -187,7 +187,7 @@ final class SseAccessCatalog
         'dossiers' => [
             'label' => 'Dossiers d’enquête',
             'hint' => 'Dossiers validés et d’intérêt, investigations, sites, objets, rédaction, rapports, transmissions, collecte et validation.',
-            'paths' => ['dossiers', 'interet', 'toiles', 'sites', 'objets', 'documents', 'bibliotheque', 'presentation', 'rapports', 'transmissions', 'collecte', 'validation'],
+            'paths' => ['dossiers', 'interet', 'toiles', 'pistes', 'sites', 'objets', 'documents', 'bibliotheque', 'presentation', 'rapports', 'transmissions', 'collecte', 'validation'],
             'legacy' => ['read' => 'entrant', 'write' => 'manage', 'add' => 'manage', 'delete' => 'manage', 'export' => 'export', 'manage' => 'grant'],
         ],
         'analyse' => [

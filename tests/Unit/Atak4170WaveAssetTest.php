@@ -246,8 +246,10 @@ final class Atak4170WaveAssetTest extends TestCase
         self::assertStringContainsString('private _new = if (_page in _sel) then { _sel - [_page] } else { [[], (_sel select [0, (count _vars) - 1]) + [_page]] select (_page in _keys) };', $pin);
         self::assertStringContainsString('if ((missionNamespace getVariable [_var, "none"]) isNotEqualTo _v) then { [_var, _v] call comspec_atak_native_fnc_setSetting; };', $pin);
         self::assertStringContainsString("['toggle', [%1]] call comspec_atak_native_fnc_mapPinnedApp;", $pin);
-        // Même ligne dans le panneau SITUATION et dans Réglages > Carte ; la page ouverte est redessinée.
-        self::assertStringContainsString('(["rows"] call comspec_atak_native_fnc_mapPinnedApp)', $this->read('functions/pages/fn_pageMap.sqf'));
+        // Même choix dans le panneau SITUATION (ligne compacte dépliable, AtakMapPinsPanelAssetTest) et dans Réglages > Carte ;
+        // la page ouverte est redessinée.
+        self::assertStringContainsString('(["panelRows", [_helpOpen isEqualTo "pins", "pins" call _helpCode]] call comspec_atak_native_fnc_mapPinnedApp)', $this->read('functions/pages/fn_pageMap.sqf'));
+        self::assertStringContainsString('private _seg = +((["rows"] call comspec_atak_native_fnc_mapPinnedApp) select 0);', $pin);
         self::assertStringContainsString('(["rows"] call comspec_atak_native_fnc_mapPinnedApp) select 0,', $this->read('functions/pages/fn_pageSettings.sqf'));
         self::assertStringContainsString('if !(_open in ["MAP", "SETTINGS"]) exitWith { false };', $pin);
         // Un redessin par image et non par tranche de 0,3 s : deux touchers rapprochés redessinent tous les deux la page.
@@ -281,16 +283,18 @@ final class Atak4170WaveAssetTest extends TestCase
     public function testPinnedBannersShareTheBandRowThenStack(): void
     {
         $map = $this->read('functions/pages/fn_pageMap.sqf');
-        // Rien en petit format ; 22 caractères au moins par bandeau ; la place de la rangée est partagée.
-        self::assertStringContainsString('if ((count _pinApps) > 0 && {!_mini}) then {', $map);
-        self::assertStringContainsString('private _n = (floor (_room / (_pinMin + _pad))) min (count _pinApps);', $map);
-        self::assertStringContainsString('private _pinW = _pinMax min (_room / _n - _pad);', $map);
-        // Rangées empilées : la carte garde la moitié de sa hauteur, le reste n'est pas dessiné.
-        self::assertStringContainsString('private _fit = _n > 0 && {_pinRow isEqualTo 0 || {(_pinOff + _pinH) < (_mh * 0.5)}};', $map);
-        self::assertStringContainsString('if (!_fit && {_pinRow > 0 || {_bandH <= 0}}) then { break };', $map);
+        // Depuis la grille commune (fn_mapBandGrid, AtakMapPinsPanelAssetTest) : les bandeaux ne partagent plus la rangée du
+        // bandeau des coordonnées, ils s'empilent au-delà de lui, aussi en petit format ; 22 caractères au moins par bandeau
+        // (16 en compact), la place d'une rangée est partagée, la carte garde la moitié de sa hauteur.
+        $grid = $this->read('functions/map/fn_mapBandGrid.sqf');
+        self::assertStringContainsString('["minChars", 22], ["minCharsCompact", 16], ["maxChars", 31], ["gap", 0.5], ["maxFrac", 0.5],', $grid);
+        self::assertStringContainsString('private _colsMax = (floor ((_availW + _gap) / (_minW + _gap))) min _n;', $grid);
+        self::assertStringContainsString('while { _rows > 0 && {!([_rows, _h] call _fits)} } do { _rows = _rows - 1; };', $grid);
+        self::assertStringContainsString('private _pinGrid = ["layout", _pinArgs] call comspec_atak_native_fnc_mapBandGrid;', $map);
+        self::assertStringNotContainsString('{!_mini}) then {', $map);
         // Chaque bandeau réserve sa place : étiquettes de la carte, puis fiches, RECHERCHER et menu OUTILS par _panH.
         self::assertStringContainsString('_hud pushBack [_pinX - _bx, _pinY - _by, _pinX + _pinW - _bx, _pinY + _pinH - _by];', $map);
-        self::assertStringContainsString('if (!_pinTop) then { _panH = _panH max (_pinOff + _pinH); };', $map);
+        self::assertStringContainsString('if (_pinTop) then { _pinTopEnd = _by + _pad + _pinExtent; } else { _panH = _panH max _pinExtent; };', $map);
         $this->assertBalanced('functions/pages/fn_pageMap.sqf');
     }
 
@@ -453,15 +457,14 @@ final class Atak4170WaveAssetTest extends TestCase
 
     public function testPinnedAppsHelpSaysWhenTheyAreHidden(): void
     {
-        $fr = ' ; touchez-le pour ouvrir l\'app ; masquées en petit format ou si la carte est trop petite"';
+        // Les bandeaux ne sont plus masqués en petit format (une ligne par app) : l'aide le dit, dans le choix et dans le
+        // réglage CBA. Traductions : ajoutées au dictionnaire avec la version (AtakMapPinsPanelAssetTest vérifie le français).
+        $fr = 'Touchez-le pour ouvrir l\'app. Ordres : répondez depuis le bandeau (REÇU, EN COURS, TERMINÉ, IMPOSSIBLE). En petit format : une ligne par app.";';
         self::assertStringContainsString($fr, $this->read('functions/map/fn_mapPinnedApp.sqf'));
-        $cba = 'Masqué en petit format ou si la carte est trop petite. Aussi réglable dans Réglages > Carte."';
+        $cba = 'En petit format : une ligne par app. Aussi réglable dans Réglages > Carte."';
         self::assertStringContainsString($cba, $this->read('XEH_preInit.sqf'));
-        $en = $this->read('i18n/en.txt');
-        self::assertStringContainsString($fr . ', "Three at most: ', $en);
-        self::assertStringContainsString('touch it to open the app; hidden in small format or when the map is too small"]', $en);
-        self::assertStringContainsString($cba . ', "None by default. ', $en);
-        self::assertStringContainsString('Hidden in small format or when the map is too small. Also available in Settings > Map."]', $en);
+        self::assertStringNotContainsString('masquées en petit format', $this->read('functions/map/fn_mapPinnedApp.sqf'));
+        self::assertStringNotContainsString('Masqué en petit format', $this->read('XEH_preInit.sqf'));
     }
 
     // ── Version et notes ────────────────────────────────────────────────────────────────────────────────────────

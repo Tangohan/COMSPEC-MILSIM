@@ -55,6 +55,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MeshSrvOn", true, true];
 [{ ["serverTick"] call comspec_atak_native_fnc_meshGraph; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Objet obligatoire pour le réseau (fn_netRequire) : le serveur lit les inventaires, rien à faire quand le réglage est vide.
 [{ ["serverTick"] call comspec_atak_native_fnc_netRequire; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Mode de liaison de la mission (fn_linkMode) : le serveur seul compte les relais posés (Eden, Zeus) et publie « sat »
+// (aucun relais) ou « relay » (au moins un, même détruit) à tous, arrivées en cours de partie comprises.
+["serverInit"] call comspec_atak_native_fnc_linkMode;
+[{ ["serverTick"] call comspec_atak_native_fnc_linkMode; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Bilan [PERF] sur un serveur dédié (le client le fait de son côté) : rien n'est écrit si rien n'a été mesuré.
 // Images du serveur comptées à chaque image (fn_perfAcc "frame") : img/s moyens et mini de la fenêtre, 99e centile,
 // « Image figée » du serveur ; le bilan ajoute joueurs, unités, nœuds et diffusions du graphe du maillage.

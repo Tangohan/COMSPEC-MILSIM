@@ -40,20 +40,30 @@ if ((_all param [0, ""]) isNotEqualTo _wk) then {
     private _cats = createHashMapFromArray [["NameCityCapital", 0], ["NameCity", 0], ["NameVillage", 1], ["NameLocal", 2], ["NameMarine", 2], ["Airport", 3]];
     private _mil = ["base", "camp", "military", "militaire", "armée", "armee", "caserne", "airfield", "aérodrome", "aerodrome", "airbase", "fob", "outpost", "checkpoint", "barracks", "army"];
     private _list = [];
+    // Couleur lue une fois par type de lieu (perf lot 2 ; avant : getArray et jusqu'à quatre « call compile » pour chacun
+    // des centaines de lieux de la carte, dans l'image du premier affichage). Construction mesurée au RPT.
+    private _tBuild = diag_tickTime;
+    private _colOf = createHashMap;
     {
         private _t = text _x;
         if (_t isEqualTo "") then { continue };
         private _ty = type _x;
         private _cat = _cats getOrDefault [_ty, 2];
         if (_cat isEqualTo 2 && {private _lt = toLower _t; (_mil findIf { (_lt find _x) >= 0 }) >= 0}) then { _cat = 3; };
-        private _col = (getArray (configFile >> "CfgLocationTypes" >> _ty >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
-        if ((count _col) < 4) then { _col = [0, 0, 0, 1]; };
-        _list pushBack [locationPosition _x, ["cut", [_t, 28]] call comspec_atak_native_fnc_mapLbl, _cat, _col];
+        private _col = _colOf getOrDefault [_ty, []];
+        if (_col isEqualTo []) then {
+            _col = (getArray (configFile >> "CfgLocationTypes" >> _ty >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
+            if ((count _col) < 4) then { _col = [0, 0, 0, 1]; };
+            _colOf set [_ty, _col];
+        };
+        // Copie par lieu, comme avant (un tableau par lieu : aucun appelant ne peut modifier la couleur d'un autre lieu).
+        _list pushBack [locationPosition _x, ["cut", [_t, 28]] call comspec_atak_native_fnc_mapLbl, _cat, +_col];
     } forEach nearestLocations [[worldSize / 2, worldSize / 2], keys _cats, worldSize * 1.5];
     // Plus importants d'abord : ils passent devant les autres quand deux noms se chevauchent.
     _list = [0, 1, 2, 3] apply { private _c = _x; _list select { (_x select 2) isEqualTo _c } };
     _all = [_wk, (_list select 0) + (_list select 1) + (_list select 2) + (_list select 3)];
     missionNamespace setVariable ["COMSPEC_ATAK_PlaceList", _all];
+    ["lieux de la carte (construction)", _tBuild, 8, -1, format ["lieux de la carte (construction, %1 lieux)", count (_all select 1)]] call comspec_atak_native_fnc_perfAcc;
 };
 private _places = _all select 1;
 if ((count _places) isEqualTo 0) exitWith {};
