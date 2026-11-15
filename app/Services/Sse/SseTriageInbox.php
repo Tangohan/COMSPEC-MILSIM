@@ -443,6 +443,32 @@ final class SseTriageInbox
 
                     return $out;
                 }],
+            // Signalements reçus sur une alerte (site ou jeu) et propositions d'alerte venues du jeu : vides sans l'étape « alertes SSE ».
+            ['key' => 'signalements', 'nav' => 'avis-recherche', 'label' => 'Signalement', 'tab' => 'Signalements', 'path' => 'atak/sse/avis/signalements',
+                'load' => static function (int $t) use ($item): array {
+                    if (!\App\Repositories\SseAlertRepository::ready()) {
+                        return [];
+                    }
+                    $out = [];
+                    foreach ((new \App\Repositories\SseAlertRepository())->listReports($t, 'new', self::LIMIT) as $r) {
+                        $out[] = $item('report:' . (int) $r['id'], (string) $r['ref'], ($r['link_doc'] === 'vigilance' ? 'Fiche de vigilance' : 'Avis de recherche') . ' · ' . mb_substr((string) $r['body'], 0, 80), (string) $r['created_at'], 'atak/sse/avis/signalements', $r['certainty'] === 'high' ? 1 : 0, ['reason' => 'Signalement reçu, pas encore pris en compte.']);
+                    }
+
+                    return $out;
+                }],
+            ['key' => 'propositions', 'nav' => 'avis-recherche', 'label' => 'Proposition d’alerte', 'tab' => 'Propositions', 'path' => 'atak/sse/avis/signalements?onglet=a-valider',
+                'load' => static function (int $t) use ($item): array {
+                    if (!\App\Repositories\SseAlertRepository::ready()) {
+                        return [];
+                    }
+                    $out = [];
+                    foreach ((new \App\Repositories\SseAlertRepository())->listProposals($t, 'pending', self::LIMIT) as $p) {
+                        $subject = (string) ($p['payload']['subject'] ?? '') !== '' ? (string) $p['payload']['subject'] : 'Sujet inconnu';
+                        $out[] = $item('proposal:' . (int) $p['id'], (string) $p['ref'], ($p['doc'] === 'vigilance' ? 'Fiche de vigilance' : 'Avis de recherche') . ' · ' . $subject, (string) $p['created_at'], 'atak/sse/avis/signalements?onglet=a-valider', 1, ['reason' => 'Alerte proposée, en attente d’un responsable.']);
+                    }
+
+                    return $out;
+                }],
             ['key' => 'suggestions', 'nav' => 'rapprochements', 'label' => 'Propositions de Cerbère-Validation', 'tab' => 'Suggestions', 'path' => 'atak/sse/rapprochements',
                 'load' => static function (int $t) use ($item): array {
                     $out = [];

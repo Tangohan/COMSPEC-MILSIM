@@ -55,6 +55,7 @@ les droits sont ceux du compte et n'entrent pas dans l'empreinte. Une ligne comm
 | `service` | `code SVC-…, fr, en, sigle, #RRGGBB, forme de l'emblème générique, référence d'emblème ("" ou "svc:<code>:<version>"), par défaut ?, canal` : services à informer |
 | `delay` | `clé, fr, en` : délais de compte rendu (`now, 15m, 1h, 4h, 24h`) |
 | `sure` | `clé, fr, en` : certitude d'un signalement (`low, medium, high`) |
+| `validity` | `clé, fr, en, jours, heures` : durées de validité (`h6, h24, h72, d7…d180, until_lifted`) ; additif, section ignorée des anciens clients |
 | `threat` | `clé, fr, en` ; `armed` : `clé, fr, en` |
 
 La référence d'emblème n'est qu'une étiquette de cache : **aucune image ne passe par le canal**, le téléphone dessine l'emblème générique (forme + couleur + sigle).
@@ -141,13 +142,19 @@ référence pendant 30 jours (`state` : `lifted` ou `expired`) : le téléphone 
 - `subject` : référence d'une identité du registre (`sse_identities.ref`) ou d'une personne (`sse_persons.subject_id`) de la communauté ; **ou** `unknown`
   (description de 10 à 400 caractères) quand le sujet n'est pas au registre. Les deux vides : `422`.
 - `reasons`, `measures` : codes du catalogue séparés par des virgules (6 au plus chacun, codes inconnus ignorés). `text` : 400 caractères, sans organisation réelle
-  (liste de refus `SseWantedRealNames`, sinon `422`). `days` : 7, 14, 30, 60, 90 ou 180 (30 par défaut). `service` : code du catalogue (défaut de la communauté).
+  (liste de refus `SseWantedRealNames`, sinon `422`). `days` : 7, 14, 30, 60, 90 ou 180 (30 par défaut). Durées courtes, additives : `validity_hours` : 6, 24 ou 72 (prime sur `days`) ; `validity: "until_lifted"` : sans échéance, active jusqu'à sa levée (prime sur tout). Une durée en heures expire à l'heure exacte (UTC) ; un avis « jusqu'à levée » prend la durée par défaut du service. `service` : code du catalogue (défaut de la communauté).
 - Droits (ceux du site, d'après le compte du jeton) : fiche de vigilance = écrire dans « Fichiers et sujets » **et** exporter de « Papiers » ; avis = écrire dans
   « Fichiers et sujets ». **Sans ce droit**, ou avec un sujet `unknown`, ou si la communauté a activé le circuit de validation des avis, l'opération crée une
   **proposition** (file « À valider » du portail) au lieu d'une alerte active.
 
 Réponse : `[1, "create", état, référence, adresse de signalement, jeton, message, replay]`, `état` = `active` ou `proposal`.
 Pour une proposition : référence `PROP-<n>`, adresse et jeton vides ; la proposition n'apparaît dans `list` qu'une fois acceptée (sous sa référence définitive).
+
+#### État d'une proposition : `proposals` (additif)
+
+`GET /api/game/v1/sse/alertes/propositions` ou `{"kind":"sse_alertes","op":"proposals"}` : les propositions faites par le compte du jeton (60 au plus, récentes d'abord).
+REST : `{"version":1,"proposals":[{"ref":"PROP-12","doc":"vigilance","proposal_state":"pending|accepted|rejected","result_ref":"FV-2026-0042","decision_note":"","decided_at":"","created_at":"","cid":"…"}]}` ;
+`result_ref` n'est renseigné que si `accepted` (référence définitive de l'alerte créée) ; `decision_note` : motif du refus si `rejected`. Canal « kind » : `[1, "proposals", [[ref, doc, proposal_state, result_ref, decision_note, decided_at, created_at, cid]…]]`. `cid` est l'identifiant client de `create` : le téléphone rapproche ainsi son envoi de la proposition.
 
 ### 3.5 `report`
 
@@ -162,7 +169,7 @@ Le signalement entre dans l'onglet « Signalements » de l'alerte, dans « À tr
 
 ### 3.6 `renew`, `lift`, `ack`
 
-- `{…,"op":"renew","ref":"…","days":30,"reason":"…","cid":"…"}` → `[1, "renew", nouvelle référence, valable jusqu'au, adresse de signalement, jeton, replay]`.
+- `{…,"op":"renew","ref":"…","days":30 (sans `days` : même durée que la fiche renouvelée, y compris courte ou « jusqu'à levée »),"reason":"…","cid":"…"}` → `[1, "renew", nouvelle référence, valable jusqu'au, adresse de signalement, jeton, replay]`.
   Droit : celui d'émettre le document. La précédente est close (« renouvelée »), son adresse de signalement reste lisible et renvoie vers la nouvelle.
 - `{…,"op":"lift","ref":"…","reason":"…","cid":"…"}` (motif de 3 à 500 caractères, obligatoire) → `[1, "lift", référence, levée le, replay]`.
   Droit : écrire dans « Fichiers et sujets » (gestion des dossiers SSE), comme la levée d'un avis sur le site.

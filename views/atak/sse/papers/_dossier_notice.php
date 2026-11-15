@@ -181,6 +181,9 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
                 </form>
                 <p class="muted">À ne jamais diffuser hors de la communauté.</p>
             <?php endif; ?>
+            <?php if ($canAdminWanted && ($nm['service_code'] ?? null) !== null): ?>
+                <form method="post" action="<?= $h(url('atak/sse/avis/' . (int) $notice['id'] . '/service')) ?>" class="ws-inline"><?= Csrf::field() ?><button class="btn btn--ghost btn--sm" type="submit">Mettre à jour le service sur cet avis</button></form>
+            <?php endif; ?>
             <?php if ($canWanted): ?>
                 <div class="ws-manage" data-ws-manage>
                     <input type="radio" name="ws-m" id="ws-m-extend" checked>
@@ -239,6 +242,12 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
             <?php endif; ?>
         </div>
     </article>
+    <?php
+    // Signalements reçus sur cet avis, adresse de signalement et QR (page de signalement du portail).
+    extract((new \App\Controllers\Web\SseAlertReportController())->panelVars('avis', (int) $notice['id'], (string) $notice['ref'], $notice));
+    $alertBack = $self . '#avis';
+    require base_path('views/atak/sse/alerts/_reports_panel.php');
+    ?>
 <?php endif; ?>
 
 <?php if ($notices !== []): ?>

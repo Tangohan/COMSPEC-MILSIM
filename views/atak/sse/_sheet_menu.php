@@ -19,6 +19,8 @@ $mLocked = (array) ($m['locked'] ?? []);
 $mLang = ($m['lang'] ?? 'fr') === 'en' ? 'en' : 'fr';
 $mIssues = (array) ($m['issues'] ?? []);
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-sheets.css')) . '">';
+// Bandeau d'avertissement : une fiche de vigilance est en cours pour cette personne.
+require __DIR__ . '/_vigilance_banner.php';
 ?>
 <section class="shx" id="emettre" aria-labelledby="shx-title">
     <div class="shx__head">

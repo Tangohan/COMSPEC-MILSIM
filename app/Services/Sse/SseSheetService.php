@@ -173,14 +173,25 @@ final class SseSheetService
 
         $validity = null;
         if ($model === 'vigilance') {
-            $validity = D::validity($input['validity'] ?? D::DEFAULT_VALIDITY);
+            $term = D::term($input);
+            $validity = $term['days'];
         }
-        $validUntil = $validity !== null ? gmdate('Y-m-d', strtotime($issued . ' UTC +' . $validity . ' days')) : null;
+        $now = time();
+        $expiresAt = null;
+        if ($validity !== null) {
+            $validUntil = gmdate('Y-m-d', strtotime($issued . ' UTC +' . $validity . ' days'));
+        } elseif (($term['hours'] ?? null) !== null) {
+            // Durée courte : échéance exacte à l'heure (UTC), la date imprimée est celle de cette échéance.
+            $expiresAt = gmdate('Y-m-d H:i:s', $now + $term['hours'] * 3600);
+            $validUntil = substr($expiresAt, 0, 10);
+        } else {
+            $validUntil = null;
+        }
         if ($alert !== null) {
             $token = is_string($input['_token'] ?? null) && SseAlertRepository::validToken((string) $input['_token']) ? (string) $input['_token'] : '';
             $alert['token'] = $token;
             $alert['url'] = SseAlertReportTo::url($token);
-            $alert['perishable'] = SseAlertLevel::perishable($validUntil);
+            $alert['perishable'] = SseAlertLevel::perishable($expiresAt ?? $validUntil);
         }
         $labels = self::levelLabels($level);
         $sensitive = array_values(array_unique(array_merge($masked['shown'], T::categories($used))));
@@ -188,7 +199,7 @@ final class SseSheetService
             'model' => $model, 'lang' => $lang, 'faces' => $faces, 'ref' => $ref,
             'title' => D::MODELS[$model]['label'], 'accent' => SseSheetPdf::ACCENTS[$model] ?? [55, 65, 81],
             'authority' => $authority, 'service' => $service,
-            'issued_at' => $issued, 'issued_dt' => gmdate('Y-m-d H:i:s'), 'valid_until' => $validUntil, 'classification' => $labels, 'level' => $level,
+            'issued_at' => $issued, 'issued_dt' => gmdate('Y-m-d H:i:s'), 'valid_until' => $validUntil, 'expires_at' => $expiresAt, 'until_lifted' => $model === 'vigilance' && ($term['lifted'] ?? false), 'classification' => $labels, 'level' => $level,
             'facts' => $facts, 'texts' => $texts, 'text_labels' => $this->textLabels($model),
             'emblem' => (string) $config['emblem'],
             'generated_at' => gmdate($lang === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC',
@@ -207,6 +218,7 @@ final class SseSheetService
                 'measures' => array_column($alert['measures'], 'code'), 'reasons' => array_column($alert['reasons'], 'code'), 'zone' => (string) $facts['zone'],
                 'service' => $alert['report']['code'], 'service_other' => $alert['report']['code'] === '' ? $alert['report']['fr'] : '',
                 'report_delay' => $alert['report']['delay'], 'report_channel' => $alert['report']['channel'], 'level' => $alert['key'],
+                'validity_hours' => $term['hours'] ?? null, 'until_lifted' => (bool) ($term['lifted'] ?? false),
             ];
         }
         // Instantané imprimé : données caviardées, sans image (les clichés sont rechargés au re-téléchargement).
@@ -476,7 +488,7 @@ final class SseSheetService
             if ($issue['model'] === 'vigilance' && is_array($data['alert'] ?? null)) {
                 $link = (new SseAlertRepository())->linkFor($tenantId, SseAlertRepository::DOC_VIGILANCE, (int) $issue['id']);
                 $data['alert']['lifted_at'] = $link['lifted_at'] ?? null;
-                $data['alert']['perishable'] = ($link['lifted_at'] ?? null) === null && SseAlertLevel::perishable((string) ($data['valid_until'] ?? ''));
+                $data['alert']['perishable'] = ($link['lifted_at'] ?? null) === null && SseAlertLevel::perishable((string) (($data['expires_at'] ?? null) ?: ($data['valid_until'] ?? '')));
             }
             $bytes = $this->render($tenantId, $data)['bytes'] ?? null;
         }

@@ -632,6 +632,8 @@ final class SseWantedNoticeController
             'serviceUse' => $this->safe(fn (): array => (new SseWantedMetaRepository())->countsByService($tenantId)) ?? [],
             'serviceStoreReady' => SseWantedMetaRepository::ready(),
             'serviceState' => $services,
+            'serviceEmblemReady' => \App\Services\Sse\SseServiceEmblems::ready(),
+            'serviceEmblemList' => $this->safe(fn (): array => (new \App\Services\Sse\SseServiceEmblems(null, null, $this->settings))->listFor($tenantId)) ?? [],
             'timezones' => \DateTimeZone::listIdentifiers(),
         ], $status);
     }
@@ -734,6 +736,10 @@ final class SseWantedNoticeController
                 $used = $this->safe(fn (): int => (new SseWantedMetaRepository())->countUsing($tenantId, $code)) ?? 0;
                 // Sans l'étape de base de données, impossible de savoir si des avis portent ce service : on désactive seulement.
                 $res = SseWantedMetaRepository::ready() ? SseWantedServiceAdmin::delete($config, $code, $used) : SseWantedServiceAdmin::setEnabled($config, $code, false);
+                // Service réellement supprimé : son emblème téléversé part avec lui.
+                if (($res['ok'] ?? false) === true && SseWantedServices::find($code, $res['config']) === null) {
+                    $this->safe(fn () => (new \App\Services\Sse\SseServiceEmblems(null, null, $this->settings))->purge($tenantId, $code));
+                }
                 break;
             case 'default':
                 $res = SseWantedServiceAdmin::setDefault($config, $code);
@@ -797,18 +803,8 @@ final class SseWantedNoticeController
     /** @return array<string, mixed> */
     private function serviceInput(Request $request): array
     {
-        $out = [];
-        foreach (['fr', 'en', 'ac', 'family', 'auth_fr', 'auth_en', 'radio', 'tel', 'mail', 'max', 'class', 'thr', 'color', 'emblem', 'ins_fr', 'ins_en'] as $k) {
-            $out[$k] = $request->inputString($k);
-        }
-        $out['exp'] = (int) $request->inputString('exp');
-        $out['enabled'] = $request->inputString('enabled') === '1';
-        foreach (['roles', 'threats', 'types', 'lang'] as $k) {
-            $v = $request->input($k);
-            $out[$k] = is_array($v) ? array_slice(array_values(array_map('strval', $v)), 0, 20) : [];
-        }
-
-        return $out;
+        // Même saisie que la fiche complète d'un service (description, adresse, cases « Afficher sur les PDF »…).
+        return SseWantedServiceController::input($request);
     }
 
     /** @param array<string, mixed> $details */

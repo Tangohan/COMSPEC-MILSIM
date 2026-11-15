@@ -579,7 +579,13 @@ trait SseWantedNoticePdfColor
         $pdf->SetXY($sx + 11.8, $y + 12.2);
         $pdf->Cell($sw - 12.4, 2.8, $auth, 0, 0, 'L');
         $half = ($sw - 3.0) / 2;
-        $this->field($this->n('channel'), (string) $r['channel'], $sx, $y + 16.0, $sw, 8.4, 7.4);
+        // Canal puis adresse choisie par la communauté (cases « afficher sur les PDF »), sur la même rubrique.
+        $contact = trim((string) $r['channel']);
+        $addr = trim(preg_replace('/\s*[\r\n]+\s*/', ' · ', (string) ($r['address'] ?? '')) ?? '');
+        if ($addr !== '') {
+            $contact = $contact !== '' ? $contact . ' · ' . $addr : $addr;
+        }
+        $this->field($this->n('channel'), $contact, $sx, $y + 16.0, $sw, 8.4, 7.4);
         $rowY = $y + $h - 8.6;
         $this->field($this->n('delay'), mb_strtoupper(SseAlertReportTo::delayLabel((string) $r['delay'], $lang), 'UTF-8'), $sx, $rowY, $half, 9.0);
         $this->field($this->n('quote'), (string) $d['ref'], $sx + $half + 3.0, $rowY, $half, 9.0);

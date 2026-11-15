@@ -804,7 +804,10 @@ trait SseSheetPdfVigilance
         $pdf->SetDrawColor(...self::INK);
         $pdf->SetLineWidth(0.25);
         $pdf->Line($l + $w1, $y, $l + $w1, $y + $h);
-        $cell($l + $w1, $w2, $this->v('valid'), $until !== '' ? $this->date($until) : '—');
+        $exact = (string) ($d['expires_at'] ?? '');
+        $validText = !empty($d['until_lifted']) ? ($this->lang === 0 ? 'Jusqu’à levée' : 'Until lifted')
+            : ($exact !== '' ? $this->date(substr($exact, 0, 10)) . ' ' . substr($exact, 11, 5) . ' UTC' : ($until !== '' ? $this->date($until) : '—'));
+        $cell($l + $w1, $w2, $this->v('valid'), $validText);
         $x = $l + $w1 + $w2;
         if ($tagW > 0) {
             // Échéance proche : cartouche hachuré « PÉRISSABLE ».

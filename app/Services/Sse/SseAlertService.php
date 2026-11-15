@@ -124,8 +124,15 @@ final class SseAlertService
         // Fiche émise avant le bloc d'alerte : niveau déduit de la menace et de l'armement imprimés.
         $level = SseAlertLevel::of((string) ($facts['threat'] ?? ''), (string) ($facts['armed'] ?? ''));
         $until = (string) ($link['valid_until'] ?? $data['valid_until'] ?? '');
+        // Durée courte (6 h, 24 h, 72 h) : l'échéance exacte est dans l'instantané ; « jusqu'à levée » : aucune échéance.
+        $exact = (string) ($data['expires_at'] ?? '');
+        $untilLifted = !empty($data['until_lifted']);
+        if ($untilLifted) {
+            $until = '';
+        }
         $lifted = ($link['lifted_at'] ?? null) !== null;
-        $state = $lifted ? 'lifted' : ($until !== '' && $until < $today ? 'expired' : 'active');
+        $expired = $exact !== '' ? $exact <= gmdate('Y-m-d H:i:s') : ($until !== '' && $until < $today);
+        $state = $lifted ? 'lifted' : ($expired ? 'expired' : 'active');
         $measures = array_values(array_filter(is_array($alert['measures'] ?? null) ? $alert['measures'] : [], 'is_array'));
         $report = SseAlertReportTo::read($link['report'] ?? [] ?: ($alert['report'] ?? []));
         $token = (string) ($link['token'] ?? $alert['token'] ?? '');
@@ -142,7 +149,7 @@ final class SseAlertService
             'texts' => is_array($issue['texts'] ?? null) ? $issue['texts'] : [],
             'zone' => (string) ($facts['zone'] ?? ''), 'place' => (string) ($facts['last_seen_place'] ?? ''),
             'issued_at' => (string) $issue['issued_at'], 'issued_by' => (string) $issue['issued_by_label'], 'issued_by_user_id' => $issue['issued_by_user_id'],
-            'until' => $until, 'state' => $state, 'perishable' => $state === 'active' && SseAlertLevel::perishable($until),
+            'until' => $until, 'expires_at' => $exact, 'until_lifted' => $untilLifted, 'state' => $state, 'perishable' => $state === 'active' && SseAlertLevel::perishable($exact !== '' ? $exact : $until),
             'lifted_at' => $link['lifted_at'] ?? null, 'lift_reason' => (string) ($link['lift_reason'] ?? ''), 'lifted_by' => (string) ($link['lifted_by_label'] ?? ''),
             'renewed_by' => $link['renewed_by_ref'] ?? null,
             'link_id' => (int) ($link['id'] ?? 0), 'token' => $usable ? $token : '', 'url' => $usable ? SseAlertReportTo::url($token) : '',
@@ -285,7 +292,7 @@ final class SseAlertService
         }
         $p = $view['params'];
         $input = [
-            'lang' => $issue['lang'], 'classification' => $issue['classification'], 'faces' => $issue['faces'], 'validity' => D::validity($days > 0 ? $days : ($p['validity'] ?? D::DEFAULT_VALIDITY)),
+            'lang' => $issue['lang'], 'classification' => $issue['classification'], 'faces' => $issue['faces'], 'validity' => $days > 0 ? D::validity($days) : (!empty($p['until_lifted']) ? 'until_lifted' : ($p['validity'] ?? D::DEFAULT_VALIDITY)), 'validity_hours' => $days > 0 ? null : ($p['validity_hours'] ?? null),
             'threat' => $view['threat'], 'armed' => $view['armed'], 'texts' => $issue['texts'],
             'measures' => array_column($view['measures'], 'code'), 'reasons' => array_column($view['reasons'], 'code'), 'zone' => $view['zone'],
             'service' => $view['report']['code'], 'service_other' => $view['report']['code'] === '' ? $view['report']['fr'] : '',

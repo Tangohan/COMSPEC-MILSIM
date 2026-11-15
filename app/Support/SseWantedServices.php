@@ -13,6 +13,11 @@ use App\Support\SseWantedCatalog as C;
  * Garde-fous : aucun nom d'organisation réelle ({@see SseWantedRealNames}, y compris pour les noms créés ou importés), coordonnées
  * fictives seulement (lignes « 555 01xx », domaines « .invalid », « .example » ou « .test »), codes de la communauté préfixés
  * « CSV- » pour ne jamais heurter un code livré (« SVC- »).
+ *
+ * Personnalisation : un service créé garde tous ses champs ; un service LIVRÉ est surchargé par la communauté (clé « overrides » des
+ * réglages : seuls les champs qui diffèrent du catalogue sont gardés, « Rétablir les valeurs livrées » efface la surcharge).
+ * L'emblème téléversé vit dans la table sse_service_emblems ({@see \App\Services\Sse\SseServiceEmblems}) ; sa version est
+ * répétée dans les réglages (clé « emblems ») pour donner « emblem_ref » sans requête.
  */
 final class SseWantedServices
 {
@@ -26,6 +31,23 @@ final class SseWantedServices
 
     public const EXPORT_FORMAT = 'comspec.wanted-services';
 
+    /** Coordonnées qu'une case « Afficher sur les PDF » commande, dans l'ordre d'affichage. */
+    public const PRINT_KEYS = ['radio', 'tel', 'mail', 'address', 'city', 'country', 'hours', 'web'];
+
+    public const DESC_MAX = 300;
+
+    public const DESC_LINES = 3;
+
+    public const ADDRESS_MAX = 130;
+
+    public const ADDRESS_LINES = 4;
+
+    /** Champs qu'une communauté peut surcharger sur un service livré. */
+    public const OVERRIDE_FIELDS = [
+        'family', 'fr', 'en', 'ac', 'roles', 'auth_fr', 'auth_en', 'desc_fr', 'desc_en', 'motto', 'radio', 'tel', 'mail', 'address', 'city', 'country',
+        'hours', 'web', 'print', 'max', 'class', 'thr', 'exp', 'threats', 'types', 'color', 'emblem', 'lang', 'ins_fr', 'ins_en',
+    ];
+
     private const CODE_RE = '/^(?:SVC|CSV)-[A-Z0-9]{1,12}(?:-[A-Z0-9]{1,10})?$/';
 
     private const NAME_RE = '/^[\p{L}\p{N} .,\'’()\/&:·+—–-]+$/u';
@@ -33,6 +55,12 @@ final class SseWantedServices
     private const PHONE_RE = '/^(?:\+?1[ .-]?)?\(?555\)?[ .-]?01\d{2}$/';
 
     private const MAIL_RE = '/^[a-z0-9._+-]{1,40}@[a-z0-9.-]{1,60}\.(?:invalid|example|test)$/i';
+
+    /** Adresse web de signalement : page du portail (« /… ») ou domaine réservé (« .invalid », « .example », « .test »). */
+    private const WEB_RE = '~^(?:/[A-Za-z0-9._/%-]{0,150}|https?://[a-z0-9.-]{1,80}\.(?:invalid|example|test)(?:/[A-Za-z0-9._/%?=&-]{0,80})?)$~i';
+
+    /** Texte libre : jamais de balise ni d'accolade. */
+    private const FREE_RE = '/^[^<>{}]*$/u';
 
     /** @var array<string, mixed>|null */
     private static ?array $raw = null;
@@ -178,6 +206,16 @@ final class SseWantedServices
         $mail = strtolower(C::line($r['mail'] ?? '', 80));
         $authFr = C::line($r['auth_fr'] ?? '', 160);
         $authEn = C::line($r['auth_en'] ?? '', 160);
+        $print = self::PRINT_KEYS;
+        if (is_array($r['print'] ?? null)) {
+            $print = array_values(array_filter(self::PRINT_KEYS, static fn (string $k): bool => in_array($k, $r['print'], true)));
+        }
+        $contact = [
+            'address' => self::lines($r['address'] ?? '', self::ADDRESS_MAX, self::ADDRESS_LINES),
+            'city' => C::line($r['city'] ?? '', 50),
+            'country' => C::line($r['country'] ?? '', 50),
+            'hours' => C::line($r['hours'] ?? '', 60),
+        ];
 
         return [
             'code' => $code,
@@ -203,19 +241,74 @@ final class SseWantedServices
             'lang' => $lang ?: ['fr', 'en'],
             'ins_fr' => C::text($r['ins_fr'] ?? '', C::INSTRUCTIONS_MAX),
             'ins_en' => C::text($r['ins_en'] ?? '', C::INSTRUCTIONS_MAX),
+            'desc_fr' => self::lines($r['desc_fr'] ?? '', self::DESC_MAX, self::DESC_LINES),
+            'desc_en' => self::lines($r['desc_en'] ?? '', self::DESC_MAX, self::DESC_LINES),
+            'motto' => C::line($r['motto'] ?? '', 120),
+            'address' => $contact['address'],
+            'city' => $contact['city'],
+            'country' => $contact['country'],
+            'hours' => $contact['hours'],
+            'web' => C::line($r['web'] ?? '', 160),
+            'print' => $print,
+            'print_address' => self::printAddress($contact, $print),
+            // Étiquette de l'emblème téléversé : posée par all() depuis les réglages de la communauté, vide sinon.
+            'emblem_ref' => '',
         ];
     }
 
-    /** Ligne de coordonnées fictives d'un service : « canal radio · téléphone · courriel ». */
+    /** Texte de quelques lignes : lignes vides retirées, nombre de lignes et longueur bornés. */
+    public static function lines(mixed $value, int $max, int $maxLines): string
+    {
+        $out = [];
+        foreach (explode("\n", C::text($value, $max * 2)) as $line) {
+            $line = C::line($line, $max);
+            if ($line !== '' && count($out) < $maxLines) {
+                $out[] = $line;
+            }
+        }
+
+        return rtrim(mb_substr(implode("\n", $out), 0, $max));
+    }
+
+    /**
+     * Adresse à imprimer, déjà composée : lignes de l'adresse, « localité, pays », horaires ; chacun seulement si sa case
+     * « Afficher sur les PDF » est cochée.
+     *
+     * @param array<string, mixed> $service
+     * @param list<string> $print
+     */
+    public static function printAddress(array $service, array $print): string
+    {
+        $on = static fn (string $k): string => in_array($k, $print, true) ? trim((string) ($service[$k] ?? '')) : '';
+        $place = implode(', ', array_values(array_filter([$on('city'), $on('country')], static fn (string $s): bool => $s !== '')));
+
+        return implode("\n", array_values(array_filter([$on('address'), $place, $on('hours')], static fn (string $s): bool => $s !== '')));
+    }
+
+    /** Ligne de coordonnées d'un service : « canal radio · téléphone · courriel », selon les cases « Afficher sur les PDF ». */
     public static function contactLine(array $service): string
     {
-        return implode(' · ', array_values(array_filter([(string) ($service['radio'] ?? ''), (string) ($service['tel'] ?? ''), (string) ($service['mail'] ?? '')], static fn (string $s): bool => $s !== '')));
+        $print = is_array($service['print'] ?? null) ? $service['print'] : self::PRINT_KEYS;
+        $parts = [];
+        foreach (['radio', 'tel', 'mail'] as $k) {
+            if (in_array($k, $print, true) && (string) ($service[$k] ?? '') !== '') {
+                $parts[] = (string) $service[$k];
+            }
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /** Étiquette de l'emblème téléversé d'un service (« svc:<code>:<version> »), lue par les documents. */
+    public static function emblemRef(string $code, int $version): string
+    {
+        return $version > 0 ? 'svc:' . $code . ':' . $version : '';
     }
 
     /**
      * Réglages « services » d'une communauté : bornés, sans doublon.
      *
-     * @return array{custom: array<string, array<string, mixed>>, hidden: list<string>, order: list<string>, default: string}
+     * @return array{custom: array<string, array<string, mixed>>, hidden: list<string>, order: list<string>, default: string, overrides: array<string, array<string, mixed>>, emblems: array<string, int>}
      */
     public static function normalizeSettings(mixed $raw): array
     {
@@ -243,8 +336,64 @@ final class SseWantedServices
             return $out;
         };
         $default = is_string($raw['default'] ?? null) && in_array($raw['default'], $known, true) ? (string) $raw['default'] : '';
+        // Surcharges des services livrés : seuls les champs qui diffèrent du catalogue sont gardés.
+        $overrides = [];
+        $catalogue = self::catalogue();
+        foreach (is_array($raw['overrides'] ?? null) ? $raw['overrides'] : [] as $code => $row) {
+            if (is_string($code) && is_array($row) && isset($catalogue[$code])) {
+                $diff = self::overrideDiff($code, $row);
+                if ($diff !== []) {
+                    $overrides[$code] = $diff;
+                }
+            }
+        }
+        $emblems = [];
+        foreach (is_array($raw['emblems'] ?? null) ? $raw['emblems'] : [] as $code => $version) {
+            if (is_string($code) && in_array($code, $known, true) && is_numeric($version) && (int) $version > 0) {
+                $emblems[$code] = (int) $version;
+            }
+        }
 
-        return ['custom' => $custom, 'hidden' => $pickKnown($raw['hidden'] ?? []), 'order' => $pickKnown($raw['order'] ?? []), 'default' => $default];
+        return ['custom' => $custom, 'hidden' => $pickKnown($raw['hidden'] ?? []), 'order' => $pickKnown($raw['order'] ?? []), 'default' => $default, 'overrides' => $overrides, 'emblems' => $emblems];
+    }
+
+    /**
+     * Service livré tel que la communauté l'a surchargé (sans « enabled »), ou null si le code n'est pas livré.
+     *
+     * @param array<string, mixed> $override
+     * @return array<string, mixed>|null
+     */
+    private static function overridden(string $code, array $override): ?array
+    {
+        $base = self::catalogue()[$code] ?? null;
+        if ($base === null) {
+            return null;
+        }
+
+        return self::normalize(['code' => $code] + array_intersect_key($override, array_flip(self::OVERRIDE_FIELDS)) + $base, 'catalogue') ?? $base;
+    }
+
+    /**
+     * Champs d'une surcharge qui diffèrent réellement du service livré.
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    public static function overrideDiff(string $code, array $row): array
+    {
+        $base = self::catalogue()[$code] ?? null;
+        $merged = self::overridden($code, $row);
+        if ($base === null || $merged === null) {
+            return [];
+        }
+        $diff = [];
+        foreach (self::OVERRIDE_FIELDS as $k) {
+            if ($merged[$k] !== $base[$k]) {
+                $diff[$k] = $merged[$k];
+            }
+        }
+
+        return $diff;
     }
 
     /**
@@ -259,11 +408,20 @@ final class SseWantedServices
         $s = self::normalizeSettings($config['services'] ?? []);
         $all = [];
         foreach (self::catalogue() as $code => $svc) {
+            $changed = isset($s['overrides'][$code]);
+            if ($changed) {
+                $svc = self::overridden($code, $s['overrides'][$code]) ?? $svc;
+            }
+            $svc['overridden'] = $changed;
             $svc['enabled'] = !in_array($code, $s['hidden'], true);
             $all[$code] = $svc;
         }
         foreach ($s['custom'] as $code => $svc) {
+            $svc['overridden'] = false;
             $all[$code] = $svc;
+        }
+        foreach ($all as $code => $svc) {
+            $all[$code]['emblem_ref'] = self::emblemRef($code, (int) ($s['emblems'][$code] ?? 0));
         }
         $ordered = [];
         foreach ($s['order'] as $code) {
@@ -388,11 +546,30 @@ final class SseWantedServices
     public static function validate(array $in, array $config, ?string $editing = null, ?string $wantedCode = null): array
     {
         $errors = [];
-        $limits = ['fr' => ['Nom français', 120], 'en' => ['Nom anglais', 120], 'ac' => ['Sigle', 12], 'auth_fr' => ['Autorité (français)', 160], 'auth_en' => ['Autorité (anglais)', 160], 'radio' => ['Canal radio', 80], 'tel' => ['Téléphone', 24], 'mail' => ['Courriel', 80]];
+        $limits = [
+            'fr' => ['Nom français', 120], 'en' => ['Nom anglais', 120], 'ac' => ['Sigle', 12], 'auth_fr' => ['Autorité (français)', 160], 'auth_en' => ['Autorité (anglais)', 160],
+            'radio' => ['Canal radio', 80], 'tel' => ['Téléphone', 24], 'mail' => ['Courriel', 80], 'desc_fr' => ['Description (français)', self::DESC_MAX],
+            'desc_en' => ['Description (anglais)', self::DESC_MAX], 'motto' => ['Devise', 120], 'address' => ['Adresse', self::ADDRESS_MAX], 'city' => ['Localité', 50],
+            'country' => ['Pays ou théâtre', 50], 'hours' => ['Horaires', 60], 'web' => ['Adresse web de signalement', 160],
+        ];
         foreach ($limits as $field => [$name, $max]) {
-            if (mb_strlen(C::line($in[$field] ?? '', 1000)) > $max) {
+            if (mb_strlen(trim(C::text($in[$field] ?? '', 2000))) > $max) {
                 $errors[] = $name . ' : ' . $max . ' caractères au plus.';
             }
+        }
+        foreach (['desc_fr' => ['Description (français)', self::DESC_LINES], 'desc_en' => ['Description (anglais)', self::DESC_LINES], 'address' => ['Adresse', self::ADDRESS_LINES]] as $field => [$name, $maxLines]) {
+            if (count(array_filter(explode("\n", C::text($in[$field] ?? '', 2000)), static fn (string $l): bool => trim($l) !== '')) > $maxLines) {
+                $errors[] = $name . ' : ' . $maxLines . ' lignes au plus.';
+            }
+        }
+        foreach (['auth_fr' => 'Autorité (français)', 'auth_en' => 'Autorité (anglais)', 'desc_fr' => 'Description (français)', 'desc_en' => 'Description (anglais)', 'motto' => 'Devise', 'address' => 'Adresse', 'city' => 'Localité', 'country' => 'Pays ou théâtre', 'hours' => 'Horaires'] as $field => $name) {
+            if (preg_match(self::FREE_RE, C::text($in[$field] ?? '', 2000)) !== 1) {
+                $errors[] = $name . ' : les signes < > { } ne sont pas acceptés.';
+            }
+        }
+        $web = C::line($in['web'] ?? '', 160);
+        if ($web !== '' && preg_match(self::WEB_RE, $web) !== 1) {
+            $errors[] = 'L’adresse web de signalement est une page du portail (« /… ») ou un domaine réservé en « .invalid », « .example » ou « .test ».';
         }
         $fr = C::line($in['fr'] ?? '', 120);
         $en = C::line($in['en'] ?? '', 120);
@@ -420,6 +597,9 @@ final class SseWantedServices
             $errors[] = 'Le courriel doit être fictif : un domaine en « .invalid », « .example » ou « .test ».';
         }
         $texts = [$fr, $en, $ac, $radio, $tel, $mail, (string) ($in['auth_fr'] ?? ''), (string) ($in['auth_en'] ?? ''), (string) ($in['ins_fr'] ?? ''), (string) ($in['ins_en'] ?? '')];
+        foreach (['desc_fr', 'desc_en', 'motto', 'address', 'city', 'country', 'hours', 'web'] as $field) {
+            $texts[] = C::text($in[$field] ?? '', 2000);
+        }
         $hit = SseWantedRealNames::find(implode(' ', $texts));
         if ($hit !== null) {
             $errors[] = 'Un service de jeu de rôle ne porte pas le nom d’une organisation réelle (« ' . $hit . ' ») : choisissez un nom fictif.';
@@ -440,9 +620,11 @@ final class SseWantedServices
             if (count(array_filter($existing, static fn (array $s): bool => $s['source'] === 'custom')) >= self::MAX_CUSTOM) {
                 $errors[] = 'Votre communauté a atteint la limite de ' . self::MAX_CUSTOM . ' services propres.';
             }
-        } elseif (!isset($existing[$editing]) || $existing[$editing]['source'] !== 'custom') {
+        } elseif (!isset($existing[$editing])) {
             $errors[] = 'Service introuvable.';
         }
+        // Un service livré se surcharge sans changer de nature ; un service créé reste un service de la communauté.
+        $source = $editing !== null && isset($existing[$editing]) ? (string) $existing[$editing]['source'] : 'custom';
         $row = $in;
         $row['code'] = $code;
         $row['fr'] = $fr;
@@ -452,7 +634,7 @@ final class SseWantedServices
         $row['threats'] = is_array($in['threats'] ?? null) ? $in['threats'] : [];
         $row['types'] = is_array($in['types'] ?? null) ? $in['types'] : [];
         $row['lang'] = is_array($in['lang'] ?? null) ? $in['lang'] : ['fr', 'en'];
-        $service = self::normalize($row, 'custom');
+        $service = self::normalize($row, $source);
         if ($service === null) {
             $errors[] = 'Service illisible : vérifiez le nom.';
 

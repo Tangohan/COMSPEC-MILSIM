@@ -77,7 +77,7 @@ final class SseAlertRepository
 
     public static function validToken(string $token): bool
     {
-        return preg_match('/^[A-Za-z0-9]{22}$/', $token) === 1;
+        return preg_match('/^[A-Za-z0-9]{22}$/D', $token) === 1;
     }
 
     public static function validClientId(?string $cid): bool
@@ -445,6 +445,20 @@ final class SseAlertRepository
         }
 
         return array_map(self::hydrateProposal(...), $this->db->fetchAll('SELECT * FROM sse_alert_proposals WHERE tenant_id = :t AND state = :s ORDER BY id DESC LIMIT ' . max(1, min(300, $limit)), ['t' => $tenantId, 's' => $state]));
+    }
+
+    /**
+     * Propositions faites par un compte (du jeu ou du site), les plus récentes d'abord : leur état se rend au téléphone.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function proposalsOf(int $tenantId, int $userId, int $limit = 30): array
+    {
+        if (!self::ready() || $userId < 1) {
+            return [];
+        }
+
+        return array_map(self::hydrateProposal(...), $this->db->fetchAll('SELECT * FROM sse_alert_proposals WHERE tenant_id = :t AND created_by_user_id = :u ORDER BY id DESC LIMIT ' . max(1, min(60, $limit)), ['t' => $tenantId, 'u' => $userId]));
     }
 
     /** Décide une proposition encore en attente (une seule fois). */

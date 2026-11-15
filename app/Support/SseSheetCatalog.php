@@ -127,6 +127,9 @@ final class SseSheetCatalog
 
     public const DEFAULT_VALIDITY = 30;
 
+    /** Durées courtes (heures) acceptées en plus des jours : 6 h, 24 h, 72 h ; « jusqu'à levée » = sans échéance (`until_lifted`). */
+    public const VALIDITY_HOURS = [6, 24, 72];
+
     /** Codes de motifs ou de mesures retenus sur une fiche de vigilance (au plus). */
     public const MAX_CODES = 6;
 
@@ -175,6 +178,26 @@ final class SseSheetCatalog
     public static function default(string $model, string $key, string $lang): string
     {
         return self::DEFAULTS[$model][$key][$lang === 'en' ? 1 : 0] ?? '';
+    }
+
+    /**
+     * Durée demandée : `until_lifted` (sans échéance), `validity_hours` (6, 24, 72) ou `validity` en jours.
+     *
+     * @param array<string, mixed> $input
+     * @return array{days: ?int, hours: ?int, lifted: bool}
+     */
+    public static function term(array $input): array
+    {
+        $lifted = ($input['until_lifted'] ?? false) === true || ($input['until_lifted'] ?? '') === '1' || ($input['validity'] ?? '') === 'until_lifted';
+        if ($lifted) {
+            return ['days' => null, 'hours' => null, 'lifted' => true];
+        }
+        $h = is_numeric($input['validity_hours'] ?? null) ? (int) $input['validity_hours'] : 0;
+        if (in_array($h, self::VALIDITY_HOURS, true)) {
+            return ['days' => null, 'hours' => $h, 'lifted' => false];
+        }
+
+        return ['days' => self::validity($input['validity'] ?? self::DEFAULT_VALIDITY), 'hours' => null, 'lifted' => false];
     }
 
     /** Durée de validité retenue (jours) : une des durées proposées, sinon 30. */

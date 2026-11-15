@@ -14,6 +14,8 @@ use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseSheetAccess;
 use App\Services\Sse\SseSheetFactsService;
 use App\Services\Sse\SseSheetService;
+use App\Services\Sse\SseVigilanceFollow;
+use App\Repositories\SseWantedSettingsRepository;
 use App\Support\SseSheetCatalog as D;
 use App\Support\SseSheetText as T;
 use App\Support\SseWantedCatalog as C;
@@ -392,7 +394,7 @@ final class SseSheetController
         }
         $checks = $request->input('checks');
 
-        return [
+        $base = [
             'lang' => D::lang($request->inputString('lang', 'fr')),
             'classification' => $request->inputString('classification'),
             'faces' => $request->inputString('faces', 'auto'),
@@ -402,6 +404,25 @@ final class SseSheetController
             'checks' => $request->inputString('checks_sent') === '1' ? (is_array($checks) ? array_values(array_map(static fn ($c): string => mb_substr((string) $c, 0, 40), array_slice($checks, 0, 40))) : []) : null,
             'texts' => $texts,
         ];
+        if ($model === 'vigilance') {
+            // Fiche de vigilance : niveau, consignes, motifs, zone et service à informer (SseVigilanceFollow::readInput).
+            $base = SseVigilanceFollow::readInput([
+                'level' => $request->inputString('level'), 'measures' => $request->input('measures'), 'measures_sent' => $request->inputString('measures_sent'),
+                'reasons' => $request->input('reasons'), 'zone' => $request->inputString('zone'), 'service' => $request->inputString('service'),
+                'service_other' => $request->inputString('service_other'), 'report_channel' => $request->inputString('report_channel'), 'report_delay' => $request->inputString('report_delay'),
+            ], $base) + $base;
+        }
+
+        if ($model === 'vigilance') {
+            // Raccourcis de durée : « h6 », « h24 », « h72 » (heures) ou « until_lifted » (sans échéance) ; sinon un nombre de jours.
+            $v = (string) ($base['validity'] ?? '');
+            if (preg_match('/^h(\d+)$/', $v, $mm) === 1 && in_array((int) $mm[1], D::VALIDITY_HOURS, true)) {
+                $base['validity_hours'] = (int) $mm[1];
+                $base['validity'] = (string) D::DEFAULT_VALIDITY;
+            }
+        }
+
+        return $base;
     }
 
     /**
@@ -429,7 +450,16 @@ final class SseSheetController
         $issuedDoc = $issued > 0 && $ready ? $this->repo->findIssue($tenantId, $issued) : null;
         $issuedMine = $issuedDoc !== null && (($subject['person_id'] !== null && $issuedDoc['person_id'] === $subject['person_id']) || ($subject['identity_id'] !== null && $issuedDoc['identity_id'] === $subject['identity_id']));
 
+        $vig = [];
+        if ($model === 'vigilance') {
+            $ui = SseWantedNoticeController::readerLang() === 'en' ? 1 : 0;
+            $vig = SseVigilanceFollow::editorData((new SseWantedSettingsRepository())->get($tenantId), $ui);
+            $vigIssued = $issuedMine && is_array($issuedDoc) ? (new \App\Services\Sse\SseAlertService())->findVigilance($tenantId, (int) $issuedDoc['id']) : null;
+            $vigIssued = $vigIssued !== null ? SseVigilanceFollow::present($vigIssued, $r, $ui) : null;
+        }
+
         return $this->page('atak.sse.sheets.editor', [
+            'vig' => $vig, 'vigIssued' => $vigIssued ?? null,
             'title' => D::label($model, $lang) . ' — ' . (string) $subject['ref'],
             'subject' => $subject, 'kind' => $kind, 'model' => $model, 'modelDef' => D::MODELS[$model],
             'lang' => $lang, 'level' => $level, 'levels' => SseSheetService::levelsFor($r),

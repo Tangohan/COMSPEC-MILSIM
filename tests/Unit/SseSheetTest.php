@@ -281,7 +281,7 @@ final class SseSheetTest extends TestCase
                         continue;
                     }
                     $text = \Tests\Support\PdfText::of((string) $res['bytes']);
-                    self::assertStringContainsString('ksnevad', $text, "$model $lang : le texte des pages est bien lu");
+                    self::assertStringContainsStringIgnoringCase('ksnevad', $text, "$model $lang : le texte des pages est bien lu");
                     self::assertNull(\Tests\Support\PdfText::fictionMention((string) $res['bytes']), "$model $lang $faces : mention de jeu sur la fiche");
                 }
             }
@@ -574,7 +574,7 @@ final class SseSheetTest extends TestCase
         foreach (['vigilance', 'identification', 'profile', 'control', 'notice'] as $model) {
             $page = $controller->editor(new Request(), ['kind' => 'personne', 'id' => $p, 'model' => $model]);
             self::assertSame(200, $page->statusCode(), $model);
-            self::assertStringContainsString('id="shx-form"', $page->body(), $model);
+            self::assertStringContainsString($model === 'vigilance' ? 'id="vig-form"' : 'id="shx-form"', $page->body(), $model);
             self::assertStringNotContainsString('Warning', $page->body(), $model);
             self::assertStringNotContainsString('Fatal', $page->body(), $model);
         }
