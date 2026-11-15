@@ -334,6 +334,497 @@ private _mk = {
     ]
 ] call _mk;
 
+// —— Kits de contenu : Sahel ——
+[
+    "builtin_sahel_convoi_carburant",
+    "Sahel — Convoi de carburant",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "AFRICA_SAHEL"],
+        ["theme", "fuel_delivery"], ["networkSize", 9],
+        ["tags", ["kit", "sahel", "africa_sahel", "fuel_delivery"]],
+        ["aliasPool", ["LE TRANSITAIRE", "SEYDOU DIX-ROUES", "LE COXEUR", "TONTON"]],
+        ["codewords", ["HARMATTAN", "PUITS", "BAOBAB", "CITERNE"]],
+        ["notes", "Citernes et pistes : factures, itinéraires et points de rendez-vous."]
+    ]
+] call _mk;
+
+[
+    "builtin_sahel_cellule_brousse",
+    "Sahel — Cellule de brousse",
+    createHashMapFromArray [
+        ["profile", "INSURGENT"], ["complexity", "DETAILED"], ["region", "AFRICA_SAHEL"],
+        ["theme", "weapons_cache"], ["networkSize", 10],
+        ["tags", ["kit", "sahel", "africa_sahel", "weapons_cache"]],
+        ["aliasPool", ["LE BERGER", "FENNEC", "CHACAL", "ABOU MOUSSA"]],
+        ["codewords", ["SIROCCO", "DUNE", "ACACIA", "LUNE"]],
+        ["notes", "Cellule rurale : cache, motos et guetteurs de piste."]
+    ]
+] call _mk;
+
+[
+    "builtin_sahel_chef_secteur",
+    "Sahel — Chef de secteur",
+    createHashMapFromArray [
+        ["profile", "COMMANDER"], ["complexity", "HIGH_VALUE"], ["region", "AFRICA_SAHEL"],
+        ["theme", "meeting_alpha"], ["networkSize", 8],
+        ["tags", ["kit", "sahel", "africa_sahel", "meeting_alpha"]],
+        ["aliasPool", ["LE VIEUX", "LE CAÏD", "EL HADJ"]],
+        ["codewords", ["TENTE", "PUITS", "MIDI", "OMBRE"]],
+        ["notes", "Cible de haute valeur : réunions de nuit, téléphone satellite."]
+    ]
+] call _mk;
+
+[
+    "builtin_sahel_passeur",
+    "Sahel — Passeur des pistes",
+    createHashMapFromArray [
+        ["profile", "COURIER"], ["complexity", "STANDARD"], ["region", "AFRICA_SAHEL"],
+        ["theme", "smuggling"], ["networkSize", 6],
+        ["tags", ["kit", "sahel", "africa_sahel", "smuggling"]],
+        ["aliasPool", ["LE PASSEUR", "LE CHAMELIER", "MOUSSA LA PISTE"]],
+        ["codewords", ["GAZELLE", "OUED", "NUIT", "SEL"]],
+        ["notes", "Passages de frontière hors des postes, de nuit."]
+    ]
+] call _mk;
+
+[
+    "builtin_sahel_collecteur",
+    "Sahel — Collecteur de fonds",
+    createHashMapFromArray [
+        ["profile", "FINANCIER"], ["complexity", "DETAILED"], ["region", "AFRICA_SAHEL"],
+        ["theme", "finance_drop"], ["networkSize", 7],
+        ["tags", ["kit", "sahel", "africa_sahel", "finance_drop"]],
+        ["aliasPool", ["LE COMMIS", "LE PRÉFET", "LE DOUANIER"]],
+        ["codewords", ["MARCHÉ", "BÉTAIL", "DIX", "SAC"]],
+        ["notes", "Collecte sur les marchés à bétail et les sites d'orpaillage."]
+    ]
+] call _mk;
+
+[
+    "builtin_sahel_civil",
+    "Sahel — Civil (bruit de fond)",
+    createHashMapFromArray [
+        ["profile", "CIVILIAN"], ["complexity", "LIGHT"], ["region", "AFRICA_SAHEL"],
+        ["theme", "RANDOM"], ["networkSize", 6],
+        ["noiseProbability", 0.65], ["falseLeadProbability", 0.1], ["includeBiometrics", false], ["includeComputer", false],
+        ["tags", ["kit", "sahel", "africa_sahel", "random"]],
+        ["notes", "Vie quotidienne d'un village du Sahel."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Syrie ——
+[
+    "builtin_syrie_atelier",
+    "Syrie — Atelier d'engins",
+    createHashMapFromArray [
+        ["profile", "TECHNICIAN"], ["complexity", "DETAILED"], ["region", "SYRIA"],
+        ["theme", "ied_cell"], ["networkSize", 6],
+        ["tags", ["kit", "syrie", "syria", "ied_cell"]],
+        ["aliasPool", ["AL NAJJAR", "L'INGÉNIEUR", "AL USTADH"]],
+        ["codewords", ["FORGE", "CUIVRE", "ATELIER", "FIL"]],
+        ["notes", "Atelier en sous-sol : composants, schémas et téléphones déclencheurs."]
+    ]
+] call _mk;
+
+[
+    "builtin_syrie_media",
+    "Syrie — Cellule média",
+    createHashMapFromArray [
+        ["profile", "INTELLIGENCE"], ["complexity", "DETAILED"], ["region", "SYRIA"],
+        ["theme", "propaganda"], ["networkSize", 6],
+        ["tags", ["kit", "syrie", "syria", "propaganda"]],
+        ["aliasPool", ["AL RAQIB", "ABU NOUR", "LE MAÎTRE D'ÉCOLE"]],
+        ["codewords", ["ÉCRAN", "VOIX", "ANTENNE", "AUBE"]],
+        ["notes", "Montage, diffusion et comptes relais."]
+    ]
+] call _mk;
+
+[
+    "builtin_syrie_planque",
+    "Syrie — Planque urbaine",
+    createHashMapFromArray [
+        ["profile", "INSURGENT"], ["complexity", "STANDARD"], ["region", "SYRIA"],
+        ["theme", "safehouse"], ["networkSize", 5],
+        ["tags", ["kit", "syrie", "syria", "safehouse"]],
+        ["aliasPool", ["LE LOCATAIRE", "ABU RAMI", "UMM KHALID"]],
+        ["codewords", ["CLÉ", "ESCALIER", "TOIT", "COUR"]],
+        ["notes", "Appartement de passage, rotations de garde."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Levant ——
+[
+    "builtin_levant_changeur",
+    "Levant — Bureau de change",
+    createHashMapFromArray [
+        ["profile", "FINANCIER"], ["complexity", "HIGH_VALUE"], ["region", "LEVANT"],
+        ["theme", "finance_drop"], ["networkSize", 8],
+        ["tags", ["kit", "levant", "levant", "finance_drop"]],
+        ["aliasPool", ["LE CHANGEUR", "AL SARRAF", "LE COUSIN"]],
+        ["codewords", ["CÈDRE", "PORT", "LIVRE", "BALANCE"]],
+        ["notes", "Double comptabilité, transferts fractionnés et sociétés d'import-export."]
+    ]
+] call _mk;
+
+[
+    "builtin_levant_association",
+    "Levant — Association de façade",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "LEVANT"],
+        ["theme", "medical_logistics"], ["networkSize", 8],
+        ["tags", ["kit", "levant", "levant", "medical_logistics"]],
+        ["aliasPool", ["LE PHARMACIEN", "AL TABIB", "UMM NOUR"]],
+        ["codewords", ["COLIS", "CLINIQUE", "DON", "CAMION"]],
+        ["notes", "Dépôt d'aide : bordereaux, bénévoles sincères et colis hors liste."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Afghanistan ——
+[
+    "builtin_afg_commandant",
+    "Afghanistan — Commandant de vallée",
+    createHashMapFromArray [
+        ["profile", "COMMANDER"], ["complexity", "HIGH_VALUE"], ["region", "AFGHANISTAN"],
+        ["theme", "meeting_alpha"], ["networkSize", 9],
+        ["tags", ["kit", "afg", "afghanistan", "meeting_alpha"]],
+        ["aliasPool", ["KOMANDAN", "HAJI SAHIB", "SHER KHAN"]],
+        ["codewords", ["DARYA", "KOH", "BAGH", "SHAB"]],
+        ["notes", "Chef local : choura de nuit, courriers à moto."]
+    ]
+] call _mk;
+
+[
+    "builtin_afg_hawala",
+    "Afghanistan — Hawala du bazar",
+    createHashMapFromArray [
+        ["profile", "FINANCIER"], ["complexity", "DETAILED"], ["region", "AFGHANISTAN"],
+        ["theme", "finance_drop"], ["networkSize", 7],
+        ["tags", ["kit", "afg", "afghanistan", "finance_drop"]],
+        ["aliasPool", ["LE CHANGEUR", "AGHA JAN", "KAKA"]],
+        ["codewords", ["SARAI", "ZAR", "DAFTAR", "MIZAN"]],
+        ["notes", "Registre à deux colonnes, reçus et codes de retrait."]
+    ]
+] call _mk;
+
+[
+    "builtin_afg_engins",
+    "Afghanistan — Poseur d'engins",
+    createHashMapFromArray [
+        ["profile", "TECHNICIAN"], ["complexity", "DETAILED"], ["region", "AFGHANISTAN"],
+        ["theme", "ied_cell"], ["networkSize", 6],
+        ["tags", ["kit", "afg", "afghanistan", "ied_cell"]],
+        ["aliasPool", ["ENGINEER", "USTAD", "BARQ"]],
+        ["codewords", ["SIM", "BATTERY", "SARAK", "PUL"]],
+        ["notes", "Composants, repérages de route et téléphones jetables."]
+    ]
+] call _mk;
+
+[
+    "builtin_afg_courrier",
+    "Afghanistan — Courrier des cols",
+    createHashMapFromArray [
+        ["profile", "COURIER"], ["complexity", "STANDARD"], ["region", "AFGHANISTAN"],
+        ["theme", "courier_run"], ["networkSize", 5],
+        ["tags", ["kit", "afg", "afghanistan", "courier_run"]],
+        ["aliasPool", ["KARWAN", "LALA", "LE NEVEU"]],
+        ["codewords", ["KOTAL", "CHAI", "SOBH", "ASP"]],
+        ["notes", "Messages écrits portés d'une vallée à l'autre."]
+    ]
+] call _mk;
+
+[
+    "builtin_afg_civil",
+    "Afghanistan — Villageois (bruit de fond)",
+    createHashMapFromArray [
+        ["profile", "CIVILIAN"], ["complexity", "LIGHT"], ["region", "AFGHANISTAN"],
+        ["theme", "RANDOM"], ["networkSize", 6],
+        ["noiseProbability", 0.65], ["falseLeadProbability", 0.1], ["includeBiometrics", false], ["includeComputer", false],
+        ["tags", ["kit", "afg", "afghanistan", "random"]],
+        ["notes", "Vie quotidienne d'un village de vallée."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Ukraine ——
+[
+    "builtin_ukr_drone",
+    "Ukraine — Équipe drone",
+    createHashMapFromArray [
+        ["profile", "TECHNICIAN"], ["complexity", "HIGH_VALUE"], ["region", "UKRAINE"],
+        ["theme", "drone_ops"], ["networkSize", 6],
+        ["tags", ["kit", "ukr", "ukraine", "drone_ops"]],
+        ["aliasPool", ["PILOT", "KAMERA", "INZHENER", "YASTREB"]],
+        ["codewords", ["STEP", "ZORIA", "MAIAK", "VITER"]],
+        ["notes", "Carnets de vol, vidéos et points de lancement."]
+    ]
+] call _mk;
+
+[
+    "builtin_ukr_logistique",
+    "Ukraine — Logistique de volontaires",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "UKRAINE"],
+        ["theme", "fuel_delivery"], ["networkSize", 9],
+        ["tags", ["kit", "ukr", "ukraine", "fuel_delivery"]],
+        ["aliasPool", ["ZAVHOZ", "VODITEL", "SKLAD"]],
+        ["codewords", ["DNIPRO", "MIST", "SKLAD", "NICH"]],
+        ["notes", "Fourgons, dépôts et bons de livraison."]
+    ]
+] call _mk;
+
+[
+    "builtin_ukr_poste",
+    "Ukraine — Poste de commandement de milice",
+    createHashMapFromArray [
+        ["profile", "COMMANDER"], ["complexity", "HIGH_VALUE"], ["region", "UKRAINE"],
+        ["theme", "meeting_alpha"], ["networkSize", 8],
+        ["tags", ["kit", "ukr", "ukraine", "meeting_alpha"]],
+        ["aliasPool", ["KOMANDIR", "SHTAB", "BATYA"]],
+        ["codewords", ["HRIM", "SOKIL", "RUBIZH", "TYSHA"]],
+        ["notes", "Tableaux d'effectifs, radios et cartes annotées."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Balkans ——
+[
+    "builtin_balkans_contrebande",
+    "Balkans — Filière de contrebande",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "BALKANS"],
+        ["theme", "smuggling"], ["networkSize", 9],
+        ["tags", ["kit", "balkans", "balkans", "smuggling"]],
+        ["aliasPool", ["GAZDA", "ŠOFER", "CARINIK", "SHOFERI"]],
+        ["codewords", ["DUNAV", "MOST", "MAGLA", "KAMEN"]],
+        ["notes", "Caches dans les planchers, voiture ouvreuse, postes de frontière."]
+    ]
+] call _mk;
+
+[
+    "builtin_balkans_faussaire",
+    "Balkans — Faussaire",
+    createHashMapFromArray [
+        ["profile", "TECHNICIAN"], ["complexity", "DETAILED"], ["region", "BALKANS"],
+        ["theme", "smuggling"], ["networkSize", 5],
+        ["tags", ["kit", "balkans", "balkans", "smuggling"]],
+        ["aliasPool", ["MAJSTOR", "PROFESOR", "USTAI"]],
+        ["codewords", ["PEČAT", "PAPIR", "MASTILO", "ŽIG"]],
+        ["notes", "Imprimerie de quartier : tampons, papiers vierges, photos d'identité."]
+    ]
+] call _mk;
+
+[
+    "builtin_balkans_milice",
+    "Balkans — Milice locale",
+    createHashMapFromArray [
+        ["profile", "MILITARY"], ["complexity", "STANDARD"], ["region", "BALKANS"],
+        ["theme", "weapons_cache"], ["networkSize", 8],
+        ["tags", ["kit", "balkans", "balkans", "weapons_cache"]],
+        ["aliasPool", ["KAPETAN", "MAJOR", "VUK"]],
+        ["codewords", ["HRAST", "STENA", "GROM", "ZORA"]],
+        ["notes", "Dépôt d'armes légères et rotations de garde."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Amérique latine ——
+[
+    "builtin_latam_patron",
+    "Amérique latine — Patron de plaza",
+    createHashMapFromArray [
+        ["profile", "COMMANDER"], ["complexity", "HIGH_VALUE"], ["region", "LATAM"],
+        ["theme", "meeting_alpha"], ["networkSize", 9],
+        ["tags", ["kit", "latam", "latam", "meeting_alpha"]],
+        ["aliasPool", ["EL VIEJO", "EL COMANDANTE", "DON BETO"]],
+        ["codewords", ["FINCA", "GALLO", "RÍO", "NOCHE"]],
+        ["notes", "Cible de haute valeur : propriété isolée, deux téléphones, garde rapprochée."]
+    ]
+] call _mk;
+
+[
+    "builtin_latam_laboratoire",
+    "Amérique latine — Laboratoire clandestin",
+    createHashMapFromArray [
+        ["profile", "TECHNICIAN"], ["complexity", "DETAILED"], ["region", "LATAM"],
+        ["theme", "medical_logistics"], ["networkSize", 6],
+        ["tags", ["kit", "latam", "latam", "medical_logistics"]],
+        ["aliasPool", ["EL DOCTOR", "EL PROFE", "LA DOCTORA"]],
+        ["codewords", ["COCINA", "BIDÓN", "MONTE", "HUMO"]],
+        ["notes", "Bidons, carnets de dosage et livraisons de précurseurs."]
+    ]
+] call _mk;
+
+[
+    "builtin_latam_comptable",
+    "Amérique latine — Comptable de l'organisation",
+    createHashMapFromArray [
+        ["profile", "FINANCIER"], ["complexity", "HIGH_VALUE"], ["region", "LATAM"],
+        ["theme", "finance_drop"], ["networkSize", 7],
+        ["tags", ["kit", "latam", "latam", "finance_drop"]],
+        ["aliasPool", ["EL CONTADOR", "LA MADRINA", "EL PRIMO"]],
+        ["codewords", ["LIBRO", "CAJA", "NÓMINA", "FACTURA"]],
+        ["notes", "Livres de comptes, prête-noms et paiements en espèces."]
+    ]
+] call _mk;
+
+[
+    "builtin_latam_guetteur",
+    "Amérique latine — Guetteur",
+    createHashMapFromArray [
+        ["profile", "INTELLIGENCE"], ["complexity", "LIGHT"], ["region", "LATAM"],
+        ["theme", "courier_run"], ["networkSize", 5],
+        ["tags", ["kit", "latam", "latam", "courier_run"]],
+        ["aliasPool", ["EL HALCÓN", "EL NIÑO", "LA FLACA"]],
+        ["codewords", ["PUNTO", "RADIO", "ESQUINA", "LUZ"]],
+        ["notes", "Radio de poche, relevés de patrouilles et taxis complices."]
+    ]
+] call _mk;
+
+[
+    "builtin_latam_transporteur",
+    "Amérique latine — Transporteur",
+    createHashMapFromArray [
+        ["profile", "COURIER"], ["complexity", "DETAILED"], ["region", "LATAM"],
+        ["theme", "smuggling"], ["networkSize", 7],
+        ["tags", ["kit", "latam", "latam", "smuggling"]],
+        ["aliasPool", ["EL CHOFER", "EL PILOTO", "EL MARINO"]],
+        ["codewords", ["CARGA", "PISTA", "LANCHA", "CRUCE"]],
+        ["notes", "Camions, pistes clandestines et lanches rapides."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Asie du Sud-Est ——
+[
+    "builtin_asie_trafic_maritime",
+    "Asie du Sud-Est — Trafic maritime",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "SE_ASIA"],
+        ["theme", "smuggling"], ["networkSize", 9],
+        ["tags", ["kit", "asie", "se_asia", "smuggling"]],
+        ["aliasPool", ["KAPITAN", "TIMONEL", "BOSSING", "PATING"]],
+        ["codewords", ["ALON", "PAROLA", "HABAGAT", "PULO"]],
+        ["notes", "Bancas à moteur, transbordements de nuit et courtiers de port."]
+    ]
+] call _mk;
+
+[
+    "builtin_asie_capitaine",
+    "Asie du Sud-Est — Capitaine de banca",
+    createHashMapFromArray [
+        ["profile", "COURIER"], ["complexity", "STANDARD"], ["region", "SE_ASIA"],
+        ["theme", "courier_run"], ["networkSize", 5],
+        ["tags", ["kit", "asie", "se_asia", "courier_run"]],
+        ["aliasPool", ["KAPITAN", "MANGINGISDA", "LAWIN"]],
+        ["codewords", ["DAGAT", "BITUIN", "LAMBAT", "TALA"]],
+        ["notes", "Carnet de bord, GPS de poche et téléphone satellite."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Corne de l'Afrique ——
+[
+    "builtin_corne_boutre",
+    "Corne de l'Afrique — Boutre de contrebande",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "HORN_AFRICA"],
+        ["theme", "smuggling"], ["networkSize", 8],
+        ["tags", ["kit", "corne", "horn_africa", "smuggling"]],
+        ["aliasPool", ["NAAKHUUDE", "KABTAN", "BADMAAX"]],
+        ["codewords", ["BAD", "DEKED", "DUUFAAN", "XEEB"]],
+        ["notes", "Cargaisons déclarées en poisson séché, balise coupée au large."]
+    ]
+] call _mk;
+
+[
+    "builtin_corne_transfert",
+    "Corne de l'Afrique — Agent de transfert",
+    createHashMapFromArray [
+        ["profile", "FINANCIER"], ["complexity", "DETAILED"], ["region", "HORN_AFRICA"],
+        ["theme", "finance_drop"], ["networkSize", 6],
+        ["tags", ["kit", "corne", "horn_africa", "finance_drop"]],
+        ["aliasPool", ["LE COMPTABLE", "LE NÉGOCIANT", "MACALLIN"]],
+        ["codewords", ["SUUQ", "BUUG", "LACAG", "FURE"]],
+        ["notes", "Transferts de la diaspora, reçus et carnets à deux colonnes."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Yémen ——
+[
+    "builtin_yemen_depot",
+    "Yémen — Dépôt d'armes",
+    createHashMapFromArray [
+        ["profile", "INSURGENT"], ["complexity", "DETAILED"], ["region", "YEMEN"],
+        ["theme", "weapons_cache"], ["networkSize", 9],
+        ["tags", ["kit", "yemen", "yemen", "weapons_cache"]],
+        ["aliasPool", ["AL SAQR", "ABU SALEH", "AL DALIL"]],
+        ["codewords", ["JABAL", "BUN", "MINA", "QASR"]],
+        ["notes", "Dépôt de montagne, convois de pick-up et registres de distribution."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Libye ——
+[
+    "builtin_libye_carburant",
+    "Libye — Trafic de carburant",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "LIBYA"],
+        ["theme", "fuel_delivery"], ["networkSize", 9],
+        ["tags", ["kit", "libye", "libya", "fuel_delivery"]],
+        ["aliasPool", ["LE CHAUFFEUR", "AL BARQ", "ABU TALAL"]],
+        ["codewords", ["WAHA", "SAHIL", "NAKHLA", "RIMAL"]],
+        ["notes", "Citernes, stations fantômes et factures au double."]
+    ]
+] call _mk;
+
+[
+    "builtin_libye_milice",
+    "Libye — Milice de quartier",
+    createHashMapFromArray [
+        ["profile", "MILITARY"], ["complexity", "STANDARD"], ["region", "LIBYA"],
+        ["theme", "meeting_alpha"], ["networkSize", 8],
+        ["tags", ["kit", "libye", "libya", "meeting_alpha"]],
+        ["aliasPool", ["AL NIMR", "ABU FIRAS", "AL TAWIL"]],
+        ["codewords", ["SOUQ", "BAHR", "MATAR", "QALAA"]],
+        ["notes", "Poste de contrôle, tableaux de garde et groupes de discussion."]
+    ]
+] call _mk;
+
+// —— Kits de contenu : Organisation ——
+[
+    "builtin_smp_equipe",
+    "Organisation — Société militaire privée",
+    createHashMapFromArray [
+        ["profile", "MILITARY"], ["complexity", "DETAILED"], ["region", "GENERIC"],
+        ["theme", "meeting_alpha"], ["networkSize", 8],
+        ["tags", ["kit", "transverse", "generic", "meeting_alpha"]],
+        ["aliasPool", ["GRANIT", "KAZAK", "HUNTER", "RAVEN"]],
+        ["codewords", ["CONTRAT", "BADGE", "ROTATION", "SITE"]],
+        ["notes", "Équipe sous contrat : badges, rotations et itinéraires de la société."]
+    ]
+] call _mk;
+
+[
+    "builtin_admin_corrompue",
+    "Organisation — Administration corrompue",
+    createHashMapFromArray [
+        ["profile", "FINANCIER"], ["complexity", "DETAILED"], ["region", "GENERIC"],
+        ["theme", "finance_drop"], ["networkSize", 7],
+        ["tags", ["kit", "transverse", "generic", "finance_drop"]],
+        ["aliasPool", ["LE PRÉFET", "LE COMMIS", "LE COUSIN"]],
+        ["codewords", ["TAMPON", "REGISTRE", "MARCHÉ", "CAHIER"]],
+        ["notes", "Service des titres : registres, tampons et papiers de complaisance."]
+    ]
+] call _mk;
+
+[
+    "builtin_ong_facade",
+    "Organisation — ONG de façade",
+    createHashMapFromArray [
+        ["profile", "LOGISTICS"], ["complexity", "DETAILED"], ["region", "GENERIC"],
+        ["theme", "medical_logistics"], ["networkSize", 8],
+        ["tags", ["kit", "transverse", "generic", "medical_logistics"]],
+        ["aliasPool", ["LE DOCTEUR", "THE COURIER", "LE LOGISTICIEN"]],
+        ["codewords", ["COLIS", "DON", "CONVOI", "BORDEREAU"]],
+        ["notes", "Dépôt d'aide : convois, double comptabilité et bénévoles sincères."]
+    ]
+] call _mk;
+
 comspec_sse_models_builtin = _builtins;
 // Pas de diffusion : chaque machine construit déjà cette table au chargement (generator XEH_preInit).
 

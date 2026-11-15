@@ -41,6 +41,8 @@ Situation : un village, cinq IA civiles posées par le Zeus, à transformer en c
 
 Cellule insurgée — Irak (`builtin_cellule_insurgee_irak`), Chef HVT, Réseau courriers, Financier, Technicien IED, Safehouse urbain, Contrebande frontière, Civil non pertinent (bruit), Cellule drone / ISR, Propagande / média, Irak 2010-2020 (Cache d'armes, Cellule IED, Chef de secteur, Courrier frontière, Relais financier, Planque urbaine), Russie 2020-2024 (Reconnaissance, Logistique, Poste de commandement, Cellule drone, Radio / EW, Info ops, Courrier civil, Civil couverture). Les `builtin_` ne se suppriment pas.
 
+Kits de contenu par pays (1.11.0) : 37 modèles de plus, rangés par kit — Sahel (Convoi de carburant, Cellule de brousse, Chef de secteur, Passeur des pistes, Collecteur de fonds, Civil), Syrie, Levant, Afghanistan, Ukraine, Balkans, Amérique latine, Asie du Sud-Est, Corne de l'Afrique, Yémen, Libye, et trois organisations sans pays (Société militaire privée, Administration corrompue, ONG de façade). L'attribut **Région / théâtre** propose huit régions de plus : Afghanistan, Ukraine, Balkans, Amérique latine, Asie du Sud-Est, Corne de l'Afrique, Libye, Yémen ; chacune a ses noms, surnoms, nationalités, indicatifs et véhicules courants. Tout est fictif.
+
 Dataset **FALCON** (Irak 2012, 6 rôles) : Chef de secteur ABU KARIM (HVT), Technicien IED « L'INGÉNIEUR », Courrier frontière « LE CHAUFFEUR », Relais financier « LE CHANGEUR », Gardien de planque « LE LOCATAIRE », Civil (bruit de fond). Attribut Eden **Rôle dans le dataset** pour fixer un rôle sur une personne.
 
 ## Pièges fréquents

@@ -63,8 +63,8 @@ Carte reconnue → pays. Toute autre carte → réglage « Pays par défaut des 
 | BGR / BG | Bulgarie | générique | Carte d'identité, Passeport, Permis de conduire | dd.mm.yyyy | Lichna karta |
 | GRC / GR | Grèce | générique | Carte d'identité, Passeport, Permis de conduire, Carte d'identité militaire | dd.mm.yyyy | Deltío Astynomikís Taftótitas |
 | TUR / TR | Turquie | générique | Carte d'identité, Passeport, Permis de conduire, Carte d'identité militaire | dd.mm.yyyy | T.C. Kimlik Kartı |
-| UKR / UA | Ukraine | générique | Carte d'identité, Passeport international, Permis de conduire, Livret militaire | dd.mm.yyyy | Pasport hromadianyna Ukrainy (ID-kartka) |
-| RUS / RU | Russie | générique | Passeport intérieur, Passeport international, Permis de conduire, Livret militaire | dd.mm.yyyy | Pasport grazhdanina Rossiiskoi Federatsii |
+| UKR / UA | Ukraine | générique | Carte d'identité, Passeport international, Permis de conduire, Livret militaire, Titre de séjour, Certificat d'immatriculation | dd.mm.yyyy | Pasport hromadianyna Ukrainy (ID-kartka) |
+| RUS / RU | Russie | générique | Passeport intérieur, Passeport international, Permis de conduire, Livret militaire, Titre de séjour, Certificat d'immatriculation | dd.mm.yyyy | Pasport grazhdanina Rossiiskoi Federatsii |
 | BLR / BY | Biélorussie | générique | Carte d'identité, Passeport, Permis de conduire, Livret militaire | dd.mm.yyyy | Identifikatsionnaya karta |
 | DNK / DK | Danemark | générique | Carte d'identité, Passeport, Permis de conduire, Carte d'identité militaire | dd.mm.yyyy | Kørekort |
 | SWE / SE | Suède | générique | Carte nationale d'identité, Passeport, Permis de conduire, Carte d'identité militaire | yyyy-mm-dd | Nationellt identitetskort |
@@ -74,20 +74,24 @@ Carte reconnue → pays. Toute autre carte → réglage « Pays par défaut des 
 | LVA / LV | Lettonie | générique | Carte d'identité, Passeport, Permis de conduire, Carte de militaire | dd.mm.yyyy | Personas apliecība (eID karte) |
 | LTU / LT | Lituanie | générique | Carte d'identité, Passeport, Permis de conduire, Carte de militaire | yyyy-mm-dd | Asmens tapatybės kortelė |
 | HRV / HR | Croatie | générique | Carte d'identité, Passeport, Permis de conduire | dd.mm.yyyy | Osobna iskaznica |
-| SRB / RS | Serbie | générique | Carte d'identité, Passeport, Permis de conduire | dd.mm.yyyy | Lična karta |
+| SRB / RS | Serbie | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd.mm.yyyy | Lična karta |
+| ALB / AL | Albanie | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd.mm.yyyy | Letërnjoftim |
 | CAN / CA | Canada | générique | Passeport, Permis de conduire | yyyy-mm-dd | Permis de conduire / Driver's Licence |
 | AUS / AU | Australie | générique | Passeport, Permis de conduire | dd/mm/yyyy | Driver Licence |
+| PHL / PH | Philippines | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | Pambansang Pagkakakilanlan |
 | ISR / IL | Israël | générique | Carte d'identité, Passeport, Permis de conduire, Carte militaire | dd/mm/yyyy | תעודת זהות · Teudat Zehut |
-| IRQ / IQ | Irak | générique | Carte nationale, Passeport, Permis de conduire | dd/mm/yyyy | البطاقة الوطنية · al-Bitaqa al-Wataniya |
-| AFG / AF | Afghanistan | générique | Tazkira (carte d'identité), Passeport, Permis de conduire | yyyy-mm-dd | تذکره · Tazkira |
-| SYR / SY | Syrie | générique | Carte d'identité, Passeport, Permis de conduire | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
-| MLI / ML | Mali | générique | Carte nationale d'identité, Passeport, Permis de conduire | dd/mm/yyyy | Carte nationale d'identité |
-| NER / NE | Niger | générique | Carte nationale d'identité, Passeport, Permis de conduire | dd/mm/yyyy | Carte nationale d'identité |
-| TCD / TD | Tchad | générique | Carte nationale d'identité, Passeport, Permis de conduire | dd/mm/yyyy | Carte nationale d'identité |
-| SOM / SO | Somalie | générique | Carte d'identité, Passeport, Permis de conduire | dd-mm-yyyy | Kaarka Aqoonsiga |
-| LBY / LY | Libye | générique | Carte d'identité, Passeport, Permis de conduire | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
-| YEM / YE | Yémen | générique | Carte d'identité, Passeport, Permis de conduire | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
-| COL / CO | Colombie | générique | Carte d'identité (cédula), Passeport, Permis de conduire | dd-mm-yyyy | Cédula de ciudadanía |
+| IRQ / IQ | Irak | générique | Carte nationale, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | البطاقة الوطنية · al-Bitaqa al-Wataniya |
+| AFG / AF | Afghanistan | générique | Tazkira (carte d'identité), Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | yyyy-mm-dd | تذکره · Tazkira |
+| SYR / SY | Syrie | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
+| LBN / LB | Liban | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | بطاقة هوية · Bitaqat Hawiya |
+| MLI / ML | Mali | générique | Carte nationale d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | Carte nationale d'identité |
+| NER / NE | Niger | générique | Carte nationale d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | Carte nationale d'identité |
+| TCD / TD | Tchad | générique | Carte nationale d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | Carte nationale d'identité |
+| SOM / SO | Somalie | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd-mm-yyyy | Kaarka Aqoonsiga |
+| LBY / LY | Libye | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
+| YEM / YE | Yémen | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
+| COL / CO | Colombie | générique | Carte d'identité (cédula), Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd-mm-yyyy | Cédula de ciudadanía |
+| MEX / MX | Mexique | générique | Carte d'identité, Passeport, Permis de conduire, Titre de séjour, Certificat d'immatriculation, Carte d'identité militaire | dd/mm/yyyy | Credencial para votar |
 | ALT | République d'Altis | fictif (carte Arma) | carte, passeport, permis, carte militaire | dd.mm.yyyy |  |
 | TNA | Fédération de Tanoa | fictif (carte Arma) | carte, passeport, permis, carte militaire | dd.mm.yyyy |  |
 | LVN | République de Livonie | fictif (carte Arma) | carte, passeport, permis, carte militaire | dd.mm.yyyy |  |

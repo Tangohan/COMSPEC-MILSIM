@@ -460,6 +460,14 @@ class Cfg3DEN {
                             class LEVANT { name = "$STR_COMSPEC_SSE_CFG_A8FA522986"; value = "LEVANT"; };
                             class AFRICA_SAHEL { name = "$STR_COMSPEC_SSE_CFG_30B56C8107"; value = "AFRICA_SAHEL"; };
                             class RUSSIA { name = "$STR_COMSPEC_SSE_CFG_D031524C84"; value = "RUSSIA"; };
+                            class AFGHANISTAN { name = "$STR_COMSPEC_SSE_CFG_C691536877"; value = "AFGHANISTAN"; };
+                            class UKRAINE { name = "$STR_COMSPEC_SSE_CFG_C951EC00F1"; value = "UKRAINE"; };
+                            class BALKANS { name = "$STR_COMSPEC_SSE_CFG_C52FC21291"; value = "BALKANS"; };
+                            class LATAM { name = "$STR_COMSPEC_SSE_CFG_2949B1C8D4"; value = "LATAM"; };
+                            class SE_ASIA { name = "$STR_COMSPEC_SSE_CFG_0AAC951D6C"; value = "SE_ASIA"; };
+                            class HORN_AFRICA { name = "$STR_COMSPEC_SSE_CFG_B843A59A7B"; value = "HORN_AFRICA"; };
+                            class LIBYA { name = "$STR_COMSPEC_SSE_CFG_99B8FE1D42"; value = "LIBYA"; };
+                            class YEMEN { name = "$STR_COMSPEC_SSE_CFG_3F45ACE1B9"; value = "YEMEN"; };
                             class GENERIC { name = "$STR_COMSPEC_SSE_CFG_C2C5747AD0"; value = "GENERIC"; };
                             class RANDOM { name = "$STR_COMSPEC_SSE_CFG_6DBD11FF8A"; value = "RANDOM"; };
                         };

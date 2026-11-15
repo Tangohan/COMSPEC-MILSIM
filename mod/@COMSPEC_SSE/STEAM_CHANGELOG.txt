@@ -1,3 +1,28 @@
+[h1]COMSPEC SSE 1.11.0 — kits de contenu par pays / country content kits (15/11/2026)[/h1]
+[b]Relance Arma complètement. / Fully restart Arma.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Des noms par centaines[/b] : dix-sept pays ont maintenant de grands viviers de prénoms et de noms (Irak, Syrie, Liban, Yémen, Libye, Afghanistan, Mali, Niger, Tchad, Somalie, Russie, Ukraine, Serbie, Albanie, Colombie, Mexique, Philippines). Deux IA d'un même village ne portent presque plus jamais le même nom.
+[*] [b]Quatre nouveaux pays des papiers[/b] : Liban, Albanie, Mexique et Philippines, avec leurs papiers, leurs plaques et leurs villes.
+[*] [b]Plus de papiers par pays[/b] : ces dix-sept pays délivrent aussi un titre de séjour, un certificat d'immatriculation et une carte militaire.
+[*] [b]Huit nouvelles régions pour le générateur[/b] : Afghanistan, Ukraine, Balkans, Amérique latine, Asie du Sud-Est, Corne de l'Afrique, Libye et Yémen, chacune avec ses noms, ses surnoms, ses nationalités, ses indicatifs de téléphone et ses véhicules courants.
+[*] [b]Trente-sept modèles tout prêts de plus[/b] dans « Appliquer un modèle » : convoi de carburant au Sahel, hawala du bazar en Afghanistan, équipe drone en Ukraine, filière de contrebande des Balkans, patron de plaza en Amérique latine, boutre de contrebande, société militaire privée, ONG de façade, administration corrompue…
+[*] Les messages et documents générés citent les véhicules de la région (« pickup Toyota Hilux », « fourgon UAZ 452 ») au lieu de « camionnette ».
+[*] Tout reste fictif : personnes, surnoms et organisations inventés. Une mission déjà faite garde ses régions ; les noms tirés au hasard pour une même graine changent, puisque les listes sont plus longues.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Names by the hundred[/b]: seventeen countries now have large pools of first names and surnames (Iraq, Syria, Lebanon, Yemen, Libya, Afghanistan, Mali, Niger, Chad, Somalia, Russia, Ukraine, Serbia, Albania, Colombia, Mexico, Philippines). Two AI from the same village almost never share a name any more.
+[*] [b]Four new paper countries[/b]: Lebanon, Albania, Mexico and the Philippines, with their papers, plates and cities.
+[*] [b]More papers per country[/b]: these seventeen countries also issue a residence permit, a vehicle registration certificate and a military card.
+[*] [b]Eight new regions for the generator[/b]: Afghanistan, Ukraine, Balkans, Latin America, South-East Asia, Horn of Africa, Libya and Yemen, each with its names, nicknames, nationalities, phone prefixes and common vehicles.
+[*] [b]Thirty-seven more ready-made models[/b] in "Apply a model": fuel convoy in the Sahel, bazaar hawala in Afghanistan, drone team in Ukraine, Balkan smuggling pipeline, plaza boss in Latin America, smuggling dhow, private military company, front NGO, corrupt administration…
+[*] Generated messages and documents name the vehicles of the region ("pickup Toyota Hilux", "van UAZ 452") instead of a plain "van".
+[*] Everything remains fictional: invented people, nicknames and organisations. A mission already built keeps its regions; names drawn for a given seed change, because the lists are longer.
+[/list]
+
 [h1]COMSPEC SSE 1.10.0 — listes du site dans les modules Zeus et l'éditeur / site lists in Zeus modules and the editor[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.21.0 pour lire les listes du site. / Fully restart Arma. Requires COMSPEC ATAK 4.21.0 to read the site lists.[/b]
 

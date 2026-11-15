@@ -37,6 +37,19 @@ Tout est fictif : personnes inventées, NIR au rang 000, SSN en 9xx, plages de t
 improbables (indiqué dans `phone.note`). Gabarits : dessins originaux, aucun modèle officiel ni emblème, bandeau
 SPÉCIMEN · SIMULATION.
 
+## Kits de contenu
+
+Dix-sept pays sont aussi des **kits de contenu** du site (`config/sse_kits/kits.json`, page Bureau SSE › Générer du contenu) : Irak, Syrie, Liban, Yémen,
+Libye, Afghanistan, Mali, Niger, Tchad, Somalie, Russie, Ukraine, Serbie, Albanie, Colombie, Mexique, Philippines. Leurs `first`, `firstF`, `last`, `lastF`
+et `docTypes` doivent rester identiques des deux côtés (PHPUnit : `tests/Unit/SseKitCatalogTest.php`). Après un changement de vivier :
+
+```
+python -I tools/countries/gen_countries.py   # CfgComspecCountries.hpp, examples.json, guides
+php tools/gen_id_real_countries.php          # fn_idRealCountries.sqf (pays réels stylisés du site)
+php tools/gen_kit_pools.php                  # fn_kitPools.sqf (régions narratives du générateur)
+php ../../tools/sse/sync_document_types.php  # miroir des papiers côté site
+```
+
 ## Ajouter un pays depuis une extension
 
 Un addon qui dépend de `comspec_sse_identity` déclare sa classe dans `class CfgComspecCountries` de son `config.cpp`, avec
