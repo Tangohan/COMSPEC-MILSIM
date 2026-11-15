@@ -24,6 +24,10 @@ class OrganizationAdminMiddleware
         // La racine du back-office contient aussi la synthèse personnelle en lecture seule.
         // Tous les membres authentifiés peuvent la consulter ; les sous-routes restent
         // strictement protégées par les permissions ci-dessous.
+        // /back-office/ma-situation/* : les pages du membre sont passées dans JNET (/jnet/moi/*, voir JnetMemberPaths) ; les lectures
+        // de l'ancienne adresse sont redirigées avant d'arriver ici. Cette exception ne sert plus qu'aux anciens POST (formulaires en
+        // cache, mod, e-mails), toujours servis. /back-office lui-même renvoie un membre sans rôle de gestion vers JNET
+        // (OrganizationDashboardController::index).
         if ($path === '/back-office' || str_starts_with($path, '/back-office/ma-situation')) {
             $scopedOrgAccess = true;
         }

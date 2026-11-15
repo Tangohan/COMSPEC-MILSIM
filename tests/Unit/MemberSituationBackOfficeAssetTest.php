@@ -18,44 +18,44 @@ final class MemberSituationBackOfficeAssetTest extends TestCase
         $helpers = (string) file_get_contents($root . '/app/Support/helpers.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/MemberSituationController.php');
 
-        self::assertStringContainsString("'/back-office/ma-situation/liaison-atak'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/appareils'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/premiere-liaison'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/ma-fiche'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/unite'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/evenements'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/qualifications'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/coffre'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/carriere'", $routes);
+        self::assertStringContainsString("'/jnet/moi/liaison-atak'", $routes);
+        self::assertStringContainsString("'/jnet/moi/appareils'", $routes);
+        self::assertStringContainsString("'/jnet/moi/premiere-liaison'", $routes);
+        self::assertStringContainsString("'/jnet/moi/ma-fiche'", $routes);
+        self::assertStringContainsString("'/jnet/moi/unite'", $routes);
+        self::assertStringContainsString("'/jnet/moi/evenements'", $routes);
+        self::assertStringContainsString("'/jnet/moi/qualifications'", $routes);
+        self::assertStringContainsString("'/jnet/moi/coffre'", $routes);
+        self::assertStringContainsString("'/jnet/moi/carriere'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/avancement/demande'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/avancement/affectation'", $routes);
         self::assertStringContainsString('requestAdvancement', $routes);
         self::assertStringContainsString('requestAssignment', $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/decorations'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/dotation'", $routes);
+        self::assertStringContainsString("'/jnet/moi/decorations'", $routes);
+        self::assertStringContainsString("'/jnet/moi/dotation'", $routes);
         self::assertStringContainsString('MemberSituationController', $routes);
 
         self::assertStringContainsString("str_starts_with(\$path, '/back-office/ma-situation')", $middleware);
         self::assertStringContainsString("str_starts_with(\$path, 'back-office/ma-situation')", $helpers);
 
-        self::assertStringContainsString('back-office/ma-situation/liaison-atak', $overview);
-        self::assertStringContainsString('back-office/ma-situation/appareils', $overview);
-        self::assertStringContainsString('back-office/ma-situation/unite', $overview);
-        self::assertStringContainsString('back-office/ma-situation/evenements', $overview);
-        self::assertStringContainsString('back-office/ma-situation/qualifications', $overview);
-        self::assertStringContainsString('back-office/ma-situation/coffre', $overview);
+        self::assertStringContainsString('jnet/moi/liaison-atak', $overview);
+        self::assertStringContainsString('jnet/moi/appareils', $overview);
+        self::assertStringContainsString('jnet/moi/unite', $overview);
+        self::assertStringContainsString('jnet/moi/evenements', $overview);
+        self::assertStringContainsString('jnet/moi/qualifications', $overview);
+        self::assertStringContainsString('jnet/moi/coffre', $overview);
         self::assertStringNotContainsString("url('account/security/devices')", $overview);
         self::assertStringNotContainsString("url('atak/premiere-liaison')", $overview);
 
         self::assertStringContainsString('Ma liaison ATAK', $nav);
         self::assertStringContainsString('Mes qualifications', $nav);
         self::assertStringContainsString('Mon coffre', $nav);
-        self::assertStringContainsString('back-office/ma-situation/coffre', $nav);
+        self::assertStringContainsString('jnet/moi/coffre', $nav);
         self::assertStringContainsString('Dossier de carrière', $nav);
-        self::assertStringContainsString('back-office/ma-situation/carriere', $nav);
+        self::assertStringContainsString('jnet/moi/carriere', $nav);
         self::assertStringContainsString('Mon unité', $nav);
-        self::assertStringContainsString('back-office/ma-situation/evenements', $nav);
-        self::assertStringContainsString('back-office/ma-situation/ma-fiche', $nav);
+        self::assertStringContainsString('jnet/moi/evenements', $nav);
+        self::assertStringContainsString('jnet/moi/ma-fiche', $nav);
 
         self::assertFileExists($root . '/views/admin/member_situation/liaison_atak.php');
         self::assertFileExists($root . '/views/admin/member_situation/appareils.php');

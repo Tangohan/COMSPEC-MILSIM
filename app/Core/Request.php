@@ -96,6 +96,20 @@ class Request
         return $this->uri;
     }
 
+    /**
+     * Copie de la requête présentée sous un autre chemin (même méthode, même requête, mêmes attributs).
+     * Sert à servir une page sous sa nouvelle adresse avec un contrôleur qui lit encore l'ancienne (JnetMemberBridge).
+     */
+    public function withPath(string $path): static
+    {
+        $copy = clone $this;
+        $copy->path = '/' . ltrim($path, '/');
+        $qs = parse_url($this->uri, PHP_URL_QUERY);
+        $copy->uri = $copy->path . (is_string($qs) && $qs !== '' ? '?' . $qs : '');
+
+        return $copy;
+    }
+
     public function query(string $key, mixed $default = null): mixed
     {
         return $this->query[$key] ?? $default;

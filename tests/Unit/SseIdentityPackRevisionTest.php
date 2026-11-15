@@ -223,7 +223,7 @@ final class SseIdentityPackRevisionTest extends TestCase
 
     public function testOnlySuccessfulRegistryWritesInvalidate(): void
     {
-        foreach (['/atak/sse/papiers/pays', '/back-office/ressources/effectifs/membres/3/papiers/kit', '/back-office/ma-situation/mes-papiers/couverture', '/api/sse/identity/checks', '/account/bienvenue/identite'] as $path) {
+        foreach (['/atak/sse/papiers/pays', '/back-office/ressources/effectifs/membres/3/papiers/kit', '/back-office/ma-situation/mes-papiers/couverture', '/jnet/moi/mes-papiers/couverture', '/api/sse/identity/checks', '/account/bienvenue/identite'] as $path) {
             self::assertTrue(SseIdentityPackCache::touchesRegistry($path), $path);
         }
         foreach (['/api/atak/position', '/api/chat', '/back-office/tableau-operationnel'] as $path) {

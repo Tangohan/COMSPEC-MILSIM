@@ -125,7 +125,7 @@ final class PilotLogbookTest extends TestCase
     public function testLogbookIsWiredInRoutesContainerMigrationAndSidebar(): void
     {
         $routes = (string) file_get_contents(self::ROOT . '/routes/web.php');
-        self::assertStringContainsString("'/back-office/ma-situation/carnet-de-vol'", $routes);
+        self::assertStringContainsString("'/jnet/moi/carnet-de-vol'", $routes);
         self::assertStringContainsString('cursus-pilote/carnet/vols/{entryId}', $routes);
         $container = (string) file_get_contents(self::ROOT . '/app/Core/Container.php');
         self::assertStringContainsString('PilotLogbookController::class', $container);
@@ -139,7 +139,7 @@ final class PilotLogbookTest extends TestCase
         $migration = (string) file_get_contents(self::ROOT . '/bootstrap/pilot_logbook_migration.php');
         self::assertStringContainsString('pilot_logbook_entries', $migration);
         self::assertStringContainsString('min_cond_hours', $migration);
-        self::assertStringContainsString('ma-situation/carnet-de-vol', (string) file_get_contents(self::ROOT . '/views/partials/ath_sidebar_nav.php'));
+        self::assertStringContainsString('jnet/moi/carnet-de-vol', (string) file_get_contents(self::ROOT . '/views/partials/ath_sidebar_nav.php'));
         // Le relevé en jeu range chaque vol au carnet.
         self::assertStringContainsString('recordModFlights', (string) file_get_contents(self::ROOT . '/app/Repositories/AtakDistanceRepository.php'));
     }

@@ -426,7 +426,7 @@ class HubController
             ['label' => 'Tableau de bord', 'url' => url('dashboard'), 'description' => 'Synthèse du jour'],
             ['label' => 'Centre d’actions', 'url' => url('centre-actions'), 'description' => 'Ce qui demande attention'],
             ['label' => 'Boîte de réception', 'url' => url('boite-reception'), 'description' => 'Messages et notifications'],
-            ['label' => 'Mes démarches', 'url' => url('back-office/ma-situation/mes-demarches'), 'description' => 'Absences, demandes, documents'],
+            ['label' => 'Mes démarches', 'url' => url('jnet/moi/mes-demarches'), 'description' => 'Absences, demandes, documents'],
             ['label' => 'Coopérations', 'url' => cooperation_mission_index_url(), 'description' => 'Missions avec d’autres unités'],
         ];
     }

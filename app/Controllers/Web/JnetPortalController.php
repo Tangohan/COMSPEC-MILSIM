@@ -22,6 +22,7 @@ use App\Services\Jnet\JnetSpaceService;
 use App\Services\Jnet\JnetUnitSpaceSettings;
 use App\Services\Jnet\JnetUnitWorkspaceService;
 use App\Services\Rbac\RbacService;
+use App\Support\JnetMemberPaths;
 use App\Support\JnetSpaceTree;
 use App\Support\PortalAccessChoice;
 
@@ -108,13 +109,8 @@ final class JnetPortalController
             $this->spaces->strengthByUnit($tenantId, $userId),
             $this->unitLinkMarks($tenantId, $userId)
         );
-        $pilot = false;
-        try {
-            $pilot = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)
-                ->allowsWithCatalogDefault($tenantId, \App\Services\Personnel\PilotQualificationService::FEATURE);
-        } catch (\Throwable) {
-        }
-        $unreadMail = $this->unreadMailCount($tenantId, $userId);
+        $memberCtx = $this->memberContext($tenantId, $userId, is_array($tenant) ? $tenant : null);
+        $unreadMail = (int) $memberCtx['unreadMail'];
         $callsign = trim((string) Session::get('callsign', ''));
 
         return Response::view('jnet.hub', [
@@ -129,11 +125,7 @@ final class JnetPortalController
                 'href' => url('jnet?commun=1'),
                 'unread' => (int) ($unread[JnetSpaceTree::ORG] ?? 0),
             ],
-            'hubSections' => JnetMemberHub::sections([
-                'tenantType' => is_array($tenant) ? (string) ($tenant['tenant_type'] ?? 'full') : 'full',
-                'pilotLogbook' => $pilot,
-                'unreadMail' => $unreadMail,
-            ]),
+            'hubSections' => JnetMemberHub::sections($memberCtx),
             'hubUnreadMail' => $unreadMail,
             'hubCanTba' => PortalAccessChoice::canAccessTba(),
         ]);
@@ -1367,6 +1359,98 @@ final class JnetPortalController
         }
 
         return Response::redirect(url('jnet/systeme'));
+    }
+
+    /**
+     * Ce qui décide des rubriques personnelles d'un membre (hub et rail « Mon espace » des pages /jnet/moi) : profil de
+     * la communauté, module carnet de vol, courrier non lu et pastilles du menu (qualifications à renouveler, événements
+     * à répondre, démarches). Une seule source pour les deux : une rubrique n'apparaît jamais dans l'un sans l'autre.
+     *
+     * @param array<string, mixed>|null $tenant
+     * @return array{tenantType: string, pilotLogbook: bool, unreadMail: int, badges: array<string, int>}
+     */
+    private function memberContext(int $tenantId, int $userId, ?array $tenant = null): array
+    {
+        $tenant ??= $this->tenantRepository->findById($tenantId);
+        $pilot = false;
+        try {
+            $pilot = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)
+                ->allowsWithCatalogDefault($tenantId, \App\Services\Personnel\PilotQualificationService::FEATURE);
+        } catch (\Throwable) {
+        }
+        $badges = [];
+        try {
+            $email = trim((string) (Session::get('email') ?? ''));
+            $all = \App\Core\Container::get(\App\Services\Portal\BackOfficeSidebarBadgeService::class)
+                ->build($tenantId, $userId, $email, \App\Core\Gate::getInstance());
+            foreach (['qualifications_expiring', 'events_rsvp_pending', 'my_enlistments_pending'] as $key) {
+                $badges[$key] = max(0, (int) ($all[$key] ?? 0));
+            }
+        } catch (\Throwable) {
+            $badges = [];
+        }
+
+        return [
+            'tenantType' => is_array($tenant) ? (string) ($tenant['tenant_type'] ?? 'full') : 'full',
+            'pilotLogbook' => $pilot,
+            'unreadMail' => $this->unreadMailCount($tenantId, $userId),
+            'badges' => $badges,
+        ];
+    }
+
+    /**
+     * Page « Ma situation » du membre sous /jnet/moi/* : même coque que les autres pages JNET, avec le rail « Mon espace »
+     * (les rubriques du hub) sous l'en-tête. Point d'entrée unique, appelé par JnetMemberShell::view() avec EXACTEMENT les
+     * variables que la page donnait à layout.main :
+     *   content           vue du corps (« admin.member_situation.unite »)
+     *   boPageTitle       titre de la page (à défaut title)
+     *   boPageSubtitle    phrase sous le titre (facultatif)
+     *   backOfficePageCss feuilles de style du contenu (assets/css/), chargées après celles de JNET
+     *   jnetPageJs        scripts du contenu (assets/js/), facultatif
+     * Le reste (user, devices, …) est transmis tel quel à la vue du corps. Les messages success/error déjà lus par le
+     * contrôleur sont affichés une seule fois, par la coque.
+     *
+     * @param array<string, mixed> $vars
+     */
+    public function memberPage(Request $request, array $vars): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $slug = JnetMemberPaths::slugOf($request->path()) ?? '';
+        $page = JnetMemberPaths::pageOf($slug) ?? '';
+        $title = trim((string) ($vars['boPageTitle'] ?? '')) !== '' ? (string) $vars['boPageTitle'] : (string) ($vars['title'] ?? 'Mon espace');
+        $lead = trim((string) ($vars['boPageSubtitle'] ?? ''));
+        $css = array_values(array_filter(array_map('strval', (array) ($vars['backOfficePageCss'] ?? []))));
+        $js = array_values(array_filter(array_map('strval', (array) ($vars['jnetPageJs'] ?? []))));
+        $memberCtx = $this->memberContext($ctx['tenant_id'], $ctx['user_id']);
+        $offered = PortalAccessChoice::jnetOfferedTo($memberCtx['tenantType']);
+        // Les clés de coque priment sur celles de la page ; les autres variables de la page passent telles quelles.
+        unset($vars['title'], $vars['jnetInnerView'], $vars['jnetPageTitle'], $vars['jnetPageCss'], $vars['jnetPageJs']);
+
+        return $this->render('member', $title, array_merge($vars, [
+            'jnetInnerView' => (string) ($vars['content'] ?? 'jnet.home'),
+            'jnetMemberShell' => true,
+            'jnetMemberPage' => $page,
+            'jnetMemberRail' => JnetMemberHub::sections($memberCtx),
+            'jnetShowExtranetTabs' => $offered,
+            'jnetPageLead' => $lead,
+        ]), 'hub', array_merge(['jnet_member.css'], $css, $this->memberDarkCss()), $js);
+    }
+
+    /**
+     * Les feuilles de contenu des pages du membre sont celles du back-office : leurs variantes pour fond noir (règles toutes
+     * préfixées par html[data-bo-theme="dark"], posé par la coque) se chargent après elles, sans rien du layout du back-office.
+     *
+     * @return list<string>
+     */
+    private function memberDarkCss(): array
+    {
+        return array_values(array_filter(
+            ['back-office-dark.generated.css', 'back-office-dark.css'],
+            static fn (string $f): bool => is_file(base_path('public/assets/css/' . $f))
+        ));
     }
 
     /** @deprecated keep redirects for old bookmarks */

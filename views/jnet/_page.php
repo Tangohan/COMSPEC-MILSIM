@@ -17,6 +17,11 @@ declare(strict_types=1);
  * @var string $jnetPageTitle
  * @var list<string> $jnetPageCss
  * @var list<string> $jnetPageJs scripts de la page (assets/js/), facultatifs
+ * @var bool $jnetMemberShell page « Ma situation » du membre (/jnet/moi/*) : thème noir pour les feuilles de contenu et rail « Mon espace »
+ * @var string $jnetMemberPage clé de la page courante (JnetMemberPaths::PAGES)
+ * @var list<array<string, mixed>> $jnetMemberRail rubriques du hub (JnetMemberHub::sections)
+ * @var bool $jnetShowExtranetTabs false pour un profil de communauté sans extranet : l'en-tête n'a pas d'onglets
+ * @var string $jnetPageLead phrase sous le titre (facultatif)
  */
 
 use App\Support\JnetUi;
@@ -58,12 +63,46 @@ $leads = [
     'system' => 'Votre point d’entrée par défaut et la bascule entre espaces.',
 ];
 $lead = (string) ($leads[$activeNav] ?? '');
+$memberShell = !empty($jnetMemberShell);
+if ($memberShell) {
+    $lead = trim((string) ($jnetPageLead ?? ''));
+}
+$showTabs = !$memberShell || ($jnetShowExtranetTabs ?? true) !== false;
 // Ces pages ouvrent sur leur propre titre (unité, personne, dossier, organisation).
 $ownHead = in_array((string) ($jnetInnerView ?? ''), ['jnet.home', 'jnet.unit', 'jnet.personnel_show', 'jnet.target_show'], true);
 $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet_spaces.css'];
+
+// Rail « Mon espace » (pages du membre) : les cinq rubriques du hub, puis les pages de la rubrique courante. Même source que le hub.
+$rail = [];
+$railCurrent = '';
+if ($memberShell && is_array($jnetMemberRail ?? null)) {
+    foreach ($jnetMemberRail as $railSection) {
+        $items = [];
+        $isCurrent = false;
+        foreach ((array) ($railSection['items'] ?? []) as $railItem) {
+            $on = (string) ($railItem['page'] ?? '') !== '' && (string) $railItem['page'] === (string) ($jnetMemberPage ?? '');
+            $isCurrent = $isCurrent || $on;
+            $items[] = ['label' => (string) $railItem['label'], 'href' => (string) $railItem['href'], 'badge' => (int) ($railItem['badge'] ?? 0), 'on' => $on];
+        }
+        $rail[] = ['key' => (string) $railSection['key'], 'title' => (string) $railSection['title'], 'items' => $items, 'current' => $isCurrent];
+        if ($isCurrent && $railCurrent === '') {
+            $railCurrent = (string) $railSection['key'];
+        }
+    }
+    if ($railCurrent === '' && $rail !== []) {
+        $railCurrent = $rail[0]['key'];
+    }
+}
+
+// Pied et scripts sont composés avant le corps de la page : une vue de contenu qui réutilise $h, $community… ne peut pas les altérer.
+$footTail = $community !== '' ? ' · ' . $h($community) : '';
+$scriptTags = '';
+foreach ((array) ($jnetPageJs ?? []) as $jsFile) {
+    $scriptTags .= '<script src="' . $h(asset_url('assets/js/' . (string) $jsFile . (str_contains((string) $jsFile, '?') ? '' : '?r=202611150001'))) . '" defer></script>' . "\n";
+}
 ?>
 <!DOCTYPE html>
-<html lang="<?= $h(function_exists('html_lang') ? html_lang() : 'fr') ?>">
+<html lang="<?= $h(function_exists('html_lang') ? html_lang() : 'fr') ?>"<?= $memberShell ? ' data-bo-theme="dark"' : '' ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -85,10 +124,10 @@ $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet
 <header class="ja-hd ja-hd--rows">
     <a class="ja-brand" href="<?= $h(url('jnet')) ?>"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
     <nav class="ja-tabs" aria-label="Rubriques de l’extranet">
-        <?php foreach ($tabs as $i => $tab): ?>
+        <?php if ($showTabs): foreach ($tabs as $i => $tab): ?>
             <?php $count = (int) ($tab['count'] ?? 0); $on = $activeNav === $tab['id']; ?>
             <a class="ja-tab<?= $on ? ' is-on' : '' ?>" href="<?= $h(url((string) $tab['path'])) ?>"<?= $on ? ' aria-current="page"' : '' ?>><span class="ja-mono"><?= $pad($i) ?></span><?= $h((string) $tab['label']) ?><?php if ($count > 0): ?><em><?= min(99, $count) ?></em><?php endif; ?></a>
-        <?php endforeach; ?>
+        <?php endforeach; endif; ?>
     </nav>
     <div class="ja-hd__r">
         <span class="ja-who">extranet<?= $community !== '' ? ' · ' . $h($community) : '' ?></span>
@@ -108,15 +147,30 @@ $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet
     <?php else: ?>
     <div class="jp-gap"></div>
     <?php endif; ?>
+    <?php if ($rail !== []): ?>
+    <nav class="jm-rail" aria-label="Mon espace">
+        <div class="jm-rail__secs">
+            <?php foreach ($rail as $railSection): ?>
+                <a class="jm-rail__sec<?= $railSection['key'] === $railCurrent ? ' is-on' : '' ?>" href="<?= $h(url('jnet/espaces') . '#hb-' . $railSection['key']) ?>"<?= $railSection['key'] === $railCurrent ? ' aria-current="true"' : '' ?>><?= $h($railSection['title']) ?></a>
+            <?php endforeach; ?>
+        </div>
+        <?php foreach ($rail as $railSection): ?>
+            <?php if ($railSection['key'] !== $railCurrent) { continue; } ?>
+            <ul class="jm-rail__items">
+                <?php foreach ($railSection['items'] as $railItem): ?>
+                    <li><a class="jm-rail__item<?= $railItem['on'] ? ' is-on' : '' ?>" href="<?= $h($railItem['href']) ?>"<?= $railItem['on'] ? ' aria-current="page"' : '' ?>><?= $h($railItem['label']) ?><?php if ($railItem['badge'] > 0): ?><em><?= min(99, $railItem['badge']) ?></em><?php endif; ?></a></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endforeach; ?>
+    </nav>
+    <?php endif; ?>
     <?php require base_path('views/jnet/_bo_content.php'); ?>
 </main>
 
 <footer class="ja-foot">
     <span>Accès réservé aux membres affectés · journalisé</span>
-    <span>JNET<?= $community !== '' ? ' · ' . $h($community) : '' ?></span>
+    <span>JNET<?= $footTail ?></span>
 </footer>
-<?php foreach ((array) ($jnetPageJs ?? []) as $jsFile): ?>
-<script src="<?= $h(asset_url('assets/js/' . (string) $jsFile . '?r=202611150001')) ?>" defer></script>
-<?php endforeach; ?>
+<?= $scriptTags ?>
 </body>
 </html>

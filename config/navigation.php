@@ -261,8 +261,8 @@ return [
                     'links' => [
                         ['label' => 'Ma fiche personnelle', 'path' => 'personnel/me'],
                         ['label' => 'Mes démarches', 'path' => 'personnel/mon-espace-rh', 'description' => 'Absences, élévation, souhait d’évolution et documents'],
-                        ['label' => 'Mon coffre', 'path' => 'back-office/ma-situation/coffre', 'description' => 'Pièces RH, brevets et attestations qui vous concernent'],
-                        ['label' => 'Musique', 'path' => 'back-office/ma-situation/musique', 'description' => 'Bibliothèque musicale, playlists et playlist globale, écoutées en jeu sur l’ATAK'],
+                        ['label' => 'Mon coffre', 'path' => 'jnet/moi/coffre', 'description' => 'Pièces RH, brevets et attestations qui vous concernent'],
+                        ['label' => 'Musique', 'path' => 'jnet/moi/musique', 'description' => 'Bibliothèque musicale, playlists et playlist globale, écoutées en jeu sur l’ATAK'],
                         ['label' => 'Patch Studio', 'path' => 'patch-studio', 'description' => 'Atelier graphique et exports COMSPEC ATAK — formule Pro+ minimum'],
                         ['label' => 'Distinctions', 'path' => 'distinctions', 'description' => 'Reconnaissances et parcours valorisés'],
                         ['label' => 'Paramètres du compte', 'path' => 'account', 'description' => 'Connexion, photo et préférences'],

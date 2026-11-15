@@ -30,9 +30,9 @@ final class OperatorDocumentVaultAssetTest extends TestCase
 
         self::assertStringContainsString('function coffre', $controller);
         self::assertStringContainsString('OperatorDocumentVaultService', $controller);
-        self::assertStringContainsString("'/back-office/ma-situation/coffre'", $routes);
+        self::assertStringContainsString("'/jnet/moi/coffre'", $routes);
         self::assertStringContainsString('Mon coffre', $nav);
-        self::assertStringContainsString('back-office/ma-situation/coffre', $nav);
+        self::assertStringContainsString('jnet/moi/coffre', $nav);
         self::assertStringContainsString("require __DIR__ . '/_summary.php'", $view);
         self::assertStringContainsString('bo-doc-sheet', $view);
         self::assertStringContainsString('bo-doc-card__body--actions', $view);

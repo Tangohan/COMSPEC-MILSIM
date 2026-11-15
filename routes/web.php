@@ -517,6 +517,72 @@ return function (Router $router) {
     $router->post('/jnet/courrier/{id}/reponse', [JnetPortalController::class, 'mailReply'], [AuthMiddleware::class]);
     $router->get('/jnet/systeme', [JnetPortalController::class, 'system'], [AuthMiddleware::class]);
     $router->post('/jnet/systeme/bascule', [JnetPortalController::class, 'switchPortal'], [AuthMiddleware::class]);
+    /*
+     * Pages « Ma situation » du membre dans JNET (/jnet/moi/*), en un seul bloc. Mêmes contrôleurs, mêmes droits et mêmes données
+     * qu'avant : la connexion et un contexte de communauté réelle (l'ancienne exception ma-situation d'OrganizationAdminMiddleware,
+     * sans droit de gestion), puis chaque contrôleur revérifie côté serveur et ne lit que la session (jamais un identifiant de
+     * membre venu de la requête). Chaque route passe par JnetMemberBridge, qui choisit l'habillage selon que le contrôleur est
+     * migré (JNET_MOI_READY) ou non. Table des pages et téléchargements : App\Support\JnetMemberPaths.
+     * Les anciennes adresses : lectures redirigées en 301 (BackOfficeLegacyRedirects et la boucle ci-dessous), envois toujours
+     * servis à /back-office/ma-situation/… (anciens formulaires, mod, e-mails) ; le filet CSRF couvre aussi /jnet/moi/.
+     */
+    $mwMoi = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
+    $moi = static fn (string $controller, string $action, ?string $owner = null): \Closure => \App\Support\JnetMemberBridge::handler($controller, $action, $owner);
+    $moiPapers = \App\Controllers\Admin\MemberIdentityPapersController::class;
+    $moiCover = \App\Controllers\Admin\MemberCoverExportController::class;
+    $router->get('/jnet/moi/ma-fiche', $moi(MemberSituationController::class, 'maFiche', PersonnelController::class), $mwMoi);
+    $router->get('/jnet/moi/ma-fiche/modifier', $moi(PersonnelController::class, 'editSelfBackOffice'), $mwMoi);
+    $router->get('/jnet/moi/unite', $moi(MemberSituationController::class, 'unite'), $mwMoi);
+    $router->get('/jnet/moi/evenements', $moi(MemberSituationController::class, 'evenements'), $mwMoi);
+    $router->get('/jnet/moi/qualifications', $moi(MemberSituationController::class, 'qualifications'), $mwMoi);
+    $router->get('/jnet/moi/qualifications/{awardId}/brevet', $moi(MemberSituationController::class, 'downloadBrevet'), $mwMoi);
+    $router->post('/jnet/moi/qualifications/{awardId}/generer-brevet', $moi(MemberSituationController::class, 'generateBrevet'), $mwMoi);
+    $router->get('/jnet/moi/avancement', $moi(MemberAdvancementController::class, 'index'), $mwMoi);
+    $router->post('/jnet/moi/avancement/{campaignId}/volontaire', $moi(MemberAdvancementController::class, 'volunteer'), $mwMoi);
+    $router->post('/jnet/moi/avancement/demande', $moi(MemberAdvancementController::class, 'requestAdvancement'), $mwMoi);
+    $router->post('/jnet/moi/avancement/affectation', $moi(MemberAdvancementController::class, 'requestAssignment'), $mwMoi);
+    $router->get('/jnet/moi/carriere', $moi(MemberSituationController::class, 'carriere'), $mwMoi);
+    $router->get('/jnet/moi/decorations', $moi(MemberSituationController::class, 'decorations'), $mwMoi);
+    $router->get('/jnet/moi/dotation', $moi(MemberSituationController::class, 'dotation'), $mwMoi);
+    $router->get('/jnet/moi/coffre', $moi(MemberSituationController::class, 'coffre'), $mwMoi);
+    $router->get('/jnet/moi/mes-demarches', $moi(MemberSituationController::class, 'mesDemarches', RhWorkspaceController::class), $mwMoi);
+    $router->get('/jnet/moi/carnet-de-vol', $moi(PilotLogbookController::class, 'mine'), $mwMoi);
+    $router->post('/jnet/moi/carnet-de-vol/ajouter', $moi(PilotLogbookController::class, 'add'), $mwMoi);
+    $router->post('/jnet/moi/carnet-de-vol/{entryId}/modifier', $moi(PilotLogbookController::class, 'update'), $mwMoi);
+    $router->post('/jnet/moi/carnet-de-vol/{entryId}/supprimer', $moi(PilotLogbookController::class, 'delete'), $mwMoi);
+    $router->get('/jnet/moi/mes-papiers', $moi($moiPapers, 'mine'), $mwMoi);
+    $router->post('/jnet/moi/mes-papiers/couverture', $moi($moiCover, 'generateMine'), $mwMoi);
+    $router->get('/jnet/moi/mes-papiers/couverture/{exportId}/telecharger', $moi($moiCover, 'downloadMine'), $mwMoi);
+    $router->get('/jnet/moi/liaison-atak', $moi(MemberSituationController::class, 'liaisonAtak'), $mwMoi);
+    $router->get('/jnet/moi/appareils', $moi(MemberSituationController::class, 'appareils'), $mwMoi);
+    $router->post('/jnet/moi/appareils/retirer', $moi(MemberSituationController::class, 'revokeAppareil'), $mwMoi);
+    $router->get('/jnet/moi/premiere-liaison', $moi(MemberSituationController::class, 'premiereLiaison', AtakFirstLinkController::class), $mwMoi);
+    $router->get('/jnet/moi/musique', $moi(MusicLibraryController::class, 'index'), $mwMoi);
+    $router->post('/jnet/moi/musique/envoyer', $moi(MusicLibraryController::class, 'upload'), $mwMoi);
+    $router->get('/jnet/moi/musique/ecouter/{id}', $moi(MusicLibraryController::class, 'listen'), $mwMoi);
+    $router->post('/jnet/moi/musique/morceaux/{id}/modifier', $moi(MusicLibraryController::class, 'trackUpdate'), $mwMoi);
+    $router->post('/jnet/moi/musique/morceaux/{id}/supprimer', $moi(MusicLibraryController::class, 'trackDelete'), $mwMoi);
+    $router->post('/jnet/moi/musique/morceaux/{id}/moderer', $moi(MusicLibraryController::class, 'trackModerate'), $mwMoi);
+    $router->post('/jnet/moi/musique/morceaux/{id}/duree', $moi(MusicLibraryController::class, 'trackDuration'), $mwMoi);
+    $router->post('/jnet/moi/musique/playlists/creer', $moi(MusicLibraryController::class, 'playlistCreate'), $mwMoi);
+    $router->post('/jnet/moi/musique/playlists/{id}/modifier', $moi(MusicLibraryController::class, 'playlistUpdate'), $mwMoi);
+    $router->post('/jnet/moi/musique/playlists/{id}/supprimer', $moi(MusicLibraryController::class, 'playlistDelete'), $mwMoi);
+    $router->post('/jnet/moi/musique/playlists/{id}/ajouter', $moi(MusicLibraryController::class, 'playlistAdd'), $mwMoi);
+    $router->post('/jnet/moi/musique/playlists/{id}/retirer', $moi(MusicLibraryController::class, 'playlistRemove'), $mwMoi);
+    $router->post('/jnet/moi/musique/playlists/{id}/deplacer', $moi(MusicLibraryController::class, 'playlistMove'), $mwMoi);
+    // Anciennes adresses à paramètres (téléchargements, flux audio) : 301 en un saut, requête conservée. Les pages sans paramètre
+    // sont dans BackOfficeLegacyRedirects (JnetMemberPaths::legacyRedirects()).
+    foreach (\App\Support\JnetMemberPaths::DOWNLOADS as $moiDownload) {
+        $router->get('/' . \App\Support\JnetMemberPaths::legacyPath($moiDownload), static function (\App\Core\Request $r, array $p) use ($moiDownload): \App\Core\Response {
+            $slug = $moiDownload;
+            foreach ($p as $name => $value) {
+                $slug = str_replace('{' . $name . '}', rawurlencode((string) $value), $slug);
+            }
+            $query = http_build_query($r->queryParams(), '', '&', PHP_QUERY_RFC3986);
+
+            return \App\Core\Response::redirect(\App\Support\JnetMemberPaths::url($slug) . ($query !== '' ? '?' . $query : ''), 301);
+        });
+    }
     // Anciennes routes JNET → nouvelles
     $router->get('/jnet/sync', [JnetPortalController::class, 'sync'], [AuthMiddleware::class]);
     $router->get('/jnet/theatre', [JnetPortalController::class, 'theatre'], [AuthMiddleware::class]);
@@ -1692,19 +1758,12 @@ return function (Router $router) {
     $router->post('/back-office/tableaux/{id}/import', [\App\Controllers\Admin\BackOfficeHomeController::class, 'import'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/tableaux/{id}/export.csv', [\App\Controllers\Admin\BackOfficeHomeController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/tableaux/{id}/supprimer', [\App\Controllers\Admin\BackOfficeHomeController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/carnet-de-vol', [PilotLogbookController::class, 'mine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/ajouter', [PilotLogbookController::class, 'add'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/modifier', [PilotLogbookController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/supprimer', [PilotLogbookController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/mes-papiers', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'mine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/mes-papiers/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateMine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/mes-papiers/couverture/{exportId}/telecharger', [\App\Controllers\Admin\MemberCoverExportController::class, 'downloadMine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/liaison-atak', [MemberSituationController::class, 'liaisonAtak'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/appareils', [MemberSituationController::class, 'appareils'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Musique (Mon espace) : bibliothèque musicale partagée avec l'app Musique de l'ATAK natif (MusicLibraryController).
-    $router->get('/back-office/ma-situation/musique', [MusicLibraryController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/envoyer', [MusicLibraryController::class, 'upload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/musique/ecouter/{id}', [MusicLibraryController::class, 'listen'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/morceaux/{id}/modifier', [MusicLibraryController::class, 'trackUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/morceaux/{id}/supprimer', [MusicLibraryController::class, 'trackDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/morceaux/{id}/moderer', [MusicLibraryController::class, 'trackModerate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1727,23 +1786,10 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/musique/playlists/{id}/retirer', [MusicLibraryController::class, 'playlistRemove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/deplacer', [MusicLibraryController::class, 'playlistMove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/appareils/retirer', [MemberSituationController::class, 'revokeAppareil'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/premiere-liaison', [MemberSituationController::class, 'premiereLiaison'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/ma-fiche', [MemberSituationController::class, 'maFiche'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/ma-fiche/modifier', [PersonnelController::class, 'editSelfBackOffice'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/mes-demarches', [MemberSituationController::class, 'mesDemarches'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/unite', [MemberSituationController::class, 'unite'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/evenements', [MemberSituationController::class, 'evenements'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/qualifications', [MemberSituationController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/avancement', [MemberAdvancementController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/avancement/{campaignId}/volontaire', [MemberAdvancementController::class, 'volunteer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/avancement/demande', [MemberAdvancementController::class, 'requestAdvancement'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/avancement/affectation', [MemberAdvancementController::class, 'requestAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/qualifications/{awardId}/generer-brevet', [MemberSituationController::class, 'generateBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/coffre', [MemberSituationController::class, 'coffre'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/qualifications/{awardId}/brevet', [MemberSituationController::class, 'downloadBrevet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/carriere', [MemberSituationController::class, 'carriere'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/decorations', [MemberSituationController::class, 'decorations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ma-situation/dotation', [MemberSituationController::class, 'dotation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/anciennete', [OrganizationSeniorityAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete', [OrganizationSeniorityAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete/initialiser', [OrganizationSeniorityAdminController::class, 'seedDefaults'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

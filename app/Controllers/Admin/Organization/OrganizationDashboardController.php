@@ -93,6 +93,12 @@ class OrganizationDashboardController
             || $gate->allows('admin.access')
             || $gate->allows('site.support');
         if (!$canAdminister) {
+            // Un membre sans rôle de gestion n'a plus rien à faire ici : ses pages sont dans JNET (/jnet/moi/*). Le personnel
+            // de gestion, les cadres délégués, la formation, les médias et la modération gardent leur synthèse.
+            if (\App\Support\PortalAccessChoice::isPlainMember()) {
+                return Response::redirect(\App\Support\PortalAccessChoice::plainMemberHome());
+            }
+
             return $this->operatorOverview($tenantId, (int) Session::get('user_id'));
         }
 
