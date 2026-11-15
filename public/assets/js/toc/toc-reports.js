@@ -171,7 +171,7 @@ window.TocReports = (function () {
       var total = st.items.length, un = unreadCount();
       var h = '<div class="toc-sec"><h2>Rapports</h2><span class="toc-dots"><span class="toc-n"><b>' + total + '</b> <span>rapport(s)</span></span><span class="toc-n' + (un ? ' rp-unread-n' : '') + '"><b>' + un + '</b> <span>non lu(s)</span></span></span></div>';
       h += '<p class="rp-desc">Les BDA, comptes rendus, SITREP et 9-line reçus du terrain, à lire, accuser et rattacher au plan.</p>';
-      if (st.readState === 'degraded') h += '<p class="rp-warn" role="status">Le suivi lu / non lu n’est pas encore installé sur le site (étape 4700 à lancer) : vos lectures ne sont conservées que dans cette fenêtre.</p>';
+      if (st.readState === 'degraded') h += '<p class="rp-warn" role="status">Le suivi lu / non lu n’est pas encore installé sur le site (étape 4740 à lancer) : vos lectures ne sont conservées que dans cette fenêtre.</p>';
       h += '<div class="rp-fams" role="tablist" aria-label="Familles de rapports">' + [['', 'Tous']].concat(FAMILIES).map(function (x) {
         var n = familyCount(x[0]), u = familyUnread(x[0]);
         return '<button type="button" role="tab" class="rp-fam" aria-selected="' + (f.family === x[0]) + '" data-rp-fam="' + x[0] + '"><span>' + esc(x[1]) + '</span><b class="mono">' + n + '</b>' + (u ? '<i class="rp-fam-u" title="' + esc(u + ' non lu(s)') + '">' + u + '</i>' : '') + '</button>';

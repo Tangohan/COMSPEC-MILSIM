@@ -111,8 +111,8 @@ final class AtakTocReportsAssetTest extends TestCase
     public function testMigrationStepIsRegisteredWithItsSqlAndRollback(): void
     {
         $registry = self::read('database/steps/registry.php');
-        self::assertMatchesRegularExpression("/'id' => 'atak_toc_report_reads', 'label' => '[^']+(?:’[^']*)*', 'group' => 'schema', 'file' => '4700_atak_toc_report_reads\\.php', 'rerun' => true\\]/u", $registry);
-        $step = self::read('database/steps/4700_atak_toc_report_reads.php');
+        self::assertMatchesRegularExpression("/'id' => 'atak_toc_report_reads', 'label' => '[^']+(?:’[^']*)*', 'group' => 'schema', 'file' => '4740_atak_toc_report_reads\\.php', 'rerun' => true\\]/u", $registry);
+        $step = self::read('database/steps/4740_atak_toc_report_reads.php');
         self::assertStringContainsString('migrations/2026_11_16_200_atak_toc_report_reads.sql', $step);
         self::assertStringContainsString('tableExists', $step);
         $sql = self::read('migrations/2026_11_16_200_atak_toc_report_reads.sql');
@@ -121,10 +121,8 @@ final class AtakTocReportsAssetTest extends TestCase
         self::assertStringNotContainsString('ADD UNIQUE KEY', $sql, 'compatible sqlite');
         self::assertStringNotContainsString('ALTER TABLE', $sql);
         self::assertStringContainsString('DROP TABLE IF EXISTS atak_toc_report_reads', self::read('migrations/rollback/atak_toc_report_reads_down.sql'));
-        // Numéro unique dans la file active.
-        preg_match_all("/'file' => '(\\d{4})_/", $registry, $m);
-        $dupes = array_filter(array_count_values($m[1]), static fn (int $n): bool => $n > 1);
-        self::assertSame([], $dupes, 'deux étapes ne partagent pas un numéro');
+        // Le numéro de l'étape n'est pris que par elle.
+        self::assertSame(1, preg_match_all("/'file' => '4740_/", $registry));
     }
 
     public function testStepCreatesTheTableOnSqliteAndIsIdempotent(): void

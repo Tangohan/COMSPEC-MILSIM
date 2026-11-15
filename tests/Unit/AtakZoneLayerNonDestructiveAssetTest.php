@@ -54,8 +54,8 @@ final class AtakZoneLayerNonDestructiveAssetTest extends TestCase
     public function testVersionBumpedAsPatch(): void
     {
         $hpp = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp');
-        self::assertStringContainsString('#define VERSION_STR "4.21.2"', $hpp);
-        self::assertStringContainsString('#define VERSION_NAME "4.21.2.AG - Washington"', $hpp);
+        // Version minimale (la 4.21.1 reste dans le journal) : chaque sortie suivante ne casse pas ce test.
+        \Tests\Support\ModVersion::assertAtLeast('4.21.1', \Tests\Support\ModVersion::match('/#define VERSION_STR "([0-9.]+)"/', $hpp));
         $log = (string) file_get_contents(dirname(__DIR__, 2) . '/CHANGELOG-ATAK.md');
         self::assertStringContainsString('(ATAK natif 4.21.1.AG - Washington)', $log);
     }

@@ -20,6 +20,7 @@ $moreActive = array_filter([
     !empty($filters['role_id']),
     !empty($filters['fonction']),
     !empty($filters['langue']),
+    !empty($filters['sessions']),
     $groupNow === 'liste' && ($filters['tri'] ?? 'nom') !== 'nom',
 ]);
 $presenceValues = array_map(static fn (array $r): int => (int) ($r['presence_score'] ?? 0), $rows);
@@ -63,6 +64,14 @@ $shown = count($rows);
                     <option value="active" <?= (($filters['status'] ?? '') === 'active') ? 'selected' : '' ?>>Compte actif</option>
                     <option value="inactive" <?= (($filters['status'] ?? '') === 'inactive') ? 'selected' : '' ?>>Compte inactif</option>
                     <option value="pending_verification" <?= (($filters['status'] ?? '') === 'pending_verification') ? 'selected' : '' ?>>E-mail à vérifier</option>
+                </select>
+            </label>
+            <?php $sessionThreshold = \App\Services\Personnel\PlayerSessionService::thresholdLabel((int) ($rosterSessionRules['min_minutes'] ?? 60)); ?>
+            <label title="<?= $hq(str_replace('%1', (string) (int) ($rosterSessionRules['min_minutes'] ?? 60), 'Une session est une présence continue sur le serveur de la communauté. Elle compte à partir de %1 minutes ; les connexions plus courtes ne rendent pas un membre actif.')) ?>">Présence sur le serveur
+                <select id="eff-sessions" name="sessions">
+                    <option value="">Tous les membres</option>
+                    <option value="actif" <?= (($filters['sessions'] ?? '') === 'actif') ? 'selected' : '' ?>><?= $hq(str_replace('%1', $sessionThreshold, 'Actifs : sessions %1 (30 j)')) ?></option>
+                    <option value="inactif" <?= (($filters['sessions'] ?? '') === 'inactif') ? 'selected' : '' ?>><?= $hq(str_replace('%1', $sessionThreshold, 'Aucune session %1 (30 j)')) ?></option>
                 </select>
             </label>
             <label>Niveau d’accès

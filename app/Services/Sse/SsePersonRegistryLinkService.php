@@ -151,7 +151,7 @@ final class SsePersonRegistryLinkService
         $nat = strtoupper(trim((string) ($person['nationality'] ?? '')));
         $sex = strtoupper(substr(trim((string) ($person['sex_apparent'] ?? $person['sex'] ?? '')), 0, 1));
 
-        return $this->identities->create($tenantId, [
+        $created = $this->identities->create($tenantId, [
             'kind' => 'civil',
             'last_name' => $last !== '' ? $last : $first,
             'first_name' => $last !== '' ? $first : '',
@@ -163,5 +163,10 @@ final class SsePersonRegistryLinkService
             'person_id' => $personId,
             'notes' => 'Identité du registre créée depuis la fiche personne IDN-' . str_pad((string) $personId, 5, '0', STR_PAD_LEFT) . '.',
         ], $userId);
+        if ($created > 0 && $userId !== null && $userId > 0) {
+            SseProvenance::manual($tenantId, ['identity', $created], ['person', $personId], 'created_from', 'Identité du registre créée depuis la fiche personne IDN-' . str_pad((string) $personId, 5, '0', STR_PAD_LEFT) . '.', $userId, 'manual.identity_from_person');
+        }
+
+        return $created;
     }
 }

@@ -10,7 +10,7 @@ use App\Support\SseWorkspaceUi;
 ?>
 <header class="iw-intel-col-head">
     <h2>Inbox</h2>
-    <a class="link" href="<?= $h(url('atak/sse/rapprochements')) ?>">Moteur</a>
+    <a class="link" href="<?= $h(url('atak/sse/rapprochements')) ?>">Cerbère</a>
 </header>
 <?php if ($inbox === []): ?>
     <p class="iw-intel-empty">Aucune piste ni suggestion en attente.</p>

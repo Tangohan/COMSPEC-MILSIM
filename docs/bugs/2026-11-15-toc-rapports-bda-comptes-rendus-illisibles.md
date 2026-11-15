@@ -21,7 +21,7 @@ Panneau Rapports (liste filtrable, fiche par type dans le tiroir, épingles par 
 - `app/Services/AtakToc/TocReportService.php`, `TocReportCatalog.php`, `TocReportPdf.php`
 - `app/Controllers/Api/AtakTocReportsApiController.php`, `AtakTocApiController.php`, `routes/web.php`
 - `public/assets/js/toc/toc-reports.js`, `toc-console.js`, `toc-layers.js`, `public/assets/css/atak-toc-reports.css`
-- `database/steps/4700_atak_toc_report_reads.php`, `migrations/2026_11_16_200_atak_toc_report_reads.sql`
+- `database/steps/4740_atak_toc_report_reads.php`, `migrations/2026_11_16_200_atak_toc_report_reads.sql`
 
 ## Vérification
 

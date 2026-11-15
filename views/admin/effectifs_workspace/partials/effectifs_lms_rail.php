@@ -87,6 +87,12 @@ $navClass = static function (string $id) use ($active): string {
                 <b>11</b>
                 <span>Vivier<em>Succession chefs / instructeurs</em></span>
             </a>
+            <?php if (\App\Support\EffectifsLmsAccess::canViewSuivi(\App\Core\Gate::getInstance())): ?>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('suivi'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('suivi'), ENT_QUOTES, 'UTF-8') ?>">
+                <b>13</b>
+                <span>Étapes des dossiers<em>Progression, échéances et retards</em></span>
+            </a>
+            <?php endif; ?>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter?onglet=surveiller'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_inbox_watch'), ENT_QUOTES, 'UTF-8') ?>">
                 <b>12</b>
                 <span>Alertes RH<em>À surveiller et informations</em></span>

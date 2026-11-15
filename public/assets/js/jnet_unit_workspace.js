@@ -1093,7 +1093,8 @@
             unite: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6',
             membre: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z|M4 21a8 8 0 0 1 16 0',
             operation: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M12 7v5l3 2',
-            page: 'M6 3h9l4 4v14H6z|M9 13h7|M9 17h7'
+            page: 'M6 3h9l4 4v14H6z|M9 13h7|M9 17h7',
+            sse: 'M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z|M9 12l2 2 4-4'
         };
         var mpop = null;
         var closeMention = function () {
@@ -1121,7 +1122,7 @@
             closeMention();
             var node = el('div', 'uw-pop');
             node.setAttribute('role', 'dialog');
-            node.setAttribute('aria-label', 'Citer une unité, un membre, une opération ou une page');
+            node.setAttribute('aria-label', 'Citer une unité, un membre, une opération, une page ou un élément SSE');
             var row = el('div', 'uw-pop__q');
             row.appendChild(el('span', '', trigger === '[[' ? '[[' : '@'));
             var q = document.createElement('input');
@@ -1131,8 +1132,8 @@
             q.setAttribute('role', 'combobox');
             q.setAttribute('aria-expanded', 'true');
             q.setAttribute('aria-controls', 'uw-mention-list');
-            q.setAttribute('aria-label', 'Chercher une unité, un membre, une opération ou une page');
-            q.placeholder = 'Unité, membre, opération, page';
+            q.setAttribute('aria-label', 'Chercher une unité, un membre, une opération, une page ou un élément SSE');
+            q.placeholder = 'Unité, membre, opération, page, élément SSE';
             row.appendChild(q);
             node.appendChild(row);
             var ul = el('ul');
@@ -1205,7 +1206,7 @@
                 var text = q.value.trim();
                 if (text.length < 2) { note('Tapez au moins deux lettres.'); return; }
                 var mine = ++seq;
-                window.JnetLinks.search(mentionUrl, text, 'unite,membre,operation,page', mentionSpace).then(function (rows) { if (mine === seq && mpop) { render(rows); } });
+                window.JnetLinks.search(mentionUrl, text, 'unite,membre,operation,page,sse', mentionSpace).then(function (rows) { if (mine === seq && mpop) { render(rows); } });
             };
             var place = function () {
                 var r = caretRect(f);

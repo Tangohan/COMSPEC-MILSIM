@@ -1,3 +1,27 @@
+[h1]COMSPEC ATAK 4.22.0 Washington — les fiches du portail SSE sur le téléphone / portal records on the phone[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]App Fiches[/b] (rubrique Renseignement) : les avis de recherche et les fiches de vigilance, d'identification, de renseignement et de contrôle du portail SSE, avec motif, mesures à prendre, dernier lieu connu, zone, menace, véhicules, adresses et personnes liées.
+[*] Une fiche se lit comme un document de renseignement : bandeau de classification en haut et en bas, service émetteur, menace en barre, mention « armé et dangereux ». Chacun ne voit que ce que son habilitation permet.
+[*] Mise à jour au démarrage, à l'ouverture de l'app et avec ACTUALISER ; hors ligne, la dernière version reste lisible avec l'heure de sa synchro. Filtres (genre, menace, type, zone), taille du texte et mode compact.
+[*] [b]PARTAGER[/b] : la fiche s'envoie à un équipier par Bluetooth ou SMS. Seule la référence part : il l'ouvre dans sa liste, selon son habilitation.
+[*] [b]Contrôle d'identité[/b] (SEEK II, mod COMSPEC SSE 1.13.0) : une personne sous avis de recherche est marquée « recherchée », avec la référence de l'avis et la mesure à prendre.
+[*] [b]Menu ACE[/b] : nouveau réglage personnel « Menu ACE : entrées ATAK à la racine » (catégorie ATAK · Menu ACE). Décoché, « Poste TOC », « Messages et ordres du TOC » et « ATAK : réparer l'affichage » quittent la racine du menu ACE ; le téléphone garde « Entretien > Réparer l'écran ». Coché par défaut.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Records app[/b] (Intelligence section): the SSE portal's wanted notices and vigilance, identification, intelligence and check sheets, with reason, action to be taken, last known location, zone, threat, vehicles, addresses and linked persons.
+[*] A record reads like an intelligence document: classification banner at the top and bottom, issuing service, threat bar, "armed and dangerous" mention. Everyone only sees what their clearance allows.
+[*] Refreshes at start-up, when you open the app and with REFRESH; offline, the last version stays readable with the time of its sync. Filters (kind, threat, type, zone), text size and compact mode.
+[*] [b]SHARE[/b]: send the record to a teammate by Bluetooth or SMS. Only the reference is sent: they open it in their own list, according to their clearance.
+[*] [b]Identity check[/b] (SEEK II, COMSPEC SSE mod 1.13.0): a person under a wanted notice is marked "wanted", with the notice reference and the action to be taken.
+[*] [b]ACE menu[/b]: new personal setting "ACE menu: ATAK entries at the root" (category ATAK · ACE menu). Unchecked, "TOC post", "TOC messages and orders" and "ATAK: repair the display" leave the root of the ACE menu; the phone keeps "Maintenance > Repair the screen". Checked by default.
+[/list]
+
 [h1]COMSPEC ATAK 4.21.2 Washington — accusés d'appui aérien : identifiant corrigé / air support acknowledgements: identifier fixed[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

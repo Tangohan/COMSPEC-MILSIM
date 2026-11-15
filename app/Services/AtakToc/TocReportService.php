@@ -18,7 +18,7 @@ use PDO;
  *    n'est ni listé ni ouvert : sa fiche répond « introuvable » (même réponse qu'un identifiant inconnu) ;
  *  - les passages caviardés du bureau Remontées sont masqués au niveau de l'opérateur, et la fiche structurée, qui
  *    répète le texte, est retirée d'un compte rendu caviardé ;
- *  - lu / non lu par opérateur (atak_toc_report_reads) ; sans cette table (étape 4700 pas encore lancée), tout est
+ *  - lu / non lu par opérateur (atak_toc_report_reads) ; sans cette table (étape 4740 pas encore lancée), tout est
  *    « non lu » et rien n'est conservé : readState vaut « degraded ».
  *
  * Clé d'un rapport : « tr-12 » (compte rendu), « nl-7 » (9-line) ; sans deux-points, elle passe telle quelle dans une adresse.

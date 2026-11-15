@@ -80,6 +80,7 @@ final class JnetMemberPaths
         'carnet-de-vol/{entryId}/modifier',
         'carnet-de-vol/{entryId}/supprimer',
         'mes-papiers/couverture',
+        'mes-papiers/etat-civil',
         'appareils/retirer',
         'musique/envoyer',
         'musique/morceaux/{id}/modifier',

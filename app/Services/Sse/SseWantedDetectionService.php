@@ -150,6 +150,7 @@ final class SseWantedDetectionService
         } catch (\Throwable $e) {
             error_log('Détection d’un avis de recherche : chronologie indisponible : ' . $e->getMessage());
         }
+        $this->trace($tenantId, $noticeId, $type, $ref, $source);
         $this->warn($tenantId, $identityId, $notice, $type, $id);
 
         return ['created' => true, 'id' => $id, 'notice_ref' => (string) $notice['ref']];
@@ -185,6 +186,28 @@ final class SseWantedDetectionService
             'threat_level' => (string) $notice['threat_level'],
             'instruction' => $instruction,
         ];
+    }
+
+    /**
+     * Trace du pourquoi (Cerbère-Détection) : l'avis de recherche est relié au contrôle ou à la fiche SEEK II qui a fait apparaître
+     * l'identité. Sans référence exploitable, rien n'est tracé ici (la détection garde sa ligne et sa chronologie).
+     */
+    private function trace(int $tenantId, int $noticeId, string $type, string $ref, string $source): void
+    {
+        try {
+            $target = null;
+            if (preg_match('/^CTRL-(\d{1,10})$/', $ref, $m) === 1) {
+                $target = ['check', (int) $m[1]];
+            } elseif ($type === 'seek' && $ref !== '') {
+                $row = Database::getInstance()->fetchOne('SELECT id FROM sse_seek_records WHERE tenant_id = :t AND rec = :r', ['t' => $tenantId, 'r' => $ref]);
+                $target = $row !== null ? ['seek', (int) $row['id']] : null;
+            }
+            if ($target !== null) {
+                SseProvenance::cerbere($tenantId, ['notice', $noticeId], $target, 'detected_on', 'cerbere.detect.wanted', 'Détection (' . C::label(C::DETECTION_TYPES, $type) . ', canal « ' . $source . ' »).');
+            }
+        } catch (\Throwable $e) {
+            error_log('Détection d’un avis de recherche : trace non enregistrée : ' . $e->getMessage());
+        }
     }
 
     /**

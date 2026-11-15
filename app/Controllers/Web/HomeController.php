@@ -531,6 +531,33 @@ class HomeController
                     // Calendrier ou présences indisponibles : le tableau reste lisible sans cette colonne.
                 }
 
+                // Présence sur le serveur : sessions d'au moins le seuil de la communauté (une requête pour tout le tableau).
+                try {
+                    $sessionRepo = \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class);
+                    if ($sessionRepo->schemaReady() && $availUserIds !== []) {
+                        $sessionRules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tid);
+                        $sessionSums = $sessionRepo->summariesForUsers(
+                            $tid,
+                            $availUserIds,
+                            $sessionRules['min_minutes'] * 60,
+                            $sessionRules['gap_minutes'] * 60,
+                            time(),
+                            $sessionRepo->tenantTimezone($tid)
+                        );
+                        foreach ($dashboardEffectifsRows as &$effRow) {
+                            if (!is_array($effRow)) {
+                                continue;
+                            }
+                            $effUid = (int) ($effRow['id'] ?? 0);
+                            $pack = is_array($effRow['availability_90'] ?? null) ? $effRow['availability_90'] : [];
+                            $effRow['availability_90'] = \App\Services\Personnel\MemberAvailabilityRate::withSessions($pack, $sessionSums[$effUid] ?? null);
+                        }
+                        unset($effRow);
+                    }
+                } catch (\Throwable) {
+                    // Sans sessions de jeu, la colonne garde son calcul d'avant.
+                }
+
                 if ($allowsRecruitment) {
                     try {
                         $latestDossier = $enlistRepo->findLatestBySubmitter($tid, $uid);

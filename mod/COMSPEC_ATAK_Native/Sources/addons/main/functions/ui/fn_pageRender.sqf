@@ -136,6 +136,7 @@ switch (_page) do {
     case "REPORTS": { [] call comspec_atak_native_fnc_pageReports; };
     case "SSE": { [] call comspec_atak_native_fnc_pageSse; };
     case "WANTED": { [] call comspec_atak_native_fnc_pageWanted; };
+    case "FICHES": { [] call comspec_atak_native_fnc_pageFiches; };
     case "DRONEDETECT": { [] call comspec_atak_native_fnc_pageDroneDetect; };
     case "DRONE": { [] call comspec_atak_native_fnc_pageDrone; };
     case "AAR": { [] call comspec_atak_native_fnc_pageAar; };
