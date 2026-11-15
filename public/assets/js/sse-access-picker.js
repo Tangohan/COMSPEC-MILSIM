@@ -152,7 +152,7 @@
             timer = window.setTimeout(function () {
                 var mine = ++seq;
                 fetch(peopleUrl + '?q=' + encodeURIComponent(q), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
-                    .then(function (res) { return res.ok ? res.json() : { items: [] }; })
+                    .then(function (res) { if (!res.ok) { if (window.SseNotify) { SseNotify.failure(res); } return { items: [] }; } return res.json(); })
                     .then(function (json) {
                         if (mine !== seq) {
                             return;
@@ -160,7 +160,7 @@
                         people = (json.items || []).map(function (p) { return { ref: p.ref, label: p.label, group: p.group, hint: p.hint, kind: 'user' }; });
                         render();
                     })
-                    .catch(function () { people = []; });
+                    .catch(function (err) { people = []; if (window.SseNotify) { SseNotify.failure(err); } });
             }, 250);
         }
 

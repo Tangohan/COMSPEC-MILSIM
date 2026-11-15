@@ -67881,4 +67881,10 @@ return [
     ' Non créées : ' => ' Not created: ',
     '1 règle créée' => '1 rule created',
     '%1 règles créées' => '%1 rules created',
+    'Fermer ce message' => 'Close this message',
+    'La demande a échoué (code %1). Réessayez ; si le problème continue, prévenez un administrateur.' => 'The request failed (code %1). Try again; if the problem persists, tell an administrator.',
+    'Le formulaire contient %1 erreur(s) à corriger' => 'The form has %1 error(s) to fix',
+    'Le serveur n’a pas répondu. Vérifiez la connexion puis réessayez.' => 'The server did not respond. Check your connection and try again.',
+    'Messages du portail' => 'Portal messages',
+    'Opération réussie' => 'Operation successful',
 ];
