@@ -13,7 +13,7 @@ use App\Services\Cron\CronJobInterface;
  * 12:00 par défaut, réglable par communauté), puis les retire de la carte. L'instantané est toujours écrit avant tout
  * retrait ; un passage est idempotent, verrouillé contre l'exécution simultanée et borné (AtakMarkerArchiveService::RUN_BUDGET
  * éléments par passage), si bien que le rattrapage de l'existant se fait en plusieurs passages sans bloquer le site.
- * Retire aussi les missions archivées plus vieilles que la rétention de la communauté.
+ * Retire aussi les missions archivées plus vieilles que la rétention de la communauté et vide la corbeille du poste TOC.
  */
 final class AtakMarkerCycleCronJob implements CronJobInterface
 {
@@ -39,6 +39,13 @@ final class AtakMarkerCycleCronJob implements CronJobInterface
     public function run(): array
     {
         $r = ($this->service ??= new AtakMarkerArchiveService(new PdoMarkerCycleStore()))->runScheduled();
+        // Corbeille du poste TOC : ce qui a dépassé 15 minutes est supprimé pour de bon (marqueurs du jeu : après 48 h).
+        $r['trash_expired'] = 0;
+        try {
+            $r['trash_expired'] = (new \App\Services\AtakToc\Purge\TocElementStore(\App\Core\Database::getPdo()))->expire(null, time());
+        } catch (\Throwable) {
+            // Base indisponible ou migration absente : rien à nettoyer.
+        }
 
         return [
             'ok' => $r['ok'],

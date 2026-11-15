@@ -79,6 +79,32 @@ final class SsePortalSettingsRepository
         return $row ? (string) $row['setting_value'] : $default;
     }
 
+    /** Pose une valeur texte (lecture puis écriture : même comportement sur toutes les bases). */
+    public function set(int $tenantId, string $key, string $value, ?int $userId = null): bool
+    {
+        try {
+            $exists = $this->db->fetchOne(
+                'SELECT 1 AS present FROM sse_portal_settings WHERE tenant_id = :t AND setting_key = :k',
+                ['t' => $tenantId, 'k' => $key]
+            );
+            if ($exists) {
+                $this->db->execute(
+                    'UPDATE sse_portal_settings SET setting_value = :v, updated_by = :u WHERE tenant_id = :t AND setting_key = :k',
+                    ['t' => $tenantId, 'k' => $key, 'v' => $value, 'u' => $userId]
+                );
+            } else {
+                $this->db->execute(
+                    'INSERT INTO sse_portal_settings (tenant_id, setting_key, setting_value, updated_by) VALUES (:t, :k, :v, :u)',
+                    ['t' => $tenantId, 'k' => $key, 'v' => $value, 'u' => $userId]
+                );
+            }
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function getBool(int $tenantId, string $key, bool $default = false): bool
     {
         $raw = $this->get($tenantId, $key, $default ? '1' : '0');

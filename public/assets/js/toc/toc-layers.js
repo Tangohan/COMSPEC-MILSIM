@@ -22,7 +22,7 @@ window.TocLayers = (function () {
     { id: 'camp', label: 'Plan du camp (app Plan, PC du poste)', source: 'jeu', every: 10, on: true },
     { id: 'zones', label: 'Zones (battleplan)', source: 'jeu + web', every: 15, on: true },
     { id: 'relays', label: 'Relais et couverture réseau', source: 'jeu', every: 30, on: false },
-    { id: 'reports', label: 'Comptes rendus géolocalisés', source: 'jeu', every: 10, on: true },
+    { id: 'reports', label: 'Rapports : BDA, comptes rendus, SITREP, 9-line', source: 'jeu', every: 10, on: true },
     { id: 'photos', label: 'Photos géolocalisées', source: 'jeu', every: 30, on: false },
     { id: 'requests', label: 'Demandes du poste (MEDEVAC, feux, ravitaillement)', source: 'jeu + web', every: 0, on: true },
     { id: 'orders', label: 'Ordres avec point', source: 'web', every: 15, on: false },
@@ -74,6 +74,8 @@ window.TocLayers = (function () {
     var timers = [];
     var trails = {};
     var requests = [];
+    // Marqueurs et tracés de la carte (suppression, sélection, purge) : une ligne par élément, rechargée avec le calque.
+    var elems = { marker: [], shape: [] };
     var shownPlanId = null;
     var shownPlan = null;
     var raw = { units: [], vehicles: [], air: [] };
@@ -153,8 +155,9 @@ window.TocLayers = (function () {
       }, 0);
       return '<button type="button" class="toc-btn is-small is-primary" id="' + id + '">Ajouter au plan</button>';
     }
-    function popup(title, lines, conv) {
-      return '<h4>' + esc(title) + '</h4>' + lines.filter(Boolean).map(function (l) { return '<p>' + l + '</p>'; }).join('') + addToPlanBtn(conv);
+    function popup(title, lines, conv, ref) {
+      var acts = ref && opts.elementActions ? opts.elementActions(ref) : '';
+      return '<h4>' + esc(title) + '</h4>' + lines.filter(Boolean).map(function (l) { return '<p>' + l + '</p>'; }).join('') + addToPlanBtn(conv) + acts;
     }
     function bind(layer, html) {
       layer.bindPopup(html, { className: 'toc-pop', maxWidth: 320 });
@@ -317,7 +320,7 @@ window.TocLayers = (function () {
             else {
               layer = R.render(tm, it.el, { opacity: o, catalog: opts.catalog });
               if (it.hatch) layer.eachLayer(function (l) { if (l instanceof L.Polygon) hatch(l, it.hatch, it.el.props.color); });
-              bind(layer, popup(it.title, it.lines, it.el));
+              bind(layer, popup(it.title, it.lines, it.el, it.ref));
             }
             st.group.addLayer(layer);
             if (!it.feat) n++;
@@ -391,6 +394,7 @@ window.TocLayers = (function () {
       return get('/api/atak/markers?mapId=' + opts.mapId, 'markers').then(function (rows) {
         if (rows === null) { touched(['markers']); renderPanel(); return; }
         var items = [];
+        var els = [];
         var calls = {};
         tracks.forEach(function (t) { if (t.fresh !== 'lost') calls[t.callsign.toUpperCase()] = true; });
         (Array.isArray(rows) ? rows : []).forEach(function (r) {
@@ -418,15 +422,27 @@ window.TocLayers = (function () {
             };
           }
           items.push(item);
+          if (/^\d+$/.test(String(r.id))) {
+            els.push({ table: 'marker', id: Number(r.id), kind: 'marker', pos: p, label: label || '', type: String(d.type || ''), author: String(d.author || ''), unit: String(d.unit || d.group || ''), pinned: !!d.web_permanent, own: meta.own, at: r.updated_at || '', game: src !== 'web' });
+          }
         });
+        elems.marker = els;
         mark('markers', items);
         if (opts.onData) opts.onData('markers');
+        if (opts.onElements) opts.onElements();
       }).catch(function () { fail('markers'); });
+    }
+    function shapeKind(s, g, type) {
+      var gt = String(g.type || '').toLowerCase();
+      if (gt === 'polygon' || gt === 'multipolygon' || ['ZONE', 'POLYGON', 'AO', 'DANGER', 'EXCLUSION', 'AREA', 'CIRCLE', 'ELLIPSE', 'RECTANGLE', 'SECTOR'].indexOf(type) >= 0) return 'zone';
+      if (gt === 'linestring' || gt === 'multilinestring' || ['ROUTE', 'LINE', 'POLYLINE', 'MSR', 'ASR', 'AXIS'].indexOf(type) >= 0) return 'route';
+      return 'form';
     }
     function loadShapes() {
       return get('/api/map-shapes?mapId=' + opts.mapId, 'shapes').then(function (rows) {
         if (rows === null) { touched(['shapes']); return; }
         var items = [];
+        var els = [];
         (Array.isArray(rows) ? rows : []).forEach(function (s) {
           var g = s.geometry && typeof s.geometry === 'object' ? s.geometry : {};
           var col = T.markerColor(s.color, '#f2f2f2');
@@ -446,9 +462,17 @@ window.TocLayers = (function () {
             if (c) el = { geom: 'point', kind: 'icon', pts: [[Number(c[0]), Number(c[1])]], props: L.extend(props, { icon: 'dot' }) };
           }
           if (!el) return;
-          items.push({ el: el, pts: el.pts, side: '', ts: s.updated_at, title: s.label || 'Forme dessinée', lines: ['<span>' + SOURCE_LABEL[s.meta && s.meta.owner_user_id ? 'web' : 'jeu'] + '</span>' + (s.updated_at ? ' · ' + hhmm(s.updated_at) : '')] });
+          var ref = /^\d+$/.test(String(s.id)) ? { table: 'shape', id: Number(s.id) } : null;
+          items.push({ el: el, pts: el.pts, side: '', ts: s.updated_at, ref: ref, title: s.label || 'Forme dessinée', lines: ['<span>' + SOURCE_LABEL[s.meta && s.meta.owner_user_id ? 'web' : 'jeu'] + '</span>' + (s.updated_at ? ' · ' + hhmm(s.updated_at) : '')] });
+          if (ref) {
+            var cx = 0, cy = 0;
+            el.pts.forEach(function (q) { cx += q[0]; cy += q[1]; });
+            els.push({ table: 'shape', id: ref.id, kind: shapeKind(s, g, type), pos: [cx / el.pts.length, cy / el.pts.length], label: s.label || '', type: type, author: String(s.created_by || ''), unit: '', pinned: !!(s.meta && s.meta.web_permanent), own: !!(opts.userId && s.meta && Number(s.meta.owner_user_id) === Number(opts.userId)), at: s.updated_at || '', game: false });
+          }
         });
+        elems.shape = els;
         mark('shapes', items);
+        if (opts.onElements) opts.onElements();
       }).catch(function () { fail('shapes'); });
     }
     var GAME_KIND = {};
@@ -571,7 +595,31 @@ window.TocLayers = (function () {
         mark('relays', items);
       }).catch(function () { fail('relays'); });
     }
+    /** Poste TOC web : les épingles viennent du panneau Rapports (mêmes rapports, même lu / non lu) ; un clic ouvre la fiche. */
+    function pinReports(list) {
+      var items = [];
+      feedItems = [];
+      list.forEach(function (r) {
+        feedItems.push({ id: r.key, t: r.t, kind: r.type_label, who: r.who, pos: r.pos, text: r.summary || r.title, prio: r.priority });
+        var p = r.pos;
+        if (!p) return;
+        var col = r.rank >= 3 ? '#ff5f56' : (r.rank === 2 ? '#f5b841' : (r.rank === 1 ? '#62b0f5' : '#98a4ae'));
+        var lines = [esc(r.summary || r.title), '<span class="mono">' + r.t + 'Z · ' + esc(r.grid || G.grid(p[0], p[1], 8)) + '</span>', '<span>' + esc(r.priority_label) + '</span> · ' + esc(r.status_label)];
+        var title = r.type_label + ' · ' + r.who;
+        items.push({ pts: [p], side: '', ts: r.at, title: title, lines: lines, feat: {
+          id: 'rp' + r.key, kind: 'marker', pos: p, symbol: iconSymbol(r.icon || 'report', col, 26), title: r.family === 'bda' && r.result ? r.result.label : r.type, sub: [], badge: (r.read ? '' : '● ') + r.t, tone: 'live', color: col, prio: PRIO.reports + (r.read ? 0 : 20), labelMax: 14, data: { type: 'report', id: r.id, key: r.key },
+          tip: function () { return popup(title, lines); }
+        } });
+      });
+      mark('reports', items);
+      if (opts.onData) opts.onData('reports');
+    }
     function loadReports() {
+      var feed = opts.reportsFeed ? opts.reportsFeed() : undefined;
+      if (feed !== undefined) {
+        if (feed !== null) pinReports(feed);
+        return Promise.resolve();
+      }
       return get('/api/atak/reports?mapId=' + opts.mapId + '&limit=80', 'reports').then(function (j) {
         if (j === null) { touched(['reports']); return; }
         var items = [];
@@ -756,6 +804,14 @@ window.TocLayers = (function () {
       failed: function () { return state.units.error; },
       brightness: function () { return brightness; },
       setBrightness: function (v) { setBrightness(v); renderPanel(); },
+      /** Marqueurs et tracés de la carte (id, type, auteur, épinglé, position) ; visible : le calque est affiché. */
+      elements: function () {
+        var out = [];
+        [['marker', 'markers'], ['shape', 'shapes']].forEach(function (pair) {
+          elems[pair[0]].forEach(function (e) { e.visible = !!state[pair[1]].on; out.push(e); });
+        });
+        return out;
+      },
       /** Repères cherchables : marqueurs, points, comptes rendus (libellé, position). */
       features: function () {
         var out = [];

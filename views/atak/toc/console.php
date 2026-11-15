@@ -11,7 +11,8 @@ $tocKeys = [
     ['F', 'Écrire un FLASH'], ['L', 'Panneau des calques'], ['B', 'Fond suivant (satellite, carte du jeu, sombre)'], ['G', 'Quadrillage'],
     ['M', 'Mesurer (clics successifs, Échap pour finir)'], ['T', 'Voir toutes les pistes'], ['P', 'Plein écran'],
     ['+ −', 'Rapprocher, éloigner'], ['Clic droit, Maj + F10', 'Menu de la carte (appui long sur un écran tactile)'],
-    ['Ctrl + Entrée', 'Inscrire à la main courante'], ['Échap', 'Fermer le menu, la fenêtre ou le panneau'],
+    ['Ctrl + Entrée', 'Inscrire à la main courante'], ['Suppr', 'Supprimer l’élément choisi ou la sélection (avec confirmation, annulable 15 minutes)'],
+    ['Ctrl + glisser', 'Sélectionner des éléments dans un rectangle'], ['Échap', 'Fermer le menu, la fenêtre ou le panneau'],
     ['Molette, glisser', 'Rapprocher, déplacer la carte'],
 ];
 ?>
@@ -19,7 +20,12 @@ $tocKeys = [
 <html lang="fr" data-theme="dark">
 <head>
 <?php require __DIR__ . '/_head.php'; ?>
+<link rel="stylesheet" href="<?= $h($a('assets/css/atak-toc-reports.css')) ?>">
+<link rel="stylesheet" href="<?= $h($a('assets/css/atak-toc-manage.css')) ?>">
 <script src="<?= $h($a('assets/js/toc/toc-console-ui.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/toc-manage.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/toc-phones.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/toc-reports.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-console.js')) ?>" defer></script>
 </head>
 <body class="toc-body">
@@ -61,6 +67,7 @@ $tocKeys = [
     <section class="toc-left" aria-label="Carte commune">
       <div class="toc-toolbar">
         <button type="button" class="toc-btn" id="toc-layers-btn" title="Calques du jeu et du web (L)" aria-expanded="false"><span>Calques</span><b class="toc-count" id="toc-layers-count">0</b></button>
+        <button type="button" class="toc-btn" id="toc-manage-btn" title="Éléments de la carte : sélectionner, épingler, archiver, supprimer, corbeille, purge" aria-expanded="false" aria-controls="toc-manage"><span>Éléments</span><b class="toc-count" id="toc-manage-count">0</b></button>
         <button type="button" class="toc-btn" id="toc-sse-ml-btn" hidden aria-expanded="false" aria-controls="toc-sse-ml" title="Calques SSE : contrôles d’identité, lieux, pistes de téléphones"><span>Calques SSE</span></button>
 <?php $cycleId = 'toc-cycle'; $cycleMap = (int) ($tocDefaultMap ?? 1); $cycleMapSelector = '#toc-terrain'; $cycleClass = 'toc-btn'; $cycleFloating = false; require base_path('views/partials/atak_marker_cycle.php'); ?>
         <label class="toc-sr" for="toc-bg">Fond de carte</label>
@@ -75,12 +82,51 @@ $tocKeys = [
       <div class="toc-mapwrap" id="toc-mapwrap">
         <div class="toc-map" id="toc-map" aria-label="Carte du terrain" tabindex="0"></div>
         <div class="toc-layers" id="toc-layers" hidden aria-label="Calques"></div>
+        <section class="toc-manage" id="toc-manage" hidden aria-labelledby="toc-manage-title">
+          <div class="toc-sec"><h2 id="toc-manage-title">Éléments de la carte</h2><button type="button" class="toc-btn is-small" data-mg="close">Fermer</button></div>
+          <p class="toc-manage-desc">Cochez des marqueurs et des tracés pour les épingler, les archiver ou les supprimer.</p>
+          <div class="toc-seg" role="tablist" aria-label="Vue">
+            <button type="button" role="tab" class="toc-btn is-on" data-mg="view-list" aria-selected="true">Liste</button>
+            <button type="button" role="tab" class="toc-btn" data-mg="view-trash" aria-selected="false"><span>Corbeille</span><b class="toc-count" id="toc-trash-count">0</b></button>
+          </div>
+          <div class="toc-manage-list" id="toc-manage-listview">
+            <div class="toc-manage-filters">
+              <label class="toc-sr" for="toc-mg-type">Type d’élément</label>
+              <select id="toc-mg-type" class="toc-select" data-mg-filter="type">
+                <option value="">Tous les types</option><option value="marker">Marqueurs</option><option value="form">Formes dessinées</option><option value="route">Routes tracées</option><option value="zone">Zones tracées</option>
+              </select>
+              <label class="toc-sr" for="toc-mg-q">Chercher un élément</label>
+              <input id="toc-mg-q" class="toc-input" type="search" data-mg-filter="q" placeholder="Nom, auteur…" autocomplete="off">
+            </div>
+            <label class="toc-mg-all"><input type="checkbox" id="toc-mg-all" data-mg="all"><span id="toc-mg-all-text">Tout cocher</span></label>
+            <ul class="toc-mg-items" id="toc-mg-items" aria-label="Éléments de la carte"></ul>
+          </div>
+          <div class="toc-manage-trash" id="toc-manage-trashview" hidden></div>
+          <div class="toc-manage-foot">
+            <button type="button" class="toc-btn is-danger" id="toc-purge-btn" data-mg="purge">Purger la carte…</button>
+            <p class="toc-manage-hint" id="toc-purge-hint"></p>
+          </div>
+        </section>
+        <div class="toc-selrect" id="toc-selrect" hidden></div>
+        <div class="toc-selbar" id="toc-selbar" hidden role="region" aria-label="Sélection">
+          <div class="toc-selbar-head"><p class="toc-selbar-count" id="toc-selbar-count"></p><button type="button" class="toc-btn is-small" data-sb="clear">Désélectionner</button></div>
+          <div class="toc-selbar-actions">
+            <button type="button" class="toc-btn" data-sb="pin">Épingler</button>
+            <button type="button" class="toc-btn" data-sb="archive">Archiver</button>
+            <button type="button" class="toc-btn is-danger" data-sb="delete" id="toc-sb-delete">Supprimer</button>
+          </div>
+        </div>
+        <div class="toc-selbar is-hint" id="toc-drawbar" hidden role="status">
+          <p class="toc-selbar-count" id="toc-drawbar-text"></p>
+          <div class="toc-selbar-actions"><button type="button" class="toc-btn is-primary" data-db="done">Terminer</button><button type="button" class="toc-btn" data-db="cancel">Annuler</button></div>
+        </div>
 <?php $sseMlId = 'toc-sse-ml'; $sseMlFloating = true; $sseMlBase = rtrim(url(''), '/'); require base_path('views/partials/sse_map_layers.php'); ?>
         <div class="toc-mapctl" role="group" aria-label="Commandes de la carte">
           <button type="button" class="toc-mapbtn" data-map="north" title="Nord en haut : voir toutes les pistes (T)" aria-label="Voir toutes les pistes"><svg width="18" height="20" viewBox="0 0 18 20" aria-hidden="true"><path d="M9 1 L16 18 L9 13 L2 18 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
           <button type="button" class="toc-mapbtn" data-map="in" title="Rapprocher (+)" aria-label="Rapprocher">+</button>
           <button type="button" class="toc-mapbtn" data-map="out" title="Éloigner (−)" aria-label="Éloigner">−</button>
           <button type="button" class="toc-mapbtn" data-map="layers" title="Calques (L)" aria-label="Calques"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17.500l9 5 9-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+          <button type="button" class="toc-mapbtn" data-map="select" title="Sélectionner des éléments : glisser pour tracer un rectangle (Ctrl + glisser en tout temps)" aria-label="Sélectionner" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6M14 4h6M4 20h6M14 20h6M4 4v6M4 14v6M20 4v6M20 14v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
           <button type="button" class="toc-mapbtn" data-map="measure" title="Mesurer (M)" aria-label="Mesurer" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17L17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
           <button type="button" class="toc-mapbtn" data-map="full" title="Plein écran (P)" aria-label="Plein écran"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
         </div>
@@ -109,9 +155,12 @@ $tocKeys = [
       <div class="toc-panel-body" id="toc-panel" role="tabpanel"></div>
     </aside>
   </main>
-  <footer class="toc-status"><div class="toc-status-pills" id="toc-status-net"></div><div class="toc-status-pills" id="toc-status-room"></div><span class="toc-status-msg" id="toc-status-msg" role="status" aria-live="polite"></span></footer>
+  <footer class="toc-status"><div class="toc-status-pills" id="toc-status-net"></div><div class="toc-status-pills" id="toc-status-room"></div><span class="toc-status-msg" id="toc-status-msg" role="status" aria-live="polite"></span><span class="toc-status-undo" id="toc-status-undo" hidden><span id="toc-status-undo-text"></span><button type="button" class="toc-btn is-small" id="toc-status-undo-btn">Annuler la suppression</button></span></footer>
 </div>
 <div class="toc-ctx" id="toc-ctx" hidden role="menu" aria-label="Menu de la carte"></div>
+<dialog class="toc-dlg" id="toc-dlg" aria-labelledby="toc-dlg-title" data-ui-confirm="1">
+  <div class="toc-dlg-box" id="toc-dlg-body"></div>
+</dialog>
 <div class="toc-drawer-veil" id="toc-drawer-veil" hidden>
   <div class="toc-drawer" id="toc-drawer" role="dialog" aria-modal="true" aria-labelledby="toc-drawer-title" tabindex="-1"></div>
 </div>

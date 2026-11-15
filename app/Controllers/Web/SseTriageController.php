@@ -446,7 +446,8 @@ final class SseTriageController
             return (bool) ($this->allows)('analyse', SseAccessCatalog::LEVEL_WRITE, $userId);
         }
         try {
-            return SseAccessPolicy::forSession()->allows($userId, 'analyse', SseAccessCatalog::LEVEL_WRITE, ['tenant_id' => $tenant, 'guest' => false]);
+            $section = 'analyse'; // section d'accès SSE, pas une fonctionnalité de forfait
+            return SseAccessPolicy::forSession()->allows($userId, $section, SseAccessCatalog::LEVEL_WRITE, ['tenant_id' => $tenant, 'guest' => false]);
         } catch (\Throwable) {
             return false;
         }

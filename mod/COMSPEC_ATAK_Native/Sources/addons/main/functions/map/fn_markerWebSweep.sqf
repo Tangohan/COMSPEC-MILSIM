@@ -26,7 +26,8 @@ if ((missionNamespace getVariable [_key, objNull]) isNotEqualTo player) then { m
 // Marqueurs du jeu retirés sur Athena (Tacmap, /m/carte) : lignes « game_del » du relevé GetMarkers (AtakApiController), en tête
 // de liste ; retirés ici (carte d'Arma, téléphones), et leur route ou leur plan suit (fn_markerOwned « gone »).
 [] spawn {
-    private _raw = ["GetMarkers", ["world:" + worldName]] call comspec_atak_native_fnc_extensionCall;
+    // « tomb » : COMSPEC Link joint son curseur des pierres tombales (marqueurs supprimés sur Athena, 48 h, par lots de 40) ; une DLL plus ancienne l'ignore.
+    private _raw = ["GetMarkers", ["world:" + worldName, "tomb"]] call comspec_atak_native_fnc_extensionCall;
     if !(_raw isEqualType "") exitWith {};
     if ((_raw find "OK|") isNotEqualTo 0 || {(_raw find "game_del") < 0}) exitWith {};
     private _tab = toString [9];

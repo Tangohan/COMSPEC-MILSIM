@@ -172,7 +172,8 @@ private _summary = {
                 (_log select -1) params [["_type", ""], ["_from", ""], ["_pos", []], ["_grid", ""], ["_text", ""], ["_hour", ""]];
                 // Mêmes libellés que le journal (fn_pageAlerts) ; rouge : détresse, vert : fin de contact, orange : le reste.
                 (createHashMapFromArray [["PANIC", ["PANIQUE", "hexMapAlert"]], ["TIC", ["CONTACT", "hexMapWarn"]], ["TIC_CLEAR", ["FIN DE CONTACT", "hexMapOk"]],
-                    ["EAGLE_DOWN", ["APPAREIL ABATTU", "hexMapAlert"]], ["COMPROMISE", ["COMPROMISSION", "hexMapWarn"]]] getOrDefault [_type, [_type, "hexMapWarn"]]) params ["_t", "_c"];
+                    ["EAGLE_DOWN", ["APPAREIL ABATTU", "hexMapAlert"]], ["COMPROMISE", ["COMPROMISSION", "hexMapWarn"]],
+                    ["TOC_INFO", ["ALERTE DU TOC", "hexMapWarn"]], ["TOC_ALERT", ["ALERTE DU TOC", "hexMapWarn"]], ["TOC_URGENT", ["ALERTE DU TOC", "hexMapAlert"]], ["TOC_TRACE", ["SUIVI PAR LE TOC", "hexMapWarn"]]] getOrDefault [_type, [_type, "hexMapWarn"]]) params ["_t", "_c"];
                 _big = _t call _tr;
                 _tone = _c;
                 _who = [[_from, ("Moi") call _tr] select (_from isEqualTo "Moi"), 12] call _clip;
