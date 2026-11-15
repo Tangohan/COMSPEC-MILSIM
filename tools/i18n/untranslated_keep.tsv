@@ -1358,3 +1358,4 @@ px Arial, sans-serif	police du canvas (CSS), pas un texte	public/assets/js/toc/t
 IBM Plex Sans	nom de police Google Fonts	views/layout/main.php
 Libre Baskerville	nom de police Google Fonts	views/layout/main.php
 jnet/liens/nouveau?src=	chemin d'URL, pas un texte	views/jnet/unit_space.php
+jnet/courrier/nouveau?membre=	chemin d'URL, pas un texte	views/jnet/commun/_voie.php

@@ -11,6 +11,7 @@ use App\Repositories\TenantMessageRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Jnet\JnetCommonSpaceService;
 use App\Services\Jnet\JnetDashboardService;
 use App\Services\Jnet\JnetLinkAccess;
 use App\Services\Jnet\JnetLinkRules;
@@ -40,6 +41,7 @@ final class JnetPortalController
         private ?JnetUnitSpaceSettings $spaceSettings = null,
         private ?JnetUnitWorkspaceService $workspace = null,
         private ?JnetLinkService $links = null,
+        private ?JnetCommonSpaceService $common = null,
     ) {
         $this->authService ??= \App\Core\Container::get(AuthService::class);
         $this->rbacService ??= \App\Core\Container::get(RbacService::class);
@@ -52,6 +54,7 @@ final class JnetPortalController
         $this->spaceSettings ??= new JnetUnitSpaceSettings();
         $this->workspace ??= new JnetUnitWorkspaceService();
         $this->links ??= new JnetLinkService();
+        $this->common ??= new JnetCommonSpaceService($this->spaces);
     }
 
     /** Espaces déjà franchis dans cette session (écran d'entrée montré une fois par espace et par session). */
@@ -68,11 +71,14 @@ final class JnetPortalController
         if ((string) $request->query('commun', '') === '' && (string) $request->query('type', '') === '') {
             return $this->hubResponse($ctx);
         }
-        $dash = $this->jnet->buildHome($ctx['tenant_id'], $ctx['user_id']);
-        $kind = (string) $request->query('type', '');
-        $space = $this->spaces->buildSpace($ctx['tenant_id'], $ctx['user_id'], 0, $kind) ?? [];
+        // Centre de commandement : un salon par page (?salon=), calculé seul. L'ancienne adresse « ?type=… » ouvre les annonces.
+        $query = $request->queryParams();
+        if ((string) ($query['salon'] ?? '') === '' && (string) ($query['type'] ?? '') !== '') {
+            $query['salon'] = 'annonces';
+        }
+        $data = $this->common->page($ctx['tenant_id'], $ctx['user_id'], $query);
 
-        return $this->render('home', 'Espace commun', array_merge($dash, $space), 'home');
+        return $this->render('home', 'Espace commun', ['cm' => $data], 'home', ['jnet_commun.css'], ['jnet_commun.js']);
     }
 
     /** Extranet du membre pour tous les profils (l'encadrement l'ouvre depuis l'onglet « Mon extranet »). */
@@ -739,7 +745,8 @@ final class JnetPortalController
             return $ctx;
         }
         $spaceId = max(0, (int) ($params['id'] ?? 0));
-        $back = $this->spaces->spaceUrl($spaceId);
+        // L'organisation publie depuis le salon « Annonces & ordres du jour » de l'espace commun, et y revient.
+        $back = $spaceId === JnetSpaceTree::ORG ? url('jnet?commun=1&salon=annonces') : $this->spaces->spaceUrl($spaceId);
         if (!\App\Core\Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Votre session a expiré, l’échange n’a pas été publié.');
 
@@ -1152,6 +1159,11 @@ final class JnetPortalController
 
         $draft = Session::getFlash('jnet_mail_draft');
         $draft = is_array($draft) ? $draft : [];
+        // « Écrire » depuis une carte de contact de l'espace commun : le destinataire est coché d'avance s'il est dans l'annuaire.
+        $to = (int) $request->query('membre', 0);
+        if ($to > 0 && ($draft['members'] ?? []) === []) {
+            $draft['members'] = [$to];
+        }
         $replyTo = (int) $request->query('repondre', 0);
         if ($replyTo > 0 && $this->messageRepository->userInThread($replyTo, $userId)) {
             $thread = $this->messageRepository->findThread($replyTo, $tenantId);

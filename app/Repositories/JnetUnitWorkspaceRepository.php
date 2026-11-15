@@ -72,6 +72,76 @@ class JnetUnitWorkspaceRepository
         }, $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
     }
 
+    /**
+     * Décompte des tâches de toute la communauté, par unité, en une seule requête (tableau de l'espace commun) : à faire,
+     * en cours, faites, et « en retard » = encore ouvertes et sans le moindre changement depuis $staleDays jours (une tâche
+     * n'a pas d'échéance : seul son dernier mouvement est connu).
+     *
+     * @return array<int, array{todo: int, doing: int, done: int, late: int}>
+     */
+    public function taskCountsByUnit(int $tenantId, int $staleDays = 14): array
+    {
+        if (!$this->ready()) {
+            return [];
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                "SELECT unit_id, status, COUNT(*) AS n,
+                        SUM(CASE WHEN status <> 'done' AND updated_at < (NOW() - INTERVAL " . max(1, min(365, $staleDays)) . " DAY) THEN 1 ELSE 0 END) AS late
+                 FROM jnet_unit_tasks WHERE tenant_id = ? GROUP BY unit_id, status"
+            );
+            $st->execute([$tenantId]);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $unit = (int) $r['unit_id'];
+            $out[$unit] ??= ['todo' => 0, 'doing' => 0, 'done' => 0, 'late' => 0];
+            $status = in_array((string) $r['status'], self::TASK_STATES, true) ? (string) $r['status'] : 'todo';
+            $out[$unit][$status] += (int) $r['n'];
+            $out[$unit]['late'] += (int) $r['late'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Tâches encore ouvertes de toute la communauté (les plus anciennes d'abord), en une requête bornée : le tableau de
+     * l'espace commun en garde les plus urgentes de chaque unité.
+     *
+     * @return list<array{id: int, unit_id: int, title: string, status: string, updated_at: string, assignee_label: string}>
+     */
+    public function openTasks(int $tenantId, int $limit = 1500): array
+    {
+        if (!$this->ready()) {
+            return [];
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                "SELECT t.id, t.unit_id, t.title, t.status, t.updated_at,
+                        COALESCE(NULLIF(a.callsign, ''), a.display_name) AS assignee_label
+                 FROM jnet_unit_tasks t
+                 LEFT JOIN users a ON a.id = t.assignee_user_id
+                 WHERE t.tenant_id = ? AND t.status <> 'done'
+                 ORDER BY t.updated_at ASC, t.id ASC
+                 LIMIT " . max(1, min(3000, $limit))
+            );
+            $st->execute([$tenantId]);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return array_map(static fn (array $r): array => [
+            'id' => (int) $r['id'],
+            'unit_id' => (int) $r['unit_id'],
+            'title' => (string) $r['title'],
+            'status' => (string) $r['status'],
+            'updated_at' => (string) $r['updated_at'],
+            'assignee_label' => (string) ($r['assignee_label'] ?? ''),
+        ], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
     /** @return array<string, mixed>|null */
     public function task(int $tenantId, int $unitId, int $taskId): ?array
     {

@@ -36,6 +36,8 @@ final class CsrfPostMiddleware
         // Pages « Ma situation » du membre (ex-/back-office/ma-situation/, déjà couvertes par '/back-office/') : chaque contrôleur
         // valide son jeton ; ceci est la ceinture en plus.
         '/jnet/moi/',
+        // Épingles de l'espace commun JNET : le contrôleur valide aussi son jeton.
+        '/jnet/commun/',
     ];
 
     /**
