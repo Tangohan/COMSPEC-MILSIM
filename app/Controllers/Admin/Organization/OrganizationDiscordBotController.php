@@ -56,6 +56,7 @@ final class OrganizationDiscordBotController
                 'settings' => $ready ? $repo->settings($tenant) : [],
                 'channels' => $ready ? $repo->channels($tenant) : [],
                 'roles' => $ready ? $repo->roles($tenant) : [],
+                'intake' => $ready ? (new \App\Services\Intel\IntelIntakeDiscord())->settings($tenant) : [],
                 'invite_url' => $inviteUrl,
                 'with_roles' => $withRoles,
                 'service_ready' => (new DiscordCompanionSettings())->key() !== '',
@@ -123,6 +124,33 @@ final class OrganizationDiscordBotController
         }
 
         return Response::redirect(url(self::PAGE));
+    }
+
+    /**
+     * Notifications des remontées du renseignement : salon, événements, rôle mentionné (réglage à part des rappels).
+     */
+    public function saveIntake(Request $request, array $params = []): Response
+    {
+        $denied = $this->guardPost($request);
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenant = (int) Session::get('tenant_id');
+        $events = $request->input('intake_events', []);
+        $result = (new \App\Services\Intel\IntelIntakeDiscord())->save($tenant, [
+            'enabled' => $request->input('intake_enabled', ''),
+            'channel_id' => (string) $request->input('intake_channel_id', ''),
+            'role_id' => (string) $request->input('intake_role_id', ''),
+            'events' => is_array($events) ? $events : [],
+        ]);
+        if ($result['ok']) {
+            $this->audit(AuditAction::DISCORD_BOT_SETTINGS, $tenant, 'remontees');
+            Session::flash('success', 'Notifications des remontées enregistrées.');
+        } else {
+            Session::flash('error', $result['error']);
+        }
+
+        return Response::redirect(url(self::PAGE) . '#dbot-remontees');
     }
 
     /** Bouton « Tester » : vérifie que le bot est vu et demande un message d'essai dans le salon de l'équipe. */
