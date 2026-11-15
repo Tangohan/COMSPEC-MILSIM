@@ -1,7 +1,7 @@
 /*
  * Dossiers d'intérêt du bureau SSE : file « ticketing », tiroir d'aperçu, fiche à onglets, modales.
- * Toutes les valeurs passent par les variables --di-* de .di : pour reprendre le système de design SSE (--sse-*), il suffit de
- * remapper ce bloc. Textes de 13 px au moins, cibles de 44 px au moins, rien de collé aux bords.
+ * Toutes les valeurs passent par les variables --di-* de .di, alignées sur les couleurs du portail SSE (sse_portal.css) : pour
+ * changer de palette, il suffit de remapper ce bloc. Textes de 13 px au moins, cibles de 44 px au moins, rien de collé aux bords.
  */
 .di {
     --di-bg: #0a0d0f;
@@ -347,3 +347,19 @@
 .di .di-rte button { min-height: var(--di-target); }
 .di label { font-size: 14px; letter-spacing: normal; text-transform: none; }
 .di .di-check, .di .di-radio { font-size: 15px; }
+
+/* Palette du portail SSE (sse_portal.css) : les valeurs de départ ne servent que si ses variables manquent. */
+.di {
+    --di-bg: var(--bg, #07090b);
+    --di-surface: var(--surface, #0f1419);
+    --di-surface-2: var(--bg-soft, #0b0d10);
+    --di-border: var(--border, rgba(242, 244, 243, .1));
+    --di-border-strong: var(--border-hover, rgba(242, 244, 243, .18));
+    --di-text: var(--text-strong, #f2f4f3);
+    --di-strong: var(--text-strong, #f2f4f3);
+    --di-muted: rgba(242, 244, 243, .62);
+    --di-accent: var(--green-bright, #34d399);
+    --di-bad: #f08a80;
+    --di-warn: var(--amber, #f59e0b);
+    --di-radius: 8px;
+}
