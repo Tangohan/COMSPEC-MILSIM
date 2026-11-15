@@ -8,6 +8,8 @@ declare(strict_types=1);
  * @var list<array{id:int,url:string,label:string}> $personPhotos
  * @var bool $canEditImages
  * @var int $imagesDocId papier d'où vient la demande (retour), 0 sinon
+ * @var bool $holderEditOnly fiche identité : l'affichage du portrait et de la signature est fait par la galerie, il ne reste
+ *                          que le formulaire, replié
  */
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $imgPhoto = ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null;
@@ -15,10 +17,19 @@ $imgSign = ($identity['signature_path'] ?? null) !== null ? (string) url((string
 $imagesDocId = (int) ($imagesDocId ?? 0);
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-id-images.js')) . '"></script>';
+$holderEditOnly = !empty($holderEditOnly);
 ?>
+<?php if ($holderEditOnly && empty($canEditImages)) { return; } ?>
+<?php if ($holderEditOnly): ?>
+<details class="idg-edit" id="images">
+    <summary>Modifier le portrait et la signature</summary>
+    <div class="idg-edit__body">
+<?php else: ?>
 <section class="panel" style="margin-top:10px" id="images">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">IMG</span> Photo et signature du titulaire</div><div class="panel-meta">Affichées sur chaque papier</div></div>
     <div class="panel-body">
+        <?php endif; ?>
+        <?php if (!$holderEditOnly): ?>
         <div class="idi-current">
             <figure class="idi-current__photo">
                 <?php if ($imgPhoto !== null): ?><img src="<?= $h($imgPhoto) ?>" alt="Photo du titulaire"><?php else: ?><span class="muted">Pas de photo : silhouette imprimée</span><?php endif; ?>
@@ -27,6 +38,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('as
                 <?php if ($imgSign !== null): ?><img src="<?= $h($imgSign) ?>" alt="Signature du titulaire"><?php else: ?><span class="muted">Pas de signature importée : signature écrite</span><?php endif; ?>
             </figure>
         </div>
+        <?php endif; ?>
         <?php if (!empty($canEditImages)): ?>
             <form method="post" enctype="multipart/form-data" action="<?= $h(url('atak/sse/papiers/identites/' . (int) $identity['id'] . '/images')) ?>" class="idi-form">
                 <?= \App\Core\Csrf::field() ?>
@@ -52,4 +64,4 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('as
             <?php require __DIR__ . '/_photo_guide.php'; ?>
         <?php endif; ?>
     </div>
-</section>
+<?php if ($holderEditOnly): ?></details><?php else: ?></section><?php endif; ?>

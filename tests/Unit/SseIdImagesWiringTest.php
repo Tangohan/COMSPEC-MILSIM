@@ -62,7 +62,7 @@ final class SseIdImagesWiringTest extends TestCase
         self::assertStringContainsString('enctype="multipart/form-data"', $holder);
         self::assertStringContainsString('Csrf::field()', $holder);
         self::assertStringContainsString("if (!empty(\$canEditImages))", $holder, 'formulaire réservé aux droits de l’atelier');
-        self::assertStringContainsString("require __DIR__ . '/_holder_images.php';", self::read('views/atak/sse/papers/identity_show.php'));
+        self::assertStringContainsString("require __DIR__ . '/_holder_images.php';", self::read('views/atak/sse/papers/_dossier_photos.php'), 'la fiche identité reprend le formulaire du titulaire via l’onglet Photos');
         self::assertStringContainsString("require __DIR__ . '/_holder_images.php';", self::read('views/atak/sse/papers/document_show.php'));
         self::assertStringContainsString("\$data['canEditImages'] ??= \$workshopRights['manage'];", self::read('app/Controllers/Web/SseIdentityRegistryController.php'));
         $input = self::read('views/atak/sse/papers/_photo_input.php');

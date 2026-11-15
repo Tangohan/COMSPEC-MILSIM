@@ -79,9 +79,11 @@ final class SseIdentityDossierService
             static fn (array $l): bool => ($l['visibility'] ?? 'known') === 'known'
         ));
         $backLinks = $this->safe(fn (): array => $this->records()->backLinks($tenantId, $id)) ?? [];
+        $manage = $access->canManage();
         $photos = array_values(array_filter(
             $this->safe(fn (): array => $this->records()->photosFor($tenantId, [$id])[$id] ?? []) ?? [],
-            static fn (array $p): bool => ($p['visibility'] ?? 'known') !== 'hidden'
+            // Une photo masquée reste visible (et marquée « masquée ») pour qui gère les fichiers ; les autres ne la voient pas.
+            static fn (array $p): bool => ($p['visibility'] ?? 'known') !== 'hidden' || $manage
         ));
         $mentions = $readable ? ($this->safe(fn (): array => (new SseFileRepository())->activeMentionsFor($tenantId, [$id], [])) ?? []) : [];
         $timeline = $this->timeline->build($tenantId, $identity, $access, $lang, $filter);

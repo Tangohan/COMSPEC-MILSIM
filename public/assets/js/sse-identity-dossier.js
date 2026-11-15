@@ -8,6 +8,13 @@
     if (!root) {
         return;
     }
+    // Portrait de l'en-tête introuvable : la silhouette remplace l'icône d'image cassée.
+    var headImg = root.querySelector('[data-dos-portrait-img]');
+    if (headImg) {
+        var broke = function () { headImg.parentNode.classList.add('is-broken'); };
+        headImg.addEventListener('error', broke);
+        if (headImg.complete && headImg.naturalWidth === 0) { broke(); }
+    }
     var tabs = Array.prototype.slice.call(root.querySelectorAll('[role="tab"]'));
     var panels = Array.prototype.slice.call(root.querySelectorAll('[role="tabpanel"]'));
     if (!tabs.length || tabs.length !== panels.length) {
@@ -33,6 +40,11 @@
         panels.forEach(function (panel) {
             panel.hidden = panel.id !== id;
         });
+        // Barre d'onglets défilante (téléphone) : l'onglet ouvert reste visible.
+        var current = tabs.filter(function (t) { return idOf(t) === id; })[0];
+        if (current && current.parentNode && current.parentNode.scrollWidth > current.parentNode.clientWidth) {
+            current.parentNode.scrollLeft = Math.max(0, current.offsetLeft - 24);
+        }
         if (focus) {
             var active = tabs.filter(function (t) { return idOf(t) === id; })[0];
             if (active) {

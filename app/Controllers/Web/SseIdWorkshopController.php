@@ -534,6 +534,21 @@ final class SseIdWorkshopController
                 return Response::redirect($back);
             }
         }
+        if (!$photo['ok'] && ($libraryId = (int) $request->input('photo_library', 0)) > 0) {
+            // « Définir comme portrait » depuis la visionneuse de l'onglet Photos.
+            $libraryPhoto = null;
+            try {
+                $libraryPhoto = (new \App\Repositories\SseFileRecordRepository())->photo($tenantId, $libraryId);
+            } catch (\Throwable $e) {
+                error_log('Portrait depuis la photothèque : photo illisible : ' . $e->getMessage());
+            }
+            $photo = SseIdWorkshopService::copyFilePhoto($tenantId, $id, $libraryPhoto, $images);
+            if (!$photo['ok']) {
+                Session::flash('error', 'Photo : ' . ($photo['error'] ?? 'image refusée.'));
+
+                return Response::redirect($back);
+            }
+        }
         if (isset($photo['path']) || $request->inputString('photo_remove') === '1') {
             $set['photo_path'] = $photo['path'] ?? null;
         }
