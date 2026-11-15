@@ -25,8 +25,9 @@ d'opération sur les terrains Arma, reliés au jeu dans les deux sens.
 
 - `4370_atak_toc_plans` : tables `atak_plans`, `atak_plan_elements`, `atak_plan_phases`, `atak_plan_versions`, `atak_plan_shares`, `atak_plan_comments`, `atak_plan_presence`, `atak_toc_rooms`, `atak_toc_actions`.
 - `4380_atak_toc_permissions` : droits `atak.toc.use` et `atak.toc.manage`.
-- `4740_atak_toc_phone` : tables `atak_toc_phone_settings` et `atak_toc_phone_events`, droit `atak.toc.phone` (accordé aux seuls niveaux qui ont `atak.toc.manage`). Sans elle, les actions sur les téléphones restent désactivées. Retour arrière : `migrations/rollback/atak_toc_phone_down.sql`.
+- `4760_atak_toc_phone` : tables `atak_toc_phone_settings` et `atak_toc_phone_events`, droit `atak.toc.phone` (accordé aux seuls niveaux qui ont `atak.toc.manage`). Sans elle, les actions sur les téléphones restent désactivées. Retour arrière : `migrations/rollback/atak_toc_phone_down.sql`.
 - `4630_atak_marker_cycles` : tables `atak_marker_cycle_settings`, `atak_marker_archives`, `atak_marker_archive_items` (cycle de 24 h des marqueurs, voir plus bas).
+- `4750_atak_toc_report_reads` : table `atak_toc_report_reads` (lu / non lu des rapports par opérateur, panneau Rapports). Sans elle, le panneau marche : tout est « non lu », rien n'est conservé, et il le dit. Retour arrière : `migrations/rollback/atak_toc_report_reads_down.sql`.
 
 ## Console : rubriques, onglets et sources
 
@@ -34,7 +35,7 @@ Quatre rubriques, chacune avec ses onglets (Alt + 1 à 4, flèches sur la barre)
 
 | Rubrique | Onglets |
 |---|---|
-| Situation | Groupes, ORBAT, Réseau, Téléphones, Flux |
+| Situation | Groupes, ORBAT, Réseau, Téléphones, Flux, Rapports |
 | Conduite | Ordres, Demandes, Chronos, EXCHECK, Main courante, Pertes |
 | Plans | Plans web, Camp |
 | Salle | Écrans, SAT, Radio |
@@ -118,7 +119,7 @@ Case à cocher, nombre d'éléments, opacité, source et heure de la dernière m
 | Zones (battleplan) | jeu + web | oui (ATAK web) |
 | Points et itinéraires | jeu + web | oui (console : « Point de passage… » ; ATAK web) |
 | Relais et couverture réseau | jeu | non |
-| Comptes rendus géolocalisés | jeu | non |
+| Rapports : BDA, comptes rendus, SITREP, 9-line (épingles par type, un clic ouvre la fiche) | jeu | accusé de réception (panneau Rapports) |
 | Photos géolocalisées (12 h, camp du poste) | jeu | non |
 | Demandes du poste | jeu + web | réponse (onglet Demandes) |
 | Ordres avec point | web | oui (ATAK web) |
@@ -126,6 +127,19 @@ Case à cocher, nombre d'éléments, opacité, source et heure de la dernière m
 | Tracés de l'app Traçage, cibles et tâches | — | affichés « pas remonté par le jeu au site pour l'instant » |
 
 Réalisme : les calques lisent les mêmes API que la carte ATAK web, avec les mêmes droits et le même brouillage. Rien n'y entre que ce que le réseau connaît. Limite connue : `/api/recon/images` ne filtre pas par carte. Les photos sont donc posées seulement si elles sont dans le terrain, récentes (12 h) et du camp du poste.
+
+## Panneau Rapports
+
+Onglet **Situation › Rapports** : tous les rapports tactiques du jeu en une liste de type ticketing. Droit : `atak.toc.use` (le même que le poste), communauté de la session.
+
+- **Sources** : `atak_tactical_reports` (BDA, contact TIC, SALUTE, SPOTREP, SITREP, patrouille, blessé, logistique, engin explosif, NRBC, ordre de conduite, fin d'opération, libres : POST `/api/atak/reports` depuis le téléphone, via COMSPEC Link) et `atak_nine_line` (9-line CAS, 5-line, MEDEVAC / CASEVAC : POST `/api/cas` et `/api/atak/medevac`). Familles du panneau : BDA, Comptes rendus, SITREP, 9-line, Autres.
+- **Liste** : onglets de familles avec compteurs et pastille de non lus, recherche (indicatif, grille, texte, sans tenir compte des accents), « Non lus », filtres (période, carte ou toutes les cartes, unité ou émetteur, priorité, statut ouvert ou clos), tri (récents, non lus, priorité, anciens).
+- **Fiche** (tiroir, aussi par lien `/atak/toc?onglet=rapports#rapport=tr-12`) : BDA (résultat en grand, cible, munition, dommages collatéraux, observateur, heure, position), comptes rendus et SITREP (faits, textes longs, autres informations), 9-line et MEDEVAC (lignes numérotées, avancement, géométrie du JTAC) ; onglet Suivi : accusé de réception, plans où le rapport est joint, jonction à un plan et à une phase (un repère par rapport et par plan, uid `rep-tr-12`), lu / non lu ; PDF ; lien. Ouvrir la fiche la marque lue.
+- **Carte** : épingles du calque « Rapports » (icône par type, étiquette = résultat du BDA, ● = non lu) ; un clic ouvre la fiche.
+- **Synchro** : `/atak/toc/api/state` porte `reports.stamp` (empreinte de 12 caractères : nombre, dernier identifiant et dernière modification des deux sources) ; quand elle change, le panneau relit sa liste.
+- **Habilitation** : un rapport au-dessus de celle de l'opérateur (classification UNCLASSIFIED, RESTRICTED, CONFIDENTIAL, SECRET ou visibilité COMMAND_ONLY, RESTRICTED, rapprochées de l'échelle américaine SSE : CUI, C, S, TS) n'est ni listé, ni ouvert, ni exporté (réponse « introuvable ») ; la liste dit seulement combien sont cachés. Les passages caviardés du bureau Remontées sont masqués au niveau de l'opérateur, et la fiche structurée d'un rapport caviardé est retirée.
+- **PDF** : `GET /atak/toc/reports/{clé}/export.pdf`, gabarit sobre inspiré des rapports militaires américains (bandeaux de classification, À / DE / OBJET / DIFFUSION, GDH), niveaux américains fictifs, « Document de fiction — jeu de rôle Arma 3 » à chaque page, aucun nom d'organisation réelle ; caviardage en rectangles noirs.
+- **API** : `GET /atak/toc/api/reports`, `GET …/reports/{clé}`, `POST …/reports/{clé}/read`, `…/ack`, `…/attach`, `POST …/reports/read-all`, `GET …/reports/plans`. Clés : `tr-12` (compte rendu), `nl-7` (9-line). Écritures : CSRF et 60 à 240 actions par minute.
 
 ## Fonds de carte
 
@@ -336,8 +350,8 @@ Onglet **Téléphones** de la rubrique Situation (`/atak/toc?onglet=telephones`)
 ### Droits et réglage
 
 - `atak.toc.use` : voir la liste, les fiches, le journal.
-- `atak.toc.phone` (droit dédié, **sensible**, suppose `atak.toc.use`) : notifier, faire sonner, localiser, trianguler. `atak.toc.manage` ne le donne pas ; l'administration de la communauté (`admin.organization`) le vaut. L'étape 4740 le crée dans chaque communauté et l'accorde **uniquement aux niveaux qui ont déjà `atak.toc.manage`** ; ensuite chaque communauté le coche ou non dans Niveaux d'accès (rubrique « Poste TOC »).
-- Réglage de la communauté (`atak_toc_phone_settings`, bouton « Réglages » de l'onglet, `atak.toc.manage`) : **fonction désactivée tant que la communauté ne l'a pas activée**, et « masquer l'entrée *Localisé par le TOC* sur les téléphones hostiles » (jamais pour un allié). Sans l'étape 4740 : désactivée, avec le message « pas encore installée ».
+- `atak.toc.phone` (droit dédié, **sensible**, suppose `atak.toc.use`) : notifier, faire sonner, localiser, trianguler. `atak.toc.manage` ne le donne pas ; l'administration de la communauté (`admin.organization`) le vaut. L'étape 4760 le crée dans chaque communauté et l'accorde **uniquement aux niveaux qui ont déjà `atak.toc.manage`** ; ensuite chaque communauté le coche ou non dans Niveaux d'accès (rubrique « Poste TOC »).
+- Réglage de la communauté (`atak_toc_phone_settings`, bouton « Réglages » de l'onglet, `atak.toc.manage`) : **fonction désactivée tant que la communauté ne l'a pas activée**, et « masquer l'entrée *Localisé par le TOC* sur les téléphones hostiles » (jamais pour un allié). Sans l'étape 4760 : désactivée, avec le message « pas encore installée ».
 
 ### Actions
 

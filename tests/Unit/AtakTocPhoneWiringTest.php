@@ -47,7 +47,7 @@ final class AtakTocPhoneWiringTest extends TestCase
         self::assertSame(AccessRightsCatalog::SENSITIVITY_CRITICAL, $meta['sensitivity'], 'droit sensible');
         self::assertSame(['atak.toc.use'], $meta['requires']);
         self::assertStringContainsString('désactivé par défaut', $meta['explanation']);
-        // Aucun niveau ne le reçoit par la matrice : il se coche ou vient de l'étape 4740 (gestionnaires du poste).
+        // Aucun niveau ne le reçoit par la matrice : il se coche ou vient de l'étape 4760 (gestionnaires du poste).
         $matrix = self::read('app/Services/Rbac/RolePermissionMatrixCatalog.php');
         self::assertStringNotContainsString('atak.toc.phone', $matrix);
         $access = self::read('app/Services/AtakToc/TocAccess.php');
@@ -70,14 +70,14 @@ final class AtakTocPhoneWiringTest extends TestCase
         $entry = array_values(array_filter($registry, static fn (array $e): bool => $e['id'] === 'atak_toc_phone'))[0] ?? null;
         self::assertNotNull($entry);
         self::assertSame('schema', $entry['group']);
-        self::assertSame('4740_atak_toc_phone.php', $entry['file']);
+        self::assertSame('4760_atak_toc_phone.php', $entry['file']);
         self::assertTrue($entry['rerun']);
         self::assertStringContainsString('migrations/rollback/atak_toc_phone_down.sql', $entry['label']);
         self::assertStringContainsString('sans cette étape la fonction reste désactivée', $entry['label']);
-        self::assertFileExists(self::ROOT . '/database/steps/4740_atak_toc_phone.php');
+        self::assertFileExists(self::ROOT . '/database/steps/4760_atak_toc_phone.php');
         $nums = array_map(static fn (array $e): int => (int) substr((string) $e['file'], 0, 4), $registry);
-        self::assertSame(1, count(array_keys($nums, 4740, true)), 'numéro unique');
-        $step = self::read('database/steps/4740_atak_toc_phone.php');
+        self::assertSame(1, count(array_keys($nums, 4760, true)), 'numéro unique');
+        $step = self::read('database/steps/4760_atak_toc_phone.php');
         // Droit donné aux seuls niveaux qui ont atak.toc.manage : jamais « tous les rôles ».
         self::assertStringContainsString("'atak.toc.manage'", $step);
         self::assertStringContainsString("'atak.toc.phone'", $step);
@@ -246,7 +246,7 @@ final class AtakTocPhoneWiringTest extends TestCase
     public function testDocumentationDescribesTheFeature(): void
     {
         $doc = self::read('docs/TOC-WEB.md');
-        foreach (['atak.toc.phone', 'Téléphones', 'atak_toc_phone_events', '4740', 'PhoneTriangulation', 'fn_tocPhone', 'position inconnue'] as $needle) {
+        foreach (['atak.toc.phone', 'Téléphones', 'atak_toc_phone_events', '4760', 'PhoneTriangulation', 'fn_tocPhone', 'position inconnue'] as $needle) {
             self::assertStringContainsString($needle, $doc, $needle);
         }
     }

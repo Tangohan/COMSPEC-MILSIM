@@ -786,6 +786,16 @@ return function (Router $router) {
     $router->post('/atak/toc/api/phones/{ref}/ring-stop', [$tocPhone, 'ringStop'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/phones/{ref}/locate', [$tocPhone, 'locate'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/phones/{ref}/triangulate', [$tocPhone, 'triangulate'], $mwAtakMemberOnly);
+    // Panneau Rapports du poste (BDA, comptes rendus, SITREP, 9-line) : lecture, lu / non lu, accusé, jonction à un plan, PDF.
+    $tocReports = \App\Controllers\Api\AtakTocReportsApiController::class;
+    $router->get('/atak/toc/api/reports', [$tocReports, 'index'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/read-all', [$tocReports, 'readAll'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/reports/plans', [$tocReports, 'plans'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/reports/{key}', [$tocReports, 'show'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/read', [$tocReports, 'read'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/ack', [$tocReports, 'ack'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/attach', [$tocReports, 'attach'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/reports/{key}/export.pdf', [$tocReports, 'pdf'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/reset', [$tocApi, 'reset'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/plans', [$planApi, 'index'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/plans', [$planApi, 'store'], $mwAtakMemberOnly);
@@ -1382,6 +1392,10 @@ return function (Router $router) {
     $router->get('/atak/sse/anomalies', [SsePortalController::class, 'anomalies'], $mwSsePortal);
     $router->get('/atak/sse/a-trier', [\App\Controllers\Web\SseTriageController::class, 'index'], $mwSsePortal);
     $router->get('/atak/sse/a-trier/compteurs', [\App\Controllers\Web\SseTriageController::class, 'counters'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/traiter', [\App\Controllers\Web\SseTriageController::class, 'act'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/annuler', [\App\Controllers\Web\SseTriageController::class, 'undo'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/regles', [\App\Controllers\Web\SseTriageController::class, 'rulesSave'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier/regles/apercu', [\App\Controllers\Web\SseTriageController::class, 'rulesPreview'], $mwSsePortal);
     $router->get('/atak/sse/rapprochements', [SsePortalController::class, 'suggestionsIndex'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/valider', [SsePortalController::class, 'suggestionAccept'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
