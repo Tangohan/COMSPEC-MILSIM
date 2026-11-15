@@ -572,13 +572,12 @@ final class RhActionInboxService
      */
     private static function issueLinks(int $userId, array $issueKeys): array
     {
+        // Fenêtre à ouvrir d'emblée (?ouvrir=) ou, à défaut, carte à atteindre (#ancre).
+        $dialogs = ['function' => 'fonctions', 'operator_image' => 'portrait'];
         $anchors = [
-            'function' => 'eff-dlg-jobs',
             'rank' => 'grade',
             'role' => 'acces',
-            'operator_image' => 'eff-dlg-portrait',
         ];
-        $base = effectifs_workspace_url('membres/' . $userId);
         $out = [];
         foreach ($issueKeys as $key) {
             $key = (string) $key;
@@ -588,7 +587,9 @@ final class RhActionInboxService
             $out[] = [
                 'key' => $key,
                 'label' => PersonnelProfileGapScanService::ISSUE_LABELS[$key],
-                'href' => $base . '#' . ($anchors[$key] ?? 'dossier'),
+                'href' => isset($dialogs[$key])
+                    ? effectifs_member_url($userId, $dialogs[$key])
+                    : effectifs_member_url($userId, '', $anchors[$key] ?? 'dossier'),
             ];
         }
 

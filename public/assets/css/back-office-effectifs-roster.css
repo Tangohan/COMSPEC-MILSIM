@@ -793,3 +793,112 @@ button.eff-das__edit {
   border-color: var(--ath-accent, #0b8a5c);
   color: var(--ath-accent, #0b8a5c);
 }
+
+/* Mobile (2026-11-15) : en-tête de tableau inutile sous les fiches, barre d'outils lisible, cibles tactiles de 40 px minimum,
+   fenêtres d'édition rapide posées en bas de l'écran au lieu de déborder de la fiche. */
+@media (max-width: 760px) {
+  .bo-eff-workspace #eff-roster-table.eff-das__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .bo-eff-workspace .eff-mq-bar > .eff-mq-more {
+    flex: 1 1 100%;
+  }
+
+  .bo-eff-workspace .eff-mq-more > summary {
+    min-height: 2.5rem;
+  }
+
+  .bo-eff-workspace .eff-mq-more__panel {
+    position: static;
+    width: auto;
+    margin-top: 0.4rem;
+    box-shadow: none;
+  }
+
+  .bo-eff-workspace .eff-mq-bar .eff-mq-seg {
+    flex: 1 1 auto;
+  }
+
+  .bo-eff-workspace .eff-mq-seg a,
+  .bo-eff-workspace .eff-mq-seg button {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .bo-eff-workspace .eff-mq-views {
+    flex-wrap: wrap;
+    flex: 1 1 100%;
+  }
+
+  .bo-eff-workspace .eff-mq-views a,
+  .bo-eff-workspace .eff-mq-meta__export a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0.25rem 0.75rem;
+  }
+
+  .bo-eff-workspace .eff-mq-more__actions .eff-catalog__btn {
+    min-height: 2.5rem;
+  }
+
+  .bo-eff-workspace .eff-das__edit,
+  .bo-eff-workspace .eff-das__dossier,
+  .bo-eff-workspace .eff-sheets__qual-count {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  .bo-eff-workspace .eff-das__edit {
+    width: 2.5rem;
+    height: 2.5rem;
+    opacity: 1;
+  }
+
+  .bo-eff-workspace .eff-mq-gh__toggle,
+  .bo-eff-workspace #eff-roster-table.eff-das__table .eff-sheets__chip,
+  .bo-eff-workspace #eff-roster-table.eff-das__table .eff-das__actions-col a,
+  .bo-eff-workspace #eff-roster-table.eff-das__table .eff-das__actions-col button {
+    min-height: 2.5rem;
+  }
+
+  .bo-eff-workspace #eff-roster-table.eff-das__table .eff-mq-mb__name {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+  }
+
+  .bo-eff-workspace #eff-roster-table.eff-das__table .eff-sheets__pop-panel {
+    position: fixed;
+    z-index: 60;
+    top: auto;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    min-width: 0;
+    max-width: none;
+    text-align: left;
+  }
+
+  .bo-eff-workspace .eff-sheets__pop-form select,
+  .bo-eff-workspace .eff-sheets__pop-form input[type="text"],
+  .bo-eff-workspace .eff-sheets__pop-form input[type="date"],
+  .bo-eff-workspace .eff-sheets__pop-form .eff-catalog__btn,
+  .bo-eff-workspace .eff-sheets__pop-link {
+    min-height: 2.5rem;
+    font-size: 1rem;
+  }
+
+  .bo-eff-workspace .eff-sheets__pop-link {
+    display: flex;
+    align-items: center;
+  }
+}

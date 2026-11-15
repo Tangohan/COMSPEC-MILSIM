@@ -177,8 +177,28 @@
     }
 
     // Lien direct vers une fenêtre (ex. « À traiter » → fiche#eff-dlg-jobs) : on l'ouvre au chargement.
+    // Idem avec ?ouvrir=etat-civil (liens des tâches et des qualités de données) : alias connus ci-dessous,
+    // un paramètre inconnu ou une fenêtre absente de la page (droits) est ignoré.
+    var DIALOG_ALIASES = {
+        'etat-civil': 'eff-dlg-civil',
+        'langues': 'eff-dlg-langues',
+        'fonctions': 'eff-dlg-jobs',
+        'portrait': 'eff-dlg-portrait',
+        'elevation': 'eff-dlg-elevation',
+        'depart': 'eff-dlg-depart'
+    };
+
     function openDialogFromHash() {
         var id = window.location.hash.replace('#', '');
+        var wanted = '';
+        try {
+            wanted = new URL(window.location.href).searchParams.get('ouvrir') || '';
+        } catch (e) {
+            wanted = '';
+        }
+        if (Object.prototype.hasOwnProperty.call(DIALOG_ALIASES, wanted)) {
+            id = DIALOG_ALIASES[wanted];
+        }
         if (!/^eff-dlg-[a-z0-9-]+$/i.test(id)) {
             return;
         }
