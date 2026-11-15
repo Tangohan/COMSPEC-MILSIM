@@ -8,14 +8,28 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Étiquettes PARTAGÉES du bureau SSE (table sse_tags, rangée par portée : « field_note » pour les fiches de renseignement,
- * « attach » pour les rattachements), liaisons étiquette ↔ objet (sse_tag_links) et réglages des fiches
- * (sse_field_note_settings). Toute requête porte la communauté et la portée. Sans les tables (étape de base de données en
- * attente), les lectures renvoient « vide » et les écritures ne font rien : ready() le dit aux appelants.
- * SQL portable (MySQL et sqlite des tests) : ni ON DUPLICATE KEY, ni fonction de date du moteur.
+ * Catalogue UNIQUE des étiquettes du bureau SSE : la table sse_attach_tags de la fenêtre « Rattacher », complétée par l'étape
+ * sse_tags (portée, famille, code, libellés, description, complément, ordre, origine, état). Une ligne vaut pour toute la
+ * communauté (unicité communauté + clé) ; sa portée dit où elle est proposée : « attach » (rattachements seulement),
+ * « field_note » (réglage d'une entrée du catalogue livré des fiches) ou « all » (fiches ET rattachements : toute étiquette
+ * propre créée depuis « Gestion des fiches », toute étiquette de rattachement activée pour les fiches).
+ * S'y ajoutent les liaisons étiquette ↔ fiche (sse_tag_links) et les réglages des fiches (sse_field_note_settings).
+ * Toute requête porte la communauté. Sans l'étape (colonnes ou tables absentes), les lectures renvoient « vide » et les
+ * écritures ne font rien : ready() le dit aux appelants. SQL portable (MySQL et sqlite des tests).
  */
 final class SseTagRepository
 {
+    public const TABLE = 'sse_attach_tags';
+
+    public const SCOPE_ATTACH = 'attach';
+
+    public const SCOPE_NOTES = 'field_note';
+
+    public const SCOPE_ALL = 'all';
+
+    /** Longueur de la colonne « name » d'origine (nom court lu par la fenêtre « Rattacher ») ; le libellé entier va dans name_fr. */
+    public const NAME_MAX = 40;
+
     private Database $db;
 
     /** @var \WeakMap<PDO, array{ok: bool, at: int}>|null */
@@ -36,7 +50,7 @@ final class SseTagRepository
                 return $known['ok'];
             }
             try {
-                $pdo->query('SELECT 1 FROM sse_tags WHERE 1 = 0');
+                $pdo->query('SELECT scope, family, code, name_fr, status, origin FROM sse_attach_tags WHERE 1 = 0');
                 $pdo->query('SELECT 1 FROM sse_tag_links WHERE 1 = 0');
                 $pdo->query('SELECT 1 FROM sse_field_note_settings WHERE 1 = 0');
                 self::$readyByConnection[$pdo] = ['ok' => true, 'at' => time()];
@@ -64,63 +78,62 @@ final class SseTagRepository
 
     // ——————————————————————————— Étiquettes ———————————————————————————
 
-    /** @return list<array<string, mixed>> */
-    public function rows(int $tenantId, string $scope): array
+    /** Toutes les étiquettes de la communauté, quelle que soit leur portée. @return list<array<string, mixed>> */
+    public function rows(int $tenantId): array
     {
         if ($tenantId < 1 || !self::ready()) {
             return [];
         }
 
-        return $this->db->fetchAll(
-            'SELECT * FROM sse_tags WHERE tenant_id = :t AND scope = :s ORDER BY sort_order ASC, id ASC',
-            ['t' => $tenantId, 's' => $scope]
-        );
+        return $this->db->fetchAll('SELECT * FROM sse_attach_tags WHERE tenant_id = :t ORDER BY sort_order ASC, id ASC', ['t' => $tenantId]);
     }
 
     /** @return array<string, mixed>|null */
-    public function find(int $tenantId, string $scope, string $slug): ?array
+    public function find(int $tenantId, string $slug): ?array
     {
         if ($tenantId < 1 || $slug === '' || !self::ready()) {
             return null;
         }
 
-        return $this->db->fetchOne(
-            'SELECT * FROM sse_tags WHERE tenant_id = :t AND scope = :s AND slug = :k LIMIT 1',
-            ['t' => $tenantId, 's' => $scope, 'k' => $slug]
-        );
+        return $this->db->fetchOne('SELECT * FROM sse_attach_tags WHERE tenant_id = :t AND slug = :k LIMIT 1', ['t' => $tenantId, 'k' => $slug]);
     }
 
     /**
-     * Crée ou met à jour la ligne d'une étiquette (clé : communauté + portée + slug).
+     * Crée ou met à jour la ligne d'une étiquette (clé : communauté + slug). Une ligne créée ici prend la portée $newScope ;
+     * une étiquette née dans la fenêtre « Rattacher » (portée « attach ») passe à « all » dès qu'elle est réglée pour les fiches.
      *
-     * @param array<string, mixed> $data family, code, name, name_en, description, description_en, color, qualifier, sort_order, origin, status, merged_into
+     * @param array<string, mixed> $data family, code, name (libellé français entier), name_en, description, description_en, color, qualifier, sort_order, origin, status, merged_into
      */
-    public function save(int $tenantId, string $scope, string $slug, array $data, ?int $userId): bool
+    public function save(int $tenantId, string $slug, array $data, ?int $userId, string $newScope = self::SCOPE_ALL): bool
     {
         if ($tenantId < 1 || $slug === '' || !self::ready()) {
             return false;
         }
-        $cols = ['family', 'code', 'name', 'name_en', 'description', 'description_en', 'color', 'qualifier', 'sort_order', 'origin', 'status', 'merged_into'];
-        $existing = $this->find($tenantId, $scope, $slug);
+        $cols = ['family', 'code', 'name_fr', 'name', 'name_en', 'description', 'description_en', 'color', 'qualifier', 'sort_order', 'origin', 'status', 'merged_into'];
+        if (array_key_exists('name', $data)) {
+            $data['name_fr'] = (string) $data['name'];
+            $data['name'] = mb_substr((string) $data['name'], 0, self::NAME_MAX);
+        }
+        $existing = $this->find($tenantId, $slug);
         if ($existing === null) {
             $row = [
-                'tenant_id' => $tenantId, 'scope' => $scope, 'slug' => $slug,
+                'tenant_id' => $tenantId, 'scope' => $newScope, 'slug' => $slug,
                 'family' => (string) ($data['family'] ?? ''), 'code' => (string) ($data['code'] ?? ''), 'name' => (string) ($data['name'] ?? ''),
-                'name_en' => (string) ($data['name_en'] ?? ''), 'description' => (string) ($data['description'] ?? ''),
+                'name_fr' => (string) ($data['name_fr'] ?? ''), 'name_en' => (string) ($data['name_en'] ?? ''), 'description' => (string) ($data['description'] ?? ''),
                 'description_en' => (string) ($data['description_en'] ?? ''), 'color' => (string) ($data['color'] ?? 'slate'),
                 'qualifier' => (string) ($data['qualifier'] ?? ''), 'sort_order' => (int) ($data['sort_order'] ?? 0),
                 'origin' => (string) ($data['origin'] ?? 'custom'), 'status' => (string) ($data['status'] ?? 'active'),
                 'merged_into' => $data['merged_into'] ?? null, 'created_by_user_id' => $userId, 'created_at' => self::now(),
             ];
             $this->db->insert(
-                'INSERT INTO sse_tags (' . implode(', ', array_keys($row)) . ') VALUES (:' . implode(', :', array_keys($row)) . ')',
+                'INSERT INTO sse_attach_tags (' . implode(', ', array_keys($row)) . ') VALUES (:' . implode(', :', array_keys($row)) . ')',
                 $row
             );
 
             return true;
         }
         $sets = [];
-        $params = ['t' => $tenantId, 's' => $scope, 'k' => $slug, 'u' => $userId, 'at' => self::now()];
+        $params = ['t' => $tenantId, 'k' => $slug, 'u' => $userId, 'at' => self::now(), 'was' => self::SCOPE_ATTACH, 'all' => self::SCOPE_ALL];
         foreach ($cols as $col) {
             if (array_key_exists($col, $data)) {
                 $sets[] = $col . ' = :' . $col;
@@ -131,36 +144,51 @@ final class SseTagRepository
             return false;
         }
         $this->db->execute(
-            'UPDATE sse_tags SET ' . implode(', ', $sets) . ', updated_by_user_id = :u, updated_at = :at WHERE tenant_id = :t AND scope = :s AND slug = :k',
+            'UPDATE sse_attach_tags SET ' . implode(', ', $sets) . ', scope = CASE WHEN scope = :was THEN :all ELSE scope END, updated_by_user_id = :u, updated_at = :at WHERE tenant_id = :t AND slug = :k',
             $params
         );
 
         return true;
     }
 
-    public function delete(int $tenantId, string $scope, string $slug): bool
+    public function delete(int $tenantId, string $slug): bool
     {
         if ($tenantId < 1 || $slug === '' || !self::ready()) {
             return false;
         }
 
-        return $this->db->execute(
-            'DELETE FROM sse_tags WHERE tenant_id = :t AND scope = :s AND slug = :k',
-            ['t' => $tenantId, 's' => $scope, 'k' => $slug]
-        ) > 0;
+        return $this->db->execute('DELETE FROM sse_attach_tags WHERE tenant_id = :t AND slug = :k', ['t' => $tenantId, 'k' => $slug]) > 0;
     }
 
-    /** Retire les réglages posés sur le catalogue livré d'une famille (les étiquettes propres restent). */
-    public function deleteCatalogOverrides(int $tenantId, string $scope, string $family): int
+    /**
+     * Retire les réglages posés sur le catalogue livré d'une famille (les étiquettes propres restent, comme les lignes dont
+     * la fenêtre « Rattacher » se sert).
+     */
+    public function deleteCatalogOverrides(int $tenantId, string $family): int
     {
         if ($tenantId < 1 || !self::ready()) {
             return 0;
         }
 
         return $this->db->execute(
-            'DELETE FROM sse_tags WHERE tenant_id = :t AND scope = :s AND family = :f AND origin = :o',
-            ['t' => $tenantId, 's' => $scope, 'f' => $family, 'o' => 'catalog']
+            'DELETE FROM sse_attach_tags WHERE tenant_id = :t AND scope = :s AND family = :f AND origin = :o',
+            ['t' => $tenantId, 's' => self::SCOPE_NOTES, 'f' => $family, 'o' => 'catalog']
         );
+    }
+
+    /** Nombre de rattachements qui portent l'étiquette (colonne tags de sse_link_attachments : « ,3,12, »). */
+    public function attachUsage(int $tenantId, int $tagId): int
+    {
+        if ($tenantId < 1 || $tagId < 1) {
+            return 0;
+        }
+        try {
+            $row = $this->db->fetchOne('SELECT COUNT(*) AS n FROM sse_link_attachments WHERE tenant_id = :t AND tags LIKE :p', ['t' => $tenantId, 'p' => '%,' . $tagId . ',%']);
+
+            return (int) ($row['n'] ?? 0);
+        } catch (\Throwable) {
+            return 0;
+        }
     }
 
     // ——————————————————————————— Liaisons ———————————————————————————

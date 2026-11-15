@@ -9,8 +9,9 @@ namespace App\Support;
  *
  * Les sigles sont ceux de la doctrine publique du renseignement militaire (disciplines de recueil, besoins en renseignement,
  * types de comptes rendus, marquages de diffusion) : aucun sigle inventé, aucune organisation réelle citée comme émettrice.
- * Chaque communauté active, désactive, renomme ou complète ce catalogue depuis « Gestion des fiches » ; ses réglages sont
- * rangés dans sse_tags (portée « field_note »), la liaison fiche ↔ étiquette dans sse_tag_links.
+ * Chaque communauté active, désactive, renomme ou complète ce catalogue depuis « Gestion des fiches » ; ses réglages et ses
+ * étiquettes propres sont rangés dans le catalogue unique du bureau (sse_attach_tags, partagé avec la fenêtre « Rattacher »),
+ * la liaison fiche ↔ étiquette dans sse_tag_links.
  *
  * Deux familles ne se choisissent pas : la priorité de traitement suit l'urgence de la fiche (mêmes clés stockées) et
  * l'évaluation rappelle la cotation A–F / 1–6 déjà portée par la fiche. Les catégories existantes
@@ -18,7 +19,7 @@ namespace App\Support;
  */
 final class SseFieldNoteTagCatalog
 {
-    /** Portée des étiquettes de fiches dans la table partagée sse_tags (les rattachements utilisent « attach »). */
+    /** Portée des liaisons de fiches dans sse_tag_links. */
     public const SCOPE = 'field_note';
 
     public const OBJECT_NOTE = 'note';

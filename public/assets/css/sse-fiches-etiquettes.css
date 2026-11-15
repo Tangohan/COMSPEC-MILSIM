@@ -101,7 +101,7 @@ body.sse-iw .sx-main .fnt-group h3, .fnt-group h3 { margin: 0; padding-bottom: 6
 .fnp-sug { min-height: 36px; padding: 0 10px; border: 1px solid var(--fx-line-strong); border-radius: 999px; background: none; color: var(--fx-ink); font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: 0.8125rem; font-weight: 700; cursor: pointer; }
 .fnp-sug:hover { border-color: var(--fx-accent); }
 .fnp .fnp-search input, body.sse-iw .sx-main .fnp .fnp-search input { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--fx-line-strong); border-radius: 6px; background: rgba(0, 0, 0, 0.28); color: var(--fx-ink); font: inherit; font-size: 0.9375rem; font-weight: 400; }
-.fnp-fams { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.fnp-fams { display: flex; flex-wrap: wrap; gap: 6px; }
 .fnp-fam { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid var(--fx-line-strong); border-radius: 8px; background: none; color: var(--fx-text); font: inherit; font-size: 0.8125rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .fnp-fam span { color: var(--fx-dim); font-variant-numeric: tabular-nums; }
 .fnp-fam:hover { color: var(--fx-ink); }

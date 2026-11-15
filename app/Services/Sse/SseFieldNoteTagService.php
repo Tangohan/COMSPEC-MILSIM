@@ -15,7 +15,10 @@ use App\Support\SseWantedRealNames;
  * Référentiel des fiches de renseignement d'une communauté : étiquettes de style américain (catalogue livré + réglages +
  * étiquettes propres), catégories, types de fiche, trames, règles, et étiquetage des fiches.
  *
- * Le catalogue livré (App\Support\SseFieldNoteTagCatalog) vaut pour toute communauté sans réglage. Une étiquette est désignée
+ * Le catalogue livré (App\Support\SseFieldNoteTagCatalog) vaut pour toute communauté sans réglage. Les réglages et les
+ * étiquettes propres vivent dans le catalogue UNIQUE du bureau (sse_attach_tags, partagé avec la fenêtre « Rattacher ») :
+ * une étiquette propre créée ici est aussi proposée aux rattachements, une étiquette de rattachement se voit ici et
+ * s'active pour les fiches. Une étiquette est désignée
  * par sa clé (slug) : la liaison fiche ↔ étiquette (sse_tag_links) ne dépend donc pas d'une ligne en base. Les catégories
  * existantes restent rangées sur la fiche (colonne themes, clés inchangées) ; une catégorie propre à la communauté est une
  * étiquette de la famille « category ». Une étiquette de diffusion est une MENTION écrite sur la fiche : elle ne change aucun
@@ -70,7 +73,7 @@ final class SseFieldNoteTagService
             return $this->memo[$tenantId];
         }
         $rows = [];
-        foreach ($this->repo->rows($tenantId, Cat::SCOPE) as $row) {
+        foreach ($this->repo->rows($tenantId) as $row) {
             $rows[(string) $row['slug']] = $row;
         }
         $out = [];
@@ -82,11 +85,12 @@ final class SseFieldNoteTagService
                 'key' => $key, 'code' => $d['code'], 'family' => $d['family'], 'label_fr' => $d['label_fr'], 'label_en' => $d['label_en'],
                 'desc_fr' => $d['desc_fr'], 'desc_en' => $d['desc_en'], 'color' => $d['color'], 'qualifier' => $d['qualifier'], 'sort' => $d['sort'],
                 'status' => $status, 'origin' => 'catalog', 'customized' => false, 'merged_into' => '',
-                'stored' => $d['family'] === 'category' ? 'themes' : 'links',
+                'stored' => $d['family'] === 'category' ? 'themes' : 'links', 'from_attach' => false, 'row_id' => 0,
             ];
-            if ($row !== null) {
+            // Une étiquette de rattachement de même clé n'est pas un réglage du catalogue livré : elle le devient si on la règle ici.
+            if ($row !== null && (string) ($row['origin'] ?? '') === 'catalog') {
                 $tag['customized'] = true;
-                foreach (['label_fr' => 'name', 'label_en' => 'name_en', 'desc_fr' => 'description', 'desc_en' => 'description_en'] as $field => $col) {
+                foreach (['label_fr' => 'name_fr', 'label_en' => 'name_en', 'desc_fr' => 'description', 'desc_en' => 'description_en'] as $field => $col) {
                     if (trim((string) ($row[$col] ?? '')) !== '') {
                         $tag[$field] = (string) $row[$col];
                     }
@@ -99,19 +103,29 @@ final class SseFieldNoteTagService
             $out[$key] = $tag;
         }
         foreach ($rows as $key => $row) {
-            $family = (string) ($row['family'] ?? '');
-            if ((string) ($row['origin'] ?? '') !== 'custom' || !Cat::hasFamily($family) || !Cat::FAMILIES[$family]['pick']) {
+            if ((string) ($row['origin'] ?? '') !== 'custom') {
                 continue;
             }
-            $status = (string) ($row['status'] ?? Cat::STATUS_ACTIVE);
+            // Étiquette née dans la fenêtre « Rattacher » : visible ici, proposée sur les fiches une fois activée (portée « all »).
+            $fromAttach = (string) ($row['scope'] ?? '') === SseTagRepository::SCOPE_ATTACH;
+            $family = (string) ($row['family'] ?? '');
+            if (!Cat::hasFamily($family) || !Cat::FAMILIES[$family]['pick']) {
+                if (!$fromAttach) {
+                    continue;
+                }
+                $family = 'theme';
+            }
+            $name = trim((string) ($row['name_fr'] ?? '')) !== '' ? (string) $row['name_fr'] : (string) ($row['name'] ?? '');
+            $status = $fromAttach ? Cat::STATUS_DISABLED : (string) ($row['status'] ?? Cat::STATUS_ACTIVE);
             $out[$key] = [
-                'key' => $key, 'code' => (string) ($row['code'] ?? ''), 'family' => $family, 'label_fr' => (string) ($row['name'] ?? ''),
-                'label_en' => trim((string) ($row['name_en'] ?? '')) !== '' ? (string) $row['name_en'] : (string) ($row['name'] ?? ''),
+                'key' => $key, 'code' => trim((string) ($row['code'] ?? '')) !== '' ? (string) $row['code'] : Cat::normalizeCode($name), 'family' => $family, 'label_fr' => $name,
+                'label_en' => trim((string) ($row['name_en'] ?? '')) !== '' ? (string) $row['name_en'] : $name,
                 'desc_fr' => (string) ($row['description'] ?? ''),
                 'desc_en' => trim((string) ($row['description_en'] ?? '')) !== '' ? (string) $row['description_en'] : (string) ($row['description'] ?? ''),
                 'color' => Cat::normalizeColor($row['color'] ?? 'slate'), 'qualifier' => (string) ($row['qualifier'] ?? ''),
                 'sort' => (int) ($row['sort_order'] ?? 0), 'status' => isset(Cat::STATUSES[$status]) ? $status : Cat::STATUS_ACTIVE,
                 'origin' => 'custom', 'customized' => true, 'merged_into' => (string) ($row['merged_into'] ?? ''), 'stored' => 'links',
+                'from_attach' => $fromAttach, 'row_id' => (int) ($row['id'] ?? 0),
             ];
         }
         $order = array_flip(Cat::familyKeys());
@@ -303,7 +317,7 @@ final class SseFieldNoteTagService
         if ($existing === null || !$existing['customized']) {
             $data['status'] = $existing['status'] ?? Cat::STATUS_ACTIVE;
         }
-        $this->repo->save($tenantId, Cat::SCOPE, $slug, $data, $actor['user_id']);
+        $this->repo->save($tenantId, $slug, $data, $actor['user_id'], self::scopeFor((string) $data['origin']));
         $this->forget();
         $this->audit($tenantId, $actor, $existing === null ? 'field_note.tag.create' : 'field_note.tag.update', $slug, $existing, $this->find($tenantId, $slug));
 
@@ -337,7 +351,7 @@ final class SseFieldNoteTagService
                 return ['ok' => false, 'errors' => ['Gardez au moins une catégorie active : une fiche en porte toujours une.']];
             }
         }
-        $this->repo->save($tenantId, Cat::SCOPE, $key, $this->rowOf($tag, ['status' => $status]), $actor['user_id']);
+        $this->repo->save($tenantId, $key, $this->rowOf($tag, ['status' => $status]), $actor['user_id'], self::scopeFor((string) $tag['origin']));
         $this->forget();
         $this->audit($tenantId, $actor, 'field_note.tag.status', $key, ['status' => $tag['status']], ['status' => $status]);
 
@@ -366,7 +380,10 @@ final class SseFieldNoteTagService
         if ($used > 0) {
             return ['ok' => false, 'errors' => [$used . ' fiche(s) portent encore cette étiquette : archivez-la ou fusionnez-la.']];
         }
-        $this->repo->delete($tenantId, Cat::SCOPE, $key);
+        if ($tag['from_attach'] || $this->repo->attachUsage($tenantId, (int) $tag['row_id']) > 0) {
+            return ['ok' => false, 'errors' => ['Des rattachements du bureau se servent de cette étiquette : archivez-la, elle ne sera plus proposée sur les fiches.']];
+        }
+        $this->repo->delete($tenantId, $key);
         $this->forget();
         $this->audit($tenantId, $actor, 'field_note.tag.delete', $key, $tag, null);
 
@@ -400,9 +417,9 @@ final class SseFieldNoteTagService
             return ['ok' => false, 'errors' => ['Les catégories livrées sont inscrites sur les fiches : elles se désactivent, elles ne fusionnent pas.'], 'moved' => 0];
         }
         $moved = $this->repo->moveLinks($tenantId, Cat::SCOPE, $from, $into);
-        $this->repo->save($tenantId, Cat::SCOPE, $from, $this->rowOf($a, [
+        $this->repo->save($tenantId, $from, $this->rowOf($a, [
             'status' => $a['origin'] === 'custom' ? Cat::STATUS_ARCHIVED : Cat::STATUS_DISABLED, 'merged_into' => $into,
-        ]), $actor['user_id']);
+        ]), $actor['user_id'], self::scopeFor((string) $a['origin']));
         $this->forget();
         $this->audit($tenantId, $actor, 'field_note.tag.merge', $from, ['key' => $from, 'status' => $a['status']], ['merged_into' => $into, 'moved' => $moved]);
 
@@ -424,7 +441,7 @@ final class SseFieldNoteTagService
         if (!Cat::hasFamily($family) || !Cat::FAMILIES[$family]['pick']) {
             return ['ok' => false, 'errors' => ['Choisissez une famille dans la liste.'], 'reset' => 0];
         }
-        $n = $this->repo->deleteCatalogOverrides($tenantId, Cat::SCOPE, $family);
+        $n = $this->repo->deleteCatalogOverrides($tenantId, $family);
         $this->forget();
         $this->audit($tenantId, $actor, 'field_note.tag.reset', $family, ['family' => $family, 'overrides' => $n], null);
 
@@ -1305,7 +1322,7 @@ final class SseFieldNoteTagService
         $created = 0;
         $updated = 0;
         foreach ($plan as $key => $p) {
-            $this->repo->save($tenantId, Cat::SCOPE, $key, $p['data'], $actor['user_id']);
+            $this->repo->save($tenantId, $key, $p['data'], $actor['user_id'], self::scopeFor((string) $p['data']['origin']));
             $p['new'] ? $created++ : $updated++;
         }
         $this->forget();
@@ -1343,6 +1360,12 @@ final class SseFieldNoteTagService
     }
 
     // ——————————————————————————— Outils ———————————————————————————
+
+    /** Portée d'une ligne créée ici : un réglage du catalogue livré ne concerne que les fiches, une étiquette propre vaut pour tout le bureau. */
+    private static function scopeFor(string $origin): string
+    {
+        return $origin === 'catalog' ? SseTagRepository::SCOPE_NOTES : SseTagRepository::SCOPE_ALL;
+    }
 
     public static function notReadyMessage(): string
     {

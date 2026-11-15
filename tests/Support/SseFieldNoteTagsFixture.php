@@ -109,11 +109,11 @@ final class SseFieldNoteTagsFixture
             if ($keep === $tag['default_on']) {
                 continue;
             }
-            $repo->save(1, Cat::SCOPE, $key, [
+            $repo->save(1, $key, [
                 'family' => $tag['family'], 'code' => $tag['code'], 'name' => $tag['label_fr'], 'name_en' => $tag['label_en'], 'description' => $tag['desc_fr'],
                 'description_en' => $tag['desc_en'], 'color' => $tag['color'], 'qualifier' => $tag['qualifier'], 'sort_order' => $tag['sort'], 'origin' => 'catalog',
                 'status' => $keep ? Cat::STATUS_ACTIVE : Cat::STATUS_DISABLED,
-            ], 7);
+            ], 7, SseTagRepository::SCOPE_NOTES);
         }
         // Une étiquette livrée renommée par la communauté.
         $service->saveTag(1, ['key' => 'pir', 'label_fr' => 'Besoin prioritaire du chef de corps', 'label_en' => 'Priority intelligence requirement', 'desc_fr' => 'Question prioritaire du chef de corps sur l’adversaire.', 'desc_en' => 'Priority question about the adversary.', 'color' => 'violet', 'sort' => 140], self::ACTOR);

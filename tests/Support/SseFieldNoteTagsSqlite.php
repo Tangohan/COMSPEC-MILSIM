@@ -7,17 +7,20 @@ namespace Tests\Support;
 use PDO;
 
 /**
- * Base sqlite en mémoire des étiquettes de fiches : celle du widget « Liaisons » (SseLinksSqlite), la table des fiches de
- * renseignement complétée de ses colonnes réelles, la table des pièces jointes, et les trois tables de l'étape 4830 créées
- * depuis le VRAI fichier SQL de la migration (traduit par MysqlDdlSqlitePdo). $withTagTables = false : base non migrée.
+ * Base sqlite en mémoire des étiquettes de fiches : celle de la fenêtre « Rattacher » (SseAttachSqlite, avec sa table
+ * sse_attach_tags), la table des fiches de renseignement complétée de ses colonnes réelles, la table des pièces jointes,
+ * puis la VRAIE étape 4850 (database/steps/4850_sse_tags.php) : colonnes ajoutées au catalogue des étiquettes, tables des
+ * liaisons et des réglages. $withTagTables = false : base où l'étape n'est pas passée.
  */
 final class SseFieldNoteTagsSqlite
 {
-    public const TABLES = ['sse_tags', 'sse_tag_links', 'sse_field_note_settings'];
+    public const TABLES = ['sse_tag_links', 'sse_field_note_settings'];
+
+    public const STEP = 'database/steps/4850_sse_tags.php';
 
     public static function open(bool $withTagTables = true): PDO
     {
-        $pdo = SseLinksSqlite::open();
+        $pdo = SseAttachSqlite::open();
         foreach ([
             'context_id INTEGER DEFAULT 1', 'note_kind TEXT DEFAULT \'FRM\'', 'themes TEXT DEFAULT \'[]\'', 'observed_at TEXT', 'pos_x REAL', 'pos_y REAL', 'pos_z REAL',
             'lat REAL', 'lng REAL', 'urgency TEXT DEFAULT \'routine\'', 'intel_source TEXT', 'source_reliability TEXT DEFAULT \'C\'', 'info_credibility INTEGER DEFAULT 3',
@@ -39,7 +42,8 @@ final class SseFieldNoteTagsSqlite
         return $pdo;
     }
 
-    public static function createTagTables(PDO $target): void
+    /** Passe la vraie étape : les deux tables viennent du fichier SQL (traduit pour sqlite), les colonnes de l'étape elle-même. */
+    public static function createTagTables(PDO $target): string
     {
         $scratch = new MysqlDdlSqlitePdo();
         $scratch->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, name TEXT, slug TEXT)');
@@ -48,7 +52,25 @@ final class SseFieldNoteTagsSqlite
         foreach ($scratch->query("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND tbl_name IN ({$in}) ORDER BY type = 'index', name")->fetchAll(PDO::FETCH_COLUMN) as $sql) {
             $target->exec((string) $sql);
         }
+        $out = self::runStep($target);
         \App\Repositories\SseTagRepository::forgetReady();
+
+        return $out;
+    }
+
+    /** Exécute database/steps/4850_sse_tags.php sur la base et renvoie ce qu'elle écrit. */
+    public static function runStep(PDO $pdo): string
+    {
+        $root = dirname(__DIR__, 2);
+        ob_start();
+        try {
+            require $root . '/' . self::STEP;
+        } finally {
+            $out = (string) ob_get_clean();
+        }
+        \App\Repositories\SseTagRepository::forgetReady();
+
+        return $out;
     }
 
     public static function sqlFile(): string
@@ -59,6 +81,6 @@ final class SseFieldNoteTagsSqlite
     public static function close(): void
     {
         \App\Repositories\SseTagRepository::forgetReady();
-        SseLinksSqlite::close();
+        SseAttachSqlite::close();
     }
 }

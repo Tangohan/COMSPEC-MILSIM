@@ -95,7 +95,7 @@ $renderRows = static function (array $rows, bool $withFamily) use ($h, $json, $l
             <td data-label="Ordre" class="fng-num" data-sort="<?= (int) $tag['sort'] ?>"><?= (int) $tag['sort'] ?></td>
             <td data-label="État" data-sort="<?= $h($tag['status']) ?>"><span class="fng-state fng-state--<?= $h($tag['status']) ?>"><?= $h($stateLabels[$tag['status']] ?? '') ?></span></td>
             <td data-label="Fiches" class="fng-num" data-sort="<?= (int) $tag['usage'] ?>"><?= (int) $tag['usage'] ?></td>
-            <td data-label="Origine" data-sort="<?= $h($tag['origin']) ?>"><span class="fng-origin"><?= $tag['origin'] === 'custom' ? 'Propre' : ($tag['customized'] ? 'Réglée' : 'Livrée') ?></span></td>
+            <td data-label="Origine" data-sort="<?= $h($tag['origin']) ?>"><span class="fng-origin"><?= !empty($tag['from_attach']) ? 'Rattachements' : ($tag['origin'] === 'custom' ? 'Propre' : ($tag['customized'] ? 'Réglée' : 'Livrée')) ?></span></td>
             <?php if ($canManageRef): ?>
                 <td class="fng-rowacts-cell">
                     <div class="fng-rowacts">
@@ -159,7 +159,7 @@ $renderRows = static function (array $rows, bool $withFamily) use ($h, $json, $l
             <div class="fng-panel__head">
                 <div>
                     <h2 class="fng-h2">Étiquettes</h2>
-                    <p class="fng-desc">Les mentions proposées sur les fiches, par famille : activez, renommez, ordonnez celles du catalogue livré, ou créez les vôtres.</p>
+                    <p class="fng-desc">Les mentions proposées sur les fiches, par famille : activez, renommez, ordonnez celles du catalogue livré, ou créez les vôtres, communes aux fiches et aux rattachements.</p>
                 </div>
                 <?php if ($canManageRef): ?>
                     <div class="fng-actions">
