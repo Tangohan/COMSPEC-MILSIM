@@ -1215,10 +1215,15 @@ return function (Router $router) {
     $router->get('/atak/sse/avis', [\App\Controllers\Web\SseWantedNoticeController::class, 'index'], $mwSsePortal);
     $router->get('/atak/sse/avis/reglages', [\App\Controllers\Web\SseWantedNoticeController::class, 'settings'], $mwSsePortal);
     $router->post('/atak/sse/avis/reglages', [\App\Controllers\Web\SseWantedNoticeController::class, 'settingsSave'], $mwSsePortal);
+    $router->post('/atak/sse/avis/reglages/services', [\App\Controllers\Web\SseWantedNoticeController::class, 'servicesSave'], $mwSsePortal);
+    $router->get('/atak/sse/avis/reglages/services/export', [\App\Controllers\Web\SseWantedNoticeController::class, 'servicesExport'], $mwSsePortal);
     $router->get('/atak/sse/avis/detections', [\App\Controllers\Web\SseWantedNoticeController::class, 'detections'], $mwSsePortal);
     $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
     $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/renouveler', [\App\Controllers\Web\SseWantedNoticeController::class, 'renew'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/prolonger', [\App\Controllers\Web\SseWantedNoticeController::class, 'extend'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/decision', [\App\Controllers\Web\SseWantedNoticeController::class, 'decide'], $mwSsePortal);
     $router->get('/atak/sse/avis/pieces/{id}/image', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentImage'], $mwSsePortal);
     $router->post('/atak/sse/avis/pieces/{id}/retirer', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentRemove'], $mwSsePortal);
     $router->post('/atak/sse/avis/pieces/{id}/principale', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentMain'], $mwSsePortal);

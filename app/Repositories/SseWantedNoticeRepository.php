@@ -136,7 +136,7 @@ final class SseWantedNoticeRepository
     /**
      * Liste des avis de la communauté.
      *
-     * @param array{status?: string, type?: string, threat?: string, q?: string, codes?: list<string>, q_codes?: list<string>, limit?: int, offset?: int} $filters
+     * @param array{status?: string, ids?: list<int>, type?: string, threat?: string, q?: string, codes?: list<string>, q_codes?: list<string>, limit?: int, offset?: int} $filters
      * @return list<array<string, mixed>>
      */
     public function list(int $tenantId, array $filters = []): array
@@ -163,6 +163,15 @@ final class SseWantedNoticeRepository
         if ($threat !== '') {
             $where[] = 'n.threat_level = :threat';
             $params['threat'] = $threat;
+        }
+        $onlyIds = array_slice(array_values(array_filter(array_map('intval', (array) ($filters['ids'] ?? [])), static fn (int $i): bool => $i >= 0)), 0, 300);
+        if ($onlyIds !== []) {
+            $marks = [];
+            foreach ($onlyIds as $k => $oid) {
+                $marks[] = ':oid' . $k;
+                $params['oid' . $k] = $oid;
+            }
+            $where[] = 'n.id IN (' . implode(', ', $marks) . ')';
         }
         $q = trim((string) ($filters['q'] ?? ''));
         $codeFilter = array_values(array_filter((array) ($filters['codes'] ?? []), 'is_string'));
@@ -275,6 +284,25 @@ final class SseWantedNoticeRepository
             "UPDATE sse_wanted_notices SET status = :s, active_key = NULL, closed_at = :now, closed_by_user_id = :u, closed_reason = :r, updated_at = :now2
              WHERE id = :id AND tenant_id = :t AND status = 'active'",
             ['s' => $status, 'now' => $now, 'u' => $userId, 'r' => mb_substr($reason, 0, 500), 'now2' => $now, 'id' => $id, 't' => $tenantId]
+        ) > 0;
+    }
+
+    /** Rouvre un avis clos par erreur de renouvellement (jamais pour une levée ou une capture). */
+    public function reopen(int $tenantId, int $id): bool
+    {
+        return $this->db->execute(
+            "UPDATE sse_wanted_notices SET status = 'active', active_key = 1, closed_at = NULL, closed_by_user_id = NULL, closed_reason = NULL, updated_at = :now
+             WHERE id = :id AND tenant_id = :t AND status = 'expired'",
+            ['now' => gmdate('Y-m-d H:i:s'), 'id' => $id, 't' => $tenantId]
+        ) > 0;
+    }
+
+    /** Repousse la date d'expiration d'un avis actif. */
+    public function extend(int $tenantId, int $id, string $expiresAt): bool
+    {
+        return $this->db->execute(
+            "UPDATE sse_wanted_notices SET expires_at = :e, updated_at = :now WHERE id = :id AND tenant_id = :t AND status = 'active'",
+            ['e' => $expiresAt, 'now' => gmdate('Y-m-d H:i:s'), 'id' => $id, 't' => $tenantId]
         ) > 0;
     }
 

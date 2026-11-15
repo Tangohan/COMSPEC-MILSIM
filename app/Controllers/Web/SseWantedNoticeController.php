@@ -12,7 +12,9 @@ use App\Repositories\SseIdentityEventRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SseWantedAttachmentRepository;
 use App\Repositories\SseWantedDetectionRepository;
+use App\Repositories\SseAuditLogRepository;
 use App\Repositories\SseWantedExtrasRepository;
+use App\Repositories\SseWantedMetaRepository;
 use App\Repositories\SseWantedNoticeRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Services\Sse\SseAccessCodeService;
@@ -24,6 +26,8 @@ use App\Services\Sse\SseWantedService;
 use App\Support\SseWantedCatalog as C;
 use App\Support\SseWantedCodes;
 use App\Support\SseWantedPhysical;
+use App\Support\SseWantedServiceAdmin;
+use App\Support\SseWantedServices;
 
 /**
  * Portail SSE : avis de recherche posés depuis la fiche d'une identité fictive (fait de jeu de rôle), notice PDF, liste des
@@ -40,6 +44,7 @@ final class SseWantedNoticeController
     private const PAPERS = 'atak/sse/papiers/identites';
     public const TOKEN_EXPIRED = 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la page puis recommencez.';
     public const NEED_MANAGE = 'Droit manquant : écrire dans « Fichiers et sujets » (gestion des dossiers ou des fichiers SSE).';
+    public const NEED_ADMIN = 'Droit manquant : les services demandeurs et la validation des avis relèvent du niveau « Gérer » de la section Fichiers et sujets.';
     public const NEED_PDF = 'Droit manquant : la notice PDF demande aussi d’écrire dans « Papiers et couvertures », d’exporter les papiers et l’habilitation Encadrement.';
 
     private ?SseWantedAccess $rights = null;
@@ -82,7 +87,7 @@ final class SseWantedNoticeController
             'q' => $request->queryString('q'),
             'code' => strtoupper($request->queryString('code')),
         ];
-        if (!in_array($filters['status'], ['', 'active', 'lifted', 'expired', 'captured'], true)) {
+        if (!in_array($filters['status'], ['', 'active', 'lifted', 'expired', 'captured', 'a_valider'], true)) {
             $filters['status'] = 'active';
         }
         $notices = [];
@@ -99,6 +104,12 @@ final class SseWantedNoticeController
                 $listFilters['codes'] = [$filters['code']];
             }
             $listFilters['q_codes'] = SseWantedCodes::matching($filters['q'], $config);
+            $pendingIds = $this->safe(fn (): array => (new SseWantedMetaRepository())->pendingIds($tenantId)) ?? [];
+            if ($filters['status'] === 'a_valider') {
+                // File « À valider » : avis proposés par un analyste, en attente d'un responsable.
+                $listFilters['status'] = 'active';
+                $listFilters['ids'] = $pendingIds === [] ? [0] : $pendingIds;
+            }
             $notices = $this->safe(fn (): array => $this->notices->list($tenantId, $listFilters)) ?? [];
             $noticeIds = array_map(static fn (array $n): int => (int) $n['id'], $notices);
             $extras = $this->safe(fn (): array => (new SseWantedExtrasRepository())->forNotices($tenantId, $noticeIds)) ?? [];
@@ -116,6 +127,9 @@ final class SseWantedNoticeController
             'filters' => $filters,
             'counts' => $counts,
             'newDetections' => $newDetections,
+            'pendingCount' => count($pendingIds ?? []),
+            'pendingIds' => $pendingIds ?? [],
+            'noticeMeta' => $this->safe(fn (): array => (new SseWantedMetaRepository())->forNotices($tenantId, $noticeIds ?? [])) ?? [],
             'wantedReady' => $ready,
             'wantedConfig' => $config,
             'wantedTypes' => C::types($config),
@@ -157,7 +171,13 @@ final class SseWantedNoticeController
             return $this->denied($back, self::NEED_MANAGE);
         }
         $input = $this->placeInput($request);
-        $res = $this->service->place($tenantId, (int) $identity['id'], $input, $r);
+        // Les dates se saisissent à l'heure de la communauté ; le service les reçoit en UTC.
+        $tz = (string) ($this->settings->get($tenantId)['process']['timezone'] ?? 'UTC');
+        $utc = $input;
+        foreach (['issued_at', 'expires_at', 'last_seen_at'] as $dateKey) {
+            $utc[$dateKey] = self::localToUtc((string) ($input[$dateKey] ?? ''), $tz);
+        }
+        $res = $this->service->place($tenantId, (int) $identity['id'], $utc, $r, ['is_member' => $this->isMemberIdentity($tenantId, $identity)]);
         if ($res['ok'] !== true) {
             if ($res['error'] === 'forbidden') {
                 return $this->denied($back);
@@ -170,7 +190,9 @@ final class SseWantedNoticeController
         if ($notice !== null) {
             $problems = array_merge($problems, $this->attachAfterPlace($request, $tenantId, $notice, $r));
         }
-        Session::flash('success', 'Avis de recherche ' . $res['ref'] . ' placé.');
+        Session::flash('success', $res['state'] === 'pending'
+            ? 'Avis de recherche ' . $res['ref'] . ' proposé : un responsable doit le valider avant sa diffusion.'
+            : 'Avis de recherche ' . $res['ref'] . ' placé.');
         if ($problems !== []) {
             Session::flash('error', implode(' ', array_slice($problems, 0, 4)));
         }
@@ -195,12 +217,110 @@ final class SseWantedNoticeController
         if (!$r->canManage()) {
             return $this->denied($back, self::NEED_MANAGE);
         }
-        $res = $this->service->lift($tenantId, (int) $notice['id'], $request->inputString('status', 'lifted'), $request->inputString('reason'), $r);
+        $res = $this->service->lift($tenantId, (int) $notice['id'], $request->inputString('status', 'lifted'), $request->inputString('reason'), $r, $request->inputString('service_code') ?: null);
         if ($res['ok'] !== true) {
             return $this->flashBack('error', $res['errors'][0] ?? 'Action non autorisée.', $back);
         }
 
         return $this->flashBack('success', $request->inputString('status') === 'captured' ? 'Avis ' . $notice['ref'] . ' clos : personne capturée.' : 'Avis ' . $notice['ref'] . ' levé.', $back);
+    }
+
+    // ------------------------------------------------------------ Renouveler, prolonger, valider
+
+    /** Renouvelle un avis : nouvel avis lié, mêmes motifs et même service, nouvelles dates. */
+    public function renew(Request $request, array $params = []): Response
+    {
+        return $this->lifecycle($request, (int) ($params['id'] ?? 0), function (SseWantedAccess $r, array $notice) use ($request): array {
+            $tz = (string) ($this->settings->get($r->tenantId())['process']['timezone'] ?? 'UTC');
+
+            return $this->service->renew($r->tenantId(), (int) $notice['id'], [
+                'issued_at' => self::localToUtc($request->inputString('issued_at'), $tz),
+                'expires_at' => self::localToUtc($request->inputString('expires_at'), $tz),
+                'no_expiry' => $request->inputString('no_expiry'),
+            ], $r);
+        }, static fn (array $res, array $notice): string => 'Avis ' . $notice['ref'] . ' renouvelé : nouvel avis ' . $res['ref'] . '.');
+    }
+
+    /** Prolonge un avis actif : nouvelle date d'expiration et motif. */
+    public function extend(Request $request, array $params = []): Response
+    {
+        return $this->lifecycle($request, (int) ($params['id'] ?? 0), function (SseWantedAccess $r, array $notice) use ($request): array {
+            $tz = (string) ($this->settings->get($r->tenantId())['process']['timezone'] ?? 'UTC');
+
+            return $this->service->extend($r->tenantId(), (int) $notice['id'], self::localToUtc($request->inputString('expires_at'), $tz), $request->inputString('reason'), $r);
+        }, static fn (array $res, array $notice): string => 'Avis ' . $notice['ref'] . ' prolongé.');
+    }
+
+    /** Décision d'un responsable sur un avis proposé : « valider » ou « refuser » (motif obligatoire). */
+    public function decide(Request $request, array $params = []): Response
+    {
+        $approve = $request->inputString('decision') === 'approve';
+
+        return $this->lifecycle(
+            $request,
+            (int) ($params['id'] ?? 0),
+            fn (SseWantedAccess $r, array $notice): array => $this->service->decide($r->tenantId(), (int) $notice['id'], $approve, $request->inputString('reason'), $r),
+            static fn (array $res, array $notice): string => $approve ? 'Avis ' . $notice['ref'] . ' validé et diffusé.' : 'Avis ' . $notice['ref'] . ' refusé.',
+            true
+        );
+    }
+
+    /**
+     * Gabarit des actions sur un avis existant : avis de la communauté de la session, jeton CSRF, droit d'écriture, puis action.
+     *
+     * @param \Closure(SseWantedAccess, array<string, mixed>): array<string, mixed> $act
+     * @param \Closure(array<string, mixed>, array<string, mixed>): string $okMessage
+     */
+    private function lifecycle(Request $request, int $noticeId, \Closure $act, \Closure $okMessage, bool $adminOnly = false): Response
+    {
+        $r = $this->r();
+        $notice = $this->safe(fn (): ?array => $this->notices->find($r->tenantId(), $noticeId));
+        if ($notice === null) {
+            return $this->flashBack('error', 'Avis introuvable.', url(self::BASE));
+        }
+        $back = url(self::PAPERS . '/' . (int) $notice['identity_id']) . '#avis';
+        if (!self::csrfOk($request)) {
+            return $this->denied($back, self::TOKEN_EXPIRED);
+        }
+        if (!$r->canManage() || ($adminOnly && !$r->canAdmin())) {
+            return $this->denied($back, $adminOnly ? 'Droit manquant : la validation est réservée aux gestionnaires de la section.' : self::NEED_MANAGE);
+        }
+        $res = $act($r, $notice);
+        if (($res['ok'] ?? false) !== true) {
+            return $this->flashBack('error', (string) (($res['errors'] ?? [])[0] ?? 'Action non autorisée.'), $back);
+        }
+        if (is_array($res['warnings'] ?? null) && $res['warnings'] !== []) {
+            Session::flash('error', implode(' ', array_slice($res['warnings'], 0, 3)));
+        }
+
+        return $this->flashBack('success', $okMessage($res, $notice), $back);
+    }
+
+    /** « 2026-11-20T14:30 » dans le fuseau de la communauté, converti en UTC « Y-m-d H:i:s » ; vide ou illisible : renvoyé tel quel. */
+    public static function localToUtc(string $value, string $timezone): string
+    {
+        $value = trim(str_replace('T', ' ', $value));
+        if ($value === '') {
+            return '';
+        }
+        try {
+            $tz = new \DateTimeZone($timezone !== '' ? $timezone : 'UTC');
+        } catch (\Throwable) {
+            return $value;
+        }
+        foreach (['Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d'] as $format) {
+            $d = \DateTimeImmutable::createFromFormat('!' . $format, $value, $tz);
+            if ($d !== false && $d->format($format) === $value) {
+                return $d->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+            }
+        }
+
+        return $value;
+    }
+
+    private function isMemberIdentity(int $tenantId, array $identity): bool
+    {
+        return \App\Services\Sse\SseMemberImageGate::forSession()->identityState($tenantId, $identity)['class'] !== \App\Services\Sse\SseMemberImageGate::CLASS_PUBLIC;
     }
 
     // ----------------------------------------------------------------- PDF
@@ -483,13 +603,35 @@ final class SseWantedNoticeController
         }
         $tenantId = $r->tenantId();
 
+        return $this->settingsPage($this->settings->get($tenantId), [], $r);
+    }
+
+    /**
+     * Page des réglages : notice, codification et services (catalogue livré, services de la communauté, usage par les avis).
+     *
+     * @param array<string, mixed> $config
+     * @param list<string> $errors
+     * @param array<string, mixed> $services état du tiroir de services en cas d'erreur : op, code, old, errors, report
+     */
+    private function settingsPage(array $config, array $errors, SseWantedAccess $r, array $services = [], int $status = 200): Response
+    {
+        $tenantId = $r->tenantId();
+
         return $this->page('atak.sse.papers.wanted_settings', [
             'title' => 'Réglages de la notice',
-            'config' => $this->settings->get($tenantId),
-            'errors' => [],
+            'config' => $config,
+            'errors' => $errors,
             'rights' => $r,
             'lang' => self::readerLang(),
-        ]);
+            'serviceList' => SseWantedServices::all($config),
+            'serviceFamilies' => SseWantedServices::families(),
+            'servicePalette' => SseWantedServices::palette(),
+            'serviceEmblems' => SseWantedServices::emblems(),
+            'serviceUse' => $this->safe(fn (): array => (new SseWantedMetaRepository())->countsByService($tenantId)) ?? [],
+            'serviceStoreReady' => SseWantedMetaRepository::ready(),
+            'serviceState' => $services,
+            'timezones' => \DateTimeZone::listIdentifiers(),
+        ], $status);
     }
 
     public function settingsSave(Request $request, array $params = []): Response
@@ -528,14 +670,18 @@ final class SseWantedNoticeController
         } else {
             $checked['settings']['codes'] = $this->settings->get($tenantId)['codes'];
         }
+        // Services : gérés par leur propre formulaire (tiroir), jamais écrasés par celui de la notice.
+        $current = $this->settings->get($tenantId);
+        $checked['settings']['services'] = $current['services'];
+        $checked['settings']['process'] = $request->inputString('process_present') === '1'
+            ? SseWantedSettingsRepository::normalizeProcess([
+                'validation' => $request->inputString('process_validation') === '1',
+                'timezone' => $request->inputString('process_timezone'),
+                'notify' => $request->inputString('process_notify') === '1',
+            ])
+            : $current['process'];
         if ($checked['errors'] !== []) {
-            return $this->page('atak.sse.papers.wanted_settings', [
-                'title' => 'Réglages de la notice',
-                'config' => $checked['settings'],
-                'errors' => $checked['errors'],
-                'rights' => $r,
-                'lang' => self::readerLang(),
-            ], 422);
+            return $this->settingsPage($checked['settings'], $checked['errors'], $r, [], 422);
         }
         try {
             $this->settings->save($tenantId, $checked['settings'], $r->userId());
@@ -546,6 +692,142 @@ final class SseWantedNoticeController
         }
 
         return $this->flashBack('success', 'Réglages de la notice enregistrés.', url(self::BASE . '/reglages'));
+    }
+
+    // ------------------------------------------------------- Services demandeurs de la communauté
+
+    /**
+     * Gestion des services demandeurs : une seule adresse, l'opération dans « op » (create, update, duplicate, toggle, delete,
+     * default, move, import). Réservé aux gestionnaires de la section ; jeton CSRF ; la communauté est celle de la session ;
+     * chaque changement est écrit au journal d'audit SSE.
+     */
+    public function servicesSave(Request $request, array $params = []): Response
+    {
+        $r = $this->r();
+        $back = url(self::BASE . '/reglages') . '#services';
+        if (!self::csrfOk($request)) {
+            return $this->denied($back, self::TOKEN_EXPIRED);
+        }
+        if (!$r->canAdmin()) {
+            return $this->denied($back, self::NEED_ADMIN);
+        }
+        $tenantId = $r->tenantId();
+        $config = $this->settings->get($tenantId);
+        $op = $request->inputString('op');
+        $code = strtoupper(trim($request->inputString('code')));
+        $form = $this->serviceInput($request);
+        $import = null;
+        switch ($op) {
+            case 'create':
+                $res = SseWantedServiceAdmin::create($config, $form);
+                break;
+            case 'update':
+                $res = SseWantedServiceAdmin::update($config, $code, $form);
+                break;
+            case 'duplicate':
+                $res = SseWantedServiceAdmin::duplicate($config, $code);
+                break;
+            case 'toggle':
+                $res = SseWantedServiceAdmin::setEnabled($config, $code, $request->inputString('enabled') === '1');
+                break;
+            case 'delete':
+                $used = $this->safe(fn (): int => (new SseWantedMetaRepository())->countUsing($tenantId, $code)) ?? 0;
+                // Sans l'étape de base de données, impossible de savoir si des avis portent ce service : on désactive seulement.
+                $res = SseWantedMetaRepository::ready() ? SseWantedServiceAdmin::delete($config, $code, $used) : SseWantedServiceAdmin::setEnabled($config, $code, false);
+                break;
+            case 'default':
+                $res = SseWantedServiceAdmin::setDefault($config, $code);
+                break;
+            case 'move':
+                $res = SseWantedServiceAdmin::move($config, $code, $request->inputString('direction') === 'up' ? 'up' : 'down');
+                break;
+            case 'import':
+                $file = $_FILES['import_file'] ?? null;
+                if (is_array($file) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK && self::isUpload((string) ($file['tmp_name'] ?? ''))) {
+                    $json = (string) file_get_contents((string) $file['tmp_name'], false, null, 0, SseWantedServiceAdmin::IMPORT_MAX_BYTES + 1);
+                } else {
+                    $json = $request->inputString('import_json');
+                }
+                $res = SseWantedServiceAdmin::import($config, $json);
+                $import = $res;
+                break;
+            default:
+                return $this->flashBack('error', 'Opération inconnue.', $back);
+        }
+        if (($res['ok'] ?? false) !== true || ($import !== null && $import['rejected'] !== [])) {
+            $state = ['op' => $op, 'code' => $code, 'old' => $form, 'errors' => $res['errors'] ?? [], 'report' => $import];
+            if ($import !== null && $import['added'] > 0) {
+                $this->settings->save($tenantId, $import['config'], $r->userId());
+                $this->auditServices($tenantId, $r, 'import', ['added' => $import['added'], 'rejected' => count($import['rejected'])]);
+                $state['saved'] = $import['message'];
+            }
+
+            return $this->settingsPage($import !== null && $import['added'] > 0 ? $import['config'] : $config, [], $r, $state, 422);
+        }
+        try {
+            $this->settings->save($tenantId, $res['config'], $r->userId());
+        } catch (\Throwable $e) {
+            error_log('Avis de recherche : services non enregistrés : ' . $e->getMessage());
+
+            return $this->flashBack('error', 'Les services n’ont pas pu être enregistrés (étape de base de données en attente ?).', $back);
+        }
+        $this->auditServices($tenantId, $r, $op, ['code' => $res['code'] ?? $code, 'message' => $res['message']]);
+
+        return $this->flashBack('success', (string) $res['message'], $back);
+    }
+
+    /** Export JSON des services créés par la communauté (à partager avec une autre communauté). */
+    public function servicesExport(Request $request, array $params = []): Response
+    {
+        $r = $this->r();
+        if (!$r->canAdmin()) {
+            return $this->denied(url(self::BASE . '/reglages'), self::NEED_ADMIN);
+        }
+        $json = SseWantedServiceAdmin::export($this->settings->get($r->tenantId()));
+        $this->auditServices($r->tenantId(), $r, 'export', []);
+
+        return (new Response())
+            ->header('Content-Type', 'application/json; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="services-demandeurs-' . gmdate('Y-m-d') . '.json"')
+            ->header('Cache-Control', 'private, no-store')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->setBody($json);
+    }
+
+    /** @return array<string, mixed> */
+    private function serviceInput(Request $request): array
+    {
+        $out = [];
+        foreach (['fr', 'en', 'ac', 'family', 'auth_fr', 'auth_en', 'radio', 'tel', 'mail', 'max', 'class', 'thr', 'color', 'emblem', 'ins_fr', 'ins_en'] as $k) {
+            $out[$k] = $request->inputString($k);
+        }
+        $out['exp'] = (int) $request->inputString('exp');
+        $out['enabled'] = $request->inputString('enabled') === '1';
+        foreach (['roles', 'threats', 'types', 'lang'] as $k) {
+            $v = $request->input($k);
+            $out[$k] = is_array($v) ? array_slice(array_values(array_map('strval', $v)), 0, 20) : [];
+        }
+
+        return $out;
+    }
+
+    /** @param array<string, mixed> $details */
+    private function auditServices(int $tenantId, SseWantedAccess $r, string $action, array $details): void
+    {
+        try {
+            (new SseAuditLogRepository())->write([
+                'tenant_id' => $tenantId,
+                'actor_user_id' => $r->userId(),
+                'actor_label' => $r->actorLabel() !== '' ? $r->actorLabel() : 'Avis de recherche',
+                'action' => 'wanted.services.' . $action,
+                'object_type' => 'sse_wanted_services',
+                'object_id' => 0,
+                'reason' => (string) ($details['message'] ?? ''),
+                'after' => $details,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Avis de recherche : audit des services indisponible : ' . $e->getMessage());
+        }
     }
 
     // ------------------------------------------------------------- Outils
@@ -575,7 +857,15 @@ final class SseWantedNoticeController
             $libraryPhotos = array_slice($libraryPhotos, 0, 24);
         }
 
+        $tzName = (string) ($config['process']['timezone'] ?? 'UTC');
+        $last = SseWantedMetaRepository::ready() ? $this->safe(fn (): ?string => (new SseWantedMetaRepository())->lastServiceCode($tenantId, (int) $r->userId())) : null;
+
         return $this->page('atak.sse.papers.wanted_form', [
+            'serviceData' => SseWantedServices::clientData($config, $lang) + ['last' => $last !== null && isset(SseWantedServices::available($config)[$last]) ? $last : ''],
+            'serviceStoreReady' => SseWantedMetaRepository::ready(),
+            'nowLocal' => (new \DateTimeImmutable('now', new \DateTimeZone($tzName)))->format('Y-m-d\TH:i'),
+            'timezoneName' => $tzName,
+            'hasActiveNotice' => $active !== null,
             'codesData' => SseWantedCodes::clientData($config, $lang),
             'physicalDefaults' => SseWantedPhysical::fromProfile($profile, $isMember),
             'isMemberIdentity' => $isMember,
@@ -600,7 +890,7 @@ final class SseWantedNoticeController
     private function placeInput(Request $request): array
     {
         $out = [];
-        foreach (['notice_type', 'threat_level', 'armed', 'reason', 'instructions', 'zone', 'last_seen_place', 'last_seen_at', 'contact_label', 'contact_detail', 'issued_at', 'expires_at', 'codes_template'] as $k) {
+        foreach (['notice_type', 'threat_level', 'armed', 'reason', 'instructions', 'zone', 'last_seen_place', 'last_seen_at', 'contact_label', 'contact_detail', 'issued_at', 'expires_at', 'codes_template', 'service_code', 'classification', 'no_expiry'] as $k) {
             $out[$k] = $request->inputString($k);
         }
         foreach (['codes_reasons', 'codes_measures'] as $k) {

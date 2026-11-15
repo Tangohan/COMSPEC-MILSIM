@@ -28,7 +28,8 @@ use App\Support\TrainingCertificatePdfEngine;
  *   aliases: list<string>, languages: string, type_label: string, threat_level: string, threat_label: string, armed: string,
  *   reason: string, instructions: string, zone: string, last_seen_place: string, last_seen_at: ?string, contact_label: string,
  *   contact_detail: string, photo: ?string, extra_photos: list<string>, signature: ?string, emblem_path: ?string,
- *   watermark: bool, footer: bool, faces: string, generated_at: string
+ *   watermark: bool, footer: bool, faces: string, generated_at: string,
+ *   service?: ?array{code: string, ac: string, color: ?array{0: int, 1: int, 2: int}}
  * }
  */
 final class SseWantedNoticePdf
@@ -188,10 +189,16 @@ final class SseWantedNoticePdf
         $pdf = $this->pdf;
         $l = self::MARGIN;
         $this->watermark($d);
+        // Couleur d'en-tête du service demandeur : filet en haut de page et autorité (sobre, jamais un insigne).
+        $tint = is_array($d['service']['color'] ?? null) ? $d['service']['color'] : self::INK;
+        if ($tint !== self::INK) {
+            $pdf->SetFillColor(...$tint);
+            $pdf->Rect(0, 0, self::PAGE_W, 3.0, 'F');
+        }
 
         // En-tête blanc : pictogramme, autorité, référence.
         $this->emblem($d, $l, 7.0, 15.0, false);
-        $pdf->SetTextColor(...self::INK);
+        $pdf->SetTextColor(...$tint);
         $pdf->SetFont($this->sans, 'B', 10.5);
         $pdf->SetXY($l + 19.0, 8.0);
         $pdf->Cell(112.0, 5.0, mb_strtoupper($d['authority'][$this->lang], 'UTF-8'), 0, 1, 'L');
