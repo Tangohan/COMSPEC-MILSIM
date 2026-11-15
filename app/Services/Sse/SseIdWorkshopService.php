@@ -255,6 +255,28 @@ final class SseIdWorkshopService
         return ['ok' => false, 'error' => 'Cette photo n’appartient pas à la personne reliée à l’identité.'];
     }
 
+    /**
+     * Reprend une photo de la photothèque de l'identité (versée à la fiche, terrain ou cliché SEEK II) comme portrait du
+     * titulaire : la photo doit être rattachée à cette identité ; image réencodée, recadrée et sans métadonnées.
+     *
+     * @param array<string, mixed>|null $photo ligne hydratée de sse_file_photos (SseFileRecordRepository::photo)
+     * @return array{ok: bool, path?: string, error?: string}
+     */
+    public static function copyFilePhoto(int $tenantId, int $identityId, ?array $photo, SseIdImageService $images, ?SseSeekPhotoService $seek = null): array
+    {
+        if ($photo === null || (int) ($photo['identity_id'] ?? 0) !== $identityId || (string) ($photo['visibility'] ?? 'known') === 'hidden') {
+            return ['ok' => false, 'error' => 'Cette photo n’est pas rattachée à cette identité.'];
+        }
+        $file = SseSeekPhotoService::isPrivatePath((string) ($photo['path'] ?? ''))
+            ? ($seek ?? new SseSeekPhotoService())->absolutePath($photo, $tenantId)
+            : self::localUpload((string) ($photo['path'] ?? ''));
+        if ($file === null) {
+            return ['ok' => false, 'error' => 'Le fichier de cette photo est introuvable.'];
+        }
+
+        return $images->storeFile($file, 'photo', $tenantId);
+    }
+
     /** Chemin disque d'une image rangée sous public/uploads (null sinon). */
     private static function localUpload(string $path): ?string
     {

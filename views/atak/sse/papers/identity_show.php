@@ -15,6 +15,7 @@ declare(strict_types=1);
 use App\Controllers\Web\SseFileController;
 use App\Repositories\SseAiProfileRepository;
 use App\Services\Sse\SseFileSearchService;
+use App\Services\Sse\SseIdentityPhotoGallery;
 use App\Services\Sse\SseWantedAccess;
 use App\Support\SseFileSubjectCatalog as S;
 use App\Support\SseIdentityCatalog as C;
@@ -78,6 +79,9 @@ if ($photoUrl === null && is_array($seekImages ?? null) && ($seekImages[0]['url'
 if ($photoUrl === null && $showPerson && is_array($person['primary_photo'] ?? null) && ($person['primary_photo']['url'] ?? '') !== '') {
     $photoUrl = (string) $person['primary_photo']['url'];
 }
+if ($secret && !$canSeeTruth) {
+    $photoUrl = null; // couverture ou fausse identité sans l'habilitation : ni portrait ni cliché dans l'en-tête
+}
 $aliasLine = [];
 if (($identity['alias'] ?? null) !== null) {
     $aliasLine[] = (string) $identity['alias'];
@@ -99,7 +103,15 @@ try {
     $aiLinks = (new SseAiProfileRepository())->forIdentity((int) ($identity['tenant_id'] ?? ($wr !== null ? $wr->tenantId() : 0)), $iid);
 } catch (\Throwable) {
 }
-$photoCount = count($filePhotos) + (($identity['photo_path'] ?? null) !== null ? 1 : 0);
+$photoGallery = SseIdentityPhotoGallery::build(
+    $identity,
+    $filePhotos,
+    is_array($seekImages ?? null) ? $seekImages : [],
+    null,
+    ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null,
+    ($identity['signature_path'] ?? null) !== null ? (string) url((string) $identity['signature_path']) : null
+);
+$photoCount = ($canSeeTruth || !$secret) ? $photoGallery['total'] : 0;
 $tabs = [
     ['synthese', 'Synthèse', null, false],
     ['papiers', 'Papiers et documents', count($documents), false],
@@ -109,8 +121,8 @@ $tabs = [
     ['detections', 'Détections', count($detections), (int) ($detectionCounts['new'] ?? 0) > 0],
     ['avis', 'Avis de recherche', $notice !== null ? '1' : (count($notices) > 0 ? (string) count($notices) : null), $notice !== null],
 ];
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script>';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script>';
 require __DIR__ . '/_subnav.php';
 ?>
 
@@ -118,10 +130,9 @@ require __DIR__ . '/_subnav.php';
     <header class="dos-head">
         <div class="dos-portrait">
             <?php if ($photoUrl !== null): ?>
-                <img src="<?= $h($photoUrl) ?>" alt="Portrait de l’identité">
-            <?php else: ?>
-                <svg viewBox="0 0 64 80" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="32" cy="26" r="14"/><path d="M6 78c0-17 11-28 26-28s26 11 26 28z"/></svg>
+                <img src="<?= $h($photoUrl) ?>" alt="Portrait de l’identité" width="112" height="144" decoding="async" data-dos-portrait-img>
             <?php endif; ?>
+            <svg viewBox="0 0 64 80" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="32" cy="26" r="14"/><path d="M6 78c0-17 11-28 26-28s26 11 26 28z"/></svg>
         </div>
         <div class="dos-id">
             <h1 translate="no"><?= $h($display) ?></h1>
@@ -322,22 +333,7 @@ require __DIR__ . '/_subnav.php';
 
     <section class="dos-panel" id="photos" role="tabpanel" aria-labelledby="tab-photos" tabindex="-1">
         <h2 class="dos-panel__title">Photos</h2>
-        <?php if ($filePhotos !== []): ?>
-            <div class="panel">
-                <div class="panel-header"><div class="panel-title">Photos du dossier</div><div class="panel-meta"><?= count($filePhotos) ?> photo(s)</div></div>
-                <div class="panel-body dos-photos">
-                    <?php foreach ($filePhotos as $fp): ?>
-                        <figure><img src="<?= $h(user_media_public_url((string) $fp['path'])) ?>" alt="Photo du dossier" loading="lazy"><figcaption><?= $h($photoKinds[(string) $fp['kind']] ?? (string) $fp['kind']) ?> · <?= $h($day($fp['created_at'])) ?></figcaption></figure>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        <?php elseif (($identity['photo_path'] ?? null) === null): ?>
-            <div class="dos-card"><div class="dos-empty"><strong>Aucune photo</strong>Versez une photo du personnage (uniquement des personnages du jeu) ou importez la photo du titulaire ci-dessous.<?php if (!empty($canManage)): ?> <a href="<?= $h(url($filesSubject . '#photos')) ?>">Verser une photo</a><?php endif; ?></div></div>
-        <?php endif; ?>
-        <?php if ($canSeeTruth || !$secret): ?>
-            <?php $imagesDocId = 0; $personPhotos = $showPerson ? ($personPhotos ?? []) : []; require __DIR__ . '/_holder_images.php'; ?>
-            <?php require __DIR__ . '/_seek_images.php'; ?>
-        <?php endif; ?>
+        <?php require __DIR__ . '/_dossier_photos.php'; ?>
     </section>
 
     <section class="dos-panel" id="relations" role="tabpanel" aria-labelledby="tab-relations" tabindex="-1">
