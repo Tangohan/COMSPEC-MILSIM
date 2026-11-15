@@ -68587,4 +68587,6 @@ return [
     'Certaines parties sont signalées : relisez-les une par une avant de confirmer.' => 'Some parts are flagged: review them one by one before confirming.',
     '. Choisissez « À corriger » ci-dessous et indiquez la bonne valeur : l’encadrement la valide. « Tout confirmer » n’est pas proposé tant qu’il manque une information.' => '. Choose “To fix” below and enter the right value: the staff validates it. “Confirm all” is not offered while information is missing.',
     'Aucune donnée n’est enregistrée dans cette partie. Choisissez « À corriger » ci-dessous pour le dire à l’encadrement.' => 'No data is recorded in this part. Choose “To fix” below to tell the staff.',
+    'Pourquoi cette demande ?' => 'Why are we asking?',
+    'Autres campagnes ouvertes' => 'Other open campaigns',
 ];
