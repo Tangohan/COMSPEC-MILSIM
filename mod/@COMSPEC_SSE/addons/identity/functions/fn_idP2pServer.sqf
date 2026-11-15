@@ -16,7 +16,7 @@
     Réponses (fn_idClient « p2p », fn_idP2pClient) : request · asked · result · shown · sent · denied · expired.
     Rien de diffusé : chaque message part au seul poste concerné (pas de file JIP) ; le choix du Zeus est une variable
     publique (comspec_sse_idP2pZeus), donc connue d'un joueur qui arrive en cours de partie.
-    Évènements CBA serveur repris du contrôle d'identité : comspec_sse_idPresented, comspec_sse_idRefused.
+    Évènements CBA serveur repris du vérification d'identité : comspec_sse_idPresented, comspec_sse_idRefused.
 */
 params [["_op", "", [""]], ["_a", [], [[]]]];
 if (!isServer) exitWith { false };

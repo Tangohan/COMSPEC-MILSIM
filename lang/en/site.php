@@ -63,7 +63,7 @@ return [
     'sse_mod_graph_t' => 'Intelligence graph',
     'sse_mod_graph_b' => 'Nodes and relations to see pivots and associations in the field.',
     'sse_mod_evidence_t' => 'Evidence & chain',
-    'sse_mod_evidence_b' => 'Seals, evidence and custody tracking for seized items.',
+    'sse_mod_evidence_b' => 'Evidence log and chain-of-custody tracking for collected items.',
     'sse_mod_mission_t' => 'Mission intel',
     'sse_mod_mission_b' => 'Merge observed / reported / assessed / confirmed levels for briefing.',
     'sse_mod_zeus_t' => 'Zeus control',

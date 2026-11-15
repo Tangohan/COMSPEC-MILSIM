@@ -1,5 +1,5 @@
 /*
-    Contrôle d'identité : gestes locaux (toutes machines) et registre (serveur).
+    Vérification d'identité : gestes locaux (toutes machines) et registre (serveur).
     Rien par image chez les clients. Serveur : l'automate des IA réalistes traite une seule IA contrôlée par image (les
     autres ne coûtent rien) et les checkpoints IA tournent sur une boucle d'une seconde ; le reste part d'une action,
     d'un évènement ou d'une mort.

@@ -1,6 +1,6 @@
 /*
     [_target, _player, _seal] call comspec_sse_fnc_doCollect
-    _seal = true : « Mettre sous scellé » (action ACE unique) : collecte puis scellé dans la foulée,
+    _seal = true : « Prendre en charge » (action ACE unique) : collecte puis scellé dans la foulée,
                    un sachet consommé (comspec_sse_fnc_bagEvidence).
 */
 params [
@@ -26,10 +26,10 @@ private _isCollected = {
 if ([_target] call _isCollected) exitWith {
     // Déjà collectée mais pas encore scellée : le scellé seul reste à faire.
     if (_seal) exitWith { [_target, _player] call comspec_sse_fnc_bagEvidence; };
-    ["Pièce déjà collectée : voir le registre des scellés.", "WARNING"] call comspec_sse_fnc_notify;
+    ["Pièce déjà collectée : voir le registre des pièces.", "WARNING"] call comspec_sse_fnc_notify;
 };
 if (_seal && {!("COMSPEC_SSE_EvidenceBag" in (items _player))}) exitWith {
-    ["Sachet de preuve SSE requis pour mettre la pièce sous scellé.", "WARNING"] call comspec_sse_fnc_notify;
+    ["Sachet de preuve SSE requis pour prendre la pièce en charge.", "WARNING"] call comspec_sse_fnc_notify;
 };
 
 [

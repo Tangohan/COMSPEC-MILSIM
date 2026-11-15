@@ -1,5 +1,5 @@
 /*
-    Liaison Athena du contrôle d'identité (DLL COMSPEC Link). Sans les fonctions dans la DLL, tout marche hors ligne :
+    Liaison Athena du vérification d'identité (DLL COMSPEC Link). Sans les fonctions dans la DLL, tout marche hors ligne :
     papiers générés, base locale (N3), file d'attente des transmissions.
     ["has"]                -> Boolean : la DLL connaît les fonctions d'identité (COMSPEC Link ≥ 2.0.118 :
                               GetAtakFeatures ; sinon sonde GetIdentityPackChunk « -1 », locale ; « ERR|unknown » = absente)

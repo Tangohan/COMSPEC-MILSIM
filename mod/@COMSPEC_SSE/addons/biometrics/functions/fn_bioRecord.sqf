@@ -150,7 +150,7 @@ if (_bii && {_reason isEqualTo ""}) then {
 };
 if (_tier > 0 && {_reason isEqualTo ""}) then {
     private _pool = switch (_tier) do {
-        case 1: { ["Mandat d'arrêt : financement d'un réseau IED", "Identifié sur une vidéo de revendication", "Chef de cellule, attentat contre un convoi", "Empreinte relevée sur un IED désamorcé"] };
+        case 1: { ["Avis de recherche : financement d'un réseau IED", "Identifié sur une vidéo de revendication", "Chef de cellule, attentat contre un convoi", "Empreinte relevée sur un IED désamorcé"] };
         case 2: { ["Lié à une cache d'armes saisie", "Contact téléphonique d'un chef de cellule", "Évadé d'un centre de détention", "Guetteur identifié lors d'une embuscade"] };
         case 3: { ["Présent lors d'un incident à un point de contrôle", "Refus de contrôle répété", "Signalé pour trafic de carburant", "Fréquente une mosquée sous surveillance"] };
         default { ["Ancien employé d'emprise, badge révoqué", "Signalé par un informateur, non recoupé", "Proche d'une personne recherchée", "Vu à proximité d'un site sensible"] };

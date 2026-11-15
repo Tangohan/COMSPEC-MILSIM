@@ -2,7 +2,7 @@
     Chaîne de possession des pièces à conviction (serveur).
 
     Chaque pièce reçoit un numéro (P-<dossier>-0001) à sa saisie, un numéro de
-    scellé (SC-000000) quand elle est mise sous scellé, puis un nouveau scellé
+    scellé (SC-000000) quand elle est prise en charge, puis un nouveau scellé
     chaque fois qu'on la rescelle après l'avoir ouverte. Chaque geste est inscrit
     au journal de la pièce : date et heure, geste, qui, où, remarque. Chaque ligne
     porte l'empreinte de la précédente (hashValue) : une ligne modifiée après
@@ -10,7 +10,7 @@
 
     [_op, _args] call comspec_sse_fnc_custody
       "open"     [entité, acteur, remarque]          saisie (crée la pièce)
-      "seal"     [entité, acteur, remarque]          mise sous scellé (crée la pièce au besoin)
+      "seal"     [entité, acteur, remarque]          prise en charge (crée la pièce au besoin)
       "event"    [entité, geste, acteur, remarque]   geste sur une pièce existante
                  (EXPLOITATION et ANALYSE ouvrent d'abord le scellé)
       "transfer" [de, à]                             remise de toutes les pièces détenues
@@ -134,7 +134,7 @@ switch (_op) do {
         _args params [["_e", objNull, [objNull]], ["_by", objNull, [objNull]], ["_remark", "", [""]]];
         if (isNull _e) exitWith { "" };
         private _p = [_e, _by] call _create;
-        if ((_p get "state") isEqualTo "SCELLÉE") exitWith { [_by, format ["Pièce %1 déjà sous scellé n° %2.", _p get "id", _p get "seal"]] call _note; _p get "id" };
+        if ((_p get "state") isEqualTo "SCELLÉE") exitWith { [_by, format ["Pièce %1 déjà prise en charge (sachet n° %2).", _p get "id", _p get "seal"]] call _note; _p get "id" };
         comspec_sse_custodySealN = comspec_sse_custodySealN + 1;
         private _seal = format ["%1-%2", missionNamespace getVariable ["comspec_sse_ana_sealPrefix", "SC"], comspec_sse_custodySealN];
         private _again = (_p get "seals") isNotEqualTo [];

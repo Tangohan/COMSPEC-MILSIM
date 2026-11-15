@@ -1,13 +1,13 @@
 /*
-    Menus ACE du contrôle d'identité (XEH_postInitClient), posés une seule fois par classe (aucune action par objet) :
-      personne (CAManBase, ACE_MainActions) › Contrôle d'identité :
+    Menus ACE du vérification d'identité (XEH_postInitClient), posés une seule fois par classe (aucune action par objet) :
+      personne (CAManBase, ACE_MainActions) › Vérification d'identité :
         Demander les papiers (2 s) · Contrôler l'identité (documents présentés) · Fouiller les papiers (6 s vivant,
         4 s corps) · Documents trouvés · Rendre un document · Poser une question (PNJ : questions de légende, 1 s)
       soi (ACE_SelfActions) › Mes papiers : Présenter mes papiers (présenter / remettre) · Refuser · Consulter
         · Demander les papiers (personne visée) · Répondre à la demande (joueur) ; clic sur « Présenter mes papiers » :
         fenêtre fn_idP2pUi (plusieurs papiers, destinataire, montrer ou remettre en main)
         · Répondre (question d'un contrôleur en attente : réponses au choix)
-      véhicule terrestre (LandVehicle) › Contrôle d'identité : Contrôler les occupants · Faire descendre
+      véhicule terrestre (LandVehicle) › Vérification d'identité : Contrôler les occupants · Faire descendre
     ACE obligatoire (comme tout le SSE) : pas de repli sans ACE.
 */
 if (!hasInterface || {isNil "ace_interact_menu_fnc_addActionToClass"}) exitWith { false };
@@ -23,7 +23,7 @@ private _addClass = {
 private _new = { _this call comspec_sse_fnc_aceAction };
 
 // --- Personne ---------------------------------------------------------------------------------------------------
-private _root = ["COMSPEC_ID_Root", "Contrôle d'identité", _icon, {}, {
+private _root = ["COMSPEC_ID_Root", "Vérification d'identité", _icon, {}, {
     params ["_t", "_p"];
     (missionNamespace getVariable ["comspec_sse_id_enabled", true]) && {_t isNotEqualTo _p} && {alive _p} && {isNull objectParent _p}
 }] call _new;
@@ -101,7 +101,7 @@ private _self = ["COMSPEC_ID_Self", "Mes papiers", _icon, {}, {
 ];
 
 // --- Véhicule ------------------------------------------------------------------------------------------------------
-private _veh = ["COMSPEC_ID_VehRoot", "Contrôle d'identité", _icon, {}, {
+private _veh = ["COMSPEC_ID_VehRoot", "Vérification d'identité", _icon, {}, {
     (missionNamespace getVariable ["comspec_sse_id_enabled", true]) && {["can", _this select 0] call comspec_sse_fnc_idVehicleOccupants}
 }] call _new;
 ["LandVehicle", 0, ["ACE_MainActions"], _veh] call _addClass;

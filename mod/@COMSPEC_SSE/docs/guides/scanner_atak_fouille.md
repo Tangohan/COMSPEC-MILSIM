@@ -10,7 +10,7 @@ Le téléphone ATAK (mod COMSPEC ATAK natif) est l'outil de terrain du SSE : il 
 
 | App (section Renseignement) | Rôle |
 |---|---|
-| **SSE terrain** (Ctrl+Maj+S si le téléphone est porté) | Onglets **CIBLE** (objet ou personne visés à 6 m), **SITE** (50 m : avancement, feu vert d'exfiltration, Triage du site, Tableau des liens), **SCELLÉS** (Pièces que je détiens, Registre des scellés), **JOURNAL** (Journal SSE, **Guide SSE**, Journal technique, Campagne) |
+| **SSE terrain** (Ctrl+Maj+S si le téléphone est porté) | Onglets **CIBLE** (objet ou personne visés à 6 m), **SITE** (50 m : avancement, feu vert d'exfiltration, Triage du site, Tableau des liens), **SCELLÉS** (Pièces que je détiens, Registre des pièces), **JOURNAL** (Journal SSE, **Guide SSE**, Journal technique, Campagne) |
 | **Contrôle ID** | Onglets **CONTRÔLE** (N1 MRZ, N2 puce, N3 base, N4 visage, verdict, Transmettre, FRM, SALUTE, SPOTREP, Relever le document, Partager, NFC, Sur mon téléphone), **HISTORIQUE** (50 derniers contrôles), **BOLO** |
 | **Ma couverture** | Fiche d'infiltré (voir [ma_couverture.md](ma_couverture.md)) |
 | **Photo** | Photo de preuve (entités cadrées à 15 m) |
@@ -38,7 +38,7 @@ Ensuite : **Relever le document** (relevé dans Contrôles ; Athena « Contrôle
 |---|---|---|---|
 | **Fouiller** (SSE) | Menu ACE sur une personne › **SSE** | 5 s (fouille rapide, « Fouille SSE rapide… ») | Objets et données SSE de la personne (révélation partielle, qualité selon la compétence), palier d'exploitation +1, journal, fenêtre DOSSIER SSE |
 | **Fouiller** (SSE) | Menu ACE sur un objet ou véhicule marqué SSE | 15 s (fouille complète, « Fouille SSE complète… ») | Idem ; véhicule : cabine et soute, « Exploitation véhicule : x % » |
-| **Fouiller les papiers** | Menu ACE sur une personne › **Contrôle d'identité** | 6 s (4 s sur un corps) | Ses documents d'identité, sous **Documents trouvés** (180 s) : Examiner / Saisir ; sans accord, seulement morte, menottée, rendue ou inconsciente |
+| **Fouiller les papiers** | Menu ACE sur une personne › **Vérification d'identité** | 6 s (4 s sur un corps) | Ses documents d'identité, sous **Documents trouvés** (180 s) : Examiner / Saisir ; sans accord, seulement morte, menottée, rendue ou inconsciente |
 | Fouille par un **checkpoint IA** | Issue « fouiller » | 8 s | Armes, papiers à plusieurs noms : soupçons |
 | **Relever les empreintes (kit)**, **Prélèvement ADN**, **Test de résidus de tir** | Menu ACE sur une personne › SSE (kit porté) | 8 s / 6 s / 6 s | Relevés hors SEEK |
 

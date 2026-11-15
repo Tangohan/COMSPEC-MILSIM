@@ -6,6 +6,8 @@ declare(strict_types=1);
 // Tenu par tools/i18n/site_i18n.py (extract, merge). %1, %2... : valeurs insérées par la vue.
 
 return [
+    'Signature tracée au SEEK II' => 'Signature drawn on the SEEK II',
+    'Signature SEEK II' => 'SEEK II signature',
     // Calques SSE des cartes (contrôles d’identité, lieux, pistes de téléphones).
     'Calques SSE : contrôles d’identité, lieux, pistes de téléphones' => 'SSE layers: identity checks, places, phone tracks',
     '%1 élément(s) affiché(s)' => '%1 item(s) shown',
@@ -7436,7 +7438,7 @@ return [
     'Aucun contrôle d’identité enregistré.' => 'No identity check recorded.',
     'Aucun contrôle d’identité remonté du terrain.' => 'No identity check reported from the field.',
     'Aucun contrôle pour cette opération' => 'No check for this operation',
-    'Aucun contrôle pour l’instant. Dans le jeu, contrôlez des papiers (menu ACE « Contrôle d’identité ») puis transmettez-les à Athena : ils apparaissent ici.' => 'No check yet. In the game, check documents (ACE menu “Identity check”) then send them to Athena: they show up here.',
+    'Aucun contrôle pour l’instant. Dans le jeu, contrôlez des papiers (menu ACE « Vérification d’identité ») puis transmettez-les à Athena : ils apparaissent ici.' => 'No check yet. In the game, check documents (ACE menu “Identity verification”) then send them to Athena: they show up here.',
     'Aucun contrôle reçu' => 'No check received',
     'Aucun contrôle reçu du terrain pour ce papier.' => 'No check received from the field for this document.',
     'Aucun contrôle reçu du terrain pour cette personne.' => 'No check received from the field for this person.',
@@ -53921,7 +53923,7 @@ return [
     'Vos brevets et qualifications apparaîtront ici dès qu’ils vous seront délivrés.' => 'Your badges and qualifications will appear here as soon as they are awarded to you.',
     'Vos changements ne sont pas encore enregistrés : l’essai part dans le salon enregistré. Continuer ?' => 'Your changes are not saved yet: the test goes to the saved channel. Continue?',
     'Vos communautés' => 'Your communities',
-    'Vos contrôles d’identité de la partie, sur la carte en cours. Touchez un contrôle pour son détail.' => 'Your identity checks in this game, on the current map. Tap a check for its details.',
+    'Vos vérifications d’identité de la partie, sur la carte en cours. Touchez un contrôle pour son détail.' => 'Your identity verifications in this game, on the current map. Tap a check for its details.',
     'Vos données' => 'Your data',
     'Vos données ATAK et votre fiche' => 'Your ATAK data and your record',
     'Vos données restent attachées à votre compte' => 'Your data stays attached to your account',
@@ -59730,7 +59732,7 @@ return [
     '%1 personne(s)' => '%1 person(s)',
     'Contrôle ID' => 'ID Check',
     'Mes contrôles d’identité de la partie' => 'My identity checks in this game',
-    'Aucun contrôle pour l’instant. Dans le jeu, contrôlez des papiers (menu ACE « Contrôle d’identité ») puis transmettez-les à Athena : ils apparaissent ici.' => 'No check yet. In the game, check documents (ACE menu “Identity check”) then send them to Athena: they show up here.',
+    'Aucun contrôle pour l’instant. Dans le jeu, contrôlez des papiers (menu ACE « Vérification d’identité ») puis transmettez-les à Athena : ils apparaissent ici.' => 'No check yet. In the game, check documents (ACE menu “Identity verification”) then send them to Athena: they show up here.',
     'Aucun niveau détaillé pour ce contrôle.' => 'No level detailed for this check.',
     'Contrôleur :' => 'Checker:',
     'Joindre à une FRM' => 'Attach to an FRM',
@@ -59739,7 +59741,7 @@ return [
     'SIMULATION' => 'SIMULATION',
     'Remarque pour le bureau SSE (facultatif)' => 'Note for the SSE office (optional)',
     'Comportement, lieu, ce que la personne a dit…' => 'Behaviour, place, what the person said…',
-    'Vos contrôles d’identité de la partie, sur la carte en cours. Touchez un contrôle pour son détail.' => 'Your identity checks in this game, on the current map. Tap a check for its details.',
+    'Vos vérifications d’identité de la partie, sur la carte en cours. Touchez un contrôle pour son détail.' => 'Your identity verifications in this game, on the current map. Tap a check for its details.',
     'Votre compte Athena n’est pas relié à Steam : vos contrôles ne peuvent pas être retrouvés. Reliez Steam dans votre profil Athena.' => 'Your Athena account is not linked to Steam: your checks cannot be found. Link Steam in your Athena profile.',
     'Né(e) le %1' => 'Born %1',
     'Photos' => 'Photos',

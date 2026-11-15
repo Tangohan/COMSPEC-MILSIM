@@ -1,3 +1,18 @@
+[h1]COMSPEC SSE 1.9.2 — vocabulaire forces spéciales américaines / US special forces wording[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.19.0 pour la signature tracée du SEEK II. / Fully restart Arma. Requires COMSPEC ATAK 4.19.0 for the drawn SEEK II signature.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Vocabulaire[/b] : les menus, le guide, le terminal Passage aux fichiers et les réglages parlent comme les forces spéciales américaines : « Prendre en charge » et registre des pièces au lieu de mise sous scellé, « Vérification d'identité » au lieu de contrôle, avis de recherche au lieu de mandat, sujet au lieu de suspect, appréhendé au lieu d'interpellé.
+[*] Rien ne change dans vos sauvegardes ni dans les anciennes fiches : seuls les textes affichés sont renommés.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Wording[/b]: menus, the guide, the Passage aux fichiers terminal and settings now use US special forces wording: "Take custody" and the item register instead of sealing, "Identity verification" instead of identity control, wanted notice instead of warrant, subject instead of suspect, apprehended instead of arrested.
+[*] Your saves and existing records are unchanged: only displayed texts are renamed.
+[/list]
+
 [h1]COMSPEC SSE 1.9.1 — tuto des extensions, fenêtre « IA de la zone », fenêtres qui s'affichaient à moitié / extensions tutorial, Area AI window, half-shown windows (11/11/2026)[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.4.1.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.4.1.[/b]
 

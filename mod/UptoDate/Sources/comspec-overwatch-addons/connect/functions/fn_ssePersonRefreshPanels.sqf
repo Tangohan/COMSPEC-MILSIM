@@ -283,7 +283,7 @@ if (_queryPending) then {
                 _banTxt = format [
                     "<t size='0.62' font='TahomaB' color='#ffffff'>%1</t><br/><t size='0.44' font='TahomaB' color='#ffffff'>%2</t>",
                     if (_tier > 0) then { format ["MATCH · TIER %1", _tier] } else { "MATCH · CONNU, NON SIGNALÉ" },
-                    _x4 getOrDefault ["action", ["DETAIN : interpeller, retenir le sujet, aviser le PC", "QUESTION / DETAIN : questionner, retenir, aviser le PC"] select ((_tier - 1) max 0 min 1)]
+                    _x4 getOrDefault ["action", ["DETAIN : appréhender, retenir le sujet, aviser le PC", "QUESTION / DETAIN : questionner, retenir, aviser le PC"] select ((_tier - 1) max 0 min 1)]
                 ];
             };
             case "possible": {

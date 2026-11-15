@@ -17,7 +17,7 @@ require __DIR__ . '/_head.php';
 ?>
     <section class="mm-card">
       <h1 class="mm-h1">Contrôle ID</h1>
-      <p class="mm-muted">Vos contrôles d’identité de la partie, sur la carte en cours. Touchez un contrôle pour son détail.</p>
+      <p class="mm-muted">Vos vérifications d’identité de la partie, sur la carte en cours. Touchez un contrôle pour son détail.</p>
       <p class="mm-idc-sim"><strong>SIMULATION</strong> Papiers fictifs pour le jeu.</p>
     </section>
 <?php if (!empty($noSteam)): ?>
@@ -26,7 +26,7 @@ require __DIR__ . '/_head.php';
     </section>
 <?php elseif ($checks === []): ?>
     <section class="mm-card">
-      <p class="mm-muted">Aucun contrôle pour l’instant. Dans le jeu, contrôlez des papiers (menu ACE « Contrôle d’identité ») puis transmettez-les à Athena : ils apparaissent ici.</p>
+      <p class="mm-muted">Aucun contrôle pour l’instant. Dans le jeu, contrôlez des papiers (menu ACE « Vérification d’identité ») puis transmettez-les à Athena : ils apparaissent ici.</p>
     </section>
 <?php else: ?>
     <div class="mm-idc-list">
