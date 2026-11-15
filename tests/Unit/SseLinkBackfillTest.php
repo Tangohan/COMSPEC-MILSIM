@@ -154,9 +154,8 @@ final class SseLinkBackfillTest extends TestCase
 
     public function testWithoutTheTableItExplainsAndDoesNothing(): void
     {
-        SseLinksSqlite::close();
-        $pdo = SseLinksSqlite::open(false);
-        $r = (new SseLinkBackfill($pdo))->run(true);
+        $this->pdo->exec('DROP TABLE sse_entity_links');
+        $r = (new SseLinkBackfill($this->pdo))->run(true);
         self::assertFalse($r['ready']);
         self::assertSame(0, $r['created']);
         self::assertStringContainsString('étape de migration', $r['messages'][0]);

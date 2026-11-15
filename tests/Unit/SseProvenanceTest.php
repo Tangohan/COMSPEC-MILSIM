@@ -96,8 +96,8 @@ final class SseProvenanceTest extends TestCase
 
     public function testWithoutTheTableNothingIsWrittenAndNothingBreaks(): void
     {
-        SseLinksSqlite::close();
-        $this->pdo = SseLinksSqlite::open(false);
+        $this->pdo->exec('DROP TABLE sse_entity_links');
+        SseEntityLinkRepository::forgetReady();
         self::assertFalse(SseEntityLinkRepository::ready());
         self::assertSame(0, SseProvenance::cerbere(1, ['check', 5], ['identity', 1], 'identified_as', 'cerbere.link.check_biokey'));
         self::assertSame(0, SseProvenance::manual(1, ['check', 5], ['identity', 1], 'related', 'Motif écrit.', 7));

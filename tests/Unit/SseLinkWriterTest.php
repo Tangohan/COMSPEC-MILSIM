@@ -150,8 +150,8 @@ final class SseLinkWriterTest extends TestCase
 
     public function testWithoutTheTableManualLinksSayWhy(): void
     {
-        SseLinksSqlite::close();
-        $this->pdo = SseLinksSqlite::open(false);
+        $this->pdo->exec('DROP TABLE sse_entity_links');
+        \App\Repositories\SseEntityLinkRepository::forgetReady();
         self::assertSame(SseLinkWriter::NOT_READY, $this->add()['error']);
         self::assertSame(SseLinkWriter::NOT_READY, $this->writer()->remove(1)['error']);
     }

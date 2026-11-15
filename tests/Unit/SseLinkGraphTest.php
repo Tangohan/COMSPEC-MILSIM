@@ -347,9 +347,8 @@ final class SseLinkGraphTest extends TestCase
 
     public function testWithoutTheProvenanceTableThePathIsDeducedFromTheColumnsAndSaysSo(): void
     {
-        SseLinksSqlite::close();
-        $this->pdo = SseLinksSqlite::open(false);
-        $this->ids = SseLinksFixture::seed($this->pdo, false);
+        $this->pdo->exec('DROP TABLE sse_entity_links');
+        \App\Repositories\SseEntityLinkRepository::forgetReady();
         $g = $this->graph()->resolve('person', (string) $this->ids['person']);
         self::assertTrue($g['found']);
         self::assertTrue($g['degraded']);
