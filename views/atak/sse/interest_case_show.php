@@ -181,6 +181,8 @@ $cdHuman = static fn (string $key): string => (string) ($cd($key)['human'] ?? ''
     </aside>
 </header>
 
+<?php \App\Services\Sse\Links\SseLinksWidget::render('interest', (int) ($c['id'] ?? 0)); ?>
+
 <div class="security-notice">
     <div class="security-notice-code">HITL</div>
     <div>

@@ -1218,6 +1218,11 @@ return function (Router $router) {
     $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
     $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
+    // Widget « Liaisons » (chemin de liaison, liens manuels) et page « Cerbères ».
+    $router->get('/atak/sse/liaisons/recherche', [\App\Controllers\Web\SseLinksController::class, 'search'], $mwSsePortal);
+    $router->post('/atak/sse/liaisons', [\App\Controllers\Web\SseLinksController::class, 'store'], $mwSsePortal);
+    $router->post('/atak/sse/liaisons/{id}/retirer', [\App\Controllers\Web\SseLinksController::class, 'remove'], $mwSsePortal);
+    $router->get('/atak/sse/cerberes', [\App\Controllers\Web\SseLinksController::class, 'cerberes'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);

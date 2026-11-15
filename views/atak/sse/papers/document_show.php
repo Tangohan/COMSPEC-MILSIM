@@ -44,6 +44,8 @@ require __DIR__ . '/_subnav.php';
     </div>
 </div>
 
+<?php \App\Services\Sse\Links\SseLinksWidget::render('paper', (int) $doc['id']); ?>
+
 <?php
 $aiLinks = [];
 try {

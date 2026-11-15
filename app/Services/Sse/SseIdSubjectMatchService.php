@@ -24,6 +24,9 @@ final class SseIdSubjectMatchService
 {
     private const MAX_CANDIDATES = 6;
 
+    /** Contrôles précédents dont le rattachement rétroactif est tracé au plus par appel (le rattachement lui-même n'est pas borné). */
+    private const MAX_TRACED = 200;
+
     private const MAX_SUGGESTIONS = 20;
 
     private Database $db;
@@ -174,10 +177,18 @@ final class SseIdSubjectMatchService
             "UPDATE sse_persons SET bio_key = :k WHERE id = :p AND tenant_id = :t AND (bio_key IS NULL OR bio_key = '')",
             ['k' => $bioKey, 'p' => $personId, 't' => $tenantId]
         );
+        $retro = $this->db->fetchAll(
+            'SELECT id FROM sse_id_checks WHERE tenant_id = :t AND context_id = :m AND subject_bio_key = :k AND person_id IS NULL ORDER BY id ASC LIMIT ' . self::MAX_TRACED,
+            ['t' => $tenantId, 'm' => $mapId, 'k' => $bioKey]
+        );
         $this->db->execute(
             'UPDATE sse_id_checks SET person_id = :p WHERE tenant_id = :t AND context_id = :m AND subject_bio_key = :k AND person_id IS NULL',
             ['p' => $personId, 't' => $tenantId, 'm' => $mapId, 'k' => $bioKey]
         );
+        // Rattachement rétroactif : chaque contrôle précédent rattaché ici garde la trace du pourquoi (Cerbère-Liaison).
+        foreach ($retro as $r) {
+            SseProvenance::cerbere($tenantId, ['check', (int) $r['id']], ['person', $personId], 'identified_as', 'cerbere.link.check_retro');
+        }
     }
 
     private function rememberIdentity(int $tenantId, int $mapId, string $bioKey, int $identityId, string $subjectSteam): void
@@ -192,11 +203,19 @@ final class SseIdSubjectMatchService
         }
         $this->db->execute('UPDATE sse_identities SET bio_key = :k WHERE id = :i AND tenant_id = :t', ['k' => $bioKey, 'i' => $identityId, 't' => $tenantId]);
         // Contrôles précédents sans papier du registre : seulement ceux présentés sous le nom de cette identité.
+        $retro = $this->db->fetchAll(
+            'SELECT id FROM sse_id_checks WHERE tenant_id = :t AND context_id = :m AND subject_bio_key = :k
+                AND identity_id IS NULL AND document_id IS NULL AND presented_last = :l ORDER BY id ASC LIMIT ' . self::MAX_TRACED,
+            ['t' => $tenantId, 'm' => $mapId, 'k' => $bioKey, 'l' => (string) $identity['last_name']]
+        );
         $this->db->execute(
             'UPDATE sse_id_checks SET identity_id = :i WHERE tenant_id = :t AND context_id = :m AND subject_bio_key = :k
                 AND identity_id IS NULL AND document_id IS NULL AND presented_last = :l',
             ['i' => $identityId, 't' => $tenantId, 'm' => $mapId, 'k' => $bioKey, 'l' => (string) $identity['last_name']]
         );
+        foreach ($retro as $r) {
+            SseProvenance::cerbere($tenantId, ['check', (int) $r['id']], ['identity', $identityId], 'identified_as', 'cerbere.link.check_retro');
+        }
     }
 
     /** @return list<string> */

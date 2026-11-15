@@ -193,7 +193,7 @@ final class SseAccessCatalog
         'analyse' => [
             'label' => 'Analyse',
             'hint' => 'Espace d’exploitation, cycle du renseignement, croisements, rapprochements, anomalies, chronologie.',
-            'paths' => ['workspace', 'croisements', 'rapprochements', 'anomalies', 'chronologie', 'moteur'],
+            'paths' => ['workspace', 'croisements', 'rapprochements', 'anomalies', 'chronologie', 'moteur', 'cerberes'],
             'legacy' => ['read' => 'entrant', 'write' => 'manage', 'add' => 'manage', 'delete' => 'manage', 'export' => 'export', 'manage' => 'grant'],
         ],
         'lore' => [

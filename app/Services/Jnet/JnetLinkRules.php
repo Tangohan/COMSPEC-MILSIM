@@ -28,17 +28,22 @@ final class JnetLinkRules
         'document' => 'Document',
         'unite' => 'Unité',
         'membre' => 'Membre',
+        // Élément du portail SSE : seul « type-numéro » est gardé (jamais un nom) ; le titre est lu à l'affichage, avec les droits du lecteur.
+        'sse' => 'Élément SSE',
     ];
 
+    /** Types d'éléments SSE qu'on peut citer (clés de SseLinkCatalog::TYPES). */
+    public const SSE_KINDS = ['person', 'identity', 'paper', 'check', 'seek', 'notice', 'doc_issue', 'photo', 'attribute', 'mention', 'case', 'interest', 'document', 'note', 'site', 'transmission', 'campaign'];
+
     /** Types qu'on peut citer dans le texte d'une page (saisie « @ » ou « [[ »). */
-    public const MENTION_TYPES = ['unite', 'membre', 'operation', 'page'];
+    public const MENTION_TYPES = ['unite', 'membre', 'operation', 'page', 'sse'];
 
     public const LINKS_PER_OBJECT_MAX = 60;
     public const MENTIONS_PER_SAVE_MAX = 25;
     public const LABEL_MAX = 80;
 
     /** « [[type:identifiant|libellé]] » : le libellé n'est qu'un repli, le titre affiché vient toujours du serveur. */
-    private const MENTION_RE = '/\[\[(unite|membre|operation|page):(\d{1,10})\|([^\[\]|\r\n]{0,80})\]\]/u';
+    private const MENTION_RE = '/\[\[(?|(unite|membre|operation|page):(\d{1,10})|(sse):([a-z_]{2,16}-\d{1,10}))\|([^\[\]|\r\n]{0,80})\]\]/u';
 
     public const UNIT_KINDS = [
         'appui' => 'Appui',
@@ -65,8 +70,34 @@ final class JnetLinkRules
         if ($type === 'cible') {
             return preg_match('/^(di|wl)-[1-9]\d{0,9}$/', $id) === 1;
         }
+        if ($type === 'sse') {
+            return self::sseParts($id) !== null;
+        }
 
         return preg_match('/^[1-9]\d{0,9}$/', $id) === 1;
+    }
+
+    /**
+     * « person-12 » → ['type' => 'person', 'id' => '12'] pour un élément SSE ; null si le type n'est pas un élément SSE citable.
+     *
+     * @return array{type: string, id: string}|null
+     */
+    public static function sseParts(string $id): ?array
+    {
+        if (preg_match('/^([a-z_]{2,16})-([1-9]\d{0,9})$/', $id, $m) !== 1 || !in_array($m[1], self::SSE_KINDS, true)) {
+            return null;
+        }
+
+        return ['type' => $m[1], 'id' => $m[2]];
+    }
+
+    /** « person:12 » (référence du portail SSE) → « person-12 » (identifiant JNET), ou null. */
+    public static function sseIdFromRef(string $ref): ?string
+    {
+        $parts = explode(':', trim($ref), 2);
+        $id = count($parts) === 2 ? $parts[0] . '-' . $parts[1] : '';
+
+        return self::sseParts($id) !== null ? $id : null;
     }
 
     /** « operation:12 » → ['type' => 'operation', 'id' => '12'], ou null si la référence n'est pas valide. */
@@ -116,6 +147,7 @@ final class JnetLinkRules
             'cible' => 'cibles',
             'unite' => 'unites',
             'membre' => 'membres',
+            'sse' => 'sse',
             default => 'autres',
         };
     }
@@ -132,6 +164,7 @@ final class JnetLinkRules
         'cibles' => 'Cibles',
         'unites' => 'Unités',
         'membres' => 'Membres',
+        'sse' => 'Éléments SSE',
     ];
 
     /**
@@ -255,13 +288,38 @@ final class JnetLinkRules
             [$raw, $offset] = $hit[0];
             $out .= $plain(substr($text, $pos, $offset - $pos));
             $seen = $resolved[$hit[1][0] . ':' . $hit[2][0]] ?? null;
-            $out .= $seen === null
-                ? '<span class="jl-mention is-hidden" title="Lien masqué">Lien masqué</span>'
-                : '<a class="jl-mention" href="' . $esc($seen['href']) . '">' . $esc($seen['title']) . '</a>';
+            if ($hit[1][0] === 'sse') {
+                $out .= self::renderSse($seen);
+            } else {
+                $out .= $seen === null
+                    ? '<span class="jl-mention is-hidden" title="Lien masqué">Lien masqué</span>'
+                    : '<a class="jl-mention" href="' . $esc($seen['href']) . '">' . $esc($seen['title']) . '</a>';
+            }
             $pos = $offset + strlen($raw);
         }
 
         return $out . $plain(substr($text, $pos));
+    }
+
+    /**
+     * Bloc d'un élément SSE cité dans un texte : référence, titre, lien et chemin de liaison résumé, tels que CE lecteur les
+     * voit. Restreint ou absent : « Élément restreint », sans nom, sans référence et sans indice sur le contenu.
+     *
+     * @param array{title: string, href: string, ref?: string, type_label?: string, path?: list<string>}|null $seen
+     */
+    public static function renderSse(?array $seen): string
+    {
+        $esc = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+        if ($seen === null) {
+            return '<span class="jl-mention is-hidden" title="Élément restreint">Élément restreint</span>';
+        }
+        $head = (($seen['ref'] ?? '') !== '' ? '<b>' . $esc((string) $seen['ref']) . '</b> ' : '') . $esc((string) $seen['title']);
+        $path = array_slice(array_values(array_filter((array) ($seen['path'] ?? []), 'is_string')), 0, 2);
+
+        return '<span class="jl-sse"><a class="jl-mention jl-mention--sse" href="' . $esc((string) $seen['href']) . '">' . $head . '</a>'
+            . (($seen['type_label'] ?? '') !== '' ? '<small class="jl-sse__type">' . $esc((string) $seen['type_label']) . '</small>' : '')
+            . ($path !== [] ? '<small class="jl-sse__path" title="Chemin de liaison">' . implode('<br>', array_map($esc, $path)) . '</small>' : '')
+            . '</span>';
     }
 
     // ——— Liaisons d'unités ———

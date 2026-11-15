@@ -1359,3 +1359,4 @@ IBM Plex Sans	nom de police Google Fonts	views/layout/main.php
 Libre Baskerville	nom de police Google Fonts	views/layout/main.php
 jnet/liens/nouveau?src=	chemin d'URL, pas un texte	views/jnet/unit_space.php
 jnet/courrier/nouveau?membre=	chemin d'URL, pas un texte	views/jnet/commun/_voie.php
+%1 rapprochement(s) de Cerbère à valider	nom propre « Cerbère » dans la traduction anglaise (le contrôle y voit un accent)	views/atak/sse/partials/case_progress.php

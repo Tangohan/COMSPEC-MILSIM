@@ -52,8 +52,9 @@ final class SsePortalNav
             ]],
             ['id' => 'analyse', 'label' => 'Analyse', 'hint' => 'Relier les faits : chronologie, rapprochements, anomalies, carte.', 'items' => [
                 ['id' => 'chronologie', 'label' => 'Chronologie', 'hint' => 'Faits et événements dans l’ordre.', 'path' => 'atak/sse/chronologie', 'icon' => 'time', 'keywords' => 'timeline'],
-                ['id' => 'croisements', 'label' => 'Croisements', 'hint' => 'Correspondances entre fiches terrain et listes de surveillance, à valider.', 'path' => 'atak/sse/croisements', 'icon' => 'cross', 'keywords' => 'surveillance watchlist'],
-                ['id' => 'rapprochements', 'label' => 'Suggestions du moteur', 'hint' => 'Liens trouvés automatiquement, à accepter ou rejeter.', 'path' => 'atak/sse/rapprochements', 'icon' => 'engine', 'keywords' => 'rapprochements moteur'],
+                ['id' => 'croisements', 'label' => 'Croisements Cerbère', 'hint' => 'Correspondances trouvées par Cerbère-Corrélation entre fiches terrain et listes de surveillance, à valider.', 'path' => 'atak/sse/croisements', 'icon' => 'cross', 'keywords' => 'surveillance watchlist'],
+                ['id' => 'rapprochements', 'label' => 'Propositions de Cerbère', 'hint' => 'Liens trouvés par Cerbère-Validation, à accepter ou rejeter.', 'path' => 'atak/sse/rapprochements', 'icon' => 'engine', 'keywords' => 'rapprochements moteur suggestions cerbere'],
+                ['id' => 'cerberes', 'label' => 'Cerbères', 'hint' => 'Ce que le système fait tout seul : traitements, état et derniers événements.', 'path' => 'atak/sse/cerberes', 'icon' => 'engine', 'keywords' => 'cerbere automatique liaison corrélation détection création validation'],
                 ['id' => 'anomalies', 'label' => 'Anomalies', 'hint' => 'Écarts et incohérences à examiner.', 'path' => 'atak/sse/anomalies', 'icon' => 'alert'],
                 ['id' => 'carte', 'label' => 'Carte ATAK', 'hint' => 'Projection géographique (ouvre l’ATAK).', 'path' => 'atak', 'icon' => 'map', 'external' => true],
             ]],

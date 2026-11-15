@@ -487,6 +487,16 @@ final class SseApiController
         }
         $userId = is_array($actor) && isset($actor['user_id']) ? (int) $actor['user_id'] : null;
         $filing['newly_linked'] = $this->cases->linkPerson($caseId, $personId, $tenantId, $userId, 'Classement depuis le terminal SEEK');
+        // Trace du pourquoi (Cerbère-Création / Cerbère-Liaison) : sans elle, le dossier « ouvert tout seul » n'explique rien.
+        \App\Services\Sse\SseProvenance::cerbere(
+            $tenantId,
+            ['person', $personId],
+            ['case', $caseId],
+            'filed_in',
+            !empty($found['created']) ? 'cerbere.create.case_from_code' : 'cerbere.link.case_terminal',
+            'Code « ' . $caseCode . ' » saisi par ' . $callsign . '.',
+            $userId
+        );
         $filing['linked'] = true;
         $filing['case'] = [
             'id' => $caseId,

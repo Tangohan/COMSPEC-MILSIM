@@ -753,13 +753,19 @@ final class JnetPortalController
 
             return Response::redirect($back);
         }
+        // Citations d'éléments SSE du compte rendu : une citation que l'auteur ne peut pas lire redevient son libellé neutre
+        // (on ne grave jamais un lien que l'auteur n'aurait pas pu poser) ; chaque lecteur est de toute façon contrôlé à l'affichage.
+        $body = (string) $request->input('body', '');
+        if (str_contains($body, '[[sse:')) {
+            $body = $this->links->sanitizeMentions(JnetLinkAccess::forViewer($ctx['tenant_id'], $ctx['user_id'], $this->spaces), $body);
+        }
         $error = $this->spaces->post(
             $ctx['tenant_id'],
             $ctx['user_id'],
             $spaceId,
             (string) $request->input('kind', 'info'),
             (string) $request->input('title', ''),
-            (string) $request->input('body', ''),
+            $body,
             (string) $request->input('link', ''),
             array_map('intval', (array) $request->input('targets', []))
         );
@@ -970,7 +976,7 @@ final class JnetPortalController
             'searchUrl' => url('jnet/liens/recherche'),
             'createUrl' => url('jnet/liens'),
             'removeBase' => url('jnet/liens'),
-            'types' => $type === 'operation' ? 'echange,page,tache,cible,document,unite,membre' : 'echange,page,tache,operation,document,unite,membre',
+            'types' => $type === 'operation' ? 'echange,page,tache,cible,document,unite,membre,sse' : 'echange,page,tache,operation,document,unite,membre,sse',
         ];
     }
 
