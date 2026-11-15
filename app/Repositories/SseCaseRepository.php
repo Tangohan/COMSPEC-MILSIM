@@ -16,10 +16,10 @@ final class SseCaseRepository
 
     /** @var array<string, string> */
     public const CLASSIFICATION_LABELS = [
-        self::CLASS_INTERNAL => 'Diffusion interne',
-        self::CLASS_COMMAND => 'Encadrement',
-        self::CLASS_CONFIDENTIAL => 'Confidentiel',
-        self::CLASS_RESTRICTED => 'Diffusion très restreinte',
+        self::CLASS_INTERNAL => 'Information non classifiée contrôlée (CUI)',
+        self::CLASS_COMMAND => 'Confidentiel (C)',
+        self::CLASS_CONFIDENTIAL => 'Secret (S)',
+        self::CLASS_RESTRICTED => 'Très secret (TS)',
     ];
 
     /** @var array<string, string> */
@@ -53,7 +53,7 @@ final class SseCaseRepository
 
     public static function classificationLabel(string $code): string
     {
-        return self::CLASSIFICATION_LABELS[$code] ?? 'Encadrement';
+        return self::CLASSIFICATION_LABELS[$code] ?? self::CLASSIFICATION_LABELS[self::CLASS_COMMAND];
     }
 
     public static function statusLabel(string $code): string

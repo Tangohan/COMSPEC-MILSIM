@@ -91,6 +91,14 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('as
                     </select>
                 </div>
                 <div>
+                    <label for="s-class">Classification par défaut des fiches (génération rapide)</label>
+                    <select id="s-class" name="default_classification">
+                        <?php foreach (\App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS as $ck => $cl): ?>
+                            <option value="<?= $h($ck) ?>" <?= ($config['default_classification'] ?? 'encadrement') === $ck ? 'selected' : '' ?>><?= $h($cl) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
                     <label for="s-expiry">Expiration par défaut (jours, 0 : aucune)</label>
                     <input id="s-expiry" type="number" name="default_expiry_days" min="0" max="3650" value="<?= (int) ($config['default_expiry_days'] ?? 0) ?>">
                 </div>

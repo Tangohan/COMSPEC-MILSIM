@@ -50,16 +50,9 @@ $check = static function (string $name, string $id, bool $on, string $label, str
     return '<label class="dbot-check" for="' . $h($id) . '"><input type="checkbox" id="' . $h($id) . '" name="' . $h($name) . '" value="1"' . ($on ? ' checked' : '') . '>'
         . '<span><b>' . $h($label) . '</b><small>' . $h($help) . '</small></span></label>';
 };
+$pill = '<span class="dbot-pill dbot-pill--' . $h($statusTone) . '">' . $h($statusText) . '</span>';
 ?>
 <div class="dbot">
-    <header class="dbot-head ath-card">
-        <div>
-            <h1 class="dbot-title">Bot Discord Athena</h1>
-            <p class="dbot-lead">Le bot accompagne votre bureau des effectifs directement sur le serveur Discord de votre communauté : résumés, candidatures, événements, rappels et accueil des nouveaux arrivants.</p>
-        </div>
-        <span class="dbot-pill dbot-pill--<?= $h($statusTone) ?>"><?= $h($statusText) ?></span>
-    </header>
-
     <?php if (empty($bot['ready'])): ?>
         <div class="dbot-note dbot-note--bad" role="alert">Le bot Discord n’est pas encore installé sur le site : la mise à jour de la base doit être lancée par l’administrateur de la plateforme.</div>
     <?php endif; ?>
@@ -69,7 +62,10 @@ $check = static function (string $name, string $id, bool $on, string $label, str
 
     <?php if ($guild === null): ?>
     <section class="ath-card dbot-card" aria-labelledby="dbot-add-title">
-        <h2 id="dbot-add-title" class="dbot-h2">Ajouter le bot Athena à votre serveur Discord</h2>
+        <div class="dbot-server">
+            <h2 id="dbot-add-title" class="dbot-h2">Ajouter le bot Athena à votre serveur Discord</h2>
+            <?= $pill ?>
+        </div>
         <p>Vous êtes redirigé vers Discord pour choisir votre serveur et autoriser le bot. Au retour, Athena relie ce serveur à votre communauté : un serveur pour une communauté.</p>
         <div class="dbot-cols">
             <div>
@@ -126,6 +122,7 @@ $check = static function (string $name, string $id, bool $on, string $label, str
                 </p>
             </div>
             <div class="dbot-server__btns">
+                <?= $pill ?>
                 <?php if (!empty($bot['invite_url']) && in_array($status, ['pending', 'absent'], true)): ?>
                     <a class="ath-btn" href="<?= $h((string) $bot['invite_url']) ?>" rel="noopener">Ajouter le bot au serveur</a>
                 <?php endif; ?>

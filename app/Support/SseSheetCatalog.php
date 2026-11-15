@@ -56,24 +56,24 @@ final class SseSheetCatalog
         'identification' => [
             ['description', 900, ['Signalement (description)', 'Description'], ['Description narrative de la personne.', 'Narrative description of the person.']],
             ['remarks', 600, ['Observations', 'Remarks'], ['Remarques utiles à l’identification.', 'Remarks useful for identification.']],
-            ['mention', 300, ['Mentions', 'Notes'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
+            ['mention', 300, ['Commentaires', 'Comments'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
         ],
         'vigilance' => [
             ['reason', 700, ['Motif de la vigilance', 'Reason for vigilance'], ['Pourquoi cette personne est à surveiller.', 'Why this person is to be watched.']],
             ['behaviour', 700, ['Comportement observé', 'Observed behaviour'], ['Habitudes, déplacements, attitude.', 'Habits, movements, attitude.']],
             ['instructions', 900, ['Conduite à tenir', 'Instructions'], ['Consignes aux équipes : ne pas intervenir, signaler, etc.', 'Instructions to teams: do not engage, report, etc.']],
-            ['mention', 300, ['Mentions', 'Notes'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
+            ['mention', 300, ['Commentaires', 'Comments'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
         ],
         'profile' => [
-            ['summary', 1500, ['Synthèse', 'Summary'], ['Résumé de la situation de la personne.', 'Summary of the person’s situation.']],
-            ['assessment', 900, ['Appréciation', 'Assessment'], ['Évaluation, fiabilité, hypothèses.', 'Assessment, reliability, hypotheses.']],
+            ['summary', 1500, ['Résumé exécutif (BLUF)', 'Executive summary (BLUF)'], ['Résumé de la situation de la personne.', 'Summary of the person’s situation.']],
+            ['assessment', 900, ['Évaluation analytique', 'Analytic assessment'], ['Évaluation, fiabilité, hypothèses.', 'Assessment, reliability, hypotheses.']],
             ['recommendations', 600, ['Recommandations', 'Recommendations'], ['Suites proposées.', 'Proposed follow-up.']],
-            ['mention', 300, ['Mentions', 'Notes'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
+            ['mention', 300, ['Commentaires', 'Comments'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
         ],
         'control' => [
             ['summary', 900, ['Synthèse du contrôle', 'Check summary'], ['Déroulé et résultat du ou des contrôles.', 'Course and outcome of the check(s).']],
             ['remarks', 700, ['Observations', 'Remarks'], ['Remarques de l’opérateur.', 'Operator remarks.']],
-            ['mention', 300, ['Mentions', 'Notes'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
+            ['mention', 300, ['Commentaires', 'Comments'], ['Mention de diffusion ou précaution.', 'Distribution note or caution.']],
         ],
     ];
 

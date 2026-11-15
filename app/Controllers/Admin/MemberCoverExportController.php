@@ -212,14 +212,14 @@ final class MemberCoverExportController
 
     private function download(int $tenantId, int $exportId, int $viewer, bool $manager, string $back, ?int $onlyUser = null): Response
     {
-        // Couverture préparée pour un membre : CONFIDENTIEL ÉLEVÉ. Gérer les papiers des membres ne suffit pas pour lire celle d'un autre :
-        // titulaire, hiérarchie, habilitation « Très restreint » avec droit « Identités de service » ou dérogation (SseMemberImageGate).
+        // Couverture préparée pour un membre : TRÈS SECRET (TS). Gérer les papiers des membres ne suffit pas pour lire celle d'un autre :
+        // titulaire, hiérarchie, habilitation « Très secret (TS) » avec droit « Identités de service » ou dérogation (SseMemberImageGate).
         if ($onlyUser !== null && $onlyUser !== $viewer) {
             $gate = \App\Services\Sse\SseMemberImageGate::forSession();
             $access = $gate->forMember($tenantId, $onlyUser);
             if (!$access['allowed']) {
                 $gate->recordDenied($tenantId, $viewer, 'cover_export', $exportId, $onlyUser);
-                Session::flash('error', 'Couverture CONFIDENTIEL ÉLEVÉ : réservée au titulaire et à sa hiérarchie.');
+                Session::flash('error', 'Couverture TRÈS SECRET (TS) : réservée au titulaire et à sa hiérarchie.');
 
                 return Response::redirect($back);
             }

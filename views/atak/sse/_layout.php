@@ -45,11 +45,18 @@ if ($clearanceUntil > $nowTs) {
 $sessionKindLabel = $isGuest ? 'Session invitée' : 'Session authentifiée';
 $classifBanner = function_exists('sse_ui_classification_label')
     ? sse_ui_classification_label()
-    : 'Confidentiel';
+    : 'Secret (S)';
 
 // Navigation unique (barre latérale, accueil, fil d'Ariane, palette Ctrl+K), filtrée selon les droits.
 $sseNavData ??= SsePortalNav::forSession($canManage, $canGrant, $isGuest, isset($canMemberPapers) ? (bool) $canMemberPapers : null);
 $sseNav = $sseNavData['sections'];
+// Boîte « À trier » et pastilles des files (SseTriageInbox) : jamais bloquant, absent si la lecture échoue.
+$sseTriage = \App\Support\SseTriageBadges::forNav($sseNav);
+$sseTriageTone = 'neutral';
+foreach ($sseTriage['entries'] as $sseTriageEntry) {
+    $sseTriageTone = \App\Support\SseTriageBadges::worst($sseTriageTone, $sseTriageEntry['tone']);
+}
+$sseTriageOn = str_contains((string) parse_url($currentPath, PHP_URL_PATH), '/atak/sse/a-trier');
 $sseNavActive = SsePortalNav::activeId($sseNav, $currentPath, $activeNav);
 $sseNavOpenSection = SsePortalNav::sectionOf($sseNav, $sseNavActive);
 $sseUrl = static fn (string $p): string => (string) url($p);
@@ -64,7 +71,7 @@ foreach ($sseNav as $section) {
 
 // Habilitation réelle de la session (plafond de lecture), affichée dans le bandeau.
 $sseClearanceKey = 'interne';
-$sseClearanceText = 'Diffusion interne';
+$sseClearanceText = \App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS['interne'];
 $sseClearanceOrigin = '';
 try {
     $sseClearanceSvc = new \App\Services\Sse\SseClearanceService();
@@ -106,6 +113,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_shell.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_ui.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_notify.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-aside-badges.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/app-update-modal.css')) ?>">
     <?php if (!empty($sseNeedLeaflet)): ?>
         <link rel="stylesheet" href="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
@@ -167,9 +175,9 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
         </div>
     </header>
 
-    <div class="iw-classbar sx-classbar sx-classbar--<?= $h($sseClearanceTone) ?>" role="status" title="<?= $h($sseClearanceOrigin) ?>">
-        <strong>Habilitation <?= $h(mb_strtoupper($sseClearanceText)) ?></strong>
-        <span>Diffusion restreinte · personnel habilité · journalisation active</span>
+    <div class="iw-classbar sx-classbar sx-classbar--<?= $h($sseClearanceTone) ?>" role="status" title="<?= $h(trim($sseClearanceText . ' — ' . $sseClearanceOrigin, ' —')) ?>">
+        <strong><?= $h(\App\Support\SseUsClassification::banner($sseClearanceKey)) ?></strong>
+        <span>Accès réservé au personnel habilité · Journalisation active</span>
         <?php if ($isGuest && $guestLabel !== ''): ?>
             <em><?= $h($guestLabel) ?></em>
         <?php endif; ?>
@@ -178,10 +186,17 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     <div class="iw-shell sx-shell">
         <aside class="iw-nav sx-nav" id="sx-nav" aria-label="Navigation du bureau SSE">
             <button type="button" class="sx-nav__close" data-sx-nav-close>Fermer le menu</button>
+            <?php if ($sseTriage['enabled']): ?>
+                <a class="sb-triage<?= $sseTriageOn ? ' is-active' : '' ?>" href="<?= $h(url('atak/sse/a-trier')) ?>" data-sb-triage data-sb-url="<?= $h(url('atak/sse/a-trier/compteurs')) ?>"<?= $sseTriageOn ? ' aria-current="page"' : '' ?>>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z"/></svg>
+                    <span class="sb-triage__label">À trier</span>
+                    <?= \App\Support\SseTriageBadges::badge('', $sseTriage['total'], $sseTriageTone) ?>
+                </a>
+            <?php endif; ?>
             <nav aria-label="Espaces du bureau SSE">
                 <?php foreach ($sseNav as $section): ?>
                     <details class="sx-nav__group" data-sx-group="<?= $h($section['id']) ?>" open>
-                        <summary class="sx-nav__head"><?= $h($section['label']) ?></summary>
+                        <summary class="sx-nav__head"><?= $h($section['label']) ?><?php if ($sseTriage['enabled'] && isset($sseTriage['sections'][$section['id']])): ?><?= \App\Support\SseTriageBadges::pill((string) $section['id'], $sseTriage['sections'][$section['id']]['count'], $sseTriage['sections'][$section['id']]['tone']) ?><?php endif; ?></summary>
                         <ul class="sx-nav__list">
                             <?php foreach ($section['items'] as $item): ?>
                                 <?php $isActive = $item['id'] === $sseNavActive; ?>
@@ -189,6 +204,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
                                     <a href="<?= $h(url($item['path'])) ?>" class="iw-nav-link sx-nav__link<?= $isActive ? ' is-active' : '' ?>" title="<?= $h($item['hint']) ?>"<?= $isActive ? ' aria-current="page"' : '' ?>>
                                         <?= SsePortalNav::icon((string) $item['icon']) ?>
                                         <span class="sx-nav__label"><?= $h($item['label']) ?></span>
+                                        <?php if (isset($sseTriage['entries'][$item['id']])): ?><?= \App\Support\SseTriageBadges::badge((string) $item['id'], $sseTriage['entries'][$item['id']]['count'], $sseTriage['entries'][$item['id']]['tone']) ?><?php endif; ?>
                                         <?php if (!empty($item['external'])): ?><span class="sx-nav__ext" aria-label="ouvre l’ATAK">↗</span><?php endif; ?>
                                     </a>
                                 </li>
@@ -287,6 +303,7 @@ window.SSE_CTX = {
 <script type="application/json" id="sx-palette-data"><?= json_encode($ssePalette, $jsonFlags | JSON_HEX_QUOT) ?></script>
 <script src="<?= $h(asset_url('assets/js/sse-context-menu.js')) ?>"></script>
 <script src="<?= $h(asset_url('assets/js/sse-shell.js')) ?>"></script>
+<script src="<?= $h(asset_url('assets/js/sse-aside-badges.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-ui.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-notify.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-global-search.js')) ?>"></script>

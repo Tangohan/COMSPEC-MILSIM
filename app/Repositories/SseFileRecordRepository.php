@@ -675,7 +675,7 @@ final class SseFileRecordRepository
     }
 
     /**
-     * Clichés des identités. Par défaut filtrés pour le lecteur de la session : une image de membre (CONFIDENTIEL ÉLEVÉ) qu'il n'a pas
+     * Clichés des identités. Par défaut filtrés pour le lecteur de la session : une image de membre (TRÈS SECRET (TS)) qu'il n'a pas
      * le droit de voir n'est jamais rendue, quel que soit l'écran, l'export ou le service appelant ; celles qu'il peut voir portent
      * « confidential » (adresse protégée). $gated = false : lecture brute, réservée aux traitements qui n'affichent rien (compter, fusionner).
      *

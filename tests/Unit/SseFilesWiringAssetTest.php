@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Passage aux fichiers : routes du portail SSE, étape de migration inscrite, liens depuis le registre, API du jeu
- * branchée, écrans sans libellé au-dessus des titres, mention SIMULATION et textes traduits.
+ * branchée, écrans sans libellé au-dessus des titres, aucun bandeau SIMULATION et textes traduits.
  */
 final class SseFilesWiringAssetTest extends TestCase
 {
@@ -62,14 +62,16 @@ final class SseFilesWiringAssetTest extends TestCase
         self::assertStringContainsString('return Response::json($this->lookup->lookup($tenantId, $q));', $api, 'repli sur le contrôle N3 seul');
     }
 
-    public function testScreensHaveNoEyebrowAndShowSimulation(): void
+    public function testScreensHaveNoEyebrowAndNoSimulationBanner(): void
     {
         foreach (['index', 'journal', 'mentions', 'seek', '_result', '_nav'] as $view) {
             $src = self::read('views/atak/sse/files/' . $view . '.php');
             self::assertStringNotContainsString('overline', $src, $view);
             self::assertStringNotContainsString('eyebrow', $src, $view);
         }
-        self::assertStringContainsString('SIMULATION', self::read('views/atak/sse/files/_nav.php'));
+        // Plus de bandeau SIMULATION : au plus une mention discrète (sse_fiction_footer), jamais sur les écrans de consultation.
+        self::assertStringNotContainsString('SIMULATION', self::read('views/atak/sse/files/_nav.php'));
+        self::assertStringNotContainsString('fx-sim', self::read('views/atak/sse/files/_nav.php'));
         self::assertStringContainsString('ARMÉ ET DANGEREUX', self::read('views/atak/sse/files/_result.php'));
     }
 

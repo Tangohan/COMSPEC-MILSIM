@@ -14,7 +14,7 @@ use App\Repositories\SseIdCoverLinkRepository;
  * seule ne dit pas qui appelle : réponse « unlinked », rien n'est écrit.
  *
  * Confidentialité : ces lignes ne vont ni dans le registre des identités, ni dans les listes de surveillance, ni dans le
- * paquet. Elles se lisent dans Mes papiers (le joueur lui-même) et, avec l'habilitation Confidentiel, sur sa fiche.
+ * paquet. Elles se lisent dans Mes papiers (le joueur lui-même) et, avec l'habilitation Secret (S), sur sa fiche.
  */
 final class SseIdGameCoverService
 {

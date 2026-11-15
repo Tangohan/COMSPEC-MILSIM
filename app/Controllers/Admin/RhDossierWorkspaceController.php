@@ -620,7 +620,7 @@ final class RhDossierWorkspaceController
     /**
      * Documents RH > « Documents d'identité » : papiers fictifs de COMSPEC Identity, par membre.
      * Le droit de voir la section est celui de l'onglet « Identité & papiers » de la fiche ; couvertures, alias et faux
-     * ne sont lus qu'avec l'habilitation Confidentiel (voir RhIdentityPapersOverview).
+     * ne sont lus qu'avec l'habilitation Secret (S) (voir RhIdentityPapersOverview).
      *
      * @param array{view: bool, manage: bool, truth: bool, cover: bool, sse: bool} $rights
      */

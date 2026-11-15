@@ -506,7 +506,7 @@ VERSION DE DIFFUSION
 ════════════════════════════════════════
 Référence source (document ou dossier) :
 Date / heure (Zulu) : {$zulu}
-Niveau de diffusion visé : Diffusion interne / Encadrement / Confidentiel / Très restreinte
+Niveau de diffusion visé : CUI / Confidentiel (C) / Secret (S) / Très secret (TS)
 Validé pour sortie de compartiment : oui / non — par :
 
 ────────────────────────────────────────

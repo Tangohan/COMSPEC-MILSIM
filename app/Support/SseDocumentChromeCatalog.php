@@ -36,10 +36,10 @@ final class SseDocumentChromeCatalog
         return [
             [
                 'code' => 'standard_restreint',
-                'label' => 'Standard — diffusion restreinte',
+                'label' => 'Standard — CUI',
                 'description' => 'Présentation actuelle du dossier : bandeau rouge, feuille crème, mention RP.',
                 'paper_style' => self::STYLE_CLEAN,
-                'banner' => 'DIFFUSION RESTREINTE — EXPLOITATION TERRAIN',
+                'banner' => 'CUI — EXPLOITATION TERRAIN',
                 'title_person' => 'DOSSIER SSE',
                 'title_docs' => 'DOSSIER DOCUMENTAIRE',
                 'subtitle_dossier' => 'Compte rendu d’exploitation',

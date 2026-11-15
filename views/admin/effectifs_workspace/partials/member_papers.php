@@ -204,7 +204,7 @@ $photoField = static function (array $i) use ($ph, $manage, $base, $csrfToken, $
             </ul>
         <?php endif; ?>
         <?php if (!$truth): ?>
-            <p class="eff-card__hint">Les alias et identités de couverture ne sont visibles qu’avec l’habilitation Confidentiel.</p>
+            <p class="eff-card__hint">Les alias et identités de couverture ne sont visibles qu’avec l’habilitation Secret (S).</p>
         <?php endif; ?>
         <?php if ($manage && $truth): ?>
             <details class="eff-card__edit">

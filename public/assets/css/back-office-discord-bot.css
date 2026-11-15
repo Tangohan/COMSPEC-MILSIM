@@ -11,28 +11,8 @@
   color: var(--ath-ink);
 }
 
-.dbot-head,
 .dbot-card {
   padding: 20px 22px;
-}
-
-.dbot-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.dbot-title {
-  margin: 0 0 6px;
-  font-size: 1.5rem;
-  line-height: 1.2;
-}
-
-.dbot-lead,
-.dbot-card p {
-  margin: 0 0 10px;
-  line-height: 1.55;
 }
 
 .dbot-h2 {
@@ -229,12 +209,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .dbot-head,
   .dbot-server {
     flex-direction: column;
   }
 
-  .dbot-head,
   .dbot-card {
     padding: 16px;
   }

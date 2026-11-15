@@ -17,7 +17,7 @@ require __DIR__ . '/_subnav.php';
 </div>
 
 <section class="panel">
-    <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Exporter</div><div class="panel-meta"><?= $rights['truth'] ? 'Vérité de jeu comprise (habilitation Confidentiel)' : 'Sans la vérité de jeu' ?></div></div>
+    <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Exporter</div><div class="panel-meta"><?= $rights['truth'] ? 'Vérité de jeu comprise (habilitation Secret)' : 'Sans la vérité de jeu' ?></div></div>
     <form class="panel-body toolbar" method="get" action="<?= $h(url('atak/sse/papiers/echanges/export')) ?>">
         <div class="toolbar-field">
             <label for="x-op">Opération (code)</label>
@@ -39,7 +39,7 @@ require __DIR__ . '/_subnav.php';
             <?= \App\Core\Csrf::field() ?>
             <p>Colonnes reconnues (première ligne du CSV, séparateur point-virgule ou virgule) :</p>
             <p><code translate="no"><?= $h(implode(';', $columns)) ?></code></p>
-            <p class="muted">Une ligne par papier ; les lignes d’une même identité sont regroupées par identity_ref, sinon par nom, prénom et date de naissance. Pays inconnu, numéro hors format ou déjà attribué : ligne écartée.<?= $rights['truth'] ? '' : ' Couvertures et faux sont importés comme identités civiles et papiers officiels (habilitation Confidentiel requise).' ?></p>
+            <p class="muted">Une ligne par papier ; les lignes d’une même identité sont regroupées par identity_ref, sinon par nom, prénom et date de naissance. Pays inconnu, numéro hors format ou déjà attribué : ligne écartée.<?= $rights['truth'] ? '' : ' Couvertures et faux sont importés comme identités civiles et papiers officiels (habilitation Secret (S) requise).' ?></p>
             <div class="idp-actions">
                 <input type="file" name="file" accept=".csv,.json,text/csv,application/json" required aria-label="Fichier à importer">
                 <button class="btn" type="submit">Importer</button>

@@ -96,6 +96,7 @@ final class SseWantedSettingsRepository
             'pdf_lang' => in_array($data['pdf_lang'] ?? null, ['auto', 'fr', 'en'], true) ? (string) $data['pdf_lang'] : 'auto',
             'watermark' => $bool($data['watermark'] ?? null, true),
             'footer' => $bool($data['footer'] ?? null, true),
+            'default_classification' => isset(\App\Support\SseUsClassification::SCALE[(string) ($data['default_classification'] ?? '')]) ? (string) $data['default_classification'] : (string) $d['default_classification'],
             'default_expiry_days' => max(0, min(3650, (int) ($data['default_expiry_days'] ?? 0))),
             'default_instructions_fr' => C::text($data['default_instructions_fr'] ?? $d['default_instructions_fr'], C::INSTRUCTIONS_MAX),
             'default_instructions_en' => C::text($data['default_instructions_en'] ?? $d['default_instructions_en'], C::INSTRUCTIONS_MAX),

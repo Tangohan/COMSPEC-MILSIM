@@ -513,6 +513,7 @@ final class SseWantedNoticeController
             'pdf_lang' => $request->inputString('pdf_lang'),
             'watermark' => $request->input('watermark'),
             'footer' => $request->input('footer'),
+            'default_classification' => $request->inputString('default_classification'),
             'default_expiry_days' => $request->input('default_expiry_days'),
             'default_instructions_fr' => $request->inputString('default_instructions_fr'),
             'default_instructions_en' => $request->inputString('default_instructions_en'),
