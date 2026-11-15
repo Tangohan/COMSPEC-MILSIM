@@ -1357,6 +1357,8 @@ return function (Router $router) {
     $router->get('/atak/sse/objets/{type}', [SsePortalController::class, 'objectRegistry'], $mwSsePortal);
     $router->get('/atak/sse/chronologie', [SsePortalController::class, 'timeline'], $mwSsePortal);
     $router->get('/atak/sse/anomalies', [SsePortalController::class, 'anomalies'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier', [\App\Controllers\Web\SseTriageController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier/compteurs', [\App\Controllers\Web\SseTriageController::class, 'counters'], $mwSsePortal);
     $router->get('/atak/sse/rapprochements', [SsePortalController::class, 'suggestionsIndex'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/valider', [SsePortalController::class, 'suggestionAccept'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
