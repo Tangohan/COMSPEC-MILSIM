@@ -108,8 +108,8 @@ final class SsePortalNavTest extends TestCase
                 $nav[$p] = true;
             }
         }
-        // Hors navigation par nature : sas d'entrée, recherche, boîte « À trier » (bouton de la barre latérale), recherche du widget « Liaisons » (JSON), formulaires et sous-pages ouverts depuis leur page.
-        $outside = '~^atak/sse/(entrer|commandement|quitter|apparence|confidentialite|recherche|objets|a-trier|liaisons)(/|$)|/(nouveau|nouvelle|reels|requete|export|mrz|partagees|importer|suggestions|pdf)$|^atak/sse/(exploitation-numerique|dev)/~';
+        // Hors navigation par nature : sas d'entrée, recherche, boîte « À trier » (bouton de la barre latérale), recherche du widget « Liaisons » (JSON), tiroir du widget Cerbère (fragment), formulaires et sous-pages ouverts depuis leur page.
+        $outside = '~^atak/sse/(entrer|commandement|quitter|apparence|confidentialite|recherche|objets|a-trier|liaisons|cerbere)(/|$)|/(nouveau|nouvelle|reels|requete|export|mrz|partagees|importer|suggestions|pdf)$|^atak/sse/(exploitation-numerique|dev)/~';
         $orphans = [];
         foreach (array_unique($m[1]) as $route) {
             if (!isset($nav[$route]) && !preg_match($outside, $route)) {
