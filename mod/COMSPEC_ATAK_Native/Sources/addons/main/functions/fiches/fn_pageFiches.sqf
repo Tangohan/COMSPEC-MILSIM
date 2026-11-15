@@ -52,6 +52,7 @@ private _markCol = {
         case ((_u select [0, 6]) isEqualTo "SECRET"): { [[0.784, 0.063, 0.18, 1], "#ffffff", "#ff5a5a"] };
         case ((_u select [0, 12]) isEqualTo "CONFIDENTIAL"): { [[0, 0.2, 0.627, 1], "#ffffff", "#6f9bff"] };
         case ((_u select [0, 12]) isEqualTo "UNCLASSIFIED"): { [[0, 0.478, 0.2, 1], "#ffffff", "#3ccf6a"] };
+        case ((_u select [0, 3]) isEqualTo "CUI"): { [[0.314, 0.157, 0.471, 1], "#ffffff", "#b78cff"] };
         default { [[0.28, 0.3, 0.31, 1], "#ffffff", "#b4c1bb"] };
     }
 };
@@ -108,8 +109,8 @@ private _agoText = {
 };
 private _all = ["list"] call comspec_atak_native_fnc_fichesAction;
 private _meta = _store getOrDefault ["meta", []];
-private _viewerMark = _meta param [3, "UNCLASSIFIED//FOUO"];
-if !(_viewerMark isEqualType "") then { _viewerMark = "UNCLASSIFIED//FOUO"; };
+private _viewerMark = _meta param [3, "CUI"];
+if !(_viewerMark isEqualType "") then { _viewerMark = "CUI"; };
 private _authority = _meta param [[0, 1] select _en, ""];
 if (!(_authority isEqualType "") || {_authority isEqualTo ""}) then { _authority = ["Bureau international de recherche", "International Search Bureau"] select _en; };
 private _age = ["age"] call comspec_atak_native_fnc_fichesAction;
