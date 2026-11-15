@@ -88,8 +88,8 @@ if (isset($tabLabels[$activeNav]) && $activeNav !== 'hub') {
 if ($memberShell) {
     $crumbs = [['Mon extranet', url('jnet')], ['Mon espace', url('jnet/espaces')], [$pageTitle, null]];
 }
-// Ces pages ouvrent sur leur propre titre (unité, personne, dossier, organisation).
-$ownHead = in_array((string) ($jnetInnerView ?? ''), ['jnet.home', 'jnet.unit', 'jnet.personnel_show', 'jnet.target_show'], true);
+// Ces pages ouvrent sur leur propre titre (unité, personne, dossier, organisation, rédaction d'un message).
+$ownHead = in_array((string) ($jnetInnerView ?? ''), ['jnet.home', 'jnet.unit', 'jnet.personnel_show', 'jnet.target_show', 'jnet.mail_compose'], true);
 $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet_spaces.css'];
 
 // Rail « Mon espace » (pages du membre) : les cinq rubriques du hub, puis les pages de la rubrique courante. Même source que le hub.
