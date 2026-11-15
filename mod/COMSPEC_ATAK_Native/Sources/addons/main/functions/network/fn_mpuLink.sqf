@@ -468,7 +468,7 @@ switch (_act) do {
         // Pont radio (fn_mpuVoice) : la radio active ACRE2 / TFAR reliée à la MPU5 par câble audio, nom de la radio dans l'action.
         ["CAManBase", 1, _path, ["COMSPEC_ATAK_MpuVoiceOn", "Relier ma radio à la MPU5 (voix)", "", { ["bridge"] call comspec_atak_native_fnc_mpuVoice; },
             { (["enabled"] call comspec_atak_native_fnc_mpuVoice) && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isEqualTo []}
-                && {["has", [player]] call comspec_atak_native_fnc_mpu5} },
+                && {["hasMpu"] call comspec_atak_native_fnc_mpu5} },
             {}, [], [0, 0, 0], 2, [false, false, false, false, false], {
                 params ["", "", "", "_ad"];
                 private _p = ["preferred"] call comspec_atak_native_fnc_mpuVoice;
