@@ -55,6 +55,7 @@ class CfgFunctions {
             class bioProfile {};
             class bioRecord {};
             class bioCapture {};
+            class bioMedical {};
             class bioCaptureLatent {};
             class bioLatentOwners {};
             class bioSearch {};

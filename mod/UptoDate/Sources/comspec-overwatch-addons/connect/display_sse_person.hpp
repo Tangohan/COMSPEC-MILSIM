@@ -443,6 +443,30 @@ class COMSPEC_SsePerson_Dialog {
             action = "['start'] call comspec_overwatch_connect_fnc_seekQuick;";
         };
 
+        // Taille, place et interactions du terminal (accueil) : fn_seekScale, fn_seekFx.
+        class BtnSize: COMSPEC_SeekBtn {
+            idc = 9710;
+            text = "TAILLE";
+            x = IN_X; y = (TILE_Y(1) + TILE_H + SEEK_U(0.004)); w = (IN_W * 0.30); h = SEEK_U(0.016);
+            sizeEx = SEEK_FONT_XS;
+            tooltip = "Taille du terminal : grand, 75, 55 ou 40 % (touches + et - du pavé numérique)";
+            action = "['cycle', [1]] call comspec_overwatch_connect_fnc_seekScale;";
+        };
+        class BtnAnchor: BtnSize {
+            idc = 9711;
+            text = "PLACE";
+            x = (IN_X + IN_W * 0.30 + SP);
+            tooltip = "Place du terminal réduit : centre, gauche, droite";
+            action = "['anchor'] call comspec_overwatch_connect_fnc_seekScale;";
+        };
+        class BtnFx: BtnSize {
+            idc = 9712;
+            text = "INTERACTIONS";
+            x = (IN_X + IN_W * 0.60 + 2 * SP); w = (IN_W * 0.40 - 2 * SP);
+            tooltip = "Interactions du lecteur : aucune (capture automatique), simples (animation) ou complètes (mini-jeux)";
+            action = "['cycleMode'] call comspec_overwatch_connect_fnc_seekFx;";
+        };
+
         // ================= PAGE 1 — SUJET (Demographics) =================
         class LabelLast: COMSPEC_SeekText {
             idc = 9551;

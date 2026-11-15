@@ -356,6 +356,11 @@ final class SseFileRepository
             'doc_type', 'doc_country', 'doc_number', 'verdict', 'enrolled', 'mod_fingers', 'mod_iris', 'mod_face', 'quality_json', 'grid',
             'game_time', 'controller_callsign', 'controller_steam_id', 'reason', 'unit', 'context_id', 'op_key',
         ];
+        // Motifs de capture (colonne ajoutée par l'étape de migration sse_seek_capture_notes) : sans la colonne, la fiche
+        // part quand même, seuls les motifs sont perdus.
+        if (($row['capture_json'] ?? null) !== null && $this->hasCaptureColumn()) {
+            $cols[] = 'capture_json';
+        }
         $now = gmdate('Y-m-d H:i:s');
         $rec = trim((string) ($row['rec'] ?? ''));
         $existing = $rec !== '' ? $this->findSeekByRec($tenantId, $rec) : null;
@@ -388,6 +393,21 @@ final class SseFileRepository
         }
 
         return ['id' => $id, 'rec' => $rec, 'created' => true];
+    }
+
+    private function hasCaptureColumn(): bool
+    {
+        static $has = null;
+        if ($has === null) {
+            try {
+                $this->db->fetchOne('SELECT capture_json FROM sse_seek_records LIMIT 1');
+                $has = true;
+            } catch (\Throwable) {
+                $has = false;
+            }
+        }
+
+        return $has;
     }
 
     /** Signature tracée au SEEK II par le contrôleur (chemin choisi par le serveur sous uploads/sse-id-signatures). */
@@ -542,6 +562,7 @@ final class SseFileRepository
             'person_id' => $int($row['person_id'] ?? null),
             'document_id' => $int($row['document_id'] ?? null),
             'check_id' => $int($row['check_id'] ?? null),
+            'capture' => \App\Support\SseCaptureNotes::decode($row['capture_json'] ?? null),
             'signature_image' => ($row['signature_image'] ?? null) !== null && $row['signature_image'] !== '' ? (string) $row['signature_image'] : null,
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => $row['updated_at'] ?? null,

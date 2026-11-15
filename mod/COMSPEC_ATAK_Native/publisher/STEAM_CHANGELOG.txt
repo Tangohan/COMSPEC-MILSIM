@@ -1,3 +1,25 @@
+[h1]COMSPEC ATAK 4.20.0 Washington — lecteur d'empreintes animé, mini-jeux, terminal réductible / animated reader, mini-games, shrinkable terminal[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]SEEK II[/b] : les empreintes se prennent doigt par doigt sur la vitre verte (main droite, main gauche, pouces) avec balayage lumineux, crêtes qui apparaissent et jauge de qualité ; un doigt mal posé ou humide rejette la lecture.
+[*] Mini-jeux à la souris, facultatifs : doigt tenu dans la zone, réticule sur l'iris, câbles USB et ALIM à brancher, vitre à essuyer. PASSER ne bloque jamais.
+[*] Réglage « Interactions SEEK II » : aucune, simples ou complètes ; bouton INTERACTIONS sur l'accueil.
+[*] Terminal réductible : boutons TAILLE et PLACE sur l'accueil, touches + et - du pavé numérique.
+[*] Les blessures comptent : garrot, attelle, bandage, brûlure ou plaie d'un bras, bandage de tête ; les motifs apparaissent sur la fiche SEEK.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]SEEK II[/b]: fingerprints are taken finger by finger on the green glass (right hand, left hand, thumbs) with a light scan, ridges appearing and a quality gauge; a badly placed or wet finger rejects the read.
+[*] Optional mouse mini-games: finger held in the zone, reticle on the iris, USB and POWER cables to plug, glass to wipe. SKIP never blocks.
+[*] "SEEK II interactions" setting: none, basic or full; INTERACTIONS button on the home page.
+[*] Shrinkable terminal: SIZE and POSITION buttons on the home page, numpad + and - keys.
+[*] Injuries matter: tourniquet, splint, bandage, burn or wound on an arm, head bandage; the reasons show on the SEEK record.
+[/list]
+
 [h1]COMSPEC ATAK 4.19.0 Washington — signature tracée au SEEK II / drawn signature on the SEEK II[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

@@ -179,6 +179,20 @@ if (isNil "comspec_sse_fnc_fileSubmit") exitWith {
 };
 private _subj = createHashMapFromArray [["last", _last], ["first", _first], ["dob", _dob], ["unknown", _unknown], ["netid", netId _target]];
 if (isPlayer _target) then { _subj set ["steam_id", getPlayerUID _target]; };
+// Motifs de capture par modalité (empreintes, iris) : main non capturable, bandage, post-mortem, gestes passés…
+// Champ facultatif « capture » : le site le range avec la fiche SEEK II et l'affiche.
+private _capture = createHashMap;
+{
+    if ((_x isEqualType []) && {(count _x) >= 3} && {(_x select 0) in ["empreintes", "iris"]}) then {
+        private _det = _x param [3, []];
+        private _nts = _x param [5, _x param [4, []]];
+        _capture set [_x select 0, createHashMapFromArray [
+            ["quality", _x select 1],
+            ["detail", [_det, []] select (!(_det isEqualType []))],
+            ["notes", [_nts, []] select (!(_nts isEqualType []))]
+        ]];
+    };
+} forEach (uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []]);
 private _payload = createHashMapFromArray [
     ["kind", "seek_record"], ["idempotency_key", _idem], ["rec", _rec], ["bio_key", _bioKey], ["verdict", _verdict], ["enroll", _enroll],
     ["subject", _subj],
@@ -192,6 +206,7 @@ private _payload = createHashMapFromArray [
     ["map", str (missionNamespace getVariable ["COMSPEC_MapId", 1])],
     ["op", missionNamespace getVariable ["comspec_sse_id_opKey", ""]]
 ];
+if ((count _capture) > 0) then { _payload set ["capture", _capture]; };
 [_snd, "sending"] call _ack;
 [_payload] call comspec_sse_fnc_fileSubmit;
 

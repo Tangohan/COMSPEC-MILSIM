@@ -34,7 +34,7 @@ params [
 _modality = toLower _modality;
 private _out = createHashMapFromArray [
     ["ok", false], ["blocked", ""], ["quality", 0], ["nfiqs", []], ["eyes", []],
-    ["factors", []], ["attempt", 0], ["labRef", ""], ["key", ""], ["modality", _modality]
+    ["factors", []], ["reasons", []], ["medSource", "vanilla"], ["attempt", 0], ["labRef", ""], ["key", ""], ["modality", _modality]
 ];
 if (isNull _target) exitWith { _out set ["blocked", "Aucun sujet."]; _out };
 
@@ -74,6 +74,11 @@ private _sevHead = (_ace select 0) max (((["HitFace"] call _hp) max (["HitHead"]
 private _vHands = ((["HitHands"] call _hp) max (["HitArms"] call _hp)) * 1.5;
 private _sevLeft = (_ace select 2) max _vHands;
 private _sevRight = (_ace select 3) max _vHands;
+// Blessures lues par ACE Medical / KAT / ACM (garrot, attelle, bandage, brûlure) ; repli vanilla : fn_bioMedical.
+private _med = if (isNil "comspec_sse_fnc_bioMedical") then { createHashMap } else { [_target] call comspec_sse_fnc_bioMedical };
+private _medHands = _med getOrDefault ["hand", [["ok", 0, ""], ["ok", 0, ""]]];
+private _medHead = _med getOrDefault ["head", ["ok", 0, ""]];
+private _reasons = [];
 
 // --- État du sujet --------------------------------------------------------------------
 private _alive = alive _target;
@@ -132,14 +137,17 @@ switch (_modality) do {
             private _f = _fingers param [_i, ["", "", "normal"]];
             private _state = _f select 2;
             private _sev = [_sevRight, _sevLeft] select (_i >= 5);
+            private _mh = _medHands select ([0, 1] select (_i >= 5));
             private _n = 0;
             switch (true) do {
                 case (_state isEqualTo "ampute"): { _n = -1; };
                 case (_sev >= _block): { _n = -2; };
+                case ((_mh select 0) isEqualTo "bloque"): { _n = -2; };
                 default {
                     private _qi = _q + (((["f" + str _i] call _r) - 0.5) * 14);
                     if (_state isEqualTo "use") then { _qi = _qi - 12 * (_strict max 0.5); };
                     if (_state isEqualTo "cicatrice") then { _qi = _qi - 8 * (_strict max 0.5); };
+                    if ((_mh select 0) isEqualTo "degrade") then { _qi = _qi - ((_mh select 1) * _strict); };
                     if (_sev >= _block * 0.35) then {
                         _qi = _qi - (25 * (_sev / _block) * _strict);
                         _handNote set [[0, 1] select (_i >= 5), true];
@@ -155,6 +163,20 @@ switch (_modality) do {
             };
             _nfiqs pushBack _n;
         };
+        {
+            private _mh = _medHands select _forEachIndex;
+            private _side = ["droite", "gauche"] select _forEachIndex;
+            if ((_mh select 0) isEqualTo "bloque") then {
+                _factors pushBack format ["Main %1 non capturable : %2", _side, _mh select 2];
+                _reasons pushBack ["empreintes", format ["main %1 : non capturable (%2)", _side, _mh select 2]];
+            };
+            if ((_mh select 0) isEqualTo "degrade") then {
+                _factors pushBack format ["Main %1 dégradée : %2 (-%3)", _side, _mh select 2, _mh select 1];
+                _reasons pushBack ["empreintes", format ["main %1 : qualité réduite (%2)", _side, _mh select 2]];
+            };
+        } forEach [0, 1];
+        if (!_alive) then { _reasons pushBack ["empreintes", "relevé post-mortem"]; };
+        if (_uncon) then { _reasons pushBack ["empreintes", "sujet inconscient"]; };
         if (_handNote select 0) then { _factors pushBack "Sang / plaies main droite"; };
         if (_handNote select 1) then { _factors pushBack "Sang / plaies main gauche"; };
         if (_sevRight >= _block) then { _factors pushBack "Main droite trop blessée : non relevable"; };
@@ -185,9 +207,19 @@ switch (_modality) do {
         };
         if (_sevHead >= _block * 1.25) exitWith {
             _out set ["blocked", "Visage et yeux trop endommagés : iris non relevable."];
+            _reasons pushBack ["iris", "visage et yeux trop endommagés"];
+        };
+        if ((_medHead select 0) isEqualTo "bloque") exitWith {
+            _out set ["blocked", format ["Iris non relevable : %1.", _medHead select 2]];
+            _reasons pushBack ["iris", format ["non capturable (%1)", _medHead select 2]];
+        };
+        if ((_medHead select 0) isEqualTo "degrade") then {
+            [format ["Blessure ou pansement à la tête : %1", _medHead select 2], _medHead select 1] call _addPen;
+            _reasons pushBack ["iris", format ["qualité réduite (%1)", _medHead select 2]];
         };
         if (!_alive) then {
-            if (_deadH >= 4) exitWith { _out set ["blocked", "Décès trop ancien : cornée opacifiée, iris non exploitable."]; };
+            if (_deadH >= 4) exitWith { _out set ["blocked", "Décès trop ancien : cornée opacifiée, iris non exploitable."]; _reasons pushBack ["iris", "décès trop ancien (cornée opacifiée)"]; };
+            _reasons pushBack ["iris", "relevé post-mortem"];
             switch (true) do {
                 case (_deadH < 0.5): { ["Sujet décédé récemment", 5] call _addPen; };
                 default { ["Cornée qui s'opacifie", 25] call _addPen; };
@@ -228,6 +260,15 @@ switch (_modality) do {
         };
         if (_sevHead >= _block) exitWith {
             _out set ["blocked", "Visage trop endommagé pour une comparaison faciale."];
+            _reasons pushBack ["visage", "visage trop endommagé"];
+        };
+        if ((_medHead select 0) isEqualTo "bloque") exitWith {
+            _out set ["blocked", format ["Visage non photographiable : %1.", _medHead select 2]];
+            _reasons pushBack ["visage", format ["non capturable (%1)", _medHead select 2]];
+        };
+        if ((_medHead select 0) isEqualTo "degrade") then {
+            [format ["Pansement ou blessure au visage : %1", _medHead select 2], (_medHead select 1) * 0.6] call _addPen;
+            _reasons pushBack ["visage", format ["qualité réduite (%1)", _medHead select 2]];
         };
         if ((_goggles find "balaclava") >= 0) then { ["Cagoule à retirer", 45] call _addPen; };
         if ((_goggles find "bandan") >= 0 || {(_goggles find "shemag") >= 0} || {(_goggles find "scarf") >= 0}) then { ["Visage partiellement couvert", 25] call _addPen; };
@@ -251,6 +292,8 @@ switch (_modality) do {
 };
 
 _out set ["factors", _factors];
+_out set ["reasons", _reasons];
+_out set ["medSource", _med getOrDefault ["source", "vanilla"]];
 private _pfx = switch (_modality) do { case "iris": { "IRI" }; case "adn": { "ADN" }; case "visage": { "VIS" }; default { "EMP" }; };
 private _n = ([format ["%1|%2|%3", _key, _modality, _attempt]] call comspec_sse_fnc_bioHash) mod 9000;
 _out set ["labRef", format ["LAB-%1-%2%3", date select 0, _pfx, 1000 + _n]];

@@ -240,6 +240,19 @@ final class SseApiController
                         'pos_z' => $sample['pos_z'] ?? $body['pos_z'] ?? null,
                     ], static fn ($v) => $v !== null && $v !== '');
                 }
+                // Motifs et détail de capture du SEEK II (facultatifs) : rangés avec les conditions du relevé.
+                $captureNotes = \App\Support\SseCaptureNotes::notes($sample['notes'] ?? null);
+                $captureDetail = \App\Support\SseCaptureNotes::detail($sample['detail'] ?? null);
+                if ($captureNotes !== [] || $captureDetail !== []) {
+                    $cond = is_array($sample['conditions'] ?? null) ? $sample['conditions'] : [];
+                    if ($captureNotes !== []) {
+                        $cond['capture_notes'] = $captureNotes;
+                    }
+                    if ($captureDetail !== []) {
+                        $cond['capture_detail'] = $captureDetail;
+                    }
+                    $sample['conditions'] = $cond;
+                }
                 $this->persons->addBiometricSample($id, $tenantId, $sample);
             }
         }
