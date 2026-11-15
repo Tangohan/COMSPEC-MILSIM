@@ -71,8 +71,9 @@ final class RoleplayFollowupAdminController
         $countTracked = 0;
         $members = $this->userRepository->allForTenant($tenantId);
         $memberLabels = [];
+        \App\Support\MemberIdentity::preload($tenantId, array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $members));
         foreach ($members as $u) {
-            $memberLabels[(int) ($u['id'] ?? 0)] = trim((string) ($u['display_name'] ?? '')) ?: trim((string) ($u['callsign'] ?? ''));
+            $memberLabels[(int) ($u['id'] ?? 0)] = member_label(['id' => (int) ($u['id'] ?? 0), 'display_name' => (string) ($u['display_name'] ?? ''), 'callsign' => (string) ($u['callsign'] ?? '')], 'list', $tenantId);
         }
         foreach ($members as $u) {
             if ((string) ($u['status'] ?? '') !== 'active') {
@@ -251,7 +252,7 @@ final class RoleplayFollowupAdminController
             if ($tid > 0) {
                 $tu = $this->userRepository->findById($tid, $tenantId);
                 if ($tu) {
-                    $tutorLabel = trim((string) ($tu['display_name'] ?? '')) ?: trim((string) ($tu['callsign'] ?? ''));
+                    $tutorLabel = member_label(['id' => $tid, 'display_name' => (string) ($tu['display_name'] ?? ''), 'callsign' => (string) ($tu['callsign'] ?? '')], 'list', $tenantId);
                 }
             }
 
@@ -618,7 +619,7 @@ final class RoleplayFollowupAdminController
         $this->personnelProfileRepository->update($uid, ['rp_tutor_user_id' => $tutorId]);
         if ($tutorId !== null && $tutorId !== $oldTutorId) {
             $tu = $this->userRepository->findById($tutorId, $tenantId);
-            $tuLabel = $tu ? (trim((string) ($tu['display_name'] ?? '')) ?: trim((string) ($tu['callsign'] ?? ''))) : ('#' . $tutorId);
+            $tuLabel = $tu ? member_label(['id' => $tutorId, 'display_name' => (string) ($tu['display_name'] ?? ''), 'callsign' => (string) ($tu['callsign'] ?? '')], 'list', $tenantId) : ('#' . $tutorId);
             $actorId = (int) Session::get('user_id');
             $this->timelineRepository->addEvent(
                 $tenantId,

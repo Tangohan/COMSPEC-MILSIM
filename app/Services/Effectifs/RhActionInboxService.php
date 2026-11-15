@@ -597,15 +597,13 @@ final class RhActionInboxService
 
     private static function memberLabel(string $displayName, string $callsign, int $userId): string
     {
-        $displayName = trim($displayName);
+        // Règle unique : prénom + nom du personnage, puis indicatif, puis nom du compte.
+        if ($userId > 0) {
+            return \App\Support\MemberIdentity::numberedLabelForUser(['id' => $userId, 'display_name' => $displayName, 'callsign' => $callsign], 'list');
+        }
         $callsign = trim($callsign);
-        if ($displayName !== '') {
-            return $displayName;
-        }
-        if ($callsign !== '') {
-            return $callsign;
-        }
+        $displayName = trim($displayName);
 
-        return $userId > 0 ? ('Membre n° ' . $userId) : 'Membre';
+        return $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 'Membre');
     }
 }

@@ -87,7 +87,7 @@ if ($gradeCodeBesideLocal !== '' && strcasecmp($gradeCodeBesideLocal, $gradeValu
 $pushRow($sheetRows, 'Affectation', 'Grade / rang', $gradeValue, $gradeDetail);
 $pushRow($sheetRows, 'Affectation', 'Unité principale', $unitName ? (string) $unitName : '');
 if (!empty($commander)) {
-    $cmdLabel = trim((string) ($commander['display_name'] ?? '')) ?: trim((string) ($commander['callsign'] ?? ''));
+    $cmdLabel = member_label(['id' => (int) ($commander['id'] ?? 0), 'display_name' => (string) ($commander['display_name'] ?? ''), 'callsign' => (string) ($commander['callsign'] ?? '')], 'list');
     $pushRow($sheetRows, 'Affectation', 'Chef d’équipe', $cmdLabel !== '' ? $cmdLabel : '');
 }
 if ($communityRoleLabel !== null) {
