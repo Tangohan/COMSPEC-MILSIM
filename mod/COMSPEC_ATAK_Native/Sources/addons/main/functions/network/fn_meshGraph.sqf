@@ -372,7 +372,9 @@ switch (_act) do {
         private _devOn = ["on"] call comspec_atak_native_fnc_devMesh;
         private _tNow = [time, serverTime] select isMultiplayer;
         // Compteurs : bilans calculés, en cache, paires élaguées, tranches, pire tranche s, temps de travail s, début de tranche, bilans de la tranche.
-        private _ct = [0, 0, 0, 1, 0, 0, _t0, 0];
+        // 9e élément : image du début de la tranche (fn_perfAcc range à part une tranche que l'ordonnanceur a étalée sur
+        // plusieurs images : ce n'est pas un gel).
+        private _ct = [0, 0, 0, 1, 0, 0, _t0, 0, diag_frameNo];
         private _linkN = 0;
         private _nodeN = 0;
         private _ref = [];
@@ -380,12 +382,13 @@ switch (_act) do {
         private _yield = {
             params ["_c", "_passId"];
             private _dt = diag_tickTime - (_c select 6);
-            ["maillage constructeur (tranche)", _c select 6] call comspec_atak_native_fnc_perfAcc;
+            ["maillage constructeur (tranche)", _c select 6, -1, _c select 8] call comspec_atak_native_fnc_perfAcc;
             _c set [4, (_c select 4) max _dt];
             _c set [5, (_c select 5) + _dt];
             _c set [3, (_c select 3) + 1];
             uiSleep 0;
             _c set [6, diag_tickTime];
+            _c set [8, diag_frameNo];
             _c set [7, 0];
             (missionNamespace getVariable ["COMSPEC_ATAK_MeshPass", -1]) isEqualTo _passId
         };
@@ -627,7 +630,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_MeshLogLast", [_nodeN, _linkN]];
         if (_devOn) then { missionNamespace setVariable ["COMSPEC_ATAK_MeshLinkLog", _log]; };
         private _lastDt = diag_tickTime - (_ct select 6);
-        ["maillage constructeur (tranche)", _ct select 6] call comspec_atak_native_fnc_perfAcc;
+        ["maillage constructeur (tranche)", _ct select 6, -1, _ct select 8] call comspec_atak_native_fnc_perfAcc;
         _ct set [4, (_ct select 4) max _lastDt];
         _ct set [5, (_ct select 5) + _lastDt];
         // Diffusion sur changement seulement, au plus toutes les 2 s.

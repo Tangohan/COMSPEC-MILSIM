@@ -1,7 +1,7 @@
 private _perfT0 = diag_tickTime;
-// Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
+// Profil : les écritures regroupées (fn_saveProfile) et les sauvegardes périodiques sont vidées en fin de mission.
 {
-    addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+    addMissionEventHandler [_x, { ["flush"] call comspec_atak_native_fnc_profileSave; }];
 } forEach ["Ended", "MPEnded"];
 /*
     Mémoire serveur de l'état partagé du téléphone, pour les joueurs qui rejoignent en cours de partie :
@@ -56,7 +56,12 @@ missionNamespace setVariable ["COMSPEC_ATAK_MeshSrvOn", true, true];
 // Objet obligatoire pour le réseau (fn_netRequire) : le serveur lit les inventaires, rien à faire quand le réglage est vide.
 [{ ["serverTick"] call comspec_atak_native_fnc_netRequire; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Bilan [PERF] sur un serveur dédié (le client le fait de son côté) : rien n'est écrit si rien n'a été mesuré.
-if (!hasInterface) then { [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread; };
+// Images du serveur comptées à chaque image (fn_perfAcc "frame") : img/s moyens et mini de la fenêtre, 99e centile,
+// « Image figée » du serveur ; le bilan ajoute joueurs, unités, nœuds et diffusions du graphe du maillage.
+if (!hasInterface) then {
+    [{ ["frame"] call comspec_atak_native_fnc_perfAcc; }, 0] call CBA_fnc_addPerFrameHandler;
+    [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call CBA_fnc_addPerFrameHandler;
+};
 // Registre des clés du maillage : mécanique de jeu, décochée par défaut (fn_meshKeys).
 ["init"] call comspec_atak_native_fnc_meshKeys;
 // Actions Zeus sur le maillage, droits vérifiés ici (fn_meshTools).

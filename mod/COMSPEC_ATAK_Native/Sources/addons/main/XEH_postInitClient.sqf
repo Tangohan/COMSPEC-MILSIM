@@ -98,8 +98,22 @@ addMissionEventHandler ["MarkerCreated", {
     if (isNull _owner) exitWith {};
     private _meta = missionNamespace getVariable "COMSPEC_ATAK_MarkerMeta";
     if (isNil "_meta") then { _meta = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MarkerMeta", _meta]; };
-    if ((count _meta) > 600) then { { if ((markerShape _x) isEqualTo "") then { _meta deleteAt _x; }; } forEach (keys _meta); };
-    _meta set [_m, [(([dayTime, "HH:MM:SS"] call BIS_fnc_timeToString) splitString ":") joinString "", [_owner] call comspec_atak_native_fnc_unitCallsign]];
+    // Table pleine : marqueurs disparus retirés, au plus une passe toutes les 5 s (avant : toutes les clés relues à
+    // chaque création dès 600 marqueurs vivants, en pleine rafale de tracés ou de collage Zeus).
+    if ((count _meta) > 600 && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMetaPurgeAt", 0])}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_MarkerMetaPurgeAt", diag_tickTime + 5];
+        private _pt = diag_tickTime;
+        { if ((markerShape _x) isEqualTo "") then { _meta deleteAt _x; }; } forEach (keys _meta);
+        ["marqueurs : purge des cartouches", _pt, 8] call comspec_atak_native_fnc_perfAcc;
+    };
+    // Heure HHMMSS : la même pour tous les marqueurs créés dans la seconde (un collage en pose des dizaines).
+    private _sec = floor (dayTime * 3600);
+    (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMetaClock", [-1, ""]]) params ["_secAt", "_hhmmss"];
+    if (_secAt isNotEqualTo _sec) then {
+        _hhmmss = (([dayTime, "HH:MM:SS"] call BIS_fnc_timeToString) splitString ":") joinString "";
+        missionNamespace setVariable ["COMSPEC_ATAK_MarkerMetaClock", [_sec, _hhmmss]];
+    };
+    _meta set [_m, [_hhmmss, [_owner] call comspec_atak_native_fnc_unitCallsign]];
 }];
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
 // Marqueurs « réseau ATAK uniquement » (fn_markerNet) : reçus par le réseau du téléphone, effacés partout quand on les
@@ -280,10 +294,12 @@ if (!isNil "zen_custom_modules_fnc_register") then {
 // Profil de rôle choisi : public pour les autres téléphones (FIRES court : pilotes et JTAC du camp) ; rien si aucun profil.
 [{ ["publish"] call comspec_atak_native_fnc_appSpaces; }, 30] call COMSPEC_ATAK_PfhSpread;
 private _eh = addMissionEventHandler ["ExtensionCallback", {
-    if !(missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) exitWith { _this call comspec_atak_native_fnc_extensionCallback };
+    // Toujours chronométré (fn_perfAcc) : part du mod d'une image figée, ligne « [PERF] Lent » au-delà de 8 ms. Hors
+    // profilage, une seule clé pour tous les rappels.
     private _pt = diag_tickTime;
     _this call comspec_atak_native_fnc_extensionCallback;
-    [format ["Rappel DLL natif %1", _this param [1, ""]] select [0, 60], _pt] call comspec_atak_native_fnc_perfAcc;
+    private _fn = format ["Rappel DLL natif %1", _this param [1, ""]] select [0, 60];
+    [["Rappels DLL natif", _fn] select (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]), _pt, 8, -1, _fn] call comspec_atak_native_fnc_perfAcc;
 }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Dossier des captures (réglage du joueur) et nom du profil Arma transmis aux DLL : elles savent où chercher les photos.
@@ -803,12 +819,14 @@ addMissionEventHandler ["EntityKilled", {
     };
 }];
 
+// Écriture du profil à un moment calme (fn_profileSave) : suivi des tirs du joueur, échéance dans la boucle ci-dessous.
+["init"] call comspec_atak_native_fnc_profileSave;
 // Débit simulé : la file d'envoi part dès que le réseau revient, et les SMS restés chez l'opérateur arrivent.
 // Hors connexion (fn_offline) : données figées, réceptions retenues, synchro et bilan au retour, sauvegarde du profil.
 [{
     ["tick"] call comspec_atak_native_fnc_offline;
     ["flush"] call comspec_atak_native_fnc_markerNet;
-    // Échéance unique d'écriture du profil (fn_profileSave : sauvegardes périodiques regroupées).
+    // Échéance unique d'écriture du profil (fn_profileSave : toutes les écritures regroupées, à un moment calme).
     ["tick"] call comspec_atak_native_fnc_profileSave;
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
     if ((count _inbox) > 0 && {[] call comspec_atak_native_fnc_p2pReachable}) then {
@@ -1270,10 +1288,10 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 [{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 15] call comspec_atak_native_fnc_waitAndExec;
 // Fiches du portail SSE (app Fiches) : lues au démarrage de la mission, puis à l'ouverture de l'app et au bouton ACTUALISER.
 [{ ["ensure"] call comspec_atak_native_fnc_fichesAction; }, [], 50] call comspec_atak_native_fnc_waitAndExec;
-// Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
+// Profil : ce qui attend un moment calme (fn_profileSave) est écrit en fin de mission.
 {
     // Fin de mission normale : le marqueur d'étape à risque (fn_deviceGuard) ne doit pas passer pour un plantage.
-    addMissionEventHandler [_x, { ["end"] call comspec_atak_native_fnc_deviceGuard; if ((missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) || {missionNamespace getVariable ["COMSPEC_ATAK_ProfileDirty", false]}) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+    addMissionEventHandler [_x, { ["end"] call comspec_atak_native_fnc_deviceGuard; ["flush"] call comspec_atak_native_fnc_profileSave; }];
 } forEach ["Ended", "MPEnded"];
 // Relais des distances : fin de mission côté serveur seulement (MPEnded), sinon perdu jusqu'à 10 min de compteurs.
 addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; }];
@@ -1282,11 +1300,16 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
 [{ !isNull (findDisplay 46) }, {
     (findDisplay 46) displayAddEventHandler ["Unload", {
         ["selfFlush"] call comspec_atak_native_fnc_distanceServer;
-        if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; };
+        // Sauvegardes périodiques comprises (hors ligne, montre, distances) : avant, seules les écritures regroupées
+        // partaient ici, les autres attendaient qu'Arma écrive le profil en quittant le jeu.
+        ["flush"] call comspec_atak_native_fnc_profileSave;
     }];
 }] call CBA_fnc_waitUntilAndExecute;
 // Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
-// (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
+// (150 ms et plus) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
+// Profil d'une minute à la demande (fn_profiler "minute"), sans réglage : ["comspec_atak_native_profileMinute"] call
+// CBA_fnc_localEvent sur le poste à mesurer (console de debug, Zeus par CBA_fnc_targetEvent). Tout va au RPT.
+["comspec_atak_native_profileMinute", { ["minute"] call comspec_atak_native_fnc_profiler; }] call CBA_fnc_addEventHandler;
 [{ time > 0 && {!isNull (findDisplay 46)} }, {
     // Découpage : preInit -> postInit (chargement du monde et des autres mods, hors de nos mains), postInit -> première
     // image de jeu (synchro JIP, attente du joueur). Le 08/11 : 46 s au total, dont 38 s avant notre postInit.
@@ -1294,27 +1317,12 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
     private _t1 = uiNamespace getVariable ["COMSPEC_ATAK_PerfPostInitAt", diag_tickTime];
     diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arrivée en jeu : %1 ms depuis le preInit (preInit -> postInit %2 ms, moteur et autres mods ; postInit -> jeu %3 ms)",
         round ((diag_tickTime - _t0) * 1000), round ((_t1 - _t0) * 1000), round ((diag_tickTime - _t1) * 1000)];
-    [{
-        private _dt = diag_deltaTime;
-        // Images lentes (plus de 50 ms, moins de 20 img/s) : comptées pour le bilan des 30 s (fn_perfAcc).
-        if (_dt > 0.05) then {
-            private _sl = missionNamespace getVariable ["COMSPEC_ATAK_PerfSlow", [0, 0]];
-            missionNamespace setVariable ["COMSPEC_ATAK_PerfSlow", [(_sl select 0) + 1, (_sl select 1) max _dt]];
-        };
-        // Temps mesuré dans les boucles du mod depuis le passage précédent (fn_perfAcc, une image environ) : part de
-        // l'image figée qui nous revient ; le reste est au moteur et aux autres mods (ACRE, ACE, textures…).
-        private _mine = missionNamespace getVariable ["COMSPEC_ATAK_PerfFrame", 0];
-        missionNamespace setVariable ["COMSPEC_ATAK_PerfFrame", 0];
-        if (_dt < 0.4) exitWith {};
-        private _arsenal = !isNull (uiNamespace getVariable ["ace_arsenal_display", displayNull]) || {!isNull (uiNamespace getVariable ["BIS_fnc_arsenal_display", displayNull])};
-        // Contexte combat pour corréler freezes au tir (suppression / comportement) — mesure réelle dès qu’Arma tourne.
-        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms, dont environ %10 ms dans les boucles du mod (arsenal %2, téléphone %3, carte %4, drone %5, cibles marquées %6, page %7, combat %8, suppression %9)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap,
-            ["aucun", "appairé"] select !isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]), count (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]),
-            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""],
-            behaviour player, round ((getSuppression player) * 100), round (_mine * 1000)];
-    }, 0] call COMSPEC_ATAK_PfhSpread;
+    // Chaque image (fn_perfAcc "frame") : images comptées (moyenne réelle et 99e centile du bilan), images lentes hors
+    // arrière-plan, « Image figée » dès 150 ms et « Saccade » avec la part mesurée du mod et le contexte (véhicule, Zeus,
+    // focus, taille de la partie). Enregistrée en direct : c'est la mesure elle-même, elle ne se chronomètre pas.
+    [{ ["frame"] call comspec_atak_native_fnc_perfAcc; }, 0] call CBA_fnc_addPerFrameHandler;
     // Bilan des boucles du téléphone (drone, marquage, carte, pages) et des images lentes, toutes les 30 s.
-    [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread;
+    [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call CBA_fnc_addPerFrameHandler;
 }] call CBA_fnc_waitUntilAndExecute;
 // Carte du joueur pour l'écran des rôles (mod COMSPEC Lobby) : son propre portrait est demandé dès la liaison prête, sans
 // attendre l'ouverture d'une page du téléphone (fn_avatarPath range la carte et le portrait dans le profil Arma).

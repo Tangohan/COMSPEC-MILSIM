@@ -160,7 +160,10 @@ switch (_mode) do {
             };
             private _pfh = if (isNil "cba_common_perFrameHandlerArray") then { [] } else { cba_common_perFrameHandlerArray };
             private _orig = missionNamespace getVariable ["COMSPEC_ATAK_ProfOrig", createHashMap];
+            // Boucles COMSPEC : celles enveloppées par le profilage et celles de la sonde permanente (COMSPEC_ATAK_PfhProbe).
+            private _probe = missionNamespace getVariable ["COMSPEC_ATAK_PfhProbe", {}];
             private _ourPfh = { ((_x select 1) select [0, 4]) isEqualTo "PFH " } count (values _orig);
+            _ourPfh = _ourPfh + ({ (_x select 0) isEqualTo _probe } count _pfh);
             private _scripts = diag_activeSQFScripts;
             diag_log format ["[COMSPEC perf] Bilan %1 s : %2 img/s (image moyenne %3 ms, pire %4 ms, %5 au-delà de 50 ms) ; téléphone %6, page %7, %8 contrôles ; mod %9 ms/s (boucles %10, carte %11, rappels DLL %12) ; boucles CBA %13 (COMSPEC %14) ; scripts en file %15 (COMSPEC %16) ; plus coûteux : %17",
                 round _span, round (_n / _span), ((_sum / (_n max 1)) * 1000) toFixed 1, _worst call _ms, _slow,

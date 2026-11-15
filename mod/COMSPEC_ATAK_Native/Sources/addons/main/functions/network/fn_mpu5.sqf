@@ -498,6 +498,6 @@ switch (_act) do {
             uiNamespace setVariable ["COMSPEC_ATAK_PttHeard", (uiNamespace getVariable ["COMSPEC_ATAK_PttHeard", []]) select { (_x select 0) isNotEqualTo _u }];
             call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
         }] call CBA_fnc_addEventHandler;
-        [{ ["tick"] call comspec_atak_native_fnc_mpu5; }, 2] call CBA_fnc_addPerFrameHandler;
+        [{ ["tick"] call comspec_atak_native_fnc_mpu5; }, 2, [], "MPU5 (passage 2 s)"] call COMSPEC_ATAK_PfhSpread;
     };
 };

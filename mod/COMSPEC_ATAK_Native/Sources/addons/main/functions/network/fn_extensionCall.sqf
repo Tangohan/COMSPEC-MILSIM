@@ -12,9 +12,11 @@ private _memo = missionNamespace getVariable ["COMSPEC_ATAK_AuthStateMemo", [-10
 if (_authQ && {_maxAge >= 0} && {diag_tickTime - (_memo select 0) <= _maxAge}) exitWith { _memo select 1 };
 private _pt = diag_tickTime;
 private _ret = "COMSPECATAKNativeExtension" callExtension [_command, _args];
-if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL native " + _command, _pt] call comspec_atak_native_fnc_perfAcc; } else {
-    if (_authQ) then { ["DLL native GetAuthState", _pt] call comspec_atak_native_fnc_perfAcc; };
-};
+// Toujours chronométré (deux lectures d'horloge) : le jeu attend la réponse, le temps compte dans la part du mod d'une
+// image figée, et un appel de plus de 20 ms laisse une ligne « [PERF] Lent : DLL native commande (direct) ». Hors
+// profilage, une seule clé pour toutes les commandes (le bilan des 30 s reste court).
+[["DLL native (appels directs)", "DLL native " + _command] select (_authQ || {missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]}),
+    _pt, 20, -1, format ["DLL native %1 (direct)", _command]] call comspec_atak_native_fnc_perfAcc;
 // Mesure des performances (fn_perfLog) : appel de plus de 5 ms noté dans le journal.
 if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["ext", ["native", _command, _pt]] call comspec_atak_native_fnc_perfLog; };
 private _raw = if (_ret isEqualType []) then { _ret param [0, ""] } else { _ret };

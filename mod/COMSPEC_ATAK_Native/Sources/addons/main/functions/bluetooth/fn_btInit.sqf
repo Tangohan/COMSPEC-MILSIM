@@ -42,7 +42,7 @@ if (!hasInterface) exitWith {};
         if (!isNil "_r") then { _h set [_id, _r]; };
     };
 }] call CBA_fnc_addEventHandler;
-[{ ["publish"] call comspec_atak_native_fnc_btAction; }, 5] call CBA_fnc_addPerFrameHandler;
+[{ ["publish"] call comspec_atak_native_fnc_btAction; }, 5, [], "Bluetooth (publication)"] call COMSPEC_ATAK_PfhSpread;
 [{ !isNull player }, {
     player addEventHandler ["Respawn", {
         player setVariable ["COMSPEC_ATAK_Airplane", missionNamespace getVariable ["COMSPEC_ATAK_Airplane", false], true];

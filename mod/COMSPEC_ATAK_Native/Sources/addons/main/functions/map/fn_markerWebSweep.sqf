@@ -58,7 +58,11 @@ private _skip = ["poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_"
     "comspec_relay_", "comspec_recon_", "_comspec_po_ring_", "_comspec_det_ring_", "comspec_gps_", "ctab_u_"];
 private _prev = uiNamespace getVariable ["COMSPEC_ATAK_MkSnap", createHashMap];
 // Carnet des marqueurs changés (EH de XEH_postInitClient) : seuls ceux-là sont relus et comparés. Passage complet au
-// premier envoi, après un budget épuisé, sans instantané ou si le carnet a débordé (clé "").
+// premier envoi, sans instantané ou si le carnet a débordé (clé ""). Budget épuisé (plus de 40 marqueurs à envoyer) :
+// le reste va au carnet et part aux passages suivants, sans relire toute la carte toutes les 15 s (avant, une carte de
+// 600 marqueurs était relue et sérialisée en entier 15 fois de suite).
+// COMSPEC_ATAK_MkSweepRev : -1 jamais passé ; compteur MkRev du dernier passage terminé ; MkRev + 0,5 s'il reste des
+// marqueurs au carnet (jamais égal au compteur, entier : le passage suivant a lieu, en mode carnet).
 private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyWs", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyWs", createHashMap];
 private _full = ("" in _dirty) || {(missionNamespace getVariable ["COMSPEC_ATAK_MkSweepRev", -1]) < 0} || {(count _prev) isEqualTo 0};
@@ -84,9 +88,10 @@ if (!_full) exitWith {
         _prev set [_n, _sig];
     } forEach (keys _dirty);
     if ((count _left) > 0) then { (missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyWs", createHashMap]) merge _left; };
-    missionNamespace setVariable ["COMSPEC_ATAK_MkSweepRev", [_rev - 1, _rev] select ((count _left) isEqualTo 0)];
+    missionNamespace setVariable ["COMSPEC_ATAK_MkSweepRev", [_rev + 0.5, _rev] select ((count _left) isEqualTo 0)];
 };
 private _next = createHashMap;
+private _left = createHashMap;
 private _budget = 40;
 {
     private _n = _x;
@@ -100,8 +105,8 @@ private _budget = 40;
         [_n, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
         _next set [_n, _sig];
     } else {
-        // Hors budget : renvoyé au prochain passage.
-        if ((_prev getOrDefault [_n, ""]) isEqualTo _sig) then { _next set [_n, _sig]; };
+        // Hors budget : gardé au carnet pour le passage suivant.
+        if ((_prev getOrDefault [_n, ""]) isEqualTo _sig) then { _next set [_n, _sig]; } else { _left set [_n, true]; };
     };
 } forEach allMapMarkers;
 // Marqueurs existants lus une fois (allMapMarkers recopiait toute la liste à chaque marqueur suivi).
@@ -112,5 +117,7 @@ private _alive = createHashMapFromArray (allMapMarkers apply { [_x, true] });
     };
 } forEach _prev;
 uiNamespace setVariable ["COMSPEC_ATAK_MkSnap", _next];
-// Passage complet (budget non épuisé) : le prochain n'a lieu qu'après un changement de marqueur.
-missionNamespace setVariable ["COMSPEC_ATAK_MkSweepRev", [-1, _rev] select (_budget > 0)];
+// Passage complet terminé : le prochain n'a lieu qu'après un changement de marqueur. Budget épuisé : le reste est au
+// carnet, les passages suivants ne relisent que lui.
+if ((count _left) > 0) then { (missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyWs", createHashMap]) merge _left; };
+missionNamespace setVariable ["COMSPEC_ATAK_MkSweepRev", [_rev + 0.5, _rev] select ((count _left) isEqualTo 0)];

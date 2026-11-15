@@ -45,7 +45,7 @@ switch (_act) do {
         // Liste gardée : les « add » des champs init Eden et des preInit de mission passent avant le postInit.
         missionNamespace setVariable [_srvKey, missionNamespace getVariable [_srvKey, []]];
         ["comspec_atak_native_jammer", { params [["_a", ""], ["_x", []]]; if (_a in ["add", "remove"]) then { [_a, _x] call comspec_atak_native_fnc_jammer; }; }] call CBA_fnc_addEventHandler;
-        [{ ["tick"] call comspec_atak_native_fnc_jammer; }, 5] call CBA_fnc_addPerFrameHandler;
+        [{ ["tick"] call comspec_atak_native_fnc_jammer; }, 5, [], "brouilleurs (passage 5 s)"] call COMSPEC_ATAK_PfhSpread;
     };
     case "add": {
         _args params [["_src", objNull, [objNull, []]], ["_rad", 500, [0]], ["_str", 100, [0]], ["_dur", 0, [0]], ["_spare", "", [""]], ["_id", "", [""]]];
