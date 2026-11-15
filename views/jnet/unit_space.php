@@ -111,6 +111,12 @@ $exchangeTools = static function (array $ex) use ($h, $base, $exBack, $shareTarg
     echo '</div>';
 };
 $tabUrl = static fn (string $key): string => $base . ($key === 'accueil' ? '?direct=1' : '?vue=' . $key . '&direct=1');
+// Fil d'Ariane : Mon extranet › cette unité › la rubrique ouverte.
+$homeHref = (string) ($usHome ?? url('jnet'));
+$crumbs = [['Mon extranet', $homeHref], [$label, $view === 'accueil' ? null : $tabUrl('accueil')]];
+if ($view !== 'accueil') {
+    $crumbs[] = [$view === 'personnaliser' ? 'Personnaliser' : (string) ($tabs[$activeTab][0] ?? 'Page'), null];
+}
 $face = static function (array $p) use ($h): string {
     $photo = $p['photo'] ?? null;
 
@@ -149,6 +155,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 <a class="ja-skip" href="#us-main">Aller au contenu</a>
 
 <header class="ja-hd ja-hd--rows">
+    <a class="ja-brand ja-brand--sm" href="<?= $h($homeHref) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
     <a class="ja-unit" href="<?= $h($tabUrl('accueil')) ?>" title="<?= $h($label) ?>">
         <?= $emblemHtml('ja-crest ja-crest--sm') ?>
         <b><?= $h($label) ?></b>
@@ -159,10 +166,12 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
         <?php endforeach; ?>
     </nav>
     <div class="ja-hd__r">
-        <?php if (count($rail) > 1): ?>
+        <a class="ja-ib ja-ib--nav" href="<?= $h($homeHref) ?>" title="Mon extranet : toutes vos unités et rubriques"><?= JnetUi::icon('extranet') ?><span class="ja-ib__t">Mon extranet</span></a>
+        <?php if (count($rail) >= 1): ?>
         <details class="us-switch">
             <summary class="ja-ib"><?= JnetUi::icon('switch') ?><span class="ja-ib__t">Changer d’espace</span></summary>
             <ul>
+                <li><a href="<?= $h(url('jnet?commun=1')) ?>">Espace commun</a></li>
                 <?php foreach ($rail as $r): ?>
                     <li><a href="<?= $h((string) $r['href']) ?>"<?= !empty($r['active']) ? ' aria-current="page"' : '' ?> style="--d: <?= min(5, max(0, (int) ($r['depth'] ?? 0))) ?>"><?= $h((string) $r['label']) ?><?= !empty($r['mine']) ? ' <small>votre unité</small>' : '' ?></a></li>
                 <?php endforeach; ?>
@@ -174,7 +183,6 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
         <?php if (!empty($canCustomize)): ?>
             <a class="ja-ib<?= $view === 'personnaliser' ? ' is-on' : '' ?>" href="<?= $h((string) ($customizeUrl ?? '')) ?>"><?= JnetUi::icon('edit') ?><span class="ja-ib__t">Personnaliser</span></a>
         <?php endif; ?>
-        <a class="ja-ib" href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>" title="Retour : <?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?>"><?= JnetUi::icon('extranet') ?><span class="ja-ib__t"><?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?></span></a>
         <?= JnetUi::account($operator) ?>
     </div>
 </header>
@@ -188,6 +196,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <ul class="uw-search__list" id="uw-search-results" aria-live="polite"></ul>
 </form>
 <main class="ja-main us-main jnet-embed" id="us-main">
+    <?= JnetUi::crumbs($crumbs) ?>
     <?php if ($flashErr): ?><p class="us-flash is-bad" role="alert"><?= $h((string) $flashErr) ?></p><?php endif; ?>
     <?php if ($flashOk): ?><p class="us-flash" role="status"><?= $h((string) $flashOk) ?></p><?php endif; ?>
     <?php if (!empty($usGate) && $view !== 'personnaliser'): ?><?php require base_path('views/jnet/unit/_gate.php'); ?><?php endif; ?>
@@ -361,7 +370,8 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 
 <footer class="ja-foot us-foot">
     <span>JNET<?= (string) ($usCommunity ?? '') !== '' ? ' · ' . $h((string) $usCommunity) : '' ?></span>
-    <a href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>"><?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?></a>
+    <a href="<?= $h($homeHref) ?>">Mon extranet</a>
+    <a href="<?= $h(url('jnet?commun=1')) ?>">Espace commun</a>
     <a href="<?= $h(url('jnet/courrier')) ?>">Messagerie</a>
     <a href="<?= $h(url('dashboard')) ?>">Quitter JNET</a>
 </footer>

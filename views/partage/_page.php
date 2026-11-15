@@ -56,7 +56,7 @@ $tabs = [
 <a class="ja-skip" href="#fp-main">Aller au contenu</a>
 
 <header class="ja-hd ja-hd--rows">
-    <a class="ja-brand" href="<?= $h(url('jnet')) ?>"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
+    <a class="ja-brand" href="<?= $h(url('jnet')) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
     <nav class="ja-tabs" aria-label="Rubriques de l’extranet">
         <?php foreach ($tabs as $i => $tab): ?>
             <?php $count = (int) ($tab['count'] ?? 0); $on = !empty($tab['on']); ?>
@@ -73,6 +73,7 @@ $tabs = [
 </header>
 
 <main class="ja-main fp-main" id="fp-main">
+    <?= \App\Support\JnetUi::crumbs([['Mon extranet', url('jnet')], ['Fichiers', null]]) ?>
     <?php if ($error): ?><div class="ja-flash is-bad" role="alert"><?= $h((string) $error) ?></div><?php endif; ?>
     <?php if ($success): ?><div class="ja-flash" role="status"><?= $h((string) $success) ?></div><?php endif; ?>
     <?php require base_path('views/partage/index.php'); ?>
