@@ -70,6 +70,7 @@ $renderOrg = static function (string $id, int $depth) use (&$renderOrg, $orgs, $
     </div>
 </div>
 <?php \App\Services\Sse\Links\SseLinksWidget::render('campaign', (int) ($row['id'] ?? 0)); ?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::section('campaign', (int) ($row['id'] ?? 0)); ?>
 
 <?php if (!empty($detail['error'])): ?>
     <div class="flash flash--error">Campagne illisible : <?= $h($detail['error']) ?></div>

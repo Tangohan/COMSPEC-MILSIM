@@ -107,6 +107,7 @@ if ($mediaCount > 0) {
 </div>
 
 <?php \App\Services\Sse\Links\SseLinksWidget::render('transmission', $eid); ?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::section('transmission', $eid); ?>
 
 <div class="txp-tabs" role="tablist" aria-label="Sections de la fiche">
     <?php foreach ($tabs as $i => [$key, $label, $n]): ?>

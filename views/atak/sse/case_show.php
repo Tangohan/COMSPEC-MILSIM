@@ -86,6 +86,7 @@ $frDate = static function (mixed $raw): string {
 </div>
 
 <?php \App\Services\Sse\Links\SseLinksWidget::render('case', (int) $case['id']); ?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::section('case', (int) $case['id']); ?>
 <?php require __DIR__ . '/partials/case_progress.php'; ?>
 
 <section class="panel sse-desk-panel">
