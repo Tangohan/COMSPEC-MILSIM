@@ -549,14 +549,14 @@ final class SseWantedNoticeTest extends TestCase
     private static function noticeData(array $extra = []): array
     {
         return $extra + [
-            'lang' => 'fr', 'banner' => ['NOTICE ROUGE', 'RED NOTICE'], 'authority' => ['Bureau international de recherche — RP', 'International Search Bureau — RP'],
+            'lang' => 'fr', 'banner' => ['NOTICE ROUGE', 'RED NOTICE'], 'authority' => ['Bureau international de recherche', 'International Search Bureau'],
             'ref' => 'A-0123/2026', 'issued_at' => '2026-11-14 10:00:00', 'expires_at' => null,
             'last_name' => 'Karimzadeh', 'first_name' => 'Élodie', 'sex' => 'M', 'birth_date' => '1984-03-12', 'birth_place' => 'Zargabad',
             'nationality' => 'Takistan (TAK)', 'height_cm' => 182, 'weight_kg' => 84, 'eyes' => 'Marron', 'hair' => 'Noirs', 'marks' => 'Cicatrice',
             'aliases' => ['Abou Hamza'], 'languages' => 'pachto', 'type_label' => 'Recherche en vue d’arrestation', 'threat_level' => 'high',
             'threat_label' => 'Élevé', 'armed' => 'yes', 'reason' => 'Motif de test.', 'instructions' => 'Signaler au service demandeur.',
             'zone' => 'Takistan', 'last_seen_place' => 'Poste nord', 'last_seen_at' => '2026-11-10 18:30:00', 'contact_label' => 'Cellule de coordination',
-            'contact_detail' => '', 'photo' => null, 'extra_photos' => [], 'signature' => null, 'emblem_path' => null, 'watermark' => true, 'footer' => true,
+            'contact_detail' => '', 'photo' => null, 'extra_photos' => [], 'signature' => null, 'emblem_path' => null,
             'faces' => 'auto', 'generated_at' => '15/11/2026 10:00 UTC',
         ];
     }
@@ -595,7 +595,7 @@ final class SseWantedNoticeTest extends TestCase
             'nom long et accents' => self::noticeData(['last_name' => 'Øksnevad-Çelik-Papadopoulos-Constantinopoulos-Vandenberghe', 'first_name' => 'Zoë-Łukasz Ñandú Jean-Baptiste Alexandre', 'reason' => 'Œuvre « scènes » — très dangereux ; ≥ 3 “cibles”']),
             'sans photo ni date' => self::noticeData(['photo' => null, 'birth_date' => null, 'birth_place' => null, 'nationality' => '', 'height_cm' => null, 'weight_kg' => null, 'eyes' => '', 'hair' => '', 'marks' => '', 'aliases' => [], 'languages' => '', 'last_seen_at' => null, 'last_seen_place' => '', 'zone' => '', 'contact_label' => '', 'armed' => 'unknown', 'threat_level' => 'low', 'threat_label' => 'Faible']),
             'textes très longs' => self::noticeData(['reason' => $long, 'instructions' => $long, 'marks' => $long, 'aliases' => ['a', 'b', 'c', 'd', 'e', 'f']]),
-            'anglais recto verso' => self::noticeData(['lang' => 'en', 'faces' => '2', 'expires_at' => '2027-01-01 00:00:00', 'footer' => false, 'watermark' => false]),
+            'anglais recto verso' => self::noticeData(['lang' => 'en', 'faces' => '2', 'expires_at' => '2027-01-01 00:00:00']),
         ];
         $jpeg = self::jpeg();
         if ($jpeg !== null) {
@@ -613,15 +613,25 @@ final class SseWantedNoticeTest extends TestCase
         self::assertSame(1, self::pages((string) $template->render(self::noticeData(['faces' => '1', 'reason' => $long]))));
     }
 
-    public function testNoticePdfCarriesTheFictionMentionAndNamesNoRealOrganisation(): void
+    public function testNoticePdfCarriesNoFictionMentionAndNamesNoRealOrganisation(): void
     {
         self::requirePdfEngine();
-        $pdf = (string) (new SseWantedNoticePdf())->render(self::noticeData());
-        // Les propriétés du fichier gardent la mention même si le pied de page est désactivé (texte PDF en UTF-16BE).
-        $needle = mb_convert_encoding('Document de fiction', 'UTF-16BE', 'UTF-8');
-        self::assertNotFalse(strpos($pdf, $needle), 'Mention « Document de fiction » absente du fichier');
-        $off = (string) (new SseWantedNoticePdf())->render(self::noticeData(['footer' => false]));
-        self::assertNotFalse(strpos($off, $needle), 'Les propriétés gardent la mention sans pied de page');
+        // Recto seul, recto verso, français et anglais ; d'anciennes données qui demandent encore filigrane et pied de
+        // page : aucune mention de jeu, ni sur les pages ni dans les propriétés du fichier.
+        foreach (['fr', 'en'] as $lang) {
+            foreach (['1', '2'] as $faces) {
+                foreach ([[], ['watermark' => true, 'footer' => true]] as $old) {
+                    $pdf = (string) (new SseWantedNoticePdf())->render(self::noticeData(['lang' => $lang, 'faces' => $faces] + $old));
+                    self::assertStringContainsString('Karimzadeh', mb_convert_case(\Tests\Support\PdfText::of($pdf), MB_CASE_TITLE, 'UTF-8'), "$lang $faces : le texte des pages est bien lu");
+                    self::assertNull(\Tests\Support\PdfText::fictionMention($pdf), "$lang $faces : mention de jeu sur la notice");
+                }
+            }
+        }
+        foreach (SseWantedCatalog::DEFAULTS as $key => $value) {
+            if (is_string($value)) {
+                self::assertNull(\App\Support\SseFictionMentions::find($value), 'réglage par défaut ' . $key);
+            }
+        }
 
         // Test statique : ni le gabarit, ni le service, ni le catalogue ne citent une organisation réelle.
         $root = dirname(__DIR__, 2) . '/app/';
@@ -633,8 +643,10 @@ final class SseWantedNoticeTest extends TestCase
             }
         }
         $template = (string) file_get_contents($root . 'Services/Sse/SseWantedNoticePdf.php');
-        self::assertStringContainsString('Document de fiction — jeu de rôle Arma 3', $template);
-        self::assertStringContainsString('Fictional document — Arma 3 role-play', $template);
+        self::assertStringNotContainsString('Document de fiction', $template);
+        self::assertStringNotContainsString('Fictional document', $template);
+        self::assertStringNotContainsString('Fiction - RP', $template);
+        self::assertStringNotContainsStringIgnoringCase('role-play', $template);
         self::assertStringNotContainsString('->Image(\'http', $template, 'Aucun logo téléchargé');
         foreach (SseWantedCatalog::DEFAULTS as $key => $value) {
             if (is_string($value)) {

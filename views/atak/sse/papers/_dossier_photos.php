@@ -152,7 +152,7 @@ $gTile = static function (array $it, bool $hero = false) use ($h, $day, $gTitle,
         </figure>
         <div class="idg-summary">
             <h3 class="idg-summary__title">Portrait et signature du titulaire</h3>
-            <p class="idg-summary__text">Affichés sur chaque papier émis pour cette identité, sous le filigrane SIMULATION. Sans portrait, le papier montre une silhouette.</p>
+            <p class="idg-summary__text">Affichés sur chaque papier émis pour cette identité. Sans portrait, le papier montre une silhouette.</p>
             <div class="idg-sign">
                 <?php if ($gal['signature'] !== null): ?>
                     <img src="<?= $h($gal['signature']) ?>" alt="Signature du titulaire" loading="lazy" width="220" height="64">

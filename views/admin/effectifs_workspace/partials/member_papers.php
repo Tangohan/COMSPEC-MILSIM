@@ -114,7 +114,7 @@ $photoField = static function (array $i) use ($ph, $manage, $base, $csrfToken, $
 <section class="eff-fm-sec" id="papiers" aria-labelledby="papiers-titre">
     <header class="eff-fm-sec__head">
         <h2 id="papiers-titre">Identité &amp; papiers</h2>
-        <p>Papiers d’identité fictifs du personnage (mention SIMULATION), kit porté en mission et contrôles subis en jeu.</p>
+        <p>Papiers d’identité du personnage, kit porté en mission et contrôles subis en jeu.</p>
     </header>
     <div class="eff-fm-cards">
 
@@ -261,7 +261,7 @@ $photoField = static function (array $i) use ($ph, $manage, $base, $csrfToken, $
                         <details class="idm-doc__preview">
                             <summary>Aperçu du spécimen</summary>
                             <div class="idp-card">
-                                <div class="idp-card__head"><span><?= $ph($d['country_name']) ?> · <?= $ph($d['doc_type_label']) ?></span><span>SIMULATION</span></div>
+                                <div class="idp-card__head"><span><?= $ph($d['country_name']) ?> · <?= $ph($d['doc_type_label']) ?></span><?php if (!empty($d['country_real'])): ?><span>SIMULATION</span><?php endif; ?></div>
                                 <div class="idp-card__name"><?= $ph(mb_strtoupper((string) $d['identity']['last_name'])) ?> <?= $ph($d['identity']['first_name']) ?></div>
                                 <div class="idp-grid" style="margin-top:8px">
                                     <div><span class="muted">N°</span><br><strong translate="no"><?= $ph($d['doc_number']) ?></strong></div>

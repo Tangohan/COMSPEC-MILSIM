@@ -68,7 +68,12 @@ final class SseWantedSettingsRepository
     public static function normalize(array $data): array
     {
         $d = C::DEFAULTS;
-        $bool = static fn (mixed $v, bool $def): bool => $v === null ? $def : ($v === true || $v === 1 || $v === '1' || $v === 'on' || $v === 'true');
+        // Réglages enregistrés avant le retrait des mentions de jeu : l'ancienne valeur livrée perd « — RP » / « (fictif) ».
+        foreach (['authority_fr', 'authority_en', 'contact_label'] as $legacyKey) {
+            if (isset($data[$legacyKey]) && is_string($data[$legacyKey])) {
+                $data[$legacyKey] = \App\Support\SseFictionMentions::cleanName($data[$legacyKey]);
+            }
+        }
         $line = static fn (mixed $v, int $max, string $def): string => ($s = C::line($v, $max)) !== '' ? $s : $def;
         $format = C::line($data['ref_format'] ?? '', 40);
         if (!self::validFormat($format)) {
@@ -95,8 +100,6 @@ final class SseWantedSettingsRepository
             'banner' => C::pick(C::BANNERS, $data['banner'] ?? null, (string) $d['banner']),
             'emblem' => C::pick(C::EMBLEMS, $data['emblem'] ?? null, (string) $d['emblem']),
             'pdf_lang' => in_array($data['pdf_lang'] ?? null, ['auto', 'fr', 'en'], true) ? (string) $data['pdf_lang'] : 'auto',
-            'watermark' => $bool($data['watermark'] ?? null, true),
-            'footer' => $bool($data['footer'] ?? null, true),
             'default_classification' => isset(\App\Support\SseUsClassification::SCALE[(string) ($data['default_classification'] ?? '')]) ? (string) $data['default_classification'] : (string) $d['default_classification'],
             'default_expiry_days' => max(0, min(3650, (int) ($data['default_expiry_days'] ?? 0))),
             'default_instructions_fr' => C::text($data['default_instructions_fr'] ?? $d['default_instructions_fr'], C::INSTRUCTIONS_MAX),
@@ -166,8 +169,6 @@ final class SseWantedSettingsRepository
         $settings = $input;
         $settings['custom_types'] = $custom;
         $settings['disabled_types'] = $disabled;
-        $settings['watermark'] = !empty($input['watermark']);
-        $settings['footer'] = !empty($input['footer']);
 
         return ['settings' => self::normalize($settings), 'errors' => $errors];
     }

@@ -178,8 +178,6 @@ final class SseWantedNoticePdfService
             'extra_photos' => $extra,
             'signature' => $signature,
             'emblem_path' => is_string($emblem) ? $emblem : null,
-            'watermark' => (bool) $config['watermark'],
-            'footer' => (bool) $config['footer'],
             'faces' => in_array($faces, ['1', '2'], true) ? $faces : 'auto',
             'generated_at' => gmdate($lang === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC',
         ];

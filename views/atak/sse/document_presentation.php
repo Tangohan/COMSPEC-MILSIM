@@ -137,8 +137,8 @@ $livePreview = false;
             <input id="pres-sub-docs" name="subtitle_docs" type="text" maxlength="180"
                    value="<?= $h((string) ($edit['subtitle_docs'] ?? '')) ?>" <?= $canManage ? '' : 'readonly' ?>>
 
-            <label for="pres-footer">Pied de page (mention RP / preuve)</label>
-            <textarea id="pres-footer" name="footer" rows="2" required maxlength="400" <?= $canManage ? '' : 'readonly' ?>><?= $h((string) ($edit['footer'] ?? '')) ?></textarea>
+            <label for="pres-footer">Pied de page (facultatif)</label>
+            <textarea id="pres-footer" name="footer" rows="2" maxlength="400" <?= $canManage ? '' : 'readonly' ?>><?= $h((string) ($edit['footer'] ?? '')) ?></textarea>
 
             <label for="pres-quality">Libellé qualité d’exploitation</label>
             <input id="pres-quality" name="quality_prefix" type="text" maxlength="80"

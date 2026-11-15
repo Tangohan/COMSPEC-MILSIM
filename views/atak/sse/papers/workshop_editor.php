@@ -272,7 +272,7 @@ require __DIR__ . '/_subnav.php';
                     <button type="button" class="btn" id="idw-export" data-lib="<?= $h(asset_url('assets/vendor/html2canvas-1.4.1/html2canvas.min.js')) ?>" data-name="<?= $h(($doc['ref'] ?: 'papier')) ?>">Exporter en image (PNG)</button>
                 </div>
                 <?php require __DIR__ . '/_doc_preview.php'; ?>
-                <p class="idw-note"><?= $h($preview['marking'] === 'none' ? 'L’image exportée n’a pas de marque visible ; la mention de jeu reste dans les métadonnées du fichier.' : 'L’image exportée porte une mention de jeu discrète, aussi écrite dans les métadonnées du fichier.') ?> Photos : uniquement des personnages du jeu.</p>
+                <p class="idw-note"><?= $h($preview['marking'] === 'none' ? 'L’image exportée n’a aucune marque visible.' : 'Pays réel stylisé : l’image exportée garde sa mention de jeu.') ?> Photos : uniquement des personnages du jeu.</p>
             </div>
         </section>
 

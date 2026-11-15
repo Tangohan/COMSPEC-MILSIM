@@ -128,7 +128,7 @@ $scopeLabels = ['default' => 'Par défaut', 'map' => 'Pour une carte', 'operatio
                         <?php if ($d['st_report'] !== 'none'): ?><span><?= $h(\App\Support\SseIdentityCatalog::label(\App\Support\SseIdentityCatalog::REPORTS, $d['st_report'])) ?></span><?php endif; ?>
                     </div>
                     <div class="idp-card" style="margin-top:8px">
-                        <div class="idp-card__head"><span><?= $h($d['country_name']) ?> · <?= $h($d['doc_type_label']) ?></span><span>SIMULATION</span></div>
+                        <div class="idp-card__head"><span><?= $h($d['country_name']) ?> · <?= $h($d['doc_type_label']) ?></span><?php if (!empty($d['country_real'])): ?><span>SIMULATION</span><?php endif; ?></div>
                         <div class="idp-card__name"><?= $h($d['holder_name']) ?></div>
                         <div class="idp-grid" style="margin-top:8px">
                             <div><span class="muted">Né(e) le</span><br><strong><?= $h($d['identity']['birth_date'] ?? '—') ?></strong></div>

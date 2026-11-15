@@ -1,3 +1,20 @@
+[h1]COMSPEC SSE 1.16.0 — fiches et fichiers sans mention « RP » / records and files without an "RP" notice (15/11/2026)[/h1]
+[b]Relance Arma complètement. / Fully restart Arma.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Fiches SSE[/b] : le bas des fiches et des dossiers n'affiche plus « Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement ». Il reste la qualité d'exploitation.
+[*] [b]Terminal des fichiers[/b] : l'en-tête est FICHIERS, sans « SIMULATION », et la ligne « Simulation : données fictives… » a disparu sous les réponses.
+[*] Un Zeus peut toujours écrire son propre pied de page dans le module « Présentation des documents SSE ». Aucune DLL à changer.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]SSE records[/b]: the bottom of records and files no longer shows "Not judicial evidence — RP / intelligence use only". The exploitation quality stays.
+[*] [b]Records terminal[/b]: the header is RECORDS, without "SIMULATION", and the line "Simulation: fictitious data…" is gone under the answers.
+[*] A Zeus can still write a footer of their own in the "SSE document presentation" module. No DLL to change.
+[/list]
+
 [h1]COMSPEC SSE 1.15.0 — photo du papier au contrôle d'identité / paper photo at the identity check (15/11/2026)[/h1]
 [b]Relance Arma complètement. / Fully restart Arma.[/b]
 
