@@ -258,8 +258,9 @@ require __DIR__ . '/ath_sidebar_nav.php';
 
 ?>
 <nav class="ath-sidebar" id="ath-sidebar" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Navigation back-office') : 'Navigation back-office') ?>">
+    <?php $athSeasonal = athena_seasonal_logo_img(); ?>
     <div class="ath-sidebar__head">
-        <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__logo" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>">A</a>
+        <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__logo" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>"<?= $athSeasonal !== '' ? ' style="background:transparent"' : '' ?>><?= $athSeasonal !== '' ? $athSeasonal : 'A' ?></a>
         <div class="ath-sidebar__brand">
             <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__brand-name" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au portail') : 'Retour au portail') ?>">ATHENA<span>.</span></a>
             <div class="ath-sidebar__brand-sub"><?= $h(!empty($isDelegatedStaff) ? 'MON PÉRIMÈTRE' : (!empty($isOperatorBoNav) ? 'ESPACE OPÉRATEUR' : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'GESTION') : 'GESTION'))) ?> · <?= $h($tenantShort) ?></div>

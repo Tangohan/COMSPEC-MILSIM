@@ -172,8 +172,9 @@ $initials = count($words) > 1
     : mb_strtoupper(mb_substr($userName, 0, 2));
 ?>
 <nav class="ath-sidebar ath-sidebar--platform" id="ath-sidebar" aria-label="Navigation administration plateforme">
+    <?php $athSeasonal = athena_seasonal_logo_img(); ?>
     <div class="ath-sidebar__head">
-        <a href="<?= $h(url('admin')) ?>" class="ath-sidebar__logo" title="Pilotage du site" aria-label="Pilotage du site">A</a>
+        <a href="<?= $h(url('admin')) ?>" class="ath-sidebar__logo" title="Pilotage du site" aria-label="Pilotage du site"<?= $athSeasonal !== '' ? ' style="background:transparent"' : '' ?>><?= $athSeasonal !== '' ? $athSeasonal : 'A' ?></a>
         <div class="ath-sidebar__brand">
             <a href="<?= $h(url('admin')) ?>" class="ath-sidebar__brand-name">ATHENA<span>.</span></a>
             <div class="ath-sidebar__brand-sub">ADMINISTRATION · PLATEFORME</div>

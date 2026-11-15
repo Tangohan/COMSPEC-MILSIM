@@ -54,6 +54,53 @@ if (!function_exists('asset_url')) {
     }
 }
 
+if (!function_exists('athena_seasonal_logo')) {
+    /**
+     * Emblème Athena de saison : la variante de Noël du 1er au 31 décembre (fuseau du site), sinon null.
+     * ATHENA_SEASONAL_LOGO=0 la coupe ; ATHENA_SEASONAL_LOGO=xmas la force (aperçu hors saison).
+     * Ne concerne que l'emblème Athena, jamais le logo d'une communauté.
+     */
+    function athena_seasonal_logo(?\DateTimeInterface $now = null): ?string
+    {
+        $switch = strtolower(trim((string) env('ATHENA_SEASONAL_LOGO', '')));
+        if (in_array($switch, ['0', 'off', 'false', 'no'], true)) {
+            return null;
+        }
+        $xmas = 'assets/images/opt/athena-eagle-xmas-96.png';
+        if ($switch === 'xmas') {
+            return $xmas;
+        }
+        try {
+            $tz = new \DateTimeZone((string) env('APP_TIMEZONE', 'Europe/Paris'));
+        } catch (\Throwable) {
+            $tz = new \DateTimeZone('Europe/Paris');
+        }
+        $local = \DateTimeImmutable::createFromInterface($now ?? new \DateTimeImmutable('now'))->setTimezone($tz);
+
+        return $local->format('n') === '12' ? $xmas : null;
+    }
+}
+
+if (!function_exists('athena_seasonal_logo_img')) {
+    /**
+     * Balise <img> de l'emblème de saison, à poser dans le carré de marque (taille fixée par le carré : aucun
+     * décalage de mise en page). Chaîne vide hors saison : la vue garde alors son rendu habituel.
+     */
+    function athena_seasonal_logo_img(?\DateTimeInterface $now = null): string
+    {
+        $logo = athena_seasonal_logo($now);
+        if ($logo === null) {
+            return '';
+        }
+        $src = htmlspecialchars(asset_url($logo), ENT_QUOTES, 'UTF-8');
+        $src2x = htmlspecialchars(asset_url(str_replace('-96.png', '-192.png', $logo)), ENT_QUOTES, 'UTF-8');
+
+        return '<img src="' . $src . '" srcset="' . $src . ' 1x, ' . $src2x . ' 3x" alt="" aria-hidden="true"'
+            . ' width="96" height="96" loading="eager" decoding="async"'
+            . ' style="display:block;width:100%;height:100%;object-fit:contain">';
+    }
+}
+
 if (!function_exists('e')) {
     /**
      * Échappe une valeur pour l’HTML (vues).
