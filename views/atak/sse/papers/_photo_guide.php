@@ -12,7 +12,7 @@ $guideVariants = ['tired' => 'Fatigué', 'beard' => 'Barbe', 'scar' => 'Cicatric
 <details class="idi-guide">
     <summary>Photo d’identité façon photomaton : créer la photo d’un personnage</summary>
     <div class="idi-guide__body">
-        <p class="idw-note"><strong>Uniquement des personnages du jeu.</strong> N’envoyez jamais la photo d’une vraie personne, ni la vôtre : la photo sert au jeu de rôle et reste sous le filigrane SIMULATION.</p>
+        <p class="idw-note"><strong>Uniquement des personnages du jeu.</strong> N’envoyez jamais la photo d’une vraie personne, ni la vôtre : la photo sert au jeu de rôle uniquement.</p>
         <ol>
             <li>Dans Arma 3, ouvrez la caméra libre (Splendid Camera, menu Échap) ou le mode photo de votre mod.</li>
             <li>Placez le personnage face caméra : tête droite, regard droit dans l’objectif, expression neutre, bouche fermée.</li>

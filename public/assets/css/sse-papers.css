@@ -6,14 +6,10 @@
     align-items: center;
     margin: 0 0 0.75rem;
     padding: 0.5rem 0.75rem;
-    border: 1px dashed var(--amber, #f59e0b);
+    border: 1px solid var(--border, rgba(127, 127, 127, 0.3));
     border-radius: var(--radius, 0.75rem);
     color: var(--text, inherit);
     font-size: 0.85rem;
-}
-.idp-sim strong {
-    letter-spacing: 0.18em;
-    color: var(--amber, #f59e0b);
 }
 .idp-grid {
     display: grid;
@@ -29,20 +25,6 @@
     border: 1px solid var(--border, rgba(127, 127, 127, 0.3));
     border-radius: 12px;
     background: var(--surface, transparent);
-}
-.idp-card::after {
-    content: "SIMULATION";
-    position: absolute;
-    inset: 40% -10% auto;
-    transform: rotate(-14deg);
-    text-align: center;
-    font-size: 2.6rem;
-    font-weight: 900;
-    letter-spacing: 0.3em;
-    color: var(--amber, #f59e0b);
-    opacity: 0.13;
-    pointer-events: none;
-    z-index: 5; /* filigrane au-dessus de la photo du titulaire */
 }
 .idp-card__photo { float: right; width: 84px; aspect-ratio: 35 / 45; object-fit: cover; margin: 0 0 0.5rem 0.75rem; border-radius: 4px; border: 1px solid var(--border, rgba(127, 127, 127, 0.3)); }
 .idp-card__head {
@@ -124,6 +106,5 @@
     display: block;
 }
 @media (max-width: 640px) {
-    .idp-card::after { font-size: 1.6rem; }
     .idp-mrz { font-size: 0.7rem; }
 }
