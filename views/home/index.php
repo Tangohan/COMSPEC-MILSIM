@@ -866,6 +866,25 @@ $heroPosterUrl = $heroImages[0]['src'];
             </div>
         </section>
 
+        <!-- Discord : simple lien, aucun widget tiers -->
+        <section class="hd hi-block" aria-labelledby="discord-heading" id="discord">
+            <div class="hi-wrap hd__grid">
+                <div class="hd__head">
+                    <h2 id="discord-heading" class="hd__title"><?= $e(__('home.discord_title')) ?></h2>
+                    <p class="hd__lead"><?= $e(__('home.discord_lead')) ?></p>
+                    <a href="<?= $e(\App\Support\PublicLinks::discordInviteUrl()) ?>" class="hd__cta" target="_blank" rel="noopener noreferrer"><?= $e(__('home.discord_cta')) ?><span class="sr-only"> <?= $e(__('home.discord_new_tab')) ?></span></a>
+                </div>
+                <ul class="hd__list">
+                    <?php for ($di = 1; $di <= 4; $di++): ?>
+                    <li>
+                        <h3><?= $e(__('home.discord_' . $di . '_t')) ?></h3>
+                        <p><?= $e(__('home.discord_' . $di . '_b')) ?></p>
+                    </li>
+                    <?php endfor; ?>
+                </ul>
+            </div>
+        </section>
+
         <!-- Appel final (acte 08) + accès rapides au portail -->
         <section class="hi-final hi-block" aria-labelledby="final-heading">
             <div class="hi-wrap">
