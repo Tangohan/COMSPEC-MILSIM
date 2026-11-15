@@ -166,7 +166,6 @@ final class SseSheetService
             'authority' => $authority, 'service' => $service,
             'issued_at' => $issued, 'issued_dt' => gmdate('Y-m-d H:i:s'), 'valid_until' => $validUntil, 'classification' => $labels, 'level' => $level,
             'facts' => $facts, 'texts' => $texts, 'text_labels' => $this->textLabels($model),
-            'watermark' => (bool) $config['watermark'], 'footer' => (bool) $config['footer'],
             'emblem' => (string) $config['emblem'],
             'generated_at' => gmdate($lang === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC',
         ];

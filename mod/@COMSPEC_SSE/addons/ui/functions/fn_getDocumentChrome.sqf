@@ -1,5 +1,6 @@
 /*
     Chrome de présentation des fiches / documents SSE (bandeau, titres, pied, papier).
+    Pied de page : vide par défaut (aucune mention de jeu sur la fiche) ; un texte saisi par le Zeus ou la mission s'affiche.
     MissionNamespace : COMSPEC_SSE_DocChrome (HashMap).
 
     Modes :
@@ -23,7 +24,7 @@ private _defaults = createHashMapFromArray [
     ["subtitle_dossier", "Compte rendu d’exploitation"],
     ["subtitle_feuille", "Feuille de consultation — lecture détaillée"],
     ["subtitle_docs", "Pièces saisies sur le terrain"],
-    ["footer", "Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement."],
+    ["footer", ""],
     ["quality_prefix", "Qualité d’exploitation"],
     ["btn_consult", "FEUILLE"],
     ["btn_transmit", "TRANSMETTRE"],
@@ -39,7 +40,7 @@ private _prefabs = createHashMapFromArray [
         ["subtitle_dossier", "Compte rendu d’exploitation"],
         ["subtitle_feuille", "Feuille de consultation — lecture détaillée"],
         ["subtitle_docs", "Pièces saisies sur le terrain"],
-        ["footer", "Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement."],
+        ["footer", ""],
         ["quality_prefix", "Qualité d’exploitation"],
         ["btn_consult", "FEUILLE"],
         ["btn_transmit", "TRANSMETTRE"],
@@ -53,7 +54,7 @@ private _prefabs = createHashMapFromArray [
         ["subtitle_dossier", "Relevé d’exploitation sur site"],
         ["subtitle_feuille", "Lecture détaillée — pièce terrain"],
         ["subtitle_docs", "Documents récupérés sur place"],
-        ["footer", "Document de travail — ne vaut pas preuve judiciaire. Usage RP / renseignement."],
+        ["footer", ""],
         ["quality_prefix", "Qualité de saisie"],
         ["btn_consult", "DÉTAIL"],
         ["btn_transmit", "ENVOYER"],
@@ -67,7 +68,7 @@ private _prefabs = createHashMapFromArray [
         ["subtitle_dossier", "Brouillon de compte rendu"],
         ["subtitle_feuille", "Relecture — brouillon"],
         ["subtitle_docs", "Documents non encore classés"],
-        ["footer", "Brouillon RP — non opposable. À ne pas confondre avec un acte officiel."],
+        ["footer", ""],
         ["quality_prefix", "Avancement"],
         ["btn_consult", "LIRE"],
         ["btn_transmit", "TRANSMETTRE"],
@@ -81,7 +82,7 @@ private _prefabs = createHashMapFromArray [
         ["subtitle_dossier", "Compte rendu classé"],
         ["subtitle_feuille", "Consultation d’archives"],
         ["subtitle_docs", "Pièces versées au dossier"],
-        ["footer", "Exemplaire d’archives — usage renseignement / RP. Ne constitue pas une preuve judiciaire."],
+        ["footer", ""],
         ["quality_prefix", "Qualité d’exploitation"],
         ["btn_consult", "FEUILLE"],
         ["btn_transmit", "TRANSMETTRE"],
@@ -95,7 +96,7 @@ private _prefabs = createHashMapFromArray [
         ["subtitle_dossier", "Compte rendu d’exploitation"],
         ["subtitle_feuille", "Feuille officielle"],
         ["subtitle_docs", "Pièces jointes"],
-        ["footer", "Document de renseignement — usage RP uniquement. Ne constitue pas une preuve judiciaire."],
+        ["footer", ""],
         ["quality_prefix", "Qualité d’exploitation"],
         ["btn_consult", "FEUILLE"],
         ["btn_transmit", "TRANSMETTRE"],

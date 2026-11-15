@@ -13,7 +13,7 @@ use Tests\Support\TocReportsSqlite;
 
 /**
  * Export PDF d'un rapport du poste TOC web : un PDF par type de rapport, bandeau de classification américain fictif,
- * mention de fiction, caviardage en rectangles noirs (jamais le bloc plein U+2588, absent de la police : il sortirait en « ? »).
+ * aucune mention de jeu, caviardage en rectangles noirs (jamais le bloc plein U+2588, absent de la police : il sortirait en « ? »).
  */
 final class AtakTocReportPdfTest extends TestCase
 {
@@ -109,11 +109,27 @@ final class AtakTocReportPdfTest extends TestCase
         self::assertStringStartsWith('%PDF-', (string) $bytes);
     }
 
-    public function testFictionMentionAndNoRealOrganisationInTheTemplate(): void
+    public function testNoFictionMentionAndNoRealOrganisationInTheTemplate(): void
     {
+        // Chaque rapport du jeu de données, en français et en anglais, du rapport sans restriction au plus classifié :
+        // aucune mention de jeu sur les pages (en-tête, pied, diffusion) ni dans les propriétés du fichier.
+        $pdf = new TocReportPdf();
+        $seen = 0;
+        foreach ($this->svc->list(1, 7, 'tres_restreint')['reports'] as $r) {
+            $d = $this->svc->find(1, 7, 'tres_restreint', $r['key']);
+            foreach (['fr', 'en'] as $lang) {
+                $bytes = (string) $pdf->render($d, ['lang' => $lang, 'operator' => 'TA1']);
+                self::assertStringContainsString(strtoupper((string) $r['key']), \Tests\Support\PdfText::of($bytes), $r['key'] . ' : le texte des pages est bien lu');
+                self::assertNull(\Tests\Support\PdfText::fictionMention($bytes), $r['key'] . ' ' . $lang . ' : mention de jeu sur le rapport');
+                ++$seen;
+            }
+        }
+        self::assertGreaterThan(0, $seen);
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/AtakToc/TocReportPdf.php');
-        self::assertStringContainsString('Document de fiction — jeu de rôle Arma 3', $src);
-        self::assertStringContainsString('Fictional document — Arma 3 role-play', $src);
+        self::assertStringNotContainsString('Document de fiction', $src);
+        self::assertStringNotContainsString('Fictional document', $src);
+        self::assertStringNotContainsString('ROLE-PLAY USE ONLY', $src);
+        self::assertStringNotContainsString('USAGE JEU DE RÔLE', $src);
         foreach (['U.S. ARMY', 'US ARMY', 'Department of', 'Pentagon', 'NATO', 'OTAN', 'CIA', 'FBI'] as $real) {
             self::assertStringNotContainsString($real, $src, 'aucun nom d’organisation réelle : ' . $real);
         }

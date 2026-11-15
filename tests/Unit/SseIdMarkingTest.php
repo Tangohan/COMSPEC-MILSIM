@@ -32,7 +32,14 @@ final class SseIdMarkingTest extends TestCase
 
     public function testRealCountryCanNeverBeWithoutVisibleMarking(): void
     {
-        self::assertSame('none', SseIdMarking::effective('none', false), 'pays imaginaire : possible');
+        // Pays imaginaire : aucune marque visible, quel que soit le réglage enregistré.
+        foreach (['none', 'discreet', 'standard', null, 'zzz'] as $setting) {
+            self::assertSame('none', SseIdMarking::effective($setting, false), 'pays imaginaire : jamais de marque visible');
+        }
+        self::assertFalse(SseIdMarking::isRealCountry(['real_sim' => false], 'ALT'));
+        self::assertFalse(SseIdMarking::isRealCountry(null, 'ALT'));
+        self::assertTrue(SseIdMarking::isRealCountry(['real_sim' => true], 'XXX'));
+        self::assertTrue(SseIdMarking::isRealCountry(null, 'gbr'), 'code du catalogue des pays réels sans ligne de pays : le marquage reste');
         self::assertSame('discreet', SseIdMarking::effective('none', true), 'pays réel : discret imposé');
         self::assertSame('standard', SseIdMarking::effective('standard', true));
         self::assertSame('discreet', SseIdMarking::effective('discreet', true));
@@ -93,20 +100,50 @@ final class SseIdMarkingTest extends TestCase
     {
         $view = self::read('views/admin/sse_files/index.php');
         self::assertStringContainsString('name="papers_marking"', $view);
-        foreach (['discreet', 'standard', 'none'] as $mode) {
+        // Le réglage ne concerne plus que les pays réels stylisés : « aucune marque » n'y est pas proposé.
+        foreach (['discreet', 'standard'] as $mode) {
             self::assertStringContainsString('<option value="' . $mode . '"', $view);
         }
+        self::assertStringNotContainsString('<option value="none"', $view);
+        self::assertStringContainsString('pays réels stylisés', $view);
         $ctrl = self::read('app/Controllers/Admin/AdminSseFilesController.php');
         self::assertStringContainsString("'papers_marking' => \\App\\Support\\SseIdMarking::normalize(", $ctrl);
         // Lecture par communauté (tenant) dans l'atelier.
         self::assertStringContainsString('->settings($tenantId)', self::read('app/Controllers/Web/SseIdWorkshopController.php'));
     }
 
-    public function testCommunityCoversAndWantedNoticeGuardrailsAreUntouched(): void
+    public function testWantedNoticeSettingsNoLongerOfferAFictionMention(): void
     {
-        // #1672 : le pied de la notice et ses propriétés PDF restent en place.
+        // La notice ne porte plus de mention de jeu : ses réglages n'en proposent plus (ni filigrane, ni pied de page).
         $settings = self::read('views/atak/sse/papers/wanted_settings.php');
-        self::assertStringContainsString('Document de fiction — jeu de rôle Arma 3', $settings);
-        self::assertStringContainsString('Le fichier PDF garde toujours cette mention dans ses propriétés.', $settings);
+        self::assertStringNotContainsString('Document de fiction', $settings);
+        self::assertStringNotContainsString('name="watermark"', $settings);
+        self::assertStringNotContainsString('name="footer"', $settings);
+        self::assertStringNotContainsString('Aspect de la notice', $settings);
+    }
+
+    public function testMemberPaperSpecimenIsUnmarkedForAnImaginaryCountryAndMarkedForARealOne(): void
+    {
+        $opxDocSvg = null;
+        require dirname(__DIR__, 2) . '/views/operateur/_document_svg.php';
+        self::assertNotNull($opxDocSvg);
+        $doc = ['id' => 4, 'doc_type' => 'id_card', 'doc_type_label' => 'Carte d’identité', 'country_code' => 'ALT', 'country_name' => 'Altis', 'last_name' => 'Marek',
+            'first_name' => 'Ana', 'sex' => 'F', 'birth_date' => '1991-02-03', 'birth_place' => 'Kavala', 'nationality' => 'ALT', 'doc_number' => 'AL1234567',
+            'issued_on' => '2026-01-01', 'expires_on' => '2036-01-01', 'authority' => 'Préfecture de Kavala', 'ref' => 'DOC-4', 'holder_name' => 'Ana Marek', 'mrz' => ['IDALT', 'X', 'Y']];
+        foreach (['recto', 'verso'] as $side) {
+            $svg = $opxDocSvg($doc, $side, null);
+            self::assertStringContainsString('<svg', $svg);
+            self::assertNull(\App\Support\SseFictionMentions::find($svg), 'pays imaginaire, ' . $side . ' : aucune mention de jeu');
+            self::assertStringNotContainsString('SIMULATION', $svg);
+            $real = $opxDocSvg(['country_real' => true, 'country_code' => 'GBR', 'country_name' => 'Royaume-Uni'] + $doc, $side, null);
+            self::assertStringContainsString('SPÉCIMEN · SIMULATION', $real, 'pays réel stylisé, ' . $side . ' : la mention reste');
+        }
+        // La page du spécimen n'imprime pas son en-tête pour un pays imaginaire.
+        $page = self::read('views/operateur/specimen.php');
+        self::assertStringContainsString("opx-specimen__head--screen", $page);
+        self::assertMatchesRegularExpression('/@media print \{[^@]*\.opx-specimen__head--screen \{ display: none; \}/s', self::read('public/assets/css/operateur-hub.css'));
+        foreach (['views/admin/effectifs_workspace/partials/member_papers.php', 'views/admin/member_situation/mes_papiers.php'] as $v) {
+            self::assertStringContainsString("<?php if (!empty(\$d['country_real'])): ?><span>SIMULATION</span><?php endif; ?>", self::read($v), $v);
+        }
     }
 }

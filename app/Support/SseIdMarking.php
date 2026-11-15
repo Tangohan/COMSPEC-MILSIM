@@ -7,13 +7,17 @@ namespace App\Support;
 /**
  * Marquage « document de jeu » des images exportées par l'atelier de papiers.
  *
- * Trois modes, choisis par communauté (sse_file_settings.settings_json, clé papers_marking) :
- * - discreet (défaut) : micro-texte en bas de chaque face, faible contraste, lisible à l'agrandissement ;
- * - standard : ancien rendu (filigrane diagonal SIMULATION et bandeau pleine largeur) ;
- * - none : aucune marque visible, mention conservée dans les métadonnées du fichier. Refusé pour les pays réels
- *   stylisés (real_sim) : ceux-là retombent sur « discreet » quoi que dise le réglage.
+ * Pays imaginaire (Altis, Tanoa, pays créés par la communauté) : AUCUNE marque visible, ni à l'aperçu ni sur l'image
+ * exportée (mode « none », quel que soit le réglage enregistré).
  *
- * La mention figure dans tous les cas dans les métadonnées (PNG tEXt, voir pngWithMention()).
+ * Pays réel stylisé (real_sim) : le marquage reste, garde-fou non négociable. Le réglage de communauté
+ * (sse_file_settings.settings_json, clé papers_marking) choisit entre :
+ * - discreet (défaut) : micro-texte en bas de chaque face, faible contraste, lisible à l'agrandissement ;
+ * - standard : filigrane diagonal SIMULATION et bandeau pleine largeur ;
+ * « none » y est refusé : ces pays retombent sur « discreet ».
+ *
+ * La mention figure dans tous les cas dans les métadonnées du fichier (PNG tEXt, voir pngWithMention()) : elle n'est
+ * pas visible sur le document.
  */
 final class SseIdMarking
 {
@@ -35,12 +39,26 @@ final class SseIdMarking
         return in_array($m, self::MODES, true) ? $m : self::DISCREET;
     }
 
-    /** Mode réellement appliqué : un pays réel stylisé n'est jamais sans marquage visible. */
+    /** Mode réellement appliqué : aucun marquage visible pour un pays imaginaire, jamais moins que « discreet » pour un pays réel stylisé. */
     public static function effective(mixed $setting, bool $realCountry): string
     {
+        if (!$realCountry) {
+            return self::NONE;
+        }
         $mode = self::normalize($setting);
 
-        return $realCountry && $mode === self::NONE ? self::DISCREET : $mode;
+        return $mode === self::NONE ? self::DISCREET : $mode;
+    }
+
+    /**
+     * Le papier est-il celui d'un pays réel stylisé (marquage conservé) ? Vrai aussi pour un code du catalogue des pays
+     * réels dont la ligne de pays manque : dans le doute, le marquage reste.
+     *
+     * @param array<string, mixed>|null $country pays hydraté (SseIdCountryRepository)
+     */
+    public static function isRealCountry(?array $country, string $code = ''): bool
+    {
+        return !empty($country['real_sim']) || isset(SseIdRealCountryCatalog::COUNTRIES[strtoupper(trim($code))]);
     }
 
     /** Le réglage « aucun marquage » est-il possible pour ce pays ? */

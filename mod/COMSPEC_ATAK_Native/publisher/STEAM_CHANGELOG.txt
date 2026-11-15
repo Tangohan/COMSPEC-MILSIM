@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.27.0 Washington — fiches du téléphone sans mention « fiction » / phone records without a "fiction" notice[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]App Fiches[/b] : la ligne « Document de fiction — jeu de rôle Arma 3 » a disparu du bas des fiches. Il reste la provenance : les fiches viennent du portail Athena et sont filtrées selon ton habilitation.
+[*] Avec COMSPEC SSE 1.16.0, les fiches SSE consultées en jeu n'affichent plus « usage RP » en bas de page.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Records app[/b]: the line "Fictional document — Arma 3 role-play" is gone from the bottom of records. The origin stays: records come from the Athena portal and are filtered by your clearance.
+[*] With COMSPEC SSE 1.16.0, SSE records read in game no longer show "RP use" at the bottom.
+[/list]
+
 [h1]COMSPEC ATAK 4.26.0 Washington — contrôle d'identité : la photo du papier remonte sur Athena / identity check: the paper photo goes up to Athena[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

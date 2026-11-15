@@ -229,7 +229,7 @@ $subjectName = (string) ($subject['person']['display_name'] ?? $subject['identit
             <button type="submit" class="btn shx__btn shx__btn--primary" id="shx-issue">Émettre le PDF</button>
         <?php endif; ?>
     </div>
-    <p class="muted">Accessoire de jeu de rôle : l’autorité émettrice est fictive et chaque page porte la mention « Document de fiction — jeu de rôle Arma 3 ». À ne jamais diffuser hors de la communauté. Émettre ne modifie jamais la fiche.</p>
+    <p class="muted">À ne jamais diffuser hors de la communauté. Émettre ne modifie jamais la fiche.</p>
 </form>
 
 <?php require dirname(__DIR__) . '/_sheet_issues.php'; ?>

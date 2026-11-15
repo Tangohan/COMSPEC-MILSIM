@@ -397,9 +397,10 @@ final class SseWantedNoticeRepository
             'zone' => $str($row['zone'] ?? null),
             'last_seen_place' => $str($row['last_seen_place'] ?? null),
             'last_seen_at' => $str($row['last_seen_at'] ?? null),
-            'contact_label' => $str($row['contact_label'] ?? null),
+            // Noms livrés enregistrés avant le retrait des mentions de jeu : sans leur ancien « (fictif) » / « — RP ».
+            'contact_label' => \App\Support\SseFictionMentions::cleanNullable($str($row['contact_label'] ?? null)),
             'contact_detail' => $str($row['contact_detail'] ?? null),
-            'authority' => $str($row['authority'] ?? null),
+            'authority' => \App\Support\SseFictionMentions::cleanNullable($str($row['authority'] ?? null)),
             'status' => $expired ? 'expired' : $status,
             'issued_at' => (string) ($row['issued_at'] ?? ''),
             'expires_at' => $expires,

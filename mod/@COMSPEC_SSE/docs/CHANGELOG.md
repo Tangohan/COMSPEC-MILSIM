@@ -1,5 +1,28 @@
 # COMSPEC SSE — historique des versions
 
+## 1.16.0 — 15/11/2026 · Fiches et fichiers sans mention « RP » ni « simulation »
+
+**Relancer Arma complètement.** Sources seulement dans cette livraison : les PBO `comspec_sse_ui`, `comspec_sse_identity`, `comspec_sse_main` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer (COMSPEC Link reste 2.0.127).
+
+### Résumé joueur
+Type : patch
+FR : Les fiches SSE consultées en jeu ne portent plus de mention « RP »
+- Le bas des fiches et des dossiers SSE n'affiche plus « Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement ». Il reste la qualité d'exploitation, sur une seule ligne.
+- Le terminal des fichiers s'appelle FICHIERS (plus « FICHIERS · SIMULATION ») et la ligne « Simulation : données fictives… » a disparu sous les réponses.
+- Un Zeus peut toujours écrire son propre pied de page dans le module « Présentation des documents SSE » : laissé vide, il n'y a aucune mention.
+EN : SSE records read in game no longer carry an "RP" notice
+- The bottom of SSE records and files no longer shows "Not judicial evidence — RP / intelligence use only". The exploitation quality stays, on a single line.
+- The records terminal is called RECORDS (no longer "RECORDS · SIMULATION") and the line "Simulation: fictitious data…" is gone under the answers.
+- A Zeus can still write a footer of their own in the "SSE document presentation" module: left empty, there is no notice.
+
+### Détail technique
+- `fn_getDocumentChrome.sqf` : pied de page vide pour le défaut et les cinq modèles livrés (`standard_restreint`, `terrain_tache`, `brouillon_froisse`, `bureau_jauni`, `formel_propre`).
+- `fn_fillResultDialog.sqf` : le pied n'est écrit que s'il existe (sinon la ligne de qualité reste seule, sans ligne vide) ; un ancien pied livré encore enregistré dans une mission est ignoré (liste exacte des cinq anciens textes), un pied écrit par le Zeus ou la mission reste affiché.
+- `fn_filePage.sqf` : en-tête « FICHIERS » ; la ligne « Simulation : données fictives du registre de la communauté et de la mission. » est retirée du bas d'une réponse.
+- `stringtable.xml` (clé `STR_COMSPEC_SSE_CFG_08AA395002`) : aide du pied de page du module, « Vide : aucune mention ».
+- Non modifié : les papiers d'identité affichés en jeu. Leur marquage éventuel est peint dans les textures (PAA) des gabarits, qui ne sont pas régénérées ici ; la mention discrète « Document de jeu » de la visionneuse ne concerne que les pays réels stylisés et reste.
+- **À tester en jeu** : ouvrir une fiche SSE après une fouille (bas de fiche sur une ligne), poser le module « Présentation des documents SSE » avec et sans pied de page, interroger le terminal des fichiers (en-tête et bas de réponse), téléphone en français puis en anglais.
+
 ## 1.15.0 — 15/11/2026 · Photo du papier au contrôle d'identité
 
 **Relancer Arma complètement.** Sources seulement dans cette livraison : le PBO `comspec_sse_identity` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). **COMSPEC Link 2.0.127 nécessaire** pour la photo (livrée avec COMSPEC ATAK 4.26.0) ; avec une DLL plus ancienne, le bouton est grisé et le reste fonctionne comme avant.

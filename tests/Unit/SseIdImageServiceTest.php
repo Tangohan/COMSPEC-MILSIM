@@ -184,7 +184,21 @@ final class SseIdImageServiceTest extends TestCase
             $copy = (array) $docs->find((int) $svc->duplicate(1, $doc, 3), 1);
             self::assertSame($doc['background_path'], $copy['background_path'], 'la copie garde le fond');
 
-            $preview = SseIdWorkshopService::previewModel($doc, $identity, null, 'standard');
+            // Pays imaginaire : l'aperçu n'a ni filigrane ni mention de jeu, quel que soit le réglage.
+            $plain = SseIdWorkshopService::previewModel($doc, $identity, null, 'standard');
+            self::assertSame('none', $plain['marking']);
+            $plainHtml = (static function (array $preview): string {
+                ob_start();
+                require dirname(__DIR__, 2) . '/views/atak/sse/papers/_doc_preview.php';
+
+                return (string) ob_get_clean();
+            })($plain);
+            self::assertStringNotContainsString('idw-watermark', $plainHtml);
+            self::assertNull(\App\Support\SseFictionMentions::find($plainHtml), 'pays imaginaire : aucune mention de jeu sur le papier');
+            self::assertStringNotContainsString('SIMULATION', $plainHtml);
+            // Pays réel stylisé, mode « standard » : filigrane au-dessus de toutes les images.
+            $preview = SseIdWorkshopService::previewModel($doc, $identity, ['code' => 'GRC', 'name' => 'Grèce', 'real_sim' => true, 'zone' => 'europe'], 'standard');
+            self::assertSame('standard', $preview['marking']);
             self::assertStringContainsString('/atak/sse/fichiers/identites/' . $iid . '/photo', (string) $preview['identity']['photo_url'], 'route protégée, jamais le fichier');
             self::assertStringNotContainsString('1_aaaaaaaaaaaaaaaa', (string) $preview['identity']['photo_url']);
             self::assertStringContainsString('/atak/sse/fichiers/identites/' . $iid . '/signature', (string) $preview['identity']['signature_url']);

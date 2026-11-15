@@ -10,15 +10,13 @@ use App\Support\SseSheetText;
 use App\Support\TrainingCertificatePdfEngine;
 
 /**
- * Gabarit PDF des fiches d'une personne (identification, vigilance, renseignement, contrôle terrain) pour le jeu de rôle :
- * même moteur (TCPDF) et même identité visuelle fictive que la notice de recherche (SseWantedNoticePdf) : en-tête blanc avec
+ * Gabarit PDF des fiches d'une personne (identification, vigilance, renseignement, contrôle terrain) :
+ * même moteur (TCPDF) et même identité visuelle que la notice de recherche (SseWantedNoticePdf) : en-tête blanc avec
  * pictogramme neutre et autorité émettrice fictive, bandeau de couleur du modèle, blocs d'information, code-barres de la
  * référence et pied de page. Une à trois pages A4, la suite passant sur la page suivante.
  *
- * Règle de fond : accessoire de JEU DE RÔLE pour des personnages FICTIFS. Aucun logo, emblème, sceau ni nom d'organisation,
- * de police ou de gouvernement réels. Chaque page porte « Document de fiction — jeu de rôle Arma 3 » (désactivable par la
- * gestion SSE seulement) ; les métadonnées du fichier la portent toujours. Aucun rendu n'imite un document officiel réel sans
- * cette mention.
+ * Règle de fond : aucun logo, emblème, sceau ni nom d'organisation, de police ou de gouvernement réels (service émetteur du
+ * catalogue de la communauté). Le document ne porte aucune mention de jeu : ni filigrane, ni ligne de pied, ni avertissement.
  *
  * Le gabarit ne reçoit que des données DÉJÀ caviardées au niveau de diffusion (SseSheetFactsService::mask) et des textes déjà
  * assainis (SseSheetText::clean) : il n'interprète jamais de HTML saisi.
@@ -77,7 +75,7 @@ final class SseSheetPdf
         'control_no' => ['N° de contrôle', 'Control no.'], 'no_data' => ['Aucune donnée', 'No data'], 'photo' => ['Photo', 'Photo'],
         'source' => ['Source et fiabilité', 'Source and reliability'], 'reliab' => ['Fiabilité de la source', 'Source reliability'], 'cred' => ['Crédibilité de l’information', 'Information credibility'],
         'classified_by' => ['Classifié par', 'Classified by'], 'derived' => ['Dérivé de', 'Derived from'], 'declass' => ['Déclassification', 'Declassify on'],
-        'sources_multi' => ['Sources multiples', 'Multiple sources'], 'declass_na' => ['Sans objet (fiction)', 'N/A (fiction)'],
+        'sources_multi' => ['Sources multiples', 'Multiple sources'], 'declass_na' => ['Sans objet', 'N/A'],
     ];
 
     /** Fiabilité de la source (A à F) et crédibilité de l'information (1 à 6), échelle de l'Amirauté : [fr, en]. */
@@ -90,11 +88,6 @@ final class SseSheetPdf
     private const ARMED = ['yes' => ['Armé et dangereux', 'Armed and dangerous'], 'no' => ['Non armé', 'Not armed'], 'unknown' => ['Inconnu : prudence', 'Unknown: caution']];
 
     private const THREAT = ['low' => [1, ['Faible', 'Low']], 'medium' => [2, ['Moyen', 'Medium']], 'high' => [3, ['Élevé', 'High']], 'critical' => [4, ['Critique', 'Critical']]];
-
-    private const DISCLAIMER = [
-        'Cette fiche est un accessoire de jeu de rôle : les personnes, l’autorité émettrice et les faits sont imaginaires. Elle n’a aucune valeur en dehors du jeu et ne doit jamais être diffusée à l’extérieur de la communauté.',
-        'This sheet is a role-play prop: the persons, the issuing authority and the facts are fictional. It has no value outside the game and must never be shared outside the community.',
-    ];
 
     private string $sans = 'freesans';
 
@@ -157,8 +150,7 @@ final class SseSheetPdf
         $pdf->SetCreator('Athena');
         $pdf->SetAuthor($d['authority'][$this->lang]);
         $pdf->SetTitle($d['title'][$this->lang] . ' ' . $d['ref']);
-        $pdf->SetSubject(self::fiction(0) . ' / ' . self::fiction(1) . ' — ' . SseUsClassification::banner($this->level()));
-        $pdf->SetKeywords('fiction, jeu de rôle, role-play, Arma 3');
+        $pdf->SetSubject(SseUsClassification::banner($this->level()));
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
         $pdf->SetMargins(self::MARGIN, self::MARGIN, self::MARGIN);
@@ -199,7 +191,6 @@ final class SseSheetPdf
         ++$this->pages;
         $pdf = $this->pdf;
         $pdf->AddPage();
-        $this->watermark();
         $this->band(true);
         $pdf->SetFont($this->sans, 'B', 8.5);
         $pdf->SetTextColor(...self::INK);
@@ -235,9 +226,8 @@ final class SseSheetPdf
         $d = $this->d;
         $pdf = $this->pdf;
         $l = self::MARGIN;
-        $this->watermark();
         $this->band(true);
-        // Service émetteur (fictif) : emblème vectoriel générique, nom entier (réduit pour tenir sur la ligne, jamais coupé).
+        // Service émetteur : emblème vectoriel générique, nom entier (réduit pour tenir sur la ligne, jamais coupé).
         $this->emblem($l, 9.6, 13.0);
         $nameW = 124.0;
         $name = mb_strtoupper($d['authority'][$this->lang], 'UTF-8');
@@ -248,15 +238,12 @@ final class SseSheetPdf
             $pdf->SetFont($this->sans, 'B', $size);
         }
         $pdf->SetTextColor(...self::INK);
-        $pdf->SetXY($l + 16.0, 10.4);
+        $pdf->SetXY($l + 16.0, 11.6);
         $pdf->Cell($nameW, 5.0, $name, 0, 1, 'L');
         $pdf->SetFont($this->sans, '', 7.8);
         $pdf->SetTextColor(...self::MUTED);
-        $pdf->SetXY($l + 16.0, 16.0);
+        $pdf->SetXY($l + 16.0, 17.2);
         $pdf->Cell($nameW, 4.0, $d['service'] !== '' ? $this->t('issuer')[$this->lang] . ' : ' . $d['service'] : $d['authority'][1 - $this->lang], 0, 1, 'L');
-        $pdf->SetXY($l + 16.0, 20.0);
-        $pdf->SetFont($this->sans, 'I', 6.6);
-        $pdf->Cell($nameW, 3.2, self::fiction($this->lang), 0, 0, 'L');
         // Numéro de contrôle et groupe date-heure.
         $x = 148.0;
         $pdf->SetDrawColor(...self::INK);
@@ -828,15 +815,15 @@ final class SseSheetPdf
         $this->y = max($this->y + 5.0, $pdf->GetY()) + 3.0;
     }
 
-    /** Bloc de la dernière page : autorité de classification et avertissement de jeu (compact, sans page dédiée). */
+    /** Bloc de la dernière page : autorité de classification (compact, sans page dédiée). */
     private function about(): void
     {
         $pdf = $this->pdf;
         $pdf->setPage($this->pages);
         $d = $this->d;
-        $need = 24.0;
+        $need = 13.0;
         if (self::BOTTOM - $this->y < $need) {
-            // Pas de page de plus pour ce bloc, sauf si deux pages sont demandées : la mention de jeu reste au pied de chaque page.
+            // Pas de page de plus pour ce bloc, sauf si deux pages sont demandées.
             if (!($d['faces'] === '2' && $this->pages === 1 && $this->newPage())) {
                 return;
             }
@@ -847,11 +834,7 @@ final class SseSheetPdf
             [$this->t('derived'), $this->t('sources_multi')[$this->lang]],
             [$this->t('declass'), $this->t('declass_na')[$this->lang]],
         ], self::MARGIN, $y, self::CONTENT_W, 3);
-        $pdf->SetFont($this->sans, 'I', 7.4);
-        $pdf->SetTextColor(...self::MUTED);
-        $pdf->SetXY(self::MARGIN, $y + 0.8);
-        $pdf->MultiCell(self::CONTENT_W, 3.5, self::DISCLAIMER[$this->lang], 0, 'L', false, 1, null, null, true, 0, false, true, 11.0, 'T', true);
-        $this->y = $pdf->GetY() + 2.0;
+        $this->y = $y + 2.0;
     }
 
     /**
@@ -933,17 +916,10 @@ final class SseSheetPdf
         $pdf->SetTextColor(...self::MUTED);
         $pdf->SetXY($l, 282.4);
         $pdf->Cell(42.0, 3.0, (string) $d['ref'], 0, 0, 'L');
-        if ($d['footer']) {
-            $pdf->SetFont($this->sans, '', 7.2);
-            $pdf->SetXY(60.0, 275.0);
-            $pdf->Cell(90.0, 3.6, self::fiction($this->lang), 0, 1, 'C');
-            $pdf->SetFont($this->sans, 'I', 6.4);
-            $pdf->SetXY(60.0, 278.8);
-            $pdf->Cell(90.0, 3.2, self::fiction(1 - $this->lang), 0, 0, 'C');
-        }
+        // Colonne centrale : la seule mention de diffusion, centrée entre le filet et le bandeau de classification.
         $pdf->SetFont(AthenaPdfTheme::mono(), 'B', 7.0);
         $pdf->SetTextColor(...self::INK);
-        $pdf->SetXY(60.0, 283.0);
+        $pdf->SetXY(60.0, 278.4);
         $pdf->Cell(90.0, 3.4, implode(' · ', SseUsClassification::dissemination($this->level())), 0, 0, 'C');
         $pdf->SetFont($this->sans, 'B', 7.6);
         $pdf->SetXY(150.0, 275.0);
@@ -987,28 +963,6 @@ final class SseSheetPdf
     private function level(): string
     {
         return SseUsClassification::normalize((string) ($this->d['level'] ?? ''));
-    }
-
-    private function watermark(): void
-    {
-        if (!$this->d['watermark']) {
-            return;
-        }
-        $pdf = $this->pdf;
-        $pdf->StartTransform();
-        $pdf->SetAlpha(0.05);
-        $pdf->SetTextColor(...self::MUTED);
-        $pdf->SetFont($this->sans, 'B', 62);
-        $text = 'FICTION - RP';
-        $pdf->Rotate(38, 105.0, 160.0);
-        $pdf->Text(105.0 - $pdf->GetStringWidth($text) / 2, 152.0, $text);
-        $pdf->SetAlpha(1.0);
-        $pdf->StopTransform();
-    }
-
-    private static function fiction(int $lang): string
-    {
-        return $lang === 1 ? 'Fictional document — Arma 3 role-play' : 'Document de fiction — jeu de rôle Arma 3';
     }
 
     private function emblem(float $x, float $y, float $size): void

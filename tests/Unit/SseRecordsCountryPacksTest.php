@@ -115,7 +115,7 @@ final class SseRecordsCountryPacksTest extends TestCase
         self::assertSame('FPR', $fr['system']);
         self::assertSame(['FPR', 'TAJ', 'FNPC', 'SIV', 'FOVeS'], array_keys($fr['systems']));
         self::assertSame('NÉANT', $fr['no_record']);
-        self::assertSame('FICHE S (FICTIVE)', $fr['status']['watchlist']);
+        self::assertSame('FICHE S', $fr['status']['watchlist']);
     }
 
     public function testDateFormatsByCountry(): void

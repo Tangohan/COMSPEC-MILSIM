@@ -76,7 +76,7 @@ private _noRecord = createHashMapFromArray [
 
 private _rows = [];
 _rows pushBack ["strip",
-    format ["<t font='EtelkaMonospaceProBold'>%1</t>", ("FICHIERS · SIMULATION" call _tr) call _esc],
+    format ["<t font='EtelkaMonospaceProBold'>%1</t>", ("FICHIERS" call _tr) call _esc],
     format ["<t font='EtelkaMonospacePro'>%1 · %2</t>", (["FICHIER LOCAL", "LOCAL + ATHENA"] select _online) call _tr, [dayTime, "HH:MM"] call BIS_fnc_timeToString],
     [0.071, 0.09, 0.114, 1]];
 _rows pushBack ["segment", "", [
@@ -234,6 +234,5 @@ if ((count _res) > 0 && {_pending isEqualTo ""} && {_scan isEqualTo ""}) then {
         _btns pushBack ["Recherchés" call _tr, ["wanted"] call _act, false, true, "App Recherchés : avis de recherche de la communauté."];
     };
     if (_btns isNotEqualTo []) then { _rows pushBack ["buttons", _btns]; };
-    _rows pushBack ["text", format ["<t size='0.75' color='#5b6673'>%1</t>", ("Simulation : données fictives du registre de la communauté et de la mission." call _tr) call _esc]];
 };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;

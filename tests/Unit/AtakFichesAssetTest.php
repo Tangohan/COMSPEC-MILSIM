@@ -179,10 +179,12 @@ final class AtakFichesAssetTest extends TestCase
     public function testTheScreenHasWhatTheRequestAsks(): void
     {
         $page = self::read(self::MAIN . 'functions/fiches/fn_pageFiches.sqf');
-        foreach (['Motif', 'Mesures à prendre', 'Dernier lieu connu', 'Zone', 'ARMÉ ET DANGEREUX', 'PARTAGER', 'ACTUALISER', 'Document de fiction', '"banner"', '"strip"',
+        foreach (['Motif', 'Mesures à prendre', 'Dernier lieu connu', 'Zone', 'ARMÉ ET DANGEREUX', 'PARTAGER', 'ACTUALISER', 'Les fiches viennent du portail Athena', '"banner"', '"strip"',
             'UNCLASSIFIED', 'SECRET', 'Véhicules', 'Adresses', 'Personnes liées', 'Aucune fiche pour l\'instant', 'fichesScale', 'fichesCompact', 'il y a %1 min'] as $needle) {
             self::assertStringContainsString($needle, $page, $needle);
         }
+        // Aucune mention de jeu sur les fiches affichées en jeu.
+        self::assertNull(\App\Support\SseFictionMentions::find($page), 'mention de jeu dans l’app Fiches');
         // Filtres : genre, menace, type, zone.
         foreach (['fichesF_type', 'fichesF_threat', 'fichesF_zone'] as $key) {
             self::assertStringContainsString($key, $page);

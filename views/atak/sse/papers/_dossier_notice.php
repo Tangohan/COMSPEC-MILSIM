@@ -179,7 +179,7 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
                     <button class="btn" type="submit">Télécharger la notice PDF</button>
                     <button class="btn btn--ghost" type="submit" name="mode" value="impression" formtarget="_blank">Imprimer</button>
                 </form>
-                <p class="muted">Accessoire de jeu de rôle : l’autorité émettrice est fictive et chaque page porte la mention « Document de fiction — jeu de rôle Arma 3 ». À ne jamais diffuser hors de la communauté.</p>
+                <p class="muted">À ne jamais diffuser hors de la communauté.</p>
             <?php endif; ?>
             <?php if ($canWanted): ?>
                 <div class="ws-manage" data-ws-manage>
