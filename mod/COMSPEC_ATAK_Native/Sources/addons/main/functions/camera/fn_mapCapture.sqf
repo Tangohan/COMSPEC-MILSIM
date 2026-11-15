@@ -221,8 +221,9 @@ private _sync = {
         true
     };
     if (canSuspend) exitWith { call _body };
-    // Bouton / module hors contexte suspendable : relevé complet en spawn (canSuspend).
-    [] spawn _body;
+    // Bouton / module hors contexte suspendable : la fonction est relancée en spawn (canSuspend), comme fn_shotDir « check ».
+    // Un « spawn _body » ne voyait pas les variables locales du fichier (_progAll, _landCount, _stamp) : le relevé échouait.
+    ["sync"] spawn comspec_atak_native_fnc_mapCapture;
     true
 };
 private _progText = {

@@ -36,7 +36,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ProfSet", {
     profileNamespace setVariable [_var, _val];
     [] call comspec_atak_native_fnc_saveProfile;
     // Modèle : la liste déroulante CBA (comspec_atak_native_phone_model) suit le choix fait dans le téléphone.
-    if (_var isEqualTo "COMSPEC_ATAK_PhoneModel") then { ["comspec_atak_native_phone_model", _val, false, "client"] call CBA_settings_fnc_set; };
+    if (_var isEqualTo "COMSPEC_ATAK_PhoneModel") then { ["comspec_atak_native_phone_model", _val] call comspec_atak_native_fnc_setSetting; };
     // Réglages lus au prochain dessin, sans effet sur la page ni sur la mise en page : le bouton change sur place.
     if (_var in ["COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_SelfIcon", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_PhotoRelief", "COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_MapDrawStyle", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_Wallpaper"]
         && {["seg_" + _var, _val] call comspec_atak_native_fnc_formSet}) exitWith {};
@@ -54,7 +54,8 @@ private _profSegment = {
 uiNamespace setVariable ["COMSPEC_ATAK_CbaToggle", {
     params ["_k"];
     private _new = !(missionNamespace getVariable [_k, false]);
-    [_k, _new, false, "client"] call CBA_settings_fnc_set;
+    // fn_setSetting : gardé dans le profil CBA comme un changement fait dans le menu CBA, écriture du profil regroupée.
+    [_k, _new] call comspec_atak_native_fnc_setSetting;
     // Étiquettes de la carte (lues au dessin de la carte) : l'interrupteur change sur place, la page n'est pas redessinée.
     if ((_k select [0, 29]) isEqualTo "comspec_atak_native_map_show_" && {["cba_" + _k, _new] call comspec_atak_native_fnc_formSet}) exitWith {};
     [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
@@ -81,7 +82,7 @@ private _cbaSwitch = {
 // Choix exclusif enregistré en réglage CBA côté joueur (étiquettes de la carte) : le même que dans le menu CBA.
 uiNamespace setVariable ["COMSPEC_ATAK_CbaSet", {
     params ["_k", "_v"];
-    [_k, _v, false, "client"] call CBA_settings_fnc_set;
+    [_k, _v] call comspec_atak_native_fnc_setSetting;
     // Styles des noms de la carte : lus au dessin, le bouton change sur place.
     if (["cseg_" + _k, _v] call comspec_atak_native_fnc_formSet) exitWith {};
     [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
@@ -178,7 +179,7 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     // Police : réglage CBA comspec_atak_native_font (aussi dans Options des addons > COMSPEC).
     ["segment", "Police", [["ROBOTO", "roboto"], ["PURISTA", "purista"]] apply {
         _x params ["_t", "_v"];
-        [_t, compile format ["['comspec_atak_native_font', '%1', false, 'client'] call CBA_settings_fnc_set;", _v], _v isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_FontFam", "roboto"])]
+        [_t, compile format ["['comspec_atak_native_font', '%1'] call comspec_atak_native_fnc_setSetting;", _v], _v isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_FontFam", "roboto"])]
     }, "Police de tout le téléphone : Roboto Condensed par défaut, ou Purista"],
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
     ["COMSPEC_ATAK_IconStyle", "real", "Style des icônes", [["RÉALISTES", "real"], ["PLATES", "flat"]], "RÉALISTES : icônes colorées aux coins arrondis posées sur le fond d'écran, comme un vrai téléphone. PLATES : tuiles d'avant"] call _profSegment,
@@ -287,7 +288,7 @@ _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
 // Taille du plein écran : réglage CBA par joueur (comspec_atak_native_full_scale), le même que dans le menu CBA.
 uiNamespace setVariable ["COMSPEC_ATAK_SetFullScale", {
     params ["_v"];
-    ["comspec_atak_native_full_scale", _v, false, "client"] call CBA_settings_fnc_set;
+    ["comspec_atak_native_full_scale", _v] call comspec_atak_native_fnc_setSetting;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _fullNow = missionNamespace getVariable ["comspec_atak_native_full_scale", 1];
@@ -315,7 +316,8 @@ private _map = [
     ["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Coordonnées des marqueurs", "Nom et coordonnées sous le marqueur, en zoom rapproché"] call _profSwitch,
     ["comspec_atak_native_map_marker_style", "plate", "Noms des marqueurs", [["PLAQUE", "plate"], ["PILULE", "pill"], ["CARTOUCHE", "card"], ["CONTOUR", "outline"], ["CLASSIQUE", "classic"]], "Marqueurs et cibles verrouillées (LOCK) : plaque, pilule, étiquette reliée avec distance et azimut, texte avec contour ou texte Arma d'origine"] call _cbaSegment,
     ["comspec_atak_native_map_place_style", "tactical", "Noms des lieux", [["TACTIQUE", "tactical"], ["ÉTIQUETTE", "tag"], ["DISCRET", "quiet"], ["CLASSIQUE", "classic"], ["CAPITALES", "small"]], "Villes, villages, lieux-dits et sites : majuscules avec contour, étiquette sombre, petit texte clair, couleurs de la carte Arma ou petites capitales avec un point turquoise (TACTIQUE s'affiche ainsi sur le fond ARDOISE)"] call _cbaSegment,
-    ["comspec_atak_native_map_pinned_app", "none", "App épinglée sur la carte", [["AUCUNE", "none"], ["MESSAGES", "CHAT"], ["SMS", "SMS"], ["ORDRES", "TASK"]], "Un bandeau de la taille de celui des coordonnées, à sa droite : non lus et dernier message ou ordre. Un toucher ouvre l'app (aussi dans les options CBA, ATAK · Affichage)"] call _cbaSegment,
+    // Apps épinglées sur la carte : la même ligne de boutons à bascule que le panneau SITUATION (trois réglages CBA, ATAK · Affichage).
+    (["rows"] call comspec_atak_native_fnc_mapPinnedApp) select 0,
     ["COMSPEC_ATAK_MapDrawStyle", "TACTICAL", "Marqueurs et traits", [["AUTO", "AUTO"], ["TACTIQUE", "TACTICAL"], ["CLASSIQUE", "STANDARD"]], "TACTIQUE : pions ronds avec lettre d'équipe, petites plaques à chasse fixe, routes orange épaisses, zones hachurées, mesure en tirets verts, cercle fin autour des marqueurs nommés. STANDARD : symboles OTAN et style choisi ci-dessus. AUTO : TACTIQUE sur le fond ARDOISE, STANDARD sur les autres"] call _profSegment,
     ["comspec_atak_native_map_show_marker_text", "", "Afficher les noms des marqueurs", "Les icônes restent, seul le texte disparaît (aussi dans CALQUES)", true] call _cbaSwitch,
     ["comspec_atak_native_map_show_cities", "", "Afficher les villes", "", true] call _cbaSwitch,
@@ -717,14 +719,14 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
 private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "en"];
 private _langs = [] call comspec_atak_native_fnc_langList;
 private _langBtns = [
-    ["ENGLISH", { ["comspec_atak_native_language", "en", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "en"],
-    ["FRANÇAIS", { ["comspec_atak_native_language", "fr", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "fr"]
+    ["ENGLISH", { ["comspec_atak_native_language", "en"] call comspec_atak_native_fnc_setSetting; }, _langSet isEqualTo "en"],
+    ["FRANÇAIS", { ["comspec_atak_native_language", "fr"] call comspec_atak_native_fnc_setSetting; }, _langSet isEqualTo "fr"]
 ];
 {
     _x params ["_code", "_name"];
-    _langBtns pushBack [toUpper _name, compile format ["['comspec_atak_native_language', '%1', 0, 'client'] call CBA_settings_fnc_set;", _code], _langSet isEqualTo _code];
+    _langBtns pushBack [toUpper _name, compile format ["['comspec_atak_native_language', '%1'] call comspec_atak_native_fnc_setSetting;", _code], _langSet isEqualTo _code];
 } forEach (_langs select { (_x select 0) isNotEqualTo "en" });
-_langBtns pushBack ["AUTO", { ["comspec_atak_native_language", "auto", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "auto"];
+_langBtns pushBack ["AUTO", { ["comspec_atak_native_language", "auto"] call comspec_atak_native_fnc_setSetting; }, _langSet isEqualTo "auto"];
 // Quatre boutons par ligne au plus (plusieurs mods de traduction chargés) : lignes suivantes sans libellé.
 private _lang = [["section", "Langue / Language", "Langue du téléphone / Phone language"]];
 for "_i" from 0 to ((count _langBtns) - 1) step 4 do {

@@ -100,7 +100,8 @@ if (_ck isNotEqualTo _key) then {
     };
     _th set ["name", _theme];
     _th set ["dark", _dark];
-    // Barres système (état, app, dock, rail) : toujours sombres, les icônes blanches de fn_statusUpdate y restent lisibles.
+    // Barres système (état, app, dock, rail) : toujours sombres ; textes (fn_layoutApply) et icônes (fn_statusUpdate) y
+    // prennent onChrome, onChromeDim et les encres « map… » : claires en sombre et en jour, vertes en nuit JVN.
     _th set ["chrome", [[0.025, 0.030, 0.027, 1], [0, 0, 0, 1]] select (_theme isEqualTo "NVG")];
     _th set ["onChrome", [[0.90, 0.94, 0.91, 1], [0.52, 0.88, 0.58, 1]] select (_theme isEqualTo "NVG")];
     // Bandeaux posés sur les barres (toast de notification, bulle en bas) : un cran plus clair que la barre.

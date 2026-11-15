@@ -187,14 +187,15 @@ switch (_act) do {
                     format ["%1 Mbit/s · portée %2 · à %3", _mb toFixed 1, [_r] call _dist, [player distance2D _ap] call _dist],
                     ["Réparez-le ou rallumez-le : tout ce qui passait par lui est coupé.", ""] select _ok];
                 private _lvl = { ["ko", "warn", "ok"] select _this };
-                _rows append [
+                // Parenthèses : « append » et « apply » ont la même priorité, sans elles les niveaux restaient en nombre (pastilles grises).
+                _rows append ([
                     ["check", [0, 2] select _ok, "Alimentation", [[format ["batterie %1 %%", round _bt], "sur secteur"] select (_bt < 0), "éteint"] select (!(_o getVariable ["COMSPEC_AtakRelayOn", true]))],
                     ["check", [0, 1, 2] select (([0, 1] select (_hp > 30)) + ([0, 1] select (_hp > 75))), "Structure", format ["%1 %%", _hp]],
                     ["check", [1, 2] select (_sl <= 0 || {_u < _sl}), "Charge", [format ["%1 téléphone(s), sans limite", _u], format ["%1 / %2 places", _u, _sl]] select (_sl > 0)],
                     ["check", [0, 1, 2] select (([0, 1] select (_loss < 40)) + ([0, 1] select (_loss < 10))), "Qualité", format ["perte %1 %% · %2 ms", _loss, _lat]],
                     ["check", [1, 2] select (_co <= 0), "Canal", format ["%1 MHz%2%3", _fq, ["", " (auto)"] select _auto, ["", format [" · %1 relais sur le même canal", _co]] select (_co > 0)]],
                     ["check", [0, 2] select (_root || {_hopsR >= 0}), "Liaison", [["répéteur sans relais raccordé en vue", format ["répéteur, %1 bond(s) jusqu'au relais raccordé", _hopsR]] select (_hopsR >= 0), "raccordé (satellite ou fibre)"] select _root]
-                ] apply { [_x select 0, (_x select 1) call _lvl, _x select 2, _x select 3] };
+                ] apply { [_x select 0, (_x select 1) call _lvl, _x select 2, _x select 3] });
                 _rows pushBack ["buttons", [["VOIR SUR LA CARTE", { profileNamespace setVariable ["COMSPEC_ATAK_RelaysLayer", true]; ["MAP"] call comspec_atak_native_fnc_navigate; }], ["PRÉFÉRER CE RELAIS", { ["pin", uiNamespace getVariable ["COMSPEC_ATAK_WrRelay", objNull]] call comspec_atak_native_fnc_relayNet; }]]];
                 if (call _isAdmin) then {
                     _rows pushBack ["section", "Gestion (Zeus et admin)", "Pour le déplacer : faites-le glisser dans Zeus."];

@@ -37,13 +37,16 @@ private _put = {
     _c setVariable [_k, _v];
     switch (_k) do { case "cs_t": { _c ctrlSetText ((_v) call comspec_atak_native_fnc_tr); }; case "cs_tt": { _c ctrlSetTooltip ((_v) call comspec_atak_native_fnc_tr); }; default { _c ctrlSetTextColor _v; }; };
 };
+// Encres des icônes : jetons des barres système (fn_theme, toujours sombres), les mêmes que les textes posés par
+// fn_layoutApply. Des valeurs fixes laissaient des icônes blanches et orange vif en nuit JVN.
+private _th = COMSPEC_ATAK_Th;
 private _sigT = ((_dir + format ["sig_%1.paa", _bars])) call comspec_atak_native_fnc_tr;
-private _sigC = switch (true) do { case (_bars >= 3): { [0.36, 0.78, 0.42, 1] }; case (_bars >= 1): { [0.95, 0.67, 0.20, 1] }; default { [0.88, 0.25, 0.22, 1] }; };
+private _sigC = switch (true) do { case (_bars >= 3): { _th get "mapOk" }; case (_bars >= 1): { _th get "mapWarn" }; default { _th get "mapAlert" }; };
 private _sigTt = (format ["%1 · %2 · %3 kbit/s · %4 ms · perte %5 %%", switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Athena hors ligne" }; }, _lq get "label", _lq get "kbps", _lq get "latency", _lq get "loss"]) call comspec_atak_native_fnc_tr;
 // Mode avion : icône d'avion à la place des barres.
 if (_lq getOrDefault ["airplane", false]) then {
     _sigT = ("\a3\ui_f\data\map\vehicleicons\iconplane_ca.paa") call comspec_atak_native_fnc_tr;
-    _sigC = [0.95, 0.67, 0.20, 1];
+    _sigC = _th get "mapWarn";
     _sigTt = ("Mode avion : réseau coupé (Bluetooth disponible)") call comspec_atak_native_fnc_tr;
 };
 // Type de liaison (fn_linkQuality "net") : SAT sans relais en bleu ; libellé à gauche de la barre (fn_layoutApply).
@@ -73,7 +76,7 @@ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefaul
 private _bat = [] call comspec_atak_native_fnc_battery;
 private _batCtrl = _d displayCtrl 88512;
 [_batCtrl, "cs_t", ((_dir + format ["bat_%1.paa", switch (true) do { case (_bat > 80): { 100 }; case (_bat > 55): { 75 }; case (_bat > 30): { 50 }; case (_bat > 12): { 25 }; default { 10 }; }])) call comspec_atak_native_fnc_tr] call _put;
-[_batCtrl, "cs_c", [[0.90, 0.94, 0.91, 1], [0.88, 0.25, 0.22, 1]] select (_bat <= 12)] call _put;
+[_batCtrl, "cs_c", [_th get "onChrome", _th get "mapAlert"] select (_bat <= 12)] call _put;
 [_d displayCtrl 88513, "cs_t", (((str floor _bat) + "%")) call comspec_atak_native_fnc_tr] call _put;
 // Mémoire vive simulée (fn_ramUsage) : pastille de la barre d'état, détail en info-bulle.
 private _ram = [] call comspec_atak_native_fnc_ramUsage;
@@ -81,7 +84,7 @@ private _ramCtrl = uiNamespace getVariable ["COMSPEC_ATAK_RamCtrl", controlNull]
 if (!isNull _ramCtrl) then {
     private _pct = _ram get "pct";
     [_ramCtrl, "cs_t", (("RAM " + (str _pct) + "%")) call comspec_atak_native_fnc_tr] call _put;
-    [_ramCtrl, "cs_c", switch (true) do { case (_pct >= 90): { [0.88, 0.25, 0.22, 1] }; case (_pct >= 75): { [0.95, 0.67, 0.20, 1] }; default { [0.62, 0.70, 0.66, 1] }; }] call _put;
+    [_ramCtrl, "cs_c", switch (true) do { case (_pct >= 90): { _th get "mapAlert" }; case (_pct >= 75): { _th get "mapWarn" }; default { _th get "onChromeDim" }; }] call _put;
     [_ramCtrl, "cs_tt", (format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire · estimation du téléphone, pas la mémoire du PC", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr] call _put;
 };
 
@@ -128,7 +131,7 @@ if (!isNull _mpuCtrl) then {
 // Cloche : orange tant qu'il reste des notifications non lues. Logo COMSPEC Link : affiché quand la liaison est établie.
 private _unread = _state getOrDefault ["notifUnread", 0];
 private _bell = _d displayCtrl 88548;
-[_bell, "cs_c", [[0.90, 0.94, 0.91, 1], [0.95, 0.67, 0.20, 1]] select (_unread > 0)] call _put;
+[_bell, "cs_c", [_th get "onChrome", _th get "mapWarn"] select (_unread > 0)] call _put;
 [_bell, "cs_tt", ((["Centre de notifications", format ["Centre de notifications : %1 non lue(s)", _unread]] select (_unread > 0))) call comspec_atak_native_fnc_tr] call _put;
 private _linkOk = if ([] call comspec_atak_native_fnc_bridge) then {
     _net isEqualTo "CONNECTED" && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}
@@ -147,7 +150,7 @@ if ((count _comp) > 0) then {
     [_logo, "cs_tt", (format ["COMSPEC Link : terminal %1, liaison de données coupée (%2)", ["compromis", "capturé"] select ((_comp getOrDefault ["state", ""]) isEqualTo "captured"), ["origine manuelle", "origine automatique"] select ((_comp getOrDefault ["origin", ""]) isEqualTo "auto")]) call comspec_atak_native_fnc_tr] call _put;
 } else {
     if ((ctrlShown _logo) isNotEqualTo _linkOk) then { _logo ctrlShow _linkOk; };
-    [_logo, "cs_c", [0.36, 0.78, 0.42, 1]] call _put;
+    [_logo, "cs_c", _th get "mapOk"] call _put;
     [_logo, "cs_tt", ("COMSPEC Link connecté") call comspec_atak_native_fnc_tr] call _put;
 };
 

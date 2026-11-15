@@ -496,18 +496,20 @@ switch (_act) do {
     };
     case "cardText": {
         private _ok = (_hit getOrDefault ["status", ""]) in ["OK", "SOS"];
-        private _col = ["#9aa39e", [(COMSPEC_ATAK_Th get "hexOk"), (COMSPEC_ATAK_Th get "hexWarn")] select ((_hit getOrDefault ["status", ""]) isEqualTo "SOS")] select _ok;
+        // Fiche posée sur la carte, toujours sombre : encres des calques de la carte (fn_theme), dans les trois thèmes.
+        private _col = [COMSPEC_ATAK_Th get "hexMapDim", [(COMSPEC_ATAK_Th get "hexMapOk"), (COMSPEC_ATAK_Th get "hexMapWarn")] select ((_hit getOrDefault ["status", ""]) isEqualTo "SOS")] select _ok;
         private _age = if ((_hit getOrDefault ["t", -1]) < 0) then { "jamais" } else {
             private _a = round (time - (_hit get "t"));
             format ["%1 (il y a %2)", _hit get "hour", [format ["%1 s", _a], format ["%1 min", floor (_a / 60)]] select (_a >= 120)]
         };
         private _p = _hit getOrDefault ["pos", []];
-        _ret = format ["<t font='COMSPEC_BarlowBold' color='#e9a53a'>%1</t> <t font='EtelkaMonospacePro' size='0.9'>%2</t>  <t size='0.85' color='%3'>%4</t><br/><t size='0.85'>Propriétaire : %5</t><br/><t size='0.85' color='#cfd8d3'>Vu à %6 · ± %7 m%8</t>",
+        _ret = format ["<t font='COMSPEC_BarlowBold' color='%9'>%1</t> <t font='EtelkaMonospacePro' size='0.9'>%2</t>  <t size='0.85' color='%3'>%4</t><br/><t size='0.85'>Propriétaire : %5</t><br/><t size='0.85' color='%10'>Vu à %6 · ± %7 m%8</t>",
             _hit getOrDefault ["sub", ""], _hit getOrDefault ["q", ""], _col,
             [_hit getOrDefault ["why", ""], ["Suivi actif", "Localisé"] select !(_hit getOrDefault ["follow", false])] select (_ok && {(_hit getOrDefault ["status", ""]) isEqualTo "OK"}),
             [_hit get "owner", "Inconnu"] select ((_hit getOrDefault ["owner", ""]) isEqualTo ""),
             _age, _hit getOrDefault ["rad", 0],
-            ["", format [" · %1", [_p, 8] call comspec_atak_native_fnc_gridRef]] select ((count _p) >= 2)];
+            ["", format [" · %1", [_p, 8] call comspec_atak_native_fnc_gridRef]] select ((count _p) >= 2),
+            COMSPEC_ATAK_Th get "hexMapWarn", COMSPEC_ATAK_Th get "hexMapText"];
     };
     case "known": { _ret = [_arg] call _known; };
     case "panel": {
@@ -538,7 +540,7 @@ switch (_act) do {
             ["combo", "mapSearchList", "Choisir (autocomplétion)", [["Identifiants connus", ""]], ""],
             ["buttons", [["LOCALISER", { ["go"] call comspec_atak_native_fnc_mapSearch; }, true], ["FERMER", { ["close"] call comspec_atak_native_fnc_mapSearch; }]]]
         ];
-        if ((count _msg) > 0) then { _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", ["#e9a53a", (COMSPEC_ATAK_Th get "hexOk")] select (_msg param [1, false]), _msg select 0]]; };
+        if ((count _msg) > 0) then { _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexOk")] select (_msg param [1, false]), _msg select 0]]; };
         _rows pushBack ["text", format ["<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _rule]];
         [_rows, [_px, _py, _pw, _ph], false, ((COMSPEC_ATAK_Th get "bg1") select [0, 3]) + [0.97]] call comspec_atak_native_fnc_formRender;
         private _f = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];

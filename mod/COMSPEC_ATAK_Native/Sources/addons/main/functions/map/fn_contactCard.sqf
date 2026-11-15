@@ -104,7 +104,7 @@ if (_stamp isNotEqualTo "") then {
 _txt ctrlSetStructuredText parseText (format ["<t font='COMSPEC_BarlowBold' size='1.15' color='%1'>%2</t>  %3<t size='0.72' color='%4'>%5</t><br/><t font='EtelkaMonospacePro' size='0.82' color='%6'>%7 · %8</t>%9",
     _th get "hexMapText", _name call _esc, _affTxt, _kindCol, _kindTxt, _th get "hexMapDim",
     [_mp, 8] call comspec_atak_native_fnc_gridRef, ["dist", _dd, player getDir _mp] call comspec_atak_native_fnc_mapFmt,
-    _l3 + (["", format ["<br/><t size='0.85' color='%1'>%2</t>", _th get "hexMapText", (_note call _esc) select [0, 90]]] select (_note isNotEqualTo ""))]); // i18n:brut
+    _l3 + (["", format ["<br/><t size='0.85' color='%1'>%2</t>", _th get "hexMapText", ["cut", _note call _esc, 90] call comspec_atak_native_fnc_mapFmt]] select (_note isNotEqualTo ""))]); // i18n:brut
 _txt ctrlSetFontHeight _fs;
 
 // Actions : une rangée en bas de la fiche. PARTAGER = ping vers mon camp à cette position.

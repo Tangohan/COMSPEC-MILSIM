@@ -180,6 +180,16 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
     // Ligne sous l'étiquette : même point décalé d'une hauteur de texte à l'écran.
     private _below = { params ["_p", "_k"]; _map ctrlMapScreenToWorld ((_map ctrlMapWorldToScreen _p) vectorAdd [0, 0.024 * _ts * _k]) };
     private _pliR = ["pli"] call comspec_atak_native_fnc_netCond;
+    // Vue en coordonnées du monde, une fois par image (même motif que fn_mapGameMarkers) : l'étiquette d'un relais hors vue
+    // n'est plus composée ni dessinée. Marge large à gauche : le texte part du relais vers la droite et peut entrer dans la vue.
+    // Cercles de portée, traits et pastille restent dessinés pour tous (ils peuvent traverser la vue, relais hors champ).
+    (ctrlPosition _map) params ["_vx", "_vy", "_vw", "_vh"];
+    private _va = _map ctrlMapScreenToWorld [_vx - 1, _vy - 0.08];
+    private _vb = _map ctrlMapScreenToWorld [_vx + _vw + 0.04, _vy + _vh + 0.08];
+    private _vx0 = (_va select 0) min (_vb select 0);
+    private _vx1 = (_va select 0) max (_vb select 0);
+    private _vy0 = (_va select 1) min (_vb select 1);
+    private _vy1 = (_va select 1) max (_vb select 1);
     {
         _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up", "_fq", "", "_loss", "", "_hl", "", "_co"];
         // Relais effacé pendant les 2 s de cache de la liste (Zeus, nettoyage) : position [0,0,0], dessiné à l'origine.
@@ -253,7 +263,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             _map drawLine [_p getPos [_r * 2.2, 45], _p getPos [_r * 2.2, 225], _col];
             _map drawLine [_p getPos [_r * 2.2, 135], _p getPos [_r * 2.2, 315], _col];
         };
-        if (!_txt) then { continue };
+        if (!_txt || {(_p select 0) < _vx0} || {(_p select 0) > _vx1} || {(_p select 1) < _vy0} || {(_p select 1) > _vy1}) then { continue };
         // Étiquette : nom (gras), puis « portée · débit · places » ou la raison de la panne.
         private _lp = _p getPos [_r * 2.4, 90];
         private _l1 = _name + (["", "  " + ("(utilisé)" call comspec_atak_native_fnc_tr)] select _use);

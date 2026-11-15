@@ -20,8 +20,11 @@ final class AtakPinnedAppMapAssetTest extends TestCase
     public function testPinnedAppIsAnOffByDefaultPlayerSetting(): void
     {
         $pre = $this->read(self::MAIN . 'XEH_preInit.sqf');
-        self::assertStringContainsString('["comspec_atak_native_map_pinned_app", "LIST",', $pre);
-        self::assertStringContainsString('["COMSPEC", "ATAK · Affichage"], [["none", "CHAT", "SMS", "TASK"], ["Aucune", "Messages", "SMS", "Ordres"], 0], 0,', $pre);
+        // 4.17.0 : le réglage de la 4.16.0 reste le premier emplacement, la liste s'allonge (mini-apps), « Aucune » reste le défaut.
+        self::assertStringContainsString('["comspec_atak_native_map_pinned_app", "App épinglée sur la carte", ', $pre);
+        self::assertStringContainsString('[_pinVar, "LIST", [_pinTitle, _pinHelp],', $pre);
+        self::assertStringContainsString('["COMSPEC", "ATAK · Affichage"], [["none", "CHAT", "SMS", "TASK", ', $pre);
+        self::assertStringContainsString('"Alertes", "Heure H"], 0], 0,', $pre);
         self::assertStringContainsString('{ ["refresh"] call comspec_atak_native_fnc_mapPinnedApp; }] call comspec_atak_native_fnc_addSetting;', $pre);
     }
 
@@ -62,13 +65,13 @@ final class AtakPinnedAppMapAssetTest extends TestCase
     public function testMapPageBuildsTheBannerAndReservesItsPlace(): void
     {
         $page = $this->read(self::MAIN . 'functions/pages/fn_pageMap.sqf');
-        self::assertStringContainsString('["app"] call comspec_atak_native_fnc_mapPinnedApp', $page);
+        self::assertStringContainsString('["apps"] call comspec_atak_native_fnc_mapPinnedApp', $page);
         self::assertStringContainsString('["build", [_ov, _mk, [_pinX, _pinY, _pinW, _pinH]', $page);
         // Même hauteur que le bandeau des coordonnées, placée à sa droite ; masquée en petit format.
         self::assertStringContainsString('["height", [_panFs, _panIn]] call comspec_atak_native_fnc_mapPinnedApp', $page);
-        self::assertStringContainsString('if (_pinApp isNotEqualTo "" && {!_mini}) then {', $page);
+        self::assertStringContainsString('if ((count _pinApps) > 0 && {!_mini}) then {', $page);
         // Réservée pour les fiches, RECHERCHER, le menu OUTILS et les étiquettes de la carte.
-        self::assertStringContainsString('_panH = _panH max _pinPan;', $page);
+        self::assertStringContainsString('if (!_pinTop) then { _panH = _panH max (_pinOff + _pinH); };', $page);
         self::assertStringContainsString('_hud pushBack [_pinX - _bx, _pinY - _by, _pinX + _pinW - _bx, _pinY + _pinH - _by];', $page);
         // Choix en un toucher depuis le panneau SITUATION.
         self::assertStringContainsString('(["rows"] call comspec_atak_native_fnc_mapPinnedApp)', $page);
@@ -85,7 +88,8 @@ final class AtakPinnedAppMapAssetTest extends TestCase
     public function testSettingIsAlsoInTheMapSettingsPage(): void
     {
         $set = $this->read(self::MAIN . 'functions/pages/fn_pageSettings.sqf');
-        self::assertStringContainsString('["comspec_atak_native_map_pinned_app", "none", "App épinglée sur la carte", [["AUCUNE", "none"], ["MESSAGES", "CHAT"], ["SMS", "SMS"], ["ORDRES", "TASK"]]', $set);
+        // 4.17.0 : la même ligne de boutons à bascule que le panneau SITUATION.
+        self::assertStringContainsString('(["rows"] call comspec_atak_native_fnc_mapPinnedApp) select 0,', $set);
     }
 
     public function testTextsAreTranslatedToEnglish(): void
@@ -98,7 +102,7 @@ final class AtakPinnedAppMapAssetTest extends TestCase
             '["Aucun non lu", "None unread"]',
             '["Aucun SMS", "No SMS"]',
             '["Ouvrir l\'app épinglée", "Open the pinned app"]',
-            '["App épinglée sous le bandeau", "App pinned under the banner"]',
+            '["Apps épinglées sur la carte", "Apps pinned on the map"]',
         ] as $pair) {
             self::assertStringContainsString($pair, $en);
         }
@@ -108,10 +112,9 @@ final class AtakPinnedAppMapAssetTest extends TestCase
 
     public function testVersionAndChangelogs(): void
     {
+        // Version courante : figée par le test de la dernière version (Atak4170WaveAssetTest) ; ici, 4.16.0 au moins.
         $hpp = $this->read(self::MAIN . 'script_component.hpp');
-        self::assertStringContainsString('#define VERSION 4.16.0', $hpp);
-        self::assertStringContainsString('#define VERSION_STR "4.16.0"', $hpp);
-        self::assertStringContainsString('#define VERSION_NAME "4.16.0.AG - Washington"', $hpp);
+        self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(1[6-9]|[2-9]\d)\.\d+"/', $hpp);
 
         $cl = $this->read(self::ROOT . 'CHANGELOG-ATAK.md');
         self::assertStringContainsString('(ATAK natif 4.16.0.AG - Washington)', $cl);
@@ -125,6 +128,6 @@ final class AtakPinnedAppMapAssetTest extends TestCase
         self::assertStringNotContainsString('comspec_atak_native', $summary);
 
         $steam = $this->read(self::ROOT . 'mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.16.0 Washington', $steam);
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.16.0 Washington', $steam);
     }
 }

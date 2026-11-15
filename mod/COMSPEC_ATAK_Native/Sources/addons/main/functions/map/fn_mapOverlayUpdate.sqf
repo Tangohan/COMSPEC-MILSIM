@@ -8,7 +8,10 @@
 params [["_cursorOnly", false], ["_compassOnly", false]];
 disableSerialization;
 private _ov = uiNamespace getVariable ["COMSPEC_ATAK_MapOverlay", createHashMap];
-private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Boussole à chaque image, cap inchangé (moins de 0,2°) : sortie ici, avant de poser les fonctions locales et de lire le
+// bandeau (fn_mapPrefs « band ») qui ne servent à rien dans ce cas. Même test que dans la branche boussole plus bas.
+if (_compassOnly && {(abs ((getDirVisual (vehicle player)) - (_ov getOrDefault ["compassH", -1]))) < 0.2}) exitWith { false };
+private _s =uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Points cardinaux sur 16 directions dans la langue du téléphone (fn_cardinal, même table partout).
 private _cardinal = { [_this select 0, 16] call comspec_atak_native_fnc_cardinal };
 // Textes des cases : seuls les libellés passent par la traduction (fn_tr), jamais le texte entier. Avant, un point
@@ -49,11 +52,11 @@ private _meUpdate = {
         private _inFt = (_ft get "id") isNotEqualTo "";
         // Indicatif tel quel (jamais traduit), raccourci proprement s'il est long.
         private _cs = ([player] call comspec_atak_native_fnc_unitCallsign) regexReplace ["[<>&]", ""];
-        if ((count _cs) > 12) then { _cs = (_cs select [0, 11]) + "…"; };
+        _cs = ["cut", _cs, 12] call comspec_atak_native_fnc_mapFmt;
         _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", _cs, [(COMSPEC_ATAK_Th get "hexMapOk"), _ft get "hex"] select _inFt];
         if (_inFt) then {
             private _fn = (toUpper ((_ft get "name") call comspec_atak_native_fnc_tr)) regexReplace ["[<>&]", ""];
-            if ((count _fn) > 8) then { _fn = _fn select [0, 8]; };
+            _fn = ["cut", _fn, 8] call comspec_atak_native_fnc_mapFmt;
             _l2 = _l2 + format [" <t color='%2'>%1</t>", _fn, _ft get "hex"];
         };
         if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {

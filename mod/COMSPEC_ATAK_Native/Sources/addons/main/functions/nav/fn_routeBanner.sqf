@@ -13,6 +13,6 @@ if (!isNull _g3) then { _g3 ctrlSetText ((format ["\z\comspec_atak_native\addons
 _g1 ctrlSetStructuredText parseText ((format ["<t size='1.25' font='COMSPEC_BarlowBold'>%1</t><br/><t size='1.0'>%2</t>", [_dn] call _fmt, _txt]) call comspec_atak_native_fnc_tr);
 private _arr = dayTime + _eta / 3600;
 // Une seule ligne sous le bandeau (fn_pageMap) : nom de destination raccourci plutôt que renvoyé à la ligne et coupé.
-if ((count _label) > 16) then { _label = (_label select [0, 15]) + "..."; };
-_g2 ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#5cc76b'>%1 min</t><t size='0.85'> · %2 · arrivée %3</t><t size='0.8' color='#8a9a93'>  %4</t>",
-    ceil (_eta / 60), [_left] call _fmt, [_arr mod 24, "HH:MM"] call BIS_fnc_timeToString, _label]) call comspec_atak_native_fnc_tr);
+_label = ["cut", _label, 16] call comspec_atak_native_fnc_mapFmt;
+_g2 ctrlSetStructuredText parseText ((format ["<t size='0.85' color='%5'>%1 min</t><t size='0.85'> · %2 · arrivée %3</t><t size='0.8' color='%6'>  %4</t>",
+    ceil (_eta / 60), [_left] call _fmt, [_arr mod 24, "HH:MM"] call BIS_fnc_timeToString, _label, COMSPEC_ATAK_Th get "hexMapOk", COMSPEC_ATAK_Th get "hexMapDim"]) call comspec_atak_native_fnc_tr);

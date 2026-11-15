@@ -161,8 +161,11 @@ switch (_action) do {
         private _extra = if (_ref9 isEqualTo "") then { "" } else {
             format [',"format":"9line","free":%1,"mission_id":"%2","recipients":[%3]', ["false", "true"] select _free9, [_ref9] call _esc, (_dest9 apply { format ['"%1"', [_x] call _esc] }) joinString ","]
         };
+        // forEach et non apply : seul forEach définit _forEachIndex (sinon neuf fois la même clé, lignes vides sur le site).
+        private _kv = [];
+        { _kv pushBack format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc]; } forEach _lines;
         private _json = format ['{"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"CAS","remarks":"%3","lines":{%4}%5%6}', _mapId, [[[] call _me, _cs9] select (_cs9 isNotEqualTo "")] call _esc, [_rem] call _esc,
-            (_lines apply { format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc] }) joinString ",", ["", format [',"geo":%1', _geo]] select (_geo isNotEqualTo ""), _extra];
+            _kv joinString ",", ["", format [',"geo":%1', _geo]] select (_geo isNotEqualTo ""), _extra];
         private _text = format ["9-LINE %1 | 1 %2 | 2 %3 | 3 %4 | 4 %5 | 5 %6 | 6 %7 | 7 %8 | 8 %9 | 9 %10%11", [] call _me,
             _lines select 0, _lines select 1, _lines select 2, _lines select 3, _lines select 4, _lines select 5, _lines select 6, _lines select 7, _lines select 8,
             ["", format [" | REM %1", _rem]] select (_rem isNotEqualTo "")];
@@ -199,8 +202,10 @@ switch (_action) do {
         if (_bridge && {!_local}) then {
             private _esc = { params ["_s"]; [[[_s, "\", "\\"] call CBA_fnc_replace, """", "\"""] call CBA_fnc_replace, toString [10], " "] call CBA_fnc_replace };
             private _mapId = missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]];
+            private _kv = [];
+            { _kv pushBack format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc]; } forEach _lines;
             private _json = format ['{"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"5LINE","format":"5line","free":true,"mission_id":"B%3%4","remarks":"","lines":{%5},"recipients":[]}',
-                _mapId, [[] call _me] call _esc, getPlayerUID player, round (diag_tickTime * 1000), (_lines apply { format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc] }) joinString ","];
+                _mapId, [[] call _me] call _esc, getPlayerUID player, round (diag_tickTime * 1000), _kv joinString ","];
             [_json] spawn { params ["_json"]; (["COMSPECExtension", "SubmitNineLine", [_json]] call comspec_atak_native_fnc_extAwait); };
         };
         private _log = _f getOrDefault ["log", []];
