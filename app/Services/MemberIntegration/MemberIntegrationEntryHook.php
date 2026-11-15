@@ -15,7 +15,7 @@ use Throwable;
 final class MemberIntegrationEntryHook
 {
     /**
-     * @param array{role_ids?: list<int>, unit_ids?: list<int>} $context
+     * @param array{role_ids?: list<int>, unit_ids?: list<int>, skip_welcome?: bool} $context
      */
     public static function afterAccountReady(
         int $tenantId,
