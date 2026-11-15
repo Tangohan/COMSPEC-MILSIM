@@ -1,6 +1,6 @@
 # ATAK natif : inventaire de ce qui peut être retiré ou fusionné
 
-Date : 2026-11-15. Version de départ : ATAK 4.26.0 (PR livrée en 4.28.0). Ce document est un rapport : rien n'a été supprimé pour l'écrire.
+Date : 2026-11-15. Version de départ : ATAK 4.26.0 (PR livrée en 4.28.0). Ce document est un rapport : rien n'a été supprimé pour l'écrire. Les retraits faits depuis sont listés à la fin (« Retiré le 15/11/2026 »).
 
 ## Méthode
 
@@ -416,3 +416,145 @@ suivis par git ; `mod/UptoDate/@COMSPECOverwatch`, `@COMSPECOverwatch_StableBeta
 3. Décisions de produit : fonds d'écran, regroupements du lanceur, tablette du JPC, intro.
 4. À la prochaine version majeure : fichiers du kit véhicule, événement d'avant la 4.12.0, gardes de `fn_tocWall`.
 5. Chantiers longs : ruines des pylônes, variantes d'usure d'écran, tri du dictionnaire.
+
+## Retiré le 15/11/2026
+
+Décision du propriétaire : retirer ce qui est mort ou en double, **sauf les fonds d'écran du téléphone** (les 13 fonds,
+52 fichiers, restent tous). Aucun changement de version ni de changelog dans ce passage. Tailles en octets (blobs git).
+
+Bilan : ATAK natif 5 276 475 octets retirés (5,28 Mo) ; Overwatch connect 24 492 916 octets retirés et 1 378 462 octets
+de `.paa` ajoutés par conversion, soit 23 114 454 octets nets (23,11 Mo). Total net : 28 390 929 octets (28,39 Mo).
+
+### Méthode de preuve
+
+Pour chaque fichier, recherche du nom sans extension, insensible à la casse, dans tout le dépôt (tous types de fichiers
+texte, donc `.sqf .hpp .cpp .ext .xml .h .cs .json .txt .html .js .php`, missions comprises), hors copies archivées :
+
+```sh
+git grep -I -i -n -F "<nom sans extension>" -- ':!mod/Workshop' ':!docs' ':!mod/UptoDate/@COMSPECOverwatch*' ':!mod/Overwatch 2026'
+```
+
+Le nom sans extension couvre les deux séparateurs (`\` et `/`) et les deux extensions. Chemins construits à l'exécution,
+cherchés à part (aucun résultat pour `connect/img`) :
+
+```sh
+git grep -I -i -n -E 'signal_bars|comspec_battery_|glitch-static|glitch-border|dust-texture|sandpaper|TAKOS|screen_cracked|desktop_bar|window_2' -- mod tools scripts tests .github
+git grep -I -i -n -E '\.(png|jpe?g)' -- mod/UptoDate/Sources/comspec-overwatch-addons
+git grep -I -i -n -E 'jpc_["%]|"jpc_" *\+|logo_%|"logo_"|dirt_%|"dirt_"' -- mod/COMSPEC_ATAK_Native/Sources/addons mod/@COMSPEC_SSE mod/UptoDate/Sources
+git grep -l -i -a -E 'jpc_tablet|logo_soar|dirt_smear|dirt_drop' -- mod ':!mod/Workshop'    # binaires compris (.p3d)
+```
+
+Les résultats sous `public/assets/` et `views/` (site web) pointent les copies du site (`/assets/img/...`), pas les
+fichiers du mod. Aucune page `html`/`js` de `connect/web` ne cite une image de `connect/img`.
+
+### Overwatch connect : `mod/UptoDate/Sources/comspec-overwatch-addons/connect/img`
+
+PNG/JPG en double d'un `.paa` utilisé (Arma n'affiche pas un PNG en texture ; le `.paa` reste) :
+
+| Fichier | Taille | Preuve |
+| --- | --- | --- |
+| `atak-fx/broken-screen.png` | 4 325 058 | Seules citations : repli `.png` de `fn_updateDeviceOverlay.sqf` et `fn_updateAtakEnhancedRoleplay.sqf`, retiré (le `.paa` est là) |
+| `overlays/comspec_overlay_no_signal_ca.png` | 2 918 665 | La macro pointe le `.paa` ; aucune citation du `.png` |
+| `overlays/comspec_overlay_static_noise_ca.png` | 2 901 644 | Repli `.png` de `fn_updateDeviceOverlay.sqf` (4 fois), retiré |
+| `overlays/comspec_overlay_low_signal_ca.png` | 2 901 644 | La macro pointe le `.paa` |
+| `athena_tablet.png` | 2 343 440 | `display_device.hpp` pointe `athena_tablet.paa` |
+| `overlays/comspec_overlay_screen_off_ca.png` | 1 396 879 | Repli `.png` de `fn_updateDeviceOverlay.sqf`, retiré |
+| `device/comspec_phone_bg_ca.png` | 26 057 | Macro sur le `.paa` ; le site a sa copie (`public/assets/img/connect-device`) |
+| `device/comspec_tablet_bg_ca.png` | 14 008 | Macro sur le `.paa` |
+| `device/comspec_icon_phone.png` | 1 254 | `config.cpp` et macro sur le `.paa` |
+| `device/comspec_icon_tablet.png` | 1 168 | Macro sur le `.paa` |
+| `device/comspec_icon_mail_ca.png` | 665 | Macro sur le `.paa` |
+| `device/comspec_icon_battery_ca.png` | 470 | Macro sur le `.paa` ; le site a sa copie |
+| `device/comspec_icon_signal_ca.png` | 459 | Macro sur le `.paa` ; le site a sa copie |
+| `device/comspec_window_2.jpg` | 4 110 | Aucun résultat (jumeau `comspec_window_2.paa`) |
+
+Sans aucune référence (recherche au résultat nul) :
+
+| Fichier | Taille |
+| --- | --- |
+| `overlays/comspec_overlay_screen_cracked_ca.png` | 2 557 555 |
+| `atak-fx/sandpaper.png` | 195 367 |
+| `atak-fx/dust-texture.jpg` | 166 542 |
+| `atak-fx/gold-scratch.png` | 53 036 |
+| `atak-fx/glitch-static-1.jpg`, `glitch-static-2.jpg` | 38 785 + 27 428 |
+| `device/athena_tablet.png` | 13 867 |
+| `atak-fx/glitch-border.png` | 8 411 |
+| `device/comspec_desktop_bar.jpg` | 4 559 |
+| `device/comspec_atak_logo.png` | 3 642 |
+| `TAKOS-HAWK-WHITE.png` | 2 316 |
+| `device/comspec_battery_{critical,full,low,medium}.png` | 1 853 |
+| `device/comspec_signal_bars_{0,1,2,3,4}.png` | 1 347 |
+
+`comspec_overlay_screen_cracked_ca.png` était prévu « à convertir » : il n'est cité nulle part (la macro
+`COMSPEC_IMG_OVERLAY_SCREEN_CRACKED` pointe `atak-fx/broken-screen.paa`) et mesure 1536 x 1024, donc non convertible
+(puissance de 2 exigée). Retiré comme fichier mort.
+
+Convertis en `.paa` (ImageToPAA d'Arma 3 Tools, DXT5), PNG d'origine retiré, chemin corrigé :
+
+| PNG retiré | Taille | `.paa` produit | Taille | Chemin corrigé dans |
+| --- | --- | --- | --- | --- |
+| `overlays/comspec_icon_device_destroyed_ca.png` (1024 x 1024) | 910 980 | `comspec_icon_device_destroyed_ca.paa` | 278 220 | `display_device_macros.hpp` |
+| `overlays/comspec_icon_jammer_ca.png` (1024 x 1024) | 905 337 | `comspec_icon_jammer_ca.paa` | 157 800 | `display_device_macros.hpp` |
+| `overlays/comspec_icon_no_coverage_ca.png` (1024 x 1024) | 919 936 | `comspec_icon_no_coverage_ca.paa` | 163 637 | `display_device_macros.hpp` |
+| `overlays/comspec_icon_reboot_ca.png` (1024 x 1024) | 836 419 | `comspec_icon_reboot_ca.paa` | 219 346 | `display_device_macros.hpp` |
+| `overlays/comspec_icon_repair_ca.png` (1024 x 1024) | 871 997 | `comspec_icon_repair_ca.paa` | 298 946 | `display_device_macros.hpp` |
+| `ecoti/ecoti_glow_ca.png` (256 x 256) | 19 589 | `ecoti_glow_ca.paa` | 43 553 | `fn_ecotiDrawFusion.sqf` |
+| `ecoti/ecoti_icon_bracket_ca.png` (256 x 256) | 2 656 | `ecoti_icon_bracket_ca.paa` | 22 862 | `fn_ecotiIconPath.sqf` |
+| `ecoti/ecoti_vignette_ca.png` (2048 x 1024) | 115 773 | `ecoti_vignette_ca.paa` | 194 098 | `fn_ecotiChromeEnsure.sqf` |
+
+À noter : les cinq macros `COMSPEC_IMG_ICON_{JAMMER,NO_COVERAGE,DEVICE_DESTROYED,REBOOT,REPAIR}` sont définies mais
+utilisées par aucune classe ni aucun script (`git grep COMSPEC_IMG_ICON_JAMMER` : la seule ligne `#define`). Les trois
+textures ECOTI étaient citées en `.png` : à vérifier en jeu (vignette, halo, losange des alliés).
+
+Après ce passage, `connect/img` ne contient plus aucun `.png` ni `.jpg`.
+
+### ATAK natif : `mod/COMSPEC_ATAK_Native/Sources/addons/main`
+
+| Fichier | Taille | Preuve |
+| --- | --- | --- |
+| `fonts/b612/` (49 fichiers) | 1 809 339 | `git grep -I -i -E 'COMSPEC_(B612\|Rajdhani\|ShareTech)'` : seulement les 5 classes de `ui/fonts.hpp` (retirées) et `tools/gen_fonts.py` (listes retirées). `fn_fontSet.sqf` ne propose que `roboto`, `purista`, `barlow2` |
+| `fonts/rajdhani/` (49 fichiers) | 1 262 900 | Idem |
+| `fonts/sharetech/` (25 fichiers) | 660 878 | Idem |
+| `data/jpc_tablet_co.paa` | 1 441 079 | Cité par la seule classe `COMSPEC_ATAK_JpcTablet` (`config.cpp`) et par `tools/` |
+| `data/jpc_tablet.p3d` | 18 363 | Idem |
+| `data/logo_soar.paa` | 50 693 | Cité par `tools/gen_assets.py` seulement |
+| `data/dirt_smear_{0,1,2}.paa` | 30 155 | Cités par `tools/gen_dirt.py` seulement |
+| `data/dirt_drop.paa` | 3 068 | Idem |
+
+Changements de config qui vont avec :
+
+- `ui/fonts.hpp` : classes `COMSPEC_B612`, `COMSPEC_B612Bold`, `COMSPEC_Rajdhani`, `COMSPEC_RajdhaniBold`,
+  `COMSPEC_ShareTech` retirées (90 lignes) ; `tools/gen_fonts.py` ne les régénère plus. Un ancien choix enregistré
+  retombe sur `roboto` (`fn_fontSet.sqf`, clé inconnue), comme avant.
+- `config.cpp` : `COMSPEC_ATAK_JpcTablet` reste (cachée, `scope=1`, parente des `COMSPEC_ATAK_JpcPhone_*` du geste
+  selfie, citée par `fn_jpcScreen.sqf`) ; son modèle et sa texture se replient sur `jpc_s7.p3d` et `jpc_s7_ca.paa`. La
+  fonction « Tablette sur le JPC » reste fermée (`_allowed = false`) : rien de visible ne change.
+
+### Laissé, et pourquoi
+
+| Élément | Raison |
+| --- | --- |
+| Fonds d'écran du téléphone (52 fichiers, `main/data/wall_*`, `items/data/walls/wall_*`) | Interdit par la décision du propriétaire. Intacts (test `ModDeadFilesRemovedAssetTest`) |
+| Ruines des pylônes, usure d'écran, coques `phone_*.paa`, atlas `jpc_<modèle>_ca.paa` | Utilisés : lignes « réduire », pas « retirer » |
+| Les deux DLL | Utilisées toutes les deux |
+| Kit de terminal de véhicule (classe, `item3d_vehiclekit.p3d`, `item_vehiclekit.paa`) | Déjà caché ; retrait prévu à une version majeure (tenues enregistrées) |
+| `fonts/barlow` (1 949 694 octets) | Proposée dans le choix de police (`barlow2`) |
+| `en.txt`, `fr.txt`, `zh_cn.txt`, dossier `i18n/` | Clés « absentes » incertaines ; chantier d'un autre volet |
+| `CfgNotifications` (`COMSPEC_ATAK_AiReply`, `AiReplyWarn`) | Pas un fichier ; le commentaire de `config.cpp` les garde « pour les missions ou scripts qui les citeraient encore » |
+| `COMSPEC_ATAK_LegacyBootstrapSuppressed` | Pas un fichier ; variable encore posée par Overwatch `atak_athena`, lecteurs possibles dans d'anciens PBO |
+| `towers/data/relay_glass.rvmat` (1 308 octets) | Incertain (peut être cité par un modèle) |
+| `main/data/toc/led` (17 glyphes) | Incertain, non creusé |
+| `connect/data/device/item*_{co,nohq,smdi,ca}.paa` et autres `.paa` non cités de `connect` (dont `device/comspec_window_2.paa`) | Incertain : probablement cités par des modèles ou des classes héritées |
+| `fn_jpcScreen.sqf`, `fn_jpcMap.sqf`, `data/jpc_screen*.rvmat`, `jpc_screen_static_co.paa` | Code fermé mais branché (boucle `tick`, actions masquées) : décision « finir ou retirer » de la fonction, pas de ses fichiers morts |
+| Outils `tools/model_jpc_tablet.py`, `gen_assets.py` (logo SOAR, atlas de la tablette), `gen_dirt.py` (traînées) | Outils de génération hors PBO : ils savent refaire les fichiers retirés si la fonction est reprise |
+| `mod/Workshop/_extract`, `mod/Overwatch 2026`, `mod/UptoDate/@COMSPECOverwatch*`, anciens packs | Copies archivées ou construites : hors périmètre |
+| Intro (`fn_introSplash.sqf`, `intro_logo_ca.paa`, `intro_chime.ogg`), Brèche, OSINT | Décisions de produit, code encore branché |
+
+### Vérifications
+
+- `hemtt check` (ATAK natif) : diagnostics identiques avant et après (2 erreurs `SPE2` déjà présentes dans
+  `functions/pages/fn_screenCast.sqf` et `fn_slideWebShow.sqf`, 68 avertissements).
+- `git grep -I -i -E 'connect[\\/]+img[\\/][^"]*\.(png|jpe?g)' -- mod` (hors copies archivées et `.md`) : aucun résultat.
+- `build_mod.bat` (Overwatch) empaquette le dossier entier (`-packonly`) ; `workshop-pack.ps1`, `verify_build.py` et
+  `pack_pbo.py` ne citent aucun fichier retiré.
+- À vérifier en jeu seulement : écrans d'Overwatch (écran cassé, ATAK éteint, bruit / hors couverture), HUD ECOTI.

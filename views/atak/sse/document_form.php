@@ -136,6 +136,9 @@ foreach ($cases as $c) {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <?php if ($isEdit && (int) ($document['id'] ?? 0) > 0): ?>
+                        <?= \App\Services\Sse\Attach\SseAttachWindow::button('document', (int) $document['id'], ['label' => 'Rattacher à une piste, une personne…', 'class' => 'btn btn--ghost btn--sm']) ?>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -723,6 +726,9 @@ foreach ($cases as $c) {
     syncMeta();
 })();
 </script>
+<?php
+?>
+<?php if ($isEdit) { \App\Services\Sse\Attach\SseAttachWindow::render(); } ?>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

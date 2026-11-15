@@ -8,6 +8,14 @@
 params [["_anim", false, [false]]];
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
+// Perf (lot 3) : miniature en cours de retour (écran porté créé, mis en page à l'image suivante : fn_displayLoad). Elle
+// n'est pas encore « le téléphone » ; rangée ou remplacée avant cette image, son écran est retiré ici.
+private _pend = uiNamespace getVariable ["COMSPEC_ATAK_HudPending", displayNull];
+if (isNull _d && {!isNull _pend}) exitWith {
+    uiNamespace setVariable ["COMSPEC_ATAK_HudPending", displayNull];
+    ("COMSPEC_ATAK_Hud" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
+    true
+};
 if (isNull _d) exitWith { true };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Zoom de la carte gardé à la fermeture (fin d'« interagir avec la miniature » : la carte du HUD repart de ce zoom, pas du zoom par

@@ -175,8 +175,7 @@ if (_crashed) then {
     _title = "TERMINAL BLOQUÉ";
     _detail = "Redémarrage automatique en cours…";
     _tex = [
-        "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa",
-        "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png"
+        "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa"
     ] call _fncResolveTex;
     _captionPlace = "bottom";
 } else {
@@ -184,8 +183,7 @@ if (_crashed) then {
         _title = "ÉCRAN ENDOMMAGÉ";
         _detail = "Position seule — réparez avec un toolkit.";
         _tex = [
-            "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.paa",
-            "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.png"
+            "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.paa"
         ] call _fncResolveTex;
         _captionPlace = "bottom";
     } else {
@@ -193,8 +191,7 @@ if (_crashed) then {
             _title = "APPAREIL HORS SERVICE";
             _detail = "Liaison coupée — réparation requise.";
             _tex = [
-                "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa",
-                "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png"
+                "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa"
             ] call _fncResolveTex;
             _captionPlace = "bottom";
         } else {
@@ -206,8 +203,7 @@ if (_crashed) then {
                 };
                 _detail = "Données illisibles — clé ou contrôle incorrect.";
                 _tex = [
-                    "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa",
-                    "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png"
+                    "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa"
                 ] call _fncResolveTex;
                 _captionPlace = "bottom";
             } else {
@@ -219,8 +215,7 @@ if (_crashed) then {
                         "Le terminal n’a plus de liaison ici."
                     };
                     _tex = [
-                        "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa",
-                        "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.png"
+                        "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_static_noise_ca.paa"
                     ] call _fncResolveTex;
                     _captionPlace = "bottom";
                 } else {
@@ -228,8 +223,7 @@ if (_crashed) then {
                         _title = "ATAK ÉTEINT";
                         _detail = "Rallumez l’appareil (interaction personnelle).";
                         _tex = [
-                            "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.paa",
-                            "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.png"
+                            "\z\comspec_overwatch\addons\connect\img\overlays\comspec_overlay_screen_off_ca.paa"
                         ] call _fncResolveTex;
                         _captionPlace = "bottom";
                     };

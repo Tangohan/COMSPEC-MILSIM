@@ -212,6 +212,25 @@ final class JnetMessagingService
         return $labels;
     }
 
+    /**
+     * Membres de chaque groupe de diffusion (hors $excludeUserId, l'expéditeur) : sert au décompte des destinataires
+     * réels pendant la rédaction (doublons entre groupes et destinataires nominatifs écartés).
+     *
+     * @return array<string, list<int>> clé de groupe => identifiants des membres de l'annuaire
+     */
+    public function groupMemberIds(int $tenantId, int $excludeUserId = 0): array
+    {
+        $out = [];
+        foreach ($this->groups($tenantId) as $group) {
+            $out[$group['key']] = array_values(array_filter(
+                $this->membersOfGroup($tenantId, $group['key']),
+                static fn (int $id): bool => $id !== $excludeUserId
+            ));
+        }
+
+        return $out;
+    }
+
     /** @return list<int> */
     private function membersOfGroup(int $tenantId, string $key): array
     {

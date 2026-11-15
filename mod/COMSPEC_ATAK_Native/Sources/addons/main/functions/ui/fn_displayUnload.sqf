@@ -61,7 +61,12 @@ if (_wasInteractive && {uiNamespace getVariable ["COMSPEC_ATAK_HudWanted", false
     [{
         if !(isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
         private _po = diag_tickTime;
+        // Perf (lot 3) : retour en deux images (fn_displayLoad) : celle-ci crée l'écran porté (moteur : une quarantaine
+        // de contrôles dont les cartes), la suivante le met en page et dessine la page. Avant, tout passait dans la
+        // même image (43 à 184 ms relevés). Rien n'est visible entre les deux : les contrôles naissent à taille nulle.
+        uiNamespace setVariable ["COMSPEC_ATAK_HudStaged", true];
         [false] call comspec_atak_native_fnc_open;
+        uiNamespace setVariable ["COMSPEC_ATAK_HudStaged", false];
         ["téléphone : retour de la miniature", _po] call comspec_atak_native_fnc_perfAcc;
     }] call comspec_atak_native_fnc_nextFrame;
 };

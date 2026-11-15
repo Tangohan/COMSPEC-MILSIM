@@ -211,7 +211,7 @@ final class AtakMapIconScaleTest extends TestCase
         self::assertStringNotContainsString('private _is =', $draw);
         self::assertStringNotContainsString('private _mk =', $draw);
         // Unités, marqueurs de la mission, zones, points de passage, itinéraires, cartouches : tous sur ces facteurs.
-        self::assertStringContainsString('private _size = ([16, 21] select (_x isEqualTo _selected || _self)) * _k * _is * _roleK;', $draw);
+        self::assertStringContainsString('private _size = ([16, 21] select (_uid isEqualTo _selected || _self)) * _k * _is * _roleK;', $draw);
         self::assertStringContainsString('if (!_engineTxt) then { [_map, _mk] call comspec_atak_native_fnc_mapGameMarkers; };', $draw);
         self::assertStringContainsString('[_map, _k * _is, _tsZ] call comspec_atak_native_fnc_zoneDraw;', $draw);
         self::assertStringContainsString('[_map, _k * _is, _tsZ, _cursor] call comspec_atak_native_fnc_wpDraw;', $draw);

@@ -81,6 +81,8 @@ $kindColors = [
     </div>
 </div>
 
+<?php \App\Services\Sse\Attach\SseAttachWindow::section('mesh', (int) ($mesh['id'] ?? 0)); ?>
+
 <div class="sse-mesh-workspace">
     <div class="sse-mesh-stage panel">
         <div class="panel-header sse-mesh-stage-head">

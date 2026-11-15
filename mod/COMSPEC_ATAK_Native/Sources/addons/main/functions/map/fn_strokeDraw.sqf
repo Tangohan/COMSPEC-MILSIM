@@ -27,7 +27,10 @@ private _rebuild = false;
 // relevé complet de 5 min (avant : polyligne recopiée et comparée en entier à chaque image, pour chaque trait).
 private _geo = missionNamespace getVariable ["COMSPEC_ATAK_SkGeo", createHashMap];
 if (_now > (missionNamespace getVariable ["COMSPEC_ATAK_SkFull", -1]) || {"" in _dirty}) then {
-    missionNamespace setVariable ["COMSPEC_ATAK_SkFull", _now + 300];
+    // 5 min + 50 s (perf lot 2) : avant, ce relevé et la relecture des marqueurs de fn_mapGameMarkers, armés à la même
+    // image du premier dessin, retombaient ensemble toutes les 300 s (pic de la carte dans les journaux).
+    private _tSk = diag_tickTime;
+    missionNamespace setVariable ["COMSPEC_ATAK_SkFull", _now + 350];
     missionNamespace setVariable ["COMSPEC_ATAK_MkDirtySk", createHashMap];
     _geo = createHashMap;
     _known = createHashMap;
@@ -35,6 +38,7 @@ if (_now > (missionNamespace getVariable ["COMSPEC_ATAK_SkFull", -1]) || {"" in 
     { if ((markerShape _x) isEqualTo "POLYLINE") then { _known set [_x, _x call _styleOf]; }; } forEach allMapMarkers;
     missionNamespace setVariable ["COMSPEC_ATAK_SkKnown", _known];
     _rebuild = true;
+    ["traits : relevé complet", _tSk, 8, -1, format ["traits : relevé complet (%1 marqueurs)", count allMapMarkers]] call comspec_atak_native_fnc_perfAcc;
 } else {
     if ((count _dirty) > 0) then {
         missionNamespace setVariable ["COMSPEC_ATAK_MkDirtySk", createHashMap];

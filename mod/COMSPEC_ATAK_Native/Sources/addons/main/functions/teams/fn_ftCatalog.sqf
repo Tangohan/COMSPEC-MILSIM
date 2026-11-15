@@ -49,8 +49,8 @@ private _roles = [
     // Même jeu d'icônes que les autres rôles (les symboles OTAN b_art / b_uav s'affichaient à part).
     ["JTAC", "JTAC", "JTAC", "\A3\ui_f\data\map\vehicleicons\iconManOfficer_ca.paa"],
     ["DRN", "Télépilote drone", "DRN", "\A3\ui_f\data\map\vehicleicons\iconManVirtual_ca.paa"],
-    ["PIL", "Pilote", "PIL", "\A3\ui_f\data\map\vehicleicons\iconAir_ca.paa"],
-    ["CPL", "Copilote / mitrailleur de bord", "CPL", "\A3\ui_f\data\map\vehicleicons\iconAir_ca.paa"],
+    ["PIL", "Pilote", "PIL", "\A3\ui_f\data\map\vehicleicons\iconPlane_ca.paa"],
+    ["CPL", "Copilote / mitrailleur de bord", "CPL", "\A3\ui_f\data\map\vehicleicons\iconPlane_ca.paa"],
     ["DRV", "Conducteur", "CON", "\A3\ui_f\data\map\vehicleicons\iconCar_ca.paa"]
 ];
 _roles = _roles apply { _x + [""] };
