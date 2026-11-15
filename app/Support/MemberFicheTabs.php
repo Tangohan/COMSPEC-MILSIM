@@ -30,7 +30,7 @@ final class MemberFicheTabs
         'qualifications' => ['label' => 'Qualifications et distinctions', 'anchors' => ['qualifications-distinctions', 'qualifications', 'distinctions', 'decerner']],
         'acces' => ['label' => 'Accès', 'anchors' => ['acces-niveau', 'acces']],
         'statut' => ['label' => 'Position et statut', 'anchors' => ['statut-position', 'statut', 'depart']],
-        'suivi-rh' => ['label' => 'Suivi RH', 'anchors' => ['suivi-rh', 'presence', 'absences', 'sanctions', 'documents-rh', 'mobilite']],
+        'suivi-rh' => ['label' => 'Suivi RH', 'anchors' => ['suivi-rh', 'presence', 'absences', 'sanctions', 'documents-rh', 'mobilite', 'fiabilisation']],
         'historique' => ['label' => 'Historique', 'anchors' => ['historique', 'historique-rh', 'chronologie']],
     ];
 
