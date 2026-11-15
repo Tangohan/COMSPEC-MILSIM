@@ -20,6 +20,9 @@ use App\Services\Sse\MemberIdentityPapersService;
  */
 final class SsePersonRegistryLinkService
 {
+    public const DENY_GUEST = 'Une session invitée ne peut pas créer d’identité du registre : connectez-vous avec votre compte.';
+    public const DENY_RIGHT = 'Droit manquant : écrire dans « Papiers et couvertures » (gestion des dossiers SSE). Demandez-le à un gestionnaire des accès SSE.';
+
     public function __construct(private ?SseIdentityRepository $identities = null)
     {
         $this->identities ??= new SseIdentityRepository();
@@ -63,11 +66,33 @@ final class SsePersonRegistryLinkService
     }
 
     /**
+     * Le demandeur peut-il créer une identité du registre ? Garde unique : la même décide d'afficher le bouton de la fiche
+     * personne et d'autoriser l'action (SsePersonRegistryController::create). Écrire dans « papiers », comme la création d'une
+     * identité depuis le registre ; une session invitée n'écrit jamais.
+     *
+     * @return string|null null si c'est permis, sinon la raison du refus (texte à montrer)
+     */
+    public function createDenial(int $tenantId, bool $guest): ?string
+    {
+        if ($guest) {
+            return self::DENY_GUEST;
+        }
+        try {
+            $allowed = $tenantId > 0
+                && SseAccessPolicy::sessionAllows('papiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => $guest, 'tenant_id' => $tenantId]);
+        } catch (\Throwable) {
+            $allowed = false;
+        }
+
+        return $allowed ? null : self::DENY_RIGHT;
+    }
+
+    /**
      * Ce que la fiche personne affiche du registre : l'identité rattachée, son avis actif, les clichés SEEK II et les mentions
      * (jamais pour une identité cachée au demandeur), et les droits utiles aux boutons.
      *
      * @param array<string, mixed> $person
-     * @return array{identity: ?array<string, mixed>, hidden: bool, notice: ?array<string, mixed>, seekImages: list<array<string, mixed>>, fileMentions: list<array<string, mixed>>, canCreate: bool, canWanted: bool, canPdf: bool, lang: string}
+     * @return array{identity: ?array<string, mixed>, hidden: bool, notice: ?array<string, mixed>, seekImages: list<array<string, mixed>>, fileMentions: list<array<string, mixed>>, canCreate: bool, createDenial: ?string, canWanted: bool, canPdf: bool, lang: string}
      */
     public function pageData(int $tenantId, array $person, SseWantedAccess $access, bool $guest): array
     {
@@ -80,15 +105,14 @@ final class SsePersonRegistryLinkService
             'seekImages' => [],
             'fileMentions' => [],
             'canCreate' => false,
+            'createDenial' => null,
             'canWanted' => $access->canManage(),
             'canPdf' => $access->canGeneratePdf(),
             'lang' => !function_exists('site_lang') || site_lang() === 'fr' ? 'fr' : 'en',
         ];
-        try {
-            $out['canCreate'] = !$guest && !$out['hidden'] && $identity === null
-                && SseAccessPolicy::sessionAllows('papiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => $guest, 'tenant_id' => $tenantId]);
-        } catch (\Throwable) {
-            $out['canCreate'] = false;
+        if ($identity === null && !$out['hidden']) {
+            $out['createDenial'] = $this->createDenial($tenantId, $guest);
+            $out['canCreate'] = $out['createDenial'] === null;
         }
         if ($identity === null) {
             return $out;
