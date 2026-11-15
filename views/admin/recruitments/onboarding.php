@@ -157,10 +157,11 @@ $steps = [
         <section class="rec-onb__panel is-active" data-rec-onb-panel="1">
             <div class="rec-onb__panel-head">
                 <p class="rec-onb__eyebrow">Étape 1 sur 4</p>
-                <h2 class="rec-onb__panel-title">Identité du personnage</h2>
+                <h2 class="rec-onb__panel-title">État civil du personnage</h2>
                 <p class="rec-onb__panel-text">
-                    Le prénom et le nom forment le nom du personnage, utilisé partout (dossier, annuaire, ATAK).
-                    L’état civil reprend ce que le candidat a déclaré quand il existe.
+                    Le prénom et le nom sont le nom que tout le monde voit : dossier, annuaire, JNET et messages.
+                    L’indicatif est le nom de radio du membre ; il sert sur la carte et en jeu, et remplace le nom
+                    seulement si le prénom et le nom ne sont pas renseignés.
                 </p>
             </div>
             <div class="rec-onb__grid">
@@ -175,6 +176,7 @@ $steps = [
                 <label class="rec-onb__field">
                     <span class="rec-onb__label">Indicatif radio <span class="rec-onb__opt">(optionnel)</span></span>
                     <input type="text" name="callsign" maxlength="64" value="<?= $h($pv('callsign')) ?>" placeholder="Ex. Ghost-1" autocomplete="off" data-rec-onb-watch="callsign">
+                    <span class="rec-onb__hint">Le nom de radio : il sert sur la carte et en jeu.</span>
                 </label>
                 <label class="rec-onb__field">
                     <span class="rec-onb__label">Surnom <span class="rec-onb__opt">(optionnel)</span></span>
@@ -182,7 +184,7 @@ $steps = [
                 </label>
             </div>
 
-            <h3 class="rec-onb__section">État civil du personnage</h3>
+            <h3 class="rec-onb__section">Autres informations d’état civil</h3>
             <div class="rec-onb__grid">
                 <label class="rec-onb__field">
                     <span class="rec-onb__label">Nationalité</span>

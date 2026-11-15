@@ -10,6 +10,7 @@ Indicateurs | /back-office/analytics
     Heures de jeu (tableur) | /back-office/atak/heures
     Escouades en jeu | /back-office/atak/escouades
   Qualité des données | /back-office/organisation/qualite-donnees
+  Fiabilisation des données | /back-office/organisation/fiabilisation
 # MEMBRES ET SUIVI RH
 Effectifs | /back-office/ressources/effectifs
   Liste des membres | /back-office/ressources/effectifs

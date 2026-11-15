@@ -21,6 +21,8 @@ lbClear _status;
 ];
 _status lbSetCurSel 0;
 
+// Contextes d'acquisition (forces spéciales) : mêmes codes que config/sse_acquisition_contexts.php sur le site.
+// Les anciens codes (controle, perquisition, reddition) restent acceptés par le site mais ne sont plus proposés.
 private _circ = _disp displayCtrl 9506;
 lbClear _circ;
 {
@@ -28,10 +30,24 @@ lbClear _circ;
     private _i = _circ lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
     _circ lbSetData [_i, _code];
 } forEach [
-    ["controle", "Contrôle"],
-    ["perquisition", "Perquisition"],
-    ["reddition", "Reddition"],
-    ["autre", "Autre"]
+    ["exploitation_site_sensible", "Exploitation de site sensible (SSE)"],
+    ["raid_action_directe", "Action directe : assaut sur l’objectif"],
+    ["interdiction_embuscade", "Interdiction ou embuscade"],
+    ["fouille_haute_valeur", "Fouille d’une cible HVT à la capture"],
+    ["cordon_fouille", "Cordon et fouille"],
+    ["point_controle_tactique", "Point de contrôle tactique (TCP)"],
+    ["fouille_patrouille", "Fouille opportuniste en patrouille"],
+    ["interrogatoire_tactique", "Interrogatoire tactique (TQ)"],
+    ["engagement_chef_local", "Rencontre avec un chef local (KLE)"],
+    ["source_humaine", "Source humaine (HUMINT / CI)"],
+    ["enrolement_biometrique", "Enrôlement biométrique (BATS / SEEK)"],
+    ["capture_champ_bataille", "Reddition ou capture au combat (EPW)"],
+    ["remise_force_partenaire", "Remise à une force partenaire"],
+    ["materiel_ennemi_capture", "Matériel ennemi capturé (CEM)"],
+    ["document_media_capture", "Document ou média capturé (DOMEX)"],
+    ["reconnaissance_speciale", "Reconnaissance spéciale (SR)"],
+    ["recuperation_personnel", "Récupération de personnel"],
+    ["autre", "Autre (précisez)"]
 ];
 _circ lbSetCurSel 0;
 

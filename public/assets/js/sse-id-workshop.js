@@ -160,6 +160,21 @@
     refreshAll();
   });
 
+  // Signature dessinée au pad (signature-pad.js) : aperçu immédiat ; pad vidé, on revient à la signature enregistrée.
+  var sigImgs = Array.prototype.slice.call(preview.querySelectorAll('[data-f-signature]'));
+  var sigInitial = sigImgs.map(function (img) { return { src: img.getAttribute('src') || '', hidden: img.hidden }; });
+  form.addEventListener('signaturepad:change', function (e) {
+    var pad = e.detail && e.detail.pad;
+    var url = pad && !pad.isEmpty() ? pad.toDataURL() : '';
+    sigImgs.forEach(function (img, i) {
+      img.src = url !== '' ? url : sigInitial[i].src;
+      img.hidden = url !== '' ? false : sigInitial[i].hidden;
+    });
+    preview.querySelectorAll('[data-p-signature]').forEach(function (b) {
+      b.hidden = url !== '' || sigInitial.some(function (s) { return !s.hidden; });
+    });
+  });
+
   // Faces affichées
   document.querySelectorAll('[data-face-show]').forEach(function (btn) {
     btn.addEventListener('click', function () {

@@ -35,6 +35,10 @@ final class JnetDashboardService
      */
     private const OPERATIONAL_ENTRY_TYPES = ['mission', 'manifestation'];
 
+    /** Annuaire du personnel : taille d'une page lue (le dépôt plafonne à 200) et nombre maximal de membres rendus. */
+    private const PERSONNEL_PAGE = 200;
+    private const PERSONNEL_DIRECTORY_MAX = 3000;
+
     /** @var array<string, mixed> Mémo par requête : la page commune et l’espace partagent ORBAT, personnel et opérations. */
     private array $memo = [];
 
@@ -687,10 +691,19 @@ final class JnetDashboardService
 
     private function loadPersonnelCardsUncached(int $tenantId): array
     {
+        // Tous les membres actifs, page par page : listForTenant() plafonne une page à 200 lignes ; un plafond à 120 faisait
+        // disparaître de l'annuaire JNET (et de sa fiche) les membres d'une grande ou ancienne communauté au-delà du 120e.
+        $raw = [];
         try {
-            $raw = $this->users->listForTenant($tenantId, null, 'active', null, 120, 0);
+            for ($offset = 0; $offset < self::PERSONNEL_DIRECTORY_MAX; $offset += self::PERSONNEL_PAGE) {
+                $page = $this->users->listForTenant($tenantId, null, 'active', null, self::PERSONNEL_PAGE, $offset);
+                $raw = array_merge($raw, $page);
+                if (count($page) < self::PERSONNEL_PAGE) {
+                    break;
+                }
+            }
         } catch (\Throwable) {
-            $raw = [];
+            // On garde ce qui a déjà été lu plutôt que de vider l'annuaire.
         }
         $ids = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $raw);
         $enriched = [];
@@ -706,6 +719,8 @@ final class JnetDashboardService
             $byId[(int) ($row['id'] ?? 0)] = $row;
         }
 
+        // Prénom, nom et trigramme du personnage (user_profiles) : la même source que la fiche et l'annuaire.
+        $raw = (new \App\Services\Personnel\MemberNameService())->withIdentities($tenantId, $raw);
         $cards = [];
         foreach ($raw as $row) {
             $id = (int) ($row['id'] ?? 0);
@@ -1188,30 +1203,18 @@ final class JnetDashboardService
     {
         $id = (int) ($row['id'] ?? 0);
         $display = trim((string) ($row['display_name'] ?? ''));
-        $character = trim((string) ($row['character_name'] ?? ''));
         $callsign = trim((string) ($row['callsign'] ?? ''));
-        // Même nom que la fiche du membre (prénom + nom au format de la communauté, member_name) ; à défaut le nom du
-        // personnage, puis l'indicatif, puis le nom du compte.
-        $first = trim((string) ($row['first_name'] ?? ''));
-        $last = trim((string) ($row['last_name'] ?? ''));
-        $civil = '';
-        if (($first !== '' || $last !== '') && function_exists('member_name')) {
-            $civil = trim(member_name([
-                'first_name' => $first,
-                'last_name' => $last,
-                'display_name' => $display,
-                'callsign' => $callsign,
-                'trigram' => trim((string) ($row['trigram'] ?? '')),
-            ], 'card', null, false));
-            if ($civil === \App\Support\MemberName::FALLBACK) {
-                $civil = '';
-            }
-        }
-        $name = $civil !== ''
-            ? $civil
-            : ($character !== ''
-                ? $character
-                : ($callsign !== '' ? $callsign : ($display !== '' ? $display : 'Opérateur')));
+        // Règle unique d'affichage (App\Support\MemberIdentity) : prénom + nom au format de la fiche, puis indicatif,
+        // puis nom du compte, puis « Membre ». L'ancien champ « nom du personnage » n'est plus utilisé.
+        $identity = \App\Support\MemberIdentity::display([
+            'first_name' => (string) ($row['first_name'] ?? ''),
+            'last_name' => (string) ($row['last_name'] ?? ''),
+            'display_name' => $display,
+            'callsign' => $callsign,
+            'trigram' => (string) ($row['trigram'] ?? ''),
+            'anonymized' => !empty($row['anonymized']),
+        ], 'card', null, false);
+        $name = $identity['primary'];
         $grade = trim((string) ($row['grade_short'] ?? $row['grade_long'] ?? ''));
         $unit = trim((string) ($row['unit_name'] ?? $row['unit_code'] ?? ''));
         $function = trim((string) ($row['job_role_display'] ?? $row['role_name'] ?? ''));
@@ -1227,8 +1230,7 @@ final class JnetDashboardService
 
         $metaBits = array_values(array_filter([
             $grade !== '' ? $grade : null,
-            ($callsign !== '' && strcasecmp($callsign, $name) !== 0) ? $callsign : null,
-            ($display !== '' && strcasecmp($display, $name) !== 0 && strcasecmp($display, $callsign) !== 0) ? $display : null,
+            $identity['secondary'] !== '' ? $identity['secondary'] : null,
         ]));
 
         return [

@@ -13,10 +13,12 @@ use App\Repositories\DocumentCategoryRepository;
 use App\Repositories\DocumentLinkRepository;
 use App\Repositories\DocumentRepository;
 use App\Repositories\DocumentSecurityRepository;
+use App\Repositories\Courrier\UserSignatureRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Documents\DocumentAccessService;
 use App\Services\Documents\DocumentTrainingReferencesService;
+use App\Services\Media\SignatureImageService;
 use App\Services\Moderation\ModerationArtifactState;
 use App\Repositories\Doctrine\DocumentDoctrineRepository;
 use App\Services\Doctrine\DoctrineDocumentAccessService;
@@ -234,6 +236,7 @@ class DocumentsController
             'securitySessionToken' => $sessionToken,
             'requiresAccessCode' => !empty($doc['require_access_code']),
             'requiresSignature' => $signatureRequired,
+            'savedSignature' => $signatureRequired ? $this->ownDefaultSignaturePreview($userId, (int) $tenantId) : null,
             'signatureBeforeDownload' => !empty($doc['signature_mandatory_before_download']),
             'isAccessCodeUnlocked' => $this->isAccessCodeUnlocked((int) $doc['id']),
         ]);
@@ -387,20 +390,23 @@ class DocumentsController
         $sessionToken = trim((string) $request->input('security_session_token'));
         $signatureDataUrl = trim((string) $request->input('signature_data_url'));
         $signatureName = trim((string) $request->input('signature_name'));
-        if ($sessionToken === '' || $signatureDataUrl === '' || $signatureName === '') {
+        $savedSignatureId = (int) $request->input('user_signature_id', 0);
+        if ($sessionToken === '' || ($signatureDataUrl === '' && $savedSignatureId <= 0) || $signatureName === '') {
             return (new Response())->setStatusCode(422)->json(['ok' => false, 'message' => 'Signature incomplète']);
         }
         $session = $this->documentSecurityRepository->findSessionByToken($sessionToken);
         if (!$session || (int) ($session['document_id'] ?? 0) !== $id || (int) ($session['tenant_id'] ?? 0) !== $tenantId) {
             return (new Response())->setStatusCode(404)->json(['ok' => false, 'message' => 'Session de sécurité invalide']);
         }
-        if (!preg_match('#^data:image/png;base64,#', $signatureDataUrl)) {
-            return (new Response())->setStatusCode(422)->json(['ok' => false, 'message' => 'Format de signature invalide']);
+        // Dessin du pad (data URL PNG contrôlé et reconstruit) ou signature enregistrée par ce membre lui-même.
+        if ($signatureDataUrl === '') {
+            $signatureDataUrl = (string) ($this->ownSavedSignatureDataUrl($savedSignatureId, $userId, $tenantId) ?? '');
         }
-        $raw = base64_decode(substr($signatureDataUrl, strlen('data:image/png;base64,')), true);
-        if ($raw === false || strlen($raw) < 100) {
-            return (new Response())->setStatusCode(422)->json(['ok' => false, 'message' => 'Signature vide']);
+        $clean = SignatureImageService::normalize($signatureDataUrl);
+        if (!$clean['ok'] || !isset($clean['png'])) {
+            return (new Response())->setStatusCode(422)->json(['ok' => false, 'message' => $clean['error'] ?? 'Signature invalide']);
         }
+        $raw = $clean['png'];
         $relativeDir = 'signatures/' . date('Y/m');
         $baseDir = base_path(self::STORAGE_BASE . $relativeDir);
         if (!is_dir($baseDir)) {
@@ -413,8 +419,61 @@ class DocumentsController
 
         $this->documentSecurityRepository->completeSignature($sessionToken, $signatureName, $relativePath);
         $this->documentSecurityRepository->logEvent($sessionToken, $id, $userId, 'signature_completed', ['signature_name' => $signatureName]);
+        if ($savedSignatureId <= 0 && $request->inputString('save_signature') === '1') {
+            $this->rememberSignature($raw, $userId, $tenantId);
+        }
 
         return (new Response())->json(['ok' => true]);
+    }
+
+    /**
+     * Signature enregistrée par le membre lui-même (table user_signatures du Bureau Courrier), en data URL PNG.
+     * Jamais celle d'un autre membre ni d'une autre communauté ; null si elle n'existe pas ou si la table manque.
+     */
+    private function ownSavedSignatureDataUrl(int $signatureId, int $userId, int $tenantId): ?string
+    {
+        if ($signatureId <= 0) {
+            return null;
+        }
+        try {
+            $row = (new UserSignatureRepository())->findById($signatureId, $userId, $tenantId);
+        } catch (\Throwable) {
+            return null;
+        }
+        $rel = is_array($row) ? (string) ($row['file_path'] ?? '') : '';
+        $base = realpath(base_path('storage/courrier/signatures'));
+        $full = $rel !== '' && $base !== false ? realpath($base . '/' . $rel) : false;
+        if ($full === false || !str_starts_with($full, $base . DIRECTORY_SEPARATOR) || !is_file($full)) {
+            return null;
+        }
+        $bytes = @file_get_contents($full);
+
+        return is_string($bytes) && $bytes !== '' ? SignatureImageService::PREFIX . base64_encode($bytes) : null;
+    }
+
+    /** Garde le dessin comme « ma signature » du membre (réutilisable) ; sans effet si le Bureau Courrier n'est pas installé. */
+    private function rememberSignature(string $png, int $userId, int $tenantId): void
+    {
+        try {
+            (new \App\Services\Courrier\DocumentSignatureService(new \App\Repositories\Courrier\CourrierDocumentRepository(), new UserSignatureRepository()))
+                ->saveUserSignature($userId, $tenantId, SignatureImageService::PREFIX . base64_encode($png), 'Signature principale', true);
+        } catch (\Throwable) {
+            // facultatif : la signature du document est déjà enregistrée
+        }
+    }
+
+    /** Aperçu de la signature enregistrée par le membre (la principale) pour la page d'un document à signer. */
+    private function ownDefaultSignaturePreview(int $userId, int $tenantId): ?array
+    {
+        try {
+            $list = (new UserSignatureRepository())->listByUser($userId, $tenantId);
+        } catch (\Throwable) {
+            return null;
+        }
+        $row = $list[0] ?? null;
+        $dataUrl = is_array($row) ? $this->ownSavedSignatureDataUrl((int) $row['id'], $userId, $tenantId) : null;
+
+        return $dataUrl !== null && is_array($row) ? ['id' => (int) $row['id'], 'data_url' => $dataUrl] : null;
     }
 
     public function accessTrack(Request $request, array $params = []): Response

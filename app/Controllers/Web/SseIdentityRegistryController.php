@@ -927,7 +927,7 @@ final class SseIdentityRegistryController
         ];
 
         return $this->view('atak.sse.papers.checks', [
-            'title' => 'Contrôles d’identité',
+            'title' => 'Vérifications d’identité sur le terrain',
             'checks' => $this->checks->list($this->tenantId(), $filters),
             'filters' => $filters,
             'papersTab' => 'controles',

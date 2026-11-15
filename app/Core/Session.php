@@ -62,6 +62,7 @@ class Session
         '/api/intel/',
         '/api/iff/',
         '/api/sse/persons',
+        '/api/sse/v1/calques',
         '/api/mission-cycle/current',
     ];
 

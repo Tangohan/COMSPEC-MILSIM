@@ -61,10 +61,12 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-weather.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-aerial.js?v=202609140010"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/sse-map-layers.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-map-popups.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/tactical-marker-chip.css?v=202609011215" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/tacmap.css?v=202607282040" rel="stylesheet">
+  <link href="<?= htmlspecialchars(asset_url('assets/css/sse-map-layers.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=202607270700" rel="stylesheet">
   <script src="<?= htmlspecialchars($base) ?>/assets/js/mission-cycle-badge.js?v=202607270700"></script>
 </head>
@@ -167,6 +169,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             <label><input type="checkbox" id="tacmap-layer-geo-places" /> Villes</label>
             <label><input type="checkbox" id="tacmap-layer-geo-roads" /> Routes</label>
             <label><input type="checkbox" id="tacmap-layer-route" checked /> Itinéraire</label>
+            <button type="button" class="tacmap-btn" id="tacmap-sse-ml-btn" hidden aria-expanded="false" aria-controls="tacmap-sse-ml" title="Calques SSE : contrôles d’identité, lieux, pistes de téléphones">Calques SSE</button>
           </div>
         </div>
         <div class="tacmap-tools-bar" id="tacmap-tools-bar">
@@ -197,6 +200,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
           </div>
         </div>
         <div id="tacmap-map"></div>
+<?php $sseMlId = 'tacmap-sse-ml'; $sseMlFloating = true; $sseMlBase = rtrim($base, '/'); require base_path('views/partials/sse_map_layers.php'); ?>
 
         <div class="tacmap-drawer" id="tacmap-table-drawer">
           <button type="button" class="tacmap-drawer__toggle" id="tacmap-table-toggle">Tableau des positions ▴</button>

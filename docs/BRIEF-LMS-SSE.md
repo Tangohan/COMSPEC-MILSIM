@@ -39,7 +39,7 @@ l'agent à partir des sources listées.
 >    la biométrie simule (empreintes, iris, ADN : qualité, référence de laboratoire), et
 >    ce qu'elle ne fait pas. **Point pédagogique central : aucune reconnaissance réelle,
 >    aucun verdict d'identification sur le terrain.**
-> 5. *Classement et procès-verbal* — code dossier SSE fourni par le commandement,
+> 5. *Classement et rapport de collecte (SSE report)* — code dossier SSE fourni par le commandement,
 >    signature par l'ATAK, ce que vaut une fiche non signée et non classée.
 > 6. *Exploitation par le TOC* — le portail `/atak/sse` : dossiers, registre des personnes,
 >    croisement listes de surveillance, codes d'accès, export PDF. Un score de similarité

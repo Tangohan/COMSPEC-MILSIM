@@ -28,6 +28,8 @@ $availablePeople = is_array($availablePeople ?? null) ? $availablePeople : [];
 $linkedIds = is_array($linkedIds ?? null) ? $linkedIds : [];
 $classifications = is_array($classifications ?? null) ? $classifications : [];
 $statuses = is_array($statuses ?? null) ? $statuses : [];
+// Contextes d'acquisition de la communauté (jeu choisi, réglages), classe nommée en entier : aucune importation à oublier.
+$acquisitionGroups = \App\Support\SseAcquisitionContexts::forTenant((int) ($case['tenant_id'] ?? \App\Core\Session::get('tenant_id') ?? 0))->groupedOptions();
 ?>
 <dialog class="sse-modal" id="sse-modal-summary">
     <form method="post" action="<?= $h($caseUrl) ?>" class="sse-modal__card">
@@ -127,8 +129,17 @@ $statuses = is_array($statuses ?? null) ? $statuses : [];
                         <input id="id-nat" name="nationality" type="text">
                     </div>
                 </div>
-                <label for="id-circ">Circonstances</label>
-                <textarea id="id-circ" name="circumstances" rows="3" placeholder="Contexte du rattachement"></textarea>
+                <label for="id-circ">Contexte d’acquisition</label>
+                <select id="id-circ" name="circumstances">
+                    <option value="">Non précisé</option>
+                    <?php foreach ($acquisitionGroups as $g): ?>
+                        <optgroup label="<?= $h($g['label']) ?>">
+                            <?php foreach ($g['options'] as $o): ?>
+                                <option value="<?= $h($o['code']) ?>" title="<?= $h($o['description']) ?>"><?= $h($o['label']) ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endforeach; ?>
+                </select>
                 <label for="id-aff">Affiliation</label>
                 <input id="id-aff" name="affiliation" type="text">
                 <footer class="sse-modal__foot sse-modal__foot--inline">

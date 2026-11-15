@@ -83,7 +83,7 @@ if (_first isEqualTo "" && {_last isEqualTo ""} && {_alias isEqualTo ""}) then {
     ["nationality", ""] call _str,
     ["language_spoken", ""] call _str,
     ["affiliation", ""] call _str,
-    ["circumstances", "perquisition"] call _str,
+    ["circumstances", "exploitation_site_sensible"] call _str,
     ["confidence_level", "moyenne"] call _str,
     ["biometrics_simulated", true] call _bool,
     ["consent_recorded", false] call _bool,

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Nom affiché d’un membre, au même format partout sur le site.
+ * Nom affiché d’un membre, au même format partout sur le site (brique utilisée par {@see MemberIdentity}).
  *
  * Règle : hors C2, le prénom et le nom passent d’abord (« Prénom NOM » sur une fiche, « Prénom N. » dans une
- * liste), l’indicatif et le pseudo viennent en second (sous-titre, infobulle). Dans le C2 (carte tactique,
+ * liste), puis l’indicatif, puis le nom du compte (jamais un e-mail), puis « Membre ». Dans le C2 (carte tactique,
  * ATAK web, Overwatch, ordres, ce qui remonte du jeu), l’indicatif reste prioritaire : voir {@see self::c2()}.
  *
  * Ligne attendue (toutes les clés sont facultatives) : first_name, last_name (identité du personnage, fiche
@@ -175,7 +175,7 @@ final class MemberName
         foreach (['callsign', 'display_name', 'public_name'] as $key) {
             $v = self::clean($row[$key] ?? '');
             $k = self::fold($v);
-            if ($v === '' || isset($seen[$k]) || $k === $full) {
+            if ($v === '' || isset($seen[$k]) || $k === $full || self::looksLikeEmail($v)) {
                 continue;
             }
             $seen[$k] = true;
@@ -392,12 +392,21 @@ final class MemberName
         return $cs !== '' ? $cs : self::short($row);
     }
 
-    /** @param array<string, mixed> $row */
+    /**
+     * Sans prénom ni nom : l’indicatif, puis le nom du compte (jamais une adresse e-mail), sinon « Membre ».
+     * Le nom du personnage (personnel_profiles.character_name) ne compte plus : voir {@see MemberIdentity}.
+     *
+     * @param array<string, mixed> $row
+     */
     private static function pseudo(array $row): string
     {
-        foreach (['display_name', 'callsign', 'public_name'] as $key) {
+        $cs = self::clean($row['callsign'] ?? '');
+        if ($cs !== '') {
+            return $cs;
+        }
+        foreach (['display_name', 'public_name'] as $key) {
             $v = self::clean($row[$key] ?? '');
-            if ($v !== '') {
+            if ($v !== '' && !self::looksLikeEmail($v)) {
                 return $v;
             }
         }
@@ -405,8 +414,39 @@ final class MemberName
         return self::FALLBACK;
     }
 
+    /**
+     * D’où vient le nom affiché : civil (prénom et/ou nom), callsign, account (nom du compte), fallback, masked.
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function source(array $row): string
+    {
+        if (self::isMasked($row)) {
+            return 'masked';
+        }
+        if (self::clean($row['first_name'] ?? '') !== '' || self::clean($row['last_name'] ?? '') !== '') {
+            return 'civil';
+        }
+        if (self::clean($row['callsign'] ?? '') !== '') {
+            return 'callsign';
+        }
+        foreach (['display_name', 'public_name'] as $key) {
+            $v = self::clean($row[$key] ?? '');
+            if ($v !== '' && !self::looksLikeEmail($v)) {
+                return 'account';
+            }
+        }
+
+        return 'fallback';
+    }
+
+    public static function looksLikeEmail(string $value): bool
+    {
+        return str_contains($value, '@') && filter_var($value, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
     /** @param array<string, mixed> $row */
-    private static function maskedLabel(array $row): string
+    public static function maskedLabel(array $row): string
     {
         foreach (['label', 'display_name', 'anonymized_label'] as $key) {
             $v = self::clean($row[$key] ?? '');

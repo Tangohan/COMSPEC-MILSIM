@@ -243,7 +243,7 @@ class MemberFileInsightsService
                 continue;
             }
             $seen[$uid] = true;
-            $label = trim((string) ($m['display_name'] ?? '')) ?: trim((string) ($m['callsign'] ?? '')) ?: 'Membre';
+            $label = member_label(['id' => $uid, 'display_name' => (string) ($m['display_name'] ?? ''), 'callsign' => (string) ($m['callsign'] ?? '')], 'list', $tenantId);
             $rows = $jobs[$uid] ?? [];
             $unitMembers[] = [
                 'user_id' => $uid,

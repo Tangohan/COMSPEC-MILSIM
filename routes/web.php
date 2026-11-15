@@ -575,6 +575,11 @@ return function (Router $router) {
     $router->post('/jnet/moi/musique/playlists/{id}/ajouter', $moi(MusicLibraryController::class, 'playlistAdd'), $mwMoi);
     $router->post('/jnet/moi/musique/playlists/{id}/retirer', $moi(MusicLibraryController::class, 'playlistRemove'), $mwMoi);
     $router->post('/jnet/moi/musique/playlists/{id}/deplacer', $moi(MusicLibraryController::class, 'playlistMove'), $mwMoi);
+    // Fiabilisation des données : la fiche du membre, relue bloc par bloc (adresse construite par JnetMemberPaths, hors table des 17 pages).
+    $moiCampaign = \App\Controllers\Web\MemberDataCampaignController::class;
+    $router->get('/' . \App\Support\JnetMemberPaths::path('fiabilisation'), $moi($moiCampaign, 'index'), $mwMoi);
+    $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/repondre'), $moi($moiCampaign, 'answer'), $mwMoi);
+    $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/confirmer'), $moi($moiCampaign, 'confirm'), $mwMoi);
     // Anciennes adresses à paramètres (téléchargements, flux audio) : 301 en un saut, requête conservée. Les pages sans paramètre
     // sont dans BackOfficeLegacyRedirects (JnetMemberPaths::legacyRedirects()).
     foreach (\App\Support\JnetMemberPaths::DOWNLOADS as $moiDownload) {
@@ -1163,6 +1168,7 @@ return function (Router $router) {
     $router->post('/back-office/renseignement/fichiers/fusion', [$boSseFiles, 'merge'], [AuthMiddleware::class]);
     $router->post('/back-office/renseignement/fichiers/extractions/{id}', [$boSseFiles, 'moderate'], [AuthMiddleware::class]);
     $router->post('/back-office/renseignement/fichiers/reglages', [$boSseFiles, 'settingsSave'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/fichiers/contextes', [$boSseFiles, 'contextsSave'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement/fichiers/{tab}', [$boSseFiles, 'index'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/renseignement/acces')), [AuthMiddleware::class]);
     $router->get('/atak/sse/accueil', [SsePortalController::class, 'home'], $mwSsePortal);
@@ -2115,6 +2121,21 @@ return function (Router $router) {
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/telecharger', [OrganizationDataQualityController::class, 'downloadData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/supprimer', [OrganizationDataQualityController::class, 'purgeData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/postes/{id}/restaurer', [OrganizationDataQualityController::class, 'restoreBillet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/anciens-noms/reprendre', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'importNames'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/anciens-noms/annuler', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'revertNames'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/bilans-automatiques', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'retroSetting'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Fiabilisation des données (campagne annuelle de relecture des fiches) : mêmes droits que la qualité des données.
+    $router->get('/back-office/organisation/fiabilisation', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/creer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/reglages', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/ouvrir-maintenant', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'openNow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/modifier', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/fiabilisation/{id}', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/fiabilisation/{id}/export', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/ouvrir', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'open'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/cloturer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'close'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/relancer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'remind'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/signalements/{flagId}/traiter', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'handleFlag'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/assign-position', [UserAdminController::class, 'assignPosition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/apply-role-set', [UserAdminController::class, 'applyRoleSet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/categories', [CategoryAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -3548,6 +3569,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // SSE — Sensitive Site Exploitation (renseignement interpersonnel)
     $router->get('/api/sse/persons', [SseApiController::class, 'personsIndex']);
     $router->post('/api/sse/persons', [SseApiController::class, 'personsStore']);
+    // Calques SSE des cartes (contrôles d'identité, lieux, pistes de téléphones) : GeoJSON, lecture seule, porte SSE (docs/sse-calques-api.md)
+    $router->get('/api/sse/v1/calques', [\App\Controllers\Api\SseMapLayersApiController::class, 'index']);
     // LOT 1 — Intelligence Workspace API v1
     $router->get('/api/sse/v1/workspace/summary', [SseIntelApiController::class, 'workspaceSummary']);
     $router->get('/api/sse/v1/inbox', [SseIntelApiController::class, 'inboxIndex']);
