@@ -2454,6 +2454,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'saveDuplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'saveAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/apercu', [EffectifsWorkspaceController::class, 'previewAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/nouveau', [EffectifsWorkspaceController::class, 'createAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/retablir', [EffectifsWorkspaceController::class, 'restoreAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/supprimer', [EffectifsWorkspaceController::class, 'deleteAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
