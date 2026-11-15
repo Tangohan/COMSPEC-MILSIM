@@ -37,7 +37,7 @@ final class SseTransmissionViewTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $view = (string) file_get_contents($root . '/views/atak/sse/transmission_show.php');
-        foreach (['Identité liée', 'Iris', 'Empreintes', 'Images transmises', 'tx-kv', 'data-sse-gallery', 'Télécharger en PDF', 'Envoyer vers Discord'] as $needle) {
+        foreach (['Identité liée', 'Iris', 'Empreintes', 'Images de la transmission', 'tx-kv', 'data-sse-gallery', 'Télécharger en PDF', 'Envoyer vers Discord'] as $needle) {
             self::assertStringContainsString($needle, $view);
         }
         // Plus de tableau clé / valeur aligné à droite sur une seule ligne.

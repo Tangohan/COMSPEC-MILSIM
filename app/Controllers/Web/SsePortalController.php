@@ -445,11 +445,18 @@ final class SsePortalController
     {
         $filters = $this->transmissionFilters($request);
         $events = $this->intelEvents->listForTenant($this->tenantId(), $filters['list']);
+        $sort = \App\Support\SseTransmissionIndex::normalizeSort((string) $request->query('tri', ''));
+        $events = \App\Support\SseTransmissionIndex::sort($events, $sort);
+        $now = new \DateTimeImmutable('now');
         $discord = new SseTransmissionDiscordService();
 
         return $this->portalView('atak.sse.transmissions', [
             'title' => 'Transmissions terrain',
             'events' => $events,
+            'sort' => $sort,
+            'counters' => \App\Support\SseTransmissionIndex::counters($events, $now),
+            'periods' => \App\Support\SseTransmissionIndex::periods($now),
+            'now' => $now,
             'filters' => $filters['ui'],
             'eventTypes' => SseIntelEventRepository::eventTypeOptions(),
             'sourceOptions' => array_merge(
@@ -631,7 +638,7 @@ final class SsePortalController
         );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
-        return Response::redirect(url('atak/sse/transmissions'));
+        return Response::redirect(url('atak/sse/transmissions') . '?onglet=relais');
     }
 
     public function transmissionDiscordCommunity(Request $request, array $params = []): Response
@@ -646,7 +653,7 @@ final class SsePortalController
         $result = (new SseTransmissionDiscordService())->setUseCommunityRelay($this->tenantId(), $enabled);
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
-        return Response::redirect(url('atak/sse/transmissions'));
+        return Response::redirect(url('atak/sse/transmissions') . '?onglet=relais');
     }
 
     public function transmissionDiscordDelete(Request $request, array $params = []): Response
@@ -662,7 +669,7 @@ final class SsePortalController
         );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
-        return Response::redirect(url('atak/sse/transmissions'));
+        return Response::redirect(url('atak/sse/transmissions') . '?onglet=relais');
     }
 
     public function transmissionDiscordTest(Request $request, array $params = []): Response
@@ -678,7 +685,7 @@ final class SsePortalController
         );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
-        return Response::redirect(url('atak/sse/transmissions'));
+        return Response::redirect(url('atak/sse/transmissions') . '?onglet=relais');
     }
 
     public function transmissionDiscordSend(Request $request, array $params = []): Response
