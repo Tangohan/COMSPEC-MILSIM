@@ -259,7 +259,7 @@ final class SseIntelFoundationService
             $this->syncCase($tenantId, $c);
             $stats['cases']++;
         }
-        foreach ($this->interest->listForTenant($tenantId, []) as $i => $row) {
+        foreach ($this->interest->listForSession($tenantId) as $i => $row) {
             if ($i >= $limit) {
                 break;
             }

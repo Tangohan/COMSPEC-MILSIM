@@ -74,6 +74,7 @@ $cols = [
     ['Pas (montre)', 'num', 'Pas mesurés par la montre Garmin en jeu'],
     ['Récupération', 'num', 'Montre Garmin : Body Battery et sommeil moyen'],
     ['Sessions', 'num', 'Sessions avec distance relevée'],
+    [str_replace('%1', \App\Services\Personnel\PlayerSessionService::thresholdLabel((int) ($pmSessionMinutes ?? 60)), 'Sessions de %1'), 'num', str_replace('%1', (string) (int) ($pmSessionMinutes ?? 60), 'Sessions de jeu sur le serveur de la communauté qui ont duré %1 minutes ou plus, sur la période. Les connexions plus courtes ne comptent pas.')],
     ['Dernière activité', 'num', ''],
 ];
 ?>
@@ -191,7 +192,7 @@ $cols = [
                         <thead>
                             <tr>
                                 <?php foreach ($cols as $i => [$label, $type, $title]): ?>
-                                    <th scope="col" data-sort-type="<?= $h($type) ?>"<?= $type === 'num' && $i !== 11 ? ' class="is-num"' : '' ?><?= $title !== '' ? ' title="' . $h($title) . '"' : '' ?><?= $i === $sortCol ? ' data-sort-initial="' . ($type === 'num' ? 'descending' : 'ascending') . '"' : '' ?>><?= $h($label) ?></th>
+                                    <th scope="col" data-sort-type="<?= $h($type) ?>"<?= $type === 'num' && $i !== 12 ? ' class="is-num"' : '' ?><?= $title !== '' ? ' title="' . $h($title) . '"' : '' ?><?= $i === $sortCol ? ' data-sort-initial="' . ($type === 'num' ? 'descending' : 'ascending') . '"' : '' ?>><?= $h($label) ?></th>
                                 <?php endforeach; ?>
                             </tr>
                         </thead>
@@ -220,6 +221,7 @@ $cols = [
                                         <?php else: ?><?= $dash ?><?php endif; ?>
                                     </td>
                                     <td class="is-num" data-sort="<?= (int) $r['sessions'] ?>"><?= $r['sessions'] > 0 ? (int) $r['sessions'] : $dash ?></td>
+                                    <td class="is-num" data-sort="<?= (int) ($r['srv_sessions'] ?? -1) ?>"><?php if (($r['srv_sessions'] ?? null) === null): ?><span class="aksq__muted" title="Compte Steam non relié ou suivi des sessions inactif.">—</span><?php else: ?><b><?= (int) $r['srv_sessions'] ?></b><?php endif; ?></td>
                                     <td data-sort="<?= $h($r['last_day']) ?>"><?= $r['last_day'] !== '' ? $h(date('d/m/Y', (int) strtotime($r['last_day']))) : $dash ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -235,7 +237,9 @@ $cols = [
                                 <td class="is-num"><?= $t['steps'] > 0 ? $h($num($t['steps'])) : $dash ?></td>
                                 <td class="is-num"><?= $t['pilot_s'] > 0 ? $h($dur($t['pilot_s'])) : $dash ?></td>
                                 <td class="is-num"><?= $t['watch_steps'] > 0 ? $h($num($t['watch_steps'])) : $dash ?></td>
-                                <td colspan="3"></td>
+                                <td colspan="2"></td>
+                                <td class="is-num"><?= $t['srv_sessions'] > 0 ? (int) $t['srv_sessions'] : $dash ?></td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>

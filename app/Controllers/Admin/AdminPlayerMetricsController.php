@@ -57,8 +57,25 @@ final class AdminPlayerMetricsController
             $sort
         );
 
+        // Sessions de jeu qui comptent (seuil de la communauté) sur la période : une requête pour tous les membres.
+        $sessionRules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+        try {
+            $sessionRepo = \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class);
+            $sessionCounts = $sessionRepo->schemaReady()
+                ? $sessionRepo->qualifyingCountsForUsers(
+                    $tenantId,
+                    array_map(static fn (array $r): int => (int) $r['user_id'], $rows),
+                    time() - ($days > 0 ? $days : 3650) * 86400,
+                    $sessionRules['min_minutes'] * 60
+                )
+                : [];
+        } catch (\Throwable) {
+            $sessionCounts = [];
+        }
+        $rows = PlayerMetrics::withServerSessions($rows, $sessionCounts);
+
         if ($request->query('format') === 'csv') {
-            return $this->csv($rows, $days);
+            return $this->csv($rows, $days, $sessionRules['min_minutes']);
         }
 
         return Response::view('layout.main', [
@@ -73,26 +90,27 @@ final class AdminPlayerMetricsController
             'pmDays' => $days,
             'pmSort' => $sort,
             'pmPeriods' => self::PERIODS,
+            'pmSessionMinutes' => $sessionRules['min_minutes'],
         ]);
     }
 
     /**
      * @param list<array<string, mixed>> $rows
      */
-    private function csv(array $rows, int $days): Response
+    private function csv(array $rows, int $days, int $sessionMinutes = 60): Response
     {
         $fh = fopen('php://temp', 'r+');
         $put = static function (array $cells) use ($fh): void {
             fputcsv($fh, array_map(static fn (mixed $c): string => PlaytimeSheet::csvCell((string) $c), $cells), ';', '"', '');
         };
         $km = static fn (int $m): string => PlaytimeSheet::frenchNumber(round($m / 1000, 2));
-        $put(['Joueur', 'Indicatif', 'Temps de jeu (h)', 'Temps d’écran (h)', 'Rôle principal', 'Distance totale (km)', 'À pied (km)', 'Véhicule terrestre (km)', 'Bateau (km)', 'Vol (km)', 'HALO (km)', 'Sauts HALO', 'Pas (jeu)', 'Sessions', 'Heures de vol, cumul (h)', 'Pas (montre)', 'Distance à pied (montre, km)', 'Courses (montre)', 'Sommeil moyen (montre, h)', 'Dernière activité']);
+        $put(['Joueur', 'Indicatif', 'Temps de jeu (h)', 'Temps d’écran (h)', 'Rôle principal', 'Distance totale (km)', 'À pied (km)', 'Véhicule terrestre (km)', 'Bateau (km)', 'Vol (km)', 'HALO (km)', 'Sauts HALO', 'Pas (jeu)', 'Sessions', 'Sessions de ' . $sessionMinutes . ' min ou plus', 'Heures de vol, cumul (h)', 'Pas (montre)', 'Distance à pied (montre, km)', 'Courses (montre)', 'Sommeil moyen (montre, h)', 'Dernière activité']);
         foreach ($rows as $r) {
             $g = is_array($r['garmin']) ? $r['garmin'] : null;
             $put([
                 $r['display_name'], $r['callsign'], PlaytimeSheet::decimal($r['play']), PlaytimeSheet::decimal($r['screen']), $r['top_role'],
                 $km($r['total_m']), $km($r['foot_m']), $km($r['land_m']), $km($r['sea_m']), $km($r['air_m']), $km($r['halo_m']), $r['halo_jumps'],
-                $r['steps'], $r['sessions'], PlaytimeSheet::decimal($r['pilot_s']),
+                $r['steps'], $r['sessions'], $r['srv_sessions'] ?? '', PlaytimeSheet::decimal($r['pilot_s']),
                 $g === null ? '' : $g['steps'], $g === null ? '' : $km((int) $g['foot_m']), $g === null ? '' : $g['run_n'],
                 $g === null ? '' : PlaytimeSheet::decimal((int) $g['avg_sleep_s']),
                 PlaytimeSheet::frenchDate($r['last_day']),

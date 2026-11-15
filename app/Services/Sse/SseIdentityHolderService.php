@@ -25,9 +25,12 @@ final class SseIdentityHolderService
 
     public const NO_ISSUE = 'Ce titulaire est un sujet contrôlé ou remonté du terrain : on y consigne les papiers constatés, on n’en génère ni n’en émet. La génération est réservée aux identités d’un membre et aux couvertures ou faux préparés par le service.';
 
-    public function __construct(private ?Database $db = null)
+    private SseMemberCivilIdentityService $civil;
+
+    public function __construct(private ?Database $db = null, ?SseMemberCivilIdentityService $civil = null)
     {
         $this->db ??= Database::getInstance();
+        $this->civil = $civil ?? new SseMemberCivilIdentityService($this->db);
     }
 
     /**
@@ -82,6 +85,9 @@ final class SseIdentityHolderService
             }
         }
         $members = $this->members($tenantId, array_values($userIds));
+        $overrides = $this->civil->overrides($tenantId, array_map(static fn (array $d): int => (int) ($d['identity_id'] ?? 0), $documents));
+        /** @var array<int, array<string, mixed>> $preview */
+        $preview = [];
         foreach ($documents as $k => $d) {
             $identity = is_array($d['identity'] ?? null) ? $d['identity'] : [];
             $kind = (string) ($identity['kind'] ?? '');
@@ -93,6 +99,8 @@ final class SseIdentityHolderService
                 'member_id' => null,
                 'member_name' => '',
                 'differs' => false,
+                'override' => false,
+                'align' => null,
             ];
             // Un membre rattaché à une identité cachée ne se révèle pas sans l'habilitation.
             if ($member !== null && (!$secret || $truth)) {
@@ -100,6 +108,18 @@ final class SseIdentityHolderService
                 $holder['member_name'] = $member['name'];
                 $holder['differs'] = $kind === 'civil' && $member['name'] !== ''
                     && self::key((string) $identity['first_name'] . ' ' . (string) $identity['last_name']) !== self::key($member['name']);
+                // « Nom volontairement différent » (posé par un responsable) : respecté, ni signalé ni écrasé.
+                if ($holder['differs'] && ($overrides[(int) ($d['identity_id'] ?? 0)] ?? false)) {
+                    $holder['differs'] = false;
+                    $holder['override'] = true;
+                }
+                // Aperçu avant/après de « Aligner sur l'état civil » (une fois par membre).
+                if ($holder['differs']) {
+                    $preview[$uid] ??= $this->civil->inspect($tenantId, $uid);
+                    if ($preview[$uid]['state'] === SseMemberCivilIdentityService::MISALIGNED && (int) ($preview[$uid]['identity']['id'] ?? 0) === (int) ($d['identity_id'] ?? 0)) {
+                        $holder['align'] = ['identity_id' => (int) $preview[$uid]['identity']['id'], 'changes' => $preview[$uid]['changes'], 'documents' => $preview[$uid]['documents']];
+                    }
+                }
             }
             $documents[$k]['holder'] = $holder;
         }
