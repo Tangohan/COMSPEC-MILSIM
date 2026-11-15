@@ -17,7 +17,7 @@ use Tests\Support\TocPurgeFixture as F;
 /**
  * Suppression douce de la carte du poste TOC : corbeille de 15 minutes, annulation, expiration, sélection multiple, épinglés
  * (confirmation renforcée), droits (ses éléments, ceux des autres), cloisonnement par communauté et par carte, pierres
- * tombales du jeu, mode dégradé sans migration, archivage de la sélection. Base SQLite réelle, migration 4770 rejouée.
+ * tombales du jeu, mode dégradé sans migration, archivage de la sélection. Base SQLite réelle, migration 4780 rejouée.
  */
 final class AtakTocDeletionTest extends TestCase
 {

@@ -15,7 +15,7 @@ use PDO;
  * Dépôt MySQL du cycle des marqueurs : atak_markers et atak_map_shapes (éléments affichés), atak_marker_cycle_settings,
  * atak_marker_archives et atak_marker_archive_items (missions archivées). Toutes les requêtes portent le tenant_id.
  *
- * Retrait d'un marqueur venu du jeu : avec la migration 4770, le marqueur reste 48 h en pierre tombale (deleted_at) et le jeu
+ * Retrait d'un marqueur venu du jeu : avec la migration 4780, le marqueur reste 48 h en pierre tombale (deleted_at) et le jeu
  * le retire de sa carte native (fn_markerWebSweep) ; sans elle, DELETE simple, le jeu ne le retire pas (docs/TOC-WEB.md).
  */
 final class PdoMarkerCycleStore implements MarkerCycleStore

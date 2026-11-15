@@ -8,7 +8,7 @@ use PDO;
 
 /**
  * Base SQLite des tests de suppression et de purge du poste TOC web : tables de la carte telles qu'en production (avant la
- * migration), puis étape 4770 jouée pour de vrai (colonnes deleted_at, deleted_by, delete_batch et table atak_toc_purges).
+ * migration), puis étape 4780 jouée pour de vrai (colonnes deleted_at, deleted_by, delete_batch et table atak_toc_purges).
  */
 final class TocPurgeFixture
 {
@@ -19,7 +19,7 @@ final class TocPurgeFixture
         return (int) strtotime(self::NOW . ' UTC');
     }
 
-    /** @param bool $migrate false : base d'avant la migration 4770 (mode dégradé) */
+    /** @param bool $migrate false : base d'avant la migration 4780 (mode dégradé) */
     public static function open(bool $migrate = true): MysqlDdlSqlitePdo
     {
         $pdo = new MysqlDdlSqlitePdo();
@@ -55,7 +55,7 @@ final class TocPurgeFixture
         return $pdo;
     }
 
-    /** Joue l'étape 4770 comme run-migrations.php : fichier inclus avec $pdo et $root. */
+    /** Joue l'étape 4780 comme run-migrations.php : fichier inclus avec $pdo et $root. */
     public static function migrate(PDO $pdo): string
     {
         $root = dirname(__DIR__, 2);
@@ -66,7 +66,7 @@ final class TocPurgeFixture
         require_once $root . '/database/steps/_context.php';
         ob_start();
         try {
-            require $root . '/database/steps/4770_atak_toc_soft_delete.php';
+            require $root . '/database/steps/4780_atak_toc_soft_delete.php';
         } finally {
             $out = (string) ob_get_clean();
         }

@@ -1,6 +1,6 @@
 -- Suppression douce et purge de la carte du poste TOC web : journal et état des purges par lots (une ligne par purge).
 -- Les colonnes deleted_at, deleted_by et delete_batch des tables atak_markers et atak_map_shapes sont ajoutées par
--- l'étape database/steps/4770_atak_toc_soft_delete.php (ALTER TABLE contrôlé : compatible sqlite, rejouable).
+-- l'étape database/steps/4780_atak_toc_soft_delete.php (ALTER TABLE contrôlé : compatible sqlite, rejouable).
 -- Aucune donnée existante n'est modifiée. Sans cette étape, le poste retombe en mode dégradé : suppression définitive
 -- avec confirmation, purge désactivée.
 -- Retour arrière : migrations/rollback/atak_toc_purges_down.sql.
