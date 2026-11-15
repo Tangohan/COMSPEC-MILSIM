@@ -249,7 +249,7 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
 
     <?php
     // Sous-pages refondues le 2026-10-26 : mise en page commune (effectifs-pages.css).
-    $effRedesignedPages = ['rh_integration', 'elevations', 'qualifications', 'chaine', 'affectations', 'fonctions', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
+    $effRedesignedPages = ['roles', 'rh_integration', 'elevations', 'qualifications', 'chaine', 'affectations', 'fonctions', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
     $effPageClass = !$isMember && in_array($active, $effRedesignedPages, true) ? ' bo-eff-page' : '';
     ?>
     <section class="bo-eff-content<?= $isMember ? ' bo-eff-content--member' : '' ?><?= $effPageClass ?>">
