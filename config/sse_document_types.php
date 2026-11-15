@@ -190,11 +190,11 @@ return [
         ],
         'UKR' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license', 'military_id'],
+            'types' => ['id_card', 'passport', 'driving_license', 'military_id', 'residence_permit', 'vehicle_registration'],
         ],
         'RUS' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license', 'military_id'],
+            'types' => ['id_card', 'passport', 'driving_license', 'military_id', 'residence_permit', 'vehicle_registration'],
         ],
         'BLR' => [
             'tier' => 'generic',
@@ -234,7 +234,11 @@ return [
         ],
         'SRB' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
+        ],
+        'ALB' => [
+            'tier' => 'generic',
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'CAN' => [
             'tier' => 'generic',
@@ -244,49 +248,61 @@ return [
             'tier' => 'generic',
             'types' => ['passport', 'driving_license'],
         ],
+        'PHL' => [
+            'tier' => 'generic',
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
+        ],
         'ISR' => [
             'tier' => 'generic',
             'types' => ['id_card', 'passport', 'driving_license', 'military_id'],
         ],
         'IRQ' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'AFG' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'SYR' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
+        ],
+        'LBN' => [
+            'tier' => 'generic',
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'MLI' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'NER' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'TCD' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'SOM' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'LBY' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'YEM' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'COL' => [
             'tier' => 'generic',
-            'types' => ['id_card', 'passport', 'driving_license'],
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
+        ],
+        'MEX' => [
+            'tier' => 'generic',
+            'types' => ['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'],
         ],
         'ALT' => [
             'tier' => 'fictional',

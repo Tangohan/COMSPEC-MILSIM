@@ -121,6 +121,28 @@ final class SseIdentityGeneratorService
         return $pool !== null ? array_values($pool['places']) : [];
     }
 
+    /**
+     * Vivier d'une région du générateur SSE, comme comspec_sse_fnc_getNarrativePools le rend au jeu : les noms d'origine
+     * de la région d'abord, puis ceux de ses kits (SseKitCatalog::regionPool), sans doublon. Région inconnue : générique.
+     *
+     * @return array{first: list<string>, last: list<string>}
+     */
+    public static function regionPool(string $region): array
+    {
+        $region = strtoupper(trim($region));
+        $kit = \App\Support\SseKitCatalog::regionPool($region);
+        if ($kit === null) {
+            return self::SSE_POOLS[$region] ?? self::SSE_POOLS['GENERIC'];
+        }
+        // L'Irak et la Syrie partageaient le vivier du Proche-Orient avant d'avoir le leur.
+        $legacy = self::SSE_POOLS[in_array($region, ['IRAQ', 'SYRIA'], true) ? 'LEVANT' : $region] ?? ['first' => [], 'last' => []];
+
+        return [
+            'first' => array_values(array_unique(array_merge($legacy['first'], $kit['first']))),
+            'last' => array_values(array_unique(array_merge($legacy['last'], $kit['last']))),
+        ];
+    }
+
     public static function randomSeed(): int
     {
         return random_int(1, self::MAX_SEED);
@@ -146,7 +168,7 @@ final class SseIdentityGeneratorService
             $last = self::pick($seed, 'ln', $pool['last']) . ($sex === 'F' ? (string) ($pool['f_suffix'] ?? '') : '');
             $place = self::pick($seed, 'pob', $pool['places']);
         } else {
-            $pool = self::SSE_POOLS[in_array($region, ['IRAQ', 'SYRIA'], true) ? 'LEVANT' : $region] ?? self::SSE_POOLS['GENERIC'];
+            $pool = self::regionPool($region);
             $sex = 'M';
             $first = self::pick($seed, 'fn', $pool['first']);
             $last = self::pick($seed, 'ln', $pool['last']);

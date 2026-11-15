@@ -1,8 +1,13 @@
 /*
     Pools narratifs enrichis pour la génération SSE.
     [_region, _seed] call comspec_sse_fnc_getNarrativePools
-    _region: IRAQ | SYRIA | LEVANT | AFRICA_SAHEL | RUSSIA | GENERIC | RANDOM
-    _seed >= 0 : région RANDOM tirée de façon déterministe.
+    _region: IRAQ | SYRIA | LEVANT | AFRICA_SAHEL | RUSSIA | AFGHANISTAN | UKRAINE | BALKANS | LATAM | SE_ASIA |
+             HORN_AFRICA | LIBYA | YEMEN | GENERIC | RANDOM
+    _seed >= 0 : région RANDOM tirée de façon déterministe (parmi les six régions d'origine : une mission déjà
+    faite garde ses tirages).
+    Les viviers des kits de contenu (comspec_sse_fnc_kitPools, mêmes listes que le site) élargissent chaque région :
+    prénoms, noms, surnoms et véhicules ; nationalités, langues et indicatifs pour les régions nées avec les kits.
+    Le résultat d'une région est gardé en mémoire : chaque appel en reçoit une copie.
 */
 params [
     ["_region", "GENERIC", [""]],
@@ -14,6 +19,16 @@ if (_region == "RANDOM") then {
     private _i = if (_seed >= 0) then { ([_seed, "region"] call comspec_sse_fnc_hash) mod 6 } else { floor random 6 };
     _region = ["IRAQ", "SYRIA", "LEVANT", "AFRICA_SAHEL", "RUSSIA", "GENERIC"] select _i;
 };
+
+if (isNil "comspec_sse_narrativePoolsCache") then { comspec_sse_narrativePoolsCache = createHashMap; };
+private _cached = comspec_sse_narrativePoolsCache get _region;
+if (!isNil "_cached") exitWith { +_cached };
+
+// Kit de contenu de la région (vide : région sans kit, GENERIC par exemple).
+private _kit = createHashMap;
+if (!isNil "comspec_sse_fnc_kitPools") then { _kit = (call comspec_sse_fnc_kitPools) getOrDefault [_region, createHashMap]; };
+// Régions slaves, balkaniques, latino-américaines et d'Asie du Sud-Est : rôles sans vocabulaire du Proche-Orient.
+private _secular = _region in ["RUSSIA", "UKRAINE", "BALKANS", "LATAM", "SE_ASIA"];
 
 private _firstNames = switch (_region) do {
     case "IRAQ";
@@ -82,7 +97,7 @@ private _phonePrefixes = switch (_region) do {
     default { ["+964 750", "+963 944", "+961 3"] };
 };
 
-private _roles = if (_region == "RUSSIA") then {
+private _roles = if (_secular) then {
     createHashMapFromArray [
         ["CIVILIAN", ["Commerçant","Ouvrier","Chauffeur","Étudiant","Mécanicien","Électricien","Infirmier","Enseignant","Magasinier","Technicien"]],
         ["INSURGENT", ["Combattant","Observateur","Armurier","Guetteur","Chef d'équipe","Opérateur radio","Recruteur"]],
@@ -182,7 +197,25 @@ private _vehicleTypes = switch (_region) do {
 };
 private _docTypes = ["Facture","Bordereau","Liste manuscrite","Carte annotée","Reçu","Permis","Photo imprimée","Carnet","Ordre de mission","Relevé"];
 
-createHashMapFromArray [
+if (count _kit > 0) then {
+    _firstNames = _kit getOrDefault ["firstNames", _firstNames];
+    _lastNames = _kit getOrDefault ["lastNames", _lastNames];
+    private _kitAliases = _kit getOrDefault ["aliases", []];
+    if (_kit getOrDefault ["legacy", false]) then {
+        // Région d'origine : ses surnoms d'abord, ceux du kit ensuite, sans doublon.
+        _aliases = _aliases + _kitAliases;
+        _aliases = _aliases arrayIntersect _aliases;
+    } else {
+        if (_kitAliases isNotEqualTo []) then { _aliases = _kitAliases; };
+        _nats = _kit getOrDefault ["nationalities", _nats];
+        _languages = _kit getOrDefault ["languages", _languages];
+        _phonePrefixes = _kit getOrDefault ["phonePrefixes", _phonePrefixes];
+    };
+    // Véhicules courants de la région, après les types génériques.
+    _vehicleTypes = _vehicleTypes + (_kit getOrDefault ["vehicleTypes", []]);
+};
+
+private _pools = createHashMapFromArray [
     ["region", _region],
     ["firstNames", _firstNames],
     ["lastNames", _lastNames],
@@ -198,4 +231,6 @@ createHashMapFromArray [
     ["vehicleTypes", _vehicleTypes],
     ["documentTypes", _docTypes],
     ["themes", ["fuel_delivery","weapons_cache","meeting_alpha","courier_run","finance_drop","ied_cell","safehouse","recruitment","smuggling","drone_ops","propaganda","medical_logistics"]]
-]
+];
+comspec_sse_narrativePoolsCache set [_region, _pools];
++_pools

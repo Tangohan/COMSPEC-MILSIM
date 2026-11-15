@@ -1261,6 +1261,12 @@ return function (Router $router) {
     $router->get('/atak/sse/fichiers/telephones/{id}', [$sseRec, 'phoneShow'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/telephones/{id}/rattacher', [$sseRec, 'phoneAttach'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/appareils/{id}/accord', [$sseRec, 'deviceConsent'], $mwSsePortal);
+    // Générer du contenu : réseau fictif tiré des kits (gestion des fichiers SSE), aperçu, lot, suppression en bloc.
+    $sseGen = \App\Controllers\Web\SseContentGeneratorController::class;
+    $router->get('/atak/sse/fichiers/generer', [$sseGen, 'index'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/generer', [$sseGen, 'preview'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/generer/creer', [$sseGen, 'commit'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/generer/lots/{id}/supprimer', [$sseGen, 'delete'], $mwSsePortal);
     $sseLore = \App\Controllers\Web\SseLoreController::class;
     $router->get('/atak/sse/fichiers/lore', [$sseLore, 'index'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/lore', [$sseLore, 'store'], $mwSsePortal);

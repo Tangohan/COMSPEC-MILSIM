@@ -29,6 +29,9 @@ final class SseIdRealCountryTest extends TestCase
     private const ICAO = [
         'GBR' => 'GBR', 'GRC' => 'GRC', 'USA' => 'USA', 'DEU' => 'D', 'AUT' => 'AUT', 'COL' => 'COL', 'FRA' => 'FRA',
         'BEL' => 'BEL', 'ESP' => 'ESP', 'POL' => 'POL', 'UKR' => 'UKR', 'RUS' => 'RUS', 'IRQ' => 'IRQ', 'SYR' => 'SYR', 'AFG' => 'AFG',
+        // Pays des kits de contenu SSE (config/sse_kits).
+        'LBN' => 'LBN', 'YEM' => 'YEM', 'LBY' => 'LBY', 'MLI' => 'MLI', 'NER' => 'NER', 'TCD' => 'TCD', 'SOM' => 'SOM', 'SRB' => 'SRB',
+        'ALB' => 'ALB', 'MEX' => 'MEX', 'PHL' => 'PHL',
     ];
 
     protected function setUp(): void

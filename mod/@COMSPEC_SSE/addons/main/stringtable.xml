@@ -2,6 +2,11 @@
 <!-- Généré par tools/i18n.py stringtable : traductions dans i18n/en.txt. -->
 <Project name="COMSPEC_SSE">
     <Package name="main">
+        <Key ID="STR_COMSPEC_SSE_CFG_00017ABD41">
+            <Original>Balkans — Local militia</Original>
+            <English>Balkans — Local militia</English>
+            <French>Balkans — Milice locale</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_001AD3CCE1">
             <Original>Optional. Identifier of a generation model (ready-made recipe) applied to this object or person, for example builtin_chef_hvt or builtin_iq_2010_2020_cache_armes. Full list: Field Manual, COMSPEC SSE, Models; in Zeus: List SSE models module.</Original>
             <English>Optional. Identifier of a generation model (ready-made recipe) applied to this object or person, for example builtin_chef_hvt or builtin_iq_2010_2020_cache_armes. Full list: Field Manual, COMSPEC SSE, Models; in Zeus: List SSE models module.</English>
@@ -167,6 +172,11 @@
             <English>Traces graph relationships to other entities.</English>
             <French>Trace les relations du graphe vers les autres entités.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_07D0E5050C">
+            <Original>Balkans — Smuggling pipeline</Original>
+            <English>Balkans — Smuggling pipeline</English>
+            <French>Balkans — Filière de contrebande</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_08315E4DF9">
             <Original>SSE exploitation terminal: case files, digital, evidence, graph and intel mission.</Original>
             <English>SSE exploitation terminal: case files, digital, evidence, graph and intel mission.</English>
@@ -237,6 +247,11 @@
             <English>Digital modules</English>
             <French>Modules numérique</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0AAC951D6C">
+            <Original>South-East Asia</Original>
+            <English>South-East Asia</English>
+            <French>Asie du Sud-Est</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_0B5D97E4D8">
             <Original>COMSPEC SSE — Papers</Original>
             <English>COMSPEC SSE — Papers</English>
@@ -266,6 +281,11 @@
             <Original>Name shown at the top of the login screen, for example MINISTRY OF DEFENCE or a front company. Empty: none.</Original>
             <English>Name shown at the top of the login screen, for example MINISTRY OF DEFENCE or a front company. Empty: none.</English>
             <French>Nom affiché en tête de l'écran de connexion, par exemple MINISTÈRE DE LA DÉFENSE ou une entreprise écran. Vide : aucun.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0D0685EAEF">
+            <Original>Horn of Africa — Smuggling dhow</Original>
+            <English>Horn of Africa — Smuggling dhow</English>
+            <French>Corne de l'Afrique — Boutre de contrebande</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_0D162D8671">
             <Original>The lab can continue exploitation remotely.</Original>
@@ -351,6 +371,11 @@
             <Original>NFC reader</Original>
             <English>NFC reader</English>
             <French>Lecteur NFC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1043C1CABB">
+            <Original>Latin America — Clandestine laboratory</Original>
+            <English>Latin America — Clandestine laboratory</English>
+            <French>Amérique latine — Laboratoire clandestin</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_1052689464">
             <Original>Dataset</Original>
@@ -536,6 +561,16 @@
             <Original>0 = rumor · 1 = established.</Original>
             <English>0 = rumor · 1 = established.</English>
             <French>0 = rumeur · 1 = établi.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_187DD263EB">
+            <Original>Afghanistan — Mountain pass courier</Original>
+            <English>Afghanistan — Mountain pass courier</English>
+            <French>Afghanistan — Courrier des cols</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_18B7D0CE7C">
+            <Original>Syria — Media cell</Original>
+            <English>Syria — Media cell</English>
+            <French>Syrie — Cellule média</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_18D06EB587">
             <Original>Cracking time in seconds, during which the operator stays plugged in.</Original>
@@ -797,10 +832,20 @@
             <English>COMSPEC SSE</English>
             <French>COMSPEC SSE</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_25F3C58DBD">
+            <Original>Sahel — Fund collector</Original>
+            <English>Sahel — Fund collector</English>
+            <French>Sahel — Collecteur de fonds</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_26275EBD66">
             <Original>Complete</Original>
             <English>Complete</English>
             <French>Complet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_26BEC16B42">
+            <Original>Levant — Exchange office</Original>
+            <English>Levant — Exchange office</English>
+            <French>Levant — Bureau de change</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_26DEC05427">
             <Original>Genuine papers; prepared cover (borrowed identity that passes every check except biometrics); forged papers (flaws depending on quality). Kept on the server only.</Original>
@@ -842,6 +887,11 @@
             <English>Field SSE terminal</English>
             <French>Terminal SSE terrain</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2949B1C8D4">
+            <Original>Latin America</Original>
+            <English>Latin America</English>
+            <French>Amérique latine</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_29AE468CF2">
             <Original>An operator equipped with the ATAK and the DL-7 cable can plug into this object and download its data.</Original>
             <English>An operator equipped with the ATAK and the DL-7 cable can plug into this object and download its data.</English>
@@ -851,6 +901,11 @@
             <Original>Single-use nitrile gloves. Worn during the search, they keep your fingerprints and DNA off the evidence.</Original>
             <English>Single-use nitrile gloves. Worn during the search, they keep your fingerprints and DNA off the evidence.</English>
             <French>Gants nitrile à usage unique. Portés pendant la fouille, ils évitent de déposer vos empreintes et votre ADN sur les pièces.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_29E798788D">
+            <Original>Sahel — Civilian (background noise)</Original>
+            <English>Sahel — Civilian (background noise)</English>
+            <French>Sahel — Civil (bruit de fond)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_2A78F654E6">
             <Original>Text read on the document (summary, background, annotations).</Original>
@@ -906,6 +961,11 @@
             <Original>Steers generated names, places, languages and documents.</Original>
             <English>Steers generated names, places, languages and documents.</English>
             <French>Oriente noms, lieux, langues et documents générés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2D1D1830BE">
+            <Original>Yemen — Arms depot</Original>
+            <English>Yemen — Arms depot</English>
+            <French>Yémen — Dépôt d'armes</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_2D4912CAFF">
             <Original>Right eye injury</Original>
@@ -1162,6 +1222,11 @@
             <English>Permanent (real campaign, everything kept)</English>
             <French>Permanente (vraie campagne, tout est gardé)</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_39F3CAE188">
+            <Original>Sahel — Sector chief</Original>
+            <English>Sahel — Sector chief</English>
+            <French>Sahel — Chef de secteur</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3A745C983B">
             <Original>Access established</Original>
             <English>Access established</English>
@@ -1171,6 +1236,11 @@
             <Original>Seed evidence</Original>
             <English>Seed evidence</English>
             <French>Semer des preuves</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3B0C1A57AB">
+            <Original>Horn of Africa — Transfer agent</Original>
+            <English>Horn of Africa — Transfer agent</English>
+            <French>Corne de l'Afrique — Agent de transfert</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3B12544651">
             <Original>Invent an SSE name</Original>
@@ -1292,6 +1362,11 @@
             <English>1 min</English>
             <French>1 min</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3F45ACE1B9">
+            <Original>Yemen</Original>
+            <English>Yemen</English>
+            <French>Yémen</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3F5EE77F7B">
             <Original>Parent of (variable name)</Original>
             <English>Parent of (variable name)</English>
@@ -1347,6 +1422,16 @@
             <English>Title · evidence file</English>
             <French>Titre · dossier de pièces</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_406F277F6C">
+            <Original>Afghanistan — Bazaar hawala</Original>
+            <English>Afghanistan — Bazaar hawala</English>
+            <French>Afghanistan — Hawala du bazar</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_40B5335EFF">
+            <Original>South-East Asia — Maritime trafficking</Original>
+            <English>South-East Asia — Maritime trafficking</English>
+            <French>Asie du Sud-Est — Trafic maritime</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_40BB5C6E81">
             <Original>Radius (m)</Original>
             <English>Radius (m)</English>
@@ -1356,6 +1441,11 @@
             <Original>Quantity of exploitable items generated (light → high value).</Original>
             <English>Quantity of exploitable items generated (light → high value).</English>
             <French>Quantité d'éléments exploitables générés (légère → haute valeur).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_412C4C2075">
+            <Original>Latin America — Plaza boss</Original>
+            <English>Latin America — Plaza boss</English>
+            <French>Amérique latine — Patron de plaza</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_41547EA607">
             <Original>Sites are placed near real towns and villages within this radius.</Original>
@@ -1466,6 +1556,11 @@
             <Original>SSE template (ID)</Original>
             <English>SSE template (ID)</English>
             <French>Modèle SSE (identifiant)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_452821135E">
+            <Original>Sahel — Fuel convoy</Original>
+            <English>Sahel — Fuel convoy</English>
+            <French>Sahel — Convoi de carburant</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_4549E689FB">
             <Original>FALCON dataset (Iraq 2012)</Original>
@@ -1652,6 +1747,11 @@
             <English>DOMEX field case</English>
             <French>Valise DOMEX de terrain</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4EBF1A3B9D">
+            <Original>Syria — Device workshop</Original>
+            <English>Syria — Device workshop</English>
+            <French>Syrie — Atelier d'engins</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_4ECFD04A93">
             <Original>Subtitle displayed under the report title. Empty = template text.</Original>
             <English>Subtitle displayed under the report title. Empty = template text.</English>
@@ -1702,10 +1802,20 @@
             <English>SSE dashboard</English>
             <French>Tableau de bord SSE</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_51E6C1630D">
+            <Original>Syria — Urban safehouse</Original>
+            <English>Syria — Urban safehouse</English>
+            <French>Syrie — Planque urbaine</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_51F4E8DCDB">
             <Original>Change level only</Original>
             <English>Change level only</English>
             <French>Changer le niveau seulement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5206F7BCA8">
+            <Original>Organisation — Front NGO</Original>
+            <English>Organisation — Front NGO</English>
+            <French>Organisation — ONG de façade</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5210C2CF7B">
             <Original>25 % (default)</Original>
@@ -1887,6 +1997,11 @@
             <English>Network</English>
             <French>Réseau</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5CC6E7E0D0">
+            <Original>Latin America — Transporter</Original>
+            <English>Latin America — Transporter</English>
+            <French>Amérique latine — Transporteur</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5CE9A82831">
             <Original>What the subject states, not what is established.</Original>
             <English>What the subject states, not what is established.</English>
@@ -1951,6 +2066,11 @@
             <Original>Higher = longer access.</Original>
             <English>Higher = longer access.</English>
             <French>Plus élevée = accès plus long.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5F158A891A">
+            <Original>Levant — Front association</Original>
+            <English>Levant — Front association</English>
+            <French>Levant — Association de façade</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5F2CB33B4C">
             <Original>Type of link shown in the graph.</Original>
@@ -2021,6 +2141,11 @@
             <Original>Russia 2020-2024 — Command post</Original>
             <English>Russia 2020-2024 — Command post</English>
             <French>Russie 2020-2024 — Poste de commandement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6287673419">
+            <Original>Organisation — Corrupt administration</Original>
+            <English>Organisation — Corrupt administration</English>
+            <French>Organisation — Administration corrompue</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_62957ECFDC">
             <Original>1 minute</Original>
@@ -2196,6 +2321,11 @@
             <Original>SSE equipment</Original>
             <English>SSE equipment</English>
             <French>Matériel SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6A1728D1E4">
+            <Original>South-East Asia — Banca skipper</Original>
+            <English>South-East Asia — Banca skipper</English>
+            <French>Asie du Sud-Est — Capitaine de banca</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_6A3B88669A">
             <Original>Seized USB drive</Original>
@@ -2392,6 +2522,11 @@
             <English>Populate a building</English>
             <French>Peupler un bâtiment</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7446EAF5E8">
+            <Original>Sahel — Track guide</Original>
+            <English>Sahel — Track guide</English>
+            <French>Sahel — Passeur des pistes</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_748B65B7BD">
             <Original>Field DNA sampling kit.</Original>
             <English>Field DNA sampling kit.</English>
@@ -2511,6 +2646,91 @@
             <Original>Lax: lets almost everything through. Strict: searches and detains at the slightest doubt, opens fire on an armed threat.</Original>
             <English>Lax: lets almost everything through. Strict: searches and detains at the slightest doubt, opens fire on an armed threat.</English>
             <French>Laxiste : laisse passer presque tout. Stricte : fouille et retient au moindre doute, ouvre le feu sur une menace armée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8B163CE74A">
+            <Original>Ukraine — Drone team</Original>
+            <English>Ukraine — Drone team</English>
+            <French>Ukraine — Équipe drone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8C8A3250FE">
+            <Original>Afghanistan — Villager (background noise)</Original>
+            <English>Afghanistan — Villager (background noise)</English>
+            <French>Afghanistan — Villageois (bruit de fond)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8E8A6135AD">
+            <Original>Latin America — Organisation accountant</Original>
+            <English>Latin America — Organisation accountant</English>
+            <French>Amérique latine — Comptable de l'organisation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_90A05C1F28">
+            <Original>Afghanistan — Valley commander</Original>
+            <English>Afghanistan — Valley commander</English>
+            <French>Afghanistan — Commandant de vallée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_928E6FEDFD">
+            <Original>Sahel — Bush cell</Original>
+            <English>Sahel — Bush cell</English>
+            <French>Sahel — Cellule de brousse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9655BE86B3">
+            <Original>Ukraine — Militia command post</Original>
+            <English>Ukraine — Militia command post</English>
+            <French>Ukraine — Poste de commandement de milice</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_99B8FE1D42">
+            <Original>Libya</Original>
+            <English>Libya</English>
+            <French>Libye</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9ECAFD1A35">
+            <Original>Libya — Neighbourhood militia</Original>
+            <English>Libya — Neighbourhood militia</English>
+            <French>Libye — Milice de quartier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A47E150A77">
+            <Original>Balkans — Forger</Original>
+            <English>Balkans — Forger</English>
+            <French>Balkans — Faussaire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B843A59A7B">
+            <Original>Horn of Africa</Original>
+            <English>Horn of Africa</English>
+            <French>Corne de l'Afrique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C33B95B02E">
+            <Original>Afghanistan — Device emplacer</Original>
+            <English>Afghanistan — Device emplacer</English>
+            <French>Afghanistan — Poseur d'engins</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C52FC21291">
+            <Original>Balkans</Original>
+            <English>Balkans</English>
+            <French>Balkans</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C5E1591656">
+            <Original>Ukraine — Volunteer logistics</Original>
+            <English>Ukraine — Volunteer logistics</English>
+            <French>Ukraine — Logistique de volontaires</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C691536877">
+            <Original>Afghanistan</Original>
+            <English>Afghanistan</English>
+            <French>Afghanistan</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C951EC00F1">
+            <Original>Ukraine</Original>
+            <English>Ukraine</English>
+            <French>Ukraine</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D0B4754FE6">
+            <Original>Organisation — Private military company</Original>
+            <English>Organisation — Private military company</English>
+            <French>Organisation — Société militaire privée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E40C6A4685">
+            <Original>Libya — Fuel trafficking</Original>
+            <English>Libya — Fuel trafficking</English>
+            <French>Libye — Trafic de carburant</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_EDITOR_OPEN">
             <Original>SSE editor</Original>
@@ -5021,6 +5241,11 @@
             <Original>Smartphone</Original>
             <English>Smartphone</English>
             <French>Smartphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FA0573F9DF">
+            <Original>Latin America — Lookout</Original>
+            <English>Latin America — Lookout</English>
+            <French>Amérique latine — Guetteur</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_FA27128D8A">
             <Original>Automatic: SEEK uses the name from the Eden Identity panel (or COMSPEC Last/First name if filled in). Invent: ignores the Eden identity. Force: same effect as automatic, Eden name enforced.</Original>

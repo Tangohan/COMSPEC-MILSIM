@@ -1,0 +1,5445 @@
+{
+ "version": 1,
+ "notice": {
+  "fr": "Contenu fictif : personnes, organisations, numéros, plaques et adresses inventés.",
+  "en": "Fictional content: invented people, organisations, numbers, plates and addresses."
+ },
+ "professions": [
+  {
+   "fr": "Agriculteur",
+   "frF": "Agricultrice",
+   "en": "Farmer"
+  },
+  {
+   "fr": "Commerçant",
+   "frF": "Commerçante",
+   "en": "Shopkeeper"
+  },
+  {
+   "fr": "Chauffeur",
+   "frF": "Chauffeuse",
+   "en": "Driver"
+  },
+  {
+   "fr": "Mécanicien",
+   "frF": "Mécanicienne",
+   "en": "Mechanic"
+  },
+  {
+   "fr": "Pêcheur",
+   "frF": "Pêcheuse",
+   "en": "Fisherman"
+  },
+  {
+   "fr": "Enseignant",
+   "frF": "Enseignante",
+   "en": "Teacher"
+  },
+  {
+   "fr": "Étudiant",
+   "frF": "Étudiante",
+   "en": "Student"
+  },
+  {
+   "fr": "Ouvrier du bâtiment",
+   "frF": "Ouvrière du bâtiment",
+   "en": "Construction worker"
+  },
+  {
+   "fr": "Infirmier",
+   "frF": "Infirmière",
+   "en": "Nurse"
+  },
+  {
+   "fr": "Fonctionnaire",
+   "frF": "Fonctionnaire",
+   "en": "Civil servant"
+  },
+  {
+   "fr": "Électricien",
+   "frF": "Électricienne",
+   "en": "Electrician"
+  },
+  {
+   "fr": "Journalier",
+   "frF": "Journalière",
+   "en": "Day labourer"
+  },
+  {
+   "fr": "Boulanger",
+   "frF": "Boulangère",
+   "en": "Baker"
+  },
+  {
+   "fr": "Artisan",
+   "frF": "Artisane",
+   "en": "Craftsman"
+  },
+  {
+   "fr": "Gardien",
+   "frF": "Gardienne",
+   "en": "Watchman"
+  },
+  {
+   "fr": "Tailleur",
+   "frF": "Couturière",
+   "en": "Tailor"
+  },
+  {
+   "fr": "Boucher",
+   "frF": "Bouchère",
+   "en": "Butcher"
+  },
+  {
+   "fr": "Menuisier",
+   "frF": "Menuisière",
+   "en": "Carpenter"
+  },
+  {
+   "fr": "Maçon",
+   "frF": "Maçonne",
+   "en": "Bricklayer"
+  },
+  {
+   "fr": "Soudeur",
+   "frF": "Soudeuse",
+   "en": "Welder"
+  },
+  {
+   "fr": "Plombier",
+   "frF": "Plombière",
+   "en": "Plumber"
+  },
+  {
+   "fr": "Coiffeur",
+   "frF": "Coiffeuse",
+   "en": "Barber"
+  },
+  {
+   "fr": "Épicier",
+   "frF": "Épicière",
+   "en": "Grocer"
+  },
+  {
+   "fr": "Chauffeur de taxi",
+   "frF": "Chauffeuse de taxi",
+   "en": "Taxi driver"
+  },
+  {
+   "fr": "Chauffeur routier",
+   "frF": "Chauffeuse routière",
+   "en": "Lorry driver"
+  },
+  {
+   "fr": "Magasinier",
+   "frF": "Magasinière",
+   "en": "Storekeeper"
+  },
+  {
+   "fr": "Manutentionnaire",
+   "frF": "Manutentionnaire",
+   "en": "Dock hand"
+  },
+  {
+   "fr": "Vendeur ambulant",
+   "frF": "Vendeuse ambulante",
+   "en": "Street vendor"
+  },
+  {
+   "fr": "Restaurateur",
+   "frF": "Restauratrice",
+   "en": "Restaurant owner"
+  },
+  {
+   "fr": "Serveur",
+   "frF": "Serveuse",
+   "en": "Waiter"
+  },
+  {
+   "fr": "Cuisinier",
+   "frF": "Cuisinière",
+   "en": "Cook"
+  },
+  {
+   "fr": "Pharmacien",
+   "frF": "Pharmacienne",
+   "en": "Pharmacist"
+  },
+  {
+   "fr": "Médecin",
+   "frF": "Médecin",
+   "en": "Doctor"
+  },
+  {
+   "fr": "Sage-femme",
+   "frF": "Sage-femme",
+   "en": "Midwife"
+  },
+  {
+   "fr": "Aide-soignant",
+   "frF": "Aide-soignante",
+   "en": "Care assistant"
+  },
+  {
+   "fr": "Vétérinaire",
+   "frF": "Vétérinaire",
+   "en": "Veterinarian"
+  },
+  {
+   "fr": "Éleveur",
+   "frF": "Éleveuse",
+   "en": "Herder"
+  },
+  {
+   "fr": "Berger",
+   "frF": "Bergère",
+   "en": "Shepherd"
+  },
+  {
+   "fr": "Maraîcher",
+   "frF": "Maraîchère",
+   "en": "Market gardener"
+  },
+  {
+   "fr": "Meunier",
+   "frF": "Meunière",
+   "en": "Miller"
+  },
+  {
+   "fr": "Forgeron",
+   "frF": "Forgeronne",
+   "en": "Blacksmith"
+  },
+  {
+   "fr": "Cordonnier",
+   "frF": "Cordonnière",
+   "en": "Cobbler"
+  },
+  {
+   "fr": "Bijoutier",
+   "frF": "Bijoutière",
+   "en": "Jeweller"
+  },
+  {
+   "fr": "Horloger",
+   "frF": "Horlogère",
+   "en": "Watchmaker"
+  },
+  {
+   "fr": "Photographe",
+   "frF": "Photographe",
+   "en": "Photographer"
+  },
+  {
+   "fr": "Imprimeur",
+   "frF": "Imprimeuse",
+   "en": "Printer"
+  },
+  {
+   "fr": "Comptable",
+   "frF": "Comptable",
+   "en": "Accountant"
+  },
+  {
+   "fr": "Employé de banque",
+   "frF": "Employée de banque",
+   "en": "Bank clerk"
+  },
+  {
+   "fr": "Agent de change",
+   "frF": "Agente de change",
+   "en": "Money changer"
+  },
+  {
+   "fr": "Secrétaire",
+   "frF": "Secrétaire",
+   "en": "Secretary"
+  },
+  {
+   "fr": "Employé de mairie",
+   "frF": "Employée de mairie",
+   "en": "Town hall clerk"
+  },
+  {
+   "fr": "Facteur",
+   "frF": "Factrice",
+   "en": "Postman"
+  },
+  {
+   "fr": "Agent d'entretien",
+   "frF": "Agente d'entretien",
+   "en": "Cleaner"
+  },
+  {
+   "fr": "Éboueur",
+   "frF": "Éboueuse",
+   "en": "Refuse collector"
+  },
+  {
+   "fr": "Pompiste",
+   "frF": "Pompiste",
+   "en": "Petrol station attendant"
+  },
+  {
+   "fr": "Garagiste",
+   "frF": "Garagiste",
+   "en": "Garage owner"
+  },
+  {
+   "fr": "Carrossier",
+   "frF": "Carrossière",
+   "en": "Panel beater"
+  },
+  {
+   "fr": "Réparateur de téléphones",
+   "frF": "Réparatrice de téléphones",
+   "en": "Phone repairer"
+  },
+  {
+   "fr": "Technicien radio",
+   "frF": "Technicienne radio",
+   "en": "Radio technician"
+  },
+  {
+   "fr": "Informaticien",
+   "frF": "Informaticienne",
+   "en": "IT technician"
+  },
+  {
+   "fr": "Ingénieur",
+   "frF": "Ingénieure",
+   "en": "Engineer"
+  },
+  {
+   "fr": "Géomètre",
+   "frF": "Géomètre",
+   "en": "Surveyor"
+  },
+  {
+   "fr": "Journaliste",
+   "frF": "Journaliste",
+   "en": "Journalist"
+  },
+  {
+   "fr": "Interprète",
+   "frF": "Interprète",
+   "en": "Interpreter"
+  },
+  {
+   "fr": "Guide",
+   "frF": "Guide",
+   "en": "Guide"
+  },
+  {
+   "fr": "Hôtelier",
+   "frF": "Hôtelière",
+   "en": "Hotel keeper"
+  },
+  {
+   "fr": "Transitaire",
+   "frF": "Transitaire",
+   "en": "Freight forwarder"
+  },
+  {
+   "fr": "Douanier",
+   "frF": "Douanière",
+   "en": "Customs officer"
+  },
+  {
+   "fr": "Docker",
+   "frF": "Docker",
+   "en": "Docker"
+  },
+  {
+   "fr": "Marin",
+   "frF": "Marin",
+   "en": "Sailor"
+  },
+  {
+   "fr": "Mineur",
+   "frF": "Mineuse",
+   "en": "Miner"
+  },
+  {
+   "fr": "Orpailleur",
+   "frF": "Orpailleuse",
+   "en": "Gold panner"
+  },
+  {
+   "fr": "Bûcheron",
+   "frF": "Bûcheronne",
+   "en": "Woodcutter"
+  },
+  {
+   "fr": "Apiculteur",
+   "frF": "Apicultrice",
+   "en": "Beekeeper"
+  },
+  {
+   "fr": "Retraité",
+   "frF": "Retraitée",
+   "en": "Retired"
+  },
+  {
+   "fr": "Mère au foyer",
+   "frF": "Mère au foyer",
+   "en": "Homemaker"
+  },
+  {
+   "fr": "Couturière",
+   "frF": "Couturière",
+   "en": "Seamstress"
+  },
+  {
+   "fr": "Institutrice",
+   "frF": "Institutrice",
+   "en": "Schoolteacher"
+  },
+  {
+   "fr": "Vendeuse au marché",
+   "frF": "Vendeuse au marché",
+   "en": "Market seller"
+  },
+  {
+   "fr": "Lycéen",
+   "frF": "Lycéenne",
+   "en": "Secondary-school pupil"
+  }
+ ],
+ "marks": [
+  {
+   "fr": "cicatrice à l'arcade gauche",
+   "en": "scar on the left eyebrow"
+  },
+  {
+   "fr": "cicatrice au menton",
+   "en": "scar on the chin"
+  },
+  {
+   "fr": "cicatrice de brûlure à l'avant-bras droit",
+   "en": "burn scar on the right forearm"
+  },
+  {
+   "fr": "tatouage sur l'avant-bras gauche",
+   "en": "tattoo on the left forearm"
+  },
+  {
+   "fr": "tatouage au cou",
+   "en": "tattoo on the neck"
+  },
+  {
+   "fr": "tatouage sur la main droite",
+   "en": "tattoo on the right hand"
+  },
+  {
+   "fr": "boite légèrement de la jambe gauche",
+   "en": "slight limp in the left leg"
+  },
+  {
+   "fr": "boite de la jambe droite",
+   "en": "limps on the right leg"
+  },
+  {
+   "fr": "phalange manquante à l'annulaire gauche",
+   "en": "missing fingertip on the left ring finger"
+  },
+  {
+   "fr": "deux doigts manquants à la main gauche",
+   "en": "two fingers missing on the left hand"
+  },
+  {
+   "fr": "dent en or (incisive supérieure)",
+   "en": "gold tooth (upper incisor)"
+  },
+  {
+   "fr": "incisive cassée",
+   "en": "broken incisor"
+  },
+  {
+   "fr": "tache de naissance sur la joue droite",
+   "en": "birthmark on the right cheek"
+  },
+  {
+   "fr": "grain de beauté au-dessus de la lèvre",
+   "en": "mole above the lip"
+  },
+  {
+   "fr": "nez cassé",
+   "en": "broken nose"
+  },
+  {
+   "fr": "oreille gauche déformée",
+   "en": "deformed left ear"
+  },
+  {
+   "fr": "porte des lunettes épaisses",
+   "en": "wears thick glasses"
+  },
+  {
+   "fr": "strabisme léger",
+   "en": "slight squint"
+  },
+  {
+   "fr": "barbe teinte au henné",
+   "en": "henna-dyed beard"
+  },
+  {
+   "fr": "moustache épaisse",
+   "en": "thick moustache"
+  },
+  {
+   "fr": "crâne rasé",
+   "en": "shaved head"
+  },
+  {
+   "fr": "cheveux longs attachés",
+   "en": "long hair tied back"
+  },
+  {
+   "fr": "voix rauque",
+   "en": "hoarse voice"
+  },
+  {
+   "fr": "bégaie sous la pression",
+   "en": "stutters under pressure"
+  },
+  {
+   "fr": "gaucher",
+   "en": "left-handed"
+  },
+  {
+   "fr": "fume beaucoup",
+   "en": "heavy smoker"
+  },
+  {
+   "fr": "mâche du tabac",
+   "en": "chews tobacco"
+  },
+  {
+   "fr": "porte toujours une casquette",
+   "en": "always wears a cap"
+  },
+  {
+   "fr": "porte une chevalière",
+   "en": "wears a signet ring"
+  },
+  {
+   "fr": "montre voyante au poignet gauche",
+   "en": "flashy watch on the left wrist"
+  },
+  {
+   "fr": "cicatrice chirurgicale à l'abdomen",
+   "en": "surgical scar on the abdomen"
+  },
+  {
+   "fr": "marque de vaccin à l'épaule",
+   "en": "vaccination mark on the shoulder"
+  },
+  {
+   "fr": "ongle noir au pouce droit",
+   "en": "black nail on the right thumb"
+  },
+  {
+   "fr": "tic nerveux à l'œil",
+   "en": "nervous eye twitch"
+  },
+  {
+   "fr": "démarche voûtée",
+   "en": "stooped walk"
+  },
+  {
+   "fr": "très grand et maigre",
+   "en": "very tall and thin"
+  },
+  {
+   "fr": "cicatrice de varicelle sur les joues",
+   "en": "chickenpox scars on the cheeks"
+  },
+  {
+   "fr": "sourcils très fournis",
+   "en": "very bushy eyebrows"
+  },
+  {
+   "fr": "prothèse dentaire",
+   "en": "dental plate"
+  },
+  {
+   "fr": "main droite tremblante",
+   "en": "trembling right hand"
+  }
+ ],
+ "vehicleColors": [
+  {
+   "fr": "Blanc",
+   "en": "White"
+  },
+  {
+   "fr": "Noir",
+   "en": "Black"
+  },
+  {
+   "fr": "Gris",
+   "en": "Grey"
+  },
+  {
+   "fr": "Argent",
+   "en": "Silver"
+  },
+  {
+   "fr": "Bleu",
+   "en": "Blue"
+  },
+  {
+   "fr": "Rouge",
+   "en": "Red"
+  },
+  {
+   "fr": "Vert",
+   "en": "Green"
+  },
+  {
+   "fr": "Beige",
+   "en": "Beige"
+  },
+  {
+   "fr": "Marron",
+   "en": "Brown"
+  },
+  {
+   "fr": "Jaune",
+   "en": "Yellow"
+  },
+  {
+   "fr": "Bordeaux",
+   "en": "Maroon"
+  },
+  {
+   "fr": "Orange",
+   "en": "Orange"
+  },
+  {
+   "fr": "Sable",
+   "en": "Sand"
+  }
+ ],
+ "pocket": [
+  {
+   "fr": "Carte d'électeur",
+   "en": "Voter card",
+   "format": "V-#######"
+  },
+  {
+   "fr": "Carte professionnelle",
+   "en": "Professional card",
+   "format": "PRO-@@####"
+  },
+  {
+   "fr": "Carte d'adhérent d'une coopérative",
+   "en": "Cooperative membership card",
+   "format": "COOP-#####"
+  },
+  {
+   "fr": "Laissez-passer de zone",
+   "en": "Area pass",
+   "format": "LP-##-####"
+  },
+  {
+   "fr": "Carte d'assurance du véhicule",
+   "en": "Vehicle insurance card",
+   "format": "AS-########"
+  },
+  {
+   "fr": "Carte d'étudiant",
+   "en": "Student card",
+   "format": "ETU-######"
+  },
+  {
+   "fr": "Carte de santé",
+   "en": "Health card",
+   "format": "SAN-########"
+  },
+  {
+   "fr": "Livret de famille (extrait)",
+   "en": "Family record book (extract)",
+   "format": "LF-######"
+  },
+  {
+   "fr": "Carte d'accès à un entrepôt",
+   "en": "Warehouse access card",
+   "format": "ENT-####"
+  },
+  {
+   "fr": "Carte de transporteur",
+   "en": "Haulier card",
+   "format": "TR-@#####"
+  },
+  {
+   "fr": "Carte de membre d'un club",
+   "en": "Club membership card",
+   "format": "CL-#####"
+  },
+  {
+   "fr": "Reçu de transfert d'argent",
+   "en": "Money transfer receipt",
+   "format": "RT-##########"
+  }
+ ],
+ "shared": {
+  "alias": [
+   {
+    "fr": "Dans le milieu, on [le|la] connaît surtout sous le nom de « {alias} ».",
+    "en": "In those circles [he|she] is mostly known as \"{alias}\"."
+   },
+   {
+    "fr": "Peu de gens l'appellent par son nom : pour tous, c'est « {alias} ».",
+    "en": "Few people use [his|her] name: to everyone [he|she] is \"{alias}\"."
+   },
+   {
+    "fr": "Le surnom « {alias} » revient dans plusieurs conversations interceptées.",
+    "en": "The nickname \"{alias}\" comes up in several intercepted conversations."
+   },
+   {
+    "fr": "[Il|Elle] signe ses messages « {alias} » et ne donne jamais son nom.",
+    "en": "[He|She] signs [his|her] messages \"{alias}\" and never gives [his|her] name."
+   },
+   {
+    "fr": "« {alias} » : c'est ainsi que les chauffeurs et les guetteurs [le|la] désignent.",
+    "en": "\"{alias}\": that is what the drivers and lookouts call [him|her]."
+   },
+   {
+    "fr": "Son surnom, « {alias} », lui vient de ses années à {place}.",
+    "en": "[His|Her] nickname, \"{alias}\", dates from [his|her] years in {place}."
+   }
+  ],
+  "vehicle": [
+   {
+    "fr": "On [le|la] voit souvent au volant d'un {vehicle} {color} immatriculé {plate}.",
+    "en": "[He|She] is often seen driving a {color} {vehicle}, plate {plate}."
+   },
+   {
+    "fr": "Son {vehicle} ({plate}) a été relevé plusieurs fois sur la route de {place}.",
+    "en": "[His|Her] {vehicle} ({plate}) has been logged several times on the road to {place}."
+   },
+   {
+    "fr": "Le {vehicle} {color} {plate} est garé presque chaque soir devant chez [lui|elle].",
+    "en": "The {color} {vehicle} {plate} is parked outside [his|her] home almost every evening."
+   },
+   {
+    "fr": "[Il|Elle] prête régulièrement son {vehicle} ({plate}) à des proches.",
+    "en": "[He|She] regularly lends [his|her] {vehicle} ({plate}) to relatives."
+   },
+   {
+    "fr": "Un {vehicle} {color}, plaque {plate}, est enregistré à son nom.",
+    "en": "A {color} {vehicle}, plate {plate}, is registered in [his|her] name."
+   },
+   {
+    "fr": "[Il|Elle] a acheté d'occasion un {vehicle} ({plate}), payé comptant.",
+    "en": "[He|She] bought a second-hand {vehicle} ({plate}), paid in cash."
+   }
+  ],
+  "family": [
+   {
+    "fr": "[Il|Elle] vit sous le même toit que {relative}.",
+    "en": "[He|She] lives under the same roof as {relative}."
+   },
+   {
+    "fr": "Sa famille, dont {relative}, habite la même adresse à {place}.",
+    "en": "[His|Her] family, including {relative}, lives at the same address in {place}."
+   },
+   {
+    "fr": "{relative} répond parfois à sa place au téléphone.",
+    "en": "{relative} sometimes answers the phone in [his|her] place."
+   },
+   {
+    "fr": "Les voisins [le|la] décrivent comme proche de {relative}.",
+    "en": "Neighbours describe [him|her] as close to {relative}."
+   },
+   {
+    "fr": "[Il|Elle] confie volontiers ses affaires à {relative}.",
+    "en": "[He|She] readily entrusts [his|her] affairs to {relative}."
+   },
+   {
+    "fr": "Tout le quartier connaît ce foyer : {relative} y vit aussi.",
+    "en": "The whole neighbourhood knows this household: {relative} lives there too."
+   }
+  ],
+  "forged": [
+   {
+    "fr": "Un de ses papiers ne résiste pas à un contrôle attentif : numéro et dates ne concordent pas.",
+    "en": "One of [his|her] papers does not survive a careful check: number and dates do not match."
+   },
+   {
+    "fr": "[Il|Elle] voyage aussi sous le nom de {falseName}, avec un document dont l'origine reste à établir.",
+    "en": "[He|She] also travels as {falseName}, with a document whose origin is still to be established."
+   },
+   {
+    "fr": "Au moins un titre à son nom a été délivré par une autorité qui n'existe pas à cette date.",
+    "en": "At least one document in [his|her] name was issued by an authority that did not exist at that date."
+   },
+   {
+    "fr": "[Il|Elle] a présenté par le passé une pièce au nom de {falseName}.",
+    "en": "[He|She] has previously shown a document in the name of {falseName}."
+   },
+   {
+    "fr": "La photo d'un de ses papiers a été remplacée ; le reste du document est authentique.",
+    "en": "The photo on one of [his|her] papers has been replaced; the rest of the document is genuine."
+   },
+   {
+    "fr": "Un second jeu de papiers, au nom de {falseName}, a été signalé à un poste de contrôle.",
+    "en": "A second set of papers, in the name of {falseName}, was reported at a checkpoint."
+   }
+  ],
+  "wanted": [
+   {
+    "fr": "[Il|Elle] fait l'objet d'un avis de recherche.",
+    "en": "[He|She] is the subject of a wanted notice."
+   },
+   {
+    "fr": "Son signalement a été diffusé aux postes de contrôle.",
+    "en": "[His|Her] description has been circulated to the checkpoints."
+   },
+   {
+    "fr": "[Il|Elle] est activement [recherché|recherchée] depuis {year}.",
+    "en": "[He|She] has been actively sought since {year}."
+   },
+   {
+    "fr": "Sa fiche est marquée : à signaler immédiatement en cas de contrôle.",
+    "en": "[His|Her] record is flagged: report immediately if checked."
+   }
+  ]
+ },
+ "blocked": [
+  "Abdiweli Mohamed",
+  "Abdoulaye Maïga",
+  "Abdullah Abdullah",
+  "Abdullahi Yusuf",
+  "Ahmad Massoud",
+  "Alfonso Cano",
+  "Ali Saleh",
+  "Amadou Touré",
+  "Aminata Traoré",
+  "Andrii Shevchenko",
+  "Ashraf Ghani",
+  "Cheick Diarra",
+  "Daniel Barrera",
+  "Diego Montoya",
+  "Dmitry Medvedev",
+  "Enrique Peña",
+  "Genaro García",
+  "Gilberto Rodríguez",
+  "Gonzalo Rodríguez",
+  "Hama Amadou",
+  "Hamid Karimi",
+  "Hamoud al-Mikhlafi",
+  "Hassan Ali",
+  "Hassan Ali Khaire",
+  "Hassan Mohamud",
+  "Ibrahim Keïta",
+  "Ivan Ivanov",
+  "Iván Márquez",
+  "Joseph Estrada",
+  "Juan Carlos Ramírez",
+  "Juan Manuel Santos",
+  "Mahamadou Issoufou",
+  "Mahamane Ousmane",
+  "Mahamat Idriss",
+  "Mahmoud Dicko",
+  "Modibo Keïta",
+  "Modibo Sidibé",
+  "Mohamed Abdullahi",
+  "Mohamed Farah",
+  "Mohammed Ali",
+  "Moussa Traoré",
+  "Nikola Jokić",
+  "Omar Bashir",
+  "Oumar Mariko",
+  "Oumou Sangaré",
+  "Raúl Reyes",
+  "Rodrigo Londoño",
+  "Rokia Traoré",
+  "Salim Idris",
+  "Seydou Keïta",
+  "Seyni Oumarou",
+  "Sharif Ahmed",
+  "Soumaïla Cissé",
+  "Taras Shevchenko",
+  "Tarek Aziz",
+  "Valery Gerasimov",
+  "Vicente Carrillo",
+  "Yurii Lutsenko",
+  "Édgar Valdez"
+ ],
+ "themes": {
+  "civil_population": {
+   "key": "civil_population",
+   "order": 10,
+   "civil": true,
+   "name": {
+    "fr": "Population civile",
+    "en": "Civilian population"
+   },
+   "summary": {
+    "fr": "Familles, commerçants, artisans, fonctionnaires : le bruit de fond d'une ville ou d'un village. Aucun lien avec un réseau, sauf parenté ou voisinage.",
+    "en": "Families, shopkeepers, craftsmen, civil servants: the background of a town or village. No tie to a network, other than kinship or neighbourhood."
+   },
+   "kits": [],
+   "orgKind": {
+    "fr": "",
+    "en": ""
+   },
+   "orgPatterns": {
+    "fr": [],
+    "en": []
+   },
+   "roles": [
+    {
+     "key": "resident",
+     "label": {
+      "fr": "Habitant",
+      "frF": "Habitante",
+      "en": "Resident"
+     },
+     "category": "civilian",
+     "side": "civ",
+     "threat": 1,
+     "weight": 100,
+     "ageMin": 16,
+     "ageMax": 78,
+     "cover": [],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 50
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est {job} à {place}, où [il|elle] a grandi.",
+      "en": "{first} {last} works as a {job} in {place}, where [he|she] grew up."
+     },
+     {
+      "fr": "[Né|Née] à {birth}, {first} {last} s'est [installé|installée] à {place} il y a plusieurs années.",
+      "en": "Born in {birth}, {first} {last} settled in {place} several years ago."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, {job}, habite le secteur de {quarter}.",
+      "en": "{first} {last}, {age}, a {job}, lives in the {quarter} area."
+     },
+     {
+      "fr": "À {place}, tout le monde connaît {first} {last}, {job} de son état.",
+      "en": "In {place} everybody knows {first} {last}, a {job} by trade."
+     },
+     {
+      "fr": "{first} {last} exerce comme {job} et quitte rarement {place}.",
+      "en": "{first} {last} works as a {job} and rarely leaves {place}."
+     },
+     {
+      "fr": "Originaire de {birth}, {first} {last} gagne sa vie comme {job}.",
+      "en": "Originally from {birth}, {first} {last} makes a living as a {job}."
+     },
+     {
+      "fr": "{first} {last} a toujours vécu à {place}, où [il|elle] est {job}.",
+      "en": "{first} {last} has always lived in {place}, working as a {job}."
+     },
+     {
+      "fr": "Depuis {year}, {first} {last} travaille comme {job} près du marché de {place}.",
+      "en": "Since {year}, {first} {last} has worked as a {job} near the {place} market."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "Rien dans son entourage ne [le|la] rattache à un groupe armé.",
+      "en": "Nothing in the household points to an armed group."
+     },
+     {
+      "fr": "Ses journées suivent un rythme régulier, entre le travail et la famille.",
+      "en": "The days follow a regular pattern, between work and family."
+     },
+     {
+      "fr": "[Il|Elle] règle ses dettes à temps et n'a jamais eu affaire à la police.",
+      "en": "Debts are paid on time and there has been no dealing with the police."
+     },
+     {
+      "fr": "On [le|la] croise chaque semaine au marché et au lieu de culte du quartier.",
+      "en": "Seen every week at the market and at the neighbourhood place of worship."
+     },
+     {
+      "fr": "[Il|Elle] cherche surtout à tenir sa famille à l'écart des troubles.",
+      "en": "The main concern is keeping the family away from the trouble."
+     },
+     {
+      "fr": "Ses voisins [le|la] disent [discret|discrète], serviable et sans histoires.",
+      "en": "Neighbours call the household quiet, helpful and trouble-free."
+     },
+     {
+      "fr": "[Il|Elle] se plaint surtout du prix du carburant et des coupures de courant.",
+      "en": "The main complaints are fuel prices and power cuts."
+     },
+     {
+      "fr": "[Il|Elle] a de la famille à l'étranger, qui envoie un peu d'argent.",
+      "en": "There is family abroad, sending a little money."
+     }
+    ],
+    "close": [
+     {
+      "fr": "Aucun élément défavorable connu.",
+      "en": "Nothing adverse known."
+     },
+     {
+      "fr": "Fiche de contexte : présence normale dans la zone.",
+      "en": "Background record: normal presence in the area."
+     },
+     {
+      "fr": "À traiter avec courtoisie : source d'ambiance possible.",
+      "en": "To be treated courteously: a possible source of atmospherics."
+     },
+     {
+      "fr": "Peut reconnaître les étrangers au quartier.",
+      "en": "Can tell who is a stranger to the neighbourhood."
+     },
+     {
+      "fr": "Sans lien établi avec les personnes d'intérêt de la zone.",
+      "en": "No established link with the persons of interest in the area."
+     },
+     {
+      "fr": "Coopère volontiers lors des contrôles.",
+      "en": "Cooperates readily at checkpoints."
+     }
+    ]
+   }
+  },
+  "insurgent_network": {
+   "key": "insurgent_network",
+   "order": 20,
+   "civil": false,
+   "name": {
+    "fr": "Réseau insurgé",
+    "en": "Insurgent network"
+   },
+   "summary": {
+    "fr": "Cellules rurales reliées par des courriers : chef de secteur, artificier, guetteurs, logisticiens et collecteurs. Organisation inventée, sans rapport avec un groupe existant.",
+    "en": "Rural cells linked by couriers: sector chief, bomb-maker, lookouts, logisticians and collectors. An invented organisation, unrelated to any existing group."
+   },
+   "kits": [
+    "MLI",
+    "NER",
+    "TCD",
+    "IRQ",
+    "SYR",
+    "AFG",
+    "YEM",
+    "SOM",
+    "LBY"
+   ],
+   "orgKind": {
+    "fr": "Cellule",
+    "en": "Cell"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "le",
+      "name": "Front {w}"
+     },
+     {
+      "art": "la",
+      "name": "Brigade {w}"
+     },
+     {
+      "art": "la",
+      "name": "Colonne {w}"
+     },
+     {
+      "art": "le",
+      "name": "Groupe de {place}"
+     },
+     {
+      "art": "la",
+      "name": "Katiba {w}"
+     },
+     {
+      "art": "le",
+      "name": "Cercle de {place}"
+     }
+    ],
+    "en": [
+     {
+      "art": "the",
+      "name": "{w} Front"
+     },
+     {
+      "art": "the",
+      "name": "{w} Brigade"
+     },
+     {
+      "art": "the",
+      "name": "{w} Column"
+     },
+     {
+      "art": "the",
+      "name": "{place} Group"
+     },
+     {
+      "art": "",
+      "name": "Katiba {w}"
+     },
+     {
+      "art": "the",
+      "name": "{place} Circle"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "sector_chief",
+     "label": {
+      "fr": "Chef de secteur",
+      "frF": "Cheffe de secteur",
+      "en": "Sector chief"
+     },
+     "category": "hvt",
+     "side": "guer",
+     "threat": 5,
+     "weight": 6,
+     "ageMin": 34,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Commerçant",
+       "frF": "Commerçante",
+       "en": "Shopkeeper"
+      },
+      {
+       "fr": "Éleveur",
+       "frF": "Éleveuse",
+       "en": "Herder"
+      },
+      {
+       "fr": "Enseignant",
+       "frF": "Enseignante",
+       "en": "Teacher"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "gang",
+      "officer_safety"
+     ],
+     "leader": true,
+     "femalePct": 0
+    },
+    {
+     "key": "deputy",
+     "label": {
+      "fr": "Adjoint opérationnel",
+      "frF": "Adjointe opérationnelle",
+      "en": "Operations deputy"
+     },
+     "category": "hvt",
+     "side": "guer",
+     "threat": 4,
+     "weight": 8,
+     "ageMin": 28,
+     "ageMax": 50,
+     "cover": [
+      {
+       "fr": "Transporteur",
+       "frF": "Transporteuse",
+       "en": "Haulier"
+      },
+      {
+       "fr": "Mécanicien",
+       "frF": "Mécanicienne",
+       "en": "Mechanic"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "bomb_maker",
+     "label": {
+      "fr": "Artificier",
+      "frF": "Artificière",
+      "en": "Bomb-maker"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 5,
+     "weight": 6,
+     "ageMin": 24,
+     "ageMax": 46,
+     "cover": [
+      {
+       "fr": "Électricien",
+       "frF": "Électricienne",
+       "en": "Electrician"
+      },
+      {
+       "fr": "Réparateur de téléphones",
+       "frF": "Réparatrice de téléphones",
+       "en": "Phone repairer"
+      },
+      {
+       "fr": "Soudeur",
+       "frF": "Soudeuse",
+       "en": "Welder"
+      }
+     ],
+     "cautions": [
+      "explosives",
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "courier",
+     "label": {
+      "fr": "Courrier",
+      "frF": "Courrier",
+      "en": "Courier"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 2,
+     "weight": 16,
+     "ageMin": 17,
+     "ageMax": 40,
+     "cover": [
+      {
+       "fr": "Chauffeur",
+       "frF": "Chauffeuse",
+       "en": "Driver"
+      },
+      {
+       "fr": "Vendeur ambulant",
+       "frF": "Vendeuse ambulante",
+       "en": "Street vendor"
+      },
+      {
+       "fr": "Berger",
+       "frF": "Bergère",
+       "en": "Shepherd"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "lookout",
+     "label": {
+      "fr": "Guetteur",
+      "frF": "Guetteuse",
+      "en": "Lookout"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 2,
+     "weight": 16,
+     "ageMin": 15,
+     "ageMax": 35,
+     "cover": [
+      {
+       "fr": "Journalier",
+       "frF": "Journalière",
+       "en": "Day labourer"
+      },
+      {
+       "fr": "Berger",
+       "frF": "Bergère",
+       "en": "Shepherd"
+      },
+      {
+       "fr": "Pompiste",
+       "frF": "Pompiste",
+       "en": "Petrol station attendant"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "fighter",
+     "label": {
+      "fr": "Combattant",
+      "frF": "Combattante",
+      "en": "Fighter"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 4,
+     "weight": 22,
+     "ageMin": 17,
+     "ageMax": 42,
+     "cover": [
+      {
+       "fr": "Agriculteur",
+       "frF": "Agricultrice",
+       "en": "Farmer"
+      },
+      {
+       "fr": "Ouvrier du bâtiment",
+       "frF": "Ouvrière du bâtiment",
+       "en": "Construction worker"
+      },
+      {
+       "fr": "Journalier",
+       "frF": "Journalière",
+       "en": "Day labourer"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "violent",
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "logistician",
+     "label": {
+      "fr": "Logisticien",
+      "frF": "Logisticienne",
+      "en": "Logistician"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 3,
+     "weight": 10,
+     "ageMin": 25,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Magasinier",
+       "frF": "Magasinière",
+       "en": "Storekeeper"
+      },
+      {
+       "fr": "Garagiste",
+       "frF": "Garagiste",
+       "en": "Garage owner"
+      },
+      {
+       "fr": "Chauffeur routier",
+       "frF": "Chauffeuse routière",
+       "en": "Lorry driver"
+      }
+     ],
+     "cautions": [
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "collector",
+     "label": {
+      "fr": "Collecteur de fonds",
+      "frF": "Collectrice de fonds",
+      "en": "Fund collector"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 3,
+     "weight": 8,
+     "ageMin": 26,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Commerçant",
+       "frF": "Commerçante",
+       "en": "Shopkeeper"
+      },
+      {
+       "fr": "Agent de change",
+       "frF": "Agente de change",
+       "en": "Money changer"
+      }
+     ],
+     "cautions": [
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "recruiter",
+     "label": {
+      "fr": "Recruteur",
+      "frF": "Recruteuse",
+      "en": "Recruiter"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 3,
+     "weight": 6,
+     "ageMin": 24,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Enseignant",
+       "frF": "Enseignante",
+       "en": "Teacher"
+      },
+      {
+       "fr": "Coiffeur",
+       "frF": "Coiffeuse",
+       "en": "Barber"
+      }
+     ],
+     "cautions": [
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "medic",
+     "label": {
+      "fr": "Soignant clandestin",
+      "frF": "Soignante clandestine",
+      "en": "Clandestine medic"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 2,
+     "weight": 2,
+     "ageMin": 24,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Infirmier",
+       "frF": "Infirmière",
+       "en": "Nurse"
+      },
+      {
+       "fr": "Pharmacien",
+       "frF": "Pharmacienne",
+       "en": "Pharmacist"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 40
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est [signalé|signalée] comme {role} au sein {deOrg}.",
+      "en": "{first} {last} is reported as {role} within {org}."
+     },
+     {
+      "fr": "Sous couvert de son métier de {job}, {first} {last} sert {org} comme {role}.",
+      "en": "Behind a job as a {job}, {first} {last} serves {org} as {role}."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, tient le rôle de {role} pour {org} autour de {place}.",
+      "en": "{first} {last}, {age}, acts as {role} for {org} around {place}."
+     },
+     {
+      "fr": "Plusieurs sources désignent {first} {last} comme {role} {deOrg}.",
+      "en": "Several sources name {first} {last} as {role} of {org}."
+     },
+     {
+      "fr": "[Recruté|Recrutée] vers {year}, {first} {last} est [devenu|devenue] {role} {deOrg}.",
+      "en": "Recruited around {year}, {first} {last} became {role} of {org}."
+     },
+     {
+      "fr": "{org} s'appuie sur {first} {last}, {role}, pour le secteur de {place}.",
+      "en": "{org} relies on {first} {last}, {role}, for the {place} sector."
+     },
+     {
+      "fr": "Officiellement {job}, {first} {last} est en réalité {role} {deOrg}.",
+      "en": "Officially a {job}, {first} {last} is in fact {role} of {org}."
+     },
+     {
+      "fr": "{first} {last} a rejoint {org} après son départ de {birth}, et y est {role}.",
+      "en": "{first} {last} joined {org} after leaving {birth}, and is {role} there."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "[Il|Elle] change de téléphone toutes les deux semaines et évite les appels vocaux.",
+      "en": "[He|She] changes phones every fortnight and avoids voice calls."
+     },
+     {
+      "fr": "[Il|Elle] ne dort jamais deux nuits de suite au même endroit.",
+      "en": "[He|She] never sleeps two nights running in the same place."
+     },
+     {
+      "fr": "Ses déplacements suivent les jours de marché, pour se fondre dans la foule.",
+      "en": "[His|Her] movements follow market days, to blend into the crowd."
+     },
+     {
+      "fr": "[Il|Elle] rend compte à {chief}, qu'[il|elle] rencontre toujours de nuit.",
+      "en": "[He|She] reports to {chief}, whom [he|she] always meets at night."
+     },
+     {
+      "fr": "[Il|Elle] a été [vu|vue] près du dépôt de {place2} avant chaque action du groupe.",
+      "en": "[He|She] has been seen near the {place2} depot before each of the group's actions."
+     },
+     {
+      "fr": "[Il|Elle] transmet ses consignes par des messages écrits, brûlés après lecture.",
+      "en": "[He|She] passes instructions in written notes, burned after reading."
+     },
+     {
+      "fr": "[Il|Elle] connaît les pistes entre {place} et {place2} mieux que quiconque.",
+      "en": "[He|She] knows the tracks between {place} and {place2} better than anyone."
+     },
+     {
+      "fr": "[Il|Elle] se méfie des nouveaux venus et vérifie qui les recommande.",
+      "en": "[He|She] distrusts newcomers and checks who vouches for them."
+     }
+    ],
+    "close": [
+     {
+      "fr": "À approcher avec précaution.",
+      "en": "To be approached with caution."
+     },
+     {
+      "fr": "Tout contact est à signaler à la cellule de renseignement.",
+      "en": "Any contact is to be reported to the intelligence cell."
+     },
+     {
+      "fr": "Sa capture permettrait de remonter jusqu'à {chief}.",
+      "en": "[His|Her] capture would lead back to {chief}."
+     },
+     {
+      "fr": "Ses téléphones et carnets sont à saisir en priorité.",
+      "en": "[His|Her] phones and notebooks are priority items to seize."
+     },
+     {
+      "fr": "Peut tenter de fuir à la vue d'une patrouille.",
+      "en": "May try to flee at the sight of a patrol."
+     },
+     {
+      "fr": "Renseignement à recouper : une seule source directe.",
+      "en": "Intelligence to be cross-checked: one direct source only."
+     }
+    ]
+   }
+  },
+  "militia": {
+   "key": "militia",
+   "order": 30,
+   "civil": false,
+   "name": {
+    "fr": "Milice",
+    "en": "Militia"
+   },
+   "summary": {
+    "fr": "Formation armée irrégulière adossée à des notables locaux : commandant, chefs de groupe, tireurs, opérateurs de drones et intendance. Unité inventée.",
+    "en": "An irregular armed formation backed by local notables: commander, group leaders, marksmen, drone operators and supply. An invented unit."
+   },
+   "kits": [
+    "RUS",
+    "UKR",
+    "SRB",
+    "ALB",
+    "LBY",
+    "SYR",
+    "IRQ"
+   ],
+   "orgKind": {
+    "fr": "Unité",
+    "en": "Unit"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "le",
+      "name": "Bataillon {w}"
+     },
+     {
+      "art": "le",
+      "name": "Détachement {w}"
+     },
+     {
+      "art": "la",
+      "name": "Compagnie {w}"
+     },
+     {
+      "art": "la",
+      "name": "Garde de {place}"
+     },
+     {
+      "art": "le",
+      "name": "Groupe {w}"
+     },
+     {
+      "art": "la",
+      "name": "Milice de {place}"
+     }
+    ],
+    "en": [
+     {
+      "art": "the",
+      "name": "{w} Battalion"
+     },
+     {
+      "art": "the",
+      "name": "{w} Detachment"
+     },
+     {
+      "art": "the",
+      "name": "{w} Company"
+     },
+     {
+      "art": "the",
+      "name": "{place} Guard"
+     },
+     {
+      "art": "the",
+      "name": "{w} Group"
+     },
+     {
+      "art": "the",
+      "name": "{place} Militia"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "commander",
+     "label": {
+      "fr": "Commandant",
+      "frF": "Commandante",
+      "en": "Commander"
+     },
+     "category": "hvt",
+     "side": "east",
+     "threat": 5,
+     "weight": 5,
+     "ageMin": 36,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Ancien officier",
+       "frF": "Ancienne officière",
+       "en": "Former officer"
+      },
+      {
+       "fr": "Entrepreneur",
+       "frF": "Entrepreneuse",
+       "en": "Businessman"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "gang",
+      "officer_safety"
+     ],
+     "leader": true,
+     "femalePct": 0
+    },
+    {
+     "key": "chief_staff",
+     "label": {
+      "fr": "Chef d'état-major",
+      "frF": "Cheffe d'état-major",
+      "en": "Chief of staff"
+     },
+     "category": "hvt",
+     "side": "east",
+     "threat": 4,
+     "weight": 5,
+     "ageMin": 32,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Ancien sous-officier",
+       "frF": "Ancienne sous-officier",
+       "en": "Former NCO"
+      },
+      {
+       "fr": "Ingénieur",
+       "frF": "Ingénieure",
+       "en": "Engineer"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "group_leader",
+     "label": {
+      "fr": "Chef de groupe",
+      "frF": "Cheffe de groupe",
+      "en": "Group leader"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 4,
+     "weight": 12,
+     "ageMin": 26,
+     "ageMax": 46,
+     "cover": [
+      {
+       "fr": "Agent de sécurité",
+       "frF": "Agente de sécurité",
+       "en": "Security guard"
+      },
+      {
+       "fr": "Chauffeur routier",
+       "frF": "Chauffeuse routière",
+       "en": "Lorry driver"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "rifleman",
+     "label": {
+      "fr": "Tireur",
+      "frF": "Tireuse",
+      "en": "Rifleman"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 3,
+     "weight": 30,
+     "ageMin": 19,
+     "ageMax": 45,
+     "cover": [
+      {
+       "fr": "Ouvrier du bâtiment",
+       "frF": "Ouvrière du bâtiment",
+       "en": "Construction worker"
+      },
+      {
+       "fr": "Mécanicien",
+       "frF": "Mécanicienne",
+       "en": "Mechanic"
+      },
+      {
+       "fr": "Journalier",
+       "frF": "Journalière",
+       "en": "Day labourer"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 3
+    },
+    {
+     "key": "marksman",
+     "label": {
+      "fr": "Tireur de précision",
+      "frF": "Tireuse de précision",
+      "en": "Marksman"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 4,
+     "weight": 5,
+     "ageMin": 22,
+     "ageMax": 44,
+     "cover": [
+      {
+       "fr": "Chasseur",
+       "frF": "Chasseuse",
+       "en": "Hunter"
+      },
+      {
+       "fr": "Garde forestier",
+       "frF": "Garde forestière",
+       "en": "Forest ranger"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "officer_safety"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "drone_operator",
+     "label": {
+      "fr": "Opérateur de drone",
+      "frF": "Opératrice de drone",
+      "en": "Drone operator"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 3,
+     "weight": 8,
+     "ageMin": 19,
+     "ageMax": 36,
+     "cover": [
+      {
+       "fr": "Informaticien",
+       "frF": "Informaticienne",
+       "en": "IT technician"
+      },
+      {
+       "fr": "Étudiant",
+       "frF": "Étudiante",
+       "en": "Student"
+      },
+      {
+       "fr": "Photographe",
+       "frF": "Photographe",
+       "en": "Photographer"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "signaller",
+     "label": {
+      "fr": "Radio",
+      "frF": "Radio",
+      "en": "Signaller"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 2,
+     "weight": 6,
+     "ageMin": 20,
+     "ageMax": 44,
+     "cover": [
+      {
+       "fr": "Technicien radio",
+       "frF": "Technicienne radio",
+       "en": "Radio technician"
+      },
+      {
+       "fr": "Électricien",
+       "frF": "Électricienne",
+       "en": "Electrician"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "quartermaster",
+     "label": {
+      "fr": "Intendant",
+      "frF": "Intendante",
+      "en": "Quartermaster"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 2,
+     "weight": 8,
+     "ageMin": 30,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Magasinier",
+       "frF": "Magasinière",
+       "en": "Storekeeper"
+      },
+      {
+       "fr": "Comptable",
+       "frF": "Comptable",
+       "en": "Accountant"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 20
+    },
+    {
+     "key": "medic",
+     "label": {
+      "fr": "Infirmier de l'unité",
+      "frF": "Infirmière de l'unité",
+      "en": "Unit medic"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 1,
+     "weight": 5,
+     "ageMin": 22,
+     "ageMax": 50,
+     "cover": [
+      {
+       "fr": "Infirmier",
+       "frF": "Infirmière",
+       "en": "Nurse"
+      },
+      {
+       "fr": "Aide-soignant",
+       "frF": "Aide-soignante",
+       "en": "Care assistant"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 40
+    },
+    {
+     "key": "sponsor",
+     "label": {
+      "fr": "Notable qui finance l'unité",
+      "frF": "Notable qui finance l'unité",
+      "en": "Notable funding the unit"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 3,
+     "weight": 4,
+     "ageMin": 42,
+     "ageMax": 68,
+     "cover": [
+      {
+       "fr": "Entrepreneur",
+       "frF": "Entrepreneuse",
+       "en": "Businessman"
+      },
+      {
+       "fr": "Négociant",
+       "frF": "Négociante",
+       "en": "Trader"
+      },
+      {
+       "fr": "Élu local",
+       "frF": "Élue locale",
+       "en": "Local councillor"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "driver",
+     "label": {
+      "fr": "Conducteur",
+      "frF": "Conductrice",
+      "en": "Driver"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 2,
+     "weight": 12,
+     "ageMin": 20,
+     "ageMax": 50,
+     "cover": [
+      {
+       "fr": "Chauffeur",
+       "frF": "Chauffeuse",
+       "en": "Driver"
+      },
+      {
+       "fr": "Garagiste",
+       "frF": "Garagiste",
+       "en": "Garage owner"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 5
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} sert comme {role} dans {org}.",
+      "en": "{first} {last} serves as {role} in {org}."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, [ancien|ancienne] {job}, est {role} {deOrg}.",
+      "en": "{first} {last}, {age}, a former {job}, is {role} of {org}."
+     },
+     {
+      "fr": "[Engagé|Engagée] en {year}, {first} {last} est aujourd'hui {role} au sein {deOrg}.",
+      "en": "Enlisted in {year}, {first} {last} is now {role} within {org}."
+     },
+     {
+      "fr": "{org} compte {first} {last} parmi ses cadres : {role}.",
+      "en": "{org} counts {first} {last} among its cadre: {role}."
+     },
+     {
+      "fr": "Originaire de {birth}, {first} {last} a rejoint {org} et y est {role}.",
+      "en": "From {birth}, {first} {last} joined {org} and is {role} there."
+     },
+     {
+      "fr": "Dans le civil {job}, {first} {last} porte l'uniforme {deOrg} comme {role}.",
+      "en": "A {job} in civilian life, {first} {last} wears the uniform of {org} as {role}."
+     },
+     {
+      "fr": "{first} {last} est [cité|citée] comme {role} dans les tableaux d'effectifs {deOrg}.",
+      "en": "{first} {last} is listed as {role} in the manning tables of {org}."
+     },
+     {
+      "fr": "Le poste de {place} est tenu par {org} ; {first} {last} y est {role}.",
+      "en": "The {place} post is held by {org}; {first} {last} is {role} there."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "[Il|Elle] tient son poste par rotations de dix jours, puis rentre à {place}.",
+      "en": "[He|She] holds [his|her] post in ten-day rotations, then goes home to {place}."
+     },
+     {
+      "fr": "[Il|Elle] répond directement à {chief}.",
+      "en": "[He|She] answers directly to {chief}."
+     },
+     {
+      "fr": "[Il|Elle] a suivi une instruction de quelques semaines au camp de {place2}.",
+      "en": "[He|She] went through a few weeks of training at the {place2} camp."
+     },
+     {
+      "fr": "Sa solde arrive en espèces, par un intermédiaire du commandement.",
+      "en": "[His|Her] pay arrives in cash, through an intermediary of the command."
+     },
+     {
+      "fr": "[Il|Elle] publie parfois des photos de l'unité, ce qui a permis de l'identifier.",
+      "en": "[He|She] sometimes posts pictures of the unit, which made identification possible."
+     },
+     {
+      "fr": "[Il|Elle] garde son équipement chez [lui|elle] entre deux rotations.",
+      "en": "[He|She] keeps [his|her] kit at home between rotations."
+     },
+     {
+      "fr": "[Il|Elle] a été [blessé|blessée] légèrement en {year} et a repris son poste.",
+      "en": "[He|She] was slightly wounded in {year} and went back to [his|her] post."
+     },
+     {
+      "fr": "[Il|Elle] entretient de bonnes relations avec les commerçants de {place}.",
+      "en": "[He|She] is on good terms with the shopkeepers of {place}."
+     }
+    ],
+    "close": [
+     {
+      "fr": "[Armé|Armée] en service ; à considérer comme [tel|telle] hors service.",
+      "en": "Armed on duty; to be regarded as such off duty."
+     },
+     {
+      "fr": "Connaît l'organisation interne de l'unité.",
+      "en": "Knows the internal organisation of the unit."
+     },
+     {
+      "fr": "Pourrait coopérer en échange de garanties pour sa famille.",
+      "en": "Might cooperate in exchange for guarantees for [his|her] family."
+     },
+     {
+      "fr": "Son téléphone contient probablement les groupes de discussion de l'unité.",
+      "en": "[His|Her] phone probably holds the unit's chat groups."
+     },
+     {
+      "fr": "Fidèle à {chief} ; peu susceptible de parler.",
+      "en": "Loyal to {chief}; unlikely to talk."
+     },
+     {
+      "fr": "Présence régulière aux points de contrôle de la zone.",
+      "en": "Regularly present at the checkpoints of the area."
+     }
+    ]
+   }
+  },
+  "cartel": {
+   "key": "cartel",
+   "order": 40,
+   "civil": false,
+   "name": {
+    "fr": "Cartel",
+    "en": "Cartel"
+   },
+   "summary": {
+    "fr": "Organisation criminelle de production et de transport : patron de plaza, lieutenants, chimiste, hommes de main, guetteurs et prête-noms. Structure inventée.",
+    "en": "A criminal production and transport organisation: plaza boss, lieutenants, chemist, enforcers, lookouts and front men. An invented structure."
+   },
+   "kits": [
+    "COL",
+    "MEX"
+   ],
+   "orgKind": {
+    "fr": "Organisation",
+    "en": "Organisation"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "",
+      "name": "Los de {place}"
+     },
+     {
+      "art": "",
+      "name": "La Oficina de {place}"
+     },
+     {
+      "art": "le",
+      "name": "Clan {w}"
+     },
+     {
+      "art": "le",
+      "name": "Bloque {w}"
+     },
+     {
+      "art": "",
+      "name": "La Empresa de {place}"
+     },
+     {
+      "art": "l'",
+      "name": "Organisation {w}"
+     }
+    ],
+    "en": [
+     {
+      "art": "",
+      "name": "Los de {place}"
+     },
+     {
+      "art": "",
+      "name": "La Oficina de {place}"
+     },
+     {
+      "art": "the",
+      "name": "{w} Clan"
+     },
+     {
+      "art": "the",
+      "name": "Bloque {w}"
+     },
+     {
+      "art": "",
+      "name": "La Empresa de {place}"
+     },
+     {
+      "art": "the",
+      "name": "{w} Organisation"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "plaza_boss",
+     "label": {
+      "fr": "Patron de plaza",
+      "frF": "Patronne de plaza",
+      "en": "Plaza boss"
+     },
+     "category": "hvt",
+     "side": "guer",
+     "threat": 5,
+     "weight": 5,
+     "ageMin": 34,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Éleveur",
+       "frF": "Éleveuse",
+       "en": "Rancher"
+      },
+      {
+       "fr": "Entrepreneur",
+       "frF": "Entrepreneuse",
+       "en": "Businessman"
+      },
+      {
+       "fr": "Concessionnaire automobile",
+       "frF": "Concessionnaire automobile",
+       "en": "Car dealer"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "violent",
+      "gang",
+      "officer_safety"
+     ],
+     "leader": true,
+     "femalePct": 5
+    },
+    {
+     "key": "lieutenant",
+     "label": {
+      "fr": "Lieutenant",
+      "frF": "Lieutenante",
+      "en": "Lieutenant"
+     },
+     "category": "hvt",
+     "side": "guer",
+     "threat": 5,
+     "weight": 8,
+     "ageMin": 27,
+     "ageMax": 48,
+     "cover": [
+      {
+       "fr": "Gérant de bar",
+       "frF": "Gérante de bar",
+       "en": "Bar manager"
+      },
+      {
+       "fr": "Transporteur",
+       "frF": "Transporteuse",
+       "en": "Haulier"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "violent",
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "enforcer",
+     "label": {
+      "fr": "Homme de main",
+      "frF": "Femme de main",
+      "en": "Enforcer"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 5,
+     "weight": 20,
+     "ageMin": 18,
+     "ageMax": 40,
+     "cover": [
+      {
+       "fr": "Agent de sécurité",
+       "frF": "Agente de sécurité",
+       "en": "Security guard"
+      },
+      {
+       "fr": "Journalier",
+       "frF": "Journalière",
+       "en": "Day labourer"
+      },
+      {
+       "fr": "Mécanicien",
+       "frF": "Mécanicienne",
+       "en": "Mechanic"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "violent",
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "chemist",
+     "label": {
+      "fr": "Chimiste",
+      "frF": "Chimiste",
+      "en": "Chemist"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 3,
+     "weight": 5,
+     "ageMin": 26,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Pharmacien",
+       "frF": "Pharmacienne",
+       "en": "Pharmacist"
+      },
+      {
+       "fr": "Laborantin",
+       "frF": "Laborantine",
+       "en": "Lab technician"
+      },
+      {
+       "fr": "Ingénieur",
+       "frF": "Ingénieure",
+       "en": "Engineer"
+      }
+     ],
+     "cautions": [
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "lookout",
+     "label": {
+      "fr": "Guetteur",
+      "frF": "Guetteuse",
+      "en": "Lookout"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 1,
+     "weight": 18,
+     "ageMin": 14,
+     "ageMax": 30,
+     "cover": [
+      {
+       "fr": "Chauffeur de taxi",
+       "frF": "Chauffeuse de taxi",
+       "en": "Taxi driver"
+      },
+      {
+       "fr": "Vendeur ambulant",
+       "frF": "Vendeuse ambulante",
+       "en": "Street vendor"
+      },
+      {
+       "fr": "Lycéen",
+       "frF": "Lycéenne",
+       "en": "Secondary-school pupil"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 25
+    },
+    {
+     "key": "transporter",
+     "label": {
+      "fr": "Transporteur",
+      "frF": "Transporteuse",
+      "en": "Transporter"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 2,
+     "weight": 14,
+     "ageMin": 22,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Chauffeur routier",
+       "frF": "Chauffeuse routière",
+       "en": "Lorry driver"
+      },
+      {
+       "fr": "Pêcheur",
+       "frF": "Pêcheuse",
+       "en": "Fisherman"
+      },
+      {
+       "fr": "Pilote agricole",
+       "frF": "Pilote agricole",
+       "en": "Crop-duster pilot"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "accountant",
+     "label": {
+      "fr": "Comptable",
+      "frF": "Comptable",
+      "en": "Accountant"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 2,
+     "weight": 5,
+     "ageMin": 28,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Comptable",
+       "frF": "Comptable",
+       "en": "Accountant"
+      },
+      {
+       "fr": "Employé de banque",
+       "frF": "Employée de banque",
+       "en": "Bank clerk"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 40
+    },
+    {
+     "key": "front_man",
+     "label": {
+      "fr": "Prête-nom",
+      "frF": "Prête-nom",
+      "en": "Front man"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 8,
+     "ageMin": 25,
+     "ageMax": 65,
+     "cover": [
+      {
+       "fr": "Restaurateur",
+       "frF": "Restauratrice",
+       "en": "Restaurant owner"
+      },
+      {
+       "fr": "Agent immobilier",
+       "frF": "Agente immobilière",
+       "en": "Estate agent"
+      },
+      {
+       "fr": "Bijoutier",
+       "frF": "Bijoutière",
+       "en": "Jeweller"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 40
+    },
+    {
+     "key": "corrupt_officer",
+     "label": {
+      "fr": "Agent acheté",
+      "frF": "Agente achetée",
+      "en": "Bought official"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 5,
+     "ageMin": 28,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Policier municipal",
+       "frF": "Policière municipale",
+       "en": "Municipal police officer"
+      },
+      {
+       "fr": "Douanier",
+       "frF": "Douanière",
+       "en": "Customs officer"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "recruiter",
+     "label": {
+      "fr": "Recruteur",
+      "frF": "Recruteuse",
+      "en": "Recruiter"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 2,
+     "weight": 5,
+     "ageMin": 20,
+     "ageMax": 40,
+     "cover": [
+      {
+       "fr": "Entraîneur de football",
+       "frF": "Entraîneuse de football",
+       "en": "Football coach"
+      },
+      {
+       "fr": "Gérant de salle de jeux",
+       "frF": "Gérante de salle de jeux",
+       "en": "Arcade manager"
+      }
+     ],
+     "cautions": [
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 20
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est {role} pour {org}.",
+      "en": "{first} {last} is {role} for {org}."
+     },
+     {
+      "fr": "Derrière son activité de {job}, {first} {last} travaille pour {org} comme {role}.",
+      "en": "Behind a business as a {job}, {first} {last} works for {org} as {role}."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, est [connu|connue] à {place} comme {role} {deOrg}.",
+      "en": "{first} {last}, {age}, is known in {place} as {role} of {org}."
+     },
+     {
+      "fr": "[Entré|Entrée] dans {org} vers {year}, {first} {last} y occupe la place de {role}.",
+      "en": "Having joined {org} around {year}, {first} {last} holds the place of {role}."
+     },
+     {
+      "fr": "{org} tient le secteur de {place} ; {first} {last} en est {role}.",
+      "en": "{org} holds the {place} area; {first} {last} is its {role}."
+     },
+     {
+      "fr": "[Natif|Native] de {birth}, {first} {last} a gravi les échelons {deOrg} jusqu'à devenir {role}.",
+      "en": "A native of {birth}, {first} {last} rose through {org} to become {role}."
+     },
+     {
+      "fr": "{first} {last} se présente comme {job} ; les écoutes [le|la] situent comme {role} {deOrg}.",
+      "en": "{first} {last} claims to be a {job}; intercepts place [him|her] as {role} of {org}."
+     },
+     {
+      "fr": "Le nom de {first} {last} apparaît dans les comptes {deOrg}, à la ligne {role}.",
+      "en": "The name {first} {last} appears in the books of {org}, on the {role} line."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "[Il|Elle] paie tout en espèces et ne garde aucun compte à son nom.",
+      "en": "[He|She] pays for everything in cash and keeps no account in [his|her] own name."
+     },
+     {
+      "fr": "[Il|Elle] reçoit ses ordres de {chief}, par messagerie chiffrée.",
+      "en": "[He|She] takes [his|her] orders from {chief}, by encrypted messaging."
+     },
+     {
+      "fr": "[Il|Elle] supervise les chargements qui quittent {place2} de nuit.",
+      "en": "[He|She] oversees the loads leaving {place2} at night."
+     },
+     {
+      "fr": "[Il|Elle] change de véhicule chaque semaine, toujours prêté par un garage ami.",
+      "en": "[He|She] changes vehicles every week, always lent by a friendly garage."
+     },
+     {
+      "fr": "[Il|Elle] passe ses soirées dans le même établissement, [entouré|entourée] de deux proches.",
+      "en": "[He|She] spends [his|her] evenings in the same venue, flanked by two associates."
+     },
+     {
+      "fr": "[Il|Elle] a déjà été [appréhendé|appréhendée], puis [relâché|relâchée] faute de témoins.",
+      "en": "[He|She] has been arrested before, then released for lack of witnesses."
+     },
+     {
+      "fr": "[Il|Elle] possède une propriété isolée du côté de {place2}.",
+      "en": "[He|She] owns a secluded property out towards {place2}."
+     },
+     {
+      "fr": "[Il|Elle] ne parle jamais d'affaires au téléphone.",
+      "en": "[He|She] never talks business on the phone."
+     }
+    ],
+    "close": [
+     {
+      "fr": "[Considéré|Considérée] comme [armé|armée] et [dangereux|dangereuse].",
+      "en": "Regarded as armed and dangerous."
+     },
+     {
+      "fr": "Les documents comptables trouvés sur [lui|elle] sont à exploiter en priorité.",
+      "en": "Any ledgers found on [him|her] are priority material."
+     },
+     {
+      "fr": "Peut négocier : [il|elle] craint davantage {chief} que la justice.",
+      "en": "May negotiate: [he|she] fears {chief} more than the courts."
+     },
+     {
+      "fr": "Ses proches sont probablement surveillés par l'organisation.",
+      "en": "[His|Her] relatives are probably watched by the organisation."
+     },
+     {
+      "fr": "À ne pas contrôler seul.",
+      "en": "Not to be checked alone."
+     },
+     {
+      "fr": "Toute saisie d'argent liquide est à photographier avant sa prise en charge.",
+      "en": "Any cash seized is to be photographed before it is taken into custody."
+     }
+    ]
+   }
+  },
+  "finance_cell": {
+   "key": "finance_cell",
+   "order": 50,
+   "civil": false,
+   "name": {
+    "fr": "Cellule de financement",
+    "en": "Financing cell"
+   },
+   "summary": {
+    "fr": "Changeurs, sociétés d'import-export et collectes : un trésorier, des agents de transfert, des porteurs de valises et des sociétés écrans. Réseau inventé.",
+    "en": "Money changers, import-export firms and collections: a treasurer, transfer agents, cash couriers and shell companies. An invented network."
+   },
+   "kits": [
+    "LBN",
+    "IRQ",
+    "SYR",
+    "YEM",
+    "AFG",
+    "SOM",
+    "LBY"
+   ],
+   "orgKind": {
+    "fr": "Réseau",
+    "en": "Network"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "le",
+      "name": "Bureau de change {w}"
+     },
+     {
+      "art": "la",
+      "name": "Maison de négoce {w}"
+     },
+     {
+      "art": "le",
+      "name": "Comptoir {w} Import-Export"
+     },
+     {
+      "art": "la",
+      "name": "Société {w} Trading"
+     },
+     {
+      "art": "la",
+      "name": "Maison {w}"
+     },
+     {
+      "art": "le",
+      "name": "Fonds de solidarité de {place}"
+     }
+    ],
+    "en": [
+     {
+      "art": "the",
+      "name": "{w} Exchange Office"
+     },
+     {
+      "art": "the",
+      "name": "{w} Trading House"
+     },
+     {
+      "art": "the",
+      "name": "{w} Import-Export Counter"
+     },
+     {
+      "art": "the",
+      "name": "{w} Trading Company"
+     },
+     {
+      "art": "the",
+      "name": "House of {w}"
+     },
+     {
+      "art": "the",
+      "name": "{place} Solidarity Fund"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "treasurer",
+     "label": {
+      "fr": "Trésorier",
+      "frF": "Trésorière",
+      "en": "Treasurer"
+     },
+     "category": "hvt",
+     "side": "civ",
+     "threat": 3,
+     "weight": 6,
+     "ageMin": 38,
+     "ageMax": 66,
+     "cover": [
+      {
+       "fr": "Négociant",
+       "frF": "Négociante",
+       "en": "Trader"
+      },
+      {
+       "fr": "Agent de change",
+       "frF": "Agente de change",
+       "en": "Money changer"
+      }
+     ],
+     "cautions": [],
+     "leader": true,
+     "femalePct": 5
+    },
+    {
+     "key": "transfer_agent",
+     "label": {
+      "fr": "Agent de transfert",
+      "frF": "Agente de transfert",
+      "en": "Transfer agent"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 22,
+     "ageMin": 24,
+     "ageMax": 62,
+     "cover": [
+      {
+       "fr": "Agent de change",
+       "frF": "Agente de change",
+       "en": "Money changer"
+      },
+      {
+       "fr": "Épicier",
+       "frF": "Épicière",
+       "en": "Grocer"
+      },
+      {
+       "fr": "Bijoutier",
+       "frF": "Bijoutière",
+       "en": "Jeweller"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "cash_courier",
+     "label": {
+      "fr": "Porteur de valises",
+      "frF": "Porteuse de valises",
+      "en": "Cash courier"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 16,
+     "ageMin": 20,
+     "ageMax": 50,
+     "cover": [
+      {
+       "fr": "Chauffeur",
+       "frF": "Chauffeuse",
+       "en": "Driver"
+      },
+      {
+       "fr": "Agent de voyages",
+       "frF": "Agente de voyages",
+       "en": "Travel agent"
+      },
+      {
+       "fr": "Étudiant",
+       "frF": "Étudiante",
+       "en": "Student"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 25
+    },
+    {
+     "key": "bookkeeper",
+     "label": {
+      "fr": "Teneur de livres",
+      "frF": "Teneuse de livres",
+      "en": "Bookkeeper"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 10,
+     "ageMin": 26,
+     "ageMax": 64,
+     "cover": [
+      {
+       "fr": "Comptable",
+       "frF": "Comptable",
+       "en": "Accountant"
+      },
+      {
+       "fr": "Secrétaire",
+       "frF": "Secrétaire",
+       "en": "Secretary"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 45
+    },
+    {
+     "key": "front_director",
+     "label": {
+      "fr": "Gérant de société écran",
+      "frF": "Gérante de société écran",
+      "en": "Shell company manager"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 12,
+     "ageMin": 30,
+     "ageMax": 65,
+     "cover": [
+      {
+       "fr": "Importateur",
+       "frF": "Importatrice",
+       "en": "Importer"
+      },
+      {
+       "fr": "Transitaire",
+       "frF": "Transitaire",
+       "en": "Freight forwarder"
+      },
+      {
+       "fr": "Hôtelier",
+       "frF": "Hôtelière",
+       "en": "Hotel keeper"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 25
+    },
+    {
+     "key": "collector",
+     "label": {
+      "fr": "Collecteur",
+      "frF": "Collectrice",
+      "en": "Collector"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 14,
+     "ageMin": 22,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Commerçant",
+       "frF": "Commerçante",
+       "en": "Shopkeeper"
+      },
+      {
+       "fr": "Responsable associatif",
+       "frF": "Responsable associative",
+       "en": "Charity organiser"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 20
+    },
+    {
+     "key": "facilitator",
+     "label": {
+      "fr": "Facilitateur à l'étranger",
+      "frF": "Facilitatrice à l'étranger",
+      "en": "Facilitator abroad"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 8,
+     "ageMin": 28,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Agent maritime",
+       "frF": "Agente maritime",
+       "en": "Shipping agent"
+      },
+      {
+       "fr": "Courtier",
+       "frF": "Courtière",
+       "en": "Broker"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "document_forger",
+     "label": {
+      "fr": "Faussaire",
+      "frF": "Faussaire",
+      "en": "Forger"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 5,
+     "ageMin": 26,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Imprimeur",
+       "frF": "Imprimeuse",
+       "en": "Printer"
+      },
+      {
+       "fr": "Photographe",
+       "frF": "Photographe",
+       "en": "Photographer"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "bodyguard",
+     "label": {
+      "fr": "Garde du trésorier",
+      "frF": "Garde du trésorier",
+      "en": "Treasurer's bodyguard"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 4,
+     "weight": 7,
+     "ageMin": 22,
+     "ageMax": 45,
+     "cover": [
+      {
+       "fr": "Agent de sécurité",
+       "frF": "Agente de sécurité",
+       "en": "Security guard"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 0
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est {role} {deOrg}.",
+      "en": "{first} {last} is {role} of {org}."
+     },
+     {
+      "fr": "{first} {last}, {job}, sert en réalité de {role} {aOrg}.",
+      "en": "{first} {last}, a {job}, in fact serves {org} as {role}."
+     },
+     {
+      "fr": "Les registres saisis désignent {first} {last}, {age} ans, comme {role} {deOrg}.",
+      "en": "Seized ledgers name {first} {last}, {age}, as {role} of {org}."
+     },
+     {
+      "fr": "Depuis {year}, {first} {last} assure pour {org} la fonction de {role}.",
+      "en": "Since {year}, {first} {last} has acted as {role} for {org}."
+     },
+     {
+      "fr": "Depuis {place}, {org} emploie {first} {last} comme {role}.",
+      "en": "From {place}, {org} employs {first} {last} as {role}."
+     },
+     {
+      "fr": "[Venu|Venue] de {birth}, {first} {last} a ouvert boutique à {place} et travaille pour {org} comme {role}.",
+      "en": "Coming from {birth}, {first} {last} opened a shop in {place} and works for {org} as {role}."
+     },
+     {
+      "fr": "{first} {last} se dit simple {job} ; ses écritures [le|la] montrent {role} {deOrg}.",
+      "en": "{first} {last} claims to be a mere {job}; the books show [him|her] as {role} of {org}."
+     },
+     {
+      "fr": "Le circuit {deOrg} passe par {first} {last}, {role}.",
+      "en": "The circuit of {org} runs through {first} {last}, {role}."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "Les sommes ne franchissent jamais la frontière : seules les écritures voyagent.",
+      "en": "The sums never cross the border: only the entries travel."
+     },
+     {
+      "fr": "[Il|Elle] tient deux carnets, dont un seul est montré aux contrôleurs.",
+      "en": "[He|She] keeps two notebooks, only one of which is shown to inspectors."
+     },
+     {
+      "fr": "[Il|Elle] fractionne chaque transfert pour rester sous les seuils de déclaration.",
+      "en": "[He|She] splits each transfer to stay under the reporting thresholds."
+     },
+     {
+      "fr": "[Il|Elle] rend ses comptes à {chief} une fois par mois, en personne.",
+      "en": "[He|She] settles [his|her] accounts with {chief} once a month, in person."
+     },
+     {
+      "fr": "[Il|Elle] utilise la boutique de {place2} comme guichet discret.",
+      "en": "[He|She] uses the shop in {place2} as a discreet counter."
+     },
+     {
+      "fr": "[Il|Elle] note les montants sous forme de quantités de marchandise.",
+      "en": "[He|She] records amounts as quantities of goods."
+     },
+     {
+      "fr": "[Il|Elle] voyage souvent, toujours avec un bagage à main.",
+      "en": "[He|She] travels often, always with hand luggage only."
+     },
+     {
+      "fr": "Ses clients ordinaires ignorent tout du second circuit.",
+      "en": "[His|Her] ordinary customers know nothing of the second circuit."
+     }
+    ],
+    "close": [
+     {
+      "fr": "[Non violent|Non violente] ; valeur surtout documentaire.",
+      "en": "Non-violent; mainly of documentary value."
+     },
+     {
+      "fr": "Saisir téléphones, carnets et reçus avant toute chose.",
+      "en": "Seize phones, notebooks and receipts before anything else."
+     },
+     {
+      "fr": "Peut expliquer le circuit en échange d'une protection.",
+      "en": "May explain the circuit in exchange for protection."
+     },
+     {
+      "fr": "Ses écritures permettent de remonter jusqu'à {chief}.",
+      "en": "[His|Her] entries lead back to {chief}."
+     },
+     {
+      "fr": "À contrôler aux points de passage : transporte parfois des espèces.",
+      "en": "To be checked at crossing points: sometimes carries cash."
+     },
+     {
+      "fr": "Risque de destruction des carnets en cas d'alerte.",
+      "en": "Risk of the notebooks being destroyed if alerted."
+     }
+    ]
+   }
+  },
+  "maritime_trafficking": {
+   "key": "maritime_trafficking",
+   "order": 60,
+   "civil": false,
+   "name": {
+    "fr": "Trafic maritime",
+    "en": "Maritime trafficking"
+   },
+   "summary": {
+    "fr": "Boutres, bancas et cargos côtiers : armateur, capitaines, équipages, courtiers de port et guetteurs de quai. Filière inventée.",
+    "en": "Dhows, bancas and coastal freighters: shipowner, skippers, crews, port brokers and quay lookouts. An invented pipeline."
+   },
+   "kits": [
+    "PHL",
+    "SOM",
+    "YEM",
+    "LBN",
+    "COL",
+    "ALB",
+    "LBY"
+   ],
+   "orgKind": {
+    "fr": "Filière",
+    "en": "Pipeline"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "l'",
+      "name": "Armement {w}"
+     },
+     {
+      "art": "la",
+      "name": "Compagnie maritime {w}"
+     },
+     {
+      "art": "la",
+      "name": "Pêcherie de {place}"
+     },
+     {
+      "art": "la",
+      "name": "Consignation {w}"
+     },
+     {
+      "art": "la",
+      "name": "Coopérative de pêche de {place}"
+     },
+     {
+      "art": "le",
+      "name": "Transit {w}"
+     }
+    ],
+    "en": [
+     {
+      "art": "",
+      "name": "{w} Shipping"
+     },
+     {
+      "art": "the",
+      "name": "{w} Maritime Company"
+     },
+     {
+      "art": "the",
+      "name": "{place} Fishery"
+     },
+     {
+      "art": "the",
+      "name": "{w} Ship Agency"
+     },
+     {
+      "art": "the",
+      "name": "{place} Fishing Cooperative"
+     },
+     {
+      "art": "",
+      "name": "{w} Transit"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "shipowner",
+     "label": {
+      "fr": "Armateur",
+      "frF": "Armatrice",
+      "en": "Shipowner"
+     },
+     "category": "hvt",
+     "side": "civ",
+     "threat": 3,
+     "weight": 5,
+     "ageMin": 38,
+     "ageMax": 68,
+     "cover": [
+      {
+       "fr": "Armateur",
+       "frF": "Armatrice",
+       "en": "Shipowner"
+      },
+      {
+       "fr": "Négociant",
+       "frF": "Négociante",
+       "en": "Trader"
+      }
+     ],
+     "cautions": [],
+     "leader": true,
+     "femalePct": 5
+    },
+    {
+     "key": "skipper",
+     "label": {
+      "fr": "Capitaine",
+      "frF": "Capitaine",
+      "en": "Skipper"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 3,
+     "weight": 12,
+     "ageMin": 30,
+     "ageMax": 62,
+     "cover": [
+      {
+       "fr": "Patron de pêche",
+       "frF": "Patronne de pêche",
+       "en": "Fishing skipper"
+      },
+      {
+       "fr": "Marin",
+       "frF": "Marin",
+       "en": "Sailor"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "deckhand",
+     "label": {
+      "fr": "Matelot",
+      "frF": "Matelot",
+      "en": "Deckhand"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 26,
+     "ageMin": 17,
+     "ageMax": 48,
+     "cover": [
+      {
+       "fr": "Pêcheur",
+       "frF": "Pêcheuse",
+       "en": "Fisherman"
+      },
+      {
+       "fr": "Docker",
+       "frF": "Docker",
+       "en": "Docker"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "engineer",
+     "label": {
+      "fr": "Mécanicien de bord",
+      "frF": "Mécanicienne de bord",
+      "en": "Ship's engineer"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 8,
+     "ageMin": 24,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Mécanicien",
+       "frF": "Mécanicienne",
+       "en": "Mechanic"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "port_broker",
+     "label": {
+      "fr": "Courtier de port",
+      "frF": "Courtière de port",
+      "en": "Port broker"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 8,
+     "ageMin": 28,
+     "ageMax": 62,
+     "cover": [
+      {
+       "fr": "Transitaire",
+       "frF": "Transitaire",
+       "en": "Freight forwarder"
+      },
+      {
+       "fr": "Agent maritime",
+       "frF": "Agente maritime",
+       "en": "Shipping agent"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 20
+    },
+    {
+     "key": "quay_lookout",
+     "label": {
+      "fr": "Guetteur de quai",
+      "frF": "Guetteuse de quai",
+      "en": "Quay lookout"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 10,
+     "ageMin": 15,
+     "ageMax": 40,
+     "cover": [
+      {
+       "fr": "Docker",
+       "frF": "Docker",
+       "en": "Docker"
+      },
+      {
+       "fr": "Vendeur ambulant",
+       "frF": "Vendeuse ambulante",
+       "en": "Street vendor"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "warehouse_keeper",
+     "label": {
+      "fr": "Gardien d'entrepôt",
+      "frF": "Gardienne d'entrepôt",
+      "en": "Warehouse keeper"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 8,
+     "ageMin": 25,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Magasinier",
+       "frF": "Magasinière",
+       "en": "Storekeeper"
+      },
+      {
+       "fr": "Gardien",
+       "frF": "Gardienne",
+       "en": "Watchman"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "armed_escort",
+     "label": {
+      "fr": "Escorte armée",
+      "frF": "Escorte armée",
+      "en": "Armed escort"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 4,
+     "weight": 10,
+     "ageMin": 19,
+     "ageMax": 42,
+     "cover": [
+      {
+       "fr": "Pêcheur",
+       "frF": "Pêcheuse",
+       "en": "Fisherman"
+      },
+      {
+       "fr": "Agent de sécurité",
+       "frF": "Agente de sécurité",
+       "en": "Security guard"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "violent"
+     ],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "customs_contact",
+     "label": {
+      "fr": "Contact à la douane",
+      "frF": "Contact à la douane",
+      "en": "Customs contact"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 5,
+     "ageMin": 28,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Douanier",
+       "frF": "Douanière",
+       "en": "Customs officer"
+      },
+      {
+       "fr": "Agent portuaire",
+       "frF": "Agente portuaire",
+       "en": "Port official"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "buyer",
+     "label": {
+      "fr": "Acheteur",
+      "frF": "Acheteuse",
+      "en": "Buyer"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 8,
+     "ageMin": 28,
+     "ageMax": 62,
+     "cover": [
+      {
+       "fr": "Grossiste",
+       "frF": "Grossiste",
+       "en": "Wholesaler"
+      },
+      {
+       "fr": "Restaurateur",
+       "frF": "Restauratrice",
+       "en": "Restaurant owner"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 20
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est {role} pour {org}.",
+      "en": "{first} {last} is {role} for {org}."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, {job}, embarque comme {role} pour {org}.",
+      "en": "{first} {last}, {age}, a {job}, sails as {role} for {org}."
+     },
+     {
+      "fr": "Le port de {place} connaît {first} {last} comme {job} ; {org} l'emploie comme {role}.",
+      "en": "The port of {place} knows {first} {last} as a {job}; {org} employs [him|her] as {role}."
+     },
+     {
+      "fr": "Depuis {year}, {first} {last} travaille pour {org} en qualité de {role}.",
+      "en": "Since {year}, {first} {last} has worked for {org} as {role}."
+     },
+     {
+      "fr": "{org} fait appel à {first} {last}, {role}, pour les traversées de nuit.",
+      "en": "{org} calls on {first} {last}, {role}, for the night crossings."
+     },
+     {
+      "fr": "[Né|Née] à {birth}, {first} {last} a toujours vécu de la mer ; [il|elle] est {role} {deOrg}.",
+      "en": "Born in {birth}, {first} {last} has always lived off the sea; [he|she] is {role} of {org}."
+     },
+     {
+      "fr": "Sur les rôles d'équipage {deOrg}, {first} {last} figure comme {role}.",
+      "en": "On the crew lists of {org}, {first} {last} appears as {role}."
+     },
+     {
+      "fr": "{first} {last} se présente comme {job} ; les quais [le|la] savent {role} {deOrg}.",
+      "en": "{first} {last} passes as a {job}; the quays know [him|her] as {role} of {org}."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "[Il|Elle] coupe la balise du bateau dès la sortie de la rade.",
+      "en": "[He|She] switches off the boat's transponder as soon as it clears the roads."
+     },
+     {
+      "fr": "Les transbordements se font au large de {place2}, sans feux.",
+      "en": "Transfers take place off {place2}, with no lights."
+     },
+     {
+      "fr": "[Il|Elle] est [payé|payée] à la traversée, moitié au départ, moitié au retour.",
+      "en": "[He|She] is paid per crossing, half on departure, half on return."
+     },
+     {
+      "fr": "[Il|Elle] prend ses instructions auprès de {chief}, au café du port.",
+      "en": "[He|She] takes [his|her] instructions from {chief}, at the harbour café."
+     },
+     {
+      "fr": "[Il|Elle] connaît les horaires des patrouilles côtières.",
+      "en": "[He|She] knows the timetable of the coastal patrols."
+     },
+     {
+      "fr": "La cargaison déclarée est toujours du poisson séché ou du ciment.",
+      "en": "The declared cargo is always dried fish or cement."
+     },
+     {
+      "fr": "[Il|Elle] garde à bord un téléphone satellite enveloppé dans un sac étanche.",
+      "en": "[He|She] keeps a satellite phone on board, wrapped in a waterproof bag."
+     },
+     {
+      "fr": "[Il|Elle] n'accoste jamais deux fois de suite au même quai.",
+      "en": "[He|She] never berths twice running at the same quay."
+     }
+    ],
+    "close": [
+     {
+      "fr": "Peut jeter la cargaison à la mer en cas d'abordage.",
+      "en": "May dump the cargo overboard if boarded."
+     },
+     {
+      "fr": "Carnet de bord, GPS et téléphones à saisir en priorité.",
+      "en": "Logbook, GPS and phones are priority seizures."
+     },
+     {
+      "fr": "Connaît les points de transbordement de la filière.",
+      "en": "Knows the pipeline's transfer points."
+     },
+     {
+      "fr": "Peu [armé|armée] ; l'escorte, elle, peut l'être.",
+      "en": "Lightly armed, if at all; the escort may be."
+     },
+     {
+      "fr": "Coopère souvent une fois [séparé|séparée] de l'équipage.",
+      "en": "Often cooperates once separated from the crew."
+     },
+     {
+      "fr": "À contrôler à quai plutôt qu'en mer.",
+      "en": "Better checked alongside than at sea."
+     }
+    ]
+   }
+  },
+  "pmc": {
+   "key": "pmc",
+   "order": 70,
+   "civil": false,
+   "name": {
+    "fr": "Société militaire privée",
+    "en": "Private military company"
+   },
+   "summary": {
+    "fr": "Société de sécurité sous contrat : directeur de pays, chefs d'équipe, opérateurs, instructeurs, logisticiens et personnel local. Entreprise inventée.",
+    "en": "A contracted security company: country manager, team leaders, operators, instructors, logisticians and local staff. An invented firm."
+   },
+   "kits": [
+    "RUS",
+    "UKR",
+    "SRB",
+    "LBY",
+    "IRQ",
+    "MLI",
+    "COL",
+    "PHL"
+   ],
+   "orgKind": {
+    "fr": "Société",
+    "en": "Company"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "",
+      "name": "{w} Sécurité et Conseil"
+     },
+     {
+      "art": "le",
+      "name": "Groupe {w} Protection"
+     },
+     {
+      "art": "",
+      "name": "{w} Risk Services"
+     },
+     {
+      "art": "",
+      "name": "{w} Solutions de sûreté"
+     },
+     {
+      "art": "la",
+      "name": "Compagnie {w} Défense"
+     },
+     {
+      "art": "",
+      "name": "{w} Global Support"
+     }
+    ],
+    "en": [
+     {
+      "art": "",
+      "name": "{w} Security and Consulting"
+     },
+     {
+      "art": "the",
+      "name": "{w} Protection Group"
+     },
+     {
+      "art": "",
+      "name": "{w} Risk Services"
+     },
+     {
+      "art": "",
+      "name": "{w} Security Solutions"
+     },
+     {
+      "art": "the",
+      "name": "{w} Defence Company"
+     },
+     {
+      "art": "",
+      "name": "{w} Global Support"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "country_manager",
+     "label": {
+      "fr": "Directeur de pays",
+      "frF": "Directrice de pays",
+      "en": "Country manager"
+     },
+     "category": "hvt",
+     "side": "east",
+     "threat": 3,
+     "weight": 4,
+     "ageMin": 38,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Consultant en sécurité",
+       "frF": "Consultante en sécurité",
+       "en": "Security consultant"
+      },
+      {
+       "fr": "Ancien officier",
+       "frF": "Ancienne officière",
+       "en": "Former officer"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": true,
+     "femalePct": 5
+    },
+    {
+     "key": "team_leader",
+     "label": {
+      "fr": "Chef d'équipe",
+      "frF": "Cheffe d'équipe",
+      "en": "Team leader"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 4,
+     "weight": 10,
+     "ageMin": 30,
+     "ageMax": 52,
+     "cover": [
+      {
+       "fr": "Ancien sous-officier",
+       "frF": "Ancienne sous-officier",
+       "en": "Former NCO"
+      },
+      {
+       "fr": "Instructeur de tir",
+       "frF": "Instructrice de tir",
+       "en": "Firearms instructor"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "officer_safety"
+     ],
+     "leader": false,
+     "femalePct": 3
+    },
+    {
+     "key": "operator",
+     "label": {
+      "fr": "Opérateur",
+      "frF": "Opératrice",
+      "en": "Operator"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 4,
+     "weight": 32,
+     "ageMin": 24,
+     "ageMax": 50,
+     "cover": [
+      {
+       "fr": "Agent de protection",
+       "frF": "Agente de protection",
+       "en": "Close protection officer"
+      },
+      {
+       "fr": "Ancien militaire",
+       "frF": "Ancienne militaire",
+       "en": "Former soldier"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 3
+    },
+    {
+     "key": "instructor",
+     "label": {
+      "fr": "Instructeur",
+      "frF": "Instructrice",
+      "en": "Instructor"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 3,
+     "weight": 8,
+     "ageMin": 30,
+     "ageMax": 56,
+     "cover": [
+      {
+       "fr": "Formateur",
+       "frF": "Formatrice",
+       "en": "Trainer"
+      },
+      {
+       "fr": "Ancien sous-officier",
+       "frF": "Ancienne sous-officier",
+       "en": "Former NCO"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "medic",
+     "label": {
+      "fr": "Auxiliaire médical",
+      "frF": "Auxiliaire médicale",
+      "en": "Medic"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 2,
+     "weight": 5,
+     "ageMin": 26,
+     "ageMax": 52,
+     "cover": [
+      {
+       "fr": "Infirmier",
+       "frF": "Infirmière",
+       "en": "Nurse"
+      },
+      {
+       "fr": "Ambulancier",
+       "frF": "Ambulancière",
+       "en": "Paramedic"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 25
+    },
+    {
+     "key": "logistician",
+     "label": {
+      "fr": "Logisticien",
+      "frF": "Logisticienne",
+      "en": "Logistician"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 1,
+     "weight": 8,
+     "ageMin": 28,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Magasinier",
+       "frF": "Magasinière",
+       "en": "Storekeeper"
+      },
+      {
+       "fr": "Transitaire",
+       "frF": "Transitaire",
+       "en": "Freight forwarder"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 20
+    },
+    {
+     "key": "pilot",
+     "label": {
+      "fr": "Pilote",
+      "frF": "Pilote",
+      "en": "Pilot"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 2,
+     "weight": 3,
+     "ageMin": 30,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Pilote",
+       "frF": "Pilote",
+       "en": "Pilot"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "analyst",
+     "label": {
+      "fr": "Analyste",
+      "frF": "Analyste",
+      "en": "Analyst"
+     },
+     "category": "military",
+     "side": "east",
+     "threat": 1,
+     "weight": 5,
+     "ageMin": 26,
+     "ageMax": 50,
+     "cover": [
+      {
+       "fr": "Analyste",
+       "frF": "Analyste",
+       "en": "Analyst"
+      },
+      {
+       "fr": "Interprète",
+       "frF": "Interprète",
+       "en": "Interpreter"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 35
+    },
+    {
+     "key": "local_fixer",
+     "label": {
+      "fr": "Intermédiaire local",
+      "frF": "Intermédiaire locale",
+      "en": "Local fixer"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 10,
+     "ageMin": 26,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Interprète",
+       "frF": "Interprète",
+       "en": "Interpreter"
+      },
+      {
+       "fr": "Guide",
+       "frF": "Guide",
+       "en": "Guide"
+      },
+      {
+       "fr": "Chauffeur",
+       "frF": "Chauffeuse",
+       "en": "Driver"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "local_guard",
+     "label": {
+      "fr": "Garde local",
+      "frF": "Garde locale",
+      "en": "Local guard"
+     },
+     "category": "military",
+     "side": "guer",
+     "threat": 3,
+     "weight": 15,
+     "ageMin": 20,
+     "ageMax": 48,
+     "cover": [
+      {
+       "fr": "Gardien",
+       "frF": "Gardienne",
+       "en": "Watchman"
+      },
+      {
+       "fr": "Agent de sécurité",
+       "frF": "Agente de sécurité",
+       "en": "Security guard"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 3
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est {role} chez {org}.",
+      "en": "{first} {last} is {role} at {org}."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, a signé avec {org} en {year} comme {role}.",
+      "en": "{first} {last}, {age}, signed with {org} in {year} as {role}."
+     },
+     {
+      "fr": "Sur le contrat de {place}, {first} {last} est {role} pour {org}.",
+      "en": "On the {place} contract, {first} {last} is {role} for {org}."
+     },
+     {
+      "fr": "[Ancien|Ancienne] {job}, {first} {last} travaille désormais pour {org} comme {role}.",
+      "en": "A former {job}, {first} {last} now works for {org} as {role}."
+     },
+     {
+      "fr": "{org} a détaché {first} {last}, {role}, sur son site de {place}.",
+      "en": "{org} has posted {first} {last}, {role}, to its {place} site."
+     },
+     {
+      "fr": "Originaire de {birth}, {first} {last} enchaîne les contrats ; le dernier, avec {org}, comme {role}.",
+      "en": "From {birth}, {first} {last} goes from contract to contract; the latest, with {org}, as {role}."
+     },
+     {
+      "fr": "Le badge de {first} {last} porte la mention {role} et le nom {deOrg}.",
+      "en": "The badge of {first} {last} reads {role}, with the name of {org}."
+     },
+     {
+      "fr": "{first} {last} figure sur la liste du personnel {deOrg}, fonction {role}.",
+      "en": "{first} {last} appears on the staff list of {org}, position {role}."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "Son contrat prévoit des rotations de huit semaines.",
+      "en": "[His|Her] contract provides for eight-week rotations."
+     },
+     {
+      "fr": "[Il|Elle] loge sur le site et sort rarement sans escorte.",
+      "en": "[He|She] lives on site and rarely goes out without an escort."
+     },
+     {
+      "fr": "[Il|Elle] rend compte à {chief}, par le réseau interne de la société.",
+      "en": "[He|She] reports to {chief}, over the company's internal network."
+     },
+     {
+      "fr": "[Il|Elle] est [payé|payée] sur un compte à l'étranger, en devises.",
+      "en": "[He|She] is paid in foreign currency, into an account abroad."
+     },
+     {
+      "fr": "[Il|Elle] a déjà travaillé à {place2} pour un autre employeur.",
+      "en": "[He|She] has already worked in {place2} for another employer."
+     },
+     {
+      "fr": "[Il|Elle] porte une arme de poing dissimulée, même en tenue civile.",
+      "en": "[He|She] carries a concealed sidearm, even in civilian clothes."
+     },
+     {
+      "fr": "[Il|Elle] évite les réseaux sociaux et n'a aucune photo publique.",
+      "en": "[He|She] stays off social media and has no public photograph."
+     },
+     {
+      "fr": "[Il|Elle] parle peu la langue locale et dépend de l'interprète.",
+      "en": "[He|She] speaks little of the local language and depends on the interpreter."
+     }
+    ],
+    "close": [
+     {
+      "fr": "[Professionnel|Professionnelle] ; réagit comme [tel|telle] à un contrôle.",
+      "en": "A professional; will react like one when checked."
+     },
+     {
+      "fr": "Son contrat et son badge sont à photographier.",
+      "en": "[His|Her] contract and badge are to be photographed."
+     },
+     {
+      "fr": "Connaît les sites et les itinéraires de la société.",
+      "en": "Knows the company's sites and routes."
+     },
+     {
+      "fr": "[Armé|Armée] ; annonce généralement son arme lors d'un contrôle.",
+      "en": "Armed; usually declares [his|her] weapon when checked."
+     },
+     {
+      "fr": "[Peu enclin|Peu encline] à parler sans l'accord de {chief}.",
+      "en": "Unlikely to talk without the agreement of {chief}."
+     },
+     {
+      "fr": "Présence légale à vérifier : titre de séjour et autorisation de port d'arme.",
+      "en": "Legal presence to be verified: residence permit and weapons licence."
+     }
+    ]
+   }
+  },
+  "smuggling_network": {
+   "key": "smuggling_network",
+   "order": 80,
+   "civil": false,
+   "name": {
+    "fr": "Réseau de contrebande",
+    "en": "Smuggling network"
+   },
+   "summary": {
+    "fr": "Cigarettes, carburant, armes légères et passages clandestins : patron, chauffeurs, passeurs, garagistes et douaniers complaisants. Filière inventée.",
+    "en": "Cigarettes, fuel, small arms and clandestine crossings: boss, drivers, guides, garage owners and obliging customs officers. An invented pipeline."
+   },
+   "kits": [
+    "SRB",
+    "ALB",
+    "UKR",
+    "LBY",
+    "MLI",
+    "NER",
+    "TCD",
+    "AFG",
+    "LBN",
+    "MEX"
+   ],
+   "orgKind": {
+    "fr": "Filière",
+    "en": "Pipeline"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "la",
+      "name": "Société de transport {w}"
+     },
+     {
+      "art": "le",
+      "name": "Garage {w}"
+     },
+     {
+      "art": "la",
+      "name": "Fratrie de {place}"
+     },
+     {
+      "art": "l'",
+      "name": "Entrepôt {w}"
+     },
+     {
+      "art": "",
+      "name": "Auto-pièces {w}"
+     },
+     {
+      "art": "la",
+      "name": "Filière de {place}"
+     }
+    ],
+    "en": [
+     {
+      "art": "",
+      "name": "{w} Transport"
+     },
+     {
+      "art": "the",
+      "name": "{w} Garage"
+     },
+     {
+      "art": "the",
+      "name": "{place} Brotherhood"
+     },
+     {
+      "art": "the",
+      "name": "{w} Warehouse"
+     },
+     {
+      "art": "",
+      "name": "{w} Auto Parts"
+     },
+     {
+      "art": "the",
+      "name": "{place} Pipeline"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "boss",
+     "label": {
+      "fr": "Patron de la filière",
+      "frF": "Patronne de la filière",
+      "en": "Pipeline boss"
+     },
+     "category": "hvt",
+     "side": "civ",
+     "threat": 3,
+     "weight": 5,
+     "ageMin": 36,
+     "ageMax": 64,
+     "cover": [
+      {
+       "fr": "Transporteur",
+       "frF": "Transporteuse",
+       "en": "Haulier"
+      },
+      {
+       "fr": "Garagiste",
+       "frF": "Garagiste",
+       "en": "Garage owner"
+      },
+      {
+       "fr": "Négociant",
+       "frF": "Négociante",
+       "en": "Trader"
+      }
+     ],
+     "cautions": [
+      "gang"
+     ],
+     "leader": true,
+     "femalePct": 5
+    },
+    {
+     "key": "driver",
+     "label": {
+      "fr": "Chauffeur",
+      "frF": "Chauffeuse",
+      "en": "Driver"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 26,
+     "ageMin": 20,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Chauffeur routier",
+       "frF": "Chauffeuse routière",
+       "en": "Lorry driver"
+      },
+      {
+       "fr": "Chauffeur de taxi",
+       "frF": "Chauffeuse de taxi",
+       "en": "Taxi driver"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 3
+    },
+    {
+     "key": "guide",
+     "label": {
+      "fr": "Passeur",
+      "frF": "Passeuse",
+      "en": "Guide"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 12,
+     "ageMin": 18,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Berger",
+       "frF": "Bergère",
+       "en": "Shepherd"
+      },
+      {
+       "fr": "Guide",
+       "frF": "Guide",
+       "en": "Guide"
+      },
+      {
+       "fr": "Bûcheron",
+       "frF": "Bûcheronne",
+       "en": "Woodcutter"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "garage_owner",
+     "label": {
+      "fr": "Garagiste (caches aménagées)",
+      "frF": "Garagiste (caches aménagées)",
+      "en": "Garage owner (hidden compartments)"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 8,
+     "ageMin": 28,
+     "ageMax": 62,
+     "cover": [
+      {
+       "fr": "Garagiste",
+       "frF": "Garagiste",
+       "en": "Garage owner"
+      },
+      {
+       "fr": "Carrossier",
+       "frF": "Carrossière",
+       "en": "Panel beater"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 3
+    },
+    {
+     "key": "warehouse_keeper",
+     "label": {
+      "fr": "Gardien d'entrepôt",
+      "frF": "Gardienne d'entrepôt",
+      "en": "Warehouse keeper"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 10,
+     "ageMin": 25,
+     "ageMax": 62,
+     "cover": [
+      {
+       "fr": "Magasinier",
+       "frF": "Magasinière",
+       "en": "Storekeeper"
+      },
+      {
+       "fr": "Gardien",
+       "frF": "Gardienne",
+       "en": "Watchman"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "scout_car",
+     "label": {
+      "fr": "Conducteur de la voiture ouvreuse",
+      "frF": "Conductrice de la voiture ouvreuse",
+      "en": "Scout car driver"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 10,
+     "ageMin": 19,
+     "ageMax": 45,
+     "cover": [
+      {
+       "fr": "Chauffeur",
+       "frF": "Chauffeuse",
+       "en": "Driver"
+      },
+      {
+       "fr": "Livreur",
+       "frF": "Livreuse",
+       "en": "Delivery driver"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "customs_contact",
+     "label": {
+      "fr": "Douanier complaisant",
+      "frF": "Douanière complaisante",
+      "en": "Obliging customs officer"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 6,
+     "ageMin": 28,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Douanier",
+       "frF": "Douanière",
+       "en": "Customs officer"
+      },
+      {
+       "fr": "Garde-frontière",
+       "frF": "Garde-frontière",
+       "en": "Border guard"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "wholesaler",
+     "label": {
+      "fr": "Grossiste",
+      "frF": "Grossiste",
+      "en": "Wholesaler"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 10,
+     "ageMin": 30,
+     "ageMax": 65,
+     "cover": [
+      {
+       "fr": "Grossiste",
+       "frF": "Grossiste",
+       "en": "Wholesaler"
+      },
+      {
+       "fr": "Épicier",
+       "frF": "Épicière",
+       "en": "Grocer"
+      },
+      {
+       "fr": "Buraliste",
+       "frF": "Buraliste",
+       "en": "Tobacconist"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 25
+    },
+    {
+     "key": "enforcer",
+     "label": {
+      "fr": "Homme de main",
+      "frF": "Femme de main",
+      "en": "Enforcer"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 4,
+     "weight": 8,
+     "ageMin": 20,
+     "ageMax": 45,
+     "cover": [
+      {
+       "fr": "Videur",
+       "frF": "Videuse",
+       "en": "Bouncer"
+      },
+      {
+       "fr": "Agent de sécurité",
+       "frF": "Agente de sécurité",
+       "en": "Security guard"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "violent"
+     ],
+     "leader": false,
+     "femalePct": 0
+    },
+    {
+     "key": "forger",
+     "label": {
+      "fr": "Faussaire (documents de transport)",
+      "frF": "Faussaire (documents de transport)",
+      "en": "Forger (transport papers)"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 5,
+     "ageMin": 26,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Imprimeur",
+       "frF": "Imprimeuse",
+       "en": "Printer"
+      },
+      {
+       "fr": "Secrétaire",
+       "frF": "Secrétaire",
+       "en": "Secretary"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 30
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est {role} {deOrg}.",
+      "en": "{first} {last} is {role} of {org}."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, {job}, travaille pour {org} comme {role}.",
+      "en": "{first} {last}, {age}, a {job}, works for {org} as {role}."
+     },
+     {
+      "fr": "À {place}, {first} {last} passe pour [un simple|une simple] {job} ; [il|elle] est {role} {deOrg}.",
+      "en": "In {place}, {first} {last} passes for a mere {job}; [he|she] is {role} of {org}."
+     },
+     {
+      "fr": "Depuis {year}, {org} emploie {first} {last} en qualité de {role}.",
+      "en": "Since {year}, {org} has employed {first} {last} as {role}."
+     },
+     {
+      "fr": "[Natif|Native] de {birth}, {first} {last} connaît chaque chemin de la frontière ; [il|elle] est {role} {deOrg}.",
+      "en": "A native of {birth}, {first} {last} knows every path on the border; [he|she] is {role} of {org}."
+     },
+     {
+      "fr": "Le nom de {first} {last} revient dans trois saisies : toujours comme {role} {deOrg}.",
+      "en": "The name {first} {last} recurs in three seizures: always as {role} of {org}."
+     },
+     {
+      "fr": "{org} confie à {first} {last}, {role}, le tronçon de {place}.",
+      "en": "{org} entrusts {first} {last}, {role}, with the {place} leg."
+     },
+     {
+      "fr": "{first} {last} tient son rôle de {role} dans {org} sous couvert de son métier de {job}.",
+      "en": "{first} {last} plays the part of {role} in {org} behind a job as a {job}."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "Les départs ont lieu les nuits sans lune, par la piste de {place2}.",
+      "en": "Departures take place on moonless nights, by the {place2} track."
+     },
+     {
+      "fr": "[Il|Elle] est [payé|payée] au voyage et ne connaît que le maillon suivant.",
+      "en": "[He|She] is paid per trip and knows only the next link."
+     },
+     {
+      "fr": "[Il|Elle] reçoit l'heure du passage par un simple appel sans réponse.",
+      "en": "[He|She] gets the crossing time through a simple missed call."
+     },
+     {
+      "fr": "Une voiture ouvre la route dix minutes avant chaque chargement.",
+      "en": "A car scouts the road ten minutes ahead of each load."
+     },
+     {
+      "fr": "La marchandise est stockée quelques heures seulement à {place2}.",
+      "en": "The goods are stored for only a few hours in {place2}."
+     },
+     {
+      "fr": "[Il|Elle] travaille pour {chief} depuis des années, sans jamais être [inquiété|inquiétée].",
+      "en": "[He|She] has worked for {chief} for years without ever being troubled."
+     },
+     {
+      "fr": "Les caches sont aménagées dans les planchers et les réservoirs.",
+      "en": "The hides are built into floors and fuel tanks."
+     },
+     {
+      "fr": "[Il|Elle] change de plaques avant chaque passage.",
+      "en": "[He|She] changes plates before each crossing."
+     }
+    ],
+    "close": [
+     {
+      "fr": "Peut abandonner le véhicule et fuir à pied.",
+      "en": "May abandon the vehicle and flee on foot."
+     },
+     {
+      "fr": "Fouille complète du véhicule : planchers, réservoirs, roue de secours.",
+      "en": "Full vehicle search: floors, tanks, spare wheel."
+     },
+     {
+      "fr": "Connaît les horaires et les points de passage de la filière.",
+      "en": "Knows the pipeline's timings and crossing points."
+     },
+     {
+      "fr": "Rarement [armé|armée] ; l'escorte peut l'être.",
+      "en": "Rarely armed; the escort may be."
+     },
+     {
+      "fr": "Parle volontiers pour éviter la saisie de son véhicule.",
+      "en": "Talks readily to avoid having [his|her] vehicle seized."
+     },
+     {
+      "fr": "Papiers du véhicule à vérifier avec soin.",
+      "en": "Vehicle papers to be checked with care."
+     }
+    ]
+   }
+  },
+  "corrupt_administration": {
+   "key": "corrupt_administration",
+   "order": 90,
+   "civil": false,
+   "name": {
+    "fr": "Administration locale corrompue",
+    "en": "Corrupt local administration"
+   },
+   "summary": {
+    "fr": "Élus, chefs de service, policiers et entrepreneurs qui se partagent marchés, autorisations et papiers de complaisance. Administration inventée.",
+    "en": "Councillors, department heads, police officers and contractors sharing out contracts, permits and papers of convenience. An invented administration."
+   },
+   "kits": [
+    "MEX",
+    "COL",
+    "IRQ",
+    "LBY",
+    "UKR",
+    "SRB",
+    "ALB",
+    "PHL",
+    "MLI",
+    "NER",
+    "TCD",
+    "LBN",
+    "AFG",
+    "YEM",
+    "SOM",
+    "SYR",
+    "RUS"
+   ],
+   "orgKind": {
+    "fr": "Administration",
+    "en": "Administration"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "la",
+      "name": "Mairie de {place}"
+     },
+     {
+      "art": "la",
+      "name": "Sous-préfecture de {place}"
+     },
+     {
+      "art": "le",
+      "name": "Service des titres de {place}"
+     },
+     {
+      "art": "la",
+      "name": "Régie municipale de {place}"
+     },
+     {
+      "art": "le",
+      "name": "Bureau des marchés de {place}"
+     },
+     {
+      "art": "le",
+      "name": "Commissariat de {place}"
+     }
+    ],
+    "en": [
+     {
+      "art": "the",
+      "name": "{place} Town Hall"
+     },
+     {
+      "art": "the",
+      "name": "{place} Sub-prefecture"
+     },
+     {
+      "art": "the",
+      "name": "{place} Documents Office"
+     },
+     {
+      "art": "the",
+      "name": "{place} Municipal Board"
+     },
+     {
+      "art": "the",
+      "name": "{place} Procurement Office"
+     },
+     {
+      "art": "the",
+      "name": "{place} Police Station"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "mayor",
+     "label": {
+      "fr": "Élu qui tient le système",
+      "frF": "Élue qui tient le système",
+      "en": "Councillor running the scheme"
+     },
+     "category": "hvt",
+     "side": "civ",
+     "threat": 2,
+     "weight": 4,
+     "ageMin": 40,
+     "ageMax": 70,
+     "cover": [
+      {
+       "fr": "Maire",
+       "frF": "Maire",
+       "en": "Mayor"
+      },
+      {
+       "fr": "Élu local",
+       "frF": "Élue locale",
+       "en": "Local councillor"
+      }
+     ],
+     "cautions": [],
+     "leader": true,
+     "femalePct": 15
+    },
+    {
+     "key": "chief_of_staff",
+     "label": {
+      "fr": "Directeur de cabinet",
+      "frF": "Directrice de cabinet",
+      "en": "Chief of staff"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 6,
+     "ageMin": 30,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Fonctionnaire",
+       "frF": "Fonctionnaire",
+       "en": "Civil servant"
+      },
+      {
+       "fr": "Juriste",
+       "frF": "Juriste",
+       "en": "Lawyer"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 30
+    },
+    {
+     "key": "registry_clerk",
+     "label": {
+      "fr": "Agent de l'état civil (papiers de complaisance)",
+      "frF": "Agente de l'état civil (papiers de complaisance)",
+      "en": "Registry clerk (papers of convenience)"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 14,
+     "ageMin": 24,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Employé de mairie",
+       "frF": "Employée de mairie",
+       "en": "Town hall clerk"
+      },
+      {
+       "fr": "Secrétaire",
+       "frF": "Secrétaire",
+       "en": "Secretary"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 50
+    },
+    {
+     "key": "police_chief",
+     "label": {
+      "fr": "Chef de la police locale",
+      "frF": "Cheffe de la police locale",
+      "en": "Local police chief"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 3,
+     "weight": 5,
+     "ageMin": 36,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Policier",
+       "frF": "Policière",
+       "en": "Police officer"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "police_officer",
+     "label": {
+      "fr": "Policier acheté",
+      "frF": "Policière achetée",
+      "en": "Bought police officer"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 3,
+     "weight": 14,
+     "ageMin": 24,
+     "ageMax": 52,
+     "cover": [
+      {
+       "fr": "Policier",
+       "frF": "Policière",
+       "en": "Police officer"
+      },
+      {
+       "fr": "Policier municipal",
+       "frF": "Policière municipale",
+       "en": "Municipal police officer"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "contractor",
+     "label": {
+      "fr": "Entrepreneur favorisé",
+      "frF": "Entrepreneuse favorisée",
+      "en": "Favoured contractor"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 12,
+     "ageMin": 32,
+     "ageMax": 66,
+     "cover": [
+      {
+       "fr": "Entrepreneur du bâtiment",
+       "frF": "Entrepreneuse du bâtiment",
+       "en": "Building contractor"
+      },
+      {
+       "fr": "Fournisseur",
+       "frF": "Fournisseuse",
+       "en": "Supplier"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "treasurer",
+     "label": {
+      "fr": "Receveur municipal",
+      "frF": "Receveuse municipale",
+      "en": "Municipal treasurer"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 6,
+     "ageMin": 30,
+     "ageMax": 64,
+     "cover": [
+      {
+       "fr": "Comptable",
+       "frF": "Comptable",
+       "en": "Accountant"
+      },
+      {
+       "fr": "Fonctionnaire",
+       "frF": "Fonctionnaire",
+       "en": "Civil servant"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 40
+    },
+    {
+     "key": "fixer",
+     "label": {
+      "fr": "Intermédiaire",
+      "frF": "Intermédiaire",
+      "en": "Go-between"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 12,
+     "ageMin": 26,
+     "ageMax": 62,
+     "cover": [
+      {
+       "fr": "Agent immobilier",
+       "frF": "Agente immobilière",
+       "en": "Estate agent"
+      },
+      {
+       "fr": "Avocat",
+       "frF": "Avocate",
+       "en": "Lawyer"
+      },
+      {
+       "fr": "Chauffeur",
+       "frF": "Chauffeuse",
+       "en": "Driver"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 20
+    },
+    {
+     "key": "customs_head",
+     "label": {
+      "fr": "Chef du poste de douane",
+      "frF": "Cheffe du poste de douane",
+      "en": "Customs post chief"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 5,
+     "ageMin": 34,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Douanier",
+       "frF": "Douanière",
+       "en": "Customs officer"
+      }
+     ],
+     "cautions": [
+      "armed"
+     ],
+     "leader": false,
+     "femalePct": 10
+    },
+    {
+     "key": "whistleblower",
+     "label": {
+      "fr": "Agent qui veut parler",
+      "frF": "Agente qui veut parler",
+      "en": "Employee willing to talk"
+     },
+     "category": "civilian",
+     "side": "civ",
+     "threat": 1,
+     "weight": 6,
+     "ageMin": 26,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Employé de mairie",
+       "frF": "Employée de mairie",
+       "en": "Town hall clerk"
+      },
+      {
+       "fr": "Comptable",
+       "frF": "Comptable",
+       "en": "Accountant"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 50
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est {role} {aOrg}.",
+      "en": "{first} {last} is {role} at {org}."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, {job}, joue le rôle de {role} au sein {deOrg}.",
+      "en": "{first} {last}, {age}, a {job}, plays the part of {role} within {org}."
+     },
+     {
+      "fr": "En poste depuis {year}, {first} {last} est {role} {aOrg}.",
+      "en": "In post since {year}, {first} {last} is {role} at {org}."
+     },
+     {
+      "fr": "{org} fonctionne grâce à quelques personnes sûres ; {first} {last} en fait partie : {role}.",
+      "en": "{org} runs thanks to a few trusted people; {first} {last} is one of them: {role}."
+     },
+     {
+      "fr": "Originaire de {birth}, {first} {last} a fait toute sa carrière à {place} ; [il|elle] est {role}.",
+      "en": "From {birth}, {first} {last} has spent a whole career in {place}; [he|she] is {role}."
+     },
+     {
+      "fr": "Plusieurs plaintes citent {first} {last}, {role} {aOrg}.",
+      "en": "Several complaints name {first} {last}, {role} at {org}."
+     },
+     {
+      "fr": "{first} {last} signe, tamponne ou ferme les yeux : {role} {aOrg}.",
+      "en": "{first} {last} signs, stamps or looks away: {role} at {org}."
+     },
+     {
+      "fr": "Le nom de {first} {last}, {job}, revient dans les dossiers {deOrg} comme {role}.",
+      "en": "The name {first} {last}, a {job}, recurs in the files of {org} as {role}."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "Les autorisations se négocient dans un café voisin, jamais au bureau.",
+      "en": "Permits are negotiated in a nearby café, never at the office."
+     },
+     {
+      "fr": "[Il|Elle] touche une part fixe sur chaque marché attribué.",
+      "en": "[He|She] takes a fixed cut of every contract awarded."
+     },
+     {
+      "fr": "[Il|Elle] doit sa place à {chief} et ne décide rien sans son accord.",
+      "en": "[He|She] owes [his|her] position to {chief} and decides nothing without that agreement."
+     },
+     {
+      "fr": "Son train de vie dépasse nettement son traitement.",
+      "en": "[His|Her] lifestyle clearly exceeds [his|her] salary."
+     },
+     {
+      "fr": "Des papiers authentiques sont délivrés sur de fausses déclarations.",
+      "en": "Genuine papers are issued on false statements."
+     },
+     {
+      "fr": "[Il|Elle] conserve chez [lui|elle] un cahier des sommes reçues.",
+      "en": "[He|She] keeps a notebook of sums received at home."
+     },
+     {
+      "fr": "[Il|Elle] prévient les intéressés avant chaque contrôle.",
+      "en": "[He|She] tips off those concerned before every inspection."
+     },
+     {
+      "fr": "[Il|Elle] a fait construire une maison à {place2} au nom d'un parent.",
+      "en": "[He|She] has had a house built in {place2} in a relative's name."
+     }
+    ],
+    "close": [
+     {
+      "fr": "[Non violent|Non violente] ; craint surtout de perdre sa place.",
+      "en": "Non-violent; mainly afraid of losing [his|her] position."
+     },
+     {
+      "fr": "Registres, tampons et cahiers personnels à saisir.",
+      "en": "Registers, stamps and personal notebooks to be seized."
+     },
+     {
+      "fr": "Peut désigner les bénéficiaires de papiers de complaisance.",
+      "en": "Can name those who received papers of convenience."
+     },
+     {
+      "fr": "À entendre séparément de ses collègues.",
+      "en": "To be interviewed separately from [his|her] colleagues."
+     },
+     {
+      "fr": "[Protégé|Protégée] par {chief} : toute démarche lui sera rapportée.",
+      "en": "Protected by {chief}: any approach will be reported back."
+     },
+     {
+      "fr": "Source possible si sa sécurité est garantie.",
+      "en": "A possible source if [his|her] safety is guaranteed."
+     }
+    ]
+   }
+  },
+  "front_ngo": {
+   "key": "front_ngo",
+   "order": 100,
+   "civil": false,
+   "name": {
+    "fr": "ONG de façade",
+    "en": "Front NGO"
+   },
+   "summary": {
+    "fr": "Association d'aide qui sert de couverture : directeur, comptable, chauffeurs, logisticiens et bénévoles sincères qui ne savent rien. Association inventée.",
+    "en": "An aid association used as cover: director, accountant, drivers, logisticians and sincere volunteers who know nothing. An invented association."
+   },
+   "kits": [
+    "LBN",
+    "SYR",
+    "IRQ",
+    "YEM",
+    "SOM",
+    "AFG",
+    "MLI",
+    "NER",
+    "TCD",
+    "LBY",
+    "PHL",
+    "UKR"
+   ],
+   "orgKind": {
+    "fr": "Association",
+    "en": "Association"
+   },
+   "orgPatterns": {
+    "fr": [
+     {
+      "art": "l'",
+      "name": "Association {w} pour l'entraide"
+     },
+     {
+      "art": "la",
+      "name": "Fondation {w}"
+     },
+     {
+      "art": "le",
+      "name": "Secours {w}"
+     },
+     {
+      "art": "l'",
+      "name": "Entraide de {place}"
+     },
+     {
+      "art": "le",
+      "name": "Comité {w} d'aide aux familles"
+     },
+     {
+      "art": "l'",
+      "name": "Œuvre {w}"
+     }
+    ],
+    "en": [
+     {
+      "art": "the",
+      "name": "{w} Mutual Aid Association"
+     },
+     {
+      "art": "the",
+      "name": "{w} Foundation"
+     },
+     {
+      "art": "",
+      "name": "{w} Relief"
+     },
+     {
+      "art": "the",
+      "name": "{place} Mutual Aid"
+     },
+     {
+      "art": "the",
+      "name": "{w} Family Aid Committee"
+     },
+     {
+      "art": "the",
+      "name": "{w} Charity"
+     }
+    ]
+   },
+   "roles": [
+    {
+     "key": "director",
+     "label": {
+      "fr": "Directeur",
+      "frF": "Directrice",
+      "en": "Director"
+     },
+     "category": "hvt",
+     "side": "civ",
+     "threat": 2,
+     "weight": 5,
+     "ageMin": 36,
+     "ageMax": 66,
+     "cover": [
+      {
+       "fr": "Responsable associatif",
+       "frF": "Responsable associative",
+       "en": "Charity organiser"
+      },
+      {
+       "fr": "Médecin",
+       "frF": "Médecin",
+       "en": "Doctor"
+      },
+      {
+       "fr": "Enseignant",
+       "frF": "Enseignante",
+       "en": "Teacher"
+      }
+     ],
+     "cautions": [],
+     "leader": true,
+     "femalePct": 20
+    },
+    {
+     "key": "accountant",
+     "label": {
+      "fr": "Comptable (double comptabilité)",
+      "frF": "Comptable (double comptabilité)",
+      "en": "Accountant (double books)"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 6,
+     "ageMin": 28,
+     "ageMax": 62,
+     "cover": [
+      {
+       "fr": "Comptable",
+       "frF": "Comptable",
+       "en": "Accountant"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 45
+    },
+    {
+     "key": "logistician",
+     "label": {
+      "fr": "Logisticien",
+      "frF": "Logisticienne",
+      "en": "Logistician"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 10,
+     "ageMin": 25,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Magasinier",
+       "frF": "Magasinière",
+       "en": "Storekeeper"
+      },
+      {
+       "fr": "Transitaire",
+       "frF": "Transitaire",
+       "en": "Freight forwarder"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 15
+    },
+    {
+     "key": "driver",
+     "label": {
+      "fr": "Chauffeur",
+      "frF": "Chauffeuse",
+      "en": "Driver"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 14,
+     "ageMin": 22,
+     "ageMax": 56,
+     "cover": [
+      {
+       "fr": "Chauffeur",
+       "frF": "Chauffeuse",
+       "en": "Driver"
+      }
+     ],
+     "cautions": [
+      "flight_risk"
+     ],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "field_coordinator",
+     "label": {
+      "fr": "Coordinateur de terrain",
+      "frF": "Coordinatrice de terrain",
+      "en": "Field coordinator"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 8,
+     "ageMin": 26,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Travailleur social",
+       "frF": "Travailleuse sociale",
+       "en": "Social worker"
+      },
+      {
+       "fr": "Infirmier",
+       "frF": "Infirmière",
+       "en": "Nurse"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 35
+    },
+    {
+     "key": "warehouse_keeper",
+     "label": {
+      "fr": "Gardien du dépôt",
+      "frF": "Gardienne du dépôt",
+      "en": "Depot keeper"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 2,
+     "weight": 6,
+     "ageMin": 25,
+     "ageMax": 60,
+     "cover": [
+      {
+       "fr": "Gardien",
+       "frF": "Gardienne",
+       "en": "Watchman"
+      },
+      {
+       "fr": "Magasinier",
+       "frF": "Magasinière",
+       "en": "Storekeeper"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 5
+    },
+    {
+     "key": "donor_liaison",
+     "label": {
+      "fr": "Chargé des donateurs",
+      "frF": "Chargée des donateurs",
+      "en": "Donor liaison"
+     },
+     "category": "suspect",
+     "side": "civ",
+     "threat": 1,
+     "weight": 6,
+     "ageMin": 26,
+     "ageMax": 58,
+     "cover": [
+      {
+       "fr": "Chargé de communication",
+       "frF": "Chargée de communication",
+       "en": "Communications officer"
+      },
+      {
+       "fr": "Journaliste",
+       "frF": "Journaliste",
+       "en": "Journalist"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 45
+    },
+    {
+     "key": "volunteer",
+     "label": {
+      "fr": "Bénévole sincère",
+      "frF": "Bénévole sincère",
+      "en": "Sincere volunteer"
+     },
+     "category": "civilian",
+     "side": "civ",
+     "threat": 1,
+     "weight": 30,
+     "ageMin": 18,
+     "ageMax": 68,
+     "cover": [
+      {
+       "fr": "Étudiant",
+       "frF": "Étudiante",
+       "en": "Student"
+      },
+      {
+       "fr": "Infirmier",
+       "frF": "Infirmière",
+       "en": "Nurse"
+      },
+      {
+       "fr": "Enseignant",
+       "frF": "Enseignante",
+       "en": "Teacher"
+      },
+      {
+       "fr": "Retraité",
+       "frF": "Retraitée",
+       "en": "Retired"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 55
+    },
+    {
+     "key": "medic",
+     "label": {
+      "fr": "Médecin de la clinique",
+      "frF": "Médecin de la clinique",
+      "en": "Clinic doctor"
+     },
+     "category": "civilian",
+     "side": "civ",
+     "threat": 1,
+     "weight": 6,
+     "ageMin": 28,
+     "ageMax": 64,
+     "cover": [
+      {
+       "fr": "Médecin",
+       "frF": "Médecin",
+       "en": "Doctor"
+      },
+      {
+       "fr": "Sage-femme",
+       "frF": "Sage-femme",
+       "en": "Midwife"
+      }
+     ],
+     "cautions": [],
+     "leader": false,
+     "femalePct": 45
+    },
+    {
+     "key": "handler",
+     "label": {
+      "fr": "Référent du réseau caché",
+      "frF": "Référente du réseau caché",
+      "en": "Handler for the hidden network"
+     },
+     "category": "suspect",
+     "side": "guer",
+     "threat": 4,
+     "weight": 5,
+     "ageMin": 30,
+     "ageMax": 55,
+     "cover": [
+      {
+       "fr": "Consultant",
+       "frF": "Consultante",
+       "en": "Consultant"
+      },
+      {
+       "fr": "Commerçant",
+       "frF": "Commerçante",
+       "en": "Shopkeeper"
+      }
+     ],
+     "cautions": [
+      "armed",
+      "gang"
+     ],
+     "leader": false,
+     "femalePct": 5
+    }
+   ],
+   "narrative": {
+    "open": [
+     {
+      "fr": "{first} {last} est {role} {deOrg}.",
+      "en": "{first} {last} is {role} of {org}."
+     },
+     {
+      "fr": "{first} {last}, {age} ans, {job}, travaille pour {org} comme {role}.",
+      "en": "{first} {last}, {age}, a {job}, works for {org} as {role}."
+     },
+     {
+      "fr": "Depuis {year}, {first} {last} est {role} au sein {deOrg}, à {place}.",
+      "en": "Since {year}, {first} {last} has been {role} within {org}, in {place}."
+     },
+     {
+      "fr": "{org} présente {first} {last} comme {role} dans ses rapports aux donateurs.",
+      "en": "{org} presents {first} {last} as {role} in its reports to donors."
+     },
+     {
+      "fr": "[Venu|Venue] de {birth}, {first} {last} a rejoint {org} et y exerce comme {role}.",
+      "en": "Coming from {birth}, {first} {last} joined {org} and works there as {role}."
+     },
+     {
+      "fr": "Sur le terrain, {first} {last} porte le gilet {deOrg} : {role}.",
+      "en": "In the field, {first} {last} wears the vest of {org}: {role}."
+     },
+     {
+      "fr": "{first} {last} figure à l'organigramme {deOrg} : {role}.",
+      "en": "{first} {last} appears on the organisation chart of {org}: {role}."
+     },
+     {
+      "fr": "Le dépôt de {place} est géré par {org} ; {first} {last} y est {role}.",
+      "en": "The {place} depot is run by {org}; {first} {last} is {role} there."
+     }
+    ],
+    "mid": [
+     {
+      "fr": "Une partie des colis ne figure sur aucun bordereau.",
+      "en": "Some of the parcels appear on no delivery note."
+     },
+     {
+      "fr": "Les véhicules de l'association passent les contrôles sans fouille.",
+      "en": "The association's vehicles pass checkpoints without being searched."
+     },
+     {
+      "fr": "[Il|Elle] rend compte à {chief}, en dehors des réunions officielles.",
+      "en": "[He|She] reports to {chief}, outside the official meetings."
+     },
+     {
+      "fr": "Les dons en espèces sont comptés deux fois, dans deux cahiers.",
+      "en": "Cash donations are counted twice, in two notebooks."
+     },
+     {
+      "fr": "[Il|Elle] se rend chaque mois à {place2}, hors de la zone d'intervention déclarée.",
+      "en": "[He|She] travels every month to {place2}, outside the declared area of operation."
+     },
+     {
+      "fr": "Rien n'indique qu'[il|elle] connaisse l'usage réel des convois.",
+      "en": "Nothing suggests [he|she] knows the real use of the convoys."
+     },
+     {
+      "fr": "La liste des bénéficiaires comprend des familles qui n'existent pas.",
+      "en": "The beneficiary list includes families that do not exist."
+     },
+     {
+      "fr": "[Il|Elle] signe les ordres de mission sans les lire.",
+      "en": "[He|She] signs travel orders without reading them."
+     }
+    ],
+    "close": [
+     {
+      "fr": "[Coopératif|Coopérative] ; à entendre comme témoin d'abord.",
+      "en": "Cooperative; to be interviewed as a witness first."
+     },
+     {
+      "fr": "Bordereaux, cahiers et ordinateur du bureau à saisir.",
+      "en": "Delivery notes, notebooks and the office computer to be seized."
+     },
+     {
+      "fr": "Peut ignorer l'activité réelle : ne pas [le|la] traiter d'emblée en suspect.",
+      "en": "May be unaware of the real activity: do not treat as a suspect from the outset."
+     },
+     {
+      "fr": "Connaît les trajets et les horaires des convois.",
+      "en": "Knows the convoy routes and timings."
+     },
+     {
+      "fr": "[Lié|Liée] à {chief} : prudence lors de l'approche.",
+      "en": "Linked to {chief}: approach with care."
+     },
+     {
+      "fr": "Bonne connaissance des familles et des quartiers.",
+      "en": "Good knowledge of the families and neighbourhoods."
+     }
+    ]
+   }
+  }
+ }
+}

@@ -49,6 +49,10 @@ final class SseIdCountryCatalog
         'nl' => 'Néerlandais',
         'uk' => 'Ukrainien',
         'ps' => 'Pachto',
+        'so' => 'Somali',
+        'sr' => 'Serbe',
+        'sq' => 'Albanais',
+        'fil' => 'Filipino',
         'other' => 'Langue imaginaire',
     ];
 
@@ -77,6 +81,17 @@ final class SseIdCountryCatalog
         'IRAQ_ID' => 'Irak (arabe)',
         'SYRIA_ID' => 'Syrie (arabe)',
         'AFGHANISTAN' => 'Afghanistan (dari, pachto)',
+        'LEBANON' => 'Liban (arabe, français)',
+        'YEMEN' => 'Yémen (arabe)',
+        'LIBYA' => 'Libye (arabe)',
+        'MALI' => 'Mali (français, bambara)',
+        'NIGER' => 'Niger (français, haoussa)',
+        'CHAD' => 'Tchad (français, arabe)',
+        'SOMALIA' => 'Somalie (somali)',
+        'SERBIA' => 'Serbie (serbe)',
+        'ALBANIA' => 'Albanie (albanais)',
+        'MEXICO' => 'Mexique (espagnol)',
+        'PHILIPPINES' => 'Philippines (filipino, anglais)',
     ];
 
     public const VALIDITY_MIN = 1;

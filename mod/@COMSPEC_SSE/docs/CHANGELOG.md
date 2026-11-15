@@ -1,5 +1,20 @@
 # COMSPEC SSE — historique des versions
 
+## 1.10.0 — 15/11/2026 · Kits de contenu par pays
+
+**Relancer Arma complètement.** Sources seulement dans cette livraison : les PBO `comspec_sse_generator`, `comspec_sse_identity`, `comspec_sse_eden`, `comspec_sse_zeus` et `comspec_sse_main` sont à reconstruire (`build_mod.bat`). Aucune DLL à changer. Les libellés anglais des nouvelles régions et des nouveaux modèles sont dans le dictionnaire de l'ATAK natif (`main/i18n/en.txt`) : ils s'affichent en anglais à partir du prochain `main.pbo` de l'ATAK, en français d'ici là.
+
+- **Kits par pays** : dix-sept pays des papiers reçoivent de grands viviers de prénoms et de noms (90 à 200 prénoms par sexe, 90 à 180 noms), repris à l'identique par le site (`config/sse_kits/kits.json`). Irak, Syrie, Yémen, Libye, Afghanistan, Mali, Niger, Tchad, Somalie, Russie, Ukraine, Serbie et Colombie sont élargis ; Liban, Albanie, Mexique et Philippines sont nouveaux (`tools/countries/countries.json`, `CfgComspecCountries.hpp`).
+- **Papiers** : ces dix-sept pays délivrent aussi le titre de séjour, le certificat d'immatriculation et la carte militaire (gabarits neutres, noms des papiers dans la langue du pays).
+- **Pays réels stylisés** : mêmes viviers dans `fn_idRealCountries.sqf`, et onze pays de plus proposés à l'import par le site (une graine donne la même identité en jeu et sur Athena).
+- **Générateur** : huit régions de plus (`AFGHANISTAN`, `UKRAINE`, `BALKANS`, `LATAM`, `SE_ASIA`, `HORN_AFRICA`, `LIBYA`, `YEMEN`) dans l'attribut Eden « Région / théâtre ». `fn_kitPools.sqf` (généré par `tools/gen_kit_pools.php`) porte les viviers de chaque région ; `fn_getNarrativePools` les ajoute aux listes d'origine, garde le résultat en mémoire et en rend une copie.
+- **Modèles intégrés** : 37 modèles de plus (61 en tout), rangés par kit : Sahel, Syrie, Levant, Afghanistan, Ukraine, Balkans, Amérique latine, Asie du Sud-Est, Corne de l'Afrique, Yémen, Libye, et trois organisations sans pays (société militaire privée, administration corrompue, ONG de façade).
+- **Véhicules** : les thèmes citent les véhicules courants de la région après les types génériques.
+- **Compatibilité** : la région « Aléatoire » tire toujours parmi les six régions d'origine. Les noms tirés pour une même graine changent (listes plus longues). Les noms de famille russes au féminin ne sortent plus dans le vivier masculin de la région Russie.
+- **Garde-fous** : tout est fictif ; les noms de famille trop liés à une personnalité ou à une dynastie réelles sont retirés des viviers, et le site écarte une liste d'homonymes.
+
+**À tester en jeu** : un civil de chaque nouveau pays (Liban, Albanie, Mexique, Philippines) présente une carte lisible ; « Donner un document » propose le titre de séjour, la carte grise et la carte militaire pour l'Irak et le Mali ; Eden › Région / théâtre liste les huit nouvelles régions et « Générer un profil » en Amérique latine donne des noms hispaniques et un indicatif +57 ou +52 ; Zeus › Appliquer un modèle liste les 61 modèles et « Sahel — Convoi de carburant » s'applique ; une mission existante en région Irak se charge sans erreur dans le RPT.
+
 ## À venir · Profils d'IA, éditeur SSE en Zeus, papiers et contrôle (version attribuée à la publication)
 
 - **SEEK II : la photo du visage remonte enfin sur Athena.** « SIGNER ET ENVOYER » n'envoyait que la fiche SEEK ; la photo n'était jointe qu'à la transmission d'une fiche personne (bouton TRANSMETTRE), donc elle ne partait jamais. Elle part maintenant avec la référence REC de la fiche signée (Overwatch connect : `fn_seekSend`, `fn_sseCaptureFacePhoto`) et le site la range sur la fiche SEEK II et sur l'identité rattachée (Bureau SSE › Identités et papiers, Fichiers › Fiches SEEK II et Photothèque). À reconstruire et publier avec le prochain paquet ATAK natif.

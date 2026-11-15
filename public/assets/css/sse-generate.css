@@ -1,0 +1,56 @@
+/* =====================================================================================================================
+   Portail SSE — Générer du contenu : cartes de kits et de réseaux à cocher, curseurs, aperçu, lots. Reprend les jetons
+   du kit « SSE Fichiers » (.fx) : thème sombre du Bureau, aucun texte sous 12 px, grilles en minmax(0, 1fr).
+   ===================================================================================================================== */
+.fx-gen-room { display: flex; flex-direction: column; gap: 4px; font-family: var(--fx-mono); font-size: 12px; color: var(--fx-mu); text-align: right; }
+.fx-gen-room b { color: var(--fx-tx); font-weight: 700; }
+.fx-gen-wk { grid-template-columns: minmax(0, 520px) minmax(0, 1fr); }
+
+.fx-gen-kits, .fx-gen-themes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.fx .fx-gen-kit { display: block; position: relative; cursor: pointer; }
+.fx-gen-kit input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.fx-gen-kit-b { display: flex; flex-direction: column; gap: 6px; height: 100%; padding: 10px 12px; border: 1px solid var(--fx-ln2); border-radius: 5px; background: var(--fx-bg); }
+.fx-gen-kit:hover .fx-gen-kit-b { border-color: rgba(232, 236, 233, .3); }
+.fx-gen-kit input:checked + .fx-gen-kit-b { border-color: var(--fx-ac); background: var(--fx-acd); }
+.fx-gen-kit input:focus-visible + .fx-gen-kit-b { outline: 2px solid var(--fx-ac); outline-offset: 2px; }
+.fx-gen-kit input:disabled + .fx-gen-kit-b { opacity: .45; cursor: not-allowed; }
+.fx-gen-kit-n { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fx-gen-kit-n b { font-size: 14px; font-weight: 800; color: var(--fx-tx); }
+.fx-gen-kit-s { font-size: 12px; line-height: 1.45; color: var(--fx-mu); }
+.fx-gen-kit-k { margin-top: auto; font-family: var(--fx-mono); font-size: 12px; color: var(--fx-dim); }
+
+.fx-gen-sl input[type="range"] { width: 100%; height: 24px; margin: 0; accent-color: var(--fx-ac); background: none; }
+.fx-gen-sl.off { opacity: .5; }
+
+.fx-gen-nums { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.fx-gen-nums span { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--fx-ln); border-radius: 5px; background: var(--fx-bg); font-size: 12px; color: var(--fx-mu); }
+.fx-gen-nums b { font-family: var(--fx-mono); font-size: 20px; font-weight: 700; color: var(--fx-tx); }
+.fx-gen-stop { margin: 0; padding: 10px 12px; border: 1px solid rgba(248, 113, 113, .35); border-radius: 5px; background: var(--fx-redd); color: var(--fx-red); line-height: 1.5; }
+.fx-gen-org { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: var(--fx-mu); line-height: 1.5; }
+.fx-gen-org b { color: var(--fx-tx); }
+.fx-gen-p { padding: 12px 0; border-top: 1px solid var(--fx-ln); min-width: 0; }
+.fx-gen-p:first-of-type { border-top: 0; padding-top: 0; }
+.fx-gen-p p { margin: 10px 0 0; color: var(--fx-tx); line-height: 1.6; max-width: 78ch; overflow-wrap: anywhere; }
+.fx-gen-p .fx-kv span { overflow-wrap: anywhere; }
+.fx-gen .fx-ff form { display: contents; }
+.fx-gen .fx-ff .btn { flex: 1 1 180px; height: 44px; }
+
+.fx-gen-lots { margin-top: 16px; }
+.fx-gen-lot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 16px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--fx-ln); }
+.fx-gen-lot:last-child { border-bottom: 0; }
+.fx-gen-lot .fx-kv span { overflow-wrap: anywhere; }
+
+@media (max-width: 1280px) { .fx-gen-wk { grid-template-columns: minmax(0, 440px) minmax(0, 1fr); } }
+@media (max-width: 1080px) { .fx-gen-wk { grid-template-columns: minmax(0, 1fr); } .fx-gen-room { text-align: left; } }
+@media (max-width: 640px) {
+    .fx-gen-kits, .fx-gen-themes { grid-template-columns: minmax(0, 1fr); }
+    .fx-gen-lot { grid-template-columns: minmax(0, 1fr); }
+    .fx-gen-lot .btn { width: 100%; height: 44px; }
+    .fx-gen-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.fx-gen-kit-k { display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.fx-gen-kit-k b { color: var(--fx-mu); font-weight: 500; }
+/* Réglages sur deux colonnes quand la place le permet ; le bouton d'aperçu reste à portée en bas du formulaire. */
+.fx-gen-sls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.fx-gen [data-gen-form] > .fx-ff { position: sticky; bottom: 0; background: var(--fx-s1); border-top: 1px solid var(--fx-ln2); border-radius: 0 0 6px 6px; z-index: 2; }
+@media (max-width: 640px) { .fx-gen-sls { grid-template-columns: minmax(0, 1fr); } }
