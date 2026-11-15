@@ -17,6 +17,7 @@ final class LegacyDataScreen
     /**
      * @return array{
      *   counts: array<string, int>,
+     *   civilTargets: list<array{id: int, label: string}>,
      *   lines: list<array{key: string, count: int, text: string}>,
      *   simulation: ?array{available: bool, reason: string, total: int, candidates: list<array{user_id: int, home_tenant_id: int, identity_id: int, character_name: string, first_name: ?string, last_name: string}>},
      *   batches: list<array{batch_id: string, at: string, imported: int, active: int}>,
@@ -32,6 +33,7 @@ final class LegacyDataScreen
         $out = [
             'counts' => array_fill_keys(LegacyDataCounter::KEYS, 0),
             'lines' => [],
+            'civilTargets' => [],
             'simulation' => null,
             'batches' => [],
             'importAvailable' => false,
@@ -46,6 +48,9 @@ final class LegacyDataScreen
         try {
             $out['counts'] = LegacyDataNotice::counts($tenantId);
             $out['lines'] = LegacyDataNotice::lines($out['counts']);
+            if (($out['counts']['no_civil_name'] ?? 0) > 0) {
+                $out['civilTargets'] = (new LegacyDataCounter())->membersWithoutCivilName($tenantId, 20);
+            }
             $import = new LegacyIdentityImport();
             $avail = $import->available();
             $out['importAvailable'] = $avail['ok'];

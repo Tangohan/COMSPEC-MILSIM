@@ -66988,4 +66988,8 @@ return [
     'sur la fiche,' => 'on the file,',
     'Le prénom et le nom ne peuvent pas contenir de HTML ni de caractères spéciaux de contrôle ; ils n’ont pas été modifiés. Le reste de l’état civil est enregistré.' => 'The first and last name cannot contain HTML or control characters; they were not changed. The rest of the personal details is saved.',
     '10. Mes identités' => '10. My identities',
+    '%1 autre(s) fiche(s) dans les effectifs.' => '%1 more member file(s) in the roster.',
+    ': compléter l’état civil' => ': fill in civil status',
+    'Compléter la fiche' => 'Fill in the member file',
+    'Ouvrir la fiche de ce membre' => 'Open this member’s file',
 ];

@@ -2025,6 +2025,22 @@ if (!function_exists('effectifs_workspace_url')) {
     }
 }
 
+if (!function_exists('effectifs_member_url')) {
+    /**
+     * Fiche d'un membre, avec en option une fenêtre ouverte d'emblée (?ouvrir=etat-civil, fonctions, langues,
+     * portrait, elevation, depart : voir eff-member.js ; un nom inconnu est ignoré) et une ancre de carte.
+     */
+    function effectifs_member_url(int $userId, string $open = '', string $anchor = ''): string
+    {
+        $url = effectifs_workspace_url('membres/' . $userId);
+        if ($open !== '' && preg_match('/^[a-z-]+$/', $open) === 1) {
+            $url .= '?ouvrir=' . $open;
+        }
+
+        return $anchor !== '' ? $url . '#' . ltrim($anchor, '#') : $url;
+    }
+}
+
 if (!function_exists('can')) {
     function can(string $permission): bool
     {

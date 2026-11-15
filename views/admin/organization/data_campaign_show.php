@@ -146,6 +146,8 @@ $closedFlags = array_values(array_filter($overview['flags'], static fn (array $f
                     <div class="dc-flag">
                         <p class="dc-flag__state"><b><?= $h($f['display_name'] !== '' ? $f['display_name'] : $f['callsign']) ?></b> · <?= $h(DataCampaignBlocks::label((string) $f['block_key'])) ?> · <?= $h($dayTime((string) $f['created_at'])) ?></p>
                         <p class="dc-flag__text"><?= $h($f['message']) ?></p>
+                        <?php $flagOpen = match ((string) $f['block_key']) { 'identity' => 'etat-civil', 'assignment' => 'fonctions', default => '' }; ?>
+                        <p class="dc-note"><a class="dc-link" href="<?= $h(effectifs_member_url((int) $f['user_id'], $flagOpen)) ?>">Ouvrir la fiche de ce membre</a></p>
                         <?php if ((int) ($f['correction_request_id'] ?? 0) > 0): ?>
                             <p class="dc-note"><?= $h($flagRequestLabel($f)) ?> — à décider dans <a class="dc-link" href="<?= $h(url('back-office/demandes-rh')) ?>">Demandes RH</a>. Le signalement se ferme quand la demande est décidée.</p>
                         <?php else: ?>
@@ -189,7 +191,7 @@ $closedFlags = array_values(array_filter($overview['flags'], static fn (array $f
                     <tbody>
                     <?php foreach ($members as $m): ?>
                         <tr>
-                            <td><?= $h($m['display_name'] !== '' ? $m['display_name'] : '—') ?><?= $m['callsign'] !== '' ? ' <span class="dc-muted">' . $h($m['callsign']) . '</span>' : '' ?></td>
+                            <td><a class="dc-link" href="<?= $h(effectifs_member_url((int) $m['user_id'])) ?>"><?= $h($m['display_name'] !== '' ? $m['display_name'] : '—') ?></a><?= $m['callsign'] !== '' ? ' <span class="dc-muted">' . $h($m['callsign']) . '</span>' : '' ?></td>
                             <td><?= $h($m['unit_label'] !== '' ? $m['unit_label'] : '—') ?></td>
                             <td><span class="dc-pill <?= $bucketClass[(string) $m['bucket']] ?? 'dc-pill--muted' ?>"><?= $h($bucketText[(string) $m['bucket']] ?? '') ?></span><?= (int) $m['open_flags'] > 0 ? ' <span class="dc-muted">' . (int) $m['open_flags'] . '</span>' : '' ?></td>
                             <td><?= (int) $m['answered'] ?> / <?= count($campaign['blocks'] ?? []) ?></td>

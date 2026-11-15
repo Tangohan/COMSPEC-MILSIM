@@ -21,8 +21,12 @@ $lgRetroOn = !isset($legacy['retroEnabled']) || !empty($legacy['retroEnabled']);
 $lgWindow = (int) ($legacy['retroWindowDays'] ?? \App\Support\EnlistmentRetroAutoClose::AUTO_CLOSE_MAX_LATE_DAYS);
 $lgThreshold = (int) ($legacy['retroThresholdDays'] ?? \App\Support\EnlistmentRetroAutoClose::AUTO_CLOSE_LATE_DAYS);
 $lgImportable = (int) ($lgCounts['importable_names'] ?? 0);
+$lgTargets = is_array($legacy['civilTargets'] ?? null) ? $legacy['civilTargets'] : [];
+// Une seule personne concernée : droit sur sa fiche, fenêtre « État civil » ouverte. Plusieurs : la liste ci-dessous.
 $lgLinks = [
-    'no_civil_name' => ['label' => 'Compléter les fiches', 'href' => effectifs_workspace_url('membres')],
+    'no_civil_name' => count($lgTargets) === 1 && (int) ($lgCounts['no_civil_name'] ?? 0) === 1
+        ? ['label' => 'Compléter la fiche', 'href' => effectifs_member_url((int) $lgTargets[0]['id'], 'etat-civil')]
+        : ['label' => 'Ouvrir les effectifs', 'href' => effectifs_workspace_url('membres')],
     'stale_dossiers' => ['label' => 'Ouvrir le recrutement', 'href' => url('back-office/recruitments')],
     'profile_gaps' => ['label' => 'Ouvrir les effectifs', 'href' => effectifs_workspace_url('membres')],
 ];
@@ -47,6 +51,16 @@ $lgLinks = [
                     <li class="bo-dq-trash__item">
                         <div class="bo-dq-trash__body">
                             <p class="bo-dq-trash__title"><?= $h((string) ($lgLine['text'] ?? '')) ?></p>
+                        <?php if ($lgKey === 'no_civil_name' && count($lgTargets) > 1): ?>
+                        <div class="bo-dq-trash__meta" data-dq-civil-targets>
+                            <?php foreach ($lgTargets as $lgT): ?>
+                            <a class="ath-btn" href="<?= $h(effectifs_member_url((int) $lgT['id'], 'etat-civil')) ?>"><span translate="no"><?= $h((string) $lgT['label']) ?></span> : compléter l’état civil</a>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if ((int) ($lgCounts['no_civil_name'] ?? 0) > count($lgTargets)): ?>
+                        <p class="bo-dq-trash__meta"><?= (int) ($lgCounts['no_civil_name'] - count($lgTargets)) ?> autre(s) fiche(s) dans les effectifs.</p>
+                        <?php endif; ?>
+                        <?php endif; ?>
                         </div>
                         <?php if (isset($lgLinks[$lgKey])): ?>
                         <a class="ath-btn" href="<?= $h($lgLinks[$lgKey]['href']) ?>"><?= $h($lgLinks[$lgKey]['label']) ?></a>
