@@ -276,6 +276,42 @@ final class SseLinkAdapters
             ['g.name']
         ));
 
+        // Périmètres de la fenêtre « Rattacher » : pistes, investigations et objets du registre (nœuds d'investigation).
+        $classOf = static fn (mixed $c): ?string => in_array((string) $c, ['interne', 'encadrement', 'confidentiel', 'tres_restreint'], true) ? (string) $c : null;
+        $r->register($a(
+            'lead',
+            'l.id AS id, l.reference_code, l.title, l.status, l.classification, l.created_at',
+            'FROM sse_leads l', 'l.id', 'l.tenant_id',
+            static fn (array $row): array => ['ref' => (string) $row['reference_code'], 'title' => trim((string) ($row['title'] ?? '')) ?: (string) $row['reference_code'],
+                'summary' => (string) (\App\Support\SseAttachCatalog::LEAD_STATUSES[(string) ($row['status'] ?? '')] ?? ''), 'href' => 'atak/sse/pistes/' . (int) $row['id'],
+                'date' => (string) ($row['created_at'] ?? ''), 'classification' => $classOf($row['classification'] ?? null)],
+            ['l.reference_code', 'l.title']
+        ));
+        $r->register($a(
+            'mesh',
+            'm.id AS id, m.reference_code, m.title, m.status, m.classification, m.created_at',
+            'FROM sse_meshes m', 'm.id', 'm.tenant_id',
+            static fn (array $row): array => ['ref' => (string) $row['reference_code'], 'title' => trim((string) ($row['title'] ?? '')) ?: (string) $row['reference_code'],
+                'summary' => (string) ($row['status'] ?? ''), 'href' => 'atak/sse/toiles/' . (int) $row['id'],
+                'date' => (string) ($row['created_at'] ?? ''), 'classification' => $classOf($row['classification'] ?? null)],
+            ['m.reference_code', 'm.title']
+        ));
+        foreach ([
+            'organization' => ["n.kind = 'organization'", 'ORG', 'Organisation', 'organisations'],
+            'vehicle' => ["n.kind = 'vehicle'", 'VEH', 'Véhicule', 'vehicules'],
+            'equipment' => ["n.kind IN ('weapon', 'phone', 'terminal', 'custom')", 'MAT', 'Matériel', 'materiels'],
+        ] as $objType => [$kindSql, $prefix, $fallback, $slug]) {
+            $r->register($a(
+                $objType,
+                'n.id AS id, n.label, n.detail, n.kind, n.mesh_id, n.created_at, m.classification AS mesh_classification',
+                'FROM sse_mesh_nodes n JOIN sse_meshes m ON m.id = n.mesh_id AND m.tenant_id = n.tenant_id AND ' . $kindSql, 'n.id', 'n.tenant_id',
+                static fn (array $row): array => ['ref' => $prefix . '-' . str_pad((string) (int) $row['id'], 5, '0', STR_PAD_LEFT), 'title' => trim((string) ($row['label'] ?? '')) ?: $fallback,
+                    'summary' => trim((string) ($row['detail'] ?? '')), 'href' => 'atak/sse/objets/' . $slug,
+                    'date' => (string) ($row['created_at'] ?? ''), 'classification' => $classOf($row['mesh_classification'] ?? null)],
+                ['n.label', 'n.detail']
+            ));
+        }
+
         return $r;
     }
 }

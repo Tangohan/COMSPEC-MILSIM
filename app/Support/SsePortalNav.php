@@ -41,6 +41,7 @@ final class SsePortalNav
                 ['id' => 'interet', 'label' => 'Dossiers d’intérêt', 'hint' => 'Signalements à qualifier : hypothèses, pas encore d’identité certaine.', 'path' => 'atak/sse/interet', 'icon' => 'interest', 'keywords' => 'pressee signalements'],
                 ['id' => 'dossiers', 'label' => 'Dossiers validés', 'hint' => 'Affaires structurées : preuves, notes, personnel, comptes rendus.', 'path' => 'atak/sse/dossiers', 'icon' => 'folder', 'keywords' => 'affaires cases preuves enquetes'],
                 ['id' => 'toiles', 'label' => 'Investigations', 'hint' => 'Tableaux des liens : relier personnes, lieux et objets.', 'path' => 'atak/sse/toiles', 'icon' => 'mesh', 'keywords' => 'tableau des liens graphe relationnel toiles reseau'],
+                ['id' => 'pistes', 'label' => 'Pistes', 'hint' => 'Hypothèses de travail : ce qui est à vérifier, suivi puis clos.', 'path' => 'atak/sse/pistes', 'icon' => 'target', 'keywords' => 'piste hypothese a verifier suivre'],
             ]],
             ['id' => 'referentiel', 'label' => 'Référentiel', 'hint' => 'Personnes, organisations, lieux et objets connus du bureau.', 'items' => [
                 ['id' => 'identites', 'label' => 'Personnes', 'hint' => 'Fiches personnes et indices biométriques.', 'path' => 'atak/sse/identites', 'icon' => 'id', 'aliases' => ['atak/sse/personnes'], 'keywords' => 'identites personnes biometrie'],

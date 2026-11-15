@@ -73,6 +73,7 @@ foreach ($rooms as $r) {
 </div>
 
 <?php \App\Services\Sse\Links\SseLinksWidget::render('site', (int) ($site['id'] ?? 0)); ?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::section('site', (int) ($site['id'] ?? 0)); ?>
 
 <div class="metrics-grid">
     <div class="metric">

@@ -66,6 +66,12 @@ final class SseLinkSessionViewer implements SseLinkViewer
         return !$this->isGuest() && $this->holds($section, SseAccessCatalog::LEVEL_WRITE);
     }
 
+    /** Droit « gérer » d'une section (fenêtre « Rattacher » : réglage de la communauté, propositions d'alignement). */
+    public function canManage(string $section): bool
+    {
+        return !$this->isGuest() && $this->holds($section, SseAccessCatalog::LEVEL_MANAGE);
+    }
+
     private function holds(string $section, string $level): bool
     {
         $key = $section . ':' . $level;

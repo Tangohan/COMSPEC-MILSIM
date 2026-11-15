@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * Fenêtres modales de la page Personnes (classer, verrouiller, déverrouiller, clore, rouvrir, rattacher, réglage, raccourcis).
+ * Fenêtres modales de la page Personnes (classer, verrouiller, déverrouiller, clore, rouvrir, réglage, raccourcis ; rattacher passe par la fenêtre universelle SseAttachWindow).
  * Partagées avec la fiche d'une personne : le script ouvre celle que demande un bouton « data-pe-act ».
  *
  * @var \App\Services\Sse\SsePersonViewer $viewer
@@ -119,24 +119,6 @@ $levelOptions = static function (bool $withNone) use ($h, $levels): string {
     </form>
 </dialog>
 
-<dialog class="pe-dialog" id="pe-dlg-link" aria-labelledby="pe-dlg-link-t">
-    <form method="post" action="<?= $h($batchUrl) ?>" data-pe-form="link">
-        <?= $field('link') ?>
-        <h2 id="pe-dlg-link-t">Ajouter à un dossier</h2>
-        <p class="pe-dlg__desc">Rattache les personnes sélectionnées à un dossier d’enquête de votre périmètre.</p>
-        <p class="pe-dlg__targets" data-pe-targets></p>
-        <label>Dossier
-            <select name="case_id" required>
-                <option value="">Choisir un dossier</option>
-                <?php foreach (($caseOptions ?? []) as $c): ?>
-                    <option value="<?= (int) ($c['id'] ?? 0) ?>"><?= $h(trim((string) ($c['reference_code'] ?? '') . ' ' . (string) ($c['title'] ?? ''))) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </label>
-        <p class="pe-dlg__error" role="alert" hidden></p>
-        <div class="pe-dlg__foot"><button type="button" class="pe-btn" data-pe-cancel>Annuler</button><button type="submit" class="pe-btn pe-btn--solid">Ajouter</button></div>
-    </form>
-</dialog>
 
 <form method="post" action="<?= $h($batchUrl) ?>" hidden data-pe-export-form>
     <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>"><input type="hidden" name="action" value="export"><input type="hidden" name="ids" value="">
