@@ -57,6 +57,9 @@ final class SseIdWorkshopService
      */
     public function save(int $tenantId, array $input, ?array $identity, ?array $doc, bool $truth, ?int $actorId, ?string $photoPath = null): array
     {
+        if ($identity !== null && SseIdentityHolderService::isObservedOnly($identity)) {
+            return ['ok' => false, 'error' => SseIdentityHolderService::NO_ISSUE];
+        }
         if ($doc !== null && $doc['workflow'] !== 'draft') {
             return ['ok' => false, 'error' => 'Seul un brouillon se modifie. Repassez le papier en brouillon, ou dupliquez-le.'];
         }
@@ -188,6 +191,9 @@ final class SseIdWorkshopService
      */
     public function duplicate(int $tenantId, array $doc, ?int $actorId): ?int
     {
+        if (SseIdentityHolderService::isObservedOnly($doc['identity'] ?? [])) {
+            return null;
+        }
         $country = $this->countries->findByCode($tenantId, (string) $doc['country_code']);
         if ($country === null) {
             return null;

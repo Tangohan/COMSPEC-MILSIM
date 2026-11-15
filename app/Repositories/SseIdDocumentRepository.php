@@ -66,7 +66,7 @@ final class SseIdDocumentRepository
                 'attribution' => $s['st_attribution'],
                 'fkind' => $s['forgery_kind'],
                 'fquality' => $s['forgery_quality'],
-                'wf' => 'draft',
+                'wf' => ($data['workflow'] ?? '') === 'observed' ? 'observed' : 'draft',
                 'notes' => ($n = trim((string) ($data['notes'] ?? ''))) !== '' ? mb_substr($n, 0, 4000) : null,
                 'layout' => \App\Support\SseIdWorkshopCatalog::layout($data['layout'] ?? null),
                 'print' => \App\Support\SseIdWorkshopCatalog::printJson($data['print'] ?? null),

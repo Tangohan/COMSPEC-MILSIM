@@ -1208,6 +1208,7 @@ return function (Router $router) {
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents/{id}/statuts', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStatuses'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents/{id}/cycle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentWorkflow'], $mwSsePortal);
