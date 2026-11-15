@@ -57,9 +57,10 @@ $sub = implode(' · ', array_filter(array_merge([(string) ($entryKind ?? '')], $
     <div class="jx-veil" aria-hidden="true"></div>
 
     <header class="ja-hd">
-        <a class="ja-brand" href="<?= $h((string) ($entryLeave ?? url('jnet'))) ?>"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
+        <a class="ja-brand" href="<?= $h((string) ($entryLeave ?? url('jnet'))) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
         <div class="ja-hd__r">
             <span class="ja-who">extranet<?= ($entryCommunity ?? '') !== '' ? ' · ' . $h($entryCommunity) : '' ?></span>
+            <a class="ja-ib ja-ib--nav" href="<?= $h((string) ($entryLeave ?? url('jnet'))) ?>"><?= JnetUi::icon('extranet') ?><span class="ja-ib__t">Mon extranet</span></a>
             <span class="jx-access"><?= $h($look['access_label']) ?></span>
         </div>
     </header>

@@ -3735,6 +3735,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/back-office/runtime-settings', [\App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/api/alerts/dismiss', [AlertDismissController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/ui-tours/dismiss', [UiTourController::class, 'dismiss'], [AuthMiddleware::class]);
+    // Extranet JNET : guide des membres, et mémoire par membre de l'annonce (fenêtre « JNET arrive », bandeau du tableau de bord).
+    $router->get('/jnet/guide', [JnetPortalController::class, 'guide'], [AuthMiddleware::class]);
+    $router->post('/api/jnet/annonce/{item}/vu', [\App\Controllers\Api\JnetNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
+    $router->post('/api/jnet/annonce/{item}/rappel', [\App\Controllers\Api\JnetNoticeController::class, 'restore'], [AuthMiddleware::class]);
     // App Discord du téléphone ATAK : message court publié dans le salon relié sur Athena (lien jamais envoyé au jeu).
     $router->post('/api/atak/discord/send', [\App\Controllers\Api\AtakDiscordApiController::class, 'send']);
     // Parc de terminaux · téléphones des opérateurs : type de numéro, numéro, IMEI, MAC gardés dans Athena.

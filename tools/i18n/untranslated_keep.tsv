@@ -1355,3 +1355,6 @@ data-cl-prop="meta" data-placeholder="Rôle ou contexte"	fragment d'attributs : 
 700 14px "Roboto Condensed", "Arial Narrow", Arial, sans-serif	police du canvas (CSS), pas un texte	public/assets/js/toc/toc-plan-render.js
 px "Roboto Condensed", "Arial Narrow", Arial, sans-serif	police du canvas (CSS), pas un texte	public/assets/js/toc/toc-plan-render.js
 px Arial, sans-serif	police du canvas (CSS), pas un texte	public/assets/js/toc/toc-plan-render.js
+IBM Plex Sans	nom de police Google Fonts	views/layout/main.php
+Libre Baskerville	nom de police Google Fonts	views/layout/main.php
+jnet/liens/nouveau?src=	chemin d'URL, pas un texte	views/jnet/unit_space.php

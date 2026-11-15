@@ -29,6 +29,7 @@ use App\Support\JnetUi;
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 // Les fiches et la messagerie allument la rubrique dont elles dépendent.
 $activeNav = (string) ($activeNav ?? 'home');
+$rawNav = $activeNav;
 $activeNav = ['mail' => 'inbox', 'mail_compose' => 'inbox', 'personnel_show' => 'personnel', 'operation_show' => 'operations', 'target_show' => 'targets'][$activeNav] ?? $activeNav;
 $pageTitle = (string) ($jnetPageTitle ?? $title ?? 'JNET');
 $community = trim((string) ($jnetTenantName ?? ''));
@@ -68,6 +69,25 @@ if ($memberShell) {
     $lead = trim((string) ($jnetPageLead ?? ''));
 }
 $showTabs = !$memberShell || ($jnetShowExtranetTabs ?? true) !== false;
+
+// Fil d'Ariane : Mon extranet › rubrique › page (la page elle-même pour une fiche, un dossier ou un message).
+$tabLabels = [];
+foreach ($tabs as $tab) {
+    $tabLabels[(string) $tab['id']] = [(string) $tab['label'], url((string) $tab['path'])];
+}
+$crumbs = [['Mon extranet', url('jnet')]];
+if (isset($tabLabels[$activeNav]) && $activeNav !== 'hub') {
+    $isDetail = in_array($rawNav, ['personnel_show', 'operation_show', 'target_show', 'mail_compose'], true);
+    $crumbs[] = $isDetail ? $tabLabels[$activeNav] : [$tabLabels[$activeNav][0], null];
+    if ($isDetail) {
+        $crumbs[] = [$pageTitle, null];
+    }
+} elseif ($activeNav !== 'hub') {
+    $crumbs[] = [$pageTitle, null];
+}
+if ($memberShell) {
+    $crumbs = [['Mon extranet', url('jnet')], ['Mon espace', url('jnet/espaces')], [$pageTitle, null]];
+}
 // Ces pages ouvrent sur leur propre titre (unité, personne, dossier, organisation).
 $ownHead = in_array((string) ($jnetInnerView ?? ''), ['jnet.home', 'jnet.unit', 'jnet.personnel_show', 'jnet.target_show'], true);
 $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet_spaces.css'];
@@ -122,7 +142,7 @@ foreach ((array) ($jnetPageJs ?? []) as $jsFile) {
 <a class="ja-skip" href="#jp-main">Aller au contenu</a>
 
 <header class="ja-hd ja-hd--rows">
-    <a class="ja-brand" href="<?= $h(url('jnet')) ?>"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
+    <a class="ja-brand" href="<?= $h(url('jnet')) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
     <nav class="ja-tabs" aria-label="Rubriques de l’extranet">
         <?php if ($showTabs): foreach ($tabs as $i => $tab): ?>
             <?php $count = (int) ($tab['count'] ?? 0); $on = $activeNav === $tab['id']; ?>
@@ -139,6 +159,7 @@ foreach ((array) ($jnetPageJs ?? []) as $jsFile) {
 </header>
 
 <main class="ja-main jp-main" id="jp-main">
+    <?= JnetUi::crumbs($crumbs) ?>
     <?php if (!$ownHead): ?>
     <header class="jp-head">
         <h1 class="ja-disp ja-disp--md"><?= $h($pageTitle) ?></h1>
@@ -170,6 +191,7 @@ foreach ((array) ($jnetPageJs ?? []) as $jsFile) {
 <footer class="ja-foot">
     <span>Accès réservé aux membres affectés · journalisé</span>
     <span>JNET<?= $footTail ?></span>
+    <a href="<?= $h(url('jnet/guide')) ?>">Guide de l’extranet</a>
 </footer>
 <?= $scriptTags ?>
 </body>

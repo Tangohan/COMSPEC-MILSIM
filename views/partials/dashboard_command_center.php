@@ -316,6 +316,7 @@ $tactPackVersion = (string) (($steam['version'] ?? '') !== '' ? $steam['version'
         require base_path('views/partials/header_dashboard.php');
         require base_path('views/partials/dashboard_idstrip.php');
         require base_path('views/partials/navbar_info_banners.php');
+        require base_path('views/partials/jnet_dashboard_banner.php');
         ?>
 
         <!-- Hero sombre — briefing du jour -->

@@ -91,6 +91,25 @@
   height: 40px;
 }
 
+/* Pleine largeur pour les registres ; les textes et formulaires gardent une mesure de lecture. */
+.jp .jnet-stage p.jnet-meta,
+.jp .jnet-stage p.jnet-empty {
+  max-width: 78ch;
+}
+
+.jp .jnet-compose {
+  max-width: 1100px;
+}
+
+/* Sous le fil d'Ariane, les titres se rapprochent. */
+.ja-crumbs + .jp-head {
+  padding-top: 28px;
+}
+
+.ja-crumbs + .jp-gap {
+  height: 20px;
+}
+
 /* —— Titres : Inter 900 italique en capitales, comme le gabarit. —— */
 
 .jp .jnet-stage h1,

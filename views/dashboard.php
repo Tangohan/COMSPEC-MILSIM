@@ -351,6 +351,7 @@ require base_path('views/partials/alert_banners.php');
     require base_path('views/partials/lms_module_entry_modal.php');
     ?>
     <?php require base_path('views/partials/dashboard_ui_tour_boot.php'); ?>
+    <?php require base_path('views/partials/jnet_announce_modal.php'); ?>
 <?php require base_path('views/partials/staff_marks_assets.php'); ?>
 </body>
 </html>
