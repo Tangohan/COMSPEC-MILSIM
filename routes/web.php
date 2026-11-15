@@ -3295,6 +3295,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $gameOps = \App\Controllers\Api\Game\GameOperationsApiController::class;
     $router->get('/api/game/v1/operations', [$gameOps, 'list']);
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
+    // Catalogue du mod SSE (ICD-SSE-CATALOGUE-001) : listes des modules Zeus, des attributs Eden et des écrans du joueur.
+    $router->get('/api/game/v1/sse/catalogue', [\App\Controllers\Api\Game\GameSseCatalogueApiController::class, 'show']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.
