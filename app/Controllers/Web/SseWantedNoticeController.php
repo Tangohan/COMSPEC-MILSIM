@@ -10,15 +10,20 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseIdentityEventRepository;
 use App\Repositories\SseIdentityRepository;
+use App\Repositories\SseWantedAttachmentRepository;
 use App\Repositories\SseWantedDetectionRepository;
+use App\Repositories\SseWantedExtrasRepository;
 use App\Repositories\SseWantedNoticeRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseWantedAccess;
+use App\Services\Sse\SseWantedAttachments;
 use App\Services\Sse\SseWantedNoticePdfService;
 use App\Services\Sse\SseWantedService;
 use App\Support\SseWantedCatalog as C;
+use App\Support\SseWantedCodes;
+use App\Support\SseWantedPhysical;
 
 /**
  * Portail SSE : avis de recherche posés depuis la fiche d'une identité fictive (fait de jeu de rôle), notice PDF, liste des
@@ -48,6 +53,7 @@ final class SseWantedNoticeController
         private ?SseWantedSettingsRepository $settings = null,
         private ?SseWantedService $service = null,
         ?SseWantedAccess $rights = null,
+        private ?SseWantedAttachments $attachments = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->clearance ??= new SseClearanceService($this->access);
@@ -74,6 +80,7 @@ final class SseWantedNoticeController
             'type' => $request->queryString('type'),
             'threat' => $request->queryString('menace'),
             'q' => $request->queryString('q'),
+            'code' => strtoupper($request->queryString('code')),
         ];
         if (!in_array($filters['status'], ['', 'active', 'lifted', 'expired', 'captured'], true)) {
             $filters['status'] = 'active';
@@ -81,17 +88,31 @@ final class SseWantedNoticeController
         $notices = [];
         $counts = ['active' => 0, 'lifted' => 0, 'expired' => 0, 'captured' => 0];
         $newDetections = 0;
+        $config = $this->settings->get($tenantId);
+        $extras = [];
+        $attachCounts = [];
         if ($ready) {
             $this->service->expireDue($tenantId);
-            $notices = $this->safe(fn (): array => $this->notices->list($tenantId, $filters)) ?? [];
+            // Filtre par code, et recherche libre qui trouve aussi les codes dont le libellé correspond.
+            $listFilters = $filters;
+            if (SseWantedCodes::kindOf($filters['code']) !== null) {
+                $listFilters['codes'] = [$filters['code']];
+            }
+            $listFilters['q_codes'] = SseWantedCodes::matching($filters['q'], $config);
+            $notices = $this->safe(fn (): array => $this->notices->list($tenantId, $listFilters)) ?? [];
+            $noticeIds = array_map(static fn (array $n): int => (int) $n['id'], $notices);
+            $extras = $this->safe(fn (): array => (new SseWantedExtrasRepository())->forNotices($tenantId, $noticeIds)) ?? [];
+            $attachCounts = $this->safe(fn (): array => (new SseWantedAttachmentRepository())->counts($tenantId, $noticeIds)) ?? [];
             $counts = $this->safe(fn (): array => $this->notices->counts($tenantId)) ?? $counts;
             $newDetections = (int) ($this->safe(fn (): array => $this->detections->counts($tenantId))['new'] ?? 0);
         }
-        $config = $this->settings->get($tenantId);
 
         return $this->page('atak.sse.papers.wanted_list', [
             'title' => 'Avis de recherche',
             'notices' => $notices,
+            'noticeExtras' => $extras,
+            'attachCounts' => $attachCounts,
+            'codeChoices' => ['reasons' => SseWantedCodes::active($config, SseWantedCodes::REASONS), 'measures' => SseWantedCodes::active($config, SseWantedCodes::MEASURES)],
             'filters' => $filters,
             'counts' => $counts,
             'newDetections' => $newDetections,
@@ -144,7 +165,15 @@ final class SseWantedNoticeController
 
             return $this->renderPlaceForm($identity, $input, $res['errors'], 422);
         }
+        $problems = $res['warnings'];
+        $notice = $this->safe(fn (): ?array => $this->notices->find($tenantId, (int) $res['id']));
+        if ($notice !== null) {
+            $problems = array_merge($problems, $this->attachAfterPlace($request, $tenantId, $notice, $r));
+        }
         Session::flash('success', 'Avis de recherche ' . $res['ref'] . ' placé.');
+        if ($problems !== []) {
+            Session::flash('error', implode(' ', array_slice($problems, 0, 4)));
+        }
 
         return Response::redirect($back . '#avis');
     }
@@ -205,6 +234,190 @@ final class SseWantedNoticeController
             ->header('Cache-Control', 'private, no-store')
             ->header('X-Content-Type-Options', 'nosniff')
             ->setBody($built['bytes']);
+    }
+
+    // ------------------------------------------------------------ Pièces jointes
+
+    /** Ajoute des images à un avis existant : fichiers envoyés et photos de la photothèque de l'identité. */
+    public function attachmentAdd(Request $request, array $params = []): Response
+    {
+        $r = $this->r();
+        $tenantId = $r->tenantId();
+        $notice = $this->safe(fn (): ?array => $this->notices->find($tenantId, (int) ($params['id'] ?? 0)));
+        if ($notice === null) {
+            return $this->flashBack('error', 'Avis introuvable.', url(self::BASE));
+        }
+        $back = url(self::PAPERS . '/' . (int) $notice['identity_id']) . '#avis';
+        if (!self::csrfOk($request)) {
+            return $this->denied($back, self::TOKEN_EXPIRED);
+        }
+        if (!$r->canManage()) {
+            return $this->denied($back, self::NEED_MANAGE);
+        }
+        $problems = $this->attachAfterPlace($request, $tenantId, $notice, $r);
+        if ($problems !== []) {
+            return $this->flashBack('error', implode(' ', array_slice($problems, 0, 4)), $back);
+        }
+
+        return $this->flashBack('success', 'Images jointes à l’avis ' . $notice['ref'] . '.', $back);
+    }
+
+    public function attachmentRemove(Request $request, array $params = []): Response
+    {
+        return $this->attachmentAction($request, (int) ($params['id'] ?? 0), false);
+    }
+
+    public function attachmentMain(Request $request, array $params = []): Response
+    {
+        return $this->attachmentAction($request, (int) ($params['id'] ?? 0), true);
+    }
+
+    private function attachmentAction(Request $request, int $attachmentId, bool $main): Response
+    {
+        $r = $this->r();
+        $tenantId = $r->tenantId();
+        $repo = new SseWantedAttachmentRepository();
+        $att = $this->safe(fn (): ?array => $repo->find($tenantId, $attachmentId));
+        $notice = $att !== null ? $this->safe(fn (): ?array => $this->notices->find($tenantId, (int) $att['notice_id'])) : null;
+        if ($att === null || $notice === null) {
+            return $this->flashBack('error', 'Pièce introuvable.', url(self::BASE));
+        }
+        $back = url(self::PAPERS . '/' . (int) $notice['identity_id']) . '#avis';
+        if (!self::csrfOk($request)) {
+            return $this->denied($back, self::TOKEN_EXPIRED);
+        }
+        if (!$r->canManage()) {
+            return $this->denied($back, self::NEED_MANAGE);
+        }
+        $service = $this->attachments();
+        $res = $main ? $service->makeMain($tenantId, $notice, $attachmentId, $r) : $service->remove($tenantId, $notice, $attachmentId, $r);
+        if ($res['ok'] !== true) {
+            return $this->flashBack('error', $res['error'], $back);
+        }
+
+        return $this->flashBack('success', $main ? 'Image principale changée.' : 'Image retirée de l’avis.', $back);
+    }
+
+    /**
+     * Image d'une pièce jointe : GET avis/pieces/{id}/image (?v=mini : miniature). Seule adresse des images d'un avis : lecture du
+     * portail, communauté de la session, et pour l'identité d'un MEMBRE l'autorisation hiérarchique (SseMemberImageGate), journalisée.
+     * Introuvable, autre communauté ou refus : 404 identique.
+     */
+    public function attachmentImage(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store')
+            ->setBody('Not found');
+        $r = $this->r();
+        if (!$r->canRead() || $r->tenantId() < 1) {
+            return $notFound();
+        }
+        $service = $this->attachments();
+        $res = $this->safe(fn (): ?array => $service->resolve($r->tenantId(), (int) ($params['id'] ?? 0), $request->queryString('v') === 'mini'));
+        if ($res === null) {
+            return $notFound();
+        }
+        if ($res['confidential']) {
+            try {
+                $gate = \App\Services\Sse\SseMemberImageGate::forSession();
+                $gate->recordConsultation($r->tenantId(), (int) $gate->viewerId(), 'wanted_attachment', (int) $res['attachment']['id'], $res['owner'], $res['reason']);
+            } catch (\Throwable $e) {
+                error_log('Avis de recherche : consultation d’une image confidentielle non journalisée, image refusée : ' . $e->getMessage());
+
+                return $notFound();
+            }
+        }
+        $abs = $res['file'];
+        $ext = ['image/png' => 'png', 'image/webp' => 'webp', 'image/jpeg' => 'jpg'][$res['mime']] ?? 'bin';
+
+        return (new Response())
+            ->header('Content-Type', $res['mime'])
+            ->header('Content-Length', (string) filesize($abs))
+            ->header('Content-Disposition', 'inline; filename="avis-' . (int) $res['attachment']['notice_id'] . '-' . (int) $res['attachment']['id'] . '.' . $ext . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer')
+            ->setBodyStream(static function () use ($abs): void {
+                $h = fopen($abs, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
+    }
+
+    /**
+     * Traite les images du formulaire (fichiers de « att_file » et photos cochées « att_photo ») pour un avis existant.
+     *
+     * @param array<string, mixed> $notice
+     * @return list<string> problèmes à montrer (une image refusée n'empêche pas les autres)
+     */
+    private function attachAfterPlace(Request $request, int $tenantId, array $notice, SseWantedAccess $access): array
+    {
+        $service = $this->attachments();
+        $problems = [];
+        $kinds = $request->input('att_kind');
+        $caps = $request->input('att_caption');
+        $kinds = is_array($kinds) ? array_values($kinds) : [];
+        $caps = is_array($caps) ? array_values($caps) : [];
+        $main = $request->inputString('att_main');
+        foreach (self::uploadedFiles('att_file') as $i => $file) {
+            if ($file['error'] === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $label = $file['name'] !== '' ? '« ' . mb_substr($file['name'], 0, 40) . ' » : ' : '';
+            if ($file['error'] !== UPLOAD_ERR_OK || !self::isUpload($file['tmp_name'])) {
+                $problems[] = $label . 'l’image dépasse 5 Mo ou n’a pas pu être reçue.';
+                continue;
+            }
+            $res = $service->addFile($tenantId, $notice, $file['tmp_name'], ['kind' => $kinds[$i] ?? 'other', 'caption' => $caps[$i] ?? '', 'main' => $main === 'up:' . $i], $access);
+            if ($res['ok'] !== true) {
+                $problems[] = $label . $res['error'];
+            }
+        }
+        $photoIds = $request->input('att_photo');
+        $photoKinds = $request->input('att_photo_kind');
+        foreach (is_array($photoIds) ? array_slice($photoIds, 0, 6) : [] as $pid) {
+            $pid = (int) $pid;
+            if ($pid < 1) {
+                continue;
+            }
+            $res = $service->addFromPhoto($tenantId, $notice, $pid, [
+                'kind' => is_array($photoKinds) ? ($photoKinds[$pid] ?? 'portrait') : 'portrait', 'main' => $main === 'ph:' . $pid,
+            ], $access);
+            if ($res['ok'] !== true) {
+                $problems[] = $res['error'];
+            }
+        }
+
+        return $problems;
+    }
+
+    /**
+     * Fichiers de $_FILES[$key] mis à plat.
+     *
+     * @return list<array{name: string, tmp_name: string, error: int}>
+     */
+    private static function uploadedFiles(string $key): array
+    {
+        $f = $_FILES[$key] ?? null;
+        if (!is_array($f) || !is_array($f['name'] ?? null)) {
+            return [];
+        }
+        $out = [];
+        foreach (array_keys($f['name']) as $i) {
+            $out[] = ['name' => (string) $f['name'][$i], 'tmp_name' => (string) ($f['tmp_name'][$i] ?? ''), 'error' => (int) ($f['error'][$i] ?? UPLOAD_ERR_NO_FILE)];
+        }
+
+        return array_slice($out, 0, 12);
+    }
+
+    /** Fichier réellement reçu par PHP en HTTP (jamais un chemin choisi par le client). */
+    private static function isUpload(string $tmp): bool
+    {
+        return $tmp !== '' && is_uploaded_file($tmp);
     }
 
     // ------------------------------------------------------------ Détections
@@ -300,12 +513,21 @@ final class SseWantedNoticeController
             'pdf_lang' => $request->inputString('pdf_lang'),
             'watermark' => $request->input('watermark'),
             'footer' => $request->input('footer'),
+            'default_classification' => $request->inputString('default_classification'),
             'default_expiry_days' => $request->input('default_expiry_days'),
             'default_instructions_fr' => $request->inputString('default_instructions_fr'),
             'default_instructions_en' => $request->inputString('default_instructions_en'),
             'custom_types' => $request->inputString('custom_types'),
             'enabled_types' => is_array($request->input('enabled_types')) ? array_values(array_map('strval', $request->input('enabled_types'))) : [],
         ]);
+        // Onglet « Codification » : absent du formulaire (ancienne page), on garde les réglages en place.
+        if ($request->inputString('codes_present') === '1') {
+            $codes = SseWantedCodes::fromForm($this->codesInput($request));
+            $checked['settings']['codes'] = $codes['settings'];
+            $checked['errors'] = array_merge($checked['errors'], $codes['errors']);
+        } else {
+            $checked['settings']['codes'] = $this->settings->get($tenantId)['codes'];
+        }
         if ($checked['errors'] !== []) {
             return $this->page('atak.sse.papers.wanted_settings', [
                 'title' => 'Réglages de la notice',
@@ -339,8 +561,28 @@ final class SseWantedNoticeController
         $tenantId = $r->tenantId();
         $config = $this->settings->get($tenantId);
         $active = SseWantedNoticeRepository::ready() ? $this->safe(fn (): ?array => $this->notices->activeForIdentity($tenantId, (int) $identity['id'])) : null;
+        $lang = self::readerLang();
+        $gate = \App\Services\Sse\SseMemberImageGate::forSession();
+        $isMember = $gate->identityState($tenantId, $identity)['class'] !== \App\Services\Sse\SseMemberImageGate::CLASS_PUBLIC;
+        $attachLock = $this->attachments()->identityVisible($tenantId, (int) $identity['id']);
+        $profile = $isMember ? null : $this->safe(fn (): ?array => (new \App\Repositories\SseFileRecordRepository())->profile($tenantId, (int) $identity['id']));
+        $libraryPhotos = [];
+        if (!$isMember && $attachLock['allowed']) {
+            $libraryPhotos = $this->safe(fn (): array => array_values(array_filter(
+                (new \App\Repositories\SseFileRecordRepository())->photosFor($tenantId, [(int) $identity['id']])[(int) $identity['id']] ?? [],
+                static fn (array $p): bool => ($p['visibility'] ?? 'known') !== 'hidden'
+            ))) ?? [];
+            $libraryPhotos = array_slice($libraryPhotos, 0, 24);
+        }
 
         return $this->page('atak.sse.papers.wanted_form', [
+            'codesData' => SseWantedCodes::clientData($config, $lang),
+            'physicalDefaults' => SseWantedPhysical::fromProfile($profile, $isMember),
+            'isMemberIdentity' => $isMember,
+            'attachLock' => $attachLock,
+            'libraryPhotos' => $libraryPhotos,
+            'extrasReady' => SseWantedExtrasRepository::ready(),
+            'attachmentsReady' => SseWantedAttachmentRepository::ready(),
             'title' => 'Placer un avis de recherche',
             'identity' => $identity,
             'old' => $old,
@@ -358,11 +600,49 @@ final class SseWantedNoticeController
     private function placeInput(Request $request): array
     {
         $out = [];
-        foreach (['notice_type', 'threat_level', 'armed', 'reason', 'instructions', 'zone', 'last_seen_place', 'last_seen_at', 'contact_label', 'contact_detail', 'issued_at', 'expires_at'] as $k) {
+        foreach (['notice_type', 'threat_level', 'armed', 'reason', 'instructions', 'zone', 'last_seen_place', 'last_seen_at', 'contact_label', 'contact_detail', 'issued_at', 'expires_at', 'codes_template'] as $k) {
             $out[$k] = $request->inputString($k);
         }
+        foreach (['codes_reasons', 'codes_measures'] as $k) {
+            $v = $request->input($k);
+            $out[$k] = is_array($v) ? array_slice(array_values(array_filter(array_map('strval', $v), static fn (string $c): bool => $c !== '')), 0, 40) : [];
+        }
+        // Signalement physique : valeurs de la liste ou saisie libre, rangées sous « physical ».
+        $physical = [];
+        foreach (array_merge(['height_cm', 'weight_kg'], array_keys(SseWantedPhysical::lists()), array_keys(SseWantedPhysical::FREE)) as $k) {
+            $physical[$k] = $request->inputString('phys_' . $k);
+        }
+        $equipment = $request->input('phys_equipment');
+        $physical['equipment'] = is_array($equipment) ? array_values(array_map('strval', $equipment)) : [];
+        $out['physical'] = $physical;
+        $out['lang'] = self::readerLang();
 
         return $out;
+    }
+
+    /**
+     * Saisie de l'onglet « Codification » des réglages.
+     *
+     * @return array<string, mixed>
+     */
+    private function codesInput(Request $request): array
+    {
+        $arr = static fn (mixed $v): array => is_array($v) ? $v : [];
+        $enabled = $request->input('codes_enabled');
+
+        return [
+            'present' => '1',
+            'rows' => is_array($request->input('codes_row')) ? array_values(array_map('strval', $request->input('codes_row'))) : [],
+            'enabled' => is_array($enabled) ? array_values(array_map('strval', $enabled)) : [],
+            'fr' => $arr($request->input('codes_fr')),
+            'en' => $arr($request->input('codes_en')),
+            'rank' => $arr($request->input('codes_rank')),
+            'custom_codes' => $request->inputString('codes_custom'),
+            'defaults_reasons' => $arr($request->input('codes_default_reasons')),
+            'defaults_measures' => $arr($request->input('codes_default_measures')),
+            'templates_enabled' => is_array($request->input('codes_templates')) ? array_values(array_map('strval', $request->input('codes_templates'))) : [],
+            'custom_templates' => $request->inputString('codes_custom_templates'),
+        ];
     }
 
     /**
@@ -411,6 +691,11 @@ final class SseWantedNoticeController
         $token = $request->input('_csrf_token');
 
         return is_string($token) && $token !== '' && Csrf::validate($token);
+    }
+
+    private function attachments(): SseWantedAttachments
+    {
+        return $this->attachments ??= new SseWantedAttachments();
     }
 
     private function r(): SseWantedAccess

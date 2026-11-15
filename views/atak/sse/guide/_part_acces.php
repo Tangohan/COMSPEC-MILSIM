@@ -38,7 +38,7 @@
 
     <h3>Bandeau permanent</h3>
     <p>
-        Pendant toute la session, un bandeau rappelle le niveau de diffusion (par exemple « Confidentiel »)
+        Pendant toute la session, un bandeau rappelle le niveau de diffusion (par exemple « SECRET//NOFORN »)
         et le fait que la consultation est tracée. Respectez ce cadre : ne diffusez rien hors canal autorisé.
     </p>
 

@@ -71,11 +71,11 @@ $all = ($_GET['toutes'] ?? '') === '1';
                             <?php $i = $hit['identity']; $pp = $hit['profile'] ?? []; $src = $hit['photo_src'] ?? null; $lock = is_array($hit['image_lock'] ?? null) ? $hit['image_lock'] : null; $cc = (string) ($pp['country'] ?? $i['nationality'] ?? 'USA'); ?>
                             <div class="fx-pc">
                                 <?php if ($lock !== null): ?>
-                                    <a class="ph" href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $i['id'])) ?>" aria-label="Photo masquée de <?= $h($i['display_name']) ?> : confidentiel élevé"><?php require __DIR__ . '/_image_lock.php'; ?></a>
+                                    <a class="ph" href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $i['id'])) ?>" aria-label="Photo masquée de <?= $h($i['display_name']) ?> : très secret (TS)"><?php require __DIR__ . '/_image_lock.php'; ?></a>
                                     <?php $lockShells = $lockShells ?? []; $lockBack = 'atak/sse/fichiers/photos'; require __DIR__ . '/_image_request.php'; ?>
                                 <?php else: ?>
                                     <a class="ph" href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $i['id'])) ?>"><?php if ($src !== null): ?><img src="<?= $h($src) ?>" alt="Photo de <?= $h($i['display_name']) ?>" loading="lazy"><?php else: ?><?= $h(mb_strtoupper(mb_substr((string) $i['first_name'], 0, 1) . mb_substr((string) $i['last_name'], 0, 1))) ?><?php endif; ?></a>
-                                    <?php if (!empty($hit['image_banner'])): ?><span class="fx-cband"><svg class="i" aria-hidden="true"><use href="#fx-lock"></use></svg>Confidentiel élevé</span><?php endif; ?>
+                                    <?php if (!empty($hit['image_banner'])): ?><span class="fx-cband"><svg class="i" aria-hidden="true"><use href="#fx-lock"></use></svg>Très secret (TS)</span><?php endif; ?>
                                 <?php endif; ?>
                                 <b translate="no"><?= $h($i['display_name']) ?></b>
                                 <small><?= $h($i['sex'] ?? 'X') ?><?= ($pp['height_cm'] ?? null) !== null ? ' · ' . $h(RF::height((int) $pp['height_cm'], $cc)) : '' ?></small>

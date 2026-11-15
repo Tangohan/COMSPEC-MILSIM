@@ -89,7 +89,7 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
                     </li>
                     <li>
                         <strong>Classification respectée</strong>
-                        Un document « Confidentiel » ou « Diffusion très restreinte »
+                        Un document « Secret (S) » ou « Très secret (TS) »
                         ne descend jamais de niveau sans caviardage et validation.
                     </li>
                     <li>

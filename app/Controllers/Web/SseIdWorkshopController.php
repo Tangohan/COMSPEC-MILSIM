@@ -33,7 +33,7 @@ use App\Support\SseIdWorkshopCatalog;
  * masse (population, recherchés et HVT par camp), briefs de couverture, import et export.
  *
  * Droits (rightsFor) : voir = gestion SSE ou habilitation Encadrement ; créer, générer, affecter, émettre = gestion SSE
- * et habilitation Encadrement ; vérité de jeu (nature, origine, faux, couvertures) = habilitation Confidentiel. Jamais
+ * et habilitation Encadrement ; vérité de jeu (nature, origine, faux, couvertures) = habilitation Secret (S). Jamais
  * en invité. Chaque écriture est journalisée (journal d'audit SSE).
  */
 final class SseIdWorkshopController
@@ -259,7 +259,7 @@ final class SseIdWorkshopController
         if (!$r['truth'] && in_array($identity['kind'] ?? '', \App\Services\Sse\MemberIdentityPapersService::SECRET, true)) {
             $identity = [];
         }
-        // Photo et signature d'un membre : CONFIDENTIEL ÉLEVÉ (affichage seulement ; l'enregistrement relit l'identité en base).
+        // Photo et signature d'un membre : TRÈS SECRET (TS) (affichage seulement ; l'enregistrement relit l'identité en base).
         if (($identity['id'] ?? 0) > 0) {
             $identity = \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity($tenantId, $identity);
         }
@@ -926,7 +926,7 @@ final class SseIdWorkshopController
     // ----------------------------------------------------------------- Briefs
 
     /**
-     * Sans habilitation Confidentiel : pas de brief relié à une identité d'emprunt. Il dirait qui est infiltré et sous quel
+     * Sans habilitation Secret (S) : pas de brief relié à une identité d'emprunt. Il dirait qui est infiltré et sous quel
      * nom, alors que la fiche du membre masque déjà ces identités (MemberIdentityPapersService).
      *
      * @param list<array<string, mixed>> $briefs

@@ -319,6 +319,22 @@ final class SseFichesGameTest extends TestCase
         self::assertNotContains('FV-2026-0001', $refs, 'Les émissions plus anciennes du même modèle sont remplacées');
     }
 
+    public function testCodedReasonsAndMeasuresComeBeforeTheFreeText(): void
+    {
+        $id = $this->identity(1, 'Codé', 'Cyril');
+        $ref = $this->notice(1, $id, ['reason' => 'Texte libre', 'instructions' => 'Consigne libre']);
+        $notice = (int) $this->pdo->query("SELECT id FROM sse_wanted_notices WHERE ref = '{$ref}'")->fetchColumn();
+        $st = $this->pdo->prepare('INSERT INTO sse_wanted_notice_extras (notice_id, tenant_id, codes_json, physical_json, updated_at) VALUES (?, 1, ?, ?, ?)');
+        $st->execute([$notice, json_encode(['reasons' => [['code' => 'M-TER-01', 'fr' => 'Financement du terrorisme', 'en' => 'Terrorist financing']], 'measures' => [['code' => 'A-OBS', 'fr' => 'Observer sans intervenir', 'en' => 'Observe only']]]), null, '2026-11-12 09:00:00']);
+        $f = $this->service()->find(1, 'interne', $ref);
+        self::assertNotNull($f);
+        self::assertSame("Financement du terrorisme\nTexte libre", $f['reason']);
+        self::assertSame("Observer sans intervenir\nConsigne libre", $f['measures']);
+        // Tables de codification absentes : le texte libre seul, sans erreur.
+        $this->pdo->exec('DROP TABLE sse_wanted_notice_extras');
+        \App\Repositories\SseWantedExtrasRepository::forgetReady();
+        self::assertSame('Texte libre', $this->service()->find(1, 'interne', $ref)['reason']);
+    }
     public function testMostSevereFirstThenMostRecent(): void
     {
         $a = $this->identity(1, 'A', 'a');

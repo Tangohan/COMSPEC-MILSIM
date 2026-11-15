@@ -56,6 +56,7 @@ $sseNavData = SsePortalNav::forSession((bool) ($canManage ?? false), (bool) ($ca
         </ul>
     </section>
 <?php endif; ?>
+<?= sse_fiction_footer() ?>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

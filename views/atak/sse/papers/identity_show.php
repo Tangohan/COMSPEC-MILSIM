@@ -125,8 +125,8 @@ $tabs = [
     ['avis', 'Avis de recherche', $notice !== null ? '1' : (count($notices) > 0 ? (string) count($notices) : null), $notice !== null],
     ['documents-emis', 'Documents émis', count((array) ($sheetMenu['issues'] ?? [])) ?: null, false],
 ];
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script>';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-wanted-gallery.js')) . '" defer></script>';
 require __DIR__ . '/_subnav.php';
 ?>
 
@@ -235,7 +235,7 @@ require __DIR__ . '/_subnav.php';
                         <dt>Nationalité</dt><dd class="<?= ($identity['nationality'] ?? null) === null ? 'is-empty' : '' ?>"><?= $h($identity['nationality'] ?? 'Non renseignée') ?></dd>
                         <dt>Profession</dt><dd class="<?= ($identity['profession'] ?? null) === null ? 'is-empty' : '' ?>"><?= $h($identity['profession'] ?? 'Non renseignée') ?></dd>
                         <dt>Langue</dt><dd class="<?= ($identity['language'] ?? null) === null ? 'is-empty' : '' ?>"><?= $h($identity['language'] ?? 'Non renseignée') ?></dd>
-                        <dt>Nature</dt><dd><?= $canSeeTruth ? $h($identity['kind_label']) : '<span class="idp-hidden">Réservée à l’habilitation Confidentiel</span>' ?></dd>
+                        <dt>Nature</dt><dd><?= $canSeeTruth ? $h($identity['kind_label']) : '<span class="idp-hidden">Réservée à l’habilitation Secret (S)</span>' ?></dd>
                         <?php if ($showPerson): ?><dt>Fiche personne</dt><dd><a class="link" href="<?= $h(url('atak/sse/identites/' . (int) $person['id'] . '?fiche=personne')) ?>"><?= $h($person['display_name'] ?? ('IDN-' . (int) $person['id'])) ?></a></dd><?php endif; ?>
                         <dt>Personnage en jeu</dt><dd class="<?= ($identity['arma_key'] ?? null) === null ? 'is-empty' : '' ?>"><?= $h($identity['arma_key'] ?? 'Aucun') ?></dd>
                         <dt>Carte</dt><dd><?= $identity['context_id'] !== null ? '#' . (int) $identity['context_id'] : 'Toutes les cartes' ?></dd>
@@ -371,10 +371,10 @@ require __DIR__ . '/_subnav.php';
     <section class="dos-panel" id="photos" role="tabpanel" aria-labelledby="tab-photos" tabindex="-1">
         <h2 class="dos-panel__title">Photos</h2>
         <?php if (is_array($identity['image_lock'] ?? null)): ?>
-            <div class="dos-card"><div class="dos-empty"><strong>CONFIDENTIEL ÉLEVÉ</strong>Les images de ce membre sont réservées à lui-même et à sa hiérarchie.
+            <div class="dos-card"><div class="dos-empty"><strong>TRÈS SECRET (TS)</strong>Les images de ce membre sont réservées à lui-même et à sa hiérarchie.
                 <?php $lock = $identity['image_lock']; $lockBack = 'atak/sse/papiers/identites/' . (int) $identity['id']; $csrfToken = \App\Core\Csrf::token(); require dirname(__DIR__) . '/files/_image_request.php'; ?></div></div>
         <?php elseif (!empty($identity['image_banner'])): ?>
-            <p class="dos-note">Confidentiel élevé : images d’un membre, consultation journalisée.</p>
+            <p class="dos-note">Très secret (TS) : images d’un membre, consultation journalisée.</p>
         <?php endif; ?>
         <?php require __DIR__ . '/_dossier_photos.php'; ?>
     </section>

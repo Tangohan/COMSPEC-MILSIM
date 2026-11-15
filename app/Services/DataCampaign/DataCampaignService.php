@@ -487,8 +487,18 @@ class DataCampaignService
             return ['ok' => false, 'message' => $ctx['error']];
         }
         $view = $this->memberView($tenantId, $userId, $ctx['campaign'], $ctx['member']);
+        // Règle serveur : un bloc dont une valeur requise manque (« À compléter ») ou signalé ne se confirme pas en bloc.
         if (!DataCampaignLoginPrompt::summarize($view['blocks'])['can_confirm_all']) {
-            return ['ok' => false, 'message' => 'Certaines parties sont à compléter ou à corriger : relisez-les une par une avant de confirmer.'];
+            $todo = [];
+            foreach ($view['blocks'] as $block) {
+                if (DataCampaignLoginPrompt::blockStatus($block) === 'incomplete') {
+                    $todo[] = (string) $block['label'] . ' (' . (implode(', ', DataCampaignLoginPrompt::missingLabels($block)) ?: 'aucune donnée') . ')';
+                }
+            }
+
+            return ['ok' => false, 'message' => $todo !== []
+                ? 'Des informations manquent : ' . implode(' ; ', $todo) . '. Ouvrez ces parties pour les compléter avant de confirmer.'
+                : 'Certaines parties sont signalées : relisez-les une par une avant de confirmer.'];
         }
         foreach ($view['blocks'] as $key => $block) {
             if ((string) $block['state'] === '') {

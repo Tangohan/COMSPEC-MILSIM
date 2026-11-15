@@ -134,10 +134,15 @@ body.sse-iw kbd {
 /* —— Bandeau d'habilitation : couleur selon le plafond réel de la session —— */
 .iw-classbar.sx-classbar { position: sticky; top: 56px; z-index: 55; font-family: var(--sans); }
 .sx-classbar strong { display: inline-flex; gap: .5rem; align-items: baseline; font-family: var(--sx-mono); letter-spacing: .12em; }
-.sx-classbar--internal { background: #334155; }
-.sx-classbar--command { background: #b45309; }
-.sx-classbar--confidential { background: #b91c1c; }
-.sx-classbar--restricted { background: linear-gradient(90deg, #7f1d1d, #4c0519); }
+.iw-classbar.sx-classbar { justify-content: center; text-align: center; flex-wrap: wrap; row-gap: 2px; padding-block: 4px; }
+.sx-classbar strong { font-size: .72rem; font-weight: 800; }
+.sx-classbar > span { text-transform: none; letter-spacing: .02em; font-size: .7rem; }
+/* Couleurs conventionnelles des bandeaux de classification (CUI violet, C bleu, S rouge, TS orange). */
+.sx-classbar--internal { background: #502878; }
+.sx-classbar--command { background: #0033a0; }
+.sx-classbar--confidential { background: #c8102e; }
+.sx-classbar--restricted { background: #ff671f; color: #111; }
+.sx-classbar--restricted > span { opacity: 1; }
 
 /* —— Navigation par sections repliables —— */
 .iw-shell.sx-shell { grid-template-columns: 252px minmax(0, 1fr); min-height: calc(100vh - 84px); }
@@ -222,7 +227,6 @@ body.sse-iw kbd {
     .sx-cmd, .sx-session { display: none; }
     .sx-actions .iw-btn--solid { display: none; }
     .iw-classbar.sx-classbar { position: static; }
-    .iw-classbar.sx-classbar > span { display: none; }
     .iw-shell.sx-shell { grid-template-columns: 1fr; }
     .iw-nav.sx-nav {
         position: fixed;
@@ -670,3 +674,6 @@ body.sse-iw .sx-main .empty-state p { color: rgba(238, 242, 240, 0.7); }
     .sx-head__actions { width: 100%; }
     .sx-head__actions .iw-btn { flex: 1; }
 }
+
+/* Mention de fiction : une ligne discrète en pied d'accueil, jamais un bandeau. */
+.sse-fiction-footer { margin: 28px 0 8px; font-size: .75rem; color: var(--sx-muted, #8a8f98); text-align: center; }

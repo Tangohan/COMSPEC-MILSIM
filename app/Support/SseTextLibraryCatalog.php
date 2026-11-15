@@ -326,7 +326,7 @@ final class SseTextLibraryCatalog
             ['MENT-12', 'mentions', 'En attente de validation', 'EN ATTENTE DE VALIDATION', 'document'],
             ['MENT-13', 'mentions', 'Validé par analyste', 'VALIDÉ PAR ANALYSTE', 'document'],
             ['MENT-14', 'mentions', 'Caviardé', 'CAVIARDÉ', 'document'],
-            ['MENT-15', 'mentions', 'Diffusion restreinte', 'DIFFUSION RESTREINTE', 'document'],
+            ['MENT-15', 'mentions', 'Information contrôlée (CUI)', 'CUI', 'document'],
             ['MENT-16', 'mentions', 'Pièce source', 'PIÈCE SOURCE', 'piece'],
             ['MENT-17', 'mentions', 'Élément dérivé', 'ÉLÉMENT DÉRIVÉ', 'piece'],
             ['MENT-18', 'mentions', 'Intégrité vérifiée', 'INTÉGRITÉ VÉRIFIÉE', 'piece'],

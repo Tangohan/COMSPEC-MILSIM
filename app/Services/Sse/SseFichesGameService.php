@@ -7,8 +7,10 @@ namespace App\Services\Sse;
 use App\Core\Database;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SseFileRecordRepository;
+use App\Repositories\SseWantedExtrasRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Support\SseFileVisibility;
+use App\Support\SseWantedPhysical;
 use App\Support\SseWantedCatalog;
 
 /**
@@ -346,6 +348,7 @@ final class SseFichesGameService
             }
         }
         $memberIds = $this->memberIdentities($tenantId, $linked);
+        $extras = $this->extras($tenantId, array_map(static fn (array $r): int => (int) $r['id'], $rows));
         $out = [];
         foreach ($rows as $r) {
             if (isset($members[(int) $r['id']])) {
@@ -369,11 +372,15 @@ final class SseFichesGameService
                 }
             }
             $links = $hidden ? ['vehicle' => [], 'address' => [], 'associate' => []] : $this->links($records['links'][$iid] ?? [], $viewerLevel, $memberIds);
+            // Motifs et mesures codifiés (catalogue de la communauté) devant le texte libre ; signalement court.
+            $x = $extras[(int) $r['id']] ?? ['reasons' => [], 'measures' => [], 'physical' => ''];
+            $joinText = static fn (array $codes, mixed $text): string => trim(implode(', ', $codes) . ($codes !== [] && trim((string) $text) !== '' ? "
+" : '') . trim((string) $text));
             $f = $this->fiche([
                 'ref' => $r['ref'], 'kind' => 'avis', 'type' => $r['notice_type'], 'name' => $hidden ? SseRedactionService::bar($name) : $name,
                 'alias' => implode(', ', array_slice(array_values(array_unique($aliases)), 0, 3)),
                 'threat' => $r['threat_level'], 'armed' => $r['armed'], 'level' => self::NOTICE_LEVEL,
-                'reason' => $r['reason'] ?? '', 'measures' => $r['instructions'] ?? '',
+                'reason' => $joinText($x['reasons'], $r['reason'] ?? ''), 'measures' => $joinText($x['measures'], $r['instructions'] ?? ''), 'desc' => $hidden ? '' : $x['physical'],
                 'zone' => $r['zone'] ?? '', 'place' => $r['last_seen_place'] ?? '', 'seen' => $r['last_seen_at'] ?? '',
                 'issued' => $r['issued_at'] ?? '', 'until' => $r['expires_at'] ?? '', 'updated' => $r['updated_at'] ?: ($r['created_at'] ?? ''),
                 'vehicles' => $links['vehicle'], 'addresses' => $links['address'], 'people' => $links['associate'],
@@ -574,6 +581,34 @@ final class SseFichesGameService
             }
             $rel = trim((string) ($l['relation_label'] ?? ''));
             $out[$k][] = (string) $l['value'] . ($k === 'associate' && $rel !== '' && $rel !== '—' ? ' (' . $rel . ')' : '');
+        }
+
+        return $out;
+    }
+
+    /**
+     * Motifs, mesures (libellés français) et signalement court des avis, depuis les tables de codification (absentes : rien).
+     *
+     * @param list<int> $noticeIds
+     * @return array<int, array{reasons: list<string>, measures: list<string>, physical: string}>
+     */
+    private function extras(int $tenantId, array $noticeIds): array
+    {
+        $out = [];
+        try {
+            if ($noticeIds === [] || !SseWantedExtrasRepository::ready()) {
+                return [];
+            }
+            foreach ((new SseWantedExtrasRepository($this->db))->forNotices($tenantId, $noticeIds) as $id => $x) {
+                $label = static fn (array $list): array => array_values(array_filter(array_map(static fn (array $c): string => self::line($c['fr'] ?? ($c['label'] ?? ''), 80), $list), static fn (string $t): bool => $t !== ''));
+                $out[(int) $id] = [
+                    'reasons' => $label((array) ($x['codes']['reasons'] ?? [])),
+                    'measures' => $label((array) ($x['codes']['measures'] ?? [])),
+                    'physical' => self::line(SseWantedPhysical::shortLine((array) ($x['physical'] ?? []), 'fr'), 200),
+                ];
+            }
+        } catch (\Throwable) {
+            return [];
         }
 
         return $out;

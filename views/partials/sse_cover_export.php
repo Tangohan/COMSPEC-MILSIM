@@ -18,7 +18,6 @@ $coverTag = in_array($coverHeadingTag ?? 'h2', ['h2', 'h3'], true) ? ($coverHead
 ?>
 <section class="idm-cover" id="couverture" aria-labelledby="idm-cover-gen-title">
     <<?= $coverTag ?> id="idm-cover-gen-title" class="idm-cover__title"><?= $coverSelf ? 'Télécharger ma couverture pour le jeu' : 'Télécharger une couverture pour ce membre' ?></<?= $coverTag ?>>
-    <p class="idm-sim"><strong>SIMULATION</strong> Le fichier contient l’identité Athena du membre (identité principale et ses papiers émis), ou une personne fictive tirée au hasard, jamais une personne réelle.</p>
     <p>Dans le jeu : téléphone › Ma couverture › Importer ma couverture › Synchroniser avec Athena. La couverture générée ici s’y récupère sans fichier ; le téléchargement ci-dessous reste possible pour jouer sans connexion.</p>
     <ol class="idm-cover__steps">
         <li>Choisissez le contenu, puis cliquez <b>Générer</b>. Avec l’identité Athena, le joueur a ses vrais papiers de jeu même si le serveur n’a pas reçu le paquet d’Athena.</li>

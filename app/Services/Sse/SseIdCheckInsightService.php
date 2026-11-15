@@ -571,7 +571,7 @@ final class SseIdCheckInsightService
         arsort($controllers);
         uksort($byVerdict, static fn (string $a, string $b): int => self::severity($b) <=> self::severity($a));
 
-        // Vérité de jeu (habilitation Confidentiel) : faux réellement présentés, d'après le registre.
+        // Vérité de jeu (habilitation Secret) : faux réellement présentés, d'après le registre.
         $realForgeries = null;
         if ($truth) {
             $realForgeries = 0;

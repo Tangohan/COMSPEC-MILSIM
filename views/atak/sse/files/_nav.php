@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * Fichiers SSE : feuilles de style (kit « SSE Fichiers »), icônes, bandeau SIMULATION, toast d'annulation et petit script
+ * Fichiers SSE : feuilles de style (kit « SSE Fichiers »), icônes, toast d'annulation et petit script
  * commun (filtres instantanés, raccourcis « / » et Échap). Les pages sont dans la navigation du bureau, section
  * « Fichiers et contrôles ». Aucune animation au chargement d'une page.
  *
@@ -36,12 +36,6 @@ $fxToast = is_string($filesToast ?? null) ? json_decode((string) $filesToast, tr
 <symbol id="fx-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></symbol>
 <symbol id="fx-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
 </svg>
-<div class="fx">
-    <div class="fx-sim" role="note">
-        <b>SIMULATION</b>
-        <span>Fichiers fictifs : seules les données du registre de votre communauté sont consultées. Aucune base réelle n’est interrogée.</span>
-    </div>
-</div>
 <?php if (is_array($fxToast) && ($fxToast['message'] ?? '') !== ''): ?>
     <div class="fx-toast" role="status" data-fx-toast>
         <span><?= $h($fxToast['message']) ?></span>

@@ -1201,6 +1201,7 @@ return function (Router $router) {
     $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/brouillon/{draft}/supprimer', [\App\Controllers\Web\SseSheetController::class, 'draftDelete'], $mwSsePortal);
     $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/apercu', [\App\Controllers\Web\SseSheetController::class, 'preview'], $mwSsePortal);
     $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/emettre', [\App\Controllers\Web\SseSheetController::class, 'issue'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/rapide', [\App\Controllers\Web\SseSheetController::class, 'quick'], $mwSsePortal);
     // RENS › Identités & documents (COMSPEC IDENTITY) : « nouvelle » / « nouveau » avant /{id}.
     $router->get('/atak/sse/papiers', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentsIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identitiesIndex'], $mwSsePortal);
@@ -1218,6 +1219,10 @@ return function (Router $router) {
     $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
     $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
+    $router->get('/atak/sse/avis/pieces/{id}/image', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentImage'], $mwSsePortal);
+    $router->post('/atak/sse/avis/pieces/{id}/retirer', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentRemove'], $mwSsePortal);
+    $router->post('/atak/sse/avis/pieces/{id}/principale', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentMain'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/pieces', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentAdd'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);
@@ -1356,6 +1361,8 @@ return function (Router $router) {
     $router->get('/atak/sse/objets/{type}', [SsePortalController::class, 'objectRegistry'], $mwSsePortal);
     $router->get('/atak/sse/chronologie', [SsePortalController::class, 'timeline'], $mwSsePortal);
     $router->get('/atak/sse/anomalies', [SsePortalController::class, 'anomalies'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier', [\App\Controllers\Web\SseTriageController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier/compteurs', [\App\Controllers\Web\SseTriageController::class, 'counters'], $mwSsePortal);
     $router->get('/atak/sse/rapprochements', [SsePortalController::class, 'suggestionsIndex'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/valider', [SsePortalController::class, 'suggestionAccept'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
@@ -3708,6 +3715,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/notes/{id}/pieces', [SseFieldNoteApiController::class, 'attachmentStore']);
     // Avis de recherche (téléphone en jeu).
     $router->get('/api/sse/wanted', [SseApiController::class, 'wanted']);
+    $router->get('/api/sse/wanted/notices', [SseApiController::class, 'wantedNotices']);
     $router->get('/api/sse/campaigns', [\App\Controllers\Api\SseCampaignApiController::class, 'index']);
     $router->post('/api/sse/campaigns/sync', [\App\Controllers\Api\SseCampaignApiController::class, 'sync']);
     $router->get('/api/sse/campaigns/{key}/text', [\App\Controllers\Api\SseCampaignApiController::class, 'text']);

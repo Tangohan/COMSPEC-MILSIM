@@ -64,7 +64,7 @@ final class SseIdWorkshopCatalog
     public const IDENTITY_MODES = [
         'primary' => 'Identité principale du membre',
         'alias' => 'Nouvel alias généré',
-        'cover' => 'Nouvelle identité de couverture (habilitation Confidentiel)',
+        'cover' => 'Nouvelle identité de couverture (habilitation Secret)',
     ];
 
     /** Champs imprimés en plus des données du papier : clé => [libellé, longueur max]. */
