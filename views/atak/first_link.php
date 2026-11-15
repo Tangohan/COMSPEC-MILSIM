@@ -4,10 +4,12 @@ declare(strict_types=1);
 /**
  * Première liaison : relier le téléphone de l'ATAK natif (@COMSPEC_ATAK_Native) au compte Athena.
  * Cinq étapes (installer, sortir le téléphone, se connecter, vérifier, dépanner), schéma de l'app Athena
- * sur le Samsung S7, état du compte et du mod. Servie aussi dans le back-office (/back-office/ma-situation/premiere-liaison).
+ * sur le Samsung S7, état du compte et du mod. Servie dans JNET (/jnet/moi/premiere-liaison, titre porté par la coque) et dans le portail (/atak/premiere-liaison).
  */
 
 $fl = is_array($firstLink ?? null) ? $firstLink : [];
+// Dans la coque JNET, le titre de la page est celui de la coque : pas de second h1 ni de surtitre.
+$inJnet = !empty($jnetMemberShell);
 $e = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
 $accountReady = !empty($fl['account_ready']);
@@ -72,8 +74,8 @@ $icon = static function (string $name): string {
 
     <header class="fl-hero">
         <div class="fl-hero__text">
-            <p class="fl-kicker">ATAK natif · mise en service</p>
-            <h1 class="fl-hero__title">Relier votre téléphone ATAK à Athena</h1>
+            <?php if (!$inJnet): ?><p class="fl-kicker">ATAK natif · mise en service</p><?php endif; ?>
+            <<?= $inJnet ? 'h2' : 'h1' ?> class="fl-hero__title">Relier votre téléphone ATAK à Athena</<?= $inJnet ? 'h2' : 'h1' ?>>
             <p class="fl-hero__lead">
                 Cinq étapes, une seule fois. Ensuite, votre téléphone en jeu se connecte tout seul :
                 position, marqueurs, messages et photos remontent au poste de commandement.

@@ -1,0 +1,36 @@
+/**
+ * JNET > Mon ATAK > Première liaison (/jnet/moi/premiere-liaison). La page garde sa feuille atak-first-link.css (chargée par la
+ * vue) ; ici elle s'aligne sur les gouttières et la pleine largeur de la coque JNET : pas de fond propre, pas de colonne centrée
+ * à 1180 px, titre de la page porté par la coque (le titre du hero devient un titre de section).
+ */
+.jp .fl {
+  background: transparent;
+  padding-bottom: 8px;
+}
+
+.jp .fl-hero,
+.jp .fl-layout {
+  width: 100%;
+  margin: 0;
+}
+
+.jp .fl-hero {
+  padding: 8px 0 32px;
+}
+
+.jp .fl-hero__title {
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+.jp .fl-aside {
+  top: 16px;
+}
+
+@media (max-width: 1020px) {
+  .jp .fl-hero {
+    padding-bottom: 24px;
+  }
+}
