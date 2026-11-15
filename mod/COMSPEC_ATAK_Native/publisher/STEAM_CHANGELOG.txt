@@ -1,3 +1,23 @@
+[h1]COMSPEC ATAK 4.23.0 Washington — le TOC peut notifier, faire sonner et localiser un téléphone / the TOC can notify, ring and locate a phone[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Poste TOC web[/b] : quand ta communauté active la fonction, le TOC peut t'envoyer un message, faire sonner ou vibrer ton téléphone de 3 à 30 secondes, ou lui demander sa position.
+[*] Le message arrive dans l'app Messages et dans le journal de l'app Alertes (carte « Alerte du TOC »), sans bandeau ni fenêtre : ton téléphone vibre selon l'urgence.
+[*] Chaque localisation ou triangulation par le TOC laisse une carte « Suivi par le TOC » avec l'heure dans l'app Alertes.
+[*] Seules les positions de la partie sont concernées : jamais ton vrai appareil ni ta vraie position.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]TOC web station[/b]: when your community turns the feature on, the TOC can send you a message, make your phone ring or vibrate for 3 to 30 seconds, or ask for its position.
+[*] The message arrives in the Messages app and in the Alerts app journal ("TOC alert" card), with no banner or popup: your phone vibrates according to the urgency.
+[*] Every locate or triangulation by the TOC leaves a "Tracked by the TOC" card with the time in the Alerts app.
+[*] Only in-game positions are involved: never your real device or your real position.
+[/list]
+
 [h1]COMSPEC ATAK 4.22.0 Washington — les fiches du portail SSE sur le téléphone / portal records on the phone[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

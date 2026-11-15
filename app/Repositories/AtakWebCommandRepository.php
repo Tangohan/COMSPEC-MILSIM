@@ -22,8 +22,15 @@ class AtakWebCommandRepository
 {
     use LazyDatabaseConnection;
 
-    /** toc : salle TOC et plans du poste TOC web (fn_webCmdToc du mod, docs/TOC-WEB.md). */
-    public const KINDS = ['uav', 'explo', 'notif', 'toc'];
+    /**
+     * toc : salle TOC et plans du poste TOC web (fn_webCmdToc du mod, docs/TOC-WEB.md).
+     * phone : actions du poste TOC web sur un téléphone en jeu (notifier, faire sonner, localiser, trace de triangulation ;
+     * App\Services\AtakToc\TocPhoneService, fn_tocPhone du mod).
+     */
+    public const KINDS = ['uav', 'explo', 'notif', 'toc', 'phone'];
+
+    /** Arguments du fil plus longs que 120 caractères (texte d'une notification du poste TOC, déjà encodé en ASCII). */
+    private const WIRE_LONG_KEYS = ['m' => 330];
 
     /** Statuts : pending (en file) → accepted (pris par le téléphone) → done | failed ; expired | cancelled. */
     public const FINAL_STATUSES = ['done', 'failed', 'expired', 'cancelled'];
@@ -167,17 +174,29 @@ class AtakWebCommandRepository
         }
         // Pas d’expireStale ici (UPDATE sur l’historique toutes les 4 s par joueur) : une commande
         // périmée est simplement écartée ; son statut passe à « expired » au prochain listRecent / ack.
+        // Les notifications du poste TOC (24 h, téléphone peut-être hors partie) sont lues à part, huit au plus : une pile
+        // de messages pour des joueurs absents ne doit jamais retarder les ordres en temps réel (drones, charges, salle).
         $st = $this->pdo()->prepare(
             "SELECT id, wire FROM atak_web_commands
              WHERE tenant_id = :tenant_id AND status = 'pending'
                AND (map_id = :map_id OR kind = 'notif')
+               AND NOT (kind = 'phone' AND cmd = 'notify')
                AND created_at >= (NOW() - INTERVAL ttl_seconds SECOND)
              ORDER BY id ASC
              LIMIT 24"
         );
         $st->execute(['tenant_id' => $tenantId, 'map_id' => max(1, $mapId)]);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $st = $this->pdo()->prepare(
+            "SELECT id, wire FROM atak_web_commands
+             WHERE tenant_id = :tenant_id AND status = 'pending' AND kind = 'phone' AND cmd = 'notify'
+               AND created_at >= (NOW() - INTERVAL ttl_seconds SECOND)
+             ORDER BY id ASC
+             LIMIT 8"
+        );
+        $st->execute(['tenant_id' => $tenantId]);
         $out = [];
-        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+        foreach (array_merge($rows, $st->fetchAll(PDO::FETCH_ASSOC) ?: []) as $row) {
             $out[] = [
                 'id' => (int) $row['id'],
                 'charge_id' => '@wc',
@@ -209,6 +228,10 @@ class AtakWebCommandRepository
         }
         $uid = $steamUid !== null ? (preg_replace('/\D/', '', $steamUid) ?? '') : '';
         if ($row['target_uid'] !== '*' && $uid !== '' && $uid !== $row['target_uid']) {
+            return false;
+        }
+        // Actions du poste TOC sur un téléphone : seul le téléphone visé répond (une position ou un accusé ne se prête pas).
+        if ($row['kind'] === 'phone' && ($uid === '' || $uid !== $row['target_uid'])) {
             return false;
         }
         $this->pdo()->prepare(
@@ -332,7 +355,7 @@ class AtakWebCommandRepository
             } elseif (is_float($v)) {
                 $v = rtrim(rtrim(number_format($v, 2, '.', ''), '0'), '.');
             }
-            $parts[] = $key . '=' . self::wireValue((string) $v, 120);
+            $parts[] = $key . '=' . self::wireValue((string) $v, self::WIRE_LONG_KEYS[$key] ?? 120);
         }
 
         return implode('~', $parts);

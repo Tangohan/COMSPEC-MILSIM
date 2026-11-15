@@ -268,7 +268,11 @@ if ((count _caps) > 0) then {
 
 // ---------- JOURNAL ----------
 private _log = missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []];
+// Messages du poste TOC web arrivés avec accusé de réception demandé : ouvrir l'app Alertes les passe en « lu ».
+["read"] call comspec_atak_native_fnc_tocPhone;
 private _lab = createHashMapFromArray [
+    ["TOC_INFO", ["ALERTE DU TOC", [0.36, 0.62, 0.90, 1], "app_alerts"]], ["TOC_ALERT", ["ALERTE DU TOC", [0.95, 0.67, 0.20, 1], "app_alerts"]],
+    ["TOC_URGENT", ["ALERTE URGENTE DU TOC", [0.90, 0.24, 0.20, 1], "app_alerts"]], ["TOC_TRACE", ["SUIVI PAR LE TOC", [0.62, 0.67, 0.64, 1], "app_alerts"]],
     ["PANIC", ["PANIQUE", [0.90, 0.24, 0.20, 1], "alert_panic"]], ["TIC", ["CONTACT", [0.95, 0.67, 0.20, 1], "alert_tic"]],
     ["TIC_CLEAR", ["FIN DE CONTACT", [0.36, 0.78, 0.42, 1], "alert_clear"]], ["EAGLE_DOWN", ["APPAREIL ABATTU", [0.90, 0.28, 0.23, 1], "alert_eagle"]],
     ["SALUTE", ["SALUTE", [0.30, 0.62, 0.98, 1], "app_salute"]], ["COMPROMISE", ["COMPROMISSION", [0.95, 0.55, 0.15, 1], "app_ew"]]
