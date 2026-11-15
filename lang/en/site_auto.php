@@ -68998,7 +68998,7 @@ return [
     'La période contient plus de 300 rapports : seuls les plus récents sont chargés.' => 'The period holds more than 300 reports: only the most recent are loaded.',
     'Le PDF n’est pas disponible pour le moment.' => 'The PDF is not available right now.',
     'Le suivi des rapports n’est pas encore installé sur le site.' => 'Report tracking is not installed on the site yet.',
-    'Le suivi lu / non lu n’est pas encore installé sur le site (étape 4740 à lancer) : vos lectures ne sont conservées que dans cette fenêtre.' => 'Read / unread tracking is not installed on the site yet (step 4740 to run): your reads are only kept in this window.',
+    'Le suivi lu / non lu n’est pas encore installé sur le site (étape 4750 à lancer) : vos lectures ne sont conservées que dans cette fenêtre.' => 'Read / unread tracking is not installed on the site yet (step 4750 to run): your reads are only kept in this window.',
     'Les 200 premiers rapports sont affichés : affinez la recherche ou la période.' => 'The first 200 reports are shown: narrow the search or the period.',
     'Les BDA, comptes rendus, SITREP et 9-line reçus du terrain, à lire, accuser et rattacher au plan.' => 'BDAs, reports, SITREPs and 9-lines received from the field, to read, acknowledge and attach to the plan.',
     'Marque non enregistrée.' => 'Mark not saved.',
