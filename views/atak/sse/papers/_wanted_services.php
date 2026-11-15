@@ -50,7 +50,7 @@ $oneService = static function (array $s) use ($lang, $roleNames, $servicePalette
 ?>
 <div class="wc-settings-pane ws-admin" id="wc-pane-services" data-wc-pane="services" role="tabpanel" aria-labelledby="wc-stab-services" data-ws-admin>
     <div>
-        <h2 class="wc-set-title">Services demandeurs</h2>
+        <h2 class="ws-admin__title">Services demandeurs</h2>
         <p class="ws-admin__desc">Les services qui peuvent demander un avis : le catalogue livré, tout fictif, et ceux que votre communauté crée. Choisir un service dans le formulaire remplit ses coordonnées et ses valeurs par défaut.</p>
     </div>
     <?php if (!$canAdmin): ?>
@@ -76,9 +76,9 @@ $oneService = static function (array $s) use ($lang, $roleNames, $servicePalette
         <span class="ws-count" data-ws-count aria-live="polite" data-total="<?= count($serviceList) ?>"><?= count($serviceList) ?> service(s), <?= $active ?> proposé(s)</span>
         <span class="ws-bar__grow"></span>
         <?php if ($canAdmin): ?>
-            <a class="sse-btn ws-btn" href="<?= $h(url('atak/sse/avis/reglages/services/export')) ?>">Exporter</a>
-            <button class="sse-btn ws-btn" type="button" data-sse-open="#ws-drawer-import">Importer</button>
-            <button class="sse-btn sse-btn--primary ws-btn" type="button" data-ws-new data-sse-open="#ws-drawer-service">Nouveau service</button>
+            <a class="btn btn--ghost ws-btn" href="<?= $h(url('atak/sse/avis/reglages/services/export')) ?>">Exporter</a>
+            <button class="btn btn--ghost ws-btn" type="button" data-ws-open="#ws-drawer-import">Importer</button>
+            <button class="btn ws-btn" type="button" data-ws-new data-ws-open="#ws-drawer-service">Nouveau service</button>
         <?php endif; ?>
     </div>
 
@@ -112,13 +112,13 @@ $oneService = static function (array $s) use ($lang, $roleNames, $servicePalette
                         <?php if ($canAdmin): ?>
                             <div class="ws-actions">
                                 <?php if ($isCustom): ?>
-                                    <button class="sse-btn ws-btn" type="button" data-ws-edit data-sse-open="#ws-drawer-service">Modifier</button>
+                                    <button class="btn btn--ghost ws-btn" type="button" data-ws-edit data-ws-open="#ws-drawer-service">Modifier</button>
                                 <?php else: ?>
-                                    <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="duplicate"><input type="hidden" name="code" value="<?= $h($code) ?>"><button class="sse-btn ws-btn" type="submit" aria-label="Dupliquer <?= $h($s['fr']) ?> pour le personnaliser">Dupliquer</button></form>
+                                    <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="duplicate"><input type="hidden" name="code" value="<?= $h($code) ?>"><button class="btn btn--ghost ws-btn" type="submit" aria-label="Dupliquer <?= $h($s['fr']) ?> pour le personnaliser">Dupliquer</button></form>
                                 <?php endif; ?>
-                                <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="toggle"><input type="hidden" name="code" value="<?= $h($code) ?>"><input type="hidden" name="enabled" value="<?= $s['enabled'] ? '0' : '1' ?>"><button class="sse-btn ws-btn" type="submit"><?= $s['enabled'] ? ($isCustom ? 'Désactiver' : 'Masquer') : 'Proposer' ?></button></form>
+                                <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="toggle"><input type="hidden" name="code" value="<?= $h($code) ?>"><input type="hidden" name="enabled" value="<?= $s['enabled'] ? '0' : '1' ?>"><button class="btn btn--ghost ws-btn" type="submit"><?= $s['enabled'] ? ($isCustom ? 'Désactiver' : 'Masquer') : 'Proposer' ?></button></form>
                                 <details class="ws-more">
-                                    <summary class="sse-btn ws-btn" aria-label="Plus d’actions pour <?= $h($s['fr']) ?>">Plus</summary>
+                                    <summary class="btn btn--ghost ws-btn" aria-label="Plus d’actions pour <?= $h($s['fr']) ?>">Plus</summary>
                                     <div class="ws-more__menu">
                                         <?php if ($isCustom): ?>
                                             <form method="post" action="<?= $h($svcAction) ?>"><?= $csrf ?><input type="hidden" name="op" value="duplicate"><input type="hidden" name="code" value="<?= $h($code) ?>"><button class="ws-menuitem" type="submit">Dupliquer</button></form>
@@ -142,19 +142,19 @@ $oneService = static function (array $s) use ($lang, $roleNames, $servicePalette
 </div>
 
 <?php if ($canAdmin): ?>
-    <dialog class="sse-drawer sse-drawer--wide ws-drawer" id="ws-drawer-service" aria-labelledby="ws-drawer-title" data-title-create="Nouveau service" data-title-update="Modifier le service" data-ws-drawer data-ws-old="<?= $h(json_encode(['op' => (string) ($serviceState['op'] ?? ''), 'code' => (string) ($serviceState['code'] ?? ''), 'old' => $serviceState['old'] ?? null], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>" <?= $opened === 'service' ? 'data-sse-autoopen' : '' ?>>
+    <dialog class="ws-dialog ws-dialog--wide" id="ws-drawer-service" aria-labelledby="ws-drawer-title" data-title-create="Nouveau service" data-title-update="Modifier le service" data-ws-drawer data-ws-old="<?= $h(json_encode(['op' => (string) ($serviceState['op'] ?? ''), 'code' => (string) ($serviceState['code'] ?? ''), 'old' => $serviceState['old'] ?? null], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>" <?= $opened === 'service' ? 'data-ws-autoopen' : '' ?>>
         <form method="post" action="<?= $h($svcAction) ?>" data-ws-form>
             <?= $csrf ?>
             <input type="hidden" name="op" value="create" data-ws-op>
             <input type="hidden" name="code" value="" data-ws-code>
-            <div class="sse-dialog__head">
+            <div class="ws-dialog__head">
                 <div>
                     <h2 id="ws-drawer-title" data-ws-title>Nouveau service</h2>
                     <p>Un service fictif de votre communauté : aucun nom, sigle, adresse ni numéro réel.</p>
                 </div>
-                <button type="button" class="sse-iconbtn" data-sse-close aria-label="Fermer"><?= '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>' ?></button>
+                <button type="button" class="ws-iconbtn" data-ws-close aria-label="Fermer"><?= '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>' ?></button>
             </div>
-            <div class="sse-dialog__body">
+            <div class="ws-dialog__body">
                 <?php if ($opened === 'service' && $stateErrors !== []): ?>
                     <ul class="ws-errors" role="alert"><?php foreach ($stateErrors as $e): ?><li><?= $h($e) ?></li><?php endforeach; ?></ul>
                 <?php endif; ?>
@@ -218,26 +218,26 @@ $oneService = static function (array $s) use ($lang, $roleNames, $servicePalette
                     <label class="ws-check"><input type="checkbox" name="enabled" value="1" checked data-f="enabled"> Proposé dans le formulaire d’avis</label>
                 </div>
             </div>
-            <div class="sse-dialog__foot">
-                <button class="sse-btn sse-btn--danger ws-danger" type="submit" name="op" value="delete" formnovalidate data-ws-delete hidden>Supprimer</button>
-                <button class="sse-btn" type="button" data-sse-close>Annuler</button>
-                <button class="sse-btn sse-btn--primary" type="submit" data-ws-save data-label-create="Créer le service" data-label-update="Enregistrer">Créer le service</button>
+            <div class="ws-dialog__foot">
+                <button class="btn btn--danger ws-danger" type="submit" name="op" value="delete" formnovalidate data-ws-delete hidden>Supprimer</button>
+                <button class="btn btn--ghost" type="button" data-ws-close>Annuler</button>
+                <button class="btn" type="submit" data-ws-save data-label-create="Créer le service" data-label-update="Enregistrer">Créer le service</button>
             </div>
         </form>
     </dialog>
 
-    <dialog class="sse-drawer ws-drawer" id="ws-drawer-import" aria-labelledby="ws-import-title" <?= $opened === 'import' ? 'data-sse-autoopen' : '' ?>>
+    <dialog class="ws-dialog" id="ws-drawer-import" aria-labelledby="ws-import-title" <?= $opened === 'import' ? 'data-ws-autoopen' : '' ?>>
         <form method="post" action="<?= $h($svcAction) ?>" enctype="multipart/form-data">
             <?= $csrf ?>
             <input type="hidden" name="op" value="import">
-            <div class="sse-dialog__head">
+            <div class="ws-dialog__head">
                 <div>
                     <h2 id="ws-import-title">Importer des services</h2>
                     <p>Un export JSON d’une autre communauté. Chaque service passe le même contrôle qu’une création : un nom réel est refusé.</p>
                 </div>
-                <button type="button" class="sse-iconbtn" data-sse-close aria-label="Fermer"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+                <button type="button" class="ws-iconbtn" data-ws-close aria-label="Fermer"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
             </div>
-            <div class="sse-dialog__body">
+            <div class="ws-dialog__body">
                 <?php if ($stateErrors !== []): ?><ul class="ws-errors" role="alert"><?php foreach ($stateErrors as $e): ?><li><?= $h($e) ?></li><?php endforeach; ?></ul><?php endif; ?>
                 <?php if ($report !== null): ?>
                     <ul class="ws-report" aria-label="Résultat de l’import">
@@ -248,9 +248,9 @@ $oneService = static function (array $s) use ($lang, $roleNames, $servicePalette
                 <div><label for="ws-import-file">Fichier d’export (.json)</label><input id="ws-import-file" type="file" name="import_file" accept="application/json,.json"></div>
                 <div><label for="ws-import-json">Ou collez son contenu</label><textarea id="ws-import-json" name="import_json" rows="8" spellcheck="false" translate="no"></textarea><p class="ws-hint">200 Ko au plus. Les services déjà présents (même nom) sont ignorés.</p></div>
             </div>
-            <div class="sse-dialog__foot">
-                <button class="sse-btn" type="button" data-sse-close>Annuler</button>
-                <button class="sse-btn sse-btn--primary" type="submit">Importer</button>
+            <div class="ws-dialog__foot">
+                <button class="btn btn--ghost" type="button" data-ws-close>Annuler</button>
+                <button class="btn" type="submit">Importer</button>
             </div>
         </form>
     </dialog>

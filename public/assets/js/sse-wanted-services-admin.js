@@ -1,6 +1,6 @@
 /*
  * SSE > Réglages de la notice > onglet « Services » : filtre de la liste, tiroir « Nouveau service » / « Modifier le service »
- * (champs remplis depuis la ligne, onglets du tiroir). Aucun libellé dans ce fichier : titres et boutons viennent des attributs
+ * (champs remplis depuis la ligne, onglets du tiroir, ouverture et fermeture des fenêtres <dialog>). Aucun libellé dans ce fichier : titres et boutons viennent des attributs
  * data-title-* de la vue, donc traduits avec la page. Sans JavaScript, la liste reste complète et les opérations par bouton
  * (dupliquer, masquer, par défaut, ordre) fonctionnent ; seul le tiroir demande le script.
  */
@@ -11,6 +11,37 @@
     function $(s, r) { return (r || document).querySelector(s); }
     function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
     function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+
+
+    /* ------------------------------------------------------------------ Fenêtres (tiroirs) */
+    var openers = new WeakMap();
+    function openDialog(d, opener) {
+        if (!d || d.hasAttribute('open')) { return; }
+        openers.set(d, opener || document.activeElement);
+        if (typeof d.showModal === 'function') { d.showModal(); } else { d.setAttribute('open', ''); }
+        document.documentElement.classList.add('ws-dialog-open');
+    }
+    function closeDialog(d) {
+        if (!d || !d.hasAttribute('open')) { return; }
+        if (typeof d.close === 'function') { d.close(); } else { d.removeAttribute('open'); }
+    }
+    function afterClose(d) {
+        document.documentElement.classList.remove('ws-dialog-open');
+        var o = openers.get(d);
+        if (o && o.focus) { o.focus({ preventScroll: true }); }
+    }
+    $$('dialog.ws-dialog').forEach(function (d) {
+        d.addEventListener('close', function () { afterClose(d); });
+        // Clic sur le fond (hors du contenu) : fermeture.
+        d.addEventListener('click', function (e) { if (e.target === d) { closeDialog(d); } });
+        if (d.hasAttribute('data-ws-autoopen')) { openDialog(d, null); }
+    });
+    document.addEventListener('click', function (e) {
+        var op = e.target.closest ? e.target.closest('[data-ws-open]') : null;
+        if (op) { openDialog($(op.getAttribute('data-ws-open')), op); return; }
+        var cl = e.target.closest ? e.target.closest('[data-ws-close]') : null;
+        if (cl) { closeDialog(cl.closest('dialog')); }
+    });
 
     /* ------------------------------------------------------------------ Filtre */
     var q = $('[data-ws-q]', admin), fam = $('[data-ws-fam]', admin), src = $('[data-ws-src]', admin);
