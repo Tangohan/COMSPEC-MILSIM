@@ -225,6 +225,11 @@ final class ActivityHubPresentationService
             \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_CLOSED => (static function () use ($type, $payload, $unread, $at): array {
                 $due = trim((string) ($payload['due_on'] ?? ''));
                 $dueText = $due !== '' && strtotime($due) !== false ? date('d/m/Y', (int) strtotime($due)) : '';
+                // Même phrase d'origine que sur la page et dans l'e-mail (absente des anciennes notifications).
+                $originKey = trim((string) ($payload['origin'] ?? ''));
+                $originLine = $originKey !== ''
+                    ? \App\Support\DataCampaignOrigin::who($originKey, (string) ($payload['org'] ?? ''), '', self::fr() ? 'fr' : 'en') . ' '
+                    : '';
                 if ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_OPENED || $type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_CLOSED) {
                     $cid = (int) ($payload['campaign_id'] ?? 0);
                     if ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_OPENED) {
@@ -248,14 +253,14 @@ final class ActivityHubPresentationService
                     $detail = self::fr() ? 'L’encadrement a traité ce que vous avez signalé : la réponse est sur la page de vérification de votre fiche.' : 'The staff handled what you reported: the answer is on your record check page.';
                 } elseif ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_OPEN) {
                     $title = self::fr() ? 'Vérifiez votre fiche' : 'Check your record';
-                    $detail = self::fr()
+                    $detail = $originLine . (self::fr()
                         ? 'Une campagne de fiabilisation des données est ouverte' . ($dueText !== '' ? ' jusqu’au ' . $dueText : '') . ' : relisez votre fiche et confirmez-la.'
-                        : 'A data reliability campaign is open' . ($dueText !== '' ? ' until ' . $dueText : '') . ': review your record and confirm it.';
+                        : 'A data reliability campaign is open' . ($dueText !== '' ? ' until ' . $dueText : '') . ': review your record and confirm it.');
                 } else {
                     $title = self::fr() ? 'Rappel : votre fiche n’est pas encore confirmée' : 'Reminder: your record is not yet confirmed';
-                    $detail = self::fr()
+                    $detail = $originLine . (self::fr()
                         ? 'La campagne de fiabilisation des données se termine' . ($dueText !== '' ? ' le ' . $dueText : ' bientôt') . '. Quelques minutes suffisent.'
-                        : 'The data reliability campaign ends' . ($dueText !== '' ? ' on ' . $dueText : ' soon') . '. A few minutes are enough.';
+                        : 'The data reliability campaign ends' . ($dueText !== '' ? ' on ' . $dueText : ' soon') . '. A few minutes are enough.');
                 }
 
                 return ['title' => $title, 'detail' => $detail, 'href' => jnet_moi_url('fiabilisation'), 'unread' => $unread, 'at' => $at];
