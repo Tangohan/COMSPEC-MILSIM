@@ -355,10 +355,17 @@ final class SsePhoneExtractionService
 
     public function attach(int $tenantId, int $id, ?int $identityId): bool
     {
-        return $this->db->execute(
+        $done = $this->db->execute(
             'UPDATE sse_phone_extractions SET identity_id = :i WHERE id = :id AND tenant_id = :t',
             ['i' => $identityId !== null && $identityId > 0 ? $identityId : null, 'id' => $id, 't' => $tenantId]
         ) > 0;
+        if ($done && $identityId !== null && $identityId > 0) {
+            // Téléphone rattaché à une identité sous avis de recherche actif : détection système.
+            [$userId, $label] = \App\Repositories\SseIdentityEventRepository::currentActor();
+            SseWantedDetectionService::tryReport($tenantId, $identityId, 'phone', ['source' => 'web', 'source_ref' => 'ext:' . $id, 'operator_label' => $label, 'operator_user_id' => $userId]);
+        }
+
+        return $done;
     }
 
     public function moderate(int $tenantId, int $id, string $status, ?int $userId, string $note): bool

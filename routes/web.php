@@ -1191,6 +1191,16 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/identites/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/images', [\App\Controllers\Web\SseIdWorkshopController::class, 'identityImages'], $mwSsePortal);
+    // Avis de recherche posés depuis la fiche d'une identité fictive (jeu de rôle), notice PDF, détections système.
+    $router->get('/atak/sse/papiers/identites/{id}/avis/nouveau', [\App\Controllers\Web\SseWantedNoticeController::class, 'placeForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/identites/{id}/avis', [\App\Controllers\Web\SseWantedNoticeController::class, 'place'], $mwSsePortal);
+    $router->get('/atak/sse/avis', [\App\Controllers\Web\SseWantedNoticeController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/avis/reglages', [\App\Controllers\Web\SseWantedNoticeController::class, 'settings'], $mwSsePortal);
+    $router->post('/atak/sse/avis/reglages', [\App\Controllers\Web\SseWantedNoticeController::class, 'settingsSave'], $mwSsePortal);
+    $router->get('/atak/sse/avis/detections', [\App\Controllers\Web\SseWantedNoticeController::class, 'detections'], $mwSsePortal);
+    $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
+    $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentShow'], $mwSsePortal);
