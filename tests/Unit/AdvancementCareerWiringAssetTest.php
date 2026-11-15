@@ -63,7 +63,7 @@ final class AdvancementCareerWiringAssetTest extends TestCase
         self::assertStringContainsString('back-office/referentiels/grades', $nav);
         self::assertStringContainsString('back-office/referentiels/decorations', $nav);
         self::assertStringContainsString('back-office/referentiels/dotation', $nav);
-        self::assertStringContainsString('back-office/ma-situation/carriere', $nav);
+        self::assertStringContainsString('jnet/moi/carriere', $nav);
 
         self::assertFileExists($root . '/views/admin/advancement/grades_index.php');
         self::assertFileExists($root . '/views/admin/advancement/grade_form.php');

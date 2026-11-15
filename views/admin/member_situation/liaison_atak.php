@@ -8,9 +8,7 @@ use App\Support\AtakDevicePresenter as Dev;
 $terminals = is_array($terminals ?? null) ? array_values(array_filter($terminals, 'is_array')) : [];
 $gamePhone = is_array($gamePhone ?? null) ? $gamePhone : [];
 $linkEvents = is_array($linkEvents ?? null) ? $linkEvents : [];
-$success = $success ?? null;
-$error = $error ?? null;
-$h = static fn (mixed $v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
+$h =static fn (mixed $v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
 $fmtDate = static function (mixed $raw, string $format = 'd/m/Y à H:i'): string {
     $ts = Dev::utcTimestamp((string) $raw);
 
@@ -44,16 +42,9 @@ foreach ($active as $t) {
 $lastLink = Dev::linkState($lastSeen !== null ? gmdate('Y-m-d H:i:s', $lastSeen) : null);
 ?>
 <div class="bo-member-situation atk-dev atk-link">
-    <?php if ($success): ?>
-        <p class="bo-member-situation__flash bo-member-situation__flash--ok"><?= $h($success) ?></p>
-    <?php endif; ?>
-    <?php if ($error): ?>
-        <p class="bo-member-situation__flash bo-member-situation__flash--err"><?= $h($error) ?></p>
-    <?php endif; ?>
-
     <div class="bo-member-situation__actions">
-        <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/appareils')) ?>">Mes appareils</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/premiere-liaison')) ?>">Configurer ATAK</a>
+        <a class="ath-btn ath-btn--solid" href="<?= $h(jnet_moi_url('appareils')) ?>">Mes appareils</a>
+        <a class="ath-btn" href="<?= $h(jnet_moi_url('premiere-liaison')) ?>">Configurer ATAK</a>
         <a class="ath-btn" href="<?= $h(url('atak')) ?>">Ouvrir la carte</a>
     </div>
 
@@ -63,7 +54,7 @@ $lastLink = Dev::linkState($lastSeen !== null ? gmdate('Y-m-d H:i:s', $lastSeen)
             <div>
                 <h2>Aucune liaison active</h2>
                 <p>Aucun téléphone ATAK n’est lié à votre compte. Configurez ATAK, puis validez la liaison depuis l’app Liaison du téléphone en jeu : un certificat client vous sera délivré par un responsable ATAK.</p>
-                <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/premiere-liaison')) ?>">Configurer ATAK</a>
+                <a class="ath-btn ath-btn--solid" href="<?= $h(jnet_moi_url('premiere-liaison')) ?>">Configurer ATAK</a>
             </div>
         </section>
     <?php else: ?>
@@ -101,10 +92,10 @@ $lastLink = Dev::linkState($lastSeen !== null ? gmdate('Y-m-d H:i:s', $lastSeen)
         <article class="bo-member-situation__card atk-dev__card">
             <header class="atk-dev__head">
                 <div>
-                    <p class="bo-member-situation__kicker">Liaison · <?= $h(Dev::typeLabel($type)) ?></p>
                     <h2><?= $h($title) ?></h2>
                 </div>
                 <div class="atk-dev__chips">
+                    <span class="atk-chip atk-chip--muted"><?= $h(Dev::typeLabel($type)) ?></span>
                     <span class="atk-chip atk-chip--<?= $h($verdictTone) ?>"><?= $h($verdictLabel) ?></span>
                     <span class="atk-chip atk-chip--<?= $h($link['key']) ?>"><i></i><?= $h($link['label']) ?><?= $link['ago'] !== '' ? ' · ' . $h($link['ago']) : '' ?></span>
                 </div>

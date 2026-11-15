@@ -59,11 +59,11 @@ final class MusicLibraryTest extends TestCase
         $nav = (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php');
         $dll = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
 
-        self::assertStringContainsString("'/back-office/ma-situation/musique'", $routes);
+        self::assertStringContainsString("'/jnet/moi/musique'", $routes);
         self::assertStringContainsString("'/api/atak/music'", $routes);
         self::assertStringContainsString("'/api/music/stream/{file}'", $routes);
         self::assertStringContainsString('music_library_migration.php', $migrations);
-        self::assertStringContainsString('back-office/ma-situation/musique', $nav);
+        self::assertStringContainsString('jnet/moi/musique', $nav);
         self::assertStringContainsString('"/api/atak/music?view="', $dll);
         // Le flux signé ne doit pas passer sous /api/atak (protégé par jeton : la DLL du lecteur n'en envoie pas).
         self::assertStringNotContainsString("'/api/atak/music/stream", $routes);

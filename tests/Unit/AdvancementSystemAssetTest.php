@@ -35,7 +35,7 @@ final class AdvancementSystemAssetTest extends TestCase
         self::assertStringContainsString("'/back-office/organisation/grades/ordre-auto'", $routes);
         self::assertStringContainsString('exceptional_override', $migration);
         self::assertStringContainsString("'/api/avancement/campagnes/{id}/publier'", $routes);
-        self::assertStringContainsString("'/back-office/ma-situation/avancement'", $routes);
+        self::assertStringContainsString("'/jnet/moi/avancement'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/avancement/demande'", $routes);
         self::assertStringContainsString("'/back-office/ma-situation/avancement/affectation'", $routes);
         self::assertStringContainsString('AdvancementEligibilityService::class', $container);

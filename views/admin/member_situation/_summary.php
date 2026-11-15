@@ -3,7 +3,7 @@
  * Ma situation — bandeau sombre + indicateurs (même langage que Mon avancement).
  *
  * @var array{
- *   kicker?: string, title?: string, lead?: string,
+ *   title?: string, lead?: string,
  *   focus?: array{label: string, value: string, meta?: string, badge?: string, badge_html?: string, empty?: bool},
  *   links?: list<array{label: string, href: string, primary?: bool}>,
  *   stats?: list<array{label: string, value: string|int, note?: string, small?: bool}>,
@@ -18,9 +18,6 @@ $stats = is_array($summary['stats'] ?? null) ? $summary['stats'] : [];
 ?>
 <section class="msd-summary<?= !empty($summary['wide']) ? ' msd-summary--wide' : '' ?>" aria-label="Résumé">
     <div class="msd-hero">
-        <?php if (($summary['kicker'] ?? '') !== ''): ?>
-            <p class="msd-hero__kicker"><?= $sh($summary['kicker']) ?></p>
-        <?php endif; ?>
         <?php if ($focus !== null): ?>
             <div class="msd-hero__focus">
                 <span class="msd-hero__badge<?= !empty($focus['empty']) ? ' is-empty' : '' ?>" aria-hidden="true"><?= isset($focus['badge_html']) ? (string) $focus['badge_html'] : $sh($focus['badge'] ?? '—') ?></span>

@@ -405,7 +405,7 @@ $isOperatorBoNav = !empty($isOperatorBoNav);
 $isDelegatedStaff = $isOperatorBoNav && !empty($isDelegatedStaff);
 
 $opOnglet = (string) ($_GET['onglet'] ?? '');
-$opFicheBase = str_starts_with($p, 'back-office/ma-situation/ma-fiche')
+$opFicheBase = str_starts_with($p, 'jnet/moi/ma-fiche')
     || $p === 'personnel/me'
     || str_starts_with($p, 'personnel/me/');
 $opSuiviActive = $opFicheBase && $opOnglet === 'suivi';
@@ -449,36 +449,36 @@ if ($isOperatorBoNav) {
             'key' => 'personnel',
             'label' => 'MA SITUATION',
             'items' => [
-                ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche'), 'icon' => 'users', 'active' => $opFicheActive],
-                ['label' => 'Mon unité', 'href' => url('back-office/ma-situation/unite'), 'icon' => 'ops', 'active' => str_starts_with($p, 'back-office/ma-situation/unite')],
+                ['label' => 'Ma fiche', 'href' => url('jnet/moi/ma-fiche'), 'icon' => 'users', 'active' => $opFicheActive],
+                ['label' => 'Mon unité', 'href' => url('jnet/moi/unite'), 'icon' => 'ops', 'active' => str_starts_with($p, 'jnet/moi/unite')],
                 [
                     'label' => 'Mes qualifications',
-                    'href' => url('back-office/ma-situation/qualifications'),
+                    'href' => url('jnet/moi/qualifications'),
                     'icon' => 'cert',
-                    'active' => str_starts_with($p, 'back-office/ma-situation/qualifications'),
+                    'active' => str_starts_with($p, 'jnet/moi/qualifications'),
                     'badge' => $opQualifBadge,
                     'warn' => $opQualifBadge !== null,
                     'notif' => $opQualifBadge !== null,
                 ],
-                ['label' => 'Mon carnet de vol', 'href' => url('back-office/ma-situation/carnet-de-vol'), 'icon' => 'path', 'active' => str_starts_with($p, 'back-office/ma-situation/carnet-de-vol')],
+                ['label' => 'Mon carnet de vol', 'href' => url('jnet/moi/carnet-de-vol'), 'icon' => 'path', 'active' => str_starts_with($p, 'jnet/moi/carnet-de-vol')],
                 [
                     'label' => 'Mon avancement',
-                    'href' => url('back-office/ma-situation/avancement'),
+                    'href' => url('jnet/moi/avancement'),
                     'icon' => 'path',
-                    'active' => str_starts_with($p, 'back-office/ma-situation/avancement'),
+                    'active' => str_starts_with($p, 'jnet/moi/avancement'),
                 ],
-                ['label' => 'Dossier de carrière', 'href' => url('back-office/ma-situation/carriere'), 'icon' => 'path', 'active' => str_starts_with($p, 'back-office/ma-situation/carriere')],
-                ['label' => 'Décorations', 'href' => url('back-office/ma-situation/decorations'), 'icon' => 'shield', 'active' => str_starts_with($p, 'back-office/ma-situation/decorations')],
-                ['label' => 'Ma dotation', 'href' => url('back-office/ma-situation/dotation'), 'icon' => 'gear', 'active' => str_starts_with($p, 'back-office/ma-situation/dotation')],
-                ['label' => 'Mon suivi', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=suivi', 'icon' => 'path', 'active' => $opSuiviActive],
+                ['label' => 'Dossier de carrière', 'href' => url('jnet/moi/carriere'), 'icon' => 'path', 'active' => str_starts_with($p, 'jnet/moi/carriere')],
+                ['label' => 'Décorations', 'href' => url('jnet/moi/decorations'), 'icon' => 'shield', 'active' => str_starts_with($p, 'jnet/moi/decorations')],
+                ['label' => 'Ma dotation', 'href' => url('jnet/moi/dotation'), 'icon' => 'gear', 'active' => str_starts_with($p, 'jnet/moi/dotation')],
+                ['label' => 'Mon suivi', 'href' => url('jnet/moi/ma-fiche') . '?onglet=suivi', 'icon' => 'path', 'active' => $opSuiviActive],
                 [
                     'label' => 'Mon coffre',
-                    'href' => url('back-office/ma-situation/coffre'),
+                    'href' => url('jnet/moi/coffre'),
                     'icon' => 'cert',
-                    'active' => str_starts_with($p, 'back-office/ma-situation/coffre'),
+                    'active' => str_starts_with($p, 'jnet/moi/coffre'),
                 ],
-                ['label' => 'Mes papiers', 'href' => url('back-office/ma-situation/mes-papiers'), 'icon' => 'cert', 'active' => str_starts_with($p, 'back-office/ma-situation/mes-papiers')],
-                ['label' => 'Musique', 'href' => url('back-office/ma-situation/musique'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/musique')],
+                ['label' => 'Mes papiers', 'href' => url('jnet/moi/mes-papiers'), 'icon' => 'cert', 'active' => str_starts_with($p, 'jnet/moi/mes-papiers')],
+                ['label' => 'Musique', 'href' => url('jnet/moi/musique'), 'icon' => 'radio', 'active' => str_starts_with($p, 'jnet/moi/musique')],
                 ['label' => 'Mon compte', 'href' => url('account'), 'icon' => 'users', 'active' => $opMonCompteActive],
             ],
         ],
@@ -487,12 +487,12 @@ if ($isOperatorBoNav) {
             'label' => 'TERRAIN',
             'items' => [
                 ['label' => 'Overwatch', 'href' => url('atak'), 'icon' => 'ops', 'active' => $navOverwatchActive],
-                ['label' => 'Ma liaison ATAK', 'href' => url('back-office/ma-situation/liaison-atak'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/liaison-atak') || str_starts_with($p, 'back-office/ma-situation/appareils') || str_starts_with($p, 'back-office/ma-situation/premiere-liaison')],
+                ['label' => 'Ma liaison ATAK', 'href' => url('jnet/moi/liaison-atak'), 'icon' => 'radio', 'active' => str_starts_with($p, 'jnet/moi/liaison-atak') || str_starts_with($p, 'jnet/moi/appareils') || str_starts_with($p, 'jnet/moi/premiere-liaison')],
                 [
                     'label' => 'Événements',
-                    'href' => url('back-office/ma-situation/evenements'),
+                    'href' => url('jnet/moi/evenements'),
                     'icon' => 'cal',
-                    'active' => $p === 'evenements' || str_starts_with($p, 'evenements/') || str_starts_with($p, 'back-office/ma-situation/evenements'),
+                    'active' => $p === 'evenements' || str_starts_with($p, 'evenements/') || str_starts_with($p, 'jnet/moi/evenements'),
                     'badge' => $opEventsBadge,
                     'warn' => $opEventsBadge !== null,
                     'notif' => $opEventsBadge !== null,
@@ -505,9 +505,9 @@ if ($isOperatorBoNav) {
             'items' => [
                 [
                     'label' => 'Mes démarches',
-                    'href' => url('back-office/ma-situation/mes-demarches'),
+                    'href' => url('jnet/moi/mes-demarches'),
                     'icon' => 'path',
-                    'active' => str_starts_with($p, 'back-office/ma-situation/mes-demarches') || str_contains($p, 'mon-espace-rh'),
+                    'active' => str_starts_with($p, 'jnet/moi/mes-demarches') || str_contains($p, 'mon-espace-rh'),
                     'badge' => $opDemarchesBadge,
                     'warn' => $opDemarchesBadge !== null,
                     'notif' => $opDemarchesBadge !== null,

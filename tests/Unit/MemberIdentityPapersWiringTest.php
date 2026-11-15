@@ -32,7 +32,7 @@ final class MemberIdentityPapersWiringTest extends TestCase
             "post('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}/action', {$c}'documentAction'], {$mw})",
             "post('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}', {$c}'documentUpdate'], {$mw})",
             "post('/back-office/ressources/effectifs/membres/{id}/papiers/kit', {$c}'kitSave'], {$mw})",
-            "get('/back-office/ma-situation/mes-papiers', {$c}'mine'], {$mw})",
+            "get('/jnet/moi/mes-papiers', \$moi(\$moiPapers, 'mine'), \$mwMoi)",
         ] as $needle) {
             self::assertStringContainsString($needle, $routes);
         }
@@ -58,7 +58,7 @@ final class MemberIdentityPapersWiringTest extends TestCase
         self::assertStringContainsString('id="papiers-kit"', $partial);
         self::assertStringContainsString('SIMULATION', $partial);
         self::assertStringContainsString('name="_csrf_token"', $partial);
-        self::assertStringContainsString("url('back-office/ma-situation/mes-papiers')", self::read('views/partials/ath_sidebar_nav.php'));
+        self::assertStringContainsString("url('jnet/moi/mes-papiers')", self::read('views/partials/ath_sidebar_nav.php'));
         // Les pages du registre sont dans la navigation du bureau (le sous-menu de la section n'en liste plus aucune).
         self::assertStringContainsString("'label' => 'Pays émetteurs', 'hint' => 'Pays imaginaires (ou réels stylisés) qui émettent les papiers.', 'path' => 'atak/sse/papiers/pays'", self::read('app/Support/SsePortalNav.php'));
         self::assertStringContainsString('enctype="multipart/form-data"', self::read('views/atak/sse/papers/country_form.php'));

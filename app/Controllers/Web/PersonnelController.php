@@ -55,6 +55,7 @@ use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
 use App\Support\EffectifsLmsAccess;
+use App\Support\JnetMemberShell;
 use App\Support\OrbatRosterPayload;
 use App\Support\OrgVisibilityCapabilities;
 use App\Support\Profile\PublicFlagCountryCatalog;
@@ -66,6 +67,9 @@ use App\Repositories\OrganizationVisibilityHistoryRepository;
 
 class PersonnelController
 {
+    /** Rend « ma fiche » et sa modification dans la coque JNET (JnetMemberShell) : voir JnetMemberBridge. */
+    public const JNET_MOI_READY = true;
+
     private function roleplayFollowupConfig(int $tenantId): array
     {
         return \App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId, $this->tenantRepository);
@@ -247,7 +251,7 @@ class PersonnelController
         return $slug !== '' ? $slug : (string) ($userRow['id'] ?? '');
     }
 
-    /** Formulaire d’édition : sa propre fiche se modifie dans le back-office. */
+    /** Formulaire d’édition : sa propre fiche se modifie dans JNET (/jnet/moi/ma-fiche/modifier). */
     /** @return array<string, mixed> */
     private function communitySettingsForLanguages(int $tenantId): array
     {
@@ -263,14 +267,14 @@ class PersonnelController
     private function personnelEditUrl(array $target, bool $isSelf): string
     {
         return $isSelf
-            ? url('back-office/ma-situation/ma-fiche/modifier')
+            ? jnet_moi_url('ma-fiche/modifier')
             : url('personnel/' . $this->personPathSegment($target) . '/edit');
     }
 
     /** URL de retour vers la fiche (optionnellement vue RH). */
     private function personnelShowRedirectUrl(array $target, bool $isSelf, ?string $viewMode = null): string
     {
-        $base = $isSelf ? url('back-office/ma-situation/ma-fiche') : url('personnel/' . $this->personPathSegment($target));
+        $base = $isSelf ? jnet_moi_url('ma-fiche') : url('personnel/' . $this->personPathSegment($target));
         if ($viewMode === 'rh') {
             return $base . '?view=rh';
         }
@@ -1255,14 +1259,18 @@ class PersonnelController
             }
         }
 
-        return Response::view('layout.main', [
+        return JnetMemberShell::view($request, [
             'content' => 'personnel.file',
             'title' => 'Fiche personnel',
             'orgPlace' => $orgPlace,
             'advancementPanel' => $advancementPanel,
             'advancementPanelIsSelf' => $isSelf,
-            'backOfficePageCss' => ['personnel-dossier.css', 'back-office-advancement.css'],
-            'isBackOfficeShell' => str_starts_with($request->path(), '/back-office/ma-situation'),
+            // Dans JNET : tailwind avant les feuilles de JNET, feuilles et scripts que layout.main chargeait via personnelFilePage.
+            'jnetPageCssFirst' => JnetMemberShell::wants($request) ? ['tailwind.css'] : [],
+            'jnetPageJs' => JnetMemberShell::wants($request) ? ['personnel-file-hub.js', 'decorations-rack.js', 'alpine.min.js'] : [],
+            'backOfficePageCss' => JnetMemberShell::wants($request)
+                ? ['personnel-dossier.css', 'back-office-advancement.css', 'personnel-file.css', 'personnel-file-refresh.css', 'decorations-kit.css', 'jnet_moi_fiche.css']
+                : ['personnel-dossier.css', 'back-office-advancement.css'],
             'boPageGroup' => 'Opérateur',
             'boPageKicker' => 'OPÉRATEUR · DOSSIER',
             'boPageTitle' => 'Ma fiche',
@@ -1401,7 +1409,7 @@ class PersonnelController
         if ($returnTo === 'edit') {
             $redirect = $this->personnelEditUrl($target, $isSelf);
         } else {
-            $redirect = $isSelf ? url('back-office/ma-situation/ma-fiche') : url('personnel/' . $this->personPathSegment($target));
+            $redirect = $isSelf ? jnet_moi_url('ma-fiche') : url('personnel/' . $this->personPathSegment($target));
         }
         return Response::redirect($redirect);
     }
@@ -1617,7 +1625,7 @@ class PersonnelController
         $notes = trim((string) ($request->input('admin_notes') ?? ''));
         $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         $this->personnelProfileRepository->updateCommandNotes((int) $target['id'], $notes);
-        $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
+        $redirect = $isSelf ? jnet_moi_url('ma-fiche') : url('personnel/' . $this->personPathSegment($target));
         return Response::redirect($redirect);
     }
 
@@ -1924,7 +1932,7 @@ class PersonnelController
         return $this->edit($request, $params);
     }
 
-    /** Édition de sa propre fiche dans le back-office (Ma situation › Ma fiche › Modifier). */
+    /** Édition de sa propre fiche dans JNET (Ma situation › Ma fiche › Modifier). */
     public function editSelfBackOffice(Request $request, array $params = []): Response
     {
         $currentUser = $this->authService->user();
@@ -1967,12 +1975,12 @@ class PersonnelController
             return Response::redirect($returnToEffectifs ? $memberUrl . '#modifier-dossier' : $memberUrl);
         }
         $inBackOffice = !empty($params['_bo']);
-        // Sa propre fiche se modifie désormais dans le back-office ; les anciennes adresses
+        // Sa propre fiche se modifie désormais dans JNET ; les anciennes adresses
         // (/personnel/me/edit, /personnel/{id}/edit) y renvoient en gardant les paramètres.
         if ($isSelf && !$fromEffectifs && !$inBackOffice) {
             $qs = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_QUERY);
 
-            return Response::redirect(url('back-office/ma-situation/ma-fiche/modifier') . ($qs !== '' ? '?' . $qs : ''));
+            return Response::redirect(jnet_moi_url('ma-fiche/modifier') . ($qs !== '' ? '?' . $qs : ''));
         }
         $uid = (int) $target['id'];
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid);
@@ -2120,7 +2128,8 @@ class PersonnelController
             ->resolvedForUsers($tenantId, [$uid], $gameLanguageCommunity)[$uid]
             ?? \App\Support\CommunityLanguages::resolveMember(null, null, $gameLanguageCommunity);
 
-        return Response::view($embeddedInEffectifs ? 'personnel.edit' : ($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main'), [
+        $editView = $embeddedInEffectifs ? 'personnel.edit' : ($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main');
+        $editVars = [
             'content' => 'personnel.edit',
             'memberTrigram' => $this->memberTrigramForFile((int) $tenantId, (int) $uid),
             'gameLanguage' => $gameLanguage,
@@ -2191,7 +2200,11 @@ class PersonnelController
             'pendingOrbatCorrection' => Container::get(\App\Repositories\PersonnelCorrectionRequestRepository::class)
                 ->hasPendingForTarget($tenantId, $uid),
             'orbatCorrectionHistory' => $this->buildOrbatCorrectionHistory($tenantId, $uid),
-            'backOfficePageCss' => ['personnel-dossier.css', 'decorations-kit.css', 'personnel-edit-refresh.css', 'back-office-corrections.css'],
+            'jnetPageCssFirst' => ['tailwind.css'],
+            'jnetPageJs' => ['decorations-rack.js', 'alpine.min.js'],
+            'backOfficePageCss' => JnetMemberShell::wants($request)
+                ? ['personnel-dossier.css', 'decorations-kit.css', 'personnel-edit-refresh.css', 'back-office-corrections.css', 'jnet_moi_fiche.css']
+                : ['personnel-dossier.css', 'decorations-kit.css', 'personnel-edit-refresh.css', 'back-office-corrections.css'],
             'canManageVisibility' => $canManageVisibility,
             'personnelVisibility' => $editVisMeta,
             'personnelVisibilityConsequence' => VisibilityLevel::consequence($editVisMeta['visibility_level'], 'personnel'),
@@ -2203,7 +2216,9 @@ class PersonnelController
                 VisibilityLevel::HIDDEN => VisibilityLevel::label(VisibilityLevel::HIDDEN),
             ],
             'visibilityPreviewBaseUrl' => url('personnel/' . $this->personPathSegment($target)),
-        ]);
+        ];
+
+        return $editView === 'layout.main' ? JnetMemberShell::view($request, $editVars) : Response::view($editView, $editVars);
     }
 
     public function updatePortrait(Request $request, array $params = []): Response
@@ -2280,7 +2295,7 @@ class PersonnelController
         }
 
         $base = $isSelf
-            ? url('personnel/me/edit')
+            ? jnet_moi_url('ma-fiche/modifier')
             : url('personnel/' . $this->personPathSegment($target) . '/edit');
 
         return $base . '#edit-portrait';
@@ -2295,7 +2310,7 @@ class PersonnelController
         }
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
-            return Response::redirect(url('personnel/me'));
+            return Response::redirect(jnet_moi_url('ma-fiche'));
         }
         $raw = (string) ($params['id'] ?? '');
         $target = $this->resolvePersonnelTarget($raw, $tenantId, (int) $currentUser['id']);

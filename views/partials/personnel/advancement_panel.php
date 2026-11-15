@@ -37,12 +37,12 @@ $modeLabel = [
         <?php endif; ?>
         <?php if ($isSelf && !empty($next['choice']) && empty($next['already_volunteered'])): ?>
             <?php if (!empty($next['campaign_id'])): ?>
-                <form method="post" action="<?= $h(url('back-office/ma-situation/avancement/' . (int) $next['campaign_id'] . '/volontaire')) ?>">
+                <form method="post" action="<?= $h(jnet_moi_url('avancement/' . (int) $next['campaign_id'] . '/volontaire')) ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <button class="ath-btn ath-btn--solid" type="submit">Demander l’avancement</button>
                 </form>
             <?php else: ?>
-                <p><a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/avancement')) ?>">Déposer une demande</a></p>
+                <p><a class="ath-btn ath-btn--solid" href="<?= $h(jnet_moi_url('avancement')) ?>">Déposer une demande</a></p>
             <?php endif; ?>
         <?php elseif (!empty($next['already_volunteered'])): ?>
             <p>Candidature déjà enregistrée.</p>
@@ -51,7 +51,7 @@ $modeLabel = [
         <?php if (!empty($offer['is_eligible'])): ?>
             <p>Vous êtes éligible à l’avancement au grade de <?= $h((string) ($offer['grade_label'] ?? '')) ?>.</p>
             <?php if ($isSelf && empty($offer['already_volunteered'])): ?>
-                <form method="post" action="<?= $h(url('back-office/ma-situation/avancement/' . (int) $offer['campaign_id'] . '/volontaire')) ?>">
+                <form method="post" action="<?= $h(jnet_moi_url('avancement/' . (int) $offer['campaign_id'] . '/volontaire')) ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <button class="ath-btn ath-btn--solid" type="submit">Me porter volontaire</button>
                 </form>
@@ -76,6 +76,6 @@ $modeLabel = [
         </ol>
     <?php endif; ?>
     <?php if ($isSelf): ?>
-        <p><a href="<?= $h(url('back-office/ma-situation/avancement')) ?>">Voir mon avancement</a></p>
+        <p><a href="<?= $h(jnet_moi_url('avancement')) ?>">Voir mon avancement</a></p>
     <?php endif; ?>
 </section>

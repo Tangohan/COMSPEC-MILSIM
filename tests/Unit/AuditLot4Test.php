@@ -101,9 +101,9 @@ final class AuditLot4Test extends TestCase
             // Indicateurs : deux adresses, même middleware.
             "\$router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);",
             "\$router->get('/back-office/analytics/conversion', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);",
-            // Première liaison : page du portail (avec la sanction du module) et page dans le back-office.
+            // Première liaison : page du portail (avec la sanction du module) et page « Ma situation » dans JNET.
             "\$router->get('/atak/premiere-liaison', [AtakFirstLinkController::class, 'index'], \$mwAtakMemberOnly);",
-            "\$router->get('/back-office/ma-situation/premiere-liaison', [MemberSituationController::class, 'premiereLiaison'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);",
+            "\$router->get('/jnet/moi/premiere-liaison', \$moi(MemberSituationController::class, 'premiereLiaison', AtakFirstLinkController::class), \$mwMoi);",
             // Révocation d'un appareil : deux POST.
             "\$router->post('/account/security/devices/revoke', [\\App\\Controllers\\Web\\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);",
             "\$router->post('/back-office/ma-situation/appareils/retirer', [MemberSituationController::class, 'revokeAppareil'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);",

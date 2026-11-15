@@ -907,13 +907,13 @@ final class ContactMailboxTest extends TestCase
             self::assertStringContainsString('DROP TABLE IF EXISTS ' . $t . ';', $down);
         }
         self::assertLessThan(strpos($down, 'contact_mail_messages;'), strpos($down, 'contact_mail_attachments;'), 'enfants d’abord');
-        $step = $this->read('database/steps/4570_contact_mailbox.php');
+        $step = $this->read('database/steps/4580_contact_mailbox.php');
         self::assertStringContainsString('tableExists', $step);
         self::assertStringContainsString('2026_11_15_010_contact_mailbox.sql', $step);
         $registry = $this->read('database/steps/registry.php');
         self::assertStringContainsString("'id' => 'contact_mailbox'", $registry);
-        self::assertSame(1, substr_count($registry, '4570_contact_mailbox.php'));
-        self::assertFileExists(self::ROOT . 'database/steps/4570_contact_mailbox.php');
+        self::assertSame(1, substr_count($registry, '4580_contact_mailbox.php'));
+        self::assertFileExists(self::ROOT . 'database/steps/4580_contact_mailbox.php');
         // Les statuts du schéma sont ceux que le code écrit.
         $repo = $this->read('app/Services/ContactMail/ContactMailRepository.php');
         foreach (['contact_mail_threads', 'contact_mail_messages', 'contact_mail_attachments', 'contact_mail_sync_state'] as $t) {

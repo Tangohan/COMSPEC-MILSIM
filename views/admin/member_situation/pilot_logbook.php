@@ -19,7 +19,7 @@ use App\Support\PilotSyllabusCatalog as Cat;
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $dur = static fn (int $s): string => $s > 0 ? Eng::formatHours($s / 3600) : '—';
 $hm = static fn (int $s): string => $s > 0 ? sprintf('%d:%02d', intdiv($s, 3600), intdiv($s % 3600, 60)) : '';
-$mineBase = 'back-office/ma-situation/carnet-de-vol';
+$mineBase = 'jnet/moi/carnet-de-vol';
 $reviewBase = 'back-office/referentiels/qualifications/cursus-pilote/carnet';
 $statusLabel = [
     'verified' => ['Relevé en jeu', 'is-ok'],
@@ -76,7 +76,7 @@ $fields = static function (array $e, bool $flight) use ($h, $hm, $knownFamilies,
     <div class="bo-qual__toolbar ath-rise" role="group" aria-label="Actions du carnet">
         <?php if ($mine): ?>
         <a href="#ajouter" class="ath-btn ath-btn--solid">Ajouter un vol</a>
-        <a href="<?= $h(url('back-office/ma-situation/qualifications')) ?>" class="ath-btn">Mon cursus pilote</a>
+        <a href="<?= $h(jnet_moi_url('qualifications')) ?>" class="ath-btn">Mon cursus pilote</a>
         <?php else: ?>
         <a href="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote')) ?>" class="ath-btn">Retour au cursus pilote</a>
         <a href="<?= $h(url('back-office/ressources/effectifs/membres/' . $memberId)) ?>#qualifications" class="ath-btn">Fiche du membre</a>

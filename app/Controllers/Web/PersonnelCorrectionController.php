@@ -422,7 +422,7 @@ final class PersonnelCorrectionController
     private function editOrbatRedirect(int $targetId, int $viewerId): string
     {
         if ($targetId > 0 && $targetId === $viewerId) {
-            return url('back-office/ma-situation/ma-fiche/modifier') . '#edit-orbat';
+            return jnet_moi_url('ma-fiche/modifier') . '#edit-orbat';
         }
 
         return url('personnel/' . max(1, $targetId) . '/edit') . '#edit-orbat';

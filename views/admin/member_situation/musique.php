@@ -22,7 +22,7 @@ $canModerateTrack = $canModerateTrack ?? static fn (array $t): bool => false;
 $userId = (int) ($userId ?? 0);
 $usage = (int) ($usageBytes ?? 0);
 $quota = max(1, (int) ($quotaBytes ?? 1));
-$base = url('back-office/ma-situation/musique');
+$base = jnet_moi_url('musique');
 $csrf = \App\Core\Csrf::field();
 $csrfToken = \App\Core\Csrf::token();
 $back = '?' . http_build_query(array_filter(['vue' => $view, 'liste' => $playlist !== null && $view !== 'global' ? (int) $playlist['id'] : null, 'q' => $q !== '' ? $q : null]));
@@ -117,7 +117,6 @@ $titles = [
     <section class="msc-card">
       <header class="msc-card__head">
         <div>
-          <p class="msc-kicker">Playlists</p>
           <h2 class="msc-title">Playlists que vous pouvez écouter</h2>
         </div>
       </header>
@@ -157,14 +156,13 @@ $titles = [
           <div class="msc-plhead">
             <span class="msc-pl__cover msc-pl__cover--lg msc-pl--<?= $h($vis) ?>" aria-hidden="true">♪</span>
             <div>
-              <p class="msc-kicker"><?= $vis === 'global' ? 'Playlist globale · choisie par l\'administrateur de la plateforme' : 'Playlist ' . $h(mb_strtolower($visLabel[$vis] ?? $vis)) . ' · ' . $h($playlist['owner_name']) ?></p>
               <h2 class="msc-title"><?= $h($playlist['name']) ?></h2>
+              <p class="msc-muted"><?= $vis === 'global' ? 'Playlist globale · choisie par l\'administrateur de la plateforme' : 'Playlist ' . $h(mb_strtolower($visLabel[$vis] ?? $vis)) . ' · ' . $h($playlist['owner_name']) ?></p>
               <?php if (trim((string) ($playlist['description'] ?? '')) !== '') : ?><p class="msc-muted"><?= $h($playlist['description']) ?></p><?php endif; ?>
             </div>
           </div>
         <?php else : ?>
           <div>
-            <p class="msc-kicker"><?= $h($tabs[$view][0] ?? '') ?></p>
             <h2 class="msc-title"><?= $h($titles[$view][0] ?? '') ?></h2>
             <p class="msc-muted"><?= $h($titles[$view][1] ?? '') ?></p>
           </div>
@@ -178,7 +176,7 @@ $titles = [
             </form>
           <?php endif; ?>
           <?php if ($tracks !== [] && $view !== 'moderation') : ?>
-            <button type="button" class="ath-btn ath-btn--solid" data-music-playall>▶ Tout écouter</button>
+            <button type="button" class="ath-btn ath-btn--solid" data-music-playall><svg class="msc-ico" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg> Tout écouter</button>
           <?php endif; ?>
         </div>
       </header>
@@ -238,7 +236,7 @@ $titles = [
               $hidden = ($t['status'] ?? '') === 'hidden';
             ?>
             <li class="msc-track<?= $hidden ? ' is-hidden' : '' ?>" data-music-track data-id="<?= $tid ?>" data-src="<?= $h($base . '/ecouter/' . $tid) ?>" data-title="<?= $h($t['title']) ?>" data-artist="<?= $h($t['artist'] ?? '') ?>" data-duration="<?= (int) $t['duration_seconds'] ?>">
-              <button type="button" class="msc-play" data-music-play aria-label="Écouter <?= $h($t['title']) ?>"><span class="msc-play__n"><?= $i + 1 ?></span><span class="msc-play__icon" aria-hidden="true">▶</span></button>
+              <button type="button" class="msc-play" data-music-play aria-label="Écouter <?= $h($t['title']) ?>"><span class="msc-play__n"><?= $i + 1 ?></span><svg class="msc-play__icon msc-ico" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg></button>
               <div class="msc-track__main">
                 <span class="msc-track__title"><?= $h($t['title']) ?></span>
                 <span class="msc-track__meta">
@@ -326,14 +324,17 @@ $titles = [
   <?php endif; ?>
 
   <aside class="msc-ingame">
-    <span class="msc-ingame__icon" aria-hidden="true">📱</span>
+    <svg class="msc-ingame__icon msc-ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 3v13h8V5H8zm4 14.2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
     <p><strong>En jeu :</strong> ouvrez l'app Musique de l'ATAK, onglet ATHENA. La playlist globale, la bibliothèque communautaire, celle de votre organisation, les playlists et vos envois y sont, une fois le téléphone lié à votre compte. En haut-parleur, les joueurs proches entendent le même morceau.</p>
   </aside>
 
   <div class="msc-player" data-music-player hidden>
-    <button type="button" class="msc-player__btn" data-music-prev aria-label="Précédent">⏮</button>
-    <button type="button" class="msc-player__btn msc-player__btn--main" data-music-toggle aria-label="Lecture / pause">⏸</button>
-    <button type="button" class="msc-player__btn" data-music-next aria-label="Suivant">⏭</button>
+    <button type="button" class="msc-player__btn" data-music-prev aria-label="Précédent"><svg class="msc-ico" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+    <button type="button" class="msc-player__btn msc-player__btn--main" data-music-toggle aria-label="Lecture / pause">
+      <svg class="msc-ico" data-ic-pause viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" hidden><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+      <svg class="msc-ico" data-ic-play viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
+    </button>
+    <button type="button" class="msc-player__btn" data-music-next aria-label="Suivant"><svg class="msc-ico" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
     <div class="msc-player__info">
       <span class="msc-player__title" data-music-now>–</span>
       <div class="msc-player__bar">
@@ -342,7 +343,7 @@ $titles = [
         <span data-music-len>0:00</span>
       </div>
     </div>
-    <label class="msc-player__vol" title="Volume">🔊<input type="range" min="0" max="100" value="80" data-music-vol aria-label="Volume"></label>
+    <label class="msc-player__vol" title="Volume"><svg class="msc-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg><input type="range" min="0" max="100" value="80" data-music-vol aria-label="Volume"></label>
     <audio preload="none" data-music-audio></audio>
   </div>
 </div>
@@ -380,8 +381,9 @@ $titles = [
   $('[data-music-next]').addEventListener('click', function () { play(cur + 1); });
   $('[data-music-prev]').addEventListener('click', function () { if (audio.currentTime > 5) audio.currentTime = 0; else play(Math.max(0, cur - 1)); });
   audio.addEventListener('ended', function () { play(cur + 1); });
-  audio.addEventListener('play', function () { $('[data-music-toggle]').textContent = '⏸'; if (rows[cur]) rows[cur].classList.add('is-playing'); });
-  audio.addEventListener('pause', function () { $('[data-music-toggle]').textContent = '▶'; });
+  var setIcon = function (playing) { $('[data-ic-pause]').hidden = !playing; $('[data-ic-play]').hidden = playing; };
+  audio.addEventListener('play', function () { setIcon(true); if (rows[cur]) rows[cur].classList.add('is-playing'); });
+  audio.addEventListener('pause', function () { setIcon(false); });
   audio.addEventListener('timeupdate', function () {
     $('[data-music-cur]').textContent = fmt(audio.currentTime);
     if (audio.duration) $('[data-music-seek]').value = Math.round(audio.currentTime / audio.duration * 1000);

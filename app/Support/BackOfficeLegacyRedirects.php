@@ -39,13 +39,14 @@ final class BackOfficeLegacyRedirects
     ];
 
     /**
-     * Toutes les anciennes adresses : pages retirées + pages devenues onglets (BackOfficeTabs).
+     * Toutes les anciennes adresses : pages retirées + pages devenues onglets (BackOfficeTabs) + pages « Ma situation »
+     * passées dans JNET (back-office/ma-situation/… → jnet/moi/…, voir JnetMemberPaths).
      *
      * @return array<string, string>
      */
     public static function map(): array
     {
-        return self::MAP + BackOfficeTabs::legacyRedirects();
+        return self::MAP + BackOfficeTabs::legacyRedirects() + JnetMemberPaths::legacyRedirects();
     }
 
     public static function target(string $legacyPath): ?string

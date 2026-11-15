@@ -143,7 +143,7 @@ final class OperatorDocumentVaultService
                 'detail' => trim((string) ($row['certificate_number'] ?? $row['issuer_name'] ?? '')),
                 'issued_at' => $issued,
                 'sort_at' => $issued,
-                'download_url' => url('back-office/ma-situation/qualifications/' . $id . '/brevet'),
+                'download_url' => jnet_moi_url('qualifications/' . $id . '/brevet'),
                 'download_label' => 'Télécharger le brevet',
                 'status_label' => 'Brevet',
             ];

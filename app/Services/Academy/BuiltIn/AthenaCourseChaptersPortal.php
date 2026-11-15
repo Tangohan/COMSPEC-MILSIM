@@ -46,7 +46,7 @@ Le menu de session › **Paramètres** ouvre `/account` (« Vue d’ensemble »)
 - **Portrait** `/account/portrait` et **Ma page publique** `/account/page-publique` (votre C.V. de joueur, visible à `/joueur/…`).
 
 ## 04 — Ma situation
-Dans le back-office, la section **Ma situation** regroupe votre dossier : **Ma fiche** (`/back-office/ma-situation/ma-fiche`), **Mon unité**, **Mes qualifications** (avec le brevet PDF), **Mon carnet de vol**, **Mon avancement**, **Dossier de carrière**, **Ma dotation**, **Mon coffre** (vos documents RH) et **Mes démarches**. C’est ici que vous vérifiez ce que l’encadrement a enregistré sur vous.
+Dans l’extranet JNET, les pages **Ma situation** (rubrique « Mon espace », `/jnet/espaces`) regroupent votre dossier : **Ma fiche** (`/jnet/moi/ma-fiche`), **Mon unité**, **Mes qualifications** (avec le brevet PDF), **Mon carnet de vol**, **Mon avancement**, **Dossier de carrière**, **Ma dotation**, **Mon coffre** (vos documents RH) et **Mes démarches**. C’est ici que vous vérifiez ce que l’encadrement a enregistré sur vous.
 
 ## 05 — Langue, notifications, documents
 - **Langue** : le sélecteur FR / EN du haut de page la change aussitôt et l’enregistre sur votre profil ; elle se règle aussi dans `/account/preferences`. Les formations intégrées de l’Academy suivent cette langue (repli en français si une traduction manque).
@@ -90,7 +90,7 @@ Session menu › **Settings** opens `/account` (“Overview”). The pages you w
 - **Portrait** `/account/portrait` and **My public page** `/account/page-publique` (your player CV, visible at `/joueur/…`).
 
 ## 04 — My situation
-In the back office, the **My situation** section gathers your file: **My file** (`/back-office/ma-situation/ma-fiche`), **My unit**, **My qualifications** (with the PDF certificate), **My flight logbook**, **My progression**, **Career file**, **My equipment**, **My locker** (your HR documents) and **My tasks**. This is where you check what staff have recorded about you.
+In the JNET extranet, the **My situation** pages (“My space” section, `/jnet/espaces`) gather your file: **My file** (`/jnet/moi/ma-fiche`), **My unit**, **My qualifications** (with the PDF certificate), **My flight logbook**, **My progression**, **Career file**, **My equipment**, **My locker** (your HR documents) and **My tasks**. This is where you check what staff have recorded about you.
 
 ## 05 — Language, notifications, documents
 - **Language**: the FR / EN switch at the top of the page changes it immediately and saves it to your profile; you can also set it in `/account/preferences`. Built-in Academy courses follow this language (falling back to French if a translation is missing).
@@ -112,7 +112,7 @@ Tango vient d’être intégré à la 2e section. Il se connecte pour la premiè
 Il ouvre **Dashboard** (`/dashboard`) : la tuile « Connexion Steam » apparaît dans Actions du jour ; il la suit (`/account/steam/connect`).
 Menu de session › **Paramètres** › **Double vérification** (`/account/security`) : il active l’application d’authentification et range ses codes de secours.
 Dans **Profil et préférences** (`/account/preferences`), il choisit **English** pour les pages et les e-mails, puis le préréglage « Usage courant ».
-Il ouvre **Ma situation › Ma fiche** (`/back-office/ma-situation/ma-fiche`) : unité, grade et emploi sont ceux saisis à l’intégration. Une erreur ? Il le signale par **Mes démarches**.
+Il ouvre **Ma situation › Ma fiche** (`/jnet/moi/ma-fiche`) : unité, grade et emploi sont ceux saisis à l’intégration. Une erreur ? Il le signale par **Mes démarches**.
 Dans **Mes documents** (`/documents/mes-documents`), il lit le règlement intérieur et signe l’accusé de lecture.
 :::
 :::analyse Pourquoi cet ordre
@@ -128,7 +128,7 @@ Tango has just joined 2nd Platoon. He signs in for the first time.
 He opens **Dashboard** (`/dashboard`): the “Steam login” tile appears under Today’s actions; he follows it (`/account/steam/connect`).
 Session menu › **Settings** › **Two-step verification** (`/account/security`): he turns on the authenticator app and stores his backup codes.
 In **Profile and preferences** (`/account/preferences`), he picks **English** for pages and e-mails, then the “Everyday use” preset.
-He opens **My situation › My file** (`/back-office/ma-situation/ma-fiche`): unit, rank and job are the ones entered at onboarding. Something wrong? He reports it through **My tasks**.
+He opens **My situation › My file** (`/jnet/moi/ma-fiche`): unit, rank and job are the ones entered at onboarding. Something wrong? He reports it through **My tasks**.
 In **My documents** (`/documents/mes-documents`), he reads the unit rules and signs the read receipt.
 :::
 :::analysis Why this order
@@ -180,7 +180,7 @@ EN;
                     'Les trois choix sont **rejoindre**, **créer** ou **utiliser Athena seul**. « Admin » désigne l’administration de toute la plateforme : ce n’est pas un choix proposé aux membres.',
                     'The three choices are **join**, **create** or **use Athena on your own**. “Admin” means administering the whole platform: it is not something members can pick.'),
                 C::q('Où activer l’application d’authentification ?', 'Where do you turn on the authenticator app?',
-                    [C::o('`/account/password`', '`/account/password`'), C::o('`/account/security` (Double vérification)', '`/account/security` (Two-step verification)'), C::o('`/back-office/ma-situation/coffre`', '`/back-office/ma-situation/coffre`')], 1,
+                    [C::o('`/account/password`', '`/account/password`'), C::o('`/account/security` (Double vérification)', '`/account/security` (Two-step verification)'), C::o('`/jnet/moi/coffre`', '`/jnet/moi/coffre`')], 1,
                     '**Double vérification** (`/account/security`) propose le code par e-mail, l’application d’authentification, les codes de secours et les appareils de confiance.',
                     '**Two-step verification** (`/account/security`) offers the e-mail code, the authenticator app, backup codes and trusted devices.'),
                 C::q('Votre grade affiché est faux. Où le constatez-vous et comment réagir ?', 'Your displayed rank is wrong. Where do you see it and what do you do?',
@@ -209,8 +209,8 @@ EN;
                 ['Il retrouve sans aide Ma fiche, Mes documents et les préférences de langue.', 'They find My file, My documents and language preferences without help.'],
             ],
             ['Fiche mémo — Portail ATHENA', 'Memo card — ATHENA portal',
-             "Tableau de bord : /dashboard\nCompte : /account · Préférences : /account/preferences · Sécurité : /account/security\nMa situation : /back-office/ma-situation/ma-fiche\nAlertes : /alertes · Documents : /documents · Mes documents : /documents/mes-documents\nMes formations : /academy/courses\nRecherche : Ctrl+K",
-             "Dashboard: /dashboard\nAccount: /account · Preferences: /account/preferences · Security: /account/security\nMy situation: /back-office/ma-situation/ma-fiche\nAlerts: /alertes · Documents: /documents · My documents: /documents/mes-documents\nMy training: /academy/courses\nSearch: Ctrl+K"]
+             "Tableau de bord : /dashboard\nCompte : /account · Préférences : /account/preferences · Sécurité : /account/security\nMa situation : /jnet/moi/ma-fiche\nAlertes : /alertes · Documents : /documents · Mes documents : /documents/mes-documents\nMes formations : /academy/courses\nRecherche : Ctrl+K",
+             "Dashboard: /dashboard\nAccount: /account · Preferences: /account/preferences · Security: /account/security\nMy situation: /jnet/moi/ma-fiche\nAlerts: /alertes · Documents: /documents · My documents: /documents/mes-documents\nMy training: /academy/courses\nSearch: Ctrl+K"]
         );
     }
 
@@ -230,14 +230,14 @@ Le mod **ATAK natif** (téléphone tactique dans Arma 3, avec le module Overwatc
 
 > Ne confondez pas : le code « Liaison téléphone » de `/atak/connect` sert à ouvrir la carte sur un **vrai téléphone**, pas à lier Arma.
 
-Le guide pas à pas est sur `/atak/premiere-liaison` ; vos terminaux liés (« En liaison » = signe de vie depuis moins de 3 minutes) sont dans **Ma situation › Ma liaison ATAK** (`/back-office/ma-situation/liaison-atak`) et dans `/account/security/devices`.
+Le guide pas à pas est sur `/atak/premiere-liaison` ; vos terminaux liés (« En liaison » = signe de vie depuis moins de 3 minutes) sont dans **Ma situation › Ma liaison ATAK** (`/jnet/moi/liaison-atak`) et dans `/account/security/devices`.
 
 ---
 
 ## 02 — Ce que le jeu remonte
 - **Positions (suivi des forces amies)** : visibles en direct sur la carte `/atak` et dans « Effectifs en liaison » du tableau de bord.
 - **Heures de jeu** : le « Temps en mission » du tableau de bord et de votre fiche ; l’encadrement les consulte dans `/back-office/atak/heures`.
-- **Heures de vol et distances** : votre **carnet de vol** (`/back-office/ma-situation/carnet-de-vol`), où vous complétez un vol (nuit, atterrissages) ; il compte quand un instructeur le contresigne. Elles alimentent le cursus pilote et certaines qualifications automatiques (chapitre 5).
+- **Heures de vol et distances** : votre **carnet de vol** (`/jnet/moi/carnet-de-vol`), où vous complétez un vol (nuit, atterrissages) ; il compte quand un instructeur le contresigne. Elles alimentent le cursus pilote et certaines qualifications automatiques (chapitre 5).
 - **Tenues ACE Arsenal** : synchronisées vers **Équipement** (`/equipment`).
 - **Marqueurs, dessins, messages et alertes médicales** : sur la carte `/atak`.
 
@@ -264,14 +264,14 @@ The **native ATAK** mod (a tactical phone inside Arma 3, with the Overwatch conn
 
 > Do not mix them up: the “Phone link” code on `/atak/connect` opens the map on a **real phone**; it does not link Arma.
 
-The step-by-step guide is at `/atak/premiere-liaison`; your linked devices (“Linked” = signal received within the last 3 minutes) are under **My situation › My ATAK link** (`/back-office/ma-situation/liaison-atak`) and in `/account/security/devices`.
+The step-by-step guide is at `/atak/premiere-liaison`; your linked devices (“Linked” = signal received within the last 3 minutes) are under **My situation › My ATAK link** (`/jnet/moi/liaison-atak`) and in `/account/security/devices`.
 
 ---
 
 ## 02 — What the game reports
 - **Positions (blue force tracking)**: live on the `/atak` map and under “Operators on the net” on the dashboard.
 - **Game hours**: the “Mission time” shown on the dashboard and your file; staff see them in `/back-office/atak/heures`.
-- **Flight hours and distances**: your **flight logbook** (`/back-office/ma-situation/carnet-de-vol`), where you complete a flight (night, landings); it counts once an instructor countersigns it. They feed the pilot track and some automatic qualifications (chapter 5).
+- **Flight hours and distances**: your **flight logbook** (`/jnet/moi/carnet-de-vol`), where you complete a flight (night, landings); it counts once an instructor countersigns it. They feed the pilot track and some automatic qualifications (chapter 5).
 - **ACE Arsenal loadouts**: synced to **Equipment** (`/equipment`).
 - **Markers, drawings, messages and medical alerts**: on the `/atak` map.
 
@@ -290,7 +290,7 @@ EN;
 :::etapes
 Dans Arma, Tango sort le téléphone ATAK (Ctrl+U), ouvre l’app **Athena**, onglet **CODE** : un code s’affiche.
 Sur son PC, il ouvre `/lier`, saisit le code et clique **Vérifier ce code**, puis autorise ce jeu.
-Le téléphone confirme la liaison. Sur le site, **Ma liaison ATAK** (`/back-office/ma-situation/liaison-atak`) montre le terminal « En liaison ».
+Le téléphone confirme la liaison. Sur le site, **Ma liaison ATAK** (`/jnet/moi/liaison-atak`) montre le terminal « En liaison ».
 Après la mission, son « Temps en mission » augmente ; le vol en hélicoptère apparaît dans **Mon carnet de vol**, à compléter puis faire contresigner.
 :::
 :::analyse Erreur fréquente
@@ -302,7 +302,7 @@ FR;
 :::steps
 In Arma, Tango takes out the ATAK phone (Ctrl+U), opens the **Athena** app, **CODE** tab: a code appears.
 On his PC he opens `/lier`, types the code, clicks **Check this code**, then authorises the game.
-The phone confirms the link. On the site, **My ATAK link** (`/back-office/ma-situation/liaison-atak`) shows the device as “Linked”.
+The phone confirms the link. On the site, **My ATAK link** (`/jnet/moi/liaison-atak`) shows the device as “Linked”.
 After the mission his “Mission time” goes up; the helicopter flight appears in **My flight logbook**, to be completed and countersigned.
 :::
 :::analysis Common mistake
@@ -359,8 +359,8 @@ EN;
                 ['Il distingue code du jeu, code du site et code du vrai téléphone.', 'They tell apart the game code, the site code and the real-phone code.'],
             ],
             ['Fiche mémo — Liaison ATAK', 'Memo card — ATAK link',
-             "Code du jeu (10 min) → /lier\nCode du site (30 min, usage unique) : /atak › Appairer › Générer un code → à coller dans le jeu\nSteam : /account/steam/connect · doublon : /account/steam-doublon\nGuide : /atak/premiere-liaison\nMes terminaux : /back-office/ma-situation/liaison-atak\nCarnet de vol : /back-office/ma-situation/carnet-de-vol",
-             "Game code (10 min) → /lier\nSite code (30 min, single use): /atak › Pair › Generate a code → paste it in the game\nSteam: /account/steam/connect · duplicate: /account/steam-doublon\nGuide: /atak/premiere-liaison\nMy devices: /back-office/ma-situation/liaison-atak\nFlight logbook: /back-office/ma-situation/carnet-de-vol"]
+             "Code du jeu (10 min) → /lier\nCode du site (30 min, usage unique) : /atak › Appairer › Générer un code → à coller dans le jeu\nSteam : /account/steam/connect · doublon : /account/steam-doublon\nGuide : /atak/premiere-liaison\nMes terminaux : /jnet/moi/liaison-atak\nCarnet de vol : /jnet/moi/carnet-de-vol",
+             "Game code (10 min) → /lier\nSite code (30 min, single use): /atak › Pair › Generate a code → paste it in the game\nSteam: /account/steam/connect · duplicate: /account/steam-doublon\nGuide: /atak/premiere-liaison\nMy devices: /jnet/moi/liaison-atak\nFlight logbook: /jnet/moi/carnet-de-vol"]
         );
     }
 }

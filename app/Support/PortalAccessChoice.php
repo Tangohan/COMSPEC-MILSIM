@@ -28,6 +28,35 @@ final class PortalAccessChoice
     }
 
     /**
+     * Membre sans rôle de gestion : ni administration (organisation, accès, assistance, plateforme), ni cadre délégué (RH,
+     * recrutement, accès, opérations…), ni formation, médias ou modération. Le back-office n'a rien à lui montrer : ses
+     * pages personnelles sont dans JNET (/jnet/moi). Mêmes tests que le menu latéral (back_office_sidebar.php) : un cadre
+     * qui y voit des pages de gestion garde le back-office.
+     */
+    public static function isPlainMember(): bool
+    {
+        $gate = Gate::getInstance();
+        if (self::canAccessTba() || $gate->allows('admin.system') || $gate->allows('admin.members.moderate')) {
+            return false;
+        }
+        if (BackOfficeDelegatedStaff::is(static fn (string $perm): bool => $gate->allows($perm))) {
+            return false;
+        }
+
+        return !TrainingLmsStaffAccess::allows($gate) && !CommunityMediaStaffAccess::allows($gate);
+    }
+
+    /**
+     * Où envoyer un membre sans rôle de gestion qui ouvre le back-office : son extranet JNET, ou le tableau de bord pour un
+     * compte sans organisation et pour les profils de communauté sans JNET (effectifs, carte ATAK). Jamais le back-office :
+     * ni boucle, ni retour vers une page qui l'y renvoie.
+     */
+    public static function plainMemberHome(): string
+    {
+        return self::memberLandingUrl() ?? url('dashboard');
+    }
+
+    /**
      * Tenant système « pas d’organisation » (slug default / libellés techniques).
      *
      * @param array<string, mixed>|null $tenant

@@ -178,7 +178,7 @@ $shortcutIcons = ['formations' => 'course', 'brevets' => 'brevet', 'qualificatio
 <section class="acd-section" id="acx-mine" aria-labelledby="acx-mine-title">
     <header class="acd-section__head">
         <h2 id="acx-mine-title" class="acd-h2">Mes brevets et qualifications <b class="acx-count"><?= count($held) ?></b></h2>
-        <a class="text-link" href="<?= $h(url('back-office/ma-situation/qualifications')) ?>"><span>Mon dossier de qualifications</span> ↗</a>
+        <a class="text-link" href="<?= $h(url('jnet/moi/qualifications')) ?>"><span>Mon dossier de qualifications</span> ↗</a>
     </header>
     <?php if ($held === []): ?>
         <div class="acd-empty acd-empty--row">

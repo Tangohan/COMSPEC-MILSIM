@@ -154,14 +154,23 @@ final class JnetMemberHubTest extends TestCase
 
     public function testEveryLinkIsARealRoute(): void
     {
-        $routes = (string) file_get_contents(self::ROOT . 'routes/web.php');
-        $hub = (string) file_get_contents(self::ROOT . 'app/Services/Jnet/JnetMemberHub.php');
-        preg_match_all("/\['[^']+', '[^']+', '([a-z\-\/]+)'/", $hub, $m);
-        self::assertGreaterThan(0, count($m[1]));
-        foreach (array_unique($m[1]) as $path) {
-            self::assertStringContainsString("'/" . $path . "'", $routes, $path);
+        $all = [];
+        foreach (['full', 'effectifs', 'atak'] as $type) {
+            foreach (H::sections(['tenantType' => $type, 'pilotLogbook' => true]) as $section) {
+                foreach ($section['items'] as $item) {
+                    $all[$item['path']] = $item['href'];
+                }
+            }
         }
-        self::assertStringContainsString("'/jnet/espaces'", $routes);
+        self::assertGreaterThan(0, count($all));
+        foreach (array_keys($all) as $path) {
+            self::assertNotNull(\Tests\Support\BackOfficeRouteMap::match('GET', '/' . $path), $path . ' : aucune route');
+        }
+        // Les pages « Ma situation » sont dans JNET, jamais dans le back-office.
+        foreach ($all as $path => $href) {
+            self::assertStringNotContainsString('back-office', $href);
+        }
+        self::assertNotNull(\Tests\Support\BackOfficeRouteMap::match('GET', '/jnet/espaces'));
     }
 
     public function testMembersLandOnJnetAndOthersKeepTheirArrival(): void

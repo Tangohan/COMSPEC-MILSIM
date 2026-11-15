@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Jnet;
 
 use App\Services\Community\TenantTypeConfig;
+use App\Support\JnetMemberPaths;
 use App\Support\JnetSpaceTree;
 use App\Support\JnetUi;
 
@@ -30,7 +31,7 @@ final class JnetMemberHub
     ];
 
     /** Adresse de la demande d'affectation (page existante « Mon avancement »). */
-    public const REQUEST_PATH = 'back-office/ma-situation/avancement#mav-aff-title';
+    public const REQUEST_PATH = JnetMemberPaths::BASE . '/avancement#mav-aff-title';
 
     /**
      * Droit du lecteur sur un espace : administrateur de la plateforme, chef de l'unité (ou d'une unité au-dessus),
@@ -188,51 +189,59 @@ final class JnetMemberHub
     }
     /**
      * Rubriques personnelles. Chaque entrée est une page existante ; celles d'un module que le profil de la communauté
-     * ne propose pas sont retirées (même règle que les menus : TenantTypeConfig::uriAllowed).
+     * ne propose pas sont retirées (même règle que les menus : TenantTypeConfig::uriAllowed). Les pages « Ma situation »
+     * sont sous /jnet/moi (JnetMemberPaths) : la même liste nourrit le hub et le rail « Mon espace » des pages.
      *
-     * @param array{tenantType?: string, pilotLogbook?: bool, unreadMail?: int} $ctx
-     * @return list<array{key: string, title: string, lead: string, items: list<array{label: string, desc: string, href: string, badge: int}>}>
+     * Entrée : label, desc, href, badge (nombre à signaler), path (chemin sans slash), page (clé de JnetMemberPaths::PAGES
+     * quand c'en est une : sert à allumer l'entrée courante du rail).
+     *
+     * @param array{tenantType?: string, pilotLogbook?: bool, unreadMail?: int, badges?: array<string, int>} $ctx
+     * @return list<array{key: string, title: string, lead: string, items: list<array{label: string, desc: string, href: string, badge: int, path: string, page: string}>}>
      */
     public static function sections(array $ctx): array
     {
         $type = (string) ($ctx['tenantType'] ?? 'full');
         $pilot = !empty($ctx['pilotLogbook']);
         $mail = max(0, (int) ($ctx['unreadMail'] ?? 0));
+        $badges = (array) ($ctx['badges'] ?? []);
+        $badge = static fn (string $key): int => max(0, (int) ($badges[$key] ?? 0));
+        $moi = static fn (string $page): array => [JnetMemberPaths::path($page), $page];
 
+        // [libellé, description, [chemin, page], pastille, drapeau]
         $catalog = [
             ['key' => 'unite', 'title' => 'Mon unité', 'lead' => 'Votre affectation, vos camarades et ce que l’unité traite en ce moment.', 'items' => [
-                ['Fiche de mon unité', 'Affectation, fonction, chef et camarades', 'back-office/ma-situation/unite'],
-                ['Messagerie', 'Messages reçus et envoyés dans l’extranet', 'jnet/courrier', $mail],
-                ['Opérations', 'Missions en cours et planifiées', 'jnet/operations'],
-                ['Annuaire du personnel', 'Retrouver un camarade, sa fonction, sa section', 'jnet/personnel'],
-                ['Bibliothèque', 'Consignes, doctrines et documents publiés', 'jnet/bibliotheque'],
-                ['Événements', 'Le calendrier de la communauté et vos réponses', 'back-office/ma-situation/evenements'],
+                ['Fiche de mon unité', 'Affectation, fonction, chef et camarades', $moi('unite')],
+                ['Messagerie', 'Messages reçus et envoyés dans l’extranet', ['jnet/courrier', ''], $mail],
+                ['Opérations', 'Missions en cours et planifiées', ['jnet/operations', '']],
+                ['Annuaire du personnel', 'Retrouver un camarade, sa fonction, sa section', ['jnet/personnel', '']],
+                ['Bibliothèque', 'Consignes, doctrines et documents publiés', ['jnet/bibliotheque', '']],
+                ['Événements', 'Le calendrier de la communauté et vos réponses', $moi('evenements'), $badge('events_rsvp_pending')],
             ]],
             ['key' => 'profil', 'title' => 'Mon profil', 'lead' => 'Votre fiche, votre compte et votre parcours.', 'items' => [
-                ['Ma fiche', 'Votre fiche personnelle et son suivi', 'back-office/ma-situation/ma-fiche'],
-                ['Mon compte', 'Connexion, portrait et préférences', 'account'],
-                ['Mes qualifications', 'Brevets obtenus, en cours et à renouveler', 'back-office/ma-situation/qualifications'],
-                ['Mon avancement', 'Campagnes, demandes d’avancement et d’affectation', 'back-office/ma-situation/avancement'],
-                ['Dossier de carrière', 'La frise de votre parcours', 'back-office/ma-situation/carriere'],
-                ['Décorations', 'Distinctions reçues', 'back-office/ma-situation/decorations'],
-                ['Ma dotation', 'Ce qui vous est attribué', 'back-office/ma-situation/dotation'],
-                ['Mes accès', 'Rôle, grade et demandes de droits', 'account/acces'],
+                ['Ma fiche', 'Votre fiche personnelle et son suivi', $moi('ma-fiche')],
+                ['Mon compte', 'Connexion, portrait et préférences', ['account', '']],
+                ['Mes qualifications', 'Brevets obtenus, en cours et à renouveler', $moi('qualifications'), $badge('qualifications_expiring')],
+                ['Mon avancement', 'Campagnes, demandes d’avancement et d’affectation', $moi('avancement')],
+                ['Dossier de carrière', 'La frise de votre parcours', $moi('carriere')],
+                ['Décorations', 'Distinctions reçues', $moi('decorations')],
+                ['Ma dotation', 'Ce qui vous est attribué', $moi('dotation')],
+                ['Mes accès', 'Rôle, grade et demandes de droits', ['account/acces', '']],
             ]],
             ['key' => 'atak', 'title' => 'Mon ATAK', 'lead' => 'Votre téléphone, sa liaison avec Athena et ce que vous écoutez en jeu.', 'items' => [
-                ['Ma liaison ATAK', 'Contrôles, session et historique de liaison', 'back-office/ma-situation/liaison-atak'],
-                ['Première liaison', 'Relier un téléphone pas à pas', 'back-office/ma-situation/premiere-liaison'],
-                ['Mes appareils', 'Téléphones liés, à retirer si besoin', 'back-office/ma-situation/appareils'],
-                ['Musique', 'Bibliothèque et playlists écoutées en jeu', 'back-office/ma-situation/musique'],
-                ['Mon carnet de vol', 'Vos vols relevés en jeu et ceux que vous notez', 'back-office/ma-situation/carnet-de-vol', 0, 'pilot'],
+                ['Ma liaison ATAK', 'Contrôles, session et historique de liaison', $moi('liaison-atak')],
+                ['Première liaison', 'Relier un téléphone pas à pas', $moi('premiere-liaison')],
+                ['Mes appareils', 'Téléphones liés, à retirer si besoin', $moi('appareils')],
+                ['Musique', 'Bibliothèque et playlists écoutées en jeu', $moi('musique')],
+                ['Mon carnet de vol', 'Vos vols relevés en jeu et ceux que vous notez', $moi('carnet-de-vol'), 0, 'pilot'],
             ]],
             ['key' => 'donnees', 'title' => 'Mes données', 'lead' => 'Vos pièces, vos papiers et ce que le site garde sur vous.', 'items' => [
-                ['Mon coffre', 'Pièces RH, brevets et attestations', 'back-office/ma-situation/coffre'],
-                ['Mes papiers', 'Identité et papiers pour le jeu de rôle', 'back-office/ma-situation/mes-papiers'],
-                ['Exporter ou supprimer mes données', 'Copie de vos informations, suppression du compte', 'account/donnees'],
+                ['Mon coffre', 'Pièces RH, brevets et attestations', $moi('coffre')],
+                ['Mes papiers', 'Identité et papiers pour le jeu de rôle', $moi('mes-papiers')],
+                ['Exporter ou supprimer mes données', 'Copie de vos informations, suppression du compte', ['account/donnees', '']],
             ]],
             ['key' => 'service', 'title' => 'Mon service', 'lead' => 'Ce qui vous attend : tâches, avis demandés, démarches.', 'items' => [
-                ['Mon service', 'Tâches, avis à donner et agenda', 'mon-service'],
-                ['Mes démarches', 'Absences, élévation, souhaits d’évolution et documents', 'back-office/ma-situation/mes-demarches'],
+                ['Mon service', 'Tâches, avis à donner et agenda', ['mon-service', '']],
+                ['Mes démarches', 'Absences, élévation, souhaits d’évolution et documents', $moi('mes-demarches'), $badge('my_enlistments_pending')],
             ]],
         ];
 
@@ -240,14 +249,14 @@ final class JnetMemberHub
         foreach ($catalog as $section) {
             $items = [];
             foreach ($section['items'] as $item) {
-                [$label, $desc, $path] = $item;
+                [$label, $desc, [$path, $page]] = $item;
                 if (($item[4] ?? '') === 'pilot' && !$pilot) {
                     continue;
                 }
                 if (!TenantTypeConfig::uriAllowed($type, $path)) {
                     continue;
                 }
-                $items[] = ['label' => $label, 'desc' => $desc, 'href' => url($path), 'badge' => (int) ($item[3] ?? 0)];
+                $items[] = ['label' => $label, 'desc' => $desc, 'href' => url($path), 'badge' => (int) ($item[3] ?? 0), 'path' => $path, 'page' => $page];
             }
             if ($items !== []) {
                 $out[] = ['key' => $section['key'], 'title' => $section['title'], 'lead' => $section['lead'], 'items' => $items];

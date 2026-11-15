@@ -24,13 +24,17 @@ use App\Services\Personnel\OperatorDocumentVaultService;
 use App\Services\Personnel\QualificationBadgeStorageService;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationTemporalStatusService;
+use App\Support\JnetMemberShell;
 use App\Support\QualificationAdminStatus;
 
 /**
- * Pages personnelles sous /back-office/ma-situation/* (coque Athena, sans redirection portail).
+ * Pages personnelles du membre sous /jnet/moi/* (coque JNET, voir JnetMemberShell ; anciennement /back-office/ma-situation/*).
  */
 final class MemberSituationController
 {
+    /** Rend ses pages dans la coque JNET (JnetMemberShell) : voir JnetMemberBridge. */
+    public const JNET_MOI_READY = true;
+
     public function __construct(
         private ?AuthService $authService = null,
         private ?AtakRealismRepository $realism = null,
@@ -74,7 +78,7 @@ final class MemberSituationController
             }
         }
 
-        return Response::view('layout.main', $this->boShell([
+        return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Ma liaison ATAK',
             'content' => 'admin.member_situation.liaison_atak',
             'boPageTitle' => 'Ma liaison ATAK',
@@ -103,7 +107,7 @@ final class MemberSituationController
         $overview = (new \App\Services\Atak\OperatorDeviceActivityService())
             ->overviewForUser($tenantId, $userId, $devices, (string) ($user['callsign'] ?? ''));
 
-        return Response::view('layout.main', $this->boShell([
+        return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Mes appareils ATAK',
             'content' => 'admin.member_situation.appareils',
             'boPageTitle' => 'Mes appareils ATAK',
@@ -141,7 +145,7 @@ final class MemberSituationController
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/ma-situation/appareils'));
+            return Response::redirect(jnet_moi_url('appareils'));
         }
 
         $terminalId = (int) $request->input('terminal_id', 0);
@@ -161,7 +165,7 @@ final class MemberSituationController
             Session::flash('error', 'Impossible de retirer cet appareil.');
         }
 
-        return Response::redirect(url('back-office/ma-situation/appareils'));
+        return Response::redirect(jnet_moi_url('appareils'));
     }
 
     public function premiereLiaison(Request $request, array $params = []): Response
@@ -286,7 +290,7 @@ final class MemberSituationController
             }
         }
 
-        return Response::view('layout.main', $this->boShell([
+        return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Mon unité',
             'content' => 'admin.member_situation.unite',
             'boPageTitle' => 'Mon unité',
@@ -310,10 +314,8 @@ final class MemberSituationController
     {
         $payload = Container::get(CommunityEventsController::class)->buildIndexPayload();
         if ($payload['blocked']) {
-            return Response::view('layout.main', $this->boShell(array_merge([
-                'title' => 'Événements',
-                'content' => 'platform.upgrade',
-            ], $payload['vars'])));
+            // Page de formules du portail (comme le carnet de vol) : la coque JNET ne charge pas le style de cette page.
+            return Response::redirect(url('platform/upgrade') . '?from=events');
         }
 
         $vue = (string) $request->query('vue', 'a_venir');
@@ -346,13 +348,15 @@ final class MemberSituationController
             }
         }
 
-        return Response::view('layout.main', $this->boShell(array_merge([
+        return JnetMemberShell::view($request, $this->boShell(array_merge([
             'title' => 'Événements',
             'content' => 'admin.member_situation.evenements',
             'boPageTitle' => 'Événements',
             'boPageKicker' => 'OPÉRATEUR · ÉVÉNEMENTS',
             'boPageSubtitle' => 'Vos prochains rendez-vous, le calendrier de l’unité et votre historique de participation.',
-            'backOfficePageCss' => ['back-office-member-events.css'],
+            // Les cartes d'événements (community/events.php) sont en utilitaires Tailwind : sa feuille passe avant celles de JNET.
+            'jnetPageCssFirst' => ['tailwind.css'],
+            'backOfficePageCss' => ['back-office-member-events.css', 'jnet_moi_evenements.css'],
             'eventsInBackOffice' => true,
             'boSkipSessionFlashes' => true,
             'memberEventsVue' => $vue,
@@ -376,7 +380,7 @@ final class MemberSituationController
         } catch (\Throwable) {
         }
 
-        return Response::view('layout.main', $this->boShell([
+        return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Mon coffre',
             'content' => 'admin.member_situation.coffre',
             'boPageTitle' => 'Mon coffre',
@@ -439,7 +443,7 @@ final class MemberSituationController
             $qualificationSuggestions = null;
         }
 
-        return Response::view('layout.main', $this->boShell([
+        return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Mes qualifications',
             'content' => 'admin.member_situation.qualifications',
             'boPageTitle' => 'Mes qualifications',
@@ -475,7 +479,7 @@ final class MemberSituationController
         } catch (\Throwable) {
         }
 
-        return Response::view('layout.main', $this->boShell([
+        return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Dossier de carrière',
             'content' => 'admin.member_situation.carriere',
             'boPageTitle' => 'Dossier de carrière',
@@ -503,7 +507,7 @@ final class MemberSituationController
         } catch (\Throwable) {
         }
 
-        return Response::view('layout.main', $this->boShell([
+        return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Mes décorations',
             'content' => 'admin.member_situation.decorations',
             'boPageTitle' => 'Mes décorations',
@@ -529,7 +533,7 @@ final class MemberSituationController
         } catch (\Throwable) {
         }
 
-        return Response::view('layout.main', $this->boShell([
+        return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Ma dotation',
             'content' => 'admin.member_situation.dotation',
             'boPageTitle' => 'Ma dotation',
@@ -552,7 +556,7 @@ final class MemberSituationController
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/ma-situation/qualifications'));
+            return Response::redirect(jnet_moi_url('qualifications'));
         }
 
         $awardId = (int) ($params['awardId'] ?? 0);
@@ -560,7 +564,7 @@ final class MemberSituationController
         if ($award === null || (int) ($award['user_id'] ?? 0) !== $userId) {
             Session::flash('error', 'Cette qualification n’est pas disponible.');
 
-            return Response::redirect(url('back-office/ma-situation/qualifications'));
+            return Response::redirect(jnet_moi_url('qualifications'));
         }
 
         $admin = QualificationAdminStatus::normalize(
@@ -569,7 +573,7 @@ final class MemberSituationController
         if ($admin !== QualificationAdminStatus::OBTAINED) {
             Session::flash('error', 'Le brevet n’est disponible que pour une qualification obtenue.');
 
-            return Response::redirect(url('back-office/ma-situation/qualifications'));
+            return Response::redirect(jnet_moi_url('qualifications'));
         }
 
         try {
@@ -595,11 +599,11 @@ final class MemberSituationController
                 );
             }
 
-            return Response::redirect(url('back-office/ma-situation/qualifications/' . $awardId . '/brevet'));
+            return Response::redirect(jnet_moi_url('qualifications/' . $awardId . '/brevet'));
         } catch (\Throwable $e) {
             Session::flash('error', $e->getMessage());
 
-            return Response::redirect(url('back-office/ma-situation/qualifications'));
+            return Response::redirect(jnet_moi_url('qualifications'));
         }
     }
 
@@ -616,18 +620,18 @@ final class MemberSituationController
         if ($award === null || (int) ($award['user_id'] ?? 0) !== $userId) {
             Session::flash('error', 'Ce brevet n’est pas disponible.');
 
-            return Response::redirect(url('back-office/ma-situation/qualifications'));
+            return Response::redirect(jnet_moi_url('qualifications'));
         }
         if (empty($award['certificate_document_path'])) {
             Session::flash('error', 'Aucun fichier de brevet n’est encore associé à cette qualification.');
 
-            return Response::redirect(url('back-office/ma-situation/qualifications'));
+            return Response::redirect(jnet_moi_url('qualifications'));
         }
         $abs = base_path('storage/uploads/' . ltrim((string) $award['certificate_document_path'], '/'));
         if (!is_file($abs)) {
             Session::flash('error', 'Fichier de brevet introuvable.');
 
-            return Response::redirect(url('back-office/ma-situation/qualifications'));
+            return Response::redirect(jnet_moi_url('qualifications'));
         }
         $downloadName = 'brevet-' . preg_replace('/[^A-Za-z0-9_\-]/', '', (string) ($award['certificate_number'] ?? $awardId)) . '.pdf';
         $response = new Response();

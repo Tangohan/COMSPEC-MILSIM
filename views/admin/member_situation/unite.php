@@ -92,7 +92,6 @@ $mateLabel = static function (array $mate): string {
     <?php if ($primary === null || $unitName === ''): ?>
         <header class="bo-dossier-hero">
             <div>
-                <p class="bo-dossier-hero__kicker">Affectation</p>
                 <h2 class="bo-dossier-hero__title">Pas encore d’unité</h2>
                 <p class="bo-dossier-hero__lead">
                     Vous n’êtes pas encore rattaché à une unité de la communauté<?= $communityName !== '' ? ' « ' . $h($communityName) . ' »' : '' ?>.
@@ -108,7 +107,7 @@ $mateLabel = static function (array $mate): string {
                 <h3>En attente d’affectation</h3>
                 <p>Dès qu’une unité vous est attribuée, cette page affiche votre fonction, le chemin dans l’organigramme et vos camarades.</p>
                 <div class="bo-member-situation__actions" style="margin-top:0.85rem">
-                    <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=unite') ?>">Ouvrir ma fiche</a>
+                    <a class="ath-btn ath-btn--solid" href="<?= $h(jnet_moi_url('ma-fiche') . '?onglet=unite') ?>">Ouvrir ma fiche</a>
                     <a class="ath-btn" href="<?= $h(url('orbat')) ?>">Voir l’organigramme</a>
                 </div>
             </div>
@@ -116,10 +115,6 @@ $mateLabel = static function (array $mate): string {
     <?php else: ?>
         <header class="bo-unit-hero"<?= $unitAccent !== '' ? ' style="--bo-unit-accent:' . $h($unitAccent) . '"' : '' ?>>
             <div class="bo-unit-hero__main">
-                <p class="bo-unit-hero__kicker">
-                    <?= $h($communityName !== '' ? $communityName : 'Communauté') ?>
-                    · Affectation principale
-                </p>
                 <?php if ($pathParts !== []): ?>
                     <nav class="bo-unit-trail" aria-label="Chemin dans l’organigramme">
                         <?php foreach ($trail as $i => $part): ?>
@@ -172,14 +167,13 @@ $mateLabel = static function (array $mate): string {
 
         <div class="bo-member-situation__actions">
             <a class="ath-btn ath-btn--solid" href="<?= $h(url('orbat')) ?>">Ouvrir l’organigramme</a>
-            <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=unite') ?>">Voir dans ma fiche</a>
-            <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/qualifications')) ?>">Mes qualifications</a>
+            <a class="ath-btn" href="<?= $h(jnet_moi_url('ma-fiche') . '?onglet=unite') ?>">Voir dans ma fiche</a>
+            <a class="ath-btn" href="<?= $h(jnet_moi_url('qualifications')) ?>">Mes qualifications</a>
         </div>
 
         <div class="bo-unit-layout">
             <section class="bo-unit-panel">
                 <header class="bo-unit-panel__head">
-                    <p class="bo-member-situation__kicker">Votre place</p>
                     <h3>Poste tenu</h3>
                 </header>
                 <dl class="bo-unit-facts">
@@ -223,7 +217,6 @@ $mateLabel = static function (array $mate): string {
             <section class="bo-unit-panel bo-unit-panel--roster">
                 <header class="bo-unit-panel__head">
                     <div>
-                        <p class="bo-member-situation__kicker">Effectif de l’unité</p>
                         <h3>Camarades</h3>
                     </div>
                     <span class="bo-member-situation__badge"><?= $mateCount ?> présent<?= $mateCount > 1 ? 's' : '' ?></span>
@@ -278,7 +271,6 @@ $mateLabel = static function (array $mate): string {
         <?php if ($subUnits !== []): ?>
             <section class="bo-unit-panel">
                 <header class="bo-unit-panel__head">
-                    <p class="bo-member-situation__kicker">Structure</p>
                     <h3>Sous-unités rattachées</h3>
                 </header>
                 <ul class="bo-unit-subs">
@@ -311,7 +303,6 @@ $mateLabel = static function (array $mate): string {
         <?php if ($secondary !== []): ?>
             <section class="bo-unit-panel">
                 <header class="bo-unit-panel__head">
-                    <p class="bo-member-situation__kicker">Autres rattachements</p>
                     <h3>Affectations secondaires</h3>
                 </header>
                 <div class="bo-unit-secondary">

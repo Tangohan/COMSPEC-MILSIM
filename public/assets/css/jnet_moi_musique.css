@@ -1,0 +1,58 @@
+/**
+ * JNET > Mon ATAK > Musique (/jnet/moi/musique). Complète back-office-music.css dans la coque JNET : icônes dessinées (SVG,
+ * sans emoji), lecteur au-dessus du pied de page, onglets sur mobile. Aucun surtitre : le titre de la page est celui de la coque.
+ */
+.jp .msc-ico {
+  flex: none;
+  fill: currentColor;
+  vertical-align: -0.12em;
+}
+
+.jp .msc-ingame__icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--ja-muted);
+}
+
+.jp .msc-play__icon {
+  margin-left: 2px;
+}
+
+.jp .msc-player__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.jp .msc-player__btn svg[hidden] {
+  display: none;
+}
+
+.jp .msc-player__vol {
+  color: var(--ja-muted);
+}
+
+.jp .ath-btn svg.msc-ico {
+  margin-right: 2px;
+}
+
+@media (max-width: 720px) {
+  .jp .msc-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .jp .msc-card__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jp .msc-card__tools {
+    flex-wrap: wrap;
+  }
+
+  .jp .msc-player {
+    bottom: 0.5rem;
+    width: calc(100vw - 1.5rem);
+  }
+}
