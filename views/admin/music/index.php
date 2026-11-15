@@ -24,7 +24,7 @@ $playlists = is_array($playlists ?? null) ? $playlists : [];
 $globalPlaylist = is_array($globalPlaylist ?? null) ? $globalPlaylist : [];
 $globalIds = array_flip(array_map('intval', is_array($globalIds ?? null) ? $globalIds : []));
 $quota = max(1, (int) ($quotaBytes ?? 1));
-$libraryUrl = (string) ($libraryUrl ?? url('back-office/ma-situation/musique'));
+$libraryUrl = (string) ($libraryUrl ?? jnet_moi_url('musique'));
 $csrf = \App\Core\Csrf::field();
 $musicEn = locale() === 'en';
 $mb = static fn (int $b): string => $musicEn

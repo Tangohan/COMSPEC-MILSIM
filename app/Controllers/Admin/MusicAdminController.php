@@ -118,7 +118,7 @@ final class MusicAdminController
             'globalPlaylist' => $global,
             'globalIds' => $globalIds,
             'quotaBytes' => MusicTrackStorage::USER_QUOTA_BYTES,
-            'libraryUrl' => url('back-office/ma-situation/musique'),
+            'libraryUrl' => jnet_moi_url('musique'),
         ];
         if ($platform) {
             $vars['isPlatformAdminShell'] = true;
