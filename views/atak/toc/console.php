@@ -21,6 +21,7 @@ $tocKeys = [
 <?php require __DIR__ . '/_head.php'; ?>
 <link rel="stylesheet" href="<?= $h($a('assets/css/atak-toc-reports.css')) ?>">
 <script src="<?= $h($a('assets/js/toc/toc-console-ui.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/toc-phones.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-reports.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-console.js')) ?>" defer></script>
 </head>

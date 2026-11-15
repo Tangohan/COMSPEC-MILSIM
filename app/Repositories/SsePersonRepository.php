@@ -751,7 +751,7 @@ final class SsePersonRepository
             'from_arma' => $this->isArmaSourced($row),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
-            // Classification, verrouillage, clôture (étape 4760) : absents tant qu'elle n'est pas passée.
+            // Classification, verrouillage, clôture (étape 4770) : absents tant qu'elle n'est pas passée.
             'classification' => \App\Support\SsePersonWork::cleanClassification($row['classification'] ?? null),
             'locked_at' => $this->nullIfEmpty($row['locked_at'] ?? null),
             'locked_by' => isset($row['locked_by']) && (int) $row['locked_by'] > 0 ? (int) $row['locked_by'] : null,

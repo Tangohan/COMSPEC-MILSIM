@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\MysqlDdlSqlitePdo;
 
 /**
- * Étape 4760 « SSE Personnes » : colonnes de classification, verrouillage et clôture, table des ouvertures (unicité dans le
+ * Étape 4770 « SSE Personnes » : colonnes de classification, verrouillage et clôture, table des ouvertures (unicité dans le
  * CREATE TABLE), rejouable sans effet, enregistrée dans la file, retour arrière présent. Jouée sur une base sqlite, jamais sur la
  * production.
  */
@@ -28,7 +28,7 @@ final class SsePersonWorkStepTest extends TestCase
         $root = self::ROOT;
         ob_start();
         (static function () use ($pdo, $root): void {
-            require $root . '/database/steps/4760_sse_persons_work.php';
+            require $root . '/database/steps/4770_sse_persons_work.php';
         })();
 
         return (string) ob_get_clean();
@@ -82,8 +82,8 @@ final class SsePersonWorkStepTest extends TestCase
     {
         $registry = (string) file_get_contents(self::ROOT . '/database/steps/registry.php');
         self::assertStringContainsString("'id' => 'sse_persons_work'", $registry);
-        self::assertStringContainsString("'file' => '4760_sse_persons_work.php'", $registry);
-        self::assertSame(1, substr_count($registry, "'file' => '4760_"), 'Numéro de l’étape unique');
+        self::assertStringContainsString("'file' => '4770_sse_persons_work.php'", $registry);
+        self::assertSame(1, substr_count($registry, "'file' => '4770_"), 'Numéro de l’étape unique');
         $sql = (string) file_get_contents(self::ROOT . '/migrations/2026_11_17_111_sse_person_views.sql');
         self::assertStringContainsString('UNIQUE KEY uq_sse_person_views (tenant_id, user_id, person_id)', $sql);
         self::assertStringNotContainsString('ALTER TABLE sse_person_views', $sql, 'Pas d’ALTER … ADD UNIQUE KEY (sqlite)');

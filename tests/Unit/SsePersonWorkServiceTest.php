@@ -497,7 +497,7 @@ final class SsePersonWorkServiceTest extends TestCase
         self::assertFalse($this->service->batch($v, 'rien', [$a], [])['results'][0]['ok']);
     }
 
-    // ------------------------------------------------------------------ Droits, communauté, base sans l'étape 4760
+    // ------------------------------------------------------------------ Droits, communauté, base sans l'étape 4770
 
     public function testWritingNeedsTheRightAnAccountAndTheSameCommunity(): void
     {

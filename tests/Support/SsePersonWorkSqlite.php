@@ -9,7 +9,7 @@ use PDO;
 
 /**
  * Base sqlite en mémoire de la page Personnes : registre d'identité et avis de recherche (SseWantedSqlite), fiches personnes avec
- * les colonnes de l'étape 4760, photos, relevés biométriques, rattachements aux dossiers, réglages, journal d'audit et table des
+ * les colonnes de l'étape 4770, photos, relevés biométriques, rattachements aux dossiers, réglages, journal d'audit et table des
  * ouvertures (créée depuis le vrai fichier SQL de la migration).
  */
 final class SsePersonWorkSqlite
@@ -27,7 +27,7 @@ signed_terminal_uid TEXT, signed_atak_id TEXT, signed_at TEXT, signature_image T
 classification TEXT, locked_at TEXT, locked_by INTEGER, lock_reason TEXT, lock_until TEXT, closed_at TEXT, closed_by INTEGER, close_reason TEXT
 SQL;
 
-    /** @param bool $withWorkColumns false : la base d'avant l'étape 4760 (page en lecture seule) */
+    /** @param bool $withWorkColumns false : la base d'avant l'étape 4770 (page en lecture seule) */
     public static function open(bool $withWorkColumns = true, bool $withViews = true): PDO
     {
         $pdo = SseWantedSqlite::open();
