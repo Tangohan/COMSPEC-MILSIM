@@ -10,9 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SsePersonRepository;
 use App\Services\Sse\SseAccessCodeService;
-use App\Services\Sse\SseAccessPolicy;
 use App\Services\Sse\SsePersonRegistryLinkService;
-use App\Support\SseAccessCatalog;
 
 /**
  * Fiche personne : crée l'identité du registre d'une personne qui n'en a pas encore, pour pouvoir y poser un avis de
@@ -21,6 +19,8 @@ use App\Support\SseAccessCatalog;
  */
 final class SsePersonRegistryController
 {
+    public const TOKEN_EXPIRED = 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la fiche puis recommencez.';
+
     public function __construct(
         private ?SseAccessCodeService $access = null,
         private ?SsePersonRepository $persons = null,
@@ -37,24 +37,33 @@ final class SsePersonRegistryController
         $back = url('atak/sse/identites/' . $personId) . '?fiche=personne';
         $tenantId = $this->access->tenantId();
         $tenantId = $tenantId > 0 ? $tenantId : (int) Session::get('tenant_id');
-        $token = $request->input('_csrf_token');
-        $guest = $this->access->isGuest();
-        if (!is_string($token) || $token === '' || !Csrf::validate($token)
-            || !SseAccessPolicy::sessionAllows('papiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => $guest, 'tenant_id' => $tenantId])) {
-            Session::flash('error', 'Action non autorisée.');
+        // Chaque refus dit sa raison : jeton périmé, droit manquant (lequel), personne introuvable, déjà rattachée, fiche sans nom.
+        if (!Csrf::verify($request)) {
+            Session::flash('error', self::TOKEN_EXPIRED);
+
+            return Response::redirect($back);
+        }
+        $denial = $this->links->createDenial($tenantId, $this->access->isGuest());
+        if ($denial !== null) {
+            Session::flash('error', $denial);
 
             return Response::redirect($back);
         }
         $person = $this->persons->findById($personId, $tenantId);
         if ($person === null) {
-            Session::flash('error', 'Identité introuvable.');
+            Session::flash('error', 'Cette personne est introuvable dans votre communauté.');
 
             return Response::redirect(url('atak/sse/identites'));
+        }
+        if ($this->links->hasAny($tenantId, $personId)) {
+            Session::flash('error', 'Une identité du registre est déjà rattachée à cette personne.');
+
+            return Response::redirect(url('atak/sse/identites/' . $personId));
         }
         $userId = (int) Session::get('user_id');
         $id = $this->links->createFor($tenantId, $person, $userId > 0 ? $userId : null);
         if ($id === null) {
-            Session::flash('error', 'Une identité du registre est déjà rattachée à cette personne, ou la fiche n’a ni nom ni prénom.');
+            Session::flash('error', 'La fiche n’a ni nom ni prénom : renseignez-en un avant de créer l’identité du registre.');
 
             return Response::redirect($back);
         }

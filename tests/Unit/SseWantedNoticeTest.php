@@ -267,6 +267,7 @@ final class SseWantedNoticeTest extends TestCase
         $denied = $controller->place(new Request(), ['id' => $id]);
         self::assertSame(302, $denied->statusCode());
         self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_wanted_notices')->fetchColumn());
+        self::assertSame(SseWantedNoticeController::TOKEN_EXPIRED, \App\Core\Session::getFlash('error'), 'Un jeton absent n’est pas un droit manquant');
 
         $_POST['_csrf_token'] = 'jeton';
         $ok = $controller->place(new Request(), ['id' => $id]);
@@ -286,6 +287,7 @@ final class SseWantedNoticeTest extends TestCase
         $_POST['reason'] = 'Identité confondue.';
         $reader = new SseWantedNoticeController(null, null, null, null, null, null, null, new SseWantedAccess(false, false, false, false, 1, 7));
         $reader->lift(new Request(), ['id' => $noticeId]);
+        self::assertSame(SseWantedNoticeController::NEED_MANAGE, \App\Core\Session::getFlash('error'), 'Sans le droit : le message nomme le droit');
         self::assertSame('active', (string) $this->pdo->query('SELECT status FROM sse_wanted_notices')->fetchColumn());
         $controller->lift(new Request(), ['id' => $noticeId]);
         self::assertSame('lifted', (string) $this->pdo->query('SELECT status FROM sse_wanted_notices')->fetchColumn());
@@ -294,6 +296,7 @@ final class SseWantedNoticeTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $pdf = $reader->pdf(new Request(), ['id' => $noticeId]);
         self::assertSame(302, $pdf->statusCode());
+        self::assertSame(SseWantedNoticeController::NEED_MANAGE, \App\Core\Session::getFlash('error'));
         self::assertSame(302, $reader->settings(new Request())->statusCode());
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['authority_fr' => 'Bureau fictif', 'authority_en' => 'Fictional bureau', 'ref_format' => 'A-{N}', '_csrf_token' => 'mauvais'];

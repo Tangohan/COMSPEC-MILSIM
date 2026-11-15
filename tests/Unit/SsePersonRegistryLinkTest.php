@@ -231,6 +231,98 @@ final class SsePersonRegistryLinkTest extends TestCase
         self::assertFalse($limited['canPdf']);
     }
 
+    private function flash(): string
+    {
+        return (string) \App\Core\Session::getFlash('error', '');
+    }
+
+    private function identityCount(): int
+    {
+        return (int) $this->pdo->query('SELECT COUNT(*) FROM sse_identities')->fetchColumn();
+    }
+
+    public function testEachRefusalOfTheCreateActionSaysItsOwnReason(): void
+    {
+        $personId = $this->person();
+        $nameless = $this->person(1, '', '');
+        $other = $this->person(2, 'Autre', 'Personne');
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $controller = new SsePersonRegistryController();
+
+        // Jeton périmé : plus un « Action non autorisée. » unique, mais la page à recharger.
+        $_POST = ['_csrf_token' => 'perime'];
+        $controller->create(new Request(), ['id' => $personId]);
+        self::assertSame(SsePersonRegistryController::TOKEN_EXPIRED, $this->flash());
+        self::assertSame(0, $this->identityCount());
+
+        // Droit manquant : la gestion des fichiers ouvre « Placer un avis » mais pas l'écriture dans « papiers » ; le message nomme le droit.
+        $_POST = ['_csrf_token' => 'jeton'];
+        Gate::getInstance()->setPermissions(['atak.sse.files.admin', 'atak.sse.clearance.confidentiel']);
+        $controller->create(new Request(), ['id' => $personId]);
+        self::assertSame(SsePersonRegistryLinkService::DENY_RIGHT, $this->flash());
+        self::assertStringContainsString('Papiers et couvertures', SsePersonRegistryLinkService::DENY_RIGHT);
+        self::assertSame(0, $this->identityCount());
+
+        // Session invitée.
+        Gate::getInstance()->setPermissions(['admin.access']);
+        $_SESSION['sse_guest'] = true;
+        $controller->create(new Request(), ['id' => $personId]);
+        self::assertSame(SsePersonRegistryLinkService::DENY_GUEST, $this->flash());
+        $_SESSION['sse_guest'] = false;
+
+        // Personne d'une autre communauté, fiche sans nom, puis création et rejeu.
+        $controller->create(new Request(), ['id' => $other]);
+        self::assertStringContainsString('introuvable', $this->flash());
+        $controller->create(new Request(), ['id' => $nameless]);
+        self::assertStringContainsString('ni nom ni prénom', $this->flash());
+        self::assertSame(0, $this->identityCount());
+
+        // Jeton envoyé par l'en-tête (appel JS) : accepté comme un champ de formulaire.
+        $_POST = [];
+        $_SERVER['HTTP_X_CSRF_TOKEN'] = 'jeton';
+        $created = $controller->create(new Request(), ['id' => $personId]);
+        self::assertStringContainsString('papiers/identites/', (string) $created->headerValue('Location'));
+        self::assertSame(1, $this->identityCount());
+        unset($_SERVER['HTTP_X_CSRF_TOKEN']);
+        $_POST = ['_csrf_token' => 'jeton'];
+        $controller->create(new Request(), ['id' => $personId]);
+        self::assertStringContainsString('déjà rattachée', $this->flash());
+        self::assertSame(1, $this->identityCount());
+    }
+
+    public function testTheCreateButtonAndTheCreateActionShareOneGuard(): void
+    {
+        $personId = $this->person();
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['_csrf_token' => 'jeton'];
+        $person = (new SsePersonRepository())->findById($personId, 1);
+        self::assertNotNull($person);
+        $access = new SseWantedAccess(false, true, true, true, 1, 7, 'ANALYSTE');
+        $links = new SsePersonRegistryLinkService();
+
+        foreach ([
+            [['atak.sse.case.manage'], true],
+            [['atak.sse.grant'], true],
+            [['admin.access'], true],
+            [['atak.sse.files.admin'], false],
+            [['atak.sse.view'], false],
+            [['atak.sse.access', 'atak.sse.clearance.confidentiel'], false],
+        ] as [$permissions, $allowed]) {
+            Gate::getInstance()->setPermissions($permissions);
+            $page = $links->pageData(1, $person, $access, false);
+            self::assertSame($allowed, $page['canCreate'], implode(',', $permissions) . ' : bouton');
+            self::assertSame($allowed ? null : SsePersonRegistryLinkService::DENY_RIGHT, $page['createDenial']);
+            $html = self::renderBlock($page, $person);
+            self::assertSame($allowed, str_contains($html, 'Créer l’identité du registre</button>'));
+            self::assertSame(!$allowed, str_contains($html, 'Droit manquant'), 'Sans le bouton, la fiche dit quel droit manque');
+
+            (new SsePersonRegistryController())->create(new Request(), ['id' => $personId]);
+            self::assertSame($allowed ? 1 : 0, $this->identityCount(), implode(',', $permissions) . ' : action = bouton');
+            $this->pdo->exec('DELETE FROM sse_identities');
+            \App\Core\Session::getFlash('error');
+        }
+    }
+
     public function testNewViewsImportTheirClassesAndCarryTheirTranslations(): void
     {
         $root = dirname(__DIR__, 2);
