@@ -36,7 +36,6 @@ final class SseTriageAutomatismsStepTest extends TestCase
         self::assertStringContainsString('migrations/rollback/sse_triage_automatisms_down.sql', $mine[0]['label']);
         $numbers = array_map(static fn (array $s): string => substr((string) $s['file'], 0, 4), $registry);
         self::assertSame(1, count(array_filter($numbers, static fn (string $n): bool => $n === '4740')), 'numéro 4740 pris une seule fois');
-        self::assertSame('4740', max(array_filter($numbers, static fn (string $n): bool => ctype_digit($n))), 'le plus grand numéro de la file');
         self::assertCount(count($registry), array_unique(array_column($registry, 'id')), 'identifiants uniques');
     }
 

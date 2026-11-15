@@ -98,7 +98,10 @@
 .tr input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--tr-accent); }
 
 /* Liste et groupes */
-.tr-listbox { border: 1px solid var(--tr-line); border-radius: .8rem; background: var(--tr-panel); overflow: hidden; }
+.tr-listbox { border: 1px solid var(--tr-line); border-radius: .8rem; background: var(--tr-panel); }
+.tr-listbox > :first-child { border-radius: .8rem .8rem 0 0; }
+.tr-listbox > :last-child { border-radius: 0 0 .8rem .8rem; }
+.tr-listbox > :only-child { border-radius: .8rem; }
 .tr-group + .tr-group, .tr-group + .tr-list, .tr-list + .tr-group { border-top: 1px solid var(--tr-line); }
 .tr-group__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px 6px; padding: 4px 12px 4px 4px; }
 .tr-group:not(:has([data-tr-select-group])) .tr-group__head { grid-template-columns: minmax(0, 1fr) auto; padding-left: 12px; }
@@ -205,11 +208,14 @@
 .tr-menu summary { border: 1px solid var(--tr-line2); background: var(--tr-panel2); padding: 0 14px; font: 600 14px var(--sans, system-ui, sans-serif); }
 .tr-menu[open] summary, .tr-why[open] summary { border-color: var(--tr-accent); }
 .tr-pop {
-    position: absolute;
-    z-index: 30;
-    right: 0;
-    top: calc(100% + 4px);
-    width: min(320px, 82vw);
+    /* Fixe : jamais coupé par la liste ni par un panneau ; la position est calculée par sse-triage.js (retournement vers le haut près du bas). */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 80;
+    width: min(320px, calc(100vw - 16px));
+    max-height: calc(100vh - 16px);
+    overflow: auto;
     padding: 12px;
     border: 1px solid var(--tr-line2);
     border-radius: .7rem;
@@ -218,12 +224,12 @@
     font-size: 13px;
     line-height: 1.45;
 }
+.tr-pop:not([data-placed]) { visibility: hidden; }
 .tr-pop ul { margin: 8px 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 .tr-pop li { display: flex; justify-content: space-between; gap: 12px; }
 .tr-pop p { margin: 6px 0 0; color: var(--tr-dim); }
-.tr-pop--menu { display: grid; gap: 6px; width: min(260px, 82vw); }
+.tr-pop--menu { display: grid; gap: 6px; width: min(260px, calc(100vw - 16px)); }
 .tr-pop--menu .tr-btn { justify-content: flex-start; width: 100%; }
-.tr-menu--up .tr-pop { top: auto; bottom: calc(100% + 4px); }
 
 /* Barre d'actions groupées */
 .tr-bulk {
