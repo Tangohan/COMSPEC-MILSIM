@@ -62,7 +62,7 @@ Une ligne = un lien : `source_type`, `source_id`, `target_type`, `target_id`, `r
 `tenant_id`. Unicité sur le couple d'éléments et la communauté (dans la définition de la table, compatible sqlite), index sur les
 deux extrémités. Écrite par `SseProvenance` (jamais bloquante) aux endroits listés ci-dessus et par le widget.
 
-**Migration** : étape 4710 `sse_entity_links` (`database/steps/4710_sse_entity_links.php`, SQL dans
+**Migration** : étape 4720 `sse_entity_links` (`database/steps/4720_sse_entity_links.php`, SQL dans
 `migrations/2026_11_16_110_sse_entity_links.sql`, retour arrière `migrations/rollback/sse_entity_links_down.sql`). Aucune donnée
 ajoutée. Sans elle, le widget est en **mode dégradé** : liens déduits des colonnes existantes (badge « Déduit », motif non
 enregistré), message clair, ajout de lien désactivé.

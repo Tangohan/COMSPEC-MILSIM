@@ -87,11 +87,25 @@ $availabilityOf = static function (array $row): array {
     return is_array($pack) ? $pack : [];
 };
 
-$renderAvailability = static function (array $pack): void {
+// Présence sur le serveur : sessions d'au moins le seuil de la communauté sur 30 jours (absent sans suivi des sessions).
+$renderServerSessions = static function (array $pack): void {
+    $srv = is_array($pack['server'] ?? null) ? $pack['server'] : null;
+    if ($srv === null || empty($srv['linked'])) {
+        return;
+    }
+    $min = max(1, (int) ($srv['min_minutes'] ?? 60));
+    $title = str_replace(['%1', '%2'], [(string) $min, (string) (int) ($srv['short'] ?? 0)], 'Sessions de jeu sur le serveur de la communauté de %1 minutes ou plus, sur 30 jours. Les connexions plus courtes (%2) ne comptent pas.');
+    $label = str_replace(['%1', '%2'], [(string) (int) ($srv['sessions'] ?? 0), \App\Services\Personnel\PlayerSessionService::thresholdLabel($min)], '%1 session(s) %2 · 30 j');
+    echo '<span class="dash-eff-avail__srv' . (!empty($srv['active']) ? ' is-on' : '') . '" title="' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
+};
+
+$renderAvailability = static function (array $pack) use ($renderServerSessions): void {
     $hint = trim((string) ($pack['hint'] ?? 'Aucune activité sur les 90 derniers jours'));
     $pct = $pack['availability_pct'] ?? null;
     if (empty($pack['sample']) || $pct === null) {
         echo '<span class="das-muted" title="' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '">—</span>';
+        $renderServerSessions($pack);
 
         return;
     }
@@ -107,6 +121,7 @@ $renderAvailability = static function (array $pack): void {
     echo '<span class="dash-eff-avail__track" aria-hidden="true"><span class="dash-eff-avail__fill"></span></span>';
     echo '<span class="dash-eff-avail__pct">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
     echo '</span>';
+    $renderServerSessions($pack);
 };
 
 $rowCount = count($rows);
@@ -773,6 +788,17 @@ $rowCount = count($rows);
     width: var(--avail-pct);
     border-radius: inherit;
     background: hsl(var(--avail-hue), 72%, 42%);
+}
+.dash-eff-avail__srv {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    color: #64748b;
+}
+.dash-eff-avail__srv.is-on {
+    color: #047857;
+    font-weight: 600;
 }
 .dash-eff-avail__pct {
     font-variant-numeric: tabular-nums;

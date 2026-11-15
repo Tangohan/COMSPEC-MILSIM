@@ -274,7 +274,10 @@ class EffectifsWorkspaceController
 
         $languageCommunity = $this->communitySettingsFor($tenantId);
         $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
-        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $jobTagFilter > 0 || $unitFilter > 0 || $gradeCategoryFilter !== '';
+        // Filtre « Actif : sessions de plus d'1 h » : au moins une session qui compte sur 30 jours (ou aucune).
+        $sessionsRaw = $request->query('sessions', '');
+        $sessionsFilter = is_string($sessionsRaw) && in_array($sessionsRaw, ['actif', 'inactif'], true) ? $sessionsRaw : '';
+        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $jobTagFilter > 0 || $unitFilter > 0 || $gradeCategoryFilter !== '' || $sessionsFilter !== '';
         if ($needsFullLoad) {
             $fetchLimit = min(2000, max($total, 1));
             $baseUsers = $this->userRepository->listForTenant(
@@ -293,8 +296,13 @@ class EffectifsWorkspaceController
                 $allRows = $this->applyRosterExtraFilters($tenantId, $allRows, $languageFilter, $jobFilter, $jobTagFilter, $unitFilter, $gradeCategoryFilter);
                 $total = count($allRows);
             }
-            if (in_array($sort, ['heures_vol', 'temps_mission'], true)) {
+            if (in_array($sort, ['heures_vol', 'temps_mission'], true) || $sessionsFilter !== '') {
                 $allRows = $this->attachRosterFieldData($tenantId, $allRows, false);
+            }
+            if ($sessionsFilter !== '') {
+                $wantActive = $sessionsFilter === 'actif';
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => !empty($r['server_sessions']['active']) === $wantActive));
+                $total = count($allRows);
             }
             $allRows = $this->sortRosterRows($allRows, $sort);
             $offset = ($page - 1) * $perPage;
@@ -369,10 +377,12 @@ class EffectifsWorkspaceController
                 'sans_role' => $onlyNoRole,
                 'tri' => $sort,
                 'langue' => $languageFilter,
+                'sessions' => $sessionsFilter,
                 'vue' => $rosterView,
                 'fonction' => $jobFilter,
                 'etiquette_fonction' => $jobTagFilter,
             ],
+            'rosterSessionRules' => \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId),
             'rosterJobTags' => (new JobRoleEnrichmentService())->tags($tenantId),
             'rosterView' => $rosterView,
             'canExportPdf' => self::pdfExportsAllowed($tenantId),
@@ -1688,6 +1698,26 @@ class EffectifsWorkspaceController
             'departure_reasons' => ['end_of_engagement' => 'Fin d’engagement', 'exclusion' => 'Exclusion', 'pause' => 'Pause', 'other' => 'Autre'],
         ]);
 
+        // Onglet Disponibilité : sessions de jeu qui comptent (seuil de la communauté), lues en une requête.
+        $memberAvailability = null;
+        try {
+            $sessionRepo = \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class);
+            $sessionRules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+            $memberAvailability = $sessionRepo->panelForUser(
+                $tenantId,
+                $id,
+                $sessionRules['min_minutes'] * 60,
+                $sessionRules['gap_minutes'] * 60,
+                time(),
+                $sessionRepo->tenantTimezone($tenantId)
+            );
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: disponibilité failed: ' . $e->getMessage());
+        }
+        $availabilitySettingsUrl = \App\Support\BackOfficeRightGuard::allows(\App\Support\BackOfficeRightGuard::MANAGERS)
+            ? url('back-office/roleplay/sessions') . '#regles'
+            : '';
+
         $memberPapers = MemberIdentityPapersController::sectionFor($tenantId, $user);
         $ficheTabs = MemberFicheTabs::visible(['papers' => is_array($memberPapers)]);
         $ficheTab = MemberFicheTabs::resolve((string) $request->queryString('onglet', ''), $ficheTabs);
@@ -1698,6 +1728,8 @@ class EffectifsWorkspaceController
             'memberIdentity' => $this->rosterIdentities($tenantId, [$id])[$id] ?? [],
             'ficheTabs' => $ficheTabs,
             'ficheTab' => $ficheTab,
+            'memberAvailability' => $memberAvailability,
+            'availabilitySettingsUrl' => $availabilitySettingsUrl,
             'memberChronology' => $chronology,
             'dataReliability' => $dataReliability,
             'chronologyType' => $chronologyType,
@@ -5739,8 +5771,22 @@ class EffectifsWorkspaceController
                 $medical = [];
             }
         }
+        // Sessions de jeu qui comptent (seuil de la communauté) : une lecture pour toute la page, rien sans la table.
+        $serverSessions = [];
+        try {
+            $sessionRepo = \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class);
+            if ($sessionRepo->schemaReady()) {
+                $rules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+                $serverSessions = $sessionRepo->summariesForUsers($tenantId, $ids, $rules['min_minutes'] * 60, $rules['gap_minutes'] * 60, time(), $sessionRepo->tenantTimezone($tenantId));
+            }
+        } catch (\Throwable) {
+            $serverSessions = [];
+        }
         foreach ($rows as &$row) {
             $uid = (int) ($row['id'] ?? 0);
+            if (isset($serverSessions[$uid])) {
+                $row['server_sessions'] = \App\Services\Personnel\PlayerSessionService::rosterCell($serverSessions[$uid]);
+            }
             $sum = is_array($playtime[$uid] ?? null) ? $playtime[$uid] : [];
             $secs = (int) ($sum['total_seconds'] ?? 0);
             $row['arma_playtime_seconds'] = $secs;

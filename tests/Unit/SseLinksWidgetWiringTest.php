@@ -185,12 +185,12 @@ final class SseLinksWidgetWiringTest extends TestCase
         self::assertStringNotContainsString('INSERT', $sql, 'aucune donnée ajoutée');
         self::assertStringContainsString('DROP TABLE IF EXISTS sse_entity_links;', self::read('migrations/rollback/sse_entity_links_down.sql'));
         $registry = self::read('database/steps/registry.php');
-        self::assertMatchesRegularExpression("/\\['id' => 'sse_entity_links', 'label' => '[^']+', 'group' => 'schema', 'file' => '4710_sse_entity_links\\.php', 'rerun' => true\\],/", $registry);
-        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4710_sse_entity_links.php');
-        // Le numéro est libre : une seule étape 4710.
+        self::assertMatchesRegularExpression("/\\['id' => 'sse_entity_links', 'label' => '[^']+', 'group' => 'schema', 'file' => '4720_sse_entity_links\\.php', 'rerun' => true\\],/", $registry);
+        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4720_sse_entity_links.php');
+        // Le numéro est libre : une seule étape 4720.
         $files = array_map('basename', glob(dirname(__DIR__, 2) . '/database/steps/47*_*.php') ?: []);
-        self::assertSame(1, count(array_filter($files, static fn (string $f): bool => str_starts_with($f, '4710_'))));
-        $step = self::read('database/steps/4710_sse_entity_links.php');
+        self::assertSame(1, count(array_filter($files, static fn (string $f): bool => str_starts_with($f, '4720_'))));
+        $step = self::read('database/steps/4720_sse_entity_links.php');
         self::assertStringContainsString('CREATE TABLE IF NOT EXISTS', $sql);
         self::assertStringContainsString('runSqlFile', $step);
         self::assertStringNotContainsString('INSERT', $step);

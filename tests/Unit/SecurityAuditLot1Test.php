@@ -26,7 +26,7 @@ final class SecurityAuditLot1Test extends TestCase
         self::assertStringContainsString('if (!$this->mayReadIntelligence()) {', $s);
         self::assertStringContainsString('$open ? count($this->fieldNotes->listForTenant', $s);
         self::assertStringContainsString('$open ? count($this->sseCases->listForTenant', $s);
-        self::assertStringContainsString('$open ? count($this->interestCases->listForTenant', $s);
+        self::assertStringContainsString('$open ? count($this->interestCases->listForSession', $s);
         self::assertStringContainsString('$intelOpen ? $this->intelEvents->listForTenant', $s);
         self::assertStringContainsString('$intelOpen ? $this->fieldNotes->listForTenant', $s);
         // Un échec de vérification ferme la porte.

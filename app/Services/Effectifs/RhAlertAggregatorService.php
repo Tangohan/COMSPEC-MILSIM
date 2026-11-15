@@ -175,12 +175,36 @@ final class RhAlertAggregatorService
         }
     }
 
+    /**
+     * Un membre qui a joué une session qui compte (au moins le seuil de la communauté, 60 minutes par défaut) sur la
+     * période n'est pas inactif, même sans connexion au site ; une connexion de quelques minutes ne change rien.
+     * Sans la table des sessions : aucun filtre, le calcul d'avant s'applique.
+     *
+     * @return array{0: string, 1: list<int|string>}
+     */
+    private function sessionActivityExclusion(int $tenantId, int $days): array
+    {
+        try {
+            $repo = new \App\Repositories\PlayerSessionRepository($this->pdo);
+            if (!$repo->schemaReady()) {
+                return ['', []];
+            }
+            $rules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+            [$exists, $params] = \App\Repositories\PlayerSessionRepository::qualifyingExistsClause('u', time() - $days * 86400, $rules['min_minutes'] * 60);
+
+            return [' AND NOT ' . $exists, $params];
+        } catch (\Throwable) {
+            return ['', []];
+        }
+    }
+
     public function countInactiveMembers(int $tenantId, int $days): int
     {
         if ($tenantId < 1) {
             return 0;
         }
         $days = max(7, min(365, $days));
+        [$sessionSql, $sessionParams] = $this->sessionActivityExclusion($tenantId, $days);
         try {
             $st = $this->pdo->prepare(
                 "SELECT COUNT(*) FROM users u
@@ -190,9 +214,9 @@ final class RhAlertAggregatorService
                    AND (
                      u.last_login_at IS NULL
                      OR u.last_login_at < DATE_SUB(NOW(), INTERVAL {$days} DAY)
-                   )"
+                   ){$sessionSql}"
             );
-            $st->execute([$tenantId]);
+            $st->execute(array_merge([$tenantId], $sessionParams));
 
             return (int) $st->fetchColumn();
         } catch (\Throwable) {
@@ -210,6 +234,7 @@ final class RhAlertAggregatorService
         }
         $days = max(7, min(365, $days));
         $limit = max(1, min(100, $limit));
+        [$sessionSql, $sessionParams] = $this->sessionActivityExclusion($tenantId, $days);
         try {
             $st = $this->pdo->prepare(
                 "SELECT u.id, u.display_name, u.callsign, u.last_login_at
@@ -220,11 +245,11 @@ final class RhAlertAggregatorService
                    AND (
                      u.last_login_at IS NULL
                      OR u.last_login_at < DATE_SUB(NOW(), INTERVAL {$days} DAY)
-                   )
+                   ){$sessionSql}
                  ORDER BY u.last_login_at IS NULL DESC, u.last_login_at ASC
                  LIMIT {$limit}"
             );
-            $st->execute([$tenantId]);
+            $st->execute(array_merge([$tenantId], $sessionParams));
 
             return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable) {

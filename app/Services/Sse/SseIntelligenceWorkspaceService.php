@@ -679,7 +679,7 @@ final class SseIntelligenceWorkspaceService
     {
         $items = [];
 
-        foreach ($this->interest->listForTenant($tenantId, []) as $row) {
+        foreach ($this->interest->listForSession($tenantId) as $row) {
             $st = (string) ($row['status'] ?? '');
             if (!in_array($st, ['ouvert', 'en_analyse', 'en_collecte', 'en_correlation', ''], true)
                 && !str_contains($st, 'attente')

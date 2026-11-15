@@ -16,7 +16,7 @@ declare(strict_types=1);
  *   php tools/sse-backfill-links.php --apply --max-batches=20 --resume=7:3:1520
  *                                                          s'arrête après 20 lots et affiche le curseur ; --resume repart de là
  *
- * Prérequis : l'étape de migration « sse_entity_links » (database/steps/4710_sse_entity_links.php) doit avoir été passée.
+ * Prérequis : l'étape de migration « sse_entity_links » (database/steps/4720_sse_entity_links.php) doit avoir été passée.
  * Code de retour : 0 sans erreur, 1 si un lot a échoué (il est annulé, les autres sont gardés), 2 si l'appel est invalide.
  */
 
