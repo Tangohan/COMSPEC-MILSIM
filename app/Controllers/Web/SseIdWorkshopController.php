@@ -443,6 +443,11 @@ final class SseIdWorkshopController
         }
         $to = SseIdentityCatalog::pick(SseIdentityCatalog::WORKFLOWS, $request->inputString('to'), '');
         $reason = trim($request->inputString('reason'));
+        if ($to !== 'revoked' && \App\Services\Sse\SseIdentityHolderService::isObservedOnly($doc['identity'] ?? [])) {
+            Session::flash('error', \App\Services\Sse\SseIdentityHolderService::NO_ISSUE);
+
+            return Response::redirect($back);
+        }
         if ($to === 'revoked' && $reason === '') {
             Session::flash('error', 'Indiquez le motif de la révocation.');
 
@@ -476,6 +481,11 @@ final class SseIdWorkshopController
         $doc = $this->documents->find($id, $tenantId);
         if ($doc === null || (!$r['truth'] && \App\Services\Sse\MemberIdentityPapersService::docIsSecret($doc))) {
             return $this->denied(url(self::BASE . '/atelier'));
+        }
+        if (\App\Services\Sse\SseIdentityHolderService::isObservedOnly($doc['identity'] ?? [])) {
+            Session::flash('error', \App\Services\Sse\SseIdentityHolderService::NO_ISSUE);
+
+            return Response::redirect($back);
         }
         $newId = (new SseIdWorkshopService($this->identities, $this->documents, $this->countries))->duplicate($tenantId, $doc, $this->userId());
         if ($newId === null) {
