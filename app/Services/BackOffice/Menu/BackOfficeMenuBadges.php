@@ -187,6 +187,29 @@ final class BackOfficeMenuBadges
         return $out;
     }
 
+    /**
+     * Texte d'explication de la tâche liée à cette pastille (clé « task » de la config), tel que déclaré : tableau
+     * vide si la pastille n'en a pas, auquel cas le tableau de bord garde l'affichage simple.
+     *
+     * @return array<string, mixed>
+     */
+    public function taskConfig(string $key): array
+    {
+        $badges = is_array($this->config['badges'] ?? null) ? $this->config['badges'] : [];
+        $def = $badges[$key] ?? null;
+        $task = is_array($def) ? ($def['task'] ?? null) : null;
+
+        return is_array($task) ? $task : [];
+    }
+
+    /** Fournisseur de la pastille $key (null si elle n'est pas déclarée ou si sa classe n'existe pas). */
+    public function providerFor(string $key): ?BadgeProvider
+    {
+        $def = $this->declared()[$key] ?? null;
+
+        return $def === null ? null : $this->provider($def['provider']);
+    }
+
     private function provider(string $class): ?BadgeProvider
     {
         if (!isset($this->providers[$class])) {
