@@ -368,6 +368,9 @@ final class SseIdentityRepository
             'photo_path' => ($row['photo_path'] ?? null) !== null && $row['photo_path'] !== '' ? (string) $row['photo_path'] : null,
             'signature_path' => ($row['signature_path'] ?? null) !== null && $row['signature_path'] !== '' ? (string) $row['signature_path'] : null,
             'bio_key' => ($row['bio_key'] ?? null) !== null && $row['bio_key'] !== '' ? (string) $row['bio_key'] : null,
+            // Étape 4690 : « nom volontairement différent » (jamais aligné sur l'état civil) et dernier alignement.
+            'name_override' => (int) ($row['name_override'] ?? 0) === 1,
+            'civil_synced_at' => ($row['civil_synced_at'] ?? null) !== null && $row['civil_synced_at'] !== '' ? (string) $row['civil_synced_at'] : null,
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => ($row['updated_at'] ?? null) !== null ? (string) $row['updated_at'] : null,
         ];

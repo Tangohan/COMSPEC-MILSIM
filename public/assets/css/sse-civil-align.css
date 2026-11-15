@@ -1,0 +1,140 @@
+/* « Aligner sur l'état civil » : bouton, fenêtre de confirmation et carte d'identité officielle.
+   Styles isolés (préfixe civil-align) : le design system du portail SSE pourra les remplacer sans toucher au reste. */
+.civil-align {
+    --ca-bg: #0f1419;
+    --ca-fg: #e6edf3;
+    --ca-muted: #9aa7b4;
+    --ca-line: rgba(148, 163, 184, 0.28);
+    --ca-accent: #34d399;
+    padding: 0;
+    border: 1px solid var(--ca-line);
+    border-radius: 6px;
+    background: var(--ca-bg);
+    color: var(--ca-fg);
+    width: min(36rem, calc(100vw - 2rem));
+    max-width: 100%;
+}
+.civil-align::backdrop {
+    background: rgba(2, 6, 10, 0.72);
+}
+.civil-align__card {
+    display: flex;
+    flex-direction: column;
+    max-height: min(86vh, 40rem);
+    margin: 0;
+}
+.civil-align__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--ca-line);
+}
+.civil-align__head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+.civil-align__close {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+}
+.civil-align__body {
+    padding: 14px 16px;
+    overflow: auto;
+}
+.civil-align__body p {
+    margin: 0 0 10px;
+}
+.civil-align__note {
+    color: var(--ca-muted);
+    font-size: 0.9em;
+}
+.civil-align__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 12px;
+}
+.civil-align__table th,
+.civil-align__table td {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--ca-line);
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+.civil-align__table thead th {
+    color: var(--ca-muted);
+    font-weight: 600;
+    font-size: 0.85em;
+}
+.civil-align__table td:last-child {
+    color: var(--ca-accent);
+}
+.civil-align__docs {
+    margin: 0 0 10px;
+    padding-left: 1.1rem;
+}
+.civil-align__foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--ca-line);
+}
+.civil-align__confirm[disabled] {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+/* Carte « Identité officielle et état civil » de la fiche papiers du membre. */
+.civil-card__state {
+    margin: 0 0 8px;
+    font-weight: 600;
+}
+.civil-card__state.is-warn {
+    color: #f59e0b;
+}
+.civil-card__state.is-ok {
+    color: #34d399;
+}
+.civil-card__cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 10px 16px;
+    margin: 0 0 10px;
+}
+.civil-card__cols dt {
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+.civil-card__cols dd {
+    margin: 0 0 6px;
+}
+.civil-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin: 8px 0 0;
+}
+.civil-card__hint {
+    margin: 6px 0 0;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+/* Titulaire d'un papier dans le registre : membre, écart signalé et actions sur une ligne qui passe à la ligne. */
+.civil-holder {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+    margin-top: 4px;
+}
