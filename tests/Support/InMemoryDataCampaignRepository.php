@@ -36,6 +36,18 @@ final class InMemoryDataCampaignRepository extends DataCampaignRepository
     /** @var array<int, string> état des demandes de correction liées (id => statut) */
     public array $requestStatus = [];
 
+    /** @var list<int> communautés réelles du serveur */
+    public array $tenantIds = [7];
+
+    /** @var list<int> membres connectés récemment (null : tous) */
+    public ?array $recentUsers = null;
+
+    /** @var list<int> membres sans prénom ou sans nom */
+    public array $withoutName = [];
+
+    /** @var int nombre d'écritures (création, ouverture, rappels, notifications) : une simulation ne doit rien écrire */
+    public int $writes = 0;
+
     public string $nowSql = '2026-12-01 10:00:00';
 
     private int $seq = 0;
@@ -59,30 +71,18 @@ final class InMemoryDataCampaignRepository extends DataCampaignRepository
     {
         $this->settingsByTenant[$tenantId] = [
             'auto_enabled' => $s['auto_enabled'] ? 1 : 0,
+            'emails_enabled' => $s['emails_enabled'] ? 1 : 0,
             'open_md' => $s['open_md'],
             'close_md' => $s['close_md'],
             'blocks_json' => json_encode($s['blocks']),
             'unit_ids_json' => json_encode($s['unit_ids']),
             'reminder_days_json' => json_encode($s['reminder_days']),
-            'last_auto_year' => $this->settingsByTenant[$tenantId]['last_auto_year'] ?? 0,
         ];
-    }
-
-    public function markAutoYear(int $tenantId, int $year): void
-    {
-        $this->settingsByTenant[$tenantId]['last_auto_year'] = $year;
     }
 
     public function tenantsWithAutoEnabled(): array
     {
-        $out = [];
-        foreach ($this->settingsByTenant as $tenantId => $row) {
-            if (!empty($row['auto_enabled'])) {
-                $out[] = $tenantId;
-            }
-        }
-
-        return $out;
+        return array_values(array_filter($this->tenantIds, fn (int $t): bool => !isset($this->settingsByTenant[$t]) || !empty($this->settingsByTenant[$t]['auto_enabled'])));
     }
 
     public function tenantsWithOpenCampaign(): array
@@ -99,6 +99,14 @@ final class InMemoryDataCampaignRepository extends DataCampaignRepository
 
     public function createCampaign(int $tenantId, array $c, int $userId): int
     {
+        if ($c['auto']) {
+            foreach ($this->campaigns as $existing) {
+                if ((int) $existing['tenant_id'] === $tenantId && (int) $existing['auto_year'] === $c['year']) {
+                    return 0;
+                }
+            }
+        }
+        $this->writes++;
         $id = ++$this->seq;
         $this->campaigns[$id] = self::hydrateCampaign([
             'id' => $id,
@@ -112,6 +120,8 @@ final class InMemoryDataCampaignRepository extends DataCampaignRepository
             'opens_on' => $c['opens_on'],
             'due_on' => $c['due_on'],
             'auto_created' => $c['auto'] ? 1 : 0,
+            'auto_year' => $c['auto'] ? $c['year'] : null,
+            'forced_on' => $c['forced_on'] ?? null,
             'created_by' => $userId,
         ]);
 
@@ -142,10 +152,31 @@ final class InMemoryDataCampaignRepository extends DataCampaignRepository
         return array_values(array_filter($this->campaigns, static fn (array $c): bool => (int) $c['tenant_id'] === $tenantId && $c['status'] === self::STATUS_OPEN));
     }
 
-    public function autoCampaignForYear(int $tenantId, int $year): ?array
+    public function updateCampaign(int $id, int $tenantId, string $title, string $dueOn): bool
+    {
+        if (!isset($this->campaigns[$id]) || $this->campaigns[$id]['status'] === self::STATUS_CLOSED) {
+            return false;
+        }
+        $this->campaigns[$id]['title'] = $title;
+        $this->campaigns[$id]['due_on'] = $dueOn;
+
+        return true;
+    }
+
+    public function recentlyActiveCount(array $userIds, int $days = 90): int
+    {
+        return $this->recentUsers === null ? count($userIds) : count(array_intersect($userIds, $this->recentUsers));
+    }
+
+    public function withoutCivilNameCount(array $userIds): int
+    {
+        return count(array_intersect($userIds, $this->withoutName));
+    }
+
+    public function campaignForYear(int $tenantId, int $year): ?array
     {
         foreach ($this->campaigns as $c) {
-            if ((int) $c['tenant_id'] === $tenantId && (int) $c['campaign_year'] === $year && !empty($c['auto_created'])) {
+            if ((int) $c['tenant_id'] === $tenantId && (int) $c['campaign_year'] === $year) {
                 return $c;
             }
         }
@@ -223,6 +254,7 @@ final class InMemoryDataCampaignRepository extends DataCampaignRepository
     public function saveAnswers(int $campaignId, int $userId, array $answers): void
     {
         $this->memberRows[$campaignId . ':' . $userId]['blocks_json'] = json_encode($answers);
+        $this->writes++;
     }
 
     public function confirm(int $campaignId, int $userId, array $answers, array $snapshot, string $hash): void
@@ -333,6 +365,7 @@ final class InMemoryDataCampaignRepository extends DataCampaignRepository
         if (isset($this->reminderRows[$key])) {
             return false;
         }
+        $this->writes++;
         $this->reminderRows[$key] = ['campaign_id' => $campaignId, 'user_id' => $userId, 'slot' => $slot, 'created_at' => $this->nowSql];
 
         return true;
@@ -342,7 +375,7 @@ final class InMemoryDataCampaignRepository extends DataCampaignRepository
     {
         $last = '';
         foreach ($this->reminderRows as $r) {
-            if ((int) $r['campaign_id'] === $campaignId && (int) $r['user_id'] === $userId && (string) $r['created_at'] > $last) {
+            if ((int) $r['campaign_id'] === $campaignId && (int) $r['user_id'] === $userId && $r['slot'] !== 'open' && (string) $r['created_at'] > $last) {
                 $last = (string) $r['created_at'];
             }
         }

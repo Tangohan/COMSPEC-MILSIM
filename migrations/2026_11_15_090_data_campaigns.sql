@@ -3,17 +3,19 @@
 -- suit l'avancement et traite les signalements. Rien n'est modifié automatiquement dans les fiches : une correction
 -- passe par les demandes de correction existantes (personnel_correction_requests) ou par le traitement d'un signalement.
 -- Aucune donnée d'identité d'emprunt, de couverture ou de papiers (SSE) n'est enregistrée ici.
+-- Ouverture automatique chaque année : active par défaut pour toute communauté (désactivable), une seule campagne ouverte par
+-- Athena par communauté et par année (clé uq_data_campaign_auto).
 -- Retour arrière : migrations/rollback/data_campaigns_down.sql.
 
 CREATE TABLE IF NOT EXISTS data_campaign_settings (
   tenant_id INT UNSIGNED NOT NULL,
-  auto_enabled TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'ouvrir une campagne chaque année (désactivé par défaut)',
+  auto_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'ouverture automatique chaque année (activée par défaut ; sans ligne, elle l''est aussi)',
+  emails_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'e-mails d''ouverture et de rappel (activés par défaut)',
   open_md VARCHAR(5) NOT NULL DEFAULT '12-01' COMMENT 'jour et mois d''ouverture (MM-JJ)',
   close_md VARCHAR(5) NOT NULL DEFAULT '12-31' COMMENT 'jour et mois de la date limite (MM-JJ)',
   blocks_json TEXT DEFAULT NULL COMMENT 'blocs inclus (liste de clés), tous si vide',
   unit_ids_json TEXT DEFAULT NULL COMMENT 'unités concernées (liste d''identifiants), toute la communauté si vide',
   reminder_days_json VARCHAR(100) DEFAULT NULL COMMENT 'jours avant la date limite, ex. [14,3,0]',
-  last_auto_year SMALLINT UNSIGNED DEFAULT NULL COMMENT 'dernière année pour laquelle la tâche planifiée a ouvert une campagne',
   updated_by INT UNSIGNED DEFAULT NULL,
   updated_at DATETIME DEFAULT NULL,
   PRIMARY KEY (tenant_id),
@@ -31,13 +33,16 @@ CREATE TABLE IF NOT EXISTS data_campaigns (
   reminder_days_json VARCHAR(100) DEFAULT NULL,
   opens_on DATE DEFAULT NULL,
   due_on DATE DEFAULT NULL,
-  auto_created TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'ouverte par la tâche planifiée',
+  auto_created TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'ouverte par Athena (tâche planifiée, commande ou bouton « Ouvrir maintenant »)',
+  auto_year SMALLINT UNSIGNED DEFAULT NULL COMMENT 'année de la campagne ouverte par Athena : une seule par communauté et par année',
+  forced_on DATE DEFAULT NULL COMMENT 'jour où l''ouverture a été forcée avant la période automatique',
   created_by INT UNSIGNED DEFAULT NULL,
   opened_at DATETIME DEFAULT NULL,
   closed_at DATETIME DEFAULT NULL,
   closed_by INT UNSIGNED DEFAULT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_data_campaign_auto (tenant_id, auto_year),
   KEY idx_data_campaigns_tenant (tenant_id, status, campaign_year),
   CONSTRAINT fk_data_campaigns_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
