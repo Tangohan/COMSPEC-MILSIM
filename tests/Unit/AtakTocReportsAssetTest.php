@@ -111,8 +111,8 @@ final class AtakTocReportsAssetTest extends TestCase
     public function testMigrationStepIsRegisteredWithItsSqlAndRollback(): void
     {
         $registry = self::read('database/steps/registry.php');
-        self::assertMatchesRegularExpression("/'id' => 'atak_toc_report_reads', 'label' => '[^']+(?:’[^']*)*', 'group' => 'schema', 'file' => '4740_atak_toc_report_reads\\.php', 'rerun' => true\\]/u", $registry);
-        $step = self::read('database/steps/4740_atak_toc_report_reads.php');
+        self::assertMatchesRegularExpression("/'id' => 'atak_toc_report_reads', 'label' => '[^']+(?:’[^']*)*', 'group' => 'schema', 'file' => '4750_atak_toc_report_reads\\.php', 'rerun' => true\\]/u", $registry);
+        $step = self::read('database/steps/4750_atak_toc_report_reads.php');
         self::assertStringContainsString('migrations/2026_11_16_200_atak_toc_report_reads.sql', $step);
         self::assertStringContainsString('tableExists', $step);
         $sql = self::read('migrations/2026_11_16_200_atak_toc_report_reads.sql');
@@ -122,7 +122,7 @@ final class AtakTocReportsAssetTest extends TestCase
         self::assertStringNotContainsString('ALTER TABLE', $sql);
         self::assertStringContainsString('DROP TABLE IF EXISTS atak_toc_report_reads', self::read('migrations/rollback/atak_toc_report_reads_down.sql'));
         // Le numéro de l'étape n'est pris que par elle.
-        self::assertSame(1, preg_match_all("/'file' => '4740_/", $registry));
+        self::assertSame(1, preg_match_all("/'file' => '4750_/", $registry));
     }
 
     public function testStepCreatesTheTableOnSqliteAndIsIdempotent(): void

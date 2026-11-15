@@ -25,7 +25,7 @@ d'opération sur les terrains Arma, reliés au jeu dans les deux sens.
 - `4370_atak_toc_plans` : tables `atak_plans`, `atak_plan_elements`, `atak_plan_phases`, `atak_plan_versions`, `atak_plan_shares`, `atak_plan_comments`, `atak_plan_presence`, `atak_toc_rooms`, `atak_toc_actions`.
 - `4380_atak_toc_permissions` : droits `atak.toc.use` et `atak.toc.manage`.
 - `4630_atak_marker_cycles` : tables `atak_marker_cycle_settings`, `atak_marker_archives`, `atak_marker_archive_items` (cycle de 24 h des marqueurs, voir plus bas).
-- `4740_atak_toc_report_reads` : table `atak_toc_report_reads` (lu / non lu des rapports par opérateur, panneau Rapports). Sans elle, le panneau marche : tout est « non lu », rien n'est conservé, et il le dit. Retour arrière : `migrations/rollback/atak_toc_report_reads_down.sql`.
+- `4750_atak_toc_report_reads` : table `atak_toc_report_reads` (lu / non lu des rapports par opérateur, panneau Rapports). Sans elle, le panneau marche : tout est « non lu », rien n'est conservé, et il le dit. Retour arrière : `migrations/rollback/atak_toc_report_reads_down.sql`.
 
 ## Console : rubriques, onglets et sources
 
