@@ -49,7 +49,7 @@ final class SseSignalDeduperTest extends TestCase
             ->execute([$tenant, $case, $type, $sev, $title, $rule, $at, $at]);
     }
 
-    private function count(string $where): int
+    private function rowCount(string $where): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM sse_engine_signals WHERE ' . $where)->fetchColumn();
     }
@@ -81,8 +81,8 @@ final class SseSignalDeduperTest extends TestCase
 
         self::assertSame(11 * 5 + 2, $r['merged']);
         self::assertSame(0, $r['failed']);
-        self::assertSame(6, $this->count("status = 'open'"), 'une ligne ouverte par identité');
-        self::assertSame(12 * 5 + 3, $this->count('1=1'), 'rien n’est supprimé');
+        self::assertSame(6, $this->rowCount("status = 'open'"), 'une ligne ouverte par identité');
+        self::assertSame(12 * 5 + 3, $this->rowCount('1=1'), 'rien n’est supprimé');
         $source = $this->pdo->query("SELECT * FROM sse_engine_signals WHERE case_id = 5 AND tenant_id = 1 AND title LIKE '%Photographie%' AND status = 'open'")->fetch(PDO::FETCH_ASSOC);
         self::assertSame('2026-10-01 02:00:00', $source['created_at'], 'la source est la plus ancienne');
         self::assertSame(12, (int) $source['seen_count'], 'les observations s’additionnent');
@@ -122,7 +122,7 @@ final class SseSignalDeduperTest extends TestCase
         self::assertSame(2, $second['remaining']);
         $third = $this->deduper()->run(true);
         self::assertSame(0, $third['remaining']);
-        self::assertSame(6, $this->count("status = 'open'"), 'même résultat qu’en une fois');
+        self::assertSame(6, $this->rowCount("status = 'open'"), 'même résultat qu’en une fois');
     }
 
     public function testTenantOptionTouchesOnlyThatCommunity(): void
@@ -130,7 +130,7 @@ final class SseSignalDeduperTest extends TestCase
         $r = $this->deduper()->run(true, 2);
 
         self::assertSame(2, $r['merged']);
-        self::assertSame(12 * 5, $this->count("tenant_id = 1 AND status = 'open'"), 'la communauté 1 n’est pas touchée');
+        self::assertSame(12 * 5, $this->rowCount("tenant_id = 1 AND status = 'open'"), 'la communauté 1 n’est pas touchée');
     }
 
     public function testAGroupThatFailsIsRolledBackWholeAndTheOthersContinue(): void
@@ -141,10 +141,10 @@ final class SseSignalDeduperTest extends TestCase
 
         self::assertSame(2, $r['failed'], 'photo et biométrie du dossier 6');
         self::assertCount(2, $r['errors']);
-        self::assertSame(12 * 2, $this->count("case_id = 6 AND status = 'open'"), 'groupe annulé en entier : ni source modifiée ni doublon fusionné');
-        self::assertSame(0, $this->count("case_id = 6 AND status = 'merged'"));
-        self::assertSame(12 * 5 + 3, $this->count('1=1'), 'aucune ligne perdue');
-        self::assertSame(1, $this->count("tenant_id = 1 AND case_id = 5 AND title LIKE '%Photographie%' AND status = 'open'"), 'les autres groupes sont fusionnés');
+        self::assertSame(12 * 2, $this->rowCount("case_id = 6 AND status = 'open'"), 'groupe annulé en entier : ni source modifiée ni doublon fusionné');
+        self::assertSame(0, $this->rowCount("case_id = 6 AND status = 'merged'"));
+        self::assertSame(12 * 5 + 3, $this->rowCount('1=1'), 'aucune ligne perdue');
+        self::assertSame(1, $this->rowCount("tenant_id = 1 AND case_id = 5 AND title LIKE '%Photographie%' AND status = 'open'"), 'les autres groupes sont fusionnés');
         self::assertFalse($this->pdo->inTransaction());
     }
 
@@ -159,8 +159,8 @@ final class SseSignalDeduperTest extends TestCase
 
         self::assertFalse($r['columns']['merged_into']);
         self::assertSame(2, $r['merged']);
-        self::assertSame(1, $this->count("status = 'open'"));
-        self::assertSame(2, $this->count("status = 'merged'"));
+        self::assertSame(1, $this->rowCount("status = 'open'"));
+        self::assertSame(2, $this->rowCount("status = 'merged'"));
     }
 
     public function testTheCommandLineScriptIsDryRunByDefaultAndDocumented(): void
