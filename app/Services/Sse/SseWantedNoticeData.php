@@ -6,6 +6,7 @@ namespace App\Services\Sse;
 
 use App\Repositories\SseWantedAttachmentRepository;
 use App\Repositories\SseWantedExtrasRepository;
+use App\Repositories\SseWantedMetaRepository;
 use App\Repositories\SseWantedNoticeRepository;
 use App\Support\SseWantedCatalog as C;
 use App\Support\SseWantedPhysical;
@@ -70,8 +71,14 @@ final class SseWantedNoticeData
         $notices = (new SseWantedNoticeRepository())->list($tenantId, ['status' => 'active', 'limit' => max(1, min(200, $limit))]);
         $ids = array_map(static fn (array $n): int => (int) $n['id'], $notices);
         $extras = (new SseWantedExtrasRepository())->forNotices($tenantId, $ids);
+        $metas = (new SseWantedMetaRepository())->forNotices($tenantId, $ids);
         $out = [];
         foreach ($notices as $n) {
+            $meta = $metas[(int) $n['id']] ?? SseWantedMetaRepository::hydrate(null);
+            // Circuit de validation : un avis proposé ou refusé n'est jamais diffusé au jeu.
+            if ($meta['state'] !== SseWantedMetaRepository::LIVE) {
+                continue;
+            }
             $x = $extras[(int) $n['id']] ?? SseWantedExtrasRepository::hydrate(null);
             $isMember = $gate->identityState($tenantId, (int) $n['identity_id'])['class'] !== SseMemberImageGate::CLASS_PUBLIC;
             $rows = [];
@@ -90,9 +97,33 @@ final class SseWantedNoticeData
                 'measures' => $x['codes']['measures'],
                 'physical' => $isMember ? [] : SseWantedPhysical::export($x['physical']),
                 'images' => $rows,
+                // Additif : le service demandeur (code stable, nom FR et EN, sigle, coordonnées fictives) et la classification.
+                'service' => self::serviceForGame($meta, $n),
+                'classification' => $meta['classification'],
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * Service demandeur d'un avis pour le jeu : l'instantané du jour de la pose, ou le texte saisi à la main (code vide).
+     *
+     * @param array<string, mixed> $meta
+     * @param array<string, mixed> $notice
+     * @return array{code: string, fr: string, en: string, ac: string, contact: string}
+     */
+    public static function serviceForGame(array $meta, array $notice): array
+    {
+        $snap = is_array($meta['service'] ?? null) ? $meta['service'] : [];
+        $label = (string) ($notice['contact_label'] ?? '');
+
+        return [
+            'code' => (string) ($meta['service_code'] ?? ''),
+            'fr' => (string) ($snap['fr'] ?? $label),
+            'en' => (string) ($snap['en'] ?? $label),
+            'ac' => (string) ($snap['ac'] ?? ''),
+            'contact' => (string) ($snap['contact'] ?? ($notice['contact_detail'] ?? '')),
+        ];
     }
 }

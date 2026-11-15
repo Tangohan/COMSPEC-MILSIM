@@ -65,10 +65,13 @@ final class SseIdentityDossierService
         }
         // Codes, signalement et images des avis : une source qui manque donne une section vide (jamais bloquant).
         $noticeExtras = [];
+        $noticeMeta = [];
         $noticeAttachments = [];
         $attachLock = ['allowed' => true, 'confidential' => false, 'reason' => '', 'owner' => null];
         if ($ready && $readable && $notices !== []) {
             $noticeExtras = $this->safe(fn (): array => (new SseWantedExtrasRepository())->forNotices($tenantId, array_map(static fn (array $n): int => (int) $n['id'], $notices))) ?? [];
+            // Service, classification, validation et prolongations de chaque avis (vide sans l'étape « processus des avis »).
+            $noticeMeta = $this->safe(fn (): array => (new \App\Repositories\SseWantedMetaRepository())->forNotices($tenantId, array_map(static fn (array $n): int => (int) $n['id'], $notices))) ?? [];
             if ($notice !== null) {
                 $attachments = new SseWantedAttachments();
                 $attachLock = $this->safe(fn (): array => $attachments->identityVisible($tenantId, $id)) ?? $attachLock;
@@ -110,6 +113,8 @@ final class SseIdentityDossierService
             'notice' => $notice,
             'notices' => $notices,
             'noticeExtras' => $noticeExtras,
+            'noticeMeta' => $noticeMeta,
+            'metaReady' => \App\Repositories\SseWantedMetaRepository::ready(),
             'noticeAttachments' => $noticeAttachments,
             'noticeAttachLock' => $attachLock,
             'attachmentsReady' => SseWantedAttachmentRepository::ready(),

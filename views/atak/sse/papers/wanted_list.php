@@ -37,7 +37,10 @@ $tone = static fn (string $level): string => match ($level) {
     default => 'badge--gray',
 };
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
-$statusTabs = ['active' => 'Actifs', 'lifted' => 'Levés', 'captured' => 'Capturés', 'expired' => 'Expirés', '' => 'Tous'];
+$noticeMeta = is_array($noticeMeta ?? null) ? $noticeMeta : [];
+$pendingCount = (int) ($pendingCount ?? 0);
+$statusTabs = ['active' => 'Actifs', 'a_valider' => 'À valider', 'lifted' => 'Levés', 'captured' => 'Capturés', 'expired' => 'Expirés', '' => 'Tous'];
+$counts['a_valider'] = $pendingCount;
 ?>
 <div class="page-heading">
     <div>
@@ -79,7 +82,9 @@ $statusTabs = ['active' => 'Actifs', 'lifted' => 'Levés', 'captured' => 'Captur
     </form>
 
     <section class="panel">
-        <?php if ($notices === []): ?>
+        <?php if ($notices === [] && $filters['status'] === 'a_valider'): ?>
+            <div class="empty-state"><div class="empty-state-inner"><strong>Rien à valider</strong><p>Aucun avis n’attend de décision. Quand le circuit de validation est actif, les avis proposés par un analyste arrivent ici.</p></div></div>
+        <?php elseif ($notices === []): ?>
             <div class="empty-state"><div class="empty-state-inner"><strong>Aucun avis</strong><p>Aucun avis ne correspond à ces filtres. Un avis se place depuis la fiche d’une identité fictive.</p><p><a class="btn" href="<?= $h(url('atak/sse/papiers/identites')) ?>">Ouvrir les identités fictives</a></p></div></div>
         <?php else: ?>
             <div class="table-wrap"><table>
@@ -99,10 +104,10 @@ $statusTabs = ['active' => 'Actifs', 'lifted' => 'Levés', 'captured' => 'Captur
                                 </div>
                             <?php endif; ?></td>
                         <td data-label="Menace"><span class="badge <?= $h($tone((string) $n['threat_level'])) ?>"><?= $h(W::label(W::THREATS, (string) $n['threat_level'], $lang)) ?></span><?= $n['armed'] === 'yes' ? ' <span class="badge badge--red">' . $h(W::label(W::ARMED, 'yes', $lang)) . '</span>' : '' ?></td>
-                        <td data-label="Statut"><span class="dos-status"><?= $h(W::label(W::STATUSES, (string) $n['status'], $lang)) ?></span></td>
+                        <td data-label="Statut"><span class="dos-status"><?= $h(W::label(W::STATUSES, (string) $n['status'], $lang)) ?></span><?php if (($noticeMeta[(int) $n['id']]['state'] ?? 'live') === 'pending'): ?> <span class="badge badge--amber">À valider</span><?php endif; ?></td>
                         <td data-label="Émis le"><?= $h($fmt($n['issued_at'])) ?></td>
                         <td data-label="Expire le"><?= $h($n['expires_at'] !== null ? $fmt($n['expires_at']) : '—') ?></td>
-                        <td data-label="Auteur" translate="no"><?= $h($authors[(int) $n['id']] ?? '—') ?></td>
+                        <td data-label="Auteur" translate="no"><?= $h($authors[(int) $n['id']] ?? '—') ?><?php $svcAc = (string) ($noticeMeta[(int) $n['id']]['service']['ac'] ?? ''); if ($svcAc !== ''): ?><div class="wc-mini" title="<?= $h($noticeMeta[(int) $n['id']]['service']['fr'] ?? '') ?>"><?= $h($svcAc) ?></div><?php endif; ?></td>
                         <td>
                             <a class="btn-open" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $n['identity_id'] . '#avis')) ?>">Ouvrir</a>
                             <?php if ($canPdf): ?>

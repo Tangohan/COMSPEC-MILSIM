@@ -35,6 +35,7 @@ final class SseWantedAccess
         private ?int $userId,
         private string $actorLabel = '',
         private bool $read = true,
+        private bool $admin = false,
     ) {
     }
 
@@ -58,6 +59,8 @@ final class SseWantedAccess
         };
         $read = $allows('fichiers', Rights::LEVEL_READ);
         $manage = $signed && $allows('fichiers', Rights::LEVEL_WRITE);
+        // Gestionnaire de la section : crée les services demandeurs de la communauté et valide les avis proposés.
+        $admin = $manage && $allows('fichiers', Rights::LEVEL_MANAGE);
         $command = self::allows($clearance, SseCaseRepository::CLASS_COMMAND);
         $truth = self::allows($clearance, SseCaseRepository::CLASS_CONFIDENTIAL);
         // Atelier de papiers : écrire dans « papiers » avec l'habilitation Encadrement ; le PDF sort du bureau : exporter.
@@ -72,7 +75,8 @@ final class SseWantedAccess
             $tenantId,
             $userId > 0 ? $userId : null,
             $label,
-            $read
+            $read,
+            $admin
         );
     }
 
@@ -110,6 +114,12 @@ final class SseWantedAccess
     public function canManage(): bool
     {
         return !$this->guest && $this->userId !== null && $this->manage;
+    }
+
+    /** Gestionnaire SSE : services demandeurs de la communauté, validation des avis proposés. */
+    public function canAdmin(): bool
+    {
+        return $this->canManage() && $this->admin;
     }
 
     /** Générer et télécharger le PDF de la notice : gestion des fichiers et droits de l'atelier de papiers. */

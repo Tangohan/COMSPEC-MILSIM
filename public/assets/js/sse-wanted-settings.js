@@ -1,5 +1,5 @@
 /*
- * SSE > Réglages de la notice : onglets « Notice » et « Codification ». Sans JavaScript, les deux sections s'empilent et le
+ * SSE > Réglages de la notice : onglets « Notice », « Codification » et « Services ». Sans JavaScript, les deux sections s'empilent et le
  * même formulaire les enregistre ensemble. Aucun texte dans ce fichier.
  */
 (function () {
@@ -16,7 +16,10 @@
             if (on && focus) { t.focus(); }
         });
         panes.forEach(function (p) { p.hidden = p.getAttribute('data-wc-pane') !== key; });
-        try { window.history.replaceState(null, '', key === 'codes' ? '#codification' : '#notice'); } catch (e) { /* sans effet */ }
+        // Le bouton « Enregistrer » est celui du formulaire de la notice et de la codification : les services ont leurs propres actions.
+        var save = document.querySelector('[data-wc-save]');
+        if (save) { save.hidden = key === 'services'; }
+        try { window.history.replaceState(null, '', key === 'codes' ? '#codification' : key === 'services' ? '#services' : '#notice'); } catch (e) { /* sans effet */ }
     }
     nav.hidden = false;
     tabs.forEach(function (t, i) {
@@ -31,5 +34,5 @@
         var p = e.target.closest ? e.target.closest('[data-wc-pane]') : null;
         if (p && p.hidden) { show(p.getAttribute('data-wc-pane')); }
     }, true);
-    show(window.location.hash === '#codification' ? 'codes' : 'notice');
+    show(window.location.hash === '#codification' ? 'codes' : window.location.hash === '#services' ? 'services' : 'notice');
 })();

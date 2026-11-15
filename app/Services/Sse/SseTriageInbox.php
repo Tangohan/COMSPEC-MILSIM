@@ -429,6 +429,20 @@ final class SseTriageInbox
 
                     return $out;
                 }],
+            ['key' => 'avis_valider', 'nav' => 'avis-recherche', 'label' => 'Avis à valider', 'tab' => 'Avis', 'path' => 'atak/sse/avis?statut=a_valider',
+                'load' => static function (int $t) use ($item): array {
+                    // Circuit de validation : avis proposés par un analyste, en attente d'un responsable (vide sans l'étape « processus des avis »).
+                    $ids = (new \App\Repositories\SseWantedMetaRepository())->pendingIds($t, self::LIMIT);
+                    if ($ids === [] || !SseWantedNoticeRepository::ready()) {
+                        return [];
+                    }
+                    $out = [];
+                    foreach ((new SseWantedNoticeRepository())->list($t, ['status' => 'active', 'ids' => $ids, 'limit' => self::LIMIT]) as $n) {
+                        $out[] = $item('notice:' . (int) $n['id'], (string) ($n['identity_name'] !== '' ? $n['identity_name'] : 'Identité #' . (int) $n['identity_id']), (string) $n['ref'], (string) $n['created_at'], 'atak/sse/papiers/identites/' . (int) $n['identity_id'] . '#avis', 1);
+                    }
+
+                    return $out;
+                }],
             ['key' => 'suggestions', 'nav' => 'rapprochements', 'label' => 'Suggestions du moteur', 'tab' => 'Suggestions', 'path' => 'atak/sse/rapprochements',
                 'load' => static function (int $t) use ($item): array {
                     $out = [];
