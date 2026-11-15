@@ -2659,6 +2659,20 @@ if (!function_exists('member_name')) {
     }
 }
 
+if (!function_exists('member_identity')) {
+    /**
+     * Point unique d'affichage d'un membre : nom principal, ligne secondaire, indicatif, trigramme, origine du nom.
+     * Contextes « list », « card » ou « c2 ». Texte brut : la vue échappe. Voir App\Support\MemberIdentity.
+     *
+     * @param array<string, mixed> $row first_name, last_name, callsign, display_name, trigram, grade_short, anonymized
+     * @return array{primary: string, secondary: string, callsign: string, trigram: string, source: string}
+     */
+    function member_identity(array $row, string $context = 'list', ?int $tenantId = null, bool $allowGrade = true): array
+    {
+        return \App\Support\MemberIdentity::display($row, $context, $tenantId, $allowGrade);
+    }
+}
+
 if (!function_exists('member_trigram')) {
     /**
      * Trigramme du membre si la communauté les utilise (jamais pour un membre masqué), sinon chaîne vide.

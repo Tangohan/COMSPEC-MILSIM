@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Personnel;
 
 use App\Core\Database;
+use App\Support\MemberIdentity;
 use App\Support\MemberName;
 use PDO;
 
@@ -131,6 +132,27 @@ final class MemberNameService
                 $row['trigram'] = '';
             }
             $out[$id] = MemberName::format($row, $format, $settings['show_grade']);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Identité affichable complète (nom principal, ligne secondaire, indicatif, trigramme, origine) des membres
+     * demandés, par la règle unique {@see MemberIdentity}. Sert aux écrans dont la requête ne charge que
+     * users.display_name et users.callsign.
+     *
+     * @param list<int> $userIds
+     * @param array<int, string> $gradeShortByUser grade abrégé par membre, si l’appelant l’a déjà
+     * @return array<int, array{primary: string, secondary: string, callsign: string, trigram: string, source: string}>
+     */
+    public function displayFor(int $tenantId, array $userIds, string $context = 'list', array $gradeShortByUser = []): array
+    {
+        $settings = MemberNameSettings::forTenant($tenantId);
+        $out = [];
+        foreach ($this->identitiesFor($tenantId, $userIds) as $id => $row) {
+            $row['grade_short'] = $gradeShortByUser[$id] ?? '';
+            $out[$id] = MemberIdentity::display($row, $context, $tenantId, true, $settings);
         }
 
         return $out;
