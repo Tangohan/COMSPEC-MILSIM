@@ -280,13 +280,13 @@ final class AtakEssentialModeAssetTest extends TestCase
         $entry = substr($entry, 0, (int) strpos($entry, "\n## ", 10));
         self::assertStringContainsString("### Résumé joueur\nType : nouveauté\nFR : Mode Essentiel, un téléphone réduit à l'essentiel en un bouton\n- ", $entry);
         self::assertStringContainsString("\nEN : Essential mode, a phone cut down to the basics with one button\n- ", $entry);
-        // Résumé joueur : mêmes puces dans les deux langues, quatre au plus, aucun nom interne.
+        // Résumé joueur : mêmes puces dans les deux langues, cinq au plus (dont le correctif de l'appareil photo), aucun nom interne.
         $summary = substr($entry, 0, (int) strpos($entry, '### Détail technique'));
         $fr = substr($summary, 0, (int) strpos($summary, "\nEN : "));
         $en = substr($summary, (int) strpos($summary, "\nEN : "));
         self::assertSame(substr_count($fr, "\n- "), substr_count($en, "\n- "));
         self::assertGreaterThanOrEqual(3, substr_count($fr, "\n- "));
-        self::assertLessThanOrEqual(4, substr_count($fr, "\n- "));
+        self::assertLessThanOrEqual(5, substr_count($fr, "\n- "));
         foreach (['fn_', 'comspec_atak_native', 'COMSPEC_ATAK_', 'CBA', '.sqf', 'AssetTest', '`'] as $internal) {
             self::assertStringNotContainsString($internal, $summary, $internal);
         }

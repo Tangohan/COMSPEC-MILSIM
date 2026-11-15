@@ -43,11 +43,13 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 ### Résumé joueur
 Type : nouveauté
 FR : Mode Essentiel, un téléphone réduit à l'essentiel en un bouton
+- Appareil photo, correctif : plus d'écran ni de menu d'actions de la molette bloqués après une prise de vue ratée ; si la photo n'a pas pu être prise, le téléphone dit pourquoi.
 - Un bouton ESSENTIEL, en haut de l'écran d'accueil, ne garde que la carte, le GPS, l'itinéraire, les ordres, le briefing, les alertes, le drone et la vidéo en direct (plus les Réglages). Retouchez-le pour tout réafficher.
 - Rien n'est désinstallé ni perdu : les messages reçus pendant ce temps vous attendent dans leur app dès que vous coupez le mode. Les apps masquées disparaissent aussi du dock, de la recherche et des bandeaux épinglés sur la carte.
 - Le même interrupteur est dans Réglages > Applications et dans le panneau SITUATION de la carte. Votre choix est gardé d'une mission à l'autre.
 - Pour un groupe : l'organisateur de la mission ou l'administrateur du serveur peut imposer le mode à tous les joueurs. Le bouton est alors grisé, avec une phrase qui explique pourquoi, et tous les téléphones montrent les mêmes apps.
 EN : Essential mode, a phone cut down to the basics with one button
+- Camera fix: no more stuck screen or scroll-wheel action menu after a failed shot; if the photo could not be taken, the phone says why.
 - An ESSENTIAL button at the top of the home screen keeps only the map, GPS, route, orders, briefing, alerts, drone and live video (plus Settings). Touch it again to show everything.
 - Nothing is uninstalled or lost: messages received in the meantime are waiting in their app as soon as you turn the mode off. Hidden apps also disappear from the dock, the search and the banners pinned on the map.
 - The same switch is in Settings > Applications and in the map's SITUATION panel. Your choice is kept from one mission to the next.
@@ -62,6 +64,31 @@ EN : Essential mode, a phone cut down to the basics with one button
 - **Bouton** : `bar` (accueil classique `fn_launcherRender` et accueil des apps regroupées `fn_pageSpace`) : vert « ESSENTIEL · ACTIF » ou neutre « ESSENTIEL » ; imposé : grisé, « ESSENTIEL · IMPOSÉ » et une phrase dessous. `rows` : ligne `switch` de `fn_formRender` (Réglages > Applications et panneau SITUATION de `fn_pageMap`, au-dessus des apps épinglées, sans toucher au bandeau des coordonnées ni à RECHERCHER) ; imposé, la pastille « IMPOSÉ » et l'aide expliquent. L'App Store affiche une phrase quand le mode est actif.
 - **Apps épinglées de la 4.17.0** : `fn_mapPinnedApp` (`_usable`) ne dessine plus le bandeau d'une app masquée par le mode et la ligne de choix l'indique (« Masquée par le mode Essentiel »). Le choix est conservé : le bandeau revient avec l'app. Messages, SMS, Feux, MEDEVAC, Alertes et Heure H sont donc sans bandeau dans le mode ; Ordres et Itinéraire (NAV) restent.
 - Aucune notification, aucun toast, aucun hint, aucun `systemChat`. Non essayé en jeu (aucun test en jeu possible dans ce fil) : voir la liste « à vérifier en jeu » de la PR. Tests : `tests/Unit/AtakEssentialModeAssetTest.php`.
+
+## Appareil photo : la prise de vue ne laisse plus l'écran et le menu d'actions bloqués (ATAK natif 4.17.1.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : Appareil photo : la prise de vue ne vous laisse plus bloqué
+- Quand une prise de vue échoue ou est interrompue, l'écran, l'interface du jeu et le menu d'actions de la molette sont toujours rendus : plus de plein écran figé ni de molette qui ne répond plus.
+- Si la photo n'a pas pu être prise, le téléphone le dit en une phrase au lieu d'annoncer une photo prise : capture refusée par le jeu (qualité HDR à passer sur Moyen au moins), liaison Athena dégradée ou file d'attente pleine.
+- Le plein écran ne s'ouvre plus sans pouvoir en sortir, et la réparation de l'affichage (action ACE) le referme aussi.
+- Si le problème revient, le journal envoyé au support dit à quelle étape la prise de vue s'est arrêtée.
+EN : Camera: taking a photo no longer leaves you stuck
+- When a shot fails or is interrupted, the screen, the game interface and the scroll-wheel action menu are always given back: no more frozen full screen or unresponsive wheel.
+- If the photo could not be taken, the phone says so in one sentence instead of announcing a photo taken: capture refused by the game (set HDR quality to Medium or higher), degraded Athena link or full queue.
+- Full screen no longer opens when you could not leave it, and the display repair (ACE action) closes it too.
+- If the problem comes back, the log sent to support says at which step the shot stopped.
+
+### Détail technique
+- **Cause certaine** : le déclenchement (`fn_photoCam` « shoot », `fn_photoMode` « SHOOT ») est un script `spawn` qui, entre le début et la fin, masque tous les contrôles, pose une caméra scriptée de prise de vue (`cameraEffect Internal`), coupe le HUD (`showHUD false`, téléphone) et allume la lumière du flash, puis rend le tout à la dernière ligne. Une erreur de script (SQF n'a pas de `try` pour elle) arrête ce script net : caméra de prise de vue jamais détruite (image figée « plein écran »), HUD jamais rendu, contrôles masqués, `COMSPEC_ATAK_PhotoShooting` resté vrai. Seul le viseur du téléphone avait un relâchement de 5 s, et seulement pour la variable. Le plein écran n'en avait aucun.
+- **Cause plausible, non vérifiée en jeu** : `showHUD false` cache aussi le menu d'actions de la molette ; un HUD non rendu le laisserait absent jusqu'à la fin de la session (symptôme rapporté : « interactions à la molette impossibles »). L'état du HUD d'avant n'était de plus lu qu'au début du cliché : un second cliché lu pendant un HUD resté caché l'aurait gardé caché.
+- **Cause plausible, non vérifiée** : la capture du poste seul (`_noNet`, ATAK sans Link ou hors réseau) ignorait le retour de `screenshot` (faux en cas de refus du jeu, qualité HDR basse) et annonçait « Photo prise » : aucune image, aucun message.
+- **Correctif** : un seul chemin de nettoyage, `fn_photoCam` « restore », qui rend lumière, caméra de prise de vue, contrôles masqués et HUD (lus au début du cliché dans sa fiche `COMSPEC_ATAK_PhotoShot`), puis remet `COMSPEC_ATAK_PhotoShooting` à faux. Appelé par : la fin normale des deux déclenchements, un chien de garde de 6 s armé par « begin » (script arrêté par une erreur), le relâchement de 5 s du viseur, la sortie du plein écran (`fn_photoMode` « EXIT », qui passe donc aussi par là pour Espace, mort, véhicule, téléphone perdu) et la réparation de l'affichage (`fn_vehicleKeys` « repair »). Chaque étape saute un objet déjà disparu. Un cliché interrompu affiche une phrase dans le téléphone (sous le viseur en plein écran).
+- Plein écran : refusé sans fenêtre de jeu (46) (ni clic ni Espace ne seraient reçus) ; un mode resté « actif » sans viseur (ouverture arrêtée par une erreur) est nettoyé à la demande suivante au lieu de refuser toute nouvelle photo ; « EXIT » accepte un 3e paramètre vrai pour sortir sans rouvrir le téléphone (réparation de l'affichage).
+- Messages : `fn_photoCam` « why » traduit le détail de la liaison (`COMSPEC_LastReconUploadDetail` : `screenshot_rejected`, `file_not_found`, `not_connected`, `queue_full`) en une phrase ; capture du poste seul refusée par le jeu : plus de « Photo prise », photo non comptée, pas d'éclair blanc. Six textes anglais dans `i18n/en.txt`. COMSPEC Link 2.0.125 inchangé (ses propres alertes de capture refusée restent).
+- **Journal RPT** (catégorie PHOTO, recopié dans le journal de session COMSPEC) : `Cliché N (téléphone|plein écran) : début…`, `caméra de prise de vue en place`, `capture lancée vers Athena` / `capture du poste … acceptée|REFUSÉE par le jeu`, `capture terminée, envoi accepté …, détail de la liaison …`, `nettoyage (fin | chien de garde | sortie du plein écran | réparation…) après X s ; caméra …, lumière …, HUD …`, et pour le plein écran `ouvert (…)` / `fermeture (…)` / `refusé : fenêtre de jeu (46) introuvable`. Un « début » sans « capture » ni « nettoyage (fin) » suivi d'un « nettoyage (chien de garde) » : le script a été arrêté (erreur de script juste au-dessus dans le RPT) ou a duré plus de 6 s.
+- Non essayé en jeu. Test : `tests/Unit/AtakPhotoModeCleanupAssetTest.php`.
 
 ## Carte : mini-apps épinglées, interface renforcée, correctifs et dessin allégé (ATAK natif 4.17.0.AG - Washington)
 

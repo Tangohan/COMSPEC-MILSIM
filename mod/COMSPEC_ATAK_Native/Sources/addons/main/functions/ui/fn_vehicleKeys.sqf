@@ -150,6 +150,9 @@ switch (_mode) do {
     // Action ACE sur soi « ATAK : réparer l'affichage » : tout remis à zéro, téléphone refermé (miniature comprise),
     // état forcé à « rangé » si un display ne se ferme pas, puis la miniature revient si elle était affichée.
     case "repair": {
+        // Appareil photo plein écran ou cliché resté en plan : même chemin de sortie que le reste (vue, HUD, gestionnaires rendus).
+        if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) then { ["EXIT", "", true] call comspec_atak_native_fnc_photoMode; };
+        ["restore", "réparation de l'affichage"] call comspec_atak_native_fnc_photoCam;
         private _was = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]);
         ["reset", "réparation manuelle (action ACE)"] call comspec_atak_native_fnc_vehicleKeys;
         uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];

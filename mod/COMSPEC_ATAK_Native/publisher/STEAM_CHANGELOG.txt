@@ -1,4 +1,4 @@
-[h1]COMSPEC ATAK 4.18.0 Washington — mode Essentiel / Essential mode[/h1]
+[h1]COMSPEC ATAK 4.18.0 Washington — mode Essentiel et appareil photo / Essential mode and camera fix[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
 
@@ -8,6 +8,10 @@
 [*] Rien n'est désinstallé ni perdu : les messages reçus vous attendent dans leur app dès que le mode est coupé. Les apps masquées quittent aussi le dock, la recherche et les bandeaux épinglés sur la carte.
 [*] Le même interrupteur est dans Réglages > Applications et dans le panneau SITUATION de la carte. Votre choix est gardé d'une mission à l'autre.
 [*] [b]Groupes[/b] : l'organisateur de la mission ou l'administrateur du serveur peut imposer le mode à tous les joueurs ; le bouton est alors grisé avec une phrase qui explique pourquoi.
+[*] [b]Appareil photo[/b] : quand une prise de vue échoue ou est interrompue, l'écran, l'interface du jeu et le menu d'actions de la molette sont toujours rendus (plus de plein écran figé ni de molette qui ne répond plus).
+[*] Si la photo n'a pas pu être prise, le téléphone le dit en une phrase : capture refusée par le jeu (qualité HDR à passer sur Moyen au moins), liaison Athena dégradée ou file d'attente pleine. Plus de « photo prise » quand il n'y a pas d'image.
+[*] Le plein écran ne s'ouvre plus sans pouvoir en sortir, et « réparer l'affichage » (action ACE) le referme aussi.
+[*] Le journal envoyé au support dit maintenant à quelle étape la prise de vue s'est arrêtée.
 [/list]
 
 [h2]English[/h2]
@@ -16,6 +20,10 @@
 [*] Nothing is uninstalled or lost: received messages are waiting in their app as soon as the mode is off. Hidden apps also leave the dock, the search and the banners pinned on the map.
 [*] The same switch is in Settings > Applications and in the map's SITUATION panel. Your choice is kept from one mission to the next.
 [*] [b]Groups[/b]: the mission organiser or the server admin can impose the mode on every player; the button is then greyed out with a sentence explaining why.
+[*] [b]Camera[/b]: when a shot fails or is interrupted, the screen, the game interface and the scroll-wheel action menu are always given back (no more frozen full screen or unresponsive wheel).
+[*] If the photo could not be taken, the phone says so in one sentence: capture refused by the game (set HDR quality to Medium or higher), degraded Athena link or full queue. No more "photo taken" when there is no image.
+[*] Full screen no longer opens when you could not leave it, and "repair the display" (ACE action) closes it too.
+[*] The log sent to support now says at which step the shot stopped.
 [/list]
 
 [h1]COMSPEC ATAK 4.17.0 Washington — mini-apps sur la carte, interface renforcée / mini apps on the map, stronger interface[/h1]

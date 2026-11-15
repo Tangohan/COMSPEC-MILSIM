@@ -24486,4 +24486,10 @@
 ["Décoché par défaut (chaque joueur choisit). Coché : tous les téléphones sont réduits aux apps de base (carte, GPS, itinéraire, ordres, briefing, alertes, drone et vidéo en direct) et les joueurs ne peuvent pas le couper. Pour garder une app de plus, ajoutez-la dans « Apps obligatoires » : une app obligatoire reste affichée.", "Off by default (each player chooses). On: every phone is cut down to the basic apps (map, GPS, route, orders, briefing, alerts, drone and live video) and players cannot turn it off. To keep one more app, add it to «Required apps»: a required app stays displayed."],
 ["Masquée par le mode Essentiel : pas de bandeau", "Hidden by Essential mode: no banner"],
 ["Mode Essentiel actif : l'accueil ne montre que les apps de base. Rien n'est désinstallé, coupez le mode dans Réglages ou depuis l'accueil.", "Essential mode is on: the home screen only shows the basic apps. Nothing is uninstalled, turn the mode off in Settings or from the home screen."]
+["Photos : fenêtre de jeu introuvable, réessayez dans un instant", "Photos: game window not found, try again in a moment"],
+["La prise de vue a été interrompue : photo non enregistrée, reprenez-la.", "The shot was interrupted: photo not saved, take it again."],
+["Capture refusée par le jeu : passez la qualité HDR au moins sur Moyen (options d'affichage), puis reprenez la photo.", "Capture refused by the game: set HDR quality to at least Medium (display options), then take the photo again."],
+["Liaison Athena dégradée : reconnectez-vous, puis reprenez la photo.", "Athena link degraded: reconnect, then take the photo again."],
+["File d'attente des photos pleine : réessayez dans un instant.", "Photo queue full: try again in a moment."],
+["Photo gardée sur le poste : à envoyer depuis la Galerie", "Photo kept on the device: send it from the Gallery"]
 ]
