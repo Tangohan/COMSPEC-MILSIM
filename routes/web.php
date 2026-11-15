@@ -1371,6 +1371,10 @@ return function (Router $router) {
     $router->get('/atak/sse/anomalies', [SsePortalController::class, 'anomalies'], $mwSsePortal);
     $router->get('/atak/sse/a-trier', [\App\Controllers\Web\SseTriageController::class, 'index'], $mwSsePortal);
     $router->get('/atak/sse/a-trier/compteurs', [\App\Controllers\Web\SseTriageController::class, 'counters'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/traiter', [\App\Controllers\Web\SseTriageController::class, 'act'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/annuler', [\App\Controllers\Web\SseTriageController::class, 'undo'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/regles', [\App\Controllers\Web\SseTriageController::class, 'rulesSave'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier/regles/apercu', [\App\Controllers\Web\SseTriageController::class, 'rulesPreview'], $mwSsePortal);
     $router->get('/atak/sse/rapprochements', [SsePortalController::class, 'suggestionsIndex'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/valider', [SsePortalController::class, 'suggestionAccept'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
