@@ -169,6 +169,19 @@ final class PilotSyllabusController
         });
     }
 
+    /** Annule l'ajournement d'un palier du cursus modèle. */
+    public function reopen(Request $request, array $params = []): Response
+    {
+        $awardId = (int) ($params['awardId'] ?? 0);
+
+        return $this->guarded($request, function (int $tenantId) use ($request, $awardId): Response {
+            $this->service->reopen($tenantId, $awardId, (int) $this->actorId(), is_platform_admin());
+            Session::flash('success', 'Ajournement annulé : le palier est de nouveau en attente de la décision d’un instructeur.');
+
+            return Response::redirect(url(self::back($request)));
+        });
+    }
+
     /** Crée ou règle un appareil (nom, filière, famille, classes Arma, image). */
     public function saveAircraft(Request $request, array $params = []): Response
     {

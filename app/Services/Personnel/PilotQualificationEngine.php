@@ -101,7 +101,7 @@ final class PilotQualificationEngine
      * @param array<string, mixed> $rule règle (definition_id, scope, track, min_scope_hours, min_track_hours, prereq_definition_id)
      * @param array<string, array{seconds: int, last_flown_at: string}> $totals heures du membre (scopeTotals)
      * @param array<int, array<string, mixed>> $awards attributions du membre indexées par qualification (admin_status, id…)
-     * @return array{state: string, scope_hours: float, track_hours: float, target_scope: float, target_track: float, cond: ?string, cond_hours: float, target_cond: float, pct: int, prereq_ok: bool, hours_ok: bool, award_id: int, last_flown_at: string}
+     * @return array{state: string, scope_hours: float, track_hours: float, target_scope: float, target_track: float, cond: ?string, cond_hours: float, target_cond: float, pct: int, prereq_ok: bool, hours_ok: bool, award_id: int, admin_status: string, last_flown_at: string}
      */
     public static function evaluate(array $rule, array $totals, array $awards): array
     {
@@ -154,6 +154,7 @@ final class PilotQualificationEngine
             'prereq_ok' => $prereqOk,
             'hours_ok' => $hoursOk,
             'award_id' => is_array($award) ? (int) ($award['id'] ?? 0) : 0,
+            'admin_status' => $status,
             'last_flown_at' => (string) ($totals[$scope]['last_flown_at'] ?? ''),
         ];
     }

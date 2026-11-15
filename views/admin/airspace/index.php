@@ -164,6 +164,31 @@ $aeroTabCounts = ['ligne' => count($queue), 'carnet' => (int) ($counts['declared
                 </div>
                 <?php endforeach; ?>
             </div>
+            <?php $adjourned = $aero['adjourned'] ?? []; if ($adjourned !== []): ?>
+            <div class="aero-phd"><div><h3>Ajournés</h3><small>Un ajournement par erreur peut être annulé.</small></div><span class="aero-stt"><?= count($adjourned) ?></span></div>
+            <div class="aero-q">
+                <?php foreach ($adjourned as $it): $uid = (int) $it['user_id']; $who = $name($uid); ?>
+                <div class="aero-qi">
+                    <div class="aero-qi__top">
+                        <?= $avatar($uid, $who) ?>
+                        <span><b><?= $h($who) ?> · <?= $h((string) $it['code']) ?></b><small><?= $h((string) $it['rule']['definition_name']) ?></small></span><span class="aero-qi__kind">Ajourné</span>
+                    </div>
+                    <?php if ($it['mine']): ?>
+                    <small class="aero-hint">Votre propre ajournement : un autre instructeur doit l’annuler.</small>
+                    <?php elseif (!$it['can']): ?>
+                    <small class="aero-hint">Réservé aux instructeurs de la filière.</small>
+                    <?php elseif ($allowed): ?>
+                    <div class="aero-qi__acts">
+                        <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote/propositions/' . (int) $it['item']['award_id'] . '/annuler')) ?>" onsubmit="return confirm(<?= $h(json_encode('Annuler l’ajournement ? Le palier repart en attente de la décision d’un instructeur.', JSON_UNESCAPED_UNICODE)) ?>)">
+                            <?= \App\Core\Csrf::field() ?><input type="hidden" name="retour" value="<?= $h($retour) ?>">
+                            <button type="submit" class="aero-btn sm">Annuler l’ajournement</button>
+                        </form>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 

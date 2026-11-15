@@ -1186,4 +1186,13 @@ final class QualificationAwardRuleService
         $this->transitions->transition($tenantId, $awardId, $approve ? QualificationAdminStatus::OBTAINED : QualificationAdminStatus::FAILED, $actorId, $approve ? 'Validée par un responsable' : 'Refusée par un responsable');
         unset($this->ctx[$tenantId]);
     }
+
+    /** Annule l'ajournement (ou le refus) d'une proposition faite par erreur ; voir QualificationStatusTransitionService::reopenFailed. */
+    public function reopen(int $tenantId, int $awardId, int $actorId): string
+    {
+        $to = $this->transitions->reopenFailed($tenantId, $awardId, $actorId);
+        unset($this->ctx[$tenantId]);
+
+        return $to;
+    }
 }

@@ -169,6 +169,21 @@ final class AirspaceOverviewService
                 ];
             }
         }
+        // Ajournés (échec enregistré par un instructeur) : l'annulation reste possible tant que rien n'a suivi.
+        $adjourned = [];
+        foreach ($rules as $r) {
+            foreach ($r['groups'][PilotQualificationEngine::BLOCKED] ?? [] as $it) {
+                if (($it['admin_status'] ?? '') !== \App\Support\QualificationAdminStatus::FAILED || (int) ($it['award_id'] ?? 0) < 1) {
+                    continue;
+                }
+                $uid = (int) $it['user_id'];
+                $validators = $r['validators'] ?? null;
+                $adjourned[] = [
+                    'user_id' => $uid, 'code' => $short($r), 'rule' => $r, 'item' => $it,
+                    'can' => $uid !== $actor && ($validators === null || in_array($actor, $validators, true)), 'mine' => $uid === $actor,
+                ];
+            }
+        }
         foreach ($in['steps'] ?? [] as $s) {
             foreach ($s['summary']['pending'] ?? [] as $p) {
                 $uid = (int) $p['member']['user_id'];
@@ -327,6 +342,7 @@ final class AirspaceOverviewService
             ],
             'line' => $line,
             'queue' => $queue,
+            'adjourned' => $adjourned,
             'tracks' => $tracks,
             'custom' => $customByTrack,
             'pilots' => $pilots,
