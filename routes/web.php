@@ -1269,6 +1269,7 @@ return function (Router $router) {
     $router->get('/atak/sse/fichiers/photos/{id}/image', [$sseRec, 'photoImage'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/photos/{id}/rattacher', [$sseRec, 'photoAttach'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/identites/{id}/{kind}', [$sseRec, 'identityImage'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/documents/{id}/fond', [$sseRec, 'documentBackground'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/acces-images', [$sseRec, 'accessRequests'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/acces-images/demande', [$sseRec, 'accessRequestStore'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/acces-images/{id}', [$sseRec, 'accessDecide'], $mwSsePortal);

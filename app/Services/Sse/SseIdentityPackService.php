@@ -142,9 +142,9 @@ final class SseIdentityPackService
                 'layout' => $d['layout'],
                 'print' => (object) array_filter((array) $d['print'], static fn (mixed $v): bool => $v !== '' && $v !== null),
                 'images' => [
-                    'photo' => $identityRows[(int) $d['identity_id']]['photo_path'] ?? null,
-                    'signature' => $identityRows[(int) $d['identity_id']]['signature_path'] ?? null,
-                    'background' => $d['background_path'],
+                    'photo' => \App\Support\SseImageStorage::publicOnly($identityRows[(int) $d['identity_id']]['photo_path'] ?? null),
+                    'signature' => \App\Support\SseImageStorage::publicOnly($identityRows[(int) $d['identity_id']]['signature_path'] ?? null),
+                    'background' => \App\Support\SseImageStorage::publicOnly($d['background_path']),
                 ],
             ];
         }

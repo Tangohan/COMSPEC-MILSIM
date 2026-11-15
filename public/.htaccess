@@ -35,6 +35,11 @@
     RewriteRule ^compte\.html$ /account [R=301,L]
     RewriteRule ^mot-de-passe-oublie\.html$ /forgot-password [R=301,L]
 
+    # Images SSE sensibles (portraits, signatures, fonds de papiers) : accès direct refusé, elles ne sortent que par les routes
+    # contrôlées du portail SSE (stockage storage/private/sse-images). Règle À ACTIVER (retirer le « # ») APRÈS la migration
+    # des fichiers : tools/sse-move-images-private.php --apply ; pas-à-pas dans docs/sse-images-hors-public.md.
+    # RewriteRule ^uploads/sse-id-(photos|signatures|backgrounds)/ - [R=404,L]
+
     # Assets / uploads : jamais via index.php (sinon MIME text/html au lieu de text/css, etc.).
     RewriteRule ^(assets|uploads)/ - [L]
     RewriteRule ^(sw\.js|manifest\.webmanifest|favicon\.ico)$ - [L]

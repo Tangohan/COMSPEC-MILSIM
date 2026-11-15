@@ -7,6 +7,10 @@
       last, first, sex, dob, pob, nat, issued, expires          ce qui est imprimé
       athenaDocId       id du papier sur Athena ("" : papier né en jeu)
       athenaIdentityId  id de l'identité Athena qui le porte       athenaRef  « IDT-000001 » ("" sans identité Athena)
+      paperRef          référence du papier sur le site (« DOC-000123 », "" : ancien serveur ou papier né en jeu)
+      issuedAt, layout  date d'émission du site et modèle d'impression (modern | classic | compact | custom ; "" si absents)
+      print             HashMap des champs imprimés en plus (address, height, stamp…) ; vide si absents
+      images            HashMap photo / signature / background : chemins du site ("" si absents), jamais chargés en jeu
       ownerUid, ownerName   à qui il a été remis (Steam ID, nom ; "" pour une IA)
       holder, holderUid     porteur connu (unité ou conteneur ; objNull si inconnu), son Steam ID
       foreign           vrai : porté par un autre joueur que son propriétaire (ramassé sur un corps, au sol)
@@ -55,6 +59,11 @@ _out set ["cls", _d getOrDefault ["cls", ""]];
 _out set ["athenaDocId", _aid];
 _out set ["athenaIdentityId", _iid];
 _out set ["athenaRef", _ref];
+_out set ["paperRef", _ath getOrDefault ["ref", ""]];
+_out set ["issuedAt", _ath getOrDefault ["issued_at", ""]];
+_out set ["layout", _ath getOrDefault ["layout", ""]];
+_out set ["print", +(_ath getOrDefault ["print", createHashMap])];
+_out set ["images", +(_ath getOrDefault ["images", createHashMap])];
 _out set ["ownerUid", _owner];
 _out set ["holder", _holder];
 _out set ["holderUid", _holderUid];
