@@ -1,3 +1,24 @@
+[h1]COMSPEC SSE 1.12.0 — le mod lit les nouveaux champs des papiers / the mod reads the new paper fields (15/11/2026)[/h1]
+[b]Relance Arma complètement. / Fully restart Arma.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Référence du papier au contrôle[/b] : quand un papier vient du site, la lecture de la base (niveau N3) rappelle sa référence (DOC-000123), la même que sur Athena.
+[*] [b]Papier pas encore émis[/b] : un papier du site dont la date d'émission est postérieure à la date de jeu est jugé faux au contrôle.
+[*] [b]Modèle d'impression et champs imprimés[/b] : le mod lit désormais le modèle d'impression et les champs en plus (adresse, taille, tampon…) envoyés par le site ; ils sont gardés pour les modules et les scripts (fn_idPaperOf).
+[*] [b]Images[/b] : Arma ne sait pas afficher une image prise sur le site (photo, signature, fond). Le mod garde seulement leur chemin ; l'affichage reste le gabarit du mod avec la silhouette.
+[*] Un serveur du site plus ancien fonctionne comme avant : les champs absents sont ignorés sans erreur.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Paper reference at the check[/b]: when a paper comes from the website, the database lookup (level N3) reminds you of its reference (DOC-000123), the same as on Athena.
+[*] [b]Paper not issued yet[/b]: a website paper whose issue date is later than the in-game date is judged forged at the check.
+[*] [b]Print layout and printed fields[/b]: the mod now reads the print layout and the extra fields (address, height, stamp…) sent by the website; they are kept for modules and scripts (fn_idPaperOf).
+[*] [b]Images[/b]: Arma cannot display an image fetched from the website (photo, signature, background). The mod only keeps their path; display stays the mod's own template with the silhouette.
+[*] An older website server works as before: missing fields are ignored without any error.
+[/list]
+
 [h1]COMSPEC SSE 1.11.0 — kits de contenu par pays / country content kits (15/11/2026)[/h1]
 [b]Relance Arma complètement. / Fully restart Arma.[/b]
 

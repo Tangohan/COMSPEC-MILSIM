@@ -24653,5 +24653,7 @@
 ["Regardez ÉTAT : la carte d'état donne la cause principale et l'action à faire.", "", "Look at STATUS: the status card gives the main cause and what to do."],
 ["ÉTAT : votre état, ce qui change votre débit, votre radio et vos voisins directs.", "", "STATUS: your status, what changes your speed, your radio and your direct neighbours."],
 ["RELAIS : calcule le débit reçu autour de vous, et liste les relais.", "", "RELAYS: calculates the speed received around you, and lists the relays."],
-["App Wave Relay : ÉTAT, RÉSEAU (nœuds, LOCALISER), RELAIS (carte de débit, liste et état des relais), VOIX.", "", "Wave Relay app: STATUS, NETWORK (nodes, LOCATE), RELAYS (throughput map, relay list and status), VOICE."]
+["App Wave Relay : ÉTAT, RÉSEAU (nœuds, LOCALISER), RELAIS (carte de débit, liste et état des relais), VOIX.", "", "Wave Relay app: STATUS, NETWORK (nodes, LOCATE), RELAYS (throughput map, relay list and status), VOICE."],
+["Date d'émission postérieure à la date du jour (%1) : papier pas encore émis.", "", "Issue date later than today (%1): paper not yet issued."],
+["Référence du papier : %1.", "", "Paper reference: %1."]
 ]

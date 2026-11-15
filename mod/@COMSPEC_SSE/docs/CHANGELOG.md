@@ -1,5 +1,25 @@
 # COMSPEC SSE — historique des versions
 
+## 1.12.0 — 15/11/2026 · Le mod lit les nouveaux champs des papiers du site
+
+**Relancer Arma complètement.** Sources seulement dans cette livraison : le PBO `comspec_sse_identity` et les `script_mod.hpp` des 23 addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer. Les deux libellés anglais sont dans le dictionnaire de l'ATAK natif (`main/i18n/en.txt`) : anglais à partir du prochain `main.pbo`, français d'ici là.
+
+### Résumé joueur
+FR : Les papiers du site sont lus plus complètement
+- Au contrôle, la lecture de la base (N3) rappelle la référence du papier, la même que sur Athena.
+- Un papier du site dont la date d'émission est postérieure à la date de jeu est jugé faux.
+- Les images du site (photo, signature, fond) ne peuvent pas être affichées par Arma : le mod garde le gabarit et la silhouette.
+EN : Website papers are read more completely
+- At the check, the database lookup (N3) reminds you of the paper reference, the same as on Athena.
+- A website paper whose issue date is later than the in-game date is judged forged.
+- Arma cannot display the website images (photo, signature, background): the mod keeps its template and silhouette.
+
+### Détail technique
+- `fn_idAthenaPack.sqf` : les papiers du pack lisent `ref`, `issued_at`, `layout`, `print` et `images` (`_docFields` partagé par `apply` et `applySelf`). `_normDoc` les normalise : texte de 200 caractères au plus, `print` en HashMap de 16 champs au plus (vides retirés), `images` en HashMap `photo` / `signature` / `background` (chemin relatif sans `..`, `:` ni antislash, sinon vide). Champs absents ou `null` : chaînes et tables vides, aucune erreur. Lecture du pack bornée à 400 morceaux (le DLL en fait de 6000 octets, sous la limite de retour d'extension).
+- `fn_idEvaluate.sqf` : constat `paper_ref` (référence du papier, sans effet sur le verdict) au N3 ; constat `not_issued` (verdict faux) pour un papier Athena dont la date d'émission imprimée est postérieure à la date de jeu, aux niveaux N0, N1 et N3. Papier né en jeu ou date illisible : inchangé.
+- `fn_idPaperOf.sqf` : nouvelles clés `paperRef`, `issuedAt`, `layout`, `print`, `images`.
+- Impossible dans Arma : charger une image par HTTP (`ctrlSetText` et les textures d'objet ne lisent que des fichiers du jeu). Repli : conserver le chemin et garder le gabarit du mod.
+
 ## 1.11.0 — 15/11/2026 · Kits de contenu par pays
 
 **Relancer Arma complètement.** Sources seulement dans cette livraison : les PBO `comspec_sse_generator`, `comspec_sse_identity`, `comspec_sse_eden`, `comspec_sse_zeus` et `comspec_sse_main` sont à reconstruire (`build_mod.bat`). Aucune DLL à changer. Les libellés anglais des nouvelles régions et des nouveaux modèles sont dans le dictionnaire de l'ATAK natif (`main/i18n/en.txt`) : ils s'affichent en anglais à partir du prochain `main.pbo` de l'ATAK, en français d'ici là.
