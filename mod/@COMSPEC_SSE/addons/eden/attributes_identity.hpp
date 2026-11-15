@@ -51,6 +51,19 @@ class COMSPEC_SSE_Papiers {
             typeName = "STRING";
             condition = "objectBrain";
         };
+        // Même identifiant, choisi dans la liste des personnes du lore de la session sur le site de la communauté
+        // (comspec_sse_fnc_edenCatalogue). Un choix ici l'emporte sur l'identifiant saisi ci-dessus ; le nom du libellé est
+        // posé sur l'unité au lancement, puis le lore de la session le complète.
+        class COMSPEC_ID_AiUidList {
+            displayName = "Personne du lore (liste du site)";
+            tooltip = "Personnes de la session de lore de l'opération. Liste lue si la connexion Athena du menu COMSPEC SSE est ouverte ; sinon la valeur enregistrée est gardée.";
+            property = "COMSPEC_ID_AiUidList";
+            control = "COMSPEC_SSE_CatLoreCombo";
+            expression = "if (isServer && {_value isNotEqualTo ''}) then { private _p = _value splitString '|'; _this setVariable ['COMSPEC_ID_AiUid', _p param [0, '']]; [{ _this call comspec_sse_fnc_siteIdentityApply; }, [[_this], _p param [0, ''], _p param [1, ''], '', '', '', ''], 2] call CBA_fnc_waitAndExecute; };";
+            defaultValue = "''";
+            typeName = "STRING";
+            condition = "objectBrain";
+        };
         class COMSPEC_ID_Behaviour {
             displayName = "Comportement au contrôle";
             tooltip = "Réponse de l'IA à « Papiers, s'il vous plaît ». Automatique : selon le contexte (IA réalistes).";

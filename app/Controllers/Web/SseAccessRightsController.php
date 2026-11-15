@@ -45,7 +45,39 @@ final class SseAccessRightsController
 
     // ------------------------------------------------------------------ Pages
 
+    /** « Qui peut quoi » : une page, une ligne par section, trois colonnes (voir, écrire, gérer) de puces. */
     public function index(Request $request, array $params = []): Response
+    {
+        $denied = $this->guard();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = $this->tenantId();
+        $old = $this->oldInput();
+        $prefSection = (string) $request->query('section', '');
+        $prefAccess = (string) $request->query('acces', '');
+        if (!isset($old['access']) && isset(C::SIMPLE_ACCESS[$prefAccess])) {
+            $old['access'] = $prefAccess;
+        }
+        if (!isset($old['sections']) && C::hasSection($prefSection) && $this->mayView($prefSection)) {
+            $old['sections'] = [$prefSection];
+        }
+
+        return $this->view('atak.sse.rights.board', [
+            'title' => 'Qui peut quoi',
+            'tab' => 'quoi',
+            'board' => $this->matrix()->board($tenantId, fn (string $key): bool => $this->mayView($key)),
+            'sections' => array_values(array_filter(C::sectionKeys(), fn (string $key): bool => $this->mayView($key))),
+            'rulesTotal' => $this->policy->rules()->countLive($tenantId),
+            'ready' => $this->policy->rules()->ready(),
+            'picker' => $this->pickerOptions($tenantId),
+            'old' => $old,
+            'focus' => $prefSection,
+        ]);
+    }
+
+    /** Grille détaillée sections × sept niveaux (l'ancienne page d'accueil de l'onglet). */
+    public function grid(Request $request, array $params = []): Response
     {
         $denied = $this->guard();
         if ($denied !== null) {
@@ -60,8 +92,104 @@ final class SseAccessRightsController
             'rulesTotal' => $this->policy->rules()->countLive($tenantId),
             'ready' => $this->policy->rules()->ready(),
             'options' => $this->policy->subjects()->options($tenantId),
+            'picker' => $this->pickerOptions($tenantId),
             'old' => $this->oldInput(),
         ]);
+    }
+
+    /**
+     * Recherche de personnes pour le champ « ajouter un bénéficiaire » : identité (prénom, nom, indicatif) telle que
+     * l'annuaire la montre à la personne ; un membre masqué ou anonymisé n'est jamais proposé.
+     */
+    public function people(Request $request, array $params = []): Response
+    {
+        $denied = $this->guardJson();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $q = mb_substr(trim((string) $request->query('q', '')), 0, 60);
+        $out = [];
+        if (mb_strlen($q) >= 2) {
+            foreach ($this->directory()->search($this->tenantId(), $q, 12) as $m) {
+                $out[] = ['ref' => C::subjectRef(C::SUBJECT_USER, (int) $m['user_id']), 'label' => $m['label'], 'group' => C::SUBJECT_TYPES[C::SUBJECT_USER], 'hint' => $m['unit']];
+            }
+        }
+
+        return Response::json(['items' => $out]);
+    }
+
+    /**
+     * Options du champ de recherche d'un bénéficiaire : positions, fonctions, qualifications d'abord ; niveaux d'accès et
+     * unités ensuite. Les personnes se cherchent à la volée (people()).
+     *
+     * @return list<array{ref: string, label: string, group: string, kind: string}>
+     */
+    private function pickerOptions(int $tenantId): array
+    {
+        $simple = $this->policy->subjects()->simpleOptions($tenantId);
+        $old = $this->policy->subjects()->options($tenantId);
+        $out = [];
+        $add = static function (string $type, array $rows, string $suffix = '') use (&$out): void {
+            foreach ($rows as $o) {
+                $out[] = ['ref' => C::subjectRef($type, (int) $o['id']), 'label' => $o['label'] . $suffix, 'group' => C::SUBJECT_TYPES[$type], 'kind' => $type];
+            }
+        };
+        $add(C::SUBJECT_POSITION, $simple['positions']);
+        $add(C::SUBJECT_JOB, $simple['jobs']);
+        $add(C::SUBJECT_QUALIF, $simple['qualifs']);
+        // Un rôle d'affichage de position est déjà proposé comme position : il n'est pas répété comme niveau d'accès.
+        $positionIds = array_column($simple['positions'], 'id');
+        $add(C::SUBJECT_ROLE, array_values(array_filter($old['roles'], static fn (array $o): bool => !in_array($o['id'], $positionIds, true))));
+        $add(C::SUBJECT_UNIT, $old['units']);
+        $add(C::SUBJECT_UNIT_TREE, $old['units'], ' et sous-unités');
+
+        return $out;
+    }
+
+    /** Ajout simple : un bénéficiaire, voir / écrire / gérer, sur une ou plusieurs sections. */
+    public function simpleStore(Request $request, array $params = []): Response
+    {
+        $denied = $this->guardWrite($request, $request->inputString('do') === 'save');
+        if ($denied !== null) {
+            return $denied;
+        }
+        $ref = C::parseSubjectRef($request->inputString('subject_ref'));
+        $input = [
+            'sections' => $this->stringList($request->input('sections')),
+            'access' => $request->inputString('access'),
+            'effect' => $request->inputString('effect') === C::EFFECT_DENY ? C::EFFECT_DENY : C::EFFECT_ALLOW,
+            'subject_type' => $ref[0] ?? '',
+            'subject_id' => $ref[1] ?? 0,
+            'starts_at' => $request->inputString('starts_at'),
+            'ends_at' => $request->inputString('ends_at'),
+            'reason' => $request->inputString('reason'),
+            'source' => '',
+        ];
+        $plan = $this->service()->planSimple($this->tenantId(), $this->userId(), $input);
+
+        return $this->respondPlan($request, $plan, $input, null, self::BASE, self::BASE . '/simple');
+    }
+
+    /** Modèle « en situation » (Renseignement…) : un bénéficiaire par étape. */
+    public function recipeStore(Request $request, array $params = []): Response
+    {
+        $denied = $this->guardWrite($request, $request->inputString('do') === 'save');
+        if ($denied !== null) {
+            return $denied;
+        }
+        $recipe = $request->inputString('recipe');
+        $refs = [];
+        $raw = $request->input('ref');
+        foreach (is_array($raw) ? $raw : [] as $i => $v) {
+            if (is_scalar($v) && preg_match('/^[0-9]{1,2}$/', (string) $i) === 1) {
+                $refs[(string) $i] = (string) $v;
+            }
+        }
+        $options = ['starts_at' => $request->inputString('starts_at'), 'ends_at' => $request->inputString('ends_at'), 'reason' => $request->inputString('reason')];
+        $plan = $this->service()->planRecipe($this->tenantId(), $this->userId(), $recipe, $refs, $options);
+        $input = ['recipe' => $recipe, 'ref' => $refs] + $options;
+
+        return $this->respondPlan($request, $plan, $input, null, self::BASE, self::BASE . '/situation');
     }
 
     public function section(Request $request, array $params = []): Response
@@ -83,6 +211,7 @@ final class SseAccessRightsController
             'section' => C::SECTIONS[$key],
             'rules' => $this->matrix()->rulesOfSection($tenantId, $key),
             'options' => $this->policy->subjects()->options($tenantId),
+            'picker' => $this->pickerOptions($tenantId),
             'ready' => $this->policy->rules()->ready(),
             'old' => $this->oldInput(),
             'focus' => C::hasLevel((string) $request->query('niveau', '')) ? (string) $request->query('niveau') : '',
@@ -253,10 +382,36 @@ final class SseAccessRightsController
         $plan = $template !== null
             ? $this->service()->planTemplate($tenantId, $this->userId(), $template, $input)
             : $this->service()->plan($tenantId, $this->userId(), $input);
+
+        return $this->respondPlan($request, $plan, $input, $template, $back, $action);
+    }
+
+    /**
+     * Aperçu (une phrase sur l'effet, puis le détail) ou enregistrement d'un plan déjà validé par le service.
+     *
+     * @param array{rules: list<array<string, mixed>>, errors: list<string>, skipped: list<string>} $plan
+     * @param array<string, mixed> $input
+     */
+    private function respondPlan(Request $request, array $plan, array $input, ?string $template, string $back, string $action): Response
+    {
+        $tenantId = $this->tenantId();
         $preview = $request->inputString('do') !== 'save';
+        // Double envoi : un jeton à usage unique accompagne l'aperçu ; un second enregistrement avec le même jeton ne refait rien et le dit.
+        $token = $request->inputString('submit_token');
+        if (!$preview && $token !== '' && !$this->consumeToken($token)) {
+            Session::flash('success', 'Cette demande a déjà été enregistrée : rien n’a été recréé.');
+
+            return Response::redirect(url($this->safeBack($back, self::BASE)));
+        }
+        if ($plan['rules'] === [] && SseAccessRuleService::onlyAlreadyInPlace($plan)) {
+            // Tout est déjà en place : ce n'est pas une erreur, et le message dit pourquoi.
+            Session::flash('success', SseAccessRuleService::describeResult($plan, 0));
+
+            return Response::redirect(url($this->safeBack($back, self::BASE)));
+        }
         if ($plan['errors'] !== [] || $plan['rules'] === []) {
             $this->flashOld($input);
-            Session::flash('error', $plan['errors'] !== [] ? implode(' ', $plan['errors']) : implode(' ', $plan['skipped']));
+            Session::flash('error', $plan['errors'] !== [] ? implode(' ', $plan['errors']) : SseAccessRuleService::describeResult($plan, 0));
 
             return Response::redirect(url($this->safeBack($back, self::BASE)));
         }
@@ -266,18 +421,20 @@ final class SseAccessRightsController
                 'tab' => 'grille',
                 'rules' => $plan['rules'],
                 'skipped' => $plan['skipped'],
-                'sim' => $this->matrix()->simulate($tenantId, $plan['rules']),
+                'sim' => $sim = $this->matrix()->simulate($tenantId, $plan['rules']),
+                'effectLine' => SseAccessMatrix::effectLine($sim),
+                'submitToken' => $this->issueToken(),
                 'input' => $input,
                 'template' => $template,
                 'action' => $action,
                 'back' => $back,
             ]);
         }
-        $ids = $this->service()->commit($tenantId, $this->userId(), $this->actorLabel(), $plan['rules'], $template !== null ? 'template' : 'create');
+        $ids = $this->service()->commit($tenantId, $this->userId(), $this->actorLabel(), $plan['rules'], $template !== null || isset($input['recipe']) ? 'template' : 'create');
         if ($ids === []) {
             Session::flash('error', 'Rien n’a été enregistré : réessayez.');
         } else {
-            Session::flash('success', 'Règles enregistrées. Les gardes du bureau en tiennent compte tout de suite.');
+            Session::flash('success', SseAccessRuleService::describeResult($plan, count($ids)));
         }
 
         return Response::redirect(url($this->safeBack($back, self::BASE)));
@@ -292,6 +449,37 @@ final class SseAccessRightsController
             Session::flash('error', 'Action non autorisée.');
 
             return Response::redirect(url('atak/sse/accueil'));
+        }
+
+        return null;
+    }
+
+    /** Jeton d'envoi à usage unique (session) : posé avec l'aperçu, consommé par l'enregistrement. */
+    private function issueToken(): string
+    {
+        $token = bin2hex(random_bytes(12));
+        Session::set('sse_rights_token_' . $token, 1);
+
+        return $token;
+    }
+
+    private function consumeToken(string $token): bool
+    {
+        if (preg_match('/^[a-f0-9]{24}$/', $token) !== 1 || Session::get('sse_rights_token_' . $token) === null) {
+            return false;
+        }
+        Session::forget('sse_rights_token_' . $token);
+
+        return true;
+    }
+
+    /** Même garde que guard(), pour une réponse JSON : jamais de redirection ni de détail. */
+    private function guardJson(): ?Response
+    {
+        $tenantId = $this->tenantId();
+        $uid = $this->userId();
+        if ($tenantId < 1 || $uid < 1 || $this->isGuest() || !$this->policy->canManageRights($uid, ['tenant_id' => $tenantId, 'guest' => false])) {
+            return Response::json(['items' => []], 403);
         }
 
         return null;
@@ -405,7 +593,7 @@ final class SseAccessRightsController
     private function flashOld(array $input): void
     {
         $keep = [];
-        foreach (['levels', 'effect', 'starts_at', 'ends_at', 'reason', 'subject_type', 'subject_id', 'template', 'restrict_rest', 'section'] as $k) {
+        foreach (['levels', 'effect', 'starts_at', 'ends_at', 'reason', 'subject_type', 'subject_id', 'template', 'restrict_rest', 'section', 'sections', 'access', 'recipe', 'ref'] as $k) {
             if (isset($input[$k])) {
                 $keep[$k] = $input[$k];
             }

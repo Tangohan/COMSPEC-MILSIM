@@ -184,6 +184,10 @@ final class SseIdentityApiController
         $map = $body['map'] ?? $body['mapId'] ?? $request->query('map') ?? $request->query('mapId');
         $mapId = is_numeric($map) && (int) $map > 0 ? (int) $map : self::DEFAULT_MAP_ID;
 
+        // Catalogue du mod SSE (ICD-SSE-CATALOGUE-001) : lecture seule, communauté de la clé ou de la session seulement.
+        if (($body['kind'] ?? null) === \App\Services\Sse\SseGameCatalogueService::KIND) {
+            return (new \App\Controllers\Api\Game\GameSseCatalogueApiController())->kindResponse($body);
+        }
         if (in_array($body['kind'] ?? null, SseEditorLibraryService::KINDS, true)) {
             return $this->editorLibraryResponse($tenantId, $body);
         }

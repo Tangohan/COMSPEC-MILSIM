@@ -23,7 +23,7 @@ $isNew = $id === 0;
 $dis = $editable ? '' : ' disabled';
 $idDis = ($editable && !$identityLocked) ? '' : ' disabled';
 $print = (array) ($doc['print'] ?? []);
-$transitionLabels = ['validated' => 'Valider', 'issued' => 'Émettre', 'draft' => 'Repasser en brouillon', 'revoked' => 'Révoquer'];
+$transitionLabels = ['validated' => 'Valider', 'issued' => 'Envoyer au jeu (émettre)', 'draft' => 'Repasser en brouillon', 'revoked' => 'Révoquer'];
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '')
     . '<script type="application/json" id="idw-countries">' . json_encode($countryJs, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>'
@@ -35,11 +35,18 @@ require __DIR__ . '/_subnav.php';
 <div class="page-heading">
     <div>
         <h1><?= $h($isNew ? 'Nouveau papier' : $doc['ref'] . ' — ' . $doc['doc_number']) ?></h1>
-        <p>Modifiez le papier à gauche : l’aperçu à droite se met à jour en direct, bande de lecture automatique comprise. Tout papier reste un spécimen de jeu, émis par un pays imaginaire ou par un pays réel stylisé (univers réaliste-simulation, gabarit générique).</p>
+        <p>Modifiez le papier à gauche : l’aperçu à droite se met à jour en direct, bande de lecture automatique comprise.</p>
     </div>
     <div class="page-reference">
         <strong><?= $h(C::label(C::WORKFLOWS, (string) $doc['workflow'])) ?></strong>
-        <div class="muted"><?= $doc['workflow'] === 'issued' ? 'Chargé par le serveur de jeu' : 'Pas encore en jeu' ?></div>
+        <?php
+        $syncLabel = match ((string) $doc['workflow']) {
+            'issued' => 'Disponible en jeu (pack du serveur de jeu)',
+            'revoked' => 'Révoqué : retiré du jeu à la prochaine synchronisation',
+            default => $isNew ? 'Pas encore enregistré' : 'En attente : « Envoyer au jeu » l’ajoute au pack du serveur',
+        };
+        ?>
+        <div class="muted idw-sync" data-sync="<?= $h((string) $doc['workflow']) ?>"><?= $h($syncLabel) ?></div>
     </div>
 </div>
 
@@ -64,7 +71,7 @@ require __DIR__ . '/_subnav.php';
             <?php endif; ?>
 
             <fieldset>
-                <legend>Papier</legend>
+                <legend>Document et modèle</legend>
                 <div class="idp-statuses">
                     <div>
                         <label for="idw-country">Pays émetteur</label>
@@ -143,7 +150,7 @@ require __DIR__ . '/_subnav.php';
 
             <fieldset>
                 <legend>Images du papier</legend>
-                <p class="idw-note">Photo, signature et fond s’affichent dans l’aperçu et l’image exportée, toujours sous le filigrane SIMULATION.</p>
+                <p class="idw-note">Photo, signature et fond s’affichent dans l’aperçu et l’image exportée.</p>
                 <div class="idp-statuses">
                     <div style="grid-column: 1 / -1">
                         <?php $photoDis = $dis; $hasPhoto = !empty($identity['photo_path']) && !$identityLocked; require __DIR__ . '/_photo_input.php'; ?>
@@ -235,7 +242,12 @@ require __DIR__ . '/_subnav.php';
             </fieldset>
 
             <?php if ($editable): ?>
-                <div class="idp-actions"><button class="btn" type="submit"><?= $isNew ? 'Créer le brouillon' : 'Enregistrer' ?></button></div>
+                <div class="idp-actions idw-actions">
+                    <button class="btn" type="submit"><?= $isNew ? 'Créer le brouillon' : 'Enregistrer' ?></button>
+                    <button class="btn btn--ghost" type="button" id="idw-undo" disabled>Annuler</button>
+                    <button class="btn btn--ghost" type="button" id="idw-redo" disabled>Rétablir</button>
+                    <span class="idw-draft" id="idw-draft" role="status" aria-live="polite">Brouillon local : aucune modification</span>
+                </div>
             <?php endif; ?>
         </div>
     </form>
@@ -251,10 +263,16 @@ require __DIR__ . '/_subnav.php';
                     <button type="button" class="btn btn--ghost" data-face-show="couverture" data-kind="passport"<?= $doc['doc_type'] === 'passport' ? '' : ' hidden' ?>>Couverture</button>
                     <button type="button" class="btn btn--ghost" data-face-show="donnees" data-kind="passport"<?= $doc['doc_type'] === 'passport' ? '' : ' hidden' ?>>Page de données</button>
                     <button type="button" class="btn btn--ghost" data-face-show="observations" data-kind="passport"<?= $doc['doc_type'] === 'passport' ? '' : ' hidden' ?>>Observations</button>
-                    <button type="button" class="btn" id="idw-export" data-lib="<?= $h(asset_url('assets/vendor/html2canvas-1.4.1/html2canvas.min.js')) ?>" data-name="<?= $h(($doc['ref'] ?: 'papier') . '-simulation') ?>">Exporter en image (PNG)</button>
+                    <span class="idw-zoom" role="group" aria-label="Zoom de l’aperçu">
+                        <button type="button" class="btn btn--ghost" id="idw-zoom-out" aria-label="Réduire l’aperçu">−</button>
+                        <button type="button" class="btn btn--ghost" id="idw-zoom-reset" aria-label="Taille normale">100 %</button>
+                        <button type="button" class="btn btn--ghost" id="idw-zoom-in" aria-label="Agrandir l’aperçu">+</button>
+                    </span>
+                    <button type="button" class="btn btn--ghost" id="idw-print">Exporter en PDF</button>
+                    <button type="button" class="btn" id="idw-export" data-lib="<?= $h(asset_url('assets/vendor/html2canvas-1.4.1/html2canvas.min.js')) ?>" data-name="<?= $h(($doc['ref'] ?: 'papier')) ?>">Exporter en image (PNG)</button>
                 </div>
                 <?php require __DIR__ . '/_doc_preview.php'; ?>
-                <p class="idw-note">L’image exportée garde le filigrane SIMULATION en diagonale et le bandeau « DOCUMENT DE JEU – SANS VALEUR », incrustés dans l’image : elle sert au jeu de rôle uniquement. Photos : uniquement des personnages du jeu.</p>
+                <p class="idw-note"><?= $h($preview['marking'] === 'none' ? 'L’image exportée n’a pas de marque visible ; la mention de jeu reste dans les métadonnées du fichier.' : 'L’image exportée porte une mention de jeu discrète, aussi écrite dans les métadonnées du fichier.') ?> Photos : uniquement des personnages du jeu.</p>
             </div>
         </section>
 

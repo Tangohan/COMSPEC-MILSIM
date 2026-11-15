@@ -632,7 +632,7 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
         <div class="dash-rail__panel">
             <div class="dash-rail__view dash-rail__view--root" data-dash-rail-root>
                 <div class="dash-rail__brand">
-                    <span class="dash-rail__brand-mark" aria-hidden="true"><span class="dash-rail__brand-emblem"></span></span>
+                    <?php $athSeasonal = athena_seasonal_logo_img(); ?><span class="dash-rail__brand-mark"<?= $athSeasonal !== '' ? ' style="background:transparent"' : '' ?> aria-hidden="true"><?= $athSeasonal !== '' ? $athSeasonal : '<span class="dash-rail__brand-emblem"></span>' ?></span>
                     <span class="dash-rail__brand-text">
                         <p class="dash-rail__eyebrow">Athena · Commandement</p>
                         <h2 class="dash-rail__title">Tableau de bord</h2>

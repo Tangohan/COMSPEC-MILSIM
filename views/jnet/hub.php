@@ -141,7 +141,7 @@ $itemRows = static function (array $section) use ($h, $pad, $arrow): string {
 <a class="ja-skip" href="#hb-main">Aller au contenu</a>
 
 <header class="ja-hd">
-    <a class="ja-brand" href="<?= $h(url('jnet')) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
+    <a class="ja-brand" href="<?= $h(url('jnet')) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><?php $athSeasonal = athena_seasonal_logo_img(); ?><i aria-hidden="true"<?= $athSeasonal !== '' ? ' style="background:transparent"' : '' ?>><?= $athSeasonal !== '' ? $athSeasonal : 'A' ?></i><span>ATHENA<em>.</em></span></a>
     <nav class="ja-hnav" aria-label="Navigation JNET">
         <a href="<?= $h(url('jnet')) ?>" aria-current="page">Mon extranet</a>
         <a href="<?= $h((string) $org['href']) ?>">Espace commun</a>

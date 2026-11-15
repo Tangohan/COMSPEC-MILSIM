@@ -341,14 +341,14 @@ final class SseKitCatalogTest extends TestCase
     public function testTheSsePackVersionIsBumpedWithItsNotes(): void
     {
         $header = self::read('mod/@COMSPEC_SSE/addons/main/script_mod.hpp');
-        self::assertStringContainsString('versionStr = "1.10.0"; versionAr[] = {1,10,0,0}', $header);
+        self::assertStringContainsString('versionStr = "1.11.0"; versionAr[] = {1,11,0,0}', $header);
         foreach (['generator', 'identity', 'eden', 'zeus'] as $addon) {
-            self::assertStringContainsString('versionStr = "1.10.0"', self::read('mod/@COMSPEC_SSE/addons/' . $addon . '/script_mod.hpp'), $addon);
+            self::assertStringContainsString('versionStr = "1.11.0"', self::read('mod/@COMSPEC_SSE/addons/' . $addon . '/script_mod.hpp'), $addon);
         }
         $steam = self::read('mod/@COMSPEC_SSE/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC SSE 1.10.0', $steam);
+        self::assertStringStartsWith('[h1]COMSPEC SSE 1.11.0', $steam);
         self::assertStringContainsString('[h2]English[/h2]', substr($steam, 0, 4000));
-        self::assertStringContainsString('## 1.10.0', self::read('mod/@COMSPEC_SSE/docs/CHANGELOG.md'));
+        self::assertStringContainsString('## 1.11.0', self::read('mod/@COMSPEC_SSE/docs/CHANGELOG.md'));
         // Dictionnaire anglais : tableau clos, une entrée par ligne, la dernière sans virgule.
         $dict = rtrim(self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/i18n/en.txt'));
         self::assertStringStartsWith("[\n[", $dict);

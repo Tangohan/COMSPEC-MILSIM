@@ -12,6 +12,8 @@ if ($active === '') {
         $active = 'invite_links';
     } elseif (str_contains($requestUri, '/back-office/recruitments/discord-questions')) {
         $active = 'discord';
+    } elseif (str_contains($requestUri, '/back-office/recruitments/paquets-integration')) {
+        $active = 'packages';
     } elseif (str_contains($requestUri, '/back-office/recruitments/settings')) {
         $active = 'sla';
     } elseif (str_contains($requestUri, '/back-office/recruitment/reference-format')) {
@@ -60,6 +62,7 @@ if ($canRecOffers) {
 $sections[] = ['label' => 'Réglages', 'items' => [
     ['href' => url('back-office/recruitments/settings'), 'label' => 'Délais (SLA)', 'hint' => 'Échéances d’instruction', 'icon' => 'clock', 'active' => $is('sla')],
     ['href' => url('back-office/recruitments/messages-prefaits'), 'label' => 'Messages préfaits', 'hint' => 'Modèles de réponse', 'icon' => 'template', 'active' => $is('messages')],
+    ['href' => url('back-office/recruitments/paquets-integration'), 'label' => 'Paquets d’intégration', 'hint' => 'Ce que reçoit un nouveau membre', 'icon' => 'template', 'active' => $is('packages')],
     ['href' => url('back-office/recruitments/discord-questions'), 'label' => 'Questions Discord', 'hint' => 'Questionnaire d’entretien', 'icon' => 'discord', 'active' => $is('discord')],
     ['href' => url('back-office/recruitments/liens-invitation'), 'label' => 'Liens d’invitation', 'hint' => 'Lien à partager pour candidater ou rejoindre', 'icon' => 'link', 'active' => $is('invite_links')],
     ['href' => url('back-office/recruitments/codes-invitation'), 'label' => 'Codes prioritaires', 'hint' => 'Accès prioritaire à la candidature', 'icon' => 'key', 'active' => $is('invite_codes')],

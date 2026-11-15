@@ -21,6 +21,7 @@ class CfgFunctions {
             class edenWriteField {};
             class edenInitEntity {};
             class edenAiProfiles {};
+            class edenCatalogue {};
             class edenDocTypes {};
             class edenCountries {};
             class domexGetNode {};
@@ -55,6 +56,28 @@ class Cfg3DEN {
         class COMSPEC_SSE_AiProfileCombo: Combo {
             attributeLoad = "['load', [_this controlsGroupCtrl 100, _value]] call comspec_sse_fnc_edenAiProfiles";
             attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenAiProfiles";
+            class Controls: Controls { class Title: Title {}; class Value: Value {}; };
+        };
+        // Listes du site de la communauté (catalogue SSE, comspec_sse_fnc_edenCatalogue) : lues si la connexion Athena du
+        // menu COMSPEC SSE est ouverte, sinon la valeur enregistrée est gardée et résolue au lancement de la mission.
+        class COMSPEC_SSE_CatCaseCombo: Combo {
+            attributeLoad = "['load', [_this controlsGroupCtrl 100, _value, 'cases', 'Aucun dossier']] call comspec_sse_fnc_edenCatalogue";
+            attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenCatalogue";
+            class Controls: Controls { class Title: Title {}; class Value: Value {}; };
+        };
+        class COMSPEC_SSE_CatLoreCombo: Combo {
+            attributeLoad = "['load', [_this controlsGroupCtrl 100, _value, 'lore', 'Aucune personne']] call comspec_sse_fnc_edenCatalogue";
+            attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenCatalogue";
+            class Controls: Controls { class Title: Title {}; class Value: Value {}; };
+        };
+        class COMSPEC_SSE_CatWantedCombo: Combo {
+            attributeLoad = "['load', [_this controlsGroupCtrl 100, _value, 'wanted', 'Aucun avis']] call comspec_sse_fnc_edenCatalogue";
+            attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenCatalogue";
+            class Controls: Controls { class Title: Title {}; class Value: Value {}; };
+        };
+        class COMSPEC_SSE_CatContextCombo: Combo {
+            attributeLoad = "['load', [_this controlsGroupCtrl 100, _value, 'contexts', 'Laisser le terminal décider']] call comspec_sse_fnc_edenCatalogue";
+            attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenCatalogue";
             class Controls: Controls { class Title: Title {}; class Value: Value {}; };
         };
         // Types de documents du registre (CfgComspecDocuments, extensions comprises) : comspec_sse_fnc_edenDocTypes.

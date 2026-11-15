@@ -29,6 +29,7 @@ class CfgPatches {
             "COMSPEC_SSE_Module_SandboxSite",
             "COMSPEC_SSE_Module_LinkEntities",
             "COMSPEC_SSE_Module_CaseReference",
+            "COMSPEC_SSE_Module_SiteIdentity",
             "COMSPEC_SSE_Module_ZeusControl",
             "COMSPEC_SSE_Module_ViewData",
             "COMSPEC_SSE_Module_SpoilView",
@@ -77,6 +78,8 @@ class CfgFunctions {
             class moduleSandboxSite {};
             class moduleLinkEntities {};
             class moduleCaseReference {};
+            class moduleSiteIdentity {};
+            class siteIdentityApply {};
             class moduleZeusControl {};
             class moduleViewData {};
             class moduleSpoilView {};
@@ -942,10 +945,75 @@ class CfgVehicles {
                 defaultValue = "''";
                 typeName = "STRING";
             };
+            // Dossier choisi dans la liste du site de la communauté : l'emporte sur la référence saisie ci-dessus.
+            class ReferenceList {
+                displayName = "Dossier du site";
+                tooltip = "Dossiers ouverts sur le site de la communauté (liste lue si la connexion Athena du menu COMSPEC SSE est ouverte). Un choix ici l'emporte sur la référence saisie.";
+                property = "COMSPEC_SSE_Module_CaseReference_ReferenceList";
+                control = "COMSPEC_SSE_CatCaseCombo";
+                expression = "_this setVariable ['ReferenceList',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
         };
 
         class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_A29053E4CB";
+        };
+    };
+
+    // Identité choisie dans les listes du site de la communauté (catalogue SSE) : personne du lore, avis, contexte, dossier.
+    class COMSPEC_SSE_Module_SiteIdentity: COMSPEC_SSE_Module_Base {
+        scope = 2;
+        scopeCurator = 2;
+        displayName = "Identité du site (Athena)";
+        category = "COMSPEC_Cat_Mission";
+        function = "comspec_sse_fnc_moduleSiteIdentity";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+
+        class Attributes {
+            class AiUid {
+                displayName = "Personne du lore";
+                tooltip = "Personne de la session de lore de l'opération, sur le site de la communauté. Liste lue si la connexion Athena du menu COMSPEC SSE est ouverte.";
+                property = "COMSPEC_SSE_Module_SiteIdentity_AiUid";
+                control = "COMSPEC_SSE_CatLoreCombo";
+                expression = "private _p = _value splitString '|'; _this setVariable ['AiUid', _p param [0, ''], true]; _this setVariable ['AiLabel', _p param [1, ''], true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class WantedRef {
+                displayName = "Avis de recherche";
+                tooltip = "Avis de recherche actif à associer aux sujets synchronisés.";
+                property = "COMSPEC_SSE_Module_SiteIdentity_WantedRef";
+                control = "COMSPEC_SSE_CatWantedCombo";
+                expression = "private _p = _value splitString '|'; _this setVariable ['WantedRef', _p param [0, ''], true]; _this setVariable ['WantedLabel', _p param [1, ''], true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class Context {
+                displayName = "Contexte d'acquisition";
+                tooltip = "Contexte porté par les fiches transmises pour ces sujets.";
+                property = "COMSPEC_SSE_Module_SiteIdentity_Context";
+                control = "COMSPEC_SSE_CatContextCombo";
+                expression = "_this setVariable ['Context',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+            class CaseRef {
+                displayName = "Dossier";
+                tooltip = "Dossier où classer les fiches de ces sujets. Vide : dossier actif de la mission.";
+                property = "COMSPEC_SSE_Module_SiteIdentity_CaseRef";
+                control = "COMSPEC_SSE_CatCaseCombo";
+                expression = "_this setVariable ['CaseRef',_value,true];";
+                defaultValue = "''";
+                typeName = "STRING";
+            };
+        };
+
+        class ModuleDescription {
+            description = "Pose sur les personnes synchronisées une identité choisie dans les listes du site de la communauté : personne du lore de la session, avis de recherche, contexte d'acquisition et dossier.";
+            sync[] = {"Anything"};
         };
     };
 
@@ -1429,6 +1497,7 @@ class CfgRemoteExec {
     class Functions {
         class comspec_sse_fnc_setCaseReference { allowedTargets = 2; jip = 0; };
         class comspec_sse_fnc_applyProfile { allowedTargets = 2; };
+        class comspec_sse_fnc_siteIdentityApply { allowedTargets = 2; jip = 0; };
         class comspec_sse_fnc_linkEntities { allowedTargets = 2; };
         class comspec_sse_fnc_giveSeek { allowedTargets = 0; };
         // Compte rendu du serveur au Zeus qui a posé un module « sites et kits ».

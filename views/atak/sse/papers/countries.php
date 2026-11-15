@@ -29,7 +29,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
         <button class="btn" type="submit">Appliquer</button>
         <?php if ($canManage): ?>
             <a class="btn" href="<?= $h(url('atak/sse/papiers/pays/nouveau')) ?>">Nouveau pays</a>
-            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/papiers/pays/reels')) ?>">Ajouter des pays réels (simulation)</a>
+            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/papiers/pays/reels')) ?>">Ajouter des pays réels</a>
         <?php endif; ?>
     </div>
 </form>
@@ -57,7 +57,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
                                 <span class="idm-swatch" aria-hidden="true"><span style="background:<?= $h($c['color_primary']) ?>"></span><span style="background:<?= $h($c['color_secondary'] ?? $c['color_primary']) ?>"></span></span>
                             <?php endif; ?>
                             <strong><?= $h($c['name']) ?></strong>
-                            <?php if (!empty($c['real_sim'])): ?> <span class="badge badge--red" title="Pays réel stylisé, univers réaliste-simulation : papiers de jeu marqués SIMULATION">Réel stylisé · simulation</span><?php elseif ($c['fictional']): ?> <span class="badge badge--amber">Fictif</span><?php endif; ?>
+                            <?php if (!empty($c['real_sim'])): ?> <span class="badge badge--red" title="Pays réel stylisé : gabarit générique, marquage de jeu toujours présent sur les images">Réel stylisé</span><?php elseif ($c['fictional']): ?> <span class="badge badge--amber">Fictif</span><?php endif; ?>
                         </td>
                         <td translate="no"><?= $h($c['code']) ?></td>
                         <td><?= $h(C::label(K::THEMES, $c['theme'])) ?></td>

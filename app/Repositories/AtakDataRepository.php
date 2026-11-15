@@ -342,6 +342,12 @@ class AtakDataRepository
                 $params[] = $since;
                 $params[] = $since;
             }
+            // Cycle de 24 h : seuls les marqueurs du cycle en cours et les marqueurs épinglés sont servis.
+            $cycleStart = \App\Services\Atak\MarkerCycle\AtakMarkerCycleFilter::cutoff($tenantId);
+            if ($cycleStart !== null) {
+                $sql .= \App\Services\Atak\MarkerCycle\AtakMarkerCycleFilter::MARKER_SQL;
+                $params[] = $cycleStart;
+            }
             $sql .= ' ORDER BY id';
             $stmt = $this->pdo()->prepare($sql);
             $stmt->execute($params);

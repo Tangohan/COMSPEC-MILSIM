@@ -95,9 +95,11 @@ final class SseIdentityPackServiceTest extends TestCase
         self::assertSame([$issued, $forged], array_column($pack['documents'], 'id'));
         self::assertSame(
             ['id', 'identity_id', 'holder_person_id', 'type', 'country', 'number', 'issued_on', 'expires_on', 'authority', 'chip',
-                'origin', 'integrity', 'validity', 'report', 'forgery_kind', 'forgery_quality'],
+                'origin', 'integrity', 'validity', 'report', 'forgery_kind', 'forgery_quality', 'ref', 'issued_at', 'layout', 'print', 'images'],
             array_keys($pack['documents'][0])
         );
+        self::assertSame(['photo', 'signature', 'background'], array_keys($pack['documents'][0]['images']));
+        self::assertSame('modern', $pack['documents'][0]['layout']);
         self::assertSame('ALK482913', $pack['documents'][0]['number']);
         self::assertSame(7, $pack['documents'][0]['holder_person_id']);
         // Vérité de jeu : le serveur sait qu'il s'agit d'un faux.

@@ -261,6 +261,15 @@ $td = 'px-4 py-2 align-top text-sm text-slate-800 dark:text-slate-200';
                 <select id="fx-ev" class="<?= $input ?> mt-1 max-w-sm" name="extractions_visibility"><option value="portal"<?= ($st['extractions_visibility'] ?? '') === 'portal' ? ' selected' : '' ?>>Tous les membres du Bureau SSE</option><option value="managers"<?= ($st['extractions_visibility'] ?? '') === 'managers' ? ' selected' : '' ?>>Après validation au back-office</option></select>
                 <p class="mt-1 text-xs <?= $muted ?>">« Après validation » : une nouvelle extraction reste « à valider » ici avant d’être lue par les membres.</p>
             </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-900 dark:text-white" for="fx-pm">Marquage des images exportées de l’atelier de papiers</label>
+                <select id="fx-pm" class="<?= $input ?> mt-1 max-w-sm" name="papers_marking">
+                    <option value="discreet"<?= ($st['papers_marking'] ?? 'discreet') === 'discreet' ? ' selected' : '' ?>>Discret (micro-texte en bas de l’image)</option>
+                    <option value="standard"<?= ($st['papers_marking'] ?? '') === 'standard' ? ' selected' : '' ?>>Standard (filigrane diagonal et bandeau)</option>
+                    <option value="none"<?= ($st['papers_marking'] ?? '') === 'none' ? ' selected' : '' ?>>Aucune marque visible (pays imaginaires seulement)</option>
+                </select>
+                <p class="mt-1 text-xs <?= $muted ?>">La mention « Document de jeu – sans valeur » reste toujours dans les métadonnées du fichier. Les papiers des pays réels stylisés gardent au minimum le marquage discret, quel que soit ce réglage.</p>
+            </div>
             <div><button class="<?= $pri ?>" type="submit">Enregistrer les réglages</button></div>
         </form>
     <?php endif; ?>

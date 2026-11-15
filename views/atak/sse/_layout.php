@@ -105,6 +105,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_field_note.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_shell.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_ui.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_notify.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/app-update-modal.css')) ?>">
     <?php if (!empty($sseNeedLeaflet)): ?>
         <link rel="stylesheet" href="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
@@ -249,8 +250,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
                     <?php endforeach; ?>
                 </nav>
             <?php endif; ?>
-            <?php if ($error): ?><div class="flash flash--error" role="alert"><?= $h($error) ?></div><?php endif; ?>
-            <?php if ($success): ?><div class="flash flash--ok" role="status"><?= $h($success) ?></div><?php endif; ?>
+            <?php require __DIR__ . '/_notify.php'; ?>
             <?= $sseContent ?>
         </main>
     </div>
@@ -288,6 +288,7 @@ window.SSE_CTX = {
 <script src="<?= $h(asset_url('assets/js/sse-context-menu.js')) ?>"></script>
 <script src="<?= $h(asset_url('assets/js/sse-shell.js')) ?>"></script>
 <script src="<?= $h(asset_url('assets/js/sse-ui.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/sse-notify.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-global-search.js')) ?>"></script>
 <script>
   window.APP_VERSION = <?= json_encode(platform_app_version(), JSON_UNESCAPED_UNICODE) ?>;

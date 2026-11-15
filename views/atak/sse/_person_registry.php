@@ -46,6 +46,8 @@ if ($registry === []) {
                     <?= Csrf::field() ?>
                     <button class="btn" type="submit">Créer l’identité du registre</button>
                 </form>
+            <?php elseif (!empty($registry['createDenial'])): ?>
+                <p class="muted" role="note"><?= $h($registry['createDenial']) ?></p>
             <?php endif; ?>
         <?php endif; ?>
     </div>

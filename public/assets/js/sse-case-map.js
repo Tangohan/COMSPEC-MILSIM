@@ -224,9 +224,7 @@
         }
       }
     }).catch(function (err) {
-      if (!silent && err && err.message) {
-        console.warn('[sse-case-map] sauvegarde vue:', err.message);
-      }
+      if (!silent && window.SseNotify) { SseNotify.failure(err); }
     });
   }
 
@@ -312,7 +310,7 @@
         });
       }).then(function (data) {
         if (!data || !data.ok || !data.feature) {
-          alert((data && data.error) || 'Impossible d’enregistrer le ping.');
+          if (window.SseNotify) { SseNotify.error((data && data.error) || 'Impossible d’enregistrer le ping.'); }
           submitBtn.disabled = false;
           return;
         }
@@ -327,7 +325,7 @@
         submitBtn.disabled = true;
         renderMarkers();
       }).catch(function (err) {
-        alert((err && err.message) || 'Erreur réseau lors de l’enregistrement du ping.');
+        if (window.SseNotify) { SseNotify.failure(err); }
         submitBtn.disabled = false;
       });
     });
@@ -344,11 +342,16 @@
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
       body: '_csrf_token=' + encodeURIComponent(boot.csrf)
-    }).then(function (r) { return r.json(); }).then(function (data) {
-      if (!data || !data.ok) return;
+    }).then(function (r) {
+      return r.json().then(function (data) {
+        if (!r.ok) { throw new Error((data && data.error) || ('Erreur ' + r.status)); }
+        return data;
+      });
+    }).then(function (data) {
+      if (!data || !data.ok) { if (window.SseNotify) { SseNotify.failure(); } return; }
       features = features.filter(function (f) { return String(f.id) !== String(id); });
       renderMarkers();
-    });
+    }).catch(function (err) { if (window.SseNotify) { SseNotify.failure(err); } });
   });
 
   var saveBtn = document.getElementById('sse-tacmap-save-btn');
@@ -414,7 +417,7 @@
       } catch (err) {
         captureBtn.disabled = false;
         captureBtn.textContent = 'Capturer la vue';
-        alert('Impossible de capturer la carte (restriction navigateur). Réessayez après un instant.');
+        if (window.SseNotify) { SseNotify.error('Impossible de capturer la carte (restriction navigateur). Réessayez après un instant.'); }
         return;
       }
       form.submit();

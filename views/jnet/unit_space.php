@@ -155,7 +155,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 <a class="ja-skip" href="#us-main">Aller au contenu</a>
 
 <header class="ja-hd ja-hd--rows">
-    <a class="ja-brand ja-brand--sm" href="<?= $h($homeHref) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
+    <a class="ja-brand ja-brand--sm" href="<?= $h($homeHref) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><?php $athSeasonal = athena_seasonal_logo_img(); ?><i aria-hidden="true"<?= $athSeasonal !== '' ? ' style="background:transparent"' : '' ?>><?= $athSeasonal !== '' ? $athSeasonal : 'A' ?></i><span>ATHENA<em>.</em></span></a>
     <a class="ja-unit" href="<?= $h($tabUrl('accueil')) ?>" title="<?= $h($label) ?>">
         <?= $emblemHtml('ja-crest ja-crest--sm') ?>
         <b><?= $h($label) ?></b>

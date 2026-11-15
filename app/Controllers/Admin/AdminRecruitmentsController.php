@@ -1024,6 +1024,39 @@ class AdminRecruitmentsController
 
         $form = $this->onboardingFormService()->build((int) $tenantId, $row, $linkedUser, $selectedRoleIds);
 
+        // Paquet d'intégration : ce que reçoit le nouveau membre. Il pré-remplit grade, unité, emploi et niveau d'accès
+        // quand l'offre ne les fixe pas ; sans paquet défini, rien ne change.
+        $needsOnboardingNow = $this->enlistmentAcceptanceProvisioningService->needsAcceptanceOnboarding($row);
+        $packageService = \App\Core\Container::get(\App\Services\MemberIntegration\MemberIntegrationPackageService::class);
+        $packageParam = $request->query('paquet', '');
+        $integrationPreview = $packageService->preview((int) $tenantId, $row, $defaultUnitId, $this->packageCaps(), (int) $packageParam);
+        if ((string) $packageParam === '0') {
+            $integrationPreview['package'] = null;
+            $integrationPreview['qualifications'] = [];
+            $integrationPreview['courses'] = [];
+        }
+        $integrationPackages = [];
+        try {
+            $integrationPackages = (new \App\Repositories\MemberIntegrationPackageRepository())->listForTenant((int) $tenantId, true);
+        } catch (\Throwable) {
+            $integrationPackages = [];
+        }
+        $pkg = $integrationPreview['package'];
+        if (is_array($pkg) && $needsOnboardingNow) {
+            if ((int) $form['gradeId'] < 1 && (int) $pkg['grade_id'] > 0 && \App\Support\EffectifsLmsAccess::canManageGrades(\App\Core\Gate::getInstance())) {
+                $form['gradeId'] = (int) $pkg['grade_id'];
+            }
+            if ($defaultUnitId < 1 && (int) $pkg['unit_id'] > 0) {
+                $defaultUnitId = (int) $pkg['unit_id'];
+            }
+            if ($defaultJobRoleId < 1 && (int) $pkg['personnel_job_role_id'] > 0) {
+                $defaultJobRoleId = (int) $pkg['personnel_job_role_id'];
+            }
+            if ($pkg['role_ids'] !== [] && \App\Support\EffectifsLmsAccess::canManageRoles(\App\Core\Gate::getInstance())) {
+                $form['accessRoleId'] = (int) $pkg['role_ids'][0];
+            }
+        }
+
         $defaultAssignmentLabel = '';
         if ($defaultJobRoleId < 1 && is_array($linkedOpening)) {
             $defaultAssignmentLabel = trim((string) ($linkedOpening['title'] ?? ''));
@@ -1060,6 +1093,10 @@ class AdminRecruitmentsController
             'linkedRecruitmentOpening' => $linkedOpening,
             'linkedUser' => $linkedUser,
             'needsAcceptanceOnboarding' => $needsOnboarding,
+            'integrationPreview' => $integrationPreview,
+            'integrationPackages' => $integrationPackages,
+            'integrationPackageParam' => (string) $packageParam,
+            'integrationPackagesUrl' => url('back-office/recruitments/paquets-integration'),
             'formDisplayNameHint' => EnlistmentAcceptedIdentity::formDisplayName($row),
             'recruitmentSidebarCounts' => $navCounts,
             'recruitmentAdminNav' => 'queue',
@@ -1121,11 +1158,18 @@ class AdminRecruitmentsController
         }
         $options = $normalized['options'];
 
-        $result = $this->enlistmentAcceptanceProvisioningService->completeAcceptanceOnboarding(
+        // Application d'un seul bloc (paquet d'intégration) ; sans paquet choisi, le parcours d'avant, inchangé.
+        $result = \App\Core\Container::get(\App\Services\MemberIntegration\MemberIntegrationPackageService::class)->apply(
             (int) $tenantId,
             $id,
             $actorId,
-            $options
+            $options,
+            [
+                'package_id' => (int) $request->input('package_id', 0),
+                'qualification_ids' => (array) $request->input('qualification_ids', []),
+                'course_ids' => (array) $request->input('course_ids', []),
+            ],
+            $this->packageCaps()
         );
 
         if (!$result['ok']) {
@@ -1138,9 +1182,19 @@ class AdminRecruitmentsController
         $steamNote = !empty($result['steam_id'])
             ? ' Profil Steam lié' . (!empty($result['steam_synced']) ? ' (avatar synchronisé)' : '') . '.'
             : '';
+        $packageNote = '';
+        if (is_array($result['applied'] ?? null)) {
+            $ap = $result['applied'];
+            $packageNote = !empty($result['unchanged'])
+                ? ' Le paquet « ' . (string) $ap['package'] . ' » était déjà appliqué : rien de nouveau.'
+                : ' Paquet « ' . (string) $ap['package'] . ' » appliqué : '
+                    . count((array) $ap['qualifications']) . ' qualification(s), ' . count((array) $ap['courses']) . ' formation(s)'
+                    . ((array) $ap['pending'] !== [] ? ', ' . count((array) $ap['pending']) . ' à attribuer par un responsable' : '')
+                    . '. Un récapitulatif a été envoyé au nouveau membre.';
+        }
         Session::flash(
             'success',
-            'Intégration terminée : compte membre prêt.' . $steamNote . ($extra !== '' ? ' ' . $extra : '')
+            'Intégration terminée : compte membre prêt.' . $steamNote . $packageNote . ($extra !== '' ? ' ' . $extra : '')
         );
         $this->enlistmentTimelineRepository->logAdhesionStep(
             (int) $tenantId,
@@ -1153,6 +1207,23 @@ class AdminRecruitmentsController
         );
 
         return Response::redirect($this->recruitmentDossierShowUrl($id));
+    }
+
+    /**
+     * Plafond des droits du recruteur sur ce qu'un paquet donne : une qualification ne se délivre qu'avec le droit de
+     * les attribuer ; l'inscription à une formation suit le droit de recruter. Grade et niveau d'accès restent soumis à
+     * leurs droits propres (voir onboardingSave).
+     *
+     * @return array{qualify: bool, enroll: bool}
+     */
+    private function packageCaps(): array
+    {
+        $gate = \App\Core\Gate::getInstance();
+
+        return [
+            'qualify' => $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('personnel.qualification.grant'),
+            'enroll' => $gate->allows('organization.recruitment.manage') || $gate->allows('admin.organization') || $gate->allows('admin.access'),
+        ];
     }
 
     private function onboardingFormService(): EnlistmentOnboardingFormService

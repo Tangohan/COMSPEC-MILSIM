@@ -12,8 +12,8 @@ namespace App\Support;
  * - les gabarits restent génériques, par « zone de style » (europe : bordeaux, americas : bleu, other : vert ou noir) ;
  *   aucune reproduction d'armoiries, d'emblèmes officiels, d'hologrammes, de motifs de sécurité, de polices ou de mises
  *   en page officielles ; le drapeau est un simple jeu de bandes (pas d'armoiries, d'étoiles ni d'inscriptions) ;
- * - chaque face porte « SIMULATION — DOCUMENT DE JEU », l'export PNG garde le filigrane diagonal et le bandeau
- *   « DOCUMENT DE JEU – SANS VALEUR » ;
+ * - l'image exportée porte toujours la mention « DOCUMENT DE JEU – SANS VALEUR » (marquage discret au minimum, jamais
+ *   désactivable pour ces pays : voir SseIdMarking) et la répète dans ses métadonnées ;
  * - numéros au format générique du jeu : code pays à deux lettres + une lettre + six chiffres (ex. GBK482913), qui ne
  *   reprend le format d'aucun vrai titre (le code MRZ, lui, est le vrai code OACI : « D » pour l'Allemagne) ;
  * - photos : uniquement des personnages du jeu.
@@ -27,7 +27,7 @@ final class SseIdRealCountryCatalog
     public const UNIVERSE = 'realistic_sim';
 
     /** Mention imprimée sur chaque face d'un papier de jeu. */
-    public const FACE_MENTION = 'SIMULATION — DOCUMENT DE JEU';
+    public const FACE_MENTION = 'DOCUMENT DE JEU – SANS VALEUR';
 
     /** Bandeau incrusté dans l'image exportée (non retirable). */
     public const EXPORT_BAND = 'DOCUMENT DE JEU – SANS VALEUR';

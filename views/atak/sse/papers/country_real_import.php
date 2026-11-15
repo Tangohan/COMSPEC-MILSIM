@@ -15,7 +15,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ss
 
 <div class="page-heading">
     <div>
-        <h1>Ajouter des pays réels (simulation)</h1>
+        <h1>Ajouter des pays réels</h1>
         <p>Pour une communauté qui joue un univers réaliste : des pays réels stylisés, proposés et jamais imposés. Leurs papiers restent des documents de jeu.</p>
     </div>
 </div>
@@ -25,7 +25,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ss
     <div class="panel-body">
         <ul>
             <li>Gabarit générique par zone (Europe bordeaux, Amériques bleu, autres vert ou noir) : aucune reproduction des vrais modèles, armoiries, emblèmes, hologrammes, motifs de sécurité, polices ou mises en page officielles.</li>
-            <li>Mention « <?= $h(RC::FACE_MENTION) ?> » sur chaque face ; l’image exportée garde le filigrane SIMULATION en diagonale et le bandeau « <?= $h(RC::EXPORT_BAND) ?> ».</li>
+            <li>Mention « <?= $h(RC::FACE_MENTION) ?> » toujours présente sur l’image exportée (au minimum en marquage discret, non désactivable pour ces pays) et dans ses métadonnées.</li>
             <li>Numéros au format du jeu (code du pays, une lettre, six chiffres) : jamais le format exact d’un vrai titre. Le code de la bande de lecture est celui de l’OACI (Allemagne : « D<< »).</li>
             <li>Photos : uniquement des personnages du jeu.</li>
         </ul>
@@ -38,7 +38,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ss
         <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Univers de la communauté</div></div>
         <div class="panel-body">
             <label class="idr-choice"><input type="radio" name="universe" value="<?= $h(RC::UNIVERSE) ?>" required> <strong><?= $h(K::THEMES[RC::UNIVERSE]) ?></strong> — notre communauté joue dans le monde réel, avec des papiers de jeu stylisés.</label>
-            <label class="idr-choice"><input type="checkbox" name="guardrails" value="1" required> Nous nous engageons : documents de jeu marqués SIMULATION, sans valeur, gabarits génériques, photos de personnages du jeu uniquement.</label>
+            <label class="idr-choice"><input type="checkbox" name="guardrails" value="1" required> Nous nous engageons : documents de jeu marqués « sans valeur », gabarits génériques, photos de personnages du jeu uniquement.</label>
         </div>
     </section>
 
@@ -66,7 +66,6 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ss
                             </span>
                             <span class="idr-spec__mrz" translate="no"><?= $h(implode("\n", $p['mrz'])) ?></span>
                             <span class="idr-spec__mention" translate="no"><?= $h(RC::FACE_MENTION) ?></span>
-                            <span class="idr-spec__wm" aria-hidden="true"><span>SIMULATION</span><span>SIMULATION</span><span>SIMULATION</span><span>SIMULATION</span></span>
                         </span>
                         <span class="idr-meta">
                             <span>Code <b translate="no"><?= $h($p['code']) ?></b> · MRZ <b translate="no"><?= $h(str_pad((string) $p['mrz_code'], 3, '<')) ?></b> · Numéros <b translate="no"><?= $h($p['number_format']) ?></b></span>

@@ -76,12 +76,17 @@ class SseAccessRuleRepository
     /**
      * Règles non retirées de la communauté (dates non filtrées), mémorisées pour la requête.
      *
+     * @param bool $fresh lire la base sans passer par aucune copie (planification d'une écriture)
      * @return list<array<string, mixed>>
      */
-    public function liveRules(int $tenantId): array
+    public function liveRules(int $tenantId, bool $fresh = false): array
     {
         if ($tenantId < 1 || !$this->ready()) {
             return [];
+        }
+        if ($fresh) {
+            // Lecture directe de la base : ni la mémoire de la requête ni la copie partagée (planifier, c'est décider d'écrire).
+            return $this->memo[$tenantId] = $this->loadLive($tenantId);
         }
         if (!isset($this->memo[$tenantId])) {
             $key = self::CACHE_NS . ':' . $tenantId . ':g' . ShortCache::gen(self::CACHE_NS . ':' . $tenantId);
@@ -258,6 +263,30 @@ class SseAccessRuleRepository
                 'reason' => (string) ($r['reason'] ?? ''),
                 'created_at' => (string) ($r['created_at'] ?? ''),
             ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Historique des changements qui concernent un bénéficiaire (identité d'un membre, position, qualification…), du plus récent au plus ancien.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function historyForSubject(int $tenantId, string $type, int $id, int $limit = 30): array
+    {
+        if ($tenantId < 1 || $id < 1 || !$this->historyReady()) {
+            return [];
+        }
+        // Lecture bornée à la communauté puis filtrée ici : l'historique d'une communauté reste de quelques centaines de lignes.
+        $out = [];
+        foreach ($this->history($tenantId, 300) as $row) {
+            if ($row['subject_type'] === $type && $row['subject_id'] === $id) {
+                $out[] = $row;
+                if (count($out) >= max(1, min(100, $limit))) {
+                    break;
+                }
+            }
         }
 
         return $out;

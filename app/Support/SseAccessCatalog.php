@@ -50,13 +50,66 @@ final class SseAccessCatalog
     public const SUBJECT_UNIT = 'unit';
     public const SUBJECT_UNIT_TREE = 'unit_tree';
     public const SUBJECT_USER = 'user';
+    /** Position administrative (« En service actif », positions créées par la communauté) : roles.id du rôle d'affichage. */
+    public const SUBJECT_POSITION = 'position';
+    /** Fonction (emploi) du référentiel de la communauté : personnel_job_roles.id. */
+    public const SUBJECT_JOB = 'job';
+    /** Qualification valide (non expirée, non suspendue) : personnel_qualification_definitions.id. Court : subject_type = VARCHAR(12). */
+    public const SUBJECT_QUALIF = 'qualif';
 
     /** @var array<string, string> */
     public const SUBJECT_TYPES = [
         self::SUBJECT_ROLE => 'Niveau d’accès',
         self::SUBJECT_UNIT => 'Unité',
         self::SUBJECT_UNIT_TREE => 'Unité et sous-unités',
-        self::SUBJECT_USER => 'Membre',
+        self::SUBJECT_USER => 'Identité',
+        self::SUBJECT_POSITION => 'Position de service',
+        self::SUBJECT_JOB => 'Fonction',
+        self::SUBJECT_QUALIF => 'Qualification',
+    ];
+
+    /**
+     * Les trois colonnes de « Qui peut quoi » : le niveau qui range la puce, et les niveaux qu'un accord simple pose.
+     * Un accord « écrire » donne aussi voir ; « gérer » donne tout.
+     *
+     * @var array<string, array{label: string, shown: string, grant: list<string>}>
+     */
+    public const SIMPLE_ACCESS = [
+        'voir' => ['label' => 'Voir', 'shown' => self::LEVEL_READ, 'grant' => [self::LEVEL_EXISTS, self::LEVEL_READ]],
+        'ecrire' => ['label' => 'Écrire', 'shown' => self::LEVEL_WRITE, 'grant' => [self::LEVEL_EXISTS, self::LEVEL_READ, self::LEVEL_WRITE, self::LEVEL_ADD]],
+        'gerer' => ['label' => 'Gérer', 'shown' => self::LEVEL_MANAGE, 'grant' => [self::LEVEL_EXISTS, self::LEVEL_READ, self::LEVEL_WRITE, self::LEVEL_ADD, self::LEVEL_DELETE, self::LEVEL_EXPORT, self::LEVEL_MANAGE]],
+    ];
+
+    /**
+     * Modèles « en situation » : chaque étape désigne un bénéficiaire que la personne choisit (position, qualification…)
+     * et ce qu'on lui accorde sur quelles sections. Sections null : toutes.
+     *
+     * @var array<string, array{label: string, hint: string, steps: list<array{label: string, kinds: list<string>, access: string, sections: list<string>|null}>}>
+     */
+    public const RECIPES = [
+        'renseignement' => [
+            'label' => 'Renseignement',
+            'hint' => 'Les positions de commandement voient tout ; les titulaires de la qualification Analyste écrivent.',
+            'steps' => [
+                ['label' => 'Positions qui voient tout', 'kinds' => [self::SUBJECT_POSITION, self::SUBJECT_JOB], 'access' => 'voir', 'sections' => null],
+                ['label' => 'Qualification de ceux qui écrivent', 'kinds' => [self::SUBJECT_QUALIF], 'access' => 'ecrire', 'sections' => ['fichiers', 'photos', 'papiers', 'extractions', 'dossiers', 'analyse', 'terrain']],
+            ],
+        ],
+        'terrain' => [
+            'label' => 'Fiches de renseignement ouvertes',
+            'hint' => 'Les titulaires d’une qualification rédigent les fiches de renseignement ; une position les consulte.',
+            'steps' => [
+                ['label' => 'Qualification de ceux qui rédigent', 'kinds' => [self::SUBJECT_QUALIF], 'access' => 'ecrire', 'sections' => ['terrain']],
+                ['label' => 'Position qui consulte', 'kinds' => [self::SUBJECT_POSITION, self::SUBJECT_JOB], 'access' => 'voir', 'sections' => ['terrain']],
+            ],
+        ],
+        'responsable' => [
+            'label' => 'Une position gère les dossiers',
+            'hint' => 'Une position (chef, adjoint…) gère les dossiers d’enquête et l’analyse, quelle que soit son unité.',
+            'steps' => [
+                ['label' => 'Position qui gère', 'kinds' => [self::SUBJECT_POSITION, self::SUBJECT_JOB], 'access' => 'gerer', 'sections' => ['dossiers', 'analyse']],
+            ],
+        ],
     ];
 
     public const EFFECT_ALLOW = 'allow';
@@ -286,6 +339,44 @@ final class SseAccessCatalog
         return $best;
     }
 
+    /**
+     * Niveaux qu'un refus « simple » pose : voir ferme la lecture (et ce qui en dépend), écrire ferme écrire et verser,
+     * gérer ferme la gestion.
+     *
+     * @return list<string>
+     */
+    public static function simpleDenyLevels(string $access): array
+    {
+        return match ($access) {
+            'voir' => [self::LEVEL_READ],
+            'ecrire' => [self::LEVEL_WRITE, self::LEVEL_ADD],
+            'gerer' => [self::LEVEL_MANAGE],
+            default => [],
+        };
+    }
+
+    /** Libellé du modèle qui a posé une règle (modèle classique « enqueteurs » ou en situation « recipe:… »), vide si saisie à la main. */
+    public static function sourceLabel(string $source): string
+    {
+        if (str_starts_with($source, 'recipe:')) {
+            return self::RECIPES[substr($source, 7)]['label'] ?? '';
+        }
+
+        return self::TEMPLATES[$source]['label'] ?? '';
+    }
+
+    /** Colonne (voir, écrire, gérer) d'un niveau de règle, ou null si le niveau n'a pas de colonne simple. */
+    public static function simpleColumnOf(string $level): ?string
+    {
+        foreach (self::SIMPLE_ACCESS as $key => $def) {
+            if ($def['shown'] === $level) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
     /** Identifiant « type:id » d'un bénéficiaire (liste déroulante, formulaire). */
     public static function subjectRef(string $type, int $id): string
     {
@@ -295,7 +386,7 @@ final class SseAccessCatalog
     /** @return array{0: string, 1: int}|null [type, id] ou null si la référence est mal formée */
     public static function parseSubjectRef(string $ref): ?array
     {
-        if (preg_match('/^(role|unit|unit_tree|user):([1-9][0-9]{0,9})$/', trim($ref), $m) !== 1) {
+        if (preg_match('/^(role|unit|unit_tree|user|position|job|qualif):([1-9][0-9]{0,9})$/', trim($ref), $m) !== 1) {
             return null;
         }
 

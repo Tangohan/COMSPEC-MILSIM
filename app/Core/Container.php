@@ -670,6 +670,7 @@ class Container
             \App\Services\DataCampaign\DataCampaignService::class => new \App\Services\DataCampaign\DataCampaignService(
                 self::get(\App\Repositories\DataCampaignRepository::class)
             ),
+            \App\Services\Cron\Jobs\AtakMarkerCycleCronJob::class => new \App\Services\Cron\Jobs\AtakMarkerCycleCronJob(),
             \App\Services\Cron\Jobs\DataCampaignCronJob::class => new \App\Services\Cron\Jobs\DataCampaignCronJob(
                 self::get(\App\Services\DataCampaign\DataCampaignService::class)
             ),
@@ -768,6 +769,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\ContactMailSyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\DataCampaignCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\AtakMarkerCycleCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob::class),
                 ],
@@ -2596,6 +2598,41 @@ class Container
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class)
+            ),
+            \App\Repositories\MemberIntegrationPackageRepository::class => new \App\Repositories\MemberIntegrationPackageRepository(),
+            \App\Services\MemberIntegration\LiveIntegrationPorts::class => new \App\Services\MemberIntegration\LiveIntegrationPorts(
+                self::get(\App\Services\Recruitment\EnlistmentAcceptanceProvisioningService::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
+                self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Services\Training\TrainingAssignmentService::class),
+                self::get(\App\Repositories\TrainingEnrollmentRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+            ),
+            \App\Services\MemberIntegration\MemberIntegrationPackageService::class => new \App\Services\MemberIntegration\MemberIntegrationPackageService(
+                \App\Core\Database::getPdo(),
+                self::get(\App\Repositories\MemberIntegrationPackageRepository::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(\App\Services\MemberIntegration\LiveIntegrationPorts::class)
+            ),
+            \App\Controllers\Admin\AdminIntegrationPackagesController::class => new \App\Controllers\Admin\AdminIntegrationPackagesController(
+                self::get(\App\Repositories\MemberIntegrationPackageRepository::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class)
             ),
             \App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController::class => new \App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController(
                 self::get(\App\Repositories\RecruitmentDiscordQuestionRepository::class),

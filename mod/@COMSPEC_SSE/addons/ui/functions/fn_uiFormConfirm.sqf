@@ -16,6 +16,10 @@ private _values = _entries apply {
             if (_idx < 0) then { _idx = _data param [2, 0]; };
             _vals param [_idx, _vals param [0, ""]]
         };
+        case "CATALOG": {
+            private _idx = lbCurSel _ctrl;
+            if (_idx < 0) then { _data param [3, ""] } else { _ctrl lbData _idx }
+        };
         case "CHECK": { cbChecked _ctrl };
         case "SLIDER": {
             private _dec = _data param [3, 0];
