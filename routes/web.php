@@ -3397,6 +3397,16 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);
     $router->post('/api/atak/map/clear', [AtakApiController::class, 'mapClear']);
     $router->post('/api/atak/map/clear/undo', [AtakApiController::class, 'mapClearUndo']);
+    // Cycle de 24 h des marqueurs et missions archivées (poste TOC web, ATAK web, TACMAP) : membre connecté, communauté de la session.
+    $markerCycle = \App\Controllers\Api\AtakMarkerCycleApiController::class;
+    $router->get('/api/atak/cycle/status', [$markerCycle, 'status']);
+    $router->get('/api/atak/cycle/archives', [$markerCycle, 'archives']);
+    $router->get('/api/atak/cycle/archives/{id}', [$markerCycle, 'show']);
+    $router->get('/api/atak/cycle/archives/{id}/export.json', [$markerCycle, 'export']);
+    $router->post('/api/atak/cycle/archives/{id}/restore', [$markerCycle, 'restore']);
+    $router->post('/api/atak/cycle/archives/{id}/delete', [$markerCycle, 'delete']);
+    $router->post('/api/atak/cycle/settings', [$markerCycle, 'settings']);
+    $router->post('/api/atak/cycle/pin', [$markerCycle, 'pin']);
     $router->get('/api/atak/markers', [AtakApiController::class, 'markersIndex']);
     $router->get('/api/atak/marker-detection-rules', [AtakApiController::class, 'markerDetectionRulesIndex']);
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);

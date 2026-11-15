@@ -24,6 +24,7 @@ d'opération sur les terrains Arma, reliés au jeu dans les deux sens.
 
 - `4370_atak_toc_plans` : tables `atak_plans`, `atak_plan_elements`, `atak_plan_phases`, `atak_plan_versions`, `atak_plan_shares`, `atak_plan_comments`, `atak_plan_presence`, `atak_toc_rooms`, `atak_toc_actions`.
 - `4380_atak_toc_permissions` : droits `atak.toc.use` et `atak.toc.manage`.
+- `4630_atak_marker_cycles` : tables `atak_marker_cycle_settings`, `atak_marker_archives`, `atak_marker_archive_items` (cycle de 24 h des marqueurs, voir plus bas).
 
 ## Console : rubriques, onglets et sources
 
@@ -315,6 +316,16 @@ Essais : `tests/Unit/AtakTocPlanV2Test.php`, `AtakTocPlanV2ApiTest.php` ; `tests
 - Texte : ASCII, 40 caractères.
 - 300 éléments au plus par envoi (sinon : envoyer phase par phase).
 - Retour (jeu vers web) : le type inverse ; une zone à 2 points devient un trait ; un type inconnu est ignoré.
+
+## Cycle de 24 h des marqueurs et missions archivées
+
+Les marqueurs et tracés de la carte (poste TOC web, ATAK web / Overwatch, TACMAP, et le jeu qui lit les mêmes API) vivent sur un **cycle de 24 h dont la bascule est à 12:00** dans le fuseau de la communauté (`tenants.default_timezone`, sinon Europe/Paris). Réglable par communauté (Missions archivées > Réglages du cycle) : activation, heure de bascule, durée (1 à 7 jours), conservation des archives (3 ans par défaut, ou sans limite). Les droits sont ceux du poste : épingler et restaurer demandent `atak.toc.use` ; les réglages et la purge demandent `atak.toc.manage`, `atak.mission_cycle.manage` ou la gestion de la communauté.
+
+- **Éphémère** (archivé à la bascule) : marqueurs de carte (`atak_markers`, dont ceux du jeu) et tracés (`atak_map_shapes`). **Durable** (jamais touché) : éléments épinglés (le « Permanent » des marqueurs, `web_permanent`), plans d'opération et leurs phases, salle TOC, lieux et calques SSE, ordre de bataille, comptes, positions et pistes (déjà limitées par leur durée de vie).
+- **Lecture** : `AtakMarkerCycleFilter::cutoff()` ajoute à `AtakDataRepository::getMarkers` et `MapShapeRepository::list` le filtre « modifié depuis le début du cycle, ou épinglé ». Cycle désactivé ou tables absentes : aucun filtre, comportement d'avant.
+- **Archivage** : tâche planifiée `atak_marker_cycle` (tous les quarts d'heure, verrou `GET_LOCK`, 2000 éléments au plus par passage, lots de 500). L'instantané est écrit dans une transaction **avant** tout retrait ; si l'écriture échoue rien n'est retiré. Rejouable : un élément n'est jamais archivé deux fois dans la même mission. Les cycles manqués sont rattrapés un par un ; ce qui date de plus de 30 jours est regroupé dans une seule mission « Missions antérieures au … ».
+- **Jeu** : un marqueur du jeu appartient au cycle de sa dernière mise à jour. Archivé, il est retiré du site sans être masqué : le jeu ne le retire pas de sa carte native et le renvoie s'il le modifie.
+- **API** (membre connecté, communauté de la session, CSRF sur les écritures) : `GET /api/atak/cycle/status`, `GET /api/atak/cycle/archives`, `GET /api/atak/cycle/archives/{id}` (lecture seule), `GET …/export.json`, `POST …/restore`, `POST …/delete` (phrase SUPPRIMER), `POST /api/atak/cycle/settings`, `POST /api/atak/cycle/pin`.
 
 ## Ce qui n'est pas fait
 

@@ -670,6 +670,7 @@ class Container
             \App\Services\DataCampaign\DataCampaignService::class => new \App\Services\DataCampaign\DataCampaignService(
                 self::get(\App\Repositories\DataCampaignRepository::class)
             ),
+            \App\Services\Cron\Jobs\AtakMarkerCycleCronJob::class => new \App\Services\Cron\Jobs\AtakMarkerCycleCronJob(),
             \App\Services\Cron\Jobs\DataCampaignCronJob::class => new \App\Services\Cron\Jobs\DataCampaignCronJob(
                 self::get(\App\Services\DataCampaign\DataCampaignService::class)
             ),
@@ -768,6 +769,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\ContactMailSyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\DataCampaignCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\AtakMarkerCycleCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob::class),
                 ],

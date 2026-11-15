@@ -74,7 +74,7 @@ final class MemberIntegrationPackageTest extends TestCase
         require $root . '/database/steps/_context.php';
         ob_start();
         try {
-            require $root . '/database/steps/4630_member_integration_packages.php';
+            require $root . '/database/steps/4640_member_integration_packages.php';
         } finally {
             $out = (string) ob_get_clean();
         }
@@ -347,9 +347,9 @@ final class MemberIntegrationPackageTest extends TestCase
         self::assertSame(0, $empty->changes);
         $registry = (string) file_get_contents(self::ROOT . '/database/steps/registry.php');
         self::assertStringContainsString("'id' => 'member_integration_packages'", $registry);
-        self::assertStringContainsString("'file' => '4630_member_integration_packages.php'", $registry);
+        self::assertStringContainsString("'file' => '4640_member_integration_packages.php'", $registry);
         self::assertFileExists(self::ROOT . '/migrations/rollback/member_integration_packages_down.sql');
-        self::assertStringNotContainsString('ADD UNIQUE KEY', (string) file_get_contents(self::ROOT . '/database/steps/4630_member_integration_packages.php'));
+        self::assertStringNotContainsString('ADD UNIQUE KEY', (string) file_get_contents(self::ROOT . '/database/steps/4640_member_integration_packages.php'));
     }
 
     public function testRoutesWiringAndScreenAreDeclared(): void

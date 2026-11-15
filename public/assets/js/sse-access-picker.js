@@ -218,4 +218,18 @@
     }
 
     document.querySelectorAll('[data-sar-pick]').forEach(init);
+
+    // Un seul envoi par formulaire : le bouton se bloque dès le premier clic (le serveur ignore de toute façon un second envoi).
+    document.querySelectorAll('.sar form[method="post"]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (form.getAttribute('data-sar-sent') === '1') {
+                event.preventDefault();
+                return;
+            }
+            form.setAttribute('data-sar-sent', '1');
+            window.setTimeout(function () {
+                form.querySelectorAll('button[type="submit"]').forEach(function (b) { b.disabled = true; });
+            }, 0);
+        });
+    });
 })();

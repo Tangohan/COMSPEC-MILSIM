@@ -62,6 +62,7 @@ $tocKeys = [
       <div class="toc-toolbar">
         <button type="button" class="toc-btn" id="toc-layers-btn" title="Calques du jeu et du web (L)" aria-expanded="false"><span>Calques</span><b class="toc-count" id="toc-layers-count">0</b></button>
         <button type="button" class="toc-btn" id="toc-sse-ml-btn" hidden aria-expanded="false" aria-controls="toc-sse-ml" title="Calques SSE : contrôles d’identité, lieux, pistes de téléphones"><span>Calques SSE</span></button>
+<?php $cycleId = 'toc-cycle'; $cycleMap = (int) ($tocDefaultMap ?? 1); $cycleMapSelector = '#toc-terrain'; $cycleClass = 'toc-btn'; $cycleFloating = false; require base_path('views/partials/atak_marker_cycle.php'); ?>
         <label class="toc-sr" for="toc-bg">Fond de carte</label>
         <select id="toc-bg" class="toc-select" title="Fond de carte (B)"></select>
         <div class="toc-search" role="search">
