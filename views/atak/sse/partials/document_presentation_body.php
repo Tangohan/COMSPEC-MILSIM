@@ -76,12 +76,12 @@ $blank['code'] = '';
 $blank['make_active'] = '0';
 $records[''] = $blank;
 
-// Aperçu : feuille de démonstration (même gabarit papier que la rédaction), classée « confidentiel » (N3).
+// Aperçu : feuille de démonstration (même gabarit papier que la rédaction), au niveau Secret (S) du bureau.
 $previewDoc = [
     'title' => 'Aperçu — présentation du modèle',
     'reference_code' => 'DOC-PREVIEW-0001',
     'classification' => 'confidentiel',
-    'classification_label' => 'Confidentiel',
+    'classification_label' => 'Secret (S)',
     'document_type_label' => 'Note',
     'status' => 'brouillon',
     'status_label' => 'Brouillon',
@@ -274,9 +274,9 @@ $icoClose = $sseIcon('<path d="M6 6l12 12M18 6L6 18"/>');
                 <div data-sse-if="access_note"><dt>Note d’accès</dt><dd data-sse-text="access_note"></dd></div>
             </dl>
             <div class="sse-block sse-block--paper">
-                <h3>Aperçu de la feuille <span class="sse-level" data-level="3" title="Niveau d’accès de l’aperçu : Confidentiel">N3 · Confidentiel</span></h3>
+                <h3>Aperçu de la feuille <span class="sse-classif" data-classif="secret" title="Niveau de classification de l’aperçu : Secret (S)">SECRET//NOFORN</span></h3>
                 <div class="sse-sheet" data-sse-class-from="paper_style" data-sse-class-prefix="sse-sheet--">
-                    <div class="sse-sheet__banner"><span data-sse-text="banner"></span><strong>CONFIDENTIEL</strong></div>
+                    <div class="sse-sheet__banner"><span data-sse-text="banner"></span><strong>SECRET//NOFORN</strong></div>
                     <div class="sse-sheet__head">
                         <div>
                             <p class="sse-sheet__org" data-sse-text="org_line"></p>
@@ -307,7 +307,7 @@ $icoClose = $sseIcon('<path d="M6 6l12 12M18 6L6 18"/>');
         <div class="sse-dialog__head">
             <div>
                 <h2 id="sse-pres-paper-title">Feuille complète — <?= $h((string) ($fullPrefab['label'] ?? '')) ?></h2>
-                <p>Telle qu’elle apparaît à la rédaction, en niveau Confidentiel.</p>
+                <p>Telle qu’elle apparaît à la rédaction, au niveau Secret (S).</p>
             </div>
             <button type="button" class="sse-iconbtn" data-sse-close aria-label="Fermer"><?= $icoClose ?></button>
         </div>

@@ -42,7 +42,7 @@ use App\Support\SseAccessCatalog;
  *
  * Lecture : accès au portail SSE. Création, statuts et cycle : gestion des dossiers SSE (atak.sse.case.manage,
  * atak.sse.grant ou admin.access), jamais en invité. Vérité de jeu (nature de l'identité, faux, couverture) :
- * habilitation Confidentiel ou plus ; en dessous elle est masquée.
+ * habilitation Secret (S) ou plus ; en dessous elle est masquée.
  */
 final class SseIdentityRegistryController
 {
@@ -293,7 +293,7 @@ final class SseIdentityRegistryController
             return Response::redirect(url(self::BASE));
         }
         $identity = $this->identities->find((int) $doc['identity_id'], $tenantId) ?? [];
-        // Photo et signature d'un membre : CONFIDENTIEL ÉLEVÉ (affichage seulement).
+        // Photo et signature d'un membre : TRÈS SECRET (TS) (affichage seulement).
         if (($identity['id'] ?? 0) > 0) {
             $identity = \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity($tenantId, $identity);
         }
@@ -872,7 +872,7 @@ final class SseIdentityRegistryController
             return Response::redirect(url(self::BASE . '/identites'));
         }
         $person = ($identity['person_id'] ?? 0) > 0 ? $this->persons->findById((int) $identity['person_id'], $tenantId) : null;
-        // Photo et signature d'un membre : CONFIDENTIEL ÉLEVÉ (photo_path vidé si refusé, route protégée si autorisé ; affichage seulement).
+        // Photo et signature d'un membre : TRÈS SECRET (TS) (photo_path vidé si refusé, route protégée si autorisé ; affichage seulement).
         $identity = \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity($tenantId, $identity);
 
         // Fiche en dossier : avis de recherche, détections, chronologie, signalement (jamais bloquant : une source qui
@@ -887,7 +887,7 @@ final class SseIdentityRegistryController
         }
 
         // Images des fiches SEEK II de cette identité (cliché du visage pris au terminal) et mentions aux fichiers : jamais
-        // pour une identité couverture ou fausse sans l'habilitation Confidentiel (même règle que le reste de la fiche).
+        // pour une identité couverture ou fausse sans l'habilitation Secret (S) (même règle que le reste de la fiche).
         $seekImages = [];
         $fileMentions = [];
         if ($this->canSeeTruth() || !in_array($identity['kind'], ['cover', 'forged'], true)) {
@@ -1085,7 +1085,7 @@ final class SseIdentityRegistryController
 
     /**
      * Tableau de bord identité d'une opération (COMSPEC IDENTITY, Lot 2) : contrôles, détections, faux détectés (et
-     * faux réellement présentés, habilitation Confidentiel), recherchés interpellés, contrôleurs, dernières alertes et
+     * faux réellement présentés, habilitation Secret), recherchés interpellés, contrôleurs, dernières alertes et
      * brouillons FRM nés des contrôles, à valider. Filtres : carte (map) et opération (op ; « - » = sans opération).
      */
     public function dashboard(Request $request, array $params = []): Response
@@ -1149,7 +1149,7 @@ final class SseIdentityRegistryController
             $truth = (new SseClearanceService())->allows(SseCaseRepository::CLASS_CONFIDENTIAL);
             $identities = (new SseIdentityRepository())->listForPerson($tenantId, $personId);
             if (!$truth) {
-                // Alias, couvertures et faux rattachés à la personne : vérité de jeu, réservée à l'habilitation Confidentiel.
+                // Alias, couvertures et faux rattachés à la personne : vérité de jeu, réservée à l'habilitation Secret (S).
                 $identities = array_values(array_filter($identities, static fn (array $i): bool => !in_array($i['kind'], MemberIdentityPapersService::SECRET, true)));
             }
             $documents = (new SseIdDocumentRepository())->list($tenantId, ['holder_person_id' => $personId, 'limit' => 50]);

@@ -29,7 +29,7 @@ use App\Support\SseIdentityCatalog;
  * Effectifs › fiche membre › onglet « Identité & papiers », et « Ma situation › Mes papiers » (lecture seule).
  *
  * Gestion : responsables RENS (gestion SSE) ou responsables des effectifs habilités Encadrement ; vérité de jeu
- * (couvertures, faux) avec l'habilitation Confidentiel. Toutes les écritures : POST + jeton CSRF, communauté de la
+ * (couvertures, faux) avec l'habilitation Secret (S). Toutes les écritures : POST + jeton CSRF, communauté de la
  * session, membre de cette communauté, journal d'audit SSE.
  */
 final class MemberIdentityPapersController
@@ -107,7 +107,7 @@ final class MemberIdentityPapersController
             $userId = (int) ($member['id'] ?? 0);
             $service = new MemberIdentityPapersService();
             $data = $service->section($tenantId, $userId, (string) ($member['steam_id'] ?? ''), $rights['truth']);
-            // Photos et signatures des identités du membre : CONFIDENTIEL ÉLEVÉ. Gérer les papiers ne suffit pas à les lire (affichage seulement).
+            // Photos et signatures des identités du membre : TRÈS SECRET (TS). Gérer les papiers ne suffit pas à les lire (affichage seulement).
             $gate = \App\Services\Sse\SseMemberImageGate::forSession();
             foreach (['identities'] as $listKey) {
                 if (is_array($data[$listKey] ?? null)) {
@@ -122,7 +122,7 @@ final class MemberIdentityPapersController
             );
             $data['maps'] = self::maps();
             $data['base'] = self::baseUrl($userId, $sse);
-            // Couverture née en jeu : vérité de jeu, habilitation Confidentiel seulement.
+            // Couverture née en jeu : vérité de jeu, habilitation Secret (S) seulement.
             $data['game_covers'] = [];
             if ($rights['truth']) {
                 try {

@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.21.2 Washington — accusés d'appui aérien : identifiant corrigé / air support acknowledgements: identifier fixed[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Appui aérien[/b] : une demande (9-line, 5-line, tir rapide) reçoit un identifiant simple que l'accusé du pilote retrouve toujours.
+[*] Avant, l'identifiant pouvait contenir un nombre mal écrit et Athena répondait « Not found ».
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Air support[/b]: a request (9-line, 5-line, quick fire) gets a simple identifier that the pilot's acknowledgement always finds.
+[*] Before, the identifier could contain a badly written number and Athena answered "Not found".
+[/list]
+
 [h1]COMSPEC ATAK 4.21.1 Washington — masquer les zones ne fait plus disparaître leurs marqueurs / hiding zones no longer wipes their markers[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

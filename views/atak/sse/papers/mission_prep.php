@@ -126,7 +126,7 @@ require __DIR__ . '/_subnav.php';
                     </tbody>
                 </table>
             </div>
-            <p class="idw-note">100 personnes au plus par catégorie, 250 en tout. Le serveur de jeu charge 500 papiers au plus par carte.<?= $rights['truth'] ? '' : ' Les faux papiers demandent l’habilitation Confidentiel.' ?></p>
+            <p class="idw-note">100 personnes au plus par catégorie, 250 en tout. Le serveur de jeu charge 500 papiers au plus par carte.<?= $rights['truth'] ? '' : ' Les faux papiers demandent l’habilitation Secret (S).' ?></p>
             <div class="idp-actions"><button class="btn" type="submit">Voir l’aperçu</button></div>
         </div>
     </form>
@@ -203,7 +203,7 @@ require __DIR__ . '/_subnav.php';
                             </tbody>
                         </table>
                     </div>
-                    <p class="idw-note">Le serveur de jeu garde pour lui la vérité (faux, couvertures). Les joueurs ne voient que les recherchés de leur camp et leur propre brief ; sur le site, les responsables RENS voient tout, la vérité restant réservée à l’habilitation Confidentiel.</p>
+                    <p class="idw-note">Le serveur de jeu garde pour lui la vérité (faux, couvertures). Les joueurs ne voient que les recherchés de leur camp et leur propre brief ; sur le site, les responsables RENS voient tout, la vérité restant réservée à l’habilitation Secret (S).</p>
                 </div>
             </section>
             <section class="panel">

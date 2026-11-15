@@ -47,7 +47,7 @@ final class SseIdKitAssignmentService
     {
         $mode = (string) $template['identity_mode'];
         if ($mode === 'cover' && !$truth) {
-            return ['ok' => false, 'error' => 'Une identité de couverture demande l’habilitation Confidentiel.', 'members' => 0, 'documents' => 0, 'skipped' => []];
+            return ['ok' => false, 'error' => 'Une identité de couverture demande l’habilitation Secret (S).', 'members' => 0, 'documents' => 0, 'skipped' => []];
         }
         $country = $this->countries->findByCode($tenantId, (string) ($template['country_code'] ?? ''));
         if ($country === null) {

@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Appui aérien (CAS) : les accusés du pilote ne partent plus avec un identifiant invalide (ATAK natif 4.21.2.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : Les accusés des appuis aériens ne sont plus refusés par Athena
+- Une demande d'appui aérien (9-line, 5-line ou demande de tir rapide) reçoit maintenant un identifiant simple et stable, que l'accusé du pilote (reçu, lu, WILCO, UNABLE) retrouve toujours.
+- Avant, l'identifiant pouvait contenir un nombre mal écrit (« 6.35867e+06 ») : Athena répondait « Not found » et l'échec apparaissait dans les signalements.
+- Si tu vois encore cette erreur, mets le mod à jour : les anciennes versions fabriquent toujours l'ancien identifiant.
+EN : Air support acknowledgements are no longer refused by Athena
+- An air support request (9-line, 5-line or quick fire request) now gets a simple, stable identifier that the pilot's acknowledgement (received, read, WILCO, UNABLE) always finds.
+- Before, the identifier could contain a badly written number ("6.35867e+06"): Athena answered "Not found" and the failure showed up in reports.
+- If you still see this error, update the mod: older versions still build the old identifier.
+
+### Détail technique
+- **Cause** : `fn_airBrief.sqf` (ref du brief, case "send") et `fn_firesQuick.sqf` fabriquaient `format ["B%1%2", UID, round (diag_tickTime * 1000)]` ; `format` écrit un nombre >= 1e6 en notation scientifique (`B765611998118681986.35867e+06`). Le DLL l'envoie dans l'adresse `/api/cas/{ref}/status` avec `+` encodé en `%2B` ; le routeur ne décode pas le segment et `AirBriefService::resolveLine` cherchait `...%2B06` dans `mission_id` : 404.
+- **Correction mod** : `CAS-<8 derniers chiffres UID>-<ms entières>` (`toFixed 0`) et `QF-...`, uniquement `[A-Za-z0-9-]`.
+- **Correction site** : `AirBriefService::normalizeRef` décode `%2B` et refuse les caractères hors `[A-Za-z0-9._+-]` ; les anciens ids sont donc retrouvés ; 404 en JSON `{"error":"cas_not_found"}`. Le Link ne rejoue déjà pas un 404 (`ShouldRetryStatusCode`) : DLL inchangée.
+- **Rapport Discord** : lignes « id mal formé (notation scientifique) » et « version du mod ancienne : mettre à jour ».
+- Tests : `tests/Unit/AtakCasRefFormatTest.php`. Non essayé en jeu.
+
 ## Calque « Zones Athena » : le masquer ne fait plus disparaître les marqueurs de zone (ATAK natif 4.21.1.AG - Washington)
 
 ### Résumé joueur

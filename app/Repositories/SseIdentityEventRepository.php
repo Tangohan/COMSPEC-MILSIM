@@ -9,7 +9,7 @@ use App\Core\Database;
 /**
  * Chronologie propre à chaque identité fictive (table sse_identity_events). Append-only : ce dépôt n'offre ni modification
  * ni suppression d'une ligne, par construction. Chaque ligne porte la section dont le lecteur doit avoir le droit
- * (« base » : quiconque ouvre la fiche ; « truth » : vérité de jeu, habilitation Confidentiel).
+ * (« base » : quiconque ouvre la fiche ; « truth » : vérité de jeu, habilitation Secret).
  */
 final class SseIdentityEventRepository
 {

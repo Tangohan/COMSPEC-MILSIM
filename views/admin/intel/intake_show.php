@@ -449,7 +449,7 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
                             <?php endforeach; ?>
                         </ul>
                     <?php endif; ?>
-                    <?php if (!$canRedact): ?><p class="rmt__hint">Caviarder est réservé aux habilités « Diffusion très restreinte ».</p><?php endif; ?>
+                    <?php if (!$canRedact): ?><p class="rmt__hint">Caviarder est réservé aux habilités « Très secret (TS) ».</p><?php endif; ?>
                 </section>
 
                 <section class="rmt__prop">

@@ -121,16 +121,6 @@
     gap: 8px;
     align-items: center;
 }
-.idm-sim {
-    padding: 8px 12px;
-    border: 1px dashed var(--amber, #f59e0b);
-    border-radius: 10px;
-    font-size: 0.85rem;
-}
-.idm-sim strong {
-    letter-spacing: 0.18em;
-    color: var(--amber, #f59e0b);
-}
 .idm-flag {
     display: inline-block;
     width: 32px;

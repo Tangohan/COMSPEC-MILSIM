@@ -16,7 +16,7 @@ $csrf = '<input type="hidden" name="_csrf_token" value="' . $h($csrfToken) . '">
 ?>
 <div class="fx">
     <div class="fx-th">
-        <div><h1>Accès aux images confidentielles</h1><p>Les images des membres (portrait, identité, couverture, papiers) sont classées CONFIDENTIEL ÉLEVÉ. Voici les demandes concernant les membres dont vous êtes un supérieur hiérarchique. Une dérogation est datée, avec un motif, et inscrite au journal d’audit.</p></div>
+        <div><h1>Accès aux images confidentielles</h1><p>Les images des membres (portrait, identité, couverture, papiers) sont classées TRÈS SECRET (TS). Voici les demandes concernant les membres dont vous êtes un supérieur hiérarchique. Une dérogation est datée, avec un motif, et inscrite au journal d’audit.</p></div>
     </div>
     <section class="fx-card">
         <?php if ($requests === []): ?>

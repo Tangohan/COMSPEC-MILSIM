@@ -30,9 +30,7 @@ body.sse-iw .fx label.fx-sw { display: inline-flex; }
 body.sse-iw .fx label.fx-drop { display: flex; }
 .fx p { margin: 0; }
 
-/* Bandeau simulation et en-tête de page */
-.fx-sim { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin: 4px 0 0; padding: 9px 14px; border: 1px solid rgba(251, 191, 36, .35); background: var(--fx-ambd); border-radius: 5px; font-size: 13px; color: var(--fx-tx); }
-.fx-sim b { font-family: var(--fx-mono); color: var(--fx-amb); letter-spacing: .24em; font-size: 12px; }
+/* En-tête de page */
 .fx-th { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px 24px; margin: 20px 0 18px; flex-wrap: wrap; }
 .fx-th h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.02em; color: var(--fx-tx); text-transform: none; }
 .fx-th p { margin: 6px 0 0; color: var(--fx-mu); max-width: 68ch; line-height: 1.55; }

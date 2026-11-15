@@ -275,17 +275,14 @@ body.sse-iw .iw-classbar.sx-classbar {
     min-height: 32px;
     padding: 4px 24px;
     gap: 16px;
-    background: var(--sse-class);
     font: 500 12px/1.4 var(--sse-font);
     letter-spacing: .06em;
     text-transform: uppercase;
 }
 body.sse-iw .sx-classbar strong { font-family: var(--sse-font-mono); font-weight: 500; letter-spacing: .12em; }
 body.sse-iw .sx-classbar span { font-weight: 400; letter-spacing: .06em; opacity: .9; }
-body.sse-iw .sx-classbar--internal { background: #2a3740; }
-body.sse-iw .sx-classbar--command { background: #7a4a0e; }
-body.sse-iw .sx-classbar--confidential { background: var(--sse-class); }
-body.sse-iw .sx-classbar--restricted { background: #5c1010; }
+/* Couleur du bandeau : celle du niveau américain de la session (sse_shell.css : CUI violet, C bleu, S rouge, TS orange). */
+body.sse-iw .iw-classbar.sx-classbar { justify-content: flex-start; text-align: left; }
 
 /* Menu latéral : sections (libellés normaux, pas de capitales), lignes de 40 px. */
 @media (min-width: 981px) {

@@ -54,6 +54,9 @@ final class SseSheetMenu
                 $denial ??= 'Disponible dès que l’étape de base de données « fiches PDF » aura été passée par l’équipe technique.';
             }
             $item = ['model' => $model, 'label' => $label, 'hint' => $hint, 'url' => url('atak/sse/identites/emission/' . $kind . '/' . $id . '/' . $model), 'action' => 'link'];
+            if ($model !== 'notice') {
+                $item['quick_url'] = url('atak/sse/identites/emission/' . $kind . '/' . $id . '/' . $model . '/rapide');
+            }
             if ($model === 'notice') {
                 if ($denial === null && $activeNotice === null) {
                     if ($hasIdentity) {

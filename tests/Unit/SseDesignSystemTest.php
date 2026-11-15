@@ -248,10 +248,10 @@ final class SseDesignSystemTest extends TestCase
         self::assertStringContainsString('sse-table--cards', $html);
         self::assertSame(40, substr_count($html, 'data-label="Aspect du papier"'));
         self::assertStringContainsString('class="sse-tag"', $html);
-        // Tiroir et fenêtres : le niveau de l'aperçu est une pastille .sse-level.
+        // Tiroir et fenêtres : le niveau de classification de l'aperçu (Secret) est une pastille .sse-classif.
         self::assertStringContainsString('<dialog class="sse-drawer', $html);
         self::assertStringContainsString('<template data-sse-template>', $html);
-        self::assertStringContainsString('class="sse-level" data-level="3"', $html);
+        self::assertStringContainsString('class="sse-classif" data-classif="secret"', $html);
         self::assertStringContainsString('<dialog class="sse-modal sse-modal--wide" id="sse-pres-edit"', $html);
         self::assertStringContainsString('<dialog class="sse-modal" id="sse-pres-activate"', $html);
         // Les routes et les champs de l'ancienne page sont conservés.

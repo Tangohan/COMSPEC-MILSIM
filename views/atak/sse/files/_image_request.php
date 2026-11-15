@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * Demande d'accès adressée à la hiérarchie du membre (sous un cadre CONFIDENTIEL ÉLEVÉ ; jamais dans un lien).
+ * Demande d'accès adressée à la hiérarchie du membre (sous un cadre TRÈS SECRET (TS) ; jamais dans un lien).
  *
  * Dans un autre formulaire (planche de comparaison), $lockShells (tableau passé par référence) reçoit la coque du formulaire à poser
  * hors de celui-ci ; les champs lui sont reliés par l'attribut « form ».
