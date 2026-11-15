@@ -54,7 +54,7 @@ $check = static function (string $name, string $id, bool $on, string $label, str
 <div class="dbot">
     <header class="dbot-head ath-card">
         <div>
-            <h1 class="dbot-title">Bot Discord Athena</h1>
+            <h2 class="dbot-title">Bot Discord Athena</h2>
             <p class="dbot-lead">Le bot accompagne votre bureau des effectifs directement sur le serveur Discord de votre communauté : résumés, candidatures, événements, rappels et accueil des nouveaux arrivants.</p>
         </div>
         <span class="dbot-pill dbot-pill--<?= $h($statusTone) ?>"><?= $h($statusText) ?></span>
