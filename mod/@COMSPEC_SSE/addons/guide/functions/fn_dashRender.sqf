@@ -597,7 +597,7 @@ switch (_tab) do {
         if (_loose isEqualTo []) then { _l pushBack ("Tous les objets SSE sont reliés." call _dim); };
         { _l pushBack format ["· %1 <t color='#8a96a3'>%2</t>", ["e:" + str _x] call _ref, (_ents get _x) get "type"]; } forEach (_loose select [0, _cap]);
         _l pushBack "";
-        _l pushBack ([format ["Registre des scellés de la campagne du site (%1)", count _sCustody]] call _hd);
+        _l pushBack ([format ["Registre des pièces de la campagne du site (%1)", count _sCustody]] call _hd);
         if (count _sCustody == 0) then { _l pushBack ([["Aucune campagne lue sur le site.", "Aucune pièce saisie dans cette campagne."] select (count _c > 0)] call _dim); };
         private _pieces = (keys _sCustody);
         _pieces sort true;

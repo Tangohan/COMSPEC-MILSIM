@@ -548,7 +548,7 @@ switch (_op) do {
         _pm set ["asked", _asked];
         { _asked set [_x, (_asked getOrDefault [_x, 0]) + 1]; } forEach (_list arrayIntersect _list);
         // Papiers : l'action ACE (2 s) est lancée par le poste après la réponse ; la vraie réponse (présente, refuse) vient
-        // du contrôle d'identité habituel. Fouille d'une personne rendue, menottée ou inconsciente : l'action ACE (6 s).
+        // du vérification d'identité habituel. Fouille d'une personne rendue, menottée ou inconsciente : l'action ACE (6 s).
         private _ace = "";
         {
             if (_ace isEqualTo "") then {

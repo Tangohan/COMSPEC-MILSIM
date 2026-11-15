@@ -118,7 +118,7 @@ if (!isNull _target) then {
     (_disp displayCtrl 9507) ctrlSetText ((_nat) call comspec_overwatch_connect_fnc_tr);
     (_disp displayCtrl 9508) ctrlSetText ((_lang) call comspec_overwatch_connect_fnc_tr);
 
-    // Document présenté au contrôle d'identité en cours : c'est ce que l'opérateur a sous les yeux,
+    // Document présenté au vérification d'identité en cours : c'est ce que l'opérateur a sous les yeux,
     // il fait foi pour le préremplissage (toujours modifiable). Repris aussi pour la reprise après relevé.
     private _doc = ["doc", [_target]] call comspec_overwatch_connect_fnc_seekState;
     if ((count _doc) > 0 && {!(uiNamespace getVariable ["COMSPEC_SsePerson_ResumeCollect", false])}) then {
@@ -283,6 +283,9 @@ if (_resume && {_idCache isEqualType []} && {(count _idCache) >= 6}) then {
         trim (ctrlText (_disp displayCtrl 9508))
     ]];
 };
+
+// Pad de signature : accroche la souris du dialogue.
+["init"] call comspec_overwatch_connect_fnc_seekSignPad;
 
 // Le terminal s'ouvre sur son accueil ; après un relevé, on revient à la biométrie.
 if (_resume) then {

@@ -1,6 +1,6 @@
 /*
     Fiches « personne » tirées du lore de session Athena pour le passage aux fichiers (SERVEUR, fn_fileServer « query »)
-    : app Fichiers du téléphone, SEEK II (QB, clé biométrique) et contrôle d'identité (source idcheck) passent tous par
+    : app Fichiers du téléphone, SEEK II (QB, clé biométrique) et vérification d'identité (source idcheck) passent tous par
     là. Seules les données CONNUES des fichiers (registre comspec_sse_loreReg, champ known) sont lues : jamais les
     réponses de l'IA ni le caché MJ. Une personne marquée in_files = false sur Athena n'est pas au fichier.
     [_type, _critères] call comspec_sse_fnc_loreFile -> [fiche…] (même forme que les fiches de fn_fileServer)

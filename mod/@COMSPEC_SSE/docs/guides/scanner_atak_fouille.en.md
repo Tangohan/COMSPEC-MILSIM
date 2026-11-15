@@ -38,7 +38,7 @@ Then: **Relever le document** (Log the document) (log in Contrôles / Checks; At
 |---|---|---|---|
 | **Fouiller** (Search) (SSE) | ACE menu on a person › **SSE** | 5 s (quick search, « Fouille SSE rapide… » / Quick SSE search…) | The person's SSE items and data (partial reveal, quality according to skill), exploitation tier +1, journal, DOSSIER SSE (SSE FILE) window |
 | **Fouiller** (SSE) | ACE menu on an SSE-marked object or vehicle | 15 s (full search, « Fouille SSE complète… » / Full SSE search…) | Same; vehicle: cab and cargo, « Exploitation véhicule : x % » (Vehicle exploitation: x %) |
-| **Fouiller les papiers** (Search for papers) | ACE menu on a person › **Contrôle d'identité** (Identity check) | 6 s (4 s on a body) | Their identity documents, under **Documents trouvés** (Documents found) (180 s): Examine / Seize; without consent, only dead, handcuffed, surrendered or unconscious |
+| **Fouiller les papiers** (Search for papers) | ACE menu on a person › **Vérification d'identité** (Identity verification) | 6 s (4 s on a body) | Their identity documents, under **Documents trouvés** (Documents found) (180 s): Examine / Seize; without consent, only dead, handcuffed, surrendered or unconscious |
 | Search by an **AI checkpoint** | "search" outcome | 8 s | Weapons, papers in several names: suspicion |
 | **Relever les empreintes (kit)** (Take fingerprints (kit)), **Prélèvement ADN** (DNA sample), **Test de résidus de tir** (Gunshot residue test) | ACE menu on a person › SSE (kit carried) | 8 s / 6 s / 6 s | Samples without a SEEK |
 

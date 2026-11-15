@@ -56,9 +56,9 @@ final class JnetCommonSpaceTest extends TestCase
 
     // ——— Salons ———
 
-    public function testSixChannelsAreDeclaredWithTheirSectionsAndTheIntelligenceDoor(): void
+    public function testEightChannelsAreDeclaredWithTheirSectionsAndTheIntelligenceDoor(): void
     {
-        self::assertSame(['annonces', 'taches', 'voie', 'renseignements', 'cibles', 'epingles'], array_keys(JnetCommonRules::SALONS));
+        self::assertSame(['apercu', 'annonces', 'taches', 'voie', 'agenda', 'epingles', 'renseignements', 'cibles'], array_keys(JnetCommonRules::SALONS));
         foreach (JnetCommonRules::SALONS as $key => $meta) {
             self::assertArrayHasKey($meta['section'], JnetCommonRules::SECTIONS, $key);
             self::assertNotSame('', $meta['label']);
@@ -67,15 +67,16 @@ final class JnetCommonSpaceTest extends TestCase
         self::assertTrue(JnetCommonRules::SALONS['renseignements']['sse']);
         self::assertTrue(JnetCommonRules::SALONS['cibles']['sse']);
         self::assertFalse(JnetCommonRules::SALONS['annonces']['sse']);
-        self::assertSame('annonces', JnetCommonRules::salon(''));
-        self::assertSame('annonces', JnetCommonRules::salon('../../etc'));
+        self::assertSame('apercu', JnetCommonRules::salon(''));
+        self::assertSame('apercu', JnetCommonRules::salon('../../etc'));
+        self::assertSame('agenda', JnetCommonRules::salon('Agenda'));
         self::assertSame('voie', JnetCommonRules::salon(' VOIE '));
     }
 
     public function testChannelPathUsesAWhitelistOfParameters(): void
     {
         self::assertSame('jnet?commun=1&salon=taches&etat=late', JnetCommonRules::path('taches', ['etat' => 'late', 'evil' => 'x', 'q' => '']));
-        self::assertSame('jnet?commun=1&salon=annonces', JnetCommonRules::path('nimporte'));
+        self::assertSame('jnet?commun=1&salon=apercu', JnetCommonRules::path('nimporte'));
         self::assertStringContainsString('q=a%20b', JnetCommonRules::path('voie', ['q' => 'a b']));
     }
 
@@ -407,9 +408,9 @@ final class JnetCommonSpaceTest extends TestCase
         }
         $home = $this->read('views/jnet/home.php');
         self::assertSame(1, substr_count($home, '<h1'), 'un seul titre de page');
-        self::assertStringContainsString('aria-current="page"', $this->read('views/jnet/commun/_rail.php'));
-        self::assertStringContainsString('aria-label="Salons"', $this->read('views/jnet/commun/_rail.php'));
-        self::assertStringContainsString('jc-drawer', $home, 'tiroir des salons sur mobile');
+        self::assertStringContainsString('aria-current="page"', $this->read('views/jnet/commun/_bar.php'));
+        self::assertStringContainsString('aria-label="Salons"', $this->read('views/jnet/commun/_bar.php'));
+        self::assertStringContainsString('overflow-x: auto', $css, 'la barre des salons défile sur mobile');
     }
 
     public function testEnglishTextsAreInTheDictionary(): void
@@ -441,9 +442,10 @@ final class JnetCommonSpaceTest extends TestCase
         foreach (['/jnet/operations', '/jnet/renseignement', '/jnet/cibles', '/jnet/exploitation', '/jnet/personnel', '/jnet/unite', '/jnet/bibliotheque'] as $route) {
             self::assertStringContainsString("'" . $route . "'", $routes, $route);
         }
-        $rail = $this->read('views/jnet/commun/_rail.php');
+        // Les autres écrans sont dans les rubriques de l'en-tête de la coque, au-dessus de l'espace commun.
+        $shell = $this->read('views/jnet/_page.php');
         foreach (['jnet/unite', 'jnet/personnel', 'jnet/operations', 'jnet/exploitation', 'jnet/bibliotheque'] as $path) {
-            self::assertStringContainsString("url('" . $path . "')", $rail, $path);
+            self::assertStringContainsString("'path' => '" . $path . "'", $shell, $path);
         }
         $ctl = $this->read('app/Controllers/Web/JnetPortalController.php');
         self::assertStringContainsString("['jnet_commun.css'], ['jnet_commun.js']", $ctl);

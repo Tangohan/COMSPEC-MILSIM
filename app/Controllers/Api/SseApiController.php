@@ -17,6 +17,7 @@ use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseDigitalLabService;
 use App\Services\Sse\SseIntelFoundationService;
 use App\Services\Sse\SseSeekPhotoService;
+use App\Services\Sse\SseSignatureStrokes;
 use App\Services\Sse\SseTerrainService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
@@ -122,6 +123,13 @@ final class SseApiController
         $body = $this->enrichSeekCaptureLocation($body);
         $mapId = $this->mapId($request, true);
 
+        // Traits de la signature tracée au SEEK II : traités à part (jamais gardés dans le journal de transmission).
+        $sigStrokes = null;
+        if (is_array($body['signature'] ?? null) && array_key_exists('strokes', $body['signature'])) {
+            $sigStrokes = $body['signature'];
+            unset($body['signature']['strokes'], $body['signature']['aspect']);
+        }
+
         $last = trim((string) ($body['last_name'] ?? ''));
         $first = trim((string) ($body['first_name'] ?? ''));
         $alias = trim((string) ($body['alias'] ?? ''));
@@ -192,7 +200,11 @@ final class SseApiController
                     (string) ($data['submitter_callsign'] ?? 'Terrain')
                 );
             }
+            $sigStored = $this->storeSeekSignature($sigStrokes, $existingId, $tenantId);
             $existing = $this->persons->findById($existingId, $tenantId) ?? $existing;
+            if ($sigStored !== null) {
+                $existing['signature_drawn'] = $sigStored;
+            }
             $existing['duplicate'] = true;
             $existing['updated'] = $filled !== [] || !empty($filing['newly_linked']);
             $existing['filing'] = $filing;
@@ -254,8 +266,12 @@ final class SseApiController
         );
         $filedCaseId = !empty($filing['case']['id']) ? (int) $filing['case']['id'] : null;
 
+        $sigStored = $this->storeSeekSignature($sigStrokes, $id, $tenantId);
         $person = $this->persons->findById($id, $tenantId);
         if (is_array($person)) {
+            if ($sigStored !== null) {
+                $person['signature_drawn'] = $sigStored;
+            }
             $person['filing'] = $filing;
             $person['biometric_samples'] = $this->persons->listBiometricSamples($id, $tenantId);
 
@@ -1413,6 +1429,29 @@ final class SseApiController
         }
 
         return $body;
+    }
+
+    /**
+     * Signature tracée au SEEK II : valide les traits, dessine le PNG et le range sur la fiche.
+     * Une signature refusée ne bloque jamais la fiche (la signature ATAK d'indicatif reste valable).
+     *
+     * @param array<string, mixed>|null $signature
+     * @return array{ok: bool, error?: string}|null null si aucun trait n'a été envoyé
+     */
+    private function storeSeekSignature(?array $signature, int $personId, int $tenantId): ?array
+    {
+        if ($signature === null) {
+            return null;
+        }
+        $res = SseSignatureStrokes::store($signature, $tenantId);
+        if (!$res['ok'] || empty($res['path'])) {
+            return ['ok' => false, 'error' => (string) ($res['error'] ?? 'Signature refusée.')];
+        }
+        if (!$this->persons->setSignatureImage($personId, $tenantId, (string) $res['path'])) {
+            return ['ok' => false, 'error' => 'Enregistrement de la signature impossible.'];
+        }
+
+        return ['ok' => true];
     }
 
     /**

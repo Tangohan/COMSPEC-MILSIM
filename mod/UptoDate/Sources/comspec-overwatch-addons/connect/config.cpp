@@ -72,6 +72,7 @@ class CfgFunctions {
             class sseCollectMedical {};
             class sseBiometricSample {};
             class sseSignAtak {};
+            class seekSignPad {};
             class sseOpenTerminal {};
             class sseOpenFromKeybind {};
             class sseHasTerminalItem {};

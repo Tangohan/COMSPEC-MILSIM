@@ -699,9 +699,9 @@
             <French>%1 vous remet %2 papier(s) : ils sont dans votre inventaire.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_P2P_B_ReceivedHow">
-            <Original>OPEN shows the selected paper (front, back, zoom). While the presentation lasts, the papers stay available in the ACE menu on the person: Identity check, Check identity.</Original>
-            <English>OPEN shows the selected paper (front, back, zoom). While the presentation lasts, the papers stay available in the ACE menu on the person: Identity check, Check identity.</English>
-            <French>OUVRIR affiche le papier choisi (recto, verso, zoom). Tant que la présentation dure, les papiers restent accessibles par le menu ACE sur la personne : Contrôle d'identité, Contrôler l'identité.</French>
+            <Original>OPEN shows the selected paper (front, back, zoom). While the presentation lasts, the papers stay available in the ACE menu on the person: Identity verification, Check identity.</Original>
+            <English>OPEN shows the selected paper (front, back, zoom). While the presentation lasts, the papers stay available in the ACE menu on the person: Identity verification, Check identity.</English>
+            <French>OUVRIR affiche le papier choisi (recto, verso, zoom). Tant que la présentation dure, les papiers restent accessibles par le menu ACE sur la personne : Vérification d'identité, Contrôler l'identité.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_P2P_B_Present">
             <Original>Tick your papers and pick the person: on foot, in plain view, within %1 m.</Original>
@@ -874,9 +874,9 @@
             <French>%1 présente ses papiers.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_P2P_N_Received">
-            <Original>%1 presents %2 paper(s) to you. ACE menu on the person › Identity check › Check identity.</Original>
-            <English>%1 presents %2 paper(s) to you. ACE menu on the person › Identity check › Check identity.</English>
-            <French>%1 vous présente %2 papier(s). Menu ACE sur la personne › Contrôle d'identité › Contrôler l'identité.</French>
+            <Original>%1 presents %2 paper(s) to you. ACE menu on the person › Identity verification › Check identity.</Original>
+            <English>%1 presents %2 paper(s) to you. ACE menu on the person › Identity verification › Check identity.</English>
+            <French>%1 vous présente %2 papier(s). Menu ACE sur la personne › Vérification d'identité › Contrôler l'identité.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_P2P_N_Given">
             <Original>%1 hands you %2 paper(s): they are in your inventory.</Original>

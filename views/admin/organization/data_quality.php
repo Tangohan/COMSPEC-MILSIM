@@ -25,6 +25,9 @@ $missingMediaUsers = is_array($missingMediaUsers ?? null) ? array_values($missin
 /** @var array<string, mixed> $legacy Section « Données anciennes à vérifier » (LegacyDataScreen::build). */
 $legacy = is_array($legacy ?? null) ? $legacy : [];
 
+/** @var array<string, mixed> $tables Tableaux de remplissage et de vérification (DataQualityTables::build). */
+$tables = is_array($tables ?? null) ? $tables : [];
+
 /** @var array<string, mixed> $storage */
 $storage = is_array($storage ?? null) ? $storage : [];
 $storageSets = is_array($storage['sets'] ?? null) ? $storage['sets'] : [];
@@ -117,6 +120,10 @@ $icon = static function (string $name): string {
 $nav = [
     ['id' => 'etat', 'icon' => 'overview', 'title' => 'État des données'],
     ['id' => 'anomalies', 'icon' => 'alert', 'title' => 'Anomalies', 'count' => $nAnomalies, 'tone' => $nHigh > 0 ? 'danger' : ($nAnomalies > 0 ? 'warn' : null)],
+    ['id' => 'personnes', 'icon' => 'users', 'title' => 'Fiches par personne', 'count' => (int) ($tables['people']['all'] ?? 0)],
+    ['id' => 'unites', 'icon' => 'flag', 'title' => 'Fiches par unité', 'count' => (int) ($tables['units']['all'] ?? 0)],
+    ['id' => 'verifications', 'icon' => 'check', 'title' => 'Vérifications d’anomalies', 'count' => (int) ($tables['findings']['all'] ?? 0), 'tone' => ($tables['findings']['all'] ?? 0) > 0 ? 'warn' : null],
+    ['id' => 'champs', 'icon' => 'overview', 'title' => 'Remplissage par donnée'],
     ['id' => 'mouvements', 'icon' => 'moves', 'title' => 'Mouvements', 'count' => count($movements)],
     ['id' => 'corbeille', 'icon' => 'trash', 'title' => 'Corbeille des postes', 'count' => count($trash)],
     ['id' => 'versions', 'icon' => 'versions', 'title' => 'Versions de l’ORBAT', 'count' => count($snapshots)],
@@ -209,6 +216,31 @@ $nav = [
                     </a>
                     <?php endforeach; ?>
                 </div>
+
+                <?php if (!empty($tables['ready'])): $sm = $tables['summary']; ?>
+                <div class="bo-dq-types">
+                    <a class="bo-dq-type" href="#dq-personnes">
+                        <span class="bo-dq-type__head"><span class="bo-dq-type__icon"><?= $icon('users') ?></span><span class="bo-dq-type__value"><?= $h($sm['average']) ?> %</span></span>
+                        <span class="bo-dq-type__label">Fiches remplies</span>
+                        <span class="bo-dq-type__help">Taux moyen de remplissage des fiches des membres actifs.</span>
+                    </a>
+                    <a class="bo-dq-type<?= $sm['incomplete'] > 0 ? ' is-hit' : '' ?>" href="<?= $h(url('back-office/organisation/qualite-donnees') . '?pe_f=incomplete#dq-personnes') ?>">
+                        <span class="bo-dq-type__head"><span class="bo-dq-type__icon"><?= $icon('alert') ?></span><span class="bo-dq-type__value"><?= $h($sm['incomplete']) ?></span></span>
+                        <span class="bo-dq-type__label">Fiches incomplètes</span>
+                        <span class="bo-dq-type__help">Moins de 80 % des données de la fiche sont renseignées.</span>
+                    </a>
+                    <a class="bo-dq-type<?= $sm['stale'] > 0 ? ' is-hit' : '' ?>" href="<?= $h(url('back-office/organisation/qualite-donnees') . '?pe_f=stale#dq-personnes') ?>">
+                        <span class="bo-dq-type__head"><span class="bo-dq-type__icon"><?= $icon('versions') ?></span><span class="bo-dq-type__value"><?= $h($sm['stale']) ?></span></span>
+                        <span class="bo-dq-type__label">Fiches anciennes</span>
+                        <span class="bo-dq-type__help">Sans mise à jour depuis plus d’un an.</span>
+                    </a>
+                    <a class="bo-dq-type<?= $sm['findings'] > 0 ? ' is-hit' : '' ?>" href="#dq-verifications">
+                        <span class="bo-dq-type__head"><span class="bo-dq-type__icon"><?= $icon('check') ?></span><span class="bo-dq-type__value"><?= $h($sm['findings']) ?></span></span>
+                        <span class="bo-dq-type__label">Constats de vérification</span>
+                        <span class="bo-dq-type__help">Doublons, identité, grades, dates impossibles, comptes sans fiche.</span>
+                    </a>
+                </div>
+                <?php endif; ?>
             </section>
 
             <!-- Anomalies -->
@@ -290,6 +322,8 @@ $nav = [
                 <button type="button" class="ath-btn bo-dq-more" data-dq-more hidden>Tout afficher (<span data-dq-more-count>0</span> de plus)</button>
                 <?php endif; ?>
             </section>
+
+            <?php require base_path('views/admin/organization/partials/data_quality_tables.php'); ?>
 
             <!-- Mouvements -->
             <section class="bo-dq-section" id="dq-mouvements" data-dq-section="mouvements">

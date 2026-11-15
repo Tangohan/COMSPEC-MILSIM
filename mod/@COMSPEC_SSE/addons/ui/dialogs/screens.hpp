@@ -237,7 +237,7 @@ class COMSPEC_SSE_EvidenceDialog {
     class controls {
         class List: COMSPEC_SSE_RscListBox { idc = 93410; SSE_POS(0.5,4,16,15.7); };
         class Detail: COMSPEC_SSE_RscStructuredText { idc = 93411; SSE_POS(17,4,18.5,15.7); };
-        class BtnBag: COMSPEC_SSE_RscButton { idc = 93420; text = "METTRE SOUS SCELLÉ"; tooltip = "Place la pièce sélectionnée sous scellé"; action = "[] call comspec_sse_fnc_uiBagSelected"; SSE_POS(0.5,20.75,8,1.5); };
+        class BtnBag: COMSPEC_SSE_RscButton { idc = 93420; text = "PRENDRE EN CHARGE"; tooltip = "Prend la pièce sélectionnée en charge"; action = "[] call comspec_sse_fnc_uiBagSelected"; SSE_POS(0.5,20.75,8,1.5); };
         class BtnBack: COMSPEC_SSE_RscButtonNav { idc = 93421; text = "TERMINAL"; action = "['terminal'] call comspec_sse_fnc_uiOpenScreen"; SSE_POS(23.2,20.75,6,1.5); };
         class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93422; text = "FERMER"; action = "closeDialog 0"; SSE_POS(29.5,20.75,6,1.5); };
     };

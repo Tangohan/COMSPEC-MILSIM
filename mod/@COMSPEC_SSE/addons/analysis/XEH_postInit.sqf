@@ -56,10 +56,10 @@ if (!hasInterface) exitWith {};
     // Tableau des liens, registre et pièces détenues : app « SSE terrain » du téléphone ATAK (onglets SITE et SCELLÉS).
     // Remise des pièces à un équipier : inscrite au journal de chacune.
     private _give = [
-        "COMSPEC_SSE_GiveSeals", "Remettre mes pièces scellées", "\z\comspec_sse\addons\zeus\data\mod_check.paa",
+        "COMSPEC_SSE_GiveSeals", "Remettre mes pièces", "\z\comspec_sse\addons\zeus\data\mod_check.paa",
         {
             params ["_target", "_player"];
-            [5, "Remise des scellés, émargement...", {
+            [5, "Remise des pièces, émargement...", {
                 params ["_target", "_player"];
                 ["transfer", [_player, _target]] call comspec_sse_fnc_custody;
             }, [_target, _player]] call comspec_sse_fnc_progressAction;
@@ -92,7 +92,7 @@ if (!hasInterface) exitWith {};
         ["COMSPEC_Cat_Sse", "Révéler une organisation", { params ["_pos", "_obj"]; ["reveal", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\z\comspec_sse\addons\zeus\data\mod_evidence.paa"],
         ["COMSPEC_Cat_Sse", "Retirer d'une organisation", { params ["_pos", "_obj"]; ["remove", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\z\comspec_sse\addons\zeus\data\mod_trash.paa"],
         ["COMSPEC_Cat_Sse", "Ouvrir le tableau des liens", { [true] call comspec_sse_fnc_chartOpen; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
-        ["COMSPEC_Cat_Mission", "Altérer un scellé (exercice)", {
+        ["COMSPEC_Cat_Mission", "Altérer une pièce (exercice)", {
             params ["_pos", "_obj"];
             private _done = 0;
             { if ((_x getVariable ["COMSPEC_SSE_PieceId", ""]) isNotEqualTo "") then { ["tamper", [_x]] call comspec_sse_fnc_custody; _done = _done + 1; }; } forEach ([_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel"));

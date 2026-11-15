@@ -1,4 +1,4 @@
-# Contrôle d'identité (COMSPEC SSE 1.3.1)
+# Vérification d'identité (COMSPEC SSE 1.3.1)
 
 Papiers d'identité **fictifs** (pays imaginaires, mention SIMULATION sur chaque document) et contrôle sur le terrain,
 par le menu ACE et l'app **Contrôle ID** du téléphone ATAK. Fonctionne entièrement hors ligne ; avec COMSPEC Link 2.0.118
@@ -55,7 +55,7 @@ avec une qualité de 0 à 100.
 
 ## Contrôler quelqu'un
 
-Menu ACE sur la personne › **Contrôle d'identité** :
+Menu ACE sur la personne › **Vérification d'identité** :
 1. **Demander les papiers** (2 s). Une IA répond (elle tend ses papiers, refuse, fuit…). Un joueur reçoit la demande
    sur son ATAK et répond par son menu ACE personnel › **Mes papiers** : *Présenter* (on peut contrôler le document
    pendant 2 minutes), *Remettre* (l'objet passe dans votre inventaire) ou *Refuser*.
@@ -94,7 +94,7 @@ Sans accord :
   sur son ATAK. Les documents trouvés s'examinent ou se **saisissent** (2 s, chaîne de possession SSE) ; **Rendre un
   document** (1 s) les restitue.
 
-Véhicule : menu ACE du véhicule arrêté › Contrôle d'identité › **Contrôler les occupants** (chaque IA répond, chaque
+Véhicule : menu ACE du véhicule arrêté › Vérification d'identité › **Contrôler les occupants** (chaque IA répond, chaque
 joueur reçoit la demande) ou **Faire descendre**.
 
 Onglet **HISTORIQUE** de l'app : les 50 derniers contrôles du joueur.
@@ -131,7 +131,7 @@ est rappelé entre crochets.
 
 ## Checkpoints IA (1.2.0)
 
-Module **Eden** « Checkpoint IA (contrôle d'identité) » (COMSPEC SSE · 2. Personnes et liens) ou module **Zeus**
+Module **Eden** « Checkpoint IA (vérification d'identité) » (COMSPEC SSE · 2. Personnes et liens) ou module **Zeus**
 « COMSPEC SSE · Identité › Checkpoint IA » : rayon de la zone, camp du poste, équipement (**visuel seul** N0, **scanner
 MRZ** N1, **lecteur NFC** N2, **liaison base** N3), sévérité (laxiste, normale, stricte), nom. Gardes : unités
 synchronisées (et leur groupe), sinon IA du camp dans la zone.
@@ -192,7 +192,7 @@ biographie, famille, langues, phrases types, sujets sensibles, secrets, brief et
   « Qui peut confirmer ce que vous dites ? ». Réponse au choix (votre vraie légende et deux leurres) dans l'app Ma
   couverture ou par le menu ACE personnel › **Mes papiers › Répondre**. Délai : réglage (20 s, 10 s de plus par
   question). Une mauvaise réponse ou un silence éveille les soupçons. Tout joueur a une légende tirée de ses papiers.
-- **Interroger une IA** : menu ACE sur la personne › Contrôle d'identité › **Poser une question**. Un civil répond
+- **Interroger une IA** : menu ACE sur la personne › Vérification d'identité › **Poser une question**. Un civil répond
   juste ; un porteur de couverture selon sa préparation ; un porteur de faux papiers se trompe plus souvent (comparez
   avec ses papiers). Les réponses s'affichent dans l'app Contrôle ID et partent dans la FRM.
 
@@ -249,7 +249,7 @@ Catégorie « COMSPEC SSE · Identité » :
 
 ## Réglages (CBA › COMSPEC SSE › Identité)
 
-Contrôle d'identité · Difficulté (arcade / standard / réaliste) · **Univers réaliste-simulation (pays réels stylisés)**
+Vérification d'identité · Difficulté (arcade / standard / réaliste) · **Univers réaliste-simulation (pays réels stylisés)**
 (non) · Pays des papiers · Papiers des IA · Civils qui
 présentent leurs papiers (90 %) · Insurgés porteurs de faux papiers (60 %) · Durée d'une présentation (120 s) ·
 Transmission automatique à Athena (non) · Documents et avis d'Athena · Opération Athena · **IA réalistes au contrôle**

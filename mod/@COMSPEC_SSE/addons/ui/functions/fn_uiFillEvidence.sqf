@@ -29,7 +29,7 @@ lbClear _lb;
 
 if (_ids isEqualTo []) exitWith {
     _lb lbAdd (("(aucune pièce au registre)") call comspec_sse_fnc_tr);
-    _detail ctrlSetStructuredText parseText (("<t color='#8f8'>REGISTRE DES SCELLÉS</t><br/>Aucune pièce saisie pour l'instant.<br/><br/><t color='#9aa'>Collecter un objet ouvre une pièce (numéro P-dossier-0001). La mettre sous scellé lui donne un numéro de scellé. Photographie, exploitation, analyse et remise à un équipier s'inscrivent au journal de la pièce, chaque ligne liée à la précédente : une ligne modifiée après coup est signalée.</t>") call comspec_sse_fnc_tr);
+    _detail ctrlSetStructuredText parseText (("<t color='#8f8'>REGISTRE DES PIÈCES</t><br/>Aucune pièce saisie pour l'instant.<br/><br/><t color='#9aa'>Collecter un objet ouvre une pièce (numéro P-dossier-0001). La prendre en charge lui donne un numéro de scellé. Photographie, exploitation, analyse et remise à un équipier s'inscrivent au journal de la pièce, chaque ligne liée à la précédente : une ligne modifiée après coup est signalée.</t>") call comspec_sse_fnc_tr);
     true
 };
 

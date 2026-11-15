@@ -1,5 +1,5 @@
 /*
-    Côté joueur du contrôle d'identité : envoi au serveur et réponses du serveur (remoteExec, allowedTargets = 1).
+    Côté joueur du vérification d'identité : envoi au serveur et réponses du serveur (remoteExec, allowedTargets = 1).
     ["send", [op, args]]                        demande au serveur (fn_idServer ; appel direct en solo / hôte)
     Réponses : request [contrôleur] · token [porteur, docId, libellé, fin] · answer [cible, réponse, texte]
       docs [cible, [[poignée, classe, libellé]…]] · doc [document imprimé, N0, sujet, mien, clé] · blank [poignée]
@@ -69,7 +69,7 @@ switch (_op) do {
             // 60 % de la durée d'examen (2 s) exigés par le serveur, plus la latence.
             [{ ["send", ["view", [player, _this]]] call comspec_sse_fnc_idClient; }, _id, 1.5] call CBA_fnc_waitAndExecute;
         } else {
-            ["", "INFO", objNull, format [("Papiers de %1 : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité." call comspec_sse_fnc_tr), [name _holder, "?"] select (isNull _holder), _label]] call comspec_sse_fnc_toast;
+            ["", "INFO", objNull, format [("Papiers de %1 : %2. Menu ACE › Vérification d'identité › Contrôler l'identité." call comspec_sse_fnc_tr), [name _holder, "?"] select (isNull _holder), _label]] call comspec_sse_fnc_toast;
         };
     };
     case "say": {
@@ -94,7 +94,7 @@ switch (_op) do {
             if ((_h select [0, 2]) isEqualTo "ID") then { _tokens set [_h, [_t, _label, time + 110]]; };
         } forEach _list;
         if (_list isEqualTo []) exitWith { ["Fouille : aucun document trouvé.", "WARNING"] call comspec_sse_fnc_toast; };
-        ["", "INFO", objNull, format [("Fouille : %1 document(s). Menu ACE › Contrôle d'identité : examiner ou saisir." call comspec_sse_fnc_tr), count _list]] call comspec_sse_fnc_toast;
+        ["", "INFO", objNull, format [("Fouille : %1 document(s). Menu ACE › Vérification d'identité : examiner ou saisir." call comspec_sse_fnc_tr), count _list]] call comspec_sse_fnc_toast;
     };
     case "blank": { ["Document vierge : aucun titulaire, rien d'imprimé.", "WARNING"] call _say; };
     case "doc": {

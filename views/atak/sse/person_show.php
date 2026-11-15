@@ -213,6 +213,10 @@ $pid = (int) ($person['id'] ?? 0);
                     <dt>Import</dt><dd><?= $h($objectMeta['import'] ?? '—') ?></dd>
                     <dt>Intégrité</dt><dd><?= $h($objectMeta['integrity'] ?? '—') ?></dd>
                     <dt>Classification</dt><dd><?= $h($objectMeta['classification'] ?? '—') ?></dd>
+                    <?php $drawnSig = is_array($person['signature'] ?? null) ? (string) ($person['signature']['image_path'] ?? '') : ''; ?>
+                    <?php if ($drawnSig !== ''): ?>
+                        <dt>Signature SEEK II</dt><dd><img src="<?= $h(url($drawnSig)) ?>" alt="Signature tracée au SEEK II" loading="lazy" style="max-height:64px;max-width:100%"></dd>
+                    <?php endif; ?>
                 </dl>
                 <?php if ($provenance !== []): ?>
                     <hr class="sse-sep">

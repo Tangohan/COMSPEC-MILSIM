@@ -826,7 +826,26 @@ final class SsePersonRepository
             'terminal_uid' => $terminal !== '' ? $terminal : null,
             'atak_id' => $this->nullIfEmpty($row['signed_atak_id'] ?? null),
             'signed_at' => $row['signed_at'] ?? null,
+            'image_path' => $this->nullIfEmpty($row['signature_image'] ?? null),
         ];
+    }
+
+    /** Range le PNG de la signature tracée au SEEK II (chemin relatif à public/, choisi par le serveur). */
+    public function setSignatureImage(int $id, int $tenantId, string $path): bool
+    {
+        if ($id <= 0 || $tenantId <= 0 || !preg_match('#^uploads/sse-id-signatures/[A-Za-z0-9_]+\.png$#', $path)) {
+            return false;
+        }
+        try {
+            $this->db->execute(
+                'UPDATE sse_persons SET signature_image = :p WHERE id = :id AND tenant_id = :t',
+                ['p' => $path, 'id' => $id, 't' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

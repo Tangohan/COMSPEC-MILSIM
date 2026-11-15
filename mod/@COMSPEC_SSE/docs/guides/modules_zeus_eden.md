@@ -34,7 +34,7 @@ Modules Zeus seulement (catégorie des modules) : **Ouvrir le panneau SSE**, **C
 
 ## Zeus (ZEN) : COMSPEC · Mission
 
-**Charger une campagne**, **Sauvegarder la campagne**, **Voir l'état de la campagne**, **Remettre la campagne à zéro**, **Clore la mission**, **Exporter la campagne**, **Importer une campagne**, **Supprimer une sauvegarde**, **Envoyer la campagne à Athena**, **Campagne : récupérer depuis Athena** · **Doter d'un terminal SEEK** (sur un joueur : remis ; sinon Rayon 5-200, 30) · **Régler la présentation des documents** (Modèle préfait : Standard / Terrain / Brouillon / Archives / Bureau ; Aspect du papier ; Bandeau ; Pied de page) · **Altérer un scellé (exercice)** · **Fixer la référence du dossier** (module config).
+**Charger une campagne**, **Sauvegarder la campagne**, **Voir l'état de la campagne**, **Remettre la campagne à zéro**, **Clore la mission**, **Exporter la campagne**, **Importer une campagne**, **Supprimer une sauvegarde**, **Envoyer la campagne à Athena**, **Campagne : récupérer depuis Athena** · **Doter d'un terminal SEEK** (sur un joueur : remis ; sinon Rayon 5-200, 30) · **Régler la présentation des documents** (Modèle préfait : Standard / Terrain / Brouillon / Archives / Bureau ; Aspect du papier ; Bandeau ; Pied de page) · **Altérer une pièce (exercice)** · **Fixer la référence du dossier** (module config).
 
 ## Eden : modules
 
@@ -50,7 +50,7 @@ Barre de menus **COMSPEC SSE** : Connexion Athena · Éditeur SSE · **Donner un
 
 | Catégorie (attributs de l'unité / objet) | Champs |
 |---|---|
-| **COMSPEC SSE — Papiers** (personnes) | Papiers portés (combo dynamique : Automatique, Aucun papier, Carte d'identité, Passeport, Permis de conduire, Carte d'identité et permis, Carte militaire, Carte d'identité et passeport, + types des extensions), Profil Athena, Comportement au contrôle, Pays des papiers, Nature des papiers (Vrais / Couverture préparée / Faux), Profil au contrôle (Automatique / Civil / Insurgé / HVT / Agent sous couverture / Policier, militaire ami), Qualité des faux papiers (60), Infiltré (couverture) |
+| **COMSPEC SSE — Papiers** (personnes) | Papiers portés (combo dynamique : Automatique, Aucun papier, Carte d'identité, Passeport, Permis de conduire, Carte d'identité et permis, Carte militaire, Carte d'identité et passeport, + types des extensions), Profil Athena, Comportement au contrôle, Pays des papiers, Nature des papiers (Vrais / Couverture préparée / Faux), Profil au contrôle (Automatique / Civil / Insurgé / HVT / Agent sous couverture / Garde ou militaire ami), Qualité des faux papiers (60), Infiltré (couverture) |
 | **COMSPEC SSE · Papiers du groupe** (groupes) | Profil Athena, Papiers, Comportement au contrôle |
 | **COMSPEC SSE — Biométrie** | Fichier biométrique, Motif de signalement, Faux papiers, Vraie identité, Identifiant biométrique (campagne), Parent de, Lien de parenté, Doigts manquants, Iris ; objets : Empreintes latentes de |
 | **COMSPEC SSE — Renseignement** | Activer le renseignement SSE, Nature de l'objet, Profil, Moment de la génération, Richesse, Identité, Ce que la base doit répondre, Nom, Prénom, Alias connu, Référence de dossier antérieur, Indice de confiance imposé, Graine, Rôle déclaré, Nationalité déclarée, Langue parlée, Numéro connu, Biométrie, Notes Zeus, ID réseau, Modèle SSE, Dataset mission, Rôle dans le dataset, Région / théâtre |

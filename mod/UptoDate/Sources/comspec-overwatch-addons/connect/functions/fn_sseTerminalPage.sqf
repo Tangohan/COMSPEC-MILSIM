@@ -44,13 +44,14 @@ private _pages = [
     ["IRIS",      [9523, 9626, 9627, 9628, 9629, 9630, 9631, 9632, 9633, 9634, 9635,
                    9636, 9637, 9638, 9639]],
     ["REVUE",     [9522, 9524, 9527, 9566, 9640, 9641, 9642]],
-    ["CONTRÔLE",  [9680, 9681, 9682, 9683, 9684, 9686, 9687, 9688, 9689]]
+    ["CONTRÔLE",  [9680, 9681, 9682, 9683, 9684, 9686, 9687, 9688, 9689]],
+    ["SIGNATURE", [9700, 9701, 9702, 9703, 9704]]
 ];
 // Ordre du flux pour << / >> : contrôle rapide d'abord, puis l'enrôlement (le terrain reste au bout).
 private _flow = [0, 10, 1, 2, 4, 3, 8, 5, 9, 6, 7];
 // Onglet allumé par page : SUJET (1, 2, 4) · EMPR. · IRIS · VISAGE · REVUE · ENVOI.
 private _tabs = [9650, 9651, 9652, 9653, 9654, 9655];
-private _tabOf = [-1, 0, 0, 1, 0, 3, 5, -1, 2, 4, -1];
+private _tabOf = [-1, 0, 0, 1, 0, 3, 5, -1, 2, 4, -1, 5];
 private _count = count _pages;
 
 private _current = uiNamespace getVariable ["COMSPEC_SsePerson_Page", 0];
@@ -101,6 +102,11 @@ if (_target isEqualTo 1) then {
             };
         } forEach [[9501, 0], [9502, 1], [9503, 2], [9504, 3], [9507, 4], [9508, 5]];
     };
+};
+
+// Points du tracé de signature : visibles seulement sur la page SIGNATURE.
+if (!isNil "comspec_overwatch_connect_fnc_seekSignPad") then {
+    ["show", [_target isEqualTo 11]] call comspec_overwatch_connect_fnc_seekSignPad;
 };
 
 // Bandeau d'aide : seulement à l'accueil.
