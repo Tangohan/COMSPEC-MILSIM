@@ -216,6 +216,9 @@ final class JnetNavFullWidthTest extends TestCase
         self::assertStringNotContainsString('<b>Leroy</b>', $html);
         self::assertStringContainsString('Hugo &lt;b&gt;Leroy&lt;/b&gt;', $html);
         self::assertStringContainsString('<img src="https://exemple.test/p.jpg"', $html);
+        // Un membre sans nom de personnage (indicatif seul) : la ligne sous son nom le dit, et ceux qui ont un nom gardent leur indicatif.
+        self::assertStringContainsString('<small class="pe-noname">Nom non renseigné</small>', $html);
+        self::assertStringContainsString('<small class="ja-mono">ECHO</small>', $html);
         self::assertStringContainsString('Indisponible', $html);
         self::assertStringContainsString('jnet_personnel.js', $html);
         self::assertStringNotContainsString('1320', $html);

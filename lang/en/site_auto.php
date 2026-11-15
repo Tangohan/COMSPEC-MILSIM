@@ -66224,4 +66224,5 @@ return [
     'Ouvrez la liste, lisez chaque message, puis fermez-le ou confirmez sa lecture quand on vous le demande.' => 'Open the list, read each message, then dismiss it or confirm you have read it when asked to.',
     'Lire les messages de la plateforme' => 'Read the platform messages',
     'Seuls les administrateurs de la communauté reçoivent ces messages.' => 'Only the community administrators receive these messages.',
+    'Nom non renseigné' => 'Name not provided',
 ];

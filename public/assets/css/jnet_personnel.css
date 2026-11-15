@@ -687,3 +687,10 @@
     gap: 10px;
   }
 }
+
+/* Membre sans nom de personnage : seul l'indicatif sert de titre, la ligne dessous le dit au lieu de rester vide. */
+.pe-id small.pe-noname {
+  font-family: inherit;
+  font-style: italic;
+  opacity: 0.7;
+}

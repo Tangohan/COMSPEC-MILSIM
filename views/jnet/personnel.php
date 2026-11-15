@@ -135,7 +135,7 @@ $face = static function (array $p) use ($h): string {
                 <li class="pe-item" data-pe-item data-name="<?= $h($name) ?>" data-grade="<?= $h($grade) ?>" data-rank="<?= (int) ($p['grade_rank'] ?? 999) ?>" data-unit="<?= $h($unit) ?>" data-chain="<?= $h($chain) ?>" data-fn="<?= $h($fn) ?>" data-duty="<?= $isOff ? 'off' : 'on' ?>" data-q="<?= $h($search) ?>"<?= empty($p['match']) ? ' hidden' : '' ?>>
                     <a class="pe-open" href="<?= $h((string) ($p['href'] ?? '#')) ?>"><span class="ja-sr">Ouvrir la fiche de <?= $h($name) ?></span></a>
                     <span class="pe-av" aria-hidden="true"><?= $face($p) ?></span>
-                    <span class="pe-id"><b><?= $h($name) ?></b><?php if ($callsign !== '' && strcasecmp($callsign, $name) !== 0): ?><small class="ja-mono"><?= $h($callsign) ?></small><?php endif; ?></span>
+                    <span class="pe-id"><b><?= $h($name) ?></b><?php if ($callsign !== '' && strcasecmp($callsign, $name) !== 0): ?><small class="ja-mono"><?= $h($callsign) ?></small><?php elseif ($callsign !== '' || $name !== ''): ?><small class="pe-noname">Nom non renseigné</small><?php endif; ?></span>
                     <span class="pe-grade"><?= $grade !== '' ? $h($grade) : '<i class="pe-none">—</i>' ?></span>
                     <span class="pe-fn"><?= $fn !== '' ? $h($fn) : '<i class="pe-none">—</i>' ?></span>
                     <span class="pe-unit">
