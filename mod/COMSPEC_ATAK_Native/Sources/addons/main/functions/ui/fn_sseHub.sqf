@@ -36,6 +36,7 @@ private _table = [
     ["Fichiers", "Fichiers", "Interroger les fichiers sur une personne, un document ou un véhicule"],
     ["Wanted", "Recherchés", "Avis de recherche et personnes surveillées"],
     ["Fiches", "Fiches", "Fiches du portail avec leurs motifs et les mesures à prendre"],
+    ["SseAlert", "Avis et vigilance", "Alertes en cours, à consulter, émettre ou signaler"],
     ["DataLink", "Extraction", "Exploiter un appareil saisi au câble DL-7"],
     ["Sse", "Console d'analyse", "Dossier en cours, sujet en vue, concordances et liens"],
     ["IdCover", "Ma couverture", "Mes papiers et mon identité de couverture"]

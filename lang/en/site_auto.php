@@ -68784,6 +68784,8 @@ return [
     'créés par le bureau' => 'created by the office',
     'Fiches SSE' => 'SSE records',
     'Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre' => 'SSE portal records: wanted notices, vigilance, intelligence, with reasons and action to be taken',
+    'Avis et vigilance' => 'Notices and vigilance',
+    'Avis de recherche, notices et fiches de vigilance : consulter, émettre, signaler une observation' => 'Wanted notices, colour notices and vigilance sheets: read, issue, report a sighting',
 
     // Avis de recherche : codification, signalement physique, pièces jointes.
     'Aucune image jointe à cet avis.' => 'No image attached to this notice.',

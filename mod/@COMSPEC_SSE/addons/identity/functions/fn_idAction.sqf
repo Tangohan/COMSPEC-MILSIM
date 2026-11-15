@@ -11,6 +11,7 @@
       "share" / "nfc"   fiche du contrôle partagée (Bluetooth, NFC)   "mobile"  QR « Sur mon téléphone »  (ATAK 3.0.2)
       "level" 4         N4 : vérification biométrique au SEEK II (ouvert sur la personne ; son verdict remplit N4)
       "pid"             confirmation PID de la personne contrôlée (HVT ou recherchée identifiée)
+      "alertReport"     SIGNALER la personne recherchée : écran de signalement de l'app « Avis et vigilance », ou envoi direct
 */
 params [["_act", ""], ["_arg", ""]];
 private _st = uiNamespace getVariable ["comspec_sse_idApp", createHashMap];
@@ -94,6 +95,7 @@ switch (_act) do {
     // ATAK 3.0.2 et plus : la fiche (_rec de fn_idHistory) est acceptée telle quelle par l'app Bluetooth.
     case "share": { if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then { ["shareIdCheck", _rec] call comspec_atak_native_fnc_btAction; }; };
     case "nfc": { if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then { ["shareIdCheckNfc", _rec] call comspec_atak_native_fnc_btAction; }; };
+    case "alertReport": { [_rec] call comspec_sse_fnc_idAlertReport; call _render; };
     case "mobile": { if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then { ["open", "controle"] call comspec_atak_native_fnc_mobileQr; }; };
 };
 true

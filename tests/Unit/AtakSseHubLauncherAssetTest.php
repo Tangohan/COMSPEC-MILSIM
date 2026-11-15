@@ -23,6 +23,7 @@ final class AtakSseHubLauncherAssetTest extends TestCase
         'DataLink' => 'DATALINK',
         'Wanted' => 'WANTED',
         'Fiches' => 'FICHES',
+        'SseAlert' => 'SSEALERT',
         'SseField' => 'SSEFIELD',
         'IdCheck' => 'IDCHECK',
         'Fichiers' => 'FICHIERS',

@@ -511,6 +511,7 @@ final class AtakExperienceService
             ['id' => 'Osint', 'name' => 'OSINT', 'description' => 'Renseignement en sources ouvertes', 'section' => 'Renseignement'],
             ['id' => 'Wanted', 'name' => 'Recherchés', 'description' => 'Personnes recherchées (HVT) de la communauté', 'section' => 'Renseignement'],
             ['id' => 'Fiches', 'name' => 'Fiches SSE', 'description' => 'Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre', 'section' => 'Renseignement'],
+            ['id' => 'SseAlert', 'name' => 'Avis et vigilance', 'description' => 'Avis de recherche, notices et fiches de vigilance : consulter, émettre, signaler une observation', 'section' => 'Renseignement'],
             ['id' => 'Tasks', 'name' => 'Tâches', 'description' => 'Tâches et ordres reçus', 'section' => 'Mission'],
             ['id' => 'Reports', 'name' => 'Comptes rendus', 'description' => 'Comptes rendus de fin de mission', 'section' => 'Mission'],
             ['id' => 'Briefing', 'name' => 'Briefing', 'description' => 'Diapositives et consignes de la mission', 'section' => 'Mission'],
