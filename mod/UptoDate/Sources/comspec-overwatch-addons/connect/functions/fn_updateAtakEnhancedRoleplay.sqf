@@ -79,9 +79,6 @@ if (!(_atakStatus get "can_display")) then {
             // Cracks transparents (atak-fx) — laisse la carte / position lisible.
             private _fx = uiNamespace getVariable ["COMSPEC_Hub_ScreenBrokenFx", controlNull];
             private _brokenTex = "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.paa";
-            if (!(fileExists _brokenTex)) then {
-                _brokenTex = "\z\comspec_overwatch\addons\connect\img\atak-fx\broken-screen.png";
-            };
             if (isNull _fx || {ctrlParent _fx != _display}) then {
                 _fx = _display ctrlCreate ["RscPicture", 9205];
                 uiNamespace setVariable ["COMSPEC_Hub_ScreenBrokenFx", _fx];
