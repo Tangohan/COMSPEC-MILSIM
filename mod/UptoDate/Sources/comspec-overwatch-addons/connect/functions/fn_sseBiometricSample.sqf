@@ -186,7 +186,7 @@ uiNamespace setVariable ["COMSPEC_SseSampleReopenPage", switch (_kind) do {
 }];
 
 uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
-    params ["_kind", "_label", "_kit", "_consume", "_give", "_takenVar", "_target"];
+    params ["_kind", "_label", "_kit", "_consume", "_give", "_takenVar", "_target", ["_fx", createHashMap, [createHashMap]]];
 
     // Relevé par le moteur : qualité selon le terrain, NFIQ par doigt, OD/OG, facteurs.
     private _cap = createHashMap;
@@ -204,6 +204,48 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
         };
     };
     if ((count _cap) > 0 && {!(_cap getOrDefault ["ok", false])}) exitWith {};
+
+    // Interactions SEEK II : la qualité du geste (lecteur, mini-jeux) pèse sur le résultat du moteur.
+    private _notes = [];
+    if ((count _cap) > 0) then { { _notes pushBackUnique (_x param [1, ""]); } forEach (_cap getOrDefault ["reasons", []]); };
+    if ((count _cap) > 0 && {(count _fx) > 0}) then {
+        {
+            if (_x isEqualType "") then { _notes pushBackUnique _x; };
+        } forEach (_fx getOrDefault ["notes", []]);
+        private _score = [0, 95, 85, 70, 50, 25];
+        private _avg = {
+            params ["_l"];
+            if (_l isEqualTo []) exitWith { 0 };
+            private _s = 0;
+            { _s = _s + _x; } forEach _l;
+            round (_s / (count _l))
+        };
+        switch (_kind) do {
+            case "empreintes": {
+                private _fxF = _fx getOrDefault ["fingers", []];
+                private _nf = +(_cap getOrDefault ["nfiqs", []]);
+                {
+                    private _f = _fxF param [_forEachIndex, -1];
+                    if (_x > 0 && {_f >= 0}) then { _nf set [_forEachIndex, 1 max (5 min (_x + round ((70 - _f) / 20)))]; };
+                    if (_x > 0 && {_f isEqualTo -2}) then { _nf set [_forEachIndex, -2]; };
+                } forEach (+_nf);
+                _cap set ["nfiqs", _nf];
+                private _use = _nf select { _x >= 1 };
+                if ((count _use) > 0) then { _cap set ["quality", [_use apply { _score select _x }] call _avg]; };
+            };
+            case "iris": {
+                private _eyes = +(_cap getOrDefault ["eyes", []]);
+                private _fxE = _fx getOrDefault ["eyes", []];
+                {
+                    private _f = _fxE param [_forEachIndex, -1];
+                    if (_x >= 0 && {_f >= 0}) then { _eyes set [_forEachIndex, round (_x * (0.55 + 0.45 * _f / 100)) max 5]; };
+                } forEach (+_eyes);
+                _cap set ["eyes", _eyes];
+                private _use = _eyes select { _x >= 0 };
+                if ((count _use) > 0) then { _cap set ["quality", [_use] call _avg]; };
+            };
+        };
+    };
 
     private _player = player;
     if (_consume && {_kit isNotEqualTo ""} && {_kit isNotEqualTo "terminal"}) then {
@@ -245,7 +287,7 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
     if ((count _cap) > 0) then { _labRef = _cap get "labRef"; };
     // Un nouveau relevé remplace le précédent du même type (recapture).
     _samples = _samples select { !((_x isEqualType []) && {(count _x) > 0} && {(_x select 0) isEqualTo _kind}) };
-    _samples pushBack [_kind, _quality, _labRef, _detail, _factors];
+    _samples pushBack [_kind, _quality, _labRef, _detail, _factors, _notes];
     uiNamespace setVariable ["COMSPEC_SsePerson_Samples", _samples];
     uiNamespace setVariable ["COMSPEC_SsePerson_BioPending", true];
     uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", ""];
@@ -254,7 +296,7 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
         private _onTarget = _target getVariable ["comspec_sse_bioSamples", []];
         if (!(_onTarget isEqualType [])) then { _onTarget = []; };
         _onTarget = _onTarget select { (_x isEqualType []) && {(count _x) >= 3} && {(_x select 0) isNotEqualTo _kind} };
-        _onTarget pushBack [_kind, _quality, _labRef, _detail, _factors];
+        _onTarget pushBack [_kind, _quality, _labRef, _detail, _factors, _notes];
         _target setVariable ["comspec_sse_bioSamples", _onTarget, true];
         [_target, _label, format ["qualité %1 · %2", _quality, _labRef]] call comspec_overwatch_connect_fnc_sseTeamLog;
     };
@@ -289,6 +331,26 @@ uiNamespace setVariable ["COMSPEC_SseSampleReopen", {
         };
     }, [_page], 0.35] call CBA_fnc_waitAndExecute;
 }];
+
+// Interactions SEEK II : le relevé se fait dans le dialogue (lecteur animé, mini-jeux facultatifs), sans fermer
+// l'écran ni barre de progression ACE. Mode « aucune », autre matériel, ADN : déroulé d'avant.
+private _fxMode = ["mode"] call comspec_overwatch_connect_fnc_seekFx;
+if (
+    _fxMode > 0
+    && {_kind in ["empreintes", "iris"]}
+    && {_kit isEqualTo "terminal"}
+    && {!isNull _disp}
+    && {!isNull _target}
+    && {!(uiNamespace getVariable ["COMSPEC_SeekFxBusy", false])}
+) exitWith {
+    uiNamespace setVariable ["COMSPEC_SeekFxCtx", [_kind, _label, _kit, _consume, _give, _takenVar, _target]];
+    ["capture", [_kind, _target, {
+        params ["_fx"];
+        (uiNamespace getVariable ["COMSPEC_SeekFxCtx", []]) params [["_k", "empreintes"], ["_l", ""], ["_kt", ""], ["_c", false], ["_g", ""], ["_tv", ""], ["_tg", objNull]];
+        [_k, _l, _kt, _c, _g, _tv, _tg, _fx] call (uiNamespace getVariable ["COMSPEC_SseSampleFinish", {}]);
+        if (!isNil "comspec_overwatch_connect_fnc_ssePersonRefreshPanels") then { [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels; };
+    }]] spawn comspec_overwatch_connect_fnc_seekFx;
+};
 
 // Mémoriser les champs visibles avant de fermer l’écran.
 if (!isNull _disp) then {

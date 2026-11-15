@@ -1,3 +1,18 @@
+[h1]COMSPEC SSE 1.9.3 — blessures prises en compte à la capture biométrique / injuries taken into account in biometric capture[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.20.0. / Fully restart Arma. Requires COMSPEC ATAK 4.20.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Blessures[/b] : empreintes, iris et visage dépendent de l'état du sujet lu dans ACE Medical, KAT et ACM (garrot, attelle, bandage, brûlure, plaie) ; sans mod médical, les points de vie du jeu servent. Un bras sous garrot ou attelé ne se capture pas, un bandage ou une brûlure dégrade la lecture, une blessure ou un bandage de tête dégrade l'iris et le visage.
+[*] Les motifs de non-capture sont renvoyés avec la fiche. Réglage « SEEK II : blessures prises en compte » pour désactiver.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Injuries[/b]: fingerprints, iris and face depend on the subject's state read from ACE Medical, KAT and ACM (tourniquet, splint, bandage, burn, wound); without a medical mod, the game's hit points are used. An arm under a tourniquet or splint cannot be captured, a bandage or burn degrades the read, a head wound or bandage degrades iris and face.
+[*] Non-capture reasons are sent with the record. "SEEK II: injuries taken into account" setting to turn it off.
+[/list]
+
 [h1]COMSPEC SSE 1.9.2 — vocabulaire forces spéciales américaines / US special forces wording[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.19.0 pour la signature tracée du SEEK II. / Fully restart Arma. Requires COMSPEC ATAK 4.19.0 for the drawn SEEK II signature.[/b]
 

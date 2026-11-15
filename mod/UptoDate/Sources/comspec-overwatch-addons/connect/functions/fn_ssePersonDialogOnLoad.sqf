@@ -286,6 +286,9 @@ if (_resume && {_idCache isEqualType []} && {(count _idCache) >= 6}) then {
 
 // Pad de signature : accroche la souris du dialogue.
 ["init"] call comspec_overwatch_connect_fnc_seekSignPad;
+// Interactions du lecteur (souris, clavier) puis taille et place enregistrées du terminal.
+["hook"] call comspec_overwatch_connect_fnc_seekFx;
+["apply"] call comspec_overwatch_connect_fnc_seekScale;
 
 // Le terminal s'ouvre sur son accueil ; après un relevé, on revient à la biométrie.
 if (_resume) then {

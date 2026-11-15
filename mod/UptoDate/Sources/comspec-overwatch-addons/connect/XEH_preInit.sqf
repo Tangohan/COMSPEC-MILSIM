@@ -977,6 +977,38 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
     ["COMSPEC", "SSE"], true
 ] call comspec_overwatch_connect_fnc_addSetting;
 
+[
+    "comspec_seek_fx_mode", "LIST",
+    [
+        "Interactions SEEK II",
+        "Aucune : la capture se fait seule, comme avant. Simples : animation du lecteur d'empreintes sans geste à faire. Complètes : animation et mini-jeux à la souris (doigt tenu sur la vitre, iris, câbles, nettoyage), toujours facultatifs. Préférence client ; le serveur ou la mission peut l'imposer."
+    ],
+    ["COMSPEC", "SSE · SEEK II"],
+    [[0, 1, 2], ["Aucune", "Simples", "Complètes"], 2]
+] call comspec_overwatch_connect_fnc_addSetting;
+
+[
+    "comspec_seek_fx_medical", "CHECKBOX",
+    [
+        "SEEK II : blessures prises en compte",
+        "La capture des empreintes, de l'iris et du visage dépend des blessures du sujet (garrot, attelle, bandage, brûlure, plaie ; ACE Medical, KAT, ACM) et les bras blessés de l'opérateur font trembler les mini-jeux. Décochez pour ignorer le médical."
+    ],
+    ["COMSPEC", "SSE · SEEK II"], true
+] call comspec_overwatch_connect_fnc_addSetting;
+
+[
+    "comspec_seek_scale", "SLIDER",
+    ["Taille du terminal SEEK II", "1 = grand (comme avant), 0,4 = très réduit : l'appareil entier, lecteur d'empreintes compris, tient à l'écran. Le bouton TAILLE de l'accueil et les touches + et - du pavé numérique changent aussi la taille, mémorisée dans votre profil."],
+    ["COMSPEC", "SSE · SEEK II"], [0.4, 1, 1, 2]
+] call comspec_overwatch_connect_fnc_addSetting;
+
+[
+    "comspec_seek_anchor", "LIST",
+    ["Place du terminal SEEK II", "Où se pose le terminal réduit à l'écran (le bouton PLACE de l'accueil change aussi cette place)."],
+    ["COMSPEC", "SSE · SEEK II"],
+    [[0, 1, 2], ["Centre", "Gauche", "Droite"], 0]
+] call comspec_overwatch_connect_fnc_addSetting;
+
 private _sseKeyDefault = [0x1F, [true, true, false]]; // Ctrl+Shift+S
 if (isClass (configFile >> "CfgPatches" >> "comspec_sse_biometrics")) then {
     // Le mod SSE possede deja ce raccourci : eviter deux ouvertures superposees.
