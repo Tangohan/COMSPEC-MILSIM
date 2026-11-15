@@ -21,7 +21,7 @@ use App\Support\SseUsClassification;
 
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $issuesList = is_array($issues ?? null) ? $issues : (array) ($sheetMenu['issues'] ?? []);
-$ilang = ($lang ?? $sheetMenu['lang'] ?? 'fr') === 'en' ? 'en' : 'fr';
+$ilang = ($sheetMenu['lang'] ?? $lang ?? 'fr') === 'en' ? 'en' : 'fr';
 $ilevel = (string) ($sheetLevel ?? $sheetMenu['level'] ?? 'interne');
 try {
     $iaccess = isset($rights) && $rights instanceof SseSheetAccess ? $rights : SseSheetAccess::fromSession();

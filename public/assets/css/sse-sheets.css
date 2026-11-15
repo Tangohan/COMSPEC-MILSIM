@@ -181,3 +181,4 @@ body.sse-theme-bureau .shx-done .shx__btn--primary { background: #35502f; border
 .shx-actions-cell, .shx-need { white-space: normal; }
 .shx-actions-cell { min-width: 14rem; max-width: 18rem; }
 .shx-need { text-align: left; }
+@media (max-width: 760px) { .shx-mask { white-space: normal; text-align: center; justify-content: center; max-width: 60%; } .shx-lvl { white-space: normal; } }
