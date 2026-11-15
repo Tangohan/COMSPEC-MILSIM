@@ -1028,7 +1028,7 @@ class AdminRecruitmentsController
         // quand l'offre ne les fixe pas ; sans paquet défini, rien ne change.
         $needsOnboardingNow = $this->enlistmentAcceptanceProvisioningService->needsAcceptanceOnboarding($row);
         $packageService = \App\Core\Container::get(\App\Services\MemberIntegration\MemberIntegrationPackageService::class);
-        $packageParam = $request->queryString('paquet');
+        $packageParam = $request->query('paquet', '');
         $integrationPreview = $packageService->preview((int) $tenantId, $row, $defaultUnitId, $this->packageCaps(), (int) $packageParam);
         if ((string) $packageParam === '0') {
             $integrationPreview['package'] = null;

@@ -65,7 +65,7 @@ class AdminIntegrationPackagesController
         $ready = $this->packages->tablesExist();
         $list = $ready ? $this->packages->listForTenant($tenantId) : [];
         $editId = (int) $request->query('paquet', 0);
-        $creating = (string) $request->query('nouveau', '') === '1';
+        $creating = $request->queryString('nouveau') === '1';
         $editing = null;
         $items = [];
         if ($ready && $editId > 0) {

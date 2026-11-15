@@ -58,8 +58,7 @@ $btnGhost = 'inline-flex items-center justify-center rounded-xl border border-sl
     </nav>
 
     <header class="<?= $card ?>">
-        <h2 class="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Paquets d’intégration</h2>
-        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
+        <p class="max-w-2xl text-sm leading-relaxed text-slate-600">
             Définissez ce que reçoit un nouveau membre quand vous l’intégrez : grade, unité, emploi, niveau d’accès, qualifications,
             formations à suivre et mot d’accueil. Le recruteur voit le paquet pendant l’intégration, peut l’ajuster, puis tout est appliqué d’un coup.
             Sans paquet, l’intégration se passe comme avant.
@@ -257,7 +256,7 @@ $btnGhost = 'inline-flex items-center justify-center rounded-xl border border-sl
         </div>
     </form>
     <?php if ($pkId > 0): ?>
-    <form method="post" action="<?= $h($base . '/' . $pkId . '/supprimer') ?>" data-ui-confirm="1" data-ui-confirm-title="Supprimer ce paquet ?" data-ui-confirm-body="Les membres déjà intégrés gardent ce qu’ils ont reçu."">
+    <form method="post" action="<?= $h($base . '/' . $pkId . '/supprimer') ?>" data-ui-confirm="1" data-ui-confirm-title="Supprimer ce paquet ?" data-ui-confirm-body="Les membres déjà intégrés gardent ce qu’ils ont reçu.">
         <?= \App\Core\Csrf::field() ?>
         <button type="submit" class="inline-flex items-center rounded-xl border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-50">Supprimer ce paquet</button>
     </form>

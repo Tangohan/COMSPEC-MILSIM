@@ -1,0 +1,134 @@
+/*
+ * Bureau SSE — messages du portail (erreur, succès, avertissement, validation de formulaire).
+ * Chargé après sse_ui.css. Erreur : rouge clair sur fond rouge très sombre (contraste > 10:1), bordure de 2 px,
+ * icône, titre et détail ; collante sous les barres fixes. Succès vert, avertissement ambre.
+ */
+body.sse-iw {
+    --nt-err-bg: #2b0d11;
+    --nt-err-line: #ef4444;
+    --nt-err-ink: #ffe4e4;
+    --nt-err-icon: #ff8b8b;
+    --nt-ok-bg: #0a2619;
+    --nt-ok-line: #34d399;
+    --nt-ok-ink: #dcfce9;
+    --nt-ok-icon: #6ee7b7;
+    --nt-warn-bg: #2d2008;
+    --nt-warn-line: #f5b042;
+    --nt-warn-ink: #fff0cf;
+    --nt-warn-icon: #fbbf24;
+}
+
+.sse-notify { margin: 0 0 8px; }
+/* Collée sous les barres fixes dès que sa place d'origine sort de l'écran (le conteneur de la page défile, donc pas de position: sticky). */
+.sse-notify.is-pinned {
+    position: fixed;
+    top: var(--sse-notify-top, 8px);
+    z-index: 50;
+    margin: 0;
+    max-height: calc(100vh - var(--sse-notify-top, 8px) - 12px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+.sse-notify__ph { height: 0; }
+.sse-notify:not(:has(.sse-note)) { margin: 0; }
+.sse-notify .sse-note { margin-bottom: 8px; }
+
+.sse-note,
+.sse-formsummary {
+    --nt-bg: var(--nt-err-bg);
+    --nt-line: var(--nt-err-line);
+    --nt-ink: var(--nt-err-ink);
+    --nt-icon: var(--nt-err-icon);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 8px 12px 14px;
+    border: 2px solid var(--nt-line);
+    border-radius: 10px;
+    background: var(--nt-bg);
+    color: var(--nt-ink);
+    font: 500 .95rem/1.45 var(--sans, system-ui, sans-serif);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .55);
+}
+.sse-note--success { --nt-bg: var(--nt-ok-bg); --nt-line: var(--nt-ok-line); --nt-ink: var(--nt-ok-ink); --nt-icon: var(--nt-ok-icon); }
+.sse-note--warning { --nt-bg: var(--nt-warn-bg); --nt-line: var(--nt-warn-line); --nt-ink: var(--nt-warn-ink); --nt-icon: var(--nt-warn-icon); }
+.sse-note:focus-visible,
+.sse-formsummary:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.sse-note__icon { flex: none; display: inline-flex; margin-top: 1px; color: var(--nt-icon); }
+.sse-note__body { flex: 1 1 auto; min-width: 0; }
+.sse-note__title { display: block; font-weight: 800; font-size: 1rem; color: #fff; }
+.sse-note__detail { margin: 2px 0 0; overflow-wrap: anywhere; }
+.sse-note__close {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -6px 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--nt-ink);
+    cursor: pointer;
+}
+.sse-note__close:hover { background: rgba(255, 255, 255, .12); }
+.sse-note__close:focus-visible { outline: 3px solid #fff; outline-offset: -2px; }
+
+/* —— Récapitulatif en tête de formulaire —— */
+.sse-formsummary { margin: 0 0 18px; padding-right: 14px; }
+.sse-formsummary__list { margin: 6px 0 0; padding-left: 1.1rem; }
+.sse-formsummary__list li + li { margin-top: 4px; }
+.sse-formsummary__list a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.sse-formsummary__list a:hover { text-decoration-thickness: 2px; }
+.sse-field-error {
+    display: block;
+    margin: 6px 0 0;
+    color: #ffb4b4;
+    font: 600 .86rem/1.4 var(--sans, system-ui, sans-serif);
+}
+.sse-field-error::before { content: "\26A0\FE0E\00a0"; }
+.sx-main [aria-invalid="true"] {
+    border-color: var(--nt-err-line, #ef4444) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, .35) !important;
+}
+
+/* —— Anciens messages posés dans les pages : même gabarit visible —— */
+body.sse-iw .sx-main .flash {
+    position: relative;
+    padding: 12px 14px 12px 46px;
+    border: 2px solid var(--nt-warn-line);
+    border-radius: 10px;
+    background: var(--nt-warn-bg);
+    color: var(--nt-warn-ink);
+    font: 500 .95rem/1.45 var(--sans, system-ui, sans-serif);
+}
+body.sse-iw .sx-main .flash::before {
+    content: "!";
+    position: absolute;
+    left: 14px;
+    top: 12px;
+    width: 22px;
+    height: 22px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font: 800 .8rem/18px var(--sans, system-ui, sans-serif);
+    text-align: center;
+}
+body.sse-iw .sx-main .flash--error { border-color: var(--nt-err-line); background: var(--nt-err-bg); color: var(--nt-err-ink); }
+body.sse-iw .sx-main .flash--ok { border-color: var(--nt-ok-line); background: var(--nt-ok-bg); color: var(--nt-ok-ink); }
+
+@media (prefers-reduced-motion: no-preference) {
+    .sse-note, .sse-formsummary { animation: sse-note-in .22s ease-out; }
+    .sse-note.is-bump { animation: sse-note-bump .3s ease-out; }
+}
+@keyframes sse-note-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes sse-note-bump { 0% { transform: scale(1); } 40% { transform: scale(1.015); } 100% { transform: scale(1); } }
+
+@media (max-width: 720px) {
+    .sse-notify { margin-left: -4px; margin-right: -4px; }
+    .sse-note, .sse-formsummary { padding-left: 12px; font-size: .92rem; }
+}
+
+@media (max-width: 720px) { .sse-notify.is-pinned { max-height: 45vh; } }
