@@ -252,6 +252,7 @@ $indicatorsChildren = [
     ['label' => 'Conversion des communautés', 'href' => url('back-office/analytics/conversion'), 'active' => $navAt('back-office/analytics/conversion')],
     ['label' => 'Métriques joueurs', 'children' => $metricsChildren],
     ['label' => 'Qualité des données', 'href' => url('back-office/organisation/qualite-donnees'), 'active' => $navAt('back-office/organisation/qualite-donnees')],
+    ['label' => 'Fiabilisation des données', 'href' => url('back-office/organisation/fiabilisation'), 'active' => $navAt('back-office/organisation/fiabilisation')],
 ];
 
 // ——— ROLEPLAY ———

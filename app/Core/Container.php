@@ -666,6 +666,22 @@ class Container
                 self::get(\App\Repositories\AtakRealismRepository::class)
             ),
             \App\Services\Cron\Jobs\ContactMailSyncCronJob::class => new \App\Services\Cron\Jobs\ContactMailSyncCronJob(),
+            \App\Repositories\DataCampaignRepository::class => new \App\Repositories\DataCampaignRepository(),
+            \App\Services\DataCampaign\DataCampaignService::class => new \App\Services\DataCampaign\DataCampaignService(
+                self::get(\App\Repositories\DataCampaignRepository::class)
+            ),
+            \App\Services\Cron\Jobs\DataCampaignCronJob::class => new \App\Services\Cron\Jobs\DataCampaignCronJob(
+                self::get(\App\Services\DataCampaign\DataCampaignService::class)
+            ),
+            \App\Controllers\Web\MemberDataCampaignController::class => new \App\Controllers\Web\MemberDataCampaignController(
+                self::get(AuthService::class),
+                self::get(\App\Services\DataCampaign\DataCampaignService::class),
+                self::get(\App\Repositories\DataCampaignRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\DataCampaignAdminController::class => new \App\Controllers\Admin\Organization\DataCampaignAdminController(
+                self::get(\App\Services\DataCampaign\DataCampaignService::class),
+                self::get(\App\Repositories\DataCampaignRepository::class)
+            ),
             \App\Services\Cron\Jobs\MailQueueCronJob::class => new \App\Services\Cron\Jobs\MailQueueCronJob(
                 new \App\Services\Email\MailQueueProcessor(
                     self::get(\App\Repositories\AsyncJobRepository::class),
@@ -751,6 +767,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\TenantDataUpkeepCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\ContactMailSyncCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\DataCampaignCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob::class),
                 ],

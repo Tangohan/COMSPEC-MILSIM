@@ -1437,6 +1437,12 @@ final class JnetPortalController
             $badges = [];
         }
 
+        // Fiabilisation des données : « à faire » tant que la campagne ouverte n'est pas terminée par ce membre.
+        try {
+            $badges['data_campaign_pending'] = \App\Core\Container::get(\App\Services\DataCampaign\DataCampaignService::class)->pendingBadge($tenantId, $userId);
+        } catch (\Throwable) {
+        }
+
         return [
             'tenantType' => is_array($tenant) ? (string) ($tenant['tenant_type'] ?? 'full') : 'full',
             'pilotLogbook' => $pilot,
