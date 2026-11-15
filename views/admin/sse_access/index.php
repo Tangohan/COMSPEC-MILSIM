@@ -53,6 +53,9 @@ $clearanceLabel = static function (array $c) use ($classificationLabels): string
         <div class="mt-4 flex flex-wrap gap-2">
             <a href="<?= $h(url('atak/sse')) ?>" class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Ouvrir le portail</a>
             <a href="<?= $h(url('atak/sse/commandement')) ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Entrer comme commandement</a>
+            <?php if (function_exists('can') && (can('atak.sse.grant') || can('admin.access'))): ?>
+                <a href="<?= $h(url('atak/sse/droits')) ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Droits d’accès par section</a>
+            <?php endif; ?>
         </div>
     </header>
 

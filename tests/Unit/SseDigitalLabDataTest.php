@@ -374,6 +374,8 @@ final class SseDigitalLabDataTest extends TestCase
         self::assertSame('digital_detail', SseDigitalLabService::DETAIL_KIND);
         $api = (string) file_get_contents($root . '/app/Controllers/Api/SseIdentityApiController.php');
         self::assertStringContainsString('SseDigitalLabService::DETAIL_KIND', $api);
+        self::assertStringContainsString('use App' . chr(92) . 'Services' . chr(92) . 'Sse' . chr(92) . 'SseDigitalLabService;', $api, 'classe importée : une erreur 500 en production sinon');
+        self::assertDoesNotMatchRegularExpression('/AppServices|AppSupport|AppRepositories/', $api);
         self::assertStringContainsString('ingestDetailPayload', $api);
         self::assertStringContainsString("'sse_digital_detail|'", $api, 'débit borné');
 
