@@ -17,6 +17,21 @@
                 <English>Yes</English>
                 <French>Oui</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_AiReaction_Real">
+                <Original>Réaliste</Original>
+                <English>Realistic</English>
+                <French>Réaliste</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_AiReaction_Soft">
+                <Original>Discrète (comme avant)</Original>
+                <English>Discreet (as before)</English>
+                <French>Discrète (comme avant)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_AiReaction_Strong">
+                <Original>Forte</Original>
+                <English>Strong</English>
+                <French>Forte</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Box">
                 <Original>Caisse BF</Original>
                 <English>BF crate</English>
@@ -1008,9 +1023,89 @@
                 <French>IA affectée</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_AiAffected_Tip">
-                <Original>L'IA éblouie vise mal, repère mal et hésite quelques secondes.  Exemple : coché.</Original>
-                <English>Dazzled AI aims and spots poorly and hesitates for a few seconds.  Example: ticked.</English>
-                <French>L'IA éblouie vise mal, repère mal et hésite quelques secondes.  Exemple : coché.</French>
+                <Original>Coché : les IA éblouies ou assourdies réagissent (voir « Réaction des IA »). Décoché : aucune IA n'est touchée.  Exemple : coché.</Original>
+                <English>Ticked: dazzled or deafened AI react (see "AI reaction"). Unticked: no AI is affected.  Example: ticked.</English>
+                <French>Coché : les IA éblouies ou assourdies réagissent (voir « Réaction des IA »). Décoché : aucune IA n'est touchée.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiAnim">
+                <Original>Geste réflexe des IA</Original>
+                <English>AI reflex gesture</English>
+                <French>Geste réflexe des IA</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiAnim_Tip">
+                <Original>Une IA éblouie de face porte un instant les mains au visage (animation du jeu) ; décochez si cette animation pose problème avec vos mods d'animation.  Exemple : coché.</Original>
+                <English>A dazzled AI facing the flash briefly raises its hands to its face (game animation); untick if that animation causes trouble with your animation mods.  Example: ticked.</English>
+                <French>Une IA éblouie de face porte un instant les mains au visage (animation du jeu) ; décochez si cette animation pose problème avec vos mods d'animation.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiDebug">
+                <Original>Journal des IA (RPT)</Original>
+                <English>AI log (RPT)</English>
+                <French>Journal des IA (RPT)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiDebug_Tip">
+                <Original>Écrit dans le RPT de la machine qui possède l'IA (serveur, headless) une ligne par IA et par détonation : force, durées, réaction. Désactivé par défaut ; beaucoup de lignes.  Exemple : décoché ; coché le temps d'un test.</Original>
+                <English>Writes to the RPT of the machine that owns the AI (server, headless) one line per AI and per detonation: strength, durations, reaction. Off by default; many lines.  Example: unticked; ticked for one test.</English>
+                <French>Écrit dans le RPT de la machine qui possède l'IA (serveur, headless) une ligne par IA et par détonation : force, durées, réaction. Désactivé par défaut ; beaucoup de lignes.  Exemple : décoché ; coché le temps d'un test.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiDuration">
+                <Original>Durée sur les IA</Original>
+                <English>AI duration</English>
+                <French>Durée sur les IA</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiDuration_Tip">
+                <Original>Multiplie les durées d'effet sur les IA (aveugle 2 à 10 s, dégradée 5 à 20 s ; 30 à 200 %). Sans effet en réaction Discrète.  Exemple : 100 %.</Original>
+                <English>Multiplies the effect durations on AI (blind 2 to 10 s, degraded 5 to 20 s; 30 to 200%). No effect with the Discreet reaction.  Example: 100%.</English>
+                <French>Multiplie les durées d'effet sur les IA (aveugle 2 à 10 s, dégradée 5 à 20 s ; 30 à 200 %). Sans effet en réaction Discrète.  Exemple : 100 %.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiImmunity">
+                <Original>Immunité des IA</Original>
+                <English>AI immunity</English>
+                <French>Immunité des IA</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiImmunity_Tip">
+                <Original>Part des IA qui ne réagissent pas à une grenade donnée (0 à 50 %), tirée une fois par IA et par grenade ; plus élevée pour les bons soldats, avec lunettes teintées ou protection auditive. Sans effet en réaction Discrète.  Exemple : 8 %.</Original>
+                <English>Share of AI that ignore a given grenade (0 to 50%), rolled once per AI and per grenade; higher for good soldiers, with tinted glasses or hearing protection. No effect with the Discreet reaction.  Example: 8%.</English>
+                <French>Part des IA qui ne réagissent pas à une grenade donnée (0 à 50 %), tirée une fois par IA et par grenade ; plus élevée pour les bons soldats, avec lunettes teintées ou protection auditive. Sans effet en réaction Discrète.  Exemple : 8 %.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiIntensity">
+                <Original>Intensité sur les IA</Original>
+                <English>AI intensity</English>
+                <French>Intensité sur les IA</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiIntensity_Tip">
+                <Original>Multiplie la force de l'effet sur les IA (0 à 200 %). Sans effet en réaction Discrète.  Exemple : 100 % ; 150 % pour des IA très sensibles.</Original>
+                <English>Multiplies the strength of the effect on AI (0 to 200%). No effect with the Discreet reaction.  Example: 100%; 150% for very sensitive AI.</English>
+                <French>Multiplie la force de l'effet sur les IA (0 à 200 %). Sans effet en réaction Discrète.  Exemple : 100 % ; 150 % pour des IA très sensibles.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiMax">
+                <Original>IA traitées par détonation</Original>
+                <English>AI handled per detonation</English>
+                <French>IA traitées par détonation</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiMax_Tip">
+                <Original>Nombre maximal d'IA touchées par détonation et par machine, les plus proches d'abord (1 à 80), traitées 6 par image : borne le coût sur une grosse mission.  Exemple : 20.</Original>
+                <English>Maximum number of AI affected per detonation and per machine, nearest first (1 to 80), handled 6 per frame: caps the cost on a big mission.  Example: 20.</English>
+                <French>Nombre maximal d'IA touchées par détonation et par machine, les plus proches d'abord (1 à 80), traitées 6 par image : borne le coût sur une grosse mission.  Exemple : 20.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiRadius">
+                <Original>Portée sur les IA</Original>
+                <English>AI range</English>
+                <French>Portée sur les IA</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiRadius_Tip">
+                <Original>Étire la portée des effets sur les IA (50 à 300 %) : à 150 %, une IA à 15 m est touchée comme à 10 m. Sans effet en réaction Discrète.  Exemple : 150 %.</Original>
+                <English>Stretches the range of the effects on AI (50 to 300%): at 150%, an AI at 15 m is hit as if at 10 m. No effect with the Discreet reaction.  Example: 150%.</English>
+                <French>Étire la portée des effets sur les IA (50 à 300 %) : à 150 %, une IA à 15 m est touchée comme à 10 m. Sans effet en réaction Discrète.  Exemple : 150 %.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiReaction">
+                <Original>Réaction des IA</Original>
+                <English>AI reaction</English>
+                <French>Réaction des IA</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiReaction_Tip">
+                <Original>Discrète : comme avant (précision et repérage réduits). Réaliste : l'IA éblouie ne cible plus 2 à 10 s, s'arrête net un instant, se baisse ou se protège le visage, puis tire mal 5 à 20 s. Forte : plus dur et plus long. Appliqué là où l'IA est locale : le serveur ou le headless doit avoir le mod.  Exemple : Réaliste.</Original>
+                <English>Discreet: as before (reduced accuracy and spotting). Realistic: a dazzled AI cannot target for 2 to 10 s, stops short for a moment, ducks or shields its face, then shoots badly for 5 to 20 s. Strong: harder and longer. Applied where the AI is local: the server or headless client must have the mod.  Example: Realistic.</English>
+                <French>Discrète : comme avant (précision et repérage réduits). Réaliste : l'IA éblouie ne cible plus 2 à 10 s, s'arrête net un instant, se baisse ou se protège le visage, puis tire mal 5 à 20 s. Forte : plus dur et plus long. Appliqué là où l'IA est locale : le serveur ou le headless doit avoir le mod.  Exemple : Réaliste.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_AllowBig">
                 <Original>Autoriser les grenades à plus de 9 flashs</Original>
