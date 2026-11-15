@@ -1,3 +1,21 @@
+[h1]COMSPEC ATAK 4.21.1 Washington — masquer les zones ne fait plus disparaître leurs marqueurs / hiding zones no longer wipes their markers[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Carte[/b] : masquer le calque « Zones Athena » (ou « Zones tactiques ») ne supprime plus les marqueurs de zone : ils sont seulement cachés sur l'ATAK.
+[*] Les réactiver les fait réapparaître tels quels, par le volet CALQUES comme par les outils de la carte.
+[*] La carte d'Arma et les autres marqueurs ne sont plus touchés par ce réglage.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Map[/b]: hiding the "Athena zones" (or "Tactical zones") layer no longer deletes zone markers: they are only hidden on the ATAK.
+[*] Turning them back on brings them back as they were, from the LAYERS panel or from the map tools.
+[*] The Arma map and other markers are no longer affected by this setting.
+[/list]
+
 [h1]COMSPEC ATAK 4.21.0 Washington — listes du SEEK II lues sur le site / SEEK II lists read from the site[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

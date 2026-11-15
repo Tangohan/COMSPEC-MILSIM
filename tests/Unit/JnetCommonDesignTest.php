@@ -449,7 +449,7 @@ final class JnetCommonDesignTest extends TestCase
         self::assertSame(JnetUi::forwardGroup(1), JnetUi::forwardGroup(-2), 'toujours une des trois, même avec une graine négative');
     }
 
-    public function testEagleLogosAreShippedButNotWiredAsASeasonalLogo(): void
+    public function testEagleLogosAreShippedAndTheSeasonalOneIsWiredByTheHelper(): void
     {
         foreach (['public/assets/images/athena-eagle-mark-white.png', 'public/assets/images/athena-eagle-xmas.png'] as $logo) {
             $info = getimagesize(self::ROOT . $logo);
@@ -459,18 +459,8 @@ final class JnetCommonDesignTest extends TestCase
         // Type de couleur 6 de l'en-tête PNG : couleurs avec canal alpha (fond blanc rendu transparent).
         $header = (string) file_get_contents(self::ROOT . 'public/assets/images/athena-eagle-xmas.png', false, null, 0, 33);
         self::assertSame(6, ord($header[25]), 'le logo de Noël a un canal de transparence');
-        // Suite possible, pas branchée : aucune vue, feuille ou script ne les référence.
-        foreach (['app', 'views', 'public/assets/css', 'public/assets/js'] as $dir) {
-            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::ROOT . $dir, \FilesystemIterator::SKIP_DOTS));
-            foreach ($it as $file) {
-                if (!$file->isFile() || !in_array($file->getExtension(), ['php', 'css', 'js'], true)) {
-                    continue;
-                }
-                $src = (string) file_get_contents($file->getPathname());
-                self::assertStringNotContainsString('athena-eagle-xmas', $src, $file->getFilename());
-                self::assertStringNotContainsString('athena-eagle-mark-white', $src, $file->getFilename());
-            }
-        }
+        // Branché depuis décembre par athena_seasonal_logo() (helpers.php), qui ne sert que la variante légère.
+        self::assertStringContainsString('athena-eagle-xmas-96.png', (string) file_get_contents(self::ROOT . 'app/Support/helpers.php'));
     }
 
     // ——— Conformité aux décisions ———

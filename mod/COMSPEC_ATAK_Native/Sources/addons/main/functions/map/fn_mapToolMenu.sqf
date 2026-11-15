@@ -16,8 +16,7 @@ switch (_key) do {
     case "ZONES": {
         private _on = !(profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]);
         profileNamespace setVariable ["COMSPEC_ATAK_ZonesLayer", _on];
-        // Overwatch pose aussi chaque zone en marqueur COMSPEC_TZ_<id> : on les masque avec le calque.
-        { if ((_x select [0, 11]) isEqualTo "COMSPEC_TZ_") then { _x setMarkerAlphaLocal ([0, 0.7] select _on); }; } forEach allMapMarkers;
+        // Marqueurs COMSPEC_TZ_<id> d'Overwatch : jamais touchés ici, fn_mapGameMarkers et fn_mapMarkerText les sautent à l'affichage.
         private _n = (count (missionNamespace getVariable ["COMSPEC_DangerZones", []])) + (count (missionNamespace getVariable ["COMSPEC_RoleplayZones", []]));
         ["INFO", if (_on) then { [format ["Zones tactiques affichées (%1)", _n], "Zones tactiques affichées : aucune zone reçue d'Athena pour cette carte"] select (_n isEqualTo 0) } else { format ["Zones tactiques masquées (%1)", _n] }, 3, 20] call comspec_atak_native_fnc_notify;
     };
