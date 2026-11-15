@@ -17,7 +17,7 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
 $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-id-images.js')) . '"></script>';
 ?>
 <section class="panel" style="margin-top:10px" id="images">
-    <div class="panel-header"><div class="panel-title"><span class="panel-index">IMG</span> Photo et signature du titulaire</div><div class="panel-meta">Affichées sur chaque papier, sous le filigrane SIMULATION</div></div>
+    <div class="panel-header"><div class="panel-title"><span class="panel-index">IMG</span> Photo et signature du titulaire</div><div class="panel-meta">Affichées sur chaque papier</div></div>
     <div class="panel-body">
         <div class="idi-current">
             <figure class="idi-current__photo">

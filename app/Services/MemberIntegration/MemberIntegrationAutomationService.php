@@ -30,7 +30,7 @@ final class MemberIntegrationAutomationService
     /**
      * Idempotent : une seule intégration active par membre.
      *
-     * @param array{role_ids?: list<int>, unit_ids?: list<int>} $context
+     * @param array{role_ids?: list<int>, unit_ids?: list<int>, skip_welcome?: bool} $context
      * @return array{ok: bool, created: bool, integration_id?: int, message?: string}
      */
     public function ensureForNewMember(
@@ -48,7 +48,8 @@ final class MemberIntegrationAutomationService
                 $this->templates->ensureDefaultRecruitTemplate($tenantId, $actorUserId > 0 ? $actorUserId : null);
             }
             $result = $this->service->instantiateForUser($tenantId, $userId, $actorUserId, $source, null, $context);
-            if (!empty($result['created']) && !empty($result['integration_id'])) {
+            // skip_welcome : le récapitulatif du paquet d'intégration tient lieu de message de bienvenue (un seul e-mail).
+            if (!empty($result['created']) && !empty($result['integration_id']) && empty($context['skip_welcome'])) {
                 $this->sendWelcome($tenantId, $userId, (int) $result['integration_id']);
             }
 

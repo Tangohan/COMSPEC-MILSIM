@@ -576,6 +576,34 @@ class RoleRepository
         return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
     }
 
+    /**
+     * Identité des titulaires d’un niveau (même communauté uniquement), pour l’aperçu « qui a ce niveau ».
+     *
+     * @param list<int> $userIds
+     * @return list<array{id: int, name: string, callsign: string}>
+     */
+    public function memberIdentities(int $tenantId, array $userIds, int $limit = 60): array
+    {
+        $userIds = array_slice(array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0))), 0, max(1, $limit));
+        if ($tenantId < 1 || $userIds === []) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($userIds), '?'));
+        $st = $this->pdo->prepare("SELECT id, display_name, callsign, email FROM users WHERE tenant_id = ? AND id IN ({$ph}) ORDER BY display_name ASC, id ASC");
+        $st->execute(array_merge([$tenantId], $userIds));
+        $out = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $name = trim((string) ($row['display_name'] ?? ''));
+            $out[] = [
+                'id' => (int) $row['id'],
+                'name' => $name !== '' ? $name : (string) ($row['callsign'] ?? ('#' . $row['id'])),
+                'callsign' => (string) ($row['callsign'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
     public function deleteCustomAccessRole(int $tenantId, int $roleId): bool
     {
         $r = $this->findById($roleId, $tenantId);

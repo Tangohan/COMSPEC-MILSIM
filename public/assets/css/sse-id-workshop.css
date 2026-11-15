@@ -14,7 +14,7 @@
     border: 1px solid var(--border-soft, rgba(127, 127, 127, 0.2));
     border-radius: 6px;
 }
-.idw-form legend { padding: 0 6px; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, inherit); }
+.idw-form legend { padding: 0 6px; font-size: 0.95rem; font-weight: 700; color: var(--text-strong, inherit); }
 .idw-form .idp-statuses { gap: 8px; }
 .idw-form textarea { width: 100%; min-height: 70px; }
 .idw-note { font-size: 0.82rem; color: var(--muted, inherit); margin: 4px 0 0; }
@@ -264,3 +264,31 @@ label.idw-check {
 .idi-guide ol { margin: 0; padding-left: 1.2rem; }
 .idi-prompt textarea { width: 100%; font-size: 0.82rem; resize: vertical; }
 .idi-variants { display: flex; flex-wrap: wrap; gap: 10px; border: 0; padding: 0; margin: 0; }
+
+/* Atelier : actions, zoom, brouillon local, validation en ligne, mobile, impression PDF. */
+.idw-zoom { display: inline-flex; gap: 4px; }
+.idw-actions { position: sticky; bottom: 0; z-index: 3; align-items: center; gap: 8px; padding: 8px 0; background: var(--surface, var(--bg, transparent)); }
+.idw-draft { font-size: 0.8rem; color: var(--muted, inherit); }
+.idw-sync { font-weight: 600; }
+.idw-err { margin: 4px 0 0; font-size: 0.8rem; color: #e5484d; }
+.idw-err[hidden] { display: none; }
+.idw-form [aria-invalid="true"] { border-color: #e5484d; outline-color: #e5484d; }
+.idw-preview { max-width: 100%; }
+@media (max-width: 640px) {
+    .idw-form input, .idw-form select, .idw-form .btn, .idw-toolbar .btn, .idw-actions .btn { min-height: 44px; }
+    .idw-toolbar { gap: 6px; }
+    .idw-toolbar .btn { flex: 1 1 auto; }
+    .idw-form .idp-statuses { grid-template-columns: minmax(0, 1fr); }
+    .idw-note, .idw-draft, .idw-err { font-size: 0.78rem; }
+}
+@media print {
+    body * { visibility: hidden; }
+    #idw-preview, #idw-preview * { visibility: visible; }
+    #idw-preview { position: absolute; inset: 0 auto auto 0; zoom: 1 !important; }
+    #idw-preview .idw-face { break-inside: avoid; position: relative; }
+    #idw-preview[data-marking="discreet"] .idw-face::after {
+        content: "Document de jeu – sans valeur · Game document – no value";
+        position: absolute; right: 8px; bottom: 4px; z-index: 20;
+        font: 600 6px Arial, sans-serif; color: rgba(40, 40, 48, 0.5);
+    }
+}
