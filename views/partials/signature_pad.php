@@ -55,7 +55,7 @@ $GLOBALS['__sigpad_assets'] = true;
     <p class="sigpad__label" id="<?= $spEsc($spId) ?>-label"><?= $spEsc($spLabel) ?><?= $spRequired ? ' *' : '' ?></p>
     <?php if ($spCurrent !== ''): ?>
         <div class="sigpad__current">
-            <img src="<?= $spEsc($spCurrent) ?>" alt="Signature actuelle">
+            <img src="<?= $spEsc($spCurrent) ?>" alt="Signature actuelle" loading="lazy">
             <span>Signature actuelle : dessinez ou chargez-en une nouvelle pour la remplacer.</span>
         </div>
     <?php endif; ?>
