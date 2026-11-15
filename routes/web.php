@@ -1189,6 +1189,17 @@ return function (Router $router) {
     $router->get('/atak/sse/identites', [SsePortalController::class, 'identitiesIndex'], $mwSsePortal);
     $router->get('/atak/sse/identites/{id}', [SsePortalController::class, 'identityShow'], $mwSsePortal);
     $router->post('/atak/sse/identites/{id}/registre', [\App\Controllers\Web\SsePersonRegistryController::class, 'create'], $mwSsePortal);
+    // Fiches PDF d'une personne ou d'une identité (identification, vigilance, renseignement, contrôle, avis) : éditeur, brouillons, aperçu, émission.
+    $router->get('/atak/sse/identites/emission/phrases', [\App\Controllers\Web\SseSheetController::class, 'phrases'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/phrases', [\App\Controllers\Web\SseSheetController::class, 'phraseSave'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/phrases/{id}/supprimer', [\App\Controllers\Web\SseSheetController::class, 'phraseDelete'], $mwSsePortal);
+    $router->get('/atak/sse/identites/emissions/{id}/pdf', [\App\Controllers\Web\SseSheetController::class, 'download'], $mwSsePortal);
+    $router->get('/atak/sse/identites/emission/{kind}/{id}/{model}', [\App\Controllers\Web\SseSheetController::class, 'editor'], $mwSsePortal);
+    $router->get('/atak/sse/identites/emission/{kind}/{id}/{model}/defauts', [\App\Controllers\Web\SseSheetController::class, 'defaults'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/brouillon', [\App\Controllers\Web\SseSheetController::class, 'draftSave'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/brouillon/{draft}/supprimer', [\App\Controllers\Web\SseSheetController::class, 'draftDelete'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/apercu', [\App\Controllers\Web\SseSheetController::class, 'preview'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/emettre', [\App\Controllers\Web\SseSheetController::class, 'issue'], $mwSsePortal);
     // RENS › Identités & documents (COMSPEC IDENTITY) : « nouvelle » / « nouveau » avant /{id}.
     $router->get('/atak/sse/papiers', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentsIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identitiesIndex'], $mwSsePortal);

@@ -40,6 +40,9 @@ use App\Services\Sse\SseCorrelationService;
 use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseMeshService;
 use App\Services\Sse\SsePersonRegistryLinkService;
+use App\Services\Sse\SseSheetAccess;
+use App\Services\Sse\SseSheetFactsService;
+use App\Services\Sse\SseSheetMenu;
 use App\Services\Sse\SseWantedAccess;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
@@ -4018,6 +4021,17 @@ final class SsePortalController
         } catch (\Throwable $e) {
             error_log('Fiche personne : lien au registre indisponible : ' . $e->getMessage());
         }
+        // Bloc « Émettre un document » : mêmes modèles et mêmes droits que sur la fiche du registre.
+        $sheetMenu = [];
+        try {
+            $sheetAccess = SseSheetAccess::fromSession($this->access, $this->clearance);
+            $sheetSubject = (new SseSheetFactsService())->subject($this->tenantId(), 'person', $id, $sheetAccess);
+            if ($sheetSubject !== null) {
+                $sheetMenu = SseSheetMenu::build($this->tenantId(), $sheetSubject, 'personne', $sheetAccess, $this->access->isGuest(), !function_exists('site_lang') || site_lang() === 'fr' ? 'fr' : 'en');
+            }
+        } catch (\Throwable $e) {
+            error_log('Fiche personne : documents à émettre indisponibles : ' . $e->getMessage());
+        }
         $people = $this->clearance->redactPeopleForScreens([$person], $this->tenantId(), null);
         $person = $people[0] ?? $person;
         // Sans photo de la personne, le premier cliché SEEK II de son identité tient lieu de portrait.
@@ -4113,6 +4127,7 @@ final class SsePortalController
             'provenance' => [],
             'idPapers' => SseIdentityRegistryController::personPapers($this->tenantId(), $id),
             'registry' => $registry,
+            'sheetMenu' => $sheetMenu,
             'canManage' => $this->canManage(),
             'activeNav' => 'identites',
         ]);

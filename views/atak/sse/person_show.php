@@ -74,6 +74,7 @@ $pid = (int) ($person['id'] ?? 0);
     </div>
 </div>
 
+<?php require __DIR__ . '/_sheet_menu.php'; ?>
 <?php require __DIR__ . '/_person_registry.php'; ?>
 
 <div class="iw-confidence" style="margin-bottom:12px">
@@ -239,6 +240,7 @@ $pid = (int) ($person['id'] ?? 0);
 </div>
 
 <?php require __DIR__ . '/papers/_person_block.php'; ?>
+<?php if (!empty($sheetMenu['ready']) && ($sheetMenu['reason'] ?? null) === null) { require __DIR__ . '/_sheet_issues.php'; } ?>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';
