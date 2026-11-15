@@ -149,8 +149,25 @@ require __DIR__ . '/_subnav.php';
                         <?php $photoDis = $dis; $hasPhoto = !empty($identity['photo_path']) && !$identityLocked; require __DIR__ . '/_photo_input.php'; ?>
                     </div>
                     <div>
-                        <label for="idw-signature">Signature (image, fond transparent conseillé, <?= (int) \App\Services\Sse\SseIdImageService::maxMb('signature') ?> Mo maximum)</label>
-                        <input id="idw-signature" type="file" name="signature" accept="image/png,image/jpeg,image/webp" data-bind-img="signature"<?= $dis ?>>
+                        <?php if ($dis === ''): ?>
+                            <?php
+                            $sigpad = [
+                                'id' => 'idw-signature',
+                                'label' => 'Signature du titulaire (fictive)',
+                                'file_name' => 'signature',
+                                'file_attrs' => 'data-bind-img="signature"',
+                                'current_url' => !empty($identity['signature_path']) ? (string) url((string) $identity['signature_path']) : '',
+                                'theme' => 'dark',
+                                'ink' => '#14202e',
+                                'name_hint' => trim((string) ($identity['first_name'] ?? '') . ' ' . (string) ($identity['last_name'] ?? '')),
+                            ];
+                            require dirname(__DIR__, 3) . '/partials/signature_pad.php';
+                            ?>
+                            <p class="idw-note">Dessinez-la ou chargez une image (PNG, JPG ou WebP, <?= (int) \App\Services\Sse\SseIdImageService::maxMb('signature') ?> Mo maximum). Elle reste une donnée de jeu de rôle.</p>
+                        <?php else: ?>
+                            <label for="idw-signature">Signature (image, fond transparent conseillé, <?= (int) \App\Services\Sse\SseIdImageService::maxMb('signature') ?> Mo maximum)</label>
+                            <input id="idw-signature" type="file" name="signature" accept="image/png,image/jpeg,image/webp" data-bind-img="signature"<?= $dis ?>>
+                        <?php endif; ?>
                         <?php if (!empty($identity['signature_path'])): ?><label class="idw-check"><input type="checkbox" name="signature_remove" value="1"<?= $dis ?>> Retirer la signature importée</label><?php endif; ?>
                     </div>
                     <div>

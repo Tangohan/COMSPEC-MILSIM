@@ -71,12 +71,29 @@ final class SseIdImageService
         if (!isset(self::KINDS[$kind]) || $tenantId <= 0) {
             return ['ok' => false, 'error' => 'Image refusée.'];
         }
-        [$folder, $maxBytes, $maxSide, $outFormat] = self::KINDS[$kind];
         $size = @filesize($source);
-        if ($size === false || $size <= 0 || $size > $maxBytes) {
+        if ($size === false || $size <= 0 || $size > self::KINDS[$kind][1]) {
             return ['ok' => false, 'error' => self::sizeError($kind)];
         }
-        $bytes = (string) @file_get_contents($source);
+
+        return $this->storeBytes((string) @file_get_contents($source), $kind, $tenantId);
+    }
+
+    /**
+     * Image déjà en mémoire (fichier lu, ou dessin du pad de signature décodé et validé par SignatureImageService) :
+     * mêmes contrôles, même réencodage et même rangement que storeFile.
+     *
+     * @return array{ok: bool, path?: string, error?: string}
+     */
+    public function storeBytes(string $bytes, string $kind, int $tenantId): array
+    {
+        if (!isset(self::KINDS[$kind]) || $tenantId <= 0) {
+            return ['ok' => false, 'error' => 'Image refusée.'];
+        }
+        [$folder, $maxBytes, $maxSide, $outFormat] = self::KINDS[$kind];
+        if ($bytes === '' || strlen($bytes) > $maxBytes) {
+            return ['ok' => false, 'error' => self::sizeError($kind)];
+        }
         $mime = self::sniff($bytes);
         if ($mime === null) {
             return ['ok' => false, 'error' => self::typeError($kind)];

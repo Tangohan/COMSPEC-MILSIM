@@ -284,11 +284,33 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
             <div>
                 <label class="block mb-1">Signature numérique (compte)</label>
                 <input id="doc-sign-name" type="text" class="w-full rounded border border-amber-200 px-2 py-1.5 mb-2" placeholder="Nom affiché/signataire" />
-                <canvas id="doc-sign-pad" width="280" height="120" class="w-full rounded border border-amber-200 bg-white"></canvas>
-                <div class="mt-2 flex gap-2">
-                    <button id="doc-sign-clear" type="button" class="flex-1 rounded border border-amber-300 px-2 py-1.5">Effacer</button>
-                    <button id="doc-sign-submit" type="button" class="flex-1 rounded bg-amber-900 px-2 py-1.5 font-semibold text-white">Signer</button>
+                <?php if (!empty($savedSignature['data_url'])): ?>
+                <div class="mb-2 flex items-center gap-2 rounded border border-amber-200 bg-white p-2" id="doc-sign-saved" data-saved-id="<?= (int) $savedSignature['id'] ?>">
+                    <img src="<?= htmlspecialchars((string) $savedSignature['data_url'], ENT_QUOTES, 'UTF-8') ?>" alt="Ma signature enregistrée" class="max-h-10 max-w-[45%] object-contain">
+                    <button id="doc-sign-saved-use" type="button" class="flex-1 rounded border border-amber-300 px-2 py-1.5">Signer avec ma signature enregistrée</button>
                 </div>
+                <?php endif; ?>
+                <?php
+                $sigpad = [
+                    'id' => 'doc-sign-pad',
+                    'label' => 'Ma signature',
+                    'name' => 'signature_data_url',
+                    'height' => 130,
+                    'ink' => '#0b1220',
+                    'background' => 'transparent',
+                ];
+                require base_path('views/partials/signature_pad.php');
+                ?>
+                <label class="mt-2 flex items-center gap-2"><input id="doc-sign-remember" type="checkbox" class="rounded border-amber-300"> <span>Garder cette signature pour mes prochains documents</span></label>
+                <div class="mt-2">
+                    <button id="doc-sign-submit" type="button" class="w-full rounded bg-amber-900 px-2 py-1.5 font-semibold text-white">Signer</button>
+                </div>
+                <span hidden>
+                    <span data-doc-sign-t="empty">Signature vide : dessinez-la ou tapez votre nom.</span>
+                    <span data-doc-sign-t="name">Indiquez le nom du signataire.</span>
+                    <span data-doc-sign-t="done">Signature enregistrée.</span>
+                    <span data-doc-sign-t="error">Erreur</span>
+                </span>
             </div>
             <?php endif; ?>
             <p id="doc-security-message" class="mt-2 text-[11px]"></p>
@@ -348,39 +370,35 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
     });
   }
 
-  const pad = document.getElementById('doc-sign-pad');
-  if (pad) {
-    const ctx = pad.getContext('2d');
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    let drawing = false;
-    const pos = (ev) => {
-      const r = pad.getBoundingClientRect();
-      const p = ev.touches ? ev.touches[0] : ev;
-      return { x: p.clientX - r.left, y: p.clientY - r.top };
-    };
-    const start = (ev) => { drawing = true; const p = pos(ev); ctx.beginPath(); ctx.moveTo(p.x, p.y); ev.preventDefault(); };
-    const move = (ev) => { if (!drawing) return; const p = pos(ev); ctx.lineTo(p.x, p.y); ctx.stroke(); ev.preventDefault(); };
-    const end = () => { drawing = false; };
-    pad.addEventListener('mousedown', start); pad.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
-    pad.addEventListener('touchstart', start, { passive:false }); pad.addEventListener('touchmove', move, { passive:false }); window.addEventListener('touchend', end);
-    document.getElementById('doc-sign-clear')?.addEventListener('click', () => ctx.clearRect(0, 0, pad.width, pad.height));
-    document.getElementById('doc-sign-submit')?.addEventListener('click', () => {
+  const signRoot = document.getElementById('doc-sign-pad');
+  if (signRoot) {
+    const label = (key) => (document.querySelector('[data-doc-sign-t="' + key + '"]') || {}).textContent || '';
+    const sendSignature = (extra) => {
       const signatureName = (document.getElementById('doc-sign-name').value || '').trim();
-      const dataUrl = pad.toDataURL('image/png');
+      if (signatureName === '') { if (msg) msg.textContent = label('name'); return; }
       const fd = new FormData();
       fd.append('_csrf_token', csrfToken);
       fd.append('security_session_token', token);
       fd.append('signature_name', signatureName);
-      fd.append('signature_data_url', dataUrl);
+      Object.keys(extra).forEach((k) => fd.append(k, extra[k]));
       fetch(<?= json_encode(url('documents/' . (int) $document['id'] . '/signature')) ?>, { method: 'POST', body: fd, credentials: 'same-origin' })
         .then(r => r.json().then(j => ({ ok: r.ok, j })))
         .then(({ ok, j }) => {
-          if (!ok) throw new Error((j && j.message) || 'Erreur');
-          if (msg) msg.textContent = 'Signature enregistrée.';
+          if (!ok) throw new Error((j && j.message) || label('error'));
+          if (msg) msg.textContent = label('done');
           track('signature_completed');
         })
         .catch(e => { if (msg) msg.textContent = e.message; });
+    };
+    document.getElementById('doc-sign-submit')?.addEventListener('click', () => {
+      const pad = window.ComspecSignaturePad && window.ComspecSignaturePad.get(signRoot);
+      if (!pad || pad.isEmpty()) { if (msg) msg.textContent = label('empty'); return; }
+      const extra = { signature_data_url: pad.toDataURL() };
+      if (document.getElementById('doc-sign-remember')?.checked) extra.save_signature = '1';
+      sendSignature(extra);
+    });
+    document.getElementById('doc-sign-saved-use')?.addEventListener('click', () => {
+      sendSignature({ user_signature_id: document.getElementById('doc-sign-saved').getAttribute('data-saved-id') });
     });
   }
 })();
