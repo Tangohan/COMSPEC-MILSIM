@@ -96,6 +96,30 @@ final class JnetUi
             . '</a>';
     }
 
+    /**
+     * Fil d'Ariane des pages profondes : « Mon extranet › Unité › Page ». Chaque élément est [libellé, lien] ; le dernier
+     * (la page où l'on se trouve) n'a pas de lien. Un élément sans libellé est ignoré.
+     *
+     * @param list<array{0: string, 1: string|null}> $items
+     */
+    public static function crumbs(array $items): string
+    {
+        $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+        $items = array_values(array_filter($items, static fn (array $i): bool => trim((string) ($i[0] ?? '')) !== ''));
+        if ($items === []) {
+            return '';
+        }
+        $last = count($items) - 1;
+        $out = '<nav class="ja-crumbs" aria-label="Fil d’Ariane"><ol>';
+        foreach ($items as $i => $item) {
+            $label = trim((string) $item[0]);
+            $href = $i < $last ? trim((string) ($item[1] ?? '')) : '';
+            $out .= '<li>' . ($href !== '' ? '<a href="' . $esc($href) . '">' . $esc($label) . '</a>' : '<span aria-current="page">' . $esc($label) . '</span>') . '</li>';
+        }
+
+        return $out . '</ol></nav>';
+    }
+
     /** « Demi-section (section OTAN) » devient « Demi-section », « Équipe / équipage » devient « Équipe ». */
     public static function shortLabel(string $label): string
     {
