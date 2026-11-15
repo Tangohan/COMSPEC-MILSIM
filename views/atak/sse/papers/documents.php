@@ -94,7 +94,18 @@ require __DIR__ . '/_subnav.php';
                         <td><?= $h($d['doc_type_label']) ?></td>
                         <td><?= $h($d['country_code']) ?></td>
                         <td><code><?= $h($d['doc_number']) ?></code></td>
-                        <td><?= $h(trim(mb_strtoupper((string) $d['identity']['last_name']) . ' ' . $d['identity']['first_name'])) ?></td>
+                        <td>
+                            <?= $h(trim(mb_strtoupper((string) $d['identity']['last_name']) . ' ' . $d['identity']['first_name'])) ?>
+                            <?php $holder = is_array($d['holder'] ?? null) ? $d['holder'] : []; ?>
+                            <?php if (($holder['kind_label'] ?? '') !== ''): ?><span class="badge badge--gray"><?= $h($holder['kind_label']) ?></span><?php endif; ?>
+                            <?php if (!empty($holder['member_id'])): ?>
+                                <br><small class="muted">Membre : <?= $h($holder['member_name'] !== '' ? $holder['member_name'] : 'état civil non renseigné') ?></small>
+                                <?php if (!empty($holder['differs'])): ?>
+                                    <span class="badge badge--amber">Nom différent de l’état civil du membre</span>
+                                    <a class="btn-open" href="<?= $h(url('atak/sse/papiers/membres/' . (int) $holder['member_id'])) ?>">Corriger</a>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
                         <td><span class="badge<?= $d['workflow'] === 'issued' ? '' : ' badge--gray' ?>"><?= $h($d['workflow_label']) ?></span><?php if ($d['expired']): ?> <span class="badge badge--amber">Expiré</span><?php endif; ?></td>
                         <?php if ($canSeeTruth): ?><td><?= $h(C::label(C::ORIGINS, $d['st_origin'])) ?></td><?php endif; ?>
                         <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'])) ?>">Ouvrir</a></td>
