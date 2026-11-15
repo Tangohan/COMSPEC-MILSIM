@@ -204,7 +204,7 @@ final class SseFichesGameTest extends TestCase
         self::assertSame('Pyrgos', $avis['zone']);
         self::assertSame('Entrepôt quai 4', $avis['place']);
         self::assertSame('2026-11-10', $avis['seen']);
-        self::assertSame('UNCLASSIFIED//FOUO', $avis['mark']);
+        self::assertSame('CUI', $avis['mark']);
         self::assertSame('interne', $avis['level']);
         self::assertSame('Bureau de recherche', $avis['auth']);
         self::assertSame('interne', $pkg['level']);
@@ -233,7 +233,7 @@ final class SseFichesGameTest extends TestCase
 
         $all = $this->service()->build(1, 'tres_restreint');
         self::assertContains('FC-2026-0004', self::refs($all));
-        self::assertSame('TOP SECRET//NOFORN', $all['mark']);
+        self::assertSame('TOP SECRET//SCI//NOFORN', $all['mark']);
         // Niveau inconnu : le plancher.
         self::assertSame(self::refs($this->service()->build(1, 'interne')), self::refs($this->service()->build(1, 'inconnu')));
     }
@@ -380,7 +380,7 @@ final class SseFichesGameTest extends TestCase
             self::assertSame($i, $p[4]);
             self::assertSame($i + 1 < count($pages) ? $i + 1 : 0, $p[5]);
             self::assertSame('interne', $p[7][2]);
-            self::assertSame('UNCLASSIFIED//FOUO', $p[7][3]);
+            self::assertSame('CUI', $p[7][3]);
             foreach ($p[6] as $row) {
                 self::assertCount(count(SseFichesGameService::COLUMNS), $row);
                 $seen[] = $row[0];

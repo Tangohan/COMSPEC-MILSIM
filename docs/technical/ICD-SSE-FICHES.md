@@ -75,7 +75,7 @@ et le niveau (le nom seulement pour un avis ou une fiche de niveau le plus bas).
   Les avis de recherche sont des documents de diffusion : niveau `interne` (constante `SseFichesGameService::NOTICE_LEVEL`).
 - Une fiche PDF émise est donnée au niveau où elle a été imprimée : son texte est déjà caviardé à ce niveau.
 - Identités de membre, états civils, photos, nature des identités : jamais. Donnée cachée par le MJ : barre de caviardage, sans alias ni lien.
-- Les marquages du bandeau (`UNCLASSIFIED//FOUO`, `CONFIDENTIAL`, `SECRET//NOFORN`, `TOP SECRET//NOFORN`) sont fictifs (jeu de rôle) et définis côté site (`SseFichesGameService::MARKINGS`) :
+- Les marquages du bandeau (`CUI`, `CONFIDENTIAL`, `SECRET//NOFORN`, `TOP SECRET//SCI//NOFORN`) sont fictifs (jeu de rôle) et viennent de l'échelle américaine du portail (`SseUsClassification::banner`) :
   un changement de niveaux ne demande aucune reconstruction du mod.
 - Sur le poste, seules les fiches du niveau le plus bas sont gardées sur disque (24 h) ; les autres ne quittent pas la mémoire de la partie.
 - Limite connue : les libellés de véhicules, d'adresses et de personnes liées d'une **fiche PDF émise** sont ceux imprimés sur le PDF (instantané) ; une personne liée y est nommée telle qu'imprimée.
