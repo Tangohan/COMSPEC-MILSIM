@@ -88,7 +88,7 @@ final class SeekSignKeyTest extends TestCase
         self::assertStringContainsString('setSeekSignatureImage(', $svc);
         self::assertStringContainsString('signature_image', self::read(self::ROOT . 'views/atak/sse/files/seek.php'));
         self::assertStringContainsString('signature_image', self::read(self::ROOT . 'views/atak/sse/papers/_seek_images.php'));
-        self::assertStringContainsString('sse_seek_records', self::read(self::ROOT . 'database/steps/4590_sse_persons_signature_image.php'));
+        self::assertStringContainsString('sse_seek_records', self::read(self::ROOT . 'database/steps/4595_sse_persons_signature_image.php'));
         self::assertStringContainsString('sse_seek_records DROP COLUMN signature_image', self::read(self::ROOT . 'migrations/rollback/sse_persons_signature_image_down.sql'));
     }
 
