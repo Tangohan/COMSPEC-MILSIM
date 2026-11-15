@@ -1233,6 +1233,7 @@ return function (Router $router) {
     $router->get('/atak/sse/fichiers/source/{type}/{id}', [$sseRec, 'source'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/photos', [$sseRec, 'photobook'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/photos', [$sseRec, 'photoUpload'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/photos/{id}/image', [$sseRec, 'photoImage'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/photos/{id}/rattacher', [$sseRec, 'photoAttach'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/comparer', [$sseRec, 'compare'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/telephones', [$sseRec, 'phones'], $mwSsePortal);

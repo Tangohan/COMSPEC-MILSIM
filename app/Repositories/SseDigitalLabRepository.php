@@ -1395,6 +1395,32 @@ final class SseDigitalLabRepository
         return (int) ($row['c'] ?? 0);
     }
 
+    /**
+     * Contenu structuré relevé sur un support (une ligne par rubrique de l'extraction). Tolère une table absente
+     * (communauté dont la migration n'est pas passée) : 0 pour cette rubrique.
+     *
+     * @return array{contacts: int, messages: int, calls: int, media: int, locations: int, accounts: int, applications: int, networks: int, artifacts: int}
+     */
+    public function contentCounts(int $deviceId, int $tenantId): array
+    {
+        $tables = [
+            'contacts' => 'sse_digital_contacts', 'messages' => 'sse_digital_messages', 'calls' => 'sse_digital_calls',
+            'media' => 'sse_digital_media', 'locations' => 'sse_digital_locations', 'accounts' => 'sse_digital_accounts',
+            'applications' => 'sse_digital_applications', 'networks' => 'sse_digital_networks',
+        ];
+        $out = ['contacts' => 0, 'messages' => 0, 'calls' => 0, 'media' => 0, 'locations' => 0, 'accounts' => 0, 'applications' => 0, 'networks' => 0, 'artifacts' => 0];
+        foreach ($tables + ['artifacts' => 'sse_digital_artifacts'] as $key => $table) {
+            try {
+                $row = $this->db->fetchOne('SELECT COUNT(*) AS c FROM ' . $table . ' WHERE device_id = :d AND tenant_id = :t', ['d' => $deviceId, 't' => $tenantId]);
+                $out[$key] = (int) ($row['c'] ?? 0);
+            } catch (\Throwable) {
+                $out[$key] = 0;
+            }
+        }
+
+        return $out;
+    }
+
     public function hubCounts(int $tenantId): array
     {
         $devices = $this->countDevices($tenantId);

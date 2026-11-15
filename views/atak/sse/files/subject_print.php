@@ -60,7 +60,7 @@ $red = array_filter($r['flags'], static fn (array $f): bool => $f['tone'] === 'r
     </header>
     <?php if ($red !== []): ?><div class="caut"><?= $h(implode(' · ', array_map(static fn (array $f): string => $f['label'], $red))) ?></div><?php endif; ?>
     <div class="id">
-        <div class="ph"><?php if ($photo !== null): ?><img src="<?= $h(user_media_public_url((string) $photo['path'])) ?>" alt=""><?php else: ?>SANS PHOTO<?php endif; ?></div>
+        <div class="ph"><?php if ($photo !== null): ?><img src="<?= $h(\App\Services\Sse\SseSeekPhotoService::photoUrl($photo)) ?>" alt=""><?php else: ?>SANS PHOTO<?php endif; ?></div>
         <dl>
             <div><dt>Naissance</dt><dd><?= $h(($i['birth_date'] ?? null) ? RF::date((string) $i['birth_date'], $c) : '—') ?></dd></div>
             <div><dt>Sexe</dt><dd><?= $h($i['sex'] ?? 'X') ?></dd></div>

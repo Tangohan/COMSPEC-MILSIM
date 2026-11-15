@@ -637,6 +637,21 @@ final class SseFileRecordRepository
         foreach ($this->db->fetchAll("SELECT * FROM sse_file_photos WHERE tenant_id = :t AND identity_id IN ({$in}) ORDER BY CASE kind WHEN 'front' THEN 0 WHEN 'profile' THEN 1 ELSE 2 END, id DESC", $params) as $r) {
             $out[(int) $r['identity_id']][] = self::hydratePhoto($r);
         }
+        // Clichés du terminal SEEK II arrivés avant leur fiche (photo sans identité, même REC que la fiche rattachée).
+        try {
+            $seekRows = $this->db->fetchAll(
+                "SELECT p.*, s.identity_id AS seek_identity_id FROM sse_file_photos p
+                 JOIN sse_seek_records s ON s.tenant_id = p.tenant_id AND s.rec = p.source_ref
+                 WHERE p.tenant_id = :t AND p.source = 'seek' AND p.identity_id IS NULL AND s.identity_id IN ({$in}) ORDER BY p.id DESC",
+                $params
+            );
+            foreach ($seekRows as $r) {
+                $r['identity_id'] = $r['seek_identity_id'];
+                $out[(int) $r['identity_id']][] = self::hydratePhoto($r);
+            }
+        } catch (\Throwable) {
+            // Fiches SEEK II absentes sur cette installation : seules les photos rattachées comptent.
+        }
 
         return $out;
     }
