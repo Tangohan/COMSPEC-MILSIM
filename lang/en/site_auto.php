@@ -67378,8 +67378,6 @@ return [
     'ajourné' => 'deferred',
     'Ajournés' => 'Deferred',
     'Annuler l’ajournement' => 'Undo the deferral',
-    'Annuler l’ajournement ? Le palier repart en attente de la décision d’un instructeur.' => 'Undo the deferral? The stage goes back to waiting for an instructor’s decision.',
-    'Annuler l’ajournement ? La qualification repart en attente de validation.' => 'Undo the deferral? The qualification goes back to waiting for validation.',
     'Un ajournement par erreur peut être annulé.' => 'A deferral made by mistake can be undone.',
     'Un ajournement fait par erreur s’annule ici : le palier repart en attente de la décision d’un instructeur.' => 'A deferral made by mistake can be undone here: the stage goes back to waiting for an instructor’s decision.',
     'Votre propre ajournement : un autre instructeur doit l’annuler.' => 'Your own deferral: another instructor must undo it.',
@@ -67391,4 +67389,7 @@ return [
     // SSE identités : avis de recherche, fiche en dossier, historique et détections.
     'Les avis de recherche relèvent de la section « Fichiers et sujets » : votre accès actuel ne permet pas de les lire.' => 'Wanted notices belong to the “Files and subjects” section: your current access does not let you read them.',
     'Les détections relèvent de la section « Fichiers et sujets » : votre accès actuel ne permet pas de les lire.' => 'Detections belong to the “Files and subjects” section: your current access does not let you read them.',
+    'Annuler l’ajournement ?' => 'Undo the deferral?',
+    'Le palier repart en attente de la décision d’un instructeur.' => 'The stage goes back to waiting for an instructor’s decision.',
+    'La qualification repart en attente de validation.' => 'The qualification goes back to waiting for validation.',
 ];
