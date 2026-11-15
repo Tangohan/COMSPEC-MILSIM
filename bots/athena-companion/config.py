@@ -9,6 +9,9 @@ class Config:
     api_key: str
     site_url: str
     state_path: str
+    heartbeat_path: str = ''
+    health_port: int = 0
+    members_intent: bool = False
 
     @classmethod
     def load(cls):
@@ -20,4 +23,9 @@ class Config:
             raise ValueError('DISCORD_TOKEN and an ATHENA_COMPANION_API_KEY of at least 32 characters are required')
         if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise ValueError('ATHENA_SITE_URL must be an HTTPS base URL, including /public when applicable')
-        return cls(token, key, site, os.environ.get('ATHENA_COMPANION_STATE', 'companion.sqlite3'))
+        port = os.environ.get('ATHENA_COMPANION_HEALTH_PORT', '0').strip() or '0'
+        if not port.isdigit() or int(port) > 65535:
+            raise ValueError('ATHENA_COMPANION_HEALTH_PORT must be a port number (0 disables the local health endpoint)')
+        return cls(token, key, site, os.environ.get('ATHENA_COMPANION_STATE', 'companion.sqlite3'),
+                   os.environ.get('ATHENA_COMPANION_HEARTBEAT', '').strip(), int(port),
+                   os.environ.get('ATHENA_COMPANION_MEMBERS_INTENT', '0').strip() == '1')

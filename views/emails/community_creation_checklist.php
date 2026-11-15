@@ -6,6 +6,9 @@ declare(strict_types=1);
 /** @var string $tenantName */
 /** @var string $dashboardUrl */
 /** @var string $communitySettingsUrl */
+/** @var string|null $discordBotUrl */
+
+$botUrl = isset($discordBotUrl) ? (string) $discordBotUrl : '';
 
 $name = htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8');
 $tenant = htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8');
@@ -16,9 +19,11 @@ $body = '<p>Bonjour ' . $name . ',</p>'
     . '<li>Vérifier les rôles d’administration (OTP e-mail demandé à la connexion).</li>'
     . '<li>Compléter la présentation et les accès publics.</li>'
     . '<li>Inviter le staff fondateur puis synchroniser les profils Steam utiles.</li>'
+    . ($botUrl !== '' ? '<li>Ajouter le bot Athena à votre serveur Discord pour suivre les effectifs et les candidatures sans quitter Discord.</li>' : '')
     . '</ol>'
     . email_html_button($dashboardUrl, 'Ouvrir le tableau de bord', 'blue')
     . email_html_button($communitySettingsUrl, 'Paramètres communauté', 'slate')
+    . ($botUrl !== '' ? email_html_button($botUrl, 'Ajouter le bot Discord', 'slate') : '')
     . email_html_url_fallback($dashboardUrl);
 
 $html = email_html_layout(

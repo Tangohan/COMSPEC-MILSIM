@@ -136,6 +136,15 @@ class OrganizationDashboardController
         } catch (\Throwable) {
             $discordInviteMissing = false;
         }
+        // Rappel discret, refermable, tant que le bot Discord n'est pas connecté (jamais bloquant).
+        $discordBotNudge = false;
+        try {
+            $botRepo = new \App\Repositories\DiscordBotRepository();
+            $discordBotNudge = $tenantId >= 2 && \App\Core\Gate::getInstance()->allows('admin.organization') && $botRepo->schemaReady()
+                && $botRepo->status($tenantId) !== 'connected' && !$botRepo->dismissed($tenantId, (int) \App\Core\Session::get('user_id'));
+        } catch (\Throwable) {
+            $discordBotNudge = false;
+        }
         $missingMediaCount = 0;
         try {
             // Le scan (300 membres) ne se refait plus à chaque affichage de l'accueil : dix minutes de cache (audit 1.20).
@@ -324,6 +333,7 @@ class OrganizationDashboardController
             'initialSetupBanner' => $initialSetupBanner,
             'configurationUpdateBadge' => $configurationUpdateBadge,
             'discordInviteMissing' => $discordInviteMissing,
+            'discordBotNudge' => $discordBotNudge,
             'missingMediaCount' => $missingMediaCount,
             'orgActivityChart' => $orgActivityChart,
             'orgMessagesRecent' => $orgMessagesRecent,

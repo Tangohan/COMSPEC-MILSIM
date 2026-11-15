@@ -43,6 +43,7 @@ jobs:
           script: |
             set -euo pipefail
             cd /var/www/athena.ttrd.fr
+            PREV_HEAD="$(git rev-parse HEAD 2>/dev/null || true)"
             echo "=== git before pull ==="
             git rev-parse --abbrev-ref HEAD || true
             git status --short --branch
@@ -122,6 +123,13 @@ jobs:
             done
             if command -v systemctl >/dev/null 2>&1; then
               systemctl reload php8.4-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
+            fi
+            # Bot Discord Athena : jamais démarré ni redémarré par le déploiement. On signale seulement qu'une mise à jour
+            # du code du bot attend (docs/discord-bot-vps.md : sudo deploy/discord-bot/install.sh --restart).
+            if [ -n "${PREV_HEAD:-}" ] && [ -d /opt/athena-discord-bot/app ]; then
+              if ! git diff --quiet "$PREV_HEAD" HEAD -- bots/athena-companion deploy/discord-bot deploy/systemd 2>/dev/null; then
+                echo "NOTE: le code du bot Discord a changé ; le bot n'est pas redémarré. Quand vous voulez : sudo deploy/discord-bot/install.sh --restart"
+              fi
             fi
             if [ -f /etc/nginx/sites-available/athena.ttrd.fr ]; then
               if ! grep -q 'location = /atak' /etc/nginx/sites-available/athena.ttrd.fr; then
