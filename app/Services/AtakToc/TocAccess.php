@@ -7,9 +7,11 @@ namespace App\Services\AtakToc;
 /**
  * Droits du poste TOC web et des plans d'opération.
  *  - atak.toc.use    : tenir le poste (TOC web), créer et éditer des plans, les envoyer en jeu ;
- *  - atak.toc.manage : configurer le poste (modèles de la communauté, plans de tous, remise à zéro de la salle) ;
+ *  - atak.toc.manage : configurer le poste (modèles de la communauté, plans de tous, remise à zéro de la salle),
+ *                      supprimer les marqueurs et tracés de tous sur la carte (corbeille de 15 minutes) ;
+ *  - atak.toc.purge  : purger la carte en masse (par type, auteur, âge, zone, cycle), avec aperçu et archivage préalable ;
  *  - atak.toc.phone  : agir sur les téléphones en jeu depuis le poste (notifier, faire sonner, localiser, trianguler).
- *    Droit dédié, sensible, qui suppose atak.toc.use : atak.toc.manage ne l'accorde pas (l'étape 4740 le donne une fois
+ *    Droit dédié, sensible, qui suppose atak.toc.use : atak.toc.manage ne l'accorde pas (l'étape 4760 le donne une fois
  *    aux niveaux qui ont déjà atak.toc.manage, ensuite chaque communauté le coche ou non). Réglage de la communauté
  *    (atak_toc_phone_settings) : tant qu'elle ne l'a pas activée, la fonction est refusée même avec le droit.
  * L'administration de la communauté (admin.organization) vaut les deux ; l'administrateur de la plateforme passe
@@ -20,6 +22,7 @@ final class TocAccess
 {
     public const USE = 'atak.toc.use';
     public const MANAGE = 'atak.toc.manage';
+    public const PURGE = 'atak.toc.purge';
     public const PHONE = 'atak.toc.phone';
 
     /** @var callable(string): bool */
@@ -50,6 +53,12 @@ final class TocAccess
     public function canManage(): bool
     {
         return ($this->can)(self::MANAGE) || ($this->can)('admin.organization');
+    }
+
+    /** Purge en masse de la carte : droit dédié, ou administration de la communauté (la gestion du poste ne suffit pas). */
+    public function canPurge(): bool
+    {
+        return ($this->can)(self::PURGE) || ($this->can)('admin.organization');
     }
 
     public function canUse(): bool

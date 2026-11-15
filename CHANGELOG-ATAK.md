@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Poste TOC : suppression des marqueurs, corbeille de 15 minutes et purge de la carte, retrait des marqueurs supprimés dans le jeu (ATAK natif 4.24.0.AG - Washington, COMSPEC Link 2.0.126)
+
+### Résumé joueur
+Type : nouveauté
+FR : Un marqueur supprimé par le poste TOC disparaît aussi de ta carte
+- Quand le poste TOC supprime des marqueurs (un seul, une sélection ou une purge de la carte), ils disparaissent aussi de ta carte d'Arma, même si tu étais absent un moment.
+- Rien ne s'affiche à l'écran : le marqueur s'efface simplement et ton jeu ne le renvoie pas.
+- Le poste TOC peut annuler une suppression pendant 15 minutes.
+- Mets à jour le mod et sa DLL COMSPEC Link (2.0.126), puis redémarre complètement Arma 3.
+EN : A marker deleted by the TOC post also disappears from your map
+- When the TOC post deletes markers (one, a selection or a purge of the map), they also disappear from your Arma map, even if you were away for a while.
+- Nothing is shown on screen: the marker simply vanishes and your game does not send it back.
+- The TOC post can undo a deletion for 15 minutes.
+- Update the mod and its COMSPEC Link DLL (2.0.126), then restart Arma 3 completely.
+
+### Détail technique
+- **Site** : suppression douce des marqueurs et tracés (colonnes `deleted_at`, `deleted_by`, `delete_batch`, migration 4690 non lancée par cette PR), corbeille de 15 minutes, sélection multiple, épinglés avec confirmation renforcée, purge par lots de 500 avec aperçu exact, archivage de la mission avant suppression et droit `atak.toc.purge` (migration 4700). Détail : `docs/TOC-WEB.md`, section « Supprimer, annuler et purger la carte ».
+- **Pierres tombales** : `GET /api/atak/markers?world_name=…&deleted_since=<instant>:<id>` renvoie, en tête et sans changer la forme de la réponse (une liste), les marqueurs du jeu supprimés depuis le curseur (`id` « del:N », `source` « game_del », `deleted_at` ; 40 au plus, 48 h au plus). Sans le paramètre : comportement d'avant.
+- **DLL (COMSPEC Link 2.0.126)** : `GetMarkers` accepte un second argument `tomb` (relevé du relais), joint le curseur `deleted_since`, ne l'avance que sur les lignes qu'il a transmises (jamais en arrière, jamais dans le futur, 48 h au plus, 1 h au premier relevé). `SimplifyMarkersJson` ne jette plus toute la liste quand un identifiant est un texte (« del:N ») ; les autres identifiants texte (« athena:… ») sont ignorés comme avant. Colonne 9 des lignes `game_del` : instant de suppression.
+- **SQF** : `fn_markerWebSweep` passe `"tomb"` ; le retrait (`deleteMarker`) et la mémoire des noms déjà traités sont inchangés. Aucun toast, `systemChat`, `hint` ni popup.
+- **À faire avant la publication** : `php tools/embed-client-attest.php --env=…` (le secret de preuve du module est lié à la version de Link), reconstruire la DLL (`COMSPECATAKNativeExtension_x64.dll`, `COMSPECExtension_x64.dll`) puis `main.pbo`. Non essayé en jeu.
+- **À tester en jeu** : supprimer un marqueur d'Arma depuis le poste TOC (disparaît en quelques secondes pour le relais, puis pour tous) ; purge de plus de 40 marqueurs du jeu (ils partent par paquets de 40) ; relais absent puis de retour (rattrapage jusqu'à 1 h) ; aucun message à l'écran ; un marqueur modifié en jeu après sa suppression n'est pas recréé.
+
+---
+
 ## Poste TOC web : notifier, faire sonner, localiser et trianguler un téléphone en jeu (ATAK natif 4.23.0.AG - Washington)
 
 ### Résumé joueur
@@ -54,7 +79,7 @@ EN : The TOC station can notify you on your phone, make it ring and locate it
 - Only in-game positions are involved, never your real device or your real position.
 
 ### Détail technique
-- **Site** : onglet « Téléphones » du poste TOC web (`/atak/toc`), routes `/atak/toc/api/phones…`, droit dédié `atak.toc.phone` (suppose `atak.toc.use`, sensible), réglage de communauté désactivé par défaut (`atak_toc_phone_settings`), journal de chaque demande (`atak_toc_phone_events`) et audit `atak_toc.phone.*`. Étape **4740** à lancer (`atak_toc_phone`), non exécutée par cette PR ; sans elle la fonction reste désactivée. Détail : `docs/TOC-WEB.md`.
+- **Site** : onglet « Téléphones » du poste TOC web (`/atak/toc`), routes `/atak/toc/api/phones…`, droit dédié `atak.toc.phone` (suppose `atak.toc.use`, sensible), réglage de communauté désactivé par défaut (`atak_toc_phone_settings`), journal de chaque demande (`atak_toc_phone_events`) et audit `atak_toc.phone.*`. Étape **4760** à lancer (`atak_toc_phone`), non exécutée par cette PR ; sans elle la fonction reste désactivée. Détail : `docs/TOC-WEB.md`.
 - **File web vers jeu** : aucune nouvelle table de commandes ni nouvel appel de la DLL. Genre `phone` du fil WC1 existant (`atak_web_commands`, lu par `GetExplosiveCommands`, compte rendu `web_cmd_ack`) ; `notify` 24 h, `ring`, `stop`, `locate`, `trace` 60 s. **COMSPEC Link inchangé (2.0.125)**, pas de recompilation de la DLL.
 - **Mod** : `fn_webCmdDispatch` (connect) envoie le genre `phone` à `fn_tocPhone` (ATAK natif). Le message va dans l'`inbox` du téléphone (Messages, canal alertes) et dans le journal d'`fn_alertsLog` (types `TOC_INFO`, `TOC_ALERT`, `TOC_URGENT`, `TOC_TRACE`, `fn_pageAlerts`, `fn_mapPinnedApp`) ; vibration par `fn_vibrate`, sonnerie par le son de notification d'ordre déjà présent. Aucun toast, `systemChat`, `hint` ni popup. Position rendue par `fn_gpsPos` et `fn_gpsFix` (jamais inventée : sans fix, « position inconnue »). Ouvrir l'app Alertes passe en « lu » les messages à accusé de réception.
 - **Triangulation** : `PhoneTriangulation`, même principe que `fn_relayNet` « locate » (distances bruitées de 5 à 25 %, moindres carrés), bruit à graine déterministe, zone d'incertitude en 1/√n.

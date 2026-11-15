@@ -42,6 +42,18 @@ final class AtakTocApiController extends AtakTocBaseController
             return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
         }
 
+        // Révision de la carte et dernier évènement (suppression, annulation, purge) : les postes ouverts relisent la carte
+        // sans rechargement (même sondage de 3 s que la salle, aucune notification dans le jeu).
+        $mapRev = 0;
+        $mapEvent = null;
+        try {
+            $mapRev = \App\Support\ShortCache::gen('toc_map:' . $this->tenantId() . ':' . $mapId);
+            $evt = \App\Support\ShortCache::get('toc_evt:' . $this->tenantId() . ':' . $mapId);
+            $mapEvent = is_array($evt) ? $evt : null;
+        } catch (\Throwable) {
+            // Cache indisponible : la carte se relit à son rythme habituel.
+        }
+
         return $this->jsonWithEtag([
             'ok' => true,
             'mapId' => $mapId,
@@ -49,9 +61,10 @@ final class AtakTocApiController extends AtakTocBaseController
             'now' => time(),
             'state' => $view['state'],
             'game' => $view['game'],
+            'map' => ['rev' => $mapRev, 'event' => $mapEvent],
             // Canal de synchro du panneau Rapports : l'empreinte change quand un rapport arrive ou évolue (la liste se relit alors).
             'reports' => ['stamp' => $this->reportStamp($mapId)],
-        ], $view['version'] . '-' . intdiv(time(), 5));
+        ], $view['version'] . '-' . intdiv(time(), 5) . '-' . $mapRev);
     }
 
     private function reportStamp(int $mapId): string

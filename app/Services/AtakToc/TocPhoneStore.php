@@ -40,7 +40,7 @@ final class TocPhoneStore
         return $t === false ? null : $t;
     }
 
-    /** Les deux tables existent (étape 4740 lancée). */
+    /** Les deux tables existent (étape 4760 lancée). */
     public function ready(): bool
     {
         try {

@@ -142,7 +142,7 @@ final class AtakTocPhoneWiringTest extends TestCase
         self::assertStringContainsString('(ATAK natif 4.23.0.AG - Washington)', $log);
         self::assertStringContainsString('COMSPEC Link inchangé', $log);
         $steam = self::read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.23.0 Washington', $steam);
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.23.0 Washington', $steam);
     }
 
     public function testPhoneSqfIsBalancedAndNeverShowsAnAlertToThePlayer(): void
