@@ -309,7 +309,7 @@ class SystemSettingsController
                 ['label' => 'Nom d’expédition', 'value' => $this->dash((string) ($email['from_name'] ?? ''))],
                 [
                     'label' => 'Adresse de réponse (Reply-To)',
-                    'value' => $this->dash(trim((string) ($email['reply_to'] ?? '')) ?: ''),
+                    'value' => $this->dash(trim((string) ($email['reply_to'] ?? '')) ?: (string) (\App\Services\ContactMail\ContactMailConfig::fromEnv()->autoReplyTo() ?? '')),
                 ],
                 ['label' => 'Serveur SMTP (hôte)', 'value' => $this->dash((string) ($smtp['host'] ?? ''))],
                 ['label' => 'Port SMTP', 'value' => (string) (int) ($smtp['port'] ?? 0)],

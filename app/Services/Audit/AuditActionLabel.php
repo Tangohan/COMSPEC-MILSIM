@@ -183,6 +183,9 @@ final class AuditActionLabel
         'platform.bo_message_toggled' => 'Message aux back-offices des communautés activé ou désactivé',
         'platform.bo_message_deleted' => 'Message aux back-offices des communautés supprimé',
         'platform.bo_message_acked' => 'Message urgent de la plateforme acquitté par la communauté',
+        'platform.contact_mail_sent' => 'Boîte de contact : e-mail envoyé',
+        'platform.contact_mail_thread_purged' => 'Boîte de contact : fil supprimé définitivement',
+        'platform.contact_mail_attachment_downloaded' => 'Boîte de contact : pièce jointe téléchargée',
         'audit.rollback' => 'Restauration d’état depuis le journal',
         'audit.rollback_alert' => 'Alerte envoyée depuis le journal',
     ];

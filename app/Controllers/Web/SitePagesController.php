@@ -11,14 +11,18 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Repositories\TenantRepository;
+use App\Services\ContactMail\ContactMailConfig;
+use App\Services\ContactMail\ContactMailFactory;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Platform\AthenaHeritageService;
 use App\Services\Platform\PublicHistoryStatsService;
 use App\Services\Platform\PublicReleaseHistoryService;
+use App\Services\Security\FileRateLimiter;
 use App\Support\AtakReleaseInfo;
 use App\Support\AtakTranslationTemplate;
 use App\Support\ChangelogCatalog;
+use App\Support\ClientIp;
 use App\Support\DevDispatchCatalog;
 use App\Support\Seo;
 
@@ -178,7 +182,7 @@ final class SitePagesController
             'title' => __('site.contact_meta_title'),
             'meta_description' => __('site.contact_meta_description'),
             'marketingActive' => 'contact',
-            'contactInboxConfigured' => legal_public_contact_email() !== null,
+            'contactInboxConfigured' => legal_public_contact_email() !== null || ContactMailConfig::fromEnv()->isConfigured(),
         ]);
     }
 
@@ -200,8 +204,17 @@ final class SitePagesController
             return Response::redirect(url('contact'));
         }
 
+        // Limite par adresse IP : cinq messages par heure.
+        $ip = ClientIp::resolve();
+        if ((new FileRateLimiter())->tooManyAttempts('contact_form:' . ($ip !== '' ? $ip : 'unknown'), 5, 3600)) {
+            Session::flash('error', __('site.contact_flash_rate'));
+
+            return Response::redirect(url('contact'));
+        }
+
         $to = legal_public_contact_email();
-        if ($to === null) {
+        $mailboxReady = ContactMailFactory::config()->isConfigured();
+        if ($to === null && !$mailboxReady) {
             Session::flash('error', __('site.contact_flash_unavailable'));
 
             return Response::redirect(url('contact'));
@@ -222,13 +235,27 @@ final class SitePagesController
 
             return Response::redirect(url('contact'));
         }
-        if ($subject === '' || strlen($subject) > 200) {
+        if ($subject === '' || strlen($subject) > 200 || preg_match('/[\x00-\x1F\x7F]/', $subject . $name . $email) === 1) {
             Session::flash('error', __('site.contact_flash_subject'));
 
             return Response::redirect(url('contact'));
         }
         if ($message === '' || strlen($message) < 20 || strlen($message) > 5000) {
             Session::flash('error', __('site.contact_flash_message'));
+
+            return Response::redirect(url('contact'));
+        }
+
+        // Boîte de contact de la plateforme : le message devient un fil « Formulaire ». Sans mot de passe de boîte dans le
+        // .env, rien n'est écrit. Si l'adresse publique est celle de la boîte, le message n'est pas envoyé en plus par e-mail.
+        $stored = $mailboxReady && $this->storeInMailbox($name, $email, $subject, $message);
+        if ($stored && ($to === null || strtolower($to) === strtolower(ContactMailFactory::config()->address()))) {
+            Session::flash('success', __('site.contact_flash_sent'));
+
+            return Response::redirect(url('contact'));
+        }
+        if ($to === null) {
+            Session::flash('error', __('site.contact_flash_send_failed'));
 
             return Response::redirect(url('contact'));
         }
@@ -256,7 +283,7 @@ final class SitePagesController
             ['purpose' => 'platform_contact', 'from' => $email]
         );
 
-        if (!$ok) {
+        if (!$ok && !$stored) {
             Session::flash('error', __('site.contact_flash_send_failed'));
 
             return Response::redirect(url('contact'));
@@ -265,6 +292,25 @@ final class SitePagesController
         Session::flash('success', __('site.contact_flash_sent'));
 
         return Response::redirect(url('contact'));
+    }
+
+    /** Dépose le message du formulaire dans la boîte de contact ; false si la base n'est pas prête. */
+    private function storeInMailbox(string $name, string $email, string $subject, string $message): bool
+    {
+        try {
+            $repo = ContactMailFactory::repository();
+            if (!$repo->ready()) {
+                return false;
+            }
+            ContactMailFactory::ingest(null, $repo)->ingestForm($name, $email, $subject, $message);
+
+            return true;
+        } catch (\Throwable $e) {
+            // Jamais le message de l'exception : il peut citer le texte saisi.
+            error_log('[contact_mail] formulaire public non rangé : ' . get_class($e));
+
+            return false;
+        }
     }
 
     public function changelog(Request $request, array $params = []): Response

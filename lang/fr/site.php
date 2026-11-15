@@ -283,6 +283,7 @@ return [
     'contact_flash_subject' => 'Indiquez un objet clair.',
     'contact_flash_message' => 'Le message doit faire entre 20 et 5 000 caractères.',
     'contact_flash_send_failed' => 'L’envoi a échoué. Réessayez dans quelques minutes.',
+    'contact_flash_rate' => 'Trop de messages envoyés depuis votre connexion. Réessayez dans une heure.',
 
     'changelog_meta_title' => 'Nouveautés Athena — Journal produit, ATAK, SSE et C2',
     'changelog_meta_description' => 'Journal des évolutions Athena : renseignement SSE, liaison ATAK, commandement, effectifs, formation et administration multi-communautés.',
