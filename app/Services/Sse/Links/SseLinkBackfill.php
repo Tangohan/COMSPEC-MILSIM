@@ -207,12 +207,13 @@ final class SseLinkBackfill
             foreach ($todo as $r) {
                 $note = trim((string) ($r['reason_text'] ?? ''));
                 $reason = 'Lien reconstruit depuis les données existantes. ' . (string) $def['note'] . ($note !== '' ? ' Motif noté à l’époque : ' . $note : '');
-                $ts = ($r['at'] ?? '') !== '' ? strtotime((string) $r['at']) : false;
+                $at = (string) ($r['at'] ?? '');
+                $when = preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/', $at) === 1 ? str_replace('T', ' ', substr($at, 0, 19)) : null;
                 $st->execute([
                     't' => $tenant, 'st' => $def['a'][0], 'si' => $r['a'], 'tt' => $def['b'][0], 'ti' => $r['b'], 'rel' => isset(C::RELATIONS[$def['relation']]) ? $def['relation'] : 'related',
                     'reason' => mb_substr($reason, 0, C::MANUAL_REASON_MAX), 'rule' => self::RULE,
                     'uid' => isset($r['actor_id']) && (int) $r['actor_id'] > 0 ? (int) $r['actor_id'] : null,
-                    'at' => $ts !== false ? gmdate('Y-m-d H:i:s', $ts) : gmdate('Y-m-d H:i:s'),
+                    'at' => $when ?? gmdate('Y-m-d H:i:s'),
                 ]);
                 ++$n;
             }
