@@ -49,9 +49,11 @@ if (_lq getOrDefault ["airplane", false]) then {
     _sigC = _th get "mapWarn";
     _sigTt = ("Mode avion : réseau coupé (Bluetooth disponible)") call comspec_atak_native_fnc_tr;
 };
-// Type de liaison (fn_linkQuality "net") : SAT sans relais en bleu ; libellé à gauche de la barre (fn_layoutApply).
+// Type de liaison (fn_linkQuality "net") : mode de liaison de la mission (fn_linkMode). SAT (liaison satellite, sans
+// relais) en bleu tant qu'elle passe ; RELAIS, PASSERELLE, PC ou MPU avec les barres ; HORS RÉSEAU en rouge (liaison
+// par relais, aucun relais reçu : la raison est dans l'infobulle). Libellé à gauche de la barre (fn_layoutApply).
 private _netT = _lq getOrDefault ["net", ""];
-if (_netT isEqualTo "SAT") then { _sigC = [0.25, 0.55, 1, 1]; };
+if (_netT isEqualTo "SAT" && {_bars > 0}) then { _sigC = [0.25, 0.55, 1, 1]; };
 // Liaison faible (fn_netSend) : de gros envois attendent une meilleure liaison ; le type de liaison le dit (« RELAIS · FAIBLE »).
 private _held = count ((missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]) select { (_x param [3, 1]) >= 100 });
 if (_held > 0 && {missionNamespace getVariable ["comspec_atak_native_net_degraded", true]} && {(_lq get "bars") > 0}) then {

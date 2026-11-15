@@ -67,14 +67,16 @@ final class AtakPinnedAppMapAssetTest extends TestCase
         $page = $this->read(self::MAIN . 'functions/pages/fn_pageMap.sqf');
         self::assertStringContainsString('["apps"] call comspec_atak_native_fnc_mapPinnedApp', $page);
         self::assertStringContainsString('["build", [_ov, _mk, [_pinX, _pinY, _pinW, _pinH]', $page);
-        // Même hauteur que le bandeau des coordonnées, placée à sa droite ; masquée en petit format.
-        self::assertStringContainsString('["height", [_panFs, _panIn]] call comspec_atak_native_fnc_mapPinnedApp', $page);
-        self::assertStringContainsString('if ((count _pinApps) > 0 && {!_mini}) then {', $page);
+        // Mêmes lignes que le bandeau des coordonnées, sur sa grille (fn_mapBandGrid, AtakMapPinsPanelAssetTest) : empilée
+        // au-delà de lui, plus à sa droite ; en petit format, une ligne au lieu d'être masquée.
+        self::assertStringContainsString('private _pinGrid = ["layout", _pinArgs] call comspec_atak_native_fnc_mapBandGrid;', $page);
+        self::assertStringContainsString('["height", _a] call comspec_atak_native_fnc_mapBandGrid', $this->read(self::MAIN . 'functions/map/fn_mapPinnedApp.sqf'));
+        self::assertStringContainsString('if ((count _pinApps) > 0) then {', $page);
         // Réservée pour les fiches, RECHERCHER, le menu OUTILS et les étiquettes de la carte.
-        self::assertStringContainsString('if (!_pinTop) then { _panH = _panH max (_pinOff + _pinH); };', $page);
+        self::assertStringContainsString('if (_pinTop) then { _pinTopEnd = _by + _pad + _pinExtent; } else { _panH = _panH max _pinExtent; };', $page);
         self::assertStringContainsString('_hud pushBack [_pinX - _bx, _pinY - _by, _pinX + _pinW - _bx, _pinY + _pinH - _by];', $page);
-        // Choix en un toucher depuis le panneau SITUATION.
-        self::assertStringContainsString('(["rows"] call comspec_atak_native_fnc_mapPinnedApp)', $page);
+        // Choix depuis le panneau SITUATION : ligne compacte « Apps épinglées · n/3 », dépliable.
+        self::assertStringContainsString('(["panelRows", [_helpOpen isEqualTo "pins", "pins" call _helpCode]] call comspec_atak_native_fnc_mapPinnedApp)', $page);
 
         $upd = $this->read(self::MAIN . 'functions/map/fn_mapOverlayUpdate.sqf');
         self::assertStringContainsString('["tick"] call comspec_atak_native_fnc_mapPinnedApp;', $upd);

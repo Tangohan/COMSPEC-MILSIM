@@ -23,9 +23,11 @@
                  Relais préféré (fiche du relais sur la carte, uiNamespace COMSPEC_ATAK_RelayPin) : gardé tant qu'il est reçu.
       "power"    : [relais, "on" | "off" | "battery"] ; "info" : [relais] fiche en notification ; "sweep" : batteries (serveur).
       "entry"    : relais (l'objet, sans crochets) -> son entrée de "list" ou [].
-      "only"     : vrai si le réseau passe exclusivement par les relais (réglage serveur comspec_atak_native_relay_only,
-                   case « Réseau exclusivement par relais » d'un module « Poser un relais », ou mode réaliste d'Athena).
-      "required" : vrai si les relais sont obligatoires (mode « only » ou case « Relais obligatoires »).
+      "only"     : vrai si le réseau passe exclusivement par les relais : mode de liaison « relais » de la mission
+                   (fn_linkMode, seule source de vérité : réglage « Liaison du téléphone », détection des relais posés,
+                   ou choix explicite : réglage comspec_atak_native_relay_only, case « Réseau exclusivement par relais »
+                   d'un module « Poser un relais », mode réaliste d'Athena). Faux en liaison satellite.
+      "required" : vrai si les relais sont obligatoires : même règle que "only" (en liaison satellite, jamais).
       "pin"      : [relais ou objNull] préfère ce relais (objNull : retour au choix automatique).
       "link"     : [position antenne ASL, portée, Mbit/s, position ASL visée, mode, objets ignorés, gain dB]
                    -> [qualité 0-1, Mbit/s, perte %, marge dB, [[cause, dB]...], MCS] : bilan radio de fn_radioLink
@@ -348,18 +350,19 @@ switch (_act) do {
         ((["list"] call comspec_atak_native_fnc_relayNet) select { (_x select 0) isEqualTo _o }) param [0, []]
     };
     case "only": {
-        (["relayOnly"] call comspec_atak_native_fnc_netCond)
-            || {missionNamespace getVariable ["COMSPEC_ATAK_RelayOnly", false]}
-            || {missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]}
-            || {["gateOn"] call comspec_atak_native_fnc_relayNet}
+        // Mode de liaison de la mission (fn_linkMode) : « relais » = réseau par les relais seulement, sans repli sur le
+        // satellite ; « sat » (aucun relais posé dans la mission, ou réglage) = la liaison existe partout.
+        (["get"] call comspec_atak_native_fnc_linkMode) isEqualTo "relay"
     };
     // Règle « pas de relais, pas de réseau MPU / radio » : le seul endroit où elle est décidée. Lue par le graphe du maillage
     // (fn_meshGraph "view" : plus de maillage d'équipe sans relais), l'ancien maillage de l'app (fn_waveRelayAction), la liaison du
     // téléphone (fn_linkQuality, par "only"), la voix relayée (fn_mpuVoice), l'app Wave Relay, le graphe du camp et le TOC.
     // Ne concerne que le réseau du jeu : la liaison internet vers Athena (app Athena, COMSPEC Link) n'en dépend pas, ni la voix
     // directe, ni une radio ACRE2 / TFAR utilisée hors du maillage.
+    // Liaison satellite (fn_linkMode : aucun relais posé dans la mission, ou réglage « Satellite ») : la règle ne s'applique pas.
     case "gateOn": {
-        ((missionNamespace getVariable ["comspec_atak_native_relay_gate", true]) isEqualTo true) && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1}
+        ((["get"] call comspec_atak_native_fnc_linkMode) isEqualTo "relay")
+            && {(missionNamespace getVariable ["comspec_atak_native_relay_gate", true]) isEqualTo true} && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1}
     };
     case "gateEval": {
         // Sans effet (table testée) : [règle active, [[nom, en service, état, distance m, portée m]...], accroché à un relais en service]
@@ -412,7 +415,8 @@ switch (_act) do {
         _near
     };
     case "required": {
-        (["only"] call comspec_atak_native_fnc_relayNet) || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]}
+        // La case « Relais obligatoires » d'un module suppose un relais posé : la mission est alors déjà en mode relais.
+        ["only"] call comspec_atak_native_fnc_relayNet
     };
     case "pin": {
         private _o = _arg;

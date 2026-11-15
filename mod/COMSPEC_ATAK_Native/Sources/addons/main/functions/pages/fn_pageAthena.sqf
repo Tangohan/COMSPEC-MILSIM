@@ -9,6 +9,11 @@
     Plus d'onglet PORTAIL (2.9.24) : il demandait un code créé sur le site, à l'envers de la page /lier, qui attend le
     code affiché par le jeu (onglet CODE). RedeemGameLink reste servi pour les anciennes versions et Overwatch connect.
     La page se redessine seule quand l'état change (fn_statusUpdate), en gardant ce qui est saisi.
+    4.28.0 : code en attente d'accord, l'écran s'ouvre sur ce qu'il faut faire, dans l'ordre : onglets, puis la carte
+    « code + QR » (ligne "qrcard" : 1. ouvrir la page ou scanner le QR, 2. saisir le code, 3. accepter ; adresse, code,
+    état et boutons groupés, QR à côté), dimensionnée sur la hauteur visible (fn_qrCardGeom). La carte d'état et les
+    étapes de la liaison (repliées) passent dessous. Avant : QR en ligne "image" 16/9 pleine largeur, plus haute que
+    l'écran en paysage (grand cadre noir, QR hors champ), code et boutons rejetés hors de vue.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -27,9 +32,19 @@ private _logo = "\z\comspec_atak_native\addons\main\data\logo_athena.paa";
 // Une fois connecté, la photo de profil Athena remplace le logo (si le portail en a une).
 if (_logged) then { private _av = [player] call comspec_atak_native_fnc_avatarPath; if (_av isNotEqualTo "") then { _logo = _av; }; };
 
+// Onglet de connexion et code en cours (fn_athenaLink) : lus d'abord, un code en attente d'accord change l'ordre de la page.
+private _canLink = !_logged && {!(_key in ["battleye", "off", "unset"])};
+private _tab = uiNamespace getVariable ["COMSPEC_ATAK_AthenaTab", "account"];
+if !(_tab in ["account", "email", "steam"]) then { _tab = "account"; };
+(uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]) params [["_ls", ""], ["_lc", ""], ["_lu", 0], ["_luri", ""], "", ["_ld", ""]];
+if (_ls isEqualTo "pending" && {diag_tickTime >= _lu}) then { _ls = "expired"; };
+private _pending = _canLink && {_tab isEqualTo "account"} && {_ls isEqualTo "pending"};
+// Lignes placées avant la carte d'état (code en attente : message d'action, onglets, carte « code + QR », note).
+private _first = [];
+
 // Connecté : la carte (photo, indicatif) ouvre l'app Profil.
 private _rows = [["status", _logo, _st get "color", _st get "title", _st get "text", _st get "action", [{}, { ["PROFILE"] call comspec_atak_native_fnc_navigate; }] select _logged]];
-if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#9fd3c0", (COMSPEC_ATAK_Th get "hexWarn")] select _hWarn, _hText], [0.06, 0.075, 0.07, 1]]; };
+if (_hText isNotEqualTo "") then { ([_rows, _first] select _pending) pushBack ["text", format ["<t color='%1'>%2</t>", ["#9fd3c0", (COMSPEC_ATAK_Th get "hexWarn")] select _hWarn, _hText], [0.06, 0.075, 0.07, 1]]; };
 
 // Bouton qui règle la situation, sous la carte d'état.
 private _btns = switch (true) do {
@@ -53,7 +68,8 @@ if (_btns isNotEqualTo []) then { _rows pushBack ["buttons", _btns]; };
 // Étapes de la liaison : dépliées tant que la connexion n'est pas faite, repliables ensuite.
 private _steps = _st get "steps";
 private _okN = { (_x select 1) isEqualTo "ok" } count _steps;
-private _open = uiNamespace getVariable ["COMSPEC_ATAK_AthenaSteps", !_logged];
+// Code en attente : repliées d'office (le code et le QR d'abord), le joueur peut les rouvrir.
+private _open = uiNamespace getVariable ["COMSPEC_ATAK_AthenaSteps", !_logged && {!_pending}];
 uiNamespace setVariable ["COMSPEC_ATAK_AthenaStepsNow", _open];
 _rows pushBack ["fold", "ÉTAPES DE LA LIAISON", format ["%1 sur %2 en ordre", _okN, count _steps], _open, {
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaSteps", !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaStepsNow", true])];
@@ -82,15 +98,13 @@ if (_logged) then {
         ];
     };
 } else {
-    if !(_key in ["battleye", "off", "unset"]) then {
-        _rows pushBack ["section", "Se connecter", "Une seule fois : les parties suivantes se connectent seules"];
-        private _tab = uiNamespace getVariable ["COMSPEC_ATAK_AthenaTab", "account"];
-        if !(_tab in ["account", "email", "steam"]) then { _tab = "account"; };
+    if (_canLink) then {
+        if (!_pending) then { _rows pushBack ["section", "Se connecter", "Une seule fois : les parties suivantes se connectent seules"]; };
         private _tabBtn = {
             params ["_label", "_tk", "_tip"];
             [_label, compile format ["uiNamespace setVariable ['COMSPEC_ATAK_AthenaTab', '%1']; ['ATHENA'] call comspec_atak_native_fnc_pageRender;", _tk], _tab isEqualTo _tk, _tip]
         };
-        _rows pushBack ["segment", "", [
+        ([_rows, _first] select _pending) pushBack ["segment", "", [
             ["CODE", "account", "Code à autoriser sur le site (recommandé)"] call _tabBtn,
             ["E-MAIL", "email", "E-mail et mot de passe, ou code reçu par e-mail"] call _tabBtn,
             ["STEAM", "steam", "Compte Steam déjà relié à Athena"] call _tabBtn
@@ -121,23 +135,29 @@ if (_logged) then {
             };
             default {
                 // Code à autoriser sur le site, connecté à son compte. Rien d'autre à saisir.
-                (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]) params ["_ls", "_lc", "_lu", "_luri", "", "_ld"];
-                if (_ls isEqualTo "pending" && {diag_tickTime >= _lu}) then { _ls = "expired"; };
                 private _short = [_luri] call comspec_atak_native_fnc_athenaShortUrl;
+                private _hDim = COMSPEC_ATAK_Th get "hexTextDim";
+                private _hTxt = COMSPEC_ATAK_Th get "hexText";
                 switch (_ls) do {
                     case "pending": {
-                        _rows append [
-                            ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>1. Sur votre ordinateur ou votre téléphone, connecté à votre compte Athena, ouvrez</t><br/><t size='1.2' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1</t>", _short], _card],
-                            ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>2. Saisissez ce code :</t><br/><t size='2.3' font='COMSPEC_BarlowBold' align='center'>%1</t><br/><t size='0.85' align='center' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>En attente de votre accord · valable encore %2 min</t>", _lc, ceil ((_lu - diag_tickTime) / 60)], _card],
-                            ["buttons", [
+                        // Carte « code + QR » : étapes dans l'ordre, adresse, code, état et boutons groupés, QR fixe de la
+                        // page /lier (tools/gen_remote_qr.py) à côté, à scanner avec son vrai téléphone connecté à Athena.
+                        // Texte complet, et texte court pour un écran bas (fn_qrCardGeom choisit) ; @S@ / @U@ : tailles.
+                        private _min = ceil ((_lu - diag_tickTime) / 60);
+                        _first pushBack ["qrcard", "\z\comspec_atak_native\addons\main\data\athena_link_qr_ca.paa",
+                            [
+                                format ["<t size='@S@' color='%1'>1. Ouvrez cette page, ou scannez le QR code :</t><br/><t size='@U@' font='COMSPEC_BarlowBold' color='%2'>%3</t><br/><t size='@S@' color='%1'>2. Saisissez ce code :</t>", _hDim, COMSPEC_ATAK_Th get "hexOk", _short],
+                                format ["<t size='@S@' align='center' color='%1'>En attente de votre accord · valable encore %2 min</t><br/><t size='@S@' color='%3'>3. Acceptez sur le site, le téléphone se connecte seul.</t>", _hTxt, _min, _hDim]
+                            ],
+                            [
+                                format ["<t size='@S@' color='%1'>%2</t>", _hTxt, format ["1. Ouvrez %1 ou scannez le QR code", _short]],
+                                format ["<t size='@S@' color='%1'>3. Acceptez sur le site · encore %2 min</t>", _hDim, _min]
+                            ],
+                            _lc,
+                            [
                                 ["OUVRIR LA PAGE", { ["open"] call comspec_atak_native_fnc_athenaLink; }, true, true, "Ouvre la page dans votre navigateur, code déjà rempli"],
                                 ["NOUVEAU CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }]
-                            ]],
-                            // QR code fixe de la page /lier (tools/gen_remote_qr.py) : à scanner avec son vrai téléphone,
-                            // connecté à Athena, quand le PC n'a pas de navigateur sous la main (plein écran, second écran).
-                            ["section", "Sur votre vrai téléphone", "Scannez ce QR code : la page Lier le jeu s'ouvre, saisissez-y le code ci-dessus."],
-                            ["image", "\z\comspec_atak_native\addons\main\data\athena_link_qr_ca.paa"],
-                            ["text", format ["<t size='0.85' align='center' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _short]]
+                            ]
                         ];
                     };
                     case "asking": { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Demande d'un code à Athena…</t>", _card]; };
@@ -171,7 +191,7 @@ if (_logged) then {
                         if (_mode isEqualTo "on") then { ["start"] call comspec_atak_native_fnc_athenaLink; };
                     };
                 };
-                _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Pas d'accès au site ? Onglet E-MAIL. Votre Steam est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.</t>"];
+                ([_rows, _first] select _pending) pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Pas d'accès au site ? Onglet E-MAIL. Votre Steam est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.</t>"];
             };
         };
     };
@@ -194,6 +214,6 @@ if (_logged) then {
         ];
     };
 };
-[_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+[_first + _rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 uiNamespace setVariable ["COMSPEC_ATAK_AthenaSig", (_st get "sig") + [_hText]];
 true

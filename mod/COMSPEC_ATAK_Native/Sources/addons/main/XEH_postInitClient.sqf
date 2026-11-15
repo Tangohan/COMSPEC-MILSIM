@@ -696,6 +696,8 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
 
 // Liaison montante publiée (débit, perte, relais) : les autres téléphones en déduisent la qualité de mon Live cam.
 [{ ["publish"] call comspec_atak_native_fnc_feedLink; }, 10] call COMSPEC_ATAK_PfhSpread;
+// Mode de liaison (fn_linkMode) : un relais supprimé depuis l'interface Zeus est signalé au serveur, qui ne le compte plus.
+[{ ["curatorHook"] call comspec_atak_native_fnc_linkMode; }, 5] call COMSPEC_ATAK_PfhSpread;
 
 // Détecteur de drones : balayage automatique en fond (réglage de l'app).
 [{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { private _perfT = diag_tickTime; ["auto"] call comspec_atak_native_fnc_droneDetectScan; ["drones : détection auto", _perfT] call comspec_atak_native_fnc_perfAcc; }; }, 5] call COMSPEC_ATAK_PfhSpread;

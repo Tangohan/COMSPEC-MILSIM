@@ -28,7 +28,10 @@ private _st = uiNamespace getVariable ["COMSPEC_ATAK_PhotoSt", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_PhotoSt", _st];
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
-private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
+// Réseau du téléphone : fn_linkMode "why" donne la vraie raison d'une coupure ("" : la photo part). En liaison satellite
+// (aucun relais dans la mission) la photo part toujours ; en liaison par relais : « Relais détruit », « Aucun relais à portée »…
+private _netWhy = ["why"] call comspec_atak_native_fnc_linkMode;
+private _net = _netWhy isEqualTo "";
 private _canShoot = _bridge && {_ready};
 private _flash = _st getOrDefault ["flash", "AUTO"];
 private _selfie = _st getOrDefault ["camSelfie", false];
@@ -66,7 +69,7 @@ private _stat = ["COMSPEC_RscStructuredText", [_pad, _pad / 4, _bw - _pad * 2, _
 _stat ctrlSetStructuredText parseText ((switch (true) do {
     case (!_bridge): { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>● COMSPEC Overwatch absent : ni prise de vue ni envoi possibles</t>" };
     case (!_ready): { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Athena non connecté : connectez-vous dans l'app Athena pour photographier</t>" };
-    case (!_net): { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Hors réseau : la photo reste sur le téléphone (app Galerie pour l'envoyer)</t>" };
+    case (!_net): { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● " + (format [("%1 : la photo reste sur le téléphone (app Galerie pour l'envoyer)") call comspec_atak_native_fnc_tr, (_netWhy) call comspec_atak_native_fnc_tr]) + "</t>" };
     default { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● Prêt : la photo part directement vers Athena</t>" };
 }) call comspec_atak_native_fnc_tr);
 

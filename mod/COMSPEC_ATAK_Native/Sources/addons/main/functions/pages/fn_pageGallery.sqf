@@ -24,7 +24,9 @@ private _tab = _s getOrDefault ["galTab", "LIB"];
 if !(_tab in ["LIB", "SENT"]) then { _tab = "LIB"; };
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
-private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
+// Réseau du téléphone : vraie raison d'une coupure (fn_linkMode "why"), "" quand les photos partent (toujours en liaison satellite).
+private _netWhy = ["why"] call comspec_atak_native_fnc_linkMode;
+private _net = _netWhy isEqualTo "";
 // Code commun des boutons qui changent de vue : légende gardée, fiche du cliché drone enregistrée puis refermée.
 private _leave = "private _st0 = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; if ((['caption', '§'] call comspec_atak_native_fnc_formValue) isNotEqualTo '§') then { _st0 set ['photoCaption', ['caption', ''] call comspec_atak_native_fnc_formValue]; }; if (((_st0 getOrDefault ['photoSel', []]) param [0, '']) isEqualTo 'DRONE') then { ['save'] call comspec_atak_native_fnc_dronePhoto; _st0 set ['dronePhEdit', -1]; };";
 private _go = { params ["_tabK", ["_sel", []]]; compile format ["%1 _st0 set ['galTab', '%2']; _st0 set ['photoSel', %3]; if ('%2' isEqualTo 'LIB') then { ['list'] call comspec_atak_native_fnc_photoLibrary; }; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _leave, _tabK, str _sel] };
@@ -87,7 +89,7 @@ private _head = [
     ["text", format ["<t size='0.78'>%1</t>", switch (true) do {
         case (!_bridge): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>● COMSPEC Overwatch absent : ni prise de vue ni envoi possibles</t>" };
         case (!_ready): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Athena non connecté : connectez-vous dans l'app Athena pour prendre et envoyer des photos</t>" };
-        case (!_net): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Hors réseau : les photos restent sur le téléphone, à envoyer plus tard d'ici</t>" };
+        case (!_net): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● " + (format [("%1 : les photos restent sur le téléphone, à envoyer plus tard d'ici") call comspec_atak_native_fnc_tr, (_netWhy) call comspec_atak_native_fnc_tr]) + "</t>" };
         default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● Prêt : les photos partent directement vers Athena</t>" };
     }]]
 ];
