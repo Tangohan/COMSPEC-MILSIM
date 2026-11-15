@@ -1883,6 +1883,7 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/modifier', [PilotLogbookController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/supprimer', [PilotLogbookController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/mes-papiers/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateMine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/mes-papiers/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'alignMine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Musique (Mon espace) : bibliothèque musicale partagée avec l'app Musique de l'ATAK natif (MusicLibraryController).
     $router->post('/back-office/ma-situation/musique/envoyer', [MusicLibraryController::class, 'upload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/morceaux/{id}/modifier', [MusicLibraryController::class, 'trackUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

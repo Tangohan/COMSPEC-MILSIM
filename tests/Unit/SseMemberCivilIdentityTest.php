@@ -663,7 +663,7 @@ final class SseMemberCivilIdentityTest extends TestCase
         $card = (string) file_get_contents($root . '/views/admin/effectifs_workspace/partials/member_papers_civil.php');
         self::assertStringContainsString('Nom volontairement différent', $card);
         self::assertStringContainsString("/etat-civil/volontaire", $card);
-        self::assertStringContainsString('jnet/moi/mes-papiers/etat-civil', (string) file_get_contents($root . '/views/admin/member_situation/mes_papiers.php'));
+        self::assertStringContainsString("jnet_moi_url('mes-papiers/etat-civil')", (string) file_get_contents($root . '/views/admin/member_situation/mes_papiers.php'));
         $routes = (string) file_get_contents($root . '/routes/web.php');
         foreach (['/atak/sse/papiers/membres/{id}/etat-civil\'', '/back-office/ressources/effectifs/membres/{id}/papiers/etat-civil\'', '/jnet/moi/mes-papiers/etat-civil\''] as $path) {
             self::assertStringContainsString("\$router->post('" . $path, $routes);

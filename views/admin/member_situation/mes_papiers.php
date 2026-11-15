@@ -50,7 +50,7 @@ $scopeLabels = ['default' => 'Par défaut', 'map' => 'Pour une carte', 'operatio
                 <?php
                 $cal = [
                     'dom' => 'civil-align-moi',
-                    'post' => url('jnet/moi/mes-papiers/etat-civil'),
+                    'post' => jnet_moi_url('mes-papiers/etat-civil'),
                     'csrf' => \App\Core\Csrf::token(),
                     'identity_id' => (int) $civil['identity']['id'],
                     'name' => $civilName,
