@@ -57,7 +57,7 @@ switch (_mode) do {
             case (!_simOn): { _out pushBack (["net", 0, "Réseau en jeu", "simulation coupée : réseau parfait" call _T] call _row); };
             case (_q getOrDefault ["airplane", false]): { _out pushBack (["net", 1, "Réseau en jeu", "mode avion" call _T, "Coupez le mode avion du téléphone (paramètres rapides)."] call _row); };
             case ((_q getOrDefault ["bars", 0]) > 0): { _out pushBack (["net", 0, "Réseau en jeu", ["%1 barre(s) sur 4", _q get "bars"] call _F] call _row); };
-            case (_need && {_relays isEqualTo []}): { _out pushBack (["net", 2, "Réseau en jeu", "aucun relais dans cette mission" call _T, "Il n'y a aucun réseau sans relais : un Zeus ou le créateur de mission doit poser un relais (module « Poser un relais »), ou couper « Réseau exclusivement par relais »."] call _row); };
+            case (_need && {_relays isEqualTo []}): { _out pushBack (["net", 2, "Réseau en jeu", "aucun relais dans cette mission" call _T, "Il n'y a aucun réseau sans relais : un Zeus ou le créateur de mission doit poser un relais (module « Poser un relais »), ou passer le réglage « Liaison du téléphone » sur Satellite."] call _row); };
             default { _out pushBack (["net", 2, "Réseau en jeu", "aucun signal ici" call _T, "Approchez-vous d'un relais, d'une passerelle de véhicule ou d'un équipier avec une MPU5, ou sortez des bâtiments et des brouilleurs."] call _row); };
         };
         // 5. Batterie.
@@ -81,7 +81,7 @@ switch (_mode) do {
             _out pushBack (["relayRule", 0, "Réseau de la mission", "simulation coupée : réseau parfait pour tous" call _T] call _row);
         } else {
             if (_total isEqualTo 0 && {_need}) then {
-                _out pushBack (["relays", 2, "Relais de la mission", "cette mission n'a pas de relais" call _T, "Personne n'a de réseau en jeu : posez un relais (module « Poser un relais » en Eden ou Zeus) ou coupez « Réseau exclusivement par relais » dans les réglages du serveur."] call _row);
+                _out pushBack (["relays", 2, "Relais de la mission", "cette mission n'a pas de relais" call _T, "Personne n'a de réseau en jeu : posez un relais (module « Poser un relais » en Eden ou Zeus) ou passez le réglage « Liaison du téléphone » sur Satellite dans les réglages du serveur."] call _row);
             } else {
                 if (_total isEqualTo 0) then {
                     _out pushBack (["relays", 1, "Relais de la mission", "aucun relais posé" call _T, "Le réseau passe sans relais ; ajoutez-en pour un réseau réaliste (couverture, brouillage, répéteurs)."] call _row);

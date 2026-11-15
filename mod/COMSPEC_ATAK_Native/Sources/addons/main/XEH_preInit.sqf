@@ -66,6 +66,15 @@ COMSPEC_ATAK_PfhSpread = {
     nil
 };
 
+// Liaison du téléphone (fn_linkMode) : PREMIER réglage de la liste COMSPEC (sans sous-catégorie, déclaré avant tous les
+// autres), imposé à tous par le serveur. Titre bilingue comme ses deux voisins (déclaré avant le réglage de langue).
+//   auto  (défaut) : détection ; aucun relais posé dans la mission (Eden ou Zeus) = satellite, au moins un = relais ;
+//   sat   : satellite, toujours relié ;        relay : relais obligatoires.
+["comspec_atak_native_link_mode", "LIST",
+    ["Liaison du téléphone / Phone link", "Automatique : aucun relais posé dans la mission (Eden ou Zeus) = liaison satellite, le téléphone marche partout ; dès qu'un relais existe, même détruit, il faut un relais en état à portée. Satellite : le téléphone est toujours relié, les relais ne font qu'améliorer le débit. Relais obligatoires : sans relais en état à portée, pas de réseau, même si la mission n'a aucun relais. / Automatic: no relay placed in the mission (Eden or Zeus) = satellite link, the phone works everywhere; as soon as one relay exists, even destroyed, a working relay in range is needed. Satellite: the phone is always linked, relays only improve the speed. Relays required: without a working relay in range, no network, even if the mission has no relay."],
+    ["COMSPEC", ""], [["auto", "sat", "relay"], ["Automatique (détection des relais) / Automatic (relay detection)", "Satellite : toujours relié / Satellite: always linked", "Relais obligatoires / Relays required"], 0], 1,
+    { if (hasInterface) then { uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []]; uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", []]; uiNamespace setVariable ["COMSPEC_ATAK_GateCache", []]; }; }] call CBA_fnc_addSetting;
+
 // Langue du mod (par joueur) : téléphone, menus CBA COMSPEC (ATAK, Overwatch, SSE) et SSE. Sans sous-catégorie : CBA
 // range ces réglages en tête de la liste COMSPEC, au-dessus des sections « ATAK · … ». Titre bilingue, jamais traduit.
 // Le code reste en français, fn_tr traduit à l'affichage (dictionnaire i18n/en.txt) ; changer la langue redessine le
@@ -152,9 +161,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
         ["COMSPEC", "ATAK · Affichage"], [["none", "CHAT", "SMS", "TASK", "WAYPOINTS", "FIRES", "MEDICAL", "ALERTS", "GARMIN"], ["Aucune", "Messages", "SMS", "Ordres", "Itinéraire (NAV)", "Feux", "MEDEVAC", "Alertes", "Heure H"], 0], 0,
         { ["refresh"] call comspec_atak_native_fnc_mapPinnedApp; }] call comspec_atak_native_fnc_addSetting;
 } forEach [
-    ["comspec_atak_native_map_pinned_app", "App épinglée sur la carte", "Aucune par défaut. Un bandeau de la taille de celui des coordonnées, à sa droite sur la carte du téléphone, résume l'app choisie. Messages, SMS, Ordres : non lus et dernier message ou ordre. Itinéraire : étape active, distance et cap. Feux : mission de tir en cours. MEDEVAC : étape de la demande et LZ. Alertes : dernière alerte. Heure H : compte à rebours du groupe. Touchez-le pour ouvrir l'app. Exemple : Ordres affiche « 2 à traiter » puis « TOC 14:32 · Rejoindre le point Alpha ». Masqué en petit format ou si la carte est trop petite. Aussi réglable dans Réglages > Carte."],
-    ["comspec_atak_native_map_pinned_app_2", "App épinglée sur la carte (2)", "Deuxième bandeau, mêmes choix que le premier. Il se pose à côté du premier s'il y a la place, sinon sur une rangée de plus ; il n'est pas dessiné si la carte est trop petite."],
-    ["comspec_atak_native_map_pinned_app_3", "App épinglée sur la carte (3)", "Troisième bandeau, mêmes choix que le premier. Il se pose à côté des autres s'il y a la place, sinon sur une rangée de plus ; il n'est pas dessiné si la carte est trop petite."]
+    ["comspec_atak_native_map_pinned_app", "App épinglée sur la carte", "Aucune par défaut. Un bandeau aligné sur celui des coordonnées, sur la carte du téléphone, résume l'app choisie. Messages, SMS, Ordres : non lus et dernier message ou ordre. Itinéraire : étape active, distance et cap. Feux : mission de tir en cours. MEDEVAC : étape de la demande et LZ. Alertes : dernière alerte. Heure H : compte à rebours du groupe. Touchez-le pour ouvrir l'app. Ordres : le bandeau montre l'ordre qui attend et ses réponses (REÇU, EN COURS, TERMINÉ, IMPOSSIBLE), sans ouvrir l'app. En petit format : une ligne par app. Aussi réglable dans Réglages > Carte."],
+    ["comspec_atak_native_map_pinned_app_2", "App épinglée sur la carte (2)", "Deuxième bandeau, mêmes choix que le premier. Il se pose à côté du premier s'il y a la place, sinon sur une rangée de plus, toujours sur la même grille ; il n'est pas dessiné si la carte est trop petite."],
+    ["comspec_atak_native_map_pinned_app_3", "App épinglée sur la carte (3)", "Troisième bandeau, mêmes choix que le premier. Il se pose à côté des autres s'il y a la place, sinon sur une rangée de plus, toujours sur la même grille ; il n'est pas dessiné si la carte est trop petite."]
 ];
 // Mode Essentiel (4.18.0, fn_essentialMode), par joueur : le téléphone ne montre que les apps de base (carte, GPS, itinéraire,
 // ordres, briefing, alertes, drone, vidéo en direct, Réglages). Coupé par défaut ; rien n'est désinstallé. Gardé dans le profil
@@ -704,7 +713,7 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     ["Véhicules relais et PC mobile", "Décoché par défaut (peu réaliste). Coché : l'équipage peut transformer n'importe quel véhicule en relais ATAK (4 km) ou en poste de commandement avec mât (10 km). Décoché : seuls les relais posés par la mission (module Eden ou Zeus « Poser un relais ») font passer le réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_only", "CHECKBOX",
-    ["Réseau uniquement par les relais", "Coché : le réseau ATAK passe uniquement par les relais de la mission (pylônes, module « Poser un relais »). Loin de tout relais, ou si la mission n'en a pas, plus de réseau du tout : messages, photos et positions attendent d'être à portée. Décoché : sans relais, le téléphone garde quand même du réseau."],
+    ["Réseau uniquement par les relais", "Coché : le réseau ATAK passe uniquement par les relais de la mission (pylônes, module « Poser un relais »). Loin de tout relais, ou si la mission n'en a pas, plus de réseau du tout : messages, photos et positions attendent d'être à portée. Décoché : le réglage « Liaison du téléphone » décide (aucun relais dans la mission : liaison satellite, réseau partout). Sans effet si « Liaison du téléphone » est sur Satellite."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 // Antennes du jeu converties en relais (fn_relayConvert).
 ["comspec_atak_native_relay_convert", "LIST",
@@ -857,7 +866,7 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Règle « pas de relais, pas de réseau MPU / radio » (fn_relayNet "gateOn", "gate") : cochée par défaut, le profil Arcade garde un réseau libre.
 ["comspec_atak_native_relay_gate", "CHECKBOX",
-    ["Exiger un relais pour le réseau MPU/radio", "Coché : le réseau du téléphone, de la MPU5 et la voix relayée ne marchent que si un relais en service est à portée (pylône, antenne, kit, véhicule relais), directement ou par une chaîne de radios qui y mène. Aucun relais, relais détruit, éteint, brouillé ou hors de portée : aucun réseau, et l'app Wave Relay dit lequel et pourquoi. Exemple : mission sans relais, deux joueurs avec une MPU5 chacun : pas de réseau entre eux tant qu'aucun relais n'est posé. Décoché (réseau libre) : comme avant, les téléphones et les MPU5 se joignent sans relais. Ne concerne ni la liaison internet vers Athena, ni la voix directe, ni une radio ACRE2 / TFAR utilisée seule."],
+    ["Exiger un relais pour le réseau MPU/radio", "Coché : le réseau du téléphone, de la MPU5 et la voix relayée ne marchent que si un relais en service est à portée (pylône, antenne, kit, véhicule relais), directement ou par une chaîne de radios qui y mène. Aucun relais, relais détruit, éteint, brouillé ou hors de portée : aucun réseau, et l'app Wave Relay dit lequel et pourquoi. Exemple : le seul relais de la mission est détruit, deux joueurs avec une MPU5 chacun : pas de réseau entre eux tant qu'un relais n'est pas réparé ou posé. Décoché (réseau libre) : les MPU5 se joignent sans relais. Sans effet en liaison satellite (réglage « Liaison du téléphone » : mission sans aucun relais, ou Satellite). Ne concerne ni la liaison internet vers Athena, ni la voix directe, ni une radio ACRE2 / TFAR utilisée seule."],
     _mpuCat, true, 1, { uiNamespace setVariable ["COMSPEC_ATAK_GateCache", []]; uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", nil]; }] call comspec_atak_native_fnc_addSetting;
 // Qualité de la voix relayée (fn_voicePath "quality", appliquée par fn_mpuVoice "sigMap") : réaliste par défaut, ce sont les valeurs d'avant.
 ["comspec_atak_native_mesh_voice_degrade", "LIST",
@@ -1403,8 +1412,8 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
     ["Vol stationnaire auto avec l'ATAK en main (hélico)", "Réglage personnel. Pilote d'un hélicoptère presque immobile en vol : prendre l'ATAK en main engage le vol stationnaire automatique, rendu à la fermeture du téléphone (la souris sert alors au téléphone, le clavier reste aux commandes)."],
     _team, true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_vehicle_terminal", "LIST",
-    ["Tablette dans les véhicules", "Conducteur, tireur et chef de bord d'un véhicule ou d'un bateau ont l'ATAK sur une tablette fixée à bord, sans avoir besoin de téléphone. « Avec le kit installé » : seulement dans les véhicules équipés du kit tablette (action ACE)."],
-    _team, [["all", "kit", "off"], ["Tous les véhicules", "Avec le kit installé", "Aucun"], 0], 1] call comspec_atak_native_fnc_addSetting;
+    ["Tablette dans les véhicules", "Conducteur, tireur et chef de bord d'un véhicule ou d'un bateau ont l'ATAK sur une tablette fixée à bord, sans avoir besoin de téléphone."],
+    _team, [["all", "off"], ["Tous les véhicules", "Aucun"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_screen_glow", "CHECKBOX",
     ["Écrans visibles la nuit", "Décoché par défaut : la lumière de l'ATAK n'est jamais visible par les autres. Coché : la nuit, un téléphone allumé éclaire le visage de son porteur et se voit de loin (encore plus aux JVN). Le mode nuit, un véhicule ou le filtre d'écran JVN réduisent cette lueur."],
     _team, false, 1] call comspec_atak_native_fnc_addSetting;
