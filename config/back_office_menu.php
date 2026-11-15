@@ -164,6 +164,24 @@ return [
                 'who' => 'Seuls les administrateurs de la communauté reçoivent ces messages.',
             ],
         ],
+        'donnees_anciennes' => [
+            'path' => 'back-office/organisation/qualite-donnees',
+            'provider' => \App\Services\BackOffice\Menu\Badges\LegacyDataBadge::class,
+            'any_permissions' => ['admin.organization', 'admin.access'],
+            'tone' => 'notif',
+            'title' => '%d point(s) de données anciennes à vérifier',
+            'task' => [
+                'explain' => [
+                    'one' => 'Des données saisies il y a longtemps sont incomplètes : 1 point est à vérifier (membres sans prénom ni nom, dossiers de recrutement anciens sans bilan, fiches sans unité, grade ou portrait).',
+                    'other' => 'Des données saisies il y a longtemps sont incomplètes : %d points sont à vérifier (membres sans prénom ni nom, dossiers de recrutement anciens sans bilan, fiches sans unité, grade ou portrait).',
+                ],
+                'consequence' => 'Rien n’est supprimé ni écrasé : ces données restent telles quelles. Certains écrans les affichent simplement autrement (un nom sous l’indicatif, un dossier laissé tel quel) tant qu’elles ne sont pas complétées.',
+                'action' => 'Ouvrez Qualité des données : la section « Données anciennes à vérifier » indique où compléter chaque point.',
+                'button' => 'Vérifier les données anciennes',
+                'who' => 'Les administrateurs de la communauté.',
+                'help' => 'Au fil des versions, les écrans ont changé de façon d’afficher les personnes et les dossiers. Les données saisies il y a longtemps peuvent être incomplètes. Athena ne les supprime ni ne les écrase jamais : cet avis vous dit ce qui est incomplet pour que vous le complétiez.',
+            ],
+        ],
         'formule' => [
             'path' => 'back-office/configuration',
             'provider' => \App\Services\BackOffice\Menu\Badges\PlanEndBadge::class,

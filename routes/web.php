@@ -2114,6 +2114,9 @@ return function (Router $router) {
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/telecharger', [OrganizationDataQualityController::class, 'downloadData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/supprimer', [OrganizationDataQualityController::class, 'purgeData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/postes/{id}/restaurer', [OrganizationDataQualityController::class, 'restoreBillet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/anciens-noms/reprendre', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'importNames'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/anciens-noms/annuler', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'revertNames'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/bilans-automatiques', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'retroSetting'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/assign-position', [UserAdminController::class, 'assignPosition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/apply-role-set', [UserAdminController::class, 'applyRoleSet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/categories', [CategoryAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

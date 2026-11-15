@@ -155,10 +155,17 @@ final class ActivityHubPresentationService
                 'at' => $at,
             ],
             \App\Support\EnlistmentRetroAutoClose::NOTIFICATION_TYPE => [
-                'title' => 'Bilan 30 jours clos automatiquement (néant)',
-                'detail' => 'Pour ' . (trim((string) ($payload['candidate'] ?? '')) !== '' ? trim((string) $payload['candidate']) : 'un candidat accepté')
-                    . ' : bilan non renseigné dans les délais. Vous pouvez rédiger un bilan qui le remplace.',
-                'href' => (int) ($payload['enlistment_id'] ?? 0) > 0
+                // Une seule information par passage et par instructeur : « count » dossiers regroupés (anciennes notifications : un dossier).
+                'title' => (int) ($payload['count'] ?? 1) > 1
+                    ? (int) $payload['count'] . ' bilans 30 jours clos automatiquement (néant)'
+                    : 'Bilan 30 jours clos automatiquement (néant)',
+                'detail' => (int) ($payload['count'] ?? 1) > 1
+                    ? 'Pour ' . implode(', ', array_map('strval', array_slice(array_values((array) ($payload['candidates'] ?? [])), 0, 3)))
+                        . ((int) $payload['count'] > 3 ? ' et ' . ((int) $payload['count'] - 3) . ' autre(s)' : '')
+                        . ' : bilans non renseignés dans les délais. Vous pouvez rédiger un bilan qui remplace chaque néant.'
+                    : 'Pour ' . (trim((string) ($payload['candidate'] ?? '')) !== '' ? trim((string) $payload['candidate']) : 'un candidat accepté')
+                        . ' : bilan non renseigné dans les délais. Vous pouvez rédiger un bilan qui le remplace.',
+                'href' => ((int) ($payload['count'] ?? 1) <= 1 && (int) ($payload['enlistment_id'] ?? 0) > 0)
                     ? url('back-office/recruitments/' . (int) $payload['enlistment_id'] . '?dossier=1#bilan-recrutement')
                     : url('back-office/recruitments'),
                 'unread' => $unread,

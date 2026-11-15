@@ -17,6 +17,11 @@ use Throwable;
  * Écrit par un service (tâche planifiée « recruitment_retro_auto_close » ou ligne de commande), jamais par une route
  * web : les droits des humains ne changent pas. Idempotent (un seul néant par dossier, jamais écrasé par un second
  * passage), borné, et un dossier en erreur est consigné puis sauté sans arrêter les autres.
+ *
+ * Très anciennes communautés : fenêtre de sécurité (EnlistmentRetroAutoClose::AUTO_CLOSE_MAX_LATE_DAYS) au-delà de
+ * laquelle un dossier n'est ni clos ni notifié, seulement compté (« stale ») pour l'avis « Données anciennes à
+ * vérifier » ; une communauté peut aussi désactiver la clôture automatique (tenants.settings, retro_auto_close) ;
+ * une seule notification par instructeur et par passage, plafonnée.
  */
 final class EnlistmentRetroAutoCloseService
 {
@@ -30,11 +35,11 @@ final class EnlistmentRetroAutoCloseService
     /**
      * @param bool $dryRun simulation : liste ce qui SERAIT clos, sans rien écrire
      * @param int|null $onlyTenantId limite à une communauté (ligne de commande)
-     * @return array{ok: bool, available: bool, dry_run: bool, closed: int, would_close: list<array{tenant_id: int, enlistment_id: int, name: string, late_days: int}>, errors: int, reason: string}
+     * @return array{ok: bool, available: bool, dry_run: bool, closed: int, would_close: list<array{tenant_id: int, enlistment_id: int, name: string, late_days: int}>, errors: int, reason: string, stale: array<int, int>, disabled: list<int>, notified: int}
      */
     public function run(bool $dryRun = false, ?int $onlyTenantId = null, ?int $now = null, ?int $maxTotal = null): array
     {
-        $out = ['ok' => true, 'available' => true, 'dry_run' => $dryRun, 'closed' => 0, 'would_close' => [], 'errors' => 0, 'reason' => ''];
+        $out = ['ok' => true, 'available' => true, 'dry_run' => $dryRun, 'closed' => 0, 'would_close' => [], 'errors' => 0, 'reason' => '', 'stale' => [], 'disabled' => [], 'notified' => 0];
         if (!$this->engagement->retroTableExists()) {
             return ['available' => false, 'reason' => 'Bilans non activés (table absente).'] + $out;
         }
@@ -43,6 +48,8 @@ final class EnlistmentRetroAutoCloseService
         }
 
         $budget = max(1, $maxTotal ?? EnlistmentRetroAutoClose::BATCH_TOTAL);
+        /** @var array<int, array<int, list<array{name: string, enlistment_id: int}>>> $toNotify communauté => instructeur => dossiers clos */
+        $toNotify = [];
         foreach ($this->tenants->listBasicAll() as $tenant) {
             $tenantId = (int) ($tenant['id'] ?? 0);
             if ($tenantId < 1 || ($onlyTenantId !== null && $tenantId !== $onlyTenantId)) {
@@ -50,6 +57,19 @@ final class EnlistmentRetroAutoCloseService
             }
             if ($budget <= 0) {
                 break;
+            }
+            try {
+                // Les dossiers anciens (au-delà de la fenêtre) ne sont jamais écrits : seulement comptés pour l'avis aux responsables.
+                $stale = $this->engagement->countStaleWithoutStaffRetro($tenantId);
+                if ($stale > 0) {
+                    $out['stale'][$tenantId] = $stale;
+                }
+                if (!EnlistmentRetroAutoClose::enabledFor($this->tenants->getSettings($tenantId))) {
+                    $out['disabled'][] = $tenantId;
+                    continue;
+                }
+            } catch (Throwable $e) {
+                error_log('[cron recruitment_retro_auto_close] réglage de la communauté ' . $tenantId . ' : ' . $e->getMessage());
             }
             try {
                 $rows = $this->engagement->listStaffRetroAutoCloseCandidates($tenantId, min($budget, EnlistmentRetroAutoClose::BATCH_PER_TENANT));
@@ -78,6 +98,10 @@ final class EnlistmentRetroAutoCloseService
                     if ($this->closeOne($tenantId, $row, $name, $late)) {
                         $out['closed']++;
                         $budget--;
+                        $handlerId = (int) ($row['reviewed_by'] ?? 0);
+                        if ($handlerId > 0) {
+                            $toNotify[$tenantId][$handlerId][] = ['name' => $name, 'enlistment_id' => $eid];
+                        }
                     }
                 } catch (Throwable $e) {
                     $out['errors']++;
@@ -85,9 +109,48 @@ final class EnlistmentRetroAutoCloseService
                 }
             }
         }
+        $out['notified'] = $this->notifyHandlers($toNotify);
         $out['ok'] = $out['errors'] === 0;
 
         return $out;
+    }
+
+    /**
+     * Une seule information sobre par instructeur et par passage (et non une par dossier), plafonnée par exécution.
+     *
+     * @param array<int, array<int, list<array{name: string, enlistment_id: int}>>> $toNotify
+     */
+    private function notifyHandlers(array $toNotify): int
+    {
+        $sent = 0;
+        try {
+            if ($toNotify === [] || !$this->notifications->tableExists()) {
+                return 0;
+            }
+        } catch (Throwable) {
+            return 0;
+        }
+        foreach ($toNotify as $tenantId => $byHandler) {
+            foreach ($byHandler as $handlerId => $dossiers) {
+                if ($sent >= EnlistmentRetroAutoClose::MAX_NOTIFICATIONS_PER_RUN) {
+                    return $sent;
+                }
+                try {
+                    $names = array_values(array_unique(array_map(static fn (array $d): string => $d['name'], array_slice($dossiers, 0, 3))));
+                    $this->notifications->create($tenantId, $handlerId, EnlistmentRetroAutoClose::NOTIFICATION_TYPE, [
+                        'candidate' => $dossiers[0]['name'],
+                        'candidates' => $names,
+                        'count' => count($dossiers),
+                        'enlistment_id' => $dossiers[0]['enlistment_id'],
+                    ]);
+                    $sent++;
+                } catch (Throwable $e) {
+                    error_log('[cron recruitment_retro_auto_close] notification de l’instructeur ' . $handlerId . ' : ' . $e->getMessage());
+                }
+            }
+        }
+
+        return $sent;
     }
 
     /**
@@ -114,20 +177,6 @@ final class EnlistmentRetroAutoCloseService
             );
         } catch (Throwable $e) {
             error_log('[cron recruitment_retro_auto_close] journal du dossier ' . $eid . ' : ' . $e->getMessage());
-        }
-        // Information sobre à l'instructeur du dossier, si le mécanisme de notifications est disponible.
-        $handlerId = (int) ($row['reviewed_by'] ?? 0);
-        if ($handlerId > 0) {
-            try {
-                if ($this->notifications->tableExists()) {
-                    $this->notifications->create($tenantId, $handlerId, EnlistmentRetroAutoClose::NOTIFICATION_TYPE, [
-                        'candidate' => $name,
-                        'enlistment_id' => $eid,
-                    ]);
-                }
-            } catch (Throwable $e) {
-                error_log('[cron recruitment_retro_auto_close] notification du dossier ' . $eid . ' : ' . $e->getMessage());
-            }
         }
 
         return true;
