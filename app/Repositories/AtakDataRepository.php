@@ -639,6 +639,11 @@ class AtakDataRepository
         $encoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $upd = $this->pdo()->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
         $upd->execute([is_string($encoded) ? $encoded : '{"suppressed":true,"suppressed_by":"web"}', $tenantId, $id]);
+        // Pierre tombale pour le jeu (poste TOC) : la suppression reste lisible par curseur pendant 48 h (lot « legacy » : sans annulation).
+        if (\App\Services\AtakToc\Purge\TocSoftDelete::available($this->pdo())) {
+            $this->pdo()->prepare("UPDATE atak_markers SET deleted_at = ?, delete_batch = 'legacy' WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL")
+                ->execute([gmdate('Y-m-d H:i:s'), $tenantId, $id]);
+        }
         ShortCache::bump('markers:' . $tenantId);
 
         return true;

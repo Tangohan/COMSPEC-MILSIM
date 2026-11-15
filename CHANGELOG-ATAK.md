@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Poste TOC : suppression des marqueurs, corbeille de 15 minutes et purge de la carte, retrait des marqueurs supprimés dans le jeu (ATAK natif 4.22.0.AG - Washington, COMSPEC Link 2.0.126)
+
+### Résumé joueur
+Type : nouveauté
+FR : Un marqueur supprimé par le poste TOC disparaît aussi de ta carte
+- Quand le poste TOC supprime des marqueurs (un seul, une sélection ou une purge de la carte), ils disparaissent aussi de ta carte d'Arma, même si tu étais absent un moment.
+- Rien ne s'affiche à l'écran : le marqueur s'efface simplement et ton jeu ne le renvoie pas.
+- Le poste TOC peut annuler une suppression pendant 15 minutes.
+- Mets à jour le mod et sa DLL COMSPEC Link (2.0.126), puis redémarre complètement Arma 3.
+EN : A marker deleted by the TOC post also disappears from your map
+- When the TOC post deletes markers (one, a selection or a purge of the map), they also disappear from your Arma map, even if you were away for a while.
+- Nothing is shown on screen: the marker simply vanishes and your game does not send it back.
+- The TOC post can undo a deletion for 15 minutes.
+- Update the mod and its COMSPEC Link DLL (2.0.126), then restart Arma 3 completely.
+
+### Détail technique
+- **Site** : suppression douce des marqueurs et tracés (colonnes `deleted_at`, `deleted_by`, `delete_batch`, migration 4690 non lancée par cette PR), corbeille de 15 minutes, sélection multiple, épinglés avec confirmation renforcée, purge par lots de 500 avec aperçu exact, archivage de la mission avant suppression et droit `atak.toc.purge` (migration 4700). Détail : `docs/TOC-WEB.md`, section « Supprimer, annuler et purger la carte ».
+- **Pierres tombales** : `GET /api/atak/markers?world_name=…&deleted_since=<instant>:<id>` renvoie, en tête et sans changer la forme de la réponse (une liste), les marqueurs du jeu supprimés depuis le curseur (`id` « del:N », `source` « game_del », `deleted_at` ; 40 au plus, 48 h au plus). Sans le paramètre : comportement d'avant.
+- **DLL (COMSPEC Link 2.0.126)** : `GetMarkers` accepte un second argument `tomb` (relevé du relais), joint le curseur `deleted_since`, ne l'avance que sur les lignes qu'il a transmises (jamais en arrière, jamais dans le futur, 48 h au plus, 1 h au premier relevé). `SimplifyMarkersJson` ne jette plus toute la liste quand un identifiant est un texte (« del:N ») ; les autres identifiants texte (« athena:… ») sont ignorés comme avant. Colonne 9 des lignes `game_del` : instant de suppression.
+- **SQF** : `fn_markerWebSweep` passe `"tomb"` ; le retrait (`deleteMarker`) et la mémoire des noms déjà traités sont inchangés. Aucun toast, `systemChat`, `hint` ni popup.
+- **À faire avant la publication** : `php tools/embed-client-attest.php --env=…` (le secret de preuve du module est lié à la version de Link), reconstruire la DLL (`COMSPECATAKNativeExtension_x64.dll`, `COMSPECExtension_x64.dll`) puis `main.pbo`. Non essayé en jeu.
+- **À tester en jeu** : supprimer un marqueur d'Arma depuis le poste TOC (disparaît en quelques secondes pour le relais, puis pour tous) ; purge de plus de 40 marqueurs du jeu (ils partent par paquets de 40) ; relais absent puis de retour (rattrapage jusqu'à 1 h) ; aucun message à l'écran ; un marqueur modifié en jeu après sa suppression n'est pas recréé.
+
+---
+
 ## Appui aérien (CAS) : les accusés du pilote ne partent plus avec un identifiant invalide (ATAK natif 4.21.2.AG - Washington)
 
 ### Résumé joueur

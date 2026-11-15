@@ -112,7 +112,15 @@ final class AtakTocController
             return $this->denied();
         }
 
-        return Response::view('atak.toc.console', $this->pageData('Poste TOC'));
+        // Suppression, corbeille et purge de la carte : droits lus ici, rejugés par chaque route de /atak/toc/api/.
+        $data = $this->pageData('Poste TOC');
+        $data['tocExtraBoot'] = [
+            'canPurge' => $this->access->canPurge(),
+            'softDelete' => \App\Services\AtakToc\Purge\TocSoftDelete::available(),
+            'trashSeconds' => \App\Services\AtakToc\Purge\TocSoftDelete::TRASH_TTL,
+        ];
+
+        return Response::view('atak.toc.console', $data);
     }
 
     public function plans(Request $request, array $params = []): Response

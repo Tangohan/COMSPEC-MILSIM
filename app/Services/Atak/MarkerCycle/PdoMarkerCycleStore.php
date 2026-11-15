@@ -6,6 +6,8 @@ namespace App\Services\Atak\MarkerCycle;
 
 use App\Core\Database;
 use App\Support\SchemaReadyCache;
+use App\Services\AtakToc\Purge\TocElementStore;
+use App\Services\AtakToc\Purge\TocSoftDelete;
 use App\Support\ShortCache;
 use PDO;
 
@@ -13,8 +15,8 @@ use PDO;
  * Dépôt MySQL du cycle des marqueurs : atak_markers et atak_map_shapes (éléments affichés), atak_marker_cycle_settings,
  * atak_marker_archives et atak_marker_archive_items (missions archivées). Toutes les requêtes portent le tenant_id.
  *
- * Retrait d'un marqueur venu du jeu : DELETE simple, sans l'état « masqué » de la suppression à la main : le relais en jeu
- * ne retire donc pas le marqueur de la carte native du jeu (seul le web repart propre), voir docs/TOC-WEB.md.
+ * Retrait d'un marqueur venu du jeu : avec la migration 4690, le marqueur reste 48 h en pierre tombale (deleted_at) et le jeu
+ * le retire de sa carte native (fn_markerWebSweep) ; sans elle, DELETE simple, le jeu ne le retire pas (docs/TOC-WEB.md).
  */
 final class PdoMarkerCycleStore implements MarkerCycleStore
 {
@@ -123,7 +125,8 @@ final class PdoMarkerCycleStore implements MarkerCycleStore
         $st = $this->db()->prepare(
             "SELECT * FROM atak_map_shapes
              WHERE tenant_id = ? AND map_id = ? AND COALESCE(updated_at, created_at) < ?
-               AND (meta IS NULL OR COALESCE(JSON_UNQUOTE(JSON_EXTRACT(meta, '$.web_permanent')), '') <> 'true')
+               AND (meta IS NULL OR COALESCE(JSON_UNQUOTE(JSON_EXTRACT(meta, '$.web_permanent')), '') <> 'true')"
+            . TocSoftDelete::liveSql($this->db()) . "
              ORDER BY COALESCE(updated_at, created_at), id LIMIT " . $limit
         );
         $st->execute([$tenantId, $mapId, $beforeUtc]);
@@ -193,6 +196,9 @@ final class PdoMarkerCycleStore implements MarkerCycleStore
     public function deleteLive(int $tenantId, int $mapId, array $refs): int
     {
         $n = 0;
+        $soft = TocSoftDelete::available($this->db());
+        $toc = new TocElementStore($this->db(), $soft);
+        $gameRow = $this->db()->prepare("SELECT 1 FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND id = ? AND arma_name IS NOT NULL AND arma_name <> '' AND marker_data NOT LIKE ?");
         $markerDel = $this->db()->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND id = ? AND marker_data NOT LIKE ?');
         $shapeDel = $this->db()->prepare(
             "DELETE FROM atak_map_shapes WHERE tenant_id = ? AND map_id = ? AND id = ?
@@ -200,6 +206,14 @@ final class PdoMarkerCycleStore implements MarkerCycleStore
         );
         foreach ($refs as $ref) {
             if ($ref['kind'] === 'marker') {
+                if ($soft) {
+                    // Marqueur du jeu : pierre tombale (« archive » : ni corbeille ni annulation), le jeu le retire de sa carte.
+                    $gameRow->execute([$tenantId, $mapId, $ref['id'], self::MARKER_PINNED_LIKE]);
+                    if ($gameRow->fetchColumn() !== false) {
+                        $n += $toc->softDelete($tenantId, $mapId, [['table' => 'marker', 'id' => $ref['id']]], null, 'archive', time());
+                        continue;
+                    }
+                }
                 $markerDel->execute([$tenantId, $mapId, $ref['id'], self::MARKER_PINNED_LIKE]);
                 $n += $markerDel->rowCount();
             } elseif ($ref['kind'] === 'shape') {

@@ -7,7 +7,9 @@ namespace App\Services\AtakToc;
 /**
  * Droits du poste TOC web et des plans d'opération.
  *  - atak.toc.use    : tenir le poste (TOC web), créer et éditer des plans, les envoyer en jeu ;
- *  - atak.toc.manage : configurer le poste (modèles de la communauté, plans de tous, remise à zéro de la salle).
+ *  - atak.toc.manage : configurer le poste (modèles de la communauté, plans de tous, remise à zéro de la salle),
+ *                      supprimer les marqueurs et tracés de tous sur la carte (corbeille de 15 minutes) ;
+ *  - atak.toc.purge  : purger la carte en masse (par type, auteur, âge, zone, cycle), avec aperçu et archivage préalable.
  * L'administration de la communauté (admin.organization) vaut les deux ; l'administrateur de la plateforme passe
  * partout (Gate). Plans : l'auteur, puis selon le partage (privé, unité, communauté) et les partages nominatifs.
  * Le lien de lecture (jeton) ouvre le plan en lecture seule à tout membre connecté de la même communauté.
@@ -16,6 +18,7 @@ final class TocAccess
 {
     public const USE = 'atak.toc.use';
     public const MANAGE = 'atak.toc.manage';
+    public const PURGE = 'atak.toc.purge';
 
     /** @var callable(string): bool */
     private $can;
@@ -45,6 +48,12 @@ final class TocAccess
     public function canManage(): bool
     {
         return ($this->can)(self::MANAGE) || ($this->can)('admin.organization');
+    }
+
+    /** Purge en masse de la carte : droit dédié, ou administration de la communauté (la gestion du poste ne suffit pas). */
+    public function canPurge(): bool
+    {
+        return ($this->can)(self::PURGE) || ($this->can)('admin.organization');
     }
 
     public function canUse(): bool

@@ -1,3 +1,23 @@
+[h1]COMSPEC ATAK 4.22.0 Washington — les marqueurs supprimés par le poste TOC disparaissent de votre carte / markers deleted by the TOC post disappear from your map[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Carte[/b] : quand le poste TOC supprime des marqueurs (un seul, une sélection ou une purge), ils disparaissent aussi de votre carte d'Arma, même si vous étiez absent un moment.
+[*] Rien ne s'affiche à l'écran : le marqueur s'efface simplement et votre jeu ne le renvoie pas.
+[*] Le poste TOC peut annuler une suppression pendant 15 minutes.
+[*] COMSPEC Link passe en 2.0.126.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Map[/b]: when the TOC post deletes markers (one, a selection or a purge), they also disappear from your Arma map, even if you were away for a while.
+[*] Nothing is shown on screen: the marker simply vanishes and your game does not send it back.
+[*] The TOC post can undo a deletion for 15 minutes.
+[*] COMSPEC Link is now 2.0.126.
+[/list]
+
 [h1]COMSPEC ATAK 4.21.2 Washington — accusés d'appui aérien : identifiant corrigé / air support acknowledgements: identifier fixed[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

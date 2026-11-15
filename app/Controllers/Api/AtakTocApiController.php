@@ -41,6 +41,18 @@ final class AtakTocApiController extends AtakTocBaseController
             return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
         }
 
+        // Révision de la carte et dernier évènement (suppression, annulation, purge) : les postes ouverts relisent la carte
+        // sans rechargement (même sondage de 3 s que la salle, aucune notification dans le jeu).
+        $mapRev = 0;
+        $mapEvent = null;
+        try {
+            $mapRev = \App\Support\ShortCache::gen('toc_map:' . $this->tenantId() . ':' . $mapId);
+            $evt = \App\Support\ShortCache::get('toc_evt:' . $this->tenantId() . ':' . $mapId);
+            $mapEvent = is_array($evt) ? $evt : null;
+        } catch (\Throwable) {
+            // Cache indisponible : la carte se relit à son rythme habituel.
+        }
+
         return $this->jsonWithEtag([
             'ok' => true,
             'mapId' => $mapId,
@@ -48,7 +60,8 @@ final class AtakTocApiController extends AtakTocBaseController
             'now' => time(),
             'state' => $view['state'],
             'game' => $view['game'],
-        ], $view['version'] . '-' . intdiv(time(), 5));
+            'map' => ['rev' => $mapRev, 'event' => $mapEvent],
+        ], $view['version'] . '-' . intdiv(time(), 5) . '-' . $mapRev);
     }
 
     public function action(Request $request, array $params = []): Response
