@@ -24,6 +24,7 @@ $jnbCollapsed = $jnbMode === 'collapsed';
          data-hide-url="<?= $jnbH(url('api/jnet/annonce/bandeau/vu')) ?>"
          data-show-url="<?= $jnbH(url('api/jnet/annonce/bandeau/rappel')) ?>">
     <div class="jnb__in">
+        <span class="jnb__mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg></span>
         <div class="jnb__text">
             <h2 class="jnb__title" id="jnb-title">Extranet JNET : ton espace d’unité, tes ordres et ton profil</h2>
             <p class="jnb__lead">Une unité. Un espace. Tout ce qui te concerne, au même endroit.</p>
