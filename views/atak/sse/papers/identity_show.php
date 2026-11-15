@@ -185,6 +185,7 @@ require __DIR__ . '/_subnav.php';
     </header>
 
     <?php require dirname(__DIR__) . '/_sheet_menu.php'; ?>
+    <?php \App\Services\Sse\Links\SseLinksWidget::render('identity', (int) $identity['id']); ?>
 
     <?php if ($notice !== null): ?>
         <?php $topPending = (($noticeMeta[(int) $notice['id']]['state'] ?? 'live') === 'pending'); ?>

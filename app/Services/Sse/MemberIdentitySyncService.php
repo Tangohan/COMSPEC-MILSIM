@@ -585,7 +585,14 @@ final class MemberIdentitySyncService
         $this->history->markRestored($tenantId, $historyId, $actorId);
         $this->log($tenantId, $actorId, 'id_member.sync_restore', (int) $identity['id'], $userId, ['history' => $historyId, 'field' => $field]);
 
-        return ['ok' => true, 'message' => self::FIELDS[$field][0] . ' restauré ; la valeur remplacée est dans l’historique.'];
+        $message = self::FIELDS[$field][0] . ' restauré ; la valeur remplacée est dans l’historique.';
+        // Remettre à la main un nom écarté par l'alignement sur l'état civil est un choix : l'identité n'est plus alignée d'office.
+        if (($h['decision'] ?? '') === 'civil' && in_array($field, ['last_name', 'first_name'], true)
+            && (new SseMemberCivilIdentityService())->setOverride($tenantId, $userId, (int) $identity['id'], true, $actorId)['ok']) {
+            $message .= ' L’identité est marquée « nom volontairement différent » : elle ne suit plus l’état civil tant que ce réglage reste posé.';
+        }
+
+        return ['ok' => true, 'message' => $message];
     }
 
     /**

@@ -2130,3 +2130,50 @@ html[data-bo-theme="dark"] .jnet-embed { --jn-field: #a3c45a; }
   flex-wrap: wrap;
   align-items: center;
 }
+
+/* —— Citer un élément SSE dans un échange (compte rendu) —— */
+
+.jnet-embed.jnet-embed .jn-cite {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0 0 0.9rem;
+}
+
+.jnet-embed.jnet-embed .jn-cite > .jn-btn { justify-self: start; }
+
+.jnet-embed.jnet-embed .jn-cite__pop {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-surface);
+}
+
+.jnet-embed.jnet-embed .jn-cite__q { display: grid; gap: 0.25rem; font-size: 0.8rem; color: var(--jn-muted, inherit); }
+
+.jnet-embed.jnet-embed .jn-cite__list {
+  display: grid;
+  gap: 0.3rem;
+  max-height: 14rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.jnet-embed.jnet-embed .jn-cite__list button {
+  display: grid;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--jn-line);
+  background: transparent;
+  color: var(--jn-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.jnet-embed.jnet-embed .jn-cite__list button:hover,
+.jnet-embed.jnet-embed .jn-cite__list button:focus-visible { border-color: var(--jn-ink); }
+
+.jnet-embed.jnet-embed .jn-cite__list small { color: var(--jn-muted, inherit); font-size: 0.8rem; }

@@ -238,7 +238,7 @@ $issues = static function (array $list) use ($ph, $stateChip, $stateLabels, $fix
                         <span class="eff-fm-list__dt"><?= $ph(substr((string) $hr['created_at'], 0, 16)) ?></span>
                         <div>
                             <b><?= $ph($label) ?> : « <?= $ph($hr['lost_value'] ?? '—') ?> » (<?= $ph($hr['lost_side'] === 'game' ? 'version du jeu' : 'version d’Athena') ?>) écarté au profit de « <?= $ph($hr['kept_value'] ?? '—') ?> »</b>
-                            <p><?= $ph(['game' => 'Repris du jeu', 'athena' => 'Athena gardée', 'both' => 'Les deux gardés', 'restore' => 'Restauration'][$hr['decision']] ?? $hr['decision']) ?><?= ($hr['restored_at'] ?? null) !== null ? ' · restauré le ' . $ph(substr((string) $hr['restored_at'], 0, 16)) : '' ?></p>
+                            <p><?= $ph(['game' => 'Repris du jeu', 'athena' => 'Athena gardée', 'both' => 'Les deux gardés', 'restore' => 'Restauration', 'civil' => 'Aligné sur l’état civil'][$hr['decision']] ?? $hr['decision']) ?><?= ($hr['restored_at'] ?? null) !== null ? ' · restauré le ' . $ph(substr((string) $hr['restored_at'], 0, 16)) : '' ?></p>
                         </div>
                         <?php if ($manage && ($hr['restored_at'] ?? null) === null): ?>
                             <form method="post" action="<?= $ph($base . '/historique/' . (int) $hr['id'] . '/restaurer') ?>" class="idm-sync__restore">

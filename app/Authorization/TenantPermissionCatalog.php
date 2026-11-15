@@ -330,6 +330,8 @@ final class TenantPermissionCatalog
             ['slug' => 'personnel.grades.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les grades'],
             ['slug' => 'personnel.assignments.manage', 'module' => 'personnel', 'action' => 'assign', 'name' => 'Gérer affectations / unités'],
             ['slug' => 'personnel.status.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer les statuts'],
+            ['slug' => 'effectifs.suivi.view', 'module' => 'personnel', 'action' => 'view', 'name' => 'Consulter le suivi du dossier des membres'],
+            ['slug' => 'effectifs.suivi.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Modifier le suivi du dossier des membres'],
             ['slug' => 'personnel.badges.manage', 'module' => 'personnel', 'action' => 'manage', 'name' => 'Gérer badges / qualifications'],
             ['slug' => 'personnel.directory.export', 'module' => 'personnel', 'action' => 'export', 'name' => 'Exporter l’annuaire'],
             ['slug' => 'personnel.progression.view', 'module' => 'personnel', 'action' => 'view', 'name' => 'Voir la progression / carrière'],

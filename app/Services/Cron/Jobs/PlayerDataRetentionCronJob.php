@@ -34,6 +34,7 @@ final class PlayerDataRetentionCronJob implements CronJobInterface
         ['atak_unit_motion', 'computed_at < DATE_SUB(NOW(), INTERVAL 7 DAY)', 'État de mouvement des unités non recalculé depuis 7 jours'],
         ['atak_vehicle_position_history', 'recorded_at < DATE_SUB(NOW(), INTERVAL 365 DAY)', 'Historique de positions des véhicules de plus d’un an'],
         ['atak_chat_messages', 'created_at < DATE_SUB(NOW(), INTERVAL 365 DAY)', 'Messages du tchat ATAK de plus d’un an'],
+        ['player_sessions', 'started_at < DATE_SUB(NOW(), INTERVAL 400 DAY)', 'Sessions de jeu sur le serveur de plus de 13 mois'],
     ];
 
     private const BATCH = 5000;
@@ -123,6 +124,7 @@ final class PlayerDataRetentionCronJob implements CronJobInterface
             'atak_terminals' => 'user_id',
             'game_player_mods' => null,
             'user_arma_playtime' => 'user_id',
+            'player_sessions' => 'user_id',
             'atak_screen_time' => 'user_id',
             'game_phone_identities' => 'user_id',
             'atak_operator_ids' => 'user_id',

@@ -853,8 +853,8 @@ final class FlashbangModAssetTest extends TestCase
         self::assertStringContainsString('linearConversion [0, 0.06, _now - (_st getOrDefault ["lastHit", -10]), 1, 0.15, true]', self::read(self::MAIN . 'functions/fn_playerLoop.sqf'));
         $desc = (string) file_get_contents(self::path('mod/COMSPEC_Flashbang/workshop/STEAM_DESCRIPTION.txt'));
         self::assertLessThanOrEqual(7900, strlen($desc), 'Description Steam : 7 900 octets au plus.');
-        self::assertSame(51, substr_count(self::read(self::MAIN . 'XEH_preInit.sqf'), 'call _add;') + 3, '51 réglages (4 camps par une seule ligne).');
-        self::assertStringContainsString('51 réglages CBA', $desc);
-        self::assertStringContainsString('51 CBA settings', $desc);
+        self::assertSame(59, substr_count(self::read(self::MAIN . 'XEH_preInit.sqf'), 'call _add;') + 3, '59 réglages (4 camps par une seule ligne ; 8 réglages IA depuis 1.0.1).');
+        self::assertStringContainsString('59 réglages CBA', $desc);
+        self::assertStringContainsString('59 CBA settings', $desc);
     }
 }

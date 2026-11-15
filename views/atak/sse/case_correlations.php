@@ -94,7 +94,7 @@ arsort($degree);
             conviction et les documents du dossier.
             Les liens <strong>déduits</strong> sont recalculés à chaque ouverture depuis les
             saisies déjà enregistrées : corriger une fiche corrige le graphe. Les liens
-            <strong>automatiques</strong> sont proposés par une règle et attendent votre
+            <strong>Cerbère</strong> sont proposés par une règle et attendent votre
             vérification. Les liens <strong>d’analyste</strong> sont vos hypothèses, et
             restent signalés comme telles.
         </p>
@@ -128,7 +128,7 @@ arsort($degree);
         <div class="metric-detail">Issus des saisies</div>
     </div>
     <div class="metric">
-        <div class="metric-label">Liens automatiques</div>
+        <div class="metric-label">Liens Cerbère</div>
         <div class="metric-value"><?= $h(str_pad((string) count($byRule), 3, '0', STR_PAD_LEFT)) ?></div>
         <div class="metric-detail">Posés par une règle, à vérifier</div>
     </div>

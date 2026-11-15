@@ -147,14 +147,35 @@ Ces effets ne touchent que lui. La lumière et le bang, eux, sont vus et entendu
 - la protection auditive (bouchons ACE, casque ACE) ;
 - un véhicule fermé.
 
-**IA** :
-- précision, vitesse de visée et repérage fortement réduits pendant 3 à 12 s ;
-- suppression (elle hésite, se couvre, tire moins) ;
-- réflexe de détourner la tête si le flash est fort ;
-- perte de la trace des ennemis au-delà d'un fort éblouissement.
+**IA** (réglage « Réaction des IA », **Réaliste** par défaut depuis 1.0.1) :
+- **aveuglée** (vision >= 20 %) : 2 à 10 s sans repérer ni viser (`disableAI "TARGET"` et `"AUTOTARGET"`), les ennemis
+  proches sont oubliés dès 45 % ;
+- **désorientée** : arrêt net de 0,5 à 3,5 s (`disableAI "MOVE"`, à pied seulement, jamais un conducteur), puis elle se
+  baisse ou, si le flash est fort et vu de face, porte les mains au visage (animation vanilla `Acts_CivilShocked_1/2`,
+  ignorée si elle n'existe pas) ;
+- **tire mal** 5 à 20 s : précision, stabilité et vitesse de visée, repérage, courage et `commanding` (sourde : elle
+  transmet mal les contacts) très réduits ; suppression : elle cherche un abri, et fuit si son courage est bas et que
+  la mission autorise la fuite (`allowFleeing` et `setBehaviour` ne sont jamais touchés) ;
+- **intensité** : distance, ligne de vue, regard (face, côté, dos), mur, pièce fermée (effet renforcé), lunettes
+  teintées et protection auditive, comme pour le joueur ; la pupille d'une IA ne descend pas sous 55 % (pas de perte
+  d'effet en plein soleil) et sa portée est x1,5 (réglable) ;
+- **immunité** : 8 % des IA (réglable ; plus pour les bons soldats, lunettes teintées, protection auditive) ne sont
+  pas touchées par une grenade donnée (tirée une fois par IA et par grenade) ;
+- **durées** : propres à chaque IA (+/-30 %), prolongées par les flashs suivants sans s'additionner ; plafonds 10 s
+  (aveugle) et 20 s (dégradée) x réglage « Durée sur les IA ».
 
-Elle n'est jamais figée (pas de `disableAI`), et ses compétences sont rendues exactement ensuite. Les civils sont
-touchés de la même façon. La DRILL ne provoque aucune réaction.
+Retour à la normale sûr : valeurs d'origine mémorisées une seule fois ; une compétence changée entre-temps par un
+autre mod ou la mission (LAMBS, VCOM, ASR AI) n'est pas écrasée ; une fonction `disableAI` déjà coupée avant le flash
+n'est jamais rétablie ; IA inconsciente (ACE Médical, KAT) : rétablissement différé ; IA passée sur une autre
+machine : restauration envoyée à sa machine ; IA morte ou supprimée : variables effacées. **Discrète** garde
+l'ancien comportement (compétences réduites 3 à 12 s, suppression, aucun `disableAI`). Les civils sont touchés de la
+même façon. La DRILL ne provoque aucune réaction.
+
+**Où l'effet s'applique** : sur la machine qui possède l'IA (serveur, headless, ou le joueur dont elle est du groupe),
+jamais à distance : le mod doit donc être chargé sur le serveur et sur les clients headless pour toucher leurs IA
+(`SERVEUR : mod absent` dans le RPT d'un client : les IA du serveur ne réagissent pas). Chaque détonation est envoyée
+aussi au propriétaire de chaque IA à moins de 80 m. Coût borné : 20 IA au plus par détonation (réglable), les plus
+proches d'abord, 6 par image, aucune attente non bornée.
 
 ## Intérieur et extérieur
 
@@ -227,7 +248,7 @@ Ce que ça change :
   victime : éblouissement ±10 %, durée du blanc ±25 %, flou et courbe de retour variables, 1 à 3 taches rémanentes qui
   dérivent, récupération en vagues avec clignements, « plocs » de l'ouïe, visée et pas qui fluctuent, petites
   hésitations ; sensibilité propre à chaque joueur (±15 %) ; IA : durée ±30 %, réaction tirée au hasard (se couvre,
-  courte rafale réflexe, hésite). La moyenne reste celle de la table de calibration (test : moyenne ±5 %, variance
+  geste réflexe, hésite ; courte rafale réflexe en réaction Discrète). La moyenne reste celle de la table de calibration (test : moyenne ±5 %, variance
   bornée).
 - **Volume** : bangs à environ -11 LUFS (avant : -14 en 1.0.0 précédente, -19 à l'origine), limiteur doux, crête sous
   -0,5 dBFS ; « Volume des flashbangs » 500 % par défaut (50 à 1000 %), « Volume de l'acouphène » 250 % (50 à 1000 %) ;
@@ -272,7 +293,15 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Sursaut | oui | Réflexe au bang : secousse sèche de la vue, à-coup de visée, gestes freinés 0,2 à 0,5 s ; plus fort par surprise, 30 % dans une rafale, moitié pour le lanceur ; part même avec une protection auditive ; les IA à pied s'arrêtent aussi 0,3 à 0,6 s | non pour un entraînement calme |
 | Radio étouffée | oui | Sans ACE : radio vanilla, ACRE2, TFAR baissent aussi | non |
 | Protection auditive (dB) | 25 | Réduction pour bouchons ou casque ACE | 30 |
-| IA affectée | oui | IA éblouie : vise et repère mal, hésite | non |
+| IA affectée | oui | Coupe tous les effets sur les IA | non |
+| Réaction des IA (serveur) | Réaliste | Discrète (comme avant 1.0.1), Réaliste (aveugle 2 à 10 s, arrêt net, geste réflexe, tire mal 5 à 20 s), Forte (x1,25 en intensité et durée, portée x1,15, moitié moins d'immunité) | Forte pour une mission d'assaut en intérieur |
+| Intensité sur les IA | 100 % | Force de l'effet sur les IA (0 à 200 %) | 150 % |
+| Portée sur les IA | 150 % | Étire la distance d'effet sur les IA (50 à 300 %) : à 150 %, une IA à 15 m est touchée comme à 10 m | 100 % pour la portée du joueur |
+| Durée sur les IA | 100 % | Multiplie les durées d'effet sur les IA (30 à 200 %) | 70 % pour des assauts plus nerveux |
+| Immunité des IA | 8 % | Part des IA épargnées par une grenade (0 à 50 %) | 0 % pour des IA toutes touchées |
+| IA traitées par détonation | 20 | Plafond d'IA touchées par détonation et par machine, plus proches d'abord (1 à 80) | 40 sur un serveur costaud |
+| Geste réflexe des IA | oui | Mains au visage d'une IA éblouie de face (animation vanilla) | non si votre pack d'animations pose problème |
+| Journal des IA (RPT) | non | Une ligne par IA et par détonation dans le RPT de la machine de l'IA (force, durées, réaction) | coché le temps d'un test |
 | Effet sur BLUFOR / OPFOR / Indépendants / Civils | Normal | Par camp, joueurs et IA : Normal, Réduit, Aucun effet visuel, Immunisé | BLUFOR sur « Aucun effet visuel » : votre équipe d'assaut n'est pas éblouie par ses propres grenades |
 | Coefficient du mode Réduit | 35 % | Force et durée de l'éblouissement en mode Réduit (5 à 90 %) | 20 % |
 | Mes propres grenades m'affectent | Oui | Oui, Réduit, Non : effet sur le lanceur | Réduit pour entrer derrière sa grenade |
@@ -418,7 +447,7 @@ calculées (tests de calibration), pas encore mesurées en jeu.
 - vision en tunnel ;
 - animation forcée du joueur ;
 - recul d'arme modifié ;
-- IA figée ;
+- IA figée longtemps (l'arrêt net ne dure que 0,5 à 3,5 s) ;
 - dégâts par défaut.
 
 ## Conception technique
@@ -467,7 +496,7 @@ calculées (tests de calibration), pas encore mesurées en jeu.
 
 ## Diagnostic
 
-- Au chargement, une ligne RPT est toujours écrite : `[COMSPEC FB] chargé 1.0.0 · CBA ok · ACE=… ACRE=… TFAR=… ZEN=…
+- Au chargement, une ligne RPT est toujours écrite : `[COMSPEC FB] chargé 1.0.1 · CBA ok · ACE=… ACRE=… TFAR=… ZEN=…
   · autres flashbang: tsp=…/dka=…`.
 - En multijoueur, sur un client, une ligne 15 s après le chargement : `[COMSPEC FB] SERVEUR : mod présent (version …)`,
   `… mod absent (clients seulement)` ou `… version différente`.
@@ -544,8 +573,10 @@ carte (onglet Flashbang) et sur le panneau.
 1. Zone A, de jour : lancer une FB-1 puis une FB-9 au cercle. Compter les bangs (exactement 1, puis 9, irréguliers).
    Vérifier :
    - lumière, étincelles et fumée à chaque coup ;
-   - les IA proches et de face sont très touchées, celles de dos peu ;
-   - l'IA à 35 m n'est pas éblouie.
+   - les IA proches et de face s'arrêtent, se couvrent ou portent les mains au visage et ne tirent plus pendant 2 à 10 s ;
+     celles de dos réagissent moins (le bruit les touche encore) ;
+   - l'IA à 35 m n'est pas aveuglée (au plus un sursaut et une précision réduite) ;
+   - avec « Journal des IA » coché, une ligne `ia` par IA dans le RPT de la machine qui la possède.
 2. Joueur à 3 m face à la grenade : voile blanc, tache rémanente à l'endroit du flash, flou qui se dissipe, sons
    étouffés, acouphène qui décroît. Même test de dos : effet bien plus faible.
 3. Même test de nuit (action « Nuit » de la caisse), puis de nuit avec JVN (grain, voile plus fort), puis lunette
@@ -685,6 +716,18 @@ standard grenades; « Irregularity » also applies to the fixed 3 s / 8 s fuse.
 grenades with more than 9 flashes » setting), hyper fast « R » classes (`_R`), « Flash rate » setting (Normal, Fast,
 Hyper fast, Random), « Random variation » (60 %), louder sound (bangs about -11 LUFS, 500 % default, close 2D layer,
 ducking; turn your headset down before testing), one continuous tinnitus per player, light vent flames.
+
+**BetterFlash 1.0.1 (AI)**: AI now react visibly. « AI reaction » (server setting, Realistic by default; Discreet = the old
+behaviour, Strong = harder): blinded AI cannot spot or aim for 2 to 10 s (`disableAI "TARGET"` / `"AUTOTARGET"`), stop
+dead for 0.5 to 3.5 s (`"MOVE"`, on foot only), duck or raise their hands to their face (vanilla animation if it exists),
+then shoot badly for 5 to 20 s (accuracy, shake, aiming speed, spotting, courage, commanding). Distance, line of sight,
+facing, walls and closed rooms count as for the player; AI range x1.5 and pupil floor 55 % (daylight does not cancel the
+effect); 8 % of the AI are immune to a given grenade. Original values are restored exactly, a value changed meanwhile by
+another mod (LAMBS, VCOM, ASR AI) or the mission is left alone, `disableAI` features switched off before the flash are
+never switched back on. Effects run on the machine that owns the AI (server, headless client, or the player whose group
+it belongs to): the mod must be loaded on the server and headless clients to affect their AI. At most 20 AI per
+detonation (setting), nearest first, 6 per frame. New settings: AI reaction, intensity, range, duration, immunity, AI per
+detonation, reflex gesture, AI log (off by default).
 
 **Where to load it**: the mod must be loaded on clients; the server is optional for thrown grenades (recommended with
 Zeus or the Eden module). Without the mod on the server, the throwing client is the authority and broadcasts one CBA

@@ -25,6 +25,7 @@ $tabs = [
     ['circuits', 'Circuits de validation', 'circuits', 0, 'Organisation'],
     ['positions', 'Positions administratives', 'positions', 0, 'Organisation'],
     ['fonctions', 'Fonctions et emplois', 'fonctions', 0, 'Organisation'],
+    ['suivi', 'Étapes des dossiers', 'suivi', 0, 'Suivi des dossiers'],
     ['invitations', 'Invitations', 'invitations', 0, 'Suivi des dossiers'],
     ['sans_comptes', 'Sans compte', 'sans-comptes', 0, 'Suivi des dossiers'],
     ['tableaux', 'Tableaux de données', 'tableaux', 0, 'Registre'],
@@ -39,7 +40,12 @@ $tabs = [
 // Profils simplifiés : retirer les onglets sans usage (même liste que le menu latéral).
 $effTenantType = function_exists('navigation_current_tenant_type') ? navigation_current_tenant_type() : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 $effRosterOnly = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts($effTenantType);
-$tabs = array_values(array_filter($tabs, static function (array $tab) use ($effTenantType): bool {
+$effCanSuivi = \App\Support\EffectifsLmsAccess::canViewSuivi(\App\Core\Gate::getInstance());
+$tabs = array_values(array_filter($tabs, static function (array $tab) use ($effTenantType, $effCanSuivi): bool {
+    if ($tab[0] === 'suivi' && !$effCanSuivi) {
+        return false;
+    }
+
     return $tab[2] === '' || !\App\Services\Community\TenantTypeConfig::backOfficePathHidden($effTenantType, effectifs_workspace_path() . '/' . $tab[2]);
 }));
 // L’onglet actif reste toujours visible dans la barre, même s’il est rangé sous « Plus ».
@@ -66,6 +72,7 @@ $lead = match ($active) {
     'tableaux' => 'Choisissez une source, les colonnes, les filtres : votre tableau se construit comme dans Excel.',
     'registre_droits' => 'Qui détient quel droit, sur quel périmètre, accordé par qui, depuis quand et jusqu’à quand.',
     'circuits' => 'Qui donne son avis sur chaque type de demande, dans quel ordre, avant la décision des responsables.',
+    'suivi' => 'Où en est chaque dossier : étapes terminées, prochaine action, retards et relances.',
     'positions' => 'La situation de chaque membre dans la communauté : en formation, en service actif… et les positions que vous créez.',
     default => 'Dossiers des membres : tableur, accès, emplois et suivi.',
 };

@@ -83,7 +83,7 @@ $doneCount = (int) $caseProgress['done'];
         <?php if (!empty($caseProgress['pending_suggestions'])): ?>
             <p class="sse-course__digest">
                 <a class="link" href="<?= $h(url('atak/sse/rapprochements') . '?case_id=' . (int) ($case['id'] ?? 0)) ?>">
-                    <?= (int) $caseProgress['pending_suggestions'] ?> rapprochement(s) moteur à valider
+                    <?= (int) $caseProgress['pending_suggestions'] ?> rapprochement(s) de Cerbère à valider
                 </a>
             </p>
         <?php endif; ?>

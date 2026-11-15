@@ -10,6 +10,7 @@ use App\Repositories\SseFileRecordRepository;
 use App\Repositories\SseWantedExtrasRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Support\SseFileVisibility;
+use App\Support\SseUsClassification;
 use App\Support\SseWantedPhysical;
 use App\Support\SseWantedCatalog;
 
@@ -58,14 +59,6 @@ final class SseFichesGameService
     /** Longueur maximale des textes dans la liste (le détail les donne en entier, dans la limite d'une page). */
     public const SHORT = ['reason' => 360, 'measures' => 260, 'desc' => 300, 'remarks' => 200, 'note' => 160];
     public const FULL = ['reason' => 800, 'measures' => 900, 'desc' => 1500, 'remarks' => 700, 'note' => 300];
-
-    /** Marquage affiché en bandeau, par niveau de diffusion (fiction : jeu de rôle). */
-    public const MARKINGS = [
-        SseCaseRepository::CLASS_INTERNAL => 'UNCLASSIFIED//FOUO',
-        SseCaseRepository::CLASS_COMMAND => 'CONFIDENTIAL',
-        SseCaseRepository::CLASS_CONFIDENTIAL => 'SECRET//NOFORN',
-        SseCaseRepository::CLASS_RESTRICTED => 'TOP SECRET//NOFORN',
-    ];
 
     private Database $db;
 
@@ -285,7 +278,8 @@ final class SseFichesGameService
 
     public static function marking(string $level): string
     {
-        return self::MARKINGS[$level] ?? mb_strtoupper(SseRedactionService::levelLabel($level));
+        // Marquage de bannière de l'échelle américaine du portail (CUI, CONFIDENTIAL, SECRET//NOFORN, TOP SECRET//SCI//NOFORN) : une seule source.
+        return SseUsClassification::banner($level);
     }
 
     /**

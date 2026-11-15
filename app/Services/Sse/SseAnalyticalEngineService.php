@@ -11,6 +11,7 @@ use App\Repositories\SsePersonRepository;
 use App\Repositories\SseSiteRepository;
 use App\Repositories\SseSuggestionQueueRepository;
 use App\Repositories\SseWatchlistRepository;
+use App\Support\SseSignalIdentity;
 
 /**
  * Pipeline analytique SSE.
@@ -21,6 +22,11 @@ use App\Repositories\SseWatchlistRepository;
  * Le moteur ne décide jamais qu’une hypothèse est vraie. Il produit
  * « rapprochement suggéré », « anomalie », « convergence », « hypothèse à examiner ».
  * Seule la validation humaine crée une relation analytique.
+ *
+ * Signaux : chaque passage OBSERVE des conditions (lacune, complétude faible…). Un signal ouvert par (dossier, type, règle,
+ * variante) : le passage le met à jour au lieu d'en créer un autre ; une condition qui n'est plus observée (photo versée,
+ * site rattaché, complétude remontée) clôt son signal « résolu automatiquement par Cerbère-Détection » ; une complétude faible
+ * inchangée depuis 30 jours passe en veille (SseSuggestionQueueRepository::addSignal, resolveUnobserved, expireStale).
  */
 final class SseAnalyticalEngineService
 {
@@ -53,7 +59,7 @@ final class SseAnalyticalEngineService
      *
      * @return array{ok:bool,run_id:string,summary:string,details:array<string,int>}
      */
-    public function runForTenant(int $tenantId, ?string $runId = null): array
+    public function runForTenant(int $tenantId, ?string $runId = null, int $dormantDays = SseSignalIdentity::DORMANT_AFTER_DAYS): array
     {
         $runId ??= 'sse-' . date('YmdHis') . '-' . $tenantId;
         $stats = [
@@ -62,7 +68,10 @@ final class SseAnalyticalEngineService
             'signals' => 0,
             'gaps' => 0,
             'scored' => 0,
+            'resolved' => 0,
+            'dormant' => 0,
         ];
+        $autoResolve = $this->autoResolveEnabled($tenantId);
 
         $caseRows = $this->cases->listForTenant($tenantId, null, ['is_folder' => 0]);
         $stats['cases'] = count($caseRows);
@@ -77,28 +86,41 @@ final class SseAnalyticalEngineService
             }
             if (in_array((string) ($case['status'] ?? ''), ['archive'], true)) {
                 $this->stageReopenHints($tenantId, $case, $personCases, $runId, $stats);
+                // Dossier archivé : plus rien n'est observé, ses signaux encore ouverts sont clos.
+                if ($autoResolve) {
+                    $stats['resolved'] += $this->queue->resolveUnobserved($tenantId, $caseId, $runId);
+                }
                 continue;
             }
 
             $this->stageDedupAndCorrelation($tenantId, $case, $personCases, $runId, $stats);
             $this->stageContradictionsAndAging($tenantId, $case, $runId, $stats);
             $this->stageScoringAndGaps($tenantId, $case, $runId, $stats);
+            // Tout signal du dossier que ce passage n'a pas observé décrit une condition disparue.
+            if ($autoResolve) {
+                $stats['resolved'] += $this->queue->resolveUnobserved($tenantId, $caseId, $runId);
+            }
         }
 
         $this->stageCrossCaseSimilarity($tenantId, $caseRows, $runId, $stats);
         $this->stageWatchlistSweep($tenantId, $runId, $stats);
-        $this->stagePreSseIntel($tenantId, $runId, $stats);
+        if ($this->stagePreSseIntel($tenantId, $runId, $stats) && $autoResolve) {
+            $stats['resolved'] += $this->queue->resolveUnobserved($tenantId, null, $runId);
+        }
+        $stats['dormant'] = $this->queue->expireStale($tenantId, $dormantDays);
 
         return [
             'ok' => true,
             'run_id' => $runId,
             'summary' => sprintf(
-                'Dossiers %d · suggestions %d · signaux %d · lacunes %d · scores %d',
+                'Dossiers %d · suggestions %d · signaux %d · lacunes %d · scores %d · résolus %d · en veille %d',
                 $stats['cases'],
                 $stats['suggestions'],
                 $stats['signals'],
                 $stats['gaps'],
-                $stats['scored']
+                $stats['scored'],
+                $stats['resolved'],
+                $stats['dormant']
             ),
             'details' => $stats,
         ];
@@ -142,6 +164,8 @@ final class SseAnalyticalEngineService
                     'note' => 'Validé depuis proposition moteur : ' . (string) ($s['reason'] ?? ''),
                     'author_label' => $authorLabel,
                 ]);
+                // Cerbère-Validation : la proposition vient du moteur, la décision d'une personne ; les deux sont tracées.
+                SseProvenance::cerbere($tenantId, [(string) $s['left_type'], (string) (int) $s['left_id']], [(string) $s['right_type'], (string) (int) $s['right_id']], 'cross_checked', 'cerbere.validate.engine_suggestion', 'Proposition « ' . (string) ($s['title'] ?? '') . ' » validée par ' . $authorLabel . '.', $userId);
             } catch (\Throwable) {
                 // La décision reste consignée même si la relation échoue.
             }
@@ -569,8 +593,9 @@ final class SseAnalyticalEngineService
      * Pont léger intel terrain → signaux pré-SSE (pas de création de dossier auto).
      *
      * @param array<string,int> $stats
+     * @return bool vrai quand la lecture du terrain a abouti (sinon rien ne doit être déclaré résolu)
      */
-    private function stagePreSseIntel(int $tenantId, string $runId, array &$stats): void
+    private function stagePreSseIntel(int $tenantId, string $runId, array &$stats): bool
     {
         try {
             $rows = $this->db->fetchAll(
@@ -580,10 +605,10 @@ final class SseAnalyticalEngineService
                 ['t' => $tenantId]
             );
         } catch (\Throwable) {
-            return;
+            return false;
         }
         if ($rows === []) {
-            return;
+            return true;
         }
 
         $byType = [];
@@ -632,6 +657,8 @@ final class SseAnalyticalEngineService
                 $stats['suggestions']++;
             }
         }
+
+        return true;
     }
 
     /**
@@ -672,6 +699,16 @@ final class SseAnalyticalEngineService
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    /** La communauté a-t-elle désactivé la résolution automatique (règle « Résoudre automatiquement quand la donnée existe ») ? Active par défaut. */
+    private function autoResolveEnabled(int $tenantId): bool
+    {
+        try {
+            return (new \App\Repositories\SseTriageRuleRepository())->presetEnabled($tenantId, 'auto_resolve', true);
+        } catch (\Throwable) {
+            return true;
+        }
+    }
 
     /**
      * @param list<array<string,mixed>> $caseRows

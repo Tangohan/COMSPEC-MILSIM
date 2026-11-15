@@ -272,7 +272,7 @@ final class JnetDashboardService
         } catch (\Throwable) {
         }
         try {
-            $interests = $open ? count($this->interestCases->listForTenant($tenantId, [])) : 0;
+            $interests = $open ? count($this->interestCases->listForSession($tenantId)) : 0;
         } catch (\Throwable) {
         }
 
@@ -793,7 +793,7 @@ final class JnetDashboardService
             return $out;
         }
         try {
-            $cases = $this->interestCases->listForTenant($tenantId, []);
+            $cases = $this->interestCases->listForSession($tenantId);
             foreach ($cases as $c) {
                 $level = (string) ($c['interest_level'] ?? 'courant');
                 $kind = match ($level) {
