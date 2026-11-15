@@ -21,8 +21,21 @@ final class SseAccessMemberRights
         private ?SseAccessRuleService $service = null,
         private ?SseAccessMatrix $matrix = null,
         private ?SseAccessDirectory $directory = null,
+        private ?SseMemberClearance $clearance = null,
+        private ?\Closure $ceiling = null,
     ) {
         $this->policy ??= SseAccessPolicy::forSession();
+    }
+
+    private function clearance(): SseMemberClearance
+    {
+        return $this->clearance ??= new SseMemberClearance();
+    }
+
+    /** Plafond de lecture de la personne qui agit (sa session) : ce qu'elle peut inscrire au plus haut. */
+    private function actorCeiling(): string
+    {
+        return $this->ceiling !== null ? (string) ($this->ceiling)() : (new SseClearanceService())->maxLevel();
     }
 
     private function policy(): SseAccessPolicy
@@ -55,6 +68,7 @@ final class SseAccessMemberRights
      * @return array{
      *   member: array{user_id: int, label: string, unit: string},
      *   ready: bool,
+     *   clearance: array<string, mixed>,
      *   entry: bool,
      *   rows: list<array{key: string, label: string, cells: array<string, array{applies: bool, allowed: bool, origins: list<array<string, mixed>>, own: list<int>}>}>,
      *   own: list<array<string, mixed>>,
@@ -104,6 +118,7 @@ final class SseAccessMemberRights
         return [
             'member' => $member,
             'ready' => $this->policy()->rules()->ready(),
+            'clearance' => $this->clearanceOverview($tenantId, $memberId),
             'entry' => $effective['entry'],
             'rows' => $rows,
             'own' => $own,
@@ -112,6 +127,34 @@ final class SseAccessMemberRights
                 fn (array $h): bool => $this->mayView($actorId, $tenantId, (string) $h['section'])
             )),
         ];
+    }
+
+    /** @return array<string, mixed> niveau d'habilitation du membre, niveaux que la personne peut inscrire, et si elle peut modifier */
+    private function clearanceOverview(int $tenantId, int $memberId): array
+    {
+        $ceiling = $this->actorCeiling();
+
+        return $this->clearance()->view($tenantId, $memberId) + [
+            'options' => $this->clearance()->grantable($ceiling),
+            'may_change' => $this->clearance()->mayChange($memberId, $ceiling),
+        ];
+    }
+
+    /**
+     * Accorde, modifie ou retire ($level null) l'habilitation inscrite sur la fiche du membre.
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function changeClearance(int $tenantId, int $actorId, string $actorLabel, int $memberId, ?string $level, string $reason): array
+    {
+        if (!$this->visibleTo($tenantId, $actorId)) {
+            return ['ok' => false, 'message' => 'Seul le droit de gestion SSE permet de modifier les droits d’accès.'];
+        }
+        if ($this->directory()->member($tenantId, $memberId) === null) {
+            return ['ok' => false, 'message' => 'Membre introuvable.'];
+        }
+
+        return $this->clearance()->change($tenantId, $actorId, $actorLabel, $memberId, $level, $reason, $this->actorCeiling());
     }
 
     /**

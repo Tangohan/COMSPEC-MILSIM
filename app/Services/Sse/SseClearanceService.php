@@ -175,36 +175,57 @@ final class SseClearanceService
             return SseCaseRepository::CLASS_INTERNAL;
         }
 
+        return self::resolve('can', $this->profileClearanceLevel())['level'];
+    }
+
+    /**
+     * Plafond calculé à partir des droits d'une personne et du niveau inscrit sur sa fiche : la règle unique, utilisée pour
+     * la session courante (maxLevel) comme pour la fiche d'un membre (SseMemberClearance).
+     *
+     * @param callable(string): bool $can droit d'origine : slug => oui / non
+     * @param string|null $profileLevel niveau de la fiche opérateur (déjà normalisé, voir normalizeProfileLevel)
+     * @return array{level: string, source: string} source : explicit, role, profile ou floor
+     */
+    public static function resolve(callable $can, ?string $profileLevel): array
+    {
         // 1. Habilitation explicite — la plus haute accordée l'emporte.
         $explicit = null;
         foreach (self::PERMISSIONS as $level => $permission) {
-            if (can($permission)) {
+            if ($can($permission)) {
                 $explicit = $level;
             }
         }
         if ($explicit !== null) {
-            return $explicit;
+            return ['level' => $explicit, 'source' => 'explicit'];
         }
 
         // 2. Report des rôles existants.
         $fromRole = SseCaseRepository::CLASS_INTERNAL;
-        if (can('admin.access') || can('atak.sse.grant')) {
+        if ($can('admin.access') || $can('atak.sse.grant')) {
             $fromRole = SseCaseRepository::CLASS_RESTRICTED;
-        } elseif (can('atak.sse.case.manage')) {
+        } elseif ($can('atak.sse.case.manage')) {
             $fromRole = SseCaseRepository::CLASS_CONFIDENTIAL;
-        } elseif (can('atak.sse.access') || can('atak.sse.cases')) {
+        } elseif ($can('atak.sse.access') || $can('atak.sse.cases')) {
             $fromRole = SseCaseRepository::CLASS_COMMAND;
         }
 
-        // 3. Habilitation inscrite sur la fiche opérateur — le plus haut l’emporte.
-        $fromProfile = $this->profileClearanceLevel();
-        if ($fromProfile !== null
-            && SseRedactionService::levelRank($fromProfile) > SseRedactionService::levelRank($fromRole)
-        ) {
-            return $fromProfile;
+        // 3. Habilitation inscrite sur la fiche opérateur — le plus haut l'emporte.
+        if ($profileLevel !== null && SseRedactionService::levelRank($profileLevel) > SseRedactionService::levelRank($fromRole)) {
+            return ['level' => $profileLevel, 'source' => 'profile'];
         }
 
-        return $fromRole;
+        return ['level' => $fromRole, 'source' => $fromRole === SseCaseRepository::CLASS_INTERNAL ? 'floor' : 'role'];
+    }
+
+    /** Niveau d'une fiche opérateur retenu comme habilitation : une classification connue de l'échelle, sinon rien. */
+    public static function normalizeProfileLevel(mixed $raw): ?string
+    {
+        $raw = strtolower(trim((string) $raw));
+        if ($raw === '' || !isset(SseCaseRepository::CLASSIFICATION_LABELS[$raw])) {
+            return null;
+        }
+
+        return isset(SseRedactionService::LEVELS[$raw]) ? $raw : null;
     }
 
     /**
@@ -313,12 +334,7 @@ final class SseClearanceService
             return null;
         }
 
-        $raw = strtolower(trim((string) ($profile['clearance_level'] ?? '')));
-        if ($raw === '' || !isset(SseCaseRepository::CLASSIFICATION_LABELS[$raw])) {
-            return null;
-        }
-
-        return isset(SseRedactionService::LEVELS[$raw]) ? $raw : null;
+        return self::normalizeProfileLevel($profile['clearance_level'] ?? '');
     }
 
     /**
