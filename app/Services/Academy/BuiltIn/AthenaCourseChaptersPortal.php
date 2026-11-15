@@ -46,7 +46,7 @@ Le menu de session › **Paramètres** ouvre `/account` (« Vue d’ensemble »)
 - **Portrait** `/account/portrait` et **Ma page publique** `/account/page-publique` (votre C.V. de joueur, visible à `/joueur/…`).
 
 ## 04 — Ma situation
-Dans l’extranet JNET, les pages **Ma situation** (`/jnet/moi`) regroupent votre dossier : **Ma fiche** (`/jnet/moi/ma-fiche`), **Mon unité**, **Mes qualifications** (avec le brevet PDF), **Mon carnet de vol**, **Mon avancement**, **Dossier de carrière**, **Ma dotation**, **Mon coffre** (vos documents RH) et **Mes démarches**. C’est ici que vous vérifiez ce que l’encadrement a enregistré sur vous.
+Dans l’extranet JNET, les pages **Ma situation** (rubrique « Mon espace », `/jnet/espaces`) regroupent votre dossier : **Ma fiche** (`/jnet/moi/ma-fiche`), **Mon unité**, **Mes qualifications** (avec le brevet PDF), **Mon carnet de vol**, **Mon avancement**, **Dossier de carrière**, **Ma dotation**, **Mon coffre** (vos documents RH) et **Mes démarches**. C’est ici que vous vérifiez ce que l’encadrement a enregistré sur vous.
 
 ## 05 — Langue, notifications, documents
 - **Langue** : le sélecteur FR / EN du haut de page la change aussitôt et l’enregistre sur votre profil ; elle se règle aussi dans `/account/preferences`. Les formations intégrées de l’Academy suivent cette langue (repli en français si une traduction manque).
@@ -90,7 +90,7 @@ Session menu › **Settings** opens `/account` (“Overview”). The pages you w
 - **Portrait** `/account/portrait` and **My public page** `/account/page-publique` (your player CV, visible at `/joueur/…`).
 
 ## 04 — My situation
-In the JNET extranet, the **My situation** pages (`/jnet/moi`) gather your file: **My file** (`/jnet/moi/ma-fiche`), **My unit**, **My qualifications** (with the PDF certificate), **My flight logbook**, **My progression**, **Career file**, **My equipment**, **My locker** (your HR documents) and **My tasks**. This is where you check what staff have recorded about you.
+In the JNET extranet, the **My situation** pages (“My space” section, `/jnet/espaces`) gather your file: **My file** (`/jnet/moi/ma-fiche`), **My unit**, **My qualifications** (with the PDF certificate), **My flight logbook**, **My progression**, **Career file**, **My equipment**, **My locker** (your HR documents) and **My tasks**. This is where you check what staff have recorded about you.
 
 ## 05 — Language, notifications, documents
 - **Language**: the FR / EN switch at the top of the page changes it immediately and saves it to your profile; you can also set it in `/account/preferences`. Built-in Academy courses follow this language (falling back to French if a translation is missing).

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Controllers\Web\JnetPortalController;
-use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -42,14 +41,7 @@ final class JnetMemberShell
 
     private static function controller(): JnetPortalController
     {
-        try {
-            return Container::get(JnetPortalController::class);
-        } catch (\InvalidArgumentException $e) {
-            if ($e->getMessage() !== 'Unknown service: ' . JnetPortalController::class) {
-                throw $e;
-            }
-
-            return new JnetPortalController();
-        }
+        // Le contrôleur n'est pas déclaré dans le Container : le routeur le construit lui aussi par « new » (dépendances paresseuses).
+        return new JnetPortalController();
     }
 }
