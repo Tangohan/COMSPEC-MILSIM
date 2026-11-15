@@ -388,6 +388,12 @@ final class SseWantedServices
     public static function validate(array $in, array $config, ?string $editing = null, ?string $wantedCode = null): array
     {
         $errors = [];
+        $limits = ['fr' => ['Nom français', 120], 'en' => ['Nom anglais', 120], 'ac' => ['Sigle', 12], 'auth_fr' => ['Autorité (français)', 160], 'auth_en' => ['Autorité (anglais)', 160], 'radio' => ['Canal radio', 80], 'tel' => ['Téléphone', 24], 'mail' => ['Courriel', 80]];
+        foreach ($limits as $field => [$name, $max]) {
+            if (mb_strlen(C::line($in[$field] ?? '', 1000)) > $max) {
+                $errors[] = $name . ' : ' . $max . ' caractères au plus.';
+            }
+        }
         $fr = C::line($in['fr'] ?? '', 120);
         $en = C::line($in['en'] ?? '', 120);
         $ac = strtoupper(C::line($in['ac'] ?? '', 12));

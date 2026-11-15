@@ -306,7 +306,7 @@ final class SseWantedNoticeController
         try {
             $tz = new \DateTimeZone($timezone !== '' ? $timezone : 'UTC');
         } catch (\Throwable) {
-            return $value;
+            $tz = new \DateTimeZone('UTC');
         }
         foreach (['Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d'] as $format) {
             $d = \DateTimeImmutable::createFromFormat('!' . $format, $value, $tz);

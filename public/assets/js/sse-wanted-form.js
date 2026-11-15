@@ -389,6 +389,7 @@
             t.setAttribute('aria-selected', on ? 'true' : 'false');
             t.tabIndex = on ? 0 : -1;
             if (on && focus) { t.focus(); }
+            if (on && t.scrollIntoView) { try { t.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* sans effet */ } }
         });
         secs.forEach(function (s) { s.hidden = s.getAttribute('data-wc-sec') !== key; });
         try { window.sessionStorage.setItem('wc-tab', key); } catch (e) { /* sans effet */ }
@@ -476,4 +477,6 @@
     sync();
     ['r', 'm'].forEach(function (k) { if (ta[k]) { grow(ta[k]); } });
     if (window.matchMedia && window.matchMedia('(max-width: 1099px)').matches) { var pb = $('[data-wc-preview-box]'); if (pb) { pb.open = false; } }
+    // Point d'accès pour le brouillon automatique (sse-wanted-services.js) : rétablit un code sans passer par le tiroir.
+    window.SseWantedForm = { toggle: function (kind, code) { return toggle(kind, code, true, false); } };
 })();

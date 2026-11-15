@@ -51,9 +51,7 @@ final class SseWantedChecks
         if ((string) ($data['armed'] ?? '') === 'yes' && trim((string) ($data['zone'] ?? '')) === '') {
             $warnings[] = ['code' => 'armed_zone', 'text' => 'Avis « armé et dangereux » sans pays ni zone : les équipes ne sauront pas où être vigilantes.'];
         }
-        if ($service === null) {
-            $warnings[] = ['code' => 'service_free', 'text' => 'Service saisi à la main : il n’est pas rattaché au catalogue, ni aux valeurs par défaut d’un service.'];
-        } else {
+        if ($service !== null) {
             if (isset($data['threat_level']) && $service['threats'] !== [] && !in_array((string) $data['threat_level'], $service['threats'], true)) {
                 $warnings[] = ['code' => 'service_threat', 'text' => 'Ce niveau de menace est inhabituel pour ce service.'];
             }

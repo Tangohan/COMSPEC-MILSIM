@@ -125,7 +125,7 @@ $tabs = [
     ['avis', 'Avis de recherche', $notice !== null ? '1' : (count($notices) > 0 ? (string) count($notices) : null), $notice !== null],
     ['documents-emis', 'Documents émis', count((array) ($sheetMenu['issues'] ?? [])) ?: null, false],
 ];
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-services.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-wanted-gallery.js')) . '" defer></script>';
 require __DIR__ . '/_subnav.php';
 ?>
@@ -187,8 +187,9 @@ require __DIR__ . '/_subnav.php';
     <?php require dirname(__DIR__) . '/_sheet_menu.php'; ?>
 
     <?php if ($notice !== null): ?>
-        <section class="dos-wanted" aria-label="Avis de recherche actif">
-            <p class="dos-wanted__title">Avis de recherche actif</p>
+        <?php $topPending = (($noticeMeta[(int) $notice['id']]['state'] ?? 'live') === 'pending'); ?>
+        <section class="dos-wanted" aria-label="<?= $topPending ? 'Avis de recherche à valider' : 'Avis de recherche actif' ?>">
+            <p class="dos-wanted__title"><?= $topPending ? 'Avis de recherche à valider' : 'Avis de recherche actif' ?></p>
             <ul class="dos-wanted__meta">
                 <li><strong translate="no"><?= $h($notice['ref']) ?></strong></li>
                 <li><?= $h($noticeTypeLabel) ?></li>

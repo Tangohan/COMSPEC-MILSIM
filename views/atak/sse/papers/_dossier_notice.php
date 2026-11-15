@@ -14,7 +14,9 @@ use App\Core\Csrf;
 use App\Services\Sse\SseWantedAccess;
 use App\Services\Sse\SseWantedAttachments;
 use App\Support\SseWantedCatalog as W;
+use App\Support\SseUsClassification;
 use App\Support\SseWantedPhysical as WP;
+use App\Support\SseWantedServices;
 
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $dlang = (string) ($dlang ?? 'fr') === 'en' ? 'en' : 'fr';
@@ -32,6 +34,9 @@ $fmt = static function (?string $v) use ($dlang): string {
 };
 $self = 'atak/sse/papiers/identites/' . (int) $iid;
 $noticeExtras = is_array($noticeExtras ?? null) ? $noticeExtras : [];
+$noticeMeta = is_array($noticeMeta ?? null) ? $noticeMeta : [];
+$canAdminWanted = $wr !== null && $wr->canAdmin();
+$servicePalette = SseWantedServices::palette();
 $noticeAttachments = is_array($noticeAttachments ?? null) ? $noticeAttachments : [];
 $noticeAttachLock = is_array($noticeAttachLock ?? null) ? $noticeAttachLock : ['allowed' => true];
 $libraryPool = array_values(array_filter(is_array($filePhotos ?? null) ? $filePhotos : [], static fn (array $p): bool => ($p['visibility'] ?? 'known') !== 'hidden'));
@@ -64,7 +69,23 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
 <?php else: ?>
     <article class="dos-card">
         <h3>Avis <span translate="no"><?= $h($notice['ref']) ?></span> · <?= $h(W::typeLabel((string) $notice['notice_type'], $wantedConfig, $dlang)) ?></h3>
+        <?php $nm = $noticeMeta[(int) $notice['id']] ?? null; $nmSvc = is_array($nm['service'] ?? null) ? $nm['service'] : []; ?>
         <div class="dos-card__body">
+            <?php if (($nm['state'] ?? 'live') === 'pending'): ?>
+                <div class="ws-pending">
+                    <p><strong>En attente de validation.</strong> Cet avis est posé mais pas encore diffusé : ni le jeu, ni les alertes ne le voient avant la décision d’un responsable.</p>
+                    <?php if ($canAdminWanted): ?>
+                        <form method="post" action="<?= $h(url('atak/sse/avis/' . (int) $notice['id'] . '/decision')) ?>">
+                            <?= Csrf::field() ?>
+                            <div><label for="dec-reason">Motif (obligatoire pour un refus)</label><input id="dec-reason" type="text" name="reason" maxlength="500"></div>
+                            <div class="ws-pending__actions">
+                                <button class="btn" type="submit" name="decision" value="approve">Valider et diffuser</button>
+                                <button class="btn btn--danger" type="submit" name="decision" value="reject">Refuser</button>
+                            </div>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
             <dl class="dos-kv">
                 <dt>Niveau de menace</dt><dd><?= $h(W::label(W::THREATS, (string) $notice['threat_level'], $dlang)) ?></dd>
                 <dt>Armé et dangereux</dt><dd><?= $h(W::label(W::ARMED, (string) $notice['armed'], $dlang)) ?></dd>
@@ -73,7 +94,10 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
                 <dt>Mesures à prendre</dt><dd><?= $codeBadges($nx['codes']['measures'], 'Codes de mesures') ?><span translate="no"><?= nl2br($h($notice['instructions'] ?? '—')) ?></span></dd>
                 <dt>Pays ou zone</dt><dd class="<?= ($notice['zone'] ?? null) === null ? 'is-empty' : '' ?>" translate="no"><?= $h($notice['zone'] ?? 'Non précisé') ?></dd>
                 <dt>Dernier lieu connu</dt><dd class="<?= ($notice['last_seen_place'] ?? null) === null ? 'is-empty' : '' ?>" translate="no"><?= $h(($notice['last_seen_place'] ?? null) !== null ? $notice['last_seen_place'] . ($notice['last_seen_at'] !== null ? ' · ' . $fmt($notice['last_seen_at']) : '') : 'Inconnu') ?></dd>
-                <dt>Service demandeur</dt><dd translate="no"><?= $h(trim((string) ($notice['contact_label'] ?? '') . (($notice['contact_detail'] ?? null) !== null ? ' — ' . $notice['contact_detail'] : '')) ?: '—') ?></dd>
+                <dt>Service demandeur</dt><dd translate="no"><span class="ws-svc-line"><span class="ws-svc-name"><?php if ($nmSvc !== []): ?><i style="background:<?= $h($nmSvc['color'] ?? '#1F3A5F') ?>"></i><?php endif; ?><?= $h(trim((string) ($notice['contact_label'] ?? '') . (($notice['contact_detail'] ?? null) !== null ? ' — ' . $notice['contact_detail'] : '')) ?: '—') ?></span><?php if (($nm['service_code'] ?? null) !== null): ?><span class="ws-badge"><?= $h($nm['service_code']) ?></span><?php endif; ?></span></dd>
+                <?php if (($nm['classification'] ?? null) !== null): ?><dt>Classification</dt><dd translate="no"><?= $h(SseUsClassification::abbr((string) $nm['classification'])) ?></dd><?php endif; ?>
+                <?php $lineage = []; if (($nm['parent_notice_id'] ?? null) !== null) { foreach ($notices as $pn) { if ((int) $pn['id'] === (int) $nm['parent_notice_id']) { $lineage[] = 'Renouvelle l’avis ' . $pn['ref'] . ' (' . $fmt($pn['issued_at']) . ')'; } } } foreach ($nm['history'] ?? [] as $ev) { $lineage[] = 'Prolongé le ' . $fmt((string) ($ev['at'] ?? '')) . ' jusqu’au ' . $fmt((string) ($ev['to'] ?? '')) . ' : ' . (string) ($ev['reason'] ?? ''); } ?>
+                <?php if ($lineage !== []): ?><dt>Versions</dt><dd><ul class="ws-versions"><?php foreach ($lineage as $ln): ?><li translate="no"><?= $h($ln) ?></li><?php endforeach; ?></ul></dd><?php endif; ?>
                 <dt>Autorité émettrice</dt><dd translate="no"><?= $h($notice['authority'] ?? '—') ?></dd>
                 <dt>Émis le</dt><dd><?= $h($fmt($notice['issued_at'])) ?></dd>
                 <dt>Expire le</dt><dd class="<?= $notice['expires_at'] === null ? 'is-empty' : '' ?>"><?= $notice['expires_at'] !== null ? $h($fmt($notice['expires_at'])) : 'Sans date d’expiration' ?></dd>
@@ -158,24 +182,60 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
                 <p class="muted">Accessoire de jeu de rôle : l’autorité émettrice est fictive et chaque page porte la mention « Document de fiction — jeu de rôle Arma 3 ». À ne jamais diffuser hors de la communauté.</p>
             <?php endif; ?>
             <?php if ($canWanted): ?>
-                <details class="dos-lift">
-                    <summary>Lever l’avis ou le clore par la capture</summary>
-                    <form class="dos-form" method="post" action="<?= $h(url('atak/sse/avis/' . (int) $notice['id'] . '/lever')) ?>">
-                        <?= Csrf::field() ?>
-                        <div>
-                            <label for="lift-status">Issue de l’avis</label>
-                            <select id="lift-status" name="status">
-                                <option value="lifted">Avis levé</option>
-                                <option value="captured">Personne capturée</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="lift-reason">Motif (obligatoire)</label>
-                            <textarea id="lift-reason" name="reason" required minlength="3" maxlength="500"></textarea>
-                        </div>
-                        <div><button class="btn btn--danger" type="submit">Clore l’avis</button></div>
-                    </form>
-                </details>
+                <div class="ws-manage" data-ws-manage>
+                    <input type="radio" name="ws-m" id="ws-m-extend" checked>
+                    <label class="ws-manage__tab" for="ws-m-extend">Prolonger</label>
+                    <input type="radio" name="ws-m" id="ws-m-renew">
+                    <label class="ws-manage__tab" for="ws-m-renew">Renouveler</label>
+                    <input type="radio" name="ws-m" id="ws-m-lift">
+                    <label class="ws-manage__tab" for="ws-m-lift">Lever ou clore</label>
+                    <div class="ws-manage__panes">
+                        <form class="dos-form ws-manage__pane" id="ws-pane-extend" method="post" action="<?= $h(url('atak/sse/avis/' . (int) $notice['id'] . '/prolonger')) ?>">
+                            <?= Csrf::field() ?>
+                            <p>Repousser la date d’expiration de cet avis, avec un motif. L’avis garde sa référence ; la prolongation s’ajoute à ses versions.</p>
+                            <div class="dos-form__row">
+                                <div><label for="ext-date">Nouvelle date d’expiration</label><input id="ext-date" type="datetime-local" name="expires_at" required></div>
+                                <div><label for="ext-reason">Motif de la prolongation</label><input id="ext-reason" type="text" name="reason" required minlength="3" maxlength="500"></div>
+                            </div>
+                            <div><button class="btn" type="submit">Prolonger l’avis</button></div>
+                        </form>
+                        <form class="dos-form ws-manage__pane" id="ws-pane-renew" method="post" action="<?= $h(url('atak/sse/avis/' . (int) $notice['id'] . '/renouveler')) ?>">
+                            <?= Csrf::field() ?>
+                            <p>Créer un nouvel avis lié à celui-ci, avec les mêmes motifs, mesures et service, et de nouvelles dates. L’avis actuel est clos « expiré ».</p>
+                            <div class="dos-form__row">
+                                <div><label for="ren-issued">Date d’émission</label><input id="ren-issued" type="datetime-local" name="issued_at"><p class="hint">Vide : maintenant.</p></div>
+                                <div><label for="ren-exp">Date d’expiration</label><input id="ren-exp" type="datetime-local" name="expires_at"><p class="hint">Vide : la durée du service, ou celle de l’avis actuel.</p></div>
+                            </div>
+                            <label class="check"><input type="checkbox" name="no_expiry" value="1"> Sans date d’expiration</label>
+                            <div><button class="btn" type="submit">Renouveler l’avis</button></div>
+                        </form>
+                        <form class="dos-form ws-manage__pane" id="ws-pane-lift" method="post" action="<?= $h(url('atak/sse/avis/' . (int) $notice['id'] . '/lever')) ?>">
+                            <?= Csrf::field() ?>
+                            <p>Lever l’avis ou le clore par la capture. Le motif est obligatoire ; le service qui lève est noté avec l’avis.</p>
+                            <div class="dos-form__row">
+                                <div>
+                                    <label for="lift-status">Issue de l’avis</label>
+                                    <select id="lift-status" name="status">
+                                        <option value="lifted">Avis levé</option>
+                                        <option value="captured">Personne capturée</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="lift-service">Service qui lève</label>
+                                    <select id="lift-service" name="service_code">
+                                        <option value="">Non précisé</option>
+                                        <?php foreach (SseWantedServices::available($wantedConfig) as $lsCode => $ls): ?><option value="<?= $h($lsCode) ?>" <?= ($nm['service_code'] ?? '') === $lsCode ? 'selected' : '' ?>><?= $h(($dlang === 'en' ? $ls['en'] : $ls['fr']) . ($ls['ac'] !== '' ? ' (' . $ls['ac'] . ')' : '')) ?></option><?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="lift-reason">Motif (obligatoire)</label>
+                                <textarea id="lift-reason" name="reason" required minlength="3" maxlength="500"></textarea>
+                            </div>
+                            <div><button class="btn btn--danger" type="submit">Clore l’avis</button></div>
+                        </form>
+                    </div>
+                </div>
             <?php endif; ?>
         </div>
     </article>
@@ -185,7 +245,7 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
     <div class="panel" style="margin-top:1rem">
         <div class="panel-header"><div class="panel-title">Avis de cette identité</div><div class="panel-meta"><?= count($notices) ?> avis</div></div>
         <div class="table-wrap"><table>
-            <thead><tr><th>Référence</th><th>Type et codes</th><th>Niveau de menace</th><th>Statut</th><th>Émis le</th><th>Clos le</th><th>Motif de clôture</th><?php if ($canPdf): ?><th></th><?php endif; ?></tr></thead>
+            <thead><tr><th>Référence</th><th>Type et codes</th><th>Niveau de menace</th><th>Statut</th><th>Émis le</th><th>Clos le</th><th>Motif de clôture</th><?php if ($canPdf || $canWanted): ?><th></th><?php endif; ?></tr></thead>
             <tbody>
             <?php foreach ($notices as $n): ?>
                 <tr>
@@ -197,7 +257,8 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
                     <td data-label="Émis le"><?= $h($fmt($n['issued_at'])) ?></td>
                     <td data-label="Clos le"><?= $h($n['closed_at'] !== null ? $fmt($n['closed_at']) : '—') ?></td>
                     <td data-label="Motif de clôture" translate="no"><?= $h($n['closed_reason'] ?? '—') ?></td>
-                    <?php if ($canPdf): ?><td><a class="btn-open" href="<?= $h(url('atak/sse/avis/' . (int) $n['id'] . '/pdf')) ?>">PDF</a></td><?php endif; ?>
+                    <?php if ($canPdf || $canWanted): ?><td><?php if ($canPdf): ?><a class="btn-open" href="<?= $h(url('atak/sse/avis/' . (int) $n['id'] . '/pdf')) ?>">PDF</a><?php endif; ?>
+                        <?php if ($canWanted && (string) $n['status'] === 'expired' && $notice === null): ?><form method="post" action="<?= $h(url('atak/sse/avis/' . (int) $n['id'] . '/renouveler')) ?>" class="ws-inline"><?= Csrf::field() ?><button class="btn-open" type="submit">Renouveler</button></form><?php endif; ?></td><?php endif; ?>
                 </tr>
             <?php endforeach; ?>
             </tbody>
