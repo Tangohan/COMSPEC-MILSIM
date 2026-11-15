@@ -1,0 +1,81 @@
+/* Consigner un papier depuis les remontées des contrôles ATAK : entrée de section et modale de sélection (charte du portail SSE). */
+.rem-entry { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; border-bottom: 1px solid var(--border); }
+.rem-entry p { margin: 4px 0 0; font-size: 14px; line-height: 1.45; }
+.rem-open { min-height: 44px; font-size: 13px; }
+
+.rem-dialog { width: min(980px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--border-hover); border-radius: 0; background: var(--surface); color: var(--text); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); overflow: hidden; }
+.rem-dialog::backdrop { background: rgba(0, 0, 0, .66); }
+.rem-dialog[open] { display: flex; flex-direction: column; }
+.rem-dialog form { display: flex; flex-direction: column; min-height: 0; flex: 1; max-height: calc(100vh - 32px); }
+.rem-head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; padding: 18px 22px 10px; }
+.rem-head h2 { margin: 0; font-size: 18px; color: var(--text-strong); }
+.rem-lead { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: var(--text); max-width: 74ch; }
+.rem-close { flex: none; width: 44px; height: 44px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-strong); font-size: 22px; line-height: 1; cursor: pointer; }
+.rem-close:hover { background: var(--surface-3); }
+
+.rem-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; padding: 10px 22px 14px; border-bottom: 1px solid var(--border); }
+.rem-field { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.rem-field label { font-size: 13px; color: var(--text); }
+.rem-field input, .rem-field select { width: 100%; min-height: 44px; padding: 8px 10px; font-size: 14px; border: 1px solid var(--border-hover); border-radius: 0; background: var(--bg-soft); color: var(--text-strong); box-sizing: border-box; }
+.rem-field input:focus-visible, .rem-field select:focus-visible, .rem-btn:focus-visible, .rem-edit:focus-visible, .rem-close:focus-visible, .rem-open:focus-visible { outline: 2px solid var(--green-bright); outline-offset: 1px; }
+
+.rem-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 22px 12px; }
+.rem-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rem-row { border: 1px solid var(--border); background: var(--surface-2); }
+.rem-row.is-picked { border-color: var(--green); background: var(--green-dark); }
+.rem-row.is-locked { opacity: .8; }
+.rem-row[hidden] { display: none; }
+.rem-main { display: flex; align-items: flex-start; gap: 6px; padding: 6px 10px 8px 0; }
+.rem-pick { flex: none; width: 48px; min-height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rem-pick input { width: 22px; height: 22px; accent-color: var(--green-bright); cursor: pointer; }
+.rem-pick input:disabled { cursor: not-allowed; }
+.rem-sum { flex: 1; min-width: 0; padding-top: 6px; }
+.rem-sum p { margin: 0; }
+.rem-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 15px; color: var(--text-strong); }
+.rem-num { font-family: var(--mono); font-size: 14px; letter-spacing: .02em; overflow-wrap: anywhere; }
+.rem-meta { margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--text); overflow-wrap: anywhere; }
+.rem-link { color: var(--green-bright); text-decoration: underline; text-underline-offset: 2px; font-size: 13px; }
+.rem-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; font-size: 13px; border: 1px solid var(--border-hover); color: var(--text-strong); }
+.rem-badge--new { border-color: var(--green); color: var(--green-bright); }
+.rem-badge--consigned { background: var(--green-dark); border-color: var(--green); color: var(--green-bright); }
+.rem-badge--exists { border-color: var(--amber); color: var(--amber); }
+.rem-badge--incomplete { border-color: var(--red); color: #f0a3a3; }
+.rem-dup { margin-top: 6px !important; font-size: 13px; color: var(--amber); }
+.rem-dup[hidden] { display: none; }
+.rem-edit { flex: none; align-self: center; min-height: 44px; padding: 0 12px; font-size: 13px; border: 1px solid var(--border-hover); background: var(--surface-3); color: var(--text-strong); cursor: pointer; }
+.rem-edit:hover { background: var(--surface); }
+.rem-fields { padding: 4px 14px 14px 58px; border-top: 1px solid var(--border); }
+.rem-fields[hidden] { display: none; }
+.rem-cerbere { margin: 10px 0; font-size: 13px; color: var(--green-bright); }
+.rem-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 12px; }
+.rem-field--wide { grid-column: 1 / -1; }
+.rem-empty, .rem-none { padding: 28px 8px; text-align: center; font-size: 14px; }
+.rem-none[hidden] { display: none; }
+.rem-empty p { margin: 6px auto 0; max-width: 56ch; line-height: 1.5; }
+
+.rem-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 22px; border-top: 1px solid var(--border); background: var(--surface-2); }
+.rem-count { margin: 0 auto 0 0; font-size: 14px; color: var(--text-strong); }
+.rem-btn { min-height: 44px; padding: 0 18px; font-size: 14px; font-weight: 600; border: 1px solid var(--border-hover); cursor: pointer; }
+.rem-btn--ghost { background: var(--surface-3); color: var(--text-strong); }
+.rem-btn--primary { background: var(--green); border-color: var(--green-bright); color: #fff; }
+.rem-btn--primary:disabled { background: var(--surface-3); border-color: var(--border); color: var(--muted); cursor: not-allowed; }
+
+.rem-field--search { grid-column: 1 / -1; }
+@media (max-width: 860px) {
+    .rem-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    .rem-dialog { inset: 0; margin: 0; width: 100%; max-width: 100%; height: 100%; max-height: 100%; border: 0; }
+    .rem-dialog form { max-height: 100%; overflow-y: auto; }
+    .rem-body { flex: none; overflow: visible; }
+    .rem-foot { position: sticky; bottom: 0; margin-top: auto; }
+    .rem-head, .rem-filters, .rem-body, .rem-foot { padding-left: 14px; padding-right: 14px; }
+    .rem-main { flex-wrap: wrap; }
+    .rem-sum { flex: 1 1 calc(100% - 60px); }
+    .rem-edit { margin: 0 0 4px 48px; }
+    .rem-fields { padding-left: 14px; }
+    .rem-foot .rem-btn { flex: 1 1 140px; }
+    .rem-count { flex: 1 1 100%; }
+    .rem-entry .rem-open { width: 100%; }
+}
+.rem-open__n { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; margin-left: 4px; background: var(--green-dark); color: var(--green-bright); font-size: 13px; }

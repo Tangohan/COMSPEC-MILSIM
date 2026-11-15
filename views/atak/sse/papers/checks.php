@@ -58,7 +58,7 @@ require __DIR__ . '/_subnav.php';
     <?php else: ?>
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Contrôle</th><th>Reçu le</th><th>Papier présenté</th><th>Nom présenté</th><th>Contrôleur</th><th>Niveaux</th><th>Verdict</th><th></th></tr></thead>
+                <thead><tr><th>Contrôle</th><th>Reçu le</th><th>Papier présenté</th><th>Nom présenté</th><th>Contrôleur</th><th>Niveaux</th><th>Verdict</th><th>Registre</th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($checks as $c): ?>
                     <tr>
@@ -69,6 +69,8 @@ require __DIR__ . '/_subnav.php';
                         <td><?= $h($c['controller_callsign'] ?? '—') ?></td>
                         <td><?= $h(implode(' ', $c['levels'])) ?></td>
                         <td><span class="badge idp-verdict--<?= $h($c['verdict'] !== '' ? $c['verdict'] : 'none') ?>"><?= $h($c['verdict_label']) ?></span></td>
+                        <?php $reg = $registry[(int) $c['id']] ?? null; ?>
+                        <td><?php if ($reg === null): ?>—<?php elseif ($reg['state'] === 'consigned'): ?><span class="badge badge--green">Consigné</span> <a class="link" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $reg['doc_id'])) ?>"><?= $h($reg['ref']) ?></a><?php elseif ($reg['state'] === 'new'): ?><span class="badge badge--gray">À consigner</span><?php else: ?><span class="muted">Pas de numéro</span><?php endif; ?></td>
                         <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/controles/' . (int) $c['id'])) ?>">Ouvrir</a></td>
                     </tr>
                 <?php endforeach; ?>

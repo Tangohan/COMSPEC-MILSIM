@@ -125,8 +125,8 @@ $tabs = [
     ['avis', 'Avis de recherche', $notice !== null ? '1' : (count($notices) > 0 ? (string) count($notices) : null), $notice !== null],
     ['documents-emis', 'Documents émis', count((array) ($sheetMenu['issues'] ?? [])) ?: null, false],
 ];
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-wanted-gallery.js')) . '" defer></script>';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">' . (!empty($remontees) || (!empty($canManage) && $observedOnly) ? '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers-remontees.css')) . '">' : '');
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-wanted-gallery.js')) . '" defer></script>' . (!empty($canManage) && $observedOnly ? '<script src="' . $h(asset_url('assets/js/sse-papers-remontees.js')) . '" defer></script>' : '');
 require __DIR__ . '/_subnav.php';
 ?>
 
@@ -323,9 +323,19 @@ require __DIR__ . '/_subnav.php';
                 </div>
             <?php endif; ?>
             <?php if (!empty($canManage) && $observedOnly): ?>
+                <?php $remontees = is_array($remontees ?? null) ? $remontees : []; $remTodo = count(array_filter($remontees, static fn (array $r): bool => $r['state'] === 'new')); ?>
+                <div class="panel-body rem-entry">
+                    <div>
+                        <strong>Consigner depuis les contrôles</strong>
+                        <p class="muted"><?= $h($remTodo > 0
+                            ? $remTodo . ' papier(s) relevé(s) par l’ATAK attendent d’être consignés : choisissez-les, rien à ressaisir.'
+                            : 'Aucun papier relevé par l’ATAK n’attend d’être consigné pour ce sujet. Les nouveaux contrôles apparaissent ici.') ?></p>
+                    </div>
+                    <button class="btn rem-open" type="button" data-rem-open aria-haspopup="dialog" aria-controls="rem-dialog"><?= $remTodo > 0 ? 'Choisir parmi les contrôles' : 'Voir les contrôles' ?><?php if ($remTodo > 0): ?> <span class="rem-open__n"><?= $remTodo ?></span><?php endif; ?></button>
+                </div>
                 <form class="panel-body idp-actions" method="post" action="<?= $h(url($self . '/constates')) ?>">
                     <?= \App\Core\Csrf::field() ?>
-                    <label for="obs_doc_type" class="muted">Papier constaté</label>
+                    <label for="obs_doc_type" class="muted">Ou saisir un papier constaté</label>
                     <select id="obs_doc_type" name="doc_type">
                         <?php foreach (C::DOC_TYPES as $k => $label): ?>
                             <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
@@ -446,6 +456,9 @@ require __DIR__ . '/_subnav.php';
         <?php $issuesEmbedded = true; if (!empty($sheetMenu['ready']) && ($sheetMenu['reason'] ?? null) === null) { require dirname(__DIR__) . '/_sheet_issues.php'; } ?>
     </section>
 </div>
+<?php if (!empty($canManage) && $observedOnly): ?>
+    <?php $remontees = is_array($remontees ?? null) ? $remontees : []; require __DIR__ . '/_remontees_dialog.php'; // hors des onglets : une modale ne s'affiche pas dans un panneau masqué ?>
+<?php endif; ?>
 <?php
 $sseContent = ob_get_clean();
 require dirname(__DIR__) . '/_layout.php';

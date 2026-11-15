@@ -182,6 +182,19 @@ final class SseIdCheckRepository
         return $ref !== '' && strlen($ref) <= 80 ? $this->findByKey($tenantId, $ref) : null;
     }
 
+    /**
+     * Rattache le contrôle au papier consigné d'après lui (et à l'identité et à la personne qui manquent). Atomique : un contrôle déjà
+     * rattaché à un papier n'est jamais repris, ce qui interdit la double consignation (false : déjà consigné).
+     */
+    public function claimDocument(int $id, int $tenantId, int $documentId, ?int $identityId, ?int $personId): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_id_checks SET document_id = :d, identity_id = COALESCE(identity_id, :i), person_id = COALESCE(person_id, :p)
+             WHERE id = :id AND tenant_id = :t AND (document_id IS NULL OR document_id = 0)',
+            ['d' => $documentId, 'i' => $identityId !== null && $identityId > 0 ? $identityId : null, 'p' => $personId !== null && $personId > 0 ? $personId : null, 'id' => $id, 't' => $tenantId]
+        ) > 0;
+    }
+
     /** Fiche FRM rattachée au contrôle (null : détachée). */
     public function setFieldNote(int $id, int $tenantId, ?int $noteId): bool
     {

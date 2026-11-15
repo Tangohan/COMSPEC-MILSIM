@@ -56,6 +56,9 @@ require __DIR__ . '/_subnav.php';
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $doc['id'])) ?>">Papier du registre <?= $h($doc['ref']) ?></a>
         <?php else: ?>
             <span class="muted">Papier absent du registre.</span>
+            <?php if (!empty($canConsign) && (int) ($check['identity_id'] ?? 0) > 0 && trim((string) ($check['doc_number'] ?? '')) !== ''): ?>
+                <a class="btn" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $check['identity_id'] . '?consigner=' . (int) $check['id'] . '#papiers')) ?>">Consigner ce papier</a>
+            <?php endif; ?>
         <?php endif; ?>
         <?php if ($person !== null): ?>
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/identites/' . (int) $person['id'])) ?>">Fiche personne <?= $h($person['display_name'] ?? ('IDN-' . (int) $person['id'])) ?></a>
