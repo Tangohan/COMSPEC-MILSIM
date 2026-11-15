@@ -510,7 +510,7 @@ if (_interactive) then {
                 params ["_ns", "_var", "_def"];
                 // Réglage CBA côté joueur (noms sur la carte) : enregistré par CBA, le même que dans le menu CBA.
                 if (_ns isEqualTo "C") exitWith {
-                    [_var, !(missionNamespace getVariable [_var, _def]), false, "client", true] call CBA_settings_fnc_set;
+                    [_var, !(missionNamespace getVariable [_var, _def])] call comspec_atak_native_fnc_setSetting;
                     [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
                 };
                 private _n = [profileNamespace, missionNamespace] select (_ns isEqualTo "M");

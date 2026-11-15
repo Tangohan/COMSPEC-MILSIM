@@ -18,7 +18,8 @@
       ["toggle", [page]]             -> épingle ou retire une app ("none" : retire tout ; quatrième app : remplace la troisième)
                                         et redessine la page ouverte
       ["refresh"]                    -> redessine la carte ou les Réglages s'ils sont ouverts (réglage changé dans le menu CBA)
-      ["rows"]                       -> ligne de choix du panneau SITUATION et de Réglages > Carte (fn_formRender)
+      ["rows"]                       -> ligne de choix du panneau SITUATION et de Réglages > Carte (fn_formRender) : les apps
+                                        que le joueur peut ouvrir, plus celles déjà épinglées (pour pouvoir les retirer)
     Aucune notification : le bandeau est dans le téléphone, rien n'apparaît dans l'interface d'Arma.
 */
 params [["_act", "apps"], ["_a", []]];
@@ -275,17 +276,18 @@ private _fill = {
 // Pages épinglées d'après les réglages du joueur, dans l'ordre des emplacements, sans doublon ni valeur inconnue.
 private _sel = [];
 { private _v = missionNamespace getVariable [_x, "none"]; if (_v in _keys) then { _sel pushBackUnique _v; }; } forEach _vars;
+// Règle de l'encadrement (fn_appInstall) : une app interdite, retirée ou désinstallée n'a pas de bandeau. [page, liste de fn_appList].
+private _usable = {
+    params ["_page", "_list"];
+    private _app = (_list select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
+    (count _app) > 0 && {["installed", _app get "id"] call comspec_atak_native_fnc_appInstall}
+};
 
 switch (_act) do {
     case "apps": {
-        // Règle de l'encadrement (fn_appInstall) : une app interdite, retirée ou désinstallée n'a pas de bandeau non plus.
         if (_sel isEqualTo []) exitWith { [] };
         private _list = [] call comspec_atak_native_fnc_appList;
-        _sel select {
-            private _page = _x;
-            private _app = (_list select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
-            (count _app) > 0 && {["installed", _app get "id"] call comspec_atak_native_fnc_appInstall}
-        }
+        _sel select { [_x, _list] call _usable }
     };
     case "height": {
         _a params ["_fs", "_in"];
@@ -340,16 +342,18 @@ switch (_act) do {
         {
             private _var = _x;
             private _v = _new param [_forEachIndex, "none"];
-            // 5e paramètre : enregistré dans le profil CBA (sans lui, le choix ne valait que pour la partie en cours).
-            if ((missionNamespace getVariable [_var, "none"]) isNotEqualTo _v) then { [_var, _v, false, "client", true] call CBA_settings_fnc_set; };
+            // fn_setSetting : gardé dans le profil CBA (sinon le choix ne valait que pour la partie en cours), une seule
+            // écriture du profil, regroupée, pour les trois emplacements.
+            if ((missionNamespace getVariable [_var, "none"]) isNotEqualTo _v) then { [_var, _v] call comspec_atak_native_fnc_setSetting; };
         } forEach _vars;
         ["refresh"] call comspec_atak_native_fnc_mapPinnedApp;
         true
     };
     case "refresh": {
-        // Un seul redessin même si le réglage et le menu CBA préviennent tous les deux.
-        if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PinRefreshAt", -10]) < 0.3) exitWith { false };
-        uiNamespace setVariable ["COMSPEC_ATAK_PinRefreshAt", diag_tickTime];
+        // Un seul redessin par image : les trois réglages changés par un même toucher (ou validés dans le menu CBA) et la
+        // fin de « toggle » préviennent dans la même image. Pas de délai : deux touchers rapprochés redessinent tous les deux.
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_PinRefreshAt", -1]) isEqualTo diag_frameNo) exitWith { false };
+        uiNamespace setVariable ["COMSPEC_ATAK_PinRefreshAt", diag_frameNo];
         if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false };
         // Carte, ou Réglages > Carte (même ligne de choix) : la page ouverte est redessinée.
         private _open = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
@@ -358,10 +362,15 @@ switch (_act) do {
         true
     };
     case "rows": {
-        // Boutons à bascule : chaque app épinglée est allumée, AUCUNE quand rien ne l'est.
-        [["segment", "Apps épinglées sur la carte", ([["none", "AUCUNE"]] + _apps) apply {
+        // Boutons à bascule : chaque app épinglée est allumée, AUCUNE quand rien ne l'est. Une app interdite, retirée ou
+        // désinstallée n'est pas proposée (elle n'aurait pas de bandeau) ; déjà épinglée, elle reste là pour être retirée,
+        // avec l'explication en info-bulle.
+        private _list = [] call comspec_atak_native_fnc_appList;
+        private _ok = _keys select { [_x, _list] call _usable };
+        [["segment", "Apps épinglées sur la carte", (([["none", "AUCUNE"]] + _apps) select { (_x select 0) isEqualTo "none" || {(_x select 0) in _ok} || {(_x select 0) in _sel} }) apply {
             _x params ["_v", "_t"];
-            [_t, format ["['toggle', [%1]] call comspec_atak_native_fnc_mapPinnedApp;", str _v], [_v in _sel, _sel isEqualTo []] select (_v isEqualTo "none")]
+            [_t, format ["['toggle', [%1]] call comspec_atak_native_fnc_mapPinnedApp;", str _v], [_v in _sel, _sel isEqualTo []] select (_v isEqualTo "none"),
+                ["", "App interdite ou désinstallée : pas de bandeau"] select (_v in _sel && {!(_v in _ok)})]
         }, "Trois au plus : un bandeau par app, de la taille de celui des coordonnées (non lus, étape de l'itinéraire, mission de tir, MEDEVAC, dernière alerte, heure H) ; touchez-le pour ouvrir l'app ; masquées en petit format ou si la carte est trop petite"]]
     };
     default { false };

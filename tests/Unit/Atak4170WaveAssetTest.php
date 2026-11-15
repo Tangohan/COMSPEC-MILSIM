@@ -33,23 +33,48 @@ final class Atak4170WaveAssetTest extends TestCase
 
     public function testPhoneCbaChoicesAreStoredInTheProfile(): void
     {
-        // 5e paramètre de CBA_settings_fnc_set (_store) : sans lui, le choix ne vaut que pour la partie en cours.
+        // Sans enregistrement dans le profil CBA, le choix ne vaut que pour la partie en cours : fn_setSetting le garde.
         $pin = $this->read('functions/map/fn_mapPinnedApp.sqf');
-        self::assertStringContainsString('[_var, _v, false, "client", true] call CBA_settings_fnc_set;', $pin);
+        self::assertStringContainsString('[_var, _v] call comspec_atak_native_fnc_setSetting;', $pin);
 
         $settings = $this->read('functions/pages/fn_pageSettings.sqf');
-        self::assertStringContainsString('[_k, _new, false, "client", true] call CBA_settings_fnc_set;', $settings);
-        self::assertStringContainsString('[_k, _v, false, "client", true] call CBA_settings_fnc_set;', $settings);
-        self::assertStringContainsString('["comspec_atak_native_full_scale", _v, false, "client", true] call CBA_settings_fnc_set;', $settings);
-        self::assertStringContainsString('["comspec_atak_native_language", "fr", 0, "client", true] call CBA_settings_fnc_set;', $settings);
+        self::assertStringContainsString('[_k, _new] call comspec_atak_native_fnc_setSetting;', $settings);
+        self::assertStringContainsString('[_k, _v] call comspec_atak_native_fnc_setSetting;', $settings);
+        self::assertStringContainsString('["comspec_atak_native_phone_model", _val] call comspec_atak_native_fnc_setSetting;', $settings);
+        self::assertStringContainsString("['comspec_atak_native_font', '%1'] call comspec_atak_native_fnc_setSetting;", $settings);
+        self::assertStringContainsString('["comspec_atak_native_full_scale", _v] call comspec_atak_native_fnc_setSetting;', $settings);
+        self::assertStringContainsString('["comspec_atak_native_language", "fr"] call comspec_atak_native_fnc_setSetting;', $settings);
+        self::assertStringContainsString("['comspec_atak_native_language', '%1'] call comspec_atak_native_fnc_setSetting;", $settings);
 
         $map = $this->read('functions/pages/fn_pageMap.sqf');
-        self::assertStringContainsString('[_var, !(missionNamespace getVariable [_var, _def]), false, "client", true] call CBA_settings_fnc_set;', $map);
+        self::assertStringContainsString('[_var, !(missionNamespace getVariable [_var, _def])] call comspec_atak_native_fnc_setSetting;', $map);
 
-        // Plus aucun appel du téléphone sans enregistrement.
+        // Plus aucun appel direct du téléphone : ni sans enregistrement, ni avec l'écriture immédiate du profil.
         foreach ([$pin, $settings, $map] as $src) {
-            self::assertSame(0, preg_match('~["\']client["\']\] call CBA_settings_fnc_set~', $src), 'appel CBA sans enregistrement');
+            self::assertStringNotContainsString('call CBA_settings_fnc_set', $src);
         }
+    }
+
+    public function testPhoneSettingsAreStoredWithoutAnImmediateProfileWrite(): void
+    {
+        // Le 5e paramètre de CBA_settings_fnc_set lance saveProfileNamespace à chaque appel (image figée sur certains PC) :
+        // fn_setSetting range le réglage dans la table CBA du profil et laisse fn_saveProfile regrouper l'écriture.
+        $set = $this->read('functions/ui/fn_setSetting.sqf');
+        self::assertStringContainsString('if !([_k, _v, 0, "client"] call CBA_settings_fnc_set) exitWith { false };', $set);
+        self::assertStringContainsString('private _hash = profileNamespace getVariable ["cba_settings_hash", [] call CBA_fnc_hashCreate];', $set);
+        // Comme CBA : clé en minuscules, [valeur, priorité] ; retiré quand le réglage revient à sa valeur par défaut.
+        self::assertStringContainsString('if (_v isEqualTo ([_k, "default"] call CBA_settings_fnc_get)) then {', $set);
+        self::assertStringContainsString('[_hash, toLower _k] call CBA_fnc_hashRem;', $set);
+        self::assertStringContainsString('[_hash, toLower _k, [_v, 0]] call CBA_fnc_hashSet;', $set);
+        self::assertStringContainsString('profileNamespace setVariable ["cba_settings_hash", _hash];', $set);
+        // Réglage imposé par le fichier userconfig de CBA : jamais rangé dans le profil.
+        self::assertStringContainsString('getVariable ["cba_settings_userconfig", locationNull]) getVariable _k }) exitWith { true };', $set);
+        // Écriture regroupée (60 s, forcée en fin de mission), jamais immédiate.
+        self::assertStringContainsString('[] call comspec_atak_native_fnc_saveProfile;', $set);
+        $code = preg_replace('~/\*.*?\*/~s', '', $set) ?? '';
+        self::assertStringNotContainsString('saveProfileNamespace', $code);
+        self::assertStringContainsString('class addSetting {}; class setSetting {};', $this->read('config.cpp'));
+        $this->assertBalanced('functions/ui/fn_setSetting.sqf');
     }
 
     public function testPinnedBannerFollowsAppPolicyAndOrderList(): void
@@ -219,18 +244,37 @@ final class Atak4170WaveAssetTest extends TestCase
 
         // Bascule : retirée si épinglée, sinon ajoutée ; la quatrième remplace la troisième ; enregistrée dans le profil.
         self::assertStringContainsString('private _new = if (_page in _sel) then { _sel - [_page] } else { [[], (_sel select [0, (count _vars) - 1]) + [_page]] select (_page in _keys) };', $pin);
-        self::assertStringContainsString('if ((missionNamespace getVariable [_var, "none"]) isNotEqualTo _v) then { [_var, _v, false, "client", true] call CBA_settings_fnc_set; };', $pin);
+        self::assertStringContainsString('if ((missionNamespace getVariable [_var, "none"]) isNotEqualTo _v) then { [_var, _v] call comspec_atak_native_fnc_setSetting; };', $pin);
         self::assertStringContainsString("['toggle', [%1]] call comspec_atak_native_fnc_mapPinnedApp;", $pin);
         // Même ligne dans le panneau SITUATION et dans Réglages > Carte ; la page ouverte est redessinée.
         self::assertStringContainsString('(["rows"] call comspec_atak_native_fnc_mapPinnedApp)', $this->read('functions/pages/fn_pageMap.sqf'));
         self::assertStringContainsString('(["rows"] call comspec_atak_native_fnc_mapPinnedApp) select 0,', $this->read('functions/pages/fn_pageSettings.sqf'));
         self::assertStringContainsString('if !(_open in ["MAP", "SETTINGS"]) exitWith { false };', $pin);
+        // Un redessin par image et non par tranche de 0,3 s : deux touchers rapprochés redessinent tous les deux la page.
+        self::assertStringContainsString('if ((uiNamespace getVariable ["COMSPEC_ATAK_PinRefreshAt", -1]) isEqualTo diag_frameNo) exitWith { false };', $pin);
+        self::assertStringContainsString('uiNamespace setVariable ["COMSPEC_ATAK_PinRefreshAt", diag_frameNo];', $pin);
+        self::assertStringNotContainsString('< 0.3', $pin);
 
         // Une fois par seconde pour tous les bandeaux, texte réécrit seulement s'il change, coût mesuré.
         self::assertStringContainsString('{ [_x] call _fill; } forEach _pins;', $pin);
         self::assertStringContainsString('(_c getVariable ["txt", ""]) isEqualTo _txt', $pin);
         self::assertStringContainsString('["carte : app épinglée", _t0] call comspec_atak_native_fnc_perfAcc;', $pin);
         self::assertSame(1, substr_count($this->read('functions/map/fn_mapOverlayUpdate.sqf'), '["tick"] call comspec_atak_native_fnc_mapPinnedApp;'));
+    }
+
+    public function testChoiceRowOnlyOffersAppsThePlayerCanOpen(): void
+    {
+        $pin = $this->read('functions/map/fn_mapPinnedApp.sqf');
+        // Un seul test (interdite, retirée, désinstallée) pour les bandeaux et pour la ligne de choix.
+        self::assertSame(1, substr_count($pin, '["installed", _app get "id"] call comspec_atak_native_fnc_appInstall'));
+        self::assertStringContainsString('_sel select { [_x, _list] call _usable }', $pin);
+        self::assertStringContainsString('private _ok = _keys select { [_x, _list] call _usable };', $pin);
+        // Proposées : AUCUNE, les apps affichables, et celles déjà épinglées (pour pouvoir les retirer), avec l'explication.
+        self::assertStringContainsString('select { (_x select 0) isEqualTo "none" || {(_x select 0) in _ok} || {(_x select 0) in _sel} }', $pin);
+        self::assertStringContainsString('["", "App interdite ou désinstallée : pas de bandeau"] select (_v in _sel && {!(_v in _ok)})]', $pin);
+        // 4e élément d'une option de « segment » : info-bulle du bouton, traduite.
+        self::assertStringContainsString('_x params ["_text", "_code", ["_active", false], ["_tip", ""], ["_segV", ""]];', $this->read('functions/ui/fn_formRender.sqf'));
+        self::assertStringContainsString('["App interdite ou désinstallée : pas de bandeau", "App forbidden or uninstalled: no banner"]', $this->read('i18n/en.txt'));
     }
 
     public function testPinnedBannersShareTheBandRowThenStack(): void
@@ -380,8 +424,12 @@ final class Atak4170WaveAssetTest extends TestCase
         self::assertStringContainsString('[(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexAlert")] select (_ho > 0), COMSPEC_ATAK_Th get "hexFriend"]', $map);
         self::assertStringContainsString('private _hDim = COMSPEC_ATAK_Th get "hexTextMuted";', $map);
         self::assertStringContainsString('[(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexOk")] select (_msg param [1, false])', $search);
+        // Texte du volet SITUATION : posé sur un fond sombre fixe quel que soit le thème, donc alliés à l'encre de la carte
+        // (3,5:1 en thème jour avec l'encre de page) ; la fiche de l'app Groupe, sur une surface du thème, garde l'encre de page.
+        self::assertStringContainsString('_rows pushBack ["text", [true] call comspec_atak_native_fnc_inspectorUpdate, [0.06, 0.075, 0.068, 0.96], "COMSPEC_ATAK_InspTextCtrl"];', $map);
         $insp = $this->read('functions/ui/fn_inspectorUpdate.sqf');
-        self::assertSame(2, substr_count($insp, 'COMSPEC_ATAK_Th get "hexFriend"'));
+        self::assertStringContainsString('[_fr, "alliés", COMSPEC_ATAK_Th get "hexMapFriend"] call _tile', $insp);
+        self::assertStringContainsString('(COMSPEC_ATAK_Th get (["hexMapFriend", "hexFriend"] select ((count _ent) > 0)))', $insp);
         foreach ([[$map, ['#47b3ff', '#e6efe9']], [$banner, ['#5cc76b', '#8a9a93']], [$search, ['#9aa39e', '#e9a53a', '#cfd8d3']], [$insp, ['#47b3ff']]] as [$src, $hexes]) {
             foreach ($hexes as $hex) {
                 self::assertStringNotContainsString($hex, $src, $hex);

@@ -24471,5 +24471,6 @@
 ["Troisième bandeau, mêmes choix que le premier. Il se pose à côté des autres s'il y a la place, sinon sur une rangée de plus ; il n'est pas dessiné si la carte est trop petite.", "Third banner, same choices as the first. It sits next to the others when there is room, otherwise on one more row; it is not drawn when the map is too small."],
 ["DANGER CLOSE", "DANGER CLOSE"],
 ["WP %1", "WP %1"],
-["splash", "splash"]
+["splash", "splash"],
+["App interdite ou désinstallée : pas de bandeau", "App forbidden or uninstalled: no banner"]
 ]

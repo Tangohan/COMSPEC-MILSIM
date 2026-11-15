@@ -33,9 +33,10 @@ if ((count _e) isEqualTo 0) then {
     private _w = wind;
     private _from = (((_w select 0) atan2 (_w select 1)) + 180) mod 360;
     private _kv = { params ["_k", "_v"]; format ["<t align='left' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t><t align='right'>%2</t>", _k, _v] };
+    // Résumé affiché seulement dans le volet SITUATION, sur son fond sombre fixe : alliés à l'encre de la carte.
     private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.6' font='COMSPEC_BarlowBold' color='%3'>%1</t><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'> %2</t>", _n, _lab, _col] };
     _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7<br/>%8</t><br/><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Cliquez sur une unité pour sa fiche.</t>",
-        [_fr, "alliés", COMSPEC_ATAK_Th get "hexFriend"] call _tile, [_ho, "contacts", [(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexAlert")] select (_ho > 0)] call _tile,
+        [_fr, "alliés", COMSPEC_ATAK_Th get "hexMapFriend"] call _tile, [_ho, "contacts", [(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexAlert")] select (_ho > 0)] call _tile,
         ["Réseau", _netTxt] call _kv,
         ["Groupe", ([player, true] call comspec_atak_native_fnc_unitGroup) call _esc] call _kv,
         ["Terrain", worldName] call _kv,
@@ -46,7 +47,9 @@ if ((count _e) isEqualTo 0) then {
     private _p = _e getOrDefault ["position", [0, 0, 0]];
     private _o = _e getOrDefault ["object", objNull];
     private _aff = _e getOrDefault ["affiliation", "unknown"];
-    private _affTxt = createHashMapFromArray [["friend", "<t color='" + (COMSPEC_ATAK_Th get "hexFriend") + "'>ami</t>"], ["hostile", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>ennemi</t>"], ["neutral", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>neutre</t>"]] getOrDefault [_aff, "inconnu"];
+    // « ami » : encre de la carte dans le volet SITUATION (fond sombre fixe, quel que soit le thème), encre du thème dans
+    // la fiche dépliée de l'app Groupe (surface du thème).
+    private _affTxt = createHashMapFromArray [["friend", "<t color='" + (COMSPEC_ATAK_Th get (["hexMapFriend", "hexFriend"] select ((count _ent) > 0))) + "'>ami</t>"], ["hostile", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>ennemi</t>"], ["neutral", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>neutre</t>"]] getOrDefault [_aff, "inconnu"];
     // Téléphone tracé (fn_pollUnits) : « téléphone », pas un camp deviné.
     if (_e getOrDefault ["phone", false]) then { _affTxt = "téléphone"; };
     private _fresh = createHashMapFromArray [["LIVE", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>en direct</t>"], ["STALE", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>retardée</t>"], ["LOST", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>perdue</t>"], ["OFFLINE", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>hors ligne</t>"]] getOrDefault [_e getOrDefault ["freshness", "LIVE"], "?"];
