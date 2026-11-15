@@ -52,7 +52,7 @@ $tone = static fn (string $m): string => in_array($m, \App\Support\SseFileCatalo
                     <small><?= ($m['reference'] ?? '') !== '' ? $h($m['reference']) . ' · ' : '' ?>posée le <?= $h(substr((string) $m['created_at'], 0, 16)) ?><?= $m['created_by'] !== '' ? ' par ' . $h($m['created_by']) : '' ?><?= $m['lifted_at'] !== null ? ' · levée le ' . $h(substr((string) $m['lifted_at'], 0, 16)) . ($m['lifted_by'] !== '' ? ' par ' . $h($m['lifted_by']) : '') : '' ?></small>
                     <?php if ($canManage && $m['active']): ?>
                         <form class="fx-inline" method="post" action="<?= $h(url('atak/sse/fichiers/mentions/' . (int) $m['id'] . '/lever')) ?>"><?= $csrf ?>
-                            <label class="fx-f"><span>Motif de la levée</span><input class="fx-in" name="lift_note" maxlength="500" placeholder="ex. interpellé le 11/11, mandat exécuté"></label>
+                            <label class="fx-f"><span>Motif de la levée</span><input class="fx-in" name="lift_note" maxlength="500" placeholder="ex. appréhendé le 11/11, avis de recherche levé"></label>
                             <button class="btn" type="submit">Lever</button>
                         </form>
                     <?php endif; ?>

@@ -42,7 +42,7 @@ final class SseTerrainService
         'MARKED' => 'Marqué',
         'COLLECTED' => 'Collecté',
         'PACKAGED' => 'Conditionné',
-        'SEALED' => 'Scellé',
+        'SEALED' => 'Sous chaîne de possession',
         'TRANSFERRED' => 'Transmis',
         'EXPLOITED' => 'Exploité',
     ];
