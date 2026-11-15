@@ -192,7 +192,11 @@ $stateButton = static function (string $state, string $label, string $class = 'a
             </thead>
             <tbody>
                 <?php foreach ($members as $m):
-                    $who = member_label(['id' => (int) ($m['user_id'] ?? $m['id'] ?? 0), 'display_name' => (string) ($m['display_name'] ?? ''), 'callsign' => (string) ($m['callsign'] ?? '')], 'list');
+                    $whoId = (int) ($m['user_id'] ?? 0);
+                    // Joueur relié à un membre : règle unique ; sinon « Joueur non relié » plus bas.
+                    $who = $whoId > 0
+                        ? member_label(['id' => $whoId, 'display_name' => (string) ($m['display_name'] ?? ''), 'callsign' => (string) ($m['callsign'] ?? '')], 'list')
+                        : (trim((string) ($m['display_name'] ?? '')) ?: trim((string) ($m['callsign'] ?? '')));
                     [$pLabel, $pTone] = $presence($m);
                     [$cLabel, $cTone] = $countLabel($m);
                     $isCounted = !empty($m['attendance_valid']) && empty($m['rh_excluded']);

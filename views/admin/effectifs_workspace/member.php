@@ -1623,11 +1623,11 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
         <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
         <div class="eff-dialog__grid">
             <p class="eff-dialog__wide eff-dialog__hint">C’est le nom que tout le monde voit : fiche, annuaire, JNET, messages. Laissez vide pour ne rien changer.</p>
-            <label>Prénom<input type="text" name="first_name" id="eff-civil-first-name" maxlength="100" autocomplete="off" value="<?= $h($memberFirstName) ?>"></label>
-            <label>Nom<input type="text" name="last_name" id="eff-civil-last-name" maxlength="100" autocomplete="off" value="<?= $h($memberLastName) ?>"></label>
+            <label>Prénom<input type="text" name="first_name" id="eff-dlg-civil-first-name" maxlength="100" autocomplete="off" value="<?= $h($memberFirstName) ?>"></label>
+            <label>Nom<input type="text" name="last_name" id="eff-dlg-civil-last-name" maxlength="100" autocomplete="off" value="<?= $h($memberLastName) ?>"></label>
             <div class="eff-dialog__wide eff-dialog__hint"><?php
-                $mnpFirst = '#eff-civil-first-name';
-                $mnpLast = '#eff-civil-last-name';
+                $mnpFirst = '#eff-dlg-civil-first-name';
+                $mnpLast = '#eff-dlg-civil-last-name';
                 $mnpCallsignInput = '';
                 $mnpCallsign = $callsign;
                 $mnpAccount = $display;
