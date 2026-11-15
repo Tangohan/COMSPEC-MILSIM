@@ -624,48 +624,7 @@ body.sse-iw .sx-main .empty-state p { color: rgba(238, 242, 240, 0.7); }
 .sx-head__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .sx-head__actions .iw-btn { min-height: 38px; font-size: .78rem; }
 
-/* —— Accueil du bureau —— */
-.sx-home { columns: 3 320px; column-gap: 14px; }
-.sx-home__space {
-    display: inline-block;
-    width: 100%;
-    margin: 0 0 14px;
-    break-inside: avoid;
-    padding: 16px 16px 10px;
-    border: 1px solid var(--sx-line-2);
-    border-radius: .8rem;
-    background: var(--sx-panel);
-    scroll-margin-top: 100px;
-}
-.sx-home__space:target { border-color: rgba(52, 211, 153, 0.55); }
-.sx-home__space h2 { margin: 0; color: #fff; font: 800 1.02rem/1.25 var(--sans); letter-spacing: -.005em; text-transform: none; }
-.sx-home__lead { margin: 4px 0 10px; color: rgba(238, 242, 240, 0.68); font-size: .84rem; line-height: 1.5; }
-.sx-home__pages { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.sx-home__pages a {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    padding: .5rem .55rem;
-    border-radius: .55rem;
-    color: inherit;
-    text-decoration: none;
-}
-.sx-home__pages a:hover, .sx-home__pages a:focus-visible { background: rgba(52, 211, 153, 0.1); outline: none; }
-.sx-home__pages .iw-nav-ico { margin-top: 2px; color: var(--sx-acc); opacity: .9; }
-.sx-home__page { display: grid; gap: 2px; min-width: 0; }
-.sx-home__page strong { color: var(--sx-ink); font-size: .86rem; font-weight: 700; }
-.sx-home__page > span { color: rgba(238, 242, 240, 0.6); font-size: .76rem; line-height: 1.4; }
-.sx-home__missing {
-    margin: 18px 0 0;
-    padding: 14px 16px;
-    border: 1px dashed var(--sx-line-2);
-    border-radius: .8rem;
-}
-.sx-home__missing h2 { margin: 0; color: var(--sx-ink); font: 700 .95rem var(--sans); letter-spacing: 0; text-transform: none; }
-.sx-home__missing p { margin: 4px 0 8px; color: rgba(238, 242, 240, 0.68); font-size: .84rem; }
-.sx-home__missing ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: .82rem; }
-.sx-home__missing strong { color: var(--sx-ink); }
-.sx-home__missing li span { color: rgba(238, 242, 240, 0.62); }
+/* Accueil du bureau : sse-accueil-bandes.css. */
 @media (max-width: 640px) {
     .sx-brand span { display: none; }
     .sx-actions .iw-btn { padding: 0 .7rem; }
@@ -674,6 +633,3 @@ body.sse-iw .sx-main .empty-state p { color: rgba(238, 242, 240, 0.7); }
     .sx-head__actions { width: 100%; }
     .sx-head__actions .iw-btn { flex: 1; }
 }
-
-/* Mention de fiction : une ligne discrète en pied d'accueil, jamais un bandeau. */
-.sse-fiction-footer { margin: 28px 0 8px; font-size: .75rem; color: var(--sx-muted, #8a8f98); text-align: center; }

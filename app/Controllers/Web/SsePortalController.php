@@ -37,6 +37,7 @@ use App\Services\Sse\SseCaseBundleService;
 use App\Services\Sse\SseCasePdfService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseCorrelationService;
+use App\Services\Sse\SseHomeBoard;
 use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseMeshService;
 use App\Services\Sse\SsePersonRegistryLinkService;
@@ -47,6 +48,7 @@ use App\Services\Sse\SseWantedAccess;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseReportService;
 use App\Services\Sse\SseTerrainService;
+use App\Services\Sse\SseTriageInbox;
 use App\Services\Sse\SseTransmissionDiscordService;
 use App\Services\Sse\SseTransmissionPdfService;
 use App\Services\Media\ImageCompressionService;
@@ -56,6 +58,7 @@ use App\Support\SseAnalyticalCatalog;
 use App\Support\SseTextVariables;
 use App\Services\Sse\SseAccessPolicy;
 use App\Support\SseAccessCatalog;
+use App\Support\SsePortalNav;
 
 final class SsePortalController
 {
@@ -3291,15 +3294,49 @@ final class SsePortalController
         ]);
     }
 
-    /** Accueil du bureau : chaque espace en une phrase, avec ses pages (selon les droits de la session). */
+    /**
+     * Accueil du bureau : l'état du bureau en une phrase, une bande par sujet (SseHomeBoard), puis les espaces et leurs pages.
+     * La boîte « À trier » et la liste des dossiers sont lues une seule fois et servent aussi à la barre latérale.
+     */
     public function home(Request $request, array $params = []): Response
     {
-        return $this->portalView('atak.sse.home', [
+        $canManage = $this->canManage();
+        $canGrant = $this->canGrant();
+        $isGuest = $this->access->isGuest();
+        $tenantId = $this->tenantId();
+        $nav = SsePortalNav::forSession($canManage, $canGrant, $isGuest);
+        $navIds = [];
+        foreach ($nav['sections'] as $section) {
+            foreach ($section['items'] as $item) {
+                $navIds[] = (string) $item['id'];
+            }
+        }
+        $snapshot = null;
+        try {
+            $snapshot = SseTriageInbox::forSession()->snapshot($tenantId, (int) Session::get('user_id'), $navIds);
+        } catch (\Throwable $e) {
+            error_log('[sse.home] À trier : ' . $e->getMessage());
+        }
+        $cases = $tenantId > 0 && $this->access->hasActiveClearance()
+            ? $this->cases->listForTenant($tenantId, $this->access->caseScope())
+            : null;
+
+        $data = [
             'title' => 'Bureau SSE',
-            'canManage' => $this->canManage(),
-            'canGrant' => $this->canGrant(),
+            'canManage' => $canManage,
+            'canGrant' => $canGrant,
             'activeNav' => 'accueil',
-        ]);
+            'sseNavData' => $nav,
+            'homeBoard' => SseHomeBoard::forSession($tenantId, (int) Session::get('user_id'), $snapshot ?? [], $cases ?? [], $navIds, $isGuest),
+        ];
+        if ($snapshot !== null) {
+            $data['sseTriageSnapshot'] = $snapshot;
+        }
+        if ($cases !== null) {
+            $data['sseAllCases'] = $cases;
+        }
+
+        return $this->portalView('atak.sse.home', $data);
     }
 
     public function operations(Request $request, array $params = []): Response
@@ -4613,7 +4650,9 @@ final class SsePortalController
         $tenantId = $this->tenantId();
         if ($tenantId > 0 && $this->access->hasActiveClearance()) {
             $scope = $this->access->caseScope();
-            $allForRail = $this->cases->listForTenant($tenantId, $scope);
+            // L'accueil a déjà lu les dossiers du périmètre : la barre latérale reprend la même liste.
+            $allForRail = is_array($data['sseAllCases'] ?? null) ? $data['sseAllCases'] : $this->cases->listForTenant($tenantId, $scope);
+            unset($data['sseAllCases']);
             $data['sseFolderTree'] = $this->cases->buildTree($allForRail);
             $data['sseFolderParents'] = array_values(array_filter(
                 $allForRail,
