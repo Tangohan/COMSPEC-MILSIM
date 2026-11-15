@@ -127,3 +127,48 @@
     .idp-card::after { font-size: 1.6rem; }
     .idp-mrz { font-size: 0.7rem; }
 }
+
+/* —— Tableau de bord identité : cartes de chiffres cliquables, classements, cibles tactiles —— */
+body.sse-iw .sx-main .idp-board-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+body.sse-iw .sx-main .idp-board-metrics a.metric { display: block; color: inherit; text-decoration: none; }
+body.sse-iw .sx-main .idp-board-metrics a.metric:hover,
+body.sse-iw .sx-main .idp-board-metrics a.metric:focus-visible { border-color: var(--ui-accent); outline: none; }
+body.sse-iw .sx-main .idp-board-metrics a.metric--todo { box-shadow: inset 3px 0 0 var(--ui-warn); }
+body.sse-iw .sx-main .idp-board-note { margin: -8px 0 18px; }
+body.sse-iw .sx-main .idp-board-frm { scroll-margin-top: 80px; }
+body.sse-iw .sx-main .idp-board-frm:target,
+body.sse-iw .sx-main .idp-board-frm:focus { border-color: var(--ui-accent); box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18); outline: none; }
+body.sse-iw .sx-main #recherches,
+body.sse-iw .sx-main #detections { scroll-margin-top: 80px; }
+body.sse-iw .sx-main .idp-board-frm,
+body.sse-iw .sx-main .idp-grid { margin-bottom: 16px; }
+body.sse-iw .sx-main .idp-grid + .panel,
+body.sse-iw .sx-main .idp-board-frm + .panel,
+body.sse-iw .sx-main .panel + .idp-grid { margin-top: 16px; }
+body.sse-iw .sx-main .idp-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+body.sse-iw .sx-main .idp-rank li,
+body.sse-iw .sx-main .idp-rank a {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 4px 8px;
+    color: var(--ui-text); text-decoration: none; border-radius: var(--ui-radius-sm);
+}
+body.sse-iw .sx-main .idp-rank li > a { flex: 1 1 auto; padding: 0; min-height: 44px; }
+body.sse-iw .sx-main .idp-rank li:hover { background: rgba(52, 211, 153, 0.05); }
+body.sse-iw .sx-main .idp-rank strong { color: var(--ui-ink); font-variant-numeric: tabular-nums; }
+body.sse-iw .sx-main .idp-actions .btn { display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 720px) {
+    body.sse-iw .sx-main .idp-board-head .btn,
+    body.sse-iw .sx-main .idp-actions .btn,
+    body.sse-iw .sx-main .toolbar .btn,
+    body.sse-iw .sx-main .empty-state .btn { min-height: 44px; }
+    body.sse-iw .sx-main .toolbar select { min-height: 44px; }
+    body.sse-iw .sx-main .idp-actions { width: 100%; }
+    body.sse-iw .sx-main .idp-actions .btn,
+    body.sse-iw .sx-main .idp-actions form { flex: 1 1 auto; }
+    body.sse-iw .sx-main .idp-grid { grid-template-columns: minmax(0, 1fr); }
+}
+body.sse-iw.sse-theme-bureau .sx-main .idp-board-metrics .metric-detail { display: block; }
+body.sse-iw .sx-main .idp-grid { align-items: start; }
+body.sse-iw .sx-main .idp-grid > .panel { margin-top: 0; }
+@media (max-width: 720px) {
+    body.sse-iw .sx-main .idp-actions form .btn { width: 100%; }
+}
