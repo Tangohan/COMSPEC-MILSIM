@@ -75,7 +75,7 @@
 .toc-ph-fixhead { display: flex; flex-wrap: wrap; gap: 6px; }
 .toc-ph-big { font-size: 20px; font-weight: 700; color: var(--toc-text); margin-right: var(--sp-m); }
 .toc-ph-tablewrap td:first-child { white-space: normal; overflow: visible; text-overflow: clip; }
-.toc-ph-tablewrap .toc-table th, .toc-ph-tablewrap .toc-table td { white-space: nowrap; }
+.toc-ph-tablewrap .toc-table th, .toc-ph-tablewrap .toc-table td { white-space: nowrap; overflow: visible; text-overflow: clip; }
 .toc-ph-tablewrap .toc-table td:first-child { white-space: normal; min-width: 110px; }
 .toc-ph-unknown { margin: var(--sp-s) 0; padding: var(--sp-m); background: var(--toc-redDim); border: 1px solid var(--toc-red); }
 .toc-ph-unknown p { margin: 0; }
@@ -84,7 +84,8 @@
 .toc-ph-bar { height: 6px; background: var(--toc-bg3); }
 .toc-ph-bar i { display: block; height: 100%; background: var(--toc-amber); transition: width 1s linear; }
 .toc-ph-tablewrap { width: 100%; overflow-x: auto; }
-.toc-ph-tablewrap .toc-table { min-width: 340px; }
+.toc-ph-tablewrap .toc-table { min-width: 0; width: 100%; }
+.toc-ph-tablewrap .toc-table th, .toc-ph-tablewrap .toc-table td { padding-left: 6px; padding-right: 6px; }
 .toc-ph-journal { list-style: none; margin: 0; padding: 0; }
 .toc-ph-journal li { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: var(--sp-s) var(--sp-m); align-items: center; min-height: 48px; padding: var(--sp-xs) 0; border-bottom: 1px solid var(--toc-line); }
 .toc-ph-jmain { display: grid; min-width: 0; }
