@@ -15,7 +15,7 @@ Chaque changement est aussi écrit dans le journal d'audit SSE (`sse_audit_log`,
 
 | Clé | Section | Pages (après `atak/sse/`) |
 | --- | --- | --- |
-| `fichiers` | Fichiers et sujets | `fichiers`, `identites`, `personnes` |
+| `fichiers` | Fichiers et sujets | `fichiers`, `identites`, `personnes`, `avis` (avis de recherche et détections) |
 | `photos` | Photothèque | `fichiers/photos`, versements depuis la photothèque du site |
 | `papiers` | Papiers et couvertures | `papiers` |
 | `extractions` | Extractions de téléphones | `fichiers/telephones`, `exploitation-numerique` |
