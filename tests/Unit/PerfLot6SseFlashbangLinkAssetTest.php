@@ -133,9 +133,9 @@ final class PerfLot6SseFlashbangLinkAssetTest extends TestCase
         self::assertStringContainsString('_fp = hashValue str (_fpKeys apply { [_x, _top get _x] });', $apply);
         self::assertSame(1, substr_count($apply, 'parseSimpleArray _raw'), 'un seul décodage du paquet');
         // Date de génération et « since » retirées seulement si elles sont à coup sûr celles de la racine.
-        self::assertStringContainsString("_raw find '[\"settings\",'", $apply);
-        self::assertStringContainsString("_raw find '[\"countries\",'", $apply);
-        self::assertStringContainsString("['[\"generated_at\",\"', true], ['[\"since\",\"', false]", $apply);
+        self::assertStringContainsString('_raw find "[""settings"","', $apply);
+        self::assertStringContainsString('_raw find "[""countries"","', $apply);
+        self::assertStringContainsString('[["[""generated_at"",""", true], ["[""since"",""", false]]', $apply);
         self::assertStringContainsString('if (_i > _limit || {_j < 0}) then { _fpSure = false; }', $apply);
         // Le rechargement forcé par le Zeus (empreinte vidée) reste possible.
         self::assertStringContainsString('_reg set ["packFp", ""];', self::read(self::SSE . 'functions/fn_idServer.sqf'));

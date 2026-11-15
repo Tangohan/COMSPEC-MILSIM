@@ -299,8 +299,8 @@ switch (_op) do {
         // sont retirées que si elles sont à coup sûr celles de la racine (avant « settings » et « countries », donc avant
         // tout bloc imbriqué) ; sinon (ancien format par ordre des champs, ordre inattendu) l'empreinte de l'arbre
         // décodé sert comme avant.
-        private _limit = _raw find '["settings",';
-        private _limitC = _raw find '["countries",';
+        private _limit = _raw find "[""settings"",";
+        private _limitC = _raw find "[""countries"",";
         if (_limit < 0 || {_limitC >= 0 && {_limitC < _limit}}) then { _limit = _limitC; };
         private _fpText = _raw;
         private _fpSure = _limit >= 0;
@@ -311,13 +311,13 @@ switch (_op) do {
                 if (_must) then { _fpSure = false; };
             } else {
                 private _rest = _fpText select [_i + (count _tag)];
-                private _j = _rest find '"]';
+                private _j = _rest find """]";
                 if (_i > _limit || {_j < 0}) then { _fpSure = false; } else {
                     _fpText = (_fpText select [0, _i]) + (_rest select [_j + 2]);
                     _limit = _limit - ((count _tag) + _j + 2);
                 };
             };
-        } forEach [['["generated_at","', true], ['["since","', false]];
+        } forEach [["[""generated_at"",""", true], ["[""since"",""", false]];
         private _fp = "";
         if (_fpSure) then { _fp = format ["t%1", hashValue _fpText]; };
         _fpText = "";
