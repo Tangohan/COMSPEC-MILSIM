@@ -2485,6 +2485,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/envoyer-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncSend'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateForMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/couverture/{exportId}/telecharger', [\App\Controllers\Admin\MemberCoverExportController::class, 'downloadForMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/membres', [\App\Controllers\Admin\LegacyPersonnelRedirectController::class, 'roster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
