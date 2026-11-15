@@ -110,7 +110,7 @@ final class MemberIntegrationPackageTest extends TestCase
     private const OPTIONS = ['first_name' => 'Jean', 'last_name' => 'Dupont', 'grade_id' => 3, 'unit_id' => 5, 'personnel_job_role_id' => 8, 'role_ids' => [2]];
     private const CAPS = ['qualify' => true, 'enroll' => true];
 
-    private function count(string $table): int
+    private function rows(string $table): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM ' . $table)->fetchColumn();
     }
@@ -125,18 +125,18 @@ final class MemberIntegrationPackageTest extends TestCase
         self::assertSame(3, (int) $m['grade_id']);
         self::assertSame(5, (int) $m['unit_id']);
         self::assertSame(1, (int) $m['skip_welcome'], 'le récapitulatif du paquet tient lieu de message de bienvenue');
-        self::assertSame(2, $this->count('t_grants'));
-        self::assertSame(2, $this->count('t_enrollments'));
+        self::assertSame(2, $this->rows('t_grants'));
+        self::assertSame(2, $this->rows('t_enrollments'));
         $grants = $this->pdo->query('SELECT definition_id, status, valid_months FROM t_grants ORDER BY definition_id')->fetchAll(PDO::FETCH_ASSOC);
         self::assertSame('obtained', $grants[0]['status']);
         self::assertSame(12, (int) $grants[0]['valid_months']);
         self::assertSame('in_training', $grants[1]['status']);
-        self::assertSame(1, $this->count('t_journal'));
+        self::assertSame(1, $this->rows('t_journal'));
         $j = $this->pdo->query('SELECT * FROM t_journal')->fetch(PDO::FETCH_ASSOC);
         self::assertSame(50, (int) $j['actor_id'], 'le journal dit qui');
         self::assertStringContainsString('Secourisme', (string) $j['detail']);
         self::assertStringContainsString('Radio', (string) $j['detail']);
-        self::assertSame(1, $this->count('t_mails'), 'un seul récapitulatif au nouveau membre');
+        self::assertSame(1, $this->rows('t_mails'), 'un seul récapitulatif au nouveau membre');
         $app = $this->repo->application(1, 1);
         self::assertNotNull($app);
         self::assertNotNull($app['welcome_sent_at']);
@@ -150,11 +150,11 @@ final class MemberIntegrationPackageTest extends TestCase
 
         self::assertTrue($again['ok']);
         self::assertTrue($again['unchanged']);
-        self::assertSame(2, $this->count('t_grants'));
-        self::assertSame(2, $this->count('t_enrollments'));
-        self::assertSame(1, $this->count('t_journal'));
-        self::assertSame(1, $this->count('t_mails'));
-        self::assertSame(1, $this->count('member_integration_applications'));
+        self::assertSame(2, $this->rows('t_grants'));
+        self::assertSame(2, $this->rows('t_enrollments'));
+        self::assertSame(1, $this->rows('t_journal'));
+        self::assertSame(1, $this->rows('t_mails'));
+        self::assertSame(1, $this->rows('member_integration_applications'));
     }
 
     public function testAFailingStepUndoesEverythingAndSaysWhich(): void
@@ -166,19 +166,19 @@ final class MemberIntegrationPackageTest extends TestCase
         self::assertFalse($r['ok']);
         self::assertStringContainsString('Rien n’a été appliqué', (string) $r['message']);
         self::assertStringContainsString('Tireur', (string) $r['message']);
-        self::assertSame(0, $this->count('t_member'), 'le grade et l’unité du parcours sont annulés aussi');
-        self::assertSame(0, $this->count('t_grants'), 'la première qualification, déjà délivrée, est annulée');
-        self::assertSame(0, $this->count('t_enrollments'));
-        self::assertSame(0, $this->count('member_integration_applications'));
-        self::assertSame(0, $this->count('t_journal'));
-        self::assertSame(0, $this->count('t_mails'));
+        self::assertSame(0, $this->rows('t_member'), 'le grade et l’unité du parcours sont annulés aussi');
+        self::assertSame(0, $this->rows('t_grants'), 'la première qualification, déjà délivrée, est annulée');
+        self::assertSame(0, $this->rows('t_enrollments'));
+        self::assertSame(0, $this->rows('member_integration_applications'));
+        self::assertSame(0, $this->rows('t_journal'));
+        self::assertSame(0, $this->rows('t_mails'));
         self::assertFalse($this->pdo->inTransaction());
 
         // Corrigé, on relance : tout passe, une seule fois.
         $this->ports->failOnQualification = 0;
         $ok = $this->service->apply(1, 1, 50, self::OPTIONS, $this->full($id), self::CAPS);
         self::assertTrue($ok['ok']);
-        self::assertSame(2, $this->count('t_grants'));
+        self::assertSame(2, $this->rows('t_grants'));
     }
 
     public function testAFailingBaseStepAppliesNothingOfThePackage(): void
@@ -188,9 +188,9 @@ final class MemberIntegrationPackageTest extends TestCase
         $r = $this->service->apply(1, 1, 50, self::OPTIONS, $this->full($id), self::CAPS);
 
         self::assertFalse($r['ok']);
-        self::assertSame(0, $this->count('t_grants'));
-        self::assertSame(0, $this->count('t_enrollments'));
-        self::assertSame(0, $this->count('member_integration_applications'));
+        self::assertSame(0, $this->rows('t_grants'));
+        self::assertSame(0, $this->rows('t_enrollments'));
+        self::assertSame(0, $this->rows('member_integration_applications'));
     }
 
     public function testAQualificationThatCannotBeAwardedIsRefusedBeforeAnyWrite(): void
@@ -201,7 +201,7 @@ final class MemberIntegrationPackageTest extends TestCase
 
         self::assertFalse($r['ok']);
         self::assertStringContainsString('Tireur', (string) $r['message']);
-        self::assertSame(0, $this->count('t_member'), 'aucune écriture : le contrôle précède tout');
+        self::assertSame(0, $this->rows('t_member'), 'aucune écriture : le contrôle précède tout');
         self::assertSame(0, $this->ports->baseCalls);
     }
 
@@ -211,8 +211,8 @@ final class MemberIntegrationPackageTest extends TestCase
         $r = $this->service->apply(1, 1, 50, self::OPTIONS, $this->full($id), ['qualify' => false, 'enroll' => true]);
 
         self::assertTrue($r['ok']);
-        self::assertSame(0, $this->count('t_grants'), 'pas d’escalade : sans droit, aucune qualification');
-        self::assertSame(2, $this->count('t_enrollments'));
+        self::assertSame(0, $this->rows('t_grants'), 'pas d’escalade : sans droit, aucune qualification');
+        self::assertSame(2, $this->rows('t_enrollments'));
         self::assertContains('Secourisme', $r['applied']['pending']);
         self::assertContains('Tireur', $r['applied']['pending']);
         self::assertStringContainsString('À attribuer par un responsable : Secourisme', (string) $this->pdo->query('SELECT detail FROM t_journal')->fetchColumn());
@@ -220,8 +220,8 @@ final class MemberIntegrationPackageTest extends TestCase
         // Un responsable habilité rejoue : seules les qualifications manquantes sont données.
         $later = $this->service->apply(1, 1, 60, self::OPTIONS, $this->full($id), self::CAPS);
         self::assertTrue($later['ok']);
-        self::assertSame(2, $this->count('t_grants'));
-        self::assertSame(2, $this->count('t_enrollments'));
+        self::assertSame(2, $this->rows('t_grants'));
+        self::assertSame(2, $this->rows('t_enrollments'));
         $app = $this->repo->application(1, 1);
         self::assertSame([], $app['applied']['pending']);
     }
@@ -234,11 +234,11 @@ final class MemberIntegrationPackageTest extends TestCase
         self::assertTrue($r['ok']);
         self::assertSame(1, $this->ports->baseCalls);
         self::assertSame(0, (int) $this->pdo->query('SELECT skip_welcome FROM t_member WHERE user_id = 101')->fetchColumn(), 'le message de bienvenue du parcours reste envoyé');
-        self::assertSame(0, $this->count('t_grants'));
-        self::assertSame(0, $this->count('t_enrollments'));
-        self::assertSame(0, $this->count('member_integration_applications'));
-        self::assertSame(0, $this->count('t_journal'));
-        self::assertSame(0, $this->count('t_mails'));
+        self::assertSame(0, $this->rows('t_grants'));
+        self::assertSame(0, $this->rows('t_enrollments'));
+        self::assertSame(0, $this->rows('member_integration_applications'));
+        self::assertSame(0, $this->rows('t_journal'));
+        self::assertSame(0, $this->rows('t_mails'));
     }
 
     public function testNothingChangesWhenNoPackageIsDefined(): void
@@ -263,7 +263,7 @@ final class MemberIntegrationPackageTest extends TestCase
         $sneaky = $this->repo->save(1, 0, ['name' => 'Piégé'], [['item_type' => 'qualification', 'ref_id' => 90], ['item_type' => 'course', 'ref_id' => 91]], 1);
         $r2 = $this->service->apply(1, 1, 50, self::OPTIONS, ['package_id' => $sneaky, 'qualification_ids' => [90], 'course_ids' => [91]], self::CAPS);
         self::assertFalse($r2['ok']);
-        self::assertSame(0, $this->count('t_grants'));
+        self::assertSame(0, $this->rows('t_grants'));
         self::assertSame(0, $this->ports->baseCalls);
 
         // Candidature d'une autre communauté, ou pas encore acceptée.
@@ -279,7 +279,7 @@ final class MemberIntegrationPackageTest extends TestCase
         $r = $this->service->apply(1, 1, 50, self::OPTIONS, ['package_id' => $id, 'qualification_ids' => [12], 'course_ids' => []], self::CAPS);
 
         self::assertFalse($r['ok']);
-        self::assertSame(0, $this->count('t_grants'));
+        self::assertSame(0, $this->rows('t_grants'));
         self::assertSame(0, $this->ports->baseCalls);
     }
 
@@ -289,8 +289,8 @@ final class MemberIntegrationPackageTest extends TestCase
         $r = $this->service->apply(1, 1, 50, self::OPTIONS, ['package_id' => $id, 'qualification_ids' => [10], 'course_ids' => []], self::CAPS);
 
         self::assertTrue($r['ok']);
-        self::assertSame(1, $this->count('t_grants'));
-        self::assertSame(0, $this->count('t_enrollments'));
+        self::assertSame(1, $this->rows('t_grants'));
+        self::assertSame(0, $this->rows('t_enrollments'));
     }
 
     public function testPackageIsChosenByOpeningThenUnitThenDefault(): void
