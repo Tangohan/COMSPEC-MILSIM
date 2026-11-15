@@ -1,0 +1,257 @@
+/**
+ * Back-office — Bot Discord Athena (views/admin/organization/discord_bot.php) et carte de proposition d'ajout.
+ * Couleurs : jetons --ath-* du shell (le mode nuit les redéfinit).
+ */
+
+.dbot {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  color: var(--ath-ink);
+}
+
+.dbot-head,
+.dbot-card {
+  padding: 20px 22px;
+}
+
+.dbot-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dbot-title {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.dbot-lead,
+.dbot-card p {
+  margin: 0 0 10px;
+  line-height: 1.55;
+}
+
+.dbot-h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.dbot-h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.dbot-fine,
+.dbot-field small,
+.dbot-check small {
+  color: var(--ath-muted, var(--ath-subtle));
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.dbot-pill {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ath-line);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dbot-pill--ok { background: rgba(18, 209, 142, 0.12); border-color: rgba(11, 138, 92, 0.35); color: var(--ath-accent, #0b8a5c); }
+.dbot-pill--warn { background: var(--ath-warn-bg); border-color: var(--ath-warn-bd); }
+.dbot-pill--bad { background: rgba(199, 46, 46, 0.1); border-color: rgba(199, 46, 46, 0.35); color: var(--ath-danger, #c72e2e); }
+.dbot-pill--off { background: var(--ath-bg); color: var(--ath-subtle); }
+
+.dbot-note {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--ath-line);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.dbot-note--warn { background: var(--ath-warn-bg); border-color: var(--ath-warn-bd); }
+.dbot-note--bad { background: rgba(199, 46, 46, 0.1); border-color: rgba(199, 46, 46, 0.35); }
+
+.dbot-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin: 14px 0;
+}
+
+.dbot-list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.dbot-perms {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.dbot-perms li {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px;
+  border: 1px solid var(--ath-line);
+  border-radius: 8px;
+  font-size: 13.5px;
+}
+
+.dbot-perms li span {
+  color: var(--ath-muted, var(--ath-subtle));
+  font-size: 12.5px;
+}
+
+.dbot-perms li.is-extra {
+  border-style: dashed;
+}
+
+.dbot-card .dbot-actions,
+.dbot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 0;
+}
+
+.dbot-table + .dbot-fine {
+  margin-top: 12px;
+}
+
+.dbot-server {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dbot-server__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dbot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+  margin: 12px 0;
+}
+
+.dbot-field {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.dbot-field label {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.dbot-select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ath-line);
+  background: var(--ath-surface, var(--ath-bg));
+  color: var(--ath-ink);
+  font: inherit;
+}
+
+.dbot-checks {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.dbot-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.dbot-check input {
+  margin-top: 3px;
+}
+
+.dbot-check span {
+  display: grid;
+  gap: 2px;
+}
+
+.dbot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.dbot-table th,
+.dbot-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--ath-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.dbot-danger {
+  border-color: rgba(199, 46, 46, 0.3);
+}
+
+/* Rappel du tableau de bord et carte de la configuration initiale */
+.dbot-nudge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .dbot-cols,
+  .dbot-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dbot-head,
+  .dbot-server {
+    flex-direction: column;
+  }
+
+  .dbot-head,
+  .dbot-card {
+    padding: 16px;
+  }
+
+  .dbot-table thead {
+    display: none;
+  }
+
+  .dbot-table tr {
+    display: grid;
+    gap: 2px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--ath-line);
+  }
+
+  .dbot-table td {
+    border: 0;
+    padding: 2px 0;
+  }
+}
