@@ -67906,6 +67906,8 @@ return [
     ' Non créées : ' => ' Not created: ',
     '1 règle créée' => '1 rule created',
     '%1 règles créées' => '%1 rules created',
+    'Supprimer ce paquet ?' => 'Delete this package?',
+    'Les membres déjà intégrés gardent ce qu’ils ont reçu.' => 'Members already onboarded keep what they received.',
     'Fermer ce message' => 'Close this message',
     'La demande a échoué (code %1). Réessayez ; si le problème continue, prévenez un administrateur.' => 'The request failed (code %1). Try again; if the problem persists, tell an administrator.',
     'Le formulaire contient %1 erreur(s) à corriger' => 'The form has %1 error(s) to fix',
