@@ -152,6 +152,7 @@ final class SseDigitalLabController
             'artifacts' => $this->repo->listArtifacts($tenantId, ['device_id' => $deviceId, 'limit' => 40]),
             'findings' => $this->repo->listFindings($tenantId, ['device_id' => $deviceId]),
             'packets' => $this->repo->listPackets($tenantId, ['device_id' => $deviceId, 'limit' => 40]),
+            'contentCounts' => $this->repo->contentCounts($deviceId, $tenantId),
             'methods' => SseDigitalLabRepository::ACQUISITION_METHODS,
             'profiles' => SseDigitalLabRepository::DATA_PROFILES,
             'activeNav' => 'labnum',
@@ -441,6 +442,8 @@ final class SseDigitalLabController
             'deviceId' => $deviceId,
             'messages' => $deviceId > 0 ? $this->repo->listMessages($deviceId, $tenantId) : [],
             'calls' => $deviceId > 0 ? $this->repo->listCalls($deviceId, $tenantId) : [],
+            'contacts' => $deviceId > 0 ? $this->repo->listContacts($deviceId, $tenantId) : [],
+            'contentCounts' => $deviceId > 0 ? $this->repo->contentCounts($deviceId, $tenantId) : null,
             'activeNav' => 'labnum',
             'labSubnav' => 'communications',
         ]);
@@ -496,6 +499,8 @@ final class SseDigitalLabController
             'media' => $this->repo->listMedia($deviceId, $tenantId),
             'artifacts' => $this->repo->listArtifacts($tenantId, ['device_id' => $deviceId, 'limit' => 100]),
             'timeline' => $this->repo->listTimeline($tenantId, ['device_id' => $deviceId]),
+            'acquisitions' => $this->repo->listAcquisitions($tenantId, ['device_id' => $deviceId]),
+            'contentCounts' => $this->repo->contentCounts($deviceId, $tenantId),
             'activeNav' => 'labnum',
             'labSubnav' => 'supports',
         ]);

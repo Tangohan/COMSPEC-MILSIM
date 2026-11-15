@@ -58,6 +58,7 @@ if ($aiLinks !== []): ?>
 
 <?php if ($canSeeTruth || !$secret): ?>
     <?php $imagesDocId = 0; $personPhotos = $showPerson ? ($personPhotos ?? []) : []; require __DIR__ . '/_holder_images.php'; ?>
+    <?php require __DIR__ . '/_seek_images.php'; ?>
 <?php endif; ?>
 
 <section class="panel" style="margin-top:10px">

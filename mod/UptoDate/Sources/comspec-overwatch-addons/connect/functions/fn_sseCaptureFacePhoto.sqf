@@ -176,6 +176,8 @@ if (!isNull _disp) then {
     uiNamespace setVariable ["COMSPEC_SsePerson_PhotoMeta", _meta];
     if (!isNull _target) then {
         _target setVariable ["comspec_sse_facePhotoStem", _png, false];
+        // Angle et qualité du cliché : SIGNER ET ENVOYER (fn_seekSend) les rejoue pour le recadrage portrait du site.
+        _target setVariable ["comspec_sse_facePhotoAngle", format ["%1@portrait,q=%2", _angle, _q], false];
         // Publique : le SEEK d'un équipier voit qu'un cliché du visage existe déjà (journal d'équipe, synthèse).
         _target setVariable ["comspec_sse_facePhotoMeta", _meta, true];
         [_target, "Photo du visage", format ["%1 · qualité %2", _angle, _q]] call comspec_overwatch_connect_fnc_sseTeamLog;
@@ -193,6 +195,11 @@ if (!isNull _disp) then {
     // fiche. Avant, elle n'était jointe qu'à une nouvelle transmission, que le terminal refusait
     // justement parce que la personne était déjà enregistrée : la photo ne remontait jamais.
     private _pid = if (isNull _target) then { "" } else { _target getVariable ["comspec_sse_athenaPersonId", ""] };
+    // Fiche SEEK II déjà signée pour ce sujet (SIGNER ET ENVOYER ne crée pas de fiche personne) : le cliché rejoint son REC.
+    if (!(_pid isEqualType "") || {_pid isEqualTo ""}) then {
+        _pid = if (isNull _target) then { "" } else { _target getVariable ["comspec_seek_rec", ""] };
+        if (_pid isEqualType "" && {_pid isNotEqualTo ""}) then { _target setVariable ["comspec_seek_photoSent", _png]; };
+    };
     if (_pid isEqualType "" && {_pid isNotEqualTo ""}) then {
         private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
         if (_cs isEqualTo "") then { _cs = groupId (group player); };
