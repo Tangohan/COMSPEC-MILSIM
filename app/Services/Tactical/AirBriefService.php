@@ -190,6 +190,18 @@ final class AirBriefService
     }
 
     /**
+     * Identifiant reçu dans l'adresse (POST /api/cas/{ref}/status) : décodé (le routeur laisse « %2B »), limité à
+     * [A-Za-z0-9._+-] et 128 caractères. Null : identifiant illisible, aucune demande ne peut le porter.
+     * Les anciens mods fabriquaient « B<UID>6.35867e+06 » : « + » et « . » restent acceptés pour les retrouver.
+     */
+    public static function normalizeRef(string $raw): ?string
+    {
+        $ref = trim(rawurldecode($raw));
+
+        return preg_match('/^[A-Za-z0-9._+\-]{1,128}$/', $ref) === 1 ? $ref : null;
+    }
+
+    /**
      * Demande désignée par un accusé du jeu : identifiant Athena (« 42 » ou « A42 ») ou mission_id donné par le jeu.
      *
      * @return array<string, mixed>|null
