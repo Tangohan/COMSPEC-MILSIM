@@ -6,6 +6,7 @@ declare(strict_types=1);
 // Tenu par tools/i18n/site_i18n.py (extract, merge). %1, %2... : valeurs insérées par la vue.
 
 return [
+    'Signature tracée au SEEK II, fiche %1' => 'Signature drawn on the SEEK II, record %1',
     'Signature tracée au SEEK II' => 'Signature drawn on the SEEK II',
     'Signature SEEK II' => 'SEEK II signature',
     // Calques SSE des cartes (contrôles d’identité, lieux, pistes de téléphones).
@@ -67374,6 +67375,20 @@ return [
     ': compléter l’état civil' => ': fill in civil status',
     'Compléter la fiche' => 'Fill in the member file',
     'Ouvrir la fiche de ce membre' => 'Open this member’s file',
+    'Ajourné' => 'Deferred',
+    'ajourné' => 'deferred',
+    'Ajournés' => 'Deferred',
+    'Annuler l’ajournement' => 'Undo the deferral',
+    'Annuler l’ajournement ? Le palier repart en attente de la décision d’un instructeur.' => 'Undo the deferral? The stage goes back to waiting for an instructor’s decision.',
+    'Annuler l’ajournement ? La qualification repart en attente de validation.' => 'Undo the deferral? The qualification goes back to waiting for validation.',
+    'Un ajournement par erreur peut être annulé.' => 'A deferral made by mistake can be undone.',
+    'Un ajournement fait par erreur s’annule ici : le palier repart en attente de la décision d’un instructeur.' => 'A deferral made by mistake can be undone here: the stage goes back to waiting for an instructor’s decision.',
+    'Votre propre ajournement : un autre instructeur doit l’annuler.' => 'Your own deferral: another instructor must undo it.',
+    'Ajournement annulé : le palier est de nouveau en attente de la décision d’un instructeur.' => 'Deferral undone: the stage is again waiting for an instructor’s decision.',
+    'Ajournement annulé : la proposition est de nouveau à valider.' => 'Deferral undone: the proposal is again waiting for validation.',
+    'Un autre instructeur doit annuler cet ajournement.' => 'Another instructor must undo this deferral.',
+    'Un autre responsable doit annuler votre propre ajournement.' => 'Another manager must undo your own deferral.',
+    'Cet ajournement ne peut plus être annulé : une autre attribution de cette qualification a été délivrée ou ouverte depuis.' => 'This deferral can no longer be undone: another award of this qualification has been issued or opened since.',
     // SSE identités : avis de recherche, fiche en dossier, historique et détections.
     'Les avis de recherche relèvent de la section « Fichiers et sujets » : votre accès actuel ne permet pas de les lire.' => 'Wanted notices belong to the “Files and subjects” section: your current access does not let you read them.',
     'Les détections relèvent de la section « Fichiers et sujets » : votre accès actuel ne permet pas de les lire.' => 'Detections belong to the “Files and subjects” section: your current access does not let you read them.',

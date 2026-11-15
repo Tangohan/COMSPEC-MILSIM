@@ -80,7 +80,7 @@ final class QualificationAdminStatus
             self::IN_TRAINING => [self::IN_EVALUATION, self::OBTAINED, self::FAILED, self::SUSPENDED, self::REVOKED],
             self::IN_EVALUATION => [self::OBTAINED, self::FAILED, self::IN_TRAINING, self::SUSPENDED, self::REVOKED],
             self::OBTAINED => [self::SUSPENDED, self::REVOKED],
-            self::FAILED => [self::CANDIDATE, self::IN_TRAINING],
+            self::FAILED => [self::CANDIDATE, self::IN_TRAINING, self::IN_EVALUATION],
             self::SUSPENDED => [self::OBTAINED, self::REVOKED],
             self::REVOKED => [],
             default => [],

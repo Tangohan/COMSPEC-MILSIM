@@ -78,6 +78,12 @@ if (_prev isEqualType createHashMap && {(_prev getOrDefault ["target", objNull])
     && {(_prev getOrDefault ["sig", ""]) isEqualTo str (uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []])}) exitWith {
     [_prev, _prev get "state", ""] call _ack;
 };
+// Signature tracée : SIGN ouvre d'abord le pad ; VALIDER signe puis relance « send » (fn_seekSignPad « accept »),
+// et le tracé part avec la fiche. Un tracé déjà validé dans cette partie sert pour les fiches suivantes.
+private _strokesSaved = uiNamespace getVariable ["COMSPEC_SsePerson_SignStrokes", []];
+if (!(_strokesSaved isEqualType []) || {(count _strokesSaved) < 2} || {count (_strokesSaved select 0) == 0}) exitWith {
+    ["open", [true]] call comspec_overwatch_connect_fnc_seekSignPad;
+};
 ["use", 0.5] call comspec_overwatch_connect_fnc_seekBattery;
 
 // --- Signature : l'identité du joueur, sans saisie ----------------------------------------------
@@ -181,6 +187,7 @@ private _payload = createHashMapFromArray [
     ["quality", createHashMapFromArray [["fp", _qFp], ["iris", _qIr], ["face", _qFace]]],
     ["grid", _grid], ["game_time", _stamp],
     ["controller", createHashMapFromArray [["callsign", _callsign], ["steam_id", _uid]]],
+    ["signature", createHashMapFromArray [["strokes", _strokesSaved select 0], ["aspect", _strokesSaved select 1]]],
     ["reason", _reason], ["unit", _unitName],
     ["map", str (missionNamespace getVariable ["COMSPEC_MapId", 1])],
     ["op", missionNamespace getVariable ["comspec_sse_id_opKey", ""]]

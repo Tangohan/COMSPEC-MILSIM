@@ -181,6 +181,59 @@ final class QualificationStatusTransitionService
         }
     }
 
+
+    /**
+     * Annule un ajournement (ou un refus) fait par erreur : l'attribution retrouve l'état d'avant la décision, lu dans
+     * son historique (« De En évaluation vers Échouée »), à défaut « En évaluation ». Impossible une fois qu'une autre
+     * attribution de la même qualification a été délivrée ou ouverte pour ce membre. Retourne le statut restauré.
+     */
+    public function reopenFailed(int $tenantId, int $awardId, int $actorId): string
+    {
+        $award = $this->awards->find($awardId, $tenantId);
+        if ($award === null) {
+            throw new RuntimeException('Attribution introuvable.');
+        }
+        $status = QualificationAdminStatus::normalize((string) ($award['admin_status'] ?? $award['status'] ?? ''));
+        if ($status !== QualificationAdminStatus::FAILED) {
+            throw new RuntimeException('Cet ajournement ne peut plus être annulé : la qualification est maintenant « ' . mb_strtolower(QualificationAdminStatus::label($status)) . ' ».');
+        }
+        if ((int) $award['user_id'] === $actorId) {
+            throw new RuntimeException('Un autre responsable doit annuler votre propre ajournement.');
+        }
+        $open = [QualificationAdminStatus::OBTAINED, QualificationAdminStatus::CANDIDATE, QualificationAdminStatus::IN_TRAINING, QualificationAdminStatus::IN_EVALUATION];
+        foreach ($this->awards->listForUser((int) $award['user_id'], $tenantId) as $other) {
+            if ((int) $other['id'] === $awardId || (int) ($other['definition_id'] ?? 0) !== (int) ($award['definition_id'] ?? 0)) {
+                continue;
+            }
+            if (in_array(QualificationAdminStatus::normalize((string) ($other['admin_status'] ?? $other['status'] ?? '')), $open, true)) {
+                throw new RuntimeException('Cet ajournement ne peut plus être annulé : une autre attribution de cette qualification a été délivrée ou ouverte depuis.');
+            }
+        }
+        $to = self::statusBeforeFailure($this->awards->listHistory($awardId));
+        $this->transition($tenantId, $awardId, $to, $actorId, 'Ajournement annulé');
+
+        return $to;
+    }
+
+    /**
+     * État d'une attribution juste avant son dernier passage à « Échouée », d'après l'historique (le plus récent d'abord).
+     *
+     * @param list<array<string, mixed>> $history
+     */
+    public static function statusBeforeFailure(array $history): string
+    {
+        $failed = mb_strtolower(QualificationAdminStatus::label(QualificationAdminStatus::FAILED));
+        foreach ($history as $h) {
+            $d = mb_strtolower((string) ($h['details'] ?? ''));
+            foreach ([QualificationAdminStatus::CANDIDATE, QualificationAdminStatus::IN_TRAINING, QualificationAdminStatus::IN_EVALUATION] as $from) {
+                if (str_starts_with($d, 'de ' . mb_strtolower(QualificationAdminStatus::label($from)) . ' vers ' . $failed)) {
+                    return $from;
+                }
+            }
+        }
+
+        return QualificationAdminStatus::IN_EVALUATION;
+    }
     /**
      * @param array<string, mixed> $data
      */
