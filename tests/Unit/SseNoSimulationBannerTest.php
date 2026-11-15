@@ -7,8 +7,8 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Portail SSE : aucun bandeau « SIMULATION » ; au plus une mention discrète de fiction par page
- * (sse_fiction_footer), jamais de ligne de simulation dans le message brut NCIC.
+ * Portail SSE : aucun bandeau « SIMULATION » ; une seule mention discrète sur l'accueil du bureau (sse_fiction_footer),
+ * aucune sur un document imprimé, jamais de ligne de simulation dans le message brut NCIC.
  */
 final class SseNoSimulationBannerTest extends TestCase
 {
@@ -36,11 +36,13 @@ final class SseNoSimulationBannerTest extends TestCase
         }
     }
 
-    public function testPrintedSheetHasOneDiscreetFooterAndNoBanner(): void
+    public function testPrintedSheetHasNoFictionMentionAndNoBanner(): void
     {
         $code = self::code('views/atak/sse/files/subject_print.php');
         self::assertSame(0, preg_match_all('/simulation/i', $code));
-        self::assertSame(1, substr_count($code, 'sse_fiction_footer(true)'));
+        self::assertStringNotContainsString('sse_fiction_footer', $code, 'la fiche imprimée ne porte plus de mention de jeu');
+        self::assertNull(\App\Support\SseFictionMentions::find($code));
+        self::assertStringContainsString('<footer><span>Imprimé le', $code, 'le pied garde la date et l’auteur de l’impression');
         self::assertStringNotContainsString('class="sim"', $code);
     }
 
@@ -54,7 +56,7 @@ final class SseNoSimulationBannerTest extends TestCase
         self::assertSame(1, substr_count(self::read('views/atak/sse/home.php'), 'sse_fiction_footer()'));
         $helper = self::read('app/Support/helpers.php');
         self::assertStringContainsString('function sse_fiction_footer', $helper);
-        self::assertStringContainsString('Document de fiction — jeu de rôle Arma 3', $helper);
+        self::assertStringNotContainsString('Document de fiction', $helper, 'plus de mention pour les documents imprimés');
         foreach (['sse_shell', 'sse-files-kit', 'sse-papers'] as $css) {
             self::assertStringNotContainsString('.fx-sim', self::read('public/assets/css/' . $css . '.css'));
         }

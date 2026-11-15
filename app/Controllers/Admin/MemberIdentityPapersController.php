@@ -443,7 +443,7 @@ final class MemberIdentityPapersController
             'boSkipPageHead' => false,
             'boPageTitle' => ($doc !== null ? 'Modifier le papier' : 'Nouveau papier') . ' — ' . $name,
             'boPageKicker' => 'EFFECTIFS · IDENTITÉ & PAPIERS',
-            'boPageSubtitle' => 'Papier fictif pour le jeu, marqué SIMULATION. Il ne part en jeu qu’une fois émis.',
+            'boPageSubtitle' => 'Il ne part en jeu qu’une fois émis.',
             'backOfficePageCss' => ['sse-papers.css', 'back-office-member-papers.css'],
             'member' => $member,
             'memberId' => $userId,

@@ -1066,7 +1066,7 @@ final class GameAuthService
             ]
         );
 
-        $extras = $this->loadOperatorExtras($userId, $tenantId);
+        $extras = $this->loadOperatorExtras($user, $userId, $tenantId);
         $grade = self::usableIdentityText((string) ($user['grade_short'] ?? $user['grade_label'] ?? ''));
         if ($grade === '') {
             $gradeRow = [
@@ -1148,9 +1148,10 @@ final class GameAuthService
     }
 
     /**
+     * @param array<string, mixed> $user ligne du membre pour la communauté de la session
      * @return array{grade_short: string, grade_long: string, unit: string, role: string, role_slug: string, function: string}
      */
-    private function loadOperatorExtras(int $userId, int $tenantId): array
+    private function loadOperatorExtras(array $user, int $userId, int $tenantId): array
     {
         $out = [
             'grade_short' => '',
@@ -1160,24 +1161,12 @@ final class GameAuthService
             'role_slug' => '',
             'function' => '',
         ];
+        // Grade et rôle de la communauté de la session (profil de communauté appliqué par findById), pas ceux de la
+        // communauté d'origine du compte : un membre de plusieurs communautés restait sans grade en jeu.
         try {
-            $pdo = \App\Core\Database::getPdo();
-            $st = $pdo->prepare(
-                'SELECT COALESCE(g.label_short, \'\') AS grade_short,
-                        COALESCE(g.label_long, \'\') AS grade_long,
-                        COALESCE(r.name, \'\') AS role_name,
-                        COALESCE(r.slug, \'\') AS role_slug
-                 FROM users u
-                 LEFT JOIN grades g ON g.id = u.grade_id
-                 LEFT JOIN roles r ON r.id = u.role_id
-                 WHERE u.id = ? AND u.tenant_id = ? LIMIT 1'
-            );
-            $st->execute([$userId, $tenantId]);
-            $row = $st->fetch(\PDO::FETCH_ASSOC) ?: [];
-            $out['grade_short'] = trim((string) ($row['grade_short'] ?? ''));
-            $out['grade_long'] = trim((string) ($row['grade_long'] ?? ''));
-            $out['role'] = trim((string) ($row['role_name'] ?? ''));
-            $out['role_slug'] = trim((string) ($row['role_slug'] ?? ''));
+            foreach (\App\Support\GameOperatorIdentity::gradeAndRole(\App\Core\Database::getPdo(), $user) as $k => $v) {
+                $out[$k] = $v;
+            }
         } catch (\Throwable) {
         }
         try {
@@ -1206,22 +1195,7 @@ final class GameAuthService
             }
         }
         try {
-            $pdo = \App\Core\Database::getPdo();
-            $st = $pdo->prepare(
-                'SELECT r.name AS role_name, pj.role_detail
-                 FROM personnel_profile_job_roles pj
-                 INNER JOIN personnel_job_roles r ON r.id = pj.personnel_job_role_id AND r.tenant_id = pj.tenant_id
-                 WHERE pj.tenant_id = ? AND pj.user_id = ?
-                 ORDER BY pj.is_primary DESC, pj.sort_order ASC, pj.id ASC
-                 LIMIT 1'
-            );
-            $st->execute([$tenantId, $userId]);
-            $job = $st->fetch(\PDO::FETCH_ASSOC) ?: [];
-            $name = trim((string) ($job['role_name'] ?? ''));
-            $detail = trim((string) ($job['role_detail'] ?? ''));
-            if ($name !== '' || $detail !== '') {
-                $out['function'] = $detail !== '' && $name !== '' ? $name . ' — ' . $detail : ($name !== '' ? $name : $detail);
-            }
+            $out['function'] = \App\Support\GameOperatorIdentity::jobFunction(\App\Core\Database::getPdo(), $tenantId, $userId);
         } catch (\Throwable) {
         }
 

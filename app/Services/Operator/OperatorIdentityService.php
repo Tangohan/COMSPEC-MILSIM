@@ -620,6 +620,8 @@ final class OperatorIdentityService
                 'doc_type_label' => (string) $d['doc_type_label'],
                 'country_code' => (string) $d['country_code'],
                 'country_name' => (string) ($country['name'] ?? $d['country_code']),
+                // Pays réel stylisé : le spécimen garde sa mention (SseIdMarking).
+                'country_real' => \App\Support\SseIdMarking::isRealCountry($country, (string) $d['country_code']),
                 'color_primary' => $country['color_primary'] ?? null,
                 'color_secondary' => $country['color_secondary'] ?? null,
                 'doc_number' => (string) $d['doc_number'],

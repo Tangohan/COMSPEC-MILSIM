@@ -5,7 +5,8 @@ declare(strict_types=1);
 /**
  * Aperçu d'un papier d'identité (recto et verso), dessiné en SVG à partir des données du papier et du pays émetteur.
  * Définit $opxDocSvg(array $doc, string $side, ?string $photo): string. Tout texte est échappé ; les couleurs du pays
- * ne sont acceptées qu'en hexadécimal. Mention SPÉCIMEN · SIMULATION sur les deux faces.
+ * ne sont acceptées qu'en hexadécimal. Aucune mention de jeu sur le papier d'un pays imaginaire ; celui d'un pays réel
+ * stylisé ($doc['country_real']) garde la mention SPÉCIMEN · SIMULATION sur les deux faces (SseIdMarking).
  * Mise en page selon le type (App\Support\SseDocumentTypes, miroir du mod) : sans photo si le type n'en porte pas, bande
  * de lecture au bas du recto (passeport) ou au verso, aucune bande pour un type sans MRZ. Un type à une seule face n'a
  * pas de verso (les vues ne le demandent pas).
@@ -91,8 +92,10 @@ $opxDocSvg = static function (array $doc, string $side = 'recto', ?string $photo
             $svg .= '<rect x="0" y="352" width="856" height="188" fill="#ffffff" fill-opacity=".86"/>' . $mrz(404, 44, 25, 3);
         }
     }
-    $svg .= '<text x="428" y="300" font-size="46" font-weight="800" fill="#b91c1c" fill-opacity=".2" text-anchor="middle" letter-spacing="4" transform="rotate(-18 428 270)">SPÉCIMEN · SIMULATION</text>'
-        . '</g><rect x="1" y="1" width="854" height="538" rx="27" fill="none" stroke="#0f172a" stroke-opacity=".18" stroke-width="2"/></svg>';
+    if (!empty($doc['country_real'])) {
+        $svg .= '<text x="428" y="300" font-size="46" font-weight="800" fill="#b91c1c" fill-opacity=".2" text-anchor="middle" letter-spacing="4" transform="rotate(-18 428 270)">SPÉCIMEN · SIMULATION</text>';
+    }
+    $svg .= '</g><rect x="1" y="1" width="854" height="538" rx="27" fill="none" stroke="#0f172a" stroke-opacity=".18" stroke-width="2"/></svg>';
 
     return $svg;
 };

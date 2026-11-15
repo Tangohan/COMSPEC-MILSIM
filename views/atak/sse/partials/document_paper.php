@@ -43,7 +43,7 @@ $orgLine = (string) ($chrome['org_line'] ?? 'ATHENA · COMPSEC');
 $accessNote = (string) ($chrome['access_note'] ?? 'L’accès est limité aux personnels habilités et inscrits au registre du bureau SSE.');
 $sealTop = (string) ($chrome['seal_top'] ?? 'BUREAU SSE');
 $sealBottom = (string) ($chrome['seal_bottom'] ?? 'RENSEIGNEMENT');
-$footerDisclaimer = (string) ($chrome['footer'] ?? 'Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement.');
+$footerDisclaimer = \App\Support\SseDocumentChromeCatalog::footerText($chrome['footer'] ?? '');
 ?>
 <div class="sse-doc-paper-chrome" data-sse-doc-paper data-classification="<?= $h($classCode) ?>" data-paper-style="<?= $h($paperStyle) ?>">
     <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?> sse-doc-paper-style--<?= $h($paperStyle) ?>" aria-label="Aperçu du document" data-classification="<?= $h($classCode) ?>">
@@ -245,6 +245,6 @@ $footerDisclaimer = (string) ($chrome['footer'] ?? 'Ne constitue pas une preuve 
             <strong><?= $h($classUpper) ?></strong>
             <span>Page 1 sur <?= (int) $marks['pages'] ?></span>
         </div>
-        <p class="sse-doc-paper__disclaimer"><?= $h($footerDisclaimer) ?></p>
+        <?php if ($footerDisclaimer !== ''): ?><p class="sse-doc-paper__disclaimer"><?= $h($footerDisclaimer) ?></p><?php endif; ?>
     </article>
 </div>

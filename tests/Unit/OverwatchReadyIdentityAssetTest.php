@@ -18,7 +18,9 @@ final class OverwatchReadyIdentityAssetTest extends TestCase
         self::assertStringContainsString('usableIdentityText', $svc);
         self::assertStringContainsString('user_site_avatar_url', $svc);
         self::assertStringContainsString('personnel_assigned_grade_label', $svc);
-        self::assertStringContainsString('personnel_profile_job_roles', $svc);
+        // Emploi de la fiche Effectifs : lu par GameOperatorIdentity (communauté de la session).
+        self::assertStringContainsString('GameOperatorIdentity::jobFunction(', $svc);
+        self::assertStringContainsString('personnel_profile_job_roles', (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/GameOperatorIdentity.php'));
         self::assertStringNotContainsString("'unit' => \$logo", $svc);
         self::assertStringContainsString("'unit' => \$unit", $svc);
         self::assertStringContainsString('render_url', $svc);

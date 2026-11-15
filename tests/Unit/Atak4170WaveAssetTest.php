@@ -475,7 +475,7 @@ final class Atak4170WaveAssetTest extends TestCase
         // Version courante : figée par le test de la dernière version (AtakEssentialModeAssetTest) ; ici, 4.17.0 au moins.
         self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(1[7-9]|[2-9]\d)\.\d+"/', $hpp);
         // La DLL COMSPEC Link ne change pas dans cette version.
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.127"', $hpp);
+        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.128"', $hpp);
 
         $cl = str_replace("\r\n", "\n", (string) file_get_contents(self::ROOT . 'CHANGELOG-ATAK.md'));
         $title = '(ATAK natif 4.17.0.AG - Washington)';

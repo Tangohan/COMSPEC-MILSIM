@@ -409,7 +409,7 @@ button.opx-photo:focus-visible { outline: 2px solid #059669; outline-offset: 2px
 .opx-specimen__face figcaption { margin-top: 0.5rem; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
 @media print {
   .opx-specimen { background: #fff; }
-  .opx-specimen__acts { display: none; }
+  .opx-specimen__acts, .opx-specimen__head--screen { display: none; }
   .opx-specimen__face { break-inside: avoid; }
   .opx-specimen__face svg { box-shadow: none; width: 86mm; }
 }
