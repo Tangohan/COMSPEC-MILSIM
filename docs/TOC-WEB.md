@@ -15,7 +15,8 @@ d'opération sur les terrains Arma, reliés au jeu dans les deux sens.
 - `atak.toc.use` : tenir le poste, créer, éditer et envoyer des plans en jeu.
 - `atak.toc.manage` : modèles de la communauté, plans de tous les membres, remise à zéro de la salle web, suppression des marqueurs et tracés des autres sur la carte.
 - `atak.toc.purge` : purger la carte en masse (écran « Purger », voir « Supprimer, annuler et purger la carte »). Dépend de `atak.toc.manage`, sensible, donné à personne automatiquement ; `admin.organization` purge sans l'avoir, `atak.toc.manage` seul ne suffit pas.
-- `admin.organization` vaut les deux ; l'administrateur de la plateforme passe partout.
+- `atak.toc.phone` : agir sur les téléphones en jeu (voir « Téléphones en jeu »), droit dédié et sensible.
+- `admin.organization` vaut tous ces droits ; l'administrateur de la plateforme passe partout.
 - L'étape 4380 crée les deux droits dans chaque communauté. Elle les donne au propriétaire, à l'administrateur, au commandant adjoint et aux gestionnaires d'unité. `atak.toc.use` va aussi aux rôles qui ont `atak.mission_cycle.manage`. Les autres rôles se cochent dans Gestion › Accès (niveau « complet » du module ATAK, et « SA section » pour `atak.toc.use`).
 - Entrées : « TOC » dans l'en-tête ATHENA et le menu Espaces, « Poste TOC » et « Plans d'opération » dans le menu Opérateur, « TOC » et « Plans » dans la barre d'ATAK web (`/atak`) et son menu Plus. Elles ne s'affichent qu'à qui a le droit.
 - Toute écriture demande le jeton CSRF (`X-CSRF-Token`). Elle est limitée par membre (actions de salle : 60 par minute ; éléments de plan : 240 par minute ; envois en jeu : 6 par minute) et journalisée (`audit_logs`, actions `atak_toc.*`).
@@ -25,6 +26,7 @@ d'opération sur les terrains Arma, reliés au jeu dans les deux sens.
 
 - `4370_atak_toc_plans` : tables `atak_plans`, `atak_plan_elements`, `atak_plan_phases`, `atak_plan_versions`, `atak_plan_shares`, `atak_plan_comments`, `atak_plan_presence`, `atak_toc_rooms`, `atak_toc_actions`.
 - `4380_atak_toc_permissions` : droits `atak.toc.use` et `atak.toc.manage`.
+- `4760_atak_toc_phone` : tables `atak_toc_phone_settings` et `atak_toc_phone_events`, droit `atak.toc.phone` (accordé aux seuls niveaux qui ont `atak.toc.manage`). Sans elle, les actions sur les téléphones restent désactivées. Retour arrière : `migrations/rollback/atak_toc_phone_down.sql`.
 - `4630_atak_marker_cycles` : tables `atak_marker_cycle_settings`, `atak_marker_archives`, `atak_marker_archive_items` (cycle de 24 h des marqueurs, voir plus bas).
 - `4750_atak_toc_report_reads` : table `atak_toc_report_reads` (lu / non lu des rapports par opérateur, panneau Rapports). Sans elle, le panneau marche : tout est « non lu », rien n'est conservé, et il le dit. Retour arrière : `migrations/rollback/atak_toc_report_reads_down.sql`.
 - `4770_atak_toc_soft_delete` : colonnes `deleted_at`, `deleted_by`, `delete_batch` sur `atak_markers` et `atak_map_shapes` (corbeille de 15 minutes, pierres tombales du jeu) et table `atak_toc_purges` (état et journal des purges). Retour arrière : `migrations/rollback/atak_toc_purges_down.sql`. Sans elle : mode dégradé (suppression définitive avec confirmation, purge désactivée, message clair).
@@ -36,7 +38,7 @@ Quatre rubriques, chacune avec ses onglets (Alt + 1 à 4, flèches sur la barre)
 
 | Rubrique | Onglets |
 |---|---|
-| Situation | Groupes, ORBAT, Réseau, Flux, Rapports |
+| Situation | Groupes, ORBAT, Réseau, Téléphones, Flux, Rapports |
 | Conduite | Ordres, Demandes, Chronos, EXCHECK, Main courante, Pertes |
 | Plans | Plans web, Camp |
 | Salle | Écrans, SAT, Radio |
@@ -358,6 +360,58 @@ Poste TOC web (`/atak/toc`) : bouton **Éléments** de la barre de la carte (pan
 - **Purge** (`atak.toc.purge`) : types (marqueurs, formes, routes, zones, pings, pistes muettes depuis plus d'une heure), auteur ou unité, âge, zone (écran, rectangle ou polygone dessiné), cycle courant seulement, toute la carte. Aperçu exact par catégorie avant confirmation ; phrase `PURGER` ; l'aperçu confirmé doit rester vrai (sinon 409 « la carte a changé »). Option « Archiver la mission avant de purger » (cochée) : tout l'instantané est écrit AVANT la première suppression ; option « Conserver les éléments épinglés » (cochée, revérifiée au moment de supprimer). Plafond de 20 000 éléments, lots de 500, progression visible, reprise après coupure (`GET /atak/toc/api/purge/status`), une seule purge à la fois par carte (30 minutes sans nouvelle : plus bloquante), un seul lot à la fois par purge. Idempotent : un lot rejoué ne supprime rien de plus. Le lot de la purge est annulable 15 minutes.
 - **Routes** (`/atak/toc/api/`, communauté lue dans la session, CSRF, limite de débit) : `elements/trash`, `elements/delete`, `elements/undo`, `elements/pin`, `elements/archive`, `purge/status`, `purge/authors`, `purge/preview`, `purge/start`, `purge/step`, `purge/cancel`.
 - **Pierres tombales vers le jeu** : un marqueur du jeu (`arma_name`) supprimé garde sa ligne 48 h (`deleted_at`). `GET /api/atak/markers?world_name=…&deleted_since=<instant>:<id>` ajoute en tête de la réponse, plus anciennes d'abord (40 au plus), les lignes `id = del:N`, `source = game_del`, `deleted_at` ; la réponse reste une liste, un ancien client sans le paramètre garde les 15 dernières minutes d'avant. COMSPEC Link 2.0.126 joint son curseur (relevé du relais `fn_markerWebSweep`, second argument `tomb`) et ne l'avance que sur les lignes qu'il a transmises ; `fn_markerWebSweep` retire le marqueur de la carte d'Arma (jamais de message dans le jeu). Le jeu ne renvoie pas un marqueur retiré : le serveur ignore ses mises à jour tant que sa ligne existe. Limites : annuler après le retrait en jeu remet le marqueur sur le web seulement.
+
+## Téléphones en jeu : notifier, faire sonner, localiser, trianguler
+
+Onglet **Téléphones** de la rubrique Situation (`/atak/toc?onglet=telephones`). Il agit uniquement sur les téléphones ATAK du jeu et sur des positions du monde Arma 3 (mètres de jeu) : aucune adresse IP, aucun appareil réel, aucune position réelle d'un joueur n'entre ni ne sort. Les comptes Steam ne quittent jamais le serveur : un téléphone est désigné côté navigateur par une référence opaque `p…` (HMAC propre à la communauté).
+
+### Droits et réglage
+
+- `atak.toc.use` : voir la liste, les fiches, le journal.
+- `atak.toc.phone` (droit dédié, **sensible**, suppose `atak.toc.use`) : notifier, faire sonner, localiser, trianguler. `atak.toc.manage` ne le donne pas ; l'administration de la communauté (`admin.organization`) le vaut. L'étape 4760 le crée dans chaque communauté et l'accorde **uniquement aux niveaux qui ont déjà `atak.toc.manage`** ; ensuite chaque communauté le coche ou non dans Niveaux d'accès (rubrique « Poste TOC »).
+- Réglage de la communauté (`atak_toc_phone_settings`, bouton « Réglages » de l'onglet, `atak.toc.manage`) : **fonction désactivée tant que la communauté ne l'a pas activée**, et « masquer l'entrée *Localisé par le TOC* sur les téléphones hostiles » (jamais pour un allié). Sans l'étape 4760 : désactivée, avec le message « pas encore installée ».
+
+### Actions
+
+| Action | Ce que fait le site | Ce que fait le téléphone en jeu |
+|---|---|---|
+| Notifier | message de 160 caractères au plus, niveau info / alerte / urgent (confirmation modale), accusé de réception demandé ou non ; 24 h en file | boîte Messages (canal alertes) et carte « Alerte du TOC » dans l'app Alertes ; aucun bandeau, `systemChat`, `hint` ni popup ; info : sans bruit, alerte : vibre, urgent : trois vibrations ; avec accusé : « reçu » à l'arrivée, « lu » à l'ouverture de l'app Alertes |
+| Sonner / vibrer | 3 à 30 s, sonnerie ou vibration, confirmation modale, bouton « Arrêter » ; 60 s en file | sons déjà présents du mod (vibration, son de notification d'ordre), jamais un nouveau son |
+| Localiser | demande de position ; 1 par 15 s et par téléphone ; 60 s en file | répond avec `fn_gpsPos` et la précision de `fn_gpsFix` ; téléphone éteint, détruit ou sans fix : « position inconnue » (jamais inventée) ; carte « Localisé par le TOC à HH:MM » |
+| Trianguler | estimation à partir des relais intacts de la carte et des téléphones alliés en ligne (`PhoneTriangulation`) | si le téléphone est celui d'un joueur visible : carte « Triangulé par le TOC à HH:MM » (commande `trace`) |
+
+Un PNJ ou un hostile ne reçoit ni message ni sonnerie ; un PNJ n'a pas de téléphone qui réponde (pas de localisation, mais la triangulation estime sa position connue). Un joueur du camp adverse peut être localisé et triangulé.
+
+### Limites et garde-fous
+
+- 1 localisation par 15 s et par téléphone, 10 messages par minute et par opérateur, 3 messages non lus par téléphone, 6 sonneries par minute et par opérateur, 3 triangulations en même temps par communauté (2 par opérateur), 1 triangulation par 30 s et par téléphone ; 60 écritures par minute et par opérateur en tout.
+- CSRF sur toute écriture ; un téléphone d'une autre communauté, ou hors de la vue de l'opérateur, répond 404 ; si les positions sont brouillées (vue chiffrée ou brouillée), le poste n'agit pas.
+- Journal de chaque demande, refus compris (`atak_toc_phone_events` : opérateur, téléphone, action, niveau, message, état, résultat, instants) et audit général `atak_toc.phone.*` dans `audit_logs`.
+- Visibilité côté cible : une entrée « Localisé par le TOC » / « Triangulé par le TOC » dans l'app Alertes. Masquable seulement pour une cible hostile, si la communauté l'a réglé ; jamais pour un allié.
+
+### Routes
+
+`GET /atak/toc/api/phones` (liste), `GET …/phones/events` (journal, demandes ouvertes mises à jour), `GET …/phones/{ref}` (fiche), `POST …/phones/settings`, `POST …/phones/{ref}/notify | ring | ring-stop | locate | triangulate`. Corps JSON, jeton `X-CSRF-Token`. Réponses d'erreur : `forbidden_phone` 403, `disabled` 403, `not_ready` 503, `target_unknown` 404, `view_degraded` 409, `rate_limited` et `too_many_*` 429 (en-tête `Retry-After`), `confirm_required`, `target_not_player` et validations 422.
+
+### Acheminement vers le jeu
+
+Aucune nouvelle file ni nouvel appel de la DLL (**COMSPEC Link inchangé**) : genre `phone` du fil WC1 de `atak_web_commands`, lu par `GetExplosiveCommands`, compte rendu par `web_cmd_ack`.
+
+| Commande | Arguments | Délai |
+|---|---|---|
+| `notify` | `lv` i/a/u, `m` texte codé, `ak` 0/1, `by` opérateur | 24 h (huit lignes au plus par sondage, lues à part des commandes en temps réel) |
+| `ring` | `d` secondes, `md` ring/vib, `by` | 60 s |
+| `stop`, `locate` (`vis`, `by`), `trace` (`kd=tri`, `by`) | – | 60 s |
+
+Le texte est codé en ASCII : lettres, chiffres, espace et `. , : -` tels quels, tout autre caractère en `@<code Unicode>_` (`TocPhoneService::wireText`, décodé par `fn_tocPhone`). Seul le téléphone visé peut rendre compte d'une commande `phone` (compte Steam vérifié). Côté mod : `fn_webCmdDispatch` (connect) → `fn_tocPhone` (ATAK natif) ; carte « Alerte du TOC » dans `fn_pageAlerts`.
+
+### Triangulation
+
+`App\Services\AtakToc\PhoneTriangulation`, même principe que la triangulation par relais de l'ATAK en jeu (`fn_relayNet` « locate ») : chaque source qui entend le téléphone (distance de jeu dans sa portée) donne une distance estimée avec 5 % (lien franc) à 25 % (lien faible) d'erreur et un azimut (3° à 15° d'erreur) ; une source = un cercle, deux = deux positions possibles, trois ou plus = moindres carrés (descente de gradient depuis le barycentre) avec une zone d'incertitude en `1,9 σ / √n` (environ neuf cas sur dix). Qualité de lien `(1 − (d/portée)^1,5) × (1 − 0,45 × terrain)` ; terrain de 0 (dégagé) à 1 par carte (`TocPhoneService::terrainFactor`). Bornes : 12 sources au plus, distance estimée de 5 m au moins, rayon de 15 m à 5 km. Déterministe : bruit à graine (communauté, téléphone, fenêtre de 30 s) mélangée à l'identifiant de chaque source (mulberry32). Le résultat est livré après 6 à 10 s d'« écoute » et toujours marqué *estimation*. Sources : relais intacts (`atak_relays`) et téléphones de joueurs alliés en ligne (portée de maillage 3 km).
+
+### Ce qui existait déjà
+
+`POST /api/units/{id}/vibrate` et `/notify` (ordres `VIBRATE` / `NOTIFY` de la page ATAK web, sans droit dédié, avec bandeau en jeu), `PHONE_GEOLOC` (géolocalisation d'un contact depuis le back-office), les anneaux de géolocalisation dessinés à la main (`geoloc-rings`), les pistes de téléphones des calques SSE (extractions) et la triangulation par relais faite en jeu. Ils ne sont pas modifiés.
 
 ## Ce qui n'est pas fait
 

@@ -241,7 +241,7 @@ final class AtakTocManageAssetTest extends TestCase
     {
         // Versions minimales (chaque sortie suivante ne casse pas ce test) ; l'alignement de Link, lui, est exact.
         $hpp = $this->file('mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp');
-        ModVersion::assertAtLeast('4.23.0', ModVersion::match('/#define VERSION_STR "([0-9.]+)"/', $hpp));
+        ModVersion::assertAtLeast('4.24.0', ModVersion::match('/#define VERSION_STR "([0-9.]+)"/', $hpp));
         $link = ModVersion::match('/#define LINK_VERSION_STR "([0-9.]+)"/', $hpp);
         ModVersion::assertAtLeast('2.0.126', $link);
         self::assertStringContainsString('const string ExtensionVersion = "' . $link . '";', $this->file('mod/UptoDate/COMSPECExtension/Extension.cs'));
@@ -254,7 +254,7 @@ final class AtakTocManageAssetTest extends TestCase
         $log = $this->file('CHANGELOG-ATAK.md');
         self::assertMatchesRegularExpression('/
 ## Poste TOC : suppression des marqueurs[^
-]+\(ATAK natif 4\.23\.0\.AG - Washington, COMSPEC Link 2\.0\.126\)
+]+\(ATAK natif 4\.24\.0\.AG - Washington, COMSPEC Link 2\.0\.126\)
 
 ### Résumé joueur
 Type : nouveauté
@@ -268,6 +268,6 @@ FR : [^
 ]+
 )+/', $log);
         $steam = $this->file('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.23.0 Washington', $steam);
+        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.24.0 Washington', $steam);
     }
 }

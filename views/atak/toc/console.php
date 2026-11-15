@@ -24,6 +24,7 @@ $tocKeys = [
 <link rel="stylesheet" href="<?= $h($a('assets/css/atak-toc-manage.css')) ?>">
 <script src="<?= $h($a('assets/js/toc/toc-console-ui.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-manage.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/toc-phones.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-reports.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-console.js')) ?>" defer></script>
 </head>
