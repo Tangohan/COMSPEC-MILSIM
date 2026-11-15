@@ -2077,7 +2077,8 @@ private _ret = switch (_mode) do {
         private _map = _a;
         // Traits, plan du camp, zones et tracé en cours, comme la carte de l'ATAK (fn_tocDraw).
         if (_ly getOrDefault ["PLAN", true] || {(_st getOrDefault ["sec", ""]) isEqualTo "PLANS"}) then { ["draw", _map] call comspec_atak_native_fnc_tocDraw; };
-        private _feed = call _feedOf;
+        // Flux construit par le passage de la seconde (« refresh ») : relu ici sans rien recalculer (« peek »).
+        private _feed = ["peek", _side] call comspec_atak_native_fnc_tocAppData;
         _feed params [["_ft", -1], ["_nodes", []], ["_events", []]];
         // Taille des textes : celle d'un écran de PC, jamais sous le plancher en pixels réels des cartes du téléphone
         // (Réglages > Carte, « Taille minimale des textes », fn_mapLbl).
@@ -2092,72 +2093,107 @@ private _ret = switch (_mode) do {
         // Poste TOC.
         private _o = _st getOrDefault ["obj", objNull];
         private _clear = "#(argb,8,8,3)color(0,0,0,0)";
-        // Étiquettes posées une à une : celle qui chevaucherait une étiquette déjà posée n'est pas écrite (icône seule).
-        private _taken = [];
-        private _lbl = {
-            params ["_pos", "_txt", ["_k", 1]];
-            if (_txt isEqualTo "") exitWith { "" };
-            private _sp = _map ctrlMapWorldToScreen _pos;
-            private _w = (count _txt) * _ts * 0.42 * _k + _ts;
-            private _r = [(_sp select 0) + _w / 2, _sp select 1, _w, _ts * 1.1 * _k];
-            if ((_taken findIf { abs ((_x select 0) - (_r select 0)) < ((_x select 2) + (_r select 2)) / 2 && {abs ((_x select 1) - (_r select 1)) < ((_x select 3) + (_r select 3)) / 2} }) >= 0) exitWith { "" };
-            _taken pushBack _r;
-            _txt
-        };
-        // Objectif et poste réservent leur place d'abord ; texte blanc cerné de noir, lisible sur tous les fonds.
+        // Texte blanc cerné de noir, lisible sur tous les fonds.
         private _text = {
             params ["_pos", "_txt", ["_rgba", [1, 1, 1, 1]], ["_w", 30]];
             if (_txt isNotEqualTo "") then { _map drawIcon [_clear, _rgba, _pos, _w, _w, 0, _txt, 2, _ts, "RobotoCondensedBold", "right"]; };
         };
         private _op = _draft getOrDefault ["pos", []];
-        private _opTxt = if ((count _op) >= 2) then { [[_op select 0, _op select 1, 0], "OBJECTIF"] call _lbl } else { "" };
-        if (!isNull _o) then {
-            private _tocPos = getPosASL _o;
-            _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_hq.paa", _sideRgb + [1], _tocPos, 30, 30, 0, "", 0];
-            [_tocPos, [_tocPos, "TOC"] call _lbl] call _text;
-        };
-        // Comptes rendus et alertes géolocalisés des 20 dernières minutes : dessinés après les nœuds (les noms d'abord).
-        private _evs = [];
-        {
-            _x params ["", ["_kind", ""], ["_prio", ""], "", "", "", ["_p", []], ["_at", -1e9]];
-            if ((count _p) >= 2 && {serverTime - _at < 1200} && {_ly getOrDefault ["EV", true]}) then {
-                _evs pushBack [[[1, 0.55, 0.2, 1], [1, 0.3, 0.22, 1]] select (_prio in ["FLASH", "URGENT"]), [_p select 0, _p select 1, 0], _kind];
-            };
-        } forEach _events;
         // Nœuds ATAK du camp : symbole OTAN ami, couleur du camp ; ancien pâli, perdu et hors ligne en gris.
         // Groupe choisi puis nœuds en direct d'abord : ce sont eux qui gardent leur nom quand la carte est chargée.
-        // Tri gardé 2 s (avant la 4.9.0 : refait à chaque image).
-        private _dk = [_ft, count _nodes, _selG, floor (diag_tickTime / 2)];
+        // Tri gardé tant que le flux n'est pas reconstruit (toutes les 2 s, fn_tocAppData ; avant la 4.9.0 : à chaque image).
+        private _dk = [_ft, count _nodes, _selG, (uiNamespace getVariable ["COMSPEC_ATAK_TocAppFeed", [[], [], 0]]) param [2, 0]];
         if ((_st getOrDefault ["drawKey", []]) isNotEqualTo _dk) then {
             _st set ["drawKey", _dk];
             _st set ["drawNodes", [_nodes, [], { [(_x select 4) min 3, -10] select (((_x param [7, ""]) isEqualTo _selG) && {_selG isNotEqualTo ""}) }, "ASCEND"] call BIS_fnc_sortBy];
         };
         _nodes = _st get "drawNodes";
-        {
-            _x params ["_nk", "_cs", "_p", "_dir", "_fr", "_kind", "_ai", ["_grp", ""], ["_n", 1], ["_src", "P"]];
-            // Calques (onglet CARTE) : joueurs ou IA, véhicules, aéronefs, unités sans téléphone ; l'unité et le groupe choisis restent.
-            private _picked = (_nk isEqualTo _selU) || {_grp isEqualTo _selG && {_selG isNotEqualTo ""}};
-            if (!_picked && {!(_ly getOrDefault [["PL", "AI"] select _ai, true]) || {_kind in ["veh", "armor", "boat"] && {!(_ly getOrDefault ["VEH", true])}}
-                || {_kind isEqualTo "air" && {!(_ly getOrDefault ["AIR", true])}} || {_src isEqualTo "D" && {!(_ly getOrDefault ["DIR", true])}}}) then { continue };
-            private _tex = format ["\A3\ui_f\data\map\markers\nato\b_%1.paa", (createHashMapFromArray [["veh", "motor_inf"], ["air", "air"], ["boat", "naval"], ["armor", "armor"]]) getOrDefault [_kind, "inf"]];
-            private _col = switch (_fr) do {
-                case 0: { _sideRgb + [1] };
-                case 1: { (_sideRgb apply { _x * 0.75 }) + [0.8] };
-                case 2: { [0.62, 0.62, 0.62, 0.85] };
-                default { [0.45, 0.45, 0.45, 0.75] };
+        // Liste de dessin (poste, nœuds, comptes rendus) gardée tant que rien de ce qui la décide ne change : flux, cadrage
+        // de la carte (deux points repères à l'écran), choix, calques, couleurs du thème, objectif, taille des textes ; et
+        // 2 s au plus. Carte immobile : la liste est rejouée telle quelle à chaque image, sans refaire ni les étiquettes
+        // ni le test de chevauchement. Carte déplacée ou zoomée : refaite à chaque image, comme avant.
+        private _accent = ["accent"] call _tcol;
+        private _viewKey = [_dk, _selU, _map ctrlMapWorldToScreen [0, 0, 0], _map ctrlMapWorldToScreen [1000, 1000, 0], _ts, _sideRgb, _accent,
+            ["PL", "AI", "DIR", "VEH", "AIR", "EV"] apply { _ly getOrDefault [_x, true] }, _op, [[], getPosASL _o] select (!isNull _o), floor (diag_tickTime / 2)];
+        private _drawList = _st getOrDefault ["drawList", [[], [], ""]];
+        if ((_drawList select 0) isNotEqualTo _viewKey) then {
+            // [0, arguments de drawIcon] ou [1, arguments de drawArrow], dans l'ordre du dessin.
+            private _drawOps = [];
+            // Étiquettes posées une à une : celle qui chevaucherait une étiquette déjà posée n'est pas écrite (icône seule).
+            // Étiquettes rangées par bande de la hauteur d'une étiquette : seules les trois bandes voisines sont comparées
+            // (avant : toutes les étiquettes déjà posées, 250 nœuds au plus, à chaque image). Deux étiquettes qui se
+            // chevauchent sont toujours à une bande d'écart au plus : même test, même résultat (_k ne dépasse jamais 1).
+            private _lblRows = createHashMap;
+            private _rowH = _ts * 1.1;
+            private _lbl = {
+                params ["_pos", "_txt", ["_k", 1]];
+                if (_txt isEqualTo "") exitWith { "" };
+                private _sp = _map ctrlMapWorldToScreen _pos;
+                private _w = (count _txt) * _ts * 0.42 * _k + _ts;
+                private _r = [(_sp select 0) + _w / 2, _sp select 1, _w, _ts * 1.1 * _k];
+                private _row = floor ((_sp select 1) / _rowH);
+                private _hit = false;
+                {
+                    private _band = _lblRows get _x;
+                    if (!isNil "_band" && {(_band findIf { abs ((_x select 0) - (_r select 0)) < ((_x select 2) + (_r select 2)) / 2 && {abs ((_x select 1) - (_r select 1)) < ((_x select 3) + (_r select 3)) / 2} }) >= 0}) exitWith { _hit = true; };
+                } forEach [_row - 1, _row, _row + 1];
+                if (_hit) exitWith { "" };
+                private _band = _lblRows get _row;
+                if (isNil "_band") then { _lblRows set [_row, [_r]]; } else { _band pushBack _r; };
+                _txt
             };
-            private _pos = [_p select 0, _p select 1, 0];
-            if (_grp isEqualTo _selG && {_selG isNotEqualTo ""}) then {
-                _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.3, 0.9], _pos, 44, 44, 0, "", 0];
+            private _note = {
+                params ["_pos", "_txt", ["_rgba", [1, 1, 1, 1]], ["_w", 30]];
+                if (_txt isNotEqualTo "") then { _drawOps pushBack [0, [_clear, _rgba, _pos, _w, _w, 0, _txt, 2, _ts, "RobotoCondensedBold", "right"]]; };
             };
-            // « IA » seulement sur le groupe choisi : la carte n'est plus couverte de suffixes.
-            private _txt = _cs + (["", format [" +%1", _n - 1]] select (_n > 1)) + (["", " · IA"] select (_ai && {_grp isEqualTo _selG})) + (["", " · ancien", " · perdu", " · hors ligne"] select (_fr min 3));
-            if (_nk isEqualTo _selU) then { _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", (["accent"] call _tcol), _pos, 52, 52, 0, "", 0]; };
-            _map drawIcon [_tex, _col, _pos, 28, 28, 0, "", 0];
-            [_pos, [_pos, _txt] call _lbl] call _text;
-            if (_fr < 2) then { _map drawArrow [_pos, _pos getPos [45, _dir], _col]; };
-        } forEach _nodes;
-        { _x params ["_c", "_p", "_k"]; _map drawIcon ["\A3\ui_f\data\map\markers\military\warning_CA.paa", _c, _p, 22, 22, 0, "", 0]; [_p, [_p, _k, 0.85] call _lbl, _c, 22] call _text; } forEach _evs;
+            // Objectif et poste réservent leur place d'abord.
+            private _opLbl = if ((count _op) >= 2) then { [[_op select 0, _op select 1, 0], "OBJECTIF"] call _lbl } else { "" };
+            if (!isNull _o) then {
+                private _tocPos = getPosASL _o;
+                _drawOps pushBack [0, ["\A3\ui_f\data\map\markers\nato\b_hq.paa", _sideRgb + [1], _tocPos, 30, 30, 0, "", 0]];
+                [_tocPos, [_tocPos, "TOC"] call _lbl] call _note;
+            };
+            // Comptes rendus et alertes géolocalisés des 20 dernières minutes : dessinés après les nœuds (les noms d'abord).
+            private _evs = [];
+            {
+                _x params ["", ["_kind", ""], ["_prio", ""], "", "", "", ["_p", []], ["_at", -1e9]];
+                if ((count _p) >= 2 && {serverTime - _at < 1200} && {_ly getOrDefault ["EV", true]}) then {
+                    _evs pushBack [[[1, 0.55, 0.2, 1], [1, 0.3, 0.22, 1]] select (_prio in ["FLASH", "URGENT"]), [_p select 0, _p select 1, 0], _kind];
+                };
+            } forEach _events;
+            // Symboles OTAN : table fixe (avant : une table recréée par nœud à chaque image).
+            private _natoTex = createHashMapFromArray [["veh", "\A3\ui_f\data\map\markers\nato\b_motor_inf.paa"], ["air", "\A3\ui_f\data\map\markers\nato\b_air.paa"],
+                ["boat", "\A3\ui_f\data\map\markers\nato\b_naval.paa"], ["armor", "\A3\ui_f\data\map\markers\nato\b_armor.paa"]];
+            {
+                _x params ["_nk", "_cs", "_p", "_dir", "_fr", "_kind", "_ai", ["_grp", ""], ["_n", 1], ["_src", "P"]];
+                // Calques (onglet CARTE) : joueurs ou IA, véhicules, aéronefs, unités sans téléphone ; l'unité et le groupe choisis restent.
+                private _picked = (_nk isEqualTo _selU) || {_grp isEqualTo _selG && {_selG isNotEqualTo ""}};
+                if (!_picked && {!(_ly getOrDefault [["PL", "AI"] select _ai, true]) || {_kind in ["veh", "armor", "boat"] && {!(_ly getOrDefault ["VEH", true])}}
+                    || {_kind isEqualTo "air" && {!(_ly getOrDefault ["AIR", true])}} || {_src isEqualTo "D" && {!(_ly getOrDefault ["DIR", true])}}}) then { continue };
+                private _tex = _natoTex getOrDefault [_kind, "\A3\ui_f\data\map\markers\nato\b_inf.paa"];
+                private _col = switch (_fr) do {
+                    case 0: { _sideRgb + [1] };
+                    case 1: { (_sideRgb apply { _x * 0.75 }) + [0.8] };
+                    case 2: { [0.62, 0.62, 0.62, 0.85] };
+                    default { [0.45, 0.45, 0.45, 0.75] };
+                };
+                private _pos = [_p select 0, _p select 1, 0];
+                if (_grp isEqualTo _selG && {_selG isNotEqualTo ""}) then {
+                    _drawOps pushBack [0, ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.3, 0.9], _pos, 44, 44, 0, "", 0]];
+                };
+                // « IA » seulement sur le groupe choisi : la carte n'est plus couverte de suffixes.
+                private _txt = _cs + (["", format [" +%1", _n - 1]] select (_n > 1)) + (["", " · IA"] select (_ai && {_grp isEqualTo _selG})) + (["", " · ancien", " · perdu", " · hors ligne"] select (_fr min 3));
+                if (_nk isEqualTo _selU) then { _drawOps pushBack [0, ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _accent, _pos, 52, 52, 0, "", 0]]; };
+                _drawOps pushBack [0, [_tex, _col, _pos, 28, 28, 0, "", 0]];
+                [_pos, [_pos, _txt] call _lbl] call _note;
+                if (_fr < 2) then { _drawOps pushBack [1, [_pos, _pos getPos [45, _dir], _col]]; };
+            } forEach _nodes;
+            { _x params ["_c", "_p", "_k"]; _drawOps pushBack [0, ["\A3\ui_f\data\map\markers\military\warning_CA.paa", _c, _p, 22, 22, 0, "", 0]]; [_p, [_p, _k, 0.85] call _lbl, _c, 22] call _note; } forEach _evs;
+            _drawList = [_viewKey, _drawOps, _opLbl];
+            _st set ["drawList", _drawList];
+        };
+        { if ((_x select 0) isEqualTo 0) then { _map drawIcon (_x select 1); } else { _map drawArrow (_x select 1); }; } forEach (_drawList select 1);
+        private _opTxt = _drawList select 2;
         // Ordres aux groupes IA du camp (fn_aiOrder).
         ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_aiOrder;
         // Appui feu typé (fn_fireSupport) : missions de tir du camp, portées et distance de sécurité.

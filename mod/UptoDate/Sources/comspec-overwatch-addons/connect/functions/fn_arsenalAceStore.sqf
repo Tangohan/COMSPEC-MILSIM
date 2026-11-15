@@ -28,6 +28,11 @@ private _var = "ace_arsenal_saved_loadouts";
 private _fnKey = {
     params ["_n"];
     if !(_n isEqualType "") exitWith { "" };
+    // Nom sans tabulation, saut de ligne ni « | » (presque tous) : mêmes minuscules et espaces regroupés, sans la
+    // conversion caractère par caractère ci-dessous. Résultat identique.
+    if ((_n find "|") < 0 && {(_n find (toString [9])) < 0} && {(_n find (toString [10])) < 0} && {(_n find (toString [13])) < 0}) exitWith {
+        ((toLower _n) splitString " ") joinString " "
+    };
     private _c = (toArray _n) apply { switch (_x) do { case 9; case 10; case 13: { 32 }; case 124: { 45 }; default { _x }; } };
     ((toLower toString _c) splitString " ") joinString " "
 };
@@ -135,18 +140,24 @@ private _fnDedupe = {
     private _seen = createHashMap;
     private _drop = [];
     private _renamed = 0;
+    // Empreinte du contenu (déballage + str de la tenue) : calculée seulement pour les noms présents deux fois, et
+    // pour la première tenue du nom au moment où un doublon se présente. Avant : pour chaque tenue du profil, à
+    // chaque passage (le plus gros du temps de la réparation), alors que les doublons sont l'exception.
+    private _fnSig = { params ["_e"]; str (([_e param [1, []]] call _fnExtended) param [0, []]) };
     {
         if !((_x isEqualType []) && {(_x param [0, 0]) isEqualType ""}) then { continue };
         private _k = [_x select 0] call _fnKey;
-        private _sig = str (([_x param [1, []]] call _fnExtended) param [0, []]);
-        if !(_k in _seen) then { _seen set [_k, [_sig]]; continue };
-        private _sigs = _seen get _k;
-        if (_sig in _sigs) then { _drop pushBack _forEachIndex; continue };
+        // _seen : nom -> [première tenue de ce nom] puis [première tenue, son empreinte] dès qu'un doublon arrive.
+        if !(_k in _seen) then { _seen set [_k, [_x]]; continue };
+        private _first = _seen get _k;
+        if ((count _first) < 2) then { _first pushBack ([_first select 0] call _fnSig); };
+        private _sig = [_x] call _fnSig;
+        if (_sig isEqualTo (_first select 1)) then { _drop pushBack _forEachIndex; continue };
         private _j = 2;
         private _nn = format ["%1 (%2)", _x select 0, _j];
         while { ([_nn] call _fnKey) in _used } do { _j = _j + 1; _nn = format ["%1 (%2)", _x select 0, _j]; };
         _used set [[_nn] call _fnKey, true];
-        _seen set [[_nn] call _fnKey, [_sig]];
+        _seen set [[_nn] call _fnKey, [_x, _sig]];
         _x set [0, _nn];
         _renamed = _renamed + 1;
     } forEach _s;

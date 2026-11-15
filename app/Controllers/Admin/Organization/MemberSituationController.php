@@ -443,15 +443,24 @@ final class MemberSituationController
             $qualificationSuggestions = null;
         }
 
+        // Interrupteurs « Visible sur Arma » / « Visible sur le profil » : le membre décide pour ses propres qualifications.
+        $qualificationDisplay = null;
+        try {
+            $qualificationDisplay = (new \App\Services\Personnel\QualificationDisplayService())
+                ->panel($awards, jnet_moi_url('qualifications/affichage'), true);
+        } catch (\Throwable) {
+        }
+
         return JnetMemberShell::view($request, $this->boShell([
             'title' => 'Mes qualifications',
             'content' => 'admin.member_situation.qualifications',
             'boPageTitle' => 'Mes qualifications',
             'boPageKicker' => 'OPÉRATEUR · MES QUALIFICATIONS',
             'boPageSubtitle' => 'Qualifications et brevets enregistrés sur votre dossier.',
-            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : [], $qualificationProgress !== [] || $qualificationSuggestions !== null ? ['qualifications-matrix.css', 'effectifs-kit.css'] : []),
+            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css', 'qualification-display.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : [], $qualificationProgress !== [] || $qualificationSuggestions !== null ? ['qualifications-matrix.css', 'effectifs-kit.css'] : []),
             'user' => $user,
             'awards' => $enriched,
+            'qualificationDisplay' => $qualificationDisplay,
             'pilotProgress' => $pilotProgress,
             'qualificationProgress' => $qualificationProgress,
             'progressNames' => $progressNames,

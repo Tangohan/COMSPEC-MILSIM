@@ -177,7 +177,7 @@ final class AtakTocLayoutAssetTest extends TestCase
         // Dispositions gardées : profil du joueur, 20 au plus, nom de 24 caractères.
         self::assertStringContainsString('profileNamespace getVariable ["COMSPEC_ATAK_TocLayouts", []]', $lay);
         self::assertStringContainsString('profileNamespace setVariable ["COMSPEC_ATAK_TocLayouts", _all];', $lay);
-        self::assertStringContainsString('saveProfileNamespace;', $lay);
+        self::assertStringContainsString('[] call comspec_atak_native_fnc_saveProfile;', $lay);
         self::assertStringContainsString('_nm = trim (_nm select [0, 24]);', $lay);
         self::assertStringContainsString('if ((count _all) > 20) then { _all = _all select [(count _all) - 20]; };', $lay);
         // Poste entier : écrans de la même salle à 6 m au plus.

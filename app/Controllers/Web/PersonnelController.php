@@ -720,6 +720,13 @@ class PersonnelController
         }
         if (!$isSelf) {
             $qualifications = $this->personnelQualificationRepository->filterForViewer($qualifications, $viewCaps);
+            // Interrupteur « Visible sur le profil » : une qualification masquée par le membre n'apparaît pas aux autres
+            // (la fiche Effectifs du responsable, elle, continue de tout montrer).
+            try {
+                $qualifications = (new \App\Services\Personnel\QualificationDisplayService())
+                    ->visibleOn($qualifications, \App\Services\Personnel\QualificationDisplayService::PROFILE);
+            } catch (\Throwable) {
+            }
         }
         $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($uid, 50, (int) $tenantId);
         $trainingCertificates = $this->trainingCertificateRepository->listByUserId($uid, (int) $tenantId);

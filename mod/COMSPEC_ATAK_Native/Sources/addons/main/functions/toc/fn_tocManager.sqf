@@ -763,7 +763,8 @@ switch (_mode) do {
                 private _all = (profileNamespace getVariable [_var, []]) select { _x isEqualType [] && {(_x param [0, ""]) isNotEqualTo _nm} };
                 _all pushBack [_nm, _items];
                 profileNamespace setVariable [_var, _all select [0 max ((count _all) - 20)]];
-                saveProfileNamespace;
+                // Écriture du profil regroupée (fn_saveProfile : une par minute au plus, et en fin de mission).
+                [] call comspec_atak_native_fnc_saveProfile;
                 ["say", format [("Préréglage %1 enregistré (%2 dalles)") call _tr, _nm, count _items]] call _fn;
             };
             case "load": {

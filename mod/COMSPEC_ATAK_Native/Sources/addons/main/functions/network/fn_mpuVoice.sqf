@@ -295,7 +295,7 @@ switch (_act) do {
     case "bridge": {
         if !(call _enabled) exitWith { ["WARNING", "Voix radio par le maillage MPU5 désactivée sur ce serveur"] call _say; false };
         if (!_acre && {!_tfar}) exitWith { ["WARNING", "Ni ACRE2 ni TFAR sur ce serveur : aucune radio à relier"] call _say; false };
-        if !(["has", [player]] call comspec_atak_native_fnc_mpu5) exitWith { ["WARNING", "Aucune MPU5 sur vous : le câble audio relie une radio que vous portez à votre MPU5"] call _say; false };
+        if !(["hasMpu"] call comspec_atak_native_fnc_mpu5) exitWith { ["WARNING", "Aucune MPU5 sur vous : le câble audio relie une radio que vous portez à votre MPU5"] call _say; false };
         private _rl = call _radios;
         private _key = _arg param [0, ""];
         private _pick = if (_key isEqualTo "") then { ["preferred"] call comspec_atak_native_fnc_mpuVoice } else {
@@ -353,7 +353,7 @@ switch (_act) do {
         if (_on && {_b isNotEqualTo []}) then {
             _b params ["_key", "_api", "_name"];
             if (((call _radios) findIf { (_x select 0) isEqualTo _key }) < 0) exitWith { _drop = format ["Radio %1 plus sur vous : pont radio retiré", _name]; };
-            if !(["has", [player]] call comspec_atak_native_fnc_mpu5) exitWith { _drop = "MPU5 plus sur vous : pont radio retiré"; };
+            if !(["hasMpu"] call comspec_atak_native_fnc_mpu5) exitWith { _drop = "MPU5 plus sur vous : pont radio retiré"; };
             if ((["denied"] call comspec_atak_native_fnc_netRequire) isNotEqualTo []) exitWith { _why = "objet requis manquant"; };
             private _node = player getVariable ["COMSPEC_ATAK_MpuNode", []];
             if (_node isEqualTo [] || {(_node param [2, objNull]) isNotEqualTo player}) exitWith { _why = "MPU5 éteinte ou batterie vide"; };

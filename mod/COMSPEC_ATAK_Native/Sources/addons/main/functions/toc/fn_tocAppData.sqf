@@ -12,6 +12,9 @@
     Modes :
       ["feed", camp]      [serverTime du flux (-1 : aucun), nœuds, flux d'événements, état]
                           nœud : les 9 champs de fn_tocFeed + source "P" (téléphone) | "D" (source directe)
+      ["peek", camp]      le même tableau pour le dessin de la carte (à chaque image) : dernier flux construit s'il a
+                          moins de 4 s, sans rien relire. C'est le passage de la seconde de la console (« refresh ») qui
+                          le reconstruit : le parcours de toutes les unités ne tombe plus dans le dessin d'une image.
       ["unit", clé]       fiche d'un nœud : table "obj", "name", "cs", "grp", "type", "veh", "crew", "grid", "pos", "speed",
                           "alt", "health" [libellé, jeton], "ammo", "player", "phone", "uid" ; vide si l'unité a disparu
       ["label", [fraîcheur, source]]   [libellé, jeton du thème] : jamais « perdu » pour une unité sans téléphone
@@ -22,8 +25,9 @@ switch (_mode) do {
         private _side = _a;
         // Gardé 2 s : les appels entre-temps (dessin de la carte à chaque image) rendent le même tableau, sans rien relire.
         private _key = [_side, floor (diag_tickTime / 2)];
-        private _c = uiNamespace getVariable ["COMSPEC_ATAK_TocAppFeed", [[], []]];
+        private _c = uiNamespace getVariable ["COMSPEC_ATAK_TocAppFeed", [[], [], -1e9]];
         if ((_c select 0) isEqualTo _key) exitWith { _c select 1 };
+        private _perfT = diag_tickTime;
         // Flux des téléphones : celui de fn_tocStatus quand la 4.8.0 est là (nœud du joueur local corrigé), sinon la variable.
         private _raw = if (isNil "comspec_atak_native_fnc_tocStatus") then { [] } else { ["feed", _side] call comspec_atak_native_fnc_tocStatus };
         if (isNil "_raw" || {!(_raw isEqualType [])} || {(count _raw) < 2}) then { _raw = missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []]; };
@@ -78,8 +82,15 @@ switch (_mode) do {
             } forEach allUnits;
         };
         private _feed = [_ft, _out, _events, _stats];
-        uiNamespace setVariable ["COMSPEC_ATAK_TocAppFeed", [_key, _feed]];
+        // [clé, flux, heure de construction] : l'heure dit au dessin de la carte quand refaire son tri (fn_tocLaptop).
+        uiNamespace setVariable ["COMSPEC_ATAK_TocAppFeed", [_key, _feed, diag_tickTime]];
+        ["TOC : flux (construction)", _perfT] call comspec_atak_native_fnc_perfAcc;
         _feed
+    };
+    case "peek": {
+        private _c = uiNamespace getVariable ["COMSPEC_ATAK_TocAppFeed", [[], [], -1e9]];
+        if (((_c select 0) param [0, ""]) isEqualTo _a && {(diag_tickTime - (_c param [2, -1e9])) < 4}) exitWith { _c select 1 };
+        ["feed", _a] call comspec_atak_native_fnc_tocAppData
     };
     case "unit": {
         private _u = objectFromNetId _a;
