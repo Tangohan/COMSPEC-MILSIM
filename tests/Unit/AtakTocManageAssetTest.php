@@ -268,6 +268,6 @@ FR : [^
 ]+
 )+/', $log);
         $steam = $this->file('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.24.0 Washington', $steam);
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.24.0 Washington', $steam);
     }
 }

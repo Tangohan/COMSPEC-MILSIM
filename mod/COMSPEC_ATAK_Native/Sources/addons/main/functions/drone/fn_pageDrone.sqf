@@ -1003,8 +1003,18 @@ switch (_tab) do {
     };
     default {
         if (_ground) then {
-            _rows pushBack ["buttons", [["DÉMARRER ET DÉCOLLER", ["takeoff"] call _act, true]]];
-            _rows pushBack ["text", format ["<t size='0.85' color='#8a9a93'>Montée à %1 m puis stationnaire. Tout ordre de vol donné au sol fait aussi décoller le drone.</t>", _alt]];
+            // Le bouton suit la famille du drone (fn_droneProfile) : drone terrestre, aucun décollage ; avion, piste ou lancement.
+            private _fam = (["get", _d] call comspec_atak_native_fnc_droneProfile) getOrDefault ["kind", "QUAD"];
+            if (_fam isEqualTo "UGV") then {
+                _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Drone terrestre : pas de décollage. Utilisez les ordres de déplacement.</t>"];
+            } else {
+                _rows pushBack ["buttons", [["DÉMARRER ET DÉCOLLER", ["takeoff"] call _act, true]]];
+                _rows pushBack ["text", switch (_fam) do {
+                    case "PLANE": { "<t size='0.85' color='#8a9a93'>Roulage et décollage sur la piste droit devant, sinon lancement à la main. Il tourne ensuite en orbite : un avion ne reste pas immobile.</t>" };
+                    case "LAUNCH": { "<t size='0.85' color='#8a9a93'>Lancement à la main : tournez le drone face à un espace dégagé d'au moins 120 m avant d'appuyer. Il tourne ensuite en orbite.</t>" };
+                    default { format ["<t size='0.85' color='#8a9a93'>Montée à la verticale jusqu'à la hauteur de sécurité, puis à %1 m. Tout ordre de vol donné au sol fait aussi décoller le drone.</t>", _alt] };
+                }];
+            };
         };
         // Caméra : ouverture, cliché, qualité du flux, petit format, sens du glisser, source de l'image.
         private _q = ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 0]) max 0) min 1;

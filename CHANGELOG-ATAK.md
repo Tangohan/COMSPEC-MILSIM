@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Drones : « Démarrer et décoller » adapté à chaque drone, tous les drones d'Arma 3 et le RQ-11 Raven (ATAK natif 4.24.1.AG - Washington, COMSPEC Link 2.0.126)
+
+### Résumé joueur
+Type : correctif
+FR : Le bouton « Démarrer et décoller » ne jette plus les drones au sol
+- Chaque type de drone décolle à sa façon : les petits drones montent à la verticale avant tout déplacement, les avions (Greyhawk, Ababil, Sentinel) roulent sur la piste, et le RQ-11 Raven est lancé à la main, cap droit devant.
+- Un avion ne reste pas immobile : une fois en l'air il tourne en orbite, et sa vitesse ne descend plus sous celle qui le fait décrocher.
+- Si le décollage n'est pas possible (batterie vide, obstacle au-dessus, pas assez de place devant, drone déjà en vol), le téléphone le dit dans l'app Drone et rien n'est lancé. Un drone terrestre n'a plus de bouton de décollage.
+- Redémarre complètement Arma 3 après la mise à jour.
+EN : The "Start and Takeoff" button no longer throws drones into the ground
+- Each type of drone takes off its own way: small drones climb straight up before any move, planes (Greyhawk, Ababil, Sentinel) roll along the runway, and the RQ-11 Raven is hand-launched straight ahead.
+- A plane cannot hold still: once airborne it flies in a circle, and its speed no longer drops below the one that makes it stall.
+- If take-off is not possible (empty battery, obstacle above, not enough room in front, drone already flying), the phone says so in the Drone app and nothing is launched. A ground drone no longer has a take-off button.
+- Restart Arma 3 completely after the update.
+
+### Détail technique
+- **Cause** : `fn_droneCmd` `_start` ne connaissait qu'un quadricoptère : poussée verticale à 3 m/s pendant 3 s au plus, puis `doMove` aussitôt. Un avion (Greyhawk, Ababil, Sentinel, Raven) n'a aucune vitesse en l'air : il décroche et tombe. La vitesse par défaut du téléphone (40 km/h, `limitSpeed`) est sous la vitesse de décrochage d'un avion, et le « stationnaire » (`doStop` + `doMove` sur place) ne tient pas un avion. Les drones à rotor plus lourds recevaient leur `doMove` avant la hauteur de sécurité.
+- **Profils** : `fn_droneProfile` (nouvelle) classe le drone par la config (simulation Plane, Helicopter, LandVehicle, `vtol`, `stallSpeed`, `maxSpeed`, nom de classe pour le Raven) avec raccourci par classes vanilla ; table QUAD, HELI, PLANE, LAUNCH, UGV, réglable par `COMSPEC_ATAK_DroneProfiles` et `COMSPEC_ATAK_DroneClassKinds`, ou par l'attribut de config `comspec_droneProfile` pour un mod.
+- **Contrôles** (`check`) : drone détruit, terrestre, inconnu, déjà en vol (jamais relancé), batterie, terminal d'un autre joueur (`isUAVConnected`), obstacle au-dessus (`terrainIntersectASL`, `lineIntersectsSurfaces`), couloir de montée dégagé, piste plane (`getTerrainHeightASL`).
+- **Décollage** : montée à la verticale par rampe jusqu'à la hauteur de sécurité (6 m, 12 m pour un rotor lourd, 3 m en CQB), roulage sur piste avec bascule en lancement assisté si l'avion ne roule pas, lancement à la main (vitesse et pente imposées). L'ordre donné se rejoue seul une fois le drone en sécurité. Vitesse et altitude minimales relevées pour une voilure fixe ; stationnaire d'un avion = orbite de 300 m.
+- **Retour** : événement `TAKEOFF` (code de la raison) lu par la ligne d'état de l'app Drone ; aucun toast, `systemChat`, `hint` ni popup. Textes FR et EN dans `en.txt` et `xx.txt`.
+- **À tester en jeu** : Darter, Greyhawk, Ababil, Sentinel, Falcon, Pelican, Raven (mod), UGV (bouton absent) ; piste, herbe, sous un toit ; lancement face à un mur.
+
 ## Poste TOC : suppression des marqueurs, corbeille de 15 minutes et purge de la carte, retrait des marqueurs supprimés dans le jeu (ATAK natif 4.24.0.AG - Washington, COMSPEC Link 2.0.126)
 
 ### Résumé joueur

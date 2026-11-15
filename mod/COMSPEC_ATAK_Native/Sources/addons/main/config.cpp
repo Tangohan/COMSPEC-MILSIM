@@ -89,7 +89,7 @@ class CfgFunctions {
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
-            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {}; class droneSeq {}; class dronePhoto {}; class droneStatic {}; class noFly {}; class droneFleet {}; class droneRange {};
+            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {}; class droneSeq {}; class dronePhoto {}; class droneStatic {}; class noFly {}; class droneFleet {}; class droneRange {}; class droneProfile {};
             class ucav {}; class ucavCmd {}; class pageUcav {};
         };
         class bluetooth { file="z\comspec_atak_native\addons\main\functions\bluetooth";
