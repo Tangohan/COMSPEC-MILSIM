@@ -61,6 +61,7 @@ class UnitCodeRepository
         // JSON_SET preserves unrelated settings, including concurrent edits.
         $st = $this->pdo()->prepare("UPDATE tenants SET settings = JSON_SET(COALESCE(NULLIF(settings, ''), '{}'), '$.unit_codes', JSON_SET(COALESCE(JSON_EXTRACT(NULLIF(settings, ''), '$.unit_codes'), JSON_OBJECT()), '$.display_prefix', ?)) WHERE id = ?");
         $st->execute([$prefix, $tenantId]);
+        TenantRepository::forgetAllCaches();
     }
 
     public function tablesExist(): bool

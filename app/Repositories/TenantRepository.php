@@ -93,9 +93,18 @@ class TenantRepository
      */
     private array $findByIdCache = [];
 
+    /** Compteur commun : une écriture faite par n’importe quelle instance vide le cache de toutes les autres. */
+    private static int $cacheGeneration = 0;
+
+    private int $cacheGenerationSeen = 0;
+
     public function findById(int $id): ?array
     {
         $useCache = PHP_SAPI !== 'cli';
+        if ($this->cacheGenerationSeen !== self::$cacheGeneration) {
+            $this->findByIdCache = [];
+            $this->cacheGenerationSeen = self::$cacheGeneration;
+        }
         if ($useCache && array_key_exists($id, $this->findByIdCache)) {
             return $this->findByIdCache[$id];
         }
@@ -114,6 +123,13 @@ class TenantRepository
     public function forgetCache(): void
     {
         $this->findByIdCache = [];
+        self::$cacheGeneration++;
+    }
+
+    /** Après une écriture directe sur tenants hors de ce dépôt : vide le cache de findById() de toutes les instances. */
+    public static function forgetAllCaches(): void
+    {
+        self::$cacheGeneration++;
     }
 
     /**

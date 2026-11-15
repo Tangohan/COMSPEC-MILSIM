@@ -108,6 +108,7 @@ class Container
             \App\Services\Community\DefaultTenantSessionService::class => new \App\Services\Community\DefaultTenantSessionService(
                 self::get(UserRepository::class),
                 self::get(AuthService::class),
+                self::get(TenantRepository::class),
             ),
             \App\Services\Community\AtakCommunityMigrationService::class => new \App\Services\Community\AtakCommunityMigrationService(
                 self::get(UserRepository::class),
