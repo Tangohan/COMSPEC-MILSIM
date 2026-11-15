@@ -7,6 +7,8 @@ namespace App\Services\Sse;
 use App\Repositories\SseFileRecordRepository;
 use App\Repositories\SseFileRepository;
 use App\Repositories\SseWantedDetectionRepository;
+use App\Repositories\SseWantedAttachmentRepository;
+use App\Repositories\SseWantedExtrasRepository;
 use App\Repositories\SseWantedNoticeRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Support\SseWantedCatalog as C;
@@ -61,6 +63,18 @@ final class SseIdentityDossierService
                 }
             }
         }
+        // Codes, signalement et images des avis : une source qui manque donne une section vide (jamais bloquant).
+        $noticeExtras = [];
+        $noticeAttachments = [];
+        $attachLock = ['allowed' => true, 'confidential' => false, 'reason' => '', 'owner' => null];
+        if ($ready && $readable && $notices !== []) {
+            $noticeExtras = $this->safe(fn (): array => (new SseWantedExtrasRepository())->forNotices($tenantId, array_map(static fn (array $n): int => (int) $n['id'], $notices))) ?? [];
+            if ($notice !== null) {
+                $attachments = new SseWantedAttachments();
+                $attachLock = $this->safe(fn (): array => $attachments->identityVisible($tenantId, $id)) ?? $attachLock;
+                $noticeAttachments = $this->safe(fn (): array => $attachments->listFor($tenantId, $notice)) ?? [];
+            }
+        }
         $profile = $this->safe(fn (): ?array => $this->records()->profile($tenantId, $id));
         $known = static fn (string $field): bool => ($profile['visibility'][$field]['v'] ?? 'known') !== 'hidden';
         if ($profile !== null) {
@@ -95,6 +109,10 @@ final class SseIdentityDossierService
             'wantedTypes' => C::types($config),
             'notice' => $notice,
             'notices' => $notices,
+            'noticeExtras' => $noticeExtras,
+            'noticeAttachments' => $noticeAttachments,
+            'noticeAttachLock' => $attachLock,
+            'attachmentsReady' => SseWantedAttachmentRepository::ready(),
             'detections' => $detections,
             'detectionCounts' => $counts,
             'profile' => $profile,

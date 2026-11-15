@@ -487,6 +487,16 @@ final class SseApiController
         }
         $userId = is_array($actor) && isset($actor['user_id']) ? (int) $actor['user_id'] : null;
         $filing['newly_linked'] = $this->cases->linkPerson($caseId, $personId, $tenantId, $userId, 'Classement depuis le terminal SEEK');
+        // Trace du pourquoi (Cerbère-Création / Cerbère-Liaison) : sans elle, le dossier « ouvert tout seul » n'explique rien.
+        \App\Services\Sse\SseProvenance::cerbere(
+            $tenantId,
+            ['person', $personId],
+            ['case', $caseId],
+            'filed_in',
+            !empty($found['created']) ? 'cerbere.create.case_from_code' : 'cerbere.link.case_terminal',
+            'Code « ' . $caseCode . ' » saisi par ' . $callsign . '.',
+            $userId
+        );
         $filing['linked'] = true;
         $filing['case'] = [
             'id' => $caseId,
@@ -809,6 +819,24 @@ final class SseApiController
         }
 
         return Response::json(['wanted' => $items, 'count' => count($items)]);
+    }
+
+    /**
+     * Avis de recherche posés par la communauté (jeu de rôle), avec leurs codes de motifs et de mesures (code, libellé français et
+     * anglais), un signalement court et la liste des images décrites (type et légende, jamais l'image elle-même).
+     * Format stable : {"notices": [{id, ref, name, type, threat, armed, zone, reasons: [{code, fr, en}], measures: [...],
+     * physical: {...}, images: [{id, kind, caption, main}]}], "count": n}.
+     */
+    public function wantedNotices(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $limit = (int) ($request->query('limit') ?? 40);
+        $items = \App\Services\Sse\SseWantedNoticeData::forGame($r, $limit > 0 ? $limit : 40);
+
+        return Response::json(['notices' => $items, 'count' => count($items)]);
     }
 
     /**

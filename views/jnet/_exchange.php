@@ -103,7 +103,7 @@ $pending = max(0, $audience - $readCount);
         <?php endif; ?>
         <h3 class="jn-ex__title"><?php if ($variant === 'chat' && $kind !== 'info'): ?><span class="jn-tag jn-tag--<?= $h($kind) ?>"><?= $h((string) ($ex['kindLabel'] ?? '')) ?></span><?php endif; ?><?= $h((string) ($ex['title'] ?? '')) ?></h3>
         <?php if ($body !== ''): ?>
-            <p class="jn-ex__body"><?= nl2br($h($body)) ?></p>
+            <p class="jn-ex__body"><?= str_contains($body, '[[sse:') ? \App\Services\Jnet\JnetLinkService::richText($body) : nl2br($h($body)) ?></p>
         <?php endif; ?>
         <?php
         $showAuthor = $variant === 'card' && $perspective !== 'up';

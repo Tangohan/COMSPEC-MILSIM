@@ -1487,6 +1487,18 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
     </section>
     </div>
 
+    <?= $panelOpen('disponibilite') ?>
+    <?php require __DIR__ . '/partials/member_availability.php'; ?>
+    </div>
+    <?php if (is_array($memberSuivi ?? null)): ?>
+        <?= $panelOpen('suivi') ?>
+        <?php // Portée isolée : le partiel ne doit pas écraser les variables de la fiche.
+        (static function (array $suivi, int $id, string $name, string $csrfToken): void {
+            require __DIR__ . '/partials/member_dossier_suivi.php';
+        })($memberSuivi, $id, (string) $name, (string) $csrfToken); ?>
+        </div>
+    <?php endif; ?>
+
     <?= $panelOpen('historique') ?>
     <section class="eff-fm-sec" id="historique" aria-labelledby="historique-titre">
         <header class="eff-fm-sec__head">
@@ -1864,5 +1876,6 @@ foreach ($jobRoles as $jr) {
 <script src="<?= $h(asset_url('assets/js/eff-member-sse-access.js')) ?>" defer></script>
 <?php endif; ?>
 <script src="<?= $h(asset_url('assets/js/eff-member.js')) ?>" defer></script>
+<?php if (is_array($memberSuivi ?? null)): ?><script src="<?= $h(asset_url('assets/js/eff-suivi.js')) ?>" defer></script><?php endif; ?>
 
 <script defer src="<?= $h(asset_url('assets/js/identity-country-picker.js')) ?>"></script>

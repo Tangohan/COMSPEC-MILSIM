@@ -21,7 +21,7 @@ use Tests\Support\SseTriageSqlite;
 /**
  * « À trier » avec ses états : compteurs hors acquittés et hors veille, dédoublonnage des signaux, mode dégradé, acquitter, veille,
  * rappeler, assigner, annuler, règles Cerbère-Tri (conditions, aperçu = nombre réel, journal, annulation). Vraie base sqlite, vraies
- * tables de l'étape 4690, vrais dépôts ; les files sont celles du bureau (signaux du moteur) ou des chargeurs de test.
+ * tables de l'étape 4740, vrais dépôts ; les files sont celles du bureau (signaux du moteur) ou des chargeurs de test.
  */
 final class SseTriageAutomationTest extends TestCase
 {

@@ -10,7 +10,7 @@ $caseId = (int) ($case['id'] ?? 0);
 ?>
 <section id="moteur" class="panel sse-ana-panel">
     <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">01.14</span> Moteur — propositions</div>
+        <div class="panel-title"><span class="panel-index">01.14</span> Cerbère — propositions</div>
         <div class="panel-header__end">
             <div class="panel-meta">
                 <?= count($engineSuggestions) ?> rapprochement(s) · <?= count($engineSignals) ?> signal(aux)
@@ -21,7 +21,7 @@ $caseId = (int) ($case['id'] ?? 0);
     </div>
     <div class="panel-body">
         <p class="sse-note">
-            Le moteur propose. Il ne décide jamais qu’une hypothèse est vraie.
+            Cerbère propose. Il ne décide jamais qu’une hypothèse est vraie.
             Validez ou rejetez chaque rapprochement — les liens validés alimentent le graphe et le registre.
         </p>
         <?php if ($engineSuggestions === [] && $engineSignals === []): ?>

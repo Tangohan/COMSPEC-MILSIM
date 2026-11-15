@@ -58,6 +58,15 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'dossier_step_reminder' => [
+                'title' => 'Une étape de votre dossier attend votre action',
+                'detail' => mb_substr(trim((string) ($payload['step'] ?? '')), 0, 180)
+                    . (is_string($payload['due_on'] ?? null) && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $payload['due_on']) === 1 ? ' · avant le ' . date('d/m/Y', (int) strtotime((string) $payload['due_on'])) : ''),
+                'href' => is_string($payload['path'] ?? null) && in_array((string) $payload['path'], ['mon-integration', 'jnet/moi', 'jnet/moi/fiabilisation', 'jnet/moi/carriere', 'jnet/moi/qualifications'], true)
+                    ? url((string) $payload['path']) : url('activite'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'photo_library_mention', 'photo_library_comment' => [
                 'title' => $type === 'photo_library_mention'
                     ? trim((string) ($payload['by'] ?? 'Un membre')) . ' vous a cité sur une photo'
@@ -73,6 +82,14 @@ final class ActivityHubPresentationService
                 'detail' => mb_substr(trim((string) ($payload['detail'] ?? 'Un nouveau document cite ce que vous surveillez.')), 0, 240),
                 'href' => is_string($payload['path'] ?? null) && preg_match('#^atak/sse/fichiers[A-Za-z0-9/_\-?=&]*$#', (string) $payload['path']) === 1
                     ? url((string) $payload['path']) : url('atak/sse/fichiers'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'sse_interest_case' => [
+                'title' => 'Dossier d’intérêt ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40),
+                'detail' => mb_substr(trim((string) ($payload['detail'] ?? 'Un dossier d’intérêt vous concerne.')), 0, 240),
+                'href' => is_string($payload['path'] ?? null) && preg_match('#^atak/sse/interet/[0-9]{1,10}$#', (string) $payload['path']) === 1
+                    ? url((string) $payload['path']) : url('atak/sse/interet'),
                 'unread' => $unread,
                 'at' => $at,
             ],
@@ -225,6 +242,11 @@ final class ActivityHubPresentationService
             \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_CLOSED => (static function () use ($type, $payload, $unread, $at): array {
                 $due = trim((string) ($payload['due_on'] ?? ''));
                 $dueText = $due !== '' && strtotime($due) !== false ? date('d/m/Y', (int) strtotime($due)) : '';
+                // Même phrase d'origine que sur la page et dans l'e-mail (absente des anciennes notifications).
+                $originKey = trim((string) ($payload['origin'] ?? ''));
+                $originLine = $originKey !== ''
+                    ? \App\Support\DataCampaignOrigin::who($originKey, (string) ($payload['org'] ?? ''), '', self::fr() ? 'fr' : 'en') . ' '
+                    : '';
                 if ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_OPENED || $type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_CLOSED) {
                     $cid = (int) ($payload['campaign_id'] ?? 0);
                     if ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_OPENED) {
@@ -248,14 +270,14 @@ final class ActivityHubPresentationService
                     $detail = self::fr() ? 'L’encadrement a traité ce que vous avez signalé : la réponse est sur la page de vérification de votre fiche.' : 'The staff handled what you reported: the answer is on your record check page.';
                 } elseif ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_OPEN) {
                     $title = self::fr() ? 'Vérifiez votre fiche' : 'Check your record';
-                    $detail = self::fr()
+                    $detail = $originLine . (self::fr()
                         ? 'Une campagne de fiabilisation des données est ouverte' . ($dueText !== '' ? ' jusqu’au ' . $dueText : '') . ' : relisez votre fiche et confirmez-la.'
-                        : 'A data reliability campaign is open' . ($dueText !== '' ? ' until ' . $dueText : '') . ': review your record and confirm it.';
+                        : 'A data reliability campaign is open' . ($dueText !== '' ? ' until ' . $dueText : '') . ': review your record and confirm it.');
                 } else {
                     $title = self::fr() ? 'Rappel : votre fiche n’est pas encore confirmée' : 'Reminder: your record is not yet confirmed';
-                    $detail = self::fr()
+                    $detail = $originLine . (self::fr()
                         ? 'La campagne de fiabilisation des données se termine' . ($dueText !== '' ? ' le ' . $dueText : ' bientôt') . '. Quelques minutes suffisent.'
-                        : 'The data reliability campaign ends' . ($dueText !== '' ? ' on ' . $dueText : ' soon') . '. A few minutes are enough.';
+                        : 'The data reliability campaign ends' . ($dueText !== '' ? ' on ' . $dueText : ' soon') . '. A few minutes are enough.');
                 }
 
                 return ['title' => $title, 'detail' => $detail, 'href' => jnet_moi_url('fiabilisation'), 'unread' => $unread, 'at' => $at];

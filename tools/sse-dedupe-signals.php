@@ -11,7 +11,7 @@ declare(strict_types=1);
  *   php tools/sse-dedupe-signals.php --tenant=7           une seule communauté
  *
  * Aucune ligne n'est supprimée. Un groupe est fusionné dans une transaction : en cas d'erreur il est annulé en entier et les autres continuent.
- * Idempotent : un signal fusionné n'est plus un doublon, relancer ne refait rien. Les colonnes de suivi de l'étape 4690 sont utilisées si elles
+ * Idempotent : un signal fusionné n'est plus un doublon, relancer ne refait rien. Les colonnes de suivi de l'étape 4740 sont utilisées si elles
  * existent (merged_into, date et auteur de la fusion) ; sans elles seul le statut change. Compatible sqlite (tests).
  * Le moteur est App\Services\Sse\SseSignalDeduper ; la procédure complète est dans la description de la demande de fusion.
  *
@@ -45,7 +45,7 @@ echo $apply ? "MODE --apply : les doublons sont fusionnés (rien n'est supprimé
 $report = (new App\Services\Sse\SseSignalDeduper(App\Core\Database::getPdo()))->run($apply, $tenant, $limit);
 
 if (!$report['columns']['dedup_key']) {
-    echo "  (colonnes de suivi absentes : étape 4690 pas encore passée, seul le statut changera)\n";
+    echo "  (colonnes de suivi absentes : étape 4740 pas encore passée, seul le statut changera)\n";
 }
 echo sprintf("Signaux ouverts ou en veille : %d, communautés : %d.\n", $report['signals'], $report['tenants']);
 echo sprintf("Groupes de doublons : %d, lignes à fusionner : %d.\n", $report['groups'], $report['duplicates']);

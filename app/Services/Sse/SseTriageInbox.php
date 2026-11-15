@@ -34,7 +34,7 @@ use App\Support\ShortCache;
  *   signaux du moteur sont de plus dédoublonnés par identité (dossier, type, règle, variante), même avant le rattrapage des doublons.
  * - Sujet : chaque élément porte le sujet concerné (dossier, personnes, identité), masqué selon les droits (SseTriageSubjects).
  * - État : acquitté, en veille ou assigné (sse_triage_state, par communauté). Les compteurs et la pastille de la barre latérale ne
- *   comptent que les éléments ni acquittés ni en veille. Sans les tables de l'étape 4690 : mode dégradé (« degraded »), liste
+ *   comptent que les éléments ni acquittés ni en veille. Sans les tables de l'étape 4740 : mode dégradé (« degraded »), liste
  *   regroupée en lecture seule.
  * - Règles Cerbère-Tri : les règles actives de la communauté traitent, au calcul de la liste, les éléments qui n'ont aucun état ;
  *   chaque action est journalisée et annulable (SseTriageRules).

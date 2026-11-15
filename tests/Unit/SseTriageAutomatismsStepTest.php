@@ -10,7 +10,7 @@ use Tests\Support\MysqlDdlSqlitePdo;
 use Tests\Support\SseTriageSqlite;
 
 /**
- * Étape 4690 : tables d'état, de règles et de journal de « À trier » et colonnes de déduplication des signaux. Enregistrée, numérotée une
+ * Étape 4740 : tables d'état, de règles et de journal de « À trier » et colonnes de déduplication des signaux. Enregistrée, numérotée une
  * seule fois, idempotente, sans ALTER … ADD UNIQUE (l'unicité est dans le CREATE TABLE), retour arrière fourni, aucune donnée modifiée.
  */
 final class SseTriageAutomatismsStepTest extends TestCase
@@ -29,14 +29,14 @@ final class SseTriageAutomatismsStepTest extends TestCase
         self::assertCount(1, $mine);
         self::assertSame('schema', $mine[0]['group']);
         self::assertTrue($mine[0]['rerun']);
-        self::assertSame('4690_sse_triage_automatisms.php', $mine[0]['file']);
+        self::assertSame('4740_sse_triage_automatisms.php', $mine[0]['file']);
         self::assertFileExists($root . '/database/steps/' . $mine[0]['file']);
         self::assertFileExists($root . '/migrations/2026_11_18_100_sse_triage_automatisms.sql');
         self::assertFileExists($root . '/migrations/rollback/sse_triage_automatisms_down.sql');
         self::assertStringContainsString('migrations/rollback/sse_triage_automatisms_down.sql', $mine[0]['label']);
         $numbers = array_map(static fn (array $s): string => substr((string) $s['file'], 0, 4), $registry);
-        self::assertSame(1, count(array_filter($numbers, static fn (string $n): bool => $n === '4690')), 'numéro 4690 pris une seule fois');
-        self::assertSame('4690', max(array_filter($numbers, static fn (string $n): bool => ctype_digit($n))), 'le plus grand numéro de la file');
+        self::assertSame(1, count(array_filter($numbers, static fn (string $n): bool => $n === '4740')), 'numéro 4740 pris une seule fois');
+        self::assertSame('4740', max(array_filter($numbers, static fn (string $n): bool => ctype_digit($n))), 'le plus grand numéro de la file');
         self::assertCount(count($registry), array_unique(array_column($registry, 'id')), 'identifiants uniques');
     }
 
@@ -78,7 +78,7 @@ final class SseTriageAutomatismsStepTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $sql = (string) file_get_contents($root . '/migrations/2026_11_18_100_sse_triage_automatisms.sql');
-        $step = (string) file_get_contents($root . '/database/steps/4690_sse_triage_automatisms.php');
+        $step = (string) file_get_contents($root . '/database/steps/4740_sse_triage_automatisms.php');
 
         self::assertMatchesRegularExpression('/CREATE TABLE IF NOT EXISTS sse_triage_state \(.*?UNIQUE KEY uq_sse_triage_item \(tenant_id, item_type, item_key\).*?\)\s*ENGINE/s', $sql);
         foreach ([$sql, $step] as $source) {

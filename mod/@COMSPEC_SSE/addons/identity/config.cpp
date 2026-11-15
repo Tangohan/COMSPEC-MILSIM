@@ -75,6 +75,7 @@ class CfgFunctions {
             class idHistory {};
             class idAthenaPack {};
             class idAthenaSubmit {};
+            class idWantedCheck {};
             class idFrm {};
             class idModuleGive {};
             class idZenRegister {};

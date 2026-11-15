@@ -8,7 +8,7 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Colonnes de suivi de sse_engine_signals ajoutées par l'étape 4690 (clé de déduplication, dernière observation, résolution,
+ * Colonnes de suivi de sse_engine_signals ajoutées par l'étape 4740 (clé de déduplication, dernière observation, résolution,
  * fusion). Chaque colonne est sondée une fois par connexion : sans l'étape, le moteur déduplique et ferme quand même les
  * signaux, avec les seuls champs d'origine (statut, date de mise à jour).
  */

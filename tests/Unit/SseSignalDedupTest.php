@@ -14,7 +14,7 @@ use Tests\Support\SseTriageSqlite;
 /**
  * Source du bruit de « À trier » : un signal du moteur est une OBSERVATION. Un seul signal ouvert par (dossier, type, règle,
  * variante) ; le passage nocturne le met à jour au lieu d'en créer un autre ; une condition disparue le clôt ; une complétude
- * faible inchangée passe en veille. Vraie base sqlite, vrai dépôt, vraies colonnes de l'étape 4690.
+ * faible inchangée passe en veille. Vraie base sqlite, vrai dépôt, vraies colonnes de l'étape 4740.
  */
 final class SseSignalDedupTest extends TestCase
 {

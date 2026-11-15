@@ -164,6 +164,8 @@ final class SseAnalyticalEngineService
                     'note' => 'Validé depuis proposition moteur : ' . (string) ($s['reason'] ?? ''),
                     'author_label' => $authorLabel,
                 ]);
+                // Cerbère-Validation : la proposition vient du moteur, la décision d'une personne ; les deux sont tracées.
+                SseProvenance::cerbere($tenantId, [(string) $s['left_type'], (string) (int) $s['left_id']], [(string) $s['right_type'], (string) (int) $s['right_id']], 'cross_checked', 'cerbere.validate.engine_suggestion', 'Proposition « ' . (string) ($s['title'] ?? '') . ' » validée par ' . $authorLabel . '.', $userId);
             } catch (\Throwable) {
                 // La décision reste consignée même si la relation échoue.
             }

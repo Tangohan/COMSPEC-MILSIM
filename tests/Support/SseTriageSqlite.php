@@ -11,7 +11,7 @@ use PDO;
 
 /**
  * Base sqlite en mémoire de « À trier » : les tables du moteur analytique (signaux d'avant la déduplication), des dossiers,
- * personnes et identités, puis, au choix, les tables et colonnes de l'étape 4690 créées par le VRAI fichier de l'étape (SQL de la
+ * personnes et identités, puis, au choix, les tables et colonnes de l'étape 4740 créées par le VRAI fichier de l'étape (SQL de la
  * migration traduit par MysqlDdlSqlitePdo). Branchée sur Database le temps d'un test.
  */
 final class SseTriageSqlite
@@ -28,7 +28,7 @@ final class SseTriageSqlite
         $pdo->exec('CREATE TABLE sse_persons (id INTEGER PRIMARY KEY, tenant_id INTEGER, last_name TEXT, first_name TEXT, alias TEXT)');
         $pdo->exec('CREATE TABLE sse_case_persons (id INTEGER PRIMARY KEY, case_id INTEGER, person_id INTEGER, tenant_id INTEGER)');
         $pdo->exec('CREATE TABLE sse_identities (id INTEGER PRIMARY KEY, tenant_id INTEGER, person_id INTEGER, kind TEXT, user_id INTEGER, first_name TEXT, last_name TEXT)');
-        // Signaux tels que créés par bootstrap/atak_sse_engine_migration.php (avant l'étape 4690).
+        // Signaux tels que créés par bootstrap/atak_sse_engine_migration.php (avant l'étape 4740).
         $pdo->exec("CREATE TABLE sse_engine_signals (
             id INT UNSIGNED NOT NULL AUTO_INCREMENT,
             tenant_id INT UNSIGNED NOT NULL,
@@ -61,14 +61,14 @@ final class SseTriageSqlite
         return $pdo;
     }
 
-    /** Joue le vrai fichier database/steps/4690_sse_triage_automatisms.php ; retourne sa sortie. */
+    /** Joue le vrai fichier database/steps/4740_sse_triage_automatisms.php ; retourne sa sortie. */
     public static function runStep(PDO $pdo): string
     {
         $run = static function () use ($pdo): string {
             $root = dirname(__DIR__, 2);
             ob_start();
             try {
-                require $root . '/database/steps/4690_sse_triage_automatisms.php';
+                require $root . '/database/steps/4740_sse_triage_automatisms.php';
             } finally {
                 $out = (string) ob_get_clean();
             }

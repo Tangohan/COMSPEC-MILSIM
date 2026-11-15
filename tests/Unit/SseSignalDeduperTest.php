@@ -148,7 +148,7 @@ final class SseSignalDeduperTest extends TestCase
         self::assertFalse($this->pdo->inTransaction());
     }
 
-    public function testWorksWithoutTheTrackingColumnsOfStep4690(): void
+    public function testWorksWithoutTheTrackingColumnsOfStep4740(): void
     {
         SseTriageSqlite::close();
         $this->pdo = SseTriageSqlite::open(false);

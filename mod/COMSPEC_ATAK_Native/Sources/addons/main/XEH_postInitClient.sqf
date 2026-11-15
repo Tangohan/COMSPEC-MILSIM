@@ -1268,6 +1268,8 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 // Fond PHOTO d'Athena (sans le mod @COMSPEC_ATAK_Photo) : meta demandée à la DLL une fois la liaison faite, pour que
 // PHOTO soit proposé dès la première ouverture de la carte.
 [{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 15] call comspec_atak_native_fnc_waitAndExec;
+// Fiches du portail SSE (app Fiches) : lues au démarrage de la mission, puis à l'ouverture de l'app et au bouton ACTUALISER.
+[{ ["ensure"] call comspec_atak_native_fnc_fichesAction; }, [], 50] call comspec_atak_native_fnc_waitAndExec;
 // Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
 {
     // Fin de mission normale : le marqueur d'étape à risque (fn_deviceGuard) ne doit pas passer pour un plantage.

@@ -8,7 +8,7 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Les trois tables de l'étape 4690 (sse_triage_state, sse_triage_rules, sse_triage_events) existent-elles ? Sans elles « À trier »
+ * Les trois tables de l'étape 4740 (sse_triage_state, sse_triage_rules, sse_triage_events) existent-elles ? Sans elles « À trier »
  * reste lisible et regroupé, sans acquittement persistant (mode dégradé). Résultat gardé par connexion : durablement quand il est
  * positif, 20 s quand il est négatif (l'étape peut passer pendant qu'une page est servie).
  */

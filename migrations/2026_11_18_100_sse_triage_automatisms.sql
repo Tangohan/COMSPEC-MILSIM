@@ -1,7 +1,7 @@
 -- SSE « À trier » : état de traitement par élément (acquitté, en veille, assigné), règles automatiques « Cerbère-Tri » par
 -- communauté et journal de leurs déclenchements. Aucune donnée existante n'est modifiée ; sans ces tables la page « À trier »
 -- reste lisible en mode regroupé, sans acquittement persistant.
--- Les colonnes de déduplication de sse_engine_signals sont ajoutées par l'étape 4690 (SchemaInspector), pas ici.
+-- Les colonnes de déduplication de sse_engine_signals sont ajoutées par l'étape 4740 (SchemaInspector), pas ici.
 -- Retour arrière : migrations/rollback/sse_triage_automatisms_down.sql.
 
 CREATE TABLE IF NOT EXISTS sse_triage_state (

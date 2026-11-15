@@ -14,6 +14,7 @@ use App\Services\Auth\AuthService;
 use App\Services\DataCampaign\DataCampaignService;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignLoginPrompt;
+use App\Support\DataCampaignOrigin;
 use App\Support\DataCampaignPage;
 use App\Support\DataCampaignScope;
 use App\Support\JnetMemberShell;
@@ -27,6 +28,12 @@ final class MemberDataCampaignController
 {
     /** Rend ses pages dans la coque JNET (JnetMemberShell). */
     public const JNET_MOI_READY = true;
+
+    /**
+     * Nommer la personne qui a ouvert une campagne manuelle ? Non : par défaut on dit « un responsable de l'organisation ».
+     * Aucun réglage de communauté n'existe encore ; le préambule sait nommer (DataCampaignOrigin) le jour où il en existera un.
+     */
+    private const NAME_REQUESTER = false;
 
     public function __construct(
         private ?AuthService $authService = null,
@@ -50,7 +57,10 @@ final class MemberDataCampaignController
         $active = $ready ? $this->service->activeFor($tenantId, $userId) : null;
         $view = null;
         $step = '';
+        $preamble = null;
+        $others = [];
         if ($active !== null) {
+            [$preamble, $others] = $this->preambles($tenantId, $userId, $active['campaign']);
             $view = $this->service->memberView($tenantId, $userId, $active['campaign'], $active['member']);
             $keys = array_keys($view['blocks']);
             $asked = $request->queryString('etape', '');
@@ -66,8 +76,11 @@ final class MemberDataCampaignController
             'boPageSubtitle' => DataCampaignPage::pageLead(),
             'backOfficePageCss' => ['data-campaign-member.css'],
             'schemaReady' => $ready,
+            'jnetPageJs' => ['data-campaign-preamble.js'],
             'campaign' => $active['campaign'] ?? null,
             'member' => $active['member'] ?? null,
+            'preamble' => $preamble,
+            'otherCampaigns' => $others,
             'campaignView' => $view,
             'step' => $step,
             'history' => $ready ? $this->repo->historyForUser($tenantId, $userId) : [],
@@ -181,6 +194,70 @@ final class MemberDataCampaignController
         }
 
         return Response::redirect(DataCampaignLoginPrompt::consumeContinue());
+    }
+
+    /**
+     * Préambule de la campagne en cours et résumé des autres campagnes ouvertes qui concernent le membre et qu'il n'a pas
+     * encore confirmées (chacune avec son origine). Un échec de lecture ne bloque jamais la page : préambule réduit aux dates.
+     *
+     * @param array<string, mixed> $campaign
+     * @return array{0: array<string, mixed>, 1: list<array<string, mixed>>}
+     */
+    private function preambles(int $tenantId, int $userId, array $campaign): array
+    {
+        $lang = function_exists('locale') ? locale() : 'fr';
+        $base = ['lang' => $lang, 'name_requester' => self::NAME_REQUESTER];
+        $units = [];
+        try {
+            $tenant = Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
+            $base['tenant_name'] = is_array($tenant) ? (string) ($tenant['name'] ?? '') : '';
+            $base['timezone'] = is_array($tenant) ? (string) ($tenant['default_timezone'] ?? '') : '';
+            $units = $this->repo->units($tenantId);
+        } catch (\Throwable) {
+            // Contexte réduit : le préambule garde ses dates et son origine.
+        }
+        $describe = function (array $c) use ($base, $units, $tenantId, $lang): array {
+            $names = [];
+            foreach ((array) ($c['unit_ids'] ?? []) as $id) {
+                $name = trim((string) ($units[(int) $id]['name'] ?? ''));
+                if ($name !== '') {
+                    $names[] = $name;
+                }
+            }
+            $labels = array_map(static fn (string $k): string => DataCampaignBlocks::label($k), (array) ($c['blocks'] ?? []));
+            if ($lang === 'en') {
+                // Les noms de blocs sont écrits en français : traduits ici car ils entrent dans une phrase déjà en anglais.
+                $labels = array_map(static fn (string $l): string => \App\Support\HtmlTranslator::translateText($l), $labels);
+            }
+            $ctx = ['unit_names' => $names, 'block_labels' => $labels] + $base;
+            if (self::NAME_REQUESTER && (int) ($c['created_by'] ?? 0) > 0) {
+                try {
+                    $u = Container::get(\App\Repositories\UserRepository::class)->findById((int) $c['created_by'], $tenantId);
+                    $ctx['requester_name'] = is_array($u) ? (string) ($u['display_name'] ?? '') : '';
+                } catch (\Throwable) {
+                    $ctx['requester_name'] = '';
+                }
+            }
+
+            return DataCampaignOrigin::describe($c, $ctx);
+        };
+        $others = [];
+        try {
+            foreach ($this->repo->openCampaigns($tenantId) as $c) {
+                if ((int) $c['id'] === (int) $campaign['id']) {
+                    continue;
+                }
+                $member = $this->repo->memberRow((int) $c['id'], $userId);
+                $concerned = $member !== null || DataCampaignScope::memberInCampaign($this->repo->primaryUnitId($userId), $c['unit_ids'], $units);
+                if ($concerned && trim((string) ($member['confirmed_at'] ?? '')) === '') {
+                    $others[] = $describe($c);
+                }
+            }
+        } catch (\Throwable) {
+            $others = [];
+        }
+
+        return [$describe($campaign), $others];
     }
 
     /**
