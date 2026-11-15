@@ -175,7 +175,7 @@ final class JobCatalogMatcher
      * Le meilleur emploi proche dans chaque pays du référentiel (« le même poste chez les Américains, les Britanniques… »),
      * meilleur score d'abord. Sans préférence de nation : chaque pays est jugé sur le nom seul.
      *
-     * @param array{name?: string, abbreviation?: string, code?: string, unit?: string} $job
+     * @param array{name?: string, abbreviation?: string, code?: string, unit?: string, country?: string, nation?: string, only?: string} $job
      * @return list<array{id: string, score: int, reasons: list<string>, country: string}>
      */
     public static function perCountry(array $job, int $min = self::SUGGEST): array

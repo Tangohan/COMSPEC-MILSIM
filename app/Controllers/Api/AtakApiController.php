@@ -13555,6 +13555,7 @@ class AtakApiController
                 'altitude' => isset($_POST['altitude']) && is_numeric($_POST['altitude']) ? (float) $_POST['altitude'] : null,
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
+                'author_user_id' => $feedId === '' || str_starts_with(strtolower($feedId), 'drone:') ? $gameUserId : null,
             ] + $photoMeta;
             // Visages floutés par le mode photo du téléphone (cadres envoyés par le jeu), avant tout le reste :
             // l'original gardé par la correction de couleur ne doit pas montrer les visages.

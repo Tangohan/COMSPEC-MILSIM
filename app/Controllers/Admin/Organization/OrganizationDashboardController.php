@@ -390,8 +390,13 @@ class OrganizationDashboardController
                 static fn (string $perm): bool => $gate->allows($perm),
                 static fn (string $path): bool => \App\Controllers\Admin\BackOfficeMenuController::visible($path)
             );
-            foreach ($rows as $row) {
+            $explainer = new \App\Services\BackOffice\Menu\PendingTaskExplainer($badges);
+            $locale = \App\Support\PlanGift::locale(function_exists('locale') ? locale() : 'fr');
+            foreach ($rows as $key => $row) {
                 if ($row['count'] > 0) {
+                    // « detail » : explication, conséquence et bouton ; null, la tâche reste un titre et un lien.
+                    $row['key'] = (string) $key;
+                    $row['detail'] = $explainer->describe((string) $key, $row['count'], $row['important'], $tenantId, $userId, $locale);
                     $home['tasks'][] = $row;
                 }
             }
