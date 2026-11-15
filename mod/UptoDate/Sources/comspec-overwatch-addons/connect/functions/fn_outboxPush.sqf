@@ -79,7 +79,9 @@ profileNamespace setVariable ["COMSPEC_Outbox", _queue];
 ["DEBUG", "Outbox", format ["En attente : %1 (%2 au total)", _label, count _queue]] call comspec_overwatch_connect_fnc_log;
 
 private _lastAnn = missionNamespace getVariable ["COMSPEC_OutboxLastAnnounce", -1e9];
-if ((diag_tickTime - _lastAnn) > 8) then {
+// Compte refusé ou non lié : la file se remplit sans bruit (une annonce par minute au plus), elle repart à la liaison.
+private _annGap = [8, 60] select (!isNil "comspec_overwatch_connect_fnc_linkGate" && {["active"] call comspec_overwatch_connect_fnc_linkGate});
+if ((diag_tickTime - _lastAnn) > _annGap) then {
     missionNamespace setVariable ["COMSPEC_OutboxLastAnnounce", diag_tickTime];
     [
         format ["Liaison indisponible — « %1 » sera transmis au rétablissement (%2 en attente).", _label, count _queue],

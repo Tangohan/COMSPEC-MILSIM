@@ -18,9 +18,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.634;
-        versionStr = "1.6.34";
-        versionAr[] = {1, 6, 34};
+        version = 1.635;
+        versionStr = "1.6.35";
+        versionAr[] = {1, 6, 35};
         // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
         // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
         // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
@@ -38,6 +38,7 @@ class CfgPatches {
         // 1.6.32 : ATAK natif 2.9.39 — rôle affiché unique (fn_getUnitRole, fn_setUnitRole, fn_getUnitsList, fn_fillZeusGroupId), indicatif d'appareil choisi par le pilote remonté à Athena (fn_reportCrewedAirAssets).
         // 1.6.33 : ATAK natif 3.0.1 — optimisation : relais élu par sort natif (fn_initProxyTrackServer), count direct des tables, une seule boucle de masquage du panneau Tenues (fn_arsenalOverlayAction).
         // 1.6.34 : ATAK natif 3.0.5 — optimisation DLL : Perf.Stats (temps par commande callExtension) ajoutée aux commandes rapides (fn_extFast).
+        // 1.6.35 : ATAK natif 4.25.0 — compte non lié ou refusé : une seule pause partagée par tous les canaux (fn_linkGate, 60 s doublées jusqu'à 15 min), files d'envoi gardées (fn_outboxFlush, fn_queueMapMarker), une ligne de journal par changement d'état, aucun affichage.
     };
 };
 
@@ -218,6 +219,7 @@ class CfgFunctions {
             class noteUplinkReturn {};
             class noteLinkTraffic {};
             class uplinkQuiet {};
+            class linkGate {};
             class arsenalOpen {};
             class aceLoadoutsRepair {};
             class uplinkHold {};

@@ -61,6 +61,13 @@ private _rows = [["segment", "", [
     [[format ["REÇUS (%1)", count _recv], format ["REÇUS · %1 NOUVEAU(X)", _unread]] select (_unread > 0), ["tab", "RECV"] call _act, _tab isEqualTo "RECV"]
 ]]];
 
+// Ligne d'état : dernier retour d'un envoi (30 s, ou tant qu'un envoi est en cours), jamais à l'écran du jeu.
+private _msg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["repStatus", ["", 0]];
+private _pending = (_mine findIf { (_x getOrDefault ["web", ""]) isEqualTo "EN ATTENTE" }) >= 0;
+if ((_msg select 0) isNotEqualTo "" && {(diag_tickTime - (_msg select 1)) < 30 || {_pending}}) then {
+    _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>" + (_msg select 0) + "</t>"];
+};
+
 // 4.2.2 : maître-détail quand la largeur le permet (téléphone tenu à l'horizontale, fn_layoutCols) : la liste reste à
 // gauche, le C.R. ouvert se lit à droite au lieu de s'insérer dans la liste.
 private _split = [_bw, "split"] call comspec_atak_native_fnc_layoutCols;

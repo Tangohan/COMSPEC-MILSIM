@@ -111,12 +111,17 @@ private _sendRcpt = {
     private _args = [_r getOrDefault ["id", ""], str side group player, getPlayerUID player, [player, true] call comspec_atak_native_fnc_unitCallsign, _kind, [dayTime, "HH:MM"] call BIS_fnc_timeToString];
     [{ ["comspec_atak_native_sideEvent", ["comspec_atak_native_reportRcpt", _this, _this select 1]] call CBA_fnc_serverEvent; }, _args, "Accusé", 1] call comspec_atak_native_fnc_netSend;
 };
-// Exécution du C.R. sur Athena (Overwatch embarqué). Renvoie "OK", "ÉCHEC" ou "HORS LIGNE".
+// Ligne d'état de l'app (30 s, ou tant qu'un envoi est en cours) : tous les retours d'envoi passent par là, jamais à l'écran du jeu.
+private _say = { params ["_t"]; (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["repStatus", [_t, diag_tickTime]]; };
+// Résultat d'envoi connu (rappel de fn_reportWebSend) : la ligne d'état le dit, la raison courte est sous le C.R.
+private _done = {
+    params ["_r"];
+    (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["repStatus", [["Athena n'a pas reçu le compte rendu (RENVOYER dans ENVOYÉS)", "Compte rendu enregistré sur Athena"] select ((_r getOrDefault ["web", ""]) isEqualTo "OK"), diag_tickTime]];
+};
+// Envoi du C.R. à Athena (fn_reportWebSend) : « web » passe à "EN ATTENTE" puis "OK", "ÉCHEC" ou "HORS LIGNE" ; « cid » reste le même
+// à chaque renvoi, le serveur écarte le doublon. Retour : true si l'envoi est parti.
 private _toWeb = {
     params ["_r"];
-    if (isNil "comspec_overwatch_connect_fnc_submitTacticalReport") exitWith { "HORS LIGNE" };
-    // Sans Athena (mode full local, service « Non ») : le C.R. ne vit qu'en jeu, rien n'est tenté.
-    if (([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on") exitWith { "LOCAL" };
     private _sd = createHashMapFromArray [["kind", toLower (_r get "code")], ["grid", _r get "grid"], ["source", "COMSPEC ATAK · Comptes rendus"]];
     { _sd set [_x select 0, _x select 2]; } forEach (_r get "lines");
     // Remontée JNET (relais du site vers les unités au-dessus de la mienne) et photo jointe.
@@ -126,8 +131,17 @@ private _toWeb = {
     private _prio = switch (_r get "prio") do { case "PRIORITAIRE": { "PRIORITY" }; case "IMMÉDIAT": { "IMMEDIATE" }; case "FLASH": { "FLASH" }; default { "ROUTINE" } };
     // Une seule ligne : le JSON d'Overwatch (hashMapToJson) n'échappe pas les retours à la ligne.
     private _details = ((_r get "lines") apply { format ["%1 : %2", _x select 1, _x select 2] }) joinString " | ";
-    private _ok = [_r get "web_type", _prio, _r get "summary", _details, _sd, _r get "pos"] call comspec_overwatch_connect_fnc_submitTacticalReport;
-    ["ÉCHEC", "OK"] select (_ok isEqualType true && {_ok})
+    private _sent = [_r, _r get "web_type", _prio, _r get "summary", _details, _sd, _r get "pos", "REPORTS", _r getOrDefault ["cid", ""], _done] call comspec_atak_native_fnc_reportWebSend;
+    if (_sent) then {
+        ["Compte rendu transmis · envoi à Athena en cours"] call _say;
+    } else {
+        [switch (_r getOrDefault ["web", ""]) do {
+            case "LOCAL": { "Compte rendu transmis au camp" };
+            case "EN ATTENTE": { "Envoi déjà en cours" };
+            default { "Compte rendu transmis au camp · Athena non connecté (RENVOYER dans ENVOYÉS)" };
+        }] call _say;
+    };
+    _sent
 };
 switch (_act) do {
     case "tab": { call _save; call _keepDraft; _ui set ["tab", _arg]; _ui set ["open", ""]; if (_arg isNotEqualTo "NEW") then { _ui set ["type", ""]; }; call _rerender; };
@@ -312,6 +326,7 @@ switch (_act) do {
             ["by", [player, true] call comspec_atak_native_fnc_unitCallsign], ["uid", getPlayerUID player],
             ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString], ["grid", _grid], ["pos", [_pos select 0, _pos select 1, 0]],
             ["summary", _summary], ["lines", _lines], ["grp", netId group player], ["web", ""],
+            ["cid", format ["CR-%1-%2-%3", getPlayerUID player, floor serverTime, (missionNamespace getVariable ["COMSPEC_ATAK_RepSeq", 0]) + 1]],
             ["jnet", [_vals getOrDefault ["jnet", "ÉCHELON SUP."], ""] select !(_m getOrDefault ["jnet", false])],
             ["photo", _ph param [1, ""]]
         ];
@@ -324,17 +339,12 @@ switch (_act) do {
             private _val = { params ["_k"]; private _i = _lines findIf { (_x select 0) isEqualTo _k }; [(_lines select _i) select 2, ""] select (_i < 0) };
             ["contact", [_pos, "UNK", ((["size"] call _val) + (["count"] call _val)) select [0, 12], _summary]] call comspec_atak_native_fnc_zoneAction;
         };
-        _r set ["web", [_r] call _toWeb];
+        missionNamespace setVariable ["COMSPEC_ATAK_RepSeq", (missionNamespace getVariable ["COMSPEC_ATAK_RepSeq", 0]) + 1];
+        [_r] call _toWeb;
         // Photo jointe : elle part vers la photothèque d'Athena, légendée avec le C.R.
         if ((count _ph) >= 2 && {!isNil "comspec_overwatch_connect_fnc_captureReconImage"}) then {
             [_ph select 0, format ["%1 · %2 · %3", _r get "tag", _r get "by", _grid], "CTAB", "", true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
         };
-        ["SUCCESS", format ["%1 transmis%2", _label, switch (_r get "web") do {
-            case "OK": { " · enregistré sur Athena" };
-            case "LOCAL": { " au camp" };
-            case "HORS LIGNE": { " en jeu · Athena non connecté" };
-            default { " en jeu · Athena n'a pas répondu (RENVOYER dans Envoyés)" };
-        }], 5, 45] call comspec_atak_native_fnc_notify;
         _drafts deleteAt _code;
         _ui set ["vals", createHashMap];
         _ui set ["auto", createHashMap];
@@ -445,8 +455,8 @@ switch (_act) do {
     case "del": { _list deleteAt _arg; call _rerender; };
     case "web": {
         private _r = _list getOrDefault [_arg, createHashMap];
-        if ((count _r) isEqualTo 0) exitWith {};
-        _r set ["web", [_r] call _toWeb];
+        if ((count _r) isEqualTo 0 || {(_r getOrDefault ["uid", ""]) isNotEqualTo getPlayerUID player}) exitWith {};
+        [_r] call _toWeb;
         call _rerender;
     };
     case "dup": {
