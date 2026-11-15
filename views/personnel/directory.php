@@ -157,7 +157,7 @@ foreach ($results as $row) {
         'legalName' => $legalFullName !== '' && mb_strtolower($legalFullName, 'UTF-8') !== mb_strtolower($rpFullName, 'UTF-8') ? $legalFullName : '',
         'pseudo' => $pseudo !== '' && !in_array(mb_strtolower($pseudo, 'UTF-8'), [mb_strtolower($displayName, 'UTF-8'), mb_strtolower($rpFullName, 'UTF-8')], true) ? $pseudo : '',
         'trigram' => member_trigram($nameRow),
-        'character' => \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($displayName, (string) ($row['character_name'] ?? '')),
+        'character' => '', // l'ancien champ « nom du personnage » n'est plus affiché (docs/identites-membres.md)
         'callsign' => trim((string) ($row['callsign'] ?? '')),
         'radio' => trim((string) ($row['radio_assigned'] ?? '')),
         'athenaId' => trim((string) ($row['athena_identifier'] ?? '')),
