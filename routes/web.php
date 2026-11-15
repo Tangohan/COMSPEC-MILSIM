@@ -1240,6 +1240,7 @@ return function (Router $router) {
     $router->post('/atak/sse/identites/emission/phrases', [\App\Controllers\Web\SseSheetController::class, 'phraseSave'], $mwSsePortal);
     $router->post('/atak/sse/identites/emission/phrases/{id}/supprimer', [\App\Controllers\Web\SseSheetController::class, 'phraseDelete'], $mwSsePortal);
     $router->get('/atak/sse/identites/emissions/{id}/pdf', [\App\Controllers\Web\SseSheetController::class, 'download'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emissions/{id}/reemettre', [\App\Controllers\Web\SseSheetController::class, 'reissueHigher'], $mwSsePortal);
     $router->get('/atak/sse/identites/emission/{kind}/{id}/{model}', [\App\Controllers\Web\SseSheetController::class, 'editor'], $mwSsePortal);
     $router->get('/atak/sse/identites/emission/{kind}/{id}/{model}/defauts', [\App\Controllers\Web\SseSheetController::class, 'defaults'], $mwSsePortal);
     $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/brouillon', [\App\Controllers\Web\SseSheetController::class, 'draftSave'], $mwSsePortal);

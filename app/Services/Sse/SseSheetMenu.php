@@ -29,6 +29,11 @@ final class SseSheetMenu
             'notice' => null, 'issues' => [], 'ready' => SseSheetRepository::ready(), 'canPhrases' => $access->canManagePhrases(), 'primary' => null,
             'phrasesUrl' => url('atak/sse/identites/emission/phrases'), 'level' => $access->level(),
         ];
+        try {
+            $out['default_level'] = SseSheetService::clampLevel((new \App\Repositories\SseWantedSettingsRepository())->get($tenantId)['default_classification'] ?? '', $access);
+        } catch (\Throwable) {
+            $out['default_level'] = '';
+        }
         if ($id < 1) {
             return $out;
         }

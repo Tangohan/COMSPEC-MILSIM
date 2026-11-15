@@ -13,6 +13,7 @@ use App\Repositories\SseWantedSettingsRepository;
 use App\Support\Pdf\AthenaPdfTheme;
 use App\Support\SseSheetCatalog as D;
 use App\Support\SseSheetText as T;
+use App\Support\SseRedactionExplain;
 use App\Support\SseUsClassification;
 use App\Support\SseWantedCatalog as C;
 
@@ -288,7 +289,10 @@ final class SseSheetService
                 }
                 $rendered = $r['bytes'];
                 $texts = $p['texts'];
-                $snapshot = $p['snapshot'] + ['params' => $p['params']];
+                $snapshot = $p['snapshot'] + ['params' => $p['params'], 'redaction' => $r['redaction'] ?? null];
+                if (is_array($input['_reissue'] ?? null)) {
+                    $snapshot['reissue'] = $input['_reissue'];
+                }
                 $sensitive = $p['sensitive'];
                 $level = $p['level'];
                 $lang = $p['lang'];
@@ -358,6 +362,8 @@ final class SseSheetService
             $data['level'] = SseUsClassification::normalize((string) $issue['classification']);
             $data['classification'] = self::levelLabels($data['level']);
             $data['facts']['photos'] = is_array($snap['photos'] ?? null) ? $snap['photos'] : [];
+            // Documents émis avant l'étiquetage des barres par catégorie : la catégorie se déduit du champ (le PDF stocké ne change pas).
+            $data['facts'] = SseRedactionExplain::retag($data['facts']);
             $data['emblem'] = (string) $this->settings->get($tenantId)['emblem'];
             $bytes = $this->render($tenantId, $data)['bytes'] ?? null;
         }
