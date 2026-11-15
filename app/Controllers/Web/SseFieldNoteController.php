@@ -223,6 +223,20 @@ final class SseFieldNoteController
             $openCases = [];
         }
 
+        // Historique du suivi (back-office Remontées) : réservé à qui gère les fiches ; les commentaires internes ne sortent
+        // que pour qui a accès au back-office.
+        $history = [];
+        if ($this->canManage()) {
+            try {
+                $history = \App\Support\SseFieldNoteTimeline::fromEvents(
+                    $this->intake()->events($tenantId, 'fiche', (int) $note['id']),
+                    \App\Controllers\Admin\AdminIntelIntakeController::allowed()
+                );
+            } catch (\Throwable) {
+                $history = [];
+            }
+        }
+
         return $this->view('atak.sse.field_note_show', [
             'title' => (string) ($note['reference_code'] ?? 'Fiche de renseignement'),
             'activeNav' => 'fiches',
@@ -231,6 +245,7 @@ final class SseFieldNoteController
             'openCases' => $openCases,
             'statusOptions' => SseFieldNoteCatalog::STATUSES,
             'attachmentsMax' => SseFieldNoteCatalog::ATTACHMENTS_MAX,
+            'history' => $history,
         ]);
     }
 
