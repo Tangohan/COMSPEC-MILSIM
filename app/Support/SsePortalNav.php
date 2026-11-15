@@ -65,6 +65,7 @@ final class SsePortalNav
                 ['id' => 'rapports', 'label' => 'Rapports', 'hint' => 'Productions finales et bilans du bureau.', 'path' => 'atak/sse/rapports', 'icon' => 'report'],
                 ['id' => 'bibliotheque', 'label' => 'Mentions officielles', 'hint' => 'Formulations validées à réutiliser dans les documents.', 'path' => 'atak/sse/bibliotheque', 'icon' => 'library', 'keywords' => 'bibliotheque textes'],
                 ['id' => 'presentation', 'label' => 'Présentation des documents', 'hint' => 'Bandeau, pied de page et papier des documents.', 'path' => 'atak/sse/presentation', 'icon' => 'paper'],
+                ['id' => 'fiches-gestion', 'label' => 'Gestion des fiches', 'hint' => 'Étiquettes, catégories, types de fiche, trames et règles des fiches de renseignement.', 'path' => 'atak/sse/fiches/gestion', 'icon' => 'library', 'keywords' => 'etiquettes categories types modeles regles referentiel tags humint pir noforn import export'],
             ]],
             ['id' => 'identite', 'label' => 'Identités et papiers', 'hint' => 'Les papiers d’identité, de leur création à leur émission, et ceux des membres.', 'items' => array_values(array_filter([
                 ['id' => 'papiers-tableau', 'label' => 'Tableau de bord', 'hint' => 'Contrôles, faux détectés et recherchés appréhendés par opération.', 'path' => 'atak/sse/papiers/tableau', 'icon' => 'ops', 'keywords' => 'identite controle tableau bord operation faux recherches'],

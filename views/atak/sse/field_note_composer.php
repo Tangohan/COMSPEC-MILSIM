@@ -21,6 +21,10 @@ declare(strict_types=1);
  * @var array<string, mixed> $draft
  * @var string $cancelUrl
  * @var string $submitUrl
+ * @var array<string, array{key: string, label: string, hint: string, tags: list<array<string, mixed>>}> $tagFamilies étiquettes de la communauté
+ * @var array<string, list<string>> $tagSuggestions étiquettes suggérées par type de fiche
+ * @var array<string, string> $kindTemplates trame de rédaction par type de fiche
+ * @var bool $tagsReady
  */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $kinds = is_array($kinds ?? null) ? $kinds : [];
@@ -55,6 +59,11 @@ $observedValue = $draftObserved !== ''
     ? str_replace(' ', 'T', substr($draftObserved, 0, 16))
     : (string) ($observedInputValue ?? date('Y-m-d\TH:i'));
 $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
+$tagFamilies = is_array($tagFamilies ?? null) ? $tagFamilies : [];
+$tagSuggestions = is_array($tagSuggestions ?? null) ? $tagSuggestions : [];
+$kindTemplates = is_array($kindTemplates ?? null) ? $kindTemplates : [];
+$tagsReady = (bool) ($tagsReady ?? false);
+$draftTags = is_array($draft['tags'] ?? null) ? $draft['tags'] : [];
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -67,6 +76,7 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_field_note.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-fiches-etiquettes.css')) ?>">
 </head>
 <body class="fn-body">
 
@@ -244,6 +254,13 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
                     </div>
                 </fieldset>
 
+                <?php if ($kindTemplates !== []): ?>
+                    <p class="fn-template" data-fn-templates="<?= $h(json_encode($kindTemplates, JSON_UNESCAPED_UNICODE) ?: '{}') ?>" hidden>
+                        <span>Votre communauté propose une trame pour ce type de fiche.</span>
+                        <button type="button" class="fn-btn" data-fn-template-insert>Insérer la trame dans le texte</button>
+                    </p>
+                <?php endif; ?>
+
                 <fieldset class="fn-field">
                     <legend>Thèmes <span class="fn-legend-hint">(<?= $themesMax ?> au maximum)</span></legend>
                     <div class="fn-theme-grid" id="fn-theme-grid">
@@ -299,6 +316,19 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
                     </div>
                 </fieldset>
 
+                <?php if ($tagsReady && $tagFamilies !== []): ?>
+                    <fieldset class="fn-field">
+                        <legend class="fnp-legend">Étiquettes <span class="fn-legend-hint">(besoin servi, discipline, produit, diffusion, validité)</span></legend>
+                        <?php
+                        $pickerSelected = $draftTags;
+                        $pickerKind = $draftKind;
+                        $pickerId = 'fn-picker';
+                        require __DIR__ . '/partials/field_note_tag_picker.php';
+                        ?>
+                        <p class="fn-field-help fnp-hint">Ce sont des mentions écrites sur la fiche : elles ne changent pas qui peut la lire.</p>
+                    </fieldset>
+                <?php endif; ?>
+
                 <div class="fn-field">
                     <label for="fn-case-code">Rattacher à un dossier</label>
                     <input type="text" id="fn-case-code" name="case_code" maxlength="32"
@@ -317,5 +347,6 @@ $observedTs = strtotime(str_replace('T', ' ', $observedValue)) ?: time();
 </form>
 
 <script src="<?= $h(asset_url('assets/js/sse-field-note-composer.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/sse-fiches-etiquettes.js')) ?>" defer></script>
 </body>
 </html>

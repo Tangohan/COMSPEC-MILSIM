@@ -215,7 +215,10 @@ final class SseAttachmentRepository
     public function tags(int $tenantId): array
     {
         $out = [];
-        foreach ($this->db->fetchAll('SELECT id, name, slug, color FROM sse_attach_tags WHERE tenant_id = :t ORDER BY name ASC LIMIT 400', ['t' => $tenantId]) as $row) {
+        // Catalogue partagé avec les fiches de renseignement (étape sse_tags) : les réglages du catalogue livré des fiches
+        // (portée « field_note ») ne sont pas des étiquettes de rattachement.
+        $shared = SseTagRepository::ready() ? " AND scope <> 'field_note'" : '';
+        foreach ($this->db->fetchAll('SELECT id, name, slug, color FROM sse_attach_tags WHERE tenant_id = :t' . $shared . ' ORDER BY name ASC LIMIT 400', ['t' => $tenantId]) as $row) {
             $out[] = ['id' => (int) $row['id'], 'name' => (string) $row['name'], 'slug' => (string) $row['slug'], 'color' => isset(A::TAG_COLORS[(string) $row['color']]) ? (string) $row['color'] : 'slate'];
         }
 
@@ -232,6 +235,11 @@ final class SseAttachmentRepository
         }
         $row = $this->db->fetchOne('SELECT id FROM sse_attach_tags WHERE tenant_id = :t AND slug = :s', ['t' => $tenantId, 's' => $slug]);
         if ($row !== null) {
+            // Une étiquette des fiches reprise pour un rattachement devient commune aux deux.
+            if ($create && SseTagRepository::ready()) {
+                $this->db->execute("UPDATE sse_attach_tags SET scope = 'all' WHERE id = :id AND tenant_id = :t AND scope = 'field_note'", ['id' => (int) $row['id'], 't' => $tenantId]);
+            }
+
             return (int) $row['id'];
         }
         if (!$create) {
