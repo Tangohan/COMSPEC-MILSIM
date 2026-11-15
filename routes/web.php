@@ -1210,6 +1210,15 @@ return function (Router $router) {
     $router->get('/atak/sse/recherche', [SsePortalController::class, 'search'], $mwSsePortal);
     $router->get('/atak/sse/recherche/suggestions', [SsePortalController::class, 'searchSuggest'], $mwSsePortal);
     $router->get('/atak/sse/identites', [SsePortalController::class, 'identitiesIndex'], $mwSsePortal);
+    // Page Personnes (vue de travail) : actions groupées et réglage avant /{id} ; tiroir d'aperçu et actions d'une fiche.
+    $router->post('/atak/sse/identites/lot', [\App\Controllers\Web\SsePersonWorkController::class, 'batch'], $mwSsePortal);
+    $router->post('/atak/sse/identites/reglages', [\App\Controllers\Web\SsePersonWorkController::class, 'settings'], $mwSsePortal);
+    $router->get('/atak/sse/identites/{id}/apercu', [\App\Controllers\Web\SsePersonWorkController::class, 'drawer'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/classer', [\App\Controllers\Web\SsePersonWorkController::class, 'classify'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/verrouiller', [\App\Controllers\Web\SsePersonWorkController::class, 'lock'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/deverrouiller', [\App\Controllers\Web\SsePersonWorkController::class, 'unlock'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/clore', [\App\Controllers\Web\SsePersonWorkController::class, 'close'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/rouvrir', [\App\Controllers\Web\SsePersonWorkController::class, 'reopen'], $mwSsePortal);
     $router->get('/atak/sse/identites/{id}', [SsePortalController::class, 'identityShow'], $mwSsePortal);
     $router->post('/atak/sse/identites/{id}/registre', [\App\Controllers\Web\SsePersonRegistryController::class, 'create'], $mwSsePortal);
     // Fiches PDF d'une personne ou d'une identité (identification, vigilance, renseignement, contrôle, avis) : éditeur, brouillons, aperçu, émission.
