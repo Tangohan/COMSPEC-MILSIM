@@ -23,6 +23,7 @@ params ["_map", "_ts", "_kt", "_scale", ["_skip", []], ["_boxOn", false], ["_eng
 private _LF = uiNamespace getVariable ["COMSPEC_ATAK_LblF", createHashMap];
 if !(_LF getOrDefault ["lay", false]) exitWith {};
 if !(missionNamespace getVariable ["comspec_atak_native_map_show_marker_text", true]) exitWith {};
+private _zonesOn = profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true];
 private _style = toUpper (missionNamespace getVariable ["comspec_atak_native_map_marker_style", "plate"]);
 private _now = diag_tickTime;
 private _pal = [] call comspec_atak_native_fnc_mapColors;
@@ -131,6 +132,8 @@ private _n = 0;
     if (_n >= 40) then { break };
     _x params ["_id", "_local", "_pos", "_txt", "_c", "_sz", "_lock", "_eni", ["_cL", []]];
     if (_id in _skip) then { continue };
+    // Calque « Zones Athena » masqué : noms des zones d'Overwatch (COMSPEC_TZ_) non écrits, marqueur intact.
+    if (!_zonesOn && {(_id select [0, 11]) isEqualTo "COMSPEC_TZ_"}) then { continue };
     if (_engineMk && {_local}) then { continue };
     // Contact ENI : déjà dans son cartouche rouge (fn_mapLabels), ou masqué (volet CONFIGURATION).
     if (_eni && {_boxOn || {!_eniOn}}) then { continue };
