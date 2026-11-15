@@ -390,6 +390,21 @@ final class SseFileRepository
         return ['id' => $id, 'rec' => $rec, 'created' => true];
     }
 
+    /** Signature tracée au SEEK II par le contrôleur (chemin choisi par le serveur sous uploads/sse-id-signatures). */
+    public function setSeekSignatureImage(int $id, int $tenantId, string $path): bool
+    {
+        if ($id <= 0 || $tenantId <= 0 || preg_match('#^uploads/sse-id-signatures/[A-Za-z0-9_]+\.png$#', $path) !== 1) {
+            return false;
+        }
+        try {
+            $this->db->execute('UPDATE sse_seek_records SET signature_image = :p WHERE id = :id AND tenant_id = :t', ['p' => $path, 'id' => $id, 't' => $tenantId]);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return true;
+    }
+
     /** Rattachement au registre et contrôle N4 né de la fiche. */
     public function linkSeek(int $id, int $tenantId, ?int $identityId, ?int $personId, ?int $documentId, ?int $checkId): void
     {
@@ -527,6 +542,7 @@ final class SseFileRepository
             'person_id' => $int($row['person_id'] ?? null),
             'document_id' => $int($row['document_id'] ?? null),
             'check_id' => $int($row['check_id'] ?? null),
+            'signature_image' => ($row['signature_image'] ?? null) !== null && $row['signature_image'] !== '' ? (string) $row['signature_image'] : null,
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => $row['updated_at'] ?? null,
         ];
