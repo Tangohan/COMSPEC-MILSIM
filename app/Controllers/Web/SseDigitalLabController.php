@@ -12,6 +12,8 @@ use App\Repositories\SseCaseRepository;
 use App\Repositories\SseDigitalLabRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseDigitalLabService;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Portail SSE — Laboratoire numérique (ATH-SSE-LABNUM).
@@ -569,11 +571,7 @@ final class SseDigitalLabController
 
     private function canManage(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('extractions', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     private function canGrant(): bool

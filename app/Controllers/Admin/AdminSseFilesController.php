@@ -14,6 +14,8 @@ use App\Repositories\SseFileRepository;
 use App\Services\Sse\SseFileAdminService;
 use App\Services\Sse\SsePhoneExtractionService;
 use App\Support\SseRecordsCountryPacks;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Back-office › Renseignement › Fichiers SSE : fiches de la communauté (recherche, doublons, fusion), extractions de
@@ -38,8 +40,11 @@ final class AdminSseFilesController
             return false;
         }
 
-        return (function_exists('is_platform_admin') && is_platform_admin())
+        $legacy = (function_exists('is_platform_admin') && is_platform_admin())
             || (function_exists('can') && (can('atak.sse.files.admin') || can('admin.access') || can('admin.organization')));
+
+        // Section Fichiers, niveau « gérer » (SseAccessPolicy) : la garde d'origine ci-dessus, restreinte ou étendue par les règles.
+        return SseAccessPolicy::sessionAllows('fichiers', SseAccessCatalog::LEVEL_MANAGE, ['guest' => false, 'legacy' => $legacy, 'door_mode' => SseAccessPolicy::DOOR_ENTRY]);
     }
 
     public function index(Request $request, array $params = []): Response

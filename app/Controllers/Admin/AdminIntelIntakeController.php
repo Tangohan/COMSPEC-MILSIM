@@ -15,6 +15,8 @@ use App\Services\Intel\IntelPlayerIdentity;
 use App\Services\Intel\IntelRedaction;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseRedactionService;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Back-office « Remontées » : tous les comptes rendus et toutes les fiches de renseignement dans un fil de suivi,
@@ -44,13 +46,16 @@ final class AdminIntelIntakeController
         if (!function_exists('can')) {
             return false;
         }
+        $legacy = false;
         foreach (['admin.system', 'admin.organization', 'admin.access', 'atak.sse.case.manage', 'atak.sse.grant'] as $perm) {
             if (can($perm)) {
-                return true;
+                $legacy = true;
+                break;
             }
         }
 
-        return false;
+        // Remontées du renseignement : section Dossiers d'enquête, niveau « écrire » (SseAccessPolicy), garde d'origine ci-dessus.
+        return SseAccessPolicy::sessionAllows('dossiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => false, 'legacy' => $legacy, 'door_mode' => SseAccessPolicy::DOOR_ENTRY]);
     }
 
     public function index(Request $request, array $params = []): Response

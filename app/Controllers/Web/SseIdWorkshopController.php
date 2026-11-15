@@ -1054,7 +1054,7 @@ final class SseIdWorkshopController
         } catch (\Throwable) {
             $command = $confidential = false;
         }
-        $sseManage = function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        $sseManage = \App\Services\Sse\SseAccessPolicy::sessionAllows('papiers', \App\Support\SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->access->tenantId()]);
 
         return self::rightsFor($this->access->isGuest() || $this->userId() === null, $sseManage, $command, $confidential);
     }

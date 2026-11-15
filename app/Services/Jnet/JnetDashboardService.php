@@ -65,7 +65,10 @@ final class JnetDashboardService
                     $this->memo['intel'] = (bool) ($this->intelGate)();
                 } else {
                     $sse = new \App\Services\Sse\SseAccessCodeService();
-                    $this->memo['intel'] = $sse->canEnterWithoutCode() && $sse->hasAcceptedConfidentiality();
+                    // Les deux portes du portail, puis le droit de lire la section Dossiers d'enquête (SseAccessPolicy : sans règle,
+                    // il n'ajoute rien ; un refus explicite de la communauté ferme aussi les dossiers dans JNET).
+                    $this->memo['intel'] = $sse->canEnterWithoutCode() && $sse->hasAcceptedConfidentiality()
+                        && \App\Services\Sse\SseAccessPolicy::sessionAllows('dossiers', \App\Support\SseAccessCatalog::LEVEL_READ, ['guest' => $sse->isGuest(), 'tenant_id' => $sse->tenantId()]);
                 }
             } catch (\Throwable) {
                 $this->memo['intel'] = false;
@@ -254,6 +257,10 @@ final class JnetDashboardService
         $open = $this->mayReadIntelligence();
         try {
             $notes = $open ? count($this->fieldNotes->listForTenant($tenantId, ['limit' => 200])) : 0;
+            // Fiches de renseignement : section « terrain » des droits d'accès SSE (un refus explicite de la communauté les ferme).
+            if (!\App\Services\Sse\SseAccessPolicy::sessionAllows('terrain', \App\Support\SseAccessCatalog::LEVEL_READ, ['tenant_id' => $tenantId])) {
+                $notes = 0;
+            }
         } catch (\Throwable) {
         }
         try {

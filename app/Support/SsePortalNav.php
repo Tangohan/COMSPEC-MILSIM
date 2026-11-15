@@ -95,6 +95,7 @@ final class SsePortalNav
             ]))],
             ['id' => 'outils', 'label' => 'Outils et réglages', 'hint' => 'Accès au bureau et mode d’emploi.', 'items' => array_values(array_filter([
                 $only($canGrant && !$isGuest, ['id' => 'acces', 'label' => 'Habilitations et codes', 'hint' => 'Codes d’accès temporaires et niveaux de diffusion.', 'path' => 'atak/sse/acces', 'icon' => 'admin', 'keywords' => 'codes acces administration']),
+                $only($canGrant && !$isGuest, ['id' => 'droits', 'label' => 'Droits d’accès', 'hint' => 'Qui peut voir, lire, écrire, verser, supprimer, exporter et gérer, section par section.', 'path' => 'atak/sse/droits', 'icon' => 'admin', 'aliases' => ['atak/sse/droits/membre', 'atak/sse/droits/qui', 'atak/sse/droits/historique'], 'keywords' => 'droits acces lecture ecriture permissions sections niveaux regles derogations']),
                 ['id' => 'guide', 'label' => 'Documentation', 'hint' => 'Mode d’emploi du bureau SSE.', 'path' => 'atak/sse/guide', 'icon' => 'help', 'aliases' => ['atak/sse/documentation'], 'keywords' => 'aide guide manuel'],
             ]))],
         ];
@@ -110,7 +111,7 @@ final class SsePortalNav
     /** Lore des sessions : MJ (atak.sse.lore.manage) ou administrateur, jamais en session invitée. */
     public static function canLore(bool $isGuest): bool
     {
-        return !$isGuest && function_exists('can') && (can('atak.sse.lore.manage') || can('admin.access'));
+        return \App\Services\Sse\SseAccessPolicy::sessionAllows('lore', \App\Support\SseAccessCatalog::LEVEL_READ, ['guest' => $isGuest]);
     }
 
     public static function forSession(bool $canManage, bool $canGrant, bool $isGuest, ?bool $canMemberPapers = null): array
@@ -129,10 +130,54 @@ final class SsePortalNav
             $canEditor = false;
         }
 
-        return [
-            'sections' => self::sections($canManage, $canGrant, $isGuest, $canMemberPapers, $canEditor),
-            'restricted' => self::restricted($canManage, $canGrant, $isGuest, $canMemberPapers, $canEditor),
-        ];
+        $sections = self::sections($canManage, $canGrant, $isGuest, $canMemberPapers, $canEditor);
+        $restricted = self::restricted($canManage, $canGrant, $isGuest, $canMemberPapers, $canEditor);
+        try {
+            // Droits d'accès de la communauté (SseAccessPolicy) : sans règle, rien n'est retiré de la navigation.
+            $policy = \App\Services\Sse\SseAccessPolicy::forSession();
+            $tenantId = (int) \App\Core\Session::get('tenant_id');
+            if ($policy->hasRules($tenantId)) {
+                $filtered = self::withAccessRules($sections, static fn (string $section, string $level): bool => \App\Services\Sse\SseAccessPolicy::sessionAllows($section, $level, ['guest' => $isGuest]));
+                $sections = $filtered['sections'];
+                $restricted = array_merge($restricted, $filtered['restricted']);
+            }
+        } catch (\Throwable) {
+        }
+
+        return ['sections' => $sections, 'restricted' => $restricted];
+    }
+
+    /**
+     * Retire de la navigation les espaces dont la section n'est pas lisible (« lire ») ; ceux dont l'existence reste visible
+     * (« voir l'existence ») passent dans la liste des espaces restreints avec la raison.
+     *
+     * @param list<array<string, mixed>> $sections
+     * @param callable(string, string): bool $allows (section, niveau) : le droit est-il accordé ?
+     * @return array{sections: list<array<string, mixed>>, restricted: list<array{label: string, reason: string}>}
+     */
+    public static function withAccessRules(array $sections, callable $allows): array
+    {
+        $restricted = [];
+        $memo = [];
+        foreach ($sections as $i => $section) {
+            $kept = [];
+            foreach ($section['items'] as $item) {
+                $key = \App\Support\SseAccessCatalog::sectionForPath((string) $item['path']);
+                if ($key === null || !empty($item['external'])) {
+                    $kept[] = $item;
+                    continue;
+                }
+                $memo[$key] ??= [$allows($key, \App\Support\SseAccessCatalog::LEVEL_READ), $allows($key, \App\Support\SseAccessCatalog::LEVEL_EXISTS)];
+                if ($memo[$key][0]) {
+                    $kept[] = $item;
+                } elseif ($memo[$key][1]) {
+                    $restricted[] = ['label' => (string) $item['label'], 'reason' => 'Accès restreint par les droits d’accès de votre communauté : demandez-le à la gestion SSE.'];
+                }
+            }
+            $sections[$i]['items'] = array_values($kept);
+        }
+
+        return ['sections' => array_values(array_filter($sections, static fn (array $sec): bool => $sec['items'] !== [])), 'restricted' => $restricted];
     }
 
     /**

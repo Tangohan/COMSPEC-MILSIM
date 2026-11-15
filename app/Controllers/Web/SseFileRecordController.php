@@ -239,7 +239,7 @@ final class SseFileRecordController
                 'visibility' => (string) ($p['visibility'] ?? 'known'), 'reveal_phase' => (int) ($p['reveal_phase'] ?? 0),
             ], $uid) : null,
             'note' => $this->records()->restoreNote($tenantId, (int) $p['id'], $uid, $this->ctx->canManage()),
-            'photo' => $this->ctx->canManage() ? $this->records()->attachPhoto($tenantId, (int) $p['id'], (int) $p['identity_id']) : null,
+            'photo' => $this->ctx->allows('photos', 'delete') ? $this->records()->attachPhoto($tenantId, (int) $p['id'], (int) $p['identity_id']) : null,
             'watch' => $uid !== null ? $this->xref()->watch($tenantId, $uid, (string) $p['kind'], (array) $p['values'], ($p['identity_id'] ?? null) !== null ? (int) $p['identity_id'] : null) : null,
             default => null,
         };
@@ -390,8 +390,8 @@ final class SseFileRecordController
             'title' => 'Photothèque',
             'params' => $p,
             'result' => $result,
-            'unattached' => $this->ctx->canWrite() ? $this->safe(fn (): array => $this->records()->unattachedPhotos($tenantId, 24)) : [],
-            'photoUpload' => !empty($this->ctx->settings()['member_photo_upload']) && $this->ctx->canWrite(),
+            'unattached' => $this->ctx->allows('photos', 'add') ? $this->safe(fn (): array => $this->records()->unattachedPhotos($tenantId, 24)) : [],
+            'photoUpload' => !empty($this->ctx->settings()['member_photo_upload']) && $this->ctx->allows('photos', 'add'),
         ]);
     }
 
@@ -409,7 +409,7 @@ final class SseFileRecordController
     public function photoUpload(Request $request, array $params = []): Response
     {
         $tenantId = $this->ctx->tenantId();
-        if (!$this->ctx->canWrite() || !$this->ctx->csrfOk($request) || empty($this->ctx->settings()['member_photo_upload'])) {
+        if (!$this->ctx->allows('photos', 'add') || !$this->ctx->csrfOk($request) || empty($this->ctx->settings()['member_photo_upload'])) {
             return $this->ctx->denied($request, self::BASE . '/photos');
         }
         if ((new FileRateLimiter())->tooManyAttempts('sse_files_photo|' . $tenantId . '|' . (int) $this->ctx->userId(), 30, 3600)) {
@@ -451,8 +451,8 @@ final class SseFileRecordController
     {
         $tenantId = $this->ctx->tenantId();
         $photo = $this->records()->photo($tenantId, (int) ($params['id'] ?? 0));
-        if ($photo === null || !$this->ctx->canWrite() || !$this->ctx->csrfOk($request)
-            || ($request->inputString('detach') === '1' && !$this->ctx->canManage())) {
+        if ($photo === null || !$this->ctx->allows('photos', 'write') || !$this->ctx->csrfOk($request)
+            || ($request->inputString('detach') === '1' && !$this->ctx->allows('photos', 'delete'))) {
             return $this->ctx->denied($request, self::BASE . '/photos');
         }
         $ref = strtoupper(trim($request->inputString('target')));
@@ -506,7 +506,7 @@ final class SseFileRecordController
     {
         $tenantId = $this->ctx->tenantId();
         $uid = $this->ctx->userId();
-        $moderator = $this->ctx->canAdmin();
+        $moderator = $this->ctx->allows('extractions', 'manage');
         $mine = $request->queryString('miens') === '1' && $uid !== null;
         $list = ['rows' => [], 'total' => 0];
         $devices = [];
@@ -530,7 +530,7 @@ final class SseFileRecordController
     public function phoneShow(Request $request, array $params = []): Response
     {
         $tenantId = $this->ctx->tenantId();
-        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->canAdmin());
+        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->allows('extractions', 'manage'));
         if ($ext === null) {
             return $this->notFound();
         }
@@ -553,8 +553,8 @@ final class SseFileRecordController
     public function phoneExport(Request $request, array $params = []): Response
     {
         $tenantId = $this->ctx->tenantId();
-        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->canAdmin());
-        if ($ext === null || !$this->ctx->canWrite()) {
+        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->allows('extractions', 'manage'));
+        if ($ext === null || !$this->ctx->allows('extractions', 'export')) {
             return $this->notFound();
         }
         $items = $this->extractions()->listItems($tenantId, (int) $ext['id'], '');
@@ -582,8 +582,8 @@ final class SseFileRecordController
     public function phoneAttach(Request $request, array $params = []): Response
     {
         $tenantId = $this->ctx->tenantId();
-        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->canAdmin());
-        if ($ext === null || !$this->ctx->canManage() || !$this->ctx->csrfOk($request)) {
+        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->allows('extractions', 'manage'));
+        if ($ext === null || !$this->ctx->allows('extractions', 'write', $this->ctx->profile('files_manage')) || !$this->ctx->csrfOk($request)) {
             return $this->ctx->denied($request, self::BASE . '/telephones');
         }
         $ref = strtoupper(trim($request->inputString('target')));

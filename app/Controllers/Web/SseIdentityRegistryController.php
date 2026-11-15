@@ -27,6 +27,8 @@ use App\Services\Sse\SseMrzService;
 use App\Support\SseIdCountryCatalog;
 use App\Support\SseIdRealCountryCatalog;
 use App\Support\SseIdentityCatalog;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Portail SSE — RENS › Identités & documents (COMSPEC IDENTITY, Lot 1).
@@ -1141,11 +1143,7 @@ final class SseIdentityRegistryController
 
     private function canManage(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('papiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     private function canSeeTruth(): bool
