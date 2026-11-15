@@ -383,7 +383,7 @@ final class SseWantedAttachmentsTest extends TestCase
         $stranger = $this->service(self::PEER);
         $refused = $stranger->addFile(1, $notice, $bytes, [], self::manager());
         self::assertFalse($refused['ok']);
-        self::assertStringContainsString(AppServicesSseSseMemberImageGate::LABEL, $refused['error']);
+        self::assertStringContainsString(\App\Services\Sse\SseMemberImageGate::LABEL, $refused['error']);
         self::assertSame([], $this->privateFiles());
 
         // Le supérieur du membre peut joindre ; les autres ne voient, ne servent et n'exposent rien.
