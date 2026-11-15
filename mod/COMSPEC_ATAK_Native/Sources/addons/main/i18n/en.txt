@@ -24781,5 +24781,8 @@
 ["Genre", "Kind"],
 ["MENACE", "THREAT"],
 ["Mesure à prendre", "Action to be taken"],
-["Fiches SSE", "SSE records"]
+["Fiches SSE", "SSE records"],
+["Menu ACE : entrées ATAK à la racine", "ACE menu: ATAK entries at the root"],
+["Réglage personnel. Coché (défaut) : « Poste TOC », « Messages et ordres du TOC » et « ATAK : réparer l'affichage » apparaissent à la racine du menu ACE d'auto-interaction. Décoché : elles disparaissent de la racine ; le téléphone ATAK garde « Entretien > Réparer l'écran », l'app Poste TOC du téléphone ouvre le poste, et la touche CBA « Messages et ordres du TOC » reste disponible.", "Personal setting. Checked (default): ""TOC post"", ""TOC messages and orders"" and ""ATAK: repair the display"" show at the root of the ACE self-interaction menu. Unchecked: they disappear from the root; the ATAK phone keeps ""Maintenance > Repair the screen"", the phone's TOC post app opens the post, and the CBA key ""TOC messages and orders"" stays available."],
+["ATAK · Menu ACE", "ATAK · ACE menu"]
 ]

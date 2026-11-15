@@ -32,7 +32,7 @@ private _add = {
 // l'ATAK remis à zéro quand il ne s'ouvre plus ou qu'un cadre reste à l'écran (fn_vehicleKeys « repair », 2.9.41).
 [["ACE_SelfActions"], "COMSPEC_ATAK_Repair", "ATAK : réparer l'affichage", "\z\comspec_atak_native\addons\main\data\logo_atak.paa",
     { [{ ["repair"] call comspec_atak_native_fnc_vehicleKeys; }] call comspec_atak_native_fnc_nextFrame; },
-    { _player isEqualTo _target && {([player] call comspec_atak_native_fnc_hasDevice) || {[player] call comspec_atak_native_fnc_aircrewTerminal} || {!isNull ([] call comspec_atak_native_fnc_display)}} }] call _add;
+    { _player isEqualTo _target && {missionNamespace getVariable ["comspec_atak_native_ace_root", true]} && {([player] call comspec_atak_native_fnc_hasDevice) || {[player] call comspec_atak_native_fnc_aircrewTerminal} || {!isNull ([] call comspec_atak_native_fnc_display)}} }] call _add;
 
 [_root, "COMSPEC_ATAK_Back", "Voir l'arrière", "", { [{ [] call comspec_atak_native_fnc_backView; }] call comspec_atak_native_fnc_nextFrame; }] call _add;
 
