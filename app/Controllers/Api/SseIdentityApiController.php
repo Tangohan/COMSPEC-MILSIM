@@ -11,6 +11,7 @@ use App\Repositories\SseCaseRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseClearanceService;
+use App\Services\Sse\SseDigitalLabService;
 use App\Services\Sse\SseEditorLibraryService;
 use App\Services\Sse\SseFileQueryService;
 use App\Services\Sse\SseIdCheckService;
@@ -198,7 +199,7 @@ final class SseIdentityApiController
 
         // Contenu d'un support numérique relevé en jeu (contacts, messages, appels, images, positions, comptes) : remplit le
         // laboratoire numérique (envoi découpé par la file du SSE, comme les fiches SEEK II).
-        if (($body['kind'] ?? null) === AppServicesSseSseDigitalLabService::DETAIL_KIND) {
+        if (($body['kind'] ?? null) === SseDigitalLabService::DETAIL_KIND) {
             return $this->digitalDetailResponse($tenantId, $body);
         }
 
