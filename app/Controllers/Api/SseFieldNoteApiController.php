@@ -48,7 +48,43 @@ final class SseFieldNoteApiController
     /** Référentiel affiché par le rédacteur ATAK (mêmes libellés que le portail). */
     public function catalog(Request $request, array $params = []): Response
     {
-        return Response::json(SseFieldNoteCatalog::clientCatalog());
+        // Champs ajoutés (facultatifs pour le client) : étiquettes actives de la communauté, ou catalogue livré si elle n'est
+        // pas identifiée. Les clés existantes (kinds, themes, urgencies, sources...) gardent leur forme et leurs valeurs.
+        $extra = [];
+        try {
+            $extra = $this->tagService()->clientCatalog($this->resolveTenantId($request));
+        } catch (\Throwable) {
+            $extra = [];
+        }
+
+        return Response::json(SseFieldNoteCatalog::clientCatalog() + $extra);
+    }
+
+    private ?\App\Services\Sse\SseFieldNoteTagService $tagServiceInstance = null;
+
+    private function tagService(): \App\Services\Sse\SseFieldNoteTagService
+    {
+        return $this->tagServiceInstance ??= new \App\Services\Sse\SseFieldNoteTagService();
+    }
+
+    /**
+     * Ajoute à chaque fiche son champ « tags » (étiquettes de la communauté) ; sans la table, le champ est une liste vide.
+     *
+     * @param list<array<string, mixed>> $notes
+     * @return list<array<string, mixed>>
+     */
+    private function withTags(int $tenant, array $notes): array
+    {
+        try {
+            $byNote = $this->tagService()->tagsForNotes($tenant, array_map(static fn (array $n): int => (int) ($n['id'] ?? 0), $notes));
+        } catch (\Throwable) {
+            $byNote = [];
+        }
+        foreach ($notes as $i => $note) {
+            $notes[$i]['tags'] = \App\Services\Sse\SseFieldNoteTagService::apiTags($byNote[(int) ($note['id'] ?? 0)] ?? []);
+        }
+
+        return $notes;
     }
 
     /** Fiches récentes — filtrables sur l'auteur pour « mes fiches ». */
@@ -92,6 +128,8 @@ final class SseFieldNoteApiController
             }
         }
 
+        $notes = $this->withTags($tenant, $notes);
+
         return Response::json(['notes' => $notes, 'count' => count($notes)]);
     }
 
@@ -110,7 +148,7 @@ final class SseFieldNoteApiController
         }
         $this->intake()->recordRead($tenant, 'fiche', (int) $note['id'], $viewer, 'jeu');
 
-        return Response::json($note);
+        return Response::json($this->withTags($tenant, [$note])[0]);
     }
 
     private ?IntelIntakeService $intakeService = null;
@@ -215,6 +253,27 @@ final class SseFieldNoteApiController
 
         $result = $this->noteService->create($tenant, $input);
         $note = $result['note'];
+
+        // Étiquettes saisies en jeu (champ facultatif « tags » : codes, ou objets {code, qualifier}) ; un code inconnu ou
+        // désactivé est ignoré, la fiche est enregistrée quoi qu'il arrive.
+        $note['tags'] = [];
+        if ((int) ($note['id'] ?? 0) > 0) {
+            try {
+                $tagService = $this->tagService();
+                if ($result['created'] && $tagService->ready()) {
+                    $selection = $tagService->withDefaults($tenant, $tagService->normalizeSelection($tenant, $body['tags'] ?? [])['selection']);
+                    if ($selection !== []) {
+                        $tagService->setNoteTags($tenant, (int) $note['id'], $selection, [
+                            'user_id' => isset($actor['user_id']) ? (int) $actor['user_id'] : null,
+                            'label' => (string) ($input['author_label'] ?? 'Terrain'),
+                        ]);
+                    }
+                }
+                $note = $this->withTags($tenant, [$note])[0];
+            } catch (\Throwable) {
+                $note['tags'] = [];
+            }
+        }
 
         // Fiche née d'un contrôle d'identité (ATAK 3.0.2 : « Joindre à une FRM » de la fiche CONTRÔLE ID) : rattachée
         // au contrôle, ses pièces jointes deviennent les photos du contrôle.

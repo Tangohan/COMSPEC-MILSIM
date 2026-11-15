@@ -11,6 +11,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
  * @var array<string,string> $urgencyOptions
  * @var array<string,string> $statusOptions
  * @var bool $canWrite
+ * @var array<string, array{key: string, label: string, hint: string, tags: list<array<string, mixed>>}> $tagFamilies étiquettes de la communauté, par famille
  */
 $notes = is_array($notes ?? null) ? $notes : [];
 $counters = is_array($counters ?? null) ? $counters : ['total' => 0, 'today' => 0, 'immediate' => 0, 'untriaged' => 0];
@@ -21,6 +22,18 @@ $urgencyOptions = is_array($urgencyOptions ?? null) ? $urgencyOptions : [];
 $statusOptions = is_array($statusOptions ?? null) ? $statusOptions : [];
 $canWrite = (bool) ($canWrite ?? false);
 $tone = static fn (string $code): string => \App\Support\SseFieldNoteCatalog::themeTone($code);
+$tagFamilies = is_array($tagFamilies ?? null) ? $tagFamilies : [];
+$activeTag = null;
+foreach ($tagFamilies as $family) {
+    foreach ($family['tags'] as $tag) {
+        if ((string) $tag['key'] === (string) ($filters['tag'] ?? '') && $tag['key'] !== '') {
+            $activeTag = $tag;
+        }
+    }
+}
+$activeFamily = $tagFamilies[(string) ($filters['tag_family'] ?? '')] ?? null;
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiches-etiquettes.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-fiches-etiquettes.js')) . '"></script>';
 ?>
 <div class="page-heading">
     <div>
@@ -63,7 +76,7 @@ $tone = static fn (string $code): string => \App\Support\SseFieldNoteCatalog::th
         <form method="get" action="<?= $h(url('atak/sse/fiches')) ?>" class="sse-filter-row sse-desk-filters">
             <label class="sr-only" for="fiche-q">Rechercher une fiche</label>
             <input id="fiche-q" type="search" name="q" value="<?= $h($filters['q'] ?? '') ?>"
-                   placeholder="Référence, texte, lieu ou auteur…">
+                   placeholder="Référence, texte, lieu ou code d’étiquette" title="Référence, texte, lieu, auteur ou code d’étiquette (HUMINT, PIR…)">
             <label class="sr-only" for="fiche-kind">Type de fiche</label>
             <select id="fiche-kind" name="note_kind">
                 <option value="">Tous les types</option>
@@ -100,9 +113,39 @@ $tone = static fn (string $code): string => \App\Support\SseFieldNoteCatalog::th
                     </option>
                 <?php endforeach; ?>
             </select>
+            <?php if ($tagFamilies !== []): ?>
+                <label class="sr-only" for="fiche-tag-family">Famille d’étiquettes</label>
+                <select id="fiche-tag-family" name="tag_family" data-fnt-family-select="fiche-tag">
+                    <option value="">Toutes les familles d’étiquettes</option>
+                    <?php foreach ($tagFamilies as $family): ?>
+                        <option value="<?= $h($family['key']) ?>" <?= ($filters['tag_family'] ?? '') === $family['key'] ? 'selected' : '' ?>><?= $h($family['label']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label class="sr-only" for="fiche-tag">Étiquette</label>
+                <select id="fiche-tag" name="tag">
+                    <option value="">Toutes les étiquettes</option>
+                    <?php foreach ($tagFamilies as $family): ?>
+                        <optgroup label="<?= $h($family['label']) ?>" data-family="<?= $h($family['key']) ?>">
+                            <?php foreach ($family['tags'] as $tag): ?>
+                                <option value="<?= $h($tag['key']) ?>" <?= ($filters['tag'] ?? '') === $tag['key'] ? 'selected' : '' ?>><?= $h($tag['code']) ?> — <?= $h($tag['label']) ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endforeach; ?>
+                </select>
+            <?php endif; ?>
             <button class="btn" type="submit">Filtrer</button>
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/fiches')) ?>">Tout afficher</a>
         </form>
+        <?php if ($activeTag !== null || $activeFamily !== null): ?>
+            <p class="fnt-active">
+                Fiches qui portent
+                <?php if ($activeTag !== null): ?>
+                    <span class="fnt" style="--fnt: <?= $h($activeTag['hex']) ?>"><?= $h($activeTag['code']) ?></span> <?= $h($activeTag['label']) ?>
+                <?php else: ?>
+                    une étiquette de la famille <strong><?= $h($activeFamily['label']) ?></strong>
+                <?php endif; ?>
+            </p>
+        <?php endif; ?>
     </div>
 </section>
 
@@ -156,6 +199,17 @@ $tone = static fn (string $code): string => \App\Support\SseFieldNoteCatalog::th
                                     <span class="sse-note-badge sse-note-badge--warning"><?= $h($note['urgency_label'] ?? '') ?></span>
                                 <?php endif; ?>
                             </div>
+                            <?php $noteTags = is_array($note['tags'] ?? null) ? $note['tags'] : []; ?>
+                            <?php if ($noteTags !== []): ?>
+                                <ul class="fnt-set" aria-label="Étiquettes de la fiche">
+                                    <?php foreach (array_slice($noteTags, 0, 4) as $tag): ?>
+                                        <li><a class="fnt" style="--fnt: <?= $h($tag['hex']) ?>" href="<?= $h(url('atak/sse/fiches?tag=' . rawurlencode((string) $tag['key']))) ?>" title="<?= $h($tag['family_label'] . ' : ' . $tag['label']) ?>"><?= $h($tag['text']) ?></a></li>
+                                    <?php endforeach; ?>
+                                    <?php if (count($noteTags) > 4): ?>
+                                        <li class="fnt__more" title="<?= $h(implode(', ', array_map(static fn (array $t): string => (string) $t['text'], array_slice($noteTags, 4)))) ?>">+<?= count($noteTags) - 4 ?></li>
+                                    <?php endif; ?>
+                                </ul>
+                            <?php endif; ?>
                         </td>
                         <td><?= $h($note['excerpt'] ?? '') ?></td>
                         <td class="muted"><?= $h($note['place_label'] ?? '—') ?></td>
