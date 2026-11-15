@@ -311,6 +311,8 @@ final class SseFieldNoteController
 
             return Response::redirect($back);
         }
+        // Validation depuis le tableau de bord identité : on y revient, sans perdre le périmètre ni la liste.
+        $back = self::triageBack((string) $request->input('return', ''), $back);
 
         $tenantId = $this->tenantId();
         $status = SseFieldNoteCatalog::normalizeStatus((string) $request->input('status', ''));
@@ -325,6 +327,17 @@ final class SseFieldNoteController
         Session::flash('success', 'Suivi enregistré : ' . SseFieldNoteCatalog::statusLabel($status) . '.');
 
         return Response::redirect($back);
+    }
+
+    /** Retour autorisé après un suivi : uniquement le tableau de bord identité (chemin relatif, jamais un lien externe). */
+    public static function triageBack(string $return, string $default): string
+    {
+        $return = trim($return);
+        if (preg_match('~^atak/sse/papiers/tableau(\?[A-Za-z0-9%=&_.\-]{0,200})?(#frm)?$~', $return) !== 1) {
+            return $default;
+        }
+
+        return url($return);
     }
 
     /** Rattachement de la fiche à un dossier validé. */

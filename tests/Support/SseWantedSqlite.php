@@ -17,6 +17,8 @@ final class SseWantedSqlite
     public static function open(bool $withWantedTables = true): PDO
     {
         $pdo = SseFilesSqlite::open();
+        // Fiche opérateur lue par SseClearanceService (niveau d'habilitation de la session).
+        $pdo->exec('CREATE TABLE IF NOT EXISTS personnel_profiles (id INTEGER PRIMARY KEY, user_id INT NOT NULL, tenant_id INT, clearance_level TEXT)');
         if ($withWantedTables) {
             self::createWantedTables($pdo);
         }

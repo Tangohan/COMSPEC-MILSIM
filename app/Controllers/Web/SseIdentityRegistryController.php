@@ -84,7 +84,7 @@ final class SseIdentityRegistryController
 
         return $this->view('atak.sse.papers.documents', [
             'title' => 'Papiers d’identité',
-            'documents' => $this->documents->list($tenantId, $filters),
+            'documents' => (new \App\Services\Sse\SseIdentityHolderService())->annotate($tenantId, $this->documents->list($tenantId, $filters), $truth),
             'filters' => $filters,
             'counts' => $this->documents->counts($tenantId),
             'countries' => $this->countries->listForTenant($tenantId),
@@ -941,11 +941,14 @@ final class SseIdentityRegistryController
             'verdict' => $request->queryString('verdict'),
             'q' => $request->queryString('q'),
         ];
+        // Périmètre venu du tableau de bord (carte, opération) : mêmes paramètres d'adresse.
+        $scope = SseIdCheckInsightService::parseScope($request->queryString('map'), $request->queryString('op'));
+        $query = $filters + ['map' => (int) $scope['map']] + ($scope['op'] !== null ? ['op' => $scope['op']] : []);
 
         return $this->view('atak.sse.papers.checks', [
             'title' => 'Vérifications d’identité sur le terrain',
-            'checks' => $this->checks->list($this->tenantId(), $filters),
-            'filters' => $filters,
+            'checks' => $this->checks->list($this->tenantId(), $query),
+            'filters' => $filters + ['map' => (int) $scope['map'], 'op' => $scope['opRaw']],
             'papersTab' => 'controles',
             'autoTransmit' => (new SseIdSettingsRepository())->autoTransmit($this->tenantId()),
             'canManageSettings' => $this->canManage(),
@@ -977,9 +980,10 @@ final class SseIdentityRegistryController
     {
         $tenantId = $this->tenantId();
         $insights = new SseIdCheckInsightService(null, $this->checks);
-        $mapId = max(0, (int) $request->queryString('map'));
-        $opRaw = trim($request->queryString('op'));
-        $opKey = $opRaw === '' ? null : ($opRaw === '-' ? '' : mb_substr($opRaw, 0, 64));
+        $scope = SseIdCheckInsightService::parseScope($request->queryString('map'), $request->queryString('op'));
+        $mapId = (int) $scope['map'];
+        $opRaw = $scope['opRaw'];
+        $opKey = $scope['op'];
         $truth = $this->canSeeTruth();
 
         return $this->view('atak.sse.papers.dashboard', [
