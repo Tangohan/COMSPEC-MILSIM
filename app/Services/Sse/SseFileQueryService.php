@@ -9,6 +9,7 @@ use App\Repositories\SseIdCheckRepository;
 use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SsePersonRepository;
+use App\Support\SseCaptureNotes;
 use App\Support\SseFileCatalog;
 use App\Support\SseIdentityCatalog;
 
@@ -580,6 +581,7 @@ final class SseFileQueryService
             'unit' => self::str($body['unit'] ?? null, 80),
             'context_id' => $mapId > 0 ? $mapId : null,
             'op_key' => $op,
+            'capture_json' => SseCaptureNotes::encode($body['capture'] ?? null),
         ]);
 
         // Signature tracée au pad du SEEK II : traits validés, PNG dessiné par le serveur. Un refus ne bloque jamais la fiche.

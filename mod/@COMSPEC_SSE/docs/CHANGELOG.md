@@ -1,5 +1,15 @@
 # COMSPEC SSE — historique des versions
 
+## 1.10.0 — 15/11/2026 · Les listes des modules viennent du site de la communauté
+
+- **Référence de dossier :** le module Zeus propose les dossiers ouverts sur le site de la communauté (liste avec filtre). La saisie à la main reste possible pour un dossier pas encore créé. En Eden, l'attribut « Dossier du site » l'emporte sur la référence saisie.
+- **Nouveau module « Identité du site (Athena) » :** pose sur un PNJ une personne du lore de la session, un avis de recherche actif, un contexte d'acquisition et un dossier, choisis dans les listes du site. En Eden, synchronisez le module aux personnes ; l'attribut « Personne du lore (liste du site) » existe aussi sur chaque unité.
+- **Éditeur Eden :** les listes sont lues sur le site seulement si la connexion Athena du menu COMSPEC SSE est ouverte sur le poste. Sinon la valeur enregistrée est gardée (marquée « hors liste ») et appliquée par le serveur au lancement de la mission.
+- **Origine des listes :** chaque formulaire l'écrit en pied (site et heure de la dernière synchro, listes gardées sur le poste, ou listes du mod) ; bouton ACTUALISER. Aucune alerte.
+- **Transmission :** la fiche personne envoie le contexte d'acquisition, le dossier et l'avis de recherche choisis pour le sujet. La file hors ligne et ses clés d'idempotence sont inchangées : un envoi rejoué ne crée pas de doublon.
+- Demande COMSPEC ATAK 4.21.0 (c'est lui qui lit le site). Sans lui, les modules gardent leurs listes locales.
+- Contrat : `docs/technical/ICD-SSE-CATALOGUE.md`.
+
 ## À venir · Profils d'IA, éditeur SSE en Zeus, papiers et contrôle (version attribuée à la publication)
 
 - **SEEK II : la photo du visage remonte enfin sur Athena.** « SIGNER ET ENVOYER » n'envoyait que la fiche SEEK ; la photo n'était jointe qu'à la transmission d'une fiche personne (bouton TRANSMETTRE), donc elle ne partait jamais. Elle part maintenant avec la référence REC de la fiche signée (Overwatch connect : `fn_seekSend`, `fn_sseCaptureFacePhoto`) et le site la range sur la fiche SEEK II et sur l'identité rattachée (Bureau SSE › Identités et papiers, Fichiers › Fiches SEEK II et Photothèque). À reconstruire et publier avec le prochain paquet ATAK natif.

@@ -9,6 +9,9 @@
       "NUMBER" _data = [défaut, min, max]           (saisie bornée)
       "CHECK"  _data = booléen
       "SLIDER" _data = [min, max, défaut, décimales]
+      "CATALOG" _data = [section, [codes locaux], [libellés locaux], code courant, libellé de la ligne vide]
+                liste du site de la communauté (comspec_sse_fnc_catalogue), liste locale en repli ; champ de filtre
+                quand elle est longue ; origine des listes et bouton ACTUALISER en pied de formulaire. Valeur : le code.
 
     _onConfirm : code appelé avec [_values, _args] après « VALIDER »
                  (_values dans l'ordre des lignes : valeur, texte, nombre ou booléen).
@@ -45,6 +48,7 @@ if (_description isEqualTo "") then {
 
 private _group = _display displayCtrl 93610;
 private _entries = [];
+private _hasCatalog = false;
 private _rowStep = 1.45;
 private _labelW = 8.4;
 private _fieldX = 8.8;
@@ -81,6 +85,21 @@ private _fieldW = 11.6;
             if (_vals isNotEqualTo []) then {
                 _ctrl lbSetCurSel ((_def max 0) min ((count _vals) - 1));
             };
+        };
+        case "CATALOG": {
+            _hasCatalog = true;
+            _ctrl = _display ctrlCreate ["COMSPEC_SSE_RscCombo", -1, _group];
+            _pos = [_fieldX * _gw, _y, (_fieldW - 3.7) * _gw, 1.15 * _gh];
+            // Filtre : saisir quelques lettres réduit la liste (référence ou nom).
+            private _filter = _display ctrlCreate ["COMSPEC_SSE_RscEdit", -1, _group];
+            _filter ctrlSetPosition [(_fieldX + _fieldW - 3.5) * _gw, _y, 3.5 * _gw, 1.15 * _gh];
+            _filter ctrlSetTooltip (("Filtrer la liste : tapez une partie de la référence ou du nom") call comspec_sse_fnc_tr);
+            _filter ctrlCommit 0;
+            _filter setVariable ["comspec_sse_catCombo", _ctrl];
+            _filter ctrlAddEventHandler ["KeyUp", { ["filter", _this select 0] call comspec_sse_fnc_uiFormCatalog; }];
+            _ctrl setVariable ["comspec_sse_catFilter", _filter];
+            _ctrl setVariable ["comspec_sse_catSpec", _data];
+            ["fill", _ctrl] call comspec_sse_fnc_uiFormCatalog;
         };
         case "CHECK": {
             _ctrl = _display ctrlCreate ["COMSPEC_SSE_RscCheckBox", -1, _group];
@@ -129,4 +148,7 @@ private _fieldW = 11.6;
 } forEach _rows;
 
 uiNamespace setVariable ["COMSPEC_SSE_FormState", [_entries, _onConfirm, _args]];
+// Listes du site : origine affichée en pied de formulaire, relecture si elles sont absentes ou périmées.
+{ (_display displayCtrl _x) ctrlShow _hasCatalog; } forEach [93603, 93622];
+if (_hasCatalog) then { ["open"] call comspec_sse_fnc_uiFormCatalog; };
 true

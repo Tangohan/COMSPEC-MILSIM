@@ -138,10 +138,15 @@ return static function (PDO $pdo, ?callable $log = null): void {
         ['idx_sse_seek_records_identity', 'tenant_id, identity_id', false],
     ]);
 
+    // Motifs de capture du SEEK II (empreintes, iris : main non capturable, bandage, post-mortem…), JSON borné par SseCaptureNotes.
+    if ($schema->tableExists('sse_seek_records') && !$schema->columnExists('sse_seek_records', 'capture_json')) {
+        $schema->addColumnIfMissing('sse_seek_records', 'capture_json', 'TEXT NULL');
+        $log("  [OK] sse_seek_records.capture_json\n");
+    }
+
     // Signature tracée au pad du SEEK II (PNG rendu par le serveur ; chemin relatif à public/).
     if ($schema->tableExists('sse_seek_records') && !$schema->columnExists('sse_seek_records', 'signature_image')) {
         $schema->addColumnIfMissing('sse_seek_records', 'signature_image', 'VARCHAR(255) DEFAULT NULL');
-        $log("  [OK] sse_seek_records.signature_image
-");
+        $log("  [OK] sse_seek_records.signature_image\n");
     }
 };

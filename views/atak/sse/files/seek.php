@@ -53,7 +53,10 @@ $tone = ['concordant' => 'g', 'discordant' => 'r', 'signale' => 'a', 'inconnu' =
                             <td translate="no"><?= $s['subject_unknown'] ? 'Inconnu' : $h($s['display_name'] !== '' ? $s['display_name'] : '—') ?></td>
                             <td class="m" translate="no"><?= $h(trim(($s['doc_country'] ?? '') . ' ' . ($s['doc_number'] ?? '')) ?: '—') ?></td>
                             <td><span class="fx-flg <?= $tone[$s['verdict']] ?? '' ?>"><?= $h($s['verdict_label']) ?></span></td>
-                            <td><?= $h($mods($s['modalities'])) ?></td>
+                            <td><?= $h($mods($s['modalities'])) ?>
+                                <?php foreach ((is_array($s['capture'] ?? null) ? $s['capture'] : []) as $capMod => $cap): ?>
+                                    <?php foreach (($cap['notes'] ?? []) as $capNote): ?><br><span class="fx-help" translate="no"><?= $h(\App\Support\SseCaptureNotes::label((string) $capMod) . ' : ' . $capNote) ?></span><?php endforeach; ?>
+                                <?php endforeach; ?></td>
                             <?php $imgs = $photos[(string) $s['rec']] ?? []; ?>
                             <td class="m">
                                 <?php if ($imgs !== [] && (string) ($imgs[0]['url'] ?? '') !== ''): ?>

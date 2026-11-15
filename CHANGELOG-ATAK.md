@@ -38,6 +38,59 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## SEEK II et modules SSE : les listes viennent du site de la communauté (ATAK natif 4.21.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : SEEK II et modules SSE, les listes viennent du site de votre communauté
+- SEEK II : le statut et le contexte d'acquisition proposés sont ceux que votre communauté a réglés sur le site. Sur la page ENVOI, une liste montre les dossiers ouverts : en choisir un remplit le code dossier, la saisie à la main reste possible.
+- Zeus et éditeur (mod COMSPEC SSE 1.10.0) : le module « Référence de dossier » propose les dossiers du site, et le nouveau module « Identité du site (Athena) » pose sur un PNJ une personne du lore de la session, un avis de recherche, un contexte d'acquisition et un dossier, choisis dans des listes avec un filtre.
+- Chaque écran dit d'où vient sa liste : « Listes du site » avec l'heure de la dernière synchro, ou les listes du mod quand le site ne répond pas. Le bouton ACTUALISER relit le site.
+- Rien à régler : les listes sont lues au début de la mission, puis à l'ouverture des écrans quand elles ont plus de dix minutes.
+EN : SEEK II and SSE modules, lists now come from your community's site
+- SEEK II: the status and acquisition context offered are the ones your community set up on the site. On the SUBMIT page, a list shows the open cases: picking one fills in the case code, and you can still type it by hand.
+- Zeus and editor (COMSPEC SSE mod 1.10.0): the "Case reference" module offers the site's cases, and the new "Site identity (Athena)" module gives an NPC a person from the session lore, a wanted notice, an acquisition context and a case, picked from lists with a filter.
+- Each screen says where its list comes from: "Site lists" with the time of the last sync, or the mod's own lists when the site does not answer. The REFRESH button reads the site again.
+- Nothing to set up: lists are read when the mission starts, then when a screen opens if they are more than ten minutes old.
+
+### Détail technique
+- **Contrat** : `docs/technical/ICD-SSE-CATALOGUE.md` (ICD-SSE-CATALOGUE-001). Site : `GET /api/game/v1/sse/catalogue` (`GameSseCatalogueApiController`, `SseGameCatalogueService`), communauté de la clé ou du jeton de jeu seulement (jamais un paramètre), ETag et `since_rev`, plafonds par liste (`truncated`), 90 lectures par minute par communauté et par compte. Même contenu en pages parseSimpleArray de 7 400 octets au plus par le `kind` `sse_catalogue` de `POST /api/sse/identity/checks`.
+- **DLL inchangée** : le mod lit le catalogue par `SubmitIdCheck` (COMSPEC Link 2.0.125, `LINK_VERSION_STR` inchangé).
+- **Mod, cache** : `comspec_overwatch_connect_fnc_sseCatalogue` (`rows`, `choices`, `ensure`, `refresh`, `fetch`, `reset`, `state`, `status`) ; listes en `uiNamespace`, référentiels gardés en `profileNamespace` (`COMSPEC_SseCatalogueRef`) pour le repli, listes vivantes oubliées à chaque début de mission ; événement `comspec_sse_catalogueUpdated`. Un échec ne retente pas avant 60 s.
+- **SEEK II** : `fn_sseCatalogueSeek` remplit 9505 (statut), 9506 (contexte) et le nouveau menu 9569 (dossiers ouverts) ; l'origine des listes s'affiche dans les libellés 9561 et 9565. Les listes du mod restent le repli.
+- **Pack SSE 1.10.0** : `comspec_sse_fnc_catalogue` (passe la main à l'ATAK natif), ligne `CATALOG` de `comspec_sse_fnc_uiForm` (filtre, ligne d'état 93603, bouton 93622), module `COMSPEC_SSE_Module_SiteIdentity` et `comspec_sse_fnc_siteIdentityApply` (serveur), attributs Eden `COMSPEC_SSE_Cat*Combo` (`comspec_sse_fnc_edenCatalogue`). La fiche personne envoie le contexte, le dossier et l'avis choisis pour le sujet (`circumstances`, `case_reference`, `wanted_ref`).
+- Tests : `tests/Unit/SseGameCatalogueTest.php`. Non essayé en jeu : voir la liste « à vérifier en jeu » de la PR.
+
+---
+
+## SEEK II : lecteur d'empreintes animé, mini-jeux facultatifs, terminal réductible, blessures prises en compte (ATAK natif 4.20.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : SEEK II, un lecteur qui vit : doigts, câbles, iris et blessures
+- La capture des empreintes se fait doigt par doigt sur la vitre verte : main droite, main gauche, puis les pouces. Le doigt se pose, un balayage lumineux passe, les crêtes apparaissent, une jauge donne la qualité. Un doigt mal posé, humide ou une vitre sale rejette la lecture et il faut recommencer.
+- Mini-jeux à la souris, tous facultatifs et rejouables : tenir le doigt dans la zone pendant le balayage, garder le réticule sur l'iris, brancher le câble USB et le câble ALIM sur le bon port, essuyer la vitre. Le bouton PASSER ne bloque jamais la capture ; la qualité du geste compte dans la qualité relevée.
+- Le réglage « Interactions SEEK II » choisit aucune (capture automatique comme avant), simples (animation seule) ou complètes ; le bouton INTERACTIONS de l'accueil le change aussi.
+- Le terminal se réduit : boutons TAILLE (100, 75, 55, 40 %) et PLACE (centre, gauche, droite) sur l'accueil, ou les touches + et - du pavé numérique. On voit alors l'appareil entier, lecteur compris. Le choix est gardé dans votre profil.
+- Les blessures comptent : garrot, attelle, bandage, brûlure ou plaie sur un bras rendent la main du sujet inutilisable ou moins lisible ; un bandage ou une blessure à la tête dégrade l'iris et le visage. Les motifs apparaissent sur la fiche SEEK. Vos propres bras blessés font trembler les mini-jeux.
+EN : SEEK II, a reader that comes alive: fingers, cables, iris and injuries
+- Fingerprints are captured finger by finger on the green glass: right hand, left hand, then thumbs. The finger lands, a light scan passes, ridges appear, a gauge shows the quality. A badly placed or wet finger, or a dirty glass, rejects the read and you start again.
+- Optional, replayable mouse mini-games: hold the finger in the zone during the scan, keep the reticle on the iris, plug the USB and POWER cables into the right port, wipe the glass. SKIP never blocks the capture; how well you do counts in the quality captured.
+- The "SEEK II interactions" setting picks none (automatic capture as before), basic (animation only) or full; the INTERACTIONS button on the home page changes it too.
+- The terminal can shrink: SIZE (100, 75, 55, 40%) and POSITION (center, left, right) buttons on the home page, or the numpad + and - keys. You then see the whole device, reader included. Your choice is kept in your profile.
+- Injuries matter: a tourniquet, splint, bandage, burn or wound on an arm makes the subject's hand unusable or harder to read; a head bandage or injury degrades the iris and the face. The reasons show on the SEEK record. Your own injured arms make the mini-games shake.
+
+### Détail technique
+- **Lecteur et mini-jeux** : `fn_seekFx` (dossier connect, enregistrée dans `config.cpp`). Opérations `mode`, `cycleMode`, `hook`, `capture`. Le panneau est créé par `ctrlCreate` (aucun IDC fixe ajouté pour l'animation) sur la vitre verte du châssis, ou dans une fenêtre fixe en bas de l'écran quand la vitre sort de l'écran (terminal grand format). Séquence 4 + 4 + 2 ; mini-jeux `_hold`, `_track`, `_cables`, `_wipe`, `_auto` ; tout est mesuré par `diag_tickTime` (indépendant de la fréquence d'images), chaque mini-jeu a un délai maximum et un bouton PASSER. État local au joueur : seul le résultat part avec la fiche. Aucune notification, aucun toast ni message de chat.
+- **Branchement** : `fn_sseBiometricSample` lance `["capture", …] spawn fn_seekFx` pour les empreintes et l'iris faits avec le SEEK COMSPEC quand le mode n'est pas « aucune » ; le dialogue reste ouvert (animation du sujet et de l'opérateur par `comspec_sse_fnc_bioAnimate` comme avant) ; la qualité du geste module le NFIQ par doigt et la qualité des yeux calculés par `comspec_sse_fnc_bioCapture`. Mode « aucune », kits BII et ADN : déroulé d'avant (barre ACE). Le contrôle rapide A1 reste automatique.
+- **Réglages CBA** (client, imposables par le serveur ou la mission) : `comspec_seek_fx_mode` (0 aucune, 1 simples, 2 complètes ; défaut 2), `comspec_seek_fx_medical` (blessures prises en compte, défaut coché), `comspec_seek_scale` (0,4 à 1), `comspec_seek_anchor`. Le profil du joueur garde `COMSPEC_SeekFxMode`, `COMSPEC_SeekScale`, `COMSPEC_SeekAnchor`.
+- **Taille** : `fn_seekScale` relève une fois la position de chaque contrôle, les replace autour du centre de l'appareil et applique `ctrlSetScale` ; IDC inchangés, rien n'est touché à 100 % centré. Boutons 9710 à 9712 sur la page ACCUEIL.
+- **Médical** : `comspec_sse_fnc_bioMedical` (pack SSE) lit ACE Medical (`ace_medical_bodyPartDamage`, `tourniquets`, `fractures`, `openWounds`, `bandagedWounds`), tient compte de KAT et d'ACM par présence de `CfgPatches`, et se replie sur `getHitPointDamage`. « ACM » n'est défini nulle part dans le dépôt : reconnu seulement par les noms de patch `acm_*`. `fn_bioCapture` en tire, par main et pour la tête, état (ok, dégradé, bloqué), points et motif, et rend `reasons`.
+- **Site** : les échantillons du SEEK portent `detail` et `notes` (facultatifs) ; la fiche SEEK II reçoit `capture` (empreintes, iris : qualité, détail, motifs), borné par `App\Support\SseCaptureNotes` et rangé dans `sse_seek_records.capture_json` (étape `sse_seek_capture_notes`, retour arrière `migrations/rollback/sse_seek_capture_notes_down.sql`). Sans la colonne, la fiche part quand même. Affichage sur la liste des fiches SEEK II et sur l'identité liée.
+- Tests : `tests/Unit/SeekRealismeTest.php`. Non essayé en jeu : voir la liste « à vérifier en jeu » de la PR.
+
+---
+
 ## SEEK II : la signature se trace à la souris, vocabulaire forces spéciales (ATAK natif 4.19.0.AG - Washington)
 
 ### Résumé joueur

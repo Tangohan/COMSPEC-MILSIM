@@ -67,6 +67,9 @@ $seekKinds = ['front' => 'Face', 'profile' => 'Profil', 'field' => 'Terrain'];
                                 <?= $h($seekKinds[(string) ($img['kind'] ?? '')] ?? 'Photo') ?><?= $verdict !== '' ? ' · ' . $h($verdict) : '' ?><br>
                                 <?= $h($when !== '' ? $when : $stored) ?><?= $where !== '' ? ' · carroyage ' . $h($where) : '' ?><br>
                                 Source : terminal SEEK II<?= $who !== '' ? ' · ' . $h($who) : '' ?><?= $unit !== '' ? ' (' . $h($unit) . ')' : '' ?>
+                                <?php foreach ((is_array($seek['capture'] ?? null) ? $seek['capture'] : []) as $capMod => $cap): ?>
+                                    <?php foreach (($cap['notes'] ?? []) as $capNote): ?><br><span translate="no"><?= $h(\App\Support\SseCaptureNotes::label((string) $capMod) . ' : ' . $capNote) ?></span><?php endforeach; ?>
+                                <?php endforeach; ?>
                                 <?php $seekSig = trim((string) ($seek['signature_image'] ?? '')); ?>
                                 <?php if ($seekSig !== ''): ?><br><img src="<?= $h(url($seekSig)) ?>" alt="Signature tracée au SEEK II, fiche <?= $h($rec) ?>" loading="lazy" style="height:28px;background:#fff;border-radius:3px"><?php endif; ?>
                             </figcaption>

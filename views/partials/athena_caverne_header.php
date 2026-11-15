@@ -515,7 +515,7 @@ if (function_exists('i18n_phrase')) {
 >
     <div class="athena-header__inner">
         <a href="<?= $h(url('dashboard')) ?>" class="athena-header__brand">
-            <span class="athena-header__brand-mark" aria-hidden="true"><span class="athena-header__brand-emblem"></span></span>
+            <?php $athSeasonal = athena_seasonal_logo_img(); ?><span class="athena-header__brand-mark"<?= $athSeasonal !== '' ? ' style="background:transparent"' : '' ?> aria-hidden="true"><?= $athSeasonal !== '' ? $athSeasonal : '<span class="athena-header__brand-emblem"></span>' ?></span>
             <span class="athena-header__brand-text">
                 <span class="athena-header__brand-title">Athena<span class="athena-header__brand-dot">.</span></span>
                 <span class="athena-header__brand-sub"><?= $h($sectionLabel) ?> · <?= $h($unitLabel) ?><?php if ($headerTenantType !== \App\Services\Community\TenantTypeConfig::TYPE_FULL): ?> · <?= $h($headerTypeLabel) ?><?php endif; ?></span>
