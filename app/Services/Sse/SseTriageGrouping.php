@@ -51,7 +51,7 @@ final class SseTriageGrouping
             $groups[$key]['top_score'] = max($groups[$key]['top_score'], (int) ($it['score'] ?? 0));
         }
         foreach ($groups as &$g) {
-            $g['noun'] = self::noun($g['items']);
+            $g['noun'] = $mode === 'type' ? self::noun($g['items']) : 'élément';
             $g['reason'] = self::commonReason($g['items']);
             $g['tone'] = SseTriageInbox::tone($g['items'], $now);
         }

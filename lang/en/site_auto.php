@@ -69473,4 +69473,6 @@ return [
     'Autres campagnes ouvertes' => 'Other open campaigns',
     'Cette identité est celle d’un membre (%1) : les images de l’avis ne s’affichent qu’avec l’autorisation de la hiérarchie du membre.' => 'This identity belongs to a member (%1): the notice images are only shown with the authorisation of the member\'s chain of command.',
     'Cette identité est celle d’un membre (%1) : aucune image n’est jointe sans l’autorisation de la hiérarchie du membre.' => 'This identity belongs to a member (%1): no image is attached without the authorisation of the member\'s chain of command.',
+    // « À trier » du bureau SSE : regroupement, acquittement, veille, assignation, règles Cerbère-Tri, priorité.
+    '1 autre élément sur le même sujet' => '1 other item on the same subject',
 ];

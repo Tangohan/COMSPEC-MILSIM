@@ -102,8 +102,8 @@ $row = function (array $it, bool $showType, string $groupReason = '') use ($h, $
     $subject = is_array($it['subject'] ?? null) ? $it['subject'] : null;
     $label = $subject !== null ? (string) $subject['label'] : (string) $it['title'];
     $open = $subject !== null && (string) ($subject['href'] ?? '') !== '' ? (string) $subject['href'] : (string) $it['href'];
-    $people = $subject !== null ? implode(', ', $subject['people'] ?? []) : '';
-    $line2 = $people !== '' ? $people : (string) ($it['meta'] ?? '');
+    $people = $subject !== null ? array_values($subject['people'] ?? []) : [];
+    $system = [\App\Services\Sse\SseTriageSubjects::MASKED_CASE, \App\Services\Sse\SseTriageSubjects::MASKED_MEMBER];
     $reason = (string) ($it['reason'] ?? '');
     $tone = (int) ($it['priority'] ?? 0) >= 2 ? 'bad' : (SseTriageInbox::ageDays((string) ($it['at'] ?? ''), time()) > SseTriageInbox::AMBER_DAYS ? 'warn' : 'neutral');
     $status = $statusLine($it);
@@ -113,8 +113,12 @@ $row = function (array $it, bool $showType, string $groupReason = '') use ($h, $
             <label class="tr-check"><input type="checkbox" data-tr-select aria-label="Sélectionner : <?= $h($label) ?>"></label>
         <?php endif; ?>
         <div class="tr-main">
-            <a class="tr-subject" href="<?= $h($open) ?>" data-tr-open><?= $h($label) ?></a>
-            <?php if ($line2 !== ''): ?><p class="tr-line"><?= $h($line2) ?></p><?php endif; ?>
+            <a class="tr-subject" href="<?= $h($open) ?>" data-tr-open<?= in_array($label, $system, true) || $subject === null ? '' : ' translate="no"' ?>><?= $h($label) ?></a>
+            <?php if ($people !== []): ?>
+                <p class="tr-line"><?php foreach ($people as $pi => $pn): ?><?= $pi > 0 ? ', ' : '' ?><span<?= in_array($pn, $system, true) ? '' : ' translate="no"' ?>><?= $h($pn) ?></span><?php endforeach; ?></p>
+            <?php elseif ((string) ($it['meta'] ?? '') !== ''): ?>
+                <p class="tr-line"><?= $h($it['meta']) ?></p>
+            <?php endif; ?>
             <?php if ($reason !== '' && $reason !== $groupReason): ?><p class="tr-line tr-line--reason"><?= $h($reason) ?></p><?php endif; ?>
             <p class="tr-meta">
                 <?php if ($showType): ?><span class="tr-chip"><?= $h($it['type_label']) ?></span><?php endif; ?>

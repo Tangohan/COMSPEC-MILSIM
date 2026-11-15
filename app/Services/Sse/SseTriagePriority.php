@@ -60,7 +60,7 @@ final class SseTriagePriority
             $why[] = ['label' => 'Classification : ' . self::CLASSIFICATION_LABELS[$class], 'points' => self::CLASSIFICATION_POINTS[$class]];
         }
         if ($linked > 0) {
-            $why[] = ['label' => $linked . ' autres éléments sur le même sujet', 'points' => min(self::LINKED_MAX, $linked * self::LINKED_EACH)];
+            $why[] = ['label' => $linked === 1 ? '1 autre élément sur le même sujet' : $linked . ' autres éléments sur le même sujet', 'points' => min(self::LINKED_MAX, $linked * self::LINKED_EACH)];
         }
         if ($boost !== 0) {
             $why[] = ['label' => 'Majoration d’une règle Cerbère-Tri', 'points' => $boost];

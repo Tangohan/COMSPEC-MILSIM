@@ -109,6 +109,7 @@ final class SseTriagePriorityGroupingTest extends TestCase
         $bySource = SseTriageGrouping::group([$x, $y, $z], 'source', self::NOW);
         self::assertSame(['Anomalies' => 2, 'Fiches' => 1], array_column(array_map(static fn (array $g): array => ['t' => $g['title'], 'c' => $g['count']], $bySource), 'c', 't'));
         $byAge = SseTriageGrouping::group([$x, $y, $z], 'anciennete', self::NOW);
+        self::assertSame('élément', $bySubject[0]['noun'], 'hors du mode « type », on compte des éléments, pas des dossiers');
         self::assertEqualsCanonicalizing(['Aujourd’hui et hier', 'De 2 à 7 jours', 'Plus de 30 jours'], array_column($byAge, 'title'));
     }
 
