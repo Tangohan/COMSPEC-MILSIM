@@ -3,10 +3,16 @@ declare(strict_types=1);
 ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 /**
+ * Bureau SSE — lecture d'une fiche de renseignement.
+ * En-tête (référence, état, cotation, actions), puis deux colonnes : le document à gauche, d'un seul tenant, et à droite
+ * une colonne à onglets (Essentiel, Suivi, Pièces jointes, Dossier, Liaisons). Les formulaires s'ouvrent dans des fenêtres.
+ * Styles : public/assets/css/sse-fiche-rens.css (classes .fnr-*) ; script : public/assets/js/sse-fiche-rens.js (aucun texte).
+ *
  * @var array<string,mixed> $note
  * @var array<string,mixed>|null $linkedCase
  * @var list<array{id:int,label:string}> $openCases
  * @var array<string,string> $statusOptions
+ * @var list<array{at:string,actor:string,label:string,from:string,to:string,body:string}> $history
  * @var int $attachmentsMax
  * @var bool $canManage
  * @var bool $canWrite
@@ -15,26 +21,21 @@ $note = is_array($note ?? null) ? $note : [];
 $attachments = is_array($note['attachments'] ?? null) ? $note['attachments'] : [];
 $openCases = is_array($openCases ?? null) ? $openCases : [];
 $statusOptions = is_array($statusOptions ?? null) ? $statusOptions : [];
+$history = is_array($history ?? null) ? $history : [];
+$linkedCase = is_array($linkedCase ?? null) && !empty($linkedCase['id']) ? $linkedCase : null;
 $attachmentsMax = (int) ($attachmentsMax ?? 4);
 $canManage = (bool) ($canManage ?? false);
 $canWrite = (bool) ($canWrite ?? false);
 $noteId = (int) ($note['id'] ?? 0);
 $csrf = \App\Core\Csrf::token();
-$tone = static fn (string $code): string => \App\Support\SseFieldNoteCatalog::themeTone($code);
-$coords = [];
-if (!empty($note['grid_reference'])) {
-    $coords[] = 'Repère ' . (string) $note['grid_reference'];
-}
-if ($note['lat'] !== null && $note['lng'] !== null) {
-    $coords[] = sprintf('%.5f / %.5f', (float) $note['lat'], (float) $note['lng']);
-}
-if ($note['pos_x'] !== null && $note['pos_y'] !== null) {
-    $coords[] = sprintf('Position jeu %.0f / %.0f', (float) $note['pos_x'], (float) $note['pos_y']);
-}
-?>
-<?php
+$ref = (string) ($note['reference_code'] ?? '');
+$kindCode = (string) ($note['note_kind'] ?? '');
+$kindLabel = (string) ($note['note_kind_label'] ?? '');
+$noteTitle = trim((string) ($note['title'] ?? ''));
+
 $classCode = \App\Repositories\SseCaseRepository::normalizeClassification((string) ($note['classification'] ?? 'interne'));
-$classLabel = mb_strtoupper(\App\Services\Sse\SseRedactionService::levelLabel($classCode), 'UTF-8');
+$classLabel = \App\Services\Sse\SseRedactionService::levelLabel($classCode);
+$classBand = mb_strtoupper($classLabel, 'UTF-8');
 $reliability = [
     'A' => 'Source sûre', 'B' => 'Source habituellement sûre', 'C' => 'Source assez sûre',
     'D' => 'Source pas toujours sûre', 'E' => 'Source peu sûre', 'F' => 'Fiabilité inconnue',
@@ -45,191 +46,458 @@ $credibility = [
 ];
 $rel = strtoupper((string) ($note['source_reliability'] ?? 'C'));
 $cred = (int) ($note['info_credibility'] ?? 3);
+$relLabel = $reliability[$rel] ?? 'Fiabilité inconnue';
+$credLabel = $credibility[$cred] ?? 'Véracité inconnue';
 $srcCode = (string) ($note['intel_source'] ?? '');
 $srcLabel = (string) ($note['intel_source_label'] ?? '');
+$urgency = (string) ($note['urgency'] ?? 'routine');
+$urgencyLabel = (string) ($note['urgency_label'] ?? '');
+$urgencyHint = (string) (\App\Support\SseFieldNoteCatalog::URGENCIES[$urgency]['hint'] ?? '');
+$urgencyTone = (string) (\App\Support\SseFieldNoteCatalog::URGENCIES[$urgency]['tone'] ?? 'neutral');
+$status = (string) ($note['status'] ?? '');
+$statusLabel = (string) ($note['status_label'] ?? '');
+$statusTone = ['brouillon' => 'idle', 'transmise' => 'new', 'prise_en_compte' => 'busy', 'exploitee' => 'done', 'sans_suite' => 'idle'][$status] ?? 'idle';
+$statusHints = [
+    'brouillon' => 'La fiche n’est pas encore transmise au bureau.',
+    'transmise' => 'La fiche est arrivée au bureau, personne ne l’a encore prise en charge.',
+    'prise_en_compte' => 'Une analyste exploite la fiche (recoupement, vérification).',
+    'exploitee' => 'Le renseignement a servi : ordre, dossier ou carte.',
+    'sans_suite' => 'La fiche est classée : aucune suite n’est donnée.',
+];
+$triageNote = trim((string) ($note['triage_note'] ?? ''));
+$triagedTs = !empty($note['triaged_at']) ? strtotime((string) $note['triaged_at']) : false;
+$observedDate = (string) ($note['observed_date_label'] ?? '');
+$observedTime = (string) ($note['observed_time_label'] ?? '');
+$place = trim((string) ($note['place_label'] ?? ''));
+$grid = trim((string) ($note['grid_reference'] ?? ''));
+$hasLatLng = ($note['lat'] ?? null) !== null && ($note['lng'] ?? null) !== null;
+$hasGame = ($note['pos_x'] ?? null) !== null && ($note['pos_y'] ?? null) !== null;
+$latLng = $hasLatLng ? sprintf('%.5f / %.5f', (float) $note['lat'], (float) $note['lng']) : '';
+$gamePos = $hasGame ? sprintf('%.0f / %.0f', (float) $note['pos_x'], (float) $note['pos_y']) : '';
+$hasPosition = $grid !== '' || $hasLatLng || $hasGame;
+$copyPosition = $grid !== '' ? $grid : ($hasGame ? $gamePos : $latLng);
 $paragraphs = preg_split("/\R{2,}/u", trim((string) ($note['body'] ?? ''))) ?: [];
+$paragraphs = array_values(array_filter($paragraphs, static fn (string $p): bool => trim($p) !== ''));
+$themes = is_array($note['themes'] ?? null) ? $note['themes'] : [];
+$author = trim((string) ($note['author_label'] ?? '')) !== '' ? (string) $note['author_label'] : 'Inconnu';
+$authorUnit = trim((string) ($note['author_unit'] ?? ''));
+$attCount = count($attachments);
+$canAttach = $canWrite && $attCount < $attachmentsMax;
 $canOpenIntake = !$canManage ? false : \App\Controllers\Admin\AdminIntelIntakeController::allowed();
+$base = 'atak/sse/fiches/' . $noteId;
+$ico = static fn (string $d): string => '<svg class="fnr-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="' . $d . '"/></svg>';
+$icons = [
+    'back' => 'M15 5l-7 7 7 7',
+    'flag' => 'M5 21V4h12l-2 4 2 4H5',
+    'folder' => 'M3 6h6l2 2h10v11H3z',
+    'clip' => 'M20 11l-8.5 8.5a5 5 0 0 1-7-7L13 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L14 7',
+    'print' => 'M7 9V4h10v5M7 17H4v-7h16v7h-3M7 14h10v6H7z',
+    'more' => 'M5 12h.01M12 12h.01M19 12h.01',
+    'copy' => 'M9 9h11v11H9zM5 15V4h11',
+    'close' => 'M6 6l12 12M18 6L6 18',
+];
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiche-rens.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-fiche-rens.js')) . '"></script>';
 ?>
-<div class="sse-reading-tools">
-    <a class="btn btn--ghost" href="<?= $h(url('atak/sse/fiches')) ?>">← File des fiches</a>
-    <div class="sse-reading-tools__right">
-        <?php if ($canOpenIntake): ?>
-            <a class="btn btn--ghost" href="<?= $h(url('back-office/remontees/fiche/' . $noteId)) ?>">Suivi dans Remontées</a>
-        <?php endif; ?>
-        <button type="button" class="btn btn--ghost" onclick="window.print()">Imprimer</button>
-    </div>
-</div>
-
-<article class="sse-reading sse-reading--<?= $h($classCode) ?>" aria-label="Fiche de renseignement <?= $h($note['reference_code'] ?? '') ?>">
-    <div class="sse-reading__band"><span><?= $h($classLabel) ?></span><span><?= $h($note['reference_code'] ?? '') ?></span></div>
-
-    <header class="sse-reading__head">
-        <div>
-            <p class="sse-reading__org">Bureau SSE · Renseignement</p>
-            <p class="sse-reading__kind"><?= $h($note['note_kind'] ?? '') ?> — <?= $h($note['note_kind_label'] ?? '') ?></p>
-            <h1 class="sse-reading__title"><?= $h(trim((string) ($note['title'] ?? '')) !== '' ? $note['title'] : 'Fiche ' . ($note['reference_code'] ?? '')) ?></h1>
-            <div class="sse-note-badges">
-                <?php foreach (($note['themes'] ?? []) as $themeCode): ?>
-                    <span class="sse-note-badge sse-note-badge--<?= $h($tone((string) $themeCode)) ?>"><?= $h(\App\Support\SseFieldNoteCatalog::themeLabel((string) $themeCode)) ?></span>
-                <?php endforeach; ?>
-                <?php if (($note['urgency'] ?? '') !== 'routine'): ?>
-                    <span class="sse-note-badge sse-note-badge--warning"><?= $h($note['urgency_label'] ?? '') ?></span>
-                <?php endif; ?>
-                <?php if (!empty($note['redacted'])): ?>
-                    <span class="sse-note-badge sse-note-badge--neutral">Passages caviardés</span>
-                <?php endif; ?>
-            </div>
+<div class="fnr fnr--<?= $h($classCode) ?>" data-fnr data-fnr-copied="Copié dans le presse-papiers." data-fnr-copy-failed="La copie a échoué : sélectionnez le texte et copiez-le à la main.">
+    <header class="fnr-head">
+        <a class="fnr-back" href="<?= $h(url('atak/sse/fiches')) ?>" title="Revenir à la file des fiches"><?= $ico($icons['back']) ?><span>File des fiches</span></a>
+        <div class="fnr-head__main">
+            <h1 class="fnr-title"><span class="fnr-title__ref"><?= $h($ref) ?></span> <span class="fnr-title__kind"><?= $h($kindLabel !== '' ? $kindLabel : 'Fiche de renseignement') ?></span></h1>
+            <p class="fnr-desc"><?php if ($noteTitle !== ''): ?><?= $h($noteTitle) ?><?php else: ?>Constat du <?= $h($observedDate) ?> à <?= $h($observedTime) ?>, rédigé par <?= $h($author) ?>.<?php endif; ?></p>
         </div>
-        <div class="sse-reading__grade" title="<?= $h(($reliability[$rel] ?? '') . ' · ' . ($credibility[$cred] ?? '')) ?>">
-            <strong><?= $h($rel . $cred) ?></strong>
-            <span>Cotation</span>
+        <div class="fnr-actions" data-cw-lift>
+            <?php if ($canManage): ?>
+                <button type="button" class="btn fnr-act" data-fnr-open="fnr-dlg-suivi" aria-haspopup="dialog"><?= $ico($icons['flag']) ?><span class="fnr-act__long">Modifier le suivi</span><span class="fnr-act__short" aria-hidden="true">Suivi</span></button>
+                <button type="button" class="btn btn--ghost fnr-act" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog"><?= $ico($icons['folder']) ?><span class="fnr-act__long">Rattacher à un dossier</span><span class="fnr-act__short" aria-hidden="true">Dossier</span></button>
+            <?php endif; ?>
+            <?php if ($canAttach): ?>
+                <button type="button" class="btn <?= $canManage ? 'btn--ghost' : '' ?> fnr-act" data-fnr-open="fnr-dlg-piece" aria-haspopup="dialog"><?= $ico($icons['clip']) ?><span class="fnr-act__long">Joindre une pièce</span><span class="fnr-act__short" aria-hidden="true">Pièce</span></button>
+            <?php endif; ?>
+            <button type="button" class="btn btn--ghost fnr-act" data-fnr-print><?= $ico($icons['print']) ?><span class="fnr-act__long">Imprimer / PDF</span><span class="fnr-act__short" aria-hidden="true">Imprimer</span></button>
+            <details class="fnr-more" data-fnr-more>
+                <summary class="btn btn--ghost fnr-act fnr-act--icon" aria-label="Autres actions" title="Autres actions"><?= $ico($icons['more']) ?></summary>
+                <div class="fnr-more__menu">
+                    <button type="button" data-fnr-copy="<?= $h($ref) ?>">Copier la référence</button>
+                    <button type="button" data-fnr-copy="<?= $h(url($base)) ?>">Copier le lien de la fiche</button>
+                    <?php if ($canOpenIntake): ?>
+                        <a href="<?= $h(url('back-office/remontees/fiche/' . $noteId)) ?>">Suivi dans Remontées</a>
+                    <?php endif; ?>
+                    <?php if ($canWrite): ?>
+                        <a href="<?= $h(url('atak/sse/fiches/nouvelle')) ?>">Rédiger une nouvelle fiche</a>
+                    <?php endif; ?>
+                </div>
+            </details>
         </div>
+        <ul class="fnr-chips" aria-label="État de la fiche">
+            <li class="fnr-chip fnr-chip--state fnr-chip--<?= $h($statusTone) ?>" title="<?= $h($statusHints[$status] ?? '') ?>"><span class="fnr-dot" aria-hidden="true"></span><?= $h($statusLabel) ?></li>
+            <li class="fnr-chip fnr-chip--class"><span class="fnr-square" aria-hidden="true"></span><?= $h($classLabel) ?></li>
+            <li class="fnr-chip"><strong class="fnr-chip__code"><?= $h($rel . $cred) ?></strong><?= $h($relLabel) ?> · <?= $h($credLabel) ?></li>
+            <?php if ($urgency !== 'routine'): ?>
+                <li class="fnr-chip fnr-chip--urgency fnr-chip--<?= $h($urgencyTone) ?>" title="<?= $h($urgencyHint) ?>">Urgence : <?= $h($urgencyLabel) ?></li>
+            <?php endif; ?>
+            <?php if (!empty($note['redacted'])): ?>
+                <li class="fnr-chip" title="Certains passages sont masqués pour votre niveau d’habilitation.">Passages caviardés</li>
+            <?php endif; ?>
+        </ul>
     </header>
 
-    <?php \App\Services\Sse\Links\SseLinksWidget::render('note', (int) ($note['id'] ?? 0)); ?>
+    <div class="fnr-layout">
+        <article class="fnr-doc" aria-label="Fiche de renseignement <?= $h($ref) ?>">
+            <div class="fnr-band"><?= $h($classBand) ?></div>
 
-    <dl class="sse-reading__facts">
-        <div><dt>Constat</dt><dd><?= $h($note['observed_date_label'] ?? '') ?> à <?= $h($note['observed_time_label'] ?? '') ?></dd></div>
-        <div><dt>Lieu</dt><dd><?= $h(($note['place_label'] ?? '') !== '' ? $note['place_label'] : 'Non précisé') ?></dd></div>
-        <div><dt>Position</dt><dd><?= $coords === [] ? 'Aucune position transmise' : $h(implode(' · ', $coords)) ?></dd></div>
-        <div><dt>Recueil</dt><dd><?= $srcCode === '' ? 'Non précisé' : $h($srcCode . ($srcLabel !== '' ? ' — ' . $srcLabel : '')) ?></dd></div>
-        <div><dt>Source</dt><dd><?= $h($rel . ' · ' . ($reliability[$rel] ?? '')) ?></dd></div>
-        <div><dt>Information</dt><dd><?= $h($cred . ' · ' . ($credibility[$cred] ?? '')) ?></dd></div>
-        <div><dt>Urgence</dt><dd><?= $h($note['urgency_label'] ?? '') ?></dd></div>
-        <div><dt>État</dt><dd><?= $h($note['status_label'] ?? '') ?></dd></div>
-    </dl>
+            <div class="fnr-doc__inner">
+                <table class="fnr-cartouche">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Émetteur</th><td>Bureau SSE · Renseignement</td>
+                            <th scope="row">Référence</th><td class="fnr-mono"><?= $h($ref) ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Type</th><td><?= $h($kindCode) ?> — <?= $h($kindLabel) ?></td>
+                            <th scope="row">Urgence</th><td><?= $h($urgencyLabel) ?></td>
+                        </tr>
+                    </tbody>
+                </table>
 
-    <section class="sse-reading__body" aria-label="Renseignement">
-        <h2>Renseignement</h2>
-        <?php foreach ($paragraphs as $para): ?>
-            <p><?= nl2br($h($para), false) ?></p>
-        <?php endforeach; ?>
-        <?php if ($paragraphs === []): ?><p class="muted">Texte vide.</p><?php endif; ?>
-    </section>
+                <div class="fnr-doc__head">
+                    <div class="fnr-doc__headmain">
+                        <h2 class="fnr-doc__title"><?= $h($noteTitle !== '' ? $noteTitle : ($kindLabel !== '' ? $kindLabel : 'Fiche de renseignement')) ?></h2>
+                    </div>
+                    <div class="fnr-stamp" title="<?= $h($relLabel . ' · ' . $credLabel) ?>">
+                        <strong><?= $h($rel . $cred) ?></strong>
+                        <span>Cotation</span>
+                    </div>
+                </div>
 
-    <?php if ($attachments !== []): ?>
-        <section class="sse-reading__atts" aria-label="Pièces jointes">
-            <h2>Pièces jointes <span><?= count($attachments) ?>/<?= $attachmentsMax ?></span></h2>
-            <ul>
-                <?php foreach ($attachments as $i => $attachment): $blur = !empty($attachment['blurred']); ?>
-                    <li class="<?= $blur ? 'is-blurred' : '' ?>">
-                        <figure>
-                            <?php if (!empty($attachment['is_image']) && !empty($attachment['url'])): ?>
-                                <?php if ($blur && !$canManage): ?>
-                                    <span class="sse-reading__img"><img src="<?= $h($attachment['url']) ?>" alt="Pièce jointe floutée"></span>
-                                <?php else: ?>
-                                    <a class="sse-reading__img" href="<?= $h($attachment['url']) ?>" target="_blank" rel="noopener"><img src="<?= $h($attachment['url']) ?>" alt="<?= $h($attachment['caption'] ?? 'Pièce jointe') ?>"></a>
-                                <?php endif; ?>
-                            <?php elseif (!empty($attachment['url'])): ?>
-                                <a class="sse-reading__doc" href="<?= $h($attachment['url']) ?>" target="_blank" rel="noopener">Ouvrir le document</a>
-                            <?php endif; ?>
-                            <figcaption>
-                                <strong>PJ <?= $i + 1 ?></strong> · <?= $h($attachment['kind_label'] ?? '') ?><?= !empty($attachment['caption']) ? ' — ' . $h($attachment['caption']) : '' ?>
-                                <?php if ($blur): ?><br><em>Floutée par le bureau</em><?php endif; ?>
-                            </figcaption>
-                            <?php if ($canWrite): ?>
-                                <form method="post"
-                                      action="<?= $h(url('atak/sse/fiches/' . $noteId . '/pieces/' . (int) ($attachment['id'] ?? 0) . '/supprimer')) ?>"
-                                      onsubmit="return confirm('Retirer cette pièce jointe de la fiche ?');">
-                                    <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                                    <button class="btn btn--ghost" type="submit">Retirer</button>
-                                </form>
-                            <?php endif; ?>
-                        </figure>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </section>
-    <?php endif; ?>
-
-    <footer class="sse-reading__foot">
-        <div><span>Rédacteur</span><strong><?= $h($note['author_label'] ?? 'Inconnu') ?></strong><?= !empty($note['author_unit']) ? ' · ' . $h($note['author_unit']) : '' ?></div>
-        <div><span>Saisie</span><strong><?= $h($note['origin_label'] ?? '') ?></strong></div>
-        <div><span>Dossier</span><strong>
-            <?php if (is_array($linkedCase ?? null) && !empty($linkedCase['id'])): ?>
-                <a href="<?= $h(url('atak/sse/dossiers/' . (int) $linkedCase['id'])) ?>"><?= $h($linkedCase['reference_code'] ?? '') ?></a>
-            <?php else: ?>Aucun<?php endif; ?>
-        </strong></div>
-    </footer>
-    <?php if (!empty($note['triage_note'])): ?>
-        <p class="sse-reading__triage"><span>Suivi analyste</span> <?= $h($note['triage_note']) ?></p>
-    <?php endif; ?>
-
-    <div class="sse-reading__band sse-reading__band--bottom"><span><?= $h($classLabel) ?></span><span>Accès limité aux personnels habilités</span></div>
-</article>
-
-<?php if ($canWrite && count($attachments) < $attachmentsMax): ?>
-    <section class="panel" style="margin-top:14px">
-        <div class="panel-header"><div class="panel-title">Ajouter une pièce jointe</div><div class="panel-meta"><?= count($attachments) ?>/<?= $attachmentsMax ?></div></div>
-        <div class="panel-body">
-            <form method="post" action="<?= $h(url('atak/sse/fiches/' . $noteId . '/pieces')) ?>"
-                  enctype="multipart/form-data" class="sse-filter-row">
-                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                <label class="sr-only" for="fiche-piece">Ajouter une pièce jointe</label>
-                <input id="fiche-piece" type="file" name="pieces[]" multiple
-                       accept="image/*,application/pdf,text/plain">
-                <label class="sr-only" for="fiche-piece-caption">Légende</label>
-                <input id="fiche-piece-caption" type="text" name="caption" maxlength="255"
-                       placeholder="Légende (facultative)">
-                <button class="btn" type="submit">Joindre</button>
-            </form>
-        </div>
-    </section>
-<?php endif; ?>
-
-<?php if ($canManage): ?>
-    <div class="iw-tower-grid" style="margin-top:14px">
-        <section class="panel">
-            <div class="panel-header">
-                <div class="panel-title"><span class="panel-index">R.04</span> Suivi de la fiche</div>
-            </div>
-            <div class="panel-body">
-                <form method="post" action="<?= $h(url('atak/sse/fiches/' . $noteId . '/suivi')) ?>">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                    <label class="sr-only" for="fiche-suivi">Nouvel état</label>
-                    <select id="fiche-suivi" name="status">
-                        <?php foreach ($statusOptions as $code => $label): ?>
-                            <option value="<?= $h($code) ?>" <?= ($note['status'] ?? '') === $code ? 'selected' : '' ?>>
-                                <?= $h($label) ?>
-                            </option>
+                <?php if ($themes !== []): ?>
+                    <ul class="fnr-tags" aria-label="Catégories">
+                        <?php foreach ($themes as $themeCode): ?>
+                            <li class="fnr-tag" style="--fnr-tag: <?= $h(\App\Support\SseFieldNoteCatalog::themeColor((string) $themeCode)) ?>"><?= $h(\App\Support\SseFieldNoteCatalog::themeLabel((string) $themeCode)) ?></li>
                         <?php endforeach; ?>
-                    </select>
-                    <label class="sr-only" for="fiche-suivi-note">Commentaire de suivi</label>
-                    <input id="fiche-suivi-note" type="text" name="triage_note" maxlength="400"
-                           value="<?= $h($note['triage_note'] ?? '') ?>"
-                           placeholder="Ce que vous en faites, en une phrase">
-                    <button class="btn" type="submit">Enregistrer le suivi</button>
-                </form>
-            </div>
-        </section>
+                    </ul>
+                <?php endif; ?>
 
-        <section class="panel">
-            <div class="panel-header">
-                <div class="panel-title"><span class="panel-index">R.05</span> Rattachement</div>
+                <section class="fnr-sec">
+                    <h3>1. Circonstances</h3>
+                    <table class="fnr-facts">
+                        <tbody>
+                            <tr><th scope="row">Date du constat</th><td><?= $h($observedDate) ?> à <?= $h($observedTime) ?></td></tr>
+                            <tr><th scope="row">Lieu</th><td><?= $h($place !== '' ? $place : 'Non précisé') ?></td></tr>
+                            <tr><th scope="row">Position</th><td>
+                                <?php if (!$hasPosition): ?>Aucune position transmise<?php endif; ?>
+                                <?php if ($grid !== ''): ?><span class="fnr-line">Repère <span class="fnr-mono"><?= $h($grid) ?></span></span><?php endif; ?>
+                                <?php if ($hasLatLng): ?><span class="fnr-line">Coordonnées <span class="fnr-mono"><?= $h($latLng) ?></span></span><?php endif; ?>
+                                <?php if ($hasGame): ?><span class="fnr-line">Position jeu <span class="fnr-mono"><?= $h($gamePos) ?></span></span><?php endif; ?>
+                            </td></tr>
+                            <tr><th scope="row">Mode de recueil</th><td><?= $srcCode === '' ? 'Non précisé' : $h($srcCode . ($srcLabel !== '' ? ' — ' . $srcLabel : '')) ?></td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="fnr-sec fnr-sec--text">
+                    <h3>2. Renseignement</h3>
+                    <?php foreach ($paragraphs as $para): ?>
+                        <p><?= nl2br($h($para), false) ?></p>
+                    <?php endforeach; ?>
+                    <?php if ($paragraphs === []): ?><p class="fnr-void">Texte vide.</p><?php endif; ?>
+                </section>
+
+                <section class="fnr-sec">
+                    <h3>3. Évaluation</h3>
+                    <table class="fnr-facts">
+                        <tbody>
+                            <tr><th scope="row">Source</th><td><strong><?= $h($rel) ?></strong> — <?= $h($relLabel) ?></td></tr>
+                            <tr><th scope="row">Information</th><td><strong><?= $h($cred) ?></strong> — <?= $h($credLabel) ?></td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <?php if ($attachments !== []): ?>
+                    <section class="fnr-sec">
+                        <h3>4. Pièces jointes</h3>
+                        <ol class="fnr-annex">
+                            <?php foreach ($attachments as $i => $attachment): $blur = !empty($attachment['blurred']); ?>
+                                <li class="<?= $blur ? 'is-blurred' : '' ?>">
+                                    <?php if (!empty($attachment['is_image']) && !empty($attachment['url'])): ?>
+                                        <span class="fnr-annex__img"><img src="<?= $h($attachment['url']) ?>" alt="" loading="lazy"></span>
+                                    <?php else: ?>
+                                        <span class="fnr-annex__img fnr-annex__img--doc" aria-hidden="true">PDF</span>
+                                    <?php endif; ?>
+                                    <span class="fnr-annex__cap"><strong>PJ <?= $i + 1 ?></strong> · <?= $h($attachment['kind_label'] ?? '') ?><?= !empty($attachment['caption']) ? ' — ' . $h($attachment['caption']) : '' ?><?php if ($blur): ?> <em>(floutée par le bureau)</em><?php endif; ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
+                    </section>
+                <?php endif; ?>
+
+                <table class="fnr-sign">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Rédacteur</th><td><?= $h($author) ?><?= $authorUnit !== '' ? ' · ' . $h($authorUnit) : '' ?></td>
+                            <th scope="row">Saisie</th><td><?= $h($note['origin_label'] ?? '') ?></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Dossier</th><td><?= $linkedCase !== null ? $h($linkedCase['reference_code'] ?? '') : 'Aucun' ?></td>
+                            <th scope="row">Suite donnée</th><td><?= $h($statusLabel) ?></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="panel-body">
-                <form method="post" action="<?= $h(url('atak/sse/fiches/' . $noteId . '/rattachement')) ?>">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                    <label class="sr-only" for="fiche-dossier">Dossier de rattachement</label>
-                    <select id="fiche-dossier" name="case_id">
-                        <option value="0">Aucun dossier</option>
-                        <?php foreach ($openCases as $case): ?>
-                            <option value="<?= (int) $case['id'] ?>"
-                                <?= (int) ($note['case_id'] ?? 0) === (int) $case['id'] ? 'selected' : '' ?>>
-                                <?= $h($case['label']) ?>
-                            </option>
+
+            <div class="fnr-band fnr-band--bottom"><?= $h($classBand) ?></div>
+        </article>
+
+        <aside class="fnr-side" aria-label="Informations sur la fiche">
+            <div class="fnr-tabs" role="tablist" aria-label="Rubriques de la fiche">
+                <button type="button" role="tab" id="fnr-tab-essentiel" aria-controls="fnr-panel-essentiel" aria-selected="true" data-fnr-tab="essentiel">Essentiel</button>
+                <button type="button" role="tab" id="fnr-tab-suivi" aria-controls="fnr-panel-suivi" aria-selected="false" tabindex="-1" data-fnr-tab="suivi">Suivi</button>
+                <button type="button" role="tab" id="fnr-tab-pieces" aria-controls="fnr-panel-pieces" aria-selected="false" tabindex="-1" data-fnr-tab="pieces">Pièces <span class="fnr-count"><?= $attCount ?>/<?= $attachmentsMax ?></span></button>
+                <button type="button" role="tab" id="fnr-tab-dossier" aria-controls="fnr-panel-dossier" aria-selected="false" tabindex="-1" data-fnr-tab="dossier">Dossier</button>
+                <button type="button" role="tab" id="fnr-tab-liaisons" aria-controls="fnr-panel-liaisons" aria-selected="false" tabindex="-1" data-fnr-tab="liaisons">Liaisons</button>
+            </div>
+
+            <section class="fnr-panel" role="tabpanel" id="fnr-panel-essentiel" aria-labelledby="fnr-tab-essentiel" data-fnr-panel="essentiel">
+                <h2 class="fnr-panel__title">Essentiel</h2>
+                <p class="fnr-desc">Les repères de la fiche : quand, où, comment le renseignement a été recueilli.</p>
+                <dl class="fnr-rows">
+                    <div><dt>Constat</dt><dd><?= $h($observedDate) ?> à <?= $h($observedTime) ?></dd></div>
+                    <div><dt>Lieu</dt><dd><?= $h($place !== '' ? $place : 'Non précisé') ?></dd></div>
+                    <div><dt>Position</dt><dd>
+                        <?php if (!$hasPosition): ?>Aucune position transmise<?php endif; ?>
+                        <?php if ($grid !== ''): ?><span class="fnr-line">Repère <span class="fnr-mono"><?= $h($grid) ?></span></span><?php endif; ?>
+                        <?php if ($hasLatLng): ?><span class="fnr-line"><span class="fnr-mono"><?= $h($latLng) ?></span></span><?php endif; ?>
+                        <?php if ($hasGame): ?><span class="fnr-line">Position jeu <span class="fnr-mono"><?= $h($gamePos) ?></span></span><?php endif; ?>
+                        <?php if ($hasPosition): ?>
+                            <button type="button" class="btn btn--ghost fnr-mini" data-fnr-copy="<?= $h($copyPosition) ?>"><?= $ico($icons['copy']) ?>Copier la position</button>
+                        <?php endif; ?>
+                    </dd></div>
+                    <div><dt>Recueil</dt><dd><?= $srcCode === '' ? 'Non précisé' : $h($srcCode . ($srcLabel !== '' ? ' — ' . $srcLabel : '')) ?></dd></div>
+                    <div><dt>Urgence</dt><dd><strong class="fnr-urgency fnr-urgency--<?= $h($urgencyTone) ?>"><?= $h($urgencyLabel) ?></strong><?php if ($urgencyHint !== ''): ?><span class="fnr-line fnr-dim"><?= $h($urgencyHint) ?></span><?php endif; ?></dd></div>
+                    <div><dt>Cotation</dt><dd><strong><?= $h($rel . $cred) ?></strong><span class="fnr-line fnr-dim"><?= $h($relLabel) ?> · <?= $h($credLabel) ?></span></dd></div>
+                    <div><dt>Rédacteur</dt><dd><?= $h($author) ?><?= $authorUnit !== '' ? ' · ' . $h($authorUnit) : '' ?><span class="fnr-line fnr-dim">Saisie : <?= $h($note['origin_label'] ?? '') ?></span></dd></div>
+                </dl>
+            </section>
+
+            <section class="fnr-panel" role="tabpanel" id="fnr-panel-suivi" aria-labelledby="fnr-tab-suivi" data-fnr-panel="suivi" hidden>
+                <h2 class="fnr-panel__title">Suivi</h2>
+                <p class="fnr-desc">Ce que le bureau a fait de la fiche, du plus récent au plus ancien.</p>
+                <div class="fnr-state fnr-state--<?= $h($statusTone) ?>">
+                    <p class="fnr-state__label"><span class="fnr-dot" aria-hidden="true"></span><?= $h($statusLabel) ?></p>
+                    <?php if (isset($statusHints[$status])): ?><p class="fnr-state__hint"><?= $h($statusHints[$status]) ?></p><?php endif; ?>
+                    <?php if ($triageNote !== ''): ?><blockquote class="fnr-quote"><?= $h($triageNote) ?></blockquote><?php endif; ?>
+                    <?php if ($triagedTs !== false): ?><p class="fnr-state__hint">Dernier suivi le <?= $h(date('d/m/Y', $triagedTs)) ?> à <?= $h(date('H:i', $triagedTs)) ?>.</p><?php endif; ?>
+                </div>
+                <?php if ($canManage): ?>
+                    <button type="button" class="btn btn--ghost fnr-wide" data-fnr-open="fnr-dlg-suivi" aria-haspopup="dialog">Modifier le suivi</button>
+                    <?php if ($history !== []): ?>
+                        <ol class="fnr-history">
+                            <?php foreach ($history as $event): ?>
+                                <li>
+                                    <p class="fnr-history__what"><strong><?= $h($event['actor']) ?></strong> <?= $h($event['label']) ?><?php if ($event['to'] !== ''): ?> : <?php if ($event['from'] !== ''): ?><?= $h($event['from']) ?> → <?php endif; ?><strong><?= $h($event['to']) ?></strong><?php endif; ?></p>
+                                    <?php if ($event['body'] !== ''): ?><blockquote class="fnr-quote"><?= $h($event['body']) ?></blockquote><?php endif; ?>
+                                    <p class="fnr-history__when"><?= $h($event['at']) ?></p>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
+                    <?php else: ?>
+                        <div class="fnr-empty">
+                            <strong>Aucun changement enregistré</strong>
+                            <p>Les changements d’état, de type et de contenu de la fiche s’inscriront ici.</p>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </section>
+
+            <section class="fnr-panel" role="tabpanel" id="fnr-panel-pieces" aria-labelledby="fnr-tab-pieces" data-fnr-panel="pieces" hidden>
+                <h2 class="fnr-panel__title">Pièces jointes <span class="fnr-count"><?= $attCount ?>/<?= $attachmentsMax ?></span></h2>
+                <p class="fnr-desc">Photos, captures et documents versés avec la fiche, quatre au plus.</p>
+                <?php if ($attachments === []): ?>
+                    <div class="fnr-empty">
+                        <strong>Aucune pièce jointe</strong>
+                        <p><?= $canAttach ? 'Ajoutez une photo, une capture ou un document pour appuyer le renseignement.' : 'Aucune photo ni aucun document n’accompagne cette fiche.' ?></p>
+                        <?php if ($canAttach): ?>
+                            <button type="button" class="btn" data-fnr-open="fnr-dlg-piece" aria-haspopup="dialog">Joindre une pièce</button>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <ul class="fnr-gallery" data-sse-gallery data-gallery-title="<?= $h($ref) ?>">
+                        <?php foreach ($attachments as $i => $attachment): $blur = !empty($attachment['blurred']); ?>
+                            <li class="<?= $blur ? 'is-blurred' : '' ?>">
+                                <figure>
+                                    <?php if (!empty($attachment['is_image']) && !empty($attachment['url'])): ?>
+                                        <?php if ($blur && !$canManage): ?>
+                                            <span class="fnr-gallery__img"><img src="<?= $h($attachment['url']) ?>" alt="Pièce jointe floutée" loading="lazy"></span>
+                                        <?php else: ?>
+                                            <a class="fnr-gallery__img" href="<?= $h($attachment['url']) ?>" target="_blank" rel="noopener"><img src="<?= $h($attachment['url']) ?>" alt="<?= $h($attachment['caption'] ?? 'Pièce jointe') ?>" loading="lazy"></a>
+                                        <?php endif; ?>
+                                    <?php elseif (!empty($attachment['url'])): ?>
+                                        <a class="fnr-gallery__img fnr-gallery__img--doc" href="<?= $h($attachment['url']) ?>" target="_blank" rel="noopener">Ouvrir le document</a>
+                                    <?php endif; ?>
+                                    <figcaption>
+                                        <strong>PJ <?= $i + 1 ?></strong> · <?= $h($attachment['kind_label'] ?? '') ?>
+                                        <?php if (!empty($attachment['caption'])): ?><span class="fnr-line"><?= $h($attachment['caption']) ?></span><?php endif; ?>
+                                        <?php if ($blur): ?><span class="fnr-line fnr-dim">Floutée par le bureau</span><?php endif; ?>
+                                    </figcaption>
+                                    <?php if ($canWrite): ?>
+                                        <button type="button" class="btn btn--danger fnr-mini" data-fnr-open="fnr-dlg-retirer" aria-haspopup="dialog"
+                                                data-fnr-action="<?= $h(url($base . '/pieces/' . (int) ($attachment['id'] ?? 0) . '/supprimer')) ?>"
+                                                data-fnr-subject="PJ <?= $i + 1 ?><?= !empty($attachment['caption']) ? ' — ' . $h($attachment['caption']) : '' ?>">Retirer</button>
+                                    <?php endif; ?>
+                                </figure>
+                            </li>
                         <?php endforeach; ?>
-                    </select>
-                    <button class="btn" type="submit">Rattacher</button>
-                </form>
-                <p class="muted" style="margin-top:10px">
-                    Rattacher une fiche la fait apparaître dans le dossier concerné, sans
-                    rien conclure sur les personnes qui y sont citées.
-                </p>
-            </div>
-        </section>
+                    </ul>
+                    <?php if ($canAttach): ?>
+                        <button type="button" class="btn btn--ghost fnr-wide" data-fnr-open="fnr-dlg-piece" aria-haspopup="dialog">Joindre une pièce</button>
+                    <?php elseif ($canWrite): ?>
+                        <p class="fnr-dim">La fiche porte déjà ses quatre pièces : retirez-en une pour en joindre une autre.</p>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </section>
+
+            <section class="fnr-panel" role="tabpanel" id="fnr-panel-dossier" aria-labelledby="fnr-tab-dossier" data-fnr-panel="dossier" hidden>
+                <h2 class="fnr-panel__title">Dossier</h2>
+                <p class="fnr-desc">Le dossier du bureau dans lequel cette fiche est versée.</p>
+                <?php if ($linkedCase !== null): ?>
+                    <a class="fnr-case" href="<?= $h(url('atak/sse/dossiers/' . (int) $linkedCase['id'])) ?>">
+                        <strong class="fnr-mono"><?= $h($linkedCase['reference_code'] ?? '') ?></strong>
+                        <span><?= $h($linkedCase['title'] ?? '') ?></span>
+                        <span class="fnr-case__go">Ouvrir le dossier</span>
+                    </a>
+                    <?php if ($canManage): ?>
+                        <button type="button" class="btn btn--ghost fnr-wide" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog">Changer de dossier</button>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div class="fnr-empty">
+                        <strong>Aucun dossier</strong>
+                        <p><?= $canManage ? 'Rattachez la fiche à un dossier pour la retrouver avec les autres éléments de l’affaire.' : 'Cette fiche n’est versée dans aucun dossier du bureau.' ?></p>
+                        <?php if ($canManage): ?>
+                            <button type="button" class="btn" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog">Rattacher à un dossier</button>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </section>
+
+            <section class="fnr-panel" role="tabpanel" id="fnr-panel-liaisons" aria-labelledby="fnr-tab-liaisons" data-fnr-panel="liaisons" hidden>
+                <h2 class="fnr-panel__title">Liaisons</h2>
+                <p class="fnr-desc">Les personnes, papiers et dossiers reliés à cette fiche, à la main ou par Cerbère.</p>
+                <?php \App\Services\Sse\Links\SseLinksWidget::render('note', $noteId); ?>
+            </section>
+        </aside>
     </div>
-<?php endif; ?>
+
+    <?php if ($canManage): ?>
+        <dialog class="fnr-dialog" id="fnr-dlg-suivi" aria-labelledby="fnr-dlg-suivi-title">
+            <form method="post" action="<?= $h(url($base . '/suivi')) ?>" class="fnr-dialog__card">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                <header class="fnr-dialog__head">
+                    <div>
+                        <h2 id="fnr-dlg-suivi-title">Suivi de la fiche</h2>
+                        <p class="fnr-desc">Indiquez où en est la fiche et ce que vous en faites.</p>
+                    </div>
+                    <button type="button" class="fnr-dialog__close" data-fnr-close aria-label="Fermer la fenêtre"><?= $ico($icons['close']) ?></button>
+                </header>
+                <div class="fnr-dialog__body">
+                    <label class="fnr-field" for="fiche-suivi">Nouvel état
+                        <select id="fiche-suivi" name="status" autofocus>
+                            <?php foreach ($statusOptions as $code => $label): ?>
+                                <option value="<?= $h($code) ?>" <?= $status === $code ? 'selected' : '' ?>><?= $h($label) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="fnr-field" for="fiche-suivi-note">Commentaire de suivi
+                        <textarea id="fiche-suivi-note" name="triage_note" maxlength="400" rows="3" placeholder="Ce que vous en faites, en une phrase"><?= $h($triageNote) ?></textarea>
+                    </label>
+                </div>
+                <footer class="fnr-dialog__foot">
+                    <button type="button" class="btn btn--ghost" data-fnr-close>Annuler</button>
+                    <button type="submit" class="btn">Enregistrer le suivi</button>
+                </footer>
+            </form>
+        </dialog>
+
+        <dialog class="fnr-dialog" id="fnr-dlg-dossier" aria-labelledby="fnr-dlg-dossier-title">
+            <form method="post" action="<?= $h(url($base . '/rattachement')) ?>" class="fnr-dialog__card">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                <header class="fnr-dialog__head">
+                    <div>
+                        <h2 id="fnr-dlg-dossier-title">Rattachement</h2>
+                        <p class="fnr-desc">La fiche apparaît dans le dossier choisi, sans rien conclure sur les personnes citées.</p>
+                    </div>
+                    <button type="button" class="fnr-dialog__close" data-fnr-close aria-label="Fermer la fenêtre"><?= $ico($icons['close']) ?></button>
+                </header>
+                <div class="fnr-dialog__body">
+                    <label class="fnr-field" for="fiche-dossier">Dossier de rattachement
+                        <select id="fiche-dossier" name="case_id" autofocus>
+                            <option value="0">Aucun dossier</option>
+                            <?php foreach ($openCases as $case): ?>
+                                <option value="<?= (int) $case['id'] ?>" <?= (int) ($note['case_id'] ?? 0) === (int) $case['id'] ? 'selected' : '' ?>><?= $h($case['label']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <?php if ($openCases === []): ?>
+                        <p class="fnr-dim">Aucun dossier ouvert ne vous est accessible pour le moment.</p>
+                    <?php endif; ?>
+                </div>
+                <footer class="fnr-dialog__foot">
+                    <button type="button" class="btn btn--ghost" data-fnr-close>Annuler</button>
+                    <button type="submit" class="btn">Rattacher</button>
+                </footer>
+            </form>
+        </dialog>
+    <?php endif; ?>
+
+    <?php if ($canAttach): ?>
+        <dialog class="fnr-dialog" id="fnr-dlg-piece" aria-labelledby="fnr-dlg-piece-title">
+            <form method="post" action="<?= $h(url($base . '/pieces')) ?>" enctype="multipart/form-data" class="fnr-dialog__card"
+                  data-fnr-files-max="<?= $attachmentsMax - $attCount ?>" data-fnr-files-message="Trop de fichiers choisis pour la place qui reste sur la fiche.">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                <header class="fnr-dialog__head">
+                    <div>
+                        <h2 id="fnr-dlg-piece-title">Ajouter une pièce jointe</h2>
+                        <p class="fnr-desc">Image, PDF ou texte ; il reste <?= $attachmentsMax - $attCount ?> place(s) sur <?= $attachmentsMax ?>.</p>
+                    </div>
+                    <button type="button" class="fnr-dialog__close" data-fnr-close aria-label="Fermer la fenêtre"><?= $ico($icons['close']) ?></button>
+                </header>
+                <div class="fnr-dialog__body">
+                    <label class="fnr-field" for="fiche-piece">Fichiers à joindre
+                        <input id="fiche-piece" type="file" name="pieces[]" multiple required autofocus accept="image/*,application/pdf,text/plain">
+                    </label>
+                    <label class="fnr-field" for="fiche-piece-caption">Légende (facultative)
+                        <input id="fiche-piece-caption" type="text" name="caption" maxlength="255" placeholder="Ce que montre la pièce">
+                    </label>
+                </div>
+                <footer class="fnr-dialog__foot">
+                    <button type="button" class="btn btn--ghost" data-fnr-close>Annuler</button>
+                    <button type="submit" class="btn">Joindre</button>
+                </footer>
+            </form>
+        </dialog>
+    <?php endif; ?>
+
+    <?php if ($canWrite && $attachments !== []): ?>
+        <dialog class="fnr-dialog fnr-dialog--small" id="fnr-dlg-retirer" aria-labelledby="fnr-dlg-retirer-title">
+            <form method="post" action="" class="fnr-dialog__card" data-fnr-target-form>
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                <header class="fnr-dialog__head">
+                    <div>
+                        <h2 id="fnr-dlg-retirer-title">Retirer cette pièce jointe ?</h2>
+                        <p class="fnr-desc">La pièce est retirée de la fiche et ne pourra pas être récupérée.</p>
+                    </div>
+                    <button type="button" class="fnr-dialog__close" data-fnr-close aria-label="Fermer la fenêtre"><?= $ico($icons['close']) ?></button>
+                </header>
+                <div class="fnr-dialog__body">
+                    <p class="fnr-subject" data-fnr-subject-out></p>
+                </div>
+                <footer class="fnr-dialog__foot">
+                    <button type="button" class="btn btn--ghost" data-fnr-close autofocus>Annuler</button>
+                    <button type="submit" class="btn btn--danger">Retirer la pièce</button>
+                </footer>
+            </form>
+        </dialog>
+    <?php endif; ?>
+</div>
 
 <?php
 $sseContent = ob_get_clean();
