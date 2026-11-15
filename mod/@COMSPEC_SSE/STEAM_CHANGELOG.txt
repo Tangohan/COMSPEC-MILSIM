@@ -1,3 +1,20 @@
+[h1]COMSPEC SSE 1.13.0 — « recherchée » au contrôle d'identité / "wanted" at the identity check (15/11/2026)[/h1]
+[b]Relance Arma complètement. / Fully restart Arma.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Avis de recherche au contrôle[/b] : une fois le contrôle transmis à Athena, une personne sous avis de recherche actif est marquée « personne recherchée » (« HVT » pour une cible prioritaire), même si l'avis vient d'être posé et n'était pas encore dans la liste du poste.
+[*] La carte du contrôle affiche la référence de l'avis, la menace, « armé et dangereux » et la mesure à prendre.
+[*] Aucune DLL à changer. Avec le mod COMSPEC ATAK 4.22.0, l'app Fiches ouvre l'avis en entier.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Wanted notice at the check[/b]: once the check is sent to Athena, a person under an active wanted notice is marked "wanted person" ("HVT" for a priority target), even if the notice has just been placed and was not yet in the phone's list.
+[*] The check card shows the notice reference, the threat, "armed and dangerous" and the action to be taken.
+[*] No DLL to change. With the COMSPEC ATAK 4.22.0 mod, the Records app opens the full notice.
+[/list]
+
 [h1]COMSPEC SSE 1.12.0 — le mod lit les nouveaux champs des papiers / the mod reads the new paper fields (15/11/2026)[/h1]
 [b]Relance Arma complètement. / Fully restart Arma.[/b]
 

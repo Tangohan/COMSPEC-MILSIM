@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## Poste TOC web : notifier, faire sonner, localiser et trianguler un téléphone en jeu (ATAK natif 4.22.0.AG - Washington)
+## Poste TOC web : notifier, faire sonner, localiser et trianguler un téléphone en jeu (ATAK natif 4.23.0.AG - Washington)
 
 ### Résumé joueur
 Type : nouveauté
@@ -54,11 +54,57 @@ EN : The TOC station can notify you on your phone, make it ring and locate it
 - Only in-game positions are involved, never your real device or your real position.
 
 ### Détail technique
-- **Site** : onglet « Téléphones » du poste TOC web (`/atak/toc`), routes `/atak/toc/api/phones…`, droit dédié `atak.toc.phone` (suppose `atak.toc.use`, sensible), réglage de communauté désactivé par défaut (`atak_toc_phone_settings`), journal de chaque demande (`atak_toc_phone_events`) et audit `atak_toc.phone.*`. Étape **4690** à lancer (`atak_toc_phone`), non exécutée par cette PR ; sans elle la fonction reste désactivée. Détail : `docs/TOC-WEB.md`.
+- **Site** : onglet « Téléphones » du poste TOC web (`/atak/toc`), routes `/atak/toc/api/phones…`, droit dédié `atak.toc.phone` (suppose `atak.toc.use`, sensible), réglage de communauté désactivé par défaut (`atak_toc_phone_settings`), journal de chaque demande (`atak_toc_phone_events`) et audit `atak_toc.phone.*`. Étape **4740** à lancer (`atak_toc_phone`), non exécutée par cette PR ; sans elle la fonction reste désactivée. Détail : `docs/TOC-WEB.md`.
 - **File web vers jeu** : aucune nouvelle table de commandes ni nouvel appel de la DLL. Genre `phone` du fil WC1 existant (`atak_web_commands`, lu par `GetExplosiveCommands`, compte rendu `web_cmd_ack`) ; `notify` 24 h, `ring`, `stop`, `locate`, `trace` 60 s. **COMSPEC Link inchangé (2.0.125)**, pas de recompilation de la DLL.
 - **Mod** : `fn_webCmdDispatch` (connect) envoie le genre `phone` à `fn_tocPhone` (ATAK natif). Le message va dans l'`inbox` du téléphone (Messages, canal alertes) et dans le journal d'`fn_alertsLog` (types `TOC_INFO`, `TOC_ALERT`, `TOC_URGENT`, `TOC_TRACE`, `fn_pageAlerts`, `fn_mapPinnedApp`) ; vibration par `fn_vibrate`, sonnerie par le son de notification d'ordre déjà présent. Aucun toast, `systemChat`, `hint` ni popup. Position rendue par `fn_gpsPos` et `fn_gpsFix` (jamais inventée : sans fix, « position inconnue »). Ouvrir l'app Alertes passe en « lu » les messages à accusé de réception.
 - **Triangulation** : `PhoneTriangulation`, même principe que `fn_relayNet` « locate » (distances bruitées de 5 à 25 %, moindres carrés), bruit à graine déterministe, zone d'incertitude en 1/√n.
 - Tests : `PhoneTriangulationTest`, `AtakTocPhoneServiceTest`, `AtakTocPhoneApiTest`, `AtakTocPhoneWiringTest`. Non essayé en jeu.
+
+## App Fiches : les fiches du portail SSE se lisent sur le téléphone et se partagent (ATAK natif 4.22.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : Les fiches du portail SSE se lisent sur le téléphone, et se partagent entre équipiers
+- Nouvelle app Fiches (rubrique Renseignement) : les avis de recherche et les fiches de vigilance, d'identification, de renseignement et de contrôle du portail, avec leur motif, leurs mesures à prendre, le dernier lieu connu, la zone, la menace, les véhicules, les adresses et les personnes liées.
+- Une fiche se lit comme un document de renseignement : bandeau de classification en haut et en bas, service émetteur, menace en barre, mention « armé et dangereux ». Tu ne vois que ce que ton habilitation permet.
+- La liste se met à jour au démarrage, à l'ouverture de l'app et avec ACTUALISER. Hors ligne, la dernière version reste lisible avec l'heure de sa synchro. Filtres par genre, menace, type et zone, taille du texte réglable, mode compact.
+- PARTAGER envoie la fiche à un équipier par Bluetooth ou par SMS : seule la référence part, il l'ouvre dans sa propre liste, selon sa propre habilitation. Un clic sur le message ouvre la fiche.
+- Contrôle d'identité (SEEK II, SSE 1.13.0) : une personne sous avis de recherche est marquée « recherchée », avec la référence de l'avis et la mesure à prendre, même si l'avis vient d'être posé sur le portail.
+- Menu ACE : nouveau réglage personnel « Menu ACE : entrées ATAK à la racine » (catégorie ATAK · Menu ACE). Décoché, « Poste TOC », « Messages et ordres du TOC » et « ATAK : réparer l'affichage » quittent la racine du menu ACE ; le téléphone garde « Entretien > Réparer l'écran » et l'app Poste TOC. Coché par défaut : rien ne change tant qu'on ne le décoche pas.
+EN : Portal records can be read on the phone and shared between teammates
+- New Records app (Intelligence section): the portal's wanted notices and vigilance, identification, intelligence and check sheets, with their reason, action to be taken, last known location, zone, threat, vehicles, addresses and linked persons.
+- A record reads like an intelligence document: classification banner at the top and bottom, issuing service, threat bar, "armed and dangerous" mention. You only see what your clearance allows.
+- The list refreshes at start-up, when you open the app and with REFRESH. Offline, the last version stays readable with the time of its sync. Filters by kind, threat, type and zone, adjustable text size, compact mode.
+- SHARE sends the record to a teammate by Bluetooth or SMS: only the reference is sent, and they open it in their own list, according to their own clearance. Tapping the message opens the record.
+- Identity check (SEEK II, SSE 1.13.0): a person under a wanted notice is marked "wanted", with the notice reference and the action to be taken, even if the notice has just been placed on the portal.
+- ACE menu: new personal setting "ACE menu: ATAK entries at the root" (category ATAK · ACE menu). Unchecked, "TOC post", "TOC messages and orders" and "ATAK: repair the display" leave the root of the ACE menu; the phone keeps "Maintenance > Repair the screen" and the TOC post app. Checked by default: nothing changes until you uncheck it.
+
+### Détail technique
+- **Canal** : `GET /api/game/v1/sse/fiches` (liste JSON, `ETag`, `since_rev`, `format=sqf&page=`) et `GET /api/game/v1/sse/fiches/{ref}` (`%2F` pour un `/`, ou `?ref=`), et, côté jeu, `SubmitIdCheck` de COMSPEC Link avec `kind: "sse_fiches"` (`op` : `list`, `detail`, `wanted`) et `kind: "sse_fiche_share"`. Aucune nouvelle DLL : COMSPEC Link reste 2.0.125. Pages parseSimpleArray de 7 400 octets au plus, 25 colonnes (`SseFichesGameService::COLUMNS`, copiées dans `fn_fichesAction` : un test les compare).
+- **Filtre côté site** (`SseFichesGameService`) : niveau de lecture du compte du jeton de jeu (`SseMemberClearance`), le plus bas sans compte ; une fiche au-dessus n'est jamais envoyée ; aucune identité de membre (`user_id > 0`), aucun état civil, aucune photo ; données cachées par le MJ en barre ; adresses à partir d'Encadrement, personnes liées à partir de Confidentiel.
+- **Téléphone** : `functions/fiches/fn_fichesAction.sqf` (données, cache, partage) et `fn_pageFiches.sqf` (liste, fiche, partage) ; app `Fiches` dans `COMSPEC_ATAK_Apps` ; démarrage dans `XEH_postInitClient`. Retours dans la ligne d'état de l'écran seulement : aucun toast, hint ni systemChat. Dernière version gardée sur le poste (`COMSPEC_ATAK_FichesCache`) pour 24 h, **fiches du niveau le plus bas seulement** ; les autres restent en mémoire de la partie.
+- **Partage** : réutilise le Bluetooth de l'app (`fn_btItems` genre `fiche`, `fn_btAction` `ficheSend`) et les SMS (`fn_p2pSend`, message « [FICHE] réf · genre · titre », clic dans `fn_pageChat`, rangement dans « Reçues » par `fn_p2pReceive`). Le site vérifie que l'expéditeur lit la fiche, limite à 12 partages par 10 minutes et journalise (`sse_audit_log`, `fiches.share`) ; le téléphone limite à 6 partages par 2 minutes.
+- **Contrôle d'identité** : `SseIdentityApiController` renvoie déjà `wanted` à l'envoi d'un contrôle, mais COMSPEC Link ne relaie que `OK|id|réf`. Plutôt que changer la DLL (version, attestation, reconstruction), le pack SSE interroge le même canal (`op: "wanted"`) juste après la transmission : `fn_idWantedCheck`.
+- Tests : `tests/Unit/SseFichesGameTest.php`, `tests/Unit/AtakFichesAssetTest.php`. **Non essayé en jeu** : rendu de l'écran, Bluetooth, SMS, relecture hors ligne.
+## Appui aérien (CAS) : les accusés du pilote ne partent plus avec un identifiant invalide (ATAK natif 4.21.2.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : Les accusés des appuis aériens ne sont plus refusés par Athena
+- Une demande d'appui aérien (9-line, 5-line ou demande de tir rapide) reçoit maintenant un identifiant simple et stable, que l'accusé du pilote (reçu, lu, WILCO, UNABLE) retrouve toujours.
+- Avant, l'identifiant pouvait contenir un nombre mal écrit (« 6.35867e+06 ») : Athena répondait « Not found » et l'échec apparaissait dans les signalements.
+- Si tu vois encore cette erreur, mets le mod à jour : les anciennes versions fabriquent toujours l'ancien identifiant.
+EN : Air support acknowledgements are no longer refused by Athena
+- An air support request (9-line, 5-line or quick fire request) now gets a simple, stable identifier that the pilot's acknowledgement (received, read, WILCO, UNABLE) always finds.
+- Before, the identifier could contain a badly written number ("6.35867e+06"): Athena answered "Not found" and the failure showed up in reports.
+- If you still see this error, update the mod: older versions still build the old identifier.
+
+### Détail technique
+- **Cause** : `fn_airBrief.sqf` (ref du brief, case "send") et `fn_firesQuick.sqf` fabriquaient `format ["B%1%2", UID, round (diag_tickTime * 1000)]` ; `format` écrit un nombre >= 1e6 en notation scientifique (`B765611998118681986.35867e+06`). Le DLL l'envoie dans l'adresse `/api/cas/{ref}/status` avec `+` encodé en `%2B` ; le routeur ne décode pas le segment et `AirBriefService::resolveLine` cherchait `...%2B06` dans `mission_id` : 404.
+- **Correction mod** : `CAS-<8 derniers chiffres UID>-<ms entières>` (`toFixed 0`) et `QF-...`, uniquement `[A-Za-z0-9-]`.
+- **Correction site** : `AirBriefService::normalizeRef` décode `%2B` et refuse les caractères hors `[A-Za-z0-9._+-]` ; les anciens ids sont donc retrouvés ; 404 en JSON `{"error":"cas_not_found"}`. Le Link ne rejoue déjà pas un 404 (`ShouldRetryStatusCode`) : DLL inchangée.
+- **Rapport Discord** : lignes « id mal formé (notation scientifique) » et « version du mod ancienne : mettre à jour ».
+- Tests : `tests/Unit/AtakCasRefFormatTest.php`. Non essayé en jeu.
 
 ## Calque « Zones Athena » : le masquer ne fait plus disparaître les marqueurs de zone (ATAK natif 4.21.1.AG - Washington)
 

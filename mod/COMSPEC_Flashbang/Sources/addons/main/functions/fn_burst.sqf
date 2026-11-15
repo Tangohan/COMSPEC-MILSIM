@@ -5,8 +5,9 @@
        Engin déjà vu puis disparu (supprimé par Zeus, détruit) : la grenade est annulée, plus aucune détonation.
     2. Interface : lumière et particules (fn_fx), bang pour la caméra locale (sourd derrière un mur, lointain
        au-delà de 150 m, retard de 343 m/s), couche grave au premier flash.
-    3. Effets sur les unités LOCALES proches : le joueur (fn_playerHit), les IA (fn_aiHit). Spectateurs, Zeus et
-       joueurs hors zone qui regardent la scène : simple éblouissement passager (fn_glare).
+    3. Effets sur les unités LOCALES proches : le joueur (fn_playerHit), les IA (fn_aiBurst : par tranches, les plus
+       proches d'abord). Spectateurs, Zeus et joueurs hors zone qui regardent la scène : simple éblouissement
+       passager (fn_glare).
     [_id, _index] call comspec_fb_fnc_burst
 */
 params ["_id", "_index"];
@@ -225,7 +226,8 @@ if (_dbg) then {
 {
     private _u = _x;
     private _isMe = _meInGame && {_u == _me};
-    private _concerned = local _u && {alive _u} && {_isMe || {!isPlayer _u && _aiOn}};
+    // Les IA ne passent plus par cette boucle : fn_aiBurst les traite après le joueur (plafond, tranches par image).
+    private _concerned = local _u && {alive _u} && {_isMe};
     // Règle du camp (fn_sideRule), relue à chaque détonation : camp courant de l'unité, lanceur, camp du lanceur.
     private _rule = if (_concerned) then { [side group _u, _side, !isNull _thrower && {_u == _thrower}] call comspec_fb_fnc_sideRule } else { [0, 1, 1, 1, "normal"] };
     _rule params ["_ruleLevel", "_kVis", "_kDur", "_kAud", "_ruleName"];
@@ -244,12 +246,10 @@ if (_dbg) then {
             ["unité", format ["%1 %2 m : aucun effet, camp=%3 règle=immunisé", _u, round (_u distance _center), side group _u]] call comspec_fb_fnc_log;
         };
     };
-    if (_dbg && {local _u} && {!_concerned} && {_ruleLevel != 3}) then {
+    if (_dbg && {local _u} && {!_concerned} && {_ruleLevel != 3} && {isPlayer _u}) then {
         ["unité", format ["%1 %2 m : ignorée (%3)", _u, round (_u distance _center), switch (true) do {
             case (!alive _u): { "morte" };
-            case (isPlayer _u && {!_isMe}): { "joueur en Zeus ou spectateur" };
-            case (!_aiOn): { "réglage « IA affectée » coupé" };
-            default { "?" };
+            default { "joueur en Zeus ou spectateur" };
         }]] call comspec_fb_fnc_log;
     };
     if (_concerned) then {
@@ -289,8 +289,6 @@ if (_dbg) then {
                 _meHit = true;
                 _info set ["tPlan", _tPlan];
                 [_vis, _aud, _info, _pos] call comspec_fb_fnc_playerHit;
-            } else {
-                [_u, _vis, _aud, _pos, _info] call comspec_fb_fnc_aiHit;
             };
             // Blessure légère à bout portant (réglage, désactivé par défaut ; jamais avec ACE Médical).
             if (!_area && {missionNamespace getVariable ["comspec_fb_damage", false]} && {(_info get "dist") < 1}
@@ -300,6 +298,11 @@ if (_dbg) then {
         };
     };
 } forEach _units;
+
+// IA locales : règle du camp, exposition et réaction (plafond par détonation, 6 par image).
+if (_aiOn) then {
+    [_ctx, _pos, _env, _g, _units, _center, _me] call comspec_fb_fnc_aiBurst;
+};
 
 if (_nTot > 9 && {_index mod 10 == 9 || {_index == _nTot - 1}}) then {
     ["burst", format ["%1 coût de la détonation %2 sur ce poste : %3 ms", _id, _index + 1, ((diag_tickTime - _tick0) * 1000) toFixed 2]] call comspec_fb_fnc_log;

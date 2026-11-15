@@ -25,7 +25,7 @@ d'opération sur les terrains Arma, reliés au jeu dans les deux sens.
 
 - `4370_atak_toc_plans` : tables `atak_plans`, `atak_plan_elements`, `atak_plan_phases`, `atak_plan_versions`, `atak_plan_shares`, `atak_plan_comments`, `atak_plan_presence`, `atak_toc_rooms`, `atak_toc_actions`.
 - `4380_atak_toc_permissions` : droits `atak.toc.use` et `atak.toc.manage`.
-- `4690_atak_toc_phone` : tables `atak_toc_phone_settings` et `atak_toc_phone_events`, droit `atak.toc.phone` (accordé aux seuls niveaux qui ont `atak.toc.manage`). Sans elle, les actions sur les téléphones restent désactivées. Retour arrière : `migrations/rollback/atak_toc_phone_down.sql`.
+- `4740_atak_toc_phone` : tables `atak_toc_phone_settings` et `atak_toc_phone_events`, droit `atak.toc.phone` (accordé aux seuls niveaux qui ont `atak.toc.manage`). Sans elle, les actions sur les téléphones restent désactivées. Retour arrière : `migrations/rollback/atak_toc_phone_down.sql`.
 - `4630_atak_marker_cycles` : tables `atak_marker_cycle_settings`, `atak_marker_archives`, `atak_marker_archive_items` (cycle de 24 h des marqueurs, voir plus bas).
 
 ## Console : rubriques, onglets et sources
@@ -336,8 +336,8 @@ Onglet **Téléphones** de la rubrique Situation (`/atak/toc?onglet=telephones`)
 ### Droits et réglage
 
 - `atak.toc.use` : voir la liste, les fiches, le journal.
-- `atak.toc.phone` (droit dédié, **sensible**, suppose `atak.toc.use`) : notifier, faire sonner, localiser, trianguler. `atak.toc.manage` ne le donne pas ; l'administration de la communauté (`admin.organization`) le vaut. L'étape 4690 le crée dans chaque communauté et l'accorde **uniquement aux niveaux qui ont déjà `atak.toc.manage`** ; ensuite chaque communauté le coche ou non dans Niveaux d'accès (rubrique « Poste TOC »).
-- Réglage de la communauté (`atak_toc_phone_settings`, bouton « Réglages » de l'onglet, `atak.toc.manage`) : **fonction désactivée tant que la communauté ne l'a pas activée**, et « masquer l'entrée *Localisé par le TOC* sur les téléphones hostiles » (jamais pour un allié). Sans l'étape 4690 : désactivée, avec le message « pas encore installée ».
+- `atak.toc.phone` (droit dédié, **sensible**, suppose `atak.toc.use`) : notifier, faire sonner, localiser, trianguler. `atak.toc.manage` ne le donne pas ; l'administration de la communauté (`admin.organization`) le vaut. L'étape 4740 le crée dans chaque communauté et l'accorde **uniquement aux niveaux qui ont déjà `atak.toc.manage`** ; ensuite chaque communauté le coche ou non dans Niveaux d'accès (rubrique « Poste TOC »).
+- Réglage de la communauté (`atak_toc_phone_settings`, bouton « Réglages » de l'onglet, `atak.toc.manage`) : **fonction désactivée tant que la communauté ne l'a pas activée**, et « masquer l'entrée *Localisé par le TOC* sur les téléphones hostiles » (jamais pour un allié). Sans l'étape 4740 : désactivée, avec le message « pas encore installée ».
 
 ### Actions
 

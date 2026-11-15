@@ -242,6 +242,22 @@ class DataCampaignRecordReader
                 }
             }
         }
+        // Sessions sur le serveur de la communauté : seules celles qui atteignent le seuil (60 min par défaut) sont
+        // comptées ; le cumul « Heures de jeu » ci-dessus reste le compteur brut du mod, sans découpage en sessions.
+        try {
+            $sessionRepo = $this->make(\App\Repositories\PlayerSessionRepository::class);
+            if ($sessionRepo->schemaReady()) {
+                $rules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+                $sum = $sessionRepo->summariesForUsers($tenantId, [$userId], $rules['min_minutes'] * 60, $rules['gap_minutes'] * 60, time(), $sessionRepo->tenantTimezone($tenantId))[$userId] ?? null;
+                if (is_array($sum) && !empty($sum['linked']) && (int) ($sum['windows'][90]['sessions'] ?? 0) > 0) {
+                    $rows[] = [
+                        'label' => str_replace('%1', \App\Services\Personnel\PlayerSessionService::thresholdLabel($rules['min_minutes']), 'Sessions %1 sur le serveur (90 jours)'),
+                        'value' => (int) $sum['windows'][90]['sessions'] . ' · ' . self::duration((int) $sum['windows'][90]['seconds']),
+                    ];
+                }
+            }
+        } catch (\Throwable) {
+        }
         $links = [];
         try {
             $pilot = $this->pilotSummary($tenantId, $userId);

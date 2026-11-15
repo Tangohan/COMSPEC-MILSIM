@@ -47,6 +47,17 @@ final class CronRunner
                 continue;
             }
             $key = $job->key();
+            if (!$force && CronSchedule::isDisabled($key)) {
+                $results[] = [
+                    'ok' => true,
+                    'skipped' => true,
+                    'job' => $key,
+                    'label' => $job->label(),
+                    'summary' => 'Désactivé (e-mails de digest coupés)',
+                    'details' => [],
+                ];
+                continue;
+            }
             if (!$force && !CronSchedule::isDue($key, $latest[$key] ?? null)) {
                 $results[] = [
                     'ok' => true,

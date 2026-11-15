@@ -69,6 +69,16 @@ libellé de remplacement ; ni indicatif, ni trigramme, ni ligne secondaire.
 sans prénom ni nom, ceux qui n'ont qu'un des deux, les noms de compte qui sont des e-mails et les écarts avec l'identité
 légale (sans jamais l'afficher). Les corrections se font depuis la fiche du membre.
 
+## Identité officielle (SSE) : elle suit l'état civil
+
+L'identité civile la plus ancienne d'un membre dans le registre SSE (`sse_identities`, `kind = 'civil'`, `user_id`) est son identité
+officielle. Son prénom et son nom sont ceux de `user_profiles` ; sa date de naissance est celle du personnage
+(`user_profiles.character_birth_date`, jamais `birth_date`, qui est la date réelle du joueur) ; son lieu de naissance est celui du
+dossier du personnage. Elle est alignée à chaque changement de prénom ou de nom, par le bouton « Aligner sur l'état civil » ou par
+`php tools/sse-sync-member-identities.php` (simulation par défaut, `--apply`, `--tenant`, `--limit`, `--create-missing`). Les
+couvertures, alias et faux, les sujets non membres et les identités marquées « nom volontairement différent » ne sont jamais touchés ;
+les anciennes valeurs restent dans l'historique des identités (restaurables).
+
 ## Écrans qui ne passent pas (encore) par la règle
 
 Voir le corps de la PR : ils sont listés avec la raison (C2, SSE, contrats du mod, noms sans identifiant de membre).

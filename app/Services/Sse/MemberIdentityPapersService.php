@@ -109,7 +109,8 @@ final class MemberIdentityPapersService
             str_starts_with($sexRaw, 'f') => 'F',
             default => 'X',
         };
-        $dob = trim((string) ($userProfile['birth_date'] ?? ''));
+        // Date de naissance du PERSONNAGE d'abord (étape 4700) ; à défaut l'ancien champ du profil (à relire : il peut être la date réelle du joueur).
+        $dob = trim((string) (($userProfile['character_birth_date'] ?? '') !== '' ? $userProfile['character_birth_date'] : ($userProfile['birth_date'] ?? '')));
 
         return [
             'last_name' => trim((string) ($userProfile['last_name'] ?? '')),

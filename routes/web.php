@@ -559,6 +559,7 @@ return function (Router $router) {
     $router->post('/jnet/moi/carnet-de-vol/{entryId}/supprimer', $moi(PilotLogbookController::class, 'delete'), $mwMoi);
     $router->get('/jnet/moi/mes-papiers', $moi($moiPapers, 'mine'), $mwMoi);
     $router->post('/jnet/moi/mes-papiers/couverture', $moi($moiCover, 'generateMine'), $mwMoi);
+    $router->post('/jnet/moi/mes-papiers/etat-civil', $moi($moiPapers, 'alignMine'), $mwMoi);
     $router->get('/jnet/moi/mes-papiers/couverture/{exportId}/telecharger', $moi($moiCover, 'downloadMine'), $mwMoi);
     $router->get('/jnet/moi/liaison-atak', $moi(MemberSituationController::class, 'liaisonAtak'), $mwMoi);
     $router->get('/jnet/moi/appareils', $moi(MemberSituationController::class, 'appareils'), $mwMoi);
@@ -1230,6 +1231,15 @@ return function (Router $router) {
     $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
     $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
+    $router->get('/atak/sse/avis/pieces/{id}/image', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentImage'], $mwSsePortal);
+    $router->post('/atak/sse/avis/pieces/{id}/retirer', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentRemove'], $mwSsePortal);
+    $router->post('/atak/sse/avis/pieces/{id}/principale', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentMain'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/pieces', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentAdd'], $mwSsePortal);
+    // Widget « Liaisons » (chemin de liaison, liens manuels) et page « Cerbères ».
+    $router->get('/atak/sse/liaisons/recherche', [\App\Controllers\Web\SseLinksController::class, 'search'], $mwSsePortal);
+    $router->post('/atak/sse/liaisons', [\App\Controllers\Web\SseLinksController::class, 'store'], $mwSsePortal);
+    $router->post('/atak/sse/liaisons/{id}/retirer', [\App\Controllers\Web\SseLinksController::class, 'remove'], $mwSsePortal);
+    $router->get('/atak/sse/cerberes', [\App\Controllers\Web\SseLinksController::class, 'cerberes'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);
@@ -1312,6 +1322,8 @@ return function (Router $router) {
     $router->get('/atak/sse/papiers/membres', [\App\Controllers\Web\SseIdentityRegistryController::class, 'membersIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'memberShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilAlign'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/etat-civil/volontaire', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilOverride'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identites/{identityId}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'identityPhoto'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], $mwSsePortal);
@@ -1450,7 +1462,6 @@ return function (Router $router) {
     $router->get('/atak/sse/sceau/{token}', [SsePortalController::class, 'sealShow']);
     $router->post('/atak/sse/dossiers/{id}/caviardage', [SsePortalController::class, 'caseRedactionStore'], $mwSsePortal);
     $router->post('/atak/sse/dossiers/{id}/caviardage/{redactionId}/supprimer', [SsePortalController::class, 'caseRedactionDelete'], $mwSsePortal);
-    $router->get('/atak/sse/interet', [SsePortalController::class, 'interestCasesIndex'], $mwSsePortal);
     $router->get('/atak/sse/transmissions', [SsePortalController::class, 'transmissionsIndex'], $mwSsePortal);
     $router->get('/atak/sse/transmissions/pdf', [SsePortalController::class, 'transmissionsPdf'], $mwSsePortal);
     $router->post('/atak/sse/transmissions/relais', [SsePortalController::class, 'transmissionDiscordStore'], $mwSsePortal);
@@ -1460,16 +1471,29 @@ return function (Router $router) {
     $router->get('/atak/sse/transmissions/{id}', [SsePortalController::class, 'transmissionShow'], $mwSsePortal);
     $router->get('/atak/sse/transmissions/{id}/pdf', [SsePortalController::class, 'transmissionPdf'], $mwSsePortal);
     $router->post('/atak/sse/transmissions/{id}/discord', [SsePortalController::class, 'transmissionDiscordSend'], $mwSsePortal);
-    $router->get('/atak/sse/interet/nouveau', [SsePortalController::class, 'interestCaseCreateForm'], $mwSsePortal);
-    $router->post('/atak/sse/interet', [SsePortalController::class, 'interestCaseStore'], $mwSsePortal);
-    $router->get('/atak/sse/interet/{id}', [SsePortalController::class, 'interestCaseShow'], $mwSsePortal);
-    $router->post('/atak/sse/interet/{id}/description', [SsePortalController::class, 'interestCaseDescription'], $mwSsePortal);
-    $router->post('/atak/sse/interet/{id}/mise-a-jour', [SsePortalController::class, 'interestCaseJournal'], $mwSsePortal);
-    $router->post('/atak/sse/interet/{id}/etat', [SsePortalController::class, 'interestCaseStatus'], $mwSsePortal);
-    $router->post('/atak/sse/interet/{id}/diffusion', [SsePortalController::class, 'interestCaseAcl'], $mwSsePortal);
-    $router->post('/atak/sse/interet/{id}/investigation', [SsePortalController::class, 'interestCaseOpenInvestigation'], $mwSsePortal);
-    $router->post('/atak/sse/interet/{id}/croisements', [SsePortalController::class, 'interestCrossDecide'], $mwSsePortal);
-    $router->post('/atak/sse/interet/{id}/constituer', [SsePortalController::class, 'interestCaseConstitute'], $mwSsePortal);
+    // Dossiers d'intérêt : les routes littérales passent avant « {id} ».
+    $router->get('/atak/sse/interet', [\App\Controllers\Web\SseInterestCaseController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/interet/nouveau', [\App\Controllers\Web\SseInterestCaseController::class, 'createRedirect'], $mwSsePortal);
+    $router->get('/atak/sse/interet/liens/recherche', [\App\Controllers\Web\SseInterestCaseController::class, 'linkSearch'], $mwSsePortal);
+    $router->post('/atak/sse/interet', [\App\Controllers\Web\SseInterestCaseController::class, 'store'], $mwSsePortal);
+    $router->get('/atak/sse/interet/{id}', [\App\Controllers\Web\SseInterestCaseController::class, 'show'], $mwSsePortal);
+    $router->get('/atak/sse/interet/{id}/apercu', [\App\Controllers\Web\SseInterestCaseController::class, 'preview'], $mwSsePortal);
+    $router->get('/atak/sse/interet/{id}/pdf', [\App\Controllers\Web\SseInterestCaseController::class, 'pdf'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/modifier', [\App\Controllers\Web\SseInterestCaseController::class, 'update'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/description', [\App\Controllers\Web\SseInterestCaseController::class, 'description'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/mise-a-jour', [\App\Controllers\Web\SseInterestCaseController::class, 'note'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/etat', [\App\Controllers\Web\SseInterestCaseController::class, 'status'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/desarchiver', [\App\Controllers\Web\SseInterestCaseController::class, 'unarchive'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/supprimer', [\App\Controllers\Web\SseInterestCaseController::class, 'trash'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/restaurer', [\App\Controllers\Web\SseInterestCaseController::class, 'restore'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/supprimer-definitivement', [\App\Controllers\Web\SseInterestCaseController::class, 'purge'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/liens', [\App\Controllers\Web\SseInterestCaseController::class, 'linkAdd'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/liens/{linkId}/retirer', [\App\Controllers\Web\SseInterestCaseController::class, 'linkRemove'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/abonnement', [\App\Controllers\Web\SseInterestCaseController::class, 'watch'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/diffusion', [\App\Controllers\Web\SseInterestCaseController::class, 'acl'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/investigation', [\App\Controllers\Web\SseInterestCaseController::class, 'openInvestigation'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/croisements', [\App\Controllers\Web\SseInterestCaseController::class, 'crossDecide'], $mwSsePortal);
+    $router->post('/atak/sse/interet/{id}/constituer', [\App\Controllers\Web\SseInterestCaseController::class, 'constitute'], $mwSsePortal);
     $router->get('/atak/sse/personnes', [SsePortalController::class, 'personsIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites', [SsePortalController::class, 'sitesIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites/{id}', [SsePortalController::class, 'siteShow'], $mwSsePortal);
@@ -1870,6 +1894,7 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/modifier', [PilotLogbookController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/supprimer', [PilotLogbookController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/mes-papiers/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateMine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/mes-papiers/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'alignMine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Musique (Mon espace) : bibliothèque musicale partagée avec l'app Musique de l'ATAK natif (MusicLibraryController).
     $router->post('/back-office/ma-situation/musique/envoyer', [MusicLibraryController::class, 'upload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/morceaux/{id}/modifier', [MusicLibraryController::class, 'trackUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2551,6 +2576,8 @@ return function (Router $router) {
     // Fiche membre › Identité & papiers (COMSPEC IDENTITY) : identités, papiers, kit de mission.
     $router->post('/back-office/ressources/effectifs/membres/{id}/qualifications-suggerees', [\App\Controllers\Admin\MemberQualificationSuggestionsController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilAlign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/etat-civil/volontaire', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilOverride'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites/{identityId}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'identityPhoto'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2590,6 +2617,11 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/sanctions', [EffectifsWorkspaceController::class, 'declareSanction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/sanctions/{sanctionId}/lever', [EffectifsWorkspaceController::class, 'liftSanction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/departs', [EffectifsWorkspaceController::class, 'departures'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/suivi', [EffectifsWorkspaceController::class, 'suivi'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/suivi/export', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'exportTeam'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/suivi/relancer', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'bulkRemind'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/membres/{id}/suivi/export', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'exportMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/suivi/{action}', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'act'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/departs/{id}/archiver', [EffectifsWorkspaceController::class, 'archiveDepartureDossier'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/departs/{id}/reintegrer', [EffectifsWorkspaceController::class, 'reinstateDeparture'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // GET .../effectifs/elevations : onglet « Élévations » de Demandes RH (BackOfficeTabs), l'ancienne adresse répond 301.
@@ -3357,6 +3389,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
     // Catalogue du mod SSE (ICD-SSE-CATALOGUE-001) : listes des modules Zeus, des attributs Eden et des écrans du joueur.
     $router->get('/api/game/v1/sse/catalogue', [\App\Controllers\Api\Game\GameSseCatalogueApiController::class, 'show']);
+    // Fiches du portail SSE (avis de recherche, fiches émises) lues par le téléphone ATAK (ICD-SSE-FICHES-001) : filtrées par la
+    // classification et l'habilitation du porteur ; une référence qui porte « / » s'écrit %2F (ou ?ref=).
+    $router->get('/api/game/v1/sse/fiches', [\App\Controllers\Api\Game\GameSseFichesApiController::class, 'show']);
+    $router->get('/api/game/v1/sse/fiches/{ref}', [\App\Controllers\Api\Game\GameSseFichesApiController::class, 'detail']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.
@@ -3718,6 +3754,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/notes/{id}/pieces', [SseFieldNoteApiController::class, 'attachmentStore']);
     // Avis de recherche (téléphone en jeu).
     $router->get('/api/sse/wanted', [SseApiController::class, 'wanted']);
+    $router->get('/api/sse/wanted/notices', [SseApiController::class, 'wantedNotices']);
     $router->get('/api/sse/campaigns', [\App\Controllers\Api\SseCampaignApiController::class, 'index']);
     $router->post('/api/sse/campaigns/sync', [\App\Controllers\Api\SseCampaignApiController::class, 'sync']);
     $router->get('/api/sse/campaigns/{key}/text', [\App\Controllers\Api\SseCampaignApiController::class, 'text']);

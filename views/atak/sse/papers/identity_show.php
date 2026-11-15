@@ -125,8 +125,8 @@ $tabs = [
     ['avis', 'Avis de recherche', $notice !== null ? '1' : (count($notices) > 0 ? (string) count($notices) : null), $notice !== null],
     ['documents-emis', 'Documents émis', count((array) ($sheetMenu['issues'] ?? [])) ?: null, false],
 ];
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script>';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-wanted-gallery.js')) . '" defer></script>';
 require __DIR__ . '/_subnav.php';
 ?>
 
@@ -185,6 +185,7 @@ require __DIR__ . '/_subnav.php';
     </header>
 
     <?php require dirname(__DIR__) . '/_sheet_menu.php'; ?>
+    <?php \App\Services\Sse\Links\SseLinksWidget::render('identity', (int) $identity['id']); ?>
 
     <?php if ($notice !== null): ?>
         <section class="dos-wanted" aria-label="Avis de recherche actif">

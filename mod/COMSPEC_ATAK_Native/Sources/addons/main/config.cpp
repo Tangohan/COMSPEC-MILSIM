@@ -140,6 +140,9 @@ class CfgFunctions {
         class trace { file="z\comspec_atak_native\addons\main\functions\trace";
             class traceCalc {}; class traceServer {}; class traceAction {};
         };
+        class fiches { file="z\comspec_atak_native\addons\main\functions\fiches";
+            class fichesAction {}; class pageFiches {};
+        };
         class dock { file="z\comspec_atak_native\addons\main\functions\dock";
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
@@ -200,6 +203,7 @@ class COMSPEC_ATAK_Apps {
     class Sse         { name="SSE"; page="SSE"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; desc="Exploitation de site (SSE) : indices et saisies"; };
     class Osint       { name="OSINT"; page="OSINT"; section="Renseignement"; order=120; dock=0; wip=1; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; desc="Renseignement en sources ouvertes"; };
     class LinkAlly    { name="Liaison allié"; short="Liaison"; page="LINKALLY"; function="comspec_atak_native_fnc_pageLinkAlly"; section="Spécialités"; order=82; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_linkally.paa"; desc="Liaison avec une unité alliée"; };
+    class Fiches      { name="Fiches SSE"; short="Fiches"; page="FICHES"; new=1; function="comspec_atak_native_fnc_pageFiches"; section="Renseignement"; order=123; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; desc="Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre"; };
     class Wanted      { name="Recherchés"; short="Rech."; page="WANTED"; section="Renseignement"; order=122; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_wanted.paa"; desc="Personnes recherchées (HVT) de la communauté"; };
     class Toc         { name="Poste TOC"; short="TOC"; page="TOC"; new=1; function="comspec_atak_native_fnc_pageToc"; section="Mission"; order=199; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_toc.paa"; desc="Écrans du poste de commandement (TOC)"; };
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; desc="Tâches et ordres reçus"; };

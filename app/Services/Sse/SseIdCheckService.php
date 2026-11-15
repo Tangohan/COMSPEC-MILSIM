@@ -101,14 +101,17 @@ final class SseIdCheckService
 
         // Personne contrôlée.
         $personId = null;
+        $personVia = 'cerbere.link.check_biokey';
         $pid = (int) ($subject['person_id'] ?? 0);
         if ($pid > 0 && $this->persons->findById($pid, $tenantId) !== null) {
             $personId = $pid;
+            $personVia = 'cerbere.link.check_designated';
         }
         $netid = $str($subject['netid'] ?? null, 64);
         if ($personId === null && $netid !== null) {
             $byNet = $this->persons->findLikelyDuplicate($tenantId, $mapId, ['target_unit_netid' => $netid]);
             $personId = is_array($byNet) && (int) ($byNet['id'] ?? 0) > 0 ? (int) $byNet['id'] : null;
+            $personVia = 'cerbere.link.check_netid';
         }
 
         $bioKey = $str($subject['bio_key'] ?? null, 64);
@@ -173,6 +176,7 @@ final class SseIdCheckService
             'case_ref' => $str($body['case'] ?? null, 64),
         ]);
         if (!$stored['duplicate']) {
+            $this->traceLinks($tenantId, (int) $stored['id'], (int) ($doc['id'] ?? 0), $documentIdentity, $link, $personId, $personVia);
             $this->matches->remember($tenantId, $mapId, $bioKey, $link['person_id'], $documentIdentity, $subjectSteam);
             // Identité sous avis de recherche actif : détection système (sans effet sur le contrôle ni sur l'identité).
             $seek = ($results['N4']['source'] ?? '') === 'seek';
@@ -185,6 +189,28 @@ final class SseIdCheckService
         }
 
         return $stored;
+    }
+
+    /**
+     * Trace du pourquoi du rattachement (Cerbère-Liaison) : le papier présenté, l'identité et la personne auxquels le contrôle a été
+     * rattaché tout seul, et par quel moyen. Absorbée en cas d'erreur : le contrôle du terrain ne dépend jamais de sa trace.
+     *
+     * @param array{person_id: ?int, identity_id: ?int} $link
+     */
+    private function traceLinks(int $tenantId, int $checkId, int $documentId, ?int $documentIdentity, array $link, ?int $designatedPerson, string $personVia): void
+    {
+        if ($checkId < 1) {
+            return;
+        }
+        if ($documentId > 0) {
+            SseProvenance::cerbere($tenantId, ['check', $checkId], ['paper', $documentId], 'checked', 'cerbere.link.check_document');
+        }
+        if ($link['identity_id'] !== null) {
+            SseProvenance::cerbere($tenantId, ['check', $checkId], ['identity', (int) $link['identity_id']], 'identified_as', $documentIdentity !== null ? 'cerbere.link.check_document' : 'cerbere.link.check_biokey');
+        }
+        if ($link['person_id'] !== null) {
+            SseProvenance::cerbere($tenantId, ['check', $checkId], ['person', (int) $link['person_id']], 'identified_as', $designatedPerson !== null && $designatedPerson === (int) $link['person_id'] ? $personVia : 'cerbere.link.check_biokey');
+        }
     }
 
     /** Identité à laquelle le contrôle a été rattaché (papier, personne ou clé biométrique), ou null. */

@@ -156,6 +156,8 @@ final class AuditAction
     public const MEMBER_INTEGRATION_STEP_FORCED = 'member_integration.step_forced';
     public const MEMBER_INTEGRATION_APPOINTMENT = 'member_integration.appointment';
     public const MEMBER_INTEGRATION_CANCELLED = 'member_integration.cancelled';
+    public const MEMBER_DOSSIER_STEP = 'member_dossier.step';
+    public const MEMBER_DOSSIER_REMIND = 'member_dossier.remind';
 
     /** Journalisation convention slugs site.* / community.* / intra.* (migration progressive). */
     public const PERMISSION_SCOPE_MIGRATION = 'permission.scope_migration';

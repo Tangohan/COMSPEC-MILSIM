@@ -93,6 +93,26 @@ final class PlayerMetrics
     }
 
     /**
+     * Ajoute à chaque ligne les sessions de jeu qui comptent sur la période (srv_sessions, srv_seconds ; null si le
+     * membre n'a pas de Steam relié ou si le suivi des sessions est absent : « — » à l'affichage, jamais 0 trompeur).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @param array<int, array{sessions: int, seconds: int}> $counts PlayerSessionRepository::qualifyingCountsForUsers
+     * @return list<array<string, mixed>>
+     */
+    public static function withServerSessions(array $rows, array $counts): array
+    {
+        foreach ($rows as &$r) {
+            $c = $counts[(int) ($r['user_id'] ?? 0)] ?? null;
+            $r['srv_sessions'] = $c === null ? null : (int) $c['sessions'];
+            $r['srv_seconds'] = $c === null ? null : (int) $c['seconds'];
+        }
+        unset($r);
+
+        return $rows;
+    }
+
+    /**
      * @param list<array<string, mixed>> $rows
      * @return list<array<string, mixed>>
      */
@@ -124,15 +144,16 @@ final class PlayerMetrics
      * Totaux de la communauté sur les lignes fusionnées.
      *
      * @param list<array<string, mixed>> $rows
-     * @return array{members: int, play: int, screen: int, total_m: int, foot_m: int, land_m: int, sea_m: int, air_m: int, halo_m: int, halo_jumps: int, steps: int, pilot_s: int, watches: int, watch_steps: int}
+     * @return array{srv_sessions: int, members: int, play: int, screen: int, total_m: int, foot_m: int, land_m: int, sea_m: int, air_m: int, halo_m: int, halo_jumps: int, steps: int, pilot_s: int, watches: int, watch_steps: int}
      */
     public static function totals(array $rows): array
     {
-        $t = ['members' => count($rows), 'play' => 0, 'screen' => 0, 'total_m' => 0, 'foot_m' => 0, 'land_m' => 0, 'sea_m' => 0, 'air_m' => 0, 'halo_m' => 0, 'halo_jumps' => 0, 'steps' => 0, 'pilot_s' => 0, 'watches' => 0, 'watch_steps' => 0];
+        $t = ['srv_sessions' => 0, 'members' => count($rows), 'play' => 0, 'screen' => 0, 'total_m' => 0, 'foot_m' => 0, 'land_m' => 0, 'sea_m' => 0, 'air_m' => 0, 'halo_m' => 0, 'halo_jumps' => 0, 'steps' => 0, 'pilot_s' => 0, 'watches' => 0, 'watch_steps' => 0];
         foreach ($rows as $r) {
             foreach (['play', 'screen', 'total_m', 'foot_m', 'land_m', 'sea_m', 'air_m', 'halo_m', 'halo_jumps', 'steps', 'pilot_s'] as $k) {
                 $t[$k] += (int) ($r[$k] ?? 0);
             }
+            $t['srv_sessions'] += (int) ($r['srv_sessions'] ?? 0);
             if (is_array($r['garmin'] ?? null)) {
                 $t['watches']++;
                 $t['watch_steps'] += (int) ($r['garmin']['steps'] ?? 0);

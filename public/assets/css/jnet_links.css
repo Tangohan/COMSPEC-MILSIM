@@ -657,3 +657,32 @@ a.jl-unit__n:hover b {
 .jl-modal__list .jl-row__k {
   min-width: 96px;
 }
+
+/* —— Élément SSE cité (« bloc liaison ») : référence, titre, nature et chemin de liaison résumé, relus avec les droits du lecteur —— */
+
+.jl-sse {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+  margin: 2px 0;
+  padding: 4px 8px;
+  border: 1px solid var(--ja-rule);
+  border-left: 3px solid var(--u, var(--ja-muted));
+  border-radius: 6px;
+  background: var(--ja-c2, transparent);
+  vertical-align: top;
+}
+
+.jl-sse .jl-mention {
+  padding: 0;
+  background: none;
+}
+
+.jl-sse__type,
+.jl-sse__path {
+  color: var(--ja-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}

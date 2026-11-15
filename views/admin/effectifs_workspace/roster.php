@@ -72,6 +72,7 @@ $filterQuery = static function (array $overrides = []) use ($filters, $page, $ro
         'unite' => (int) ($rosterUnitFilter ?? 0) > 0 ? (int) $rosterUnitFilter : null,
         'categorie' => (string) ($rosterGradeCategory ?? '') !== '' ? (string) $rosterGradeCategory : null,
         'langue' => !empty($filters['langue']) ? $filters['langue'] : null,
+        'sessions' => !empty($filters['sessions']) ? $filters['sessions'] : null,
         'fonction' => !empty($filters['fonction']) ? $filters['fonction'] : null,
         'etiquette_fonction' => !empty($filters['etiquette_fonction']) ? (int) $filters['etiquette_fonction'] : null,
         'vue' => !empty($filters['vue']) && $filters['vue'] !== 'general' ? $filters['vue'] : null,
@@ -338,6 +339,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <th title="Le poste tenu dans son unité : chef de groupe, tireur, adjoint…">Rôle</th>
                             <th>Statut</th>
                             <th title="Présence aux activités ; la disponibilité est indiquée dessous">Présence</th>
+                            <th class="eff-das__num eff-das__col-sv" title="<?= htmlspecialchars(str_replace('%1', (string) (int) ($rosterSessionRules['min_minutes'] ?? 60), 'Sessions de jeu sur le serveur de la communauté qui ont duré %1 minutes ou plus, sur 30 jours. Les connexions plus courtes ne comptent pas.'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(str_replace('%1', \App\Services\Personnel\PlayerSessionService::thresholdLabel((int) ($rosterSessionRules['min_minutes'] ?? 60)), 'Sessions de %1'), ENT_QUOTES, 'UTF-8') ?></th>
                             <th title="Dernière connexion au site">Dernière connexion</th>
                             <th class="eff-das__num">Qualifs</th>
                             <th title="Ce que la personne a le droit de faire sur le site">Niveau d’accès</th>
@@ -379,7 +381,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                 $colCount = ($canBulkAny ? 1 : 0) + 2 + match ($rosterView) {
                     'medical' => 8,
                     'aviation' => 5 + count($aviationFamilies),
-                    default => 14,
+                    default => 15,
                 };
                 $currentGroup = null;
                 ?>
@@ -778,6 +780,16 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <span class="eff-mq-pr__v"><?= $presenceScore ?> %</span>
                             </span>
                             <span class="eff-das__sub">Dispo. <?= $availabilityScore ?> %</span>
+                        </td>
+                        <?php $srv = is_array($row['server_sessions'] ?? null) ? $row['server_sessions'] : null; ?>
+                        <td class="eff-das__num" data-label="Sessions qui comptent">
+                            <?php if ($srv === null): ?>
+                                <span class="eff-das__muted" title="Le suivi des sessions de jeu n’est pas actif sur ce site.">—</span>
+                            <?php elseif (empty($srv['linked'])): ?>
+                                <span class="eff-das__muted" title="Compte Steam non relié : aucune session ne peut être attribuée.">Steam non relié</span>
+                            <?php else: ?>
+                                <a class="eff-mq-sv<?= !empty($srv['active']) ? ' is-on' : '' ?>" href="<?= htmlspecialchars($ficheUrl . '?onglet=disponibilite#onglet-disponibilite', ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars(str_replace(['%1', '%2'], [(string) (int) $srv['sessions'], (string) (int) $srv['short']], '%1 session(s) qui comptent sur 30 jours ; %2 plus courte(s) non comptée(s).'), ENT_QUOTES, 'UTF-8') ?>"><b><?= (int) $srv['sessions'] ?></b><span class="eff-das__sub"><?= !empty($srv['active']) ? 'Actif' : 'Inactif' ?></span></a>
+                            <?php endif; ?>
                         </td>
                         <?php
                         $lastLogin = trim((string) ($row['last_login_at'] ?? ''));

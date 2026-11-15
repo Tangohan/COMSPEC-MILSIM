@@ -93,7 +93,8 @@ private _send = {
     private _none = (count _dest) isEqualTo 0;
     // Personne en ligne : la demande reste visible sur le web et la carte, sous un indicatif générique.
     if (_none) then { _dest = [["PILOTES", objNull]]; };
-    private _ref = format ["Q%1%2", getPlayerUID player, round (diag_tickTime * 1000)];
+    // Id sûr ([A-Za-z0-9-]) : jamais de nombre formaté en notation scientifique (« 6.35867e+06 »).
+    private _ref = format ["QF-%1-%2", (getPlayerUID player) select [9], (round (diag_tickTime * 1000)) toFixed 0];
     private _lines = [_cs, [player, 8] call comspec_atak_native_fnc_gridRef, _grid, _ammoTxt, "FIRES"];
     ["send", ["5", _lines, "", _dest, _ref, true]] call comspec_atak_native_fnc_airBrief;
     _sent set [_ref, [_m, (_dest apply { _x select 1 }) select { !isNull _x }, _grid, _ammo]];

@@ -13028,13 +13028,19 @@ class AtakApiController
         // Accusé du pilote (« WILCO:HOG 21 », SendCASState de la DLL) : ref = mission_id du jeu ou identifiant Athena.
         $ack = \App\Services\Tactical\AirBriefService::parseAck($status);
         if ($ack !== null) {
+            // Le routeur ne décode pas le segment : « %2B » (le « + » d'un ancien id) est remis en clair ici ; un id
+            // illisible (hors [A-Za-z0-9._+-]) donne un 404 propre, sans requête.
+            $ref = \App\Services\Tactical\AirBriefService::normalizeRef((string) ($params['id'] ?? ''));
+            if ($ref === null) {
+                return Response::json(['error' => 'cas_not_found'], 404);
+            }
             try {
-                $res = (new \App\Services\Tactical\AirBriefService())->acknowledge($tenantId, (string) ($params['id'] ?? ''), $ack[0], $ack[1]);
+                $res = (new \App\Services\Tactical\AirBriefService())->acknowledge($tenantId, $ref, $ack[0], $ack[1]);
             } catch (\Throwable) {
                 $res = ['result' => 'unavailable', 'recipient' => null];
             }
             if ($res['result'] === 'not_found') {
-                return Response::json(['error' => 'Not found'], 404);
+                return Response::json(['error' => 'cas_not_found'], 404);
             }
             if ($res['result'] === 'unavailable') {
                 return Response::json(['error' => 'unavailable'], 503);
@@ -13045,7 +13051,7 @@ class AtakApiController
         $id = (int) ($params['id'] ?? 0);
         $row = $this->casRepo->updateCasStatus($tenantId, $id, $status);
         if ($row === null) {
-            return Response::json(['error' => 'Not found or invalid status'], 404);
+            return Response::json(['error' => 'cas_not_found'], 404);
         }
         return Response::json($row);
     }
@@ -15766,6 +15772,24 @@ class AtakApiController
                 $match !== null ? (int) $match['id'] : null,
                 $serverPort
             );
+            // Session de jeu : le signe de vie d'un joueur sur un serveur déclaré de sa communauté prolonge sa session
+            // (PlayerSessionRepository fusionne les signes de vie espacés de moins de la coupure tolérée).
+            if ($match !== null) {
+                try {
+                    $rules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+                    $member = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+                    \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class)->recordHeartbeat(
+                        $tenantId,
+                        $steam,
+                        time(),
+                        $rules['gap_minutes'] * 60,
+                        $member !== null ? (int) $member['id'] : null,
+                        (int) $match['id']
+                    );
+                } catch (\Throwable) {
+                    // Table des sessions absente ou base indisponible : la réponse au joueur ne change pas.
+                }
+            }
         }
 
         if ($servers === []) {

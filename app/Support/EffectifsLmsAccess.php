@@ -46,6 +46,27 @@ final class EffectifsLmsAccess
     }
 
     /**
+     * Voir le suivi du dossier (étapes, échéances, historique). Mêmes personnes que les pièces du coffre RH, donc ceux
+     * qui gèrent déjà le dossier : aucun accès nouveau à l'ouverture ; effectifs.suivi.view l'ouvre à d'autres, au choix
+     * de la communauté (page Niveaux d'accès), et n'est accordé à personne automatiquement.
+     */
+    public static function canViewSuivi(Gate $gate): bool
+    {
+        return self::canViewHrDocuments($gate) || $gate->allows('effectifs.suivi.view') || $gate->allows('effectifs.suivi.manage');
+    }
+
+    /**
+     * Modifier le suivi du dossier : administrateurs de la communauté (déjà maîtres de toute la fiche) ou droit
+     * effectifs.suivi.manage. Un responsable RH sans ce droit consulte mais ne modifie pas.
+     */
+    public static function canManageSuivi(Gate $gate): bool
+    {
+        return $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('effectifs.suivi.manage');
+    }
+
+    /**
      * Décerner une décoration depuis la fiche. Exactement les droits qui ouvrent l'écran des décorations
      * (OrganizationAdminMiddleware, préfixe /back-office/referentiels/decorations) : aucun droit nouveau.
      */
