@@ -1445,6 +1445,15 @@ return function (Router $router) {
     $router->post('/admin/system/retrospective/recalculer', [\App\Controllers\Admin\System\SystemYearReviewController::class, 'refresh'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/e-mails/reglages', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/e-mails/recapitulatif', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'sendDigestNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Boîte de contact de la plateforme (IMAP en lecture, SMTP en réponse) : administrateur du site uniquement.
+    $router->get('/admin/system/boite-contact', [\App\Controllers\Admin\System\SystemContactMailboxController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/boite-contact/actualiser', [\App\Controllers\Admin\System\SystemContactMailboxController::class, 'sync'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/boite-contact/nouveau', [\App\Controllers\Admin\System\SystemContactMailboxController::class, 'compose'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/boite-contact/envoyer', [\App\Controllers\Admin\System\SystemContactMailboxController::class, 'send'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/boite-contact/brouillon', [\App\Controllers\Admin\System\SystemContactMailboxController::class, 'saveDraft'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/boite-contact/fil/{id}', [\App\Controllers\Admin\System\SystemContactMailboxController::class, 'thread'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/boite-contact/fil/{id}/action', [\App\Controllers\Admin\System\SystemContactMailboxController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/boite-contact/piece/{id}', [\App\Controllers\Admin\System\SystemContactMailboxController::class, 'attachment'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Registre des données (tableaux, corrélations, purge des joueurs fantômes).
     $router->get('/admin/system/donnees', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/donnees/api', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'api'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

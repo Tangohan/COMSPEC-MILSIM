@@ -70,6 +70,8 @@ final class CronSchedule
         // Données dérivées qui s'écrivaient à l'affichage de pages : matricules, codes d'unité, échelle de grades, terminaux ATAK.
         'tenant_data_upkeep' => 60,
         'mail_queue' => 5,
+        // Boîte de contact de la plateforme : nouveaux messages IMAP, un passage à chaque tick (rien tant que le mot de passe manque).
+        'contact_mail_sync' => 5,
         // Le récapitulatif vérifie sa propre cadence (Administration > Envois d'e-mails).
         'mail_ops_digest' => 5,
         'athena_heritage_snapshot' => 1440,

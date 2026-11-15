@@ -282,6 +282,7 @@ return [
     'contact_flash_subject' => 'Enter a clear subject.',
     'contact_flash_message' => 'The message must be between 20 and 5,000 characters.',
     'contact_flash_send_failed' => 'Sending failed. Try again in a few minutes.',
+    'contact_flash_rate' => 'Too many messages sent from your connection. Try again in an hour.',
 
     'changelog_meta_title' => 'Athena product updates — ATAK, SSE and C2',
     'changelog_meta_description' => 'Athena product journal: SSE intelligence, ATAK link, command, personnel, training and multi-community administration.',

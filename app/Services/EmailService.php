@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Repositories\EmailDeliveryRepository;
 use App\Repositories\EmailDigestRepository;
+use App\Services\Email\AutomaticMailNotice;
 use App\Services\Email\EmailEvents;
 use App\Services\Email\MailBudget;
 use App\Services\Email\MailBudgetGate;
@@ -113,6 +114,17 @@ final class EmailService
                 && $this->holdForBudget($eventCode, $to, $subject, $htmlBody, $textBody, $tenantId, $reply, $payloadSummary, $campaignId, $mailerType, $attachments)) {
                 return true;
             }
+        }
+        if ($community === null) {
+            // Expéditeur « ne pas répondre » de la plateforme : les réponses vont à la boîte de contact (Reply-To), et le
+            // message dit où écrire. Les messages d'une communauté gardent leur expéditeur et leur Reply-To.
+            $contact = \App\Services\ContactMail\ContactMailConfig::fromEnv();
+            if ($reply === null && trim((string) ($cfg['reply_to'] ?? '')) === '') {
+                $reply = $contact->autoReplyTo();
+            }
+            $notice = AutomaticMailNotice::apply($htmlBody, $textBody, $contact);
+            $htmlBody = $notice['html'];
+            $textBody = $notice['text'];
         }
         $result = $transport->sendMessage(
             $to,

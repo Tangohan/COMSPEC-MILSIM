@@ -665,6 +665,7 @@ class Container
                 self::get(\App\Services\Advancement\GradeScaleTemplateService::class),
                 self::get(\App\Repositories\AtakRealismRepository::class)
             ),
+            \App\Services\Cron\Jobs\ContactMailSyncCronJob::class => new \App\Services\Cron\Jobs\ContactMailSyncCronJob(),
             \App\Services\Cron\Jobs\MailQueueCronJob::class => new \App\Services\Cron\Jobs\MailQueueCronJob(
                 new \App\Services\Email\MailQueueProcessor(
                     self::get(\App\Repositories\AsyncJobRepository::class),
@@ -749,6 +750,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\TenantDataUpkeepCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\ContactMailSyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob::class),
                 ],
