@@ -1,4 +1,4 @@
-[h1]COMSPEC ATAK 4.24.1 Washington — « Démarrer et décoller » adapté à chaque drone / "Start and Takeoff" adapted to each drone[/h1]
+[h1]COMSPEC ATAK 4.24.2 Washington — « Démarrer et décoller » adapté à chaque drone / "Start and Takeoff" adapted to each drone[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
 
@@ -14,6 +14,24 @@
 [*] [b]Drones[/b]: the "Start and Takeoff" button no longer throws drones into the ground. Small drones (AR-2 Darter...) climb straight up before moving; planes (Greyhawk, Ababil, Sentinel) roll along the runway; the RQ-11 Raven is hand-launched straight ahead.
 [*] A plane cannot hold still: once airborne it flies in a circle, and its speed no longer drops below the one that makes it stall.
 [*] If take-off is impossible (empty battery, obstacle above, no room in front, drone already flying), the phone says so in the Drone app and nothing is launched. A ground drone no longer has a take-off button.
+[/list]
+
+[h1]COMSPEC ATAK 4.24.1 Washington — app BDA : l'envoi à Athena se voit et se renvoie / BDA app: sending to Athena is visible and can be resent[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]App BDA[/b] : chaque bilan transmis montre son parcours dans la liste (envoi en cours, enregistré sur Athena, ou non reçu avec la raison).
+[*] Si Athena n'a pas reçu le bilan, un bouton RENVOYER apparaît. Le renvoyer ne crée pas de doublon sur le poste TOC.
+[*] Les retours passent par la ligne d'état de l'app : plus de notification à l'écran.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]BDA app[/b]: each BDA you send shows where it stands in the list (sending, saved on Athena, or not received with the reason).
+[*] If Athena did not receive the BDA, a RESEND button appears. Resending does not create a duplicate on the TOC post.
+[*] Feedback shows in the app status line: no more on-screen notification.
 [/list]
 
 [h1]COMSPEC ATAK 4.24.0 Washington — les marqueurs supprimés par le poste TOC disparaissent de votre carte / markers deleted by the TOC post disappear from your map[/h1]

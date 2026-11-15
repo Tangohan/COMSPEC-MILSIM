@@ -158,7 +158,7 @@ switch (_tab) do {
             private _trail = if (_isSent) then {
                 [
                     ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>non diffusé en jeu</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>diffusé ✓</t>"] select ((_r getOrDefault ["dest", "CAMP"]) isNotEqualTo "AUCUNE"),
-                    switch (_web) do { case "OK": { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Athena ✓</t>" }; case "LOCAL": { "" }; case "ÉCHEC": { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Athena : non reçu</t>" }; default { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Athena hors ligne</t>" } },
+                    ([_web, _r getOrDefault ["webWhy", ""]] call comspec_atak_native_fnc_reportWebState) select 0,
                     ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>pas encore lu</t>", format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>lu par %1</t>", count _rc]] select ((count _rc) > 0),
                     ["", format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>reçu par %1 ✓</t>", _acks]] select (_acks > 0)
                 ] select { _x isNotEqualTo "" }

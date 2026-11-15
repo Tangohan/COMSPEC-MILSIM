@@ -1,6 +1,8 @@
 /*
     App BDA : formulaire de bilan des dégâts (cible, résultat, pertes, matériel, munition, grille, reprise, remarques)
     et bilans reçus du camp (les plus récents d'abord), chacun visible sur la carte.
+    Mes bilans montrent leur parcours Athena (en attente, enregistré, échec avec sa raison courte) et un bouton RENVOYER en cas
+    d'échec ; la ligne d'état en tête de page donne le dernier retour (30 s). Aucun toast, aucun hint, aucun systemChat.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -11,7 +13,14 @@ private _seg = {
     private _v = _f getOrDefault [_key, _def];
     ["segment", _label, _opts apply { [_x select 0, compile format ["['set', '%1', '%2'] call comspec_atak_native_fnc_bdaAction;", _key, _x select 1], (_x select 1) isEqualTo _v] }]
 };
-private _rows = [
+private _rows = [];
+// Ligne d'état : dernier retour de l'envoi (30 s, ou tant que l'envoi est en cours).
+private _msg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["bdaStatus", ["", 0]];
+private _pending = ((values (missionNamespace getVariable ["COMSPEC_ATAK_BdaList", createHashMap])) findIf { (_x getOrDefault ["web", ""]) isEqualTo "EN ATTENTE" }) >= 0;
+if ((_msg select 0) isNotEqualTo "" && {(diag_tickTime - (_msg select 1)) < 30 || {_pending}}) then {
+    _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>" + (_msg select 0) + "</t>"];
+};
+_rows append [
     ["section", "Nouveau bilan", "Effets observés après un tir ou une frappe"],
     ["Cible", "type", "PERS", [["PERSONNEL", "PERS"], ["VÉHICULE", "VEH"], ["BÂTIMENT", "BLDG"], ["POSITION", "POS"]]] call _seg,
     ["Résultat", "res", "DESTROYED", [["DÉTRUIT", "DESTROYED"], ["ENDOMMAGÉ", "DAMAGED"], ["NEUTRALISÉ", "NEUTRALIZED"], ["SANS EFFET", "NONE"]]] call _seg,
@@ -37,11 +46,18 @@ if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (CO
     if ((_r getOrDefault ["ekia", ""]) isNotEqualTo "") then { _bits pushBack format ["EKIA %1", _r get "ekia"]; };
     if ((_r getOrDefault ["equip", ""]) isNotEqualTo "") then { _bits pushBack (_r get "equip"); };
     if ((_r getOrDefault ["ammo", ""]) isNotEqualTo "") then { _bits pushBack (_r get "ammo"); };
-    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2 %3</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 · %5 · %6</t><br/><t size='0.9'>%7%8</t>%9",
+    // Parcours d'envoi à Athena : seulement pour mes bilans (ceux du camp n'ont pas d'état).
+    private _state = if (_r getOrDefault ["mine", false]) then { [_r getOrDefault ["web", ""], _r getOrDefault ["webWhy", ""]] call comspec_atak_native_fnc_reportWebState } else { ["", false] };
+    _state params ["_trail", "_retry"];
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2 %3</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 · %5 · %6</t><br/><t size='0.9'>%7%8</t>%9%10",
         [(COMSPEC_ATAK_Th get "hexOk"), (COMSPEC_ATAK_Th get "hexAlert")] select ((_r getOrDefault ["reatk", "NO"]) isEqualTo "YES"), _tgt, _res, _r getOrDefault ["by", "?"], _r getOrDefault ["time", ""], _r getOrDefault ["grid", ""],
         _bits joinString " · ", format ["%1%2", ["", " · "] select ((count _bits) > 0), _reatk],
-        ["", format ["<br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", _r get "rem"]] select ((_r getOrDefault ["rem", ""]) isNotEqualTo "")]];
-    _rows pushBack ["buttons", [["CARTE", compile format ["['map', %1] call comspec_atak_native_fnc_bdaAction;", str (_r get "id")]], ["RETIRER", compile format ["['del', %1] call comspec_atak_native_fnc_bdaAction;", str (_r get "id")]]]];
+        ["", format ["<br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", _r get "rem"]] select ((_r getOrDefault ["rem", ""]) isNotEqualTo ""),
+        ["", "<br/><t size='0.85'>" + _trail + "</t>"] select (_trail isNotEqualTo "")]];
+    private _btns = [["CARTE", compile format ["['map', %1] call comspec_atak_native_fnc_bdaAction;", str (_r get "id")]]];
+    if (_retry) then { _btns pushBack ["RENVOYER", compile format ["['web', %1] call comspec_atak_native_fnc_bdaAction;", str (_r get "id")], true, true, "Renvoie ce bilan à Athena"]; };
+    _btns pushBack ["RETIRER", compile format ["['del', %1] call comspec_atak_native_fnc_bdaAction;", str (_r get "id")]];
+    _rows pushBack ["buttons", _btns];
 } forEach _list;
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

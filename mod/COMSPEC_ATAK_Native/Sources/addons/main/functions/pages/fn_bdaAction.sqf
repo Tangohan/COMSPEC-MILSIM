@@ -2,8 +2,11 @@
     App BDA (bilan des dégâts). Params : [action, argument, valeur]
       "set" clé valeur : choix du formulaire     "here" : grille = ma position
       "send" : diffuse le bilan au camp (et au poste Athena avec Overwatch, rapport BDA)
+      "web" id : renvoie à Athena un bilan resté en échec (même identifiant client : le serveur ne crée pas de doublon)
       "recv" [bilan, camp] : réception (événement comspec_atak_native_bda, rejoué par la synchro serveur)
       "map" id : carte sur le bilan     "del" id : retire un bilan de ma liste
+    Aucun toast, aucun hint, aucun systemChat : les retours passent par la ligne d'état de l'écran (« bdaStatus ») et par
+    l'état d'envoi de chaque bilan (« web » : EN ATTENTE, OK, ÉCHEC, HORS LIGNE), lu par fn_reportWebState.
 */
 params [["_act", ""], ["_arg", ""], ["_val", ""]];
 private _f = uiNamespace getVariable ["COMSPEC_ATAK_BdaForm", createHashMap];
@@ -11,6 +14,28 @@ uiNamespace setVariable ["COMSPEC_ATAK_BdaForm", _f];
 private _list = missionNamespace getVariable ["COMSPEC_ATAK_BdaList", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_BdaList", _list];
 private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BDA") then { ["BDA"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
+// Ligne d'état de la page (30 s).
+private _say = { params ["_t"]; (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bdaStatus", [_t, diag_tickTime]]; };
+// Envoi à Athena (rapport BDA) : l'identifiant client « cid » reste le même à chaque renvoi, le serveur écarte le doublon.
+// Résultat connu : la ligne d'état le dit (la raison courte est dans la liste, sous le bilan).
+private _done = {
+    params ["_r"];
+    (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bdaStatus", [["Athena n'a pas reçu le bilan (RENVOYER dans la liste)", "Bilan enregistré sur Athena"] select ((_r getOrDefault ["web", ""]) isEqualTo "OK"), diag_tickTime]];
+};
+private _toWeb = {
+    params ["_r"];
+    private _labels = [_r] call comspec_atak_native_fnc_bdaLabels;
+    private _sd = createHashMapFromArray [["kind", "bda"], ["grid", _r get "grid"], ["type", _labels select 0], ["desc", _labels select 1],
+        ["ekia", _r get "ekia"], ["equip", _r get "equip"], ["ordnance", _r get "ammo"], ["reattack", _labels select 2], ["remarks", _r get "rem"]];
+    private _sent = [_r, "BDA", ["ROUTINE", "PRIORITY"] select ((_r get "reatk") isEqualTo "YES"), format ["BDA %1 · %2 %3", _r get "grid", _labels select 0, _labels select 1],
+        format ["%1 %2 en %3. EKIA %4, matériel %5. %6. %7", _labels select 0, _labels select 1, _r get "grid", _r get "ekia", _r get "equip", _labels select 2, _r get "rem"],
+        _sd, _r get "pos", "BDA", _r getOrDefault ["cid", ""], _done] call comspec_atak_native_fnc_reportWebSend;
+    if (_sent) then {
+        ["Bilan transmis au camp · envoi à Athena en cours"] call _say;
+    } else {
+        [["Bilan transmis au camp · Athena non connecté (RENVOYER dans la liste)", "Bilan transmis au camp"] select ((_r getOrDefault ["web", ""]) isEqualTo "LOCAL")] call _say;
+    };
+};
 private _save = { { _f set [_x, [_x, _f getOrDefault [_x, ""]] call comspec_atak_native_fnc_formValue]; } forEach ["ekia", "equip", "ammo", "grid", "rem"]; };
 switch (_act) do {
     case "set": { call _save; _f set [_arg, _val]; call _rerender; };
@@ -31,19 +56,16 @@ switch (_act) do {
             ["id", _id], ["by", [player, true] call comspec_atak_native_fnc_unitCallsign], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
             ["type", _f getOrDefault ["type", "PERS"]], ["res", _f getOrDefault ["res", "DESTROYED"]], ["reatk", _f getOrDefault ["reatk", "NO"]],
             ["ekia", _f getOrDefault ["ekia", ""]], ["equip", _f getOrDefault ["equip", ""]], ["ammo", _f getOrDefault ["ammo", ""]],
-            ["rem", _f getOrDefault ["rem", ""]], ["pos", [_pos select 0, _pos select 1, 0]], ["grid", [_pos, 8] call comspec_atak_native_fnc_gridRef]
+            ["rem", _f getOrDefault ["rem", ""]], ["pos", [_pos select 0, _pos select 1, 0]], ["grid", [_pos, 8] call comspec_atak_native_fnc_gridRef],
+            ["cid", format ["BDA-%1-%2-%3", getPlayerUID player, floor serverTime, _seq]]
         ];
-        [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_bda", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [_r, str side group player], "BDA", 1] call comspec_atak_native_fnc_netSend;
+        [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_bda", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [+_r, str side group player], "BDA", 1] call comspec_atak_native_fnc_netSend;
         { _f deleteAt _x; } forEach ["ekia", "equip", "ammo", "rem"];
-        ["SUCCESS", "Bilan des dégâts transmis au camp", 4, 40] call comspec_atak_native_fnc_notify;
-        // Avec Overwatch et Athena : rapport BDA au poste web.
-        if (!isNil "comspec_overwatch_connect_fnc_submitTacticalReport" && {([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on"}) then {
-            private _labels = [_r] call comspec_atak_native_fnc_bdaLabels;
-            private _sd = createHashMapFromArray [["kind", "bda"], ["grid", _r get "grid"], ["type", _labels select 0], ["desc", _labels select 1],
-                ["ekia", _r get "ekia"], ["equip", _r get "equip"], ["ordnance", _r get "ammo"], ["reattack", _labels select 2], ["remarks", _r get "rem"]];
-            ["BDA", ["ROUTINE", "PRIORITY"] select ((_r get "reatk") isEqualTo "YES"), format ["BDA %1 · %2 %3", _r get "grid", _labels select 0, _labels select 1],
-                format ["%1 %2 en %3. EKIA %4, matériel %5. %6. %7", _labels select 0, _labels select 1, _r get "grid", _r get "ekia", _r get "equip", _labels select 2, _r get "rem"], _sd, _r get "pos"] call comspec_overwatch_connect_fnc_submitTacticalReport;
-        };
+        // Mon bilan reste dans ma liste avec son parcours (la copie reçue du serveur est écartée : même id).
+        _r set ["web", ""];
+        _r set ["mine", true];
+        _list set [_id, _r];
+        [_r] call _toWeb;
         call _rerender;
     };
     case "recv": {
@@ -63,6 +85,13 @@ switch (_act) do {
         if ((count _p) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
         [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
+    };
+    case "web": {
+        private _r = _list getOrDefault [_arg, createHashMap];
+        if ((count _r) isEqualTo 0 || {!(_r getOrDefault ["mine", false])}) exitWith {};
+        if ((_r getOrDefault ["web", ""]) isEqualTo "EN ATTENTE") exitWith { ["Envoi déjà en cours"] call _say; call _rerender; };
+        [_r] call _toWeb;
+        call _rerender;
     };
     case "del": { _list deleteAt _arg; call _rerender; };
 };

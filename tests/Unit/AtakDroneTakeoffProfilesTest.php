@@ -218,13 +218,13 @@ final class AtakDroneTakeoffProfilesTest extends TestCase
     {
         $hpp = $this->read(self::MAIN . 'script_component.hpp');
         $v = ModVersion::match('/#define VERSION_STR "([0-9.]+)"/', $hpp);
-        ModVersion::assertAtLeast('4.24.1', $v);
+        ModVersion::assertAtLeast('4.24.2', $v);
         self::assertStringContainsString('#define VERSION ' . $v, $hpp);
         self::assertStringStartsWith($v . '.', ModVersion::match('/#define VERSION_NAME "([^"]+)"/', $hpp));
         $log = $this->read('CHANGELOG-ATAK.md');
-        self::assertMatchesRegularExpression('/\n## Drones : « Démarrer et décoller » adapté à chaque drone[^\n]+\(ATAK natif 4\.24\.1\.AG - Washington, COMSPEC Link 2\.0\.126\)\n\n### Résumé joueur\nType : correctif\nFR : [^\n]+\n(- [^\n]+\n)+EN : [^\n]+\n(- [^\n]+\n)+/', $log);
+        self::assertMatchesRegularExpression('/\n## Drones : « Démarrer et décoller » adapté à chaque drone[^\n]+\(ATAK natif 4.24.2.AG - Washington, COMSPEC Link 2\.0\.126\)\n\n### Résumé joueur\nType : correctif\nFR : [^\n]+\n(- [^\n]+\n)+EN : [^\n]+\n(- [^\n]+\n)+/', $log);
         $steam = $this->read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt');
-        self::assertStringContainsString('[h1]COMSPEC ATAK 4.24.1 Washington', $steam);
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.24.2 Washington', $steam);
         self::assertStringContainsString('Raven', $steam);
         // Aucun binaire ni DLL touché : Link reste aligné.
         self::assertStringContainsString('#define LINK_VERSION_STR "2.0.126"', $hpp);

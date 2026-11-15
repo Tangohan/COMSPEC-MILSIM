@@ -14442,6 +14442,17 @@ class AtakApiController
             }
         }
 
+        // Renvoi d'un compte rendu ou d'un BDA après un échec d'envoi : même identifiant client, même fiche, aucun doublon.
+        $clientId = is_array($data['structured_data'] ?? null) ? (string) ($data['structured_data']['client_id'] ?? '') : '';
+        if ($clientId !== '') {
+            $already = $repo->findByClientId($tenantId, $mapId, (string) ($data['submitter_steam_id'] ?? ''), $clientId);
+            if (is_array($already)) {
+                $already['duplicate'] = true;
+
+                return Response::json($already, 200);
+            }
+        }
+
         $reportId = $repo->create($data);
         if ($reportId > 0) {
             $this->jnetBridge()->relayTacticalReport(
