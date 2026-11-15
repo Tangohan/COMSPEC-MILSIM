@@ -68,6 +68,14 @@ foreach ($byTrack as $t => $rows) {
     uksort($rows, static fn (string $a, string $b): int => ($a === 'common' ? 0 : 1) <=> ($b === 'common' ? 0 : 1) ?: strcmp($a, $b));
     $byTrack[$t] = $rows;
 }
+$adjourned = [];
+foreach ($rules as $r) {
+    foreach ($r['groups'][Eng::BLOCKED] as $it) {
+        if (($it['admin_status'] ?? '') === \App\Support\QualificationAdminStatus::FAILED && (int) ($it['award_id'] ?? 0) > 0) {
+            $adjourned[] = ['rule' => $r, 'item' => $it];
+        }
+    }
+}
 $declaredFlights = is_array($declaredFlights ?? null) ? $declaredFlights : [];
 $canReviewTrack = is_array($canReviewTrack ?? null) ? $canReviewTrack : [];
 $logbookUrl = static fn (int $uid): string => url($base . '/carnet/' . $uid);
@@ -179,6 +187,43 @@ $athKpis = [
                     <input type="hidden" name="definition_id" value="<?= (int) $cp['step']['definition_id'] ?>">
                     <button type="submit" name="decision" value="valider" class="ath-btn ath-btn--solid">Valider</button>
                     <button type="submit" name="decision" value="ajourner" class="ath-btn">Ajourner</button>
+                </form>
+                <?php endif; ?>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($adjourned !== []): ?>
+    <section class="pcs-pending ath-card" aria-labelledby="pcs-adjourned-title">
+        <header class="pcs-sec__head">
+            <h2 id="pcs-adjourned-title">Ajournés <span class="rql__count"><?= count($adjourned) ?></span></h2>
+            <p>Un ajournement fait par erreur s’annule ici : le palier repart en attente de la décision d’un instructeur.</p>
+        </header>
+        <ul class="pcs-pending__list">
+            <?php foreach ($adjourned as $p):
+                $r = $p['rule'];
+                $it = $p['item'];
+                $validators = $r['validators'];
+                $mine = (int) $it['user_id'] === $actorId;
+                $canValidate = !$mine && ($validators === null || in_array($actorId, $validators, true));
+                ?>
+            <li class="pcs-pending__row">
+                <span class="pcs-pending__badge"><?= $h((string) ($tiers[$r['tier']]['short'] ?? '')) ?></span>
+                <span class="pcs-pending__main">
+                    <a class="pcs-pending__who" href="<?= $h($logbookUrl((int) $it['user_id'])) ?>" title="Ouvrir son carnet de vol"><?= $h($who((int) $it['user_id'])) ?></a>
+                    <span class="pcs-pending__what"><?= $h((string) $r['definition_name']) ?> · ajourné</span>
+                    <?php if ($mine): ?>
+                    <span class="pcs-pending__hint">Votre propre ajournement : un autre instructeur doit l’annuler.</span>
+                    <?php elseif (!$canValidate): ?>
+                    <span class="pcs-pending__hint">Réservé aux instructeurs <?= $h(mb_strtolower(Cat::trackLabel((string) $r['track']))) ?> de la communauté.</span>
+                    <?php endif; ?>
+                </span>
+                <?php if ($canValidate && $allowed): ?>
+                <form method="post" action="<?= $h(url($base . '/propositions/' . (int) $it['award_id'] . '/annuler')) ?>" class="pcs-pending__actions" data-ui-confirm="1" data-ui-confirm-title="Annuler l’ajournement ?" data-ui-confirm-body="Le palier repart en attente de la décision d’un instructeur.">
+                    <?= \App\Core\Csrf::field() ?>
+                    <button type="submit" class="ath-btn">Annuler l’ajournement</button>
                 </form>
                 <?php endif; ?>
             </li>

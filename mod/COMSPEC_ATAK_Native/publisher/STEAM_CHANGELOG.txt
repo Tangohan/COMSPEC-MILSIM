@@ -5,7 +5,8 @@
 [h2]Français[/h2]
 [list]
 [*] [b]SEEK II[/b] : le bouton SIGNER de la page ENVOI ouvre un pad ; tracez votre signature à la souris, EFFACER pour recommencer, VALIDER pour signer la fiche.
-[*] La signature tracée part avec la fiche et s'affiche sur la fiche de l'identité dans le Bureau SSE.
+[*] La touche SIGN de l'appareil ouvre le même pad puis envoie la fiche avec votre signature.
+[*] La signature tracée part avec la fiche et s'affiche sur la fiche SEEK II et sur la fiche de l'identité dans le Bureau SSE.
 [*] Les écrans du SEEK II parlent comme les forces spéciales américaines : pièces, rapports de collecte, sujets, cibles, vérification d'identité, point de contrôle.
 [*] Signature trop courte ou trop chargée : l'écran du SEEK le dit sur sa ligne d'état, sans fenêtre ni alerte.
 [/list]
@@ -13,7 +14,8 @@
 [h2]English[/h2]
 [list]
 [*] [b]SEEK II[/b]: the SIGN button on the SUBMIT page opens a pad; draw your signature with the mouse, CLEAR to start over, CONFIRM to sign the record.
-[*] The drawn signature is sent with the record and shown on the identity record in the SSE Office.
+[*] The SIGN key on the device opens the same pad, then sends the record with your signature.
+[*] The drawn signature is sent with the record and shown on the SEEK II record and on the identity record in the SSE Office.
 [*] SEEK II screens now use US special forces wording: evidence items, collection reports, subjects, targets, identity verification, checkpoint.
 [*] Signature too short or too crowded: the SEEK II says so on its status line, with no popup or alert.
 [/list]

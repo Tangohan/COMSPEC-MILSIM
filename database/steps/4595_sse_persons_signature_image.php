@@ -11,6 +11,14 @@ declare(strict_types=1);
  */
 
 $sigImgSchema = new \App\Support\Migrations\SchemaInspector($pdo);
+if ($sigImgSchema->tableExists('sse_seek_records')) {
+    if ($sigImgSchema->columnExists('sse_seek_records', 'signature_image')) {
+        echo "  [OK] Colonne sse_seek_records.signature_image déjà présente.\n";
+    } else {
+        $sigImgSchema->runSqlFile($root . '/migrations/2026_11_15_111_sse_seek_records_signature_image.sql');
+        echo "  [OK] Colonne créée : sse_seek_records.signature_image.\n";
+    }
+}
 if (!$sigImgSchema->tableExists('sse_persons')) {
     echo "  [OK] Table sse_persons absente : la colonne sera créée avec elle (atak_sse_persons).\n";
 } elseif ($sigImgSchema->columnExists('sse_persons', 'signature_image')) {
