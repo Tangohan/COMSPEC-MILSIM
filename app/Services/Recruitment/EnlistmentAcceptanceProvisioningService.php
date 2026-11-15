@@ -303,6 +303,7 @@ final class EnlistmentAcceptanceProvisioningService
                 'unit_ids' => isset($options['unit_id']) && (int) $options['unit_id'] > 0
                     ? [(int) $options['unit_id']]
                     : [],
+                'skip_welcome' => !empty($options['skip_welcome']),
             ]
         );
 
@@ -942,7 +943,11 @@ final class EnlistmentAcceptanceProvisioningService
         $pdo = Database::getPdo();
         $userId = 0;
         $rawToken = '';
-        $pdo->beginTransaction();
+        // Appelé dans la transaction d'un paquet d'intégration : on ne l'ouvre ni ne la ferme.
+        $ownTransaction = !$pdo->inTransaction();
+        if ($ownTransaction) {
+            $pdo->beginTransaction();
+        }
         try {
             $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
             $displayName = $fullName !== '—' ? $fullName : null;
@@ -968,9 +973,13 @@ final class EnlistmentAcceptanceProvisioningService
             $expires = new DateTimeImmutable('+' . self::SETUP_TOKEN_HOURS . ' hours');
             $this->passwordResetRepository->create($userId, $tokenHash, $expires);
 
-            $pdo->commit();
+            if ($ownTransaction) {
+                $pdo->commit();
+            }
         } catch (Throwable) {
-            $pdo->rollBack();
+            if ($ownTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
 
             return [
                 'ok' => false,

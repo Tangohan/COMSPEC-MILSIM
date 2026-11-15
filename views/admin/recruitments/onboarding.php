@@ -33,6 +33,11 @@ $civilOptions = is_array($civilOptions ?? null) ? $civilOptions : [];
 $linkedOpening = is_array($linkedRecruitmentOpening ?? null) ? $linkedRecruitmentOpening : null;
 $linkedUser = is_array($linkedUser ?? null) ? $linkedUser : null;
 $needsOnboarding = !empty($needsAcceptanceOnboarding);
+$preview = is_array($integrationPreview ?? null) ? $integrationPreview : ['package' => null, 'qualifications' => [], 'courses' => [], 'application' => null, 'hasPackages' => false];
+$pkg = is_array($preview['package'] ?? null) ? $preview['package'] : null;
+$allPackages = is_array($integrationPackages ?? null) ? $integrationPackages : [];
+$packagesUrl = (string) ($integrationPackagesUrl ?? url('back-office/recruitments/paquets-integration'));
+$pkgParam = (string) ($integrationPackageParam ?? '');
 
 $pv = static fn (string $key): string => trim((string) ($prefill[$key] ?? ''));
 $accessRoleId = (int) ($prefill['access_role_id'] ?? 0);
@@ -91,6 +96,7 @@ $steps = [
     2 => ['Steam & Arma', 'Reconnaissance en jeu'],
     3 => ['Accès', 'Niveau et position'],
     4 => ['Affectation', 'Unité, grade, emploi'],
+    5 => ['À appliquer', 'Paquet d’intégration'],
 ];
 ?>
 <div class="rec-onb" data-rec-onb>
@@ -100,7 +106,7 @@ $steps = [
             <p class="rec-onb__kicker">Intégration · dossier #<?= (int) $id ?></p>
             <h1 class="rec-onb__title">Intégrer <span data-rec-onb-name><?= $h($candidateLabel) ?></span></h1>
             <p class="rec-onb__lead">
-                Quatre étapes pour transformer la candidature acceptée en fiche membre complète.
+                Cinq étapes pour transformer la candidature acceptée en fiche membre complète.
                 Rien n’est enregistré avant « Finaliser l’intégration ».
             </p>
             <div class="rec-onb__chips">
@@ -126,6 +132,18 @@ $steps = [
     <p class="rec-onb__note" role="status">
         L’intégration a déjà été finalisée. Vous pouvez encore corriger les informations ci-dessous puis réenregistrer.
     </p>
+    <?php endif; ?>
+
+    <?php if (count($allPackages) > 1): ?>
+    <nav class="rec-onb__note" aria-label="Paquet d’intégration">
+        Paquet d’intégration :
+        <?php foreach ($allPackages as $p): ?>
+            <?php $isCur = $pkg !== null && (int) $pkg['id'] === (int) $p['id']; ?>
+            <a href="<?= $h(url('back-office/recruitments/' . $id . '/onboarding') . '?paquet=' . (int) $p['id']) ?>"<?= $isCur ? ' aria-current="true"' : '' ?> style="<?= $isCur ? 'font-weight:700;' : '' ?>display:inline-block;min-height:44px;line-height:44px;margin-right:.75rem"><?= $h((string) $p['name']) ?></a>
+        <?php endforeach; ?>
+        <a href="<?= $h(url('back-office/recruitments/' . $id . '/onboarding') . '?paquet=0') ?>"<?= $pkgParam === '0' ? ' aria-current="true"' : '' ?> style="display:inline-block;min-height:44px;line-height:44px">Aucun paquet</a>
+        <span class="rec-onb__hint">Choisissez avant de remplir : la page se recharge.</span>
+    </nav>
     <?php endif; ?>
 
     <nav class="rec-onb__steps" aria-label="Étapes d’intégration">
@@ -156,7 +174,7 @@ $steps = [
 
         <section class="rec-onb__panel is-active" data-rec-onb-panel="1">
             <div class="rec-onb__panel-head">
-                <p class="rec-onb__eyebrow">Étape 1 sur 4</p>
+                <p class="rec-onb__eyebrow">Étape 1 sur 5</p>
                 <h2 class="rec-onb__panel-title">État civil du personnage</h2>
                 <p class="rec-onb__panel-text">
                     Le prénom et le nom sont le nom que tout le monde voit : dossier, annuaire, JNET et messages.
@@ -227,7 +245,7 @@ $steps = [
 
         <section class="rec-onb__panel" data-rec-onb-panel="2" hidden>
             <div class="rec-onb__panel-head">
-                <p class="rec-onb__eyebrow">Étape 2 sur 4</p>
+                <p class="rec-onb__eyebrow">Étape 2 sur 5</p>
                 <h2 class="rec-onb__panel-title">Lien Steam & données Arma</h2>
                 <p class="rec-onb__panel-text">
                     Avec le profil Steam, Athena reconnaît le joueur dans Arma et l’ATAK : temps de jeu,
@@ -257,7 +275,7 @@ $steps = [
 
         <section class="rec-onb__panel" data-rec-onb-panel="3" hidden>
             <div class="rec-onb__panel-head">
-                <p class="rec-onb__eyebrow">Étape 3 sur 4</p>
+                <p class="rec-onb__eyebrow">Étape 3 sur 5</p>
                 <h2 class="rec-onb__panel-title">Niveau d’accès et position de service</h2>
                 <p class="rec-onb__panel-text">
                     Le niveau d’accès décide de ce que le membre peut voir et faire sur le site.
@@ -318,7 +336,7 @@ $steps = [
 
         <section class="rec-onb__panel" data-rec-onb-panel="4" hidden>
             <div class="rec-onb__panel-head">
-                <p class="rec-onb__eyebrow">Étape 4 sur 4</p>
+                <p class="rec-onb__eyebrow">Étape 4 sur 5</p>
                 <h2 class="rec-onb__panel-title">Affectation : unité, grade et emploi</h2>
                 <p class="rec-onb__panel-text">
                     Placez le membre dans l’organigramme, donnez-lui son grade et sa fonction.
@@ -386,11 +404,94 @@ $steps = [
                 </label>
             </div>
 
+            <div class="rec-onb__nav">
+                <button type="button" class="rec-onb__btn rec-onb__btn--ghost" data-rec-onb-prev>Retour</button>
+                <button type="button" class="rec-onb__btn rec-onb__btn--solid" data-rec-onb-next>Continuer</button>
+            </div>
+        </section>
+
+        <section class="rec-onb__panel" data-rec-onb-panel="5" hidden>
+            <div class="rec-onb__panel-head">
+                <h2 class="rec-onb__panel-title">Ce qui sera appliqué</h2>
+                <p class="rec-onb__panel-text">
+                    Tout est appliqué d’un coup à la finalisation : si une étape échoue, rien n’est enregistré et le message dit laquelle.
+                    Décochez ce que vous ne voulez pas donner à cette recrue.
+                </p>
+            </div>
+
+            <?php if ($pkg === null): ?>
+            <div class="rec-onb__summary" data-rec-onb-package-empty>
+                <h3 class="rec-onb__summary-title">Définissez ce que reçoit un nouveau membre</h3>
+                <p class="rec-onb__summary-text">
+                    <?php if (!empty($preview['hasPackages'])): ?>
+                        Aucun paquet ne correspond à cette candidature (ou « Aucun paquet » est choisi) : seuls le grade, l’affectation et le niveau d’accès des étapes précédentes seront appliqués.
+                    <?php else: ?>
+                        Aucun paquet d’intégration n’est défini. Créez-en un pour donner d’un coup, à chaque recrue, qualifications d’entrée, formations, consignes et valeurs par défaut. Sans paquet, seuls les réglages des étapes précédentes sont appliqués.
+                    <?php endif; ?>
+                    <a href="<?= $h($packagesUrl) ?>">Définir les paquets d’intégration</a>
+                </p>
+            </div>
+            <?php else: ?>
+            <input type="hidden" name="package_id" value="<?= (int) $pkg['id'] ?>">
+            <div class="rec-onb__summary" data-rec-onb-package>
+                <h3 class="rec-onb__summary-title">Paquet « <?= $h((string) $pkg['name']) ?> »</h3>
+                <p class="rec-onb__summary-text">
+                    Grade, unité, emploi et niveau d’accès : voir les étapes 3 et 4, déjà pré-remplis par le paquet.
+                    <a href="<?= $h($packagesUrl . '?paquet=' . (int) $pkg['id']) ?>">Modifier le paquet</a>
+                </p>
+                <?php if (is_array($preview['application'] ?? null)): ?>
+                <p class="rec-onb__hint">Ce paquet a déjà été appliqué à ce dossier. Relancer est sans risque : ce qui est déjà donné n’est pas refait ni renvoyé.</p>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($preview['qualifications'] !== []): ?>
+            <fieldset class="rec-onb__field rec-onb__field--full">
+                <legend class="rec-onb__label">Qualifications</legend>
+                <?php foreach ($preview['qualifications'] as $q): ?>
+                <label class="rec-onb__choice">
+                    <input type="checkbox" name="qualification_ids[]" value="<?= (int) $q['ref_id'] ?>"<?= !empty($q['blocked']) ? ' disabled' : ' checked' ?>>
+                    <span>
+                        <span class="rec-onb__choice-name"><?= $h((string) $q['name']) ?><?= $q['status'] === 'in_training' ? ' (en formation)' : '' ?><?= (int) $q['valid_months'] > 0 ? ' · validité ' . (int) $q['valid_months'] . ' mois' : '' ?></span>
+                        <?php if (trim((string) $q['reason']) !== ''): ?><span class="rec-onb__choice-desc"><?= $h((string) $q['reason']) ?></span><?php endif; ?>
+                    </span>
+                </label>
+                <?php endforeach; ?>
+            </fieldset>
+            <?php endif; ?>
+
+            <?php if ($preview['courses'] !== []): ?>
+            <fieldset class="rec-onb__field rec-onb__field--full">
+                <legend class="rec-onb__label">Formations à suivre</legend>
+                <?php foreach ($preview['courses'] as $c): ?>
+                <label class="rec-onb__choice">
+                    <input type="checkbox" name="course_ids[]" value="<?= (int) $c['ref_id'] ?>"<?= !empty($c['blocked']) ? ' disabled' : ' checked' ?>>
+                    <span>
+                        <span class="rec-onb__choice-name"><?= $h((string) $c['name']) ?></span>
+                        <?php if (trim((string) $c['reason']) !== ''): ?><span class="rec-onb__choice-desc"><?= $h((string) $c['reason']) ?></span><?php endif; ?>
+                    </span>
+                </label>
+                <?php endforeach; ?>
+            </fieldset>
+            <?php endif; ?>
+
+            <?php if ($preview['qualifications'] === [] && $preview['courses'] === []): ?>
+            <p class="rec-onb__hint">Ce paquet ne contient ni qualification ni formation.</p>
+            <?php endif; ?>
+
+            <?php if (trim((string) ($pkg['welcome_message'] ?? '')) !== ''): ?>
+            <div class="rec-onb__field rec-onb__field--full">
+                <span class="rec-onb__label">Consignes de bienvenue envoyées au membre</span>
+                <p class="rec-onb__hint" style="white-space:pre-line"><?= $h((string) $pkg['welcome_message']) ?></p>
+            </div>
+            <?php endif; ?>
+            <?php endif; ?>
+
             <div class="rec-onb__summary">
                 <h3 class="rec-onb__summary-title">Prêt à finaliser</h3>
                 <p class="rec-onb__summary-text">
                     Athena crée ou rattache le compte, applique le niveau d’accès, le grade et l’affectation,
-                    lie le Steam, ouvre le suivi d’intégration puis envoie les e-mails d’accueil si nécessaire.
+                    lie le Steam, ouvre le suivi d’intégration, inscrit aux formations, délivre les qualifications
+                    cochées, note le tout dans l’historique du membre et lui envoie un seul récapitulatif de bienvenue.
                 </p>
             </div>
 
@@ -440,7 +541,7 @@ $steps = [
   var current = 1;
 
   function show(step) {
-    current = Math.max(1, Math.min(4, step));
+    current = Math.max(1, Math.min(5, step));
     tabs.forEach(function (t) {
       var n = parseInt(t.getAttribute('data-rec-onb-tab'), 10);
       t.classList.toggle('is-active', n === current);
@@ -452,7 +553,7 @@ $steps = [
       p.hidden = !on;
       p.classList.toggle('is-active', on);
     });
-    if (bar) bar.style.width = ((current - 1) / 3 * 100) + '%';
+    if (bar) bar.style.width = ((current - 1) / 4 * 100) + '%';
   }
 
   function validateStep(step) {

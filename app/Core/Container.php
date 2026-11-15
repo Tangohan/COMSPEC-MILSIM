@@ -2597,6 +2597,41 @@ class Container
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class)
             ),
+            \App\Repositories\MemberIntegrationPackageRepository::class => new \App\Repositories\MemberIntegrationPackageRepository(),
+            \App\Services\MemberIntegration\LiveIntegrationPorts::class => new \App\Services\MemberIntegration\LiveIntegrationPorts(
+                self::get(\App\Services\Recruitment\EnlistmentAcceptanceProvisioningService::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(\App\Repositories\EnlistmentTimelineRepository::class),
+                self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Repositories\QualificationAwardRepository::class),
+                self::get(\App\Services\Training\TrainingAssignmentService::class),
+                self::get(\App\Repositories\TrainingEnrollmentRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+            ),
+            \App\Services\MemberIntegration\MemberIntegrationPackageService::class => new \App\Services\MemberIntegration\MemberIntegrationPackageService(
+                \App\Core\Database::getPdo(),
+                self::get(\App\Repositories\MemberIntegrationPackageRepository::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(\App\Services\MemberIntegration\LiveIntegrationPorts::class)
+            ),
+            \App\Controllers\Admin\AdminIntegrationPackagesController::class => new \App\Controllers\Admin\AdminIntegrationPackagesController(
+                self::get(\App\Repositories\MemberIntegrationPackageRepository::class),
+                self::get(\App\Repositories\EnlistmentRepository::class),
+                self::get(\App\Repositories\RecruitmentOpeningRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class)
+            ),
             \App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController::class => new \App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController(
                 self::get(\App\Repositories\RecruitmentDiscordQuestionRepository::class),
                 self::get(\App\Repositories\EnlistmentRepository::class)
