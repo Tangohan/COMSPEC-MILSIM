@@ -38,12 +38,19 @@ require __DIR__ . '/_subnav.php';
         <label for="q">Recherche</label>
         <input id="q" name="q" type="search" value="<?= $h($filters['q'] ?? '') ?>" placeholder="Numéro, nom, indicatif, carroyage…">
     </div>
-    <div class="toolbar-actions"><button class="btn" type="submit">Appliquer</button></div>
+    <?php if ((int) ($filters['map'] ?? 0) > 0): ?><input type="hidden" name="map" value="<?= (int) $filters['map'] ?>"><?php endif; ?>
+    <?php if (($filters['op'] ?? '') !== ''): ?><input type="hidden" name="op" value="<?= $h($filters['op']) ?>"><?php endif; ?>
+    <div class="toolbar-actions">
+        <button class="btn" type="submit">Appliquer</button>
+        <?php if ((int) ($filters['map'] ?? 0) > 0 || ($filters['op'] ?? '') !== ''): ?>
+            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/papiers/tableau') . \App\Services\Sse\SseIdCheckInsightService::scopeQuery((int) $filters['map'], (string) $filters['op'])) ?>">Retour au tableau de bord</a>
+        <?php endif; ?>
+    </div>
 </form>
 
 <section class="panel">
     <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">01</span> Contrôles</div>
+        <div class="panel-title">Contrôles</div>
         <div class="panel-meta"><?= count($checks) ?> contrôle(s)</div>
     </div>
     <?php if ($checks === []): ?>

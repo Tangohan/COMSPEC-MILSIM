@@ -26,7 +26,9 @@ if (!$campaignSchema->tableExists('data_campaigns')) {
         $added[] = 'forced_on';
     }
     if (!$campaignSchema->indexExists('data_campaigns', 'uq_data_campaign_auto') && $campaignSchema->columnExists('data_campaigns', 'auto_year')) {
-        $pdo->exec('ALTER TABLE `data_campaigns` ADD UNIQUE KEY `uq_data_campaign_auto` (`tenant_id`, `auto_year`)');
+        $pdo->exec($pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite'
+            ? 'CREATE UNIQUE INDEX `uq_data_campaign_auto` ON `data_campaigns` (`tenant_id`, `auto_year`)'
+            : 'ALTER TABLE `data_campaigns` ADD UNIQUE KEY `uq_data_campaign_auto` (`tenant_id`, `auto_year`)');
         $added[] = 'uq_data_campaign_auto';
     }
     foreach (['auto_created', 'auto_year', 'forced_on'] as $column) {

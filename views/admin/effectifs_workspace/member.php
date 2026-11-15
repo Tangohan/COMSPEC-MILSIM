@@ -19,6 +19,7 @@ $profile = is_array($memberPersonnelProfile ?? null) ? $memberPersonnelProfile :
 $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
 $grades = is_array($elevationCatalog['grades'] ?? null) ? $elevationCatalog['grades'] : [];
 $canEditProfiles = (bool) ($canEditProfiles ?? false);
+$sseAccess = is_array($sseAccess ?? null) ? $sseAccess : null;
 $canManageStatus = (bool) ($canManageStatus ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
 $canManageRoles = (bool) ($canManageRoles ?? false);
@@ -353,6 +354,9 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
     <div class="eff-fm-hero__band<?= $bannerUrl !== '' ? ' has-image' : '' ?>"<?php if ($bannerUrl !== ''): ?> style="--eff-fm-band: url('<?= $h($bannerUrl) ?>')"<?php endif; ?>>
         <nav class="eff-fm-hero__nav" aria-label="Retour">
             <a class="eff-fm-hero__back" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">← Tableur des effectifs</a>
+            <?php if ($sseAccess !== null && is_array($sseAccess['clearance'] ?? null)): ?>
+                <button type="button" class="eff-sse-badge eff-sse-badge--hero is-lvl-<?= $h($sseAccess['clearance']['level']) ?>" data-dialog-open="eff-dlg-acces-sse" title="Habilitation SSE : voir le détail">Habilitation SSE : <?= $h($sseAccess['clearance']['label']) ?></button>
+            <?php endif; ?>
             <?php if ($rankInfo !== null): ?>
                 <span class="eff-fm-hero__rank" title="Rang d’ancienneté : membres actifs de la communauté classés par date d’engagement, du plus ancien au plus récent.">Membre <?= (int) $rankInfo['rank'] ?> / <?= (int) $rankInfo['total'] ?></span>
             <?php endif; ?>
@@ -1854,7 +1858,9 @@ foreach ($jobRoles as $jr) {
 </dialog>
 <?php endif; ?>
 <?php if ($sseAccess !== null): ?>
+<dialog class="eff-dialog eff-dialog--wide eff-sse-dialog" id="eff-dlg-acces-sse" aria-labelledby="eff-dlg-acces-sse-title" data-sse-preview-url="<?= $h(effectifs_workspace_url('membres/' . $id . '/acces-sse/apercu')) ?>">
 <?php $ssePart = 'dialog'; require __DIR__ . '/partials/member_sse_access.php'; ?>
+</dialog>
 <script src="<?= $h(asset_url('assets/js/eff-member-sse-access.js')) ?>" defer></script>
 <?php endif; ?>
 <script src="<?= $h(asset_url('assets/js/eff-member.js')) ?>" defer></script>

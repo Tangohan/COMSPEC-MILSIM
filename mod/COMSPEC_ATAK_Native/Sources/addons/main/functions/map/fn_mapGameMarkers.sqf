@@ -37,7 +37,8 @@ if (isNil "_pend") then { _pend = createHashMap; missionNamespace setVariable ["
 private _dead = missionNamespace getVariable "COMSPEC_ATAK_GmDead";
 if (isNil "_dead") then { _dead = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_GmDead", _dead]; };
 private _pendDue = (count _pend) > 0 && {_now > (missionNamespace getVariable ["COMSPEC_ATAK_GmPendAt", 0])};
-private _full = _now > (_cache select 0) || {"" in _dirty} || {(_cache param [3, false]) isNotEqualTo (_pal get "dark")} || {(_cache param [4, false]) isNotEqualTo _tac};
+private _zonesOn = profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true];
+private _full = _now > (_cache select 0) || {"" in _dirty} || {(_cache param [3, false]) isNotEqualTo (_pal get "dark")} || {(_cache param [4, false]) isNotEqualTo _tac} || {(_cache param [5, true]) isNotEqualTo _zonesOn};
 if (_full || {(count _dirty) > 0} || {_pendDue}) then {
     missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyGm", createHashMap];
     if (_pendDue) then {
@@ -61,6 +62,8 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
     private _entry = {
         // Marqueurs natifs des routes et plans (fn_markerOwned) : le tracé est déjà dessiné par fn_routeDraw / fn_zoneDraw.
         if ((_x find "/77000") > 0 || {(_x find "comspec_shape_prv_") isEqualTo 0}) exitWith { [] };
+        // Calque « Zones Athena » masqué : zones d'Overwatch (COMSPEC_TZ_) non dessinées ici ; le marqueur reste intact.
+        if (!_zonesOn && {(_x select [0, 11]) isEqualTo "COMSPEC_TZ_"}) exitWith { [] };
         private _a = markerAlpha _x;
         if (_a <= 0.02) exitWith { [] };
         private _shape = markerShape _x;
@@ -146,7 +149,7 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
             private _e = call _entry;
             if ((count _e) > 0) then { _index set [_x, count _list]; _list pushBack _e; };
         } forEach allMapMarkers;
-        _cache = [_now + 300, _list, _index, _pal get "dark", _tac];
+        _cache = [_now + 300, _list, _index, _pal get "dark", _tac, _zonesOn];
     } else {
         // Marqueur changé : son entrée est remplacée à sa place (ordre de dessin gardé), ajoutée s'il est nouveau,
         // vidée s'il a disparu ; la liste est recompactée à la prochaine relecture complète.

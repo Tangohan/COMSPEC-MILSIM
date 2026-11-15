@@ -21,6 +21,20 @@
   }
   root.classList.add('jc-js');
 
+  // La barre des salons se colle juste sous la barre du haut, quelle que soit sa hauteur (elle passe sur plusieurs lignes en mobile).
+  var topBar = document.querySelector('.ja-hd');
+  var syncTop = function () {
+    if (topBar) {
+      root.style.setProperty('--jc-top', Math.round(topBar.getBoundingClientRect().height) + 'px');
+    }
+  };
+  syncTop();
+  if (topBar && typeof ResizeObserver === 'function') {
+    new ResizeObserver(syncTop).observe(topBar);
+  } else {
+    window.addEventListener('resize', syncTop);
+  }
+
   var store = {
     get: function (k) {
       try { return window.localStorage.getItem(k); } catch (e) { return null; }
