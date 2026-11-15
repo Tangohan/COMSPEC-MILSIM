@@ -5,8 +5,8 @@
     « comspec_sse_controlRecord » et, si elle existe, comspec_sse_fnc_controlRecord, avec UN tableau de paires
     [clé, valeur] (clés ci-dessous, fn_idPhoto « pairs ») et la fiche. Rien n'est affiché par l'interface Arma : la ligne
     d'état de la visionneuse dit ce qui s'est passé, le téléphone reçoit une notification, le RPT garde une ligne.
-    La commande screenshot d'Arma n'enregistre que la scène 3D, jamais l'interface : une image du document n'est possible
-    qu'en la dessinant hors du jeu (site), à partir de ces mêmes champs ; le relevé reste la source.
+    Le relevé est textuel. L'image du papier est une autre action du joueur : bouton « PHOTO DU PAPIER » de la visionneuse
+    (fn_idPaperPhoto, capture d'écran du papier affiché, jointe au contrôle sur Athena par COMSPEC Link 2.0.127).
     ["can"]    -> [possible, motif (vide si possible), texte court du bouton (vide : « RELEVER »)]
     ["shoot"]  visionneuse ouverte : relevé du document (contrôle en cours, sinon un contrôle est ouvert sur ce document)
     ["app"]    depuis l'app Contrôle ID : ouvre la visionneuse sur le document en cours, relevé fait tout seul, puis

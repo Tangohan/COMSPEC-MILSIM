@@ -237,7 +237,14 @@ if (_tab isEqualTo "history") then {
             ["Sur mon téléphone" call _tr, ["mobile"] call _act, false, true, "QR code : vos contrôles de la partie sur votre vrai téléphone."]
         ];
     };
+    // Photo du papier (fn_idPaperPhoto) : prise dans la visionneuse du document ; « Renvoyer » après un échec d'envoi.
+    _shareBtns pushBack ["Photo du papier" call _tr, ["paper"] call _act, false, true, "Ouvre le document : le bouton « PHOTO DU PAPIER » joint sa photo au contrôle sur Athena."];
+    if ((_cur getOrDefault ["paperState", ""]) isEqualTo "failed" && {(_cur getOrDefault ["paperShot", ""]) isNotEqualTo ""}) then {
+        _shareBtns pushBack ["Renvoyer la photo" call _tr, ["paperResend"] call _act, false, true, "Nouvel envoi de la photo du papier à Athena."];
+    };
     ["share", "Partager", [["buttons", _shareBtns]]] call _fold;
+    private _paperLine = (["label", _cur] call comspec_sse_fnc_idPaperPhoto) param [0, ""];
+    if (_paperLine isNotEqualTo "") then { _rows pushBack ["info", "Photo du papier" call _tr, [_paperLine] call _esc]; };
     _rows pushBack ["info", "Né(e) le" call _tr, format ["%1 · %2", _d getOrDefault ["dob", ""], [_d getOrDefault ["pob", ""]] call _esc]];
     _rows pushBack ["info", "Expire le" call _tr, _d getOrDefault ["expires", ""]];
     if ((_cur getOrDefault ["subjName", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Contrôlé" call _tr, [_cur get "subjName"] call _esc]; };

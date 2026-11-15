@@ -76,6 +76,7 @@ class CfgFunctions {
             class idAthenaPack {};
             class idAthenaSubmit {};
             class idWantedCheck {};
+            class idPaperPhoto {};
             class idFrm {};
             class idModuleGive {};
             class idZenRegister {};

@@ -201,7 +201,7 @@ if (!hasInterface) exitWith {};
                 ["EDIT", ["Alias", ""], ""],
                 ["LIST", ["Niveau", "Surveillance : signalé. Recherché : à capturer. HVT : cible prioritaire."], [["surveillance", "recherche", "hvt"], ["Sous surveillance", "Recherché", "HVT"], 1]],
                 ["EDIT", ["Papiers connus", "Numéros de documents, séparés par des virgules."], ""],
-                ["EDIT", ["Signalement", "Description, véhicule, consignes (diffusé avec l'avis)."], ""]
+                ["EDIT", ["Signalement physique", "Description, véhicule, consignes (diffusé avec l'avis)."], ""]
             ],
             {
                 params ["_v", "_args"];

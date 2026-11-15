@@ -6,6 +6,7 @@
                         (fn_scanAnim), rien de bloqué ; résultat ou refus portés par la fiche (fn_idHistory)
       "ask"             redemander les papiers (document plus présenté)   "files"  passage aux fichiers (app Fichiers)
       "view"            revoir le document (visionneuse)  "transmit"   envoi à Athena    "frm"  fiche FRM pré-remplie
+      "paper"           photo du papier (visionneuse, jointe au contrôle sur Athena)   "paperResend"  nouvel envoi après un échec
       "photo"           photo du document (jointe à la FRM)    "salute" / "spotrep"   compte rendu pré-rempli
       "share" / "nfc"   fiche du contrôle partagée (Bluetooth, NFC)   "mobile"  QR « Sur mon téléphone »  (ATAK 3.0.2)
       "level" 4         N4 : vérification biométrique au SEEK II (ouvert sur la personne ; son verdict remplit N4)
@@ -85,6 +86,9 @@ switch (_act) do {
     case "transmit": { [_rec] call comspec_sse_fnc_idAthenaSubmit; call _render; };
     case "frm": { [_rec] call comspec_sse_fnc_idFrm; };
     case "photo": { ["app"] call comspec_sse_fnc_idPhoto; };
+    // Photo du papier : la visionneuse s'ouvre sur le document, le joueur y presse « PHOTO DU PAPIER » (jamais prise toute seule).
+    case "paper": { [_rec get "doc", false, false] call comspec_sse_fnc_idViewerOpen; };
+    case "paperResend": { ["send", _rec] call comspec_sse_fnc_idPaperPhoto; call _render; };
     case "salute": { ["SALUTE"] call comspec_sse_fnc_idReport; };
     case "spotrep": { ["SPOTREP"] call comspec_sse_fnc_idReport; };
     // ATAK 3.0.2 et plus : la fiche (_rec de fn_idHistory) est acceptée telle quelle par l'app Bluetooth.

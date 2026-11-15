@@ -225,6 +225,6 @@ final class AtakDroneTakeoffProfilesTest extends TestCase
         self::assertStringContainsString('[h1]COMSPEC ATAK 4.24.2 Washington', $steam);
         self::assertStringContainsString('Raven', $steam);
         // Aucun binaire ni DLL touché : Link reste aligné.
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.126"', $hpp);
+        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.127"', $hpp);
     }
 }

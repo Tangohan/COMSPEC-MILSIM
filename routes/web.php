@@ -1298,6 +1298,8 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/controles/reglages', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checksSettings'], $mwSsePortal);
     $router->get('/atak/sse/papiers/tableau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'dashboard'], $mwSsePortal);
     $router->get('/atak/sse/papiers/controles/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checkShow'], $mwSsePortal);
+    // Photo du papier d'un contrôle : route contrôlée (image privée, jamais une adresse de fichier).
+    $router->get('/atak/sse/papiers/controles/{id}/photo-papier', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checkPaperImage'], $mwSsePortal);
     // RENS › Identités & documents › Passage aux fichiers (QW, QV, QA, QB), journal, mentions, fiches SEEK II.
     $router->get('/atak/sse/fichiers', [\App\Controllers\Web\SseFileController::class, 'index'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/requete', [\App\Controllers\Web\SseFileController::class, 'query'], $mwSsePortal);
@@ -3813,6 +3815,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/sse/identity/pack', [\App\Controllers\Api\SseIdentityApiController::class, 'pack']);
     $router->get('/api/sse/identity/documents/lookup', [\App\Controllers\Api\SseIdentityApiController::class, 'lookup']);
     $router->post('/api/sse/identity/checks', [\App\Controllers\Api\SseIdentityApiController::class, 'checksStore']);
+    // Photo du papier d'un contrôle déjà reçu (COMSPEC Link 2.0.127, UploadIdCheckPhoto) : multipart « image ».
+    $router->post('/api/sse/identity/checks/image', [\App\Controllers\Api\SseIdentityApiController::class, 'checkImageStore']);
 
     // Exploitation de site sensible
     $router->get('/api/sse/sites', [SseApiController::class, 'sitesIndex']);

@@ -31,6 +31,9 @@ final class SseIdImageService
         // Pièces jointes d'un avis de recherche : image (5 Mo) et miniature (même source, plus petite).
         'wanted' => ['sse-wanted', 5 * 1024 * 1024, 1600, 'jpg', true],
         'wanted_thumb' => ['sse-wanted', 5 * 1024 * 1024, 360, 'jpg', true],
+        // Photo du papier d'un contrôle d'identité, prise en jeu (1,5 Mo au plus) et sa miniature.
+        'check_paper' => ['sse-id-checks', 1_572_864, 1600, 'jpg', true],
+        'check_paper_thumb' => ['sse-id-checks', 1_572_864, 360, 'jpg', true],
     ];
 
     /** Rapport largeur / hauteur de la photo d'identité (35 × 45 mm) ; le carré est aussi accepté. */
