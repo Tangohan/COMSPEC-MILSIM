@@ -395,19 +395,20 @@ final class SseFileRepository
         return ['id' => $id, 'rec' => $rec, 'created' => true];
     }
 
+    private ?bool $captureColumn = null;
+
     private function hasCaptureColumn(): bool
     {
-        static $has = null;
-        if ($has === null) {
+        if ($this->captureColumn === null) {
             try {
                 $this->db->fetchOne('SELECT capture_json FROM sse_seek_records LIMIT 1');
-                $has = true;
+                $this->captureColumn = true;
             } catch (\Throwable) {
-                $has = false;
+                return false;
             }
         }
 
-        return $has;
+        return $this->captureColumn;
     }
 
     /** Signature tracée au SEEK II par le contrôleur (chemin choisi par le serveur sous uploads/sse-id-signatures). */
