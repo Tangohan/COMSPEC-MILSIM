@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Support\Migrations\SchemaInspector;
 
 /**
- * Actions sur les téléphones en jeu depuis le poste TOC web (étape 4740) :
+ * Actions sur les téléphones en jeu depuis le poste TOC web (étape 4760) :
  *  - atak_toc_phone_settings : réglage de chaque communauté (fonction active ou non, journal masqué pour les cibles
  *    hostiles). Sans ligne : fonction désactivée, journal visible ;
  *  - atak_toc_phone_events : journal de chaque demande (notifier, faire sonner, localiser, trianguler) : qui, quoi,
