@@ -20,6 +20,9 @@ use App\Services\Sse\SseCoverExportService;
  */
 final class MemberCoverExportController
 {
+    /** « Mes papiers » du membre : ses retours mènent à /jnet/moi (voir JnetMemberBridge). */
+    public const JNET_MOI_READY = true;
+
     public function __construct(
         private ?SseCoverExportService $service = null,
         private ?UserRepository $users = null,
@@ -28,7 +31,7 @@ final class MemberCoverExportController
         $this->users ??= new UserRepository();
     }
 
-    /** POST /back-office/ma-situation/mes-papiers/couverture */
+    /** POST /jnet/moi/mes-papiers/couverture (et l'ancienne adresse /back-office/ma-situation/mes-papiers/couverture) */
     public function generateMine(Request $request, array $params = []): Response
     {
         $viewer = (int) Session::get('user_id');
@@ -37,10 +40,10 @@ final class MemberCoverExportController
             return Response::redirect(url('login'));
         }
 
-        return $this->generate($request, $tenantId, $viewer, $viewer, false, url('back-office/ma-situation/mes-papiers') . '#couverture');
+        return $this->generate($request, $tenantId, $viewer, $viewer, false, jnet_moi_url('mes-papiers', [], 'couverture'));
     }
 
-    /** GET …/mes-papiers/couverture/{exportId}/telecharger */
+    /** GET /jnet/moi/mes-papiers/couverture/{exportId}/telecharger */
     public function downloadMine(Request $request, array $params = []): Response
     {
         $viewer = (int) Session::get('user_id');
@@ -49,7 +52,7 @@ final class MemberCoverExportController
             return Response::redirect(url('login'));
         }
 
-        return $this->download($tenantId, (int) ($params['exportId'] ?? 0), $viewer, false, url('back-office/ma-situation/mes-papiers') . '#couverture');
+        return $this->download($tenantId, (int) ($params['exportId'] ?? 0), $viewer, false, jnet_moi_url('mes-papiers', [], 'couverture'));
     }
 
     /** POST /atak/sse/papiers/membres/{id}/couverture */

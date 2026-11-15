@@ -1,0 +1,325 @@
+/**
+ * JNET > Mes données > Mes papiers (/jnet/moi/mes-papiers). Les feuilles sse-papers.css et back-office-member-papers.css
+ * lisent les jetons --fm-* du back-office (absents ici) : ils sont redéfinis dans les jetons de JNET, puis les blocs de la page
+ * (couverture, papiers, briefs, kit, contrôles) reçoivent la même grammaire que le reste de l'extranet. Aucun surtitre.
+ */
+.jp .bo-member-situation {
+  --fm-text: var(--ja-ink);
+  --fm-muted: var(--ja-muted);
+  --fm-border: var(--ja-rule);
+  --fm-border-strong: color-mix(in srgb, var(--ja-ink) 28%, transparent);
+  --fm-surface: var(--ja-c1);
+  --fm-surface-muted: var(--ja-c2);
+  --fm-row: var(--ja-rule2);
+  --fm-primary: var(--u);
+  --fm-primary-soft: color-mix(in srgb, var(--u) 12%, transparent);
+  --fm-dark-btn: var(--u);
+  --fm-dark-btn-ink: var(--ja-on-u);
+  --fm-mono: var(--ja-mono);
+  --fm-sans: var(--ja-font);
+  --amber: var(--ja-warn);
+  --text: var(--ja-ink);
+  --text-strong: var(--ja-ink);
+  --muted: var(--ja-muted);
+  --border: var(--ja-rule);
+  --surface: var(--ja-c1);
+  display: grid;
+  gap: 22px;
+  max-width: none;
+  color: var(--ja-ink);
+}
+
+.jp .bo-member-situation > * {
+  min-width: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.jp .bo-member-situation h2 {
+  margin: 0;
+  color: var(--ja-ink);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.jp .bo-member-situation p {
+  margin: 0;
+  color: var(--ja-muted);
+  line-height: 1.55;
+}
+
+.jp .bo-member-situation a {
+  color: var(--u);
+}
+
+.jp .bo-member-situation > ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ja-muted);
+}
+
+.jp .bo-member-situation > ul li {
+  padding: 10px 14px;
+  border: 1px solid var(--ja-rule);
+  background: var(--ja-c1);
+}
+
+.jp .bo-member-situation > ul li b {
+  color: var(--ja-ink);
+}
+
+/* Bandeau « SIMULATION » */
+.jp .idm-sim {
+  color: var(--ja-muted);
+  border-color: color-mix(in srgb, var(--ja-warn) 55%, transparent);
+  background: transparent;
+}
+
+.jp .idm-sim strong {
+  margin-right: 8px;
+}
+
+/* Couverture : état, mode d'emploi, formulaire, historique */
+.jp .idm-cover {
+  padding: 18px 20px;
+  border: 1px solid var(--ja-rule);
+  background: var(--ja-c1);
+  margin: 0;
+}
+
+.jp .idm-cover__state {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jp .idm-cover__state li {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--ja-rule);
+  border-left-width: 3px;
+  background: var(--ja-c2);
+}
+
+.jp .idm-cover__state li span {
+  color: var(--ja-dim);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.jp .idm-cover__state li b {
+  color: var(--ja-ink);
+  font-size: 14px;
+}
+
+.jp .idm-cover__state li.is-ok {
+  border-left-color: var(--ja-accent);
+}
+
+.jp .idm-cover__state li.is-warn {
+  border-left-color: var(--ja-warn);
+}
+
+.jp .idm-cover__state li.is-off {
+  border-left-color: var(--ja-dim);
+}
+
+.jp .idm-cover__todo,
+.jp .idm-cover p {
+  color: var(--ja-muted);
+}
+
+.jp .idm-cover .idm-cover__steps {
+  color: var(--ja-muted);
+}
+
+.jp .idm-cover .idm-cover__steps b {
+  color: var(--ja-ink);
+}
+
+.jp .idm-cover__form select {
+  border-radius: 2px;
+  background-color: var(--ja-void);
+  color: var(--ja-ink);
+  color-scheme: dark;
+}
+
+.jp .idm-cover__form select:focus {
+  border-color: var(--u);
+  outline: none;
+}
+
+.jp .idm-cover__form label,
+.jp .idm-cover__label {
+  color: var(--ja-dim);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.jp .idm-cover__form select,
+.jp .idm-cover__form select option {
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+}
+
+.jp .idm-drop {
+  border-radius: 2px;
+  background: var(--ja-c2);
+}
+
+.jp .idm-drop__btn {
+  border-radius: 2px;
+  background: var(--ja-void);
+  color: var(--ja-ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.jp .idm-drop__name {
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+}
+
+.jp .idm-cover .idm-cover__form .idm-cover__go {
+  height: 36px;
+  border-radius: 2px;
+  border-color: var(--u);
+  background: var(--u);
+  color: var(--ja-on-u);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.jp .idm-cover .idm-cover__form .idm-cover__go:hover {
+  filter: brightness(1.15);
+  border-color: var(--u);
+  background: var(--u);
+  color: var(--ja-on-u);
+}
+
+.jp .idm-cover .idm-cover__dl {
+  border-radius: 2px;
+  color: var(--ja-ink);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.jp .idm-cover .idm-cover__dl:hover {
+  border-color: var(--u);
+  color: var(--u);
+}
+
+/* Papiers, briefs, couvertures reçues du jeu */
+.jp .idm-docs {
+  gap: 14px;
+}
+
+.jp .idm-doc {
+  border-radius: 0;
+  border-color: var(--ja-rule);
+  background: var(--ja-c1);
+  padding: 14px 16px;
+}
+
+.jp .idm-doc__head b {
+  color: var(--ja-ink);
+}
+
+.jp .idm-doc__head span {
+  color: var(--ja-muted);
+  font-size: 12.5px;
+}
+
+.jp .idm-doc__head .idm-doc__num {
+  color: var(--ja-ink);
+}
+
+.jp .idm-brief {
+  display: grid;
+  gap: 2px;
+  margin: 10px 0 0;
+}
+
+.jp .idm-brief dt {
+  margin-top: 8px;
+  color: var(--ja-dim);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.jp .idm-brief dd {
+  color: var(--ja-ink);
+  overflow-wrap: anywhere;
+}
+
+.jp .idp-card {
+  max-width: 620px;
+  border-radius: 0;
+  border-color: var(--ja-rule);
+  background: var(--ja-c2);
+  color: var(--ja-ink);
+}
+
+.jp .idp-card__head {
+  color: var(--ja-muted);
+}
+
+.jp .idp-card__name {
+  color: var(--ja-ink);
+}
+
+.jp .idp-grid .muted {
+  color: var(--ja-dim);
+  font-size: 12px;
+}
+
+.jp .idp-mrz {
+  background: var(--ja-void);
+  color: var(--ja-ink);
+}
+
+.jp .bo-member-situation__flash {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ja-rule);
+}
+
+.jp .bo-member-situation__flash--err {
+  border-color: color-mix(in srgb, var(--ja-bad) 50%, transparent);
+  background: color-mix(in srgb, var(--ja-bad) 10%, transparent);
+  color: var(--ja-bad);
+}
+
+@media (max-width: 640px) {
+  .jp .idm-cover {
+    padding: 14px;
+  }
+
+  .jp .idm-cover__history li {
+    align-items: flex-start;
+  }
+
+  .jp .idp-card {
+    padding: 0.8rem;
+  }
+}
