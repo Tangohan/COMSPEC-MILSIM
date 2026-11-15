@@ -65,6 +65,9 @@ if (_first isEqualTo "" && {_last isEqualTo ""} && {_alias isEqualTo ""}) then {
 };
 
 private _case = [] call comspec_sse_fnc_getCaseReference;
+// Dossier propre au sujet, choisi dans la liste du site (module Identité du site) : il l'emporte sur le dossier actif.
+private _ownCase = _entity getVariable ["comspec_sse_caseRef", ""];
+if (_ownCase isEqualType "" && {_ownCase isNotEqualTo ""}) then { _case = _ownCase; };
 private _idem = ["PERSON", _uid] call comspec_sse_fnc_makeIdempotencyKey;
 
 [format ["personPayload uid=%1 first='%2' last='%3' alias='%4'", _uid, _first, _last, _alias]] call comspec_sse_fnc_log;
@@ -78,7 +81,9 @@ createHashMapFromArray [
     ["nationality", _id getOrDefault ["nationality", ""]],
     ["language_spoken", _id getOrDefault ["language", ""]],
     ["affiliation", _id getOrDefault ["role", ""]],
-    ["circumstances", _extra getOrDefault ["circumstances", "exploitation_site_sensible"]],
+    // Contexte choisi pour ce sujet dans la liste du site (module Identité du site), sinon celui de l'envoi.
+    ["circumstances", _extra getOrDefault ["circumstances", _entity getVariable ["comspec_sse_acqContext", "exploitation_site_sensible"]]],
+    ["wanted_ref", _entity getVariable ["comspec_sse_wantedRef", ""]],
     ["confidence_level", _extra getOrDefault ["confidence_level", "moyenne"]],
     ["biometrics_simulated", true],
     ["consent_recorded", false],

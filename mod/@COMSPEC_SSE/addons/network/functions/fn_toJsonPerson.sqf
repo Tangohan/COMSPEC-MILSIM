@@ -96,6 +96,7 @@ if (_first isEqualTo "" && {_last isEqualTo ""} && {_alias isEqualTo ""}) then {
     ["target_unit_netid", ""] call _str,
     ["sse_uid", ""] call _str,
     ["case_reference", ""] call _str,
+    ["wanted_ref", ""] call _str,
     ["idempotency_key", ""] call _str,
     ["mission_id", ""] call _str,
     ["schema", "comspec_sse_athena_person_v0.4"] call _str

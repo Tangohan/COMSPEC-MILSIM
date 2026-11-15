@@ -20,6 +20,7 @@ class CfgFunctions {
             file = "z\comspec_sse\addons\core\functions";
             class log {};
             class tr {};
+            class catalogue {};
             class trDisplay {};
             class aceAction {};
             class zenAction {};

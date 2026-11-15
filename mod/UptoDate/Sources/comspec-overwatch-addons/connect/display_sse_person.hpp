@@ -443,6 +443,30 @@ class COMSPEC_SsePerson_Dialog {
             action = "['start'] call comspec_overwatch_connect_fnc_seekQuick;";
         };
 
+        // Taille, place et interactions du terminal (accueil) : fn_seekScale, fn_seekFx.
+        class BtnSize: COMSPEC_SeekBtn {
+            idc = 9710;
+            text = "TAILLE";
+            x = IN_X; y = (TILE_Y(1) + TILE_H + SEEK_U(0.004)); w = (IN_W * 0.30); h = SEEK_U(0.016);
+            sizeEx = SEEK_FONT_XS;
+            tooltip = "Taille du terminal : grand, 75, 55 ou 40 % (touches + et - du pavé numérique)";
+            action = "['cycle', [1]] call comspec_overwatch_connect_fnc_seekScale;";
+        };
+        class BtnAnchor: BtnSize {
+            idc = 9711;
+            text = "PLACE";
+            x = (IN_X + IN_W * 0.30 + SP);
+            tooltip = "Place du terminal réduit : centre, gauche, droite";
+            action = "['anchor'] call comspec_overwatch_connect_fnc_seekScale;";
+        };
+        class BtnFx: BtnSize {
+            idc = 9712;
+            text = "INTERACTIONS";
+            x = (IN_X + IN_W * 0.60 + 2 * SP); w = (IN_W * 0.40 - 2 * SP);
+            tooltip = "Interactions du lecteur : aucune (capture automatique), simples (animation) ou complètes (mini-jeux)";
+            action = "['cycleMode'] call comspec_overwatch_connect_fnc_seekFx;";
+        };
+
         // ================= PAGE 1 — SUJET (Demographics) =================
         class LabelLast: COMSPEC_SeekText {
             idc = 9551;
@@ -808,9 +832,16 @@ class COMSPEC_SsePerson_Dialog {
         };
         class EditCase: EditLast {
             idc = 9518;
-            x = IN_X; y = (CASE_TOP + LBL_H); w = IN_W; h = CASE_EDIT_H;
+            x = IN_X; y = (CASE_TOP + LBL_H); w = HALF_W; h = CASE_EDIT_H;
             font = "TahomaB";
             sizeEx = (0.026 * SEEK_K);
+        };
+        // Dossiers ouverts sur le site de la communauté (fn_sseCatalogueSeek) : en choisir un remplit le code.
+        class ComboCase: ComboStatus {
+            idc = 9569;
+            x = IN_X2; y = (CASE_TOP + LBL_H); w = HALF_W; h = CASE_EDIT_H;
+            tooltip = "Dossiers ouverts sur le site de la communauté";
+            onLBSelChanged = "params ['_c', '_i']; private _ref = _c lbData _i; if (_ref isNotEqualTo '') then { ((ctrlParent _c) displayCtrl 9518) ctrlSetText _ref; };";
         };
         class SigCard: RscText {
             idc = 9568;

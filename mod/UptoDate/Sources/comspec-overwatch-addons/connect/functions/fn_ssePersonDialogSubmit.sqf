@@ -229,9 +229,17 @@ private _sampleArr = [];
 {
     if ((_x isEqualType []) && {(count _x) >= 3}) then {
         _x params ["_k", "_q", "_r"];
+        // Détail par doigt (NFIQ) ou par œil, et motifs de capture (main non capturable, bandage, post-mortem…) :
+        // champs facultatifs, le site les range avec l'échantillon et les montre sur la fiche SEEK.
+        private _det = _x param [3, []];
+        if (!(_det isEqualType [])) then { _det = []; };
+        private _nts = _x param [5, []];
+        if (!(_nts isEqualType [])) then { _nts = []; };
+        private _detJson = ((_det select { _x isEqualType 0 }) apply { str (round _x) }) joinString ",";
+        private _ntsJson = ((_nts select { _x isEqualType "" }) apply { format ['"%1"', [_x] call _escape] }) joinString ",";
         _sampleArr pushBack format [
-            '{"kind":"%1","quality":%2,"lab_reference":"%3",%4}',
-            [_k] call _escape, _q, [_r] call _escape, _locFrag
+            '{"kind":"%1","quality":%2,"lab_reference":"%3","detail":[%4],"notes":[%5],%6}',
+            [_k] call _escape, _q, [_r] call _escape, _detJson, _ntsJson, _locFrag
         ];
     };
 } forEach _samples;

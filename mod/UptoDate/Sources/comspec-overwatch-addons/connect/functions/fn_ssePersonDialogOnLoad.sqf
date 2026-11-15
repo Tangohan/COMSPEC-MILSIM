@@ -7,49 +7,11 @@ private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNul
 if (isNull _disp) then { _disp = findDisplay 9991; };
 if (isNull _disp) exitWith {};
 
+// Statuts et contextes d'acquisition : listes du site de la communauté (fn_sseCatalogue), listes du mod en repli.
+// Le remplissage est refait quand le site répond (événement comspec_sse_catalogueUpdated, XEH_postInitClient).
+["ensure"] call comspec_overwatch_connect_fnc_sseCatalogue;
+[true] call comspec_overwatch_connect_fnc_sseCatalogueSeek;
 private _status = _disp displayCtrl 9505;
-lbClear _status;
-{
-    _x params ["_code", "_label"];
-    private _i = _status lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
-    _status lbSetData [_i, _code];
-} forEach [
-    ["civil", "Civil"],
-    ["combattant", "Combattant"],
-    ["detenu", "Détenu"],
-    ["prioritaire", "Personne prioritaire"]
-];
-_status lbSetCurSel 0;
-
-// Contextes d'acquisition (forces spéciales) : mêmes codes que config/sse_acquisition_contexts.php sur le site.
-// Les anciens codes (controle, perquisition, reddition) restent acceptés par le site mais ne sont plus proposés.
-private _circ = _disp displayCtrl 9506;
-lbClear _circ;
-{
-    _x params ["_code", "_label"];
-    private _i = _circ lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
-    _circ lbSetData [_i, _code];
-} forEach [
-    ["exploitation_site_sensible", "Exploitation de site sensible (SSE)"],
-    ["raid_action_directe", "Action directe : assaut sur l’objectif"],
-    ["interdiction_embuscade", "Interdiction ou embuscade"],
-    ["fouille_haute_valeur", "Fouille d’une cible HVT à la capture"],
-    ["cordon_fouille", "Cordon et fouille"],
-    ["point_controle_tactique", "Point de contrôle tactique (TCP)"],
-    ["fouille_patrouille", "Fouille opportuniste en patrouille"],
-    ["interrogatoire_tactique", "Interrogatoire tactique (TQ)"],
-    ["engagement_chef_local", "Rencontre avec un chef local (KLE)"],
-    ["source_humaine", "Source humaine (HUMINT / CI)"],
-    ["enrolement_biometrique", "Enrôlement biométrique (BATS / SEEK)"],
-    ["capture_champ_bataille", "Reddition ou capture au combat (EPW)"],
-    ["remise_force_partenaire", "Remise à une force partenaire"],
-    ["materiel_ennemi_capture", "Matériel ennemi capturé (CEM)"],
-    ["document_media_capture", "Document ou média capturé (DOMEX)"],
-    ["reconnaissance_speciale", "Reconnaissance spéciale (SR)"],
-    ["recuperation_personnel", "Récupération de personnel"],
-    ["autre", "Autre (précisez)"]
-];
-_circ lbSetCurSel 0;
 
 private _target = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
 private _weaponsLines = [];
@@ -286,6 +248,9 @@ if (_resume && {_idCache isEqualType []} && {(count _idCache) >= 6}) then {
 
 // Pad de signature : accroche la souris du dialogue.
 ["init"] call comspec_overwatch_connect_fnc_seekSignPad;
+// Interactions du lecteur (souris, clavier) puis taille et place enregistrées du terminal.
+["hook"] call comspec_overwatch_connect_fnc_seekFx;
+["apply"] call comspec_overwatch_connect_fnc_seekScale;
 
 // Le terminal s'ouvre sur son accueil ; après un relevé, on revient à la biométrie.
 if (_resume) then {
