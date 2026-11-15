@@ -166,7 +166,7 @@ final class JnetMailComposeTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $response = $controller->mailSend(new Request());
         self::assertStringEndsWithCompat('/jnet/courrier', (string) $response->headerValue('Location'));
-        self::assertSame(1, $this->count('tenant_message_threads'), 'aucun fil créé');
+        self::assertSame(1, $this->rows('tenant_message_threads'), 'aucun fil créé');
     }
 
     // —— Champs postés et envoi réel ——
@@ -278,7 +278,7 @@ final class JnetMailComposeTest extends TestCase
         $response = $this->send(['_csrf_token' => 'jeton', 'subject' => 'Objet', 'body' => 'Corps', 'members' => [(string) Db::FOREIGNER]], false);
         self::assertStringEndsWithCompat('/jnet/courrier/nouveau', (string) $response->headerValue('Location'));
         self::assertSame('Choisissez au moins un destinataire ou un groupe de diffusion.', $_SESSION['_flash']['error'] ?? null);
-        self::assertSame(2, $this->count('tenant_message_threads'));
+        self::assertSame(2, $this->rows('tenant_message_threads'));
     }
 
     public function testTheGroupMemberListsGivenToThePageNeverContainTheSender(): void
@@ -311,8 +311,8 @@ final class JnetMailComposeTest extends TestCase
         }
         unset($post['_csrf_token']);
         $this->send($post, false);
-        self::assertSame(1, $this->count('tenant_message_threads'));
-        self::assertSame(1, $this->count('tenant_messages'));
+        self::assertSame(1, $this->rows('tenant_message_threads'));
+        self::assertSame(1, $this->rows('tenant_messages'));
     }
 
     public function testARefusedSendComesBackWithTheWholeInput(): void
@@ -448,14 +448,14 @@ final class JnetMailComposeTest extends TestCase
     private function send(array $post, bool $expectThread = true): Response
     {
         self::assertNotNull($this->pdo);
-        $before = $this->count('tenant_message_threads');
+        $before = $this->rows('tenant_message_threads');
         $_GET = [];
         $_POST = $post;
         $_SERVER['REQUEST_METHOD'] = 'POST';
         unset($_SESSION['_flash']);
         $response = Db::controller($this->pdo)->mailSend(new Request());
         self::assertSame(302, $response->statusCode());
-        self::assertSame($before + ($expectThread ? 1 : 0), $this->count('tenant_message_threads'));
+        self::assertSame($before + ($expectThread ? 1 : 0), $this->rows('tenant_message_threads'));
 
         return $response;
     }
@@ -540,7 +540,7 @@ final class JnetMailComposeTest extends TestCase
         return array_map(static fn (array $r): array => [(int) $r[0], (string) $r[1], $r[2] !== null ? (string) $r[2] : null], $rows);
     }
 
-    private function count(string $table): int
+    private function rows(string $table): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM ' . $table)->fetchColumn();
     }
