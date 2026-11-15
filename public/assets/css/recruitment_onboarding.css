@@ -142,7 +142,7 @@ html[data-bo-theme="dark"] body:has(.rec-onb) .recruitment-lms-main {
 .rec-onb__steps {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.5rem;
   margin-bottom: 1.25rem;
   padding: 0.5rem;
@@ -509,7 +509,7 @@ html[data-bo-theme="dark"] body:has(.rec-onb) .recruitment-lms-main {
 @media (max-width: 760px) {
   .rec-onb__hero { grid-template-columns: auto 1fr; }
   .rec-onb__hero-back { grid-column: 1 / -1; justify-self: start; }
-  .rec-onb__steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.25rem; }
+  .rec-onb__steps { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.25rem; }
   .rec-onb__step { flex-direction: column; gap: 0.3rem; padding: 0.5rem 0.25rem; text-align: center; }
   .rec-onb__step-sub { display: none; }
   .rec-onb__step-label { font-size: 0.75rem; }

@@ -25,7 +25,7 @@ require __DIR__ . '/_subnav.php';
 <div class="page-heading">
     <div>
         <h1>Briefs de couverture</h1>
-        <p>La fiche de couverture remise à un joueur : biographie, légende à tenir, contacts, consignes, téléphone et adresse simulés. Il la lit dans Ma situation › Mes papiers ; le serveur de jeu la reçoit avec le pack, reliée à son compte Steam. Un brief par joueur et par portée (par défaut, carte ou opération).</p>
+        <p>La fiche de couverture remise à un joueur : biographie, légende à tenir, contacts, consignes, téléphone et adresse fictifs. Il la lit dans Ma situation › Mes papiers ; le serveur de jeu la reçoit avec le pack, reliée à son compte Steam. Un brief par joueur et par portée (par défaut, carte ou opération).</p>
     </div>
     <div class="page-reference"><strong><?= count($briefs) ?> brief(s)</strong></div>
 </div>
@@ -52,7 +52,7 @@ require __DIR__ . '/_subnav.php';
                 </div>
                 <div><label for="b-op">Opération (code)</label><input id="b-op" name="op_key" value="<?= $h($e['op_key'] ?? '') ?>" maxlength="64" placeholder="Aucune"></div>
                 <div><label for="b-title">Titre</label><input id="b-title" name="title" value="<?= $h($e['title']) ?>" maxlength="160" placeholder="Fiche de couverture"></div>
-                <div><label for="b-phone">Téléphone simulé</label><input id="b-phone" name="phone" value="<?= $h($e['phone'] ?? '') ?>" maxlength="40"></div>
+                <div><label for="b-phone">Téléphone</label><input id="b-phone" name="phone" value="<?= $h($e['phone'] ?? '') ?>" maxlength="40"></div>
                 <div><label for="b-address">Adresse (fictive)</label><input id="b-address" name="address" value="<?= $h($e['address'] ?? '') ?>" maxlength="255"></div>
                 <div style="grid-column: 1 / -1"><label for="b-bio">Biographie</label><textarea id="b-bio" name="biography" maxlength="2000"><?= $h($e['biography'] ?? '') ?></textarea></div>
                 <div style="grid-column: 1 / -1"><label for="b-legend">Légende</label><textarea id="b-legend" name="legend" maxlength="2000"><?= $h($e['legend'] ?? '') ?></textarea></div>

@@ -178,7 +178,7 @@ final class SseIdImageServiceTest extends TestCase
             $copy = (array) $docs->find((int) $svc->duplicate(1, $doc, 3), 1);
             self::assertSame($doc['background_path'], $copy['background_path'], 'la copie garde le fond');
 
-            $preview = SseIdWorkshopService::previewModel($doc, $identity, null);
+            $preview = SseIdWorkshopService::previewModel($doc, $identity, null, 'standard');
             self::assertStringContainsString('1_aaaaaaaaaaaaaaaa.jpg', (string) $preview['identity']['photo_url']);
             self::assertStringContainsString('1_bbbbbbbbbbbbbbbb.png', (string) $preview['identity']['signature_url']);
             self::assertStringContainsString('1_cccccccccccccccc.jpg', (string) $preview['background_url']);

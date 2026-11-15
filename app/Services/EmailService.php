@@ -2222,6 +2222,37 @@ final class EmailService
         );
     }
 
+    /**
+     * Récapitulatif de bienvenue d'un paquet d'intégration : ce que le nouveau membre a reçu et ce qu'il doit faire.
+     * Même événement que le message d'ouverture du parcours (un seul e-mail de bienvenue par membre).
+     *
+     * @param array<string, mixed> $recap
+     */
+    public function sendMemberIntegrationPackageRecap(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        array $recap,
+        string $pageUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::MEMBER_INTEGRATION_STARTED,
+            'member_integration_package_recap',
+            $to,
+            'Bienvenue dans ' . $tenantName . ' : ce que vous avez reçu',
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'recap' => $recap,
+                'pageUrl' => $pageUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'member_integration_package_recap']
+        );
+    }
+
     public function sendMemberIntegrationNotice(
         string $eventCode,
         string $to,

@@ -48,17 +48,6 @@
 .idr-spec__lines span:first-of-type { font-family: ui-monospace, Consolas, monospace; color: #b3261e; }
 .idr-spec__mrz { padding: 3px 8px; background: rgba(255, 255, 255, 0.75); font-family: "OCR B", ui-monospace, Consolas, monospace; font-size: 7.4px; line-height: 1.3; white-space: pre; overflow: hidden; color: #111; }
 .idr-spec__mention { padding: 2px 8px; background: #a8191e; color: #fff; font-size: 8px; font-weight: 800; letter-spacing: 0.12em; text-align: center; }
-.idr-spec__wm {
-    position: absolute;
-    inset: -40%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    align-items: center;
-    transform: rotate(-24deg);
-    pointer-events: none;
-}
-.idr-spec__wm span { font-size: 26px; font-weight: 900; letter-spacing: 0.3em; color: #b3261e; opacity: 0.13; white-space: nowrap; }
 @media (max-width: 520px) {
     .idr-grid { grid-template-columns: 1fr; }
     .idr-spec__mrz { font-size: 6px; }
