@@ -14,12 +14,16 @@
            class ComspecLobby { class Slots { class A1 { tag = "A-1"; surname = "Vasseur"; given = "Thomas"; rank = "Sergent-chef";
              unit = "ALPHA"; role = "Chef de groupe"; quals = "Chef de groupe"; portrait = "images\a1.paa"; }; }; };
       3. la carte Athena du joueur local, gardée dans le profil Arma par COMSPEC ATAK à chaque partie (profileNamespace
-         COMSPEC_LOBBY_Self : indicatif, nom, unité, qualifications, portrait) : c'est VOTRE dossier, montré sur le poste choisi
-         quand la mission ne donne pas d'identité à ce poste ;
+         COMSPEC_LOBBY_Self : indicatif, nom, grade, unité, fonction, qualifications, portrait) : c'est VOTRE dossier, montré
+         sur le poste choisi quand la mission ne donne pas d'identité à ce poste. La fonction est celle du membre dans sa
+         communauté (fiche Effectifs d'Athena), JAMAIS le texte du poste : sans fonction sur Athena, la ligne est masquée ;
       4. le texte du rôle tel quel.
-    Portrait : image d'un PBO, ou image téléchargée par COMSPEC Link. Arma refuse en texture une image hors PBO (sauf
-    -filePatching) : elle passe alors par le navigateur intégré (idc 9106), lue par COMSPEC Link (ImageDataChunk « local: »,
-    sans réseau). Sans COMSPEC ATAK, pas de portrait Athena : le cadre reste vide.
+    Portrait : image d'un PBO, ou image téléchargée par COMSPEC Link dans comspec_cache (dossier du jeu), lue en texture
+    par son chemin relatif. Une image qu'Arma ne peut pas lire en texture (autre dossier) passe par le navigateur intégré
+    (idc 9106), lue par COMSPEC Link (ImageDataChunk « local: », sans réseau) : JPEG ou PNG seulement, donc pour une
+    texture .paa c'est la copie JPEG du site que « Synchroniser » télécharge. Sans portrait, le cadre dit pourquoi.
+    Lignes du dossier : une ligne sans valeur est masquée et les suivantes remontent ; les qualifications qui ne tiennent
+    pas sur la ligne sont coupées, avec le nombre de celles qui restent.
     Clés d'une carte : surname, given, rank, unit, role, quals, portrait (chemin d'image lisible par le jeu), source (« ATHENA »...).
     Journal : lignes [COMSPEC LOBBY] au RPT, dont les premières lignes de la liste (texte, donnée, valeur, image).
 */
@@ -92,9 +96,9 @@ private _identity = {
         private _rb = _text find "]";
         private _name = trim (((([_text, _text select [_rb + 1]] select (_rb >= 0)) splitString "@") select [0, 1]) joinString "");
         if ((count _self) > 0) then {
-            // Poste sans identité donnée par la mission : le dossier est celui du joueur, la fonction celle du poste.
+            // Poste sans identité donnée par la mission : le dossier est celui du joueur, fonction comprise (celle du
+            // membre sur Athena). Le texte du poste n'y entre jamais : il reste dans la liste des rôles.
             { _h set [_x, _y]; } forEach _self;
-            if ((_h getOrDefault ["role", ""]) isEqualTo "") then { _h set ["role", _name]; };
         } else {
             _h set ["surname", [_name, "-"] select (_name isEqualTo "")];
         };
@@ -162,6 +166,7 @@ private _portrait = {
     if (_pic isEqualTo "" || {_tex isNotEqualTo ""}) exitWith {
         _wb ctrlShow false;
         _pc ctrlSetText ([_tex, _blank] select (_tex isEqualTo ""));
+        _pic isNotEqualTo ""
     };
     // Image hors PBO refusée en texture : navigateur intégré.
     _pc ctrlSetText _blank;
@@ -171,7 +176,7 @@ private _portrait = {
         (if ((_r select 0) isEqualTo "") then { format ["portrait indisponible (%1)", _r select 1] } else { format ["portrait par le navigateur intégré (%1 caractères)", count (_r select 1)] }) call _log;
     };
     (_webCache get _pic) params ["_m", "_b"];
-    if (_m isEqualTo "") exitWith { _wb ctrlShow false; };
+    if (_m isEqualTo "") exitWith { _wb ctrlShow false; false };
     _wb setVariable ["COMSPEC_LOBBY_Img", [_m, _b]];
     _wb ctrlShow true;
     if (_wb getVariable ["COMSPEC_LOBBY_Ready", false]) then {
@@ -187,6 +192,36 @@ private _portrait = {
             [_wb, ["LoadFile", "z\comspec_lobby\addons\main\data\portrait.html"]] call (uiNamespace getVariable "COMSPEC_LOBBY_wba");
         };
     };
+    true
+};
+// Lignes du dossier (libellé, valeur) : positions de la config, gardées pour faire remonter les lignes quand l'une est vide.
+private _rows = [[9110, 9114], [9111, 9115], [9112, 9116], [9113, 9117]];
+private _rowPos = _rows apply { [ctrlPosition ((_x select 0) call _c), ctrlPosition ((_x select 1) call _c)] };
+// Qualifications (séparées par « · ») coupées à la largeur de la ligne : « A · B +3 ». Jamais de débordement sur le pool.
+private _fitQuals = {
+    params [["_txt", ""], ["_ctrl", controlNull]];
+    private _items = ((_txt splitString "·") apply { trim _x }) select { _x isNotEqualTo "" };
+    if (_items isEqualTo []) exitWith { "" };
+    private _max = ((ctrlPosition _ctrl) select 2) * 0.96;
+    private _size = ctrlFontHeight _ctrl;
+    private _w = { _this getTextWidth ["RobotoCondensed", _size] };
+    private _out = "";
+    private _n = 0;
+    {
+        private _more = (count _items) - _n - 1;
+        private _try = ([_out, _out + " · "] select (_n > 0)) + _x;
+        if (((_try + ([format [" +%1", _more], ""] select (_more isEqualTo 0))) call _w) > _max) exitWith {};
+        _out = _try;
+        _n = _n + 1;
+    } forEach _items;
+    if (_n isEqualTo 0) exitWith {
+        // Même la première ne tient pas : coupée, avec le nombre des autres.
+        private _first = _items select 0;
+        private _tail = ["…", format ["… +%1", (count _items) - 1]] select ((count _items) > 1);
+        while { (count _first) > 1 && {((_first + _tail) call _w) > _max} } do { _first = _first select [0, (count _first) - 1]; };
+        _first + _tail
+    };
+    _out + ([format [" +%1", (count _items) - _n], ""] select (_n isEqualTo (count _items)))
 };
 
 // ------------------------------------------------------------------ 4. bouton « Synchroniser »
@@ -233,15 +268,44 @@ uiNamespace setVariable ["COMSPEC_LOBBY_syncRun", {
     if ((_url find "/") < 0) then { _url = ""; };
     private _q = _cols findIf { (_x select [0, 2]) isEqualTo "Q:" };
     private _qn = if (_q < 0) then { "" } else { ((((_cols select _q) select [2]) splitString ";") apply { (_x splitString "~") param [0, ""] }) joinString " · " };
-    private _pic = "";
-    { if (_x isEqualType [] && {(_x param [0, ""]) isEqualTo "portrait"}) exitWith { _pic = _x param [1, ""]; }; } forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]);
+    // Carte déjà gardée : portrait, grade et fonction repris quand la réponse ne les donne pas.
+    private _old = createHashMap;
+    { if (_x isEqualType [] && {(_x param [0, ""]) isEqualType ""} && {(_x param [1, ""]) isEqualType ""}) then { _old set [_x param [0, ""], _x param [1, ""]]; }; } forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]);
+    private _pic = _old getOrDefault ["portrait", ""];
     if (_url isEqualTo "") then { _pic = ""; } else {
-        private _dl = (["DownloadBriefingSlideImage", [_url, format ["avatar_%1_%2", _uid, hashValue _url]]] call _ext) splitString "|";
-        if ((_dl param [0, ""]) isEqualTo "OK" && {(_dl param [1, ""]) isNotEqualTo ""}) then { _pic = ((_dl select 1) splitString (toString [92])) joinString "/"; };
+        private _get = {
+            params ["_u"];
+            private _dl = (["DownloadBriefingSlideImage", [_u, format ["avatar_%1_%2", _uid, hashValue _u]]] call _ext) splitString "|";
+            if ((_dl param [0, ""]) isEqualTo "OK" && {(_dl param [1, ""]) isNotEqualTo ""}) then { ((_dl select 1) splitString (toString [92])) joinString "/" } else { "" }
+        };
+        private _got = [_url] call _get;
+        // Texture .paa rangée hors du dossier du jeu (Arma ne la lit pas, et le navigateur intégré ne lit pas le .paa) :
+        // la copie JPEG du site (même adresse, .jpg) est prise à la place, pour le navigateur intégré.
+        private _lg = toLower _got;
+        private _rel = _lg find "comspec_cache/";
+        private _readable = _rel >= 0 && {fileExists (((_got select [_rel]) splitString "/") joinString (toString [92]))};
+        if (_got isNotEqualTo "" && {!_readable} && {(_lg select [((count _lg) - 4) max 0]) isEqualTo ".paa"} && {((toLower _url) select [((count _url) - 4) max 0]) isEqualTo ".paa"}) then {
+            private _web = [(_url select [0, (count _url) - 4]) + ".jpg"] call _get;
+            if (_web isNotEqualTo "") then { _got = _web; };
+        };
+        if (_got isNotEqualTo "") then { _pic = _got; };
     };
+    // Grade et fonction du membre dans sa communauté : gardés en mémoire par COMSPEC Link depuis la liaison Athena
+    // (GetAuthState, sans réseau ; cellule « - » = vide). Liaison pas prête : les valeurs déjà gardées restent.
+    private _rank = _old getOrDefault ["rank", ""];
+    private _role = _old getOrDefault ["role", ""];
+    private _auth = (["GetAuthState", []] call _ext) splitString _tab;
+    if ((_auth param [1, ""]) isEqualTo "READY") then {
+        private _cell = { private _v = _auth param [_this, "-"]; ["", _v] select (_v isNotEqualTo "-") };
+        _rank = 9 call _cell;
+        _role = 17 call _cell;
+    };
+    private _status = "";
+    { if ((_x select [0, 2]) isEqualTo "S:") exitWith { _status = _x select [2]; }; } forEach _cols;
     profileNamespace setVariable ["COMSPEC_LOBBY_Self", [
         ["surname", [_cs, _name] select (_cs isEqualTo "")], ["given", ["", _name] select (_cs isNotEqualTo "")],
-        ["unit", 3 call _col], ["quals", _qn], ["source", "ATHENA"], ["portrait", _pic]
+        ["rank", _rank], ["unit", 3 call _col], ["role", _role], ["quals", _qn], ["source", "ATHENA"], ["portrait", _pic],
+        ["portraitState", ["", "none"] select (_url isEqualTo "" && {_status isEqualTo "no_portrait"})]
     ]];
     saveProfileNamespace;
     uiNamespace setVariable ["COMSPEC_LOBBY_Reload", true];
@@ -283,13 +347,43 @@ while { !isNull _display } do {
         (9101 call _c) ctrlSetText _tag;
         (9104 call _c) ctrlSetText (toUpper (_card getOrDefault ["surname", "-"]));
         (9105 call _c) ctrlSetText (toUpper (_card getOrDefault ["given", ""]));
-        (9114 call _c) ctrlSetText (_card getOrDefault ["rank", ""]);
-        (9115 call _c) ctrlSetText (_card getOrDefault ["unit", ""]);
-        (9116 call _c) ctrlSetText (_card getOrDefault ["role", ""]);
-        (9117 call _c) ctrlSetText (_card getOrDefault ["quals", ""]);
+        // Lignes : grade, unité, fonction (celle du membre, jamais le poste), qualifications. Vide = ligne masquée.
+        private _vals = [
+            trim (_card getOrDefault ["rank", ""]), trim (_card getOrDefault ["unit", ""]), trim (_card getOrDefault ["role", ""]),
+            [_card getOrDefault ["quals", ""], 9117 call _c] call _fitQuals
+        ];
+        private _slot = 0;
+        {
+            _x params ["_li", "_vi"];
+            private _v = _vals select _forEachIndex;
+            private _show = _v isNotEqualTo "";
+            { (_x call _c) ctrlShow _show; } forEach [_li, _vi];
+            if (_show) then {
+                (_rowPos select _slot) params ["_lp", "_vp"];
+                (_li call _c) ctrlSetPosition _lp;
+                (_li call _c) ctrlCommit 0;
+                (_vi call _c) ctrlSetPosition _vp;
+                (_vi call _c) ctrlCommit 0;
+                (_vi call _c) ctrlSetText _v;
+                _slot = _slot + 1;
+            };
+        } forEach _rows;
         private _pic = _card getOrDefault ["portrait", ""];
-        [_pic] call _portrait;
-        (9103 call _c) ctrlSetText (toUpper (_card getOrDefault ["source", [localize "STR_COMSPEC_LOBBY_PortraitLocal", ""] select (_pic isEqualTo "")]));
+        private _shown = [_pic] call _portrait;
+        // Sous le portrait : l'origine quand il s'affiche, sinon « sans photo » sur son propre dossier, et la raison sur
+        // la ligne d'état (aucun portrait sur Athena, ou image pas lisible ici : « Synchroniser » la reprend). Un message
+        // de synchronisation déjà affiché n'est pas remplacé.
+        private _isSelf = (_card getOrDefault ["source", ""]) isEqualTo "ATHENA";
+        (9103 call _c) ctrlSetText (toUpper (switch (true) do {
+            case (_shown): { _card getOrDefault ["source", localize "STR_COMSPEC_LOBBY_PortraitLocal"] };
+            case (_isSelf): { localize "STR_COMSPEC_LOBBY_PortraitNone" };
+            default { "" };
+        }));
+        private _hints = [localize "STR_COMSPEC_LOBBY_PortraitHintNone", localize "STR_COMSPEC_LOBBY_PortraitHintRetry"];
+        private _st = 9107 call _c;
+        if ((ctrlText _st) isEqualTo "" || {(ctrlText _st) in _hints}) then {
+            _st ctrlSetText (if (_shown || {!_isSelf}) then { "" } else { _hints select !(_pic isEqualTo "" && {(_card getOrDefault ["portraitState", ""]) isEqualTo "none"}) });
+        };
     };
 
     uiSleep 0.12;

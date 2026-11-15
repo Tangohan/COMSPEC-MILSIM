@@ -1,6 +1,6 @@
 ﻿# COMSPEC Lobby
 
-Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications). Aucune dépendance autre que le jeu. Version 0.3.0 (essayée en jeu sur serveur dédié : voir « État »).
+Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications). Aucune dépendance autre que le jeu. Version 0.3.1 (0.3.0 essayée en jeu sur serveur dédié : voir « État »).
 
 Le système de postes d'Arma est gardé tel quel : liste des rôles, camps, pool de joueurs, paramètres de mission, verrou, expulsion, Workshop, chat. Le mod restyle l'écran (fond noir, filets fins, un accent ambre), remonte le pool de joueurs sous le dossier, et ajoute le dossier. Rien n'est remplacé ni piloté par script.
 
@@ -41,13 +41,14 @@ Tout le reste de la mission se règle comme d'habitude, dans Arma : l'écran gar
 
 ## Athena : votre dossier et votre portrait
 
-Avec **COMSPEC ATAK** chargé et un compte Athena relié, le dossier montre **votre** identité Athena sur le poste que vous choisissez, quand la mission ne donne pas d'identité à ce poste : indicatif, nom, unité, qualifications et portrait opérateur (celui de Mon compte > Portrait). La fonction affichée est celle du poste.
+Avec **COMSPEC ATAK** chargé et un compte Athena relié, le dossier montre **votre** identité Athena sur le poste que vous choisissez, quand la mission ne donne pas d'identité à ce poste : indicatif, nom, grade, unité, fonction, qualifications et portrait opérateur (celui de Mon compte > Portrait). La **fonction** est la vôtre dans votre communauté (fiche Effectifs d'Athena), jamais le texte du poste : le poste reste dans la liste des rôles. Une ligne sans valeur (pas de grade, pas de fonction) est masquée, et une longue liste de qualifications est coupée à la largeur de la ligne (« A · B +3 »).
 
 Comment ça marche : à chaque partie, COMSPEC ATAK garde votre carte dans le profil Arma (`profileNamespace COMSPEC_LOBBY_Self`) et le portrait téléchargé par COMSPEC Link. L'écran des rôles, qui s'ouvre avant toute mission et sans liaison, relit cette carte. Conséquences :
 
 - la toute première fois (aucune partie jouée avec ATAK 4.14.0 ou plus), le dossier montre seulement le texte du rôle ;
 - un changement de portrait ou d'indicatif sur le site apparaît à l'écran des rôles après la partie suivante ;
-- Arma refuse en texture une image hors d'un PBO : le portrait passe par le navigateur intégré du jeu (aucune adresse externe, image lue sur le disque par COMSPEC Link). Avec `-filePatching` il s'affiche en texture.
+- le portrait est rangé par COMSPEC Link (2.0.128 ou plus) dans `comspec_cache` du dossier du jeu, seul dossier hors PBO qu'Arma lit en texture. De 2.0.124 à 2.0.127 il était rangé dans Documents : le cadre restait vide (0.3.0). Si le dossier du jeu n'est pas inscriptible, le portrait passe par le navigateur intégré du jeu (aucune adresse externe, copie JPEG lue sur le disque par COMSPEC Link) après un clic sur **Synchroniser** ;
+- sans portrait affiché, le cadre dit « Sans photo » et la ligne à côté du bouton dit pourquoi (aucun portrait sur Athena, ou image à resynchroniser).
 
 Le bouton **Synchroniser**, en haut du dossier, redemande votre carte à Athena tout de suite, sans attendre la prochaine partie. Il marche quand COMSPEC Link a déjà une session Athena dans ce lancement du jeu (une partie jouée, puis retour à l'écran des rôles) ; sinon un message dit quoi faire. Le clic fige le jeu le temps de la réponse du site (quelques secondes au plus).
 

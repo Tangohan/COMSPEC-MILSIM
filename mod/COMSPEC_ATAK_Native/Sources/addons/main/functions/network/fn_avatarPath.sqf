@@ -129,9 +129,13 @@ _cache set [_uid, [_path, diag_tickTime]];
             private _qn = if (_q < 0) then { "" } else { ((_quals get _uid) apply { _x param [0, ""] }) joinString " · " };
             private _pic = "";
             { if ((_x param [0, ""]) isEqualTo "portrait") exitWith { _pic = _x param [1, ""]; }; } forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]);
+            // Grade et fonction du membre dans sa communauté (profil de la liaison Athena) : la carte de l'écran des
+            // rôles les montre, à la place du texte du poste (4.27.1).
+            private _prof = { private _v = missionNamespace getVariable [_this, ""]; ["", _v] select (_v isEqualType "" && {!(_v in ["-", "—"])}) };
             profileNamespace setVariable ["COMSPEC_LOBBY_Self", [
                 ["surname", [_cs, _name] select (_cs isEqualTo "")], ["given", ["", _name] select (_cs isNotEqualTo "")],
-                ["unit", 3 call _col], ["quals", _qn], ["source", "ATHENA"], ["portrait", _pic]
+                ["rank", "comspec_profile_grade" call _prof], ["unit", 3 call _col], ["role", "comspec_profile_function" call _prof],
+                ["quals", _qn], ["source", "ATHENA"], ["portrait", _pic]
             ]];
             profileNamespace setVariable ["COMSPEC_LOBBY_Uid", _uid];
             profileNamespace setVariable ["COMSPEC_LOBBY_Tenant", _tenant];
