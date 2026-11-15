@@ -11,6 +11,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UserRepository;
 use App\Services\Audit\AuditService;
+use App\Services\DataQuality\DataQualityTables;
+use App\Services\DataQuality\DatabaseDataQualitySource;
 use App\Services\Media\MissingUserMediaScanner;
 use App\Services\Organization\CommunityDataStorageService;
 use App\Services\Organization\OrbatBilletService;
@@ -27,6 +29,7 @@ final class OrganizationDataQualityController
         private OrbatBilletService $billetService,
         private ?UserRepository $users = null,
         private ?CommunityDataStorageService $dataStorage = null,
+        private ?DataQualityTables $tables = null,
     ) {}
 
     public const CONFIRM_WORD = 'SUPPRIMER';
@@ -75,12 +78,31 @@ final class OrganizationDataQualityController
             'schemaReady' => $this->billetService->schemaReady(),
             'csrfToken' => Csrf::token(),
             'missingMediaUsers' => $this->missingMediaUsers($tenantId),
+            'tables' => $this->tables($tenantId, $request->queryParams()),
             // Données anciennes à vérifier : lecture seule ; la simulation de la reprise des noms se lit avec ?simuler=1.
             'legacy' => \App\Services\LegacyData\LegacyDataScreen::build($tenantId, (string) $request->query('simuler', '') === '1'),
             'storage' => $this->storage()->overview($tenantId),
             'canPurge' => $gate->allows('organization.data.purge'),
             'confirmWord' => self::CONFIRM_WORD,
         ]);
+    }
+
+    /**
+     * Tableaux par personne, par unité, vérifications et remplissage par champ (taux de remplissage et de mise à jour
+     * des fiches). Réservés aux mêmes droits que la page ; une lecture impossible laisse la page sans ces tableaux.
+     *
+     * @param array<string, mixed> $query
+     * @return array<string, mixed>
+     */
+    private function tables(int $tenantId, array $query): array
+    {
+        try {
+            return ($this->tables ??= new DataQualityTables(new DatabaseDataQualitySource()))->build($tenantId, $query);
+        } catch (\Throwable $e) {
+            error_log('[qualite-donnees] tableaux indisponibles : ' . $e->getMessage());
+
+            return ['ready' => false];
+        }
     }
 
     /**
