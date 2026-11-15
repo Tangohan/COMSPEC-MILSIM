@@ -364,6 +364,8 @@ final class EnlistmentRecruitmentEngagementRepository
         }
         $lim = max(1, min(200, $limit));
         $minAge = \App\Support\EnlistmentRetroAutoClose::acceptanceAgeDays();
+        // Fenêtre de sécurité : les dossiers plus anciens ne sont jamais clos par la tâche (voir countStaleWithoutStaffRetro).
+        $maxAge = \App\Support\EnlistmentRetroAutoClose::acceptanceMaxAgeDays();
         $stmt = $this->pdo->prepare(
             "SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.status, e.created_at, e.reviewed_at, e.reviewed_by
              FROM enlistments e
@@ -378,6 +380,7 @@ final class EnlistmentRecruitmentEngagementRepository
              WHERE e.tenant_id = ?
                AND e.status = 'reviewed'
                AND DATE(COALESCE(e.reviewed_at, e.created_at)) <= DATE_SUB(CURDATE(), INTERVAL {$minAge} DAY)
+               AND DATE(COALESCE(e.reviewed_at, e.created_at)) >= DATE_SUB(CURDATE(), INTERVAL {$maxAge} DAY)
                AND r.id IS NULL
              ORDER BY COALESCE(e.reviewed_at, e.created_at) ASC, e.id ASC
              LIMIT {$lim}"
@@ -385,6 +388,38 @@ final class EnlistmentRecruitmentEngagementRepository
         $stmt->execute([self::SCOPE_STAFF_ONE_MONTH, $tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Candidatures acceptées sans aucun bilan d'équipe dont le retard dépasse la fenêtre de sécurité de la clôture
+     * automatique : jamais écrites ni notifiées, seulement comptées (avis « Données anciennes à vérifier »).
+     * Lecture seule, un COUNT.
+     */
+    public function countStaleWithoutStaffRetro(int $tenantId): int
+    {
+        if (!$this->retroTableExists() || $tenantId < 1) {
+            return 0;
+        }
+        $maxAge = \App\Support\EnlistmentRetroAutoClose::acceptanceMaxAgeDays();
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*)
+             FROM enlistments e
+             LEFT JOIN enlistment_retro_feedbacks r
+               ON r.tenant_id = e.tenant_id
+              AND r.enlistment_id = e.id
+              AND (
+                    r.feedback_scope = ?
+                    OR r.feedback_scope = 'staff'
+                    OR r.feedback_scope LIKE 'staff\\_%' ESCAPE '\\\\'
+              )
+             WHERE e.tenant_id = ?
+               AND e.status = 'reviewed'
+               AND DATE(COALESCE(e.reviewed_at, e.created_at)) < DATE_SUB(CURDATE(), INTERVAL {$maxAge} DAY)
+               AND r.id IS NULL"
+        );
+        $stmt->execute([self::SCOPE_STAFF_ONE_MONTH, $tenantId]);
+
+        return (int) $stmt->fetchColumn();
     }
 
     /**

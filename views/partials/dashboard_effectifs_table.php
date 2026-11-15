@@ -17,6 +17,17 @@ if (empty($can_view_personnel_directory)) {
 }
 
 $rows = is_array($dashboard_effectifs_rows ?? null) ? $dashboard_effectifs_rows : [];
+// Nom des membres : règle unique (prénom + nom du personnage, indicatif, nom du compte, « Membre »).
+\App\Support\MemberIdentity::preload(
+    (int) \App\Core\Session::get('tenant_id'),
+    array_map(static fn ($r): int => is_array($r) ? (int) ($r['id'] ?? 0) : 0, $rows)
+);
+$dashMemberName = static fn (array $r): string => \App\Support\MemberIdentity::labelForUser([
+    'id' => (int) ($r['id'] ?? 0),
+    'display_name' => (string) ($r['display_name'] ?? ''),
+    'callsign' => (string) ($r['callsign'] ?? ''),
+    'anonymized' => !empty($r['anonymized']),
+], 'list');
 $unitLabel = trim((string) ($dashboard_tenant_label ?? '')) !== ''
     ? (string) $dashboard_tenant_label
     : 'Votre communauté';
@@ -140,12 +151,9 @@ $rowCount = count($rows);
                     if ($uid < 1) {
                         continue;
                     }
-                    $displayName = trim((string) ($row['display_name'] ?? ''));
-                    if ($displayName === '') {
-                        $displayName = 'Membre';
-                    }
+                    $displayName = $dashMemberName($row);
                     $callsign = trim((string) ($row['callsign'] ?? ''));
-                    $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($displayName, (string) ($row['character_name'] ?? ''));
+                    $character = ''; // l'ancien champ « nom du personnage » n'est plus affiché (docs/identites-membres.md)
                     $slug = trim((string) ($row['profile_slug'] ?? ''));
                     $target = $slug !== '' ? $slug : (string) $uid;
                     $ficheUrl = url('personnel/' . $target);
@@ -264,12 +272,9 @@ $rowCount = count($rows);
                             if ($uid < 1) {
                                 continue;
                             }
-                            $displayName = trim((string) ($row['display_name'] ?? ''));
-                            if ($displayName === '') {
-                                $displayName = 'Membre';
-                            }
+                            $displayName = $dashMemberName($row);
                             $callsign = trim((string) ($row['callsign'] ?? ''));
-                            $character = \App\Support\PersonnelDirectoryHints::distinctCharacterLabel($displayName, (string) ($row['character_name'] ?? ''));
+                            $character = ''; // l'ancien champ « nom du personnage » n'est plus affiché (docs/identites-membres.md)
                             $slug = trim((string) ($row['profile_slug'] ?? ''));
                             $target = $slug !== '' ? $slug : (string) $uid;
                             $ficheUrl = url('personnel/' . $target);

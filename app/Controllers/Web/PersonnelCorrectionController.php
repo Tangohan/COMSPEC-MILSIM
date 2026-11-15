@@ -287,16 +287,12 @@ final class PersonnelCorrectionController
 
     private function nameOf(string $displayName, string $callsign, int $userId): string
     {
-        $displayName = trim($displayName);
-        if ($displayName !== '') {
-            return $displayName;
-        }
-        $callsign = trim($callsign);
-        if ($callsign !== '') {
-            return $callsign;
+        // Règle unique : prénom + nom du personnage, puis indicatif, puis nom du compte.
+        if ($userId > 0) {
+            return \App\Support\MemberIdentity::numberedLabelForUser(['id' => $userId, 'display_name' => $displayName, 'callsign' => $callsign], 'list');
         }
 
-        return $userId > 0 ? 'Membre n° ' . $userId : '';
+        return trim($callsign) !== '' ? trim($callsign) : trim($displayName);
     }
 
     /** POST /back-office/personnel/corrections/lot — même décision pour plusieurs demandes. */

@@ -2651,11 +2651,49 @@ if (!function_exists('member_name')) {
             $row['trigram'] = '';
         }
 
-        return \App\Support\MemberName::format(
-            $row,
-            \App\Services\Personnel\MemberNameSettings::formatFor($settings, $context),
-            $allowGrade && $settings['show_grade']
+        return \App\Support\MemberIdentity::display($row, $context, $tenantId, $allowGrade, $settings)['primary'];
+    }
+}
+
+if (!function_exists('member_label')) {
+    /**
+     * Nom d'un membre dont la ligne ne porte que id (ou user_id), display_name, callsign : le prénom et le nom du
+     * personnage sont repris de sa fiche, puis règle unique (indicatif, nom du compte, « Membre »). Texte brut.
+     *
+     * @param array<string, mixed> $row
+     */
+    function member_label(array $row, string $context = 'list', ?int $tenantId = null): string
+    {
+        return \App\Support\MemberIdentity::labelForUser($row, $context, $tenantId);
+    }
+}
+
+if (!function_exists('member_labels_preload')) {
+    /**
+     * Charge d'un coup l'identité du personnage des membres d'une liste avant une boucle d'appels à member_label().
+     *
+     * @param list<array<string, mixed>> $rows
+     */
+    function member_labels_preload(array $rows, string $idKey = 'id', ?int $tenantId = null): void
+    {
+        \App\Support\MemberIdentity::preload(
+            $tenantId ?? (int) \App\Core\Session::get('tenant_id'),
+            array_map(static fn ($r): int => is_array($r) ? (int) ($r[$idKey] ?? 0) : 0, $rows)
         );
+    }
+}
+
+if (!function_exists('member_identity')) {
+    /**
+     * Point unique d'affichage d'un membre : nom principal, ligne secondaire, indicatif, trigramme, origine du nom.
+     * Contextes « list », « card » ou « c2 ». Texte brut : la vue échappe. Voir App\Support\MemberIdentity.
+     *
+     * @param array<string, mixed> $row first_name, last_name, callsign, display_name, trigram, grade_short, anonymized
+     * @return array{primary: string, secondary: string, callsign: string, trigram: string, source: string}
+     */
+    function member_identity(array $row, string $context = 'list', ?int $tenantId = null, bool $allowGrade = true): array
+    {
+        return \App\Support\MemberIdentity::display($row, $context, $tenantId, $allowGrade);
     }
 }
 

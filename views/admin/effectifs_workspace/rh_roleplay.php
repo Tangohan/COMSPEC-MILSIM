@@ -86,7 +86,7 @@ $typeLabels = [
                 <?php foreach ($phaseAutoErrors as $err): ?>
                     <?php
                     $errUid = (int) ($err['user_id'] ?? 0);
-                    $errName = trim((string) ($err['display_name'] ?? '')) ?: trim((string) ($err['callsign'] ?? '')) ?: 'Membre';
+                    $errName = member_label(['id' => $errUid, 'display_name' => (string) ($err['display_name'] ?? ''), 'callsign' => (string) ($err['callsign'] ?? '')], 'list');
                     ?>
                     <tr>
                         <td><strong class="eff-sheets__name"><?= htmlspecialchars($errName, ENT_QUOTES, 'UTF-8') ?></strong></td>

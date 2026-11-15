@@ -161,7 +161,7 @@ return [
                     'slot' => 'secondary',
                     'links' => [
                         ['label' => 'Guides', 'path' => 'documentation', 'description' => 'Mode d’emploi du portail, de l’ATAK et des fichiers'],
-                        ['label' => 'Guide du Bureau SSE', 'path' => 'atak/sse/guide', 'any_permissions' => ['atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'admin.access', 'admin.organization'], 'description' => 'Fichiers, contrôles d’identité, SEEK II et téléphones'],
+                        ['label' => 'Guide du Bureau SSE', 'path' => 'atak/sse/guide', 'any_permissions' => ['atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'admin.access', 'admin.organization'], 'description' => 'Fichiers, vérifications d’identité, SEEK II et téléphones'],
                     ],
                 ],
             ],

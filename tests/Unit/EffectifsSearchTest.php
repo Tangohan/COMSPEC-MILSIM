@@ -104,7 +104,7 @@ final class EffectifsSearchTest extends TestCase
     public function testMembersJobsAndRolesAreGroupedAndScoped(): void
     {
         $result = $this->search()->search(14, 'viper');
-        self::assertSame('Ryan Mercer', $result['members'][0]['name']);
+        self::assertSame('Viper', $result['members'][0]['name'], 'Sans prénom ni nom de personnage : l’indicatif, puis le nom du compte.');
         self::assertSame('SOAR-B-A-1', $result['members'][0]['unit_code']);
 
         $jobs = $this->search()->search(14, 'infirmier')['jobs'];
@@ -142,7 +142,7 @@ final class EffectifsSearchTest extends TestCase
         Gate::getInstance()->setPermissions(['organization.effectifs.hub.view']);
         $ok = json_decode($controller->search(new Request())->body(), true);
         self::assertTrue($ok['ok']);
-        self::assertSame('Ryan Mercer', $ok['members'][0]['name']);
+        self::assertSame('Viper', $ok['members'][0]['name'], 'Sans prénom ni nom : l’indicatif, puis le nom du compte.');
         self::assertStringContainsString('/membres/7', $ok['members'][0]['url']);
     }
 }

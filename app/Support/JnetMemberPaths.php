@@ -48,6 +48,14 @@ final class JnetMemberPaths
     ];
 
     /**
+     * Pages du membre servies sous /jnet/moi mais hors de la table ci-dessus (pas de redirection depuis l'ancienne adresse :
+     * elles n'ont jamais existé sous /back-office/ma-situation). Elles allument leur entrée du rail « Mon espace ».
+     *
+     * @var list<string>
+     */
+    public const EXTRA_PAGES = ['fiabilisation'];
+
+    /**
      * Lectures à paramètres (téléchargements) : forme de la fin d'adresse, avec ses jokers de routeur.
      *
      * @var list<string>
@@ -177,6 +185,11 @@ final class JnetMemberPaths
         $slug = trim($slug, '/');
         if (isset(self::PAGES[$slug])) {
             return $slug;
+        }
+        foreach (self::EXTRA_PAGES as $extra) {
+            if ($slug === $extra || str_starts_with($slug, $extra . '/')) {
+                return $extra;
+            }
         }
         $best = null;
         foreach (array_keys(self::PAGES) as $page) {

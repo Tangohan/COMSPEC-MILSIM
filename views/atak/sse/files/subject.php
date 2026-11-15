@@ -39,7 +39,7 @@ foreach ($photos as $ph) {
 }
 $legacyPhoto = ($i['photo_path'] ?? null) ? user_media_public_url((string) $i['photo_path']) : null;
 $shot = static function (?array $ph, string $label, ?int $height) use ($h, $legacyPhoto): string {
-    $src = $ph !== null ? user_media_public_url((string) $ph['path']) : ($label === 'FACE' ? $legacyPhoto : null);
+    $src = $ph !== null ? \App\Services\Sse\SseSeekPhotoService::photoUrl($ph) : ($label === 'FACE' ? $legacyPhoto : null);
     $top = $height !== null ? max(4, (int) round((200 - $height) * 1.5)) : 20;
     $inner = $src !== null ? '<img src="' . $h($src) . '" alt="Photo ' . $h(mb_strtolower($label)) . '">'
         : '<div class="hc"></div><div class="sil" style="top:' . $top . 'px"><i></i><u></u></div>';
@@ -167,7 +167,7 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
                     <div class="fx-book" style="padding:0">
                         <?php foreach ($photos as $ph): ?>
                             <div class="fx-pc">
-                                <span class="ph"><img src="<?= $h(user_media_public_url((string) $ph['path'])) ?>" alt="<?= $h($ph['caption'] ?? 'Photo') ?>" loading="lazy"></span>
+                                <span class="ph"><img src="<?= $h(\App\Services\Sse\SseSeekPhotoService::photoUrl($ph)) ?>" alt="<?= $h($ph['caption'] ?? 'Photo') ?>" loading="lazy"></span>
                                 <small><?= $h(['front' => 'Face', 'profile' => 'Profil', 'field' => 'Terrain', 'document' => 'Papier'][$ph['kind']] ?? 'Photo') ?> · <?= $h(['upload' => 'envoi d’un membre', 'atak' => 'ATAK', 'seek' => 'SEEK II', 'person' => 'fiche personne', 'extraction' => 'extraction'][$ph['source']] ?? $ph['source']) ?></small>
                                 <?php if (($ph['caption'] ?? '') !== ''): ?><small translate="no"><?= $h($ph['caption']) ?></small><?php endif; ?>
                                 <?php if ($canManage): ?><form method="post" action="<?= $h(url('atak/sse/fichiers/photos/' . (int) $ph['id'] . '/rattacher')) ?>"><?= $csrf ?><input type="hidden" name="detach" value="1"><button class="btn sm link" type="submit">Retirer de la fiche</button></form><?php endif; ?>

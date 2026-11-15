@@ -13,6 +13,7 @@ use App\Repositories\SseFileRecordRepository;
 use App\Repositories\SseFileRepository;
 use App\Services\Sse\SseFileAdminService;
 use App\Services\Sse\SsePhoneExtractionService;
+use App\Support\SseAcquisitionContexts;
 use App\Support\SseRecordsCountryPacks;
 use App\Services\Sse\SseAccessPolicy;
 use App\Support\SseAccessCatalog;
@@ -28,7 +29,7 @@ final class AdminSseFilesController
 {
     public const BASE = 'back-office/renseignement/fichiers';
 
-    public const TABS = ['fiches' => 'Fiches', 'extractions' => 'Extractions de téléphones', 'journal' => 'Journal des consultations', 'reglages' => 'Réglages'];
+    public const TABS = ['fiches' => 'Fiches', 'extractions' => 'Extractions de téléphones', 'journal' => 'Journal des consultations', 'contextes' => 'Contextes d’acquisition', 'reglages' => 'Réglages'];
 
     public function __construct(private ?SseFileRecordRepository $records = null)
     {
@@ -63,6 +64,7 @@ final class AdminSseFilesController
                 'fiches' => $data += ['subjects' => $admin->subjects($tenantId, $data['q'], $page), 'duplicates' => $admin->duplicates($tenantId), 'page' => $page],
                 'extractions' => $data += ['extractions' => (new SsePhoneExtractionService($this->records()))->list($tenantId, ['q' => $data['q'], 'status' => $request->queryString('etat'), 'page' => $page], true), 'status' => $request->queryString('etat'), 'page' => $page],
                 'journal' => $data += ['rows' => (new SseFileRepository())->listQueries($tenantId, ['q' => $data['q'], 'source' => $request->queryString('source'), 'limit' => 300])],
+                'contextes' => $data += ['contexts' => SseAcquisitionContexts::fromSettings($this->records()->settings($tenantId))],
                 default => $data += ['settings' => $this->records()->settings($tenantId), 'countries' => SseRecordsCountryPacks::codes()],
             };
         } catch (\Throwable $e) {
@@ -140,6 +142,51 @@ final class AdminSseFilesController
         Session::flash('success', 'Réglages enregistrés.' . ($purged['queries'] + $purged['extractions'] > 0 ? ' Purge : ' . $purged['queries'] . ' consultation(s), ' . $purged['extractions'] . ' extraction(s).' : ''));
 
         return Response::redirect(url(self::BASE . '/reglages'));
+    }
+
+    /**
+     * Contextes d'acquisition de la communauté : jeu (forces spéciales US ou police), contextes de base activés ou
+     * renommés, contextes ajoutés. Les codes déjà stockés ne changent jamais ; un contexte désactivé reste lisible.
+     */
+    public function contextsSave(Request $request, array $params = []): Response
+    {
+        if (!self::allowed() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->deny();
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $overrides = [];
+        $rows = $request->input('ctx', []);
+        foreach (is_array($rows) ? $rows : [] as $code => $row) {
+            if (is_array($row)) {
+                $overrides[(string) $code] = [
+                    'enabled' => ($row['enabled'] ?? '') === '1',
+                    'fr' => $row['fr'] ?? '',
+                    'en' => $row['en'] ?? '',
+                ];
+            }
+        }
+        $custom = [];
+        $new = $request->input('custom', []);
+        foreach (is_array($new) ? $new : [] as $row) {
+            if (is_array($row)) {
+                $custom[] = [
+                    'code' => $row['code'] ?? '',
+                    'group' => $row['group'] ?? 'autre',
+                    'fr' => $row['fr'] ?? '',
+                    'en' => $row['en'] ?? '',
+                    'enabled' => ($row['enabled'] ?? '0') === '1',
+                ];
+            }
+        }
+        $this->records()->saveSettings($tenantId, [
+            'acquisition_set' => $request->inputString('acquisition_set'),
+            'acquisition_overrides' => $overrides,
+            'acquisition_custom' => $custom,
+        ], (int) Session::get('user_id'));
+        $this->audit($tenantId, 'file.contexts', 0, 'Contextes d’acquisition enregistrés');
+        Session::flash('success', 'Contextes d’acquisition enregistrés.');
+
+        return Response::redirect(url(self::BASE . '/contextes'));
     }
 
     private static function ref(string $v): int

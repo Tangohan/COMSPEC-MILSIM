@@ -153,7 +153,7 @@ final class MemberIntegrationAdminController
         $user = $this->users->findById($userId, $tenantId) ?? [];
         $this->service->refresh($tenantId, $id, $this->actorId());
         $row = $this->integrations->findForTenant($tenantId, $id) ?? $row;
-        $displayName = (string) ($user['display_name'] ?? $user['callsign'] ?? $user['email'] ?? 'Membre');
+        $displayName = member_label(['id' => $userId, 'display_name' => (string) ($user['display_name'] ?? ''), 'callsign' => (string) ($user['callsign'] ?? '')], 'list', $tenantId);
         $row['display_name'] = $displayName;
         $statusLabels = MemberIntegrationCatalog::statusLabels();
         $statusKey = (string) ($row['status'] ?? '');

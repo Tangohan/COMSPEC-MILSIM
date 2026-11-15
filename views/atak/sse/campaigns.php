@@ -16,7 +16,7 @@ $typeTone = static fn (string $t): string => match ($t) { 'temporaire' => 'badge
         <h1>Campagnes SSE</h1>
         <p>
             Les campagnes du mod COMSPEC SSE : personnages récurrents, organisations, ce que les joueurs
-            en savent et registre des scellés. Elles arrivent du jeu (module Zeus « Campagne : envoyer à Athena »)
+            en savent et registre de chaîne de possession. Elles arrivent du jeu (module Zeus « Campagne : envoyer à Athena »)
             ou d’un texte exporté, et repartent en jeu par « Campagne : récupérer depuis Athena ».
         </p>
     </div>

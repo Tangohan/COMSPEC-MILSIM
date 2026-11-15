@@ -237,6 +237,7 @@ final class JnetMemberHub
             ['key' => 'donnees', 'title' => 'Mes données', 'lead' => 'Vos pièces, vos papiers et ce que le site garde sur vous.', 'items' => [
                 ['Mon coffre', 'Pièces RH, brevets et attestations', $moi('coffre')],
                 ['Mes papiers', 'Identité et papiers pour le jeu de rôle', $moi('mes-papiers')],
+                ['Fiabilisation des données', 'Relire votre fiche et confirmer qu’elle est exacte', $moi('fiabilisation'), $badge('data_campaign_pending')],
                 ['Exporter ou supprimer mes données', 'Copie de vos informations, suppression du compte', ['account/donnees', '']],
             ]],
             ['key' => 'service', 'title' => 'Mon service', 'lead' => 'Ce qui vous attend : tâches, avis demandés, démarches.', 'items' => [

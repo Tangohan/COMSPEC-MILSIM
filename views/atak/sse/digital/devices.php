@@ -52,7 +52,7 @@ require __DIR__ . '/_subnav.php';
         <div class="panel-meta"><?= count($devices) ?> fiche(s)</div>
     </div>
     <?php if ($devices === []): ?>
-        <div class="empty-state"><div class="empty-state-inner"><strong>Aucun support</strong><p>Enregistrez une saisie pour démarrer une exploitation.</p></div></div>
+        <div class="empty-state"><div class="empty-state-inner"><strong>Aucun support</strong><p>Enregistrez une saisie pour démarrer une exploitation. Un support arrive aussi tout seul quand un joueur exploite un téléphone ou un ordinateur en jeu puis le transmet (terminal SEEK ou app SSE de l’ATAK).</p></div></div>
     <?php else: ?>
         <div class="table-wrap">
             <table>

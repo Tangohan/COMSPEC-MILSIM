@@ -6,6 +6,8 @@ namespace App\Services\Effectifs;
 
 use App\Core\Database;
 use App\Repositories\UserRepository;
+use App\Services\Personnel\MemberNameService;
+use App\Support\MemberIdentity;
 use App\Support\UnitCodeBuilder;
 use PDO;
 use Throwable;
@@ -194,16 +196,18 @@ final class EffectifsSearchService
         } catch (Throwable) {
         }
         $out = [];
+        // Nom affiché : règle unique (prénom + nom du personnage, indicatif, nom du compte, « Membre »).
+        MemberIdentity::preload($tenantId, array_map(static fn (array $m): int => (int) $m['id'], $found), new MemberNameService($this->pdo()));
         foreach ($found as $m) {
             $id = (int) $m['id'];
             $r = $rich[$id] ?? [];
             $unitId = (int) ($r['unit_id'] ?? 0);
-            $name = $m['display_name'] !== '' ? $m['display_name'] : ($m['character_name'] !== '' ? $m['character_name'] : 'Membre');
+            $name = MemberIdentity::labelForUser(['id' => $id, 'display_name' => $m['display_name'], 'callsign' => $m['callsign']], 'list', $tenantId);
             $out[] = [
                 'id' => $id,
                 'name' => $name,
                 'callsign' => $m['callsign'],
-                'character_name' => $m['character_name'] !== $name ? $m['character_name'] : '',
+                'character_name' => '',
                 'grade' => trim((string) ($r['grade_short'] ?? '')),
                 'unit' => trim((string) ($r['unit_name'] ?? '')),
                 'unit_code' => (string) ($codes['units'][$unitId]['code'] ?? ''),

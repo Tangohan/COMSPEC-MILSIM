@@ -7,16 +7,20 @@ namespace App\Controllers\Web;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\SseCaseRepository;
 use App\Repositories\SseFileRecordRepository;
 use App\Repositories\SseFileRepository;
 use App\Repositories\SseIdentityRepository;
+use App\Repositories\SseLoreRepository;
 use App\Services\Security\FileRateLimiter;
 use App\Services\Sse\SseFileRecordService;
 use App\Services\Sse\SseFileSearchService;
 use App\Services\Sse\SseFileXrefService;
 use App\Services\Sse\SseIdImageService;
 use App\Services\Sse\SsePhoneExtractionService;
+use App\Services\Sse\SseSeekPhotoService;
 use App\Support\SseFileSubjectCatalog as S;
+use App\Support\SseFileVisibility;
 use App\Support\SseMeasure;
 
 /**
@@ -393,6 +397,74 @@ final class SseFileRecordController
             'unattached' => $this->ctx->allows('photos', 'add') ? $this->safe(fn (): array => $this->records()->unattachedPhotos($tenantId, 24)) : [],
             'photoUpload' => !empty($this->ctx->settings()['member_photo_upload']) && $this->ctx->allows('photos', 'add'),
         ]);
+    }
+
+    /**
+     * Image d'une photo de la photothèque rangée à l'abri (cliché du terminal SEEK II) : GET fichiers/photos/{id}/image.
+     * Mêmes droits que la photothèque (accès au portail SSE, porte d'entrée comprise), communauté de la session, jamais
+     * la photo d'une identité couverture ou fausse sans l'habilitation Confidentiel ; un identifiant d'une autre
+     * communauté, d'une photo masquée ou d'un chemin étranger répond 404, sans rien révéler.
+     */
+    public function photoImage(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store')
+            ->setBody('Not found');
+        $tenantId = $this->ctx->tenantId();
+        $photo = null;
+        try {
+            $photo = $tenantId > 0 ? $this->records()->photo($tenantId, (int) ($params['id'] ?? 0)) : null;
+        } catch (\Throwable $e) {
+            error_log('Fichiers SSE : image illisible : ' . $e->getMessage());
+        }
+        if ($photo === null || ($photo['visibility'] === 'hidden' && !$this->ctx->canManage())) {
+            return $notFound();
+        }
+        if (($photo['identity_id'] ?? null) !== null) {
+            $identity = (new SseIdentityRepository())->find((int) $photo['identity_id'], $tenantId);
+            if ($identity === null || (in_array($identity['kind'], ['cover', 'forged'], true) && !($this->ctx->canSee())(SseCaseRepository::CLASS_CONFIDENTIAL))) {
+                return $notFound();
+            }
+            // Lore de session : une photo que la fiche ne montre pas encore à l'opérateur ne se lit pas non plus par son adresse.
+            if (!$this->ctx->canLore()) {
+                try {
+                    $profile = $this->records()->profile($tenantId, (int) $photo['identity_id']);
+                    $phase = SseFileVisibility::phaseOf($profile, (new SseLoreRepository())->phases($tenantId));
+                    if (!SseFileVisibility::inFiles($profile) || !SseFileVisibility::field($profile, 'photo', $phase)) {
+                        return $notFound();
+                    }
+                } catch (\Throwable $e) {
+                    error_log('Fichiers SSE : lore de la photo illisible : ' . $e->getMessage());
+                }
+            }
+        }
+        $abs = (new SseSeekPhotoService($this->records()))->absolutePath($photo, $tenantId);
+        if ($abs === null) {
+            return $notFound();
+        }
+        $ext = match ($photo['mime']) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+        $mime = ['png' => 'image/png', 'webp' => 'image/webp', 'jpg' => 'image/jpeg'][$ext];
+
+        return (new Response())
+            ->header('Content-Type', $mime)
+            ->header('Content-Length', (string) filesize($abs))
+            ->header('Content-Disposition', 'inline; filename="seek-' . (int) $photo['id'] . '.' . $ext . '"')
+            ->header('Cache-Control', 'private, max-age=3600')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer')
+            ->setBodyStream(static function () use ($abs): void {
+                $h = fopen($abs, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
     }
 
     /** Deux fiches côte à côte (photos et signalement). */

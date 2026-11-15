@@ -40,7 +40,7 @@ require __DIR__ . '/_subnav.php';
 <div class="page-heading">
     <div>
         <h1>Identités et couvertures de l’opération</h1>
-        <p>Générez en un coup la population d’une opération (civils, militaires, suspects, cibles prioritaires) avec leurs papiers, vérifiez l’aperçu, puis validez : le serveur de jeu donne ces identités à ses IA au lieu d’en inventer. Les recherchés et les HVT de l’opération, et les camps qui y ont accès, se règlent ici.</p>
+        <p>Générez en un coup la population d’une opération (civils, militaires, personnes d’intérêt, cibles prioritaires) avec leurs papiers, vérifiez l’aperçu, puis validez : le serveur de jeu donne ces identités à ses IA au lieu d’en inventer. Les recherchés et les HVT de l’opération, et les camps qui y ont accès, se règlent ici.</p>
     </div>
     <div class="page-reference"><strong><?= $h($scope['set'] ? ($scope['op'] !== '' ? $scope['op'] : 'Hors opération') . ' · ' . $mapLabel($scope['map'] > 0 ? $scope['map'] : null) : 'Choisissez une opération') ?></strong></div>
 </div>
