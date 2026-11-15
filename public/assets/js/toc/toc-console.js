@@ -16,7 +16,7 @@
 
   // Rubriques et onglets : la situation, la conduite de l'opération, les plans, la salle.
   var NAV = [
-    ['situation', 'Situation', [['groupes', 'Groupes'], ['orbat', 'ORBAT'], ['reseau', 'Réseau'], ['flux', 'Flux'], ['rapports', 'Rapports']]],
+    ['situation', 'Situation', [['groupes', 'Groupes'], ['orbat', 'ORBAT'], ['reseau', 'Réseau'], ['telephones', 'Téléphones'], ['flux', 'Flux'], ['rapports', 'Rapports']]],
     ['conduite', 'Conduite', [['ordres', 'Ordres'], ['demandes', 'Demandes'], ['chronos', 'Chronos'], ['excheck', 'EXCHECK'], ['main', 'Main courante'], ['pertes', 'Pertes']]],
     ['plans', 'Plans', [['plans', 'Plans web'], ['camp', 'Camp']]],
     ['salle', 'Salle', [['salle', 'Écrans'], ['sat', 'SAT'], ['radio', 'Radio']]]
@@ -223,6 +223,7 @@
   }
   function setTab(id) {
     if (!TAB_GROUP[id]) return;
+    if (S.tab === 'telephones' && id !== 'telephones' && window.TocPhones) window.TocPhones.left();
     S.tab = id;
     setPref('tab', id);
     S.isr = id === 'sat';
@@ -512,7 +513,8 @@
 
   var PANELS = {
     groupes: panelGroupes, orbat: panelOrbat, flux: panelFlux, rapports: function () { return S.reports ? S.reports.panel() : ''; }, ordres: panelOrdres, camp: panelCamp, reseau: panelReseau, radio: panelRadio, plans: panelPlans,
-    sat: panelSat, salle: panelSalle, chronos: panelChronos, main: panelMain, excheck: panelExcheck, pertes: panelPertes, demandes: panelDemandes
+    sat: panelSat, salle: panelSalle, chronos: panelChronos, main: panelMain, excheck: panelExcheck, pertes: panelPertes, demandes: panelDemandes,
+    telephones: function () { return window.TocPhones ? window.TocPhones.panel() : ''; }
   };
   function renderPanel() {
     var body = $('#toc-panel');
@@ -530,6 +532,7 @@
     });
     if (focusName) { var f = body.querySelector('[name="' + focusName + '"]'); if (f) { f.focus(); if (caret != null && f.setSelectionRange) { try { f.setSelectionRange(caret, caret); } catch (e) {} } } }
     body.scrollTop = scroll;
+    if (S.tab === 'telephones' && window.TocPhones) window.TocPhones.attached();
     if (S.tab === 'plans' && !S.plansLoaded) loadPlans();
     if (S.tab === 'reseau') loadJournal();
     if (S.tab === 'rapports' && S.reports && !S.reports.loaded()) S.reports.load();
@@ -597,7 +600,8 @@
     var btns = '<button type="button" class="toc-btn is-small is-primary" data-pick="center">Centrer</button>';
     if (d.type === 'track') {
       btns += '<button type="button" class="toc-btn is-small' + (following ? ' is-on' : '') + '" data-pick="follow" aria-pressed="' + following + '">' + (following ? 'Ne plus suivre' : 'Suivre') + '</button>' +
-        '<button type="button" class="toc-btn is-small" data-pick="message">Message</button><button type="button" class="toc-btn is-small" data-pick="order">Ordre</button>';
+        '<button type="button" class="toc-btn is-small" data-pick="message">Message</button><button type="button" class="toc-btn is-small" data-pick="order">Ordre</button>' +
+        (d.track && d.track.src === 'unit' ? '<button type="button" class="toc-btn is-small" data-pick="phone">Téléphone</button>' : '');
     } else if (canEditMarker(d)) {
       btns += '<button type="button" class="toc-btn is-small" data-pick="edit">Modifier</button><button type="button" class="toc-btn is-small" data-pick="pin" aria-pressed="' + isPinned(d) + '">' + (isPinned(d) ? 'Désépingler' : 'Épingler') + '</button><button type="button" class="toc-btn is-small is-danger" data-pick="delete">Supprimer</button>';
     }
@@ -621,6 +625,7 @@
     else if (a === 'here') S.tm.map.panTo(S.tm.toLL(pos));
     else if (a === 'details' && it) setPick(it.id, false);
     else if (a === 'follow' && it) { var ov = S.layers.overlay; ov.follow(ov.following() === it.id ? null : it.id); renderPick(); say(ov.following() ? 'La carte suit ' + it.title + ' (déplacer la carte arrête le suivi).' : 'Suivi arrêté.'); }
+    else if (a === 'phone') { if (t && window.TocPhones) window.TocPhones.openByCallsign(t.callsign); }
     else if (a === 'message') openWindow('message', { pour: t ? (t.group || t.callsign) : '' });
     else if (a === 'order') openWindow('ordre', { pour: t ? (t.group || t.callsign) : '' });
     else if (a === 'trail') { var on = !S.layers.isOn('trails'); S.layers.setLayerOn('trails', on); say(on ? 'Traces affichées (depuis l’ouverture du poste).' : 'Traces masquées.'); }
@@ -1192,6 +1197,7 @@
     });
     // Calques SSE (contrôles d’identité, lieux, pistes de téléphones) : module partagé, désactivés au départ, proposés seulement si le lecteur y a droit.
     if (window.SseMapLayers) S.sse = window.SseMapLayers.mountToc(S.tm, S.mapId);
+    if (window.TocPhones) window.TocPhones.mapReady(S.tm);
     var map = S.tm.map;
     map.on('contextmenu', function (e) {
       if (e.originalEvent) e.originalEvent.preventDefault();
@@ -1315,6 +1321,9 @@
     window.addEventListener('hashchange', applyHash);
     bindKeys();
   }
+
+  // Pont pour les modules de la console qui vivent dans leur propre fichier (onglet « Téléphones »).
+  window.TocHost = { api: api, say: say, renderPanel: renderPanel, state: function () { return { mapId: S.mapId, side: S.side, tab: S.tab }; } };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

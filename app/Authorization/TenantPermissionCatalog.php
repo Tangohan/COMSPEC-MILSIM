@@ -154,6 +154,7 @@ final class TenantPermissionCatalog
             ['slug' => 'atak.aar.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les comptes rendus post-opération ATAK'],
             ['slug' => 'atak.toc.use', 'module' => 'atak', 'action' => 'view', 'name' => 'Tenir le poste TOC web et préparer des plans d’opération'],
             ['slug' => 'atak.toc.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Configurer le poste TOC web (envoi des plans en jeu, réglages, modèles de la communauté)'],
+            ['slug' => 'atak.toc.phone', 'module' => 'atak', 'action' => 'manage', 'name' => 'Agir sur les téléphones en jeu depuis le poste TOC web (notifier, faire sonner, localiser, trianguler)'],
             ['slug' => 'atak.aar.conclude', 'module' => 'atak', 'action' => 'manage', 'name' => 'Écrire la conclusion du commandement des comptes rendus'],
             ['slug' => 'atak.sse.access', 'module' => 'atak', 'action' => 'view', 'name' => 'Accéder au portail de renseignement interpersonnel'],
             ['slug' => 'atak.sse.grant', 'module' => 'atak', 'action' => 'manage', 'name' => 'Délivrer des codes d’accès temporaires au renseignement'],
