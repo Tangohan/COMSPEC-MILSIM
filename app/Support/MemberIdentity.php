@@ -90,6 +90,23 @@ final class MemberIdentity
         ];
     }
 
+    /**
+     * Prénom ou nom saisi dans un formulaire : espaces nettoyés, longueur bornée, null si la saisie contient du HTML
+     * ou des caractères de contrôle (refusée), chaîne vide si rien n'est saisi.
+     */
+    public static function cleanNamePart(mixed $raw, int $max = 100): ?string
+    {
+        $v = trim((string) preg_replace('/\s+/u', ' ', (string) $raw));
+        if ($v === '') {
+            return '';
+        }
+        if (preg_match('/[<>\x00-\x1F\x7F]/u', $v) === 1 || !mb_check_encoding($v, 'UTF-8')) {
+            return null;
+        }
+
+        return mb_substr($v, 0, $max, 'UTF-8');
+    }
+
     /** Nom principal seul (cas le plus courant). @param array<string, mixed> $row */
     public static function name(array $row, string $context = self::LIST, ?int $tenantId = null, bool $allowGrade = true): string
     {

@@ -1660,6 +1660,8 @@ class EffectifsWorkspaceController
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
+            // Prénom et nom du personnage (user_profiles), indicatif, trigramme : nom affiché par la règle unique.
+            'memberIdentity' => $this->rosterIdentities($tenantId, [$id])[$id] ?? [],
             'ficheTabs' => $ficheTabs,
             'ficheTab' => $ficheTab,
             'memberChronology' => $chronology,
@@ -2973,6 +2975,32 @@ class EffectifsWorkspaceController
             'nickname_primary' => $text($request->input('nickname_primary'), 100),
             'motto' => $text($request->input('motto'), 255),
         ];
+        // Prénom et nom du personnage (le nom que tout le monde voit) : user_profiles, comme la fiche du membre.
+        // Une saisie vide laisse la valeur actuelle (jamais d'effacement par ce formulaire) ; du HTML est refusé.
+        $profiles = \App\Core\Container::get(\App\Repositories\UserProfileRepository::class);
+        $currentIdentity = $profiles->getByUserId($id) ?? [];
+        $nameUpsert = [];
+        $nameRejected = false;
+        foreach (['first_name', 'last_name'] as $nameKey) {
+            $clean = \App\Support\MemberIdentity::cleanNamePart($request->input($nameKey, ''));
+            if ($clean === null) {
+                $nameRejected = true;
+            } elseif ($clean !== '' && $clean !== trim((string) ($currentIdentity[$nameKey] ?? ''))) {
+                $nameUpsert[$nameKey] = $clean;
+            }
+        }
+        $nameBefore = trim(trim((string) ($currentIdentity['first_name'] ?? '')) . ' ' . trim((string) ($currentIdentity['last_name'] ?? '')));
+        $nameAfter = $nameBefore;
+        if ($nameUpsert !== []) {
+            $profiles->ensureRow($id);
+            $profiles->upsert($id, $nameUpsert);
+            $nameAfter = trim(
+                (string) ($nameUpsert['first_name'] ?? trim((string) ($currentIdentity['first_name'] ?? '')))
+                . ' ' . (string) ($nameUpsert['last_name'] ?? trim((string) ($currentIdentity['last_name'] ?? '')))
+            );
+            // Ancien champ « nom du personnage » : tenu égal à « Prénom Nom » comme à l'enregistrement du dossier.
+            $data['character_name'] = $nameAfter;
+        }
         $this->personnelProfileRepository->ensureRecord($id, $tenantId);
         $this->personnelProfileRepository->update($id, $data);
         $this->adminAuditService->logUserUpdated(
@@ -2980,8 +3008,22 @@ class EffectifsWorkspaceController
             (int) Session::get('user_id'),
             $id,
             'etat_civil',
-            implode(', ', array_keys(array_filter($data, static fn ($v): bool => $v !== null)))
+            implode(', ', array_keys(array_filter($data, static fn ($v): bool => $v !== null))) . ($nameUpsert !== [] ? ', ' . implode(', ', array_keys($nameUpsert)) : '')
         );
+        if ($nameUpsert !== []) {
+            $this->adminAuditService->logUserUpdated(
+                $tenantId,
+                (int) Session::get('user_id'),
+                $id,
+                'nom_affiche:' . $nameBefore,
+                $nameAfter
+            );
+        }
+        if ($nameRejected) {
+            Session::flash('error', 'Le prénom et le nom ne peuvent pas contenir de HTML ni de caractères spéciaux de contrôle ; ils n’ont pas été modifiés. Le reste de l’état civil est enregistré.');
+
+            return Response::redirect($redirect);
+        }
         Session::flash('success', 'État civil mis à jour.');
 
         return Response::redirect($redirect);
