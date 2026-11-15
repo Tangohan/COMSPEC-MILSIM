@@ -133,6 +133,7 @@ final class TenantPermissionCatalog
             ['slug' => 'operations.comms.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Piloter les communications opérationnelles'],
             ['slug' => 'operations.doctrine.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter la doctrine opérationnelle'],
             ['slug' => 'operations.doctrine.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Gérer la doctrine opérationnelle'],
+            ['slug' => 'events.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Gérer les présences et les événements'],
         ];
     }
 
@@ -308,6 +309,7 @@ final class TenantPermissionCatalog
             ['slug' => 'training.results.view', 'module' => 'training', 'action' => 'view', 'name' => 'Voir les résultats'],
             ['slug' => 'training.results.export', 'module' => 'training', 'action' => 'export', 'name' => 'Exporter les résultats'],
             ['slug' => 'training.certifications.manage', 'module' => 'training', 'action' => 'manage', 'name' => 'Gérer les certifications'],
+            ['slug' => 'training.publications.manage', 'module' => 'training', 'action' => 'manage', 'name' => 'Publier et retirer des parcours de formation'],
             ['slug' => 'training.prerequisites.manage', 'module' => 'training', 'action' => 'manage', 'name' => 'Gérer les prérequis'],
             ['slug' => 'training.manage', 'module' => 'training', 'action' => 'manage', 'name' => 'Gérer les formations (périmètre étendu)'],
         ];
