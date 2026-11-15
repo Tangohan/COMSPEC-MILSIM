@@ -44,18 +44,21 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 Type : nouveauté
 FR : SEEK II, signez la fiche à la souris
 - Sur la page ENVOI du SEEK II, le bouton SIGNER ouvre un pad : tracez votre signature à la souris, EFFACER pour recommencer, VALIDER pour signer la fiche.
-- La signature tracée est envoyée avec la fiche et s'affiche sur la fiche de l'identité dans le Bureau SSE.
+- La touche SIGN de l'appareil (et le bouton SIGNER ET ENVOYER) ouvre le même pad, puis envoie la fiche avec votre signature.
+- La signature tracée est envoyée avec la fiche et s'affiche sur la fiche SEEK II et sur la fiche de l'identité dans le Bureau SSE.
 - Les écrans du SEEK II et du Bureau SSE parlent maintenant comme les forces spéciales américaines : pièces et rapports de collecte, sujets et cibles, vérification d'identité, point de contrôle.
 - Si le pad est trop chargé ou la signature trop courte, l'écran du SEEK le dit sur la ligne d'état, sans fenêtre ni alerte.
 EN : SEEK II, sign the record with the mouse
 - On the SEEK II SUBMIT page, the SIGN button opens a pad: draw your signature with the mouse, CLEAR to start over, CONFIRM to sign the record.
-- The drawn signature is sent with the record and shown on the identity record in the SSE Office.
+- The SIGN key on the device (and the SIGN AND SEND button) opens the same pad, then sends the record with your signature.
+- The drawn signature is sent with the record and shown on the SEEK II record and on the identity record in the SSE Office.
 - The SEEK II and SSE Office screens now use US special forces wording: evidence items and collection reports, subjects and targets, identity verification, checkpoint.
 - If the pad is too crowded or the signature too short, the SEEK II says so on its status line, with no popup or alert.
 
 ### Détail technique
 - **Pad** : page 11 « SIGNATURE » de `display_sse_person.hpp` (IDC 9700 à 9704), fonction `fn_seekSignPad` (`init`, `open`, `back`, `clear`, `accept`, `show`, `json`, `down`, `move`, `up`). Le dialogue accroche `MouseButtonDown`, `MouseMoving` et `MouseButtonUp` (évènements d'affichage, donc insensibles aux points dessinés par-dessus) ; le tracé s'affiche avec de petits contrôles créés à la volée et détruits avec le dialogue. Bornes côté jeu : 8 traits, 150 points par trait, 300 points au total, point gardé tous les 5 pixels.
 - **Envoi** : `fn_ssePersonDialogSubmit` ajoute `strokes` (points entiers 0 à 1000 dans le pad) et `aspect` (largeur / hauteur du pad) à l'objet `signature` de `POST /api/sse/persons` ; `fn_seekSignPad "json"` fabrique le fragment. Le bouton SIGNER ne signe plus d'un coup : il ouvre le pad, VALIDER appelle ensuite `fn_sseSignAtak` comme avant.
+- **Touche SIGN** : `fn_seekSend` ouvre le pad (`["open", [true]]`) tant qu'aucun tracé n'est validé ; VALIDER relance `send` et la fiche `seek_record` part avec `signature.strokes` et `signature.aspect` (le tracé validé sert aux fiches suivantes de la partie). `SseFileQueryService::storeSeek` valide par `SseSignatureStrokes`, range le PNG (`sse_seek_records.signature_image`, même étape de migration) et répond `signature_drawn` ; il apparaît sur la liste des fiches SEEK II et sur l'identité liée. Les trois entrées SIGN (bouton, touche logicielle, touche du châssis, F4/S) passaient déjà par `send` : aucune défaillance de câblage trouvée, le geste signait seulement sans rien tracer.
 - **Site** : `App\Services\Sse\SseSignatureStrokes` valide strictement les traits (12 traits, 400 points par trait, 800 au total, entiers ou décimaux finis de 0 à 1000, proportions de 1 à 6, tracé d'au moins 20 sur 1000), dessine le PNG sans GD puis le range par `SignatureImageService::fromDataUrl` (même rangement et mêmes contrôles que le pad du site, `uploads/sse-id-signatures`). `SseApiController::personsStore` retire les traits du journal de transmission, range l'image sur la fiche créée ou complétée (`sse_persons.signature_image`, colonne ajoutée par `bootstrap/atak_sse_persons_migration.php`) et répond `signature_drawn`. Une signature refusée ne bloque jamais la fiche. Affichage : liste des fiches et fiche de l'identité du Bureau SSE.
 - **Vocabulaire** : libellés affichés seulement, aucune clé, colonne, route, permission ni code de statut renommés ; les anciens codes restent acceptés. Dictionnaire anglais `i18n/en.txt` et `lang/en/site_auto.php` à jour.
 - Tests : `tests/Unit/SseSignatureStrokesTest.php`. Non essayé en jeu : voir la liste « à vérifier en jeu » de la PR.
