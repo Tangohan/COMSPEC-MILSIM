@@ -136,7 +136,7 @@ switch (_mode) do {
             { ["open"] call comspec_atak_native_fnc_tocInbox; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
         if (!isNil "ace_interact_menu_fnc_createAction") then {
             private _act = ["COMSPEC_ATAK_TocInbox", "Messages et ordres du TOC", "", { ["open"] call comspec_atak_native_fnc_tocInbox; },
-                { missionNamespace getVariable ["comspec_atak_native_toc_enabled", true] }, {}, [], "", 4, [false, false, false, false, false],
+                { missionNamespace getVariable ["comspec_atak_native_toc_enabled", true] && {missionNamespace getVariable ["comspec_atak_native_ace_root", true]} }, {}, [], "", 4, [false, false, false, false, false],
                 {
                     // Non-lus dans le nom de l'action : seul signal, aucune alerte à l'écran.
                     params ["", "", "", "_ad"];
