@@ -77,6 +77,13 @@ if ((_d getVariable ["COMSPEC_UcavCtl", []]) isNotEqualTo []) exitWith {
 _d setVariable ["COMSPEC_DroneAckN", (_d getVariable ["COMSPEC_DroneAckN", 0]) + 1, true];
 private _alt = _d getVariable ["COMSPEC_DroneAlt", 40];
 private _spd = _d getVariable ["COMSPEC_DroneSpd", 40];
+// Profil de décollage de la famille (fn_droneProfile) : une voilure fixe ne vole pas sous sa vitesse mini (1,3 fois le
+// décrochage) ni sous son altitude mini ; la vitesse et l'altitude enregistrées sont relevées une fois pour toutes.
+private _prof = ["get", _d] call comspec_atak_native_fnc_droneProfile;
+private _minK = _prof get "minKmh";
+private _minA = _prof get "minAlt";
+if (_minK > 0 && {_spd < _minK}) then { _spd = _minK; _d setVariable ["COMSPEC_DroneSpd", _minK, true]; };
+if (_minA > 0 && {_alt < _minA}) then { _alt = _minA; _d setVariable ["COMSPEC_DroneAlt", _minA, true]; };
 private _setMode = { params ["_m"]; _d setVariable ["COMSPEC_DroneMode", _m, true]; _d setVariable ["COMSPEC_DroneTask", [], true]; _d setVariable ["COMSPEC_DroneRoute", [], true]; _d setVariable ["COMSPEC_DroneLoop", (_d getVariable ["COMSPEC_DroneLoop", 0]) + 1]; };
 private _fly = {
     params ["_pos"];
@@ -107,18 +114,87 @@ private _crew = {
     private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
     if (_side in [west, east, independent] && {(side group driver _d) isNotEqualTo _side}) then { (crew _d) joinSilent (createGroup [_side, true]); };
 };
-// Démarrage : IA de vol, moteurs, montée franche, puis l'ordre suit son cours.
+// Démarrage selon le profil de la famille (fn_droneProfile) : contrôles, puis montée verticale (quadricoptère, drone à
+// rotor), roulage sur piste (voilure fixe) ou lancement à la main (RQ-11 Raven, piste impossible). L'ordre donné reste en
+// attente et se rejoue seul quand le drone est en sécurité : aucun déplacement avant la hauteur de sécurité.
+// Échec : événement TAKEOFF (code de la raison) lu par la ligne d'état du téléphone, rien n'est lancé.
+private _startFail = false;
+private _startPending = false;
 private _start = {
-    if (((getPosATL _d) select 2) > 1 && {isEngineOn _d}) exitWith { false };
+    private _chk = ["check", _d, true] call comspec_atak_native_fnc_droneProfile;
+    _chk params ["_code", "_pf"];
+    if (_code isEqualTo "FLYING") exitWith { false };
+    if (_code isNotEqualTo "OK") exitWith {
+        _startFail = true;
+        _d setVariable ["COMSPEC_DroneEvt", [((_d getVariable ["COMSPEC_DroneEvt", [0]]) select 0) + 1, "TAKEOFF", getPosASL _d, _code], true];
+        false
+    };
     call _crew;
+    ["HOVER"] call _setMode;
     _d land "NONE";
     _d engineOn true;
     _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
-    _d spawn {
-        for "_i" from 1 to 60 do {
-            if (!alive _this || {((getPosATL _this) select 2) > 3}) exitWith {};
-            _this setVelocityModelSpace [0, 0, 3];
-            sleep 0.05;
+    _d limitSpeed ((_d getVariable ["COMSPEC_DroneSpd", 40]) max (_pf get "minKmh"));
+    // En profil CQB (vol bas) la hauteur de sécurité reste basse.
+    private _safe = _pf get "safeAgl";
+    if (_d getVariable ["COMSPEC_DroneCqb", false] && {(_pf get "kind") in ["QUAD", "HELI"]}) then { _safe = 3; };
+    _startPending = true;
+    [_d, _pf, _d getVariable ["COMSPEC_DroneLoop", 0], _cmd, _args, _safe] spawn {
+        params ["_d", "_pf", "_loop", "_cmd", "_args", "_safe"];
+        private _fail = {
+            params ["_why"];
+            _d setVariable ["COMSPEC_DroneEvt", [((_d getVariable ["COMSPEC_DroneEvt", [0]]) select 0) + 1, "TAKEOFF", getPosASL _d, _why], true];
+        };
+        private _live = { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} };
+        private _ok = false;
+        private _method = _pf get "method";
+        private _t0 = time;
+        // Montée verticale : rampe douce jusqu'à la hauteur de sécurité, arrêt net sous un obstacle.
+        if (_method isEqualTo "CLIMB") then {
+            while { call _live && {time - _t0 < (_pf get "timeout")} } do {
+                private _agl = (getPosATL _d) select 2;
+                if (_agl >= _safe) exitWith { _ok = true; };
+                private _pa = getPosASL _d;
+                if ((count (lineIntersectsSurfaces [_pa, _pa vectorAdd [0, 0, 1.2], _d, objNull, true, 1])) > 0) exitWith { ["OVERHEAD"] call _fail; };
+                _d setVelocity [0, 0, ((_pf get "climb") min (0.8 + (_safe - _agl) * 1.2))];
+                sleep 0.05;
+            };
+            if (!_ok && {call _live} && {(time - _t0) >= (_pf get "timeout")}) then { ["STUCK"] call _fail; };
+        };
+        // Roulage : l'IA décolle seule, cap droit devant sur la piste ; sans élan au bout de 25 s, lancement assisté.
+        if (_method isEqualTo "ROLL") then {
+            _d doMove ((getPosATL _d) getPos [3000, getDir _d]);
+            while { call _live && {time - _t0 < (_pf get "timeout")} } do {
+                private _agl = (getPosATL _d) select 2;
+                if (_agl > 8 && {(speed _d) >= (_pf get "minKmh")}) exitWith { _ok = true; };
+                if ((time - _t0) > 25 && {_agl < 1.5} && {(speed _d) < 8}) exitWith { _method = "ASSIST"; };
+                sleep 0.5;
+            };
+            if (!_ok && {_method isEqualTo "ROLL"} && {call _live}) then { ["STUCK"] call _fail; };
+        };
+        // Lancement : mis à 1,6 m du sol dans l'axe, vitesse et pente imposées jusqu'à la hauteur de sécurité ; l'IA prend la suite.
+        if (_method isEqualTo "ASSIST" && {call _live}) then {
+            private _dir = getDir _d;
+            private _pitch = _pf get "pitch";
+            private _dv = [(sin _dir) * (cos _pitch), (cos _dir) * (cos _pitch), sin _pitch];
+            private _up = [-(sin _dir) * (sin _pitch), -(cos _dir) * (sin _pitch), cos _pitch];
+            private _v0 = _pf get "launchMs";
+            private _p0 = getPosATL _d;
+            if ((_p0 select 2) < 1.5) then { _d setPosATL [_p0 select 0, _p0 select 1, 1.6]; };
+            _t0 = time;
+            while { call _live && {time - _t0 < (_pf get "timeout")} } do {
+                private _agl = (getPosATL _d) select 2;
+                if (_agl >= (_safe max 15) && {(speed _d) >= (_pf get "minKmh")}) exitWith { _ok = true; };
+                _d setVectorDirAndUp [_dv, _up];
+                if ((time - _t0) < 1.5 || {((speed _d) / 3.6) < (_v0 * 0.9)}) then { _d setVelocity (_dv vectorMultiply _v0); };
+                sleep 0.05;
+            };
+            if (!_ok && {call _live}) then { ["CRASH"] call _fail; };
+        };
+        if (_ok && {call _live}) then {
+            _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
+            // Le drone est en sécurité : l'ordre qui a provoqué le décollage se rejoue (il refait son déplacement).
+            [_d, _cmd, _args] call comspec_atak_native_fnc_droneCmd;
         };
     };
     true
@@ -157,6 +233,8 @@ if (_cmd isEqualTo "force") then {
 if (_cmd in ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual", "release", "stick"]) then { _d setVariable ["COMSPEC_DroneStandby", nil, true]; };
 // Ordre de vol donné au sol : décollage d'abord (le retour au pilote d'un drone déjà posé ne le fait pas redécoller).
 if (_cmd in ["takeoff", "hover", "follow", "escort", "goto", "loiter", "observe", "strike", "hunt", "route", "stick"]) then { call _start; };
+// Échec du décollage (ou décollage en cours) : l'ordre ne part pas, jamais de déplacement avant la hauteur de sécurité.
+if (_startFail || {_startPending}) exitWith {};
 // Profil CQB : l'IA de vol ne sait pas passer une porte, notre boucle prend la main ; les ordres « hauts » en sortent.
 private _cqb = _d getVariable ["COMSPEC_DroneCqb", false];
 if (_cqb && {_cmd in ["loiter", "observe", "hunt", "strike"]}) then {
@@ -250,11 +328,24 @@ switch (_cmd) do {
         // En vol : on repart en stationnaire dans le nouveau profil (remontée prudente en quittant le CQB).
         if (((getPosATL _d) select 2) > 1) then { [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
     };
-    case "alt": { _d setVariable ["COMSPEC_DroneAlt", _args param [0, 40], true]; _d flyInHeight [_args param [0, 40], true]; };
-    case "speed": { _d setVariable ["COMSPEC_DroneSpd", _args param [0, 40], true]; _d limitSpeed (_args param [0, 40]); };
+    case "alt": { private _na = (_args param [0, 40]) max _minA; _d setVariable ["COMSPEC_DroneAlt", _na, true]; _d flyInHeight [_na, true]; };
+    case "speed": { private _ns = (_args param [0, 40]) max _minK; _d setVariable ["COMSPEC_DroneSpd", _ns, true]; _d limitSpeed _ns; };
     case "takeoff";
     case "hover": {
         ["HOVER"] call _setMode;
+        // Voilure fixe : pas de stationnaire, un avion tourne en rond (orbite de 300 m) autour de l'endroit où il se trouve.
+        if ((_prof get "kind") in ["PLANE", "LAUNCH"]) exitWith {
+            private _g = group driver _d;
+            _d flyInHeight [_alt, true];
+            if (!isNull _g) then {
+                for "_i" from ((count waypoints _g) - 1) to 0 step -1 do { deleteWaypoint [_g, _i]; };
+                private _w = _g addWaypoint [getPosATL _d, 0];
+                _w setWaypointType "LOITER";
+                _w setWaypointLoiterType "CIRCLE";
+                _w setWaypointLoiterRadius 300;
+                _g setCurrentWaypoint _w;
+            };
+        };
         doStop _d;
         _d flyInHeight [_alt, true];
         _d doMove (getPosATL _d);

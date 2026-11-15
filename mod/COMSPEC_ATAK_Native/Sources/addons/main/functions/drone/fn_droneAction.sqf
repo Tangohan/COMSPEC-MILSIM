@@ -226,6 +226,22 @@ private _log = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneLogN", (missionNamespace getVariable ["COMSPEC_ATAK_DroneLogN", 0]) + 1];
 };
 private _modeName = { params ["_m"]; (createHashMapFromArray [["ROUTE", "route"], ["STANDBY", "veille"], ["HOVER", "stationnaire"], ["FOLLOW", "suivi"], ["HOME", "retour au pilote"], ["LAND", "atterrissage"], ["RTH", "retour automatique au point de décollage"], ["STRIKE", "frappe"], ["HUNT", "recherche"], ["MANUAL", "pilotage manuel"], ["STICK", "manette"], ["GOTO", "vers le point"], ["LOITER", "orbite"], ["OBSERVE", "observation"], ["ESCORT", "escorte"]]) getOrDefault [_m, toLower _m] };
+// Raison d'un décollage refusé ou raté (code de fn_droneProfile), pour la ligne d'état de l'app : rien ne s'affiche à l'écran d'Arma.
+private _takeoffWhy = {
+    params ["_code"];
+    createHashMapFromArray [
+        ["DEAD", "Drone détruit : décollage impossible"],
+        ["UGV", "Drone terrestre : le décollage ne s'applique pas à ce drone"],
+        ["UNKNOWN", "Type de drone inconnu : décollage refusé"],
+        ["FLYING", "Drone déjà en vol : décollage ignoré"],
+        ["FUEL", "Batterie trop faible pour décoller"],
+        ["CONNECTED", "Drone piloté depuis le terminal d'un autre joueur : décollage refusé"],
+        ["OVERHEAD", "Obstacle au-dessus du drone (toit, arbre) : déplacez-le à découvert"],
+        ["NOROOM", "Pas assez d'espace dégagé devant le drone : tournez-le face à un espace libre"],
+        ["STUCK", "Le drone n'a pas pu décoller : essayez à un autre endroit"],
+        ["CRASH", "Décollage raté : le drone n'a pas pris d'altitude, tournez-le face à un espace libre"]
+    ] getOrDefault [_code, "Décollage refusé"]
+};
 // Grille saisie (6, 8 ou 10 chiffres) → centre de la case, position ASL ; [] si invalide.
 private _gridPos = {
     params ["_txt"];
@@ -864,8 +880,15 @@ switch (_act) do {
     };
     case "takeoff": {
         if (isNull _d || {!(call _needLink)}) exitWith {};
+        // Contrôles avant d'envoyer (famille du drone, déjà en vol, batterie, terminal, espace dégagé) : l'échec s'affiche sur la ligne d'état.
+        (["check", _d] call comspec_atak_native_fnc_droneProfile) params ["_code", "_pf"];
+        if (_code isNotEqualTo "OK") exitWith {
+            [[_code] call _takeoffWhy, ["#e5483a", "#8a9a93"] select (_code isEqualTo "FLYING")] call _log;
+            call _render;
+        };
         ["takeoff"] call _send;
         [format ["Ordre : démarrage et décollage, %1 m", _s getOrDefault ["droneAlt", 40]]] call _log;
+        [format ["Décollage : %1", createHashMapFromArray [["CLIMB", "montée à la verticale"], ["ROLL", "roulage sur la piste"], ["ASSIST", "lancement à la main, cap droit devant"]] getOrDefault [_pf getOrDefault ["method", "CLIMB"], "montée à la verticale"]], "#8a9a93"] call _log;
         call _render;
     };
     case "cqb": {
@@ -1812,6 +1835,10 @@ switch (_act) do {
         if ((_ev select 0) > (missionNamespace getVariable ["COMSPEC_ATAK_DroneEvtN", 0])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_DroneEvtN", _ev select 0];
             _ev params ["", "_kind", "_pos", "_what"];
+            if (_kind isEqualTo "TAKEOFF") exitWith {
+                [[_what] call _takeoffWhy, "#e5483a"] call _log;
+                call _render;
+            };
             if (_kind isEqualTo "OBSTACLE") exitWith {
                 ["WARNING", "Drone : obstacle devant, arrêt en stationnaire"] call _say;
                 [format ["CQB : obstacle devant en %1, arrêt en stationnaire", [_pos, 8] call comspec_atak_native_fnc_gridRef], "#f2ab33"] call _log;
