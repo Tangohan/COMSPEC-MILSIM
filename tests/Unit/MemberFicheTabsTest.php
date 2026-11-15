@@ -76,7 +76,7 @@ final class MemberFicheTabsTest extends TestCase
         foreach (MemberFicheTabs::slugs() as $slug) {
             $chunk = self::panelChunk($view, $slug);
             foreach (MemberFicheTabs::anchors($slug) as $anchor) {
-                if (in_array($anchor, ['papiers', 'invitations'], true)) {
+                if (in_array($anchor, ['papiers', 'invitations', 'disponibilite'], true)) {
                     continue; // insérées par un partiel qui garde son ancre
                 }
                 self::assertStringContainsString('id="' . $anchor . '"', $chunk, '#' . $anchor . ' hors de l’onglet ' . $slug);

@@ -205,6 +205,8 @@ final class PlayerTracePurgeService
         $bySteam('atak_device_logs', 'Journal de l’appareil', 'steam_uid', 'logged_at');
         $bySteam('atak_mod_reports', 'Rapports d’erreurs du mod', 'steam_uid', 'last_seen_at', 'delete', null);
         $byUser('user_arma_playtime', 'Temps de jeu Arma', 'user_id', 'updated_at');
+        $byUser('player_sessions', 'Sessions de jeu sur le serveur', 'user_id', 'started_at');
+        $bySteam('player_sessions', 'Sessions de jeu sur le serveur (par Steam)', 'steam_uid', 'started_at');
         $byUser('atak_screen_time', 'Temps d’écran ATAK', 'user_id', 'day');
         $byUser('atak_distance_stats', 'Distances parcourues', 'user_id', 'day');
         $byUser('atak_pilot_time', 'Heures de vol', 'user_id', null);
