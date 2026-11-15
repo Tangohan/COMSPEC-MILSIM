@@ -86,6 +86,8 @@ final class SseApiController
             $filters,
             static fn ($v) => $v !== null && $v !== ''
         ));
+        // Le jeu ne reçoit ni les dossiers clos ni les fiches verrouillées (habilitation du téléphone inconnue : échec fermé).
+        $persons = $this->persons->withoutGameHidden($tenantId, $persons);
         $summaries = $this->persons->biometricSummariesForPersons(
             $tenantId,
             array_map(static fn (array $p) => (int) ($p['id'] ?? 0), $persons)
@@ -158,6 +160,10 @@ final class SseApiController
 
         $samples = is_array($body['biometric_samples'] ?? null) ? $body['biometric_samples'] : [];
         $existing = $this->persons->findLikelyDuplicate($tenantId, $mapId, $data);
+        // Une fiche close ou verrouillée n'est ni renvoyée ni complétée depuis le terminal : la retransmission crée une fiche ouverte.
+        if ($existing !== null && $this->persons->withoutGameHidden($tenantId, [$existing]) === []) {
+            $existing = null;
+        }
         $existingSamples = [];
         if ($existing !== null) {
             $existingSamples = $this->persons->listBiometricSamples((int) $existing['id'], $tenantId);
@@ -417,7 +423,7 @@ final class SseApiController
         }
         $id = (int) ($params['id'] ?? 0);
         $person = $this->persons->findById($id, $r);
-        if ($person === null) {
+        if ($person === null || $this->persons->withoutGameHidden($r, [$person]) === []) {
             return Response::json(['error' => 'not_found', 'message' => 'Fiche introuvable.'], 404);
         }
         $person['biometric_samples'] = $this->persons->listBiometricSamples($id, $r);
@@ -441,6 +447,9 @@ final class SseApiController
         }
 
         $person = $this->persons->findByTargetUnit($r, $this->mapId($request), $netId);
+        if (is_array($person) && $this->persons->withoutGameHidden($r, [$person]) === []) {
+            $person = null;
+        }
         if (is_array($person)) {
             $person['biometric_samples'] = $this->persons->listBiometricSamples((int) $person['id'], $r);
         }
@@ -522,7 +531,7 @@ final class SseApiController
         }
 
         $person = $this->persons->findById($personId, $tenantId);
-        if ($person === null) {
+        if ($person === null || $this->persons->withoutGameHidden($tenantId, [$person]) === []) {
             return Response::json(['error' => 'not_found', 'message' => 'Fiche introuvable.'], 404);
         }
 

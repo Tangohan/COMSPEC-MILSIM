@@ -2499,36 +2499,25 @@ final class SsePortalController
 
     public function personsIndex(Request $request, array $params = []): Response
     {
-        $tenantId = $this->tenantId();
-        $list = $this->persons->listForContext($tenantId, 1, [
-            'status' => $request->query('status'),
-            'limit' => 100,
-        ]);
-
-        // Chaîne de possession : une seule requête pour tout le registre.
-        $custody = $this->persons->custodyEventsForPersons(
-            array_map(static fn (array $p): int => (int) ($p['id'] ?? 0), $list),
-            $tenantId
-        );
-
-        // Relevés biométriques simulés + croisement listes de surveillance.
-        foreach ($list as $i => $p) {
-            $pid = (int) ($p['id'] ?? 0);
-            $list[$i]['biometric_samples'] = $this->persons->listBiometricSamples($pid, $tenantId);
-            $list[$i]['watchlist'] = $this->cross->matchOne($p, $tenantId);
-            $list[$i]['custody'] = $custody[$pid] ?? [];
+        $viewer = \App\Services\Sse\SsePersonViewer::fromSession($this->access, $this->clearance);
+        $listing = (new \App\Services\Sse\SsePersonWorkService())->listing($viewer, $request->queryParams());
+        $caseOptions = [];
+        if ($viewer->canCases) {
+            try {
+                $caseOptions = array_slice($this->cases->listForTenant($viewer->tenantId, $this->access->caseScope(), ['is_folder' => 0]), 0, 150);
+            } catch (\Throwable) {
+                $caseOptions = [];
+            }
         }
-
-        // Écrans de travail : rabattus seulement si la communauté l'a décidé.
-        $list = $this->clearance->redactPeopleForScreens($list, $tenantId);
-
         $nav = (string) ($params['_nav'] ?? 'identites');
 
         return $this->portalView('atak.sse.persons', [
             'title' => 'Personnes',
-            'persons' => $list,
-            'screensRedacted' => $this->clearance->workingRedactionEnabled($tenantId),
-            'myClearance' => $this->clearance->maxLevel(),
+            'listing' => $listing,
+            'viewer' => $viewer,
+            'csrf' => Csrf::token(),
+            'caseOptions' => $caseOptions,
+            'now' => time(),
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
@@ -4012,6 +4001,16 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/identites'));
         }
+        // Fiche verrouillée au-dessus de l'habilitation, ou liée à l'identité d'un membre : même réponse qu'une fiche inexistante.
+        $workViewer = \App\Services\Sse\SsePersonViewer::fromSession($this->access, $this->clearance);
+        $workService = new \App\Services\Sse\SsePersonWorkService();
+        $workDetail = $workService->detail($workViewer, $id);
+        if ($workDetail === null) {
+            Session::flash('error', 'Cette personne est introuvable ou restreinte.');
+
+            return Response::redirect(url('atak/sse/identites'));
+        }
+        $workService->recordOpen($workViewer, $id);
         // La fiche du registre (avis de recherche, notice PDF, historique, détections, images du sujet) est la fiche de référence :
         // une personne qui en a une y mène ; « ?fiche=personne » garde la vue de la personne elle-même.
         $registry = [];
@@ -4089,7 +4088,7 @@ final class SsePortalController
             'objectMeta' => [
                 'ref' => 'IDN-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT),
                 'priority' => '—',
-                'classification' => '—',
+                'classification' => $workDetail['row']['classification'] !== null ? \App\Support\SsePersonWork::classificationBadge($workDetail['row']['classification']) : '—',
                 'last_seen' => (string) ($person['updated_at'] ?? $person['created_at'] ?? '—'),
                 'bio_prints' => SseTerrainService::biometricModalityLabel($samples, 'empreintes'),
                 'bio_iris' => SseTerrainService::biometricModalityLabel($samples, 'iris'),
@@ -4135,6 +4134,7 @@ final class SsePortalController
             'idPapers' => SseIdentityRegistryController::personPapers($this->tenantId(), $id),
             'registry' => $registry,
             'sheetMenu' => $sheetMenu,
+            'work' => ['row' => $workDetail['row'], 'viewer' => $workViewer, 'csrf' => Csrf::token(), 'ready' => $workDetail['ready']],
             'canManage' => $this->canManage(),
             'activeNav' => 'identites',
         ]);

@@ -256,6 +256,50 @@ final class SsePersonRepository
     }
 
     /**
+     * Toutes les fiches de la communauté (les plus récentes d'abord), sans requête par fiche : la photo principale n'est pas
+     * jointe (page Personnes : lue en une fois par SsePersonWorkRepository).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAllForTenant(int $tenantId, int $limit = \App\Support\SsePersonWork::LOAD_LIMIT): array
+    {
+        $limit = max(1, min(\App\Support\SsePersonWork::LOAD_LIMIT, $limit));
+        $out = [];
+        foreach ($this->db->fetchAll(
+            'SELECT p.* FROM sse_persons p WHERE p.tenant_id = :t ORDER BY p.id DESC LIMIT ' . $limit,
+            ['t' => $tenantId]
+        ) as $row) {
+            $out[] = $this->hydrate($row, false, false);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Retire des fiches celles que le jeu ne doit pas recevoir : closes et verrouillées (manuellement ou par la règle de la
+     * communauté). Le jeu ne dit pas quelle habilitation a le téléphone : une fiche verrouillée n'est jamais envoyée.
+     *
+     * @param list<array<string, mixed>> $persons
+     * @return list<array<string, mixed>>
+     */
+    public function withoutGameHidden(int $tenantId, array $persons): array
+    {
+        $threshold = null;
+        try {
+            $threshold = \App\Support\SsePersonWork::autoThreshold(
+                (new SsePortalSettingsRepository($this->db))->get($tenantId, \App\Support\SsePersonWork::SETTING_AUTO_LOCK, '')
+            );
+        } catch (\Throwable) {
+            // Réglage illisible : seuls le verrouillage manuel et la clôture comptent.
+        }
+
+        return array_values(array_filter(
+            $persons,
+            static fn (array $p): bool => !\App\Support\SsePersonWork::hiddenFromGame($p, $threshold)
+        ));
+    }
+
+    /**
      * Recherche textuelle sur le tenant (tous contextes).
      *
      * @return list<array<string, mixed>>
@@ -652,7 +696,7 @@ final class SsePersonRepository
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */
-    private function hydrate(array $row, bool $withPhotos): array
+    private function hydrate(array $row, bool $withPhotos, bool $lookupPrimary = true): array
     {
         $weapons = $this->decodeJsonList($row['weapons_json'] ?? null);
         $equipment = $this->decodeJsonList($row['equipment_json'] ?? null);
@@ -707,6 +751,15 @@ final class SsePersonRepository
             'from_arma' => $this->isArmaSourced($row),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
+            // Classification, verrouillage, clôture (étape 4700) : absents tant qu'elle n'est pas passée.
+            'classification' => \App\Support\SsePersonWork::cleanClassification($row['classification'] ?? null),
+            'locked_at' => $this->nullIfEmpty($row['locked_at'] ?? null),
+            'locked_by' => isset($row['locked_by']) && (int) $row['locked_by'] > 0 ? (int) $row['locked_by'] : null,
+            'lock_reason' => $this->nullIfEmpty($row['lock_reason'] ?? null),
+            'lock_until' => $this->nullIfEmpty($row['lock_until'] ?? null),
+            'closed_at' => $this->nullIfEmpty($row['closed_at'] ?? null),
+            'closed_by' => isset($row['closed_by']) && (int) $row['closed_by'] > 0 ? (int) $row['closed_by'] : null,
+            'close_reason' => $this->nullIfEmpty($row['close_reason'] ?? null),
         ];
 
         if ($withPhotos) {
@@ -723,7 +776,7 @@ final class SsePersonRepository
                 $primary = $out['photos'][0];
             }
             $out['primary_photo'] = $primary;
-        } elseif (!empty($row['primary_photo_id'])) {
+        } elseif ($lookupPrimary && !empty($row['primary_photo_id'])) {
             $photo = $this->db->fetchOne(
                 'SELECT * FROM sse_person_photos WHERE id = :id LIMIT 1',
                 ['id' => (int) $row['primary_photo_id']]

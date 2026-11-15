@@ -74,6 +74,7 @@ $pid = (int) ($person['id'] ?? 0);
     </div>
 </div>
 
+<?php if (is_array($work ?? null)) { require __DIR__ . '/persons/_workbar.php'; } ?>
 <?php require __DIR__ . '/_sheet_menu.php'; ?>
 <?php require __DIR__ . '/_person_registry.php'; ?>
 
@@ -243,4 +244,8 @@ $pid = (int) ($person['id'] ?? 0);
 <?php if (!empty($sheetMenu['ready']) && ($sheetMenu['reason'] ?? null) === null) { require __DIR__ . '/_sheet_issues.php'; } ?>
 <?php
 $sseContent = ob_get_clean();
+if (is_array($work ?? null)) {
+    $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-persons.css')) . '">';
+    $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-persons.js')) . '" defer></script>';
+}
 require __DIR__ . '/_layout.php';
