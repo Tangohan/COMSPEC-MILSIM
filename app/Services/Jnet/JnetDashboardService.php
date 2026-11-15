@@ -35,6 +35,10 @@ final class JnetDashboardService
      */
     private const OPERATIONAL_ENTRY_TYPES = ['mission', 'manifestation'];
 
+    /** Annuaire du personnel : taille d'une page lue (le dépôt plafonne à 200) et nombre maximal de membres rendus. */
+    private const PERSONNEL_PAGE = 200;
+    private const PERSONNEL_DIRECTORY_MAX = 3000;
+
     /** @var array<string, mixed> Mémo par requête : la page commune et l’espace partagent ORBAT, personnel et opérations. */
     private array $memo = [];
 
@@ -687,10 +691,19 @@ final class JnetDashboardService
 
     private function loadPersonnelCardsUncached(int $tenantId): array
     {
+        // Tous les membres actifs, page par page : listForTenant() plafonne une page à 200 lignes ; un plafond à 120 faisait
+        // disparaître de l'annuaire JNET (et de sa fiche) les membres d'une grande ou ancienne communauté au-delà du 120e.
+        $raw = [];
         try {
-            $raw = $this->users->listForTenant($tenantId, null, 'active', null, 120, 0);
+            for ($offset = 0; $offset < self::PERSONNEL_DIRECTORY_MAX; $offset += self::PERSONNEL_PAGE) {
+                $page = $this->users->listForTenant($tenantId, null, 'active', null, self::PERSONNEL_PAGE, $offset);
+                $raw = array_merge($raw, $page);
+                if (count($page) < self::PERSONNEL_PAGE) {
+                    break;
+                }
+            }
         } catch (\Throwable) {
-            $raw = [];
+            // On garde ce qui a déjà été lu plutôt que de vider l'annuaire.
         }
         $ids = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $raw);
         $enriched = [];

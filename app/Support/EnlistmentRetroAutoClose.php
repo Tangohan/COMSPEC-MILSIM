@@ -17,6 +17,17 @@ final class EnlistmentRetroAutoClose
     /** Seuil unique : jours de retard (après l'échéance J+30) à partir desquels le néant est enregistré. */
     public const AUTO_CLOSE_LATE_DAYS = 45;
 
+    /**
+     * Fenêtre de sécurité : au-delà de ce retard (jours après l'échéance J+30), un dossier est considéré comme ancien et
+     * n'est JAMAIS clos automatiquement, ni notifié : une très ancienne communauté ne voit pas des centaines de
+     * candidatures historiques rattrapées d'un coup. Ces dossiers sont seulement comptés, dans l'avis « Données anciennes
+     * à vérifier » du tableau de bord, pour qu'un instructeur décide.
+     */
+    public const AUTO_CLOSE_MAX_LATE_DAYS = 180;
+
+    /** Au plus ce nombre de notifications d'instructeur par exécution, toutes communautés confondues (une par instructeur et par passage). */
+    public const MAX_NOTIFICATIONS_PER_RUN = 50;
+
     /** Nombre maximal de dossiers clos par communauté et par exécution (le reste passe à l'exécution suivante). */
     public const BATCH_PER_TENANT = 25;
 
@@ -33,6 +44,28 @@ final class EnlistmentRetroAutoClose
     public static function acceptanceAgeDays(): int
     {
         return EnlistmentStatusCatalog::RETRO_DELAY_DAYS + self::AUTO_CLOSE_LATE_DAYS;
+    }
+
+    /** Ancienneté maximale de l'acceptation, en jours calendaires : au-delà, le dossier est « ancien » (voir AUTO_CLOSE_MAX_LATE_DAYS). */
+    public static function acceptanceMaxAgeDays(): int
+    {
+        return EnlistmentStatusCatalog::RETRO_DELAY_DAYS + self::AUTO_CLOSE_MAX_LATE_DAYS;
+    }
+
+    /**
+     * Candidature acceptée, sans bilan d'équipe, dont le retard dépasse la fenêtre de sécurité : jamais clôturée
+     * automatiquement, seulement signalée aux responsables.
+     *
+     * @param array<string, mixed> $row ligne de la table enlistments
+     */
+    public static function isStale(array $row, bool $hasStaffRetro, ?int $now = null): bool
+    {
+        if ($hasStaffRetro || (string) ($row['status'] ?? '') !== 'reviewed') {
+            return false;
+        }
+        $late = self::lateDays($row, $now);
+
+        return $late !== null && $late > self::AUTO_CLOSE_MAX_LATE_DAYS;
     }
 
     /**
@@ -53,7 +86,8 @@ final class EnlistmentRetroAutoClose
 
     /**
      * Le néant doit-il être enregistré maintenant ? Seulement une candidature acceptée, sans bilan d'équipe
-     * (humain ou néant), en retard d'au moins AUTO_CLOSE_LATE_DAYS jours.
+     * (humain ou néant), en retard d'au moins AUTO_CLOSE_LATE_DAYS jours et d'au plus AUTO_CLOSE_MAX_LATE_DAYS jours
+     * (au-delà : dossier ancien, voir isStale).
      *
      * @param array<string, mixed> $row ligne de la table enlistments
      */
@@ -64,7 +98,23 @@ final class EnlistmentRetroAutoClose
         }
         $late = self::lateDays($row, $now);
 
-        return $late !== null && $late >= self::AUTO_CLOSE_LATE_DAYS;
+        return $late !== null && $late >= self::AUTO_CLOSE_LATE_DAYS && $late <= self::AUTO_CLOSE_MAX_LATE_DAYS;
+    }
+
+    /**
+     * Réglage de la communauté (tenants.settings, clé « retro_auto_close ») : activé par défaut, pour la fenêtre récente
+     * seulement. Une communauté peut le désactiver ; elle ne peut pas élargir la fenêtre au-delà de la sécurité.
+     *
+     * @param array<string, mixed> $tenantSettings contenu décodé de tenants.settings
+     */
+    public static function enabledFor(array $tenantSettings): bool
+    {
+        $cfg = $tenantSettings['retro_auto_close'] ?? null;
+        if (!is_array($cfg) || !array_key_exists('enabled', $cfg)) {
+            return true;
+        }
+
+        return filter_var($cfg['enabled'], FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
