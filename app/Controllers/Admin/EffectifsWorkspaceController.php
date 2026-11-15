@@ -5041,11 +5041,23 @@ class EffectifsWorkspaceController
         } catch (\Throwable) {
             return $out;
         }
+        // Une lecture pour tous les membres chargés (au lieu d’une par membre) ; en cas d’erreur, repli sur
+        // l’ancienne lecture membre par membre.
+        $rowsByUser = null;
+        try {
+            $rowsByUser = $awardRepo->listForUsers($userIds, $tenantId);
+        } catch (\Throwable) {
+            $rowsByUser = null;
+        }
         foreach ($userIds as $uid) {
-            try {
-                $rows = $awardRepo->listForUser($uid, $tenantId);
-            } catch (\Throwable) {
-                continue;
+            if ($rowsByUser !== null) {
+                $rows = $rowsByUser[(int) $uid] ?? [];
+            } else {
+                try {
+                    $rows = $awardRepo->listForUser($uid, $tenantId);
+                } catch (\Throwable) {
+                    continue;
+                }
             }
             $labels = [];
             $items = [];

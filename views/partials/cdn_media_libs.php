@@ -56,7 +56,7 @@ if ($cdnPhase === 'head'):
     <link rel="dns-prefetch" href="https://media.tenor.com">
     <?php endif; ?>
     <?php if (!$cdnSkipLocal && is_file(base_path('public/assets/css/athena_media.css'))): ?>
-    <link href="<?= htmlspecialchars($baseUrlCdn, ENT_QUOTES, 'UTF-8') ?>/assets/css/athena_media.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/athena_media.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php
     endif;
@@ -109,7 +109,7 @@ else: // body
 
     if ($hasPacks && !$cdnSkipLocal && is_file(base_path('public/assets/js/athena_media.js'))):
         ?>
-    <script defer src="<?= htmlspecialchars($baseUrlCdn, ENT_QUOTES, 'UTF-8') ?>/assets/js/athena_media.js"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena_media.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
         <?php
     endif;
 endif;

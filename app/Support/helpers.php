@@ -2084,6 +2084,12 @@ if (!function_exists('training_course_default_cover_url')) {
      */
     function training_course_default_cover_url(): string
     {
+        // L'original pèse 9,5 Mo (4800 × 3195) : la variante 1600 px (0,24 Mo) est servie quand elle est présente.
+        $light = 'assets/images/opt/formation-de-specialite-1600.jpg';
+        if (is_file(base_path('public/' . $light))) {
+            return rtrim(url(''), '/') . '/' . $light;
+        }
+
         return rtrim(url(''), '/') . '/assets/images/formation-de-specialite.jpg';
     }
 }

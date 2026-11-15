@@ -192,9 +192,11 @@ final class EnlistmentStatusCatalog
      * État du bilan d'équipe 30 jours.
      *
      * @param array<string, mixed> $row
-     * @return array{key: string, label: string, tone: string, meta: string, days_since_acceptance: ?int, actionable: bool}
+     * @param bool $autoClosed le bilan est un néant posé par Athena (et non rédigé par un membre) : même état « done »
+     *                         (le dossier n'est plus en retard) mais présenté « Clos par Athena » et signalé par `auto`
+     * @return array{key: string, label: string, tone: string, meta: string, days_since_acceptance: ?int, actionable: bool, auto?: bool}
      */
-    public static function retro(array $row, ?string $doneAt, bool $tableReady, ?int $now = null): array
+    public static function retro(array $row, ?string $doneAt, bool $tableReady, ?int $now = null, bool $autoClosed = false): array
     {
         $status = (string) ($row['status'] ?? '');
         $doneAt = $doneAt !== null ? trim($doneAt) : null;
@@ -203,6 +205,9 @@ final class EnlistmentStatusCatalog
 
         if ($doneAt !== null) {
             $fmt = self::formatDate($doneAt, 'd/m/Y');
+            if ($autoClosed) {
+                return ['key' => 'done', 'label' => \App\Support\EnlistmentRetroAutoClose::BADGE_LABEL, 'tone' => 'muted', 'meta' => $fmt !== '' ? 'Néant le ' . $fmt : 'Néant', 'days_since_acceptance' => $days, 'actionable' => false, 'auto' => true];
+            }
 
             return ['key' => 'done', 'label' => 'Fait', 'tone' => 'emerald', 'meta' => $fmt !== '' ? 'Le ' . $fmt : '', 'days_since_acceptance' => $days, 'actionable' => false];
         }

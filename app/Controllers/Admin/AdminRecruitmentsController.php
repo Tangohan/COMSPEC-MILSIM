@@ -569,15 +569,18 @@ class AdminRecruitmentsController
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
         if ($this->enlistmentTimelineRepository->tableExists()) {
+            // Ce bilan remplace un néant posé par Athena : le néant reste lisible dans le journal, on le rappelle ici.
+            $replacesAuto = \App\Support\EnlistmentRetroAutoClose::isAutoClosed($existingStaffRetro);
             $this->enlistmentTimelineRepository->append(
                 (int) $tenantId,
                 $id,
                 'staff_note',
                 'general',
                 'Bilan de recrutement (équipe, après 30 jours)',
-                'Note : ' . $rating . " / 5\n\n" . $comment,
+                'Note : ' . $rating . " / 5\n\n" . $comment
+                    . ($replacesAuto ? "\n\nCe bilan remplace le néant clos automatiquement par Athena." : ''),
                 $userId,
-                ['retro' => 'staff_one_month']
+                ['retro' => 'staff_one_month'] + ($replacesAuto ? ['replaces_auto' => true] : [])
             );
         }
         try {

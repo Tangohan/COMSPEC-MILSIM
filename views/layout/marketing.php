@@ -31,12 +31,12 @@ $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/design-system.css'))): ?>
-    <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/design-system.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/design-system.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
-    <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/styles.css" rel="stylesheet">
-    <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/home-impact.css?v=hero-av-5" rel="stylesheet">
-    <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/site-marketing.css?v=2" rel="stylesheet">
-    <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/public-site-footer.css?v=2" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/styles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/home-impact.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/site-marketing.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/public-site-footer.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <?php
     $marketingStyles = is_array($marketingStyles ?? null) ? $marketingStyles : [];
     foreach ($marketingStyles as $href):

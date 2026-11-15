@@ -37,6 +37,8 @@ final class CronSchedule
         'moderation_quarantine_expire' => 60,
         'account_deletion_anonymize' => 60,
         'recruitment_retro_reminders' => 360,
+        // Bilan 30 jours attendu depuis 45 jours sans bilan : « néant » validé par Athena, au plus 100 dossiers par passage.
+        'recruitment_retro_auto_close' => 60,
         'hr_weekly_digest' => 1440,
         'training_forgotten_docs_digest' => 1440,
         'roleplay_bilan_due' => 1440,

@@ -422,6 +422,7 @@ final class CommunityHandoverService
         $in = implode(',', array_fill(0, count($departing), '?'));
         $this->pdo()->prepare("UPDATE tenants SET owner_user_id = ? WHERE id = ? AND owner_user_id IN ({$in})")
             ->execute(array_merge([$successorId, $tenantId], $departing));
+        \App\Repositories\TenantRepository::forgetAllCaches();
     }
 
     private function announce(int $tenantId, string $successorName): void

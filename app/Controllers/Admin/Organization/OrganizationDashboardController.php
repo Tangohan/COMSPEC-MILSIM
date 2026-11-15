@@ -98,7 +98,7 @@ class OrganizationDashboardController
 
         $tenantName = '';
         try {
-            $tenantRow = (new TenantRepository())->findById($tenantId);
+            $tenantRow = \App\Core\Container::get(TenantRepository::class)->findById($tenantId);
             if ($tenantRow !== null) {
                 $tenantName = (string) ($tenantRow['name'] ?? '');
             }
@@ -124,7 +124,7 @@ class OrganizationDashboardController
 
         $discordInviteMissing = false;
         try {
-            $settings = (new TenantRepository())->getSettings($tenantId);
+            $settings = \App\Core\Container::get(TenantRepository::class)->getSettings($tenantId);
             $communityCfg = is_array($settings['community'] ?? null) ? $settings['community'] : [];
             $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($communityCfg);
         } catch (\Throwable) {
@@ -289,7 +289,7 @@ class OrganizationDashboardController
         // Messages de l'administration du site : jamais bloquants, une erreur les masque simplement.
         $platformMessages = [];
         try {
-            $tenantForMessages = (new TenantRepository())->findById($tenantId);
+            $tenantForMessages = \App\Core\Container::get(TenantRepository::class)->findById($tenantId);
             if (is_array($tenantForMessages)) {
                 $platformMessages = (new \App\Services\Platform\PlatformBoMessageService())->forTenant($tenantForMessages, $viewerId, locale(), false, true);
             }
@@ -412,7 +412,7 @@ class OrganizationDashboardController
         $terminals = [];
         $mission = null;
         try {
-            $tenant = (new TenantRepository())->findById($tenantId) ?: [];
+            $tenant = \App\Core\Container::get(TenantRepository::class)->findById($tenantId) ?: [];
         } catch (\Throwable) {
         }
         try {

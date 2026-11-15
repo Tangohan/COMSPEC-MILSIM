@@ -37,7 +37,7 @@ foreach ($academyLearning as $courseKey => $learnerState) {
 ?>
 <div id="main" class="academy-content academy-public academy-live">
 <section class="academy-full-hero" aria-labelledby="academy-title">
-<img class="academy-full-hero__image" src="<?= $h(asset_url('assets/images/academy-hero.jpg')) ?>" alt="" fetchpriority="high" decoding="async" width="1818" height="1256">
+<picture><source type="image/webp" srcset="<?= $h(asset_url('assets/images/opt/academy-hero-960.webp')) ?> 960w, <?= $h(asset_url('assets/images/opt/academy-hero-1818.webp')) ?> 1818w" sizes="(max-aspect-ratio: 13/9) 145vh, 100vw"><img class="academy-full-hero__image" src="<?= $h(asset_url('assets/images/academy-hero.jpg')) ?>" alt="" fetchpriority="high" decoding="async" width="1818" height="1256"></picture>
 <div class="academy-full-hero__shade"></div>
 <div class="academy-full-hero__content wrap">
 <p class="eyebrow">ATHENA / <?= $h($t('tagline')) ?></p>

@@ -253,6 +253,8 @@
   bottom: 0;
   background-color: transparent;
   background-image: url('/assets/img/atak-fx/broken-screen.png');
+  /* WebP (0,24 Mo au lieu de 4,3 Mo) ; la déclaration précédente reste le repli. */
+  background-image: image-set(url('/assets/img/atak-fx/broken-screen.webp') type('image/webp'), url('/assets/img/atak-fx/broken-screen.png') type('image/png'));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

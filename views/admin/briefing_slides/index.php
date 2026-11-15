@@ -554,6 +554,8 @@ require base_path('views/partials/ath_kpis.php');
       .catch(function () {});
   };
 
-  window.setInterval(poll, 15000);
+  // Onglet masqué : pas d'appel toutes les 15 s ; rafraîchi au retour au premier plan.
+  window.setInterval(function () { if (!document.hidden) poll(); }, 15000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
 })();
 </script>

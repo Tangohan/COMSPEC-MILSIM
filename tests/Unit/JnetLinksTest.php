@@ -563,7 +563,7 @@ final class JnetLinksTest extends TestCase
         self::assertStringNotContainsString('INSERT', $sql, 'aucune donnée ajoutée');
         self::assertStringContainsString('UNIQUE KEY uq_jnet_links_pair (tenant_id, src_type, src_id, dst_type, dst_id)', $sql);
         self::assertStringContainsString('ON DELETE CASCADE', $sql);
-        $step = $this->read('database/steps/4550_jnet_links.php');
+        $step = $this->read('database/steps/4560_jnet_links.php');
         self::assertStringContainsString('tableExists', $step);
         self::assertStringContainsString('2026_11_14_070_jnet_links.sql', $step);
         $down = $this->read('migrations/rollback/jnet_links_down.sql');
@@ -571,8 +571,8 @@ final class JnetLinksTest extends TestCase
         self::assertStringContainsString('DROP TABLE IF EXISTS jnet_unit_links;', $down);
         $registry = $this->read('database/steps/registry.php');
         self::assertStringContainsString("'id' => 'jnet_links'", $registry);
-        self::assertStringContainsString('4550_jnet_links.php', $registry);
-        self::assertFileExists(self::ROOT . 'database/steps/4550_jnet_links.php');
+        self::assertStringContainsString('4560_jnet_links.php', $registry);
+        self::assertFileExists(self::ROOT . 'database/steps/4560_jnet_links.php');
         // Les écrans tolèrent l'absence des tables.
         $repo = $this->read('app/Repositories/JnetLinksRepository.php');
         self::assertStringContainsString("tableExists('jnet_unit_links')", $repo);
