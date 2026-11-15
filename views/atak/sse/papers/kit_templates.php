@@ -13,7 +13,7 @@ require __DIR__ . '/_subnav.php';
 <div class="page-heading">
     <div>
         <h1>Kits documentaires types</h1>
-        <p>Un kit type réunit les papiers d’un profil (civil, militaire, diplomate, journaliste, contractor, agent infiltré…) : pays, types de papiers, identité qui les porte, champs pré-remplis, téléphone et adresse simulés, éléments de légende. Affecté à des membres, il crée leurs papiers, leur kit de mission et leur brief de couverture.</p>
+        <p>Un kit type réunit les papiers d’un profil (civil, militaire, diplomate, journaliste, contractor, agent infiltré…) : pays, types de papiers, identité qui les porte, champs pré-remplis, téléphone et adresse, éléments de légende. Affecté à des membres, il crée leurs papiers, leur kit de mission et leur brief de couverture.</p>
     </div>
     <div class="page-reference"><strong><?= count($templates) ?> kit(s)</strong></div>
 </div>

@@ -576,6 +576,46 @@ class RoleRepository
         return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
     }
 
+    /**
+     * Identité des titulaires d’un niveau (même communauté uniquement), pour l’aperçu « qui a ce niveau ».
+     *
+     * @param list<int> $userIds
+     * @return list<array{id: int, name: string, callsign: string, unit: string}>
+     */
+    public function memberIdentities(int $tenantId, array $userIds, int $limit = 60): array
+    {
+        $userIds = array_slice(array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0))), 0, max(1, $limit));
+        if ($tenantId < 1 || $userIds === []) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($userIds), '?'));
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT u.id, u.display_name, u.callsign, un.name AS unit_name
+                 FROM users u
+                 LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                 LEFT JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = u.tenant_id
+                 WHERE u.tenant_id = ? AND u.id IN ({$ph}) ORDER BY u.display_name ASC, u.id ASC"
+            );
+            $st->execute(array_merge([$tenantId], $userIds));
+        } catch (\Throwable) {
+            $st = $this->pdo->prepare("SELECT id, display_name, callsign, NULL AS unit_name FROM users WHERE tenant_id = ? AND id IN ({$ph}) ORDER BY display_name ASC, id ASC");
+            $st->execute(array_merge([$tenantId], $userIds));
+        }
+        $out = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $name = trim((string) ($row['display_name'] ?? ''));
+            $out[$row['id'] . ''] = [
+                'id' => (int) $row['id'],
+                'name' => $name !== '' ? $name : (string) ($row['callsign'] ?? ('#' . $row['id'])),
+                'callsign' => (string) ($row['callsign'] ?? ''),
+                'unit' => trim((string) ($row['unit_name'] ?? '')),
+            ];
+        }
+
+        return array_values($out);
+    }
+
     public function deleteCustomAccessRole(int $tenantId, int $roleId): bool
     {
         $r = $this->findById($roleId, $tenantId);
@@ -616,6 +656,7 @@ class RoleRepository
                 'color' => isset($style['color']) ? trim((string) $style['color']) : '',
                 'icon' => isset($style['icon']) ? trim((string) $style['icon']) : '',
                 'variant' => isset($style['variant']) ? trim((string) $style['variant']) : '',
+                'hex' => isset($style['hex']) && \App\Services\Rbac\AccessRoleColor::isHex(trim((string) $style['hex'])) ? strtolower(trim((string) $style['hex'])) : '',
             ],
             static fn (string $v): bool => $v !== ''
         );

@@ -23,8 +23,10 @@
     place-items: center;
     color: var(--muted);
 }
-.dos-portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dos-portrait { position: relative; }
+.dos-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: var(--surface-2, #1a222c); }
 .dos-portrait svg { width: 62%; height: auto; opacity: 0.55; }
+.dos-portrait.is-broken img { display: none; }
 .dos-id { min-width: 0; }
 .dos-id h1 { overflow-wrap: anywhere; line-height: 1.12; }
 .dos-alias { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
@@ -37,7 +39,7 @@
     border: 1px solid var(--border);
     background: rgba(255, 255, 255, 0.025);
     color: var(--text);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     line-height: 1.2;
 }
 .dos-chip--mono { font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.04em; }
@@ -62,7 +64,7 @@
     background: #12171b;
     color: #9ca5ac;
     font-family: var(--mono, monospace);
-    font-size: 0.62rem;
+    font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -127,7 +129,7 @@
     background: transparent;
     color: var(--muted);
     font-family: var(--mono, monospace);
-    font-size: 0.64rem;
+    font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-decoration: none;
@@ -143,7 +145,7 @@
     padding: 0.05rem 0.35rem;
     border: 1px solid var(--border);
     background: rgba(255, 255, 255, 0.04);
-    font-size: 0.6rem;
+    font-size: 0.6875rem;
     text-align: center;
 }
 .dos-tab__n--alert { border-color: rgba(220, 38, 38, 0.7); background: rgba(220, 38, 38, 0.18); color: #ffb4b4; }
@@ -179,10 +181,6 @@
 .dos-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.5rem; }
 .dos-list li { padding: 0.5rem 0.65rem; border: 1px solid var(--border-soft, var(--border)); background: rgba(255, 255, 255, 0.015); font-size: 0.82rem; overflow-wrap: anywhere; }
 .dos-list small { display: block; color: var(--muted); font-size: 0.72rem; }
-.dos-photos { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-.dos-photos figure { margin: 0; }
-.dos-photos img { width: 100%; aspect-ratio: 35 / 45; object-fit: cover; border: 1px solid var(--border); display: block; background: var(--surface-2, #1a222c); }
-.dos-photos figcaption { margin-top: 0.25rem; color: var(--muted); font-size: 0.7rem; }
 
 /* Chronologie. */
 .dos-filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.9rem; }
@@ -224,7 +222,7 @@
 .dos-note--info { border-color: var(--border); }
 .dos-filters-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; margin: 0 0 1rem; }
 .dos-filters-bar label { display: block; margin: 0 0 0.2rem; color: var(--muted); font-size: 0.72rem; }
-.dos-status { font-family: var(--mono, monospace); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.dos-status { font-family: var(--mono, monospace); font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; }
 
 @media (max-width: 760px) {
     .dos-head { grid-template-columns: auto minmax(0, 1fr); }

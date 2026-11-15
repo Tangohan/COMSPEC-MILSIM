@@ -310,7 +310,7 @@ final class SseIdWorkshopController
             'country' => $country,
             'countries' => $countries,
             'countryJs' => $countryJs,
-            'preview' => SseIdWorkshopService::previewModel($doc, $identity, $country),
+            'preview' => SseIdWorkshopService::previewModel($doc, $identity, $country, $this->markingSetting($tenantId)),
             'editable' => $editable,
             'transitions' => $doc['id'] > 0 && $r['manage'] ? (SseIdentityCatalog::TRANSITIONS[$doc['workflow']] ?? []) : [],
             'duplicates' => $doc['id'] > 0 ? $this->documents->duplicatesOf((int) $doc['id'], $tenantId) : [],
@@ -447,6 +447,11 @@ final class SseIdWorkshopController
         }
         $to = SseIdentityCatalog::pick(SseIdentityCatalog::WORKFLOWS, $request->inputString('to'), '');
         $reason = trim($request->inputString('reason'));
+        if ($to !== 'revoked' && \App\Services\Sse\SseIdentityHolderService::isObservedOnly($doc['identity'] ?? [])) {
+            Session::flash('error', \App\Services\Sse\SseIdentityHolderService::NO_ISSUE);
+
+            return Response::redirect($back);
+        }
         if ($to === 'revoked' && $reason === '') {
             Session::flash('error', 'Indiquez le motif de la révocation.');
 
@@ -480,6 +485,11 @@ final class SseIdWorkshopController
         $doc = $this->documents->find($id, $tenantId);
         if ($doc === null || (!$r['truth'] && \App\Services\Sse\MemberIdentityPapersService::docIsSecret($doc))) {
             return $this->denied(url(self::BASE . '/atelier'));
+        }
+        if (\App\Services\Sse\SseIdentityHolderService::isObservedOnly($doc['identity'] ?? [])) {
+            Session::flash('error', \App\Services\Sse\SseIdentityHolderService::NO_ISSUE);
+
+            return Response::redirect($back);
         }
         $newId = (new SseIdWorkshopService($this->identities, $this->documents, $this->countries))->duplicate($tenantId, $doc, $this->userId());
         if ($newId === null) {
@@ -528,6 +538,21 @@ final class SseIdWorkshopController
                 return Response::redirect($back);
             }
         }
+        if (!$photo['ok'] && ($libraryId = (int) $request->input('photo_library', 0)) > 0) {
+            // « Définir comme portrait » depuis la visionneuse de l'onglet Photos.
+            $libraryPhoto = null;
+            try {
+                $libraryPhoto = (new \App\Repositories\SseFileRecordRepository())->photo($tenantId, $libraryId);
+            } catch (\Throwable $e) {
+                error_log('Portrait depuis la photothèque : photo illisible : ' . $e->getMessage());
+            }
+            $photo = SseIdWorkshopService::copyFilePhoto($tenantId, $id, $libraryPhoto, $images);
+            if (!$photo['ok']) {
+                Session::flash('error', 'Photo : ' . ($photo['error'] ?? 'image refusée.'));
+
+                return Response::redirect($back);
+            }
+        }
         if (isset($photo['path']) || $request->inputString('photo_remove') === '1') {
             $set['photo_path'] = $photo['path'] ?? null;
         }
@@ -547,7 +572,7 @@ final class SseIdWorkshopController
         }
         $this->identities->setImages($id, $tenantId, $set);
         SseIdMassGeneratorService::audit($tenantId, $this->userId(), 'id_images.update', 'sse_identity', $id, ['images' => array_keys($set)]);
-        Session::flash('success', 'Images du titulaire enregistrées. Elles apparaissent sur l’aperçu de chaque papier, sous le filigrane SIMULATION.');
+        Session::flash('success', 'Images du titulaire enregistrées. Elles apparaissent sur l’aperçu de chaque papier.');
 
         return Response::redirect($back);
     }
@@ -1049,6 +1074,16 @@ final class SseIdWorkshopController
     }
 
     // ----------------------------------------------------------------- Outils
+
+    /** Réglage de communauté du marquage des images exportées (discreet par défaut, jamais bloquant). */
+    private function markingSetting(int $tenantId): string
+    {
+        try {
+            return (string) (new \App\Repositories\SseFileRecordRepository())->settings($tenantId)['papers_marking'];
+        } catch (\Throwable) {
+            return \App\Support\SseIdMarking::DISCREET;
+        }
+    }
 
     /** @return array{view: bool, manage: bool, truth: bool} */
     private function rights(): array

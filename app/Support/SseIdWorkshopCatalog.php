@@ -52,6 +52,11 @@ final class SseIdWorkshopCatalog
         'journalist' => 'Journaliste',
         'contractor' => 'Contractor',
         'undercover' => 'Agent infiltré',
+        'humanitarian' => 'Humanitaire',
+        'trader' => 'Négociant',
+        'haulier' => 'Transporteur routier',
+        'seafarer' => 'Marin',
+        'official' => 'Agent public local',
         'other' => 'Autre',
     ];
 
@@ -72,7 +77,7 @@ final class SseIdWorkshopCatalog
         'categories' => ['Catégories (permis)', 24],
         'service' => ['Service ou employeur', 60],
         'rank' => ['Grade ou fonction', 40],
-        'phone' => ['Téléphone (simulé)', 24],
+        'phone' => ['Téléphone', 24],
         'signature' => ['Signature (texte)', 40],
         'stamp' => ['Texte du tampon', 60],
         'remarks' => ['Observations', 160],
@@ -115,6 +120,37 @@ final class SseIdWorkshopCatalog
             'profession' => 'Chauffeur', 'legend' => 'Habitant ordinaire ; rien ne doit le relier à son unité.',
             'instructions' => 'Ne révélez jamais votre vraie identité ; en cas de doute, appelez votre contact.',
             'print' => ['categories' => 'B'],
+        ],
+        // Kits types des thèmes de contenu (config/sse_kits) : organisations inventées, jamais un organisme réel.
+        'humanitarian' => [
+            'name' => 'Humanitaire — employé d’une association', 'doc_types' => ['passport', 'residence_permit'], 'identity_mode' => 'alias',
+            'profession' => 'Logisticien', 'legend' => 'Employé d’une association d’entraide, venu suivre une distribution.',
+            'instructions' => 'Présentez votre ordre de mission ; ne quittez pas le convoi sans prévenir votre coordinateur.',
+            'print' => ['service' => 'Association d’entraide', 'remarks' => 'Personnel humanitaire (fictif)'],
+        ],
+        'trader' => [
+            'name' => 'Négociant — import-export', 'doc_types' => ['id_card', 'passport'], 'identity_mode' => 'alias',
+            'profession' => 'Négociant', 'legend' => 'Négociant de passage, venu régler une livraison et voir un fournisseur.',
+            'instructions' => 'Parlez prix et délais ; vos reçus et votre carnet de commandes confirment votre visite.',
+            'print' => ['service' => 'Comptoir d’import-export'],
+        ],
+        'haulier' => [
+            'name' => 'Transporteur routier — chauffeur de ligne', 'doc_types' => ['id_card', 'driving_license', 'vehicle_registration'], 'identity_mode' => 'alias',
+            'profession' => 'Chauffeur routier', 'legend' => 'Chauffeur d’une société de transport, en route avec un chargement déclaré.',
+            'instructions' => 'Gardez la lettre de voiture à portée de main ; ne discutez pas du chargement.',
+            'print' => ['service' => 'Société de transport', 'categories' => 'B C CE'],
+        ],
+        'seafarer' => [
+            'name' => 'Marin — équipage d’un caboteur', 'doc_types' => ['passport', 'id_card'], 'identity_mode' => 'alias',
+            'profession' => 'Marin', 'legend' => 'Membre d’équipage d’un caboteur, à terre le temps d’une escale.',
+            'instructions' => 'Citez le nom du navire et le quai ; votre capitaine garde le rôle d’équipage.',
+            'print' => ['service' => 'Armement côtier', 'remarks' => 'Gens de mer (fictif)'],
+        ],
+        'official' => [
+            'name' => 'Agent public local — service des titres', 'doc_types' => ['id_card', 'driving_license'], 'identity_mode' => 'alias',
+            'profession' => 'Fonctionnaire', 'legend' => 'Agent d’une administration locale, en déplacement pour son service.',
+            'instructions' => 'Montrez votre ordre de service ; renvoyez toute question à votre chef de bureau.',
+            'print' => ['service' => 'Administration locale', 'rank' => 'Agent de bureau'],
         ],
     ];
 

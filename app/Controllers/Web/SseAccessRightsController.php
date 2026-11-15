@@ -396,9 +396,22 @@ final class SseAccessRightsController
     {
         $tenantId = $this->tenantId();
         $preview = $request->inputString('do') !== 'save';
+        // Double envoi : un jeton à usage unique accompagne l'aperçu ; un second enregistrement avec le même jeton ne refait rien et le dit.
+        $token = $request->inputString('submit_token');
+        if (!$preview && $token !== '' && !$this->consumeToken($token)) {
+            Session::flash('success', 'Cette demande a déjà été enregistrée : rien n’a été recréé.');
+
+            return Response::redirect(url($this->safeBack($back, self::BASE)));
+        }
+        if ($plan['rules'] === [] && SseAccessRuleService::onlyAlreadyInPlace($plan)) {
+            // Tout est déjà en place : ce n'est pas une erreur, et le message dit pourquoi.
+            Session::flash('success', SseAccessRuleService::describeResult($plan, 0));
+
+            return Response::redirect(url($this->safeBack($back, self::BASE)));
+        }
         if ($plan['errors'] !== [] || $plan['rules'] === []) {
             $this->flashOld($input);
-            Session::flash('error', $plan['errors'] !== [] ? implode(' ', $plan['errors']) : implode(' ', $plan['skipped']));
+            Session::flash('error', $plan['errors'] !== [] ? implode(' ', $plan['errors']) : SseAccessRuleService::describeResult($plan, 0));
 
             return Response::redirect(url($this->safeBack($back, self::BASE)));
         }
@@ -410,6 +423,7 @@ final class SseAccessRightsController
                 'skipped' => $plan['skipped'],
                 'sim' => $sim = $this->matrix()->simulate($tenantId, $plan['rules']),
                 'effectLine' => SseAccessMatrix::effectLine($sim),
+                'submitToken' => $this->issueToken(),
                 'input' => $input,
                 'template' => $template,
                 'action' => $action,
@@ -420,7 +434,7 @@ final class SseAccessRightsController
         if ($ids === []) {
             Session::flash('error', 'Rien n’a été enregistré : réessayez.');
         } else {
-            Session::flash('success', 'Règles enregistrées. Les gardes du bureau en tiennent compte tout de suite.');
+            Session::flash('success', SseAccessRuleService::describeResult($plan, count($ids)));
         }
 
         return Response::redirect(url($this->safeBack($back, self::BASE)));
@@ -438,6 +452,25 @@ final class SseAccessRightsController
         }
 
         return null;
+    }
+
+    /** Jeton d'envoi à usage unique (session) : posé avec l'aperçu, consommé par l'enregistrement. */
+    private function issueToken(): string
+    {
+        $token = bin2hex(random_bytes(12));
+        Session::set('sse_rights_token_' . $token, 1);
+
+        return $token;
+    }
+
+    private function consumeToken(string $token): bool
+    {
+        if (preg_match('/^[a-f0-9]{24}$/', $token) !== 1 || Session::get('sse_rights_token_' . $token) === null) {
+            return false;
+        }
+        Session::forget('sse_rights_token_' . $token);
+
+        return true;
     }
 
     /** Même garde que guard(), pour une réponse JSON : jamais de redirection ni de détail. */

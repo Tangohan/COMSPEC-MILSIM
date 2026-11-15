@@ -15,6 +15,8 @@ declare(strict_types=1);
 use App\Controllers\Web\SseFileController;
 use App\Repositories\SseAiProfileRepository;
 use App\Services\Sse\SseFileSearchService;
+use App\Services\Sse\SseIdentityHolderService;
+use App\Services\Sse\SseIdentityPhotoGallery;
 use App\Services\Sse\SseWantedAccess;
 use App\Support\SseFileSubjectCatalog as S;
 use App\Support\SseIdentityCatalog as C;
@@ -45,6 +47,8 @@ $fileMentions = is_array($fileMentions ?? null) ? $fileMentions : [];
 $detectionCounts = is_array($detectionCounts ?? null) ? $detectionCounts : ['new' => 0];
 $timelineFilter = (string) ($timelineFilter ?? '');
 $iid = (int) $identity['id'];
+// Sujet contrôlé ou remonté du terrain : on y constate des papiers, on n'en génère pas.
+$observedOnly = SseIdentityHolderService::isObservedOnly($identity);
 $self = 'atak/sse/papiers/identites/' . $iid;
 $filesSubject = 'atak/sse/fichiers/sujet/' . $iid;
 $dt = static function (?string $v) use ($dlang): string {
@@ -78,6 +82,9 @@ if ($photoUrl === null && is_array($seekImages ?? null) && ($seekImages[0]['url'
 if ($photoUrl === null && $showPerson && is_array($person['primary_photo'] ?? null) && ($person['primary_photo']['url'] ?? '') !== '') {
     $photoUrl = (string) $person['primary_photo']['url'];
 }
+if ($secret && !$canSeeTruth) {
+    $photoUrl = null; // couverture ou fausse identité sans l'habilitation : ni portrait ni cliché dans l'en-tête
+}
 $aliasLine = [];
 if (($identity['alias'] ?? null) !== null) {
     $aliasLine[] = (string) $identity['alias'];
@@ -99,18 +106,26 @@ try {
     $aiLinks = (new SseAiProfileRepository())->forIdentity((int) ($identity['tenant_id'] ?? ($wr !== null ? $wr->tenantId() : 0)), $iid);
 } catch (\Throwable) {
 }
-$photoCount = count($filePhotos) + (($identity['photo_path'] ?? null) !== null ? 1 : 0);
+$photoGallery = SseIdentityPhotoGallery::build(
+    $identity,
+    $filePhotos,
+    is_array($seekImages ?? null) ? $seekImages : [],
+    null,
+    ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null,
+    ($identity['signature_path'] ?? null) !== null ? (string) url((string) $identity['signature_path']) : null
+);
+$photoCount = ($canSeeTruth || !$secret) ? $photoGallery['total'] : 0;
 $tabs = [
     ['synthese', 'Synthèse', null, false],
-    ['papiers', 'Papiers et documents', count($documents), false],
+    ['papiers', $observedOnly ? 'Papiers constatés' : 'Papiers et documents', count($documents), false],
     ['photos', 'Photos', $photoCount, false],
     ['relations', 'Relations et affiliations', count($fileLinks) + count($fileBackLinks) + count($aiLinks), false],
     ['historique', 'Historique', count($timeline), false],
     ['detections', 'Détections', count($detections), (int) ($detectionCounts['new'] ?? 0) > 0],
     ['avis', 'Avis de recherche', $notice !== null ? '1' : (count($notices) > 0 ? (string) count($notices) : null), $notice !== null],
 ];
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script>';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script>';
 require __DIR__ . '/_subnav.php';
 ?>
 
@@ -118,10 +133,9 @@ require __DIR__ . '/_subnav.php';
     <header class="dos-head">
         <div class="dos-portrait">
             <?php if ($photoUrl !== null): ?>
-                <img src="<?= $h($photoUrl) ?>" alt="Portrait de l’identité">
-            <?php else: ?>
-                <svg viewBox="0 0 64 80" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="32" cy="26" r="14"/><path d="M6 78c0-17 11-28 26-28s26 11 26 28z"/></svg>
+                <img src="<?= $h($photoUrl) ?>" alt="Portrait de l’identité" width="112" height="144" decoding="async" data-dos-portrait-img>
             <?php endif; ?>
+            <svg viewBox="0 0 64 80" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="32" cy="26" r="14"/><path d="M6 78c0-17 11-28 26-28s26 11 26 28z"/></svg>
         </div>
         <div class="dos-id">
             <h1 translate="no"><?= $h($display) ?></h1>
@@ -152,7 +166,7 @@ require __DIR__ . '/_subnav.php';
                 <?php endif; ?>
             <?php endif; ?>
             <?php if (!empty($canManage)): ?>
-                <a class="btn" href="<?= $h(url($self . '#papiers')) ?>" data-dos-go>Générer un papier</a>
+                <a class="btn" href="<?= $h(url($self . '#papiers')) ?>" data-dos-go><?= $observedOnly ? 'Consigner un papier constaté' : 'Générer un papier' ?></a>
             <?php endif; ?>
             <details class="dos-menu">
                 <summary>Autres actions</summary>
@@ -272,10 +286,13 @@ require __DIR__ . '/_subnav.php';
     </section>
 
     <section class="dos-panel" id="papiers" role="tabpanel" aria-labelledby="tab-papiers" tabindex="-1">
-        <h2 class="dos-panel__title">Papiers et documents</h2>
+        <h2 class="dos-panel__title"><?= $observedOnly ? 'Papiers constatés' : 'Papiers et documents' ?></h2>
+        <p class="muted" style="margin:0 0 10px"><?= $observedOnly
+            ? 'Papiers constatés au contrôle : ce qui a été relevé sur ce sujet. Papiers émis par le service : seulement pour les identités des membres, les couvertures et les faux préparés, jamais pour un sujet contrôlé.'
+            : 'Papiers émis par le service : ils partent en jeu une fois émis. Les papiers relevés sur un sujet contrôlé se consignent à part, sur sa fiche.' ?></p>
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">Papiers émis ou préparés</div>
+                <div class="panel-title"><?= $observedOnly ? 'Papiers constatés au contrôle' : 'Papiers émis ou préparés' ?></div>
                 <div class="panel-meta"><?= count($documents) ?> papier(s)</div>
             </div>
             <?php if ($documents === []): ?>
@@ -283,7 +300,7 @@ require __DIR__ . '/_subnav.php';
             <?php else: ?>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>Référence</th><th>Type</th><th>Pays</th><th>Numéro</th><th>Expire le</th><th>État</th><th></th></tr></thead>
+                        <thead><tr><th>Référence</th><th>Type</th><th>Pays</th><th>Numéro</th><th>Expire le</th><th>État</th><?php if ($observedOnly): ?><th>Authenticité</th><?php endif; ?><th></th></tr></thead>
                         <tbody>
                         <?php foreach ($documents as $d): ?>
                             <tr>
@@ -292,7 +309,8 @@ require __DIR__ . '/_subnav.php';
                                 <td data-label="Pays"><?= $h($d['country_code']) ?></td>
                                 <td data-label="Numéro"><code><?= $h($d['doc_number']) ?></code></td>
                                 <td data-label="Expire le"><?= $h($d['expires_on'] ?? '—') ?></td>
-                                <td data-label="État"><?= $h($d['workflow_label']) ?></td>
+                                <td data-label="État"><?= $h($d['workflow_label']) ?><?php if ($observedOnly && $d['workflow'] !== 'observed'): ?> <span class="badge badge--gray">Généré avant : lecture seule</span><?php endif; ?></td>
+                                <?php if ($observedOnly): ?><td data-label="Authenticité"><?= $d['workflow'] === 'observed' ? $h(C::label(C::AUTHENTICITY, SseIdentityHolderService::authenticityOf($d))) : '—' ?></td><?php endif; ?>
                                 <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'])) ?>">Ouvrir</a></td>
                             </tr>
                         <?php endforeach; ?>
@@ -300,7 +318,34 @@ require __DIR__ . '/_subnav.php';
                     </table>
                 </div>
             <?php endif; ?>
-            <?php if (!empty($canManage)): ?>
+            <?php if (!empty($canManage) && $observedOnly): ?>
+                <form class="panel-body idp-actions" method="post" action="<?= $h(url($self . '/constates')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <label for="obs_doc_type" class="muted">Papier constaté</label>
+                    <select id="obs_doc_type" name="doc_type">
+                        <?php foreach (C::DOC_TYPES as $k => $label): ?>
+                            <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input name="country_code" maxlength="3" size="4" placeholder="Pays" aria-label="Pays lu sur le papier" required>
+                    <input name="doc_number" maxlength="20" placeholder="Numéro" aria-label="Numéro lu sur le papier" required>
+                    <input name="issued_on" type="date" aria-label="Délivré le">
+                    <input name="expires_on" type="date" aria-label="Expire le">
+                    <select name="authenticity" aria-label="Authenticité constatée">
+                        <?php foreach (C::AUTHENTICITY as $k => $label): ?>
+                            <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <select name="source" aria-label="Source du constat">
+                        <?php foreach (C::OBSERVED_SOURCES as $k => $label): ?>
+                            <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input name="seen_on" type="date" aria-label="Date du constat" value="<?= $h(gmdate('Y-m-d')) ?>">
+                    <input name="place" maxlength="120" placeholder="Lieu du constat" aria-label="Lieu du constat">
+                    <button class="btn" type="submit">Consigner le papier constaté</button>
+                </form>
+            <?php elseif (!empty($canManage)): ?>
                 <form class="panel-body idp-actions" method="get" action="<?= $h(url('atak/sse/papiers/documents/nouveau')) ?>">
                     <input type="hidden" name="identity_id" value="<?= $iid ?>">
                     <label for="new_doc_type" class="muted">Nouveau papier</label>
@@ -322,22 +367,13 @@ require __DIR__ . '/_subnav.php';
 
     <section class="dos-panel" id="photos" role="tabpanel" aria-labelledby="tab-photos" tabindex="-1">
         <h2 class="dos-panel__title">Photos</h2>
-        <?php if ($filePhotos !== []): ?>
-            <div class="panel">
-                <div class="panel-header"><div class="panel-title">Photos du dossier</div><div class="panel-meta"><?= count($filePhotos) ?> photo(s)</div></div>
-                <div class="panel-body dos-photos">
-                    <?php foreach ($filePhotos as $fp): ?>
-                        <figure><img src="<?= $h(\App\Services\Sse\SseSeekPhotoService::photoUrl($fp)) ?>" alt="Photo du dossier" loading="lazy"><figcaption><?= $h($photoKinds[(string) $fp['kind']] ?? (string) $fp['kind']) ?> · <?= $h($day($fp['created_at'])) ?></figcaption></figure>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        <?php elseif (($identity['photo_path'] ?? null) === null): ?>
-            <div class="dos-card"><div class="dos-empty"><strong>Aucune photo</strong>Versez une photo du personnage (uniquement des personnages du jeu) ou importez la photo du titulaire ci-dessous.<?php if (!empty($canManage)): ?> <a href="<?= $h(url($filesSubject . '#photos')) ?>">Verser une photo</a><?php endif; ?></div></div>
+        <?php if (is_array($identity['image_lock'] ?? null)): ?>
+            <div class="dos-card"><div class="dos-empty"><strong>CONFIDENTIEL ÉLEVÉ</strong>Les images de ce membre sont réservées à lui-même et à sa hiérarchie.
+                <?php $lock = $identity['image_lock']; $lockBack = 'atak/sse/papiers/identites/' . (int) $identity['id']; $csrfToken = \App\Core\Csrf::token(); require dirname(__DIR__) . '/files/_image_request.php'; ?></div></div>
+        <?php elseif (!empty($identity['image_banner'])): ?>
+            <p class="dos-note">Confidentiel élevé : images d’un membre, consultation journalisée.</p>
         <?php endif; ?>
-        <?php if ($canSeeTruth || !$secret): ?>
-            <?php $imagesDocId = 0; $personPhotos = $showPerson ? ($personPhotos ?? []) : []; require __DIR__ . '/_holder_images.php'; ?>
-            <?php require __DIR__ . '/_seek_images.php'; ?>
-        <?php endif; ?>
+        <?php require __DIR__ . '/_dossier_photos.php'; ?>
     </section>
 
     <section class="dos-panel" id="relations" role="tabpanel" aria-labelledby="tab-relations" tabindex="-1">

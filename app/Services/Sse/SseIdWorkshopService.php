@@ -57,6 +57,9 @@ final class SseIdWorkshopService
      */
     public function save(int $tenantId, array $input, ?array $identity, ?array $doc, bool $truth, ?int $actorId, ?string $photoPath = null): array
     {
+        if ($identity !== null && SseIdentityHolderService::isObservedOnly($identity)) {
+            return ['ok' => false, 'error' => SseIdentityHolderService::NO_ISSUE];
+        }
         if ($doc !== null && $doc['workflow'] !== 'draft') {
             return ['ok' => false, 'error' => 'Seul un brouillon se modifie. Repassez le papier en brouillon, ou dupliquez-le.'];
         }
@@ -188,6 +191,9 @@ final class SseIdWorkshopService
      */
     public function duplicate(int $tenantId, array $doc, ?int $actorId): ?int
     {
+        if (SseIdentityHolderService::isObservedOnly($doc['identity'] ?? [])) {
+            return null;
+        }
         $country = $this->countries->findByCode($tenantId, (string) $doc['country_code']);
         if ($country === null) {
             return null;
@@ -255,6 +261,28 @@ final class SseIdWorkshopService
         return ['ok' => false, 'error' => 'Cette photo n’appartient pas à la personne reliée à l’identité.'];
     }
 
+    /**
+     * Reprend une photo de la photothèque de l'identité (versée à la fiche, terrain ou cliché SEEK II) comme portrait du
+     * titulaire : la photo doit être rattachée à cette identité ; image réencodée, recadrée et sans métadonnées.
+     *
+     * @param array<string, mixed>|null $photo ligne hydratée de sse_file_photos (SseFileRecordRepository::photo)
+     * @return array{ok: bool, path?: string, error?: string}
+     */
+    public static function copyFilePhoto(int $tenantId, int $identityId, ?array $photo, SseIdImageService $images, ?SseSeekPhotoService $seek = null): array
+    {
+        if ($photo === null || (int) ($photo['identity_id'] ?? 0) !== $identityId || (string) ($photo['visibility'] ?? 'known') === 'hidden') {
+            return ['ok' => false, 'error' => 'Cette photo n’est pas rattachée à cette identité.'];
+        }
+        $file = SseSeekPhotoService::isPrivatePath((string) ($photo['path'] ?? ''))
+            ? ($seek ?? new SseSeekPhotoService())->absolutePath($photo, $tenantId)
+            : self::localUpload((string) ($photo['path'] ?? ''));
+        if ($file === null) {
+            return ['ok' => false, 'error' => 'Le fichier de cette photo est introuvable.'];
+        }
+
+        return $images->storeFile($file, 'photo', $tenantId);
+    }
+
     /** Chemin disque d'une image rangée sous public/uploads (null sinon). */
     private static function localUpload(string $path): ?string
     {
@@ -318,9 +346,10 @@ final class SseIdWorkshopService
      * @param array<string, mixed> $doc papier hydraté (ou brouillon de formulaire : mêmes clés)
      * @param array<string, mixed> $identity identité hydratée (mêmes clés)
      * @param array<string, mixed>|null $country pays hydraté
+     * @param string $markingSetting réglage de communauté (SseIdMarking) ; le pays réel stylisé ne descend jamais sous « discreet »
      * @return array<string, mixed>
      */
-    public static function previewModel(array $doc, array $identity, ?array $country): array
+    public static function previewModel(array $doc, array $identity, ?array $country, string $markingSetting = 'discreet'): array
     {
         $colors = array_values(array_filter([$country['color_primary'] ?? null, $country['color_secondary'] ?? null]));
         $colors += [0 => '#1f4e79', 1 => '#c9a227'];
@@ -329,6 +358,8 @@ final class SseIdWorkshopService
             : (($country['flag_path'] ?? null) !== null ? (string) url((string) $country['flag_path']) : null);
 
         return [
+            'marking' => \App\Support\SseIdMarking::effective($markingSetting, $real),
+            'marking_locked' => !\App\Support\SseIdMarking::canDisableVisible($real),
             'doc_type' => (string) ($doc['doc_type'] ?? 'id_card'),
             'doc_type_label' => SseIdentityCatalog::label(SseIdentityCatalog::DOC_TYPES, (string) ($doc['doc_type'] ?? 'id_card')),
             'layout' => SseIdWorkshopCatalog::layout($doc['layout'] ?? null),

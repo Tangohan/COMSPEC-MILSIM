@@ -63,8 +63,8 @@ Known map → country. Any other map → « Default country of the papers » set
 | BGR / BG | Bulgaria | generic | Identity card, Passport, Driving licence | dd.mm.yyyy | Lichna karta |
 | GRC / GR | Greece | generic | Police identity card, Passport, Driving licence, Military identity card | dd.mm.yyyy | Deltío Astynomikís Taftótitas |
 | TUR / TR | Türkiye | generic | Identity card, Passport, Driving licence, Military identity card | dd.mm.yyyy | T.C. Kimlik Kartı |
-| UKR / UA | Ukraine | generic | Identity card, Passport for travelling abroad, Driving licence, Military ID | dd.mm.yyyy | Pasport hromadianyna Ukrainy (ID-kartka) |
-| RUS / RU | Russia | generic | Internal passport, International passport, Driving licence, Military ID | dd.mm.yyyy | Pasport grazhdanina Rossiiskoi Federatsii |
+| UKR / UA | Ukraine | generic | Identity card, Passport for travelling abroad, Driving licence, Military ID, Residence permit, Vehicle registration certificate | dd.mm.yyyy | Pasport hromadianyna Ukrainy (ID-kartka) |
+| RUS / RU | Russia | generic | Internal passport, International passport, Driving licence, Military ID, Residence permit, Vehicle registration certificate | dd.mm.yyyy | Pasport grazhdanina Rossiiskoi Federatsii |
 | BLR / BY | Belarus | generic | Identity card, Passport, Driving licence, Military ID | dd.mm.yyyy | Identifikatsionnaya karta |
 | DNK / DK | Denmark | generic | Identity card, Passport, Driving licence, Military ID card | dd.mm.yyyy | Kørekort |
 | SWE / SE | Sweden | generic | National identity card, Passport, Driving licence, Armed Forces ID card | yyyy-mm-dd | Nationellt identitetskort |
@@ -74,20 +74,24 @@ Known map → country. Any other map → « Default country of the papers » set
 | LVA / LV | Latvia | generic | Identity card, Passport, Driving licence, Military ID card | dd.mm.yyyy | Personas apliecība (eID karte) |
 | LTU / LT | Lithuania | generic | Identity card, Passport, Driving licence, Military ID card | yyyy-mm-dd | Asmens tapatybės kortelė |
 | HRV / HR | Croatia | generic | Identity card, Passport, Driving licence | dd.mm.yyyy | Osobna iskaznica |
-| SRB / RS | Serbia | generic | Identity card, Passport, Driving licence | dd.mm.yyyy | Lična karta |
+| SRB / RS | Serbia | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd.mm.yyyy | Lična karta |
+| ALB / AL | Albania | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd.mm.yyyy | Letërnjoftim |
 | CAN / CA | Canada | generic | Passport, Driver's licence | yyyy-mm-dd | Permis de conduire / Driver's Licence |
 | AUS / AU | Australia | generic | Passport, Driver licence | dd/mm/yyyy | Driver Licence |
+| PHL / PH | Philippines | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | Pambansang Pagkakakilanlan |
 | ISR / IL | Israel | generic | Identity card, Passport, Driving licence, Military ID card | dd/mm/yyyy | תעודת זהות · Teudat Zehut |
-| IRQ / IQ | Iraq | generic | National card, Passport, Driving licence | dd/mm/yyyy | البطاقة الوطنية · al-Bitaqa al-Wataniya |
-| AFG / AF | Afghanistan | generic | Tazkira (identity card), Passport, Driving licence | yyyy-mm-dd | تذکره · Tazkira |
-| SYR / SY | Syria | generic | Identity card, Passport, Driving licence | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
-| MLI / ML | Mali | generic | National identity card, Passport, Driving licence | dd/mm/yyyy | Carte nationale d'identité |
-| NER / NE | Niger | generic | National identity card, Passport, Driving licence | dd/mm/yyyy | Carte nationale d'identité |
-| TCD / TD | Chad | generic | National identity card, Passport, Driving licence | dd/mm/yyyy | Carte nationale d'identité |
-| SOM / SO | Somalia | generic | Identity card, Passport, Driving licence | dd-mm-yyyy | Kaarka Aqoonsiga |
-| LBY / LY | Libya | generic | Identity card, Passport, Driving licence | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
-| YEM / YE | Yemen | generic | Identity card, Passport, Driving licence | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
-| COL / CO | Colombia | generic | Citizenship card (cédula), Passport, Driving licence | dd-mm-yyyy | Cédula de ciudadanía |
+| IRQ / IQ | Iraq | generic | National card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | البطاقة الوطنية · al-Bitaqa al-Wataniya |
+| AFG / AF | Afghanistan | generic | Tazkira (identity card), Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | yyyy-mm-dd | تذکره · Tazkira |
+| SYR / SY | Syria | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
+| LBN / LB | Lebanon | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | بطاقة هوية · Bitaqat Hawiya |
+| MLI / ML | Mali | generic | National identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | Carte nationale d'identité |
+| NER / NE | Niger | generic | National identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | Carte nationale d'identité |
+| TCD / TD | Chad | generic | National identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | Carte nationale d'identité |
+| SOM / SO | Somalia | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd-mm-yyyy | Kaarka Aqoonsiga |
+| LBY / LY | Libya | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
+| YEM / YE | Yemen | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | البطاقة الشخصية · al-Bitaqa al-Shakhsiya |
+| COL / CO | Colombia | generic | Citizenship card (cédula), Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd-mm-yyyy | Cédula de ciudadanía |
+| MEX / MX | Mexico | generic | Identity card, Passport, Driving licence, Residence permit, Vehicle registration certificate, Military identity card | dd/mm/yyyy | Credencial para votar |
 | ALT | Republic of Altis | fictional (Arma map) | card, passport, licence, military card | dd.mm.yyyy |  |
 | TNA | Federation of Tanoa | fictional (Arma map) | card, passport, licence, military card | dd.mm.yyyy |  |
 | LVN | Republic of Livonia | fictional (Arma map) | card, passport, licence, military card | dd.mm.yyyy |  |

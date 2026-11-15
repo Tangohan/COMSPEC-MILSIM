@@ -180,14 +180,18 @@ final class SseAccessMemberRights
     public function save(int $tenantId, int $actorId, string $actorLabel, int $memberId, array $input): array
     {
         $plan = $this->plan($tenantId, $actorId, $memberId, $input);
+        if ($plan['rules'] === [] && SseAccessRuleService::onlyAlreadyInPlace($plan)) {
+            // Déjà en place (double clic, ou règle posée entre-temps) : ce n'est pas une erreur, et on dit ce qui existe.
+            return ['ok' => true, 'message' => SseAccessRuleService::describeResult($plan, 0), 'ids' => []];
+        }
         if ($plan['errors'] !== [] || $plan['rules'] === []) {
-            return ['ok' => false, 'message' => $plan['errors'] !== [] ? implode(' ', $plan['errors']) : implode(' ', $plan['skipped']), 'ids' => []];
+            return ['ok' => false, 'message' => $plan['errors'] !== [] ? implode(' ', $plan['errors']) : SseAccessRuleService::describeResult($plan, 0), 'ids' => []];
         }
         $ids = $this->service()->commit($tenantId, $actorId, $actorLabel, $plan['rules'], 'create');
 
         return $ids === []
             ? ['ok' => false, 'message' => 'Rien n’a été enregistré : réessayez.', 'ids' => []]
-            : ['ok' => true, 'message' => 'Accès enregistré. Les gardes du bureau SSE en tiennent compte tout de suite.', 'ids' => $ids];
+            : ['ok' => true, 'message' => SseAccessRuleService::describeResult($plan, count($ids)), 'ids' => $ids];
     }
 
     /**

@@ -1,10 +1,10 @@
 /**
  * Atelier de documents (COMSPEC IDENTITY, Lot 6) : aperçu en direct du papier fictif, bande MRZ recalculée par le site
  * (SseMrzService, GET …/atelier/mrz), choix des faces affichées et export de l'aperçu en image PNG (html2canvas,
- * chargé seulement au premier export). Le filigrane SIMULATION fait partie de chaque face exportée, au-dessus de la
- * photo, de la signature et de l'image de fond importées ; l'export le redessine en plus directement sur l'image
- * (diagonale sur toute la surface) avec le bandeau « DOCUMENT DE JEU – SANS VALEUR » : ni le masquer dans la page ni
- * retoucher le DOM ne permet d'obtenir une image sans eux.
+ * chargé seulement au premier export). Le marquage « document de jeu » (discret par défaut, voir SseIdMarking) est
+ * dessiné directement sur l'image exportée, au-dessus de la photo, de la signature et de l'image de fond importées,
+ * et la mention est écrite dans les métadonnées PNG (tEXt) : ni le masquer dans la page ni
+ * retoucher le DOM ne retire la marque d'un pays réel stylisé.
  */
 (function () {
   var form = document.getElementById('idw-form');
@@ -110,14 +110,14 @@
       });
       var seq = ++mrzSeq;
       fetch(url + '?' + q.toString(), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (r) { if (!r.ok) { if (window.SseNotify) { SseNotify.failure(r); } return null; } return r.json(); })
         .then(function (data) {
           if (!data || seq !== mrzSeq || !Array.isArray(data.lines)) return;
           setText('mrz', data.lines.join('\n'));
           var state = document.getElementById('idw-mrz-state');
           if (state) state.textContent = (data.valid ? 'Bande de lecture valide' : 'Bande de lecture incomplète') + (data.format ? ' · ' + data.format : '');
         })
-        .catch(function () {});
+        .catch(function (err) { if (window.SseNotify) { SseNotify.failure(err); } });
     }, 250);
   }
 
@@ -197,12 +197,40 @@
       document.head.appendChild(s);
     });
   }
-  // Marques incrustées dans l'image exportée (non retirables) : filigrane diagonal sur toute la surface et bandeau.
+  // Marquage « document de jeu » de l'image exportée (réglage de communauté lu dans data-marking, jamais retirable
+  // par l'utilisateur) :
+  //  - discreet (défaut) : micro-texte faible contraste en bas de chaque face ;
+  //  - standard : ancien rendu, filigrane diagonal et bandeau pleine largeur ;
+  //  - none : aucune marque visible (le serveur ne l'envoie jamais pour un pays réel stylisé).
+  // Dans tous les cas la mention est aussi écrite dans les métadonnées du PNG (blocs tEXt).
   var BAND = 'DOCUMENT DE JEU – SANS VALEUR · GAME DOCUMENT – NO VALUE';
-  function stampGameMarks(canvas) {
-    var ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    var w = canvas.width, h = canvas.height, diag = Math.sqrt(w * w + h * h);
+  var MICRO = 'Document de jeu – sans valeur · Game document – no value';
+  var META = 'Document de jeu - sans valeur / Game document - no value';
+  function markingMode() {
+    var m = preview.getAttribute('data-marking');
+    // Pays réel stylisé (zone de style définie) : jamais sans marque visible, même si le DOM est retouché.
+    var sel = document.getElementById('idw-country');
+    var c = sel ? countries[sel.value] : null;
+    var real = (c && c.zone) || /idw-zone--/.test(preview.className);
+    if (m === 'none' && real) return 'discreet';
+    return m === 'standard' || m === 'none' ? m : 'discreet';
+  }
+  function stampDiscreet(ctx, w, h) {
+    var size = Math.max(9, Math.round(h * 0.026));
+    ctx.save();
+    ctx.font = '600 ' + size + 'px Arial';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'alphabetic';
+    var x = w - Math.round(size * 0.9), y = h - Math.round(size * 0.8);
+    ctx.lineWidth = Math.max(2, size * 0.28);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.strokeText(MICRO, x, y);
+    ctx.fillStyle = 'rgba(40, 40, 48, 0.5)';
+    ctx.fillText(MICRO, x, y);
+    ctx.restore();
+  }
+  function stampStandard(ctx, w, h) {
+    var diag = Math.sqrt(w * w + h * h);
     var size = Math.max(14, Math.round(h / 9));
     ctx.save();
     ctx.translate(w / 2, h / 2);
@@ -224,30 +252,185 @@
     ctx.textBaseline = 'middle';
     ctx.fillText(BAND, w / 2, h - bh / 2);
   }
+  function stampGameMarks(canvas) {
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    var mode = markingMode();
+    if (mode === 'standard') stampStandard(ctx, canvas.width, canvas.height);
+    else if (mode === 'discreet') stampDiscreet(ctx, canvas.width, canvas.height);
+  }
+  var crcTable = null;
+  function crc32(bytes) {
+    if (!crcTable) {
+      crcTable = [];
+      for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        crcTable[n] = c >>> 0;
+      }
+    }
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) crc = crcTable[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  // Insère des blocs tEXt (mention de jeu) juste après l'IHDR d'un PNG ; renvoie un Blob.
+  function pngWithMention(dataUrl) {
+    var bin = atob(dataUrl.split(',')[1]);
+    var src = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) src[i] = bin.charCodeAt(i);
+    var parts = [];
+    [['Description', META], ['Comment', META], ['Source', 'COMSPEC Athena - fictional ID workshop']].forEach(function (kv) {
+      var text = kv[0] + '\0' + kv[1];
+      var type = 'tEXt' + text;
+      var buf = new Uint8Array(4 + type.length + 4);
+      var dv = new DataView(buf.buffer);
+      dv.setUint32(0, text.length);
+      for (var j = 0; j < type.length; j++) buf[4 + j] = type.charCodeAt(j) & 0xFF;
+      dv.setUint32(4 + type.length, crc32(buf.subarray(4, 4 + type.length)));
+      parts.push(buf);
+    });
+    return new Blob([src.subarray(0, 33)].concat(parts, [src.subarray(33)]), { type: 'image/png' });
+  }
   if (exportBtn) {
     exportBtn.addEventListener('click', function () {
       exportBtn.disabled = true;
       loadLib(exportBtn.getAttribute('data-lib')).then(function (h2c) {
         var faces = Array.prototype.filter.call(preview.querySelectorAll('.idw-face'), function (f) { return f.offsetParent !== null; });
-        var base = exportBtn.getAttribute('data-name') || 'papier-simulation';
+        var base = exportBtn.getAttribute('data-name') || 'papier';
         return faces.reduce(function (p, face) {
           return p.then(function () {
             return h2c(face, { backgroundColor: null, scale: 2, useCORS: true, logging: false }).then(function (canvas) {
               stampGameMarks(canvas);
               var a = document.createElement('a');
               a.download = base + '-' + (face.getAttribute('data-face') || 'face') + '.png';
-              a.href = canvas.toDataURL('image/png');
+              var blob = pngWithMention(canvas.toDataURL('image/png'));
+              a.href = URL.createObjectURL(blob);
               document.body.appendChild(a);
               a.click();
               a.remove();
+              setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
             });
           });
         }, Promise.resolve());
       }).catch(function () {
-        window.alert('Export impossible dans ce navigateur.');
+        if (window.SseNotify) { SseNotify.error('Export impossible dans ce navigateur.'); }
       }).then(function () { exportBtn.disabled = false; });
     });
   }
 
+  // ---- Zoom de l'aperçu, impression PDF -----------------------------------------------------------------------
+  var zoom = 1;
+  function setZoom(z) {
+    zoom = Math.max(0.6, Math.min(1.6, z));
+    preview.style.zoom = String(zoom);
+    var r = document.getElementById('idw-zoom-reset');
+    if (r) r.textContent = Math.round(zoom * 100) + ' %';
+  }
+  [['idw-zoom-out', -0.1], ['idw-zoom-in', 0.1]].forEach(function (z) {
+    var b = document.getElementById(z[0]);
+    if (b) b.addEventListener('click', function () { setZoom(zoom + z[1]); });
+  });
+  var zr = document.getElementById('idw-zoom-reset');
+  if (zr) zr.addEventListener('click', function () { setZoom(1); });
+  // PDF : boîte d'impression du navigateur (« enregistrer en PDF ») ; la feuille de style d'impression ne garde que
+  // l'aperçu et y ajoute la mention de jeu selon data-marking.
+  var printBtn = document.getElementById('idw-print');
+  if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+
+  // ---- Validation en ligne (n'empêche jamais l'enregistrement : le serveur tranche) -----------------------------
+  function flag(el, msg) {
+    if (!el) return;
+    var id = el.id + '-err';
+    var n = document.getElementById(id);
+    if (!n) {
+      n = document.createElement('p');
+      n.id = id;
+      n.className = 'idw-err';
+      n.setAttribute('role', 'alert');
+      n.hidden = true;
+      el.parentNode.appendChild(n);
+    }
+    n.textContent = msg;
+    n.hidden = msg === '';
+    if (msg === '') { el.removeAttribute('aria-invalid'); el.removeAttribute('aria-describedby'); }
+    else { el.setAttribute('aria-invalid', 'true'); el.setAttribute('aria-describedby', id); }
+  }
+  function formatToRegex(fmt) {
+    if (!fmt) return null;
+    var out = '';
+    for (var i = 0; i < fmt.length; i++) {
+      var ch = fmt.charAt(i);
+      out += ch === '#' ? '[0-9]' : ch === '@' ? '[A-Za-z]' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    return new RegExp('^' + out + '$');
+  }
+  function validate() {
+    var c = countries[val('country')] || {};
+    var numEl = field('number');
+    var re = formatToRegex(String(c.format || ''));
+    flag(numEl, numEl && re && val('number') !== '' && !re.test(val('number')) ? 'Le numéro ne suit pas le format du pays.' : '');
+    var iss = val('issued_on'), exp = val('expires_on'), dob = val('birth_date');
+    flag(field('expires_on'), iss && exp && exp <= iss ? 'La date d’expiration doit suivre la date de délivrance.' : '');
+    flag(field('birth_date'), dob && iss && dob >= iss ? 'La naissance doit précéder la délivrance.' : '');
+  }
+  form.addEventListener('input', validate);
+  form.addEventListener('change', validate);
+
+  // ---- Brouillon local automatique, annuler / rétablir -----------------------------------------------------------
+  var undoBtn = document.getElementById('idw-undo');
+  var redoBtn = document.getElementById('idw-redo');
+  var draftEl = document.getElementById('idw-draft');
+  var storeKey = 'idw-draft:' + location.pathname;
+  function snapshot() {
+    var o = {};
+    form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (el) {
+      if (el.type === 'file' || el.type === 'hidden' || el.disabled || el.name === '_csrf_token') return;
+      o[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    return o;
+  }
+  function restoreSnapshot(o) {
+    form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (el) {
+      if (!(el.name in o) || el.type === 'file') return;
+      if (el.type === 'checkbox') el.checked = !!o[el.name]; else el.value = o[el.name];
+    });
+    refreshAll();
+    validate();
+  }
+  if (undoBtn && redoBtn) {
+    var history = [JSON.stringify(snapshot())], pos = 0, saveTimer = null, applying = false;
+    var syncButtons = function () { undoBtn.disabled = pos <= 0; redoBtn.disabled = pos >= history.length - 1; };
+    try {
+      var saved = window.localStorage.getItem(storeKey);
+      if (saved && saved !== history[0] && window.confirm('Un brouillon local non enregistré existe pour ce papier. Le reprendre ?')) {
+        restoreSnapshot(JSON.parse(saved));
+        history = [saved]; pos = 0;
+        if (draftEl) draftEl.textContent = 'Brouillon local repris';
+      }
+    } catch (err) { /* stockage indisponible */ }
+    form.addEventListener('input', function () {
+      if (applying) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        var snap = JSON.stringify(snapshot());
+        if (snap === history[pos]) return;
+        history = history.slice(0, pos + 1); history.push(snap); if (history.length > 40) history.shift();
+        pos = history.length - 1;
+        syncButtons();
+        try { window.localStorage.setItem(storeKey, snap); if (draftEl) draftEl.textContent = 'Brouillon local enregistré (pas encore sur le site)'; }
+        catch (err) { if (draftEl) draftEl.textContent = 'Brouillon local indisponible'; }
+      }, 600);
+    });
+    var go = function (d) {
+      var n = pos + d;
+      if (n < 0 || n >= history.length) return;
+      pos = n; applying = true; restoreSnapshot(JSON.parse(history[pos])); applying = false; syncButtons();
+    };
+    undoBtn.addEventListener('click', function () { go(-1); });
+    redoBtn.addEventListener('click', function () { go(1); });
+    form.addEventListener('submit', function () { try { window.localStorage.removeItem(storeKey); } catch (err) { /* ignore */ } });
+  }
+
   refreshAll();
+  validate();
 })();

@@ -902,6 +902,8 @@ final class SseFileRecordRepository
         'member_photo_upload' => true,
         'xref_enabled' => true,
         'purpose_required' => true,
+        // Marquage des images exportées de l'atelier de papiers : discreet | standard | none (App\Support\SseIdMarking).
+        'papers_marking' => 'discreet',
         // Contextes d'acquisition (App\Support\SseAcquisitionContexts) : jeu, réglages des contextes de base, ajouts.
         'acquisition_set' => 'us_sof',
         'acquisition_overrides' => [],
@@ -949,6 +951,7 @@ final class SseFileRecordRepository
             'member_photo_upload' => $bool($data['member_photo_upload'] ?? null, true),
             'xref_enabled' => $bool($data['xref_enabled'] ?? null, true),
             'purpose_required' => $bool($data['purpose_required'] ?? null, true),
+            'papers_marking' => \App\Support\SseIdMarking::normalize($data['papers_marking'] ?? null),
             'acquisition_set' => SseAcquisitionContexts::normalizeSet($data['acquisition_set'] ?? null),
             'acquisition_overrides' => SseAcquisitionContexts::normalizeOverrides($data['acquisition_overrides'] ?? []),
             'acquisition_custom' => SseAcquisitionContexts::normalizeCustom($data['acquisition_custom'] ?? []),

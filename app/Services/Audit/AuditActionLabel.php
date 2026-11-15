@@ -67,6 +67,9 @@ final class AuditActionLabel
         'personnel.job_category.deleted' => 'Catégorie d’emplois vide supprimée',
         // Rôles & permissions
         'role.permissions_updated' => 'Permissions du rôle mises à jour',
+        'access_role.created' => 'Niveau d’accès créé',
+        'access_role.members_changed' => 'Membres copiés ou déplacés vers un niveau d’accès',
+        'access_role.removed' => 'Niveau d’accès supprimé ou masqué',
         'permission.scope_migration' => 'Migration des périmètres de permissions',
         'site_role.assigned' => 'Rôle site attribué',
         'site_role.revoked' => 'Rôle site révoqué',

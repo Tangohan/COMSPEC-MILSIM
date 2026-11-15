@@ -48,8 +48,10 @@ final class SseIdentityWiringAssetTest extends TestCase
         self::assertStringContainsString("'idPapers' => SseIdentityRegistryController::personPapers(", self::read('app/Controllers/Web/SsePortalController.php'));
         self::assertStringContainsString("require __DIR__ . '/papers/_person_block.php';", self::read('views/atak/sse/person_show.php'));
         $sub = self::read('views/atak/sse/papers/_subnav.php');
-        self::assertStringContainsString('SIMULATION', $sub);
-        self::assertStringContainsString('content: "SIMULATION"', self::read('public/assets/css/sse-papers.css'));
+        // Une seule mention sobre par écran, sans filigrane ni majuscules répétées.
+        self::assertStringContainsString('Papiers fictifs pour le jeu de rôle, sans valeur réelle.', $sub);
+        self::assertStringNotContainsString('SIMULATION', $sub);
+        self::assertStringNotContainsString('content: "SIMULATION"', self::read('public/assets/css/sse-papers.css'));
     }
 
     public function testLinkDllServesTheFourCommandsAndAnnouncesThem(): void

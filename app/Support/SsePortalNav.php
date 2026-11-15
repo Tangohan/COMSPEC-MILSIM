@@ -82,6 +82,7 @@ final class SsePortalNav
                 ['id' => 'fichiers-telephones', 'label' => 'Téléphones du jeu', 'hint' => 'Extractions des téléphones ATAK synchronisés depuis le jeu.', 'path' => 'atak/sse/fichiers/telephones', 'icon' => 'collect', 'keywords' => 'telephone extraction atak contacts messages positions'],
                 $only(!$isGuest && ($canManage || self::canLore($isGuest)), ['id' => 'fichiers-lore', 'label' => 'Lore des sessions', 'hint' => 'Préparer les personnes d’une mission et ce que les fichiers en savent.', 'path' => 'atak/sse/fichiers/lore', 'icon' => 'dice', 'keywords' => 'lore session mission mj zeus eden ia synchronisation']),
                 $only(!$isGuest, ['id' => 'fichiers-acces-images', 'label' => 'Accès aux images confidentielles', 'hint' => 'Demandes d’accès aux images des membres, à décider par leur hiérarchie.', 'path' => 'atak/sse/fichiers/acces-images', 'icon' => 'lock', 'keywords' => 'images confidentiel eleve membres derogation demande acces hierarchie']),
+                $only(!$isGuest && ($canManage || self::canGenerate($isGuest)), ['id' => 'fichiers-generer', 'label' => 'Générer du contenu', 'hint' => 'Peupler la communauté avec un réseau fictif tiré des kits par pays, par lots supprimables.', 'path' => 'atak/sse/fichiers/generer', 'icon' => 'engine', 'keywords' => 'generer generateur contenu kits pays identites vehicules papiers reseau lot population']),
                 ['id' => 'fichiers-journal', 'label' => 'Journal des consultations', 'hint' => 'Toutes les consultations des fichiers, sur le site ou en jeu.', 'path' => 'atak/sse/fichiers/journal', 'icon' => 'time', 'keywords' => 'journal consultations historique'],
                 ['id' => 'fichiers-mentions', 'label' => 'Mentions aux fichiers', 'hint' => 'Mandats, avis de recherche, signalements et consignes de prudence.', 'path' => 'atak/sse/fichiers/mentions', 'icon' => 'alert', 'keywords' => 'mentions mandat recherche signalement disparu arme dangereux'],
                 ['id' => 'fichiers-seek', 'label' => 'Fiches SEEK II', 'hint' => 'Enregistrements biométriques faits en jeu avec le SEEK II.', 'path' => 'atak/sse/fichiers/seek', 'icon' => 'id', 'keywords' => 'seek biometrie empreintes iris visage'],
@@ -115,6 +116,12 @@ final class SsePortalNav
     public static function canLore(bool $isGuest): bool
     {
         return \App\Services\Sse\SseAccessPolicy::sessionAllows('lore', \App\Support\SseAccessCatalog::LEVEL_READ, ['guest' => $isGuest]);
+    }
+
+    /** Générer du contenu : gestion des fichiers SSE (section Fichiers, niveau « gérer »), jamais en session invitée. */
+    private static function canGenerate(bool $isGuest): bool
+    {
+        return !$isGuest && \App\Services\Sse\SseAccessPolicy::sessionAllows('fichiers', \App\Support\SseAccessCatalog::LEVEL_MANAGE, ['guest' => $isGuest]);
     }
 
     public static function forSession(bool $canManage, bool $canGrant, bool $isGuest, ?bool $canMemberPapers = null): array

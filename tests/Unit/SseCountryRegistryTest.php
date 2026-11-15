@@ -22,6 +22,7 @@ final class SseCountryRegistryTest extends TestCase
         'GRC' => 'GR', 'TUR' => 'TR', 'UKR' => 'UA', 'RUS' => 'RU', 'BLR' => 'BY', 'DNK' => 'DK', 'SWE' => 'SE', 'NOR' => 'NO', 'FIN' => 'FI',
         'EST' => 'EE', 'LVA' => 'LV', 'LTU' => 'LT', 'HRV' => 'HR', 'SRB' => 'RS', 'CAN' => 'CA', 'AUS' => 'AU', 'ISR' => 'IL', 'IRQ' => 'IQ',
         'AFG' => 'AF', 'SYR' => 'SY', 'MLI' => 'ML', 'NER' => 'NE', 'TCD' => 'TD', 'SOM' => 'SO', 'LBY' => 'LY', 'YEM' => 'YE', 'COL' => 'CO',
+        'LBN' => 'LB', 'ALB' => 'AL', 'MEX' => 'MX', 'PHL' => 'PH',
     ];
 
     private const FULL = ['FRA', 'DEU', 'USA', 'GBR', 'BEL', 'AUT', 'CHE', 'NLD', 'ITA', 'ESP', 'POL'];

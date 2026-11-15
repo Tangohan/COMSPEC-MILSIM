@@ -92,10 +92,12 @@ final class SseIdWorkshopWiringTest extends TestCase
     public function testViewsKeepTheSimulationGuardrailsCsrfAndExports(): void
     {
         $preview = self::read('views/atak/sse/papers/_doc_preview.php');
+        // Filigrane et mention de face : seulement en mode « standard » (ancien rendu), sur chaque face.
         self::assertStringContainsString('class="idw-watermark"', $preview);
-        self::assertSame(1, substr_count($preview, "\$pvWatermark = '<div class=\"idw-watermark\""));
-        self::assertSame(5, substr_count($preview, '<?= $pvWatermark ?>'), 'filigrane SIMULATION sur chaque face');
-        self::assertStringContainsString('SPÉCIMEN DE JEU — SIMULATION', $preview);
+        self::assertSame(1, substr_count($preview, 'class="idw-watermark"'));
+        self::assertSame(5, substr_count($preview, '<?= $pvWatermark ?>'), 'marquage standard sur chaque face');
+        self::assertStringContainsString('$pvStandard', $preview);
+        self::assertStringContainsString('data-marking=', $preview);
         $editor = self::read('views/atak/sse/papers/workshop_editor.php');
         self::assertStringContainsString("assets/vendor/html2canvas-1.4.1/html2canvas.min.js", $editor);
         self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/vendor/html2canvas-1.4.1/html2canvas.min.js');

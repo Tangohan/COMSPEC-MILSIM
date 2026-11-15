@@ -725,6 +725,70 @@ final class SseAccessSimpleSubjectsTest extends TestCase
         }
     }
 
+    // ------------------------------------------------------------------ Message fidèle à ce qui a été fait (double envoi, copie périmée)
+
+    public function testSavingTwiceNeverContradictsItself(): void
+    {
+        $in = ['sections' => ['dossiers'], 'access' => 'ecrire', 'reason' => 'Renfort enquête Alpha'];
+        $rights = $this->rights();
+        $first = $rights->save(1, 10, 'Dix', 12, $in);
+        self::assertTrue($first['ok']);
+        self::assertStringContainsString('4 règles créées', $first['message']);
+        self::assertStringContainsString('Dossiers d’enquête · Écrire', $first['message']);
+        $count = $this->rules->countLive(1);
+        // Le même envoi arrive une seconde fois (double clic) : rien n'est doublé, et le message dit ce qui existe.
+        $second = $rights->save(1, 10, 'Dix', 12, $in);
+        self::assertTrue($second['ok'], 'déjà en place n’est pas une erreur');
+        self::assertStringContainsString('Aucune règle créée', $second['message']);
+        self::assertStringContainsString('déjà réglé ainsi', $second['message']);
+        self::assertStringNotContainsString('règles créées :', $second['message']);
+        self::assertSame($count, $this->rules->countLive(1));
+    }
+
+    public function testThePreviewAndTheSaveUseTheSamePlanAndTheSameWords(): void
+    {
+        $input = $this->simple(['subject_type' => 'position', 'subject_id' => 50]);
+        $preview = $this->service->planSimple(1, 10, $input);
+        $saved = $this->service->planSimple(1, 10, $input);
+        self::assertSame($preview['rules'], $saved['rules']);
+        $ids = $this->service->commit(1, 10, 'Dix', $saved['rules']);
+        self::assertStringStartsWith(count($ids) . ' règles créées', SseAccessRuleService::describeResult($saved, count($ids)));
+        $again = $this->service->planSimple(1, 10, $input);
+        self::assertSame([], $again['rules']);
+        self::assertTrue(SseAccessRuleService::onlyAlreadyInPlace($again));
+        self::assertStringStartsWith('Aucune règle créée.', SseAccessRuleService::describeResult($again, 0));
+        // Un refus pour droits insuffisants n'est PAS présenté comme « déjà en place ».
+        $denied = $this->service->planSimple(1, 15, $this->simple(['sections' => ['dossiers'], 'access' => 'gerer', 'subject_type' => 'position', 'subject_id' => 51, 'reason' => 'Responsable du bureau']));
+        self::assertFalse(SseAccessRuleService::onlyAlreadyInPlace($denied));
+    }
+
+    public function testPlanningNeverTrustsAStaleCopyOfTheRules(): void
+    {
+        $in = $this->simple(['subject_type' => 'position', 'subject_id' => 50]);
+        $ids = $this->service->commit(1, 10, 'Dix', $this->service->planSimple(1, 10, $in)['rules']);
+        self::assertNotSame([], $ids);
+        $this->rules->liveRules(1);
+        // La copie gardée de la requête (ou partagée) croit encore que les règles existent ; elles ont été retirées ailleurs.
+        $this->pdo->exec("UPDATE sse_access_rules SET revoked_at = '" . self::NOW . "'");
+        self::assertNotSame([], $this->rules->liveRules(1), 'copie périmée');
+        $plan = $this->service->planSimple(1, 10, $in);
+        self::assertSame([], $plan['errors']);
+        self::assertCount(count($ids), $plan['rules'], 'l’aperçu et l’enregistrement lisent l’état réel : les règles sont recréées');
+        self::assertSame([], $this->rules->liveRules(1, true));
+    }
+
+    public function testTheSubmitTokenAndTheDoubleClickGuardAreWired(): void
+    {
+        $ctl = self::read('app/Controllers/Web/SseAccessRightsController.php');
+        self::assertStringContainsString("inputString('submit_token')", $ctl);
+        self::assertStringContainsString('consumeToken(', $ctl);
+        self::assertStringContainsString("'submitToken' => \$this->issueToken()", $ctl);
+        self::assertStringContainsString('name="submit_token"', self::read('views/atak/sse/rights/preview.php'));
+        self::assertStringContainsString('data-sar-sent', self::read('public/assets/js/sse-access-picker.js'));
+        self::assertStringContainsString('data-sse-sent', self::read('public/assets/js/eff-member-sse-access.js'));
+        self::assertStringContainsString('liveRules($tenantId, true)', self::read('app/Services/Sse/SseAccessRuleService.php'));
+    }
+
     public function testNoMigrationIsNeededTheTypesFitTheExistingColumn(): void
     {
         foreach ([C::SUBJECT_POSITION, C::SUBJECT_JOB, C::SUBJECT_QUALIF, C::SUBJECT_USER] as $type) {

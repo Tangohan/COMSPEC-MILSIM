@@ -1208,6 +1208,7 @@ return function (Router $router) {
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents/{id}/statuts', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStatuses'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents/{id}/cycle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentWorkflow'], $mwSsePortal);
@@ -1265,6 +1266,12 @@ return function (Router $router) {
     $router->get('/atak/sse/fichiers/telephones/{id}', [$sseRec, 'phoneShow'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/telephones/{id}/rattacher', [$sseRec, 'phoneAttach'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/appareils/{id}/accord', [$sseRec, 'deviceConsent'], $mwSsePortal);
+    // Générer du contenu : réseau fictif tiré des kits (gestion des fichiers SSE), aperçu, lot, suppression en bloc.
+    $sseGen = \App\Controllers\Web\SseContentGeneratorController::class;
+    $router->get('/atak/sse/fichiers/generer', [$sseGen, 'index'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/generer', [$sseGen, 'preview'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/generer/creer', [$sseGen, 'commit'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/generer/lots/{id}/supprimer', [$sseGen, 'delete'], $mwSsePortal);
     $sseLore = \App\Controllers\Web\SseLoreController::class;
     $router->get('/atak/sse/fichiers/lore', [$sseLore, 'index'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/lore', [$sseLore, 'store'], $mwSsePortal);
@@ -2458,6 +2465,9 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'saveDuplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'saveAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/apercu', [EffectifsWorkspaceController::class, 'previewAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/membres', [EffectifsWorkspaceController::class, 'moveRoleMembers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/membres/apercu', [EffectifsWorkspaceController::class, 'previewRoleMembers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/nouveau', [EffectifsWorkspaceController::class, 'createAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/retablir', [EffectifsWorkspaceController::class, 'restoreAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/supprimer', [EffectifsWorkspaceController::class, 'deleteAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2595,6 +2605,10 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/liens-invitation/{id}/revoquer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/supprimer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/reactiver', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Paquets d'intégration (ce que reçoit un nouveau membre) : avant « {id} » pour la même raison.
+    $router->get('/back-office/recruitments/paquets-integration', [\App\Controllers\Admin\AdminIntegrationPackagesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/paquets-integration', [\App\Controllers\Admin\AdminIntegrationPackagesController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/paquets-integration/{id}/supprimer', [\App\Controllers\Admin\AdminIntegrationPackagesController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboarding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboardingSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -3397,6 +3411,16 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);
     $router->post('/api/atak/map/clear', [AtakApiController::class, 'mapClear']);
     $router->post('/api/atak/map/clear/undo', [AtakApiController::class, 'mapClearUndo']);
+    // Cycle de 24 h des marqueurs et missions archivées (poste TOC web, ATAK web, TACMAP) : membre connecté, communauté de la session.
+    $markerCycle = \App\Controllers\Api\AtakMarkerCycleApiController::class;
+    $router->get('/api/atak/cycle/status', [$markerCycle, 'status']);
+    $router->get('/api/atak/cycle/archives', [$markerCycle, 'archives']);
+    $router->get('/api/atak/cycle/archives/{id}', [$markerCycle, 'show']);
+    $router->get('/api/atak/cycle/archives/{id}/export.json', [$markerCycle, 'export']);
+    $router->post('/api/atak/cycle/archives/{id}/restore', [$markerCycle, 'restore']);
+    $router->post('/api/atak/cycle/archives/{id}/delete', [$markerCycle, 'delete']);
+    $router->post('/api/atak/cycle/settings', [$markerCycle, 'settings']);
+    $router->post('/api/atak/cycle/pin', [$markerCycle, 'pin']);
     $router->get('/api/atak/markers', [AtakApiController::class, 'markersIndex']);
     $router->get('/api/atak/marker-detection-rules', [AtakApiController::class, 'markerDetectionRulesIndex']);
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);
