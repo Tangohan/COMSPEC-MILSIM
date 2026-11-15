@@ -16,7 +16,8 @@ COMSPEC_ATAK_LinkAllyInitDone = true;
 ["comspec_atak_native_linkAllyFlushed", { ["flushed", _this] call comspec_atak_native_fnc_linkAllyAction; }] call CBA_fnc_addEventHandler;
 
 // Sauvegarde de mon appareil sur mon unité (seulement si elle a changé : quelques centaines d'octets).
-[{ if ([player] call comspec_atak_native_fnc_hasDevice) then { ["mirror"] call comspec_atak_native_fnc_linkAllyAction; }; }, 30] call CBA_fnc_addPerFrameHandler;
+// Perf (lot 3) : départ décalé et sonde permanente (COMSPEC_ATAK_PfhSpread, XEH_preInit), comme les autres boucles du mod.
+[{ if ([player] call comspec_atak_native_fnc_hasDevice) then { ["mirror"] call comspec_atak_native_fnc_linkAllyAction; }; }, 30, [], "liaison d'un allié (copie de mon appareil)"] call COMSPEC_ATAK_PfhSpread;
 
 addMissionEventHandler ["EntityKilled", { params ["_unit", "_killer", "_inst"]; ["killed", [_unit, _killer, _inst]] call comspec_atak_native_fnc_linkAllyAction; }];
 
@@ -69,7 +70,7 @@ addMissionEventHandler ["EntityKilled", { params ["_unit", "_killer", "_inst"]; 
         private _now = (["candidates"] call comspec_atak_native_fnc_linkAllyAction) apply { _x select 0 };
         if (_now isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_LinkAllySeen", []])) then { ["LINKALLY"] call comspec_atak_native_fnc_pageRender; };
     };
-}, 0.5] call CBA_fnc_addPerFrameHandler;
+}, 0.5, [], "liaison d'un allié (passage 0,5 s)"] call COMSPEC_ATAK_PfhSpread;
 
 // Action ACE sur un équipier (vivant, inconscient ou mort) : lien avec la barre de progression ACE.
 if (!isNil "ace_interact_menu_fnc_createAction") then {
