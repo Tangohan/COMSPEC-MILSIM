@@ -648,6 +648,28 @@ final class SseIdCheckInsightService
         ], $rows);
     }
 
+    /**
+     * Filtre d'adresse du tableau de bord : « map » (numéro de carte) et « op » (clé d'opération, « - » = hors opération).
+     *
+     * @return array{map: ?int, op: ?string, opRaw: string}
+     */
+    public static function parseScope(string $mapRaw, string $opRaw): array
+    {
+        $map = max(0, (int) $mapRaw);
+        $opRaw = trim($opRaw);
+        $opRaw = mb_substr($opRaw, 0, 64);
+
+        return ['map' => $map > 0 ? $map : null, 'op' => $opRaw === '' ? null : ($opRaw === '-' ? '' : $opRaw), 'opRaw' => $opRaw];
+    }
+
+    /** Chaîne d'adresse (« ?map=2&op=X ») qui garde le périmètre choisi sur les pages liées ; vide si aucun filtre. */
+    public static function scopeQuery(?int $map, string $opRaw, array $extra = []): string
+    {
+        $q = array_filter(['map' => $map !== null && $map > 0 ? (string) $map : '', 'op' => $opRaw] + $extra, static fn ($v): bool => (string) $v !== '');
+
+        return $q === [] ? '' : '?' . http_build_query($q);
+    }
+
     /** Opérations proposées dans le filtre du tableau de bord. */
     public function operations(int $tenantId): array
     {
