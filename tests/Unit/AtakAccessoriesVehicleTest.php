@@ -32,7 +32,7 @@ final class AtakAccessoriesVehicleTest extends TestCase
             self::assertFileExists(dirname(__DIR__, 2) . '/' . self::MAIN . '/functions/vehicle/fn_' . $fn . '.sqf');
         }
         $data = dirname(__DIR__, 2) . '/' . self::MAIN . '/data/';
-        foreach (['PowerBank' => 'item_powerbank', 'NvgFilter' => 'item_nvgfilter', 'VehicleKit' => 'item_vehiclekit'] as $cls => $pic) {
+        foreach (['PowerBank' => 'item_powerbank', 'NvgFilter' => 'item_nvgfilter'] as $cls => $pic) {
             self::assertStringContainsString('class COMSPEC_ATAK_' . $cls . ': ItemCore', $cfg);
             self::assertStringContainsString('class Item_COMSPEC_ATAK_' . $cls . ': Item_Base_F', $cfg);
             self::assertStringContainsString('"Item_COMSPEC_ATAK_' . $cls . '"', $cfg);
@@ -98,7 +98,8 @@ final class AtakAccessoriesVehicleTest extends TestCase
         $pre = $this->read(self::MAIN . '/XEH_preInit.sqf');
         self::assertStringContainsString('"comspec_atak_native_gwSrv"', $pre);
         self::assertStringContainsString('["sweep"] call comspec_atak_native_fnc_vehicleGateway;', $this->read(self::MAIN . '/XEH_postInitServer.sqf'));
-        self::assertStringContainsString('"COMSPEC_ATAK_VehKit", "Installer le terminal ATAK"', $this->read(self::MAIN . '/functions/shell/fn_aceMenu.sqf'));
+        // 4.28.0 : kit de terminal de véhicule retiré de l'offre (AtakVehicleKitRemovedAssetTest).
+        self::assertStringNotContainsString('COMSPEC_ATAK_VehKit', $this->read(self::MAIN . '/functions/shell/fn_aceMenu.sqf'));
     }
 
     public function testPhoneModelsShareTheScreenOpening(): void

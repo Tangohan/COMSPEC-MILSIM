@@ -1,3 +1,45 @@
+[h1]COMSPEC ATAK 4.28.0 Washington — liaison satellite sans relais, app Athena sans vide, carte et accueil rangés / satellite link without relays, Athena app without the gap, tidier map and home[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Liaison du téléphone[/b] : mission sans aucun relais, le téléphone est relié par satellite (« SAT ») et tout marche partout, photos comprises. Dès qu'un relais existe dans la mission (éditeur ou Zeus), il faut un relais en état à portée ; un relais détruit ne transmet plus. Nouveau réglage serveur tout en haut des options COMSPEC : « Liaison du téléphone » (Automatique, Satellite, Relais obligatoires).
+[*] [b]App Athena[/b] : le code à saisir, l'adresse, son QR code et les deux boutons tiennent sur un seul écran. Plus de grand vide ni de bouton coupé.
+[*] [b]Carte[/b] : bandeaux des apps épinglées alignés et lisibles, visibles aussi en petit format ; réponse à un ordre directement depuis le bandeau ORDRES. Volet SITUATION plus compact, explications dépliables.
+[*] [b]Accueil[/b] : les apps SSE sont rangées dans une seule tuile « SSE », chaque tuile a sa propre icône, l'app OSINT (pas encore disponible) n'est plus affichée.
+[*] Le « kit terminal véhicule ATAK » n'est plus proposé : la tablette de bord est déjà dans tous les véhicules. Un kit déjà dans une tenue ou une caisse reste là, sans effet.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Phone link[/b]: in a mission with no relay at all, the phone is linked by satellite ("SAT") and everything works everywhere, photos included. As soon as one relay exists in the mission (editor or Zeus), a working relay in range is needed; a destroyed relay no longer transmits. New server setting at the very top of the COMSPEC options: "Phone link" (Automatic, Satellite, Relays required).
+[*] [b]Athena app[/b]: the code to enter, the address, its QR code and both buttons fit on one screen. No more large empty gap or cut-off button.
+[*] [b]Map[/b]: pinned app banners aligned and readable, also shown in small format; answer an order straight from the ORDERS banner. More compact SITUATION panel, explanations open on touch.
+[*] [b]Home[/b]: the SSE apps sit in a single "SSE" tile, every tile has its own icon, the OSINT app (not available yet) is no longer shown.
+[*] The "ATAK vehicle terminal kit" is no longer offered: the vehicle tablet is already in every vehicle. A kit already in a loadout or a crate stays there, with no effect.
+[/list]
+
+[h1]COMSPEC ATAK 4.27.1 Washington — ta photo s'affiche de nouveau / your photo shows again[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Photo du joueur[/b] : ton portrait Athena s'affiche de nouveau sur le téléphone (réglages rapides, Profil, Groupe, Messages) à la place des initiales, et les diapositives du briefing aussi.
+[*] Plus de fenêtre « Picture not found » quand une image ne peut pas être lue.
+[*] Écran des rôles (COMSPEC Lobby 0.3.1) : ton grade et ta fonction dans ta communauté sont gardés pour ton dossier.
+[*] COMSPEC Link passe en 2.0.128.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Player photo[/b]: your Athena portrait shows again on the phone (quick settings, Profile, Group, Messages) instead of the initials, and so do briefing slides.
+[*] No more "Picture not found" window when an image cannot be read.
+[*] Role screen (COMSPEC Lobby 0.3.1): your rank and your role in your community are kept for your dossier.
+[*] COMSPEC Link is now 2.0.128.
+[/list]
+
 [h1]COMSPEC ATAK 4.27.0 Washington — fiches du téléphone sans mention « fiction » / phone records without a "fiction" notice[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

@@ -3,8 +3,9 @@
     Renvoie "" (non) ou le type :
       "air"     : pilote, copilote ou tourelle d'un aéronef (tablette de vol, réglage comspec_atak_native_aircrew)
       "vehicle" : conducteur, tireur, chef de bord ou tourelle d'un véhicule terrestre ou d'un bateau équipé d'une
-                  tablette durcie (réglage comspec_atak_native_vehicle_terminal : "all" tous, "kit" ceux où le kit
-                  COMSPEC_ATAK_VehicleKit est installé, "off" aucun)
+                  tablette durcie (réglage comspec_atak_native_vehicle_terminal : "all" tous, "off" aucun ; l'ancienne
+                  valeur "kit" d'un réglage enregistré vaut "all" : le kit COMSPEC_ATAK_VehicleKit, retiré en
+                  4.28.0, ne sert plus à rien)
       "cp"      : à bord (toute place) ou à moins de 8 m d'un véhicule de son camp dont le poste de commandement
                   est déployé (fn_vehicleGateway)
       "toc"     : à pied, à moins de 2,5 m d'un PC portable de TOC (fn_tocPost), joueur local seulement
@@ -29,5 +30,4 @@ if (_v isKindOf "Air") exitWith {
 };
 if (_v isKindOf "StaticWeapon" || {!(_v isKindOf "LandVehicle" || {_v isKindOf "Ship"})}) exitWith { "" };
 private _mode = missionNamespace getVariable ["comspec_atak_native_vehicle_terminal", "all"];
-private _fitted = switch (_mode) do { case "all": { true }; case "kit": { _v getVariable ["COMSPEC_ATAK_VehTerm", false] }; default { false }; };
-["", "vehicle"] select (_fitted && {[_v, _u] call _crew})
+["", "vehicle"] select (_mode isNotEqualTo "off" && {[_v, _u] call _crew})

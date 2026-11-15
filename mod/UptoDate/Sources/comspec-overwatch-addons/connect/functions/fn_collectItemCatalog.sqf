@@ -9,10 +9,21 @@ params [["_loadout", [], [[]]]];
 private _out = [];
 private _seen = createHashMap;
 // Nom affiché et mod d'origine (configSourceMod ; vide = Arma 3 de base).
+// Fiche d'un objet (nom, type, mod) gardée pour la session de jeu, par classe et emplacement : la config ne change pas
+// tant que le jeu tourne. Avant : jusqu'à 4 isClass, configSourceMod, modParams et une expression régulière par objet
+// porté, à chaque fiche. Chaque fiche reçoit sa propre copie de l'entrée.
+private _memo = uiNamespace getVariable "COMSPEC_OpItemCatalogMemo";
+if (isNil "_memo" || {!(_memo isEqualType createHashMap)}) then {
+    _memo = createHashMap;
+    uiNamespace setVariable ["COMSPEC_OpItemCatalogMemo", _memo];
+};
 private _add = {
     params ["_class", "_kind"];
     if (!(_class isEqualType "") || {_class isEqualTo ""} || {_class in _seen}) exitWith {};
     _seen set [_class, true];
+    private _memoKey = _class + "|" + _kind;
+    private _hit = _memo get _memoKey;
+    if (!isNil "_hit") exitWith { _out pushBack (+_hit); };
     private _cfg = configNull;
     {
         if (isClass (configFile >> _x >> _class)) exitWith { _cfg = configFile >> _x >> _class; };
@@ -35,7 +46,9 @@ private _add = {
     };
     if ((((toLower _class) find "ace_") isEqualTo 0) && {_kind isEqualTo "item"} && {(toLower _class) regexMatch "ace_(fielddressing|packingbandage|elasticbandage|quikclot|tourniquet|morphine|epinephrine|adenosine|splint|bloodiv|plasmaiv|salineiv|personalaidkit|surgicalkit|bodybag).*"}) then { _kind = "medical"; };
     if ((((toLower _class) find "kat_") isEqualTo 0) && {_kind isEqualTo "item"}) then { _kind = "medical"; };
-    _out pushBack (createHashMapFromArray [["class", _class], ["name", _name select [0, 80]], ["kind", _kind], ["mod", _mod select [0, 60]]]);
+    private _entry = createHashMapFromArray [["class", _class], ["name", _name select [0, 80]], ["kind", _kind], ["mod", _mod select [0, 60]]];
+    _memo set [_memoKey, _entry];
+    _out pushBack (+_entry);
 };
 private _weapon = {
     params ["_slot", "_kind"];

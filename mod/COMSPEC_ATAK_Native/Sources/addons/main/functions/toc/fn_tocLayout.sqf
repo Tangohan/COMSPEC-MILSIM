@@ -223,7 +223,8 @@ switch (_mode) do {
         _all pushBack [_nm, _panes apply { [_x] call _tokenOf }];
         if ((count _all) > 20) then { _all = _all select [(count _all) - 20]; };
         profileNamespace setVariable ["COMSPEC_ATAK_TocLayouts", _all];
-        saveProfileNamespace;
+        // Écriture du profil regroupée (fn_saveProfile : une par minute au plus, et en fin de mission), jamais dans l'image du clic.
+        [] call comspec_atak_native_fnc_saveProfile;
         _nm
     };
     case "delPreset": {
@@ -232,7 +233,8 @@ switch (_mode) do {
         private _rest = _all select { (toLower (_x select 0)) isNotEqualTo (toLower _a) };
         if ((count _rest) isEqualTo (count _all)) exitWith { false };
         profileNamespace setVariable ["COMSPEC_ATAK_TocLayouts", _rest];
-        saveProfileNamespace;
+        // Écriture du profil regroupée (fn_saveProfile : une par minute au plus, et en fin de mission), jamais dans l'image du clic.
+        [] call comspec_atak_native_fnc_saveProfile;
         true
     };
     case "kit": {

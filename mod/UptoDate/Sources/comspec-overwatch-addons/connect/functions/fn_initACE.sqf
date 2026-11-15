@@ -51,46 +51,53 @@ if (!(_installed isEqualType [])) then { _installed = []; };
     };
 } forEach _installed;
 
-// Purge des anciennes feuilles à plat sous COMSPEC Athena (session Arma précédente).
-private _mainPath = ["ACE_SelfActions", "COMSPEC_Main"];
-private _legacyFlat = [
-    "COMSPEC_OrderInbox", "COMSPEC_Messages", "COMSPEC_Photos", "COMSPEC_Briefing",
-    "COMSPEC_EcotiMarkBuilding", "COMSPEC_EcotiCycleFloor", "COMSPEC_EcotiIlluminate",
-    "COMSPEC_EcotiRouteAdd", "COMSPEC_EcotiRouteClear",
-    "COMSPEC_Ping", "COMSPEC_Med", "COMSPEC_MedInbox", "COMSPEC_IntelNote",
-    "COMSPEC_Resynch", "COMSPEC_HelmetSnap", "COMSPEC_DroneSnap", "COMSPEC_LaserSync",
-    "COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork", "COMSPEC_Recon", "COMSPEC_ReconNote",
-    "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderMenu", "COMSPEC_OrderCompose",
-    "COMSPEC_OrderFrago", "COMSPEC_OrderMove", "COMSPEC_OrderHold", "COMSPEC_OrderRecon",
-    "COMSPEC_OrderQRF", "COMSPEC_Loadout", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull", "COMSPEC_WardrobeSyncAll",
-    "COMSPEC_Callsign", "COMSPEC_BugReport", "COMSPEC_DisableOwnPhoneGps",
-    "COMSPEC_ChargesAtak", "COMSPEC_RepairAtakPower", "COMSPEC_RepairAtakScreen",
-    "COMSPEC_DiagnosticAtak"
-];
-{
-    if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
-        ["CAManBase", 1, _mainPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
-        if (!isNull player) then {
-            [typeOf player, 1, _mainPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+// Anciennes feuilles (45 identifiants × 3 retraits, dont 2 avec héritage = 135 appels dans l'image) : retirées
+// seulement si un arbre d'une autre version a déjà été posé pendant cette mission. À l'arrivée en mission il n'y a rien à
+// retirer : ACE vide ses actions de classe à chaque mission, et tout ce qui est posé sous COMSPEC_Main passe par
+// fn_aceAddSelfAction, donc figure dans COMSPEC_ACESelfActions (retiré ci-dessus). Avant, ces 135 retraits sans effet
+// étaient faits à chaque arrivée.
+if ((missionNamespace getVariable ["COMSPEC_ACEMenuStructureVer", 0]) isNotEqualTo 0) then {
+    // Purge des anciennes feuilles à plat sous COMSPEC Athena (session Arma précédente).
+    private _mainPath = ["ACE_SelfActions", "COMSPEC_Main"];
+    private _legacyFlat = [
+        "COMSPEC_OrderInbox", "COMSPEC_Messages", "COMSPEC_Photos", "COMSPEC_Briefing",
+        "COMSPEC_EcotiMarkBuilding", "COMSPEC_EcotiCycleFloor", "COMSPEC_EcotiIlluminate",
+        "COMSPEC_EcotiRouteAdd", "COMSPEC_EcotiRouteClear",
+        "COMSPEC_Ping", "COMSPEC_Med", "COMSPEC_MedInbox", "COMSPEC_IntelNote",
+        "COMSPEC_Resynch", "COMSPEC_HelmetSnap", "COMSPEC_DroneSnap", "COMSPEC_LaserSync",
+        "COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork", "COMSPEC_Recon", "COMSPEC_ReconNote",
+        "COMSPEC_CAS", "COMSPEC_Manifest", "COMSPEC_OrderMenu", "COMSPEC_OrderCompose",
+        "COMSPEC_OrderFrago", "COMSPEC_OrderMove", "COMSPEC_OrderHold", "COMSPEC_OrderRecon",
+        "COMSPEC_OrderQRF", "COMSPEC_Loadout", "COMSPEC_WardrobePush", "COMSPEC_WardrobePull", "COMSPEC_WardrobeSyncAll",
+        "COMSPEC_Callsign", "COMSPEC_BugReport", "COMSPEC_DisableOwnPhoneGps",
+        "COMSPEC_ChargesAtak", "COMSPEC_RepairAtakPower", "COMSPEC_RepairAtakScreen",
+        "COMSPEC_DiagnosticAtak"
+    ];
+    {
+        if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
+            ["CAManBase", 1, _mainPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+            if (!isNull player) then {
+                [typeOf player, 1, _mainPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+            };
         };
-    };
-    if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
-        [player, 1, _mainPath + [_x]] call ace_interact_menu_fnc_removeActionFromObject;
-    };
-} forEach _legacyFlat;
+        if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
+            [player, 1, _mainPath + [_x]] call ace_interact_menu_fnc_removeActionFromObject;
+        };
+    } forEach _legacyFlat;
 
-private _mapLegacyPath = ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_MapSurvey"];
-{
-    if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
-        ["CAManBase", 1, _mapLegacyPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
-        if (!isNull player) then {
-            [typeOf player, 1, _mapLegacyPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+    private _mapLegacyPath = ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_MapSurvey"];
+    {
+        if (!isNil "ace_interact_menu_fnc_removeActionFromClass") then {
+            ["CAManBase", 1, _mapLegacyPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+            if (!isNull player) then {
+                [typeOf player, 1, _mapLegacyPath + [_x], true] call ace_interact_menu_fnc_removeActionFromClass;
+            };
         };
-    };
-    if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
-        [player, 1, _mapLegacyPath + [_x]] call ace_interact_menu_fnc_removeActionFromObject;
-    };
-} forEach ["COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork"];
+        if (!isNull player && {!isNil "ace_interact_menu_fnc_removeActionFromObject"}) then {
+            [player, 1, _mapLegacyPath + [_x]] call ace_interact_menu_fnc_removeActionFromObject;
+        };
+    } forEach ["COMSPEC_Terrain", "COMSPEC_Scene", "COMSPEC_GeoNetwork"];
+};
 
 missionNamespace setVariable ["COMSPEC_ACESelfActions", [], false];
 missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
@@ -99,7 +106,13 @@ missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
 missionNamespace setVariable ["COMSPEC_ATAKMenuReady", false, false];
 missionNamespace setVariable ["COMSPEC_ACEAthenaReady", false, false];
 
-["INFO", "ACE", "Installation menus ACE SelfActions (arbre v5)"] call comspec_overwatch_connect_fnc_log;
+["INFO", "ACE", format ["Installation menus ACE SelfActions (arbre v%1)", _menuVer]] call comspec_overwatch_connect_fnc_log;
+
+// Installation étalée : les actions sont préparées ici (léger) et mises en file dans l'ordre (un dossier avant ses
+// feuilles) ; elles sont posées plus bas, quelques-unes par image (2 ms au plus par image), au lieu de 26 à 43
+// addActionToClass avec héritage dans la même image à l'arrivée en mission.
+// File : [0, action, chemin] = self-action (fn_aceAddSelfAction) ; [1, arguments] = addActionToClass direct.
+private _queue = [];
 
 private _condEnabled = { missionNamespace getVariable ["comspec_overwatch_enabled", true] };
 private _condSync = {
@@ -113,7 +126,7 @@ private _root = ["ACE_SelfActions", "COMSPEC_Main"];
 private _fnc_folder = {
     params ["_id", "_label", "_path", ["_cond", { missionNamespace getVariable ["comspec_overwatch_enabled", true] }]];
     private _a = [_id, _label, "", {}, _cond, { [] }] call comspec_overwatch_connect_fnc_aceAction;
-    [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+    _queue pushBack [0, _a, _path];
 };
 
 // ATAK natif : plus les entrées qui ouvraient une ancienne fenêtre plein écran par-dessus le jeu, ni celles qui
@@ -134,11 +147,11 @@ private _fnc_leaf = {
     }]];
     if (_id in _nativeDrop) exitWith {};
     private _a = [_id, _label, "", _stmt, _cond, { [] }] call comspec_overwatch_connect_fnc_aceAction;
-    [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+    _queue pushBack [0, _a, _path];
 };
 
 private _mainAction = ["COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren] call comspec_overwatch_connect_fnc_aceAction;
-[_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+_queue pushBack [0, _mainAction, ["ACE_SelfActions"]];
 
 ["COMSPEC_Account", "Connexion Athena", {
     [] call comspec_overwatch_connect_fnc_openLogin;
@@ -385,7 +398,7 @@ private _ord = _sup + ["COMSPEC_OrderMenu"];
         _noChildren,
         [_type, _announce]
     ] call comspec_overwatch_connect_fnc_aceAction;
-    [_a, _ord] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+    _queue pushBack [0, _a, _ord];
 } forEach [
     ["COMSPEC_OrderMove", "Déplacement (rapide)", "MOVE", "déplacement"],
     ["COMSPEC_OrderHold", "Maintien (rapide)", "HOLD", "maintien"],
@@ -454,7 +467,7 @@ if (
     _captureAtakAction isNotEqualTo []
     && {!(missionNamespace getVariable ["COMSPEC_ACEClassActionsReady", false])}
 ) then {
-    ["CAManBase", 0, ["ACE_MainActions"], _captureAtakAction, true] call ace_interact_menu_fnc_addActionToClass;
+    _queue pushBack [1, ["CAManBase", 0, ["ACE_MainActions"], _captureAtakAction, true]];
 };
 
 private _disablePhoneAction = [
@@ -486,7 +499,7 @@ if (
     _disablePhoneAction isNotEqualTo []
     && {!(missionNamespace getVariable ["COMSPEC_ACEClassActionsReady", false])}
 ) then {
-    ["CAManBase", 0, ["ACE_MainActions"], _disablePhoneAction, true] call ace_interact_menu_fnc_addActionToClass;
+    _queue pushBack [1, ["CAManBase", 0, ["ACE_MainActions"], _disablePhoneAction, true]];
 };
 if (
     (_captureAtakAction isNotEqualTo [])
@@ -495,19 +508,57 @@ if (
     missionNamespace setVariable ["COMSPEC_ACEClassActionsReady", true, false];
 };
 
-[] call comspec_overwatch_connect_fnc_initChargeAceActions;
+// Pose de la file. Premier passage tout de suite (la racine COMSPEC_Main existe dès cette image), la suite une
+// image après l'autre. Pendant ce temps COMSPEC_ACEMenuBuilding retient fn_initATAKMenu et le dossier « Charges ATAK »
+// (fn_initChargeAceActions), qui se posent après, comme avant : l'ordre des entrées du menu ne change pas.
+missionNamespace setVariable ["COMSPEC_ACEMenuBuilding", true, false];
+private _fnc_drain = {
+    params ["_job", "_handle"];
+    _job params ["_queue", "_stat", "_menuVer"];
+    private _t0 = diag_tickTime;
+    while { _queue isNotEqualTo [] } do {
+        (_queue deleteAt 0) params ["_kind", "_a", ["_path", []]];
+        if (_kind isEqualTo 0) then {
+            [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+        } else {
+            _a call ace_interact_menu_fnc_addActionToClass;
+        };
+        _stat set [0, (_stat select 0) + 1];
+        // Budget par image : au moins une action, puis arrêt dès 2 ms.
+        if ((diag_tickTime - _t0) > 0.002) exitWith {};
+    };
+    private _dt = diag_tickTime - _t0;
+    _stat set [1, (_stat select 1) + 1];
+    _stat set [2, (_stat select 2) + _dt];
+    _stat set [3, (_stat select 3) max _dt];
+    // Part de l'image comptée par l'ATAK natif (ligne « Image figée » et bilan des boucles).
+    if (!isNil "comspec_atak_native_fnc_perfAcc") then { ["menus ACE (installation)", _t0] call comspec_atak_native_fnc_perfAcc; };
+    if (_queue isNotEqualTo []) exitWith {};
 
-missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
-missionNamespace setVariable ["COMSPEC_ACEClassTreeVer", _menuVer, false]; // par mission : ACE vide ses actions de classe à chaque mission
+    if (_handle >= 0) then { [_handle] call CBA_fnc_removePerFrameHandler; };
+    missionNamespace setVariable ["COMSPEC_ACEMenuBuilding", false, false];
+    [] call comspec_overwatch_connect_fnc_initChargeAceActions;
 
-if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
-    private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;
-    if (_bt isNotEqualTo "") then {
-        [(["COMSPECExtension", "SetBloodType", [_bt]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
-        if (!isNil "comspec_overwatch_connect_fnc_operatorProfileTick") then {
-            [{
-                ["blood_type_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
-            }, [], 2] call CBA_fnc_waitAndExecute;
+    missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
+    missionNamespace setVariable ["COMSPEC_ACEClassTreeVer", _menuVer, false]; // par mission : ACE vide ses actions de classe à chaque mission
+    diag_log format ["[COMSPEC Overwatch][PERF] Menus ACE (installation) : %1 actions, %2 ms sur %3 image(s), pire image %4 ms",
+        _stat select 0, ((_stat select 2) * 1000) toFixed 1, _stat select 1, ((_stat select 3) * 1000) toFixed 1];
+
+    if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
+        private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;
+        if (_bt isNotEqualTo "") then {
+            [(["COMSPECExtension", "SetBloodType", [_bt]] call comspec_overwatch_connect_fnc_extDirect)] call comspec_overwatch_connect_fnc_extResult;
+            if (!isNil "comspec_overwatch_connect_fnc_operatorProfileTick") then {
+                [{
+                    ["blood_type_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
+                }, [], 2] call CBA_fnc_waitAndExecute;
+            };
         };
     };
+};
+// [actions posées, images, temps total, pire image]
+private _job = [_queue, [0, 0, 0, 0], _menuVer];
+[_job, -1] call _fnc_drain;
+if (_queue isNotEqualTo []) then {
+    [_fnc_drain, 0, _job] call CBA_fnc_addPerFrameHandler;
 };

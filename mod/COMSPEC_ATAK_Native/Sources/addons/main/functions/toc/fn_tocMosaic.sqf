@@ -8,8 +8,11 @@
     Plus de sources que de cases : pages qui tournent toutes les « rotation » secondes (10 s si non réglé).
     Coût : une caméra et une cible de rendu 256 px (moins si la liaison montante est faible) par source vue, créées par
     chaque joueur seulement pour les écrans qu'il regarde de près ; plafond par joueur = 4 vignettes par caméra
-    d'écran restant libre sous comspec_atak_native_toc_cam_max (caméras d'écran et satellites déjà comptés). Au-delà,
-    les vignettes en trop passent à tour de rôle (2 s chacune) au lieu d'être rendues ensemble.
+    d'écran restant libre sous comspec_atak_native_toc_cam_max (caméras d'écran et satellites déjà comptés), et jamais
+    plus de 4 vignettes rendues en même temps (chaque vignette est un rendu complet de la scène en plus : à 8, le
+    débit d'image s'effondrait devant une mosaïque 3x3). Au-delà, les vignettes en trop passent à tour de rôle (2 s
+    chacune) au lieu d'être rendues ensemble. Les noms des cibles de rendu libérées sont repris (par taille d'image) :
+    le moteur ne libère jamais une cible, un nom neuf par caméra en laissait une de plus à chaque page tournée.
     Modes (client) :
       ["cfg", écran]             réglage (valeurs par défaut comprises)
       ["tiles", écran]           cases de la page en cours : [[netId ou "", libellé de la source]...] (taille grille²)
@@ -57,7 +60,7 @@ switch (_mode) do {
         if !(_max isEqualType 0) then { _max = 2; };
         private _busy = (count (missionNamespace getVariable ["COMSPEC_ATAK_TocCams", []]))
             + ({ !isNull (_x select 0) } count (values (missionNamespace getVariable ["COMSPEC_ATAK_TocSatCams", createHashMap])));
-        (((round _max) - _busy) max 0) * 4
+        ((((round _max) - _busy) max 0) * 4) min 4
     };
     case "tiles": {
         (["cfg", _a] call _fn) params ["_g", "_m", "_grp", "_man", "_rot"];
@@ -110,9 +113,13 @@ switch (_mode) do {
         if (({ !isNull (_x select 0) } count (values _cams)) >= (["budget"] call _fn)) exitWith { "" };
         private _res = [_src] call _resOf;
         if (_res <= 0) exitWith { "" };
-        private _n = (uiNamespace getVariable ["COMSPEC_ATAK_TocMosSeq", 0]) + 1;
-        uiNamespace setVariable ["COMSPEC_ATAK_TocMosSeq", _n];
-        private _rt = format ["comspec_tocmos_%1", _n];
+        // Cible de rendu : un nom libéré de la même taille d'abord (« tick »), un nom neuf sinon.
+        private _freeRt = (uiNamespace getVariable ["COMSPEC_ATAK_TocMosFree", createHashMap]) getOrDefault [_res, []];
+        private _rt = if ((count _freeRt) > 0) then { _freeRt deleteAt 0 } else {
+            private _n = (uiNamespace getVariable ["COMSPEC_ATAK_TocMosSeq", 0]) + 1;
+            uiNamespace setVariable ["COMSPEC_ATAK_TocMosSeq", _n];
+            format ["comspec_tocmos_%1", _n]
+        };
         private _kind = switch (true) do { case (unitIsUAV _src): { "UAV" }; case (_src isKindOf "Man"): { "MAN" }; default { "CAM" }; };
         private _cam = "camera" camCreate (ASLToAGL getPosASL _src);
         _cam camSetFov 0.75;
@@ -158,12 +165,20 @@ switch (_mode) do {
         format ["#(argb,%1,%1,1)r2t(%2,1.7778)", _res, _rt]
     };
     case "tick": {
-        // Caméras plus demandées (écran quitté, page tournée, source coupée) : libérées.
+        // Caméras plus demandées (écran quitté, page tournée, source coupée) : libérées. Le nom de leur cible de rendu
+        // est gardé pour la prochaine caméra de la même taille (« tex »).
+        private _freeAll = uiNamespace getVariable ["COMSPEC_ATAK_TocMosFree", createHashMap];
+        uiNamespace setVariable ["COMSPEC_ATAK_TocMosFree", _freeAll];
         {
-            _y params ["_cam", "_rt", "_until", "", "_src"];
+            _y params ["_cam", "_rt", "_until", "", "_src", ["_res", 0]];
             if (diag_tickTime > _until || {isNull _src} || {!alive _src}) then {
                 if (!isNull _cam) then { ["close", [_cam, _rt]] call comspec_atak_native_fnc_tocRtt; };
                 _cams deleteAt _x;
+                if (_res > 0 && {_rt isEqualType ""} && {_rt isNotEqualTo ""}) then {
+                    private _freeRt = _freeAll getOrDefault [_res, []];
+                    _freeRt pushBackUnique _rt;
+                    _freeAll set [_res, _freeRt];
+                };
             };
         } forEach +_cams;
     };

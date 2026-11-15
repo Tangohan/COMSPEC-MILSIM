@@ -65,7 +65,7 @@ final class SsePortalNav
                 ['id' => 'bibliotheque', 'label' => 'Mentions officielles', 'hint' => 'Formulations validées à réutiliser dans les documents.', 'path' => 'atak/sse/bibliotheque', 'icon' => 'library', 'keywords' => 'bibliotheque textes'],
                 ['id' => 'presentation', 'label' => 'Présentation des documents', 'hint' => 'Bandeau, pied de page et papier des documents.', 'path' => 'atak/sse/presentation', 'icon' => 'paper'],
             ]],
-            ['id' => 'identite', 'label' => 'Identités et papiers', 'hint' => 'Les papiers fictifs du jeu, de leur création à leur émission, et ceux des membres.', 'items' => array_values(array_filter([
+            ['id' => 'identite', 'label' => 'Identités et papiers', 'hint' => 'Les papiers d’identité, de leur création à leur émission, et ceux des membres.', 'items' => array_values(array_filter([
                 ['id' => 'papiers-tableau', 'label' => 'Tableau de bord', 'hint' => 'Contrôles, faux détectés et recherchés appréhendés par opération.', 'path' => 'atak/sse/papiers/tableau', 'icon' => 'ops', 'keywords' => 'identite controle tableau bord operation faux recherches'],
                 ['id' => 'papiers', 'label' => 'Papiers d’identité', 'hint' => 'Registre des papiers d’identité fictifs émis pour le jeu.', 'path' => 'atak/sse/papiers', 'icon' => 'doc', 'aliases' => ['atak/sse/papiers/documents'], 'keywords' => 'papiers passeport carte permis registre mrz documents identite'],
                 ['id' => 'papiers-identites', 'label' => 'Identités fictives', 'hint' => 'Identités (réelles, de couverture, falsifiées) portées par les papiers.', 'path' => 'atak/sse/papiers/identites', 'icon' => 'id', 'keywords' => 'identites fictives couverture alias faux'],

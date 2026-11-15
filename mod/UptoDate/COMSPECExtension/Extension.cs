@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.127";
+    private const string ExtensionVersion = "2.0.128";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -889,8 +889,21 @@ public static partial class Extension
         catch { /* ignore */ }
     }
 
+    /// <summary>Temps total que « Disconnect » peut prendre au fil qui l'appelle (le fil du jeu en fin de mission).</summary>
+    private const int DisconnectBudgetMs = 1500;
+    /// <summary>Part de ce temps laissée au dernier envoi des journaux du terminal.</summary>
+    private const int DisconnectLogFlushMs = 1000;
+    /// <summary>Attente minimale de la réponse au POST de déconnexion, même si les journaux ont pris toute leur part.</summary>
+    private const int DisconnectPostFloorMs = 500;
+    /// <summary>Durée laissée au POST lui-même (inchangée) : il finit en tâche de fond si le fil appelant n'attend plus.</summary>
+    private const int DisconnectPostTimeoutSeconds = 3;
+
     /// <summary>
-    /// POST /api/atak/disconnect synchrone (timeout court : le process Arma peut mourir tout de suite).
+    /// POST /api/atak/disconnect (le process Arma peut mourir tout de suite). Mêmes réponses qu'avant.
+    /// Perf (lot 6) : le fil appelant attendait jusqu'à 8 s (journaux) puis 3 s (POST), soit 11 s de jeu figé en fin de
+    /// mission quand Athena répond mal. Il attend maintenant <see cref="DisconnectBudgetMs"/> au plus : 1 s pour les
+    /// journaux, puis le reste (0,5 s au moins) pour le POST, qui part sur un fil à part et garde ses 3 s ; passé le
+    /// délai, la réponse est « ERR|timeout » (comme un POST trop lent avant) et l'envoi se termine en tâche de fond.
     /// </summary>
     private static string VerifyDisconnectSync(string callSign)
     {
@@ -899,26 +912,41 @@ public static partial class Extension
             return "ERR|not_connected";
         if (_apiKey.Length == 0)
             return "ERR|unauthorized";
-        FlushDeviceLogsSync();
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        FlushDeviceLogsSync(DisconnectLogFlushMs);
         if (!TryBuildRequestUri(baseUrl, "/api/atak/disconnect", out var discUri, out var discErr) || discUri is null)
             return "ERR|" + discErr;
 
-        // Timeout court : quit / Ended doit aboutir avant la mort du process.
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        var discUrl = discUri.AbsoluteUri;
+        var discBody = BuildDisconnectBody(callSign);
+        var post = Task.Run(() =>
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(DisconnectPostTimeoutSeconds));
+            try
+            {
+                using var resp = SendJsonPost(discUrl, discBody, cts.Token);
+                if (resp.IsSuccessStatusCode)
+                    return "OK|disconnected";
+                var code = (int)resp.StatusCode;
+                if (code is 401 or 403) return "ERR|unauthorized";
+                if (code == 404) return "ERR|not_found";
+                return "ERR|http_" + code;
+            }
+            catch (Exception ex)
+            {
+                return FormatCaughtError(ex);
+            }
+        });
+        var waitMs = Math.Max(DisconnectPostFloorMs, DisconnectBudgetMs - (int)started.ElapsedMilliseconds);
         try
         {
-            using var resp = SendJsonPost(discUri.AbsoluteUri, BuildDisconnectBody(callSign), cts.Token);
-            if (resp.IsSuccessStatusCode)
-                return "OK|disconnected";
-            var code = (int)resp.StatusCode;
-            if (code is 401 or 403) return "ERR|unauthorized";
-            if (code == 404) return "ERR|not_found";
-            return "ERR|http_" + code;
+            if (post.Wait(waitMs)) return post.Result;
         }
         catch (Exception ex)
         {
             return FormatCaughtError(ex);
         }
+        return "ERR|timeout";
     }
 
     /// <summary>
@@ -993,7 +1021,11 @@ public static partial class Extension
     /// </summary>
     private static void EnsureDrainTimer(bool rejitter = false)
     {
-        LoadQueueFromDisk();
+        // Perf (lot 6) : appelé à chaque mise en file depuis le fil du jeu. Si la file sur disque n'a pas encore été
+        // relue (pas de « Warmup » avant le premier envoi), elle l'est sur un fil à part : jusqu'à 32 Mo de fichier
+        // n'étaient lus et décodés sous callExtension. LoadQueueFromDisk ne s'exécute qu'une fois (verrou interne).
+        if (System.Threading.Volatile.Read(ref _diskQueueLoaded) == 0)
+            _ = Task.Run(static () => { try { LoadQueueFromDisk(); } catch { /* best effort */ } });
         lock (DrainTimerLock)
         {
             var baseMs = _drainPeriodMs;
@@ -1863,7 +1895,7 @@ public static partial class Extension
     /// <summary>Commandes que fn_uplinkHold laisse passer ou purement locales : elles ne rouvrent pas les envois.</summary>
     private static readonly HashSet<string> NonUplinkCommands = new(StringComparer.Ordinal)
     {
-        "Async", "Warmup", "UplinkOff", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
+        "Async", "AsyncKeep", "AsyncPoll", "Warmup", "UplinkOff", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
         "GetLogTail", "SendQueue.Status", "SyncStats", "MemStats", "Perf.Stats", "GetPendingQueueCount", "GetSessionTenant",
         "Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore",
         "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect", "ClientDisconnect", "RepairLocalData",
@@ -2169,16 +2201,19 @@ public static partial class Extension
                     lines.Add(QueueRowJson(mk.Url, StripQueueSecrets(mk.Body)));
                 }
                 File.WriteAllLines(fifo, lines);
+                // Perf (lot 6) : la position est copiée sous le verrou, le fichier écrit HORS du verrou. Avant, ce fil de
+                // fond gardait CoalescedPositionLock pendant l'écriture disque, et UpdatePosition (fil du jeu, plusieurs
+                // fois par seconde) attendait la fin de l'écriture. DiskQueueLock garde les écritures en série.
+                (string Url, string Body)? positionSnapshot;
                 lock (CoalescedPositionLock)
+                    positionSnapshot = _coalescedPosition;
+                if (positionSnapshot is { } p)
                 {
-                    if (_coalescedPosition is { } p)
-                    {
-                        File.WriteAllText(pos, QueueRowJson(p.Url, StripQueueSecrets(p.Body)));
-                    }
-                    else if (File.Exists(pos))
-                    {
-                        File.Delete(pos);
-                    }
+                    File.WriteAllText(pos, QueueRowJson(p.Url, StripQueueSecrets(p.Body)));
+                }
+                else if (File.Exists(pos))
+                {
+                    File.Delete(pos);
                 }
             }
         }
@@ -3320,7 +3355,7 @@ public static partial class Extension
             for (var i = 0; i < argsString.Length; i++)
                 argsString[i] = ArmaString(argsString[i]);
             // « Async » : c'est la commande portée qui compte (fn_extAwait l'a déjà passée par fn_uplinkHold).
-            NoteGameCommand(functionString == "Async" && argsString.Length > 1 ? argsString[1] : functionString);
+            NoteGameCommand((functionString is "Async" or "AsyncKeep") && argsString.Length > 1 ? argsString[1] : functionString);
         }
         catch
         {
@@ -3383,7 +3418,7 @@ public static partial class Extension
         {
             var ticks = System.Diagnostics.Stopwatch.GetTimestamp() - startTs;
             var key = function ?? "";
-            if (key == "Async" && args.Length > 1) key = "Async " + (args[1] ?? "");
+            if ((key is "Async" or "AsyncKeep") && args.Length > 1) key = "Async " + (args[1] ?? "");
             if (PerfSlots.Count >= PerfSlotsMax && !PerfSlots.ContainsKey(key)) key = "(autres)";
             var s = PerfSlots.GetOrAdd(key, static _ => new PerfSlot());
             var us = ticks * 1_000_000 / System.Diagnostics.Stopwatch.Frequency;
@@ -3910,6 +3945,12 @@ public static partial class Extension
     private const int AsyncMaxParallel = 6;
     private static readonly SemaphoreSlim AsyncGate = new(AsyncMaxParallel, AsyncMaxParallel);
 
+    /// <summary>Résultats de « AsyncKeep » en attente de lecture par « AsyncPoll » (Result null = commande en cours).</summary>
+    private static readonly ConcurrentDictionary<string, (string? Result, long AtMs)> AsyncKept = new(StringComparer.Ordinal);
+    private const int AsyncKeptMax = 32;
+    private const long AsyncKeptTtlMs = 120_000;
+    private const int AsyncTicketMaxLength = 64;
+
     /// <summary>
     /// DLL-C01 : vrai seulement dans le worker « Async » (Task.Run). Les POST sync (AdminControl, GameAdmin…)
     /// refusent de bloquer le thread jeu hors de ce contexte.
@@ -4067,14 +4108,46 @@ public static partial class Extension
         // exécute la commande sur un thread à part et renvoie son résultat par le rappel ("comspec", "async:<ticket>", résultat).
         // callExtension bloque le thread du jeu, même lancé depuis un spawn : une requête HTTP lente (jusqu'à
         // SyncTimeoutSeconds) figeait la partie. Une DLL plus ancienne répond "" et le SQF retombe sur l'appel direct.
-        if (function == "Async")
+        // Perf (lot 6) : « AsyncKeep » = même exécution hors du fil du jeu, mêmes commandes, mêmes contrôles, mais le
+        // résultat est gardé dans la DLL au lieu de partir par le rappel ; ["AsyncPoll", [ticket]] le relit :
+        // « PENDING|ticket » tant que la commande tourne, puis la réponse exacte de la commande (une seule fois).
+        // Pour les écrans où le rappel de la DLL n'arrive pas (écran des rôles du lobby : le bouton Synchroniser
+        // appelait GetPlayerAvatarInfo en direct, jusqu'à 8 s de jeu figé). Au plus AsyncKeptMax tickets, gardés
+        // AsyncKeptTtlMs ; ticket de 64 caractères au plus.
+        if (function == "AsyncPoll")
+        {
+            var pollTicket = args.Length > 0 ? (args[0] ?? "") : "";
+            if (pollTicket.Length == 0 || pollTicket.Length > AsyncTicketMaxLength) return "ERR|async_args";
+            if (!AsyncKept.TryGetValue(pollTicket, out var kept)) return "ERR|async_unknown";
+            if (kept.Result is null) return "PENDING|" + pollTicket;
+            AsyncKept.TryRemove(pollTicket, out _);
+            return kept.Result;
+        }
+        if (function is "Async" or "AsyncKeep")
         {
             if (args.Length < 2 || string.IsNullOrEmpty(args[0]) || string.IsNullOrEmpty(args[1])) return "ERR|async_args";
-            if (_callback == null) return "ERR|no_callback";
+            var keep = function == "AsyncKeep";
+            if (!keep && _callback == null) return "ERR|no_callback";
             var ticket = args[0]!;
             var command = args[1]!;
-            if (command == "Async") return "ERR|async_nested";
+            if (command is "Async" or "AsyncKeep" or "AsyncPoll") return "ERR|async_nested";
             var rest = args[2..];
+            if (keep)
+            {
+                if (ticket.Length > AsyncTicketMaxLength) return "ERR|async_args";
+                var nowMs = Environment.TickCount64;
+                foreach (var old in AsyncKept)
+                {
+                    if (nowMs - old.Value.AtMs > AsyncKeptTtlMs) AsyncKept.TryRemove(old.Key, out _);
+                }
+                if (AsyncKept.Count >= AsyncKeptMax) return "ERR|async_busy";
+                if (!AsyncKept.TryAdd(ticket, (null, nowMs))) return "ERR|async_args";
+            }
+            void Deliver(string value)
+            {
+                if (keep) AsyncKept[ticket] = (value, Environment.TickCount64);
+                else InvokeCallback("async:" + ticket, value);
+            }
             // Commandes purement locales (mise en file, aucun HTTP sync) : hors AsyncGate (sinon 6 POST lents
             // saturaient la porte et sautaient UpdatePosition jusqu'à 8 s). Avant 2.0.104 le corps tournait
             // inline sous callExtension (JSON + EnrichAtakPayload sur le fil jeu). Task.Run sans gate : le jeu
@@ -4091,7 +4164,7 @@ public static partial class Extension
                         localResult = direct;
                     }
                     catch (Exception ex) { localResult = FormatCaughtError(ex); }
-                    InvokeCallback("async:" + ticket, localResult);
+                    Deliver(localResult);
                 });
                 return "QUEUED|" + ticket;
             }
@@ -4115,7 +4188,7 @@ public static partial class Extension
                     InAsyncWorker.Value = false;
                     AsyncGate.Release();
                 }
-                InvokeCallback("async:" + ticket, result);
+                Deliver(result);
             });
             return "QUEUED|" + ticket;
         }
@@ -7046,6 +7119,16 @@ public static partial class Extension
                             {
                                 if (File.Exists(cached) && new FileInfo(cached).Length > 0)
                                     return "OK|" + cached.Replace('\\', '/');
+                                // 2.0.128 : image déjà téléchargée dans un autre dossier de cache (Documents, de 2.0.124 à
+                                // 2.0.127 : Arma ne la lisait pas) : copiée ici, sans nouvelle requête.
+                                foreach (var otherCacheDir in ImageCacheDirs())
+                                {
+                                    var avatarElsewhere = Path.Combine(otherCacheDir, "briefing_" + safeKey + cachedExt);
+                                    if (string.Equals(avatarElsewhere, cached, StringComparison.OrdinalIgnoreCase)) continue;
+                                    if (!File.Exists(avatarElsewhere) || new FileInfo(avatarElsewhere).Length == 0) continue;
+                                    File.Copy(avatarElsewhere, cached, true);
+                                    return "OK|" + cached.Replace('\\', '/');
+                                }
                             }
                             catch { /* téléchargement normal */ }
                         }
@@ -7788,11 +7871,11 @@ public static partial class Extension
         }
     }
 
-    private static void FlushDeviceLogsSync()
+    private static void FlushDeviceLogsSync(int timeoutMs)
     {
         try
         {
-            FlushDeviceLogsBatch(80);
+            FlushDeviceLogsBatch(80, timeoutMs);
         }
         catch
         {
@@ -7801,7 +7884,7 @@ public static partial class Extension
     }
 
     /// <summary>Envoie un lot de journaux ; false si le lot a été remis en file (échec réseau ou HTTP).</summary>
-    private static bool FlushDeviceLogsBatch(int maxLines)
+    private static bool FlushDeviceLogsBatch(int maxLines, int timeoutMs = SyncTimeoutSeconds * 1000)
     {
         if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0 || _terminalUid.Length == 0)
             return false;
@@ -7833,7 +7916,7 @@ public static partial class Extension
         sb.Append("]}");
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(Math.Clamp(timeoutMs, 250, SyncTimeoutSeconds * 1000)));
             using var resp = SendJsonPost(uri.AbsoluteUri, sb.ToString(), cts.Token);
             if (!resp.IsSuccessStatusCode)
             {
@@ -7916,6 +7999,24 @@ public static partial class Extension
         catch { return ""; }
     }
 
+    /// <summary>
+    /// Dossiers de cache des images, par ordre de préférence. 2.0.128 : comspec_cache du dossier du jeu d'abord, le seul
+    /// qu'Arma lit en texture (chemin relatif comspec_cache\…). Documents\Arma 3 - COMSPEC\Cache, mis en premier par
+    /// 2.0.124, n'est pas lisible par le jeu : les portraits et les diapositives ne s'affichaient plus (initiales sur le
+    /// téléphone, cadre vide à l'écran des rôles, journal de TTRD du 15/11). Il reste le repli quand le dossier du jeu
+    /// n'est pas inscriptible (l'image passe alors par le navigateur intégré), puis TEMP.
+    /// </summary>
+    private static string[] ImageCacheDirs()
+    {
+        var persistent = PersistentCacheRoot();
+        return new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
+            persistent.Length > 0 ? Path.Combine(persistent, "briefing") : "",
+            Path.Combine(Path.GetTempPath(), "comspec_cache", "briefing"),
+        }.Where(d => d.Length > 0).ToArray();
+    }
+
     private static string? GetWritableCacheDir()
     {
         // Dossier déjà vérifié : réutilisé tant qu'il existe (un fichier test était écrit puis effacé à chaque
@@ -7923,18 +8024,8 @@ public static partial class Extension
         var known = _writableCacheDir;
         if (known != null && Directory.Exists(known))
             return known;
-        // Documents\Arma 3 - COMSPEC\Cache d'abord (COMSPEC Link 2.0.124) : il survit aux mises à jour du mod et au
-        // nettoyage de TEMP, donc portraits et diapositives ne sont plus retéléchargés à chaque fois (TTRD, 14/11).
-        var persistent = PersistentCacheRoot();
-        var candidates = new[]
+        foreach (var dir in ImageCacheDirs())
         {
-            persistent.Length > 0 ? Path.Combine(persistent, "briefing") : "",
-            Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
-            Path.Combine(Path.GetTempPath(), "comspec_cache", "briefing"),
-        };
-        foreach (var dir in candidates)
-        {
-            if (dir.Length == 0) continue;
             try
             {
                 Directory.CreateDirectory(dir);
@@ -12375,7 +12466,24 @@ public static partial class Extension
             if (!File.Exists(dest))
                 File.Copy(resolved, dest, false);
 
-            // 200 fichiers et 1 Go au plus (les photos envoyées y restent, ~20 Mo chacune), les plus récents gardés.
+            // Perf (lot 6) : le ménage du dossier (liste, tri et suppressions sur 200 fichiers) part en tâche de fond ;
+            // la réponse ne l'attend plus. La copie reste faite avant de répondre : l'appelant lit le fichier aussitôt.
+            var staged = File.Exists(dest) ? dest : resolved;
+            _ = Task.Run(() => PruneCaptureDir(dir));
+            return staged;
+        }
+        catch
+        {
+            // Le miroir ne doit jamais faire échouer un envoi.
+            return resolved;
+        }
+    }
+
+    /// <summary>200 fichiers et 1 Go au plus (les photos envoyées y restent, ~20 Mo chacune), les plus récents gardés.</summary>
+    private static void PruneCaptureDir(string dir)
+    {
+        try
+        {
             var files = new DirectoryInfo(dir).GetFiles();
             Array.Sort(files, (a, b) => b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc));
             long kept = 0;
@@ -12387,13 +12495,10 @@ public static partial class Extension
                 if (i < 200 && kept <= CapturesMaxBytes) continue;
                 try { files[i].Delete(); } catch { /* ignore */ }
             }
-
-            return File.Exists(dest) ? dest : resolved;
         }
         catch
         {
-            // Le miroir ne doit jamais faire échouer un envoi.
-            return resolved;
+            // Ménage au prochain passage.
         }
     }
 

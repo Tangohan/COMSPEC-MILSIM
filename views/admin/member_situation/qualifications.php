@@ -96,6 +96,12 @@ $summary = [
             </div>
         </section>
     <?php else: ?>
+        <?php if (is_array($qualificationDisplay ?? null)):
+            $qdHeading = 'h2';
+            $qdClass = '';
+            $qdId = 'affichage';
+            require base_path('views/partials/qualification_display.php');
+        endif; ?>
         <div class="bo-doc-list-head">
             <h3 class="bo-doc-list-head__title">
                 <?= (int) $count ?> qualification<?= $count > 1 ? 's' : '' ?>
@@ -236,3 +242,6 @@ $summary = [
         </div>
     <?php endif; ?>
 </div>
+<?php if (is_array($qualificationDisplay ?? null) && $awards !== []): ?>
+<script src="<?= $h(asset_url('assets/js/qualification-display.js')) ?>" defer></script>
+<?php endif; ?>

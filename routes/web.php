@@ -544,6 +544,7 @@ return function (Router $router) {
     $router->get('/jnet/moi/qualifications', $moi(MemberSituationController::class, 'qualifications'), $mwMoi);
     $router->get('/jnet/moi/qualifications/{awardId}/brevet', $moi(MemberSituationController::class, 'downloadBrevet'), $mwMoi);
     $router->post('/jnet/moi/qualifications/{awardId}/generer-brevet', $moi(MemberSituationController::class, 'generateBrevet'), $mwMoi);
+    $router->post('/jnet/moi/qualifications/affichage', $moi(\App\Controllers\Admin\MemberQualificationDisplayController::class, 'toggleMine'), $mwMoi);
     $router->get('/jnet/moi/avancement', $moi(MemberAdvancementController::class, 'index'), $mwMoi);
     $router->post('/jnet/moi/avancement/{campaignId}/volontaire', $moi(MemberAdvancementController::class, 'volunteer'), $mwMoi);
     $router->post('/jnet/moi/avancement/demande', $moi(MemberAdvancementController::class, 'requestAdvancement'), $mwMoi);
@@ -2637,6 +2638,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'saveAdequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/qualifications', [EffectifsWorkspaceController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Fiche membre › Identité & papiers (COMSPEC IDENTITY) : identités, papiers, kit de mission.
+    $router->post('/back-office/ressources/effectifs/membres/{id}/qualifications/affichage', [\App\Controllers\Admin\MemberQualificationDisplayController::class, 'toggle'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/qualifications-suggerees', [\App\Controllers\Admin\MemberQualificationSuggestionsController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilAlign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

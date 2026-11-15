@@ -123,15 +123,17 @@ switch (_op) do {
         };
         private _p = _head splitString "|";
         private _n = parseNumber (_p param [1, "0"]);
-        private _buf = "";
+        // Morceaux rangés puis recollés en une fois : pas de recopie du texte déjà lu à chaque morceau.
+        private _parts = [];
         private _ok = _n > 0 && {_n <= 50};
         if (_ok) then {
             for "_i" from 0 to (_n - 1) do {
                 private _c = ["ReadCoverFileChunk", [str _i]] call _call;
                 if ((_c select [0, 3]) isNotEqualTo "OK|") exitWith { _ok = false; };
-                _buf = _buf + (_c select [3]);
+                _parts pushBack (_c select [3]);
             };
         };
+        private _buf = _parts joinString "";
         private _root = if (_ok) then { parseSimpleArray _buf } else { [] };
         if !(_ok && {_root isEqualType []} && {_root isNotEqualTo []}) exitWith { [_err get "read"] call _fail };
         private _m = createHashMapFromArray (_root select { _x isEqualType [] && {count _x isEqualTo 2} && {(_x select 0) isEqualType ""} });

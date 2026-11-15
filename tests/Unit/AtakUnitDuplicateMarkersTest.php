@@ -99,7 +99,7 @@ final class AtakUnitDuplicateMarkersTest extends TestCase
         $hpp = $this->read(self::MAIN . 'script_component.hpp');
         $v = ModVersion::match('/#define VERSION_STR "([0-9.]+)"/', $hpp);
         ModVersion::assertAtLeast('4.24.3', $v);
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.127"', $hpp);
+        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.128"', $hpp);
         $log = $this->read('CHANGELOG-ATAK.md');
         self::assertMatchesRegularExpression('/\n## Carte du téléphone : plus de symboles d\'alliés empilés[^\n]+\(ATAK natif 4\.24\.3\.AG - Washington, COMSPEC Link 2\.0\.126\)\n\n### Résumé joueur\nType : correctif\nFR : [^\n]+\n(- [^\n]+\n)+EN : [^\n]+\n(- [^\n]+\n)+/', $log);
         self::assertStringContainsString('[h1]COMSPEC ATAK 4.24.3 Washington', $this->read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));

@@ -10,7 +10,11 @@
     fn_netSend met les envois en file). Brouilleurs : effet selon le rapport brouilleur / signal (un signal fort tout
     proche du relais résiste). Réglage serveur comspec_atak_native_net_realism : 0 simplifié (ancien modèle), 1 réaliste,
     2 exigeant. Clés en plus : tx (émission possible), margin (dB, -1 sans relais), jitter (ms).
-    Réseau exclusivement par relais (fn_relayNet "only") : sans relais reçu, aucun réseau (même simulation coupée).
+    Mode de liaison de la mission (fn_linkMode, seule source de vérité, lue par fn_relayNet "only") : « relais » (au
+    moins un relais posé dans la mission, ou réglage) : sans relais reçu, aucun réseau (même simulation coupée), libellé
+    = la vraie raison (« Relais détruit », « Relais hors service », « Aucun relais à portée ») ; « sat » (aucun relais posé,
+    ou réglage) : la liaison existe partout, jamais coupée par le terrain. Clés en plus : mode ("sat" | "relay"),
+    net (type affiché dans la barre d'état : SAT, RELAIS, PASSERELLE, PC, MPU, HORS RÉSEAU).
     Liaison réaliste téléphone <-> radio (fn_mpuLink, réglage comspec_atak_native_mpu_real) : le téléphone passe par sa
     radio de données, une MPU5 reliée par câble EUD ou Wi-Fi (sans MPU5 : pas de réseau de données) ; débit, latence et pertes
     sont ceux du maillage jusqu'à la passerelle (relief, sauts, brouilleurs déjà comptés), puis bâtiment, véhicule,
@@ -52,11 +56,14 @@ if ((_mpu get "active") && {!(_mpu get "ok")} && {missionNamespace getVariable [
     _q
 };
 if !(["sim"] call comspec_atak_native_fnc_netCond) exitWith {
-    // Réseau exclusivement par relais : même sans simulation de débit, aucun relais reçu = aucun réseau.
+    // Liaison par relais (fn_linkMode, par "only") : même sans simulation de débit, aucun relais reçu = aucun réseau,
+    // avec la vraie raison (relais détruit, hors service, hors de portée). Liaison satellite : réseau partout.
+    private _lm = ["get"] call comspec_atak_native_fnc_linkMode;
     _q = if ((["only"] call comspec_atak_native_fnc_relayNet) && {(["best"] call comspec_atak_native_fnc_relayNet) isEqualTo []}) then {
-        createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", "Aucun relais"], ["factors", [["Aucun relais reçu (réseau exclusivement par relais)", "aucun réseau"]]], ["sim", true]]
+        private _why = ["reason"] call comspec_atak_native_fnc_linkMode;
+        createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", _why], ["factors", [[_why, "aucun réseau"]]], ["sim", true], ["net", "HORS RÉSEAU"], ["mode", _lm]]
     } else {
-        createHashMapFromArray [["bars", 4], ["kbps", 5000], ["latency", 40], ["loss", 0], ["label", "Simulation coupée"], ["factors", []], ["sim", false]]
+        createHashMapFromArray [["bars", 4], ["kbps", 5000], ["latency", 40], ["loss", 0], ["label", "Simulation coupée"], ["factors", []], ["sim", false], ["net", ["", "SAT"] select (_lm isEqualTo "sat")], ["mode", _lm]]
     };
     uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", [diag_tickTime, _q]];
     _q
@@ -73,10 +80,15 @@ private _kbps = 4000;
 // Meilleur relais reçu (fn_relayNet "best") : relais de la mission (module « Poser un relais » ou Overwatch), passerelle
 // de véhicule ou PC mobile ; relief, batterie, brouillage, chaîne des répéteurs et saturation déjà comptés.
 private _best = ["best"] call comspec_atak_native_fnc_relayNet;
-// Relais obligatoires : case « Relais obligatoires » d'un module « Poser un relais » (presque plus de réseau sans relais).
-// Réseau exclusivement par relais : réglage serveur, case du module ou mode réaliste d'Athena (aucun réseau sans relais).
+// Mode de liaison de la mission (fn_linkMode, seule source de vérité, lue par fn_relayNet "only" et "required") :
+// « relais » : aucun réseau sans relais reçu, sans repli sur le satellite ; « sat » : la liaison existe partout.
 private _only = ["only"] call comspec_atak_native_fnc_relayNet;
-private _req = _only || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]};
+private _req = ["required"] call comspec_atak_native_fnc_relayNet;
+private _sat = (["get"] call comspec_atak_native_fnc_linkMode) isEqualTo "sat";
+// Coupure voulue (zone coupée par le serveur, sous l'eau) : la liaison satellite ne la traverse pas.
+private _cut = false;
+// Raison réelle de l'absence de relais (liaison par relais) : libellé de la liaison et des apps.
+private _noRelay = "";
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 if (_bridge) then {
     private _link = toLower (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]);
@@ -92,7 +104,7 @@ if (_bridge) then {
     if (_zone isEqualType createHashMap && {(count _zone) > 0}) then {
         _loss = _loss max (_zone getOrDefault ["packet_loss_floor", 0]);
         _lat = _lat + (_zone getOrDefault ["latency_add", 0]);
-        if (_zone getOrDefault ["force_disconnect", false]) then { _mul = 0; };
+        if (_zone getOrDefault ["force_disconnect", false]) then { _mul = 0; _cut = true; };
         _f pushBack [format ["Zone %1", _zone getOrDefault ["name", "radio"]], format ["perte %1 %%", _loss]];
     };
 };
@@ -117,7 +129,9 @@ if (_mesh) then {
     if (_lk isEqualTo "wifi") then { _f pushBack [format ["Wi-Fi de la MPU5 (%1 m)", round (_mpu get "wifiD")], format ["%1 %%", round (100 * (_mpu get "wifiQ"))]]; };
 };
 if (_req && {_best isEqualTo []}) then {
-    if (_only) then { _mul = 0; _f pushBack ["Aucun relais reçu (réseau exclusivement par relais)", "aucun réseau"]; } else { _mul = _mul * 0.1; _f pushBack ["Aucun relais à portée", "-90 %"]; };
+    _noRelay = ["reason"] call comspec_atak_native_fnc_linkMode;
+    _mul = 0;
+    _f pushBack [_noRelay, "aucun réseau"];
 };
 if (_best isNotEqualTo []) then {
     _best params ["", "_gn", "_gd", "_gmb", "_gl", "_gk", "", "_gu", "_gs", "", ["_gf", 0], ["_gh", ""], ["_glat", 0], ["_gmg", -1], ["_gtx", true], ["_gls", []], ["_gmcs", -1]];
@@ -166,7 +180,7 @@ if (_unit isEqualTo player) then {
 };
 // Dans un véhicule : la carrosserie gêne, sauf sur son terminal de bord ou sa passerelle (antenne du toit).
 if (_unit isNotEqualTo player && {([player] call comspec_atak_native_fnc_vehicleTerminal) isEqualTo ""} && {(["state", _unit] call comspec_atak_native_fnc_vehicleGateway) isEqualTo ""}) then { _mul = _mul * 0.8; _f pushBack ["Dans un véhicule", "-20 %"]; };
-if ((_eye select 2) < 0) then { _mul = 0; _f pushBack ["Sous l'eau", "aucun signal"]; };
+if ((_eye select 2) < 0) then { _mul = 0; _cut = true; _f pushBack ["Sous l'eau", "aucun signal"]; };
 // Masque du relief : 8 directions vers un point haut à 1,5 km. Avec un relais reçu, le relief est déjà dans son
 // bilan radio (modèle réaliste) : on ne le compte pas deux fois.
 private _masked = 0;
@@ -272,6 +286,13 @@ if (_real > 0 && {["congestion"] call comspec_atak_native_fnc_netCond}) then {
     };
 };
 _mul = 0 max (_mul min 1);
+// Liaison satellite (fn_linkMode), sans relais ni radio de données : la liaison existe partout. Bâtiment, sous-sol, relief,
+// véhicule et météo la ralentissent sans jamais la couper (assez de débit pour une photo) ; seuls un brouillage, une zone
+// coupée par le serveur ou l'eau la coupent.
+if (_sat && {!_mesh} && {_best isEqualTo []} && {!_cut}) then {
+    private _floor = 0.1 * _jamM * (1 - _zj);
+    if (_mul < _floor) then { _mul = _floor; _f pushBack ["Liaison satellite", "débit réduit, jamais coupée"]; };
+};
 // Antenne d'extension de débit : pertes atténuées et débit de base relevé (rien à faire sans aucun signal).
 if (_ext isNotEqualTo [] && {_mul > 0} && {!_mesh}) then {
     (["boost", _mul] call comspec_atak_native_fnc_antenna) params ["_m2", "_gain", "_name", "_txt"];
@@ -302,16 +323,18 @@ private _label = ["Aucun signal", "Très faible", "Faible", "Bon", "Excellent"] 
 // Réception seule : une barre au plus, rien ne part.
 if (!_tx && {_bars > 0}) then { _bars = 1; _label = "Réception seule"; };
 if (_bars isEqualTo 0) then { _tx = false; };
-// Type de liaison affiché dans la barre d'état (fn_statusUpdate) : radio MPU, relais, passerelle ou PC ; SAT = Athena
-// raccordé directement, sans relais ni maillage.
+// Liaison par relais sans relais reçu : le libellé dit la vraie raison (relais détruit, hors service, hors de portée).
+if (_bars isEqualTo 0 && {_noRelay isNotEqualTo ""}) then { _label = _noRelay; };
+// Type de liaison affiché dans la barre d'état (fn_statusUpdate) : radio MPU, relais, passerelle ou PC ; SAT = liaison
+// satellite (fn_linkMode), sans relais ni maillage ; HORS RÉSEAU = liaison par relais sans aucun relais reçu.
 private _netT = "";
 if (_mesh) then { _netT = "MPU"; } else {
     if (_best isNotEqualTo []) then { _netT = createHashMapFromArray [["relay", "RELAIS"], ["gw", "PASSERELLE"], ["cp", "PC"], ["mpu5", "MPU"]] getOrDefault [_best select 5, "RELAIS"]; }
-    else { if (_bridge && {(toLower (missionNamespace getVariable ["COMSPEC_LinkState", "offline"])) isEqualTo "linked"}) then { _netT = "SAT"; }; };
+    else { _netT = ["HORS RÉSEAU", "SAT"] select _sat; };
 };
 _q = createHashMapFromArray [
     ["bars", _bars], ["kbps", _kbps], ["latency", _lat], ["loss", _loss min 100], ["factors", _f], ["sim", true],
-    ["label", _label], ["tx", _tx], ["margin", _margin], ["jitter", _jit], ["net", _netT]
+    ["label", _label], ["tx", _tx], ["margin", _margin], ["jitter", _jit], ["net", _netT], ["mode", ["relay", "sat"] select _sat]
 ];
 uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", [diag_tickTime, _q]];
 ["réseau : calcul de la liaison", _perfT] call comspec_atak_native_fnc_perfAcc;

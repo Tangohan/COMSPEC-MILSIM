@@ -1,3 +1,21 @@
+[h1]COMSPEC Lobby 0.3.1 — votre fonction, votre grade et votre photo sur le dossier / your role, rank and photo on the dossier[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] La ligne Fonction montre votre fonction dans votre communauté (celle d'Athena), plus le nom du poste choisi.
+[*] Votre grade s'affiche.
+[*] Votre photo s'affiche de nouveau (avec COMSPEC ATAK 4.27.1). Sans photo, le cadre le dit.
+[*] Une ligne vide est masquée ; une longue liste de qualifications ne déborde plus.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] The Role line shows your role in your community (from Athena), no longer the name of the chosen slot.
+[*] Your rank is shown.
+[*] Your photo is shown again (with COMSPEC ATAK 4.27.1). Without a photo, the frame says so.
+[*] An empty line is hidden; a long list of qualifications no longer overflows.
+[/list]
+
 [h1]COMSPEC Lobby 0.3.0 — première publication / first release[/h1]
 
 [h2]Français[/h2]

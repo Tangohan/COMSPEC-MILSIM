@@ -867,6 +867,14 @@ final class AtakOverwatchIntelController
     /** @param array<string, mixed>|null $body */
     private function mapId(Request $request, ?array $body = null): int
     {
+        // Communauté par défaut : carte réservée à la partie du demandeur (AtakPartyScope), jamais celle du client.
+        $tenantId = (int) ($this->tenant($request) ?? 0);
+        if ($tenantId > 0) {
+            $reserved = \App\Support\AtakPartyScope::forRequest($tenantId, $body ?? $this->body(), (string) $request->ip())['map_id'];
+            if ($reserved !== null) {
+                return $reserved;
+            }
+        }
         $raw = $body['mapId'] ?? $body['map_id'] ?? $request->query('mapId');
         $id = (int) ($raw ?? 1);
 

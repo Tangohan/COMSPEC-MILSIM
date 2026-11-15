@@ -49,8 +49,10 @@ diag_log _line;
 private _buf = missionNamespace getVariable ["COMSPEC_DiagLog", []];
 if (!(_buf isEqualType [])) then { _buf = []; };
 _buf pushBack format ["%1 %2", diag_tickTime toFixed 1, _line];
+// Tampon plein : les plus anciennes lignes sont retirées sur place (avant : un tableau de 200 lignes recopié à
+// chaque ligne de journal une fois le tampon plein).
 if (count _buf > 200) then {
-    _buf = _buf select [0 max ((count _buf) - 200), 200];
+    _buf deleteRange [0, (count _buf) - 200];
 };
 missionNamespace setVariable ["COMSPEC_DiagLog", _buf, false];
 

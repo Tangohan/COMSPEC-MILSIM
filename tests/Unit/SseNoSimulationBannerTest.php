@@ -7,8 +7,8 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Portail SSE : aucun bandeau « SIMULATION » ; une seule mention discrète sur l'accueil du bureau (sse_fiction_footer),
- * aucune sur un document imprimé, jamais de ligne de simulation dans le message brut NCIC.
+ * Portail SSE : aucun bandeau « SIMULATION », aucune mention de jeu sur l'accueil du bureau ni sur un document imprimé,
+ * jamais de ligne de simulation dans le message brut NCIC.
  */
 final class SseNoSimulationBannerTest extends TestCase
 {
@@ -51,14 +51,18 @@ final class SseNoSimulationBannerTest extends TestCase
         self::assertSame(0, preg_match_all('/simulation|fictional data/i', self::code('app/Services/Sse/SseFileRecordService.php')));
     }
 
-    public function testHomeHasAtMostOneDiscreetMention(): void
+    public function testHomeCarriesNoGameMention(): void
     {
-        self::assertSame(1, substr_count(self::read('views/atak/sse/home.php'), 'sse_fiction_footer()'));
+        $home = self::code('views/atak/sse/home.php');
+        self::assertStringNotContainsString('sse_fiction_footer', $home, 'l’accueil du bureau ne porte plus de mention de jeu');
+        self::assertNull(\App\Support\SseFictionMentions::find($home));
+        self::assertSame(0, preg_match_all('/simulation|fictif|fictive|jeu de rôle|\bRP\b/iu', $home));
         $helper = self::read('app/Support/helpers.php');
-        self::assertStringContainsString('function sse_fiction_footer', $helper);
+        self::assertStringNotContainsString('function sse_fiction_footer', $helper, 'la mention de pied n’existe plus');
         self::assertStringNotContainsString('Document de fiction', $helper, 'plus de mention pour les documents imprimés');
-        foreach (['sse_shell', 'sse-files-kit', 'sse-papers'] as $css) {
+        foreach (['sse_shell', 'sse-files-kit', 'sse-papers', 'sse-accueil-bandes'] as $css) {
             self::assertStringNotContainsString('.fx-sim', self::read('public/assets/css/' . $css . '.css'));
+            self::assertStringNotContainsString('fiction-footer', self::read('public/assets/css/' . $css . '.css'));
         }
     }
 

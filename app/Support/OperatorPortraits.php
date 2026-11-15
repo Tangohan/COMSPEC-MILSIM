@@ -201,6 +201,25 @@ final class OperatorPortraits
     }
 
     /**
+     * Le portrait opérateur est une image publique du profil (uploads/portraits). Une image SSE sensible (photo
+     * d'identité, signature, fond de papier : espace privé « sse-private/… » ou ancien dossier « uploads/sse-id-… »,
+     * refusé par le serveur web) n'est jamais donnée comme portrait, ni au site ni au jeu : elle ne se lit que par
+     * les routes contrôlées du portail SSE (SseMemberImageGate).
+     */
+    public static function isPublicPortraitPath(string $path): bool
+    {
+        $p = ltrim(str_replace('\\', '/', trim($path)), '/');
+        if ($p === '' || str_contains($p, '..')) {
+            return false;
+        }
+        if (preg_match('#^https?://#i', $p) === 1) {
+            $p = ltrim((string) parse_url($p, PHP_URL_PATH), '/');
+        }
+
+        return preg_match('#(?:^|/)(?:sse-private|uploads/sse-[a-z-]+|storage/private)/#i', $p) !== 1;
+    }
+
+    /**
      * @param list<int> $ids
      */
     private static function load(int $tenantId, array $ids): void
@@ -235,6 +254,9 @@ final class OperatorPortraits
                 }
             }
             foreach ($best as $uid => $pick) {
+                if (!self::isPublicPortraitPath((string) ($pick['row']['character_portrait_path'] ?? ''))) {
+                    continue;
+                }
                 $url = function_exists('personnel_operator_portrait_url') ? personnel_operator_portrait_url($pick['row']) : null;
                 self::$cache[$tenantId . ':' . $uid] = $url !== null && $url !== '' ? $url : null;
             }

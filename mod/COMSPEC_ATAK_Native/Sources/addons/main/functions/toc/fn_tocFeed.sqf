@@ -31,6 +31,7 @@ switch (_mode) do {
         COMSPEC_ATAK_TocDev = createHashMap;
         COMSPEC_ATAK_TocLast = createHashMap;
         COMSPEC_ATAK_TocSent = createHashMap;
+        COMSPEC_ATAK_TocCs = createHashMap;
         private _now = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
         // Événements de camp relayés par le serveur (comspec_atak_native_sideEvent les rejoue ici en local).
         ["comspec_atak_native_report", {
@@ -125,6 +126,7 @@ switch (_mode) do {
         // PC du poste ouverts (fn_tocLaptop) : leur camp est publié aussi, même sans écran.
         private _ops = allPlayers select { ((_x getVariable ["COMSPEC_ATAK_TocView", []]) param [0, ""]) isNotEqualTo "" };
         if ((count _screens) isEqualTo 0 && {(count _ops) isEqualTo 0}) exitWith {};
+        private _perfT = diag_tickTime;
         // Camps à publier : ceux des écrans ; un écran ouvert à tous publie pour chaque camp qui a des joueurs.
         private _sides = _ops apply { (_x getVariable "COMSPEC_ATAK_TocView") select 0 };
         {
@@ -137,6 +139,7 @@ switch (_mode) do {
         // Seuils « en direct / ancien / perdu » : règle unique de fn_tocStatus (le plus long silence normal d'un
         // téléphone à l'arrêt y est compté ; avant, un joueur immobile et connecté passait « perdu » à 50 s).
         if (isNil "COMSPEC_ATAK_TocSeen") then { COMSPEC_ATAK_TocSeen = createHashMap; };
+        if (isNil "COMSPEC_ATAK_TocCs") then { COMSPEC_ATAK_TocCs = createHashMap; };
         private _now = serverTime;
         private _jam = { _x isEqualType [] && {(_x param [4, 1e9]) >= _now} } count (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
         private _relays = { _x isEqualType objNull && {!isNull _x} && {alive _x} && {_x getVariable ["COMSPEC_AtakRelayOn", true]} } count (missionNamespace getVariable ["COMSPEC_AtakRelays", []]);
@@ -148,6 +151,10 @@ switch (_mode) do {
             if (diag_tickTime > (_c select 1)) then { _c = [[_u] call comspec_atak_native_fnc_hasDevice, diag_tickTime + 8 + random 4]; COMSPEC_ATAK_TocDev set [_k, _c]; };
             _c select 0
         };
+        // Unités classées par camp en un seul parcours, au premier camp qui a des lecteurs (avant : toutes les unités de
+        // la partie relues une fois par camp publié, soit jusqu'à quatre parcours par passage).
+        private _bySide = createHashMap;
+        private _sorted = false;
         {
             private _side = _x;
             // Lecteurs : joueurs du camp au PC du poste ou à moins de 200 m d'un écran de ce camp (fn_tocScreen ne dessine
@@ -164,9 +171,14 @@ switch (_mode) do {
             private _nP = 0; private _nAi = 0;
             // Réglage « Source des positions du TOC » : en « jeu » seul, les téléphones ne sont pas lus (ni inventaire, ni PLI).
             private _srcMode = ["mode"] call comspec_atak_native_fnc_tocTracks;
+            if (!_sorted && {_srcMode isNotEqualTo "GAME"}) then {
+                _sorted = true;
+                { _bySide set [_x, []]; } forEach _sides;
+                { private _l = _bySide get (str side group _x); if (!isNil "_l") then { _l pushBack _x; }; } forEach allUnits;
+            };
             {
                 private _u = _x;
-                if (_srcMode isEqualTo "GAME" || {!alive _u} || {(str side group _u) isNotEqualTo _side} || {!([_u] call _has)}) then { continue };
+                if (_srcMode isEqualTo "GAME" || {!alive _u} || {!([_u] call _has)}) then { continue };
                 private _isAi = !isPlayer _u;
                 if (_isAi) then { _nAi = _nAi + 1; } else { _nP = _nP + 1; };
                 private _key = netId _u;
@@ -198,8 +210,16 @@ switch (_mode) do {
                     case (_v isKindOf "Tank" || {_v isKindOf "Wheeled_APC_F"}): { "armor" };
                     default { "veh" };
                 };
-                private _cs = [_u, true] call comspec_atak_native_fnc_unitCallsign;
-                if (_cs isEqualTo "") then { _cs = [[_u] call comspec_atak_native_fnc_tocDisplayName, groupId group _u] select _isAi; };
+                // Indicatif gardé 20 à 30 s par unité (comme la console du poste, fn_tocAppData) : il était recalculé pour
+                // chaque porteur d'ATAK à chaque passage.
+                private _csC = COMSPEC_ATAK_TocCs getOrDefault [_key, ["", -1e9]];
+                if (diag_tickTime > (_csC select 1)) then {
+                    private _csN = [_u, true] call comspec_atak_native_fnc_unitCallsign;
+                    if (_csN isEqualTo "") then { _csN = [[_u] call comspec_atak_native_fnc_tocDisplayName, groupId group _u] select _isAi; };
+                    _csC = [_csN, diag_tickTime + 20 + random 10];
+                    COMSPEC_ATAK_TocCs set [_key, _csC];
+                };
+                private _cs = _csC select 0;
                 // Équipage d'un véhicule : un seul nœud (le meilleur état), occupants comptés.
                 if (_v isNotEqualTo _u) then {
                     private _vk = netId _v;
@@ -216,7 +236,7 @@ switch (_mode) do {
                 if ((count _nodes) < 150) then {
                     _nodes pushBack [_key, _cs select [0, 28], [round (_pos select 0), round (_pos select 1)], round _dir, _fr, _kind, _isAi, groupId group _u, 1];
                 };
-            } forEach allUnits;
+            } forEach (_bySide getOrDefault [_side, []]);
             // Pistes du jeu fusionnées avec les nœuds des téléphones (une unité et son téléphone : un seul nœud), plafond
             // de pistes, effectif réel du camp. Relevé gardé et espacé par fn_tocTracks : rien n'est relu ici à chaque tour.
             (["nodes", [_side, _nodes, _nP, _nAi]] call comspec_atak_native_fnc_tocTracks) params ["_merged", "_ext", "_strength"];
@@ -238,7 +258,9 @@ switch (_mode) do {
             COMSPEC_ATAK_TocSent set [_side, [[_st select 0, _h] select _all, [_st select 1, diag_tickTime] select _all, [(_st select 2) + _to, _owners] select _all]];
         } forEach _sides;
         // Ménage : unités disparues.
-        if ((count COMSPEC_ATAK_TocDev) > 600) then { COMSPEC_ATAK_TocDev = createHashMap; COMSPEC_ATAK_TocLast = createHashMap; COMSPEC_ATAK_TocSeen = createHashMap; };
+        if ((count COMSPEC_ATAK_TocDev) > 600) then { COMSPEC_ATAK_TocDev = createHashMap; COMSPEC_ATAK_TocLast = createHashMap; COMSPEC_ATAK_TocSeen = createHashMap; COMSPEC_ATAK_TocCs = createHashMap; };
+        // Coût du passage dans le bilan [PERF] du serveur (rien n'est mesuré quand aucun camp n'a d'écran ni de PC ouvert).
+        ["TOC : flux serveur (passage)", _perfT] call comspec_atak_native_fnc_perfAcc;
     };
 };
 true

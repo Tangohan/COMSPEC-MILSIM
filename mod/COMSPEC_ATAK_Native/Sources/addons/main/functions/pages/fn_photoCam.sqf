@@ -408,7 +408,10 @@ switch (_act) do {
             private _faces = [_selfie] call comspec_atak_native_fnc_photoFaces;
             (_meta select 9) append _faces;
             // Débit simulé : sans réseau, la photo reste sur le téléphone (app Galerie pour l'envoyer plus tard).
-            private _noNet = ((([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) isEqualTo 0);
+            // Liaison satellite (aucun relais dans la mission) : la photo part toujours. Liaison par relais : fn_linkMode "why"
+            // donne la vraie raison de la coupure (« Relais détruit », « Aucun relais à portée »…).
+            private _netWhy = ["why"] call comspec_atak_native_fnc_linkMode;
+            private _noNet = _netWhy isNotEqualTo "";
             // ATAK seul (sans COMSPEC Link) : la photo reste aussi sur le téléphone, rien n'est envoyé.
             private _noLink = isNil "comspec_overwatch_connect_fnc_captureReconImage";
             if (_noLink) then { _noNet = true; };
@@ -453,7 +456,7 @@ switch (_act) do {
                 ["WARNING", _why, 6, 40] call comspec_atak_native_fnc_notify;
             } else {
                 if (_noNet) then {
-                    [["WARNING", "INFO"] select _noLink, ["Pas de réseau : photo gardée sur le téléphone, à envoyer depuis l'app Galerie", "Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)"] select _noLink, 5, 40] call comspec_atak_native_fnc_notify;
+                    [["WARNING", "INFO"] select _noLink, [format [("%1 : photo gardée sur le téléphone, à envoyer depuis l'app Galerie") call comspec_atak_native_fnc_tr, (_netWhy) call comspec_atak_native_fnc_tr], "Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)"] select _noLink, 5, 40] call comspec_atak_native_fnc_notify;
                 } else {
                     [["WARNING", "SUCCESS"] select _ok, ["Photo non envoyée : voir l'app Galerie, onglet ENVOIS", "Photo en cours d'envoi vers Athena"] select _ok, 3, 30] call comspec_atak_native_fnc_notify;
                 };

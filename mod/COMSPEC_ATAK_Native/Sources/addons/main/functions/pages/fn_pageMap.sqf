@@ -228,45 +228,48 @@ switch (_bStyle) do {
 // Hauteur prise en bas de la carte par le bandeau (boutons OUTILS / RECHERCHER, fiches et panneaux posés au-dessus).
 private _panH = [0, _bandH] select (!_bTop && {_bandH > 0});
 // Apps épinglées (4.16.0 ; trois au plus et mini-apps en 4.17.0 ; fn_mapPinnedApp, réglages du joueur, aucune par défaut) : des
-// bandeaux de la hauteur de celui des coordonnées. D'abord à sa droite, sur la même ligne, en se partageant la place ; ce qui
-// n'y tient pas (22 caractères au moins par bandeau) passe sur des rangées empilées, au-dessus (bas) ou en dessous (haut), tant
-// que la carte garde la moitié de sa hauteur ; le reste n'est pas dessiné. Rien en petit format. Les rangées du bas comptent
-// dans _panH : fiches, RECHERCHER et menu les laissent libres.
+// bandeaux posés sur la même grille que celui des coordonnées (fn_mapBandGrid, fonction pure) : rangées empilées au-dessus de
+// lui (bas) ou en dessous (haut), calées sur son bord gauche, cases de même largeur et de même hauteur, jamais une case à côté
+// du bandeau (sa hauteur change avec son contenu : la case de droite ne tombait ni sur sa ligne ni sur sa hauteur). Deux
+// lignes en grand ; une ligne en petit format, ou quand la pile prendrait plus de la moitié de la carte. Les rangées du bas
+// comptent dans _panH : fiches, RECHERCHER et menu les laissent libres.
 private _pinApps = ["apps"] call comspec_atak_native_fnc_mapPinnedApp;
-if ((count _pinApps) > 0 && {!_mini}) then {
-    private _pinH = ["height", [_panFs, _panIn]] call comspec_atak_native_fnc_mapPinnedApp;
-    private _pinMin = 22 * _chW + _cellIn * 2;
-    private _pinMax = (if (_stripW > 0) then { _stripW } else { 31 * _chW + _cellIn * 2 }) min ((_mw - 2 * _pad - _toolCol) max _pinMin);
+// Bas de la pile quand elle est en haut de la carte : la réglette d'effectif passe dessous.
+private _pinTopEnd = 0;
+if ((count _pinApps) > 0) then {
     private _pinTop = _bTop && {_bandH > 0};
+    // Bord droit : la barre d'outils et, en haut et en main, le bouton des calques.
     private _pinLim = _bx + _mw - _toolCol - _pad - ([0, _pad * 2 + _fs * 1.9 / _ratio] select (_pinTop && _interactive));
     private _pinAlpha = _bc get "alpha";
     if (_pinAlpha < 0) then { _pinAlpha = 0.86; };
-    // Rangée 0 : celle du bandeau (à sa droite, ou seule en bas à gauche quand il est masqué). _pinOff : distance entre le
-    // bord où le bandeau est posé (bas ou haut de la carte, marge comprise) et la rangée en cours.
-    private _pinX = [_px0, _px0 + _stripW + _pad] select (_bandH > 0);
-    private _pinOff = 0;
-    private _pinRow = 0;
-    while { (count _pinApps) > 0 } do {
-        private _room = _pinLim - _pinX + _pad;
-        private _n = (floor (_room / (_pinMin + _pad))) min (count _pinApps);
-        private _fit = _n > 0 && {_pinRow isEqualTo 0 || {(_pinOff + _pinH) < (_mh * 0.5)}};
-        // Rangée empilée sans place (ou bandeau masqué sur une carte trop étroite) : le reste n'est pas dessiné.
-        if (!_fit && {_pinRow > 0 || {_bandH <= 0}}) then { break };
-        if (_fit) then {
-            private _pinW = _pinMax min (_room / _n - _pad);
-            private _pinY = [_by + _mh - _pad - _pinOff - _pinH, _by + _pad + _pinOff] select _pinTop;
-            {
-                ["build", [_ov, _mk, [_pinX, _pinY, _pinW, _pinH], [_panFs, _panIn, _cellIn, _chW, _ratio], _interactive, _x, _pinAlpha]] call comspec_atak_native_fnc_mapPinnedApp;
-                _hud pushBack [_pinX - _bx, _pinY - _by, _pinX + _pinW - _bx, _pinY + _pinH - _by];
-                _pinX = _pinX + _pinW + _pad;
-            } forEach (_pinApps select [0, _n]);
-            _pinApps deleteRange [0, _n];
-            if (!_pinTop) then { _panH = _panH max (_pinOff + _pinH); };
-        };
-        // Rangée suivante : au-delà du bandeau et de ce qui vient d'être posé.
-        _pinOff = (([_bandH, _pinOff] select (_pinRow > 0)) max ([0, _pinOff + _pinH] select _fit)) + _pad / 2;
-        _pinRow = _pinRow + 1;
-        _pinX = _px0;
+    // Bord gauche : celui du bandeau des coordonnées ; en haut, jamais sous la rose ni le cap (la pile part de leur droite).
+    private _pinX0 = _px0;
+    private _pinKeepY = _by + _pad;
+    if (_pinTop) then {
+        {
+            private _c = _ov getOrDefault [_x, controlNull];
+            if (!isNull _c) then { (ctrlPosition _c) params ["_kx", "_ky", "_kw", "_kh"]; _pinX0 = _pinX0 max (_kx + _kw + _pad); _pinKeepY = _pinKeepY max (_ky + _kh); };
+        } forEach ["needle", "compassCard", "compassTape", "heading"];
+    };
+    private _pinArgs = [count _pinApps, _mini, _pinX0, _pinLim, [_by + _mh - _pad, _by + _pad] select _pinTop, _pinTop, _stripW, _bandH, _mh, _chW, _cellIn, _pad, _panFs, _panIn];
+    private _pinGrid = ["layout", _pinArgs] call comspec_atak_native_fnc_mapBandGrid;
+    // En haut, carte trop étroite à droite de la rose (petit format vertical) : la pile repart du bord gauche du bandeau,
+    // sous la rose et le cap.
+    if (_pinTop && {(_pinGrid select 0) isEqualTo []} && {_pinX0 > _px0}) then {
+        _pinArgs set [2, _px0];
+        // Sous le bouton des calques aussi : toute la largeur jusqu'à la barre d'outils redevient libre.
+        if (_pinKeepY >= (_by + _pad * 2 + _fs * 1.9)) then { _pinArgs set [3, _bx + _mw - _toolCol - _pad]; };
+        _pinArgs set [7, _bandH max (_pinKeepY - (_by + _pad))];
+        _pinGrid = ["layout", _pinArgs] call comspec_atak_native_fnc_mapBandGrid;
+    };
+    _pinGrid params ["_pinCells", "_pinCompact", "_pinExtent"];
+    {
+        _x params ["_pinX", "_pinY", "_pinW", "_pinH"];
+        ["build", [_ov, _mk, [_pinX, _pinY, _pinW, _pinH], [_panFs, _panIn, _cellIn, _chW, _ratio], _interactive, _pinApps select _forEachIndex, _pinAlpha, _pinCompact]] call comspec_atak_native_fnc_mapPinnedApp;
+        _hud pushBack [_pinX - _bx, _pinY - _by, _pinX + _pinW - _bx, _pinY + _pinH - _by];
+    } forEach _pinCells;
+    if ((count _pinCells) > 0) then {
+        if (_pinTop) then { _pinTopEnd = _by + _pad + _pinExtent; } else { _panH = _panH max _pinExtent; };
     };
 };
 // Rectangles de l'interface posée sur la carte, relatifs au coin de la carte, avec sa taille : fn_mapHudRects les
@@ -279,6 +282,8 @@ if (!isNull _hdC) then { (ctrlPosition _hdC) params ["_hx", "_hy", "_hw", "_hh"]
 private _sqRect = [];
 if (!(_interactive && {(_s getOrDefault ["mapToolsOpen", false]) || {_searchOpen} || {(_s getOrDefault ["mapMode", "SELECT"]) isNotEqualTo "SELECT"}}) && {(_s getOrDefault ["mapCam", ""]) isEqualTo ""}) then {
     private _sqY = if (!isNull _hdC) then { (ctrlPosition _hdC) params ["", "_hy", "", "_hh"]; _hy + _hh + pixelH * 3 } else { _by + _pad + ([0, _fs * 1.6] select (!isNull (_ov getOrDefault ["compassTape", controlNull]))) };
+    // Bandeaux d'apps empilés en haut de la carte : la réglette passe sous la pile au lieu de la croiser.
+    if (_pinTopEnd > 0) then { _sqY = _sqY max (_pinTopEnd + pixelH * 3); };
     _sqRect = [_bx + _pad, _sqY, ((_mw - _toolCol - 2 * _pad) min (_mw * 0.6)) max (_font * 6 / _ratio), _fs * 1.2];
     if ((count units group player) > 1) then { _hud pushBack [(_sqRect select 0) - _bx, _sqY - _by, (_sqRect select 0) + (_sqRect select 2) - _bx, _sqY + (_sqRect select 3) - _by]; };
 };
@@ -685,10 +690,34 @@ if (_interactive) then {
                     ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, "", "Couleurs selon l'altitude du terrain"]
                 ]]
             ];
+            // Explications dépliables du volet : chaque réglage tient sur une ligne (libellé + état), son texte d'aide est caché
+            // et s'ouvre au toucher du libellé (chevron), sur toute la largeur du volet. Une seule explication ouverte à la
+            // fois, gardée pour la session (uiNamespace COMSPEC_ATAK_MapPanelHelp : clé de la ligne ouverte, "" : aucune).
+            // Avant : l'aide était écrite dans la ligne, dans la colonne étroite laissée par l'interrupteur (fn_formRender).
+            uiNamespace setVariable ["COMSPEC_ATAK_MapPanelHelpToggle", {
+                params [["_k", ""]];
+                uiNamespace setVariable ["COMSPEC_ATAK_MapPanelHelp", ["", _k] select ((uiNamespace getVariable ["COMSPEC_ATAK_MapPanelHelp", ""]) isNotEqualTo _k)];
+                ["MAP"] call comspec_atak_native_fnc_pageRender;
+            }];
+            private _helpOpen = uiNamespace getVariable ["COMSPEC_ATAK_MapPanelHelp", ""];
+            if !(_helpOpen isEqualType "") then { _helpOpen = ""; };
+            private _helpCode = { format ["[%1] call (uiNamespace getVariable 'COMSPEC_ATAK_MapPanelHelpToggle');", str _this] };
+            // Ligne « switch » avec aide -> ligne compacte à chevron, puis l'aide en dessous seulement si elle est ouverte.
+            private _foldSwitch = {
+                params ["_r", "_k"];
+                _r = +_r;
+                private _hp = _r param [4, ""];
+                if ((_r param [0, ""]) isNotEqualTo "switch" || {_hp isEqualTo ""}) exitWith { _rows pushBack _r; };
+                while { (count _r) < 7 } do { _r pushBack ([false, ""] select ((count _r) isEqualTo 6)); };
+                _r set [4, ""];
+                _r set [7, [_helpOpen isEqualTo _k, _k call _helpCode]];
+                _rows pushBack _r;
+                if (_helpOpen isEqualTo _k) then { _rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexTextDim", _hp call comspec_atak_native_fnc_tr]]; };
+            };
             // Mode Essentiel (4.18.0, fn_essentialMode) : même interrupteur que le bouton de l'accueil et de Réglages.
-            _rows append (["rows"] call comspec_atak_native_fnc_essentialMode);
-            // Apps épinglées (réglages du joueur, fn_mapPinnedApp) : choix en un toucher, sans quitter la carte.
-            _rows append (["rows"] call comspec_atak_native_fnc_mapPinnedApp);
+            { [_x, "essential"] call _foldSwitch; } forEach (["rows"] call comspec_atak_native_fnc_essentialMode);
+            // Apps épinglées (réglages du joueur, fn_mapPinnedApp) : « Apps épinglées · n/3 », le choix se déplie.
+            _rows append (["panelRows", [_helpOpen isEqualTo "pins", "pins" call _helpCode]] call comspec_atak_native_fnc_mapPinnedApp);
             _rows pushBack ["title", "Calques"];
             {
                 _x params ["_key", "_title", "_items"];
@@ -706,7 +735,8 @@ if (_interactive) then {
                     {
                         _x params ["_lbl", "_ns", "_var", "_def", "", ["_help", ""]];
                         (_st select _forEachIndex) params ["_on", "_locked"];
-                        _rows pushBack ["switch", _lbl, _on, format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def], ["", _help] select _full, _locked];
+                        // Vue CONFIGURATION : l'explication du calque se déplie sous sa ligne (même règle que plus haut).
+                        [["switch", _lbl, _on, format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def], ["", _help] select _full, _locked], "layer:" + _var] call _foldSwitch;
                     } forEach _items;
                     // Étiquettes : taille du texte (même réglage que la réglette de Réglages > Carte) et opacité du fond,
                     // enregistrées dans le profil.

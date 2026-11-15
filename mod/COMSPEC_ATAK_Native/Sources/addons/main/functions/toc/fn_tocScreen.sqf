@@ -73,6 +73,9 @@
     par le serveur. COMSPEC_ATAK_TocOpt [luminosité, distance d'affichage] : réglages de l'écran lus par « tick ».
       ["audit"]                            contrôle de chaque affichage dans un display d'essai (journal, COMSPEC_ATAK_TocAudit)
       ["build", display] / ["draw", [objet, display]]   contrôles de la carte du poste / dessin d'une image
+      ["build", [display, vrai]]   une tranche de contrôles par appel (table vide tant que tout n'est pas créé)
+      ["draw", [objet, display, vrai]]   dessin qui étale la création des contrôles : rend "BUILD" tant qu'il en reste
+      ["first", [objet, texture, depuis le tour]] / ["firstRun"]   file des premières images : un écran par image
     Rendu (1 à 2 s, écran allumé) : mise en page en pixels virtuels 1600 x 900, polices fixes (28 px pour le texte courant,
     jamais selon la taille d'interface de qui regarde), une ligne = un contrôle coupé à sa largeur (« … ») ; symboles
     regroupés (cases de 64 px, 110 px en vue d'ensemble) et plaques sans chevauchement, jamais hors du cadre ; groupes
@@ -700,22 +703,71 @@ switch (_mode) do {
         _o setVariable ["COMSPEC_ATAK_TocAt", -10];
         if (((uiNamespace getVariable ["COMSPEC_ATAK_TocPending", []]) param [2, ""]) isEqualTo _nm) then { uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []]; };
         ["INFO", "SCREEN", format ["Écran TOC %1 : texture UI %2 chargée, image dessinée", typeOf _o, _nm]] call comspec_atak_native_fnc_log;
-        // Première image à l'image suivante, sans attendre le tour de la seconde (display retrouvé par son nom).
-        [{
-            params ["_o", "_nm"];
-            private _d = (uiNamespace getVariable ["COMSPEC_ATAK_TocDisps", createHashMap]) getOrDefault [_nm, displayNull];
-            if (isNull _o || {isNull _d} || {!(_o getVariable ["COMSPEC_ATAK_TocOn", false])}) exitWith {};
-            _o setVariable ["COMSPEC_ATAK_TocAt", diag_tickTime];
-            ["draw", [_o, _d]] call comspec_atak_native_fnc_tocScreen;
-            ["dim", [_o, _d]] call comspec_atak_native_fnc_tocConfig;
-            displayUpdate _d;
-        }, [_o, _nm]] call comspec_atak_native_fnc_nextFrame;
+        // Première image à l'image suivante, sans attendre le tour de la seconde (display retrouvé par son nom). Les
+        // textures des écrans d'une salle arrivent ensemble : leurs premières images passent par la file « first », un
+        // écran par image, au lieu de se dessiner toutes dans la même image (gel à l'entrée dans la salle).
+        ["first", [_o, _nm, false]] call _fn;
     };
     case "center": {
         // Centre de l'image (ASL) : milieu de la boîte du modèle de l'écran hôte, gardé une fois par objet. L'origine des
         // modèles est au sol (trépied, murs d'images, 98 pouces) ou au plafond (écran suspendu) : regarder l'image ne
         // mettait pas l'origine à l'écran, l'écran passait pour « pas vu » (plus redessiné, caméras jamais lancées).
         [_a] call _centerOf
+    };
+    case "first": {
+        // File des premières images (texture tout juste chargée, écran rallumé, contrôles de la carte à créer) : un
+        // écran par image. Avant, tous les écrans d'une salle se dessinaient dans la même image à l'entrée (20 à 60 ms
+        // par écran à carte, environ 900 contrôles créés d'un coup) ; ils s'allument maintenant l'un après l'autre.
+        // _tick : demandé par le tour de la seconde (matière jour / nuit et compteur d'images posés au premier passage).
+        _a params [["_o", objNull], ["_nm", ""], ["_tick", false]];
+        if (isNull _o || {_nm isEqualTo ""}) exitWith { false };
+        private _q = uiNamespace getVariable ["COMSPEC_ATAK_TocFirstQ", []];
+        private _i = _q findIf { (_x select 0) isEqualTo _o };
+        if (_i < 0) then { _q pushBack [_o, _nm, _tick]; } else { (_q select _i) set [1, _nm]; };
+        uiNamespace setVariable ["COMSPEC_ATAK_TocFirstQ", _q];
+        // Vidage lancé une seule fois (numéro de l'image de son dernier passage) ; relancé s'il s'est arrêté.
+        if (diag_frameNo - (uiNamespace getVariable ["COMSPEC_ATAK_TocFirstAt", -10]) > 2) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_TocFirstAt", diag_frameNo];
+            [{ ["firstRun"] call comspec_atak_native_fnc_tocScreen; }, []] call comspec_atak_native_fnc_nextFrame;
+        };
+        true
+    };
+    case "firstRun": {
+        // Un écran de la file par image : une tranche de contrôles, ou son image quand ils sont tous créés.
+        disableSerialization;
+        private _q = uiNamespace getVariable ["COMSPEC_ATAK_TocFirstQ", []];
+        private _disps = uiNamespace getVariable ["COMSPEC_ATAK_TocDisps", createHashMap];
+        private _busy = false;
+        while { !_busy && {(count _q) > 0} } do {
+            (_q select 0) params [["_o", objNull], ["_nm", ""], ["_tick", false]];
+            private _d = _disps getOrDefault [_nm, displayNull];
+            // Écran quitté, éteint ou texture abandonnée entre-temps : retiré, le suivant passe dans la même image.
+            if (isNull _o || {isNull _d} || {!(_o getVariable ["COMSPEC_ATAK_TocOn", false])}) then { _q deleteAt 0; continue };
+            _busy = true;
+            private _perfT = diag_tickTime;
+            if (_tick) then {
+                (_q select 0) set [2, false];
+                ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], true]] call _fn;
+                _o setVariable ["COMSPEC_ATAK_TocDraws", (_o getVariable ["COMSPEC_ATAK_TocDraws", 0]) + 1];
+            };
+            _o setVariable ["COMSPEC_ATAK_TocAt", diag_tickTime];
+            private _res = ["draw", [_o, _d, true]] call _fn;
+            if (isNil "_res" || {_res isNotEqualTo "BUILD"}) then {
+                ["dim", [_o, _d]] call comspec_atak_native_fnc_tocConfig;
+                displayUpdate _d;
+                _q deleteAt 0;
+            } else {
+                // Tranche de contrôles créée : mesurée à part (le dessin lui-même a déjà ses clés, jamais compté deux fois).
+                ["TOC : premier dessin d'un écran (contrôles)", _perfT] call comspec_atak_native_fnc_perfAcc;
+            };
+        };
+        if ((count _q) > 0) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_TocFirstAt", diag_frameNo];
+            [{ ["firstRun"] call comspec_atak_native_fnc_tocScreen; }, []] call comspec_atak_native_fnc_nextFrame;
+        } else {
+            uiNamespace setVariable ["COMSPEC_ATAK_TocFirstAt", -10];
+        };
+        true
     };
     case "tick": {
         // Client, chaque seconde. Coût proportionnel aux seuls écrans proches : index par cases de 100 m, refait quand
@@ -898,15 +950,24 @@ switch (_mode) do {
                         private _last = _o getVariable ["COMSPEC_ATAK_TocAt", -10];
                         private _due = _now - _last >= ([1.9, 0.9] select ((_cfg select 3) in ["CLOCK", "SAT", "STRIP", "MOSAIC", "TEXT", "BROADCAST", "RADIO", "COLA", "COLC", "COLE"]));
                         if (_due && {_drawn < 8 || {_last < 0}}) then {
-                            _drawn = _drawn + 1;
-                            // Matière jour / nuit suivie (rien ne change tant que le soleil ne passe pas l'horizon).
-                            ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], true]] call _fn;
-                            _o setVariable ["COMSPEC_ATAK_TocAt", _now];
-                            _o setVariable ["COMSPEC_ATAK_TocDraws", (_o getVariable ["COMSPEC_ATAK_TocDraws", 0]) + 1];
-                            ["draw", [_o, _disp]] call _fn;
-                            // Luminosité de l'écran (voile au-dessus de l'image).
-                            ["dim", [_o, _disp]] call comspec_atak_native_fnc_tocConfig;
-                            displayUpdate _disp;
+                            if (_last < 0) then {
+                                // Première image (écran rallumé, texture tout juste chargée) : toujours servie, mais par la
+                                // file « first », un écran par image, et plus toutes dans l'image de ce tour.
+                                ["first", [_o, _tex, true]] call _fn;
+                            } else {
+                                _drawn = _drawn + 1;
+                                // Matière jour / nuit suivie (rien ne change tant que le soleil ne passe pas l'horizon).
+                                ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], true]] call _fn;
+                                _o setVariable ["COMSPEC_ATAK_TocAt", _now];
+                                _o setVariable ["COMSPEC_ATAK_TocDraws", (_o getVariable ["COMSPEC_ATAK_TocDraws", 0]) + 1];
+                                // Passage à un affichage à carte : ses contrôles sont créés par tranches (file « first »).
+                                private _res = ["draw", [_o, _disp, true]] call _fn;
+                                if (!isNil "_res" && {_res isEqualTo "BUILD"}) then { ["first", [_o, _tex, false]] call _fn; } else {
+                                    // Luminosité de l'écran (voile au-dessus de l'image).
+                                    ["dim", [_o, _disp]] call comspec_atak_native_fnc_tocConfig;
+                                    displayUpdate _disp;
+                                };
+                            };
                         };
                     };
                 };
@@ -927,64 +988,94 @@ switch (_mode) do {
         // Contrôles de la carte des affichages SPLIT, MAP, TOC, SQUAD (groupe « grp »), créés une fois par display et
         // réutilisés à chaque image. Tout le reste (en-tête, pied, FLASH, panneau, tableaux) : fn_tocBoard, au-dessus.
         // Pixels virtuels 1600 x 900 (_R), polices fixes du thème (fn_tocTheme), jamais selon la taille d'interface.
+        // Environ 900 contrôles : créés d'un coup, ils figeaient l'image à l'allumage de l'écran. _a = display (tout,
+        // d'un coup) ou [display, vrai] : une tranche par appel, dans l'ordre de création d'origine (l'ordre des
+        // contrôles d'un groupe est leur ordre d'empilement). Rend la table quand tout est créé, une table vide sinon ;
+        // avancement gardé sur le display (COMSPEC_ATAK_TocUiB = [tranche suivante, table en cours]).
         private _d = _a;
+        private _staged = false;
+        if (_a isEqualType []) then { _d = _a param [0, displayNull]; _staged = _a param [1, false]; };
         disableSerialization;
-        // Rendu du tableau créé avant la carte : supprimé, il sera recréé par-dessus elle.
-        private _brd = _d getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
-        if (!isNull _brd) then { ctrlDelete _brd; _d setVariable ["COMSPEC_ATAK_TocBoard", controlNull]; _d setVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap]; };
+        (_d getVariable ["COMSPEC_ATAK_TocUiB", [0, createHashMap]]) params ["_stage", "_b"];
+        private _grp = _b getOrDefault ["grp", controlNull];
         private _mk = {
-            params ["_cls", ["_grp", controlNull], ["_st", ""], ["_tok", "text"]];
-            private _c = if (isNull _grp) then { _d ctrlCreate [_cls, -1] } else { _d ctrlCreate [_cls, -1, _grp] };
+            params ["_cls", ["_in", controlNull], ["_st", ""], ["_tok", "text"]];
+            private _c = if (isNull _in) then { _d ctrlCreate [_cls, -1] } else { _d ctrlCreate [_cls, -1, _in] };
             if (_st isNotEqualTo "") then { ["style", [_c, _st, _tok]] call comspec_atak_native_fnc_tocTheme; };
             _c ctrlSetPosition [0, 0, 0, 0];
             _c ctrlCommit 0;
             _c
         };
-        private _grp = ["RscControlsGroupNoScrollbars"] call _mk;
-        private _sea = ["RscText", _grp] call _mk;
-        _sea ctrlSetBackgroundColor (["bg1"] call _tcol);
-        private _tiles = []; for "_i" from 1 to 36 do { _tiles pushBack (["RscPicture", _grp] call _mk); };
-        // Voile sombre sur le fond (photo ou carte d'ensemble assombrie) : symboles et plaques ressortent.
-        private _dim = ["RscText", _grp] call _mk;
-        _dim ctrlSetBackgroundColor (["bg0", 0.35] call _tcol);
-        private _lines = []; for "_i" from 1 to 28 do { private _l = ["RscText", _grp] call _mk; _l ctrlSetBackgroundColor (["lineStrong", 0.45] call _tcol); _lines pushBack _l; };
-        private _gLbls = []; for "_i" from 1 to 28 do { private _t = ["COMSPEC_RscTocLabelCenter", _grp, "data", "text2"] call _mk; _t ctrlSetBackgroundColor (["bg0", 0.78] call _tcol); _gLbls pushBack _t; };
-        private _places = []; for "_i" from 1 to 16 do { private _t = ["COMSPEC_RscTocLabelCenter", _grp, "body", "text2"] call _mk; _t ctrlSetBackgroundColor (["bg0", 0.5] call _tcol); _places pushBack _t; };
-        private _segs = []; for "_i" from 1 to 260 do { private _c = ["RscPicture", _grp] call _mk; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _segs pushBack _c; }; // i18n:brut (texture blanche teintée)
-        private _segLbls = []; for "_i" from 1 to 24 do { private _t = ["COMSPEC_RscTocLabel", _grp, "bodyBold", "text"] call _mk; _t ctrlSetBackgroundColor (["bg0", 0.82] call _tcol); _segLbls pushBack _t; };
-        private _mkIcons = []; private _mkLbls = [];
-        for "_i" from 1 to 40 do { _mkIcons pushBack (["RscPicture", _grp] call _mk); private _t = ["COMSPEC_RscTocLabel", _grp, "bodyBold", "text"] call _mk; _t ctrlSetBackgroundColor (["bg0", 0.82] call _tcol); _mkLbls pushBack _t; };
-        private _evIcons = []; for "_i" from 1 to 12 do { _evIcons pushBack (["RscPicture", _grp] call _mk); };
-        // Nœuds : filet de rappel (plaque décalée), symbole, liseré d'état, plaque.
-        private _leads = []; for "_i" from 1 to 100 do { private _c = ["RscPicture", _grp] call _mk; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _c ctrlSetTextColor (["text2", 0.7] call _tcol); _leads pushBack _c; }; // i18n:brut (texture blanche teintée)
-        private _uIcons = []; private _uLbls = []; private _uBars = [];
-        for "_i" from 1 to 100 do {
-            _uIcons pushBack (["RscPicture", _grp] call _mk);
-            private _t = ["COMSPEC_RscTocLabel", _grp, "bodyBold", "text"] call _mk;
-            _t ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
-            _uLbls pushBack _t;
-            _uBars pushBack (["RscText", _grp] call _mk);
+        // Nœuds : symbole, plaque, liseré d'état (ajoutés aux listes de la table, 50 nœuds par tranche).
+        private _units = {
+            for "_i" from 1 to 50 do {
+                (_b get "uIcons") pushBack (["RscPicture", _grp] call _mk);
+                private _t = ["COMSPEC_RscTocLabel", _grp, "bodyBold", "text"] call _mk;
+                _t ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
+                (_b get "uLbls") pushBack _t;
+                (_b get "uBars") pushBack (["RscText", _grp] call _mk);
+            };
         };
-        private _scBg = ["RscText", _grp] call _mk; _scBg ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
-        private _scBar = ["RscText", _grp] call _mk; _scBar ctrlSetBackgroundColor (["text"] call _tcol);
-        private _scT0 = ["RscText", _grp] call _mk; _scT0 ctrlSetBackgroundColor (["text"] call _tcol);
-        private _scT1 = ["RscText", _grp] call _mk; _scT1 ctrlSetBackgroundColor (["text"] call _tcol);
-        private _scTxt = ["COMSPEC_RscTocLabel", _grp, "data", "text2"] call _mk;
-        private _noBg = ["RscText", _grp] call _mk; _noBg ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
-        private _noArrow = ["COMSPEC_RscTocLabelCenter", _grp, "body", "text"] call _mk; _noArrow ctrlSetText "▲"; // i18n:brut (symbole)
-        private _noTxt = ["COMSPEC_RscTocLabelCenter", _grp, "bodyBold", "text"] call _mk; _noTxt ctrlSetText (("N") call comspec_atak_native_fnc_tr);
-        // Légende : fond, 4 pastilles et leurs libellés.
-        private _lgBg = ["RscText", _grp] call _mk; _lgBg ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
-        private _lg = []; for "_i" from 1 to 4 do { _lg pushBack [["RscText", _grp] call _mk, ["COMSPEC_RscTocLabel", _grp, "body", "text2"] call _mk]; };
-        private _empty = ["COMSPEC_RscTocText", _grp] call _mk;
-        _empty ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
-        createHashMapFromArray [["grp", _grp], ["sea", _sea], ["tiles", _tiles], ["dim", _dim],
-            ["lines", _lines], ["gLbls", _gLbls], ["places", _places], ["segs", _segs], ["segLbls", _segLbls], ["mkIcons", _mkIcons], ["mkLbls", _mkLbls],
-            ["evIcons", _evIcons], ["leads", _leads], ["uIcons", _uIcons], ["uLbls", _uLbls], ["uBars", _uBars], ["scale", [_scBg, _scBar, _scT0, _scT1, _scTxt]], ["north", [_noBg, _noArrow, _noTxt]],
-            ["legend", [_lgBg, _lg]], ["empty", _empty]]
+        private _steps = [
+            {
+                // Rendu du tableau créé avant la carte : supprimé, il sera recréé par-dessus elle.
+                private _brd = _d getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
+                if (!isNull _brd) then { ctrlDelete _brd; _d setVariable ["COMSPEC_ATAK_TocBoard", controlNull]; _d setVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap]; };
+                _grp = ["RscControlsGroupNoScrollbars"] call _mk;
+                private _sea = ["RscText", _grp] call _mk;
+                _sea ctrlSetBackgroundColor (["bg1"] call _tcol);
+                private _tiles = []; for "_i" from 1 to 36 do { _tiles pushBack (["RscPicture", _grp] call _mk); };
+                // Voile sombre sur le fond (photo ou carte d'ensemble assombrie) : symboles et plaques ressortent.
+                private _dim = ["RscText", _grp] call _mk;
+                _dim ctrlSetBackgroundColor (["bg0", 0.35] call _tcol);
+                private _lines = []; for "_i" from 1 to 28 do { private _l = ["RscText", _grp] call _mk; _l ctrlSetBackgroundColor (["lineStrong", 0.45] call _tcol); _lines pushBack _l; };
+                private _gLbls = []; for "_i" from 1 to 28 do { private _t = ["COMSPEC_RscTocLabelCenter", _grp, "data", "text2"] call _mk; _t ctrlSetBackgroundColor (["bg0", 0.78] call _tcol); _gLbls pushBack _t; };
+                private _places = []; for "_i" from 1 to 16 do { private _t = ["COMSPEC_RscTocLabelCenter", _grp, "body", "text2"] call _mk; _t ctrlSetBackgroundColor (["bg0", 0.5] call _tcol); _places pushBack _t; };
+                { _b set _x; } forEach [["grp", _grp], ["sea", _sea], ["tiles", _tiles], ["dim", _dim], ["lines", _lines], ["gLbls", _gLbls], ["places", _places]];
+            },
+            {
+                private _segs = []; for "_i" from 1 to 260 do { private _c = ["RscPicture", _grp] call _mk; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _segs pushBack _c; }; // i18n:brut (texture blanche teintée)
+                private _segLbls = []; for "_i" from 1 to 24 do { private _t = ["COMSPEC_RscTocLabel", _grp, "bodyBold", "text"] call _mk; _t ctrlSetBackgroundColor (["bg0", 0.82] call _tcol); _segLbls pushBack _t; };
+                { _b set _x; } forEach [["segs", _segs], ["segLbls", _segLbls]];
+            },
+            {
+                private _mkIcons = []; private _mkLbls = [];
+                for "_i" from 1 to 40 do { _mkIcons pushBack (["RscPicture", _grp] call _mk); private _t = ["COMSPEC_RscTocLabel", _grp, "bodyBold", "text"] call _mk; _t ctrlSetBackgroundColor (["bg0", 0.82] call _tcol); _mkLbls pushBack _t; };
+                private _evIcons = []; for "_i" from 1 to 12 do { _evIcons pushBack (["RscPicture", _grp] call _mk); };
+                // Nœuds : filet de rappel (plaque décalée), symbole, liseré d'état, plaque.
+                private _leads = []; for "_i" from 1 to 100 do { private _c = ["RscPicture", _grp] call _mk; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _c ctrlSetTextColor (["text2", 0.7] call _tcol); _leads pushBack _c; }; // i18n:brut (texture blanche teintée)
+                { _b set _x; } forEach [["mkIcons", _mkIcons], ["mkLbls", _mkLbls], ["evIcons", _evIcons], ["leads", _leads], ["uIcons", []], ["uLbls", []], ["uBars", []]];
+            },
+            _units,
+            _units,
+            {
+                private _scBg = ["RscText", _grp] call _mk; _scBg ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
+                private _scBar = ["RscText", _grp] call _mk; _scBar ctrlSetBackgroundColor (["text"] call _tcol);
+                private _scT0 = ["RscText", _grp] call _mk; _scT0 ctrlSetBackgroundColor (["text"] call _tcol);
+                private _scT1 = ["RscText", _grp] call _mk; _scT1 ctrlSetBackgroundColor (["text"] call _tcol);
+                private _scTxt = ["COMSPEC_RscTocLabel", _grp, "data", "text2"] call _mk;
+                private _noBg = ["RscText", _grp] call _mk; _noBg ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
+                private _noArrow = ["COMSPEC_RscTocLabelCenter", _grp, "body", "text"] call _mk; _noArrow ctrlSetText "▲"; // i18n:brut (symbole)
+                private _noTxt = ["COMSPEC_RscTocLabelCenter", _grp, "bodyBold", "text"] call _mk; _noTxt ctrlSetText (("N") call comspec_atak_native_fnc_tr);
+                // Légende : fond, 4 pastilles et leurs libellés.
+                private _lgBg = ["RscText", _grp] call _mk; _lgBg ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
+                private _lg = []; for "_i" from 1 to 4 do { _lg pushBack [["RscText", _grp] call _mk, ["COMSPEC_RscTocLabel", _grp, "body", "text2"] call _mk]; };
+                private _empty = ["COMSPEC_RscTocText", _grp] call _mk;
+                _empty ctrlSetBackgroundColor (["bg0", 0.82] call _tcol);
+                { _b set _x; } forEach [["scale", [_scBg, _scBar, _scT0, _scT1, _scTxt]], ["north", [_noBg, _noArrow, _noTxt]], ["legend", [_lgBg, _lg]], ["empty", _empty]];
+            }
+        ];
+        while { _stage < (count _steps) } do {
+            call (_steps select _stage);
+            _stage = _stage + 1;
+            if (_staged) exitWith {};
+        };
+        if (_stage < (count _steps)) exitWith { _d setVariable ["COMSPEC_ATAK_TocUiB", [_stage, _b]]; createHashMap };
+        _d setVariable ["COMSPEC_ATAK_TocUiB", nil];
+        _b
     };
     case "draw": {
-        _a params ["_o", "_d"];
+        _a params ["_o", "_d", ["_staged", false]];
         disableSerialization;
         private _cfg = [_o] call _cfgOf;
         _cfg params [["_name", "TOC"], ["_cside", ""], "", ["_view", "SPLIT"], ["_half", 0], ["_center", []]];
@@ -1026,7 +1117,14 @@ switch (_mode) do {
             if ((count _op) < 8) then { _view = "SPLIT"; _op = []; };
         };
         private _ui = _d getVariable ["COMSPEC_ATAK_TocUi", createHashMap];
-        if ((count _ui) isEqualTo 0) then { _ui = ["build", _d] call _fn; _d setVariable ["COMSPEC_ATAK_TocUi", _ui]; };
+        // Contrôles de la carte : d'un coup, ou une tranche par image quand le dessin vient de la file « first »
+        // (rien n'est dessiné tant qu'il en reste : "BUILD", l'écran repasse à l'image suivante).
+        if ((count _ui) isEqualTo 0) then {
+            _ui = ["build", [_d, _staged]] call _fn;
+            if ((count _ui) > 0) then { _d setVariable ["COMSPEC_ATAK_TocUi", _ui]; };
+        };
+        if ((count _ui) isEqualTo 0) exitWith { "BUILD" };
+        private _perfMap = diag_tickTime;
         private _place2 = { params ["_c", "_rect"]; _c ctrlSetPosition (_rect call _R); _c ctrlCommit 0; _c ctrlShow true; };
         // ---- Mise en page : carte des affichages à carte (régions du thème fn_tocTheme, descendues sous un FLASH) ----
         // Maquettes : tools/toc_mockups.py (mur_split, mur_carte, mur_escouade, mur_pip), mêmes régions.
@@ -1134,10 +1232,32 @@ switch (_mode) do {
             };
             for "_i" from _used to ((count _tiles) - 1) do { (_tiles select _i) ctrlShow false; };
             // Plaques sans chevauchement, en pixels du groupe : cases prises (symboles, puces fixes, plaques posées).
-            private _taken = [];
+            // Index par cases de 128 px (table case -> rectangles qui la touchent) : une plaque n'est comparée qu'aux
+            // rectangles des cases qu'elle couvre, et plus à tous ceux déjà posés (jusqu'à 300 par essai de place, dix
+            // essais par plaque). Même test de recouvrement, même résultat : deux rectangles qui se recouvrent partagent
+            // toujours une case (indices bornés au cadre, les rectangles hors cadre vont dans les cases du bord).
+            private _tk = createHashMap;
+            private _take = {
+                params ["_x0", "_y0", "_w", "_h"];
+                private _rc = [_x0, _y0, _w, _h];
+                for "_i" from (((floor (_x0 / 128)) max -1) min 13) to (((floor ((_x0 + _w) / 128)) max -1) min 13) do {
+                    for "_j" from (((floor (_y0 / 128)) max -1) min 8) to (((floor ((_y0 + _h) / 128)) max -1) min 8) do {
+                        private _l = _tk get [_i, _j];
+                        if (isNil "_l") then { _tk set [[_i, _j], [_rc]]; } else { _l pushBack _rc; };
+                    };
+                };
+            };
             private _free = {
                 params ["_x0", "_y0", "_w", "_h"];
-                (_taken findIf { _x0 < ((_x select 0) + (_x select 2)) && {(_x0 + _w) > (_x select 0)} && {_y0 < ((_x select 1) + (_x select 3))} && {(_y0 + _h) > (_x select 1)} }) < 0
+                private _ok = true;
+                for "_i" from (((floor (_x0 / 128)) max -1) min 13) to (((floor ((_x0 + _w) / 128)) max -1) min 13) do {
+                    for "_j" from (((floor (_y0 / 128)) max -1) min 8) to (((floor ((_y0 + _h) / 128)) max -1) min 8) do {
+                        private _l = _tk get [_i, _j];
+                        if (!isNil "_l" && {(_l findIf { _x0 < ((_x select 0) + (_x select 2)) && {(_x0 + _w) > (_x select 0)} && {_y0 < ((_x select 1) + (_x select 3))} && {(_y0 + _h) > (_x select 1)} }) >= 0}) exitWith { _ok = false; };
+                    };
+                    if (!_ok) exitWith {};
+                };
+                _ok
             };
             // Huit places autour du point (droite, gauche, dessus, dessous, diagonales), puis deux plus loin à droite et à
             // gauche (un filet de rappel relie alors la plaque au symbole) ; mode 1 : centrée sur le point (noms de lieux).
@@ -1156,7 +1276,7 @@ switch (_mode) do {
                     _x params ["_x0", "_y0"];
                     if (_x0 >= 2 && {_y0 >= 2} && {(_x0 + _w) <= (_mwPx - 2)} && {(_y0 + _h) <= (_mhPx - 2)} && {[_x0, _y0, _w, _h] call _free}) exitWith {
                         _res = [_x0, _y0, _forEachIndex];
-                        _taken pushBack [_x0, _y0, _w, _h];
+                        [_x0, _y0, _w, _h] call _take;
                     };
                 } forEach _cands;
                 _res
@@ -1183,12 +1303,12 @@ switch (_mode) do {
             [_scT1, [30 + _barPx - 3, _sy + 12, 3, 22]] call _place2;
             [_scTxt, _sTxt, _sTw] call _lbl;
             [_scTxt, [30 + _barPx + 14, _sy + 4, _sTw, 38]] call _place2;
-            _taken pushBack [16, _sy, 28 + _barPx + 14 + _sTw, 46];
+            [16, _sy, 28 + _barPx + 14 + _sTw, 46] call _take;
             (_ui get "north") params ["_noBg", "_noArrow", "_noTxt"];
             [_noBg, [_mwPx - 72, 12, 56, 70]] call _place2;
             [_noArrow, [_mwPx - 72, 14, 56, 32]] call _place2;
             [_noTxt, [_mwPx - 72, 44, 56, 36]] call _place2;
-            _taken pushBack [_mwPx - 72, 12, 56, 70];
+            [_mwPx - 72, 12, 56, 70] call _take;
             // Légende (bas droite) : pastilles de couleur et libellés ; masquée si la carte est trop étroite pour elle.
             (_ui get "legend") params ["_lgBg", "_lg"];
             private _chips = [[["friend"] call _tcol, "En direct"], [["friend", 0.55] call _tcol, "Ancien"], [["lost"] call _tcol, "Perdu"], [["red"] call _tcol, "Alerte"]];
@@ -1209,7 +1329,7 @@ switch (_mode) do {
                     [_sl, [_cx0 + 18, _sy, (_lws select _forEachIndex) - 18, 46]] call _place2;
                 };
             } forEach _lg;
-            if (_lgOn) then { [_lgBg, [_lgX, _sy, _lgW, 46]] call _place2; _taken pushBack [_lgX, _sy, _lgW, 46]; };
+            if (_lgOn) then { [_lgBg, [_lgX, _sy, _lgW, 46]] call _place2; [_lgX, _sy, _lgW, 46] call _take; };
             // Lignes du quadrillage et leurs numéros (hectomètres, comme les grilles des comptes rendus) au bord haut et gauche.
             private _g3 = { private _s = str (floor (_this / 100)); while { (count _s) < 3 } do { _s = "0" + _s; }; _s };
             private _lines = _ui get "lines";
@@ -1225,7 +1345,7 @@ switch (_mode) do {
                         private _t = _gLbls select _gi;
                         _t ctrlSetText ((_gx call _g3) call comspec_atak_native_fnc_tr);
                         [_t, [_px - 44, 8, 88, 34]] call _place2;
-                        _taken pushBack [_px - 44, 8, 88, 34];
+                        [_px - 44, 8, 88, 34] call _take;
                         _gi = _gi + 1;
                     };
                 };
@@ -1239,7 +1359,7 @@ switch (_mode) do {
                         private _t = _gLbls select _gi;
                         _t ctrlSetText ((_gy call _g3) call comspec_atak_native_fnc_tr);
                         [_t, [8, _py - 17, 88, 34]] call _place2;
-                        _taken pushBack [8, _py - 17, 88, 34];
+                        [8, _py - 17, 88, 34] call _take;
                         _gi = _gi + 1;
                     };
                 };
@@ -1271,9 +1391,34 @@ switch (_mode) do {
             {
                 (_x select 1) params ["", "", "_p"];
                 ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
-                _taken pushBack [_gx * _texW - 20, _gy * _texH - 20, 40, 40];
+                [_gx * _texW - 20, _gy * _texH - 20, 40, 40] call _take;
             } forEach _clusters;
             // Marqueurs de la mission visibles par ce joueur : symboles (deux presque au même point : un seul).
+            // Relevé fait une fois par image et partagé entre les écrans dessinés dans cette image (avant : deux parcours
+            // de tous les marqueurs par écran, avec une lecture de config par marqueur) : [numéro de l'image,
+            // symboles [marqueur, position, icône], tracés [marqueur, forme]], dans l'ordre de allMapMarkers.
+            private _mkSnap = uiNamespace getVariable ["COMSPEC_ATAK_TocMkSnap", [-1, [], []]];
+            if ((_mkSnap select 0) isNotEqualTo diag_frameNo) then {
+                private _icCache = uiNamespace getVariable ["COMSPEC_ATAK_TocMkIcon", createHashMap];
+                uiNamespace setVariable ["COMSPEC_ATAK_TocMkIcon", _icCache];
+                private _snapI = [];
+                private _snapS = [];
+                {
+                    if ((markerAlpha _x) > 0) then {
+                        private _sh = markerShape _x;
+                        if (_sh isEqualTo "ICON") then {
+                            private _ty = markerType _x;
+                            private _ic = _icCache get _ty;
+                            if (isNil "_ic") then { _ic = getText (configFile >> "CfgMarkers" >> _ty >> "icon"); _icCache set [_ty, _ic]; };
+                            _snapI pushBack [_x, getMarkerPos _x, _ic];
+                        } else {
+                            if (_sh in ["POLYLINE", "RECTANGLE", "ELLIPSE"]) then { _snapS pushBack [_x, _sh]; };
+                        };
+                    };
+                } forEach allMapMarkers;
+                _mkSnap = [diag_frameNo, _snapI, _snapS];
+                uiNamespace setVariable ["COMSPEC_ATAK_TocMkSnap", _mkSnap];
+            };
             private _mkSeen = createHashMap;
             private _mkIcons = _ui get "mkIcons";
             private _mkLbls = _ui get "mkLbls";
@@ -1292,25 +1437,23 @@ switch (_mode) do {
                 _col
             };
             {
-                if (_mi < 40 && {(markerShape _x) isEqualTo "ICON"} && {(markerAlpha _x) > 0}) then {
-                    private _p = getMarkerPos _x;
-                    if ([_p select 0, _p select 1] call _inView) then {
-                        private _icon = getText (configFile >> "CfgMarkers" >> (markerType _x) >> "icon");
-                        ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
-                        private _mkCk = [floor (_gx * _texW / 28), floor (_gy * _texH / 28)];
-                        if (_icon isNotEqualTo "" && {!(_mkCk in _mkSeen)}) then {
-                            _mkSeen set [_mkCk, true];
-                            private _c = _mkIcons select _mi;
-                            _c ctrlSetText ((_icon) call comspec_atak_native_fnc_tr);
-                            _c ctrlSetTextColor ([_x, ["bg0"] call _tcol] call _mkCol);
-                            _c ctrlSetPosition [_gx - 15 / _texW, _gy - 15 / _texH, 30 / _texW, 30 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
-                            _taken pushBack [_gx * _texW - 15, _gy * _texH - 15, 30, 30];
-                            _mkTodo pushBack [_mi, _gx, _gy, markerText _x];
-                            _mi = _mi + 1;
-                        };
+                if (_mi >= 40) exitWith {};
+                _x params ["_m", "_p", "_icon"];
+                if ([_p select 0, _p select 1] call _inView) then {
+                    ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
+                    private _mkCk = [floor (_gx * _texW / 28), floor (_gy * _texH / 28)];
+                    if (_icon isNotEqualTo "" && {!(_mkCk in _mkSeen)}) then {
+                        _mkSeen set [_mkCk, true];
+                        private _c = _mkIcons select _mi;
+                        _c ctrlSetText ((_icon) call comspec_atak_native_fnc_tr);
+                        _c ctrlSetTextColor ([_m, ["bg0"] call _tcol] call _mkCol);
+                        _c ctrlSetPosition [_gx - 15 / _texW, _gy - 15 / _texH, 30 / _texW, 30 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
+                        [_gx * _texW - 15, _gy * _texH - 15, 30, 30] call _take;
+                        _mkTodo pushBack [_mi, _gx, _gy, markerText _m];
+                        _mi = _mi + 1;
                     };
                 };
-            } forEach allMapMarkers;
+            } forEach (_mkSnap select 1);
             for "_i" from _mi to 39 do { (_mkIcons select _i) ctrlShow false; };
             // Comptes rendus et alertes géolocalisés des 20 dernières minutes.
             private _evIcons = _ui get "evIcons";
@@ -1323,7 +1466,7 @@ switch (_mode) do {
                     _c ctrlSetText (("\A3\ui_f\data\map\markers\military\warning_CA.paa") call comspec_atak_native_fnc_tr);
                     _c ctrlSetTextColor (["red"] call _tcol);
                     _c ctrlSetPosition [_gx - 17 / _texW, _gy - 17 / _texH, 34 / _texW, 34 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
-                    _taken pushBack [_gx * _texW - 17, _gy * _texH - 17, 34, 34];
+                    [_gx * _texW - 17, _gy * _texH - 17, 34, 34] call _take;
                     _ei = _ei + 1;
                 };
             } forEach _events;
@@ -1336,11 +1479,13 @@ switch (_mode) do {
             private _leads = _ui get "leads";
             private _ui0 = 0;
             private _li3 = 0;
+            private _natoTex = createHashMapFromArray [["veh", "\A3\ui_f\data\map\markers\nato\b_motor_inf.paa"], ["air", "\A3\ui_f\data\map\markers\nato\b_air.paa"],
+                ["boat", "\A3\ui_f\data\map\markers\nato\b_naval.paa"], ["armor", "\A3\ui_f\data\map\markers\nato\b_armor.paa"]];
             {
                 _x params ["", "_lead", "_sum", "_mem"];
                 _lead params ["", "_cs", "_p", "", "_fr", "_kind"];
                 ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
-                private _tex = format ["\A3\ui_f\data\map\markers\nato\b_%1.paa", (createHashMapFromArray [["veh", "motor_inf"], ["air", "air"], ["boat", "naval"], ["armor", "armor"]]) getOrDefault [_kind, "inf"]];
+                private _tex = _natoTex getOrDefault [_kind, "\A3\ui_f\data\map\markers\nato\b_inf.paa"];
                 // Couleur OTAN amie du thème : en direct pleine, ancien pâli, perdu et hors ligne en gris.
                 private _col = switch (_fr) do {
                     case 0: { ["friend"] call _tcol };
@@ -1454,29 +1599,26 @@ switch (_mode) do {
                 _li2 = _li2 + 1;
             };
             {
-                private _m = _x;
-                private _sh = markerShape _m;
-                if (_sh in ["POLYLINE", "RECTANGLE", "ELLIPSE"] && {(markerAlpha _m) > 0}) then {
-                    private _col = [_m] call _mkCol;
-                    private _sk = missionNamespace getVariable [format ["COMSPEC_ATAK_SK_%1", _m regexReplace ["[^A-Za-z0-9]", "_"]], []];
-                    private _th = 3 + 2 * ((_sk param [0, 1]) max 1 min 3);
-                    private _pts = [];
-                    if (_sh isEqualTo "POLYLINE") then {
-                        private _pl = markerPolyline _m;
-                        for "_i" from 0 to ((count _pl) - 2) step 2 do { _pts pushBack [_pl select _i, _pl select (_i + 1)]; };
-                        if (_sk param [2, false]) then { _pts pushBack (_pts param [0, [0, 0]]); };
-                    } else {
-                        // Rectangle et ellipse : contour, tourné comme le marqueur.
-                        private _c0 = getMarkerPos _m; (getMarkerSize _m) params ["_sa", "_sb"]; private _dir = markerDir _m;
-                        private _rot = { params ["_lx", "_ly"]; [(_c0 select 0) + _lx * cos _dir + _ly * sin _dir, (_c0 select 1) - _lx * sin _dir + _ly * cos _dir] };
-                        if (_sh isEqualTo "RECTANGLE") then { _pts = [[-_sa, -_sb], [_sa, -_sb], [_sa, _sb], [-_sa, _sb], [-_sa, -_sb]] apply { _x call _rot }; } else {
-                            for "_q" from 0 to 16 do { _pts pushBack ([_sa * sin (_q * 22.5), _sb * cos (_q * 22.5)] call _rot); };
-                        };
+                _x params ["_m", "_sh"];
+                private _col = [_m] call _mkCol;
+                private _sk = missionNamespace getVariable [format ["COMSPEC_ATAK_SK_%1", _m regexReplace ["[^A-Za-z0-9]", "_"]], []];
+                private _th = 3 + 2 * ((_sk param [0, 1]) max 1 min 3);
+                private _pts = [];
+                if (_sh isEqualTo "POLYLINE") then {
+                    private _pl = markerPolyline _m;
+                    for "_i" from 0 to ((count _pl) - 2) step 2 do { _pts pushBack [_pl select _i, _pl select (_i + 1)]; };
+                    if (_sk param [2, false]) then { _pts pushBack (_pts param [0, [0, 0]]); };
+                } else {
+                    // Rectangle et ellipse : contour, tourné comme le marqueur.
+                    private _c0 = getMarkerPos _m; (getMarkerSize _m) params ["_sa", "_sb"]; private _dir = markerDir _m;
+                    private _rot = { params ["_lx", "_ly"]; [(_c0 select 0) + _lx * cos _dir + _ly * sin _dir, (_c0 select 1) - _lx * sin _dir + _ly * cos _dir] };
+                    if (_sh isEqualTo "RECTANGLE") then { _pts = [[-_sa, -_sb], [_sa, -_sb], [_sa, _sb], [-_sa, _sb], [-_sa, -_sb]] apply { _x call _rot }; } else {
+                        for "_q" from 0 to 16 do { _pts pushBack ([_sa * sin (_q * 22.5), _sb * cos (_q * 22.5)] call _rot); };
                     };
-                    for "_i" from 0 to ((count _pts) - 2) do { [_pts select _i, _pts select (_i + 1), _col, _th] call _seg; };
-                    [_pts param [0, [0, 0]], (_sk param [3, markerText _m]), ["text"] call _tcol] call _segLbl;
                 };
-            } forEach allMapMarkers;
+                for "_i" from 0 to ((count _pts) - 2) do { [_pts select _i, _pts select (_i + 1), _col, _th] call _seg; };
+                [_pts param [0, [0, 0]], (_sk param [3, markerText _m]), ["text"] call _tcol] call _segLbl;
+            } forEach (_mkSnap select 2);
             private _pcat = [] call comspec_atak_native_fnc_planCatalog;
             {
                 _x params ["", ["_kind", ""], ["_pts", []], ["_txt", ""], ["_ck", "WHITE"], "", "", ["_w", 2]];
@@ -1528,6 +1670,7 @@ switch (_mode) do {
             _em ctrlSetPosition ([(_mwPx / 2) - 420, (_mhPx / 2) - 44, 840, 88] call _R); _em ctrlCommit 0;
         };
 
+        ["TOC carte d'écran (dessin)", _perfMap] call comspec_atak_native_fnc_perfAcc;
         // ---- En-tête, pied, FLASH, panneau : fn_tocBoard (au-dessus de la carte) ----
         private _perfT = diag_tickTime;
         ["draw", [_o, _d, _view, createHashMapFromArray [["op", _op], ["squad", _squad], ["sqNodes", _sqNodes]]]] call comspec_atak_native_fnc_tocBoard;

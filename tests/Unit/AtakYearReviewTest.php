@@ -94,7 +94,7 @@ final class AtakYearReviewTest extends TestCase
     public function testAppsDeclareesAvecAbregeIconeEtReglage(): void
     {
         $cfg = self::read(self::MAIN . '/config.cpp');
-        self::assertMatchesRegularExpression('/class YearReview\s+\{ name="Bilan de l\'année"; short="Bilan"; page="YEARREVIEW";[^}]*function="comspec_atak_native_fnc_pageYearReview";[^}]*icon="\\\\z\\\\comspec_atak_native\\\\addons\\\\main\\\\data\\\\app_reports\.paa"/', $cfg);
+        self::assertMatchesRegularExpression('/class YearReview\s+\{ name="Bilan de l\'année"; short="Bilan"; page="YEARREVIEW";[^}]*function="comspec_atak_native_fnc_pageYearReview";[^}]*icon="\\\\z\\\\comspec_atak_native\\\\addons\\\\main\\\\data\\\\ui_clock\.paa"/', $cfg);
         self::assertMatchesRegularExpression('/class Youtube\s+\{ name="Vidéo YouTube"; short="YT"; page="YOUTUBE";[^}]*icon="[^"]+\.paa"/', $cfg);
         foreach (['yearReview', 'pageYearReview', 'youtube', 'pageYoutube'] as $fn) {
             self::assertStringContainsString("class {$fn} {}", $cfg);

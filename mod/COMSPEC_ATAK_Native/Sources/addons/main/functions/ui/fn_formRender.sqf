@@ -57,6 +57,8 @@
       ["check", niveau, libellé, valeur, aide]   étape d'une chaîne (liaison) : pastille d'icône (niveau "ok" | "now" |
           "warn" | "ko" | "todo" | "off"), libellé à gauche, valeur à droite, aide en petit dessous ; hauteur au contenu
       ["meter", titre, détail, pourcentage (-1 : sans jauge), [étiquettes], code, choisie]   ligne à jauge de qualité (app Wave Relay)
+      ["qrcard", image du QR, [texte avant le code, après], [texte court avant, après], code, [[libellé, code, principal, actif, aide]...]]
+          carte « code + QR » de l'app Athena, dimensionnée sur la hauteur visible (fn_qrCardGeom) ; toute la largeur
       ["graph", modèle (fn_meshGraphView "model"), options, hauteur en rangées]   graphe du réseau dessiné dans le formulaire
     Composants partagés 3.1.0 (système de design, docs/ui/atak-design-system.md) :
       ["header", titre, sous-titre, [[libellé, code, principal]...], code retour]   en-tête d'app : grand titre, actions à
@@ -676,22 +678,37 @@ private _renderRow = {
         };
         case "switch": {
             // Ligne réglage : libellé + aide à gauche, interrupteur à droite ; « IMPOSÉ » si la communauté fixe la valeur.
-            _row params ["", "_label", "_on", "_code", ["_help", ""], ["_locked", false], ["_id", ""]];
+            // 8e élément (facultatif) : aide dépliable, [ouverte, code]. La ligne reste compacte (libellé + interrupteur), un
+            // chevron précède le libellé et un toucher sur le libellé appelle le code ; la page ajoute elle-même le texte
+            // d'aide dessous, sur toute la largeur, quand il est ouvert (volet SITUATION de la carte, fn_pageMap).
+            _row params ["", "_label", "_on", "_code", ["_help", ""], ["_locked", false], ["_id", ""], ["_swFold", []]];
+            private _swFoldOn = _swFold isEqualType [] && {(count _swFold) >= 2};
             // Pastille plafonnée au tiers de la ligne : dans le volet étroit de la carte, elle prenait toute la largeur
             // et le libellé disparaissait (on ne voyait que des « OUI »).
             private _pillW = (_font * 3.6 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW])) min (_w * 0.3);
             private _card = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
             _card ctrlSetBackgroundColor (_th get "surface");
-            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _rowH]] call _mk;
+            private _swCs = _rowH * 0.5;
+            private _swCw = [0, _swCs / (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]) + _pad * 0.3] select _swFoldOn;
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5 + _swCw, _y + _pad / 4, _w - _pillW - _pad * 2.5 - _swCw, _rowH]] call _mk;
             // Libellé en blanc franc, aide en gris clair (retour de jeu : les lignes semblaient grisées).
             _t ctrlSetStructuredText parseText ((format ["<t size='0.95' color='" + _hT + "'>%1</t>%2", _label, ["", format ["<br/><t size='0.75' color='" + _hTD + "'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
-            private _tw = _w - _pillW - _pad * 2.5;
+            private _tw = _w - _pillW - _pad * 2.5 - _swCw;
             private _h = (((ctrlTextHeight _t) max (([(_label) call comspec_atak_native_fnc_tr, _tw, 0.95] call _estH)
                 + ([0, [(_help) call comspec_atak_native_fnc_tr, _tw, 0.75] call _estH] select (_help isNotEqualTo "")))) + _pad / 2) max _rowH;
-            _t ctrlSetPosition [_pad * 1.5, _y + _pad / 4, _tw, _h - _pad / 2];
+            _t ctrlSetPosition [_pad * 1.5 + _swCw, _y + _pad / 4, _tw, _h - _pad / 2];
             _t ctrlCommit 0;
             _card ctrlSetPosition [_pad, _y, _w, _h];
             _card ctrlCommit 0;
+            if (_swFoldOn) then {
+                _swFold params [["_swOpen", false], ["_swCode", {}]];
+                private _swCh = ["COMSPEC_RscPicture", [_pad * 1.5, _y + (_h - _swCs) / 2, _swCw - _pad * 0.3, _swCs], format ["\z\comspec_atak_native\addons\main\data\%1.paa", ["ui_chevron_down", "ui_chevron_up"] select _swOpen]] call _mk;
+                _swCh ctrlSetTextColor ([(_th get "text"), _accInk] select _swOpen);
+                // Zone de toucher : le libellé seul, jamais la pastille (elle garde son propre clic).
+                private _swB = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w - _pillW - _pad, _h]] call _mk;
+                _swB ctrlSetTooltip ((["Afficher l'explication", "Masquer l'explication"] select _swOpen) call comspec_atak_native_fnc_tr);
+                [_swB, _swCode] call _click;
+            };
             private _ph = _fs * 1.35;
             // Interrupteur libre : la pastille est le bouton. Un bouton transparent posé sur toute la ligne l'assombrissait en jeu, malgré ses couleurs à 0 :
             // les lignes libres paraissaient grisées et les lignes imposées, sans lui, claires (l'inverse du sens).
@@ -1434,6 +1451,77 @@ private _renderRow = {
                 _y = _y0 + _side * _ratio + _pad;
             };
         };
+        case "qrcard": {
+            // Carte « code + QR » (onglet CODE de l'app Athena) : étapes, adresse, code, état et boutons d'un côté, QR
+            // code carré de l'autre (dessous dans une colonne étroite). Tout est dimensionné d'après la hauteur encore
+            // visible sous la ligne (fn_qrCardGeom) : rien à faire défiler pour lire le code et toucher les boutons.
+            // Params : [image du QR, [texte complet avant le code, après], [texte court avant, après], code, boutons].
+            // Dans les textes, @S@ est remplacé par la taille des étapes et @U@ par celle de l'adresse.
+            _row params ["", "_pic", ["_fullT", ["", ""]], ["_shortT", ["", ""]], ["_code", ""], ["_btns", []]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            private _ip = _pad / 2;
+            private _fb = (missionNamespace getVariable ["COMSPEC_ATAK_FontBody", 0]) max _fs;
+            private _nl = toString [10];
+            private _trT = { (_this apply { ((_x regexReplace ["@S@", "1"]) regexReplace ["@U@", "1"]) call comspec_atak_native_fnc_tr }) };
+            private _cnt = { _this apply { ((((_x regexReplace ["<br ?/?>", _nl]) regexReplace ["<[^>]*>", ""]) splitString _nl) apply { count _x }) } };
+            private _g = [_w, (_rh - _y - _pad) max (_rowH * 3), _fb, _rowH, _ip, _ratio, COMSPEC_ATAK_FontMin, (_fullT call _trT) call _cnt, (_shortT call _trT) call _cnt] call comspec_atak_native_fnc_qrCardGeom;
+            _g params ["_wide", "_isShort", "", "_fh", "_fCode", "_side", "_tw"];
+            private _sz = { (_this / _fb) toFixed 2 };
+            private _texts = ([_fullT, _shortT] select _isShort) apply { (((_x regexReplace ["@S@", _fh call _sz]) regexReplace ["@U@", (_fh * 1.15) call _sz]) call comspec_atak_native_fnc_tr) };
+            private _card = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
+            _card ctrlSetBackgroundColor (_th get "surface");
+            private _tx = _pad + _ip;
+            private _cy = _y + _ip;
+            // Un bloc de texte structuré posé à _cy, hauteur au contenu (jamais sous l'estimation).
+            private _put = {
+                params ["_html", "_rel"];
+                private _c = ["COMSPEC_RscStructuredText", [_tx, _cy, _tw, _rowH]] call _mk;
+                _c ctrlSetStructuredText parseText _html;
+                private _h = (ctrlTextHeight _c) max ([_html, _tw, _rel] call _estH);
+                _c ctrlSetPosition [_tx, _cy, _tw, _h];
+                _c ctrlCommit 0;
+                _cy = _cy + _h;
+            };
+            if ((_texts select 0) isNotEqualTo "") then { [_texts select 0, _fh / _fb] call _put; };
+            [format ["<t align='center'>%1<t size='%2' font='COMSPEC_BarlowBold' color='%3'>%4</t></t>", ["", format ["<t size='%1' color='%2'>2.  </t>", _fh call _sz, _hTD]] select _isShort, _fCode call _sz, _hT, _code], _fCode / _fb] call _put;
+            if ((_texts select 1) isNotEqualTo "") then { [_texts select 1, _fh / _fb] call _put; };
+            _cy = _cy + _ip;
+            private _nb = (count _btns) max 1;
+            private _bw = (_tw - (_nb - 1) * _ip) / _nb;
+            {
+                _x params ["_label", "_bcode", ["_primary", false], ["_enabled", true], ["_tip", ""]];
+                private _bpos = [_tx + _forEachIndex * (_bw + _ip), _cy, _bw, _rowH];
+                private _b = if (_primary) then { ["COMSPEC_RscButtonPrimary", _bpos, _label] call _mk } else { [_bpos, _label] call _flat };
+                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
+                _b ctrlSetFontHeight _btnFs;
+                [_b, _bw, _btnFs] call _fit;
+                if (!_primary) then { [_b, _th get "surface2"] call _face; _b ctrlSetTextColor (_th get "text"); };
+                _b ctrlEnable _enabled;
+                [_b, _bcode] call _click;
+            } forEach _btns;
+            _cy = _cy + _rowH;
+            // QR code : carré blanc (marge de lecture) et image aux proportions gardées, à droite du texte ou dessous.
+            private _qw = _side / _ratio;
+            private _textH = _cy - (_y + _ip);
+            private _cardH = 0;
+            private _qx = 0;
+            private _qy = 0;
+            if (_wide) then {
+                _cardH = (_textH max _side) + 2 * _ip;
+                _qx = _pad + _w - _ip - _qw;
+                _qy = _y + (_cardH - _side) / 2;
+            } else {
+                _cardH = _textH + _side + 3 * _ip;
+                _qx = _pad + (_w - _qw) / 2;
+                _qy = _cy + _ip;
+            };
+            private _qb = ["COMSPEC_RscText", [_qx, _qy, _qw, _side]] call _mk;
+            _qb ctrlSetBackgroundColor [1, 1, 1, 1];
+            ["COMSPEC_RscSlide", [_qx, _qy, _qw, _side], _pic] call _mk;
+            _card ctrlSetPosition [_pad, _y, _w, _cardH];
+            _card ctrlCommit 0;
+            _y = _y + _cardH + _pad / 2;
+        };
         case "password": {
             // Mot de passe masqué : on garde la vraie valeur à part et on n'affiche que des points.
             _row params ["", "_key", "_label"];
@@ -1583,7 +1671,7 @@ private _flW0 = _w;
 // Carte : volets et menus déjà pensés pour le paysage (functions/map), laissés tels quels.
 private _flOn = (_rows findIf { (_x param [0, ""]) isEqualTo "flow" && {!(_x param [1, true])} }) < 0
     && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MAP"};
-private _flBarrier = ["header", "tabs", "strip", "banner", "steps", "squad", "empty", "skeleton", "image", "qr", "bar", "big", "title", "break", "hero"];
+private _flBarrier = ["header", "tabs", "strip", "banner", "steps", "squad", "empty", "skeleton", "image", "qr", "qrcard", "bar", "big", "title", "break", "hero"];
 private _flTiles = ["info", "switch", "toggle", "row", "person", "notif", "check", "status", "slider"];
 // Une ligne dessinée en (_flX, _flY), largeur _flW ; renvoie le bas de la ligne.
 private _flPut = {
