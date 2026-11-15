@@ -122,25 +122,46 @@ private _texOf = {
     _res
 };
 // Image d'un fichier local en base64, par COMSPEC Link (aucun réseau). Renvoie [type MIME, base64] ou ["", raison].
+// L'image est lue par morceaux de 5 940 octets (jusqu'à 61 appels à COMSPEC Link). Elle est gardée pour tout le
+// lancement du jeu (uiNamespace COMSPEC_LOBBY_ImgKeep : chemin -> [taille, premier morceau, type, base64]) : à chaque
+// retour sur l'écran des rôles, un seul appel (le premier morceau) vérifie que le fichier est le même (même taille,
+// même début) ; avant, toute l'image était relue et réencodée à chaque ouverture de l'écran. Fichier remplacé (nouvelle
+// photo, « Synchroniser ») : relu en entier. Les morceaux sont assemblés une seule fois (joinString), plus par « + » à
+// chaque morceau (la chaîne entière était recopiée à chaque fois).
 private _b64Of = {
     params [["_p", ""]];
-    private _b64 = "";
+    private _keep = uiNamespace getVariable "COMSPEC_LOBBY_ImgKeep";
+    if (isNil "_keep" || {!(_keep isEqualType createHashMap)}) then {
+        _keep = createHashMap;
+        uiNamespace setVariable ["COMSPEC_LOBBY_ImgKeep", _keep];
+    };
+    (_keep getOrDefault [_p, [-1, "", "", ""]]) params ["_keptTotal", "_keptHead", "_keptMime", "_keptB64"];
+    private _parts = [];
     private _mime = "jpeg";
     private _off = 0;
+    private _total = 0;
     private _err = "";
+    private _same = false;
     for "_n" from 0 to 60 do {
         private _r = "COMSPECExtension" callExtension ["ImageDataChunk", ["local:" + _p, "lobby_portrait", _off toFixed 0]];
         if (_r isEqualType []) then { _r = _r param [0, ""]; };
         if !(_r isEqualType "") then { _r = ""; };
         private _f = _r splitString "|";
         if ((_f param [0, ""]) isNotEqualTo "OK") exitWith { _err = [_f param [1, "erreur"], "COMSPEC Link absent"] select (_r isEqualTo ""); };
-        _b64 = _b64 + (_f param [3, ""]);
+        _total = parseNumber (_f param [1, "0"]);
+        // Premier morceau identique à celui de l'image gardée, même taille : même fichier, rien d'autre à lire.
+        if (_n isEqualTo 0 && {_total isEqualTo _keptTotal} && {_keptB64 isNotEqualTo ""} && {(_f param [3, ""]) isEqualTo _keptHead}) exitWith { _same = true; };
+        _parts pushBack (_f param [3, ""]);
         _off = parseNumber (_f param [2, "0"]);
         if ((count _f) > 4) then { _mime = _f select 4; };
-        if (_off >= parseNumber (_f param [1, "0"])) exitWith {};
+        if (_off >= _total) exitWith {};
     };
+    if (_same) exitWith { [_keptMime, _keptB64] };
+    private _b64 = _parts joinString "";
     if (_err isEqualTo "" && {_b64 isEqualTo ""}) then { _err = "image vide"; };
-    if (_err isEqualTo "") then { [_mime, _b64] } else { ["", _err] }
+    if (_err isNotEqualTo "") exitWith { ["", _err] };
+    _keep set [_p, [_total, _parts select 0, _mime, _b64]];
+    [_mime, _b64]
 };
 // ctrlWebBrowserAction passe par compile : HEMTT (vérification du SQF au build) ne connaît pas encore cette commande.
 uiNamespace setVariable ["COMSPEC_LOBBY_wba", compile "(_this select 0) ctrlWebBrowserAction (_this select 1)"];
@@ -229,7 +250,20 @@ private _fitQuals = {
 // seulement si COMSPEC Link a déjà une session Athena dans ce lancement du jeu (une partie jouée) et si le SteamID est connu
 // (gardé par COMSPEC ATAK : rien ne permet de le lire avant une mission). Sinon le message dit quoi faire.
 // L'appel bloque le jeu le temps de la réponse du site (quelques secondes au plus) : il part d'un clic du joueur.
-uiNamespace setVariable ["COMSPEC_LOBBY_sync", { [] spawn (uiNamespace getVariable ["COMSPEC_LOBBY_syncRun", {}]) }];
+// Un seul passage à la fois : chaque clic lançait sa propre synchronisation, et dix clics d'impatience enchaînaient dix
+// séries d'appels bloquants (carte, portrait). Un clic pendant qu'une synchronisation tourne est ignoré.
+uiNamespace setVariable ["COMSPEC_LOBBY_SyncBusy", false];
+uiNamespace setVariable ["COMSPEC_LOBBY_sync", {
+    if (uiNamespace getVariable ["COMSPEC_LOBBY_SyncBusy", false]) exitWith {};
+    uiNamespace setVariable ["COMSPEC_LOBBY_SyncBusy", true];
+    [] spawn {
+        private _t0 = diag_tickTime;
+        [] call (uiNamespace getVariable ["COMSPEC_LOBBY_syncRun", {}]);
+        uiNamespace setVariable ["COMSPEC_LOBBY_SyncBusy", false];
+        // Durée du passage (appels à COMSPEC Link compris : ce sont eux qui bloquent l'écran, voir ci-dessus).
+        diag_log format ["[COMSPEC LOBBY][PERF] Synchroniser : %1 ms", round ((diag_tickTime - _t0) * 1000)];
+    };
+}];
 uiNamespace setVariable ["COMSPEC_LOBBY_syncRun", {
     disableSerialization;
     private _d = uiNamespace getVariable ["COMSPEC_LOBBY_Display", displayNull];
@@ -243,7 +277,11 @@ uiNamespace setVariable ["COMSPEC_LOBBY_syncRun", {
     "STR_COMSPEC_LOBBY_SyncRunning" call _say;
     uiSleep 0.05;
     private _ext = {
+        private _t = diag_tickTime;
         private _r = "COMSPECExtension" callExtension _this;
+        // Appel direct à COMSPEC Link : l'écran est figé pendant sa durée. Écrit au journal au-dessus de 20 ms.
+        private _ms = round ((diag_tickTime - _t) * 1000);
+        if (_ms >= 20) then { diag_log format ["[COMSPEC LOBBY][PERF] DLL %1 : %2 ms (direct)", _this param [0, ""], _ms]; };
         if (_r isEqualType []) then { _r = _r param [0, ""]; };
         if !(_r isEqualType "") then { _r = ""; };
         _r
