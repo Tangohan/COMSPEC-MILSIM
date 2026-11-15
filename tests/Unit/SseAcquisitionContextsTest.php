@@ -295,7 +295,8 @@ final class SseAcquisitionContextsTest extends TestCase
 
     public function testModSourcesOfferTheNewContextsAndKeepSendingKnownCodes(): void
     {
-        $onload = self::read('mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ssePersonDialogOnLoad.sqf');
+        // Liste de repli du SEEK II (le site de la communauté la remplace quand il répond : fn_sseCatalogue).
+        $onload = self::read('mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sseCatalogueSeek.sqf');
         $codes = array_keys(SseAcquisitionContexts::catalogByCode());
         foreach ($codes as $code) {
             self::assertStringContainsString('["' . $code . '", "', $onload, $code);
