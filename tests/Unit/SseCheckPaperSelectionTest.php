@@ -114,6 +114,63 @@ final class SseCheckPaperSelectionTest extends TestCase
         self::assertStringContainsString('Page 2 grattée', (string) $doc['notes']);
     }
 
+    /** @param array<string, mixed> $document */
+    private function ingest(string $key, array $document): int
+    {
+        $res = (new \App\Services\Sse\SseIdCheckService())->store(1, 1, [
+            'idempotency_key' => $key,
+            'document' => $document + ['type' => 'passport', 'country' => 'USA', 'number' => 'US47036925'],
+            'presented_name' => ['last' => 'Karimzadeh', 'first' => 'Élodie'],
+            'controller' => ['callsign' => 'Alpha 2-1'],
+            'levels' => ['N0'], 'results' => ['N0' => ['state' => 'ok', 'verdict' => 'ras']], 'verdict' => 'ras', 'grid' => '045112',
+        ]);
+        self::assertArrayNotHasKey('error', $res, json_encode($res));
+
+        return (int) $res['id'];
+    }
+
+    public function testIssueDateAndAuthorityRaisedByTheTerminalAreStoredBoundedAndPrefillThePaper(): void
+    {
+        $id = $this->ingest('k-paper-1', ['issued' => '14.03.2021', 'authority' => "  U.S. Department
+of State	" . str_repeat('x', 400)]);
+        $row = (new SseIdCheckRepository())->find($id, 1);
+        self::assertSame('2021-03-14', $row['results']['paper']['issued'], 'Date normalisée');
+        self::assertSame(160, mb_strlen($row['results']['paper']['authority']), 'Autorité bornée à 160 caractères');
+        self::assertStringStartsWith('U.S. Department of State xxx', $row['results']['paper']['authority']);
+        self::assertSame(['N0'], $row['levels'], 'Les champs du papier ne sont pas un niveau de contrôle');
+
+        $rows = $this->service()->candidates(1, $this->identity());
+        self::assertSame('2021-03-14', $rows[0]['fields']['issued_on']);
+        self::assertStringStartsWith('U.S. Department of State', $rows[0]['fields']['authority']);
+
+        // La saisie de l'opérateur remplace le préremplissage ; les champs consignés viennent au papier.
+        $res = $this->service()->consign(1, $this->identity(), [$id => ['issued_on' => '2020-02-02', 'authority' => 'Bureau fictif des passeports']], 7);
+        $doc = (new SseIdDocumentRepository())->find($res['created'][0]['doc_id'], 1);
+        self::assertSame('2020-02-02', $doc['issued_on']);
+        self::assertSame('Bureau fictif des passeports', $doc['authority']);
+        // Sans saisie : les valeurs du terrain.
+        $id2 = $this->ingest('k-paper-2', ['number' => 'US99999999', 'issued' => '2019-07-01', 'authority' => 'Autorité fictive']);
+        $res2 = $this->service()->consign(1, $this->identity(), [$id2 => []], 7);
+        $doc2 = (new SseIdDocumentRepository())->find($res2['created'][0]['doc_id'], 1);
+        self::assertSame('2019-07-01', $doc2['issued_on']);
+        self::assertSame('Autorité fictive', $doc2['authority']);
+    }
+
+    public function testInvalidOrMissingIssueDateAndAuthorityAreIgnoredWithoutBreakingTheCheck(): void
+    {
+        foreach (['32.13.2021', '2021-02-30', 'hier', '0000-00-00', "<script>", ['x'], null, '12/05/1800'] as $i => $bad) {
+            $id = $this->ingest('k-bad-' . $i, ['issued' => $bad, 'authority' => $bad === null ? null : (is_array($bad) ? $bad : '')]);
+            $row = (new SseIdCheckRepository())->find($id, 1);
+            self::assertArrayNotHasKey('paper', $row['results'], 'Rien de rangé pour ' . json_encode($bad));
+        }
+        $id = $this->ingest('k-none', []);
+        self::assertSame('', $this->service()->candidates(1, $this->identity())[0]['fields']['issued_on'] ?? 'x', 'Sans remontée : champ vide à saisir');
+        self::assertSame('2021-03-14', \App\Services\Sse\SseIdCheckService::paperDate('2021-03-14 10:00:00'));
+        self::assertSame('2021-03-04', \App\Services\Sse\SseIdCheckService::paperDate('4/3/2021'));
+        self::assertSame('', \App\Services\Sse\SseIdCheckService::paperAuthority(['a']));
+        self::assertSame('Texte propre', \App\Services\Sse\SseIdCheckService::paperAuthority("Texte   propre"));
+    }
+
     public function testSeveralChecksAreRecordedAtOnceAndEachCheckPointsToItsPaper(): void
     {
         $a = $this->check('a');

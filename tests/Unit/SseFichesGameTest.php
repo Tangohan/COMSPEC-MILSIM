@@ -328,8 +328,8 @@ final class SseFichesGameTest extends TestCase
         $st->execute([$notice, json_encode(['reasons' => [['code' => 'M-TER-01', 'fr' => 'Financement du terrorisme', 'en' => 'Terrorist financing']], 'measures' => [['code' => 'A-OBS', 'fr' => 'Observer sans intervenir', 'en' => 'Observe only']]]), null, '2026-11-12 09:00:00']);
         $f = $this->service()->find(1, 'interne', $ref);
         self::assertNotNull($f);
-        self::assertSame("Financement du terrorisme\nTexte libre", $f['reason']);
-        self::assertSame("Observer sans intervenir\nConsigne libre", $f['measures']);
+        self::assertSame("M-TER-01 Financement du terrorisme\nTexte libre", $f['reason']);
+        self::assertSame("A-OBS Observer sans intervenir\nConsigne libre", $f['measures']);
         // Tables de codification absentes : le texte libre seul, sans erreur.
         $this->pdo->exec('DROP TABLE sse_wanted_notice_extras');
         \App\Repositories\SseWantedExtrasRepository::forgetReady();
@@ -630,6 +630,46 @@ final class SseFichesGameTest extends TestCase
         self::assertSame(['wanted' => false], $this->service()->wantedFor(2, $id), 'Autre communauté');
         self::assertSame(['wanted' => false], $this->service()->wantedFor(1, null));
         self::assertSame(['wanted' => false], $this->service()->wantedFor(1, $this->identity(1, 'Sans', 'Avis')));
+    }
+
+    public function testWantedGivesTheCodedReasonsMeasuresServiceAndDescriptionAndStaysWithoutThemOtherwise(): void
+    {
+        $id = $this->identity(1, 'Codé', 'Cyril');
+        $ref = $this->notice(1, $id, ['ref' => 'A-0810/2026']);
+        $notice = (int) $this->pdo->query("SELECT id FROM sse_wanted_notices WHERE ref = '{$ref}'")->fetchColumn();
+        $plain = $this->service()->wantedFor(1, $id);
+        self::assertSame([], $plain['reasons']);
+        self::assertSame('', $plain['service']);
+        $st = $this->pdo->prepare('INSERT INTO sse_wanted_notice_extras (notice_id, tenant_id, codes_json, physical_json, updated_at) VALUES (?, 1, ?, ?, ?)');
+        $st->execute([$notice, json_encode(['reasons' => [['code' => 'M-TER-01', 'fr' => 'Financement du terrorisme', 'en' => 'Terrorist financing']], 'measures' => [['code' => 'A-OBS', 'fr' => 'Observer sans intervenir', 'en' => 'Observe only'], ['code' => 'A-DNG', 'fr' => 'Considérer armé et dangereux', 'en' => 'Treat as armed']]]), json_encode(['height_cm' => 181, 'build' => 'athletic']), '2026-11-12 09:00:00']);
+        $this->pdo->prepare('INSERT INTO sse_wanted_notice_meta (notice_id, tenant_id, service_code, service_json, classification) VALUES (?, 1, ?, ?, ?)')
+            ->execute([$notice, 'COD', json_encode(['code' => 'COD', 'fr' => 'Cellule des opérations', 'en' => 'Operations Cell', 'ac' => 'COD']), 'confidentiel']);
+        \App\Repositories\SseWantedMetaRepository::forgetReady();
+        $w = $this->service()->wantedFor(1, $id);
+        self::assertSame(['M-TER-01 Financement du terrorisme'], $w['reasons']);
+        self::assertSame(['A-OBS Observer sans intervenir', 'A-DNG Considérer armé et dangereux'], $w['measures']);
+        self::assertSame('Cellule des opérations (COD)', $w['service']);
+        self::assertStringContainsString('181', $w['physical']);
+        // Canal du jeu : l'avis garde ses 8 premiers éléments et ajoute motifs, mesures, service et signalement.
+        $this->gameToken(1, 7);
+        $checks = static fn (int $tenantId, int $checkId): ?int => $checkId === 12 && $tenantId === 1 ? $id : null;
+        $controller = new GameSseFichesApiController($this->service(), static fn (): bool => false, static fn (): ?string => null, static fn (): ?string => 'interne', function (array $row): void {
+            $this->audited[] = $row;
+        }, $checks);
+        $hit = self::parse(json_decode($controller->kindResponse(['kind' => SseFichesGameService::KIND, 'op' => 'wanted', 'check' => 12])->body(), true)['ref']);
+        self::assertCount(12, $hit);
+        self::assertSame(['M-TER-01 Financement du terrorisme'], $hit[8]);
+        self::assertSame(['A-OBS Observer sans intervenir', 'A-DNG Considérer armé et dangereux'], $hit[9]);
+        self::assertSame('Cellule des opérations (COD)', $hit[10]);
+        // Tables de codification et de processus absentes : l'avis reste lisible, sans détail.
+        $this->pdo->exec('DROP TABLE sse_wanted_notice_extras');
+        $this->pdo->exec('DROP TABLE sse_wanted_notice_meta');
+        \App\Repositories\SseWantedExtrasRepository::forgetReady();
+        \App\Repositories\SseWantedMetaRepository::forgetReady();
+        $bare = $this->service()->wantedFor(1, $id);
+        self::assertTrue($bare['wanted']);
+        self::assertSame([], $bare['reasons']);
+        self::assertSame('', $bare['service']);
     }
 
     public function testWantedOpOfTheGameChannelAnswersForTheCheckOfTheCommunity(): void

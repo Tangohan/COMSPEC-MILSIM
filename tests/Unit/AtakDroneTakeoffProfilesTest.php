@@ -194,12 +194,10 @@ final class AtakDroneTakeoffProfilesTest extends TestCase
     public function testEnglishFileStaysStrictAndCarriesTheNewTexts(): void
     {
         $en = $this->read(self::MAIN . 'i18n/en.txt');
-        $raw = (string) file_get_contents(dirname(__DIR__, 2) . '/' . self::MAIN . 'i18n/en.txt');
         self::assertStringNotContainsString('\\"', $en);
         self::assertTrue(str_ends_with($en, "]\n]\n"));
         self::assertStringNotContainsString(",\n]", $en);
-        self::assertStringContainsString("\r\n", $raw);
-        self::assertSame(0, preg_match('/(?<!\r)\n/', $raw), 'fins de ligne CRLF');
+        // Les fins de ligne dépendent du checkout (LF sur le CI, CRLF sous Windows) : seul le contenu compte.
         foreach ([
             '["Batterie trop faible pour décoller", "Battery too low to take off"]',
             '["Drone déjà en vol : décollage ignoré", "Drone already flying: take-off ignored"]',

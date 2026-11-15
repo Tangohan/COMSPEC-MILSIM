@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SseFileRecordRepository;
 use App\Repositories\SseWantedExtrasRepository;
+use App\Repositories\SseWantedMetaRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Support\SseFileVisibility;
 use App\Support\SseUsClassification;
@@ -170,7 +171,9 @@ final class SseFichesGameService
      * Avis actif d'une identité contrôlée (champ « wanted » du contrôle d'identité) : référence, type, menace, armé, mesure
      * courte. Jamais pour l'identité d'un membre. Sans avis : seulement « wanted: false ».
      *
-     * @return array{wanted: bool, ref?: string, type?: string, threat?: string, armed?: string, instruction?: string}
+     * Additif (même réponse, mêmes droits) : motifs et mesures codifiés (« CODE libellé »), service demandeur et signalement court.
+     *
+     * @return array{wanted: bool, ref?: string, type?: string, threat?: string, armed?: string, instruction?: string, reasons?: list<string>, measures?: list<string>, service?: string, physical?: string}
      */
     public function wantedFor(int $tenantId, ?int $identityId): array
     {
@@ -189,10 +192,44 @@ final class SseFichesGameService
                 'threat' => self::pick(SseWantedCatalog::THREATS, $r['threat_level'] ?? '', 'medium'),
                 'armed' => self::pick(SseWantedCatalog::ARMED, $r['armed'] ?? '', 'unknown'),
                 'instruction' => self::line($r['instructions'] ?? '', 120),
-            ];
+            ] + $this->wantedDetail($tenantId, (int) $r['id']);
         }
 
         return ['wanted' => false];
+    }
+
+    /**
+     * Motifs et mesures codifiés, service demandeur et signalement court d'un avis, pour le contrôle d'identité du jeu. Un avis sans
+     * codes, sans service ou sans signalement (ou une étape de base absente) donne des listes et des textes vides.
+     *
+     * @return array{reasons: list<string>, measures: list<string>, service: string, physical: string}
+     */
+    private function wantedDetail(int $tenantId, int $noticeId): array
+    {
+        $out = ['reasons' => [], 'measures' => [], 'service' => '', 'physical' => ''];
+        try {
+            if (SseWantedExtrasRepository::ready()) {
+                $x = (new SseWantedExtrasRepository($this->db))->forNotice($tenantId, $noticeId);
+                $coded = static fn (array $list): array => array_slice(array_values(array_filter(array_map(
+                    static fn (array $c): string => self::line(trim(($c['code'] ?? '') . ' ' . ($c['fr'] ?? '')), 90),
+                    $list
+                ), static fn (string $t): bool => $t !== '')), 0, 6);
+                $out['reasons'] = $coded((array) ($x['codes']['reasons'] ?? []));
+                $out['measures'] = $coded((array) ($x['codes']['measures'] ?? []));
+                $out['physical'] = self::line(SseWantedPhysical::shortLine((array) ($x['physical'] ?? []), 'fr'), 160);
+            }
+            if (SseWantedMetaRepository::ready()) {
+                $meta = (new SseWantedMetaRepository($this->db))->forNotice($tenantId, $noticeId);
+                $snap = is_array($meta['service'] ?? null) ? $meta['service'] : [];
+                $name = self::line($snap['fr'] ?? '', 90);
+                $ac = self::line($snap['ac'] ?? '', 12);
+                $out['service'] = $name !== '' && $ac !== '' ? $name . ' (' . $ac . ')' : $name;
+            }
+        } catch (\Throwable) {
+            return $out;
+        }
+
+        return $out;
     }
 
     // ------------------------------------------------------------ Pages parseSimpleArray
@@ -594,7 +631,7 @@ final class SseFichesGameService
                 return [];
             }
             foreach ((new SseWantedExtrasRepository($this->db))->forNotices($tenantId, $noticeIds) as $id => $x) {
-                $label = static fn (array $list): array => array_values(array_filter(array_map(static fn (array $c): string => self::line($c['fr'] ?? ($c['label'] ?? ''), 80), $list), static fn (string $t): bool => $t !== ''));
+                $label = static fn (array $list): array => array_values(array_filter(array_map(static fn (array $c): string => self::line(trim((string) ($c['code'] ?? '') . ' ' . ($c['fr'] ?? ($c['label'] ?? ''))), 90), $list), static fn (string $t): bool => $t !== ''));
                 $out[(int) $id] = [
                     'reasons' => $label((array) ($x['codes']['reasons'] ?? [])),
                     'measures' => $label((array) ($x['codes']['measures'] ?? [])),

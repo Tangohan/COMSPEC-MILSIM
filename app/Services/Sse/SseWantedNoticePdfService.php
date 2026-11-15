@@ -10,6 +10,7 @@ use App\Repositories\SseIdentityRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Support\Pdf\AthenaPdfTheme;
 use App\Support\SseFileSubjectCatalog as S;
+use App\Support\SseUsClassification;
 use App\Support\SseWantedCatalog as C;
 
 /**
@@ -33,6 +34,7 @@ final class SseWantedNoticePdfService
         private ?SseIdCountryRepository $countries = null,
         private ?SseWantedSettingsRepository $settings = null,
         private ?SseWantedNoticePdf $template = null,
+        private ?SseWantedAttachments $attachments = null,
     ) {
         $this->identities ??= new SseIdentityRepository();
         $this->settings ??= new SseWantedSettingsRepository();
@@ -100,7 +102,13 @@ final class SseWantedNoticePdfService
         $snap = is_array($meta['service'] ?? null) ? $meta['service'] : [];
         $hex = (string) ($snap['color'] ?? '');
         $rgb = preg_match('/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$/', $hex, $m) === 1 ? [(int) hexdec($m[1]), (int) hexdec($m[2]), (int) hexdec($m[3])] : null;
-        $service = $snap !== [] ? ['code' => (string) ($snap['code'] ?? ''), 'ac' => (string) ($snap['ac'] ?? ''), 'color' => $rgb] : null;
+        $service = $snap !== [] ? ['code' => (string) ($snap['code'] ?? ''), 'ac' => (string) ($snap['ac'] ?? ''), 'color' => $rgb, 'name' => (string) ($snap[$lang === 'en' ? 'en' : 'fr'] ?? '')] : null;
+        // Bandeaux de classification américains (fictifs) : le niveau de l'avis, sinon celui par défaut de l'échelle.
+        $classCode = SseUsClassification::normalize($meta['classification'] ?? null);
+        $classification = ['code' => $classCode, 'banner' => SseUsClassification::banner($classCode), 'rgb' => SseUsClassification::rgb($classCode)];
+        // Motifs, mesures, signalement et pièces de l'avis (pièces : droits du lecteur, rien pour une identité de membre non autorisée).
+        $wanted = SseWantedNoticeData::forPdf($notice, $lang, $this->attachments);
+        $attached = $this->attachedImages($wanted['attachments'], $lang);
         $ref = (string) $notice['ref'];
         $expires = $notice['expires_at'] ?? null;
         $extra = [];
@@ -133,6 +141,12 @@ final class SseWantedNoticePdfService
             'banner' => [$banner[0], $banner[1]],
             'authority' => [(string) ($snap['auth_fr'] ?? $config['authority_fr']), (string) ($snap['auth_en'] ?? $config['authority_en'])],
             'service' => $service,
+            'classification' => $classification,
+            'reasons' => $wanted['reasons'],
+            'measures' => $wanted['measures'],
+            'physical_rows' => $wanted['physical_rows'],
+            'physical_line' => $wanted['physical_line'],
+            'attached' => $attached,
             'ref' => $ref,
             'issued_at' => (string) $notice['issued_at'],
             'expires_at' => $expires !== null ? (string) $expires : null,
@@ -160,7 +174,7 @@ final class SseWantedNoticePdfService
             'last_seen_at' => $notice['last_seen_at'] ?? null,
             'contact_label' => (string) ($notice['contact_label'] ?? ''),
             'contact_detail' => (string) ($notice['contact_detail'] ?? ''),
-            'photo' => $photo,
+            'photo' => $photo ?? $attached['main'],
             'extra_photos' => $extra,
             'signature' => $signature,
             'emblem_path' => is_string($emblem) ? $emblem : null,
@@ -169,6 +183,35 @@ final class SseWantedNoticePdfService
             'faces' => in_array($faces, ['1', '2'], true) ? $faces : 'auto',
             'generated_at' => gmdate($lang === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC',
         ];
+    }
+
+    /**
+     * Image principale (pleine) et jusqu'à 3 miniatures légendées des pièces de l'avis, en octets JPEG.
+     *
+     * @param list<array<string, mixed>> $attachments
+     * @return array{main: ?string, thumbs: list<array{bytes: string, caption: string}>}
+     */
+    private function attachedImages(array $attachments, string $lang): array
+    {
+        $main = null;
+        $thumbs = [];
+        foreach ($attachments as $a) {
+            $isMain = !empty($a['is_main']);
+            if ($isMain && $main === null) {
+                $main = self::imageBytes((string) $a['file'], false, true);
+                if ($main !== null) {
+                    continue;
+                }
+            }
+            if (count($thumbs) < 3) {
+                $bytes = self::imageBytes((string) ($a['thumb_file'] ?? $a['file']), false, true);
+                if ($bytes !== null) {
+                    $thumbs[] = ['bytes' => $bytes, 'caption' => trim((string) ($a['caption'] ?? '')) !== '' ? (string) $a['caption'] : (string) ($a[$lang === 'en' ? 'kind_en' : 'kind_fr'] ?? '')];
+                }
+            }
+        }
+
+        return ['main' => $main, 'thumbs' => $thumbs];
     }
 
     private const EYES_EN = ['brown' => 'Brown', 'black' => 'Black', 'hazel' => 'Hazel', 'green' => 'Green', 'blue' => 'Blue', 'gray' => 'Grey'];
@@ -256,9 +299,10 @@ final class SseWantedNoticePdfService
      * Octets JPEG d'une image rangée sous public/uploads (jamais un autre chemin), réduits et aplatis sur fond blanc. Sans GD,
      * seul un JPEG est repris tel quel.
      */
-    public static function imageBytes(string $path, bool $flatten): ?string
+    public static function imageBytes(string $path, bool $flatten, bool $absolute = false): ?string
     {
-        $file = \App\Support\SseImageStorage::readable($path);
+        // $absolute : chemin déjà résolu par SseImageStorage (pièces d'avis), jamais un chemin venu d'une requête.
+        $file = $absolute ? (is_file($path) ? $path : null) : \App\Support\SseImageStorage::readable($path);
         if ($file === null || filesize($file) > 6 * 1024 * 1024) {
             return null;
         }

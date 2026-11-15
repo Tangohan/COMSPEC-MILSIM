@@ -2,6 +2,8 @@
     Transmission d'un contrôle à Athena (POST /api/sse/identity/checks via la DLL COMSPEC Link : SubmitIdCheck).
     [_rec] call comspec_sse_fnc_idAthenaSubmit       (fiche de fn_idHistory)
     Clé d'idempotence par fiche : un renvoi (file hors ligne, double clic) ne crée pas de doublon côté site.
+    Papier présenté : date de délivrance (issued) et autorité émettrice (authority), quand le papier les porte, rejoignent
+    « document » (le site les range, bornés, pour préremplir « Consigner un papier » ; aucune image : Arma ne sait pas en sortir une).
     Sans la fonction dans la DLL (Link trop ancien) ou sans liaison : file hors ligne du SSE (fn_queueOffline),
     renvoyée par fn_flushQueue quand la liaison revient. Réponse « OK|id|réf » : référence CTRL-… gardée sur la fiche.
     JSON d'un seul bloc (constats en codes, sans phrases) : au-delà de 4 000 caractères, envoyé en morceaux de 4 000
@@ -30,7 +32,7 @@ private _payload = createHashMapFromArray [
     ["idempotency_key", _rec get "idem"],
     ["map", str (missionNamespace getVariable ["COMSPEC_MapId", 1])],
     ["op", missionNamespace getVariable ["comspec_sse_id_opKey", ""]],
-    ["document", createHashMapFromArray [["id", _athenaId], ["local_id", _d getOrDefault ["id", ""]], ["type", _d getOrDefault ["type", ""]], ["country", _d getOrDefault ["country", ""]], ["number", _d getOrDefault ["number", ""]]]],
+    ["document", createHashMapFromArray [["id", _athenaId], ["local_id", _d getOrDefault ["id", ""]], ["type", _d getOrDefault ["type", ""]], ["country", _d getOrDefault ["country", ""]], ["number", _d getOrDefault ["number", ""]], ["issued", _d getOrDefault ["issued", ""]], ["authority", _d getOrDefault ["authority", ""]]]],
     ["presented_name", createHashMapFromArray [["last", _d getOrDefault ["last", ""]], ["first", _d getOrDefault ["first", ""]], ["dob", _d getOrDefault ["dob", ""]]]],
     ["subject", createHashMapFromArray [["person_id", _personId], ["netid", _rec getOrDefault ["subjNetId", ""]], ["bio_key", _rec getOrDefault ["subjKey", ""]], ["steam_id", _rec getOrDefault ["subjUid", ""]]]],
     ["controller", createHashMapFromArray [["callsign", name player], ["steam_id", getPlayerUID player]]],
