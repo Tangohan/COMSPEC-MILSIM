@@ -14,7 +14,7 @@ $p = $profile ?? ['id' => 0, 'identity_id' => 0, 'context_id' => null, 'op_key' 
 $id = (int) $p['id'];
 $opts = [
     'side' => ['civ' => 'Civils', 'west' => 'BLUFOR', 'east' => 'OPFOR', 'guer' => 'Indépendants'],
-    'category' => ['civilian' => 'Civil', 'military' => 'Militaire', 'suspect' => 'Suspect', 'hvt' => 'HVT'],
+    'category' => ['civilian' => 'Civil', 'military' => 'Militaire', 'suspect' => 'Personne d’intérêt (PoI)', 'hvt' => 'HVT'],
     'papers' => ['identity' => 'Ceux de son identité', 'auto' => 'Selon son camp (générés)', 'none' => 'Aucun papier'],
     'behaviour' => ['auto' => 'Selon le contexte (IA réalistes)', 'coopere' => 'Coopère', 'nerveux' => 'Nerveux', 'ment' => 'Ment avec aplomb', 'refuse' => 'Refuse', 'fuit' => 'S’enfuit', 'agressif' => 'Devient agressif', 'rendu' => 'Se rend'],
 ];

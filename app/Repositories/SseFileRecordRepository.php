@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\SilentSchemaMigration;
+use App\Support\SseAcquisitionContexts;
 use App\Support\SseFileSubjectCatalog as S;
 use App\Support\SseFileText;
 
@@ -795,6 +796,10 @@ final class SseFileRecordRepository
         'member_photo_upload' => true,
         'xref_enabled' => true,
         'purpose_required' => true,
+        // Contextes d'acquisition (App\Support\SseAcquisitionContexts) : jeu, réglages des contextes de base, ajouts.
+        'acquisition_set' => 'us_sof',
+        'acquisition_overrides' => [],
+        'acquisition_custom' => [],
     ];
 
     /** @return array<string, mixed> */
@@ -838,6 +843,9 @@ final class SseFileRecordRepository
             'member_photo_upload' => $bool($data['member_photo_upload'] ?? null, true),
             'xref_enabled' => $bool($data['xref_enabled'] ?? null, true),
             'purpose_required' => $bool($data['purpose_required'] ?? null, true),
+            'acquisition_set' => SseAcquisitionContexts::normalizeSet($data['acquisition_set'] ?? null),
+            'acquisition_overrides' => SseAcquisitionContexts::normalizeOverrides($data['acquisition_overrides'] ?? []),
+            'acquisition_custom' => SseAcquisitionContexts::normalizeCustom($data['acquisition_custom'] ?? []),
         ];
     }
 

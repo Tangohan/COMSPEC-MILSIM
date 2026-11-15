@@ -1168,6 +1168,7 @@ return function (Router $router) {
     $router->post('/back-office/renseignement/fichiers/fusion', [$boSseFiles, 'merge'], [AuthMiddleware::class]);
     $router->post('/back-office/renseignement/fichiers/extractions/{id}', [$boSseFiles, 'moderate'], [AuthMiddleware::class]);
     $router->post('/back-office/renseignement/fichiers/reglages', [$boSseFiles, 'settingsSave'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/fichiers/contextes', [$boSseFiles, 'contextsSave'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement/fichiers/{tab}', [$boSseFiles, 'index'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/renseignement/acces')), [AuthMiddleware::class]);
     $router->get('/atak/sse/accueil', [SsePortalController::class, 'home'], $mwSsePortal);

@@ -17,7 +17,7 @@ require __DIR__ . '/_subnav.php';
 <div class="page-heading">
     <div>
         <h1>Tableau de bord identité</h1>
-        <p>Ce que les contrôles du terrain ont donné pour l’opération : papiers contrôlés, détections, faux, personnes recherchées interpellées, et les fiches de renseignement nées des contrôles, à valider.</p>
+        <p>Ce que les contrôles du terrain ont donné pour l’opération : papiers contrôlés, détections, faux, personnes recherchées appréhendées, et les fiches de renseignement nées des contrôles, à valider.</p>
     </div>
     <div class="page-reference"><strong><?= $h($scopeLabel) ?></strong></div>
 </div>
@@ -67,7 +67,7 @@ require __DIR__ . '/_subnav.php';
         </div>
     </div>
     <div class="metric">
-        <div class="metric-label">Recherchés interpellés</div>
+        <div class="metric-label">Recherchés appréhendés</div>
         <div class="metric-value"><?= $h($pad((int) $board['wanted'])) ?></div>
         <div class="metric-detail">Personnes recherchées ou cibles prioritaires contrôlées</div>
     </div>
@@ -138,7 +138,7 @@ require __DIR__ . '/_subnav.php';
                 <div class="panel-meta"><?= count($board['points']) ?> contrôle(s) positionné(s), coordonnées du terrain</div>
             </div>
             <div class="panel-body">
-                <div id="idw-checks-map" class="idw-map" role="img" aria-label="Carte des contrôles d’identité par position"
+                <div id="idw-checks-map" class="idw-map" role="img" aria-label="Carte des vérifications d’identité sur le terrain par position"
                      data-points="<?= $h(json_encode($board['points'], JSON_UNESCAPED_UNICODE)) ?>"
                      data-check-url="<?= $h(url('atak/sse/papiers/controles')) ?>"></div>
                 <p class="muted" style="margin-top:6px">Vert : RAS · orange : signalé ou expiré · rouge : recherché, cible prioritaire, volé, faux ou inconnu. Touchez un point pour ouvrir le contrôle.</p>
@@ -188,7 +188,7 @@ require __DIR__ . '/_subnav.php';
 
     <section class="panel" style="margin-top:10px">
         <div class="panel-header">
-            <div class="panel-title"><span class="panel-index">04</span> Recherchés interpellés</div>
+            <div class="panel-title"><span class="panel-index">04</span> Recherchés appréhendés</div>
             <div class="panel-meta"><?= (int) $board['wanted'] ?> personne(s)</div>
         </div>
         <div class="panel-body">

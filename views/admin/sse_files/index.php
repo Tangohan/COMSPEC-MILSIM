@@ -2,13 +2,14 @@
 declare(strict_types=1);
 /**
  * Back-office › Renseignement › Fichiers SSE : onglets Fiches (recherche, doublons, fusion), Extractions de téléphones
- * (modération), Journal des consultations, Réglages (pays par défaut, conservation, droits). Clair et sombre comme le
+ * (modération), Journal des consultations, Contextes d'acquisition (jeu, activation, libellés), Réglages (pays par défaut, conservation, droits). Clair et sombre comme le
  * reste du back-office ; aucun petit libellé au-dessus des titres.
  *
  * @var string $tab
  * @var string $q
  */
 use App\Controllers\Admin\AdminSseFilesController as C;
+use App\Support\SseAcquisitionContexts;
 use App\Support\SseRecordsCountryPacks as Packs;
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -153,6 +154,84 @@ $td = 'px-4 py-2 align-top text-sm text-slate-800 dark:text-slate-200';
                 </tbody>
             </table></div>
         </section>
+    <?php elseif ($tab === 'contextes'): ?>
+        <?php
+        $ctx = ($contexts ?? null) instanceof SseAcquisitionContexts ? $contexts : SseAcquisitionContexts::defaults();
+        $groupLabels = SseAcquisitionContexts::groups();
+        $byGroup = [];
+        foreach ($ctx->entries(false) as $e) {
+            $byGroup[$e['group']][] = $e;
+        }
+        $customCount = count(array_filter($ctx->entries(false), static fn (array $e): bool => $e['custom']));
+        $freeSlots = min(3, max(0, SseAcquisitionContexts::CUSTOM_LIMIT - $customCount));
+        ?>
+        <form method="post" action="<?= $h($base . '/contextes') ?>" class="space-y-5"><?= \App\Core\Csrf::field() ?>
+            <section class="<?= $card ?> space-y-3 p-5">
+                <h2 class="text-lg font-black text-slate-900 dark:text-white">Contextes d’acquisition</h2>
+                <p class="max-w-3xl text-sm <?= $muted ?>">Comment une information, une photo, un papier, une empreinte ou un support a été obtenu : c’est la liste proposée dans le champ « Circonstances » des fiches de personnes, au portail comme en jeu. Les fiches déjà enregistrées gardent leur valeur : un contexte décoché ou renommé reste lisible partout.</p>
+                <div>
+                    <label class="block text-sm font-bold text-slate-900 dark:text-white" for="ctx-set">Jeu de contextes</label>
+                    <select id="ctx-set" class="<?= $input ?> mt-1 max-w-sm" name="acquisition_set">
+                        <?php foreach (SseAcquisitionContexts::sets() as $code => $label): ?>
+                            <option value="<?= $h($code) ?>"<?= $ctx->set() === $code ? ' selected' : '' ?>><?= $h($label['fr']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="mt-1 text-xs <?= $muted ?>">« Forces spéciales US » : raid, exploitation de site sensible, point de contrôle tactique, DOMEX. « Police et gendarmerie » : les quatre choix d’origine (contrôle, perquisition, reddition, autre). Enregistrez pour afficher la liste du jeu choisi.</p>
+                </div>
+            </section>
+
+            <?php foreach ($byGroup as $groupCode => $entries): ?>
+                <section class="<?= $card ?> overflow-hidden">
+                    <h3 class="border-b border-slate-200 px-5 py-3 text-base font-black text-slate-900 dark:border-slate-700 dark:text-white"><?= $h($groupLabels[$groupCode]['fr'] ?? $groupCode) ?></h3>
+                    <div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                        <thead><tr><th class="<?= $th ?>">Actif</th><th class="<?= $th ?>">Libellé français</th><th class="<?= $th ?>">Libellé anglais</th><th class="<?= $th ?>">Code</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <?php foreach ($entries as $e): ?>
+                            <?php if ($e['custom']): ?>
+                                <?php $n = 'custom[' . $e['code'] . ']'; ?>
+                                <tr>
+                                    <td class="<?= $td ?>"><input type="hidden" name="<?= $h($n) ?>[code]" value="<?= $h($e['code']) ?>"><input type="hidden" name="<?= $h($n) ?>[group]" value="<?= $h($e['group']) ?>"><input type="hidden" name="<?= $h($n) ?>[enabled]" value="0"><input type="checkbox" class="h-4 w-4" name="<?= $h($n) ?>[enabled]" value="1" aria-label="Actif"<?= $e['enabled'] ? ' checked' : '' ?>></td>
+                                    <td class="<?= $td ?>"><input class="<?= $input ?>" name="<?= $h($n) ?>[fr]" maxlength="<?= SseAcquisitionContexts::LABEL_MAX ?>" value="<?= $h($e['fr']) ?>" aria-label="Libellé français" required></td>
+                                    <td class="<?= $td ?>"><input class="<?= $input ?>" name="<?= $h($n) ?>[en]" maxlength="<?= SseAcquisitionContexts::LABEL_MAX ?>" value="<?= $h($e['en'] === $e['fr'] ? '' : $e['en']) ?>" aria-label="Libellé anglais"></td>
+                                    <td class="<?= $td ?> font-mono text-xs" translate="no"><?= $h($e['code']) ?></td>
+                                </tr>
+                            <?php else: ?>
+                                <?php $n = 'ctx[' . $e['code'] . ']'; ?>
+                                <tr>
+                                    <td class="<?= $td ?>"><input type="hidden" name="<?= $h($n) ?>[enabled]" value="0"><input type="checkbox" class="h-4 w-4" name="<?= $h($n) ?>[enabled]" value="1" aria-label="Actif"<?= $e['enabled'] ? ' checked' : '' ?>></td>
+                                    <td class="<?= $td ?>"><input class="<?= $input ?>" name="<?= $h($n) ?>[fr]" maxlength="<?= SseAcquisitionContexts::LABEL_MAX ?>" value="<?= $h($e['fr'] === $e['default_fr'] ? '' : $e['fr']) ?>" placeholder="<?= $h($e['default_fr']) ?>" aria-label="Libellé français"></td>
+                                    <td class="<?= $td ?>"><input class="<?= $input ?>" name="<?= $h($n) ?>[en]" maxlength="<?= SseAcquisitionContexts::LABEL_MAX ?>" value="<?= $h($e['en'] === $e['default_en'] ? '' : $e['en']) ?>" placeholder="<?= $h($e['default_en']) ?>" aria-label="Libellé anglais"></td>
+                                    <td class="<?= $td ?> font-mono text-xs" translate="no"><?= $h($e['code']) ?></td>
+                                </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table></div>
+                </section>
+            <?php endforeach; ?>
+
+            <?php if ($freeSlots > 0): ?>
+                <section class="<?= $card ?> space-y-3 p-5">
+                    <h3 class="text-base font-black text-slate-900 dark:text-white">Ajouter un contexte</h3>
+                    <p class="text-xs <?= $muted ?>">Propre à votre communauté. Le code est créé à partir du libellé français et ne change plus ensuite ; pour retirer un contexte, décochez-le.</p>
+                    <?php for ($i = 0; $i < $freeSlots; $i++): ?>
+                        <div class="grid gap-3" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+                            <input type="hidden" name="custom[new<?= $i ?>][enabled]" value="1">
+                            <input class="<?= $input ?>" name="custom[new<?= $i ?>][fr]" maxlength="<?= SseAcquisitionContexts::LABEL_MAX ?>" placeholder="Libellé français" aria-label="Libellé français du nouveau contexte">
+                            <input class="<?= $input ?>" name="custom[new<?= $i ?>][en]" maxlength="<?= SseAcquisitionContexts::LABEL_MAX ?>" placeholder="Libellé anglais" aria-label="Libellé anglais du nouveau contexte">
+                            <select class="<?= $input ?>" name="custom[new<?= $i ?>][group]" aria-label="Groupe du nouveau contexte">
+                                <?php foreach ($groupLabels as $gc => $g): ?>
+                                    <?php if ($gc === 'police') { continue; } ?>
+                                    <option value="<?= $h($gc) ?>"<?= $gc === 'autre' ? ' selected' : '' ?>><?= $h($g['fr']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endfor; ?>
+                </section>
+            <?php endif; ?>
+
+            <div><button class="<?= $pri ?>" type="submit">Enregistrer les contextes</button></div>
+        </form>
     <?php else: ?>
         <?php $st = $settings ?? []; ?>
         <form method="post" action="<?= $h($base . '/reglages') ?>" class="<?= $card ?> space-y-5 p-5"><?= \App\Core\Csrf::field() ?>

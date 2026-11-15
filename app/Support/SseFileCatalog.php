@@ -24,7 +24,7 @@ final class SseFileCatalog
         'web' => 'Site Athena',
         'phone' => 'Téléphone en jeu',
         'seek' => 'SEEK II',
-        'idcheck' => 'Contrôle d’identité en jeu',
+        'idcheck' => 'Vérification d’identité sur le terrain',
         'game' => 'Jeu (liaison directe)',
         'watch' => 'Surveillance (recoupement)',
     ];

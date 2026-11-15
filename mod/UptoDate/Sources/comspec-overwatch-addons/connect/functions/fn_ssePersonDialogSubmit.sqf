@@ -89,8 +89,10 @@ if (_status isEqualTo "") then { _status = "civil"; };
 
 private _circCtrl = _disp displayCtrl 9506;
 private _circIdx = lbCurSel _circCtrl;
-private _circ = if (_circIdx < 0) then { "controle" } else { _circCtrl lbData _circIdx };
-if (_circ isEqualTo "") then { _circ = "controle"; };
+private _circ = if (_circIdx < 0) then { "exploitation_site_sensible" } else { _circCtrl lbData _circIdx };
+if (_circ isEqualTo "") then { _circ = "exploitation_site_sensible"; };
+// Fiche gardée sur le poste : le libellé lisible, pas le code envoyé au site.
+private _circLabel = if (_circIdx < 0) then { _circ } else { _circCtrl lbText _circIdx };
 
 private _age = -1;
 if (_ageStr isNotEqualTo "") then {
@@ -418,7 +420,7 @@ private _sheetLines = [];
     if (_val isNotEqualTo "") then { _sheetLines pushBack [_lab, _val]; };
 } forEach [
     ["Nom", _last], ["Prénom", _first], ["Alias", _alias], ["Âge", _age], ["Nationalité", _nat], ["Langue", _lang],
-    ["Signes particuliers", _marks], ["Affiliation", _affil], ["Déclaration", _stmt], ["Circonstance", _circ],
+    ["Signes particuliers", _marks], ["Affiliation", _affil], ["Déclaration", _stmt], ["Contexte d’acquisition", _circLabel],
     ["Dossier", _caseCode], ["Grille", _grid]
 ];
 {
