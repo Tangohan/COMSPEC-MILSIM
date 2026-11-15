@@ -32,7 +32,7 @@ final class SseInterestCaseRepository
         'publish' => ['seconds' => 600, 'label' => 'Soumettre à validation'],
     ];
 
-    /** Colonnes ajoutées par l'étape sse_interest_case_suite (database/steps/4710_sse_interest_case_suite.php). */
+    /** Colonnes ajoutées par l'étape sse_interest_case_suite (database/steps/4750_sse_interest_case_suite.php). */
     public const EXTENDED_COLUMNS = ['version', 'classification', 'case_type', 'assignee_user_id', 'due_at', 'tags', 'archive_from_status', 'deleted_at', 'deleted_by', 'delete_reason'];
 
     /** Colonnes qu'une mise à jour peut poser (liste blanche : jamais un nom de colonne venu de la saisie). */

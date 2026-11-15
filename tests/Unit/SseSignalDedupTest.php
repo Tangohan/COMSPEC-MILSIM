@@ -45,7 +45,7 @@ final class SseSignalDedupTest extends TestCase
         return $q->addSignal($tenant, $over + ['case_id' => $case, 'signal_type' => 'gap_auto', 'severity' => 'medium', 'title' => $title, 'detail' => 'BESOIN — Disposer d’une photographie exploitable.', 'rule_key' => 'auto_gap', 'run_id' => $run]);
     }
 
-    private function count(string $where = '1=1'): int
+    private function countRows(string $where = '1=1'): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM sse_engine_signals WHERE ' . $where)->fetchColumn();
     }
@@ -59,7 +59,7 @@ final class SseSignalDedupTest extends TestCase
             $ids[] = $this->gap($q, self::PHOTO, 'run' . $night);
         }
 
-        self::assertSame(1, $this->count(), 'avant : 30 lignes, un signal par nuit');
+        self::assertSame(1, $this->countRows(), 'avant : 30 lignes, un signal par nuit');
         self::assertSame(1, count(array_unique($ids)), 'toujours le même identifiant');
         $row = $this->pdo->query('SELECT * FROM sse_engine_signals')->fetch(PDO::FETCH_ASSOC);
         self::assertSame('open', $row['status']);
@@ -77,7 +77,7 @@ final class SseSignalDedupTest extends TestCase
         $this->gap($q, self::PHOTO, 'r1', 6);
         $this->gap($q, self::PHOTO, 'r1', 5, 2);
 
-        self::assertSame(4, $this->count(), 'type de lacune, dossier et communauté font l’identité');
+        self::assertSame(4, $this->countRows(), 'type de lacune, dossier et communauté font l’identité');
     }
 
     public function testTheScoreOfALowCompletenessSignalIsNotPartOfItsIdentity(): void
@@ -88,7 +88,7 @@ final class SseSignalDedupTest extends TestCase
         $b = $q->addSignal(1, $base + ['title' => 'Complétude faible (18/100)', 'run_id' => 'r2']);
 
         self::assertSame($a, $b);
-        self::assertSame(1, $this->count());
+        self::assertSame(1, $this->countRows());
         self::assertSame('Complétude faible (18/100)', (string) $this->pdo->query('SELECT title FROM sse_engine_signals')->fetchColumn(), 'le score est mis à jour');
         self::assertSame('Complétude faible', SseSignalIdentity::shortTitle('completeness', 'Complétude faible (18/100)'));
     }
@@ -101,8 +101,8 @@ final class SseSignalDedupTest extends TestCase
         $again = $this->gap($q, self::PHOTO, 'r3');
 
         self::assertNotSame($first, $again, 'la condition réapparaît : nouveau signal, donc nouvel élément à trier');
-        self::assertSame(1, $this->count("status = 'open'"));
-        self::assertSame(1, $this->count("status = 'resolved'"));
+        self::assertSame(1, $this->countRows("status = 'open'"));
+        self::assertSame(1, $this->countRows("status = 'resolved'"));
     }
 
     public function testResolutionRecordsWhenAndByWhomAndOnlyTouchesUnobservedSignals(): void
@@ -120,8 +120,8 @@ final class SseSignalDedupTest extends TestCase
         self::assertSame('resolved', $photo['status']);
         self::assertSame('cerbere-detection', $photo['resolved_by']);
         self::assertSame('2026-11-02 02:00:00', $photo['resolved_at']);
-        self::assertSame(1, $this->count("status = 'open' AND case_id = 9"), 'un autre dossier n’est pas touché');
-        self::assertSame(1, $this->count("status = 'open' AND case_id = 5"));
+        self::assertSame(1, $this->countRows("status = 'open' AND case_id = 9"), 'un autre dossier n’est pas touché');
+        self::assertSame(1, $this->countRows("status = 'open' AND case_id = 5"));
     }
 
     public function testALowCompletenessUnchangedForThirtyDaysGoesDormantAndAChangeReopensIt(): void
@@ -139,7 +139,7 @@ final class SseSignalDedupTest extends TestCase
         $q->addSignal(1, $base + ['title' => 'Complétude faible (22/100)', 'run_id' => 'r3']);
         self::assertSame(1, $q->expireStale(1, 30), 'inchangée depuis 35 jours : en veille');
         self::assertSame('dormant', (string) $this->pdo->query('SELECT status FROM sse_engine_signals WHERE id = ' . $id)->fetchColumn());
-        self::assertSame(1, $this->count("signal_type = 'gap_auto' AND status = 'open'"), 'seule la complétude expire');
+        self::assertSame(1, $this->countRows("signal_type = 'gap_auto' AND status = 'open'"), 'seule la complétude expire');
         self::assertSame([], array_filter($q->listOpenSignalsDeduped(1), static fn (array $s): bool => (int) $s['id'] === $id), 'plus dans la liste à trier');
 
         $this->now = '2026-11-06 02:00:00';
@@ -158,7 +158,7 @@ final class SseSignalDedupTest extends TestCase
         $q->addSignal(1, $base + ['run_id' => 'r2']);
 
         self::assertSame('dormant', (string) $this->pdo->query('SELECT status FROM sse_engine_signals WHERE id = ' . $id)->fetchColumn());
-        self::assertSame(1, $this->count());
+        self::assertSame(1, $this->countRows());
     }
 
     public function testExistingDuplicatesAreMergedIntoTheOldestWhenTheEngineObservesThem(): void
@@ -171,8 +171,8 @@ final class SseSignalDedupTest extends TestCase
         $survivor = $this->gap($q, self::PHOTO, 'new');
 
         self::assertSame(1, $survivor, 'le plus ancien est la source');
-        self::assertSame(1, $this->count("status = 'open'"));
-        self::assertSame(2, $this->count("status = 'merged' AND CAST(merged_into AS INTEGER) = 1"));
+        self::assertSame(1, $this->countRows("status = 'open'"));
+        self::assertSame(2, $this->countRows("status = 'merged' AND CAST(merged_into AS INTEGER) = 1"));
     }
 
     public function testListOpenSignalsDedupedShowsOneLinePerIdentityEvenBeforeTheCatchUp(): void
@@ -199,9 +199,9 @@ final class SseSignalDedupTest extends TestCase
         $q = $this->repo();
         $this->gap($q, self::PHOTO, 'r1');
         $this->gap($q, self::PHOTO, 'r2');
-        self::assertSame(1, $this->count(), 'dédoublonné sans colonne de suivi');
+        self::assertSame(1, $this->countRows(), 'dédoublonné sans colonne de suivi');
         self::assertSame(1, $q->resolveUnobserved(1, 5, 'r3'));
-        self::assertSame(1, $this->count("status = 'resolved'"), 'statut seul');
+        self::assertSame(1, $this->countRows("status = 'resolved'"), 'statut seul');
     }
 
     public function testAMergedOrResolvedSignalIsNeverListedNorCounted(): void
@@ -223,6 +223,6 @@ final class SseSignalDedupTest extends TestCase
         $q->addSignal(1, $aging + ['detail' => 'Appréciation #4 âgée de 32 jours.', 'run_id' => 'r2']);
         $q->addSignal(1, $aging + ['detail' => 'Appréciation #9 âgée de 45 jours.', 'run_id' => 'r2']);
 
-        self::assertSame(2, $this->count(), 'une appréciation vieillie = un signal, le nombre de jours le met à jour');
+        self::assertSame(2, $this->countRows(), 'une appréciation vieillie = un signal, le nombre de jours le met à jour');
     }
 }

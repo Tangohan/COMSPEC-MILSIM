@@ -1,4 +1,4 @@
--- Retour arrière de l'étape sse_interest_case_suite (database/steps/4710_sse_interest_case_suite.php). À lancer à la main :
+-- Retour arrière de l'étape sse_interest_case_suite (database/steps/4750_sse_interest_case_suite.php). À lancer à la main :
 -- efface l'historique champ par champ, les éléments liés et les abonnés des dossiers d'intérêt, puis retire les colonnes
 -- ajoutées à sse_interest_cases. Les dossiers eux-mêmes, leur journal de mises à jour et leurs destinataires ne sont pas touchés.
 DROP TABLE IF EXISTS sse_interest_case_watchers;
