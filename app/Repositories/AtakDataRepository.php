@@ -48,6 +48,13 @@ class AtakDataRepository
         $this->injectedPdo = $pdo !== null;
     }
 
+    private ?bool $isMysql = null;
+
+    private function isMysql(): bool
+    {
+        return $this->isMysql ??= $this->pdo()->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql';
+    }
+
     private function hasPosColumns(): bool
     {
         if ($this->hasPosColumns !== null) {
@@ -730,9 +737,12 @@ class AtakDataRepository
                 );
             }
             // age_seconds sur l’horloge MySQL (même référence que updated_at / markStale).
+            // Autre moteur (SQLite des tests) : sans age_seconds, l'âge est alors déduit de updated_at.
             $stmt = $this->pdo()->prepare(
-                'SELECT *, TIMESTAMPDIFF(SECOND, updated_at, NOW()) AS age_seconds
+                $this->isMysql()
+                    ? 'SELECT *, TIMESTAMPDIFF(SECOND, updated_at, NOW()) AS age_seconds
                  FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY call_sign'
+                    : 'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY call_sign'
             );
             $stmt->execute([$tenantId, $mapId]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1123,11 +1133,15 @@ class AtakDataRepository
     public function markStaleUnitsOffline(int $tenantId, int $mapId): array
     {
         $ttl = self::UNIT_LIVE_TTL_SECONDS;
+        // MySQL : borne sur l'horloge de la base. Autre moteur (SQLite des tests) : borne calculée ici.
+        $stale = $this->isMysql()
+            ? '(updated_at IS NULL OR updated_at < (NOW() - INTERVAL ' . (int) $ttl . ' SECOND))'
+            : '(updated_at IS NULL OR updated_at < ' . $this->pdo()->quote(date('Y-m-d H:i:s', time() - $ttl)) . ')';
         $select = $this->pdo()->prepare(
             'SELECT id, call_sign FROM atak_units
              WHERE tenant_id = ? AND map_id = ?
                AND status IN (?, ?)
-               AND (updated_at IS NULL OR updated_at < (NOW() - INTERVAL ' . (int) $ttl . ' SECOND))'
+               AND ' . $stale
         );
         $select->execute([$tenantId, $mapId, 'linked', 'delayed']);
         $rows = $select->fetchAll(PDO::FETCH_ASSOC);
@@ -1138,7 +1152,7 @@ class AtakDataRepository
             'UPDATE atak_units SET status = ?
              WHERE tenant_id = ? AND map_id = ?
                AND status IN (?, ?)
-               AND (updated_at IS NULL OR updated_at < (NOW() - INTERVAL ' . (int) $ttl . ' SECOND))'
+               AND ' . $stale
         );
         $stmt->execute(['offline', $tenantId, $mapId, 'linked', 'delayed']);
         $out = [];
@@ -3134,6 +3148,17 @@ class AtakDataRepository
 
     public function setLastActivity(int $tenantId, int $mapId): void
     {
+        if (!$this->isMysql()) {
+            // Autre moteur (SQLite des tests) : même effet sans ON DUPLICATE KEY.
+            $upd = $this->pdo()->prepare('UPDATE atak_last_activity SET last_activity_at = NOW() WHERE tenant_id = ? AND map_id = ?');
+            $upd->execute([$tenantId, $mapId]);
+            if ($upd->rowCount() === 0) {
+                $this->pdo()->prepare('INSERT INTO atak_last_activity (tenant_id, map_id, last_activity_at) VALUES (?, ?, NOW())')
+                    ->execute([$tenantId, $mapId]);
+            }
+
+            return;
+        }
         $stmt = $this->pdo()->prepare('INSERT INTO atak_last_activity (tenant_id, map_id, last_activity_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE last_activity_at = NOW()');
         $stmt->execute([$tenantId, $mapId]);
     }
