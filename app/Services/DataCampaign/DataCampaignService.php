@@ -9,6 +9,7 @@ use App\Repositories\DataCampaignRepository;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignCalendar;
 use App\Support\DataCampaignLoginPrompt;
+use App\Support\DataCampaignOrigin;
 use App\Support\DataCampaignProgress;
 use App\Support\DataCampaignScope;
 use App\Support\DataCampaignSnapshot;
@@ -940,7 +941,7 @@ class DataCampaignService
             if (!$this->repo()->reserveReminder($campaignId, $tenantId, $uid, 'open')) {
                 continue;
             }
-            $this->notify($tenantId, $uid, self::NOTIFY_OPEN, ['campaign_id' => $campaignId, 'year' => $c['campaign_year'], 'due_on' => (string) ($c['due_on'] ?? '')]);
+            $this->notify($tenantId, $uid, self::NOTIFY_OPEN, ['campaign_id' => $campaignId, 'year' => $c['campaign_year'], 'due_on' => (string) ($c['due_on'] ?? '')] + $this->originFacts($c));
             if ($withMail && $this->mail($tenantId, $uid, $c)) {
                 $this->stats['mails']++;
             }
@@ -1005,7 +1006,7 @@ class DataCampaignService
         if (!$this->repo()->reserveReminder($c['id'], $tenantId, $userId, $slot, $actorId)) {
             return false;
         }
-        $this->notify($tenantId, $userId, self::NOTIFY_REMINDER, ['campaign_id' => $c['id'], 'year' => $c['campaign_year'], 'due_on' => (string) ($c['due_on'] ?? '')]);
+        $this->notify($tenantId, $userId, self::NOTIFY_REMINDER, ['campaign_id' => $c['id'], 'year' => $c['campaign_year'], 'due_on' => (string) ($c['due_on'] ?? '')] + $this->originFacts($c));
         $this->stats['notified']++;
         if ($withMail && $this->mail($tenantId, $userId, $c)) {
             $this->stats['mails']++;
@@ -1064,6 +1065,36 @@ class DataCampaignService
         }
     }
 
+    /** @var array<int, string> nom de l'organisation par communauté (une lecture par passage) */
+    private array $orgNames = [];
+
+    /**
+     * Ce que la notification doit savoir pour redire qui demande et quand : origine, début, nom de l'organisation.
+     * Un nom introuvable donne une chaîne vide (la phrase dit alors « votre organisation »).
+     *
+     * @param array<string, mixed> $c
+     * @return array{origin: string, opens_on: string, org: string}
+     */
+    private function originFacts(array $c): array
+    {
+        $tenantId = (int) ($c['tenant_id'] ?? 0);
+        if (!isset($this->orgNames[$tenantId])) {
+            $this->orgNames[$tenantId] = '';
+            try {
+                $tenant = Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
+                $this->orgNames[$tenantId] = is_array($tenant) ? trim((string) ($tenant['name'] ?? '')) : '';
+            } catch (\Throwable) {
+                // Sans base (tests) : pas de nom.
+            }
+        }
+        $start = trim((string) ($c['opens_on'] ?? ''));
+        if ($start === '') {
+            $start = substr(trim((string) ($c['opened_at'] ?? '')), 0, 10);
+        }
+
+        return ['origin' => DataCampaignOrigin::origin($c), 'opens_on' => $start, 'org' => $this->orgNames[$tenantId]];
+    }
+
     /** @param array<string, mixed> $payload */
     private function notify(int $tenantId, int $userId, string $type, array $payload): void
     {
@@ -1100,8 +1131,14 @@ class DataCampaignService
             }
             $tenant = Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
             $due = (string) ($campaign['due_on'] ?? '');
+            $mailer = Container::get(\App\Services\EmailService::class);
+            $origin = DataCampaignOrigin::describe($campaign, [
+                'lang' => $mailer->recipientLocale($to),
+                'tenant_name' => is_array($tenant) ? (string) ($tenant['name'] ?? '') : '',
+                'timezone' => is_array($tenant) ? (string) ($tenant['default_timezone'] ?? '') : '',
+            ]);
 
-            return Container::get(\App\Services\EmailService::class)->sendTemplated(
+            return $mailer->sendTemplated(
                 \App\Services\Email\EmailEvents::DATA_CAMPAIGN_REMINDER,
                 'data_campaign_reminder',
                 $to,
@@ -1111,6 +1148,9 @@ class DataCampaignService
                     'tenantName' => is_array($tenant) ? (string) ($tenant['name'] ?? '') : '',
                     'year' => (int) ($campaign['campaign_year'] ?? 0),
                     'dueOn' => $due,
+                    'originLine' => $origin['who'],
+                    'periodLine' => $origin['period'],
+                    'stateLine' => $origin['state'] === DataCampaignOrigin::OVERDUE ? $origin['when'] : '',
                     'pageUrl' => jnet_moi_url('fiabilisation'),
                 ],
                 $tenantId,

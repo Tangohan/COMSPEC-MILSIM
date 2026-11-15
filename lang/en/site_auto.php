@@ -68623,4 +68623,6 @@ return [
     'Aucune donnée n’est enregistrée dans cette partie. Choisissez « À corriger » ci-dessous pour le dire à l’encadrement.' => 'No data is recorded in this part. Choose “To fix” below to tell the staff.',
     'Niveau de classification de l’aperçu : Secret (S)' => 'Classification level of the preview: Secret (S)',
     'Telle qu’elle apparaît à la rédaction, au niveau Secret (S).' => 'As it appears when writing, at Secret (S) level.',
+    'Pourquoi cette demande ?' => 'Why are we asking?',
+    'Autres campagnes ouvertes' => 'Other open campaigns',
 ];
