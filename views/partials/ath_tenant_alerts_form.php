@@ -235,7 +235,7 @@ $iconSvg = [
                     <div class="bo-ta2__field">
                         <label class="bo-ta2__label" for="ta-image">Vignette</label>
                         <?php if ($imageUrl): ?>
-                        <img src="<?= $h($imageUrl) ?>" alt="" class="bo-ta-form__thumb">
+                        <img src="<?= $h($imageUrl) ?>" alt="" loading="lazy" decoding="async" class="bo-ta-form__thumb">
                         <label class="ath-users-filters__check"><input type="checkbox" name="remove_image" value="1"> Retirer l’image actuelle</label>
                         <?php endif; ?>
                         <input id="ta-image" type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
@@ -243,7 +243,7 @@ $iconSvg = [
                     <div class="bo-ta2__field">
                         <label class="bo-ta2__label" for="ta-banner">Bannière</label>
                         <?php if ($bannerUrl): ?>
-                        <img src="<?= $h($bannerUrl) ?>" alt="" class="bo-ta-form__banner-thumb">
+                        <img src="<?= $h($bannerUrl) ?>" alt="" loading="lazy" decoding="async" class="bo-ta-form__banner-thumb">
                         <label class="ath-users-filters__check"><input type="checkbox" name="remove_banner" value="1"> Retirer la bannière actuelle</label>
                         <?php endif; ?>
                         <input id="ta-banner" type="file" name="banner_file" accept="image/jpeg,image/png,image/webp">

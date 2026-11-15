@@ -28,9 +28,9 @@ $trainingStudioHideSidebar = !empty($trainingStudioHideSidebar);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
-    <link href="<?= $baseUrl ?>/assets/css/styles.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/styles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
-    <link href="<?= $baseUrl ?>/assets/css/training_studio_shell.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/training_studio_shell.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 </head>
 <body class="layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
     <div class="grain" aria-hidden="true"></div>

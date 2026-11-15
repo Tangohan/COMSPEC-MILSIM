@@ -179,4 +179,4 @@ window.__portalSearchPageUrl = <?= json_encode(url('search'), JSON_HEX_TAG | JSO
         <div id="portal-search-results" class="mt-10 min-h-[12rem] max-h-[min(70vh,720px)] overflow-y-auto pr-1"></div>
     </section>
 </div>
-<script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal_search.js"></script>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/portal_search.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

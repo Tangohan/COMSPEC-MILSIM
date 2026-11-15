@@ -29,7 +29,7 @@ $legalActiveSection = $legalActiveSection ?? '';
     $tailwindBaseUrl = $baseUrl;
     require base_path('views/partials/tailwind_cdn_or_build.php');
 ?>
-    <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/legal-docs.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/legal-docs.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 </head>
 <body class="legal-body">
 
@@ -64,7 +64,7 @@ $legalActiveSection = $legalActiveSection ?? '';
     <?php endif; ?>
     <?php require base_path('views/partials/demo_nda_session_widget.php'); ?>
     <?php if (is_file(base_path('public/assets/js/cookie_consent.js'))): ?>
-    <script defer src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/cookie_consent.js"></script>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/cookie_consent.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <script>
     (function () {

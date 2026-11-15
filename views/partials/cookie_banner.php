@@ -99,4 +99,4 @@ $b = url('');
         </div>
     </div>
 </div>
-<script src="<?= htmlspecialchars($b) ?>/assets/js/cookie_consent.js" defer></script>
+<script src="<?= htmlspecialchars(asset_url('assets/js/cookie_consent.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>

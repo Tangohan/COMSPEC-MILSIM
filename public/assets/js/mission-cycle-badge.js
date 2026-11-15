@@ -7,6 +7,8 @@
 
   var POLL_MS = 20000;
   var timer = null;
+  var visibilityBound = false;
+  var lastOpts = null;
 
   function apiBase() {
     if (global.ATAK_API_BASE) return String(global.ATAK_API_BASE).replace(/\/$/, '');
@@ -131,8 +133,17 @@
     stop();
     fetchCurrent(opts);
     timer = setInterval(function () {
+      // Onglet masqué : pas d'appel ; le retour au premier plan rafraîchit aussitôt (ci-dessous).
+      if (document.hidden) return;
       fetchCurrent(opts);
     }, opts.intervalMs || POLL_MS);
+    if (!visibilityBound) {
+      visibilityBound = true;
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && timer && lastOpts) fetchCurrent(lastOpts);
+      });
+    }
+    lastOpts = opts;
 
     var sel = document.getElementById(opts.workspaceSelectId || 'tacmap-workspace');
     if (sel && !sel.__mcycleBound) {

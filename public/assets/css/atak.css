@@ -9660,6 +9660,10 @@ a.atak-session-hub__btn {
   background-image:
     linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
     url('/assets/img/atak-fx/glitch-hud.png');
+  /* WebP (0,11 Mo au lieu de 2,9 Mo) ; la déclaration précédente reste le repli. */
+  background-image:
+    linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+    image-set(url('/assets/img/atak-fx/glitch-hud.webp') type('image/webp'), url('/assets/img/atak-fx/glitch-hud.png') type('image/png'));
   background-size: cover, cover;
 }
 
@@ -9691,6 +9695,8 @@ a.atak-session-hub__btn {
 .atak-cam-photo--fx-screen_off::before {
   opacity: 0.72;
   background-image: url('/assets/img/atak-fx/broken-screen.png');
+  /* WebP (0,24 Mo au lieu de 4,3 Mo) ; la déclaration précédente reste le repli. */
+  background-image: image-set(url('/assets/img/atak-fx/broken-screen.webp') type('image/webp'), url('/assets/img/atak-fx/broken-screen.png') type('image/png'));
   background-size: cover;
   mix-blend-mode: screen;
 }

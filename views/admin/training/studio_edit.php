@@ -620,6 +620,10 @@ $defaultCanvasJson = json_encode([
                     if ($sip === '' || $siu === '') {
                         continue;
                     }
+                    /* Vignette 400 px (public/assets/images/_thumbs, nommée par le sha1 du nom de fichier) : la grille
+                       n'a pas à télécharger les originaux, dont certains dépassent 20 Mo. Le choix garde l'original. */
+                    $sit = 'assets/images/_thumbs/' . sha1(basename($sip)) . '.webp';
+                    $siThumb = is_file(base_path('public/' . $sit)) ? asset_url($sit) : $siu;
                     ?>
                 <button type="button"
                         class="ts-pres-lib-item group text-left rounded-xl border border-slate-200 bg-white overflow-hidden hover:border-emerald-400 hover:shadow-sm transition"
@@ -627,7 +631,7 @@ $defaultCanvasJson = json_encode([
                         data-pres-lib-url="<?= htmlspecialchars($siu) ?>"
                         data-pres-lib-label="<?= htmlspecialchars(mb_strtolower($sil)) ?>">
                     <span class="block aspect-[4/3] bg-slate-100 overflow-hidden">
-                        <img src="<?= htmlspecialchars($siu) ?>" alt="" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-[1.03] transition duration-300">
+                        <img src="<?= htmlspecialchars($siThumb) ?>" alt="" width="400" height="300" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-[1.03] transition duration-300">
                     </span>
                     <span class="block px-2 py-1.5 text-[10px] font-semibold text-slate-700 leading-snug line-clamp-2"><?= htmlspecialchars($sil) ?></span>
                 </button>

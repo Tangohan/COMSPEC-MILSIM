@@ -33,7 +33,7 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
         <a href="<?= $h($href) ?>" class="group flex gap-3 overflow-hidden rounded-xl border border-slate-200 bg-white p-3 transition hover:border-emerald-300 hover:bg-emerald-50/40">
             <?php if ($cover !== ''): ?>
             <div class="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                <img src="<?= $h($cover) ?>" alt="" class="h-full w-full object-cover">
+                <img src="<?= $h($cover) ?>" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover">
             </div>
             <?php endif; ?>
             <div class="min-w-0 flex-1">

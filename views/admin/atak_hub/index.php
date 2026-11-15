@@ -229,6 +229,8 @@ $statusFr = static function (?string $status): string {
       .catch(function () {});
   }
   tick();
-  window.setInterval(tick, 10000);
+  // Onglet masqué : pas d'appel toutes les 10 s ; rafraîchi au retour au premier plan.
+  window.setInterval(function () { if (!document.hidden) tick(); }, 10000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
 })();
 </script>
