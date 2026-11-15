@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * Formulaire « Placer un avis de recherche » sur une identité fictive. Fait de jeu de rôle : aucune donnée réelle.
- * Quatre sections en onglets : essentiel, signalement physique, pièces jointes, service et dates. Sélecteur de codes en
+ * Quatre sections en onglets : essentiel, signalement physique, pièces jointes, émission (service, dates, récapitulatif). Sélecteur de codes en
  * tiroir, modèles d’avis, aperçu en direct, bouton « Placer l’avis » collant. Styles préfixés « wc- » (assets/css/sse-wanted-codes.css),
  * comportement dans assets/js/sse-wanted-form.js.
  *
@@ -19,6 +19,7 @@ declare(strict_types=1);
 use App\Core\Csrf;
 use App\Services\Sse\SseWantedAttachments;
 use App\Support\SseWantedCatalog as W;
+use App\Support\SseUsClassification;
 use App\Support\SseWantedPhysical as P;
 
 ob_start();
@@ -37,9 +38,23 @@ $physVal = static fn (string $k): string => (string) ($phys[$k] ?? '');
 $iid = (int) $identity['id'];
 $back = url('atak/sse/papiers/identites/' . $iid);
 $isMember = !empty($isMemberIdentity);
+$serviceData = is_array($serviceData ?? null) ? $serviceData : ['items' => [], 'families' => [], 'default' => '', 'last' => '', 'classes' => []];
+$serviceItems = $serviceData['items'];
+$serviceFamilies = $serviceData['families'];
+$svcSelected = array_key_exists('service_code', $old) ? (string) $old['service_code'] : (string) ($serviceData['default'] !== '' ? $serviceData['default'] : $serviceData['last']);
+$svcPre = null;
+foreach ($serviceItems as $it) {
+    if ($it['code'] === $svcSelected) {
+        $svcPre = $it['prefill'];
+    }
+}
+if ($svcPre === null) {
+    $svcSelected = '';
+}
+$wsPropose = !empty($wantedConfig['process']['validation']) && !empty($serviceStoreReady) && isset($rights) && is_object($rights) && !$rights->canAdmin();
 $tenantKey = isset($rights) && is_object($rights) ? (int) $rights->tenantId() : 0;
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-wanted-form.js')) . '" defer></script>';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-services.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-wanted-form.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-wanted-services.js')) . '" defer></script>';
 $clientState = [
     'lang' => $lang,
     'selected' => ['r' => array_values(is_array($old['codes_reasons'] ?? null) ? $old['codes_reasons'] : []), 'm' => array_values(is_array($old['codes_measures'] ?? null) ? $old['codes_measures'] : [])],
@@ -50,7 +65,7 @@ $tabs = [
     'essential' => ['Essentiel', 'Type, niveau de menace, motifs, mesures à prendre et dernier lieu connu.'],
     'physical' => ['Signalement', 'Description physique propre à cet avis : une copie datée, la fiche garde la sienne.'],
     'files' => ['Pièces jointes', 'Jusqu’à six images : portrait, signe distinctif, véhicule, lieu.'],
-    'service' => ['Service et dates', 'Service demandeur fictif, date d’émission et date d’expiration.'],
+    'service' => ['Émission', 'Service demandeur fictif, dates et récapitulatif avant de placer l’avis.'],
 ];
 ?>
 <div class="page-heading">
@@ -76,6 +91,64 @@ $tabs = [
     <form class="wc-form" id="wc-form" method="post" enctype="multipart/form-data" action="<?= $h(url('atak/sse/papiers/identites/' . $iid . '/avis')) ?>" data-wc-form>
         <?= Csrf::field() ?>
         <script type="application/json" id="wc-data"><?= json_encode($codesData + ['state' => $clientState], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+        <script type="application/json" id="ws-data"><?= json_encode([
+            'lang' => $lang, 'families' => $serviceFamilies, 'items' => $serviceItems, 'default' => $serviceData['default'], 'last' => $serviceData['last'], 'classes' => $serviceData['classes'],
+            'nowLocal' => (string) ($nowLocal ?? ''), 'tz' => (string) ($timezoneName ?? 'UTC'), 'hasOld' => $old !== [],
+            'subject' => (string) ($identity['display_name'] ?? '') . ' · ' . (string) ($identity['ref'] ?? ''), 'hasActive' => !empty($hasActiveNotice), 'isMember' => $isMember, 'selected' => $svcSelected, 'propose' => $wsPropose,
+            'draftKey' => 'ws-draft-' . $tenantKey . '-' . $iid, 'recentKey' => 'ws-service-' . $tenantKey,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+        <div id="ws-labels" hidden>
+            <span data-k="other">Autre… (saisie ponctuelle)</span>
+            <span data-k="search">Rechercher un service, un sigle ou un code</span>
+            <span data-k="none">Aucun service ne correspond.</span>
+            <span data-k="pick">Choisir un service</span>
+            <span data-k="role">Rôle</span>
+            <span data-k="contact">Coordonnées</span>
+            <span data-k="max">Classification maximale</span>
+            <span data-k="custom">Service de la communauté</span>
+            <span data-k="catalogue">Catalogue</span>
+            <span data-k="last">Dernier service utilisé</span>
+            <span data-k="class_ok">Ce service peut émettre à ce niveau.</span>
+            <span data-k="class_bad">Ce service ne peut pas émettre à ce niveau (maximum : %1).</span>
+            <span data-k="r_subject">Sujet</span>
+            <span data-k="r_type">Type d’avis</span>
+            <span data-k="r_threat">Menace</span>
+            <span data-k="r_armed">Armé et dangereux</span>
+            <span data-k="r_reasons">Motifs</span>
+            <span data-k="r_measures">Mesures</span>
+            <span data-k="r_zone">Zone</span>
+            <span data-k="r_service">Service</span>
+            <span data-k="r_class">Classification</span>
+            <span data-k="r_issued">Émission</span>
+            <span data-k="r_expires">Expiration</span>
+            <span data-k="r_files">Pièces jointes</span>
+            <span data-k="r_none">Aucun</span>
+            <span data-k="r_free">Saisie libre</span>
+            <span data-k="r_now">maintenant</span>
+            <span data-k="r_noexp">sans expiration</span>
+            <span data-k="r_images">%1 image(s)</span>
+            <span data-k="r_codes">%1 code(s)</span>
+            <span data-k="blocking">À corriger avant de placer l’avis</span>
+            <span data-k="warning">À vérifier</span>
+            <span data-k="ready">Rien à signaler : l’avis peut être placé.</span>
+            <span data-k="c_member">Cette identité est celle d’un membre : aucun avis n’est placé sur un membre réel.</span>
+            <span data-k="c_active">Cette identité fait déjà l’objet d’un avis actif : levez-le ou renouvelez-le.</span>
+            <span data-k="c_reason">Aucun motif : choisissez un code de motif ou écrivez la raison de l’avis.</span>
+            <span data-k="c_expiry_order">La date d’expiration précède la date d’émission.</span>
+            <span data-k="c_expiry_past">La date d’expiration est déjà passée : l’avis expirerait dès sa pose.</span>
+            <span data-k="c_service_class">Le service ne peut pas émettre à ce niveau de classification (maximum : %1).</span>
+            <span data-k="c_armed_zone">Avis « armé et dangereux » sans pays ni zone.</span>
+            <span data-k="c_service_threat">Ce niveau de menace est inhabituel pour ce service.</span>
+            <span data-k="c_service_type">Ce type d’avis est inhabituel pour ce service.</span>
+            <span data-k="c_type_threat">Un avis de ce type porte d’ordinaire une menace élevée ou critique.</span>
+            <span data-k="c_no_expiry">Aucune date d’expiration alors que ce service émet d’ordinaire pour %1 jours.</span>
+            <span data-k="c_long_expiry">Validité de plus d’un an : prévoyez plutôt un renouvellement.</span>
+            <span data-k="draft_restored">Brouillon retrouvé : vos dernières saisies ont été rétablies.</span>
+            <span data-k="draft_clear">Effacer le brouillon</span>
+            <span data-k="draft_cleared">Brouillon effacé.</span>
+            <span data-k="go_blocked">Corrigez les points bloquants du récapitulatif pour placer l’avis.</span>
+            <span data-k="go_issues">%1 point(s) à corriger</span>
+        </div>
         <div id="wc-labels" hidden>
             <span data-k="selected">%1 sélectionné(s)</span>
             <span data-k="none">Aucun code</span>
@@ -287,16 +360,70 @@ $tabs = [
             <?php endif; ?>
         </section>
 
-        <section class="wc-sec" id="wc-sec-service" role="tabpanel" aria-labelledby="wc-tab-service" data-wc-sec="service">
-            <h2>Service et dates</h2>
-            <p class="wc-sec__desc"><?= $h($tabs['service'][1]) ?> Autorité émettrice (fictive) : <strong translate="no"><?= $h($lang === 'en' ? $wantedConfig['authority_en'] ?? '' : $wantedConfig['authority_fr'] ?? '') ?></strong>. <?php if (!empty($rights) && $rights->canManage()): ?><a class="link" href="<?= $h(url('atak/sse/avis/reglages')) ?>">Réglages de la notice</a><?php endif; ?></p>
-            <div class="wc-row wc-row--2">
-                <div><label for="w-contact">Service demandeur (fictif)</label><input id="w-contact" type="text" name="contact_label" maxlength="160" value="<?= $h($val('contact_label', (string) ($wantedConfig['contact_label'] ?? ''))) ?>"></div>
-                <div><label for="w-contact-d">Coordonnées du service (fictives)</label><input id="w-contact-d" type="text" name="contact_detail" maxlength="200" value="<?= $h($val('contact_detail', (string) ($wantedConfig['contact_detail'] ?? ''))) ?>"></div>
+        <section class="wc-sec ws-sec" id="wc-sec-service" role="tabpanel" aria-labelledby="wc-tab-service" data-wc-sec="service" data-ws-root>
+            <h2>Émission</h2>
+            <p class="wc-sec__desc"><?= $h($tabs['service'][1]) ?> Autorité émettrice (fictive) : <strong translate="no" data-ws-authority><?= $h($lang === 'en' ? $wantedConfig['authority_en'] ?? '' : $wantedConfig['authority_fr'] ?? '') ?></strong>. <?php if (!empty($rights) && $rights->canManage()): ?><a class="link" href="<?= $h(url('atak/sse/avis/reglages')) ?>#services">Gérer les services</a><?php endif; ?></p>
+            <?php if (empty($serviceStoreReady)): ?>
+                <div class="dos-note dos-note--info">Le service choisi est écrit dans l’avis avec son texte ; son code, le circuit de validation et le renouvellement seront disponibles dès que l’étape de base de données « processus des avis » aura été passée.</div>
+            <?php endif; ?>
+
+            <div class="ws-service">
+                <div class="ws-field">
+                    <label for="ws-service">Choisir un service</label>
+                    <select id="ws-service" name="service_code" data-ws-select>
+                        <option value="">Autre… (saisie ponctuelle)</option>
+                        <?php foreach ($serviceFamilies as $famKey => $famName): $famItems = array_filter($serviceItems, static fn (array $i): bool => $i['family'] === $famKey); if ($famItems === []) { continue; } ?>
+                            <optgroup label="<?= $h($famName) ?>">
+                                <?php foreach ($famItems as $item): ?>
+                                    <option value="<?= $h($item['code']) ?>" <?= $svcSelected === $item['code'] ? 'selected' : '' ?>><?= $h($item['name'] . ($item['ac'] !== '' ? ' (' . $item['ac'] . ')' : '')) ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="hint">Choisir un service remplit les coordonnées, la classification, le niveau de menace usuel et la durée de validité. Vous pouvez les ajuster ensuite.</p>
+                </div>
+                <div class="ws-card" data-ws-card aria-live="polite" hidden></div>
             </div>
-            <div class="wc-row wc-row--2">
-                <div><label for="w-issued">Date d’émission</label><input id="w-issued" type="datetime-local" name="issued_at" value="<?= $h($val('issued_at')) ?>"><p class="hint">Vide : maintenant.</p></div>
-                <div><label for="w-expires">Date d’expiration (facultative)</label><input id="w-expires" type="datetime-local" name="expires_at" value="<?= $h($val('expires_at')) ?>"></div>
+
+            <div class="wc-row wc-row--2" data-ws-free>
+                <div><label for="w-contact">Service demandeur (fictif)</label><input id="w-contact" type="text" name="contact_label" maxlength="160" value="<?= $h($val('contact_label', $svcPre['contact_label'] ?? (string) ($wantedConfig['contact_label'] ?? ''))) ?>" data-ws-contact></div>
+                <div><label for="w-contact-d">Coordonnées du service (fictives)</label><input id="w-contact-d" type="text" name="contact_detail" maxlength="200" value="<?= $h($val('contact_detail', $svcPre['contact_detail'] ?? (string) ($wantedConfig['contact_detail'] ?? ''))) ?>" data-ws-contact-detail></div>
+            </div>
+
+            <div class="wc-row wc-row--3">
+                <div>
+                    <label for="ws-class">Classification de l’avis</label>
+                    <select id="ws-class" name="classification" data-ws-class>
+                        <?php foreach (SseUsClassification::codes() as $cc): ?>
+                            <option value="<?= $h($cc) ?>" <?= $val('classification', $svcPre['classification'] ?? (string) ($wantedConfig['default_classification'] ?? 'encadrement')) === $cc ? 'selected' : '' ?>><?= $h(SseUsClassification::label($cc, $lang)) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="hint ws-hint-class" data-ws-class-msg></p>
+                </div>
+                <div>
+                    <label for="w-issued">Date d’émission</label>
+                    <input id="w-issued" type="datetime-local" name="issued_at" value="<?= $h($val('issued_at')) ?>" data-ws-issued>
+                    <div class="ws-chips" role="group" aria-label="Raccourcis de la date d’émission"><button class="ws-chip" type="button" data-ws-now>Maintenant</button></div>
+                </div>
+                <div>
+                    <label for="w-expires">Date d’expiration (facultative)</label>
+                    <input id="w-expires" type="datetime-local" name="expires_at" value="<?= $h($val('expires_at')) ?>" data-ws-expires>
+                    <div class="ws-chips" role="group" aria-label="Raccourcis de la date d’expiration">
+                        <button class="ws-chip" type="button" data-ws-plus="7">+7 j</button>
+                        <button class="ws-chip" type="button" data-ws-plus="30">+30 j</button>
+                        <button class="ws-chip" type="button" data-ws-plus="90">+90 j</button>
+                        <button class="ws-chip" type="button" data-ws-noexp>Sans expiration</button>
+                    </div>
+                    <input type="hidden" name="no_expiry" value="<?= $val('no_expiry') === '1' ? '1' : '' ?>" data-ws-noexp-input>
+                </div>
+            </div>
+            <p class="hint ws-tz">Dates à l’heure de la communauté (<?= $h($timezoneName ?? 'UTC') ?>). Vide : maintenant, et l’expiration par défaut du service.</p>
+
+            <div class="ws-recap" data-ws-recap hidden>
+                <h3>Récapitulatif de l’avis</h3>
+                <p class="wc-sec__desc">Relisez avant de placer l’avis : les points bloquants sont à corriger, les avertissements laissent passer.</p>
+                <ul class="ws-findings" data-ws-findings aria-live="polite"></ul>
+                <dl class="ws-recap__list" data-ws-recap-list></dl>
             </div>
         </section>
         </div>
@@ -312,7 +439,7 @@ $tabs = [
         <div class="wc-bar">
             <span class="wc-bar__status" data-wc-status aria-live="polite"></span>
             <a class="btn btn--ghost" href="<?= $h($back) ?>">Annuler</a>
-            <button class="btn btn--danger wc-bar__go" type="submit">Placer l’avis</button>
+            <button class="btn btn--danger wc-bar__go" type="submit" data-ws-go><?= $wsPropose ? 'Proposer à la validation' : 'Placer l’avis' ?></button>
         </div>
     </form>
 

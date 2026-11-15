@@ -95,6 +95,12 @@ final class SseWantedNoticePdfService
         $marks = $value('marks');
         $lg = trim((string) ($identity['language'] ?? ''));
         $banner = C::BANNERS[(string) $config['banner']] ?? C::BANNERS['red'];
+        // Service demandeur de l'avis : instantané du jour de la pose (autorité, sigle, couleur d'en-tête).
+        $meta = $this->safe(fn (): array => (new \App\Repositories\SseWantedMetaRepository())->forNotice($tenantId, (int) $notice['id'])) ?? \App\Repositories\SseWantedMetaRepository::hydrate(null);
+        $snap = is_array($meta['service'] ?? null) ? $meta['service'] : [];
+        $hex = (string) ($snap['color'] ?? '');
+        $rgb = preg_match('/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$/', $hex, $m) === 1 ? [(int) hexdec($m[1]), (int) hexdec($m[2]), (int) hexdec($m[3])] : null;
+        $service = $snap !== [] ? ['code' => (string) ($snap['code'] ?? ''), 'ac' => (string) ($snap['ac'] ?? ''), 'color' => $rgb] : null;
         $ref = (string) $notice['ref'];
         $expires = $notice['expires_at'] ?? null;
         $extra = [];
@@ -125,7 +131,8 @@ final class SseWantedNoticePdfService
         return [
             'lang' => $lang,
             'banner' => [$banner[0], $banner[1]],
-            'authority' => [(string) $config['authority_fr'], (string) $config['authority_en']],
+            'authority' => [(string) ($snap['auth_fr'] ?? $config['authority_fr']), (string) ($snap['auth_en'] ?? $config['authority_en'])],
+            'service' => $service,
             'ref' => $ref,
             'issued_at' => (string) $notice['issued_at'],
             'expires_at' => $expires !== null ? (string) $expires : null,

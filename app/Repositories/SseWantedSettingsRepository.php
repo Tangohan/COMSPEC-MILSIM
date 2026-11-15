@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Support\SseWantedCatalog as C;
 use App\Support\SseWantedCodes;
 use App\Support\SseWantedRealNames;
+use App\Support\SseWantedServices;
 
 /**
  * Réglages de la notice de recherche, par communauté : autorité émettrice FICTIVE, service demandeur, format de référence,
@@ -103,6 +104,8 @@ final class SseWantedSettingsRepository
             'disabled_types' => $disabled,
             'custom_types' => $custom,
             'codes' => SseWantedCodes::normalizeSettings($data['codes'] ?? []),
+            'services' => SseWantedServices::normalizeSettings($data['services'] ?? []),
+            'process' => self::normalizeProcess($data['process'] ?? []),
         ];
     }
 
@@ -178,6 +181,27 @@ final class SseWantedSettingsRepository
         $rest = (string) preg_replace('/\{(?:N(?::[1-8])?|Y|y)\}/', '', $format);
 
         return preg_match('/^[A-Za-z0-9\-\/._ ]*$/', $rest) === 1;
+    }
+
+    /**
+     * Réglages du processus d'émission : circuit de validation (un analyste propose, un responsable diffuse), fuseau de la
+     * communauté pour les dates, notification des abonnés.
+     *
+     * @return array{validation: bool, timezone: string, notify: bool}
+     */
+    public static function normalizeProcess(mixed $raw): array
+    {
+        $raw = is_array($raw) ? $raw : [];
+        $tz = is_string($raw['timezone'] ?? null) ? trim($raw['timezone']) : '';
+        if ($tz === '' || !in_array($tz, \DateTimeZone::listIdentifiers(), true)) {
+            $tz = 'Europe/Paris';
+        }
+
+        return [
+            'validation' => ($raw['validation'] ?? false) === true || ($raw['validation'] ?? '') === '1' || ($raw['validation'] ?? '') === 1,
+            'timezone' => $tz,
+            'notify' => !array_key_exists('notify', $raw) || $raw['notify'] === true || $raw['notify'] === '1' || $raw['notify'] === 1,
+        ];
     }
 
     /**

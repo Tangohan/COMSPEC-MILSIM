@@ -18,6 +18,15 @@ final class SseWantedRealNames
         'us marshals', 'marshals service', 'homeland security', 'secret service', 'scotland yard', 'metropolitan police',
         'nypd', 'lapd', 'gendarmerie nationale', 'police nationale', 'police judiciaire', 'dgse', 'dgsi', 'bundeskriminalamt',
         'bka', 'mi5', 'mi6', 'mossad', 'fsb', 'kgb', 'united nations', 'nations unies', 'onu', 'nato', 'otan',
+        // Agences, commandements et unités américains ou alliés réels (forces spéciales, renseignement, justice, frontières).
+        'dia', 'jsoc', 'dea', 'ncis', 'afosi', 'army cid', 'nctc', 'odni', 'dni', 'nga', 'nro', 'dtra', 'socom', 'centcom', 'africom',
+        'eucom', 'southcom', 'northcom', 'indopacom', 'sofcom', 'devgru', 'delta force', 'navy seals', 'seal team', 'green berets',
+        'special forces group', 'ranger regiment', 'marsoc', 'afsoc', 'arsof', 'usss', 'usms', 'dod', 'pentagon', 'department of defense',
+        'department of state', 'state department', 'department of justice', 'department of the treasury', 'ofac', 'fincen', 'irs', 'cbp',
+        'uscis', 'immigration and customs', 'border patrol', 'coast guard', 'tsa', 'swat', 'gign', 'gsg 9', 'gchq', 'asis',
+        'asio', 'csis', 'rcmp', 'bnd', 'aivd', 'svr', 'gru', 'shin bet', 'special air service', 'special boat service',
+        'red cross', 'croix rouge', 'icrc', 'unhcr', 'unicef', 'world bank', 'banque mondiale', 'imf', 'osce', 'unodc', 'wfp', 'oms',
+        'nsc', 'cisa', 'eurojust', 'frontex', 'dgfip',
     ];
 
     /** Premier nom réel trouvé dans le texte, ou null. */

@@ -88,7 +88,7 @@ final class SseWantedCodesStorageTest extends TestCase
     {
         $id = $this->identity();
         $res = (new SseWantedService())->place(1, $id, self::input([
-            'codes_reasons' => ['M-TER-01', 'M-INS-01', 'M-ZZZ-99'], 'codes_measures' => ['A-DNG', 'A-NOI'], 'codes_template' => 'cell_leader',
+            'zone' => 'Zone Nord', 'codes_reasons' => ['M-TER-01', 'M-INS-01', 'M-ZZZ-99'], 'codes_measures' => ['A-DNG', 'A-NOI'], 'codes_template' => 'cell_leader',
             'physical' => ['height_cm' => '181', 'build' => 'athletic', 'hair' => 'brown', 'tattoos' => 'Aigle sur l’épaule droite', 'equipment' => ['rifle', 'vest']],
         ]), self::manager());
         self::assertTrue($res['ok']);
@@ -177,7 +177,7 @@ final class SseWantedCodesStorageTest extends TestCase
         SseWantedExtrasRepository::forgetReady();
         self::assertFalse(SseWantedExtrasRepository::ready());
         $id = $this->identity();
-        $res = (new SseWantedService())->place(1, $id, self::input(['codes_reasons' => ['M-TER-01']]), self::manager());
+        $res = (new SseWantedService())->place(1, $id, self::input(['zone' => 'Zone Nord', 'codes_reasons' => ['M-TER-01']]), self::manager());
         self::assertTrue($res['ok'], 'l’avis est placé');
         self::assertCount(1, $res['warnings']);
         self::assertStringContainsString('étape de base de données', $res['warnings'][0]);
@@ -312,7 +312,7 @@ final class SseWantedCodesStorageTest extends TestCase
         $game = SseWantedNoticeData::forGame(1);
         self::assertCount(1, $game);
         $n = $game[0];
-        self::assertSame(['id', 'ref', 'name', 'type', 'threat', 'armed', 'zone', 'reasons', 'measures', 'physical', 'images'], array_keys($n));
+        self::assertSame(['id', 'ref', 'name', 'type', 'threat', 'armed', 'zone', 'reasons', 'measures', 'physical', 'images', 'service', 'classification'], array_keys($n));
         self::assertSame([['code' => 'M-TRF-02', 'fr' => 'Passeur', 'en' => 'Smuggler']], $n['reasons']);
         self::assertSame(['A-EXF', 'A-REP'], array_column($n['measures'], 'code'));
         self::assertSame('Signaler tout mouvement transfrontalier', $n['measures'][0]['fr']);

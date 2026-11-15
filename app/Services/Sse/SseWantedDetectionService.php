@@ -92,7 +92,7 @@ final class SseWantedDetectionService
         if (!isset(C::DETECTION_TYPES[$type])) {
             return null;
         }
-        $notice = $this->notices->activeForIdentity($tenantId, $identityId);
+        $notice = self::released($tenantId, $this->notices->activeForIdentity($tenantId, $identityId));
         if ($notice === null) {
             return null;
         }
@@ -171,7 +171,7 @@ final class SseWantedDetectionService
             if (!SseWantedNoticeRepository::ready()) {
                 return ['wanted' => false];
             }
-            $notice = $this->notices->activeForIdentity($tenantId, $identityId);
+            $notice = self::released($tenantId, $this->notices->activeForIdentity($tenantId, $identityId));
         } catch (\Throwable) {
             return ['wanted' => false];
         }
@@ -258,5 +258,21 @@ final class SseWantedDetectionService
         }
 
         return array_values(array_unique(array_filter($ids, static fn (int $i): bool => $i > 0)));
+    }
+
+    /**
+     * Un avis proposé à la validation n'est pas encore diffusé : ni détection ni alerte avant la décision du responsable.
+     *
+     * @param array<string, mixed>|null $notice
+     * @return array<string, mixed>|null
+     */
+    private static function released(int $tenantId, ?array $notice): ?array
+    {
+        if ($notice === null) {
+            return null;
+        }
+        $meta = (new \App\Repositories\SseWantedMetaRepository())->forNotice($tenantId, (int) $notice['id']);
+
+        return $meta['state'] === \App\Repositories\SseWantedMetaRepository::LIVE ? $notice : null;
     }
 }

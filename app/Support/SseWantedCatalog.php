@@ -84,6 +84,11 @@ final class SseWantedCatalog
         'notice.placed' => ['Avis de recherche placé', 'Wanted notice placed', 'bad'],
         'notice.lifted' => ['Avis de recherche levé', 'Wanted notice lifted', 'ok'],
         'notice.captured' => ['Personne capturée', 'Subject captured', 'ok'],
+        'notice.submitted' => ['Avis proposé à la validation', 'Notice submitted for validation', 'warn'],
+        'notice.validated' => ['Avis validé et diffusé', 'Notice validated and released', 'bad'],
+        'notice.rejected' => ['Avis refusé à la validation', 'Notice rejected at validation', 'muted'],
+        'notice.renewed' => ['Avis renouvelé', 'Notice renewed', 'info'],
+        'notice.extended' => ['Avis prolongé', 'Notice extended', 'info'],
         'notice.expired' => ['Avis de recherche expiré', 'Wanted notice expired', 'muted'],
         'notice.pdf' => ['Notice PDF générée', 'PDF notice generated', 'muted'],
         'notice.attachment_added' => ['Image jointe à l’avis', 'Image attached to the notice', 'info'],
@@ -99,7 +104,7 @@ final class SseWantedCatalog
         'record' => ['Fiche', 'Record', ['identity.created', 'identity.updated', 'identity.photo', 'file.photo', 'audit']],
         'papers' => ['Papiers', 'Documents', ['document.created', 'document.issued']],
         'checks' => ['Contrôles et consultations', 'Checks and queries', ['check.recorded', 'query.recorded']],
-        'notices' => ['Avis de recherche', 'Wanted notices', ['notice.placed', 'notice.lifted', 'notice.captured', 'notice.expired', 'notice.pdf', 'notice.attachment_added', 'notice.attachment_removed', 'file.mention']],
+        'notices' => ['Avis de recherche', 'Wanted notices', ['notice.placed', 'notice.submitted', 'notice.validated', 'notice.rejected', 'notice.renewed', 'notice.extended', 'notice.lifted', 'notice.captured', 'notice.expired', 'notice.pdf', 'notice.attachment_added', 'notice.attachment_removed', 'file.mention']],
         'detections' => ['Détections', 'Detections', ['detection.raised', 'detection.handled']],
     ];
 

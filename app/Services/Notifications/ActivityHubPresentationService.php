@@ -100,6 +100,19 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'sse_wanted_notice' => [
+                'title' => match ((string) ($payload['event'] ?? 'placed')) {
+                    'validate' => 'Avis de recherche à valider : ',
+                    'validated' => 'Avis de recherche validé : ',
+                    'rejected' => 'Avis de recherche refusé : ',
+                    default => 'Nouvel avis de recherche : ',
+                } . mb_substr(trim((string) (($payload['label'] ?? '') !== '' ? $payload['label'] : ($payload['ref'] ?? ''))), 0, 80),
+                'detail' => 'Avis ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ((string) ($payload['event'] ?? '') === 'validate' ? ' : un responsable doit le valider avant sa diffusion.' : '.'),
+                'href' => is_string($payload['path'] ?? null) && preg_match('#^atak/sse/avis[A-Za-z0-9/_\-?=&]*$#', (string) $payload['path']) === 1
+                    ? url((string) $payload['path']) : url('atak/sse/avis'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'sse_wanted_detection' => [
                 'title' => 'Avis de recherche : ' . mb_substr(trim((string) ($payload['label'] ?? 'identité détectée')), 0, 80),
                 'detail' => 'Une identité sous avis de recherche a été repérée (avis ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ').',

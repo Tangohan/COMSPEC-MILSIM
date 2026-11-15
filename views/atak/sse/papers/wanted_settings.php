@@ -30,8 +30,8 @@ $customTplLines = [];
 foreach ($config['codes']['custom_templates'] ?? [] as $key => $t) {
     $customTplLines[] = implode('|', [$key, $t['fr'], $t['en'], $t['type'], $t['threat'], $t['armed'], implode(' ', $t['reasons']), implode(' ', $t['measures'])]);
 }
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-wanted-settings.js')) . '" defer></script>';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-services.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-wanted-settings.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-wanted-services-admin.js')) . '" defer></script>';
 ?>
 <div class="page-heading">
     <div>
@@ -51,6 +51,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('as
             <nav class="wc-settings-tabs" role="tablist" aria-label="Sections des réglages" data-wc-stabs hidden>
                 <button class="wc-tab" type="button" role="tab" id="wc-stab-notice" aria-controls="wc-pane-notice" aria-selected="true" data-wc-stab="notice">Notice</button>
                 <button class="wc-tab" type="button" role="tab" id="wc-stab-codes" aria-controls="wc-pane-codes" aria-selected="false" data-wc-stab="codes">Codification</button>
+                <button class="wc-tab" type="button" role="tab" id="wc-stab-services" aria-controls="wc-pane-services" aria-selected="false" data-wc-stab="services">Services</button>
             </nav>
             <div class="wc-settings-pane" id="wc-pane-notice" data-wc-pane="notice" role="tabpanel" aria-labelledby="wc-stab-notice">
             <div class="dos-form__row">
@@ -114,6 +115,21 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('as
                 <?php endforeach; ?>
                 <label for="s-custom">Types propres à la communauté (une ligne chacun : clé|libellé français|libellé anglais, huit au plus)</label>
                 <textarea id="s-custom" name="custom_types" rows="4"><?= $h(implode("\n", $customLines)) ?></textarea>
+            </fieldset>
+            <fieldset>
+                <legend>Émission des avis</legend>
+                <input type="hidden" name="process_present" value="1">
+                <label class="check"><input type="checkbox" name="process_validation" value="1" <?= !empty($config['process']['validation']) ? 'checked' : '' ?>> Circuit de validation : l’avis posé par un analyste doit être validé par un responsable avant sa diffusion</label>
+                <label class="check"><input type="checkbox" name="process_notify" value="1" <?= !empty($config['process']['notify']) ? 'checked' : '' ?>> Notifier les abonnés (équipes, surveillants de l’identité) quand un avis est diffusé</label>
+                <div class="dos-form__row">
+                    <div>
+                        <label for="s-tz">Fuseau horaire des dates</label>
+                        <select id="s-tz" name="process_timezone">
+                            <?php foreach (is_array($timezones ?? null) ? $timezones : ['Europe/Paris', 'UTC'] as $tzName): ?><option value="<?= $h($tzName) ?>" <?= ($config['process']['timezone'] ?? 'Europe/Paris') === $tzName ? 'selected' : '' ?>><?= $h($tzName) ?></option><?php endforeach; ?>
+                        </select>
+                        <p class="hint">Les dates d’émission et d’expiration se saisissent à cette heure ; elles sont gardées en UTC.</p>
+                    </div>
+                </div>
             </fieldset>
             <fieldset>
                 <legend>Aspect de la notice</legend>
@@ -185,8 +201,9 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('as
                     <textarea id="s-codes-tpl" name="codes_custom_templates" rows="3" placeholder="courrier|Courrier de cellule|Cell courier|surveillance|medium|unknown|M-TRF-06|A-OBS A-REP"><?= $h(implode("\n", $customTplLines)) ?></textarea>
                 </fieldset>
             </div>
-            <div class="idp-actions"><button class="btn" type="submit">Enregistrer</button></div>
+            <div class="idp-actions" data-wc-save><button class="btn" type="submit">Enregistrer</button></div>
         </form>
+        <?php require __DIR__ . '/_wanted_services.php'; ?>
     </div>
 </section>
 <?php
