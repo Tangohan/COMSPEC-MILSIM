@@ -1,5 +1,25 @@
 # COMSPEC SSE — historique des versions
 
+## 1.14.0 — 15/11/2026 · Motifs et mesures au contrôle, date et autorité des papiers
+
+**Relancer Arma complètement.** Sources seulement dans cette livraison : le PBO `comspec_sse_identity` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer (COMSPEC Link reste 2.0.125 : la DLL relaie le JSON du contrôle tel quel).
+
+### Résumé joueur
+Type : nouveauté
+FR : L'avis de recherche est plus complet au contrôle ; la date et l'autorité du papier remontent
+- La carte « AVIS DE RECHERCHE » du contrôle d'identité ajoute les motifs et les mesures codifiés de l'avis (code et libellé) et le service demandeur.
+- Quand le papier présenté porte une date de délivrance et une autorité émettrice, le contrôle transmis à Athena les envoie : l'écran « Consigner depuis les contrôles » du portail les préremplit.
+EN : The wanted notice is fuller at the check; the paper's issue date and authority are sent up
+- The "WANTED NOTICE" card of the identity check adds the notice's coded reasons and measures (code and label) and the requesting service.
+- When the presented paper carries an issue date and an issuing authority, the check sent to Athena sends them: the portal's "Record from checks" screen pre-fills them.
+
+### Détail technique
+- `fn_idWantedCheck.sqf` : la réponse `op: "wanted"` passe à 12 éléments (`[…, mesure, motifs[], mesures[], service, signalement]`) ; les éléments 8 à 11 sont facultatifs (site plus ancien : listes vides). La clé `wanted` de la fiche garde les 5 premiers éléments à leur place et ajoute `[motifs, mesures, service, signalement]`. Aucune extension de la réponse de `SubmitIdCheck`.
+- `fn_idPage.sqf` : lignes « Motif », « Mesures à prendre » et « Service » sous la carte de l'avis, quand elles existent.
+- `fn_idAthenaSubmit.sqf` et `fn_controlRecord.sqf` : `document.issued` et `document.authority` rejoignent le payload (le relevé reprend aussi ces deux champs de la fiche du document). Le site les range bornés (date AAAA-MM-JJ, autorité 160 caractères) sous `results.paper` du contrôle, sans migration.
+- Image du papier : non envoyée. Arma ne sait pas sortir une image (`fn_idPhoto` : le relevé reste textuel) et la DLL découpe le JSON en morceaux de 4 000 caractères : une image n'y passerait pas ; le site peut dessiner le papier à partir de ces champs.
+- **À tester en jeu** : contrôler un papier délivré par un pays du paquet (date et autorité imprimées), le transmettre, puis ouvrir « Consigner depuis les contrôles » sur le portail ; contrôler une personne sous avis codifié et lire les lignes de motifs, de mesures et de service.
+
 ## 1.13.0 — 15/11/2026 · « Recherchée » au contrôle d'identité
 
 **Relancer Arma complètement.** Sources seulement dans cette livraison : le PBO `comspec_sse_identity` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer (COMSPEC Link reste 2.0.125).

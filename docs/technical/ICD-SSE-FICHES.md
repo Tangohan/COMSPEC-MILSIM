@@ -58,6 +58,11 @@ issued, until, updated, vehicles, addresses, people, auth, cut` (`SseFichesGameS
 Révision inchangée (`rev`) : page `[…, [], [], [], true]`. `ETag` `W/"ssefiches-<révision>"`, `304` si `If-None-Match` correspond (route JSON).
 
 `op: "wanted"` : `[1, "wanted", avis ?, réf, type, menace, armé, mesure]` pour l'identité reconnue par le contrôle `check` de la communauté (jamais pour un membre).
+Additif (SSE 1.14.0) : `[1, "wanted", avis ?, réf, type, menace, armé, mesure, motifs, mesures, service, signalement]`. `motifs` et `mesures` sont des listes
+de textes « CODE libellé » (6 au plus, 90 caractères), `service` le service demandeur (« Nom (SIGLE) », instantané du jour de la pose), `signalement` la ligne courte
+du signalement physique. Les éléments 8 à 11 sont facultatifs (avis sans codes, étape de base absente : listes et textes vides) ; un client qui ne lit que les huit premiers
+fonctionne comme avant. Dans les fiches (`reason`, `measures`), chaque motif et chaque mesure codifiés est écrit « CODE libellé », devant le texte libre.
+`GET /api/sse/wanted/notices` (`SseWantedNoticeData::forGame`) garde sa forme (codes bilingues, signalement, images décrites) ; le pack SSE lit les mêmes champs par ce canal, sans étendre la réponse de `SubmitIdCheck`.
 
 ### Partage
 
