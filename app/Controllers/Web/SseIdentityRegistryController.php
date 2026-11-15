@@ -89,6 +89,9 @@ final class SseIdentityRegistryController
             'counts' => $this->documents->counts($tenantId),
             'countries' => $this->countries->listForTenant($tenantId),
             'papersTab' => 'documents',
+            // « Aligner sur l'état civil » : proposé aux responsables qui gèrent les papiers des membres (revérifié à l'envoi).
+            'civilManage' => !empty(($this->memberPapersRights() ?? [])['manage']),
+            'civilCsrf' => Csrf::token(),
         ]);
     }
 

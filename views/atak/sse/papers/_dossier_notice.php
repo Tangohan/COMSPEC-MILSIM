@@ -91,7 +91,7 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
                 <details class="dos-lift" <?= $noticeAttachments !== [] ? 'open' : '' ?>>
                     <summary>Images jointes (<?= count($noticeAttachments) ?>)</summary>
                     <?php if (empty($noticeAttachLock['allowed'])): ?>
-                        <p class="muted">Cette identité est celle d’un membre (CONFIDENTIEL ÉLEVÉ) : les images de l’avis ne s’affichent qu’avec l’autorisation de la hiérarchie du membre.</p>
+                        <p class="muted">Cette identité est celle d’un membre (<?= $h(\App\Services\Sse\SseMemberImageGate::LABEL) ?>) : les images de l’avis ne s’affichent qu’avec l’autorisation de la hiérarchie du membre.</p>
                     <?php else: ?>
                         <?php if ($noticeAttachments === []): ?><p class="muted">Aucune image jointe à cet avis.</p><?php else: ?>
                             <ul class="wc-gal" data-wc-gal>

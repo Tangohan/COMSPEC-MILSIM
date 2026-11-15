@@ -1487,6 +1487,10 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
     </section>
     </div>
 
+    <?= $panelOpen('disponibilite') ?>
+    <?php require __DIR__ . '/partials/member_availability.php'; ?>
+    </div>
+
     <?= $panelOpen('historique') ?>
     <section class="eff-fm-sec" id="historique" aria-labelledby="historique-titre">
         <header class="eff-fm-sec__head">
