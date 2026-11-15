@@ -10,7 +10,7 @@ $queue = is_array($tower['operator_queue'] ?? null) ? $tower['operator_queue'] :
         <h1>Files de validation</h1>
         <p>
             Rapprochements, consolidations, contradictions et dossiers d’intérêt —
-            aucune proposition automatique ne devient un fait sans décision humaine.
+            aucune proposition de Cerbère-Validation ne devient un fait sans décision humaine.
         </p>
     </div>
 </div>

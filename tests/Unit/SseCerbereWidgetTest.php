@@ -479,7 +479,7 @@ final class SseCerbereWidgetTest extends TestCase
     public function testEnglishTranslationsExistForTheVisibleTexts(): void
     {
         $en = self::read('lang/en/site_auto.php');
-        foreach (['Fait par Cerbère', 'Provenance', 'Automatismes', 'Masquer le bouton Cerbère', 'Accepter', 'Écarter', 'Afficher le bouton Cerbère', 'Chargement de Cerbère…', 'Pages utiles'] as $t) {
+        foreach (['Fait par Cerbère', 'Provenance', 'Cerbères', 'Masquer le bouton Cerbère', 'Accepter', 'Écarter', 'Afficher le bouton Cerbère', 'Chargement de Cerbère…', 'Pages utiles'] as $t) {
             self::assertStringContainsString("'" . $t . "'", $en, $t);
         }
     }
