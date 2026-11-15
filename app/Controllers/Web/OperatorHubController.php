@@ -680,14 +680,23 @@ final class OperatorHubController
      * Photo d'identité en donnée intégrée (le spécimen s'enregistre en image sans autre requête). Seulement un fichier
      * image du dossier public, 600 Kio au plus ; sinon null.
      */
-    public static function photoDataUri(?string $path, ?string $publicDir = null): ?string
+    public static function photoDataUri(?string $path, ?string $publicDir = null, ?string $privateDir = null): ?string
     {
         if ($path === null || $path === '' || str_contains($path, "\0")) {
             return null;
         }
-        $public = realpath($publicDir ?? base_path('public'));
-        $file = $public !== false ? realpath($public . '/' . ltrim($path, '/')) : false;
-        if ($public === false || $file === false || !str_starts_with($file, $public . DIRECTORY_SEPARATOR) || !is_file($file) || filesize($file) > 600 * 1024) {
+        // Espace privé SSE (nouveaux envois) : même contrôle de chemin, même limite de taille.
+        $file = null;
+        if (\App\Support\SseImageStorage::isPrivatePath($path)) {
+            $file = \App\Support\SseImageStorage::absolute($path, $publicDir, $privateDir);
+        } else {
+            $public = realpath($publicDir ?? base_path('public'));
+            $real = $public !== false ? realpath($public . '/' . ltrim($path, '/')) : false;
+            if ($public !== false && $real !== false && str_starts_with($real, $public . DIRECTORY_SEPARATOR) && is_file($real)) {
+                $file = $real;
+            }
+        }
+        if ($file === null || filesize($file) > 600 * 1024) {
             return null;
         }
         $bytes = (string) file_get_contents($file);

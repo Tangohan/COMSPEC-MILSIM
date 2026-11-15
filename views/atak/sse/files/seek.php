@@ -66,7 +66,7 @@ $tone = ['concordant' => 'g', 'discordant' => 'r', 'signale' => 'a', 'inconnu' =
                                 <?php else: ?>—<?php endif; ?>
                             </td>
                             <td translate="no"><?= $h($s['grid'] ?? '—') ?><?= ($s['controller_callsign'] ?? '') !== '' ? ' · ' . $h($s['controller_callsign']) : '' ?>
-                                <?php if (!empty($s['signature_image'])): ?><br><img src="<?= $h(url((string) $s['signature_image'])) ?>" alt="Signature tracée au SEEK II, fiche <?= $h($s['rec']) ?>" loading="lazy" style="height:28px;background:#fff;border-radius:3px"><?php endif; ?></td>
+                                <?php if (!empty($s['signature_image'])): ?><br><img src="<?= $h(\App\Support\SseImageStorage::inlineSrc((string) $s['signature_image'])) ?>" alt="Signature tracée au SEEK II, fiche <?= $h($s['rec']) ?>" loading="lazy" style="height:28px;background:#fff;border-radius:3px"><?php endif; ?></td>
                             <td>
                                 <?php if ($s['identity_id'] !== null): ?><a href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $s['identity_id'])) ?>">Fiche</a> · <?php endif; ?>
                                 <?php if ($s['check_id'] !== null): ?><a href="<?= $h(url('atak/sse/papiers/controles/' . (int) $s['check_id'])) ?>">Contrôle N4</a> · <?php endif; ?>

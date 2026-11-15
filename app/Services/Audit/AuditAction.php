@@ -87,6 +87,11 @@ final class AuditAction
     public const DISCORD_WEBHOOK_REMOVED = 'discord_webhook.removed';
     public const DISCORD_WEBHOOK_TESTED = 'discord_webhook.tested';
 
+    /** Bot Discord Athena : serveur rattaché à la communauté, réglages, retrait. */
+    public const DISCORD_BOT_LINKED = 'discord_bot.linked';
+    public const DISCORD_BOT_SETTINGS = 'discord_bot.settings';
+    public const DISCORD_BOT_UNLINKED = 'discord_bot.unlinked';
+
     public const MODERATION_ACTION = 'moderation.action_applied';
     public const MODERATION_REVOKED = 'moderation.action_revoked';
     public const REPORT_MODERATION = 'report.moderation_action';
