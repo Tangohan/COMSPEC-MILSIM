@@ -66474,6 +66474,7 @@ return [
     'Image enregistrée : %1' => 'Stored image: %1',
     'Envoyer un nouveau portrait' => 'Send a new portrait',
     'Numéro de membre de la communauté' => 'Community member number',
+    'Matricule de votre organisation' => 'Your organization registration number',
     'Identifiant Athena' => 'Athena identifier',
     'Matricule de service' => 'Service number',
     'Indicatifs radio secondaires' => 'Secondary radio callsigns',

@@ -158,7 +158,7 @@ class DataCampaignRecordReader
         }
         $secondary = array_values(array_filter(array_map('trim', preg_split('/\R/u', (string) ($s['extra_callsigns'] ?? '')) ?: [])));
         $rows = [
-            ['label' => 'Numéro de membre de la communauté', 'value' => self::text($u['tenant_member_number'] ?? '')],
+            ['label' => 'Matricule de votre organisation', 'value' => self::text($u['tenant_member_number'] ?? '')],
             ['label' => 'Identifiant Athena', 'value' => self::text($u['athena_identifier'] ?? '')],
             ['label' => 'Matricule de service', 'value' => $service],
             ['label' => 'Matricule du dossier', 'value' => self::text($s['matricule_internal'] ?? '')],
