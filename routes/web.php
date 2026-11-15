@@ -3343,6 +3343,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
     // Catalogue du mod SSE (ICD-SSE-CATALOGUE-001) : listes des modules Zeus, des attributs Eden et des écrans du joueur.
     $router->get('/api/game/v1/sse/catalogue', [\App\Controllers\Api\Game\GameSseCatalogueApiController::class, 'show']);
+    // Fiches du portail SSE (avis de recherche, fiches émises) lues par le téléphone ATAK (ICD-SSE-FICHES-001) : filtrées par la
+    // classification et l'habilitation du porteur ; une référence qui porte « / » s'écrit %2F (ou ?ref=).
+    $router->get('/api/game/v1/sse/fiches', [\App\Controllers\Api\Game\GameSseFichesApiController::class, 'show']);
+    $router->get('/api/game/v1/sse/fiches/{ref}', [\App\Controllers\Api\Game\GameSseFichesApiController::class, 'detail']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.

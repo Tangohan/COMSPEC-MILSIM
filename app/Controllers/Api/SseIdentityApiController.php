@@ -188,6 +188,11 @@ final class SseIdentityApiController
         if (($body['kind'] ?? null) === \App\Services\Sse\SseGameCatalogueService::KIND) {
             return (new \App\Controllers\Api\Game\GameSseCatalogueApiController())->kindResponse($body);
         }
+        // Fiches du portail pour le téléphone (ICD-SSE-FICHES-001) : lecture filtrée par l'habilitation du porteur, avis d'un contrôle,
+        // journal d'un partage. Même canal, aucune nouvelle DLL.
+        if (in_array($body['kind'] ?? null, [\App\Services\Sse\SseFichesGameService::KIND, \App\Services\Sse\SseFichesGameService::KIND_SHARE], true)) {
+            return (new \App\Controllers\Api\Game\GameSseFichesApiController())->kindResponse($body);
+        }
         if (in_array($body['kind'] ?? null, SseEditorLibraryService::KINDS, true)) {
             return $this->editorLibraryResponse($tenantId, $body);
         }

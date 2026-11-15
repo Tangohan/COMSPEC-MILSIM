@@ -68444,4 +68444,6 @@ return [
     'l’entrée' => 'the entry',
     'ne sera plus reconnu par QUERY sur le terrain.' => 'will no longer be recognised by QUERY in the field.',
     'État de la liste' => 'List status',
+    'Fiches SSE' => 'SSE records',
+    'Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre' => 'SSE portal records: wanted notices, vigilance, intelligence, with reasons and action to be taken',
 ];
