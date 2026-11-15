@@ -316,7 +316,7 @@ require __DIR__ . '/_subnav.php';
                                 <td data-label="Expire le"><?= $h($d['expires_on'] ?? '—') ?></td>
                                 <td data-label="État"><?= $h($d['workflow_label']) ?><?php if ($observedOnly && $d['workflow'] !== 'observed'): ?> <span class="badge badge--gray">Généré avant : lecture seule</span><?php endif; ?></td>
                                 <?php if ($observedOnly): ?><td data-label="Authenticité"><?= $d['workflow'] === 'observed' ? $h(C::label(C::AUTHENTICITY, SseIdentityHolderService::authenticityOf($d))) : '—' ?></td><?php endif; ?>
-                                <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'])) ?>">Ouvrir</a></td>
+                                <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'])) ?>">Ouvrir</a><?php if (!in_array($d['workflow'], ['observed'], true)): ?> <a class="btn-open" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $d['id'] . '/telecharger/pdf')) ?>" aria-label="Télécharger la pièce complète <?= $h($d['ref']) ?> (PDF)">Télécharger</a><?php endif; ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
