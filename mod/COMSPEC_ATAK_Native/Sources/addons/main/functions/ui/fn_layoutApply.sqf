@@ -5,6 +5,8 @@
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d) exitWith { false };
+// Mesure (fn_perfAcc, RPT) : « téléphone : disposition », dock compris (« dock (dessin) » ou « dock (gardé) »).
+private _layT0 = diag_tickTime;
 // Disposition déjà calculée par l'appelant (glisser du téléphone, fn_phoneDrag) : pas de second calcul.
 private _l = param [0, createHashMap, [createHashMap]];
 if ((count _l) isEqualTo 0) then { _l = [] call comspec_atak_native_fnc_layoutGet; };
@@ -267,6 +269,27 @@ private _wall = profileNamespace getVariable ["COMSPEC_ATAK_Wallpaper", "topo"];
 private _wallTex = ["path", [_wall, profileNamespace getVariable ["COMSPEC_ATAK_WallBlur", false], _l get "landscape"]] call comspec_atak_native_fnc_wallPath;
 private _wc = [88542, [_bx, _byy, _bww, _bhh]] call _set;
 _wc ctrlSetText _wallTex; // i18n:brut
+// Perf (lot 3) : grandes textures connues seulement à l'usage (coque du téléphone selon le modèle, l'orientation et
+// l'heure ; fond d'écran ; carré des icônes) gardées chargées une fois vues, comme les icônes de fn_textureKeep : une
+// image minuscule hors écran sur l'écran de mission (display 46). Téléphone rangé, plus aucun contrôle ne les
+// référençait : Arma pouvait les décharger, et la sortie suivante ou le retour de la miniature les rechargeait dans
+// l'image (à-coup). Fichiers des PBO seulement, une fois chacun, 40 au plus.
+private _d46 = findDisplay 46;
+if (!isNull _d46) then {
+    private _kept = _d46 getVariable "COMSPEC_ATAK_TexKeepMore";
+    if (isNil "_kept") then { _kept = createHashMap; _d46 setVariable ["COMSPEC_ATAK_TexKeepMore", _kept]; };
+    {
+        if (_x isEqualType "" && {(_x select [0, 1]) isEqualTo "\"} && {!(_x in _kept)} && {(count _kept) < 40}) then {
+            _kept set [_x, true];
+            private _kc = _d46 ctrlCreate ["RscPicture", -1];
+            _kc ctrlSetPosition [safeZoneX - 1, safeZoneY - 1, 0.001, 0.001];
+            _kc ctrlSetText _x; // i18n:brut (chemins de textures)
+            _kc ctrlSetTextColor [1, 1, 1, 0.01];
+            _kc ctrlEnable false;
+            _kc ctrlCommit 0;
+        };
+    } forEach [_l get "phoneTexture", _wallTex, "\z\comspec_atak_native\addons\main\data\ui_icon_squircle.paa", "\z\comspec_atak_native\addons\main\data\ui_hand.paa", "\z\comspec_atak_native\addons\main\data\ui_pin.paa"];
+};
 _wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wallTex isNotEqualTo ""});
 { if (!isNull _x) then { _x ctrlShow (_isMap && {_x isEqualTo _mapC}); }; } forEach ([_d, true] call comspec_atak_native_fnc_mapCtrl);
 (_d displayCtrl 88531) ctrlShow !_isMap;
@@ -353,6 +376,28 @@ if (!_dragging) then {
 // contenu (filtre de nuit, luminosité, fêlures, écran éteint et son bouton bloquant, toasts, verrouillage, volet,
 // alertes) restaient à l'ancienne place, en partie hors du téléphone. Ils sont recréés comme après un rendu de page.
 if (_overlays && {!_dragging}) then {
+    // Perf (lot 3) : ces calques ne sont recréés que si la place de l'écran a vraiment changé. Un réglage qui appelle
+    // la mise en page puis le rendu (Réglages : la plupart des bascules) les supprimait et les recréait ici (12 à 150
+    // contrôles), puis fn_pageRender les recréait une seconde fois parce qu'ils étaient plus récents que son tampon.
+    // Gardés quand : même disposition qu'à leur dernière création ici (cadres, tailles de texte, modèle, mode, thème),
+    // aucune création de calques par fn_pageRender entre-temps (tampon COMSPEC_ATAK_OvStamp), calques encore sur cet
+    // écran, et aucun contrôle posé sur l'écran depuis (même test que fn_pageRender). Ils sont alors seulement remis à
+    // jour, comme le fait fn_pageRender quand il les garde.
+    private _ovStamp = uiNamespace getVariable ["COMSPEC_ATAK_OvStamp", 0];
+    private _laySig = str [_l get "device", _l get "phone", _l get "status", _l get "appbar", _l get "body", _l get "dockRect", _l get "rail",
+        _l get "font", _l get "fontSmall", _l get "landscape", _l getOrDefault ["model", ""], _l getOrDefault ["mode", ""], _l get "texture", _l get "mini",
+        _interactive, _th get "name", _th get "accent", _ovStamp];
+    private _dev0 = (uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) param [0, controlNull];
+    private _layKeep = (uiNamespace getVariable ["COMSPEC_ATAK_LaySig", ""]) isEqualTo _laySig
+        && {_dev0 isEqualType controlNull} && {!isNull _dev0} && {(ctrlParent _dev0) isEqualTo _d}
+        && {((allControls _d) findIf { isNull (ctrlParentControlsGroup _x) && {(_x getVariable ["cs_ov", -1]) isNotEqualTo _ovStamp} && {!(_x getVariable ["cs_ovSkip", false])} }) < 0};
+    if (_layKeep) then {
+        [] call comspec_atak_native_fnc_deviceOverlay;
+        uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+        [] call comspec_atak_native_fnc_notificationsRender;
+        ["raise"] call comspec_atak_native_fnc_fx;
+        ["téléphone : calques de mise en page gardés", _layT0] call comspec_atak_native_fnc_perfAcc;
+    } else {
     private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
     private _sfx = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []];
     { ctrlDelete _x; } forEach ([
@@ -367,9 +412,15 @@ if (_overlays && {!_dragging}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
     [] call comspec_atak_native_fnc_deviceOverlay;
     uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+    // Calques tout juste recréés à cette place : tampon et signature posés comme le fait fn_pageRender, pour que le
+    // rendu de page qui suit les garde au lieu de les recréer une seconde fois.
+    { if (isNull (ctrlParentControlsGroup _x)) then { _x setVariable ["cs_ov", _ovStamp]; }; } forEach (allControls _d);
+    uiNamespace setVariable ["COMSPEC_ATAK_OvSig", str [_l get "device", _l get "landscape", _l get "model", _l get "mode", _l get "texture"]];
     uiNamespace setVariable ["COMSPEC_ATAK_ToastSig", []];
     [] call comspec_atak_native_fnc_notificationsRender;
     ["raise"] call comspec_atak_native_fnc_fx;
+    uiNamespace setVariable ["COMSPEC_ATAK_LaySig", _laySig];
+    };
     // Contrôles de l'app posés hors du groupe de contenu (boussole, bandeau de position, recherche de la carte, palette,
     // Garmin, Plan, JTAC…) : coordonnées absolues, restés à l'ancien cadre. Page redessinée à l'image suivante, sauf si
     // l'appelant l'a déjà redessinée entre-temps (fn_pageSettings, XEH_preInit : mise en page puis rendu).
@@ -382,4 +433,5 @@ if (_overlays && {!_dragging}) then {
         [_s2 getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender;
     }, [uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]] call comspec_atak_native_fnc_nextFrame;
 };
+["téléphone : disposition", _layT0] call comspec_atak_native_fnc_perfAcc;
 true

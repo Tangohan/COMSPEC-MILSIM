@@ -143,6 +143,10 @@ class CfgFunctions {
         class fiches { file="z\comspec_atak_native\addons\main\functions\fiches";
             class fichesAction {}; class pageFiches {};
         };
+        // App « Avis et vigilance » (ICD-SSE-ALERTES-001) : alertes du portail SSE, émission, signalement.
+        class alertes { file="z\comspec_atak_native\addons\main\functions\alertes";
+            class alertesAction {}; class alertesSend {}; class alertesDraft {}; class alertesQr {}; class pageAlertes {}; class pageAlertesNew {};
+        };
         class dock { file="z\comspec_atak_native\addons\main\functions\dock";
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
@@ -209,6 +213,7 @@ class COMSPEC_ATAK_Apps {
     class LinkAlly    { name="Liaison allié"; short="Liaison"; page="LINKALLY"; function="comspec_atak_native_fnc_pageLinkAlly"; section="Spécialités"; order=82; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_linkally.paa"; desc="Liaison avec une unité alliée"; };
     class Fiches      { name="Fiches SSE"; short="Fiches"; page="FICHES"; new=1; function="comspec_atak_native_fnc_pageFiches"; section="Renseignement"; order=123; dock=0; icon="\z\comspec_atak_native\addons\main\data\ui_clip.paa"; desc="Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre"; };
     class Wanted      { name="Recherchés"; short="Rech."; page="WANTED"; section="Renseignement"; order=122; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_wanted.paa"; desc="Personnes recherchées (HVT) de la communauté"; };
+    class SseAlert    { name="Avis et vigilance"; short="Avis"; page="SSEALERT"; new=1; function="comspec_atak_native_fnc_pageAlertes"; section="Renseignement"; order=124; dock=0; icon="\z\comspec_atak_native\addons\main\data\ui_warning.paa"; desc="Avis de recherche, notices et fiches de vigilance : consulter, émettre, signaler une observation"; };
     class Toc         { name="Poste TOC"; short="TOC"; page="TOC"; new=1; function="comspec_atak_native_fnc_pageToc"; section="Mission"; order=199; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_toc.paa"; desc="Écrans du poste de commandement (TOC)"; };
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; desc="Tâches et ordres reçus"; };
     class Reports     { name="Comptes rendus"; short="CR"; page="REPORTS"; section="Mission"; order=202; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; desc="Comptes rendus de fin de mission"; };
@@ -601,12 +606,12 @@ class CfgVehicles {
         hiddenSelections[]={"camo","patch"};
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\vest_phone_co.paa",""};
     };
-    // Tablette durcie à touches sur le rabat du JPC (fn_jpcScreen, tools/model_jpc_tablet.py) : coque, écran (texture UI).
+    // Ancienne tablette à touches du JPC (fn_jpcScreen, fonction fermée) : modèle et atlas retirés, la classe reste cachée (scope=1), parente des téléphones, avec le modèle du S7 en repli.
     class COMSPEC_ATAK_JpcTablet: Static {
         scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_2805C17B50";
-        model="\z\comspec_atak_native\addons\main\data\jpc_tablet.p3d";
+        model="\z\comspec_atak_native\addons\main\data\jpc_s7.p3d";
         hiddenSelections[]={"camo","screen"};
-        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_tablet_co.paa","#(argb,8,8,3)color(0,0,0,1)"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_s7_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
         hiddenSelectionsMaterials[]={"","\z\comspec_atak_native\addons\main\data\jpc_screen.rvmat"};
     };
     // Téléphone du profil ouvert sur le JPC (fn_jpcScreen, tools/model_jpc_phones.py) : S7 par défaut, coques.

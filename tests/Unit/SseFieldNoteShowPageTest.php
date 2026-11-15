@@ -109,7 +109,7 @@ final class SseFieldNoteShowPageTest extends TestCase
         self::assertStringNotContainsString('4. Pièces jointes', $doc, 'pas de section vide dans le document');
         // États vides explicatifs, avec leur bouton.
         self::assertMatchesRegularExpression('#<strong>Aucune pièce jointe</strong>\s*<p>[^<]+</p>\s*<button type="button" class="btn" data-fnr-open="fnr-dlg-piece"#', $page);
-        self::assertMatchesRegularExpression('#<strong>Aucun dossier</strong>\s*<p>[^<]+</p>\s*<button type="button" class="btn" data-fnr-open="fnr-dlg-dossier"#', $page);
+        self::assertMatchesRegularExpression('#<strong>Aucun dossier</strong>\s*<p>[^<]+</p>\s*<button type="button" class="btn" data-ra-open data-ra-pieces="note:\d+" aria-haspopup="dialog">Rattacher à…</button>#', $page);
         self::assertStringContainsString('Pièces <span class="fnr-count">0/4</span>', $page);
     }
 
@@ -158,13 +158,13 @@ final class SseFieldNoteShowPageTest extends TestCase
     {
         $page = self::page(self::render('b'));
         self::assertSame(1, substr_count($page, '<div class="fnr-tabs" role="tablist"'), 'une barre d’onglets propre à la page');
-        foreach (['essentiel', 'suivi', 'pieces', 'dossier', 'liaisons'] as $i => $tab) {
+        foreach (['essentiel', 'etiquettes', 'suivi', 'pieces', 'dossier', 'liaisons'] as $i => $tab) {
             self::assertMatchesRegularExpression('#<button type="button" role="tab" id="fnr-tab-' . $tab . '" aria-controls="fnr-panel-' . $tab . '" aria-selected="' . ($i === 0 ? 'true' : 'false') . '"#', $page);
             self::assertMatchesRegularExpression('#<section class="fnr-panel" role="tabpanel" id="fnr-panel-' . $tab . '" aria-labelledby="fnr-tab-' . $tab . '" data-fnr-panel="' . $tab . '"' . ($i === 0 ? '' : ' hidden') . '>\s*<h2 class="fnr-panel__title">[^<]+(<span class="fnr-count">[^<]+</span>)?</h2>\s*<p class="fnr-desc">[^<]+</p>#', $page, $tab);
         }
         $src = self::read(self::VIEW);
         // Titre de chaque onglet et de chaque fenêtre : une ligne de description juste dessous.
-        self::assertSame(5, preg_match_all('#<h2 class="fnr-panel__title">.*?</h2>\s*<p class="fnr-desc">#', $src));
+        self::assertSame(6, preg_match_all('#<h2 class="fnr-panel__title">.*?</h2>\s*<p class="fnr-desc">#', $src));
         self::assertSame(4, preg_match_all('#<h2 id="fnr-dlg-[a-z]+-title">[^<]+</h2>\s*<p class="fnr-desc">#', $src));
     }
 
@@ -192,7 +192,7 @@ final class SseFieldNoteShowPageTest extends TestCase
 
     public function testFormsLiveInDialogsWithTheirTokenAndRoutes(): void
     {
-        foreach (['a' => ['suivi' => 'suivi', 'dossier' => 'rattachement', 'piece' => 'pieces'], 'b' => ['suivi' => 'suivi', 'dossier' => 'rattachement', 'retirer' => '']] as $variant => $expected) {
+        foreach (['a' => ['suivi' => 'suivi', 'piece' => 'pieces'], 'b' => ['suivi' => 'suivi', 'retirer' => '']] as $variant => $expected) {
             $page = self::page(self::render($variant));
             SseFieldNoteShowFixture::close();
             // Hors du widget Liaisons (qui a ses propres fenêtres), chaque formulaire est dans une fenêtre de la page.
@@ -217,7 +217,10 @@ final class SseFieldNoteShowPageTest extends TestCase
             foreach (['brouillon', 'transmise', 'prise_en_compte', 'exploitee', 'sans_suite'] as $status) {
                 self::assertStringContainsString('<option value="' . $status . '"', $by['suivi']);
             }
-            self::assertMatchesRegularExpression('#<select id="fiche-dossier" name="case_id"[^>]*>\s*<option value="0">Aucun dossier</option>#', $by['dossier']);
+            // Le rattachement n'a plus sa petite fenêtre « Aucun dossier ▾ » : les boutons ouvrent la fenêtre « Rattacher » universelle.
+            self::assertStringNotContainsString('name="case_id"', $own);
+            self::assertStringNotContainsString('fnr-dlg-dossier', $page);
+            self::assertGreaterThanOrEqual(2, preg_match_all('#data-ra-open data-ra-pieces="note:\d+" aria-haspopup="dialog"#', $own), 'variante ' . $variant);
             if (isset($by['piece'])) {
                 self::assertStringContainsString('enctype="multipart/form-data"', $by['piece']);
                 self::assertStringContainsString('type="file" name="pieces[]" multiple required', $by['piece']);
@@ -234,7 +237,7 @@ final class SseFieldNoteShowPageTest extends TestCase
     {
         $page = self::page(self::render('c'));
         $own = self::own($page);
-        foreach (['<form', '<dialog', 'data-fnr-open', '_csrf_token', 'Modifier le suivi', 'Rattacher à un dossier', 'Joindre une pièce', 'Changer de dossier', 'Retirer', 'Suivi dans Remontées', 'Rédiger une nouvelle fiche', 'fnr-history'] as $absent) {
+        foreach (['<form', '<dialog', 'data-fnr-open', 'data-ra-open', '_csrf_token', 'Modifier le suivi', 'Rattacher à…', 'Joindre une pièce', 'Changer de dossier', 'Retirer', 'Suivi dans Remontées', 'Rédiger une nouvelle fiche', 'fnr-history'] as $absent) {
             self::assertStringNotContainsString($absent, $own, $absent);
         }
         // Il lit tout de même le document, l'état, la note de suivi, les pièces et le dossier.
@@ -252,7 +255,7 @@ final class SseFieldNoteShowPageTest extends TestCase
         $page = self::page(self::render('d'));
         self::assertStringContainsString('id="fnr-dlg-piece"', $page);
         self::assertStringContainsString('Rédiger une nouvelle fiche', $page);
-        foreach (['id="fnr-dlg-suivi"', 'id="fnr-dlg-dossier"', 'Modifier le suivi', 'Rattacher à un dossier', '/suivi"', '/rattachement"', 'Suivi dans Remontées'] as $absent) {
+        foreach (['id="fnr-dlg-suivi"', 'id="fnr-dlg-dossier"', 'Modifier le suivi', 'Rattacher à un dossier', 'Rattacher ailleurs', '/suivi"', '/rattachement"', 'Suivi dans Remontées'] as $absent) {
             self::assertStringNotContainsString($absent, $page, $absent);
         }
     }

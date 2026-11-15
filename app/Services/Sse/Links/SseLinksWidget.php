@@ -34,7 +34,7 @@ final class SseLinksWidget
 
 
     /**
-     * @param array<string, mixed> $options viewer (SseLinkViewer), graph (SseLinkGraph), back (adresse de retour), return (true : rend le HTML au lieu de l'écrire)
+     * @param array<string, mixed> $options viewer (SseLinkViewer), graph (SseLinkGraph), back (adresse de retour), actions (HTML des actions de la page, dans la barre), return (true : rend le HTML au lieu de l'écrire)
      */
     public static function render(string $type, int|string $id, array $options = []): ?string
     {
@@ -96,6 +96,8 @@ final class SseLinksWidget
             'g' => $g,
             'root' => $root,
             'degraded' => !$ready,
+            // Actions de la page (HTML déjà échappé par l'appelant), posées dans la barre à côté du bouton « Liaisons ».
+            'actions' => (string) ($options['actions'] ?? ''),
             'canWrite' => $ready && !$viewer->isGuest() && $viewer->canWrite(C::TYPES[$type]['section']),
             'guest' => $viewer->isGuest(),
             'csrf' => Csrf::token(),

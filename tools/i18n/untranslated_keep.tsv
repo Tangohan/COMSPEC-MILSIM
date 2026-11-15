@@ -1360,3 +1360,4 @@ Libre Baskerville	nom de police Google Fonts	views/layout/main.php
 jnet/liens/nouveau?src=	chemin d'URL, pas un texte	views/jnet/unit_space.php
 jnet/courrier/nouveau?membre=	chemin d'URL, pas un texte	views/jnet/commun/_voie.php
 %1 rapprochement(s) de Cerbère à valider	nom propre « Cerbère » dans la traduction anglaise (le contrôle y voit un accent)	views/atak/sse/partials/case_progress.php
+%1 Proposés par Cerbère	nom propre « Cerbère » dans la traduction anglaise (le contrôle y voit un accent)	views/atak/sse/_attach_window.php

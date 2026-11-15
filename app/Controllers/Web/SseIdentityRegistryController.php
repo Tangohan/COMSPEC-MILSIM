@@ -58,6 +58,7 @@ final class SseIdentityRegistryController
         private ?SsePersonRepository $persons = null,
         private ?SseIdentityGeneratorService $generator = null,
         private ?\App\Services\Sse\SseCheckPaperImageService $paperImages = null,
+        private ?\App\Services\Sse\SsePaperDownloadService $paperDownloads = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->clearance ??= new SseClearanceService($this->access);
@@ -373,8 +374,16 @@ final class SseIdentityRegistryController
         }
         $country = $this->countries->findByCode($tenantId, (string) $doc['country_code']);
         $holder = ($pid = (int) ($doc['holder_person_id'] ?? 0)) > 0 ? $this->persons->findById($pid, $tenantId) : null;
+        // Pièce complète : faces, tailles et remplacements annoncés ; null si le lecteur n'a pas l'habilitation de ce papier.
+        $dl = null;
+        if (\App\Services\Sse\SsePaperDownloadService::available()) {
+            $toRender = $this->paperToRender((int) $doc['id'], false);
+            $dl = $toRender === null ? null : $toRender['plan'] + ['base' => self::BASE . '/documents/' . (int) $doc['id']];
+        }
 
         return $this->view('atak.sse.papers.document_show', [
+            'tenantId' => $tenantId,
+            'dl' => $dl,
             'title' => $doc['ref'] . ' — ' . $doc['doc_type_label'],
             'doc' => $doc,
             'identity' => $identity,
@@ -388,6 +397,196 @@ final class SseIdentityRegistryController
             'papersTab' => 'documents',
             'personPhotos' => \App\Services\Sse\SseIdWorkshopService::personPhotos($tenantId, $identity['person_id'] ?? null),
         ]);
+    }
+
+    // ------------------------------------------------------- Pièce complète (téléchargement)
+
+    /** Plafond de débit des téléchargements et des aperçus de faces, par communauté et par compte. */
+    private const DL_RATE_MAX = 40;
+    private const DL_RATE_WINDOW = 600;
+    private const FACE_RATE_MAX = 240;
+
+    /**
+     * Papier prêt à rendre pour le lecteur de la session, ou null : papier introuvable, d'une autre communauté, section
+     * « papiers » non lisible, papier secret sans l'habilitation Confidentiel (réponse identique pour l'appelant : 404).
+     * Photo et signature d'une identité de MEMBRE : seulement si SseMemberImageGate l'autorise (la consultation est alors
+     * journalisée) ; sinon silhouette et signature imprimée, avec un avertissement.
+     *
+     * @return array{tenant: int, doc: array<string, mixed>, identity: array<string, mixed>, country: ?array<string, mixed>, images: bool, model: array<string, mixed>, plan: array<string, mixed>, holder: string}|null
+     */
+    private function paperToRender(int $docId, bool $recordConsultation): ?array
+    {
+        $tenantId = $this->tenantId();
+        if ($tenantId < 1 || $docId < 1 || !SseAccessPolicy::sessionAllows('papiers', SseAccessCatalog::LEVEL_READ, ['guest' => $this->access->isGuest(), 'tenant_id' => $tenantId])) {
+            return null;
+        }
+        $doc = $this->documents->find($docId, $tenantId);
+        if ($doc === null) {
+            return null;
+        }
+        $identity = $this->identities->find((int) $doc['identity_id'], $tenantId) ?? [];
+        $secret = in_array($identity['kind'] ?? '', MemberIdentityPapersService::SECRET, true) || in_array($doc['st_origin'], MemberIdentityPapersService::SECRET, true);
+        if ($secret && !$this->canSeeTruth()) {
+            return null;
+        }
+        $country = $this->countries->findByCode($tenantId, (string) $doc['country_code']);
+        $images = true;
+        if (($identity['id'] ?? 0) > 0) {
+            try {
+                $gate = \App\Services\Sse\SseMemberImageGate::forSession();
+                $access = $gate->forIdentity($tenantId, $identity);
+                $images = (bool) $access['allowed'];
+                if ($images && $access['confidential'] && $recordConsultation && ($identity['photo_path'] ?? '') . ($identity['signature_path'] ?? '') !== '') {
+                    $gate->recordConsultation($tenantId, (int) $gate->viewerId(), 'paper_download', (int) $doc['id'], $access['owner'], $access['reason']);
+                }
+            } catch (\Throwable $e) {
+                error_log('Pièce complète : droit sur les images indécidable ou consultation non journalisée, images retirées : ' . $e->getMessage());
+                $images = false;
+            }
+        }
+        $plan = $this->paperDownloads()->plan($doc, $identity, $country, $images);
+        $marking = 'discreet';
+        try {
+            $marking = (string) (new \App\Repositories\SseFileRecordRepository())->settings($tenantId)['papers_marking'];
+        } catch (\Throwable) {
+        }
+        $shown = $images ? $identity : array_merge($identity, ['photo_path' => null, 'signature_path' => null]);
+        $model = \App\Services\Sse\SseIdWorkshopService::previewModel($doc, $shown, $country, $marking);
+        $model['mrz'] = SseMrzService::forDocument($doc, $identity, (string) ($country['mrz_code'] ?? ''));
+
+        return [
+            'tenant' => $tenantId, 'doc' => $doc, 'identity' => $identity, 'country' => $country, 'images' => $images, 'model' => $model, 'plan' => $plan,
+            'holder' => trim(mb_strtoupper((string) ($identity['last_name'] ?? '')) . ' ' . (string) ($identity['first_name'] ?? '')),
+        ];
+    }
+
+    private function paperDownloads(): \App\Services\Sse\SsePaperDownloadService
+    {
+        return $this->paperDownloads ??= new \App\Services\Sse\SsePaperDownloadService();
+    }
+
+    private function notFound(): Response
+    {
+        return (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store')
+            ->setBody('Not found');
+    }
+
+    private function downloadRateKey(string $kind, int $tenantId): string
+    {
+        return 'sse_paper_' . $kind . '|' . $tenantId . '|' . (int) $this->userId() . '|' . ($this->userId() === null ? (string) ($_SERVER['REMOTE_ADDR'] ?? '') : '');
+    }
+
+    /**
+     * GET /atak/sse/papiers/documents/{id}/face/{face} : une face du papier en PNG (aperçu de la page, 240 dpi). Même image que le
+     * téléchargement. Papier ou face inconnus, autre communauté, droits ou habilitation insuffisants : 404 identique.
+     */
+    public function documentFace(Request $request, array $params = []): Response
+    {
+        if (!\App\Services\Sse\SsePaperDownloadService::available()) {
+            return $this->notFound();
+        }
+        $tenantId = $this->tenantId();
+        if ($tenantId > 0 && (new \App\Services\Security\FileRateLimiter())->tooManyAttempts($this->downloadRateKey('face', $tenantId), self::FACE_RATE_MAX, self::DL_RATE_WINDOW)) {
+            return (new Response())->setStatusCode(429)->header('Content-Type', 'text/plain; charset=utf-8')->header('Retry-After', '60')->setBody('Too many requests');
+        }
+        $p = $this->paperToRender((int) ($params['id'] ?? 0), true);
+        $face = (string) ($params['face'] ?? '');
+        if ($p === null || !isset($p['plan']['faces'][$face])) {
+            return $this->notFound();
+        }
+        try {
+            $png = $this->paperDownloads()->png($p['model'], $this->paperDownloads()->assets($p['doc'], $p['identity'], $p['country'], $p['images']), $face, \App\Services\Sse\SsePaperRenderer::DPI_PREVIEW);
+        } catch (\Throwable $e) {
+            error_log('Pièce complète : face illisible : ' . $e->getMessage());
+
+            return $this->notFound();
+        }
+
+        return (new Response())
+            ->header('Content-Type', 'image/png')
+            ->header('Content-Length', (string) strlen($png))
+            ->header('Content-Disposition', 'inline; filename="' . \App\Services\Sse\SsePaperDownloadService::filename($p['doc'], $face, 'png') . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer')
+            ->setBody($png);
+    }
+
+    /**
+     * GET /atak/sse/papiers/documents/{id}/telecharger/{format}(?face=…) : pdf (pièce complète, A4), zip (un PNG par face) ou png
+     * (une face, ?face=recto). Chaque téléchargement est journalisé (qui, quel papier, format, faces). Débit borné.
+     */
+    public function documentDownload(Request $request, array $params = []): Response
+    {
+        $format = (string) ($params['format'] ?? '');
+        if (!in_array($format, \App\Services\Sse\SsePaperDownloadService::FORMATS, true) || !\App\Services\Sse\SsePaperDownloadService::available()) {
+            return $this->notFound();
+        }
+        $tenantId = $this->tenantId();
+        $p = $this->paperToRender((int) ($params['id'] ?? 0), false);
+        if ($p === null) {
+            return $this->notFound();
+        }
+        $faces = array_keys($p['plan']['faces']);
+        $one = null;
+        if ($format === 'png') {
+            $one = $request->queryString('face');
+            if (!in_array($one, $faces, true)) {
+                return $this->notFound();
+            }
+            $faces = [$one];
+        }
+        if ((new \App\Services\Security\FileRateLimiter())->tooManyAttempts($this->downloadRateKey('download', $tenantId), self::DL_RATE_MAX, self::DL_RATE_WINDOW)) {
+            return (new Response())->setStatusCode(429)->header('Content-Type', 'text/plain; charset=utf-8')->header('Retry-After', '60')->setBody('Too many requests');
+        }
+        // Seconde passe : la consultation d'une photo de membre est journalisée avant de produire quoi que ce soit.
+        $p = $this->paperToRender((int) $p['doc']['id'], true);
+        if ($p === null) {
+            return $this->notFound();
+        }
+        $svc = $this->paperDownloads();
+        $assets = $svc->assets($p['doc'], $p['identity'], $p['country'], $p['images']);
+        $warnings = $p['plan']['warnings'];
+        try {
+            if ($format === 'pdf') {
+                $body = $svc->pdf($p['doc'], $p['model'], $assets, $warnings, $p['holder']);
+                if ($body === null) {
+                    return $this->notFound();
+                }
+                $name = \App\Services\Sse\SsePaperDownloadService::filename($p['doc'], 'complet', 'pdf');
+                $mime = 'application/pdf';
+            } elseif ($format === 'zip') {
+                $body = $svc->zip($p['doc'], $p['model'], $assets, $warnings);
+                $name = \App\Services\Sse\SsePaperDownloadService::filename($p['doc'], 'faces', 'zip');
+                $mime = 'application/zip';
+            } else {
+                $body = $svc->png($p['model'], $assets, (string) $one);
+                $name = \App\Services\Sse\SsePaperDownloadService::filename($p['doc'], (string) $one, 'png');
+                $mime = 'image/png';
+            }
+        } catch (\Throwable $e) {
+            error_log('Pièce complète : génération impossible : ' . $e->getMessage());
+
+            return $this->notFound();
+        }
+        $this->audit($tenantId, 'id_document.download', (int) $p['doc']['id'], [
+            'format' => $format, 'faces' => $faces, 'file' => $name, 'bytes' => strlen($body), 'images_included' => $p['images'],
+            'real_country' => $p['plan']['real'], 'warnings' => count($warnings),
+        ], 'sse_id_document');
+
+        return (new Response())
+            ->header('Content-Type', $mime)
+            ->header('Content-Length', (string) strlen($body))
+            ->header('Content-Disposition', 'attachment; filename="' . $name . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer')
+            ->header('X-Paper-Faces', implode(',', $faces))
+            ->header('X-Paper-Warnings', (string) count($warnings))
+            ->setBody($body);
     }
 
     public function documentStatuses(Request $request, array $params = []): Response
@@ -820,7 +1019,7 @@ final class SseIdentityRegistryController
     }
 
     /** @param array<string, mixed> $after */
-    private function audit(int $tenantId, string $action, int $objectId, array $after): void
+    private function audit(int $tenantId, string $action, int $objectId, array $after, string $objectType = 'sse_id_country'): void
     {
         try {
             (new SseAuditLogRepository())->write([
@@ -828,7 +1027,7 @@ final class SseIdentityRegistryController
                 'actor_user_id' => $this->userId(),
                 'actor_label' => 'Registre des papiers',
                 'action' => $action,
-                'object_type' => 'sse_id_country',
+                'object_type' => $objectType,
                 'object_id' => $objectId,
                 'after' => $after,
             ]);

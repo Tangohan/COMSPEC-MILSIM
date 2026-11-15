@@ -108,8 +108,8 @@ final class SsePortalNavTest extends TestCase
                 $nav[$p] = true;
             }
         }
-        // Hors navigation par nature : sas d'entrée, recherche, boîte « À trier » (bouton de la barre latérale), recherche du widget « Liaisons » (JSON), tiroir du widget Cerbère (fragment), formulaires et sous-pages ouverts depuis leur page.
-        $outside = '~^atak/sse/(entrer|commandement|quitter|apparence|confidentialite|recherche|objets|a-trier|liaisons|cerbere)(/|$)|/(nouveau|nouvelle|reels|requete|export|mrz|partagees|importer|suggestions|pdf)$|^atak/sse/(exploitation-numerique|dev)/~';
+        // Hors navigation par nature : sas d'entrée, recherche, boîte « À trier » (bouton de la barre latérale), recherche du widget « Liaisons » (JSON), lectures de la fenêtre « Rattacher » (JSON), tiroir du widget Cerbère (fragment), formulaires et sous-pages ouverts depuis leur page.
+        $outside = '~^atak/sse/(entrer|commandement|quitter|apparence|confidentialite|recherche|objets|a-trier|liaisons|rattacher|cerbere)(/|$)|/(nouveau|nouvelle|reels|requete|export|mrz|partagees|importer|suggestions|pdf)$|^atak/sse/(exploitation-numerique|dev)/~';
         $orphans = [];
         foreach (array_unique($m[1]) as $route) {
             if (!isset($nav[$route]) && !preg_match($outside, $route)) {
@@ -158,6 +158,8 @@ final class SsePortalNavTest extends TestCase
             '/public/atak/sse/accueil' => 'accueil',
             '/public/atak/sse/papiers' => 'papiers',
             '/public/atak/sse/papiers/documents/7' => 'papiers',
+            '/public/atak/sse/papiers/documents/7/telecharger/pdf' => 'papiers',
+            '/public/atak/sse/papiers/documents/7/face/recto' => 'papiers',
             '/public/atak/sse/papiers/tableau?op=x' => 'papiers-tableau',
             '/public/atak/sse/papiers/identites/3' => 'papiers-identites',
             '/public/atak/sse/papiers/controles/9' => 'papiers-controles',

@@ -133,6 +133,7 @@ $unarchiveVersion = (int) $c['version'];
     </header>
 
     <?php \App\Services\Sse\Links\SseLinksWidget::render('interest', (int) ($c['id'] ?? 0)); ?>
+    <?php \App\Services\Sse\Attach\SseAttachWindow::section('interest', (int) ($c['id'] ?? 0)); ?>
 
     <div class="di-tabs" role="tablist" aria-label="Sections du dossier" data-di-tabs>
         <?php foreach ($tabs as $key => [$label, $count]): ?>

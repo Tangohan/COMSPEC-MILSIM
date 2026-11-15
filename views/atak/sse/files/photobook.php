@@ -102,10 +102,7 @@ $all = ($_GET['toutes'] ?? '') === '1';
                         <div class="fx-pc">
                             <span class="ph"><img src="<?= $h(\App\Services\Sse\SseSeekPhotoService::photoUrl($ph)) ?>" alt="<?= $h($ph['caption'] ?? 'Photo à rattacher') ?>" loading="lazy"></span>
                             <small translate="no"><?= $h($ph['caption'] ?? substr((string) $ph['created_at'], 0, 16)) ?></small>
-                            <form method="post" action="<?= $h(url('atak/sse/fichiers/photos/' . (int) $ph['id'] . '/rattacher')) ?>" style="display:flex;gap:6px"><?= $csrf ?>
-                                <input class="fx-in mono" name="target" placeholder="IDT-…" aria-label="Fiche à rattacher" style="height:32px">
-                                <button class="btn sm" type="submit">OK</button>
-                            </form>
+                            <button type="button" class="btn sm" data-ra-open data-ra-pieces="photo:<?= (int) $ph['id'] ?>" aria-haspopup="dialog">Rattacher à…</button>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -113,6 +110,9 @@ $all = ($_GET['toutes'] ?? '') === '1';
         </section>
     </div>
 </div>
+<?php
+?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::render(); ?>
 <?php
 $sseContent = ob_get_clean();
 require dirname(__DIR__) . '/_layout.php';

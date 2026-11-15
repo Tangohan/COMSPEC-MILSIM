@@ -5,8 +5,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /**
  * Bureau SSE — lecture d'une fiche de renseignement.
  * En-tête (référence, état, cotation, actions), puis deux colonnes : le document à gauche, d'un seul tenant, et à droite
- * une colonne à onglets (Essentiel, Suivi, Pièces jointes, Dossier, Liaisons). Les formulaires s'ouvrent dans des fenêtres.
+ * une colonne à onglets (Essentiel, Étiquettes, Suivi, Pièces jointes, Dossier, Liaisons). Les formulaires s'ouvrent dans des fenêtres.
  * Styles : public/assets/css/sse-fiche-rens.css (classes .fnr-*) ; script : public/assets/js/sse-fiche-rens.js (aucun texte).
+ * Étiquettes de style américain (SseFieldNoteTagService::decorate) : marquage de diffusion dans le bandeau et le cartouche,
+ * besoin, discipline et produit dans le cartouche, thèmes en pastilles, mention de validité, onglet « Étiquettes » filtrable.
+ * Styles et script des étiquettes : sse-fiches-etiquettes.css / .js (.fnt-*, .fnp-*).
  *
  * @var array<string,mixed> $note
  * @var array<string,mixed>|null $linkedCase
@@ -16,6 +19,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
  * @var int $attachmentsMax
  * @var bool $canManage
  * @var bool $canWrite
+ * @var array<string, array{key: string, label: string, hint: string, tags: list<array<string, mixed>>}> $tagFamilies étiquettes à proposer
+ * @var bool $tagsReady
  */
 $note = is_array($note ?? null) ? $note : [];
 $attachments = is_array($note['attachments'] ?? null) ? $note['attachments'] : [];
@@ -96,8 +101,41 @@ $icons = [
     'copy' => 'M9 9h11v11H9zM5 15V4h11',
     'close' => 'M6 6l12 12M18 6L6 18',
 ];
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiche-rens.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-fiche-rens.js')) . '"></script>';
+// —— Étiquettes de la fiche ——
+$tagCat = \App\Support\SseFieldNoteTagCatalog::class;
+$tagLang = function_exists('locale') && locale() === 'en' ? 'en' : 'fr';
+$tagList = is_array($note['tags'] ?? null) ? $note['tags'] : [];
+$tagGroups = is_array($note['tag_groups'] ?? null) ? $note['tag_groups'] : [];
+$tagFamilies = is_array($tagFamilies ?? null) ? $tagFamilies : [];
+$tagsReady = (bool) ($tagsReady ?? false);
+$canTag = $canWrite && $tagsReady && $tagFamilies !== [];
+$categories = is_array($note['tag_categories'] ?? null) ? $note['tag_categories'] : array_map(
+    static fn (mixed $c): array => ['code' => (string) $c, 'label' => \App\Support\SseFieldNoteCatalog::themeLabel((string) $c), 'hex' => \App\Support\SseFieldNoteCatalog::themeColor((string) $c)],
+    $themes
+);
+$topicTags = array_merge($tagGroups['theme'] ?? [], $tagGroups['framework'] ?? []);
+$disciplines = is_array($note['tag_disciplines'] ?? null) ? $note['tag_disciplines'] : [];
+$requirements = $tagGroups['requirement'] ?? [];
+$products = $tagGroups['product'] ?? [];
+$validity = $tagGroups['validity'] ?? [];
+$dissemination = $tagGroups['dissemination'] ?? [];
+$marking = (string) ($note['marking'] ?? \App\Support\SseUsClassification::banner($classCode));
+$handling = is_array($note['handling'] ?? null) ? $note['handling'] : [];
+$precedence = is_array($note['precedence'] ?? null) ? $note['precedence'] : ['code' => $tagCat::defaultPrecedence($urgency), 'label' => '', 'desc' => ''];
+$relUs = (string) (($note['evaluation_us'] ?? [])['reliability'] ?? $tagCat::reliabilityUs($rel));
+$credUs = (string) (($note['evaluation_us'] ?? [])['credibility'] ?? $tagCat::credibilityUs($cred));
+$codes = static function (array $tags) use ($h): string {
+    $out = '';
+    foreach ($tags as $tag) {
+        $out .= '<span><b>' . $h($tag['text']) . '</b>' . ($tag['label'] !== '' ? ' <small>' . $h($tag['label']) . ($tag['note'] !== '' ? ' · ' . $h($tag['note']) : '') . '</small>' : '') . '</span>';
+    }
+
+    return '<span class="fnr-codes">' . $out . '</span>';
+};
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiche-rens.css')) . '">'
+    . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiches-etiquettes.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-fiche-rens.js')) . '"></script>'
+    . '<script defer src="' . $h(asset_url('assets/js/sse-fiches-etiquettes.js')) . '"></script>';
 ?>
 <div class="fnr fnr--<?= $h($classCode) ?>" data-fnr data-fnr-copied="Copié dans le presse-papiers." data-fnr-copy-failed="La copie a échoué : sélectionnez le texte et copiez-le à la main.">
     <header class="fnr-head">
@@ -109,7 +147,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
         <div class="fnr-actions" data-cw-lift>
             <?php if ($canManage): ?>
                 <button type="button" class="btn fnr-act" data-fnr-open="fnr-dlg-suivi" aria-haspopup="dialog"><?= $ico($icons['flag']) ?><span class="fnr-act__long">Modifier le suivi</span><span class="fnr-act__short" aria-hidden="true">Suivi</span></button>
-                <button type="button" class="btn btn--ghost fnr-act" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog"><?= $ico($icons['folder']) ?><span class="fnr-act__long">Rattacher à un dossier</span><span class="fnr-act__short" aria-hidden="true">Dossier</span></button>
+                <button type="button" class="btn btn--ghost fnr-act" data-ra-open data-ra-pieces="note:<?= (int) $noteId ?>" aria-haspopup="dialog"><?= $ico($icons['folder']) ?><span class="fnr-act__long">Rattacher à…</span><span class="fnr-act__short" aria-hidden="true">Rattacher</span></button>
             <?php endif; ?>
             <?php if ($canAttach): ?>
                 <button type="button" class="btn <?= $canManage ? 'btn--ghost' : '' ?> fnr-act" data-fnr-open="fnr-dlg-piece" aria-haspopup="dialog"><?= $ico($icons['clip']) ?><span class="fnr-act__long">Joindre une pièce</span><span class="fnr-act__short" aria-hidden="true">Pièce</span></button>
@@ -122,6 +160,9 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                     <button type="button" data-fnr-copy="<?= $h(url($base)) ?>">Copier le lien de la fiche</button>
                     <?php if ($canOpenIntake): ?>
                         <a href="<?= $h(url('back-office/remontees/fiche/' . $noteId)) ?>">Suivi dans Remontées</a>
+                    <?php endif; ?>
+                    <?php if ($canTag): ?>
+                        <button type="button" data-fnr-open="fnr-dlg-etiquettes" aria-haspopup="dialog">Modifier les étiquettes</button>
                     <?php endif; ?>
                     <?php if ($canWrite): ?>
                         <a href="<?= $h(url('atak/sse/fiches/nouvelle')) ?>">Rédiger une nouvelle fiche</a>
@@ -142,9 +183,9 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
         </ul>
     </header>
 
-    <div class="fnr-layout">
+    <div class="fnr-layout fnr-layout--tags">
         <article class="fnr-doc" aria-label="Fiche de renseignement <?= $h($ref) ?>">
-            <div class="fnr-band"><?= $h($classBand) ?></div>
+            <div class="fnr-band"><?= $h($classBand) ?><?php if ($dissemination !== []): ?><span class="fnr-band__marking"><?= $h($marking) ?></span><?php endif; ?></div>
 
             <div class="fnr-doc__inner">
                 <table class="fnr-cartouche">
@@ -155,8 +196,22 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                         </tr>
                         <tr>
                             <th scope="row">Type</th><td><?= $h($kindCode) ?> — <?= $h($kindLabel) ?></td>
-                            <th scope="row">Urgence</th><td><?= $h($urgencyLabel) ?></td>
+                            <th scope="row">Urgence</th><td><?= $h($urgencyLabel) ?><span class="fnr-us" title="<?= $h($precedence['desc']) ?>"><?= $h($precedence['code']) ?></span></td>
                         </tr>
+                        <tr>
+                            <th scope="row">Diffusion</th><td colspan="3" class="fnr-marking"><?= $h($marking) ?></td>
+                        </tr>
+                        <?php if ($requirements !== [] || $products !== []): ?>
+                            <tr>
+                                <th scope="row">Besoin</th><td><?= $requirements !== [] ? $codes($requirements) : 'Non précisé' ?></td>
+                                <th scope="row">Produit</th><td><?= $products !== [] ? $codes($products) : 'Non précisé' ?></td>
+                            </tr>
+                        <?php endif; ?>
+                        <?php if ($disciplines !== [] && $tagList !== []): ?>
+                            <tr>
+                                <th scope="row">Discipline</th><td colspan="3"><?= $codes($disciplines) ?></td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
 
@@ -170,12 +225,22 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                     </div>
                 </div>
 
-                <?php if ($themes !== []): ?>
-                    <ul class="fnr-tags" aria-label="Catégories">
-                        <?php foreach ($themes as $themeCode): ?>
-                            <li class="fnr-tag" style="--fnr-tag: <?= $h(\App\Support\SseFieldNoteCatalog::themeColor((string) $themeCode)) ?>"><?= $h(\App\Support\SseFieldNoteCatalog::themeLabel((string) $themeCode)) ?></li>
+                <?php if ($categories !== [] || $topicTags !== []): ?>
+                    <ul class="fnr-tags" aria-label="Catégories et thèmes">
+                        <?php foreach ($categories as $category): ?>
+                            <li class="fnr-tag" style="--fnr-tag: <?= $h($category['hex']) ?>"><?= $h($category['label']) ?></li>
+                        <?php endforeach; ?>
+                        <?php foreach ($topicTags as $tag): ?>
+                            <li class="fnr-tag" style="--fnr-tag: <?= $h($tag['hex']) ?>" title="<?= $h($tag['desc']) ?>"><b><?= $h($tag['text']) ?></b> <?= $h($tag['label']) ?></li>
                         <?php endforeach; ?>
                     </ul>
+                <?php endif; ?>
+                <?php if ($validity !== []): ?>
+                    <p class="fnr-validity"><strong>Validité</strong>
+                        <?php foreach ($validity as $tag): ?>
+                            <span><b><?= $h($tag['text']) ?></b> <?= $h($tag['label']) ?><?= $tag['note'] !== '' ? ', ' . $h($tag['note']) : '' ?></span>
+                        <?php endforeach; ?>
+                    </p>
                 <?php endif; ?>
 
                 <section class="fnr-sec">
@@ -207,8 +272,8 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                     <h3>3. Évaluation</h3>
                     <table class="fnr-facts">
                         <tbody>
-                            <tr><th scope="row">Source</th><td><strong><?= $h($rel) ?></strong> — <?= $h($relLabel) ?></td></tr>
-                            <tr><th scope="row">Information</th><td><strong><?= $h($cred) ?></strong> — <?= $h($credLabel) ?></td></tr>
+                            <tr><th scope="row">Source</th><td><strong><?= $h($rel) ?></strong> — <?= $h($relLabel) ?> <span class="fnr-us-label" lang="en">(<?= $h($relUs) ?>)</span></td></tr>
+                            <tr><th scope="row">Information</th><td><strong><?= $h($cred) ?></strong> — <?= $h($credLabel) ?> <span class="fnr-us-label" lang="en">(<?= $h($credUs) ?>)</span></td></tr>
                         </tbody>
                     </table>
                 </section>
@@ -243,14 +308,18 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                         </tr>
                     </tbody>
                 </table>
+                <?php foreach ($handling as $line): ?>
+                    <p class="fnr-handling"><?= $h($line) ?></p>
+                <?php endforeach; ?>
             </div>
 
-            <div class="fnr-band fnr-band--bottom"><?= $h($classBand) ?></div>
+            <div class="fnr-band fnr-band--bottom"><?= $h($classBand) ?><?php if ($dissemination !== []): ?><span class="fnr-band__marking"><?= $h($marking) ?></span><?php endif; ?></div>
         </article>
 
         <aside class="fnr-side" aria-label="Informations sur la fiche">
             <div class="fnr-tabs" role="tablist" aria-label="Rubriques de la fiche">
                 <button type="button" role="tab" id="fnr-tab-essentiel" aria-controls="fnr-panel-essentiel" aria-selected="true" data-fnr-tab="essentiel">Essentiel</button>
+                <button type="button" role="tab" id="fnr-tab-etiquettes" aria-controls="fnr-panel-etiquettes" aria-selected="false" tabindex="-1" data-fnr-tab="etiquettes">Étiquettes</button>
                 <button type="button" role="tab" id="fnr-tab-suivi" aria-controls="fnr-panel-suivi" aria-selected="false" tabindex="-1" data-fnr-tab="suivi">Suivi</button>
                 <button type="button" role="tab" id="fnr-tab-pieces" aria-controls="fnr-panel-pieces" aria-selected="false" tabindex="-1" data-fnr-tab="pieces">Pièces <span class="fnr-count"><?= $attCount ?>/<?= $attachmentsMax ?></span></button>
                 <button type="button" role="tab" id="fnr-tab-dossier" aria-controls="fnr-panel-dossier" aria-selected="false" tabindex="-1" data-fnr-tab="dossier">Dossier</button>
@@ -279,9 +348,55 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                 </dl>
             </section>
 
+            <section class="fnr-panel" role="tabpanel" id="fnr-panel-etiquettes" aria-labelledby="fnr-tab-etiquettes" data-fnr-panel="etiquettes" hidden>
+                <h2 class="fnr-panel__title">Étiquettes <span class="fnr-count"><?= count($tagList) ?></span></h2>
+                <p class="fnr-desc">Ce que la fiche porte comme mentions : besoin servi, discipline, produit, thèmes, diffusion, validité.</p>
+                <div class="fnt-list" id="fnr-tag-list">
+                    <?php if ($tagList !== []): ?>
+                        <div class="fnt-search">
+                            <label class="sr-only" for="fnr-tag-filter">Filtrer les étiquettes de la fiche</label>
+                            <input type="search" id="fnr-tag-filter" data-fnt-filter="fnr-tag-list" autocomplete="off" placeholder="Filtrer : code, libellé ou famille">
+                        </div>
+                        <?php foreach ($tagGroups as $familyKey => $familyTags): ?>
+                            <section class="fnt-group" data-fnt-group>
+                                <h3><?= $h($tagCat::familyLabel((string) $familyKey, $tagLang)) ?></h3>
+                                <ul>
+                                    <?php foreach ($familyTags as $tag): ?>
+                                        <li class="fnt-item" data-fnt-item data-search="<?= $h($tag['text'] . ' ' . $tag['label'] . ' ' . $tag['desc'] . ' ' . $tag['family_label']) ?>">
+                                            <a class="fnt<?= $tag['status'] !== 'active' ? ' fnt--off' : '' ?>" style="--fnt: <?= $h($tag['hex']) ?>" href="<?= $h(url('atak/sse/fiches?tag=' . rawurlencode((string) $tag['key']))) ?>" title="Voir les fiches qui portent cette étiquette"><?= $h($tag['text']) ?></a>
+                                            <span class="fnt-item__label"><?= $h($tag['label']) ?><?= $tag['note'] !== '' ? ' · ' . $h($tag['note']) : '' ?></span>
+                                            <?php if ($tag['desc'] !== ''): ?><span class="fnt-item__desc"><?= $h($tag['desc']) ?></span><?php endif; ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </section>
+                        <?php endforeach; ?>
+                        <p class="fnp-empty" data-fnt-empty hidden>Aucune étiquette de la fiche ne correspond.</p>
+                    <?php else: ?>
+                        <div class="fnr-empty">
+                            <strong>Aucune étiquette</strong>
+                            <p><?= $canTag ? 'Ajoutez le besoin servi, la discipline de recueil, le type de produit ou une mention de diffusion.' : ($tagsReady ? 'Cette fiche ne porte que ses catégories.' : 'L’étiquetage n’est pas encore ouvert sur ce site : la fiche garde ses catégories.') ?></p>
+                            <?php if ($canTag): ?>
+                                <button type="button" class="btn" data-fnr-open="fnr-dlg-etiquettes" aria-haspopup="dialog">Ajouter des étiquettes</button>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    <dl class="fnr-rows">
+                        <div><dt>Marquage</dt><dd><span class="fnr-mono"><?= $h($marking) ?></span></dd></div>
+                        <div><dt>Priorité</dt><dd><strong class="fnr-mono"><?= $h($precedence['code']) ?></strong><span class="fnr-line fnr-dim">Suit l’urgence de la fiche : <?= $h($urgencyLabel) ?>.</span></dd></div>
+                        <div><dt>Cotation</dt><dd><strong><?= $h($rel . $cred) ?></strong><span class="fnr-line fnr-dim" lang="en"><?= $h($relUs) ?> · <?= $h($credUs) ?></span></dd></div>
+                    </dl>
+                    <p class="fnt-note">Une étiquette de diffusion est une mention écrite sur la fiche : elle ne change pas qui peut la lire. L’accès reste décidé par la classification de la fiche et par les droits d’accès de la communauté.</p>
+                </div>
+                <?php if ($canTag && $tagList !== []): ?>
+                    <button type="button" class="btn btn--ghost fnr-wide" data-fnr-open="fnr-dlg-etiquettes" aria-haspopup="dialog">Modifier les étiquettes</button>
+                <?php endif; ?>
+            </section>
+
             <section class="fnr-panel" role="tabpanel" id="fnr-panel-suivi" aria-labelledby="fnr-tab-suivi" data-fnr-panel="suivi" hidden>
                 <h2 class="fnr-panel__title">Suivi</h2>
                 <p class="fnr-desc">Ce que le bureau a fait de la fiche, du plus récent au plus ancien.</p>
+                <?php if (!empty($intakeDesk)): $intakePart = 'panel'; require __DIR__ . '/_intake_suivi.php'; else: ?>
                 <div class="fnr-state fnr-state--<?= $h($statusTone) ?>">
                     <p class="fnr-state__label"><span class="fnr-dot" aria-hidden="true"></span><?= $h($statusLabel) ?></p>
                     <?php if (isset($statusHints[$status])): ?><p class="fnr-state__hint"><?= $h($statusHints[$status]) ?></p><?php endif; ?>
@@ -306,6 +421,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                             <p>Les changements d’état, de type et de contenu de la fiche s’inscriront ici.</p>
                         </div>
                     <?php endif; ?>
+                <?php endif; ?>
                 <?php endif; ?>
             </section>
 
@@ -366,14 +482,14 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                         <span class="fnr-case__go">Ouvrir le dossier</span>
                     </a>
                     <?php if ($canManage): ?>
-                        <button type="button" class="btn btn--ghost fnr-wide" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog">Changer de dossier</button>
+                        <button type="button" class="btn btn--ghost fnr-wide" data-ra-open data-ra-pieces="note:<?= (int) $noteId ?>" aria-haspopup="dialog">Rattacher ailleurs</button>
                     <?php endif; ?>
                 <?php else: ?>
                     <div class="fnr-empty">
                         <strong>Aucun dossier</strong>
-                        <p><?= $canManage ? 'Rattachez la fiche à un dossier pour la retrouver avec les autres éléments de l’affaire.' : 'Cette fiche n’est versée dans aucun dossier du bureau.' ?></p>
+                        <p><?= $canManage ? 'Rattachez la fiche à un dossier, une piste ou une personne pour la retrouver avec les autres éléments de l’affaire.' : 'Cette fiche n’est versée dans aucun dossier du bureau.' ?></p>
                         <?php if ($canManage): ?>
-                            <button type="button" class="btn" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog">Rattacher à un dossier</button>
+                            <button type="button" class="btn" data-ra-open data-ra-pieces="note:<?= (int) $noteId ?>" aria-haspopup="dialog">Rattacher à…</button>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -383,6 +499,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                 <h2 class="fnr-panel__title">Liaisons</h2>
                 <p class="fnr-desc">Les personnes, papiers et dossiers reliés à cette fiche, à la main ou par Cerbère.</p>
                 <?php \App\Services\Sse\Links\SseLinksWidget::render('note', $noteId); ?>
+                <?php \App\Services\Sse\Attach\SseAttachWindow::section('note', $noteId, ['slim' => true]); ?>
             </section>
         </aside>
     </div>
@@ -417,32 +534,31 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
             </form>
         </dialog>
 
-        <dialog class="fnr-dialog" id="fnr-dlg-dossier" aria-labelledby="fnr-dlg-dossier-title">
-            <form method="post" action="<?= $h(url($base . '/rattachement')) ?>" class="fnr-dialog__card">
+        <?php \App\Services\Sse\Attach\SseAttachWindow::render(); ?>
+    <?php endif; ?>
+
+    <?php if ($canTag): ?>
+        <dialog class="fnr-dialog fnr-dialog--wide" id="fnr-dlg-etiquettes" aria-labelledby="fnr-dlg-etiquettes-title">
+            <form method="post" action="<?= $h(url($base . '/etiquettes')) ?>" class="fnr-dialog__card">
                 <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
                 <header class="fnr-dialog__head">
                     <div>
-                        <h2 id="fnr-dlg-dossier-title">Rattachement</h2>
-                        <p class="fnr-desc">La fiche apparaît dans le dossier choisi, sans rien conclure sur les personnes citées.</p>
+                        <h2 id="fnr-dlg-etiquettes-title">Étiquettes de la fiche</h2>
+                        <p class="fnr-desc">Choisissez par famille ou cherchez un code. Ce sont des mentions : l’accès à la fiche ne change pas.</p>
                     </div>
                     <button type="button" class="fnr-dialog__close" data-fnr-close aria-label="Fermer la fenêtre"><?= $ico($icons['close']) ?></button>
                 </header>
                 <div class="fnr-dialog__body">
-                    <label class="fnr-field" for="fiche-dossier">Dossier de rattachement
-                        <select id="fiche-dossier" name="case_id" autofocus>
-                            <option value="0">Aucun dossier</option>
-                            <?php foreach ($openCases as $case): ?>
-                                <option value="<?= (int) $case['id'] ?>" <?= (int) ($note['case_id'] ?? 0) === (int) $case['id'] ? 'selected' : '' ?>><?= $h($case['label']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <?php if ($openCases === []): ?>
-                        <p class="fnr-dim">Aucun dossier ouvert ne vous est accessible pour le moment.</p>
-                    <?php endif; ?>
+                    <?php
+                    $pickerSelected = $tagList;
+                    $pickerKind = $kindCode;
+                    $pickerId = 'fnr-picker';
+                    require __DIR__ . '/partials/field_note_tag_picker.php';
+                    ?>
                 </div>
                 <footer class="fnr-dialog__foot">
                     <button type="button" class="btn btn--ghost" data-fnr-close>Annuler</button>
-                    <button type="submit" class="btn">Rattacher</button>
+                    <button type="submit" class="btn">Enregistrer les étiquettes</button>
                 </footer>
             </form>
         </dialog>
@@ -497,6 +613,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
             </form>
         </dialog>
     <?php endif; ?>
+    <?php if (!empty($intakeDesk)): $intakePart = 'dialogs'; require __DIR__ . '/_intake_suivi.php'; endif; ?>
 </div>
 
 <?php

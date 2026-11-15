@@ -25,10 +25,21 @@ _hit = _cacheNum getOrDefault [_v, nil];
 if (!isNil "_hit") exitWith { _hit };
 // Chemin d'image ou de son (dont les images téléchargées par la DLL, C:/…/x.jpg) et texture procédurale (#(argb,…)r2t(…),
 // image vidéo) : jamais traduits.
-if ((_v select [0, 1]) isEqualTo "\" || {(_v select [0, 2]) isEqualTo "#("} || {(_v find ".paa") > 0} || {(_v select [1, 2]) isEqualTo ":/"} || {(count _v) > 4 && {((toLower _v) select [(count _v) - 4]) in [".jpg", "jpeg", ".png", ".ogg"]}}) exitWith { _cache set [_v, _v]; _v };
+if ((_v select [0, 1]) isEqualTo "\" || {(_v select [0, 2]) isEqualTo "#("} || {(_v find ".paa") > 0} || {(_v select [1, 2]) isEqualTo ":/"} || {(count _v) > 4 && {((toLower _v) select [(count _v) - 4]) in [".jpg", "jpeg", ".png", ".ogg"]}}) exitWith {
+    _cache set [_v, _v];
+    (missionNamespace getVariable ["COMSPEC_ATAK_I18nCacheQ", []]) pushBack _v;
+    _v
+};
 
 private _exact = missionNamespace getVariable ["COMSPEC_ATAK_I18nExact", createHashMap];
+// Perf (lot 3) : texte sans aucune lettre (heure « 12:45 », « 85% », grille, nombre) et absent du dictionnaire : rendu
+// tel quel, sans découpe et sans entrée de cache (ces valeurs toujours nouvelles remplissaient le cache des textes
+// chiffrés, vidé ensuite en entier).
+if ((toLower _v) isEqualTo (toUpper _v) && {!((trim _v) in _exact)}) exitWith { _v };
 private _tpls = missionNamespace getVariable ["COMSPEC_ATAK_I18nTpl", createHashMap];
+// Texte nouveau (ni dans un cache ni sans lettre) : compté et chronométré pour fn_pageRender (« traduction : textes
+// nouveaux (rendu) » au RPT, jamais à l'écran).
+private _trT0 = diag_tickTime;
 private _nl = toString [10];
 // « Libellé : valeur » : ponctuation de la langue affichée (espace avant les deux-points en français).
 private _colon = [": ", " : "] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr");
@@ -42,7 +53,10 @@ private _tplMatch = {
     private _n = count _core;
     private _hasDot = (_core find " · ") >= 0;
     private _hasColon = (_core find " : ") > 0;
+    // Perf (lot 3) : les deux listes de modèles (même début, même fin) sont parcourues l'une après l'autre ; avant, elles
+    // étaient recopiées bout à bout dans un tableau neuf à chaque texte inconnu.
     {
+      {
         _x params ["_parts", "_ids", "_en"];
         private _p0 = _parts select 0;
         if ((_core select [0, count _p0]) isEqualTo _p0) then {
@@ -81,7 +95,9 @@ private _tplMatch = {
             };
         };
         if (_res isNotEqualTo "") exitWith {};
-    } forEach ((_tpls getOrDefault [_core select [0, 3], []]) + (_tpls getOrDefault [_gen + (_core select [(_n - 3) max 0]), _tpls getOrDefault [_gen, []]]));
+      } forEach _x;
+      if (_res isNotEqualTo "") exitWith {};
+    } forEach [_tpls getOrDefault [_core select [0, 3], []], _tpls getOrDefault [_gen + (_core select [(_n - 3) max 0]), _tpls getOrDefault [_gen, []]]];
     _res
 };
 
@@ -151,16 +167,19 @@ private _seg = {
 // « < RÉGLAGES », « <  PRÉC. » ou « noir < 25 % » restent du texte, cherché en entier dans le dictionnaire.
 private _out = "";
 private _txt = "";
+// Texte hors balises, pour le choix du cache à la fin (les chiffres des balises, size='0.95' ou color='#5cc76b', ne
+// comptent pas : presque tout le texte fixe des pages en a).
+private _plain = "";
 private _rest = _v;
 while { _rest isNotEqualTo "" } do {
     private _i = _rest find "<";
     private _c = if (_i < 0) then { "" } else { _rest select [_i + 1, 1] };
     if (_i >= 0 && {(_c isEqualTo "/") || {(toLower _c) isNotEqualTo (toUpper _c)}}) then {
         _txt = _txt + (_rest select [0, _i]);
-        if (_txt isNotEqualTo "") then { _out = _out + ([_txt] call _seg); _txt = ""; };
+        if (_txt isNotEqualTo "") then { _plain = _plain + _txt; _out = _out + ([_txt] call _seg); _txt = ""; };
         private _j = (_rest select [_i]) find ">";
         // « < » sans « > » : pas une balise (bouton « < RÉGLAGES · AFFICHAGE ») ; le texte est traduit quand même.
-        if (_j < 0) then { _out = _out + ([_rest select [_i]] call _seg); _rest = ""; } else {
+        if (_j < 0) then { _plain = _plain + (_rest select [_i]); _out = _out + ([_rest select [_i]] call _seg); _rest = ""; } else {
             _out = _out + (_rest select [_i, _j + 1]);
             _rest = _rest select [_i + _j + 1];
         };
@@ -171,13 +190,30 @@ while { _rest isNotEqualTo "" } do {
         };
     };
 };
-if (_txt isNotEqualTo "") then { _out = _out + ([_txt] call _seg); };
-if (((_v splitString "0123456789") joinString "") isNotEqualTo _v) exitWith {
-    if (count _cacheNum > 1500) then { _cacheNum = createHashMap; };
-    missionNamespace setVariable ["COMSPEC_ATAK_I18nCacheNum", _cacheNum];
-    _cacheNum set [_v, _out];
+if (_txt isNotEqualTo "") then { _plain = _plain + _txt; _out = _out + ([_txt] call _seg); };
+missionNamespace setVariable ["COMSPEC_ATAK_TrMiss", (missionNamespace getVariable ["COMSPEC_ATAK_TrMiss", 0]) + 1];
+missionNamespace setVariable ["COMSPEC_ATAK_TrMissT", (missionNamespace getVariable ["COMSPEC_ATAK_TrMissT", 0]) + (diag_tickTime - _trT0)];
+// Perf (lot 3) : cache plein : la moitié la plus ancienne sort (ordre d'arrivée gardé dans une file à part). Avant, tout
+// le cache était vidé d'un coup et chaque texte de la page suivante était retraduit (pire rendu loin de la moyenne).
+// File et cache désaccordés (cache remplacé ailleurs) : remise à zéro des deux, comme avant.
+private _keep = {
+    params ["_map", "_mapVar", "_qVar", "_max"];
+    private _q = missionNamespace getVariable [_qVar, []];
+    if ((count _map) > _max) then {
+        private _half = floor ((count _q) / 2);
+        { _map deleteAt _x; } forEach (_q select [0, _half]);
+        _q deleteRange [0, _half];
+        if ((count _map) > _max) then { _map = createHashMap; _q = []; };
+    };
+    missionNamespace setVariable [_mapVar, _map];
+    missionNamespace setVariable [_qVar, _q];
+    _q pushBack _v;
+    _map set [_v, _out];
+};
+// Texte avec chiffres hors balises (barre d'état, curseur de carte, cap, heures…) : petit cache à part.
+if (((_plain splitString "0123456789") joinString "") isNotEqualTo _plain) exitWith {
+    [_cacheNum, "COMSPEC_ATAK_I18nCacheNum", "COMSPEC_ATAK_I18nCacheNumQ", 1500] call _keep;
     _out
 };
-if (count _cache > 4000) then { _cache = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_I18nCache", _cache]; };
-_cache set [_v, _out];
+[_cache, "COMSPEC_ATAK_I18nCache", "COMSPEC_ATAK_I18nCacheQ", 4000] call _keep;
 _out

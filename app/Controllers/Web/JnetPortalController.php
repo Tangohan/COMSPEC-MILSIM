@@ -1164,26 +1164,59 @@ final class JnetPortalController
             return Response::redirect(url('jnet/courrier'));
         }
 
-        $draft = Session::getFlash('jnet_mail_draft');
-        $draft = is_array($draft) ? $draft : [];
-        // « Écrire » depuis une carte de contact de l'espace commun : le destinataire est coché d'avance s'il est dans l'annuaire.
-        $to = (int) $request->query('membre', 0);
-        if ($to > 0 && ($draft['members'] ?? []) === []) {
-            $draft['members'] = [$to];
+        $serverDraft = Session::getFlash('jnet_mail_draft');
+        $hasServerDraft = is_array($serverDraft);
+        $draft = $hasServerDraft ? $serverDraft : [];
+        $groups = $this->messaging->groups($tenantId);
+        $directory = $this->messaging->directory($tenantId, $userId);
+
+        // Arrivée depuis une fiche : ?membre=, ?formation= ou ?groupe= posent le destinataire d'avance, s'il est dans
+        // l'annuaire ou les groupes du lecteur ; le titre de la page le nomme.
+        $title = 'Nouveau message';
+        $context = 'nouveau';
+        $recipientName = '';
+        if (!$hasServerDraft) {
+            $to = (int) $request->queryString('membre', '0');
+            $formation = (int) $request->queryString('formation', '0');
+            $groupKey = $formation > 0 ? 'unit:' . $formation : trim($request->queryString('groupe', ''));
+            if ($to > 0) {
+                foreach ($directory as $member) {
+                    if ((int) $member['id'] === $to) {
+                        $draft['members'] = [$to];
+                        $recipientName = (string) $member['name'];
+                        $context = 'membre-' . $to;
+                        break;
+                    }
+                }
+            } elseif ($groupKey !== '') {
+                foreach ($groups as $group) {
+                    if ($group['key'] === $groupKey) {
+                        $draft['groups'] = [$groupKey];
+                        $recipientName = (string) $group['label'];
+                        $context = 'groupe-' . preg_replace('/[^a-z0-9]+/i', '-', $groupKey);
+                        break;
+                    }
+                }
+            }
+        }
+        if ($recipientName !== '') {
+            $title = 'Message à ' . $recipientName;
         }
         $replyTo = (int) $request->query('repondre', 0);
         if ($replyTo > 0 && $this->messageRepository->userInThread($replyTo, $userId)) {
             $thread = $this->messageRepository->findThread($replyTo, $tenantId);
             if ($thread !== null && ($draft['subject'] ?? '') === '') {
                 $draft['subject'] = 'RE : ' . (string) ($thread['subject'] ?? '');
+                $context = 'reponse-' . $replyTo;
             }
         }
 
-        return $this->render('mail_compose', 'Nouveau message', [
+        return $this->render('mail_compose', $title, [
             'mailBoxes' => $this->mailBoxes($tenantId, $userId),
             'mailBox' => 'redaction',
-            'mailGroups' => $this->messaging->groups($tenantId),
-            'mailDirectory' => $this->messaging->directory($tenantId, $userId),
+            'mailGroups' => $groups,
+            'mailGroupMembers' => $this->messaging->groupMemberIds($tenantId, $userId),
+            'mailDirectory' => $directory,
             'mailPrecedences' => $this->messaging->precedences(),
             'mailDraft' => [
                 'subject' => (string) ($draft['subject'] ?? ''),
@@ -1193,7 +1226,12 @@ final class JnetPortalController
                 'members' => array_map('intval', (array) ($draft['members'] ?? [])),
             ],
             'mailEmailLimit' => $this->messaging->emailNotificationLimit(),
-        ], 'inbox');
+            'mailMaxRecipients' => $this->messaging->maxRecipients(),
+            'mailRecipientName' => $recipientName,
+            'mailDraftContext' => $context,
+            'mailHasServerDraft' => $hasServerDraft,
+            'mailUserId' => $userId,
+        ], 'mail_compose', ['jnet_mail_compose.css'], ['jnet_mail_compose.js']);
     }
 
     public function mailSend(Request $request, array $params = []): Response

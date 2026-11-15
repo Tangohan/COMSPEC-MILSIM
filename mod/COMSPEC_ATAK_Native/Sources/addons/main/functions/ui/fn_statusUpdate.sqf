@@ -42,12 +42,25 @@ private _put = {
 private _th = COMSPEC_ATAK_Th;
 private _sigT = ((_dir + format ["sig_%1.paa", _bars])) call comspec_atak_native_fnc_tr;
 private _sigC = switch (true) do { case (_bars >= 3): { _th get "mapOk" }; case (_bars >= 1): { _th get "mapWarn" }; default { _th get "mapAlert" }; };
-private _sigTt = (format ["%1 · %2 · %3 kbit/s · %4 ms · perte %5 %%", switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Athena hors ligne" }; }, _lq get "label", _lq get "kbps", _lq get "latency", _lq get "loss"]) call comspec_atak_native_fnc_tr;
+// Perf (lot 3) : ce passage tourne 5 fois par seconde. Les textes composés (infobulles surtout : débit, latence, mémoire,
+// vent) étaient formatés puis traduits à chaque passage, avant même de savoir s'ils avaient changé, et chaque valeur
+// nouvelle remplissait le cache des textes chiffrés de fn_tr. Ici la valeur brute est comparée d'abord (_putLazy) : le
+// texte n'est composé et traduit que si elle change (ou la langue). Téléphone porté (non interactif) : pas de souris,
+// donc pas d'infobulle à tenir à jour ; elles sont posées dès que le téléphone est pris en main (nouvel écran).
+private _lang = missionNamespace getVariable ["COMSPEC_ATAK_Lang", ""];
+private _tips = _state getOrDefault ["interactive", false];
+private _putLazy = {
+    params ["_c", "_k", "_raw", "_make"];
+    if (_k isEqualTo "cs_tt" && {!_tips}) exitWith {};
+    if ((_c getVariable [_k + "_r", 0]) isEqualTo _raw) exitWith {};
+    _c setVariable [_k + "_r", _raw];
+    [_c, _k, call _make] call _put;
+};
 // Mode avion : icône d'avion à la place des barres.
-if (_lq getOrDefault ["airplane", false]) then {
+private _airplane = _lq getOrDefault ["airplane", false];
+if (_airplane) then {
     _sigT = ("\a3\ui_f\data\map\vehicleicons\iconplane_ca.paa") call comspec_atak_native_fnc_tr;
     _sigC = _th get "mapWarn";
-    _sigTt = ("Mode avion : réseau coupé (Bluetooth disponible)") call comspec_atak_native_fnc_tr;
 };
 // Type de liaison (fn_linkQuality "net") : mode de liaison de la mission (fn_linkMode). SAT (liaison satellite, sans
 // relais) en bleu tant qu'elle passe ; RELAIS, PASSERELLE, PC ou MPU avec les barres ; HORS RÉSEAU en rouge (liaison
@@ -56,9 +69,9 @@ private _netT = _lq getOrDefault ["net", ""];
 if (_netT isEqualTo "SAT" && {_bars > 0}) then { _sigC = [0.25, 0.55, 1, 1]; };
 // Liaison faible (fn_netSend) : de gros envois attendent une meilleure liaison ; le type de liaison le dit (« RELAIS · FAIBLE »).
 private _held = count ((missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]) select { (_x param [3, 1]) >= 100 });
-if (_held > 0 && {missionNamespace getVariable ["comspec_atak_native_net_degraded", true]} && {(_lq get "bars") > 0}) then {
+private _heldOn = _held > 0 && {missionNamespace getVariable ["comspec_atak_native_net_degraded", true]} && {(_lq get "bars") > 0};
+if (_heldOn) then {
     _netT = format ["%1 · %2", ([_netT, "SIGNAL"] select (_netT isEqualTo "")) call comspec_atak_native_fnc_tr, "FAIBLE" call comspec_atak_native_fnc_tr];
-    _sigTt = _sigTt + (format [" · %1 gros envoi(s) en attente d'une meilleure liaison" call comspec_atak_native_fnc_tr, _held]);
 };
 private _netCtl = uiNamespace getVariable ["COMSPEC_ATAK_NetTypeCtrl", controlNull];
 if (!isNull _netCtl) then {
@@ -67,7 +80,13 @@ if (!isNull _netCtl) then {
 };
 [_sig, "cs_t", _sigT] call _put;
 [_sig, "cs_c", _sigC] call _put;
-[_sig, "cs_tt", _sigTt] call _put;
+[_sig, "cs_tt", [_net, _lq get "label", _lq get "kbps", _lq get "latency", _lq get "loss", _airplane, [0, _held] select _heldOn, _lang], {
+    private _sigTt = if (_airplane) then { ("Mode avion : réseau coupé (Bluetooth disponible)") call comspec_atak_native_fnc_tr } else {
+        (format ["%1 · %2 · %3 kbit/s · %4 ms · perte %5 %%", switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Athena hors ligne" }; }, _lq get "label", _lq get "kbps", _lq get "latency", _lq get "loss"]) call comspec_atak_native_fnc_tr
+    };
+    if (_heldOn) then { _sigTt = _sigTt + (format [" · %1 gros envoi(s) en attente d'une meilleure liaison" call comspec_atak_native_fnc_tr, _held]); };
+    _sigTt
+}] call _putLazy;
 [] call comspec_atak_native_fnc_deviceOverlay;
 // Écran de verrouillage (heure, batterie, verrouillage au rallumage) et volet rapide (batterie, réseau).
 ["tick"] call comspec_atak_native_fnc_lockScreen;
@@ -85,9 +104,9 @@ private _ram = [] call comspec_atak_native_fnc_ramUsage;
 private _ramCtrl = uiNamespace getVariable ["COMSPEC_ATAK_RamCtrl", controlNull];
 if (!isNull _ramCtrl) then {
     private _pct = _ram get "pct";
-    [_ramCtrl, "cs_t", (("RAM " + (str _pct) + "%")) call comspec_atak_native_fnc_tr] call _put;
+    [_ramCtrl, "cs_t", [_pct, _lang], { (("RAM " + (str _pct) + "%")) call comspec_atak_native_fnc_tr }] call _putLazy;
     [_ramCtrl, "cs_c", switch (true) do { case (_pct >= 90): { _th get "mapAlert" }; case (_pct >= 75): { _th get "mapWarn" }; default { _th get "onChromeDim" }; }] call _put;
-    [_ramCtrl, "cs_tt", (format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire · estimation du téléphone, pas la mémoire du PC", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr] call _put;
+    [_ramCtrl, "cs_tt", [_ram get "used", _ram get "total", _ram get "apps", _lang], { (format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire · estimation du téléphone, pas la mémoire du PC", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr }] call _putLazy;
 };
 
 // Cadenas et libellé du chiffrement : état réel de ma liaison (fn_meshKeys "link"), ouvert tant qu'elle n'est pas chiffrée.
@@ -127,14 +146,15 @@ if (!isNull _mpuCtrl) then {
 };
 
 ([] call comspec_atak_native_fnc_weather) params ["_temp", "_speed", "_card"];
-[_d displayCtrl 88524, "cs_t", (format ["%1°C   %2 %3", _temp, _card, round _speed]) call comspec_atak_native_fnc_tr] call _put;
-[_d displayCtrl 88524, "cs_tt", (format ["Vent du %1, %2 m/s", _card, round _speed]) call comspec_atak_native_fnc_tr] call _put;
-[_d displayCtrl 88525, "cs_t", (([dayTime, "HH:MM"] call BIS_fnc_timeToString)) call comspec_atak_native_fnc_tr] call _put;
+[_d displayCtrl 88524, "cs_t", [_temp, _card, round _speed, _lang], { (format ["%1°C   %2 %3", _temp, _card, round _speed]) call comspec_atak_native_fnc_tr }] call _putLazy;
+[_d displayCtrl 88524, "cs_tt", [_card, round _speed, _lang], { (format ["Vent du %1, %2 m/s", _card, round _speed]) call comspec_atak_native_fnc_tr }] call _putLazy;
+// Heure : recomposée une fois par seconde de mission au plus (avant : 5 fois par seconde).
+[_d displayCtrl 88525, "cs_t", floor (dayTime * 3600), { (([dayTime, "HH:MM"] call BIS_fnc_timeToString)) call comspec_atak_native_fnc_tr }] call _putLazy;
 // Cloche : orange tant qu'il reste des notifications non lues. Logo COMSPEC Link : affiché quand la liaison est établie.
 private _unread = _state getOrDefault ["notifUnread", 0];
 private _bell = _d displayCtrl 88548;
 [_bell, "cs_c", [_th get "onChrome", _th get "mapWarn"] select (_unread > 0)] call _put;
-[_bell, "cs_tt", ((["Centre de notifications", format ["Centre de notifications : %1 non lue(s)", _unread]] select (_unread > 0))) call comspec_atak_native_fnc_tr] call _put;
+[_bell, "cs_tt", [_unread, _lang], { ((["Centre de notifications", format ["Centre de notifications : %1 non lue(s)", _unread]] select (_unread > 0))) call comspec_atak_native_fnc_tr }] call _putLazy;
 private _linkOk = if ([] call comspec_atak_native_fnc_bridge) then {
     _net isEqualTo "CONNECTED" && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}
 } else {

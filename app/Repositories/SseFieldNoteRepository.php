@@ -79,10 +79,26 @@ final class SseFieldNoteRepository
             $where[] = '(' . implode(' OR ', $themeParts) . ')';
         }
 
+        // Fiches désignées par leurs étiquettes (SseFieldNoteTagService) : « ids » restreint, « q_ids » élargit la recherche.
+        $idList = static function (mixed $raw, string $prefix) use (&$params): string {
+            $marks = [];
+            foreach (array_slice(array_values(array_unique(array_map('intval', (array) $raw))), 0, 2000) as $i => $id) {
+                $marks[] = ':' . $prefix . $i;
+                $params[$prefix . $i] = $id;
+            }
+
+            return $marks === [] ? '' : 'n.id IN (' . implode(', ', $marks) . ')';
+        };
+        if (array_key_exists('ids', $filters) && is_array($filters['ids'])) {
+            $in = $idList($filters['ids'], 'nid_');
+            $where[] = $in !== '' ? $in : '1 = 0';
+        }
+
         $q = trim((string) ($filters['q'] ?? ''));
         if ($q !== '') {
             $like = '%' . $q . '%';
-            $where[] = '(n.reference_code LIKE :q_ref OR n.title LIKE :q_title OR n.body LIKE :q_body OR n.place_label LIKE :q_place OR n.author_label LIKE :q_author)';
+            $qIds = is_array($filters['q_ids'] ?? null) ? $idList($filters['q_ids'], 'qid_') : '';
+            $where[] = '(n.reference_code LIKE :q_ref OR n.title LIKE :q_title OR n.body LIKE :q_body OR n.place_label LIKE :q_place OR n.author_label LIKE :q_author' . ($qIds !== '' ? ' OR ' . $qIds : '') . ')';
             $params['q_ref'] = $like;
             $params['q_title'] = $like;
             $params['q_body'] = $like;

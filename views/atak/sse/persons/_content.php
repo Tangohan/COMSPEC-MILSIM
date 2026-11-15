@@ -336,7 +336,7 @@ $levels = W::assignableLevels($viewer->level);
             <button type="button" class="pe-btn" data-pe-act="lock"<?= $canAct ? '' : ' disabled title="' . $h($denyReason) . '"' ?>><?= $ico('lock') ?><span>Verrouiller</span></button>
             <button type="button" class="pe-btn" data-pe-act="close"<?= $canAct ? '' : ' disabled title="' . $h($denyReason) . '"' ?>><?= $ico('check') ?><span>Clore</span></button>
             <button type="button" class="pe-btn" data-pe-act="export"<?= $viewer->canExport && !$viewer->guest ? '' : ' disabled title="Droit manquant : exporter"' ?>><span>Exporter CSV</span></button>
-            <button type="button" class="pe-btn" data-pe-act="link"<?= $viewer->canCases ? '' : ' disabled title="' . $h('Droit manquant : écrire dans « Dossiers d’enquête »') . '"' ?>><span>Ajouter à un dossier</span></button>
+            <button type="button" class="pe-btn" data-ra-open data-ra-type="person" data-ra-collect=".pe-check input:checked" aria-haspopup="dialog"<?= !$viewer->guest ? '' : ' disabled title="' . $h('Une session invitée ne peut pas rattacher') . '"' ?>><span>Rattacher à…</span></button>
             <button type="button" class="pe-btn pe-btn--ghost" data-pe-selclear><span>Désélectionner</span></button>
         </div>
     </div>
@@ -504,3 +504,4 @@ $levels = W::assignableLevels($viewer->level);
 </div>
 
 <?php require __DIR__ . '/_dialogs.php'; ?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::render(); ?>

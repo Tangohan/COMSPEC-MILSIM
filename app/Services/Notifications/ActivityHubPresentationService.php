@@ -227,6 +227,14 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            // Accusé à l'émetteur d'une remontée : sa fiche ou son compte rendu est pris en compte.
+            \App\Services\Intel\IntelIntakeDesk::NOTIFY_ACK => [
+                'title' => 'Votre remontée est prise en compte',
+                'detail' => trim((string) ($payload['type'] ?? 'Remontée') . ' ' . (string) ($payload['ref'] ?? '')) . ' : quelqu’un en répond au bureau.',
+                'href' => url('activite'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'atak_mod_report_reply' => [
                 'title' => !empty($payload['auto'])
                     ? 'Réponse sur une erreur détectée par votre mod'
