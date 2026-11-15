@@ -298,7 +298,7 @@ trait SseSheetPdfVigilance
             $pdf->SetFillColor(0, 0, 0);
             $pdf->Rect($x, $y + 1.4, 78.0, 7.4, 'F');
             // Lettre de repère de la barre (légende « Passages masqués » en pied de page).
-            $run = preg_match('/' . self::BLOCK . '+/u', $last . $first, $rm) === 1 ? $rm[0] : self::BLOCK;
+            $run = self::BLOCK; // une suite d'un bloc = identité
             $lw = $this->rxLetter($this->rxMark($run), $x + 78.6, $y + 3.6, 12.0);
             $pdf->SetFont($this->sans, 'I', 7.4);
             $pdf->SetTextColor(...self::MUTED);
