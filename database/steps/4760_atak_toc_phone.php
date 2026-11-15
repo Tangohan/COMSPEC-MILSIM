@@ -44,7 +44,8 @@ try {
             $findPerm->execute([$tenantId, 'atak.toc.phone']);
             $permId = (int) $findPerm->fetchColumn();
             if ($permId < 1) {
-                $addPerm->execute([$tenantId, 'Agir sur les téléphones en jeu depuis le poste TOC web (notifier, faire sonner, localiser, trianguler)', 'atak.toc.phone', 'atak', date('Y-m-d H:i:s')]);
+                // Libellé court : la colonne name de certaines bases est limitée à 100 caractères (le détail reste dans le catalogue des droits).
+                $addPerm->execute([$tenantId, 'Agir sur les téléphones en jeu depuis le poste TOC web', 'atak.toc.phone', 'atak', date('Y-m-d H:i:s')]);
                 $permId = (int) $pdo->lastInsertId();
                 $created++;
             }

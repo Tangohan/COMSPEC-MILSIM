@@ -44,7 +44,7 @@ $toneClass = static function (string $tone): string {
             <h1>Intelligence Workspace</h1>
             <p>
                 Inbox, chemise dossier, chronologie et graphe — une seule surface d’exploitation.
-                Les propositions automatiques restent distinctes des faits confirmés.
+                Les propositions de Cerbère-Validation restent distinctes des faits confirmés.
             </p>
         </div>
         <div class="iw-intel-hero-meta">

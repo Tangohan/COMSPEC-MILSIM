@@ -1451,7 +1451,7 @@ final class AtakActivityLogService
             'SSE_SITE' => 'Site',
             'SSE_SEIZURE' => 'Saisie',
             'SSE_WATCHLIST' => 'Surveillance',
-            'SSE_AUTO' => 'Automatisme',
+            'SSE_AUTO' => 'Cerbère',
             'SSE_CLEARANCE' => 'Habilitation',
             'SSE_DOCUMENT' => 'Document',
         ];

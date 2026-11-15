@@ -28,7 +28,7 @@ $caseId = (int) ($selectedCaseId ?? 0);
 
 <p class="muted" style="margin:0 0 12px">
     Priorités de renseignement, ordres de collecte, validation, sanitisation et diffusion —
-    sans mélanger propositions automatiques et faits confirmés.
+    sans mélanger propositions de Cerbère et faits confirmés.
 </p>
 
 <section class="iw-cycle-block">
