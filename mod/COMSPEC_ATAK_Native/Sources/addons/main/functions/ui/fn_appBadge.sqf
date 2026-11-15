@@ -18,5 +18,7 @@ switch (_page) do {
     case "DEBRIEF": { { (_x get "state") isNotEqualTo "done" } count (values (missionNamespace getVariable ["COMSPEC_ATAK_Dbf", createHashMap])) };
     // Dossier SSE : somme des pastilles des apps qu'il regroupe (fn_sseHub).
     case "SSEHUB": { ["badge"] call comspec_atak_native_fnc_sseHub };
+    // Avis et vigilance : alertes ni lues sur ce poste ni accusées.
+    case "SSEALERT": { ["badge"] call comspec_atak_native_fnc_alertesAction };
     default { 0 };
 }

@@ -273,6 +273,10 @@ if (_open isNotEqualTo "") exitWith {
                 ["PARTAGER", compile format ["['share', %1] call comspec_atak_native_fnc_fichesAction;", str _open], true],
                 ["ACTUALISER", { ["load", true] call comspec_atak_native_fnc_fichesAction; }]
             ]];
+            // Avis et fiche de vigilance : la même référence s'ouvre dans l'app « Avis et vigilance » (signaler, accuser lecture, service à informer).
+            if (_kind in ["avis", "vigilance"]) then {
+                _rows pushBack ["buttons", [["SIGNALER · AVIS ET VIGILANCE", compile format ["['openRef', %1] call comspec_atak_native_fnc_alertesAction;", str _open], false, true, "Ouvre cette alerte dans l'app Avis et vigilance"]]];
+            };
             _rows pushBack ([_mark] call _banner);
             _rows pushBack ([] call _footer);
             [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
