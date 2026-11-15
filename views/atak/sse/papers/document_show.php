@@ -31,6 +31,10 @@ $statusFields = [
     'st_attribution' => ['Attribution', C::ATTRIBUTIONS],
     'chip_status' => ['Puce', C::CHIPS],
 ];
+$hideSimNote = true;
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-papier-telecharger.js')) . '"></script>';
+$dl = is_array($dl ?? null) ? $dl : null;
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papier-telecharger.css')) . '">';
 require __DIR__ . '/_subnav.php';
 ?>
 
@@ -46,42 +50,41 @@ require __DIR__ . '/_subnav.php';
     </div>
 </div>
 
-<?php \App\Services\Sse\Links\SseLinksWidget::render('paper', (int) $doc['id']); ?>
+<?php
+$pdlMenu = '';
+if ($dl !== null) {
+    ob_start();
+    require __DIR__ . '/_download_menu.php';
+    $pdlMenu = (string) ob_get_clean();
+}
+ob_start();
+?>
+<?php \App\Services\Sse\Links\SseLinksWidget::render('paper', (int) $doc['id'], ['actions' => $pdlMenu]); ?>
+<?php
+$pdlWidget = trim((string) ob_get_clean());
+// Sans le widget Liaisons (indisponible), le bouton reste accessible dans sa propre barre.
+echo $pdlWidget !== '' ? $pdlWidget : ($pdlMenu !== '' ? '<div class="pdl-bar">' . $pdlMenu . '</div>' : '');
+?>
 <?php \App\Services\Sse\Attach\SseAttachWindow::section('paper', (int) $doc['id']); ?>
 
 <?php
 $aiLinks = [];
 try {
-    $aiLinks = (new \App\Repositories\SseAiProfileRepository())->forIdentity((int) $doc['tenant_id'], (int) $doc['identity_id']);
+    $aiLinks = (new \App\Repositories\SseAiProfileRepository())->forIdentity((int) ($tenantId ?? 0), (int) $doc['identity_id']);
 } catch (\Throwable) {
 }
 if ($aiLinks !== []): ?>
     <p class="idp-ai-links">Profils IA de ce titulaire : <?php foreach ($aiLinks as $i => $aiP): ?><?= $i > 0 ? ', ' : '' ?><a class="link" href="<?= $h(url('atak/sse/papiers/profils-ia/' . (int) $aiP['id'])) ?>"><?= $h($aiP['ref'] . ' · ' . $aiP['label']) ?></a><?php endforeach; ?></p>
 <?php endif; ?>
 
-<section class="panel">
-    <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Aperçu</div><div class="panel-meta">Document fictif</div></div>
-    <div class="panel-body">
-        <div class="idp-card">
-            <div class="idp-card__head">
-                <span><?= $h($country['name'] ?? $doc['country_code']) ?> · <?= $h($doc['doc_type_label']) ?></span>
-            </div>
-            <?php if (!empty($identity['photo_path'])): ?><img class="idp-card__photo" src="<?= $h((string) \App\Support\SseImageStorage::identityUrl($identity, 'photo')) ?>" alt="Photo du titulaire"><?php endif; ?>
-            <div class="idp-card__name"><?= $h(mb_strtoupper((string) ($identity['last_name'] ?? ''))) ?> <?= $h($identity['first_name'] ?? '') ?></div>
-            <div class="idp-grid" style="margin-top:8px">
-                <div><span class="muted">N°</span><br><strong translate="no"><?= $h($doc['doc_number']) ?></strong></div>
-                <div><span class="muted">Né(e) le</span><br><strong><?= $h(\App\Support\SseIdentityCatalog::birthDateLabel($identity['birth_date'] ?? null)) ?></strong></div>
-                <div><span class="muted">Lieu de naissance</span><br><strong><?= $h($identity['birth_place'] ?? '—') ?></strong></div>
-                <div><span class="muted">Sexe</span><br><strong><?= $h($identity['sex'] ?? 'X') ?></strong></div>
-                <div><span class="muted">Nationalité</span><br><strong><?= $h($identity['nationality'] ?? '—') ?></strong></div>
-                <div><span class="muted">Délivré le</span><br><strong><?= $h($doc['issued_on'] ?? '—') ?></strong></div>
-                <div><span class="muted">Expire le</span><br><strong><?= $h($doc['expires_on'] ?? '—') ?></strong><?php if ($doc['expired']): ?> <span class="badge badge--amber">Expiré</span><?php endif; ?></div>
-                <div><span class="muted">Autorité</span><br><strong><?= $h($doc['authority'] ?? '—') ?></strong></div>
-            </div>
-            <div class="idp-mrz" translate="no" aria-label="Bande de lecture automatique"><?= $h(implode("\n", $mrz)) ?></div>
-        </div>
-    </div>
-</section>
+<?php if ($dl !== null): ?>
+    <?php require __DIR__ . '/_download_preview.php'; ?>
+<?php else: ?>
+    <section class="panel">
+        <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Aperçu</div></div>
+        <div class="panel-body"><p class="muted">L’aperçu et le téléchargement de ce papier demandent l’habilitation Confidentiel.</p></div>
+    </section>
+<?php endif; ?>
 
 <?php if (($identity['id'] ?? 0) > 0 && ($canSeeTruth || !$secret)): ?>
     <?php $imagesDocId = $id; $personPhotos = $personPhotos ?? []; require __DIR__ . '/_holder_images.php'; ?>
@@ -89,6 +92,7 @@ if ($aiLinks !== []): ?>
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">02</span> Statuts du papier</div></div>
+    <p class="muted pdl-desc pdl-desc--pad">Ce que le serveur de jeu et les contrôles lisent sur ce papier.</p>
     <?php if ($canManage): ?>
         <form class="panel-body" method="post" action="<?= $h(url('atak/sse/papiers/documents/' . $id . '/statuts')) ?>">
             <?= \App\Core\Csrf::field() ?>
@@ -150,6 +154,7 @@ if ($aiLinks !== []): ?>
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">03</span> Cycle de vie</div><div class="panel-meta">Brouillon → Validé → Émis → Révoqué</div></div>
+    <p class="muted pdl-desc pdl-desc--pad">Où en est le papier, de sa création à sa révocation.</p>
     <div class="panel-body">
         <div class="idp-grid">
             <div><span class="muted">Créé le</span><br><strong><?= $h($doc['created_at']) ?></strong></div>
@@ -176,6 +181,7 @@ if ($aiLinks !== []): ?>
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">04</span> Exemplaires en jeu</div><div class="panel-meta"><?= count($instances) ?> exemplaire(s)</div></div>
+    <p class="muted pdl-desc pdl-desc--pad">Les exemplaires de ce papier vus en jeu.</p>
     <?php if ($instances === []): ?>
         <div class="panel-body"><p class="muted">Aucun exemplaire signalé par le jeu pour l’instant. Ils apparaîtront ici quand le serveur de jeu les aura distribués.</p></div>
     <?php else: ?>
@@ -194,6 +200,7 @@ if ($aiLinks !== []): ?>
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">05</span> Contrôles de ce papier</div><div class="panel-meta"><?= count($checks) ?> contrôle(s)</div></div>
+    <p class="muted pdl-desc pdl-desc--pad">Les contrôles d’identité où ce papier a été présenté.</p>
     <?php if ($paperImages !== []): ?>
         <div class="panel-body">
             <p class="muted">Photos du papier prises aux contrôles.</p>

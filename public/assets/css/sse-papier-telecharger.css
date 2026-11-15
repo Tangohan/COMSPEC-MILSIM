@@ -1,0 +1,131 @@
+/* Registre des papiers : bouton « Télécharger », aperçu des faces (image du téléchargement) et feuille d'impression. */
+.pdl-bar { margin: 0 0 18px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+
+/* —— Menu Télécharger (dans la barre « Liaisons » ou seul) —— */
+.pdl-menu { position: relative; }
+.pdl-menu__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--sl-line-strong, var(--border-hover, rgba(238, 242, 240, 0.18)));
+    border-radius: var(--sl-radius-sm, 8px);
+    background: var(--sl-surface-2, var(--surface-3, #1a222c));
+    color: var(--sl-ink, var(--text-strong, #f2f4f3));
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+.pdl-menu__btn::-webkit-details-marker { display: none; }
+.pdl-menu__btn:hover { border-color: var(--sl-accent, var(--accent, #94a3b8)); }
+.pdl-menu__btn:focus-visible,
+.pdl-item:focus-visible,
+.pdl-chip:focus-visible,
+.pdl-tab:focus-visible { outline: 2px solid var(--sl-accent, var(--accent, #94a3b8)); outline-offset: 2px; }
+.pdl-menu[open] .pdl-menu__btn { border-color: var(--sl-accent, var(--accent, #94a3b8)); }
+.pdl-menu__pop {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 6px);
+    left: 0;
+    width: min(380px, calc(100vw - 32px));
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid var(--sl-line-strong, var(--border-hover, rgba(238, 242, 240, 0.18)));
+    border-radius: var(--sl-radius, 12px);
+    background: var(--sl-surface-deep, var(--surface, #10151b));
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+.pdl-menu__lead { margin: 2px 8px 6px; font-size: max(13px, 0.8125rem); color: var(--sl-dim, var(--muted, rgba(242, 244, 243, 0.62))); }
+.pdl-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--sl-radius-sm, 8px);
+    background: transparent;
+    color: var(--sl-ink, var(--text-strong, #f2f4f3));
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+a.pdl-item:hover,
+button.pdl-item:hover { background: var(--sl-surface-2, var(--surface-3, #1a222c)); }
+.pdl-item b { font-size: 0.9375rem; font-weight: 600; }
+.pdl-item span { font-size: max(13px, 0.8125rem); color: var(--sl-dim, var(--muted, rgba(242, 244, 243, 0.62))); }
+.pdl-item--faces { cursor: default; }
+.pdl-faces { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+.pdl-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--sl-line-strong, var(--border-hover, rgba(238, 242, 240, 0.18)));
+    border-radius: 999px;
+    color: var(--sl-ink, var(--text-strong, #f2f4f3)) !important;
+    font-size: max(13px, 0.8125rem) !important;
+    text-decoration: none;
+}
+.pdl-chip:hover { border-color: var(--sl-accent, var(--accent, #94a3b8)); }
+.pdl-menu__warn { margin: 4px 8px 2px; font-size: max(13px, 0.8125rem); color: var(--amber, #f5b042); }
+
+/* —— Aperçu —— */
+.pdl-desc { margin: 0 0 12px; font-size: max(13px, 0.8125rem); }
+.pdl-desc--pad { margin: 0; padding: 0 16px 10px; }
+.pdl-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.pdl-tabs[hidden] { display: none; }
+.pdl-tab {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--border-hover, rgba(242, 244, 243, 0.18));
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text, inherit);
+    font: inherit;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+.pdl-tab[aria-selected="true"] { background: var(--accent-soft, rgba(148, 163, 184, 0.14)); border-color: var(--accent, #94a3b8); color: var(--text-strong, #f2f4f3); font-weight: 600; }
+.pdl-stage { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+.pdl-face { margin: 0; width: 100%; max-width: 760px; }
+.pdl-zoom { display: block; border-radius: 10px; }
+.pdl-zoom:focus-visible { outline: 2px solid var(--accent, #94a3b8); outline-offset: 3px; }
+.pdl-face img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.35); background: transparent; }
+.pdl-face figcaption { margin-top: 6px; font-size: max(13px, 0.8125rem); color: var(--muted, rgba(242, 244, 243, 0.62)); text-align: center; }
+.pdl-js .pdl-face[hidden] { display: none; }
+.pdl-js .pdl-face figcaption { display: none; }
+.pdl-warn { margin: 12px 0 0; font-size: max(13px, 0.8125rem); color: var(--amber, #f5b042); }
+
+@media (max-width: 640px) {
+    .pdl-menu__pop { position: fixed; left: 16px; right: 16px; top: auto; bottom: 16px; width: auto; max-height: 80vh; overflow-y: auto; }
+    .pdl-tab { flex: 1 1 auto; justify-content: center; }
+}
+
+/* —— Impression : toutes les faces à l'échelle réelle, rien d'autre —— */
+@page { margin: 12mm; }
+@media print {
+    body.pdl-printing * { visibility: hidden !important; }
+    body.pdl-printing .pdl-preview,
+    body.pdl-printing .pdl-preview * { visibility: visible !important; }
+    body.pdl-printing .pdl-preview { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; background: #fff !important; box-shadow: none; }
+    body.pdl-printing .pdl-preview .panel-header,
+    body.pdl-printing .pdl-preview .pdl-desc,
+    body.pdl-printing .pdl-preview .pdl-tabs,
+    body.pdl-printing .pdl-preview .pdl-warn { display: none !important; }
+    body.pdl-printing .pdl-preview .panel-body { padding: 0; }
+    body.pdl-printing .pdl-stage { align-items: flex-start; gap: 8mm; }
+    body.pdl-printing .pdl-face { display: block !important; width: var(--pdl-w); max-width: none; break-inside: avoid; }
+    body.pdl-printing .pdl-face img { width: var(--pdl-w); box-shadow: none; border-radius: 0; }
+    body.pdl-printing .pdl-face figcaption { display: block !important; color: #000; }
+}
+
+.pdl-preview .panel-meta { font-size: max(13px, 0.8125rem); }
