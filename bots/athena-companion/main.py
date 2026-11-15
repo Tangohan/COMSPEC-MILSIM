@@ -10,7 +10,7 @@ import discord
 from discord import app_commands
 from discord.ext import tasks
 from api import AthenaAPI, ApiError
-from bureau import FORMATTERS, dangerous_role, error_text, format_reminder, plan_roles
+from bureau import FORMATTERS, dangerous_role, error_text, format_reminder, plan_roles, reminder_mention
 from config import Config
 from health import Health
 from i18n import tr
@@ -318,7 +318,12 @@ class Companion(discord.Client):
         channel = guild.get_channel(int(item['to']))
         if not isinstance(channel, discord.TextChannel) or not channel.permissions_for(guild.me).send_messages:
             return False
-        await channel.send(embed=embed)
+        role = reminder_mention(item)
+        if role:
+            # Seul le rôle choisi dans les réglages est mentionné : jamais @everyone ni un membre.
+            await channel.send(content='<@&%s>' % role, embed=embed, allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=[discord.Object(id=int(role))]))
+        else:
+            await channel.send(embed=embed)
         return True
 
     async def remind_guild(self, guild):

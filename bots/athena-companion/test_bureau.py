@@ -56,6 +56,8 @@ class FormatTests(unittest.TestCase):
             ('campaign', {'slot': 'j3', 'title': 'Campagne 2026', 'due_on': '2026-12-01'}),
             ('campaign', {'slot': 'j0', 'title': 'Campagne 2026', 'due_on': '2026-12-01'}),
             ('test', {}),
+            ('remontee', {'event': 'urgent', 'ref': 'FR-2026-000041', 'type': 'FRO', 'urgency': 'high', 'emitter': 'VIPER', 'link': 'https://x.test'}),
+            ('remontee', {'event': 'late', 'ref': 'CR-12', 'type': 'SPOTREP', 'urgency': 'critical'}),
         ]
         for kind, data in kinds:
             for locale in ('fr', 'en'):
@@ -64,6 +66,16 @@ class FormatTests(unittest.TestCase):
                 self.assertNotIn(':count', body)
                 self.assertNotIn(':title', body)
         self.assertIsNone(bureau.format_reminder({'kind': 'unknown', 'data': {}}, 'fr'))
+
+    def test_report_reminder_carries_no_text_and_mentions_only_a_numeric_role(self):
+        item = {'kind': 'remontee', 'data': {'event': 'new', 'ref': 'FR-1', 'type': 'FRT', 'urgency': 'low', 'body': 'SECRET', 'role': '123456789012345678'}}
+        title, body, _ = bureau.format_reminder(item, 'fr')
+        self.assertEqual(title, 'Nouvelle remontée')
+        self.assertNotIn('SECRET', body)
+        self.assertNotIn(':urgency', body)
+        self.assertEqual(bureau.reminder_mention(item), '123456789012345678')
+        self.assertEqual(bureau.reminder_mention({'kind': 'remontee', 'data': {'role': '@everyone'}}), '')
+        self.assertEqual(bureau.reminder_mention({'kind': 'applications_new', 'data': {'role': '123456789012345678'}}), '')
 
     def test_translations_stay_complete_and_substitution_leaves_other_text_alone(self):
         self.assertEqual(TEXT['fr'].keys(), TEXT['en'].keys())

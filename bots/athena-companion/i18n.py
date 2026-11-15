@@ -37,6 +37,10 @@ TEXT = {
   'r_campaign':'Fiabilisation de vos données','r_campaign_j14':'Il reste 14 jours ou moins pour confirmer vos données (« :title », avant le :due_on).',
   'r_campaign_j3':'Plus que 3 jours ou moins pour confirmer vos données (« :title », avant le :due_on).','r_campaign_j0':'C’est aujourd’hui : confirmez vos données (« :title »).',
   'r_test':'Message d’essai','r_test_body':'La connexion entre Athena et ce salon fonctionne.',
+  'r_remontee_new':'Nouvelle remontée','r_remontee_urgent':'Remontée urgente','r_remontee_ack':'Remontée prise en compte',
+  'r_remontee_forward':'Remontée transmise','r_remontee_late':'Remontée en retard de prise en compte','r_remontee_manual':'Remontée à regarder',
+  'r_remontee_ref':':ref · :type','r_remontee_urgency':'Urgence : :urgency','r_remontee_emitter':'Émetteur : :emitter',
+  'r_remontee_u_critical':'critique','r_remontee_u_high':'urgente','r_remontee_u_medium':'normale','r_remontee_u_low':'routine',
   'welcome':'Bienvenue :name ! Pour accéder à vos outils, reliez votre compte Athena : :link',
  },
  'en': {
@@ -77,6 +81,10 @@ TEXT = {
   'r_campaign':'Confirm your data','r_campaign_j14':'14 days or fewer left to confirm your data (“:title”, by :due_on).',
   'r_campaign_j3':'3 days or fewer left to confirm your data (“:title”, by :due_on).','r_campaign_j0':'It is today: confirm your data (“:title”).',
   'r_test':'Test message','r_test_body':'The connection between Athena and this channel works.',
+  'r_remontee_new':'New report','r_remontee_urgent':'Urgent report','r_remontee_ack':'Report acknowledged',
+  'r_remontee_forward':'Report forwarded','r_remontee_late':'Report overdue for acknowledgement','r_remontee_manual':'Report to look at',
+  'r_remontee_ref':':ref · :type','r_remontee_urgency':'Urgency: :urgency','r_remontee_emitter':'Sender: :emitter',
+  'r_remontee_u_critical':'critical','r_remontee_u_high':'urgent','r_remontee_u_medium':'normal','r_remontee_u_low':'routine',
   'welcome':'Welcome :name! To get your tools, link your Athena account: :link',
  }
 }

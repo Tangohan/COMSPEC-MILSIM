@@ -282,6 +282,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
             <section class="fnr-panel" role="tabpanel" id="fnr-panel-suivi" aria-labelledby="fnr-tab-suivi" data-fnr-panel="suivi" hidden>
                 <h2 class="fnr-panel__title">Suivi</h2>
                 <p class="fnr-desc">Ce que le bureau a fait de la fiche, du plus récent au plus ancien.</p>
+                <?php if (!empty($intakeDesk)): $intakePart = 'panel'; require __DIR__ . '/_intake_suivi.php'; else: ?>
                 <div class="fnr-state fnr-state--<?= $h($statusTone) ?>">
                     <p class="fnr-state__label"><span class="fnr-dot" aria-hidden="true"></span><?= $h($statusLabel) ?></p>
                     <?php if (isset($statusHints[$status])): ?><p class="fnr-state__hint"><?= $h($statusHints[$status]) ?></p><?php endif; ?>
@@ -306,6 +307,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                             <p>Les changements d’état, de type et de contenu de la fiche s’inscriront ici.</p>
                         </div>
                     <?php endif; ?>
+                <?php endif; ?>
                 <?php endif; ?>
             </section>
 
@@ -497,6 +499,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
             </form>
         </dialog>
     <?php endif; ?>
+    <?php if (!empty($intakeDesk)): $intakePart = 'dialogs'; require __DIR__ . '/_intake_suivi.php'; endif; ?>
 </div>
 
 <?php

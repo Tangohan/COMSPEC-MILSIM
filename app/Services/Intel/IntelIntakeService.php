@@ -29,6 +29,7 @@ class IntelIntakeService
 
     public const STATES = [
         'a_traiter' => 'À traiter',
+        'prise_en_compte' => 'Prise en compte',
         'en_cours' => 'En exploitation',
         'transmise' => 'Transmise',
         'exploitee' => 'Exploitée',
@@ -40,6 +41,7 @@ class IntelIntakeService
     /** Explication courte de chaque état (infobulles, aide). */
     public const STATE_HINTS = [
         'a_traiter' => 'Arrivée, personne ne l’a encore prise en charge.',
+        'prise_en_compte' => 'Quelqu’un en répond : l’émetteur voit que sa remontée est prise en compte.',
         'en_cours' => 'Une analyste l’exploite (recoupement, vérification).',
         'transmise' => 'Transmise à l’échelon supérieur ou versée à un dossier SSE.',
         'exploitee' => 'Le renseignement a servi (ordre, dossier, carte).',
@@ -48,7 +50,7 @@ class IntelIntakeService
         'close' => 'Classée sans suite.',
     ];
 
-    public const OPEN_STATES = ['a_traiter', 'en_cours'];
+    public const OPEN_STATES = ['a_traiter', 'prise_en_compte', 'en_cours'];
 
     /** États qui demandent une précision : la remontée d'origine (doublon) ou le destinataire (transmise). */
     public const STATES_WITH_TARGET = ['doublon', 'transmise'];
@@ -66,6 +68,11 @@ class IntelIntakeService
         'delete' => 'a supprimé la remontée',
         'restore' => 'a restauré la remontée',
         'duplicate' => 'a rattaché un doublon',
+        'ack' => 'a pris en compte la remontée',
+        'steam' => 'a consulté l’identifiant Steam de l’émetteur',
+        'discord' => 'a demandé une notification Discord',
+        'convert' => 'a converti la remontée',
+        'link' => 'a relié la remontée',
     ];
 
     /** Champs modifiables depuis le back-office, par source. */
@@ -76,16 +83,34 @@ class IntelIntakeService
 
     private static ?bool $ready = null;
 
+    /** @var array<string, array<string, true>> */
+    private static array $columns = [];
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo;
+    }
+
+    /** Oublie ce que la classe sait du schéma (tests : une base par scénario). */
+    public static function forgetSchema(): void
+    {
+        self::$ready = null;
+        self::$columns = [];
+    }
+
+    /** Base de test sqlite : mêmes requêtes, sans information_schema ni syntaxe propre à MySQL. */
+    private function sqlite(): bool
+    {
+        return $this->pdo()->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite';
     }
 
     public function schemaReady(): bool
     {
         if (self::$ready === null) {
             try {
-                $st = $this->pdo()->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('intel_intake_state', 'intel_intake_events', 'intel_intake_redactions', 'intel_intake_reads')");
+                $st = $this->pdo()->query($this->sqlite()
+                    ? "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('intel_intake_state', 'intel_intake_events', 'intel_intake_redactions', 'intel_intake_reads')"
+                    : "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('intel_intake_state', 'intel_intake_events', 'intel_intake_redactions', 'intel_intake_reads')");
                 self::$ready = $st !== false && (int) $st->fetchColumn() === 4;
             } catch (\Throwable) {
                 self::$ready = false;
@@ -127,7 +152,7 @@ class IntelIntakeService
             $source === 'fiche' && $status === 'exploitee', $source === 'cr' && $status === 'actioned' => 'exploitee',
             $source === 'fiche' && $status === 'sans_suite' => 'non_exploitable',
             $source === 'cr' && $status === 'archived' => 'close',
-            $source === 'fiche' && $status === 'prise_en_compte', $source === 'cr' && $status === 'acknowledged' => 'en_cours',
+            $source === 'fiche' && $status === 'prise_en_compte', $source === 'cr' && $status === 'acknowledged' => 'prise_en_compte',
             default => 'a_traiter',
         };
     }
@@ -136,8 +161,8 @@ class IntelIntakeService
     public static function sourceStatusFor(string $source, string $state): ?string
     {
         $map = $source === 'fiche'
-            ? ['a_traiter' => 'transmise', 'en_cours' => 'prise_en_compte', 'transmise' => 'prise_en_compte', 'exploitee' => 'exploitee', 'doublon' => 'sans_suite', 'non_exploitable' => 'sans_suite', 'close' => 'sans_suite']
-            : ['a_traiter' => 'SUBMITTED', 'en_cours' => 'ACKNOWLEDGED', 'transmise' => 'ACKNOWLEDGED', 'exploitee' => 'ACTIONED', 'doublon' => 'ARCHIVED', 'non_exploitable' => 'ARCHIVED', 'close' => 'ARCHIVED'];
+            ? ['a_traiter' => 'transmise', 'prise_en_compte' => 'prise_en_compte', 'en_cours' => 'prise_en_compte', 'transmise' => 'prise_en_compte', 'exploitee' => 'exploitee', 'doublon' => 'sans_suite', 'non_exploitable' => 'sans_suite', 'close' => 'sans_suite']
+            : ['a_traiter' => 'SUBMITTED', 'prise_en_compte' => 'ACKNOWLEDGED', 'en_cours' => 'ACKNOWLEDGED', 'transmise' => 'ACKNOWLEDGED', 'exploitee' => 'ACTIONED', 'doublon' => 'ARCHIVED', 'non_exploitable' => 'ARCHIVED', 'close' => 'ARCHIVED'];
 
         return $map[$state] ?? null;
     }
@@ -253,18 +278,21 @@ class IntelIntakeService
     /** Colonne présente ? (des colonnes viennent de migrations facultatives : mission_key, attachment_count…) */
     private function hasColumn(string $table, string $column): bool
     {
-        static $cols = [];
-        if (!isset($cols[$table])) {
-            $cols[$table] = [];
+        if (!isset(self::$columns[$table])) {
+            self::$columns[$table] = [];
             try {
-                $st = $this->pdo()->prepare('SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?');
-                $st->execute([$table]);
-                $cols[$table] = array_fill_keys(array_map('strval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []), true);
+                if ($this->sqlite()) {
+                    $st = $this->pdo()->query('SELECT name FROM pragma_table_info(' . $this->pdo()->quote($table) . ')');
+                } else {
+                    $st = $this->pdo()->prepare('SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?');
+                    $st->execute([$table]);
+                }
+                self::$columns[$table] = array_fill_keys(array_map('strval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []), true);
             } catch (\Throwable) {
             }
         }
 
-        return isset($cols[$table][$column]);
+        return isset(self::$columns[$table][$column]);
     }
 
     /** @return list<array<string, mixed>> */
@@ -286,7 +314,7 @@ class IntelIntakeService
             $args['as'] = (int) $f['assignee'];
         }
         $extra = [];
-        foreach (['submitter_user_id', 'submitter_steam_id', 'grid_reference', 'mission_key', 'attachment_count'] as $c) {
+        foreach (['submitter_user_id', 'submitter_steam_id', 'grid_reference', 'mission_key', 'attachment_count', 'acknowledged_at'] as $c) {
             $extra[] = $this->hasColumn('atak_tactical_reports', $c) ? "r.{$c}" : "NULL AS {$c}";
         }
         try {
@@ -295,7 +323,11 @@ class IntelIntakeService
                         r.summary, r.details, r.status, r.created_at, r.deleted_at AS src_deleted_at, " . implode(', ', $extra) . ",
                         s.state, s.assignee_user_id, s.deleted_at,
                         a.display_name AS assignee_name, a.callsign AS assignee_callsign,
-                        (SELECT COUNT(*) FROM intel_intake_events e WHERE e.tenant_id = r.tenant_id AND e.source = 'cr' AND e.source_id = r.id AND e.kind = 'comment') AS comments
+                        (SELECT COUNT(*) FROM intel_intake_events e WHERE e.tenant_id = r.tenant_id AND e.source = 'cr' AND e.source_id = r.id AND e.kind = 'comment') AS comments,
+                        (SELECT MIN(e2.created_at) FROM intel_intake_events e2 WHERE e2.tenant_id = r.tenant_id AND e2.source = 'cr' AND e2.source_id = r.id AND e2.kind IN ('ack', 'state')) AS ack_event_at,
+                        (SELECT COUNT(*) FROM intel_intake_redactions d WHERE d.tenant_id = r.tenant_id AND d.source = 'cr' AND d.source_id = r.id) AS redactions,
+                        (SELECT COUNT(*) FROM intel_intake_reads rd WHERE rd.tenant_id = r.tenant_id AND rd.source = 'cr' AND rd.source_id = r.id) AS readers,
+                        (SELECT COALESCE(SUM(rd2.read_count), 0) FROM intel_intake_reads rd2 WHERE rd2.tenant_id = r.tenant_id AND rd2.source = 'cr' AND rd2.source_id = r.id) AS reads
                  FROM atak_tactical_reports r
                  LEFT JOIN intel_intake_state s ON s.tenant_id = r.tenant_id AND s.source = 'cr' AND s.source_id = r.id
                  LEFT JOIN users a ON a.id = s.assignee_user_id
@@ -321,6 +353,8 @@ class IntelIntakeService
             'grid' => (string) ($r['grid_reference'] ?? ''),
             'mission' => (string) ($r['mission_key'] ?? ''),
             'attachments' => (int) ($r['attachment_count'] ?? 0),
+            'linked' => false,
+            'ack_at' => (string) ($r['ack_event_at'] ?? '') ?: (string) ($r['acknowledged_at'] ?? ''),
         ]), $rows);
     }
 
@@ -343,7 +377,7 @@ class IntelIntakeService
             $args['as'] = (int) $f['assignee'];
         }
         $extra = [];
-        foreach (['author_user_id', 'author_steam_id', 'grid_reference', 'place_label'] as $c) {
+        foreach (['author_user_id', 'author_steam_id', 'grid_reference', 'place_label', 'case_id', 'interest_case_id', 'triaged_at'] as $c) {
             $extra[] = $this->hasColumn('sse_field_notes', $c) ? "n.{$c}" : "NULL AS {$c}";
         }
         $extra[] = $this->hasColumn('sse_field_note_attachments', 'note_id')
@@ -355,7 +389,11 @@ class IntelIntakeService
                         n.status, n.origin, n.observed_at, n.created_at, " . implode(', ', $extra) . ",
                         s.state, s.assignee_user_id, s.deleted_at,
                         a.display_name AS assignee_name, a.callsign AS assignee_callsign,
-                        (SELECT COUNT(*) FROM intel_intake_events e WHERE e.tenant_id = n.tenant_id AND e.source = 'fiche' AND e.source_id = n.id AND e.kind = 'comment') AS comments
+                        (SELECT COUNT(*) FROM intel_intake_events e WHERE e.tenant_id = n.tenant_id AND e.source = 'fiche' AND e.source_id = n.id AND e.kind = 'comment') AS comments,
+                        (SELECT MIN(e2.created_at) FROM intel_intake_events e2 WHERE e2.tenant_id = n.tenant_id AND e2.source = 'fiche' AND e2.source_id = n.id AND e2.kind IN ('ack', 'state')) AS ack_event_at,
+                        (SELECT COUNT(*) FROM intel_intake_redactions d WHERE d.tenant_id = n.tenant_id AND d.source = 'fiche' AND d.source_id = n.id) AS redactions,
+                        (SELECT COUNT(*) FROM intel_intake_reads rd WHERE rd.tenant_id = n.tenant_id AND rd.source = 'fiche' AND rd.source_id = n.id) AS readers,
+                        (SELECT COALESCE(SUM(rd2.read_count), 0) FROM intel_intake_reads rd2 WHERE rd2.tenant_id = n.tenant_id AND rd2.source = 'fiche' AND rd2.source_id = n.id) AS reads
                  FROM sse_field_notes n
                  LEFT JOIN intel_intake_state s ON s.tenant_id = n.tenant_id AND s.source = 'fiche' AND s.source_id = n.id
                  LEFT JOIN users a ON a.id = s.assignee_user_id
@@ -382,6 +420,8 @@ class IntelIntakeService
             'grid' => trim((string) ($r['grid_reference'] ?? '') . ' ' . (string) ($r['place_label'] ?? '')),
             'mission' => '',
             'attachments' => (int) ($r['attachment_count'] ?? 0),
+            'linked' => !empty($r['case_id']) || !empty($r['interest_case_id']),
+            'ack_at' => (string) ($r['ack_event_at'] ?? '') ?: (in_array((string) $r['status'], ['prise_en_compte', 'exploitee', 'sans_suite'], true) ? (string) ($r['triaged_at'] ?? '') : ''),
         ]), $rows);
     }
 
@@ -409,6 +449,9 @@ class IntelIntakeService
             'comments' => (int) ($r['comments'] ?? 0),
             'deleted' => !empty($r['deleted_at']) || !empty($r['src_deleted_at']),
             'origin' => (string) ($r['origin'] ?? 'atak'),
+            'redactions' => (int) ($r['redactions'] ?? 0),
+            'readers' => (int) ($r['readers'] ?? 0),
+            'reads' => (int) ($r['reads'] ?? 0),
         ];
     }
 
@@ -450,7 +493,7 @@ class IntelIntakeService
             $st = $this->pdo()->prepare(
                 "SELECT id, image_path, caption, captured_at, created_at, {$confidential} FROM recon_images
                  WHERE tenant_id = ? AND source_name = ?{$alive}
-                 ORDER BY (LOWER(author_callsign) = LOWER(?)) DESC, ABS(TIMESTAMPDIFF(SECOND, created_at, ?)) ASC, id DESC
+                 ORDER BY (LOWER(author_callsign) = LOWER(?)) DESC, " . ($this->sqlite() ? "ABS(strftime('%s', created_at) - strftime('%s', ?))" : 'ABS(TIMESTAMPDIFF(SECOND, created_at, ?))') . " ASC, id DESC
                  LIMIT 1"
             );
             $st->execute([$tenantId, $name, (string) ($report['submitter_callsign'] ?? ''), $sent !== '' ? $sent : date('Y-m-d H:i:s')]);
@@ -562,6 +605,29 @@ class IntelIntakeService
             }
         }
         $senderUserId = (int) ($source === 'cr' ? ($row['submitter_user_id'] ?? 0) : ($row['author_user_id'] ?? 0));
+        // Jalons du cycle : première prise en compte, début d'exploitation, issue.
+        $ackAt = '';
+        $ackBy = '';
+        $workAt = '';
+        $closedAt = '';
+        foreach ($events as $e) {
+            $to = (string) ($e['meta']['to'] ?? '');
+            if ($ackAt === '' && ($e['kind'] === 'ack' || ($e['kind'] === 'state' && $to !== 'a_traiter'))) {
+                $ackAt = (string) $e['at'];
+                $ackBy = (string) $e['actor'];
+            }
+            if ($e['kind'] === 'state') {
+                if ($to === 'en_cours' && $workAt === '') {
+                    $workAt = (string) $e['at'];
+                }
+                $closedAt = in_array($to, self::OPEN_STATES, true) ? '' : (string) $e['at'];
+            }
+        }
+        if ($ackAt === '' && $current !== 'a_traiter') {
+            $ackAt = (string) ($source === 'cr' ? ($row['acknowledged_at'] ?? '') : ($row['triaged_at'] ?? ''));
+        }
+        $reads = $this->reads($tenantId, $source, $id);
+        $redactions = $this->redactions($tenantId, $source, [$id])[$id] ?? [];
         $triagedBy = (int) ($source === 'cr' ? ($row['acknowledged_by_user_id'] ?? 0) : ($row['triaged_by'] ?? 0));
 
         return [
@@ -579,8 +645,18 @@ class IntelIntakeService
             'assignee' => $assignee,
             'deleted' => ($state !== null && !empty($state['deleted_at'])) || ($source === 'cr' && !empty($row['deleted_at'])),
             'events' => $events,
-            'redactions' => $this->redactions($tenantId, $source, [$id])[$id] ?? [],
-            'reads' => $this->reads($tenantId, $source, $id),
+            'redactions' => $redactions,
+            'reads' => $reads,
+            'priority' => (string) ($source === 'cr' ? ($row['priority'] ?? '') : ($row['urgency'] ?? '')),
+            'classification' => (string) ($row['classification'] ?? ''),
+            'origin' => (string) ($source === 'cr' ? 'atak' : ($row['origin'] ?? 'atak')),
+            'ack_at' => $ackAt,
+            'ack_by' => $ackBy,
+            'work_at' => $workAt,
+            'closed_at' => $closedAt,
+            'linked' => ($source === 'fiche' && (!empty($row['case_id']) || !empty($row['interest_case_id']))) || !empty($stateInfo['case_id']),
+            'case_id' => ((int) ($source === 'fiche' ? ($row['case_id'] ?? 0) : 0) ?: (int) ($stateInfo['case_id'] ?? 0)) ?: null,
+            'interest_case_id' => (int) ($source === 'fiche' ? ($row['interest_case_id'] ?? 0) : 0) ?: null,
             'attachments' => $attachments,
             'structured' => $structured,
             'state_history' => $stateHistory,
@@ -789,8 +865,9 @@ class IntelIntakeService
         }
         try {
             $this->pdo()->prepare(
-                'INSERT INTO intel_intake_reads (tenant_id, source, source_id, user_id, channel) VALUES (?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE read_count = read_count + 1, last_read_at = CURRENT_TIMESTAMP'
+                'INSERT INTO intel_intake_reads (tenant_id, source, source_id, user_id, channel) VALUES (?, ?, ?, ?, ?) '
+                . ($this->sqlite() ? 'ON CONFLICT (tenant_id, source, source_id, user_id, channel) DO UPDATE SET' : 'ON DUPLICATE KEY UPDATE')
+                . ' read_count = read_count + 1, last_read_at = CURRENT_TIMESTAMP'
             )->execute([$tenantId, $source, $id, $userId, substr($channel, 0, 12)]);
         } catch (\Throwable) {
         }
@@ -940,20 +1017,7 @@ class IntelIntakeService
             'exploited_by' => $exploited ? $actor['id'] : null,
             'exploited_at' => $exploited ? date('Y-m-d H:i:s') : null,
         ]);
-        $status = self::sourceStatusFor($source, $state);
-        if ($status !== null) {
-            try {
-                if ($source === 'fiche') {
-                    $this->pdo()->prepare('UPDATE sse_field_notes SET status = ?, triaged_by = ?, triaged_at = CURRENT_TIMESTAMP WHERE tenant_id = ? AND id = ?')
-                        ->execute([$status, $actor['id'] ?: null, $tenantId, $id]);
-                } else {
-                    $this->pdo()->prepare('UPDATE atak_tactical_reports SET status = ?, acknowledged_by_user_id = COALESCE(acknowledged_by_user_id, ?), acknowledged_at = COALESCE(acknowledged_at, CURRENT_TIMESTAMP) WHERE tenant_id = ? AND id = ?')
-                        ->execute([$status, $actor['id'] ?: null, $tenantId, $id]);
-                }
-            } catch (\Throwable) {
-                // Statut d'origine hors des valeurs permises : le suivi reste juste.
-            }
-        }
+        $this->syncSourceStatus($tenantId, $source, $id, $actor, $state);
         $this->log($tenantId, $source, $id, 'state', $actor, trim($note) !== '' ? mb_substr(trim($note), 0, 2000) : null, ['from' => $item['state'], 'to' => $state] + $extra);
         if (isset($extra['duplicate_of'])) {
             // Trace aussi sur la remontée d'origine, pour retrouver ses doublons depuis son fil.
@@ -968,6 +1032,75 @@ class IntelIntakeService
         return true;
     }
 
+    /**
+     * Prise en compte en un clic : la remontée m'est attribuée, l'heure est notée, l'état passe à « Prise en compte »
+     * et le statut d'origine suit (c'est lui que l'émetteur lit sur sa fiche). Sans effet si elle est déjà prise.
+     *
+     * @param array{id: int, label: string} $actor
+     */
+    public function take(int $tenantId, string $source, int $id, array $actor): bool
+    {
+        $item = $this->find($tenantId, $source, $id);
+        if ($item === null || $item['state'] !== 'a_traiter' || $actor['id'] < 1) {
+            return false;
+        }
+        $this->upsertState($tenantId, $source, $id, [
+            'state' => 'prise_en_compte',
+            'assignee_user_id' => $actor['id'],
+            'assigned_by' => $actor['id'],
+            'assigned_at' => date('Y-m-d H:i:s'),
+        ]);
+        $this->syncSourceStatus($tenantId, $source, $id, $actor, 'prise_en_compte');
+        $this->log($tenantId, $source, $id, 'ack', $actor, null, [
+            'from' => 'a_traiter',
+            'to' => 'prise_en_compte',
+            'waited' => max(0, time() - (strtotime((string) $item['at']) ?: time())),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Le statut d'origine suit l'état de suivi. Ne lève jamais.
+     *
+     * @param array{id: int, label: string} $actor
+     */
+    private function syncSourceStatus(int $tenantId, string $source, int $id, array $actor, string $state): void
+    {
+        $status = self::sourceStatusFor($source, $state);
+        if ($status === null) {
+            return;
+        }
+        try {
+            if ($source === 'fiche') {
+                $this->pdo()->prepare('UPDATE sse_field_notes SET status = ?, triaged_by = ?, triaged_at = CURRENT_TIMESTAMP WHERE tenant_id = ? AND id = ?')
+                    ->execute([$status, $actor['id'] ?: null, $tenantId, $id]);
+            } else {
+                $this->pdo()->prepare('UPDATE atak_tactical_reports SET status = ?, acknowledged_by_user_id = COALESCE(acknowledged_by_user_id, ?), acknowledged_at = COALESCE(acknowledged_at, CURRENT_TIMESTAMP) WHERE tenant_id = ? AND id = ?')
+                    ->execute([$status, $actor['id'] ?: null, $tenantId, $id]);
+            }
+        } catch (\Throwable) {
+            // Statut d'origine hors des valeurs permises : le suivi reste juste.
+        }
+    }
+
+    /**
+     * Trace libre dans le fil (consultation Steam, notification Discord, conversion, lien). Ne lève jamais.
+     *
+     * @param array{id: int, label: string} $actor
+     * @param array<string, mixed> $meta
+     */
+    public function journal(int $tenantId, string $source, int $id, string $kind, array $actor, ?string $body = null, array $meta = []): void
+    {
+        if (!isset(self::EVENT_LABELS[$kind]) || !isset(self::SOURCES[$source]) || $id < 1) {
+            return;
+        }
+        try {
+            $this->log($tenantId, $source, $id, $kind, $actor, $body, $meta);
+        } catch (\Throwable) {
+        }
+    }
+
     /** @param array{id: int, label: string} $actor */
     public function assign(int $tenantId, string $source, int $id, array $actor, ?int $userId): bool
     {
@@ -975,12 +1108,43 @@ class IntelIntakeService
         if ($userId !== null && $userId > 0 && $card === null) {
             return false;
         }
+        if ($card !== null) {
+            // Jamais un membre d'une autre communauté.
+            $st = $this->pdo()->prepare('SELECT 1 FROM users WHERE id = ? AND tenant_id = ? LIMIT 1');
+            $st->execute([$card['id'], $tenantId]);
+            if (!$st->fetchColumn()) {
+                return false;
+            }
+        }
         $this->upsertState($tenantId, $source, $id, [
             'assignee_user_id' => $card['id'] ?? null,
             'assigned_by' => $actor['id'] ?: null,
             'assigned_at' => date('Y-m-d H:i:s'),
         ]);
         $this->log($tenantId, $source, $id, 'assign', $actor, null, ['to' => $card['label'] ?? null, 'to_id' => $card['id'] ?? null]);
+
+        return true;
+    }
+
+    /**
+     * Thèmes d'une fiche (codes du référentiel, quatre au plus). L'ancienne liste reste dans le fil.
+     *
+     * @param array{id: int, label: string} $actor
+     */
+    public function setThemes(int $tenantId, int $id, array $actor, mixed $themes): bool
+    {
+        $item = $this->find($tenantId, 'fiche', $id);
+        if ($item === null) {
+            return false;
+        }
+        $new = SseFieldNoteCatalog::normalizeThemes(is_array($themes) ? array_values($themes) : (string) $themes);
+        $old = SseFieldNoteCatalog::normalizeThemes($item['row']['themes'] ?? '');
+        if ($new === $old) {
+            return false;
+        }
+        $this->pdo()->prepare('UPDATE sse_field_notes SET themes = ? WHERE tenant_id = ? AND id = ?')->execute([json_encode($new, JSON_UNESCAPED_UNICODE), $tenantId, $id]);
+        $label = static fn (array $codes): string => implode(', ', array_map(static fn (string $c): string => SseFieldNoteCatalog::themeLabel($c), $codes));
+        $this->log($tenantId, 'fiche', $id, 'edit', $actor, null, ['fields' => ['Thèmes'], 'before' => ['themes' => $label($old)], 'after' => ['themes' => $label($new)]]);
 
         return true;
     }
@@ -1208,7 +1372,7 @@ class IntelIntakeService
     private function log(int $tenantId, string $source, int $id, string $kind, array $actor, ?string $body = null, array $meta = []): void
     {
         $this->pdo()->prepare(
-            'INSERT INTO intel_intake_events (tenant_id, source, source_id, kind, actor_user_id, actor_label, body, meta_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        )->execute([$tenantId, $source, $id, $kind, $actor['id'] ?: null, mb_substr($actor['label'], 0, 120), $body, $meta !== [] ? json_encode($meta, JSON_UNESCAPED_UNICODE) : null]);
+            'INSERT INTO intel_intake_events (tenant_id, source, source_id, kind, actor_user_id, actor_label, body, meta_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        )->execute([$tenantId, $source, $id, $kind, $actor['id'] ?: null, mb_substr($actor['label'], 0, 120), $body, $meta !== [] ? json_encode($meta, JSON_UNESCAPED_UNICODE) : null, date('Y-m-d H:i:s')]);
     }
 }

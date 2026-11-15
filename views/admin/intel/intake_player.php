@@ -52,7 +52,7 @@ $currentDay = null;
                             <?php if (!empty($playerCanSeeMembers)): ?><a href="<?= $h(url('back-office/users/' . (int) $p['user_id'])) ?>"><?= $h($p['account']) ?></a><?php else: ?><?= $h($p['account']) ?><?php endif; ?>
                         <?php else: ?><span class="rmt__muted">Non rattaché</span><?php endif; ?>
                     </dd></div>
-                    <div><dt>Steam</dt><dd><?= $p['steam'] !== '' ? '<span class="rmt__mono">' . $h($p['steam']) . '</span>' : '<span class="rmt__muted">Inconnu</span>' ?></dd></div>
+                    <div><dt>Steam</dt><dd><?= $p['steam'] !== '' ? '<span class="rmt__mono" title="Identifiant masqué : il se lit depuis la fiche d’une remontée">' . $h(\App\Services\Intel\IntelIntakePresenter::maskSteam((string) $p['steam'])) . '</span>' : '<span class="rmt__muted">Inconnu</span>' ?></dd></div>
                     <div><dt>Dernière remontée</dt><dd><?= $p['last'] !== '' ? $h($when((string) $p['last'])) : '—' ?></dd></div>
                     <?php if ($others !== []): ?><div><dt>Autres indicatifs</dt><dd><?= $h(implode(', ', $others)) ?></dd></div><?php endif; ?>
                 </dl>
