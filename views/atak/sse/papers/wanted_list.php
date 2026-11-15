@@ -22,6 +22,9 @@ $canManage = $rights !== null && $rights->canManage();
 $wantedConfig = is_array($wantedConfig ?? null) ? $wantedConfig : [];
 $wantedTypes = is_array($wantedTypes ?? null) ? $wantedTypes : W::types();
 $authors = is_array($authors ?? null) ? $authors : [];
+$noticeExtras = is_array($noticeExtras ?? null) ? $noticeExtras : [];
+$attachCounts = is_array($attachCounts ?? null) ? $attachCounts : [];
+$codeChoices = is_array($codeChoices ?? null) ? $codeChoices : [];
 $fmt = static function (?string $v) use ($lang): string {
     $v = trim((string) $v);
     $ts = $v !== '' ? strtotime($v . ' UTC') : false;
@@ -33,7 +36,7 @@ $tone = static fn (string $level): string => match ($level) {
     'medium' => 'badge--amber',
     default => 'badge--gray',
 };
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '">';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-wanted-codes.css')) . '">';
 $statusTabs = ['active' => 'Actifs', 'lifted' => 'Levés', 'captured' => 'Capturés', 'expired' => 'Expirés', '' => 'Tous'];
 ?>
 <div class="page-heading">
@@ -58,7 +61,12 @@ $statusTabs = ['active' => 'Actifs', 'lifted' => 'Levés', 'captured' => 'Captur
     </nav>
     <form class="dos-filters-bar" method="get" action="<?= $h(url('atak/sse/avis')) ?>">
         <input type="hidden" name="statut" value="<?= $h($filters['status']) ?>">
-        <div><label for="f-q">Recherche</label><input id="f-q" type="search" name="q" value="<?= $h($filters['q']) ?>" placeholder="Nom ou référence"></div>
+        <div><label for="f-q">Recherche</label><input id="f-q" type="search" name="q" value="<?= $h($filters['q']) ?>" placeholder="Nom, référence, code ou mot"></div>
+        <div><label for="f-code">Code</label>
+            <input id="f-code" class="wc-filter-code" type="text" name="code" list="f-code-list" value="<?= $h($filters['code'] ?? '') ?>" placeholder="M-TER-01, A-OBS" autocomplete="off" translate="no">
+            <datalist id="f-code-list">
+                <?php foreach ($codeChoices as $kindList): foreach ($kindList as $code => $c): ?><option value="<?= $h($code) ?>"><?= $h($lang === 'en' ? $c['en'] : $c['fr']) ?></option><?php endforeach; endforeach; ?>
+            </datalist></div>
         <div><label for="f-type">Type</label>
             <select id="f-type" name="type"><option value="">Tous</option>
                 <?php foreach ($wantedTypes as $k => $labels): ?><option value="<?= $h($k) ?>" <?= $filters['type'] === $k ? 'selected' : '' ?>><?= $h($lang === 'en' ? $labels[1] : $labels[0]) ?></option><?php endforeach; ?>
@@ -81,7 +89,15 @@ $statusTabs = ['active' => 'Actifs', 'lifted' => 'Levés', 'captured' => 'Captur
                     <tr>
                         <td data-label="Référence" translate="no"><strong><?= $h($n['ref']) ?></strong></td>
                         <td data-label="Identité" translate="no"><a class="link" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $n['identity_id'] . '#avis')) ?>"><?= $h($n['identity_name'] !== '' ? $n['identity_name'] : 'Identité #' . (int) $n['identity_id']) ?></a></td>
-                        <td data-label="Type"><?= $h(W::typeLabel((string) $n['notice_type'], $wantedConfig, $lang)) ?></td>
+                        <td data-label="Type"><?= $h(W::typeLabel((string) $n['notice_type'], $wantedConfig, $lang)) ?>
+                            <?php $cx = $noticeExtras[(int) $n['id']]['codes'] ?? ['reasons' => [], 'measures' => []]; $cl = array_merge($cx['reasons'], $cx['measures']); ?>
+                            <?php if ($cl !== [] || !empty($attachCounts[(int) $n['id']])): ?>
+                                <div class="wc-listcodes">
+                                    <?php foreach (array_slice($cl, 0, 6) as $c): ?><a class="wc-codelink" translate="no" href="<?= $h(url('atak/sse/avis') . '?statut=' . rawurlencode((string) $filters['status']) . '&code=' . rawurlencode((string) $c['code'])) ?>" title="<?= $h($lang === 'en' ? $c['en'] : $c['fr']) ?>"><b><?= $h($c['code']) ?></b></a><?php endforeach; ?>
+                                    <?php if (count($cl) > 6): ?><span class="wc-mini">+<?= count($cl) - 6 ?></span><?php endif; ?>
+                                    <?php if (!empty($attachCounts[(int) $n['id']])): ?><span class="wc-mini"><?= (int) $attachCounts[(int) $n['id']] ?> image(s)</span><?php endif; ?>
+                                </div>
+                            <?php endif; ?></td>
                         <td data-label="Menace"><span class="badge <?= $h($tone((string) $n['threat_level'])) ?>"><?= $h(W::label(W::THREATS, (string) $n['threat_level'], $lang)) ?></span><?= $n['armed'] === 'yes' ? ' <span class="badge badge--red">' . $h(W::label(W::ARMED, 'yes', $lang)) . '</span>' : '' ?></td>
                         <td data-label="Statut"><span class="dos-status"><?= $h(W::label(W::STATUSES, (string) $n['status'], $lang)) ?></span></td>
                         <td data-label="Émis le"><?= $h($fmt($n['issued_at'])) ?></td>

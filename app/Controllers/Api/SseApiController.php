@@ -812,6 +812,24 @@ final class SseApiController
     }
 
     /**
+     * Avis de recherche posés par la communauté (jeu de rôle), avec leurs codes de motifs et de mesures (code, libellé français et
+     * anglais), un signalement court et la liste des images décrites (type et légende, jamais l'image elle-même).
+     * Format stable : {"notices": [{id, ref, name, type, threat, armed, zone, reasons: [{code, fr, en}], measures: [...],
+     * physical: {...}, images: [{id, kind, caption, main}]}], "count": n}.
+     */
+    public function wantedNotices(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $limit = (int) ($request->query('limit') ?? 40);
+        $items = \App\Services\Sse\SseWantedNoticeData::forGame($r, $limit > 0 ? $limit : 40);
+
+        return Response::json(['notices' => $items, 'count' => count($items)]);
+    }
+
+    /**
      * Interrogation d’identité terrain (SEEK Query) — registre + listes de surveillance réels.
      */
     public function identityQuery(Request $request, array $params = []): Response

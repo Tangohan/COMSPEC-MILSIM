@@ -28,6 +28,9 @@ final class SseIdImageService
         'signature' => ['sse-id-signatures', 1024 * 1024, 900, 'png', true],
         'flag' => ['sse-flags', 1024 * 1024, 800, 'png', false],
         'background' => ['sse-id-backgrounds', 3 * 1024 * 1024, 1600, 'jpg', true],
+        // Pièces jointes d'un avis de recherche : image (5 Mo) et miniature (même source, plus petite).
+        'wanted' => ['sse-wanted', 5 * 1024 * 1024, 1600, 'jpg', true],
+        'wanted_thumb' => ['sse-wanted', 5 * 1024 * 1024, 360, 'jpg', true],
     ];
 
     /** Rapport largeur / hauteur de la photo d'identité (35 × 45 mm) ; le carré est aussi accepté. */
