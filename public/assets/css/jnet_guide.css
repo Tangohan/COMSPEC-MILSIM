@@ -1,0 +1,476 @@
+/**
+ * JNET — guide des membres (views/jnet/guide.php), sur le thème noir d'Athena (jnet_athena.css) : sommaire collant à gauche,
+ * chapitres à droite, recherche dans la page. Tous les sélecteurs commencent par .jg- : rien d'autre n'est touché.
+ */
+
+.jg {
+  display: block;
+  padding-bottom: 72px;
+}
+
+.jg-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.jg-intro {
+  max-width: 68ch;
+  margin: 0 0 24px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ja-muted);
+}
+
+.jg-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.jg-search {
+  flex: 1 1 360px;
+  max-width: 640px;
+  margin: 0;
+}
+
+.jg-search input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--ja-rule);
+  border-radius: 8px;
+  background: var(--ja-c1);
+  color: var(--ja-ink);
+  font: inherit;
+  font-size: 15px;
+}
+
+.jg-search input::placeholder {
+  color: var(--ja-dim);
+}
+
+.jg-search input:focus-visible {
+  outline: 2px solid var(--u);
+  outline-offset: 2px;
+  border-color: var(--u);
+}
+
+.jg-count {
+  min-height: 20px;
+  margin: 6px 2px 0;
+  font-size: 12px;
+  color: var(--ja-dim);
+}
+
+.jg-toc-toggle {
+  display: none;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid var(--ja-rule);
+  border-radius: 8px;
+  background: var(--ja-c1);
+  color: var(--ja-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jg-layout {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+
+/* Sommaire */
+
+.jg-side {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 18px 16px;
+  border: 1px solid var(--ja-rule2);
+  border-radius: 10px;
+  background: var(--ja-c1);
+}
+
+.jg-side__title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ja-ink);
+}
+
+.jg-toc,
+.jg-toc ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jg-toc > li {
+  margin: 2px 0;
+}
+
+.jg-toc a {
+  display: block;
+  padding: 7px 10px;
+  border-left: 2px solid transparent;
+  border-radius: 0 6px 6px 0;
+  color: var(--ja-muted);
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+
+.jg-toc a:hover {
+  background: var(--ja-c2);
+  color: var(--ja-ink);
+}
+
+.jg-toc a.is-on {
+  border-left-color: var(--u);
+  background: var(--ja-c2);
+  color: var(--ja-ink);
+}
+
+.jg-toc ul {
+  margin: 2px 0 6px 12px;
+}
+
+.jg-toc ul a {
+  padding: 5px 10px;
+  font-size: 12.5px;
+}
+
+.jg-toc .is-off {
+  display: none;
+}
+
+.jg-side__links {
+  display: grid;
+  gap: 4px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--ja-rule2);
+  font-size: 13px;
+}
+
+.jg-side__links a {
+  color: var(--u);
+}
+
+.jg-side__links a:hover {
+  text-decoration: underline;
+}
+
+/* Chapitres */
+
+.jg-main {
+  min-width: 0;
+  max-width: 78ch;
+}
+
+.jg-empty {
+  padding: 20px;
+  border: 1px dashed var(--ja-rule);
+  border-radius: 8px;
+  color: var(--ja-muted);
+}
+
+.jg-sec {
+  margin: 0 0 56px;
+  scroll-margin-top: 24px;
+}
+
+.jg-sec > h2 {
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ja-rule);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ja-ink);
+}
+
+.jg-sub {
+  margin: 28px 0 0;
+  scroll-margin-top: 24px;
+}
+
+.jg-sub h3 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ja-ink);
+}
+
+.jg-sub h4 {
+  margin: 22px 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ja-ink);
+}
+
+.jg p,
+.jg li,
+.jg dd {
+  font-size: 15px;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--ja-ink) 82%, transparent);
+}
+
+.jg p {
+  margin: 0 0 14px;
+}
+
+.jg ul {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+
+.jg li {
+  margin: 4px 0;
+}
+
+.jg a:not(.jg-btn) {
+  color: var(--u);
+}
+
+.jg-dl {
+  display: grid;
+  grid-template-columns: minmax(130px, 200px) minmax(0, 1fr);
+  gap: 0;
+  margin: 0 0 16px;
+  border-top: 1px solid var(--ja-rule2);
+}
+
+.jg-dl dt,
+.jg-dl dd {
+  margin: 0;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--ja-rule2);
+}
+
+.jg-dl dt {
+  padding-right: 16px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ja-ink);
+}
+
+.jg-note {
+  padding: 12px 16px;
+  border-left: 3px solid var(--u);
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--u) 8%, var(--ja-c1));
+}
+
+.jg-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  margin: 0 8px 8px 0;
+  padding: 0 18px;
+  border: 1px solid var(--u);
+  border-radius: 8px;
+  background: var(--u);
+  color: var(--ja-on-u);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.jg-btn:hover {
+  filter: brightness(1.08);
+}
+
+/* Schémas */
+
+.jg-fig {
+  margin: 16px 0 20px;
+  padding: 16px;
+  border: 1px solid var(--ja-rule2);
+  border-radius: 10px;
+  background: var(--ja-c1);
+}
+
+.jg-fig svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.jg-fig figcaption {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ja-muted);
+}
+
+.jg-fig text {
+  fill: var(--ja-ink);
+  font: 600 13px Inter, system-ui, sans-serif;
+}
+
+.jg-fig .jg-cap {
+  fill: var(--ja-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.jg-box {
+  fill: var(--ja-c2);
+  stroke: var(--ja-rule);
+  stroke-width: 1.2;
+}
+
+.jg-box--top {
+  stroke: var(--u);
+}
+
+.jg-box--sm {
+  fill: var(--ja-c1);
+}
+
+.jg-line,
+.jg-arrow,
+.jg-dash {
+  fill: none;
+  stroke: var(--ja-muted);
+  stroke-width: 1.6;
+}
+
+.jg-arrow {
+  stroke: var(--u);
+  stroke-width: 2.4;
+}
+
+.jg-dash {
+  stroke: var(--u);
+  stroke-dasharray: 5 5;
+}
+
+/* Questions fréquentes */
+
+.jg-q {
+  border-bottom: 1px solid var(--ja-rule2);
+}
+
+.jg-q:first-child {
+  border-top: 1px solid var(--ja-rule2);
+}
+
+.jg-q summary {
+  position: relative;
+  padding: 14px 36px 14px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ja-ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.jg-q summary::-webkit-details-marker {
+  display: none;
+}
+
+.jg-q summary::after {
+  content: "+";
+  position: absolute;
+  right: 6px;
+  top: 12px;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--u);
+}
+
+.jg-q[open] summary::after {
+  content: "−";
+}
+
+.jg-q > div {
+  padding: 0 0 6px;
+}
+
+.jg-dl--gloss dt {
+  color: var(--u);
+}
+
+.jg [hidden] {
+  display: none !important;
+}
+
+/* Écrans étroits */
+
+@media (max-width: 900px) {
+  .jg-toc-toggle {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .jg-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .jg-side {
+    position: static;
+    max-height: none;
+  }
+
+  .jg.is-js .jg-side {
+    display: none;
+  }
+
+  .jg.is-js .jg-side.is-open {
+    display: block;
+  }
+
+  .jg-dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jg-dl dt {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .jg-dl dd {
+    padding-top: 4px;
+  }
+
+  .jg-search {
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.jg) {
+    scroll-behavior: smooth;
+  }
+}
+
+@media print {
+  .jg-tools,
+  .jg-side {
+    display: none;
+  }
+
+  .jg-layout {
+    display: block;
+  }
+
+  .jg-q > div {
+    display: block;
+  }
+}

@@ -70,6 +70,19 @@ class UserUiTourRepository
         }
     }
 
+    /** Efface la ligne : l'élément (bandeau, fenêtre…) redevient visible pour ce membre. */
+    public function restore(int $userId, string $tourKey): void
+    {
+        if ($userId < 1 || $tourKey === '' || !$this->schemaReady()) {
+            return;
+        }
+        try {
+            $this->pdo->prepare('DELETE FROM user_ui_tours WHERE user_id = ? AND tour_key = ?')->execute([$userId, $tourKey]);
+        } catch (PDOException) {
+            // Table absente ou indisponible : rien à rétablir.
+        }
+    }
+
     /**
      * Lignes dont la clé commence par $prefix (parcours enregistrés en plusieurs lignes, ex. accueil du profil).
      *

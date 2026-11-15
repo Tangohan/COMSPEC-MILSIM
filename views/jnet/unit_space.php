@@ -363,6 +363,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <span>JNET<?= (string) ($usCommunity ?? '') !== '' ? ' · ' . $h((string) $usCommunity) : '' ?></span>
     <a href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>"><?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?></a>
     <a href="<?= $h(url('jnet/courrier')) ?>">Messagerie</a>
+    <a href="<?= $h(url('jnet/guide')) ?>">Guide</a>
     <a href="<?= $h(url('dashboard')) ?>">Quitter JNET</a>
 </footer>
 <?php if ($shareTargets !== [] && $view !== 'partager'): ?>

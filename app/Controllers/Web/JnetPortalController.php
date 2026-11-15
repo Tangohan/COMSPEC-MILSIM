@@ -1335,6 +1335,12 @@ final class JnetPortalController
         ], 'system');
     }
 
+    /** Guide de l'extranet : ce que JNET propose, rubrique par rubrique, rédigé pour les membres (views/jnet/guide.php). */
+    public function guide(Request $request, array $params = []): Response
+    {
+        return $this->render('guide', 'Guide de l’extranet JNET', [], 'guide', ['jnet_guide.css'], ['jnet_guide.js']);
+    }
+
     public function switchPortal(Request $request, array $params = []): Response
     {
         if (!$request->isPost()) {

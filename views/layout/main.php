@@ -691,6 +691,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php if (empty($isFormationWorkspace) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
         <?php require base_path('views/partials/year_review_modal.php'); ?>
     <?php endif; ?>
+    <?php require base_path('views/partials/jnet_announce_modal.php'); ?>
     <?php if (
         !empty(\App\Core\Session::get('user_id'))
         && empty($isBackOfficeShell)

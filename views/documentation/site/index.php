@@ -116,6 +116,9 @@ $tocGroups = [
             <p class="site-docs__ref-link">
                 <a href="<?= htmlspecialchars(url('wiki/atak'), ENT_QUOTES, 'UTF-8') ?>">Wiki ATAK : toutes les apps du téléphone</a>
             </p>
+            <p class="site-docs__ref-link">
+                <a href="<?= htmlspecialchars(url('jnet/guide'), ENT_QUOTES, 'UTF-8') ?>">Guide de l’extranet JNET</a>
+            </p>
         </aside>
 
         <div class="site-docs__main">

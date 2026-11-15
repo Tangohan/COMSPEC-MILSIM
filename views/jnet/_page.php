@@ -114,6 +114,7 @@ $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet
 <footer class="ja-foot">
     <span>Accès réservé aux membres affectés · journalisé</span>
     <span>JNET<?= $community !== '' ? ' · ' . $h($community) : '' ?></span>
+    <a href="<?= $h(url('jnet/guide')) ?>">Guide de l’extranet</a>
 </footer>
 <?php foreach ((array) ($jnetPageJs ?? []) as $jsFile): ?>
 <script src="<?= $h(asset_url('assets/js/' . (string) $jsFile . '?r=202611150001')) ?>" defer></script>
