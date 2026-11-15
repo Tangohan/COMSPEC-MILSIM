@@ -106,6 +106,8 @@ if ($mediaCount > 0) {
     </div>
 </div>
 
+<?php \App\Services\Sse\Links\SseLinksWidget::render('transmission', $eid); ?>
+
 <div class="txp-tabs" role="tablist" aria-label="Sections de la fiche">
     <?php foreach ($tabs as $i => [$key, $label, $n]): ?>
         <button type="button" class="txp-tab<?= $i === 0 ? ' is-active' : '' ?>" role="tab" id="txp-tab-<?= $h($key) ?>" aria-controls="txp-panel-<?= $h($key) ?>" aria-selected="<?= $i === 0 ? 'true' : 'false' ?>"<?= $i === 0 ? '' : ' tabindex="-1"' ?> data-txp-tab="<?= $h($key) ?>">

@@ -51,7 +51,7 @@ $emptyText = ['todo' => 'Rien à faire pour l’instant.', 'doing' => 'Rien en c
                     // « Liés à » : ordre, opération, page… (liens contrôlés côté serveur pour ce lecteur).
                     $taskItems = is_array($usw['links']['tasks'][(string) (int) $t['id']] ?? null) ? $usw['links']['tasks'][(string) (int) $t['id']] : [];
                     if (isset($linkBlockFor) && (!empty($usw['links']['ready']) && ($canPost || $taskItems !== []))) {
-                        $linkBlock = $linkBlockFor('tache', (int) $t['id'], $taskItems, 'echange,operation,page,cible,document,unite,membre');
+                        $linkBlock = $linkBlockFor('tache', (int) $t['id'], $taskItems, 'echange,operation,page,cible,document,unite,membre,sse');
                         $linkMode = 'inline';
                         $linkUid = 't' . (int) $t['id'];
                         require base_path('views/jnet/_linked.php');

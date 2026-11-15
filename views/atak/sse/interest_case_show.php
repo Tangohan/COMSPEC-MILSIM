@@ -132,6 +132,8 @@ $unarchiveVersion = (int) $c['version'];
         </dl>
     </header>
 
+    <?php \App\Services\Sse\Links\SseLinksWidget::render('interest', (int) ($c['id'] ?? 0)); ?>
+
     <div class="di-tabs" role="tablist" aria-label="Sections du dossier" data-di-tabs>
         <?php foreach ($tabs as $key => [$label, $count]): ?>
             <a class="di-tab<?= $activeTab === $key ? ' is-active' : '' ?>" role="tab" id="di-tab-<?= $key ?>" aria-controls="di-panel-<?= $key ?>" aria-selected="<?= $activeTab === $key ? 'true' : 'false' ?>" href="<?= $diH($base . '?onglet=' . $key) ?>" data-di-tab="<?= $key ?>">

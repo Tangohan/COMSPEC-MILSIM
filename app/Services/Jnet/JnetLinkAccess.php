@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Jnet;
 
 use App\Core\Gate;
+use App\Services\Sse\Links\SseLinkGraph;
+use App\Services\Sse\Links\SseLinkSessionViewer;
 use App\Repositories\JnetUnitWorkspaceRepository;
 use App\Support\JnetSpaceTree;
 use App\Support\JnetUi;
@@ -15,8 +17,10 @@ use App\Support\JnetUi;
  * Rien n'est décidé ici qui ne le soit déjà ailleurs ; en cas de doute, la réponse est « non vu » et le lien s'affiche
  * « Lien masqué ».
  */
-final class JnetLinkAccess implements JnetLinkViewer
+final class JnetLinkAccess implements JnetLinkViewer, JnetSseViewer
 {
+    private ?SseLinkGraph $sseGraph = null;
+
     /** @var array<string, array<string, mixed>|null> */
     private array $seen = [];
 
@@ -82,6 +86,7 @@ final class JnetLinkAccess implements JnetLinkViewer
                 'echange' => $this->exchange((int) $id),
                 'cible' => $this->target($id),
                 'document' => $this->document((int) $id),
+                'sse' => $this->sse($id),
                 default => null,
             };
         } catch (\Throwable) {
@@ -220,6 +225,50 @@ final class JnetLinkAccess implements JnetLinkViewer
         return ['type' => 'document', 'id' => (string) $id, 'title' => $f['title'], 'sub' => $f['photo'] ? 'Photo' : 'Document', 'href' => $f['href'], 'group' => JnetLinkRules::groupOf('document', '', $f['photo'])];
     }
 
+    private function sseGraph(): SseLinkGraph
+    {
+        return $this->sseGraph ??= new SseLinkGraph(new SseLinkSessionViewer());
+    }
+
+    /**
+     * Un élément SSE (« person-12 ») tel que CE lecteur le voit avec SES droits SSE : section, habilitation, identités de membres.
+     * Illisible, inexistant ou d'une autre communauté : null (indiscernable). Rien du contenu SSE n'est copié ici.
+     */
+    private function sse(string $id): ?array
+    {
+        $parts = JnetLinkRules::sseParts($id);
+        $viewer = new SseLinkSessionViewer();
+        if ($parts === null || $viewer->tenantId() !== $this->tenant) {
+            return null;
+        }
+        $node = $this->sseGraph()->see($parts['type'], $parts['id']);
+        if ($node === null) {
+            return null;
+        }
+
+        return ['type' => 'sse', 'id' => $id, 'title' => (string) $node['title'], 'sub' => $node['type_label'] . ' · ' . $node['ref'], 'href' => (string) $node['href'], 'group' => 'sse',
+            'ref' => (string) $node['ref'], 'type_label' => (string) $node['type_label']];
+    }
+
+    public function ssePath(string $id): array
+    {
+        $parts = JnetLinkRules::sseParts($id);
+        if ($parts === null) {
+            return [];
+        }
+        try {
+            $viewer = new SseLinkSessionViewer();
+            if ($viewer->tenantId() !== $this->tenant) {
+                return [];
+            }
+            $g = (new SseLinkGraph($viewer))->resolve($parts['type'], $parts['id'], 3, 40);
+
+            return array_slice($g['chains'] ?? [], 0, 2);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     public function canWriteIn(int $spaceId): bool
     {
         return $spaceId > 0 && $this->tree()->has($spaceId) && $this->spaces->canPost($this->tenant, $this->user, $spaceId);
@@ -341,6 +390,17 @@ final class JnetLinkAccess implements JnetLinkViewer
                             foreach ($dash->loadTargets($this->tenant) as $t) {
                                 if ($has((string) ($t['name'] ?? '') . ' ' . (string) ($t['code'] ?? ''))) {
                                     $push('cible', (string) $t['id']);
+                                }
+                            }
+                        }
+                        break;
+                    case 'sse':
+                        // Titre NEUTRE (référence seule) : c'est ce qui est écrit dans le contenu JNET ; le nom reste dans « sub », vu du rédacteur seulement.
+                        $sseViewer = new SseLinkSessionViewer();
+                        if ($sseViewer->tenantId() === $this->tenant) {
+                            foreach (['person', 'identity', 'paper', 'check', 'case', 'interest', 'note', 'site', 'document'] as $sseType) {
+                                foreach ($this->sseGraph()->search($sseType, $q, 4) as $hit) {
+                                    $out[] = ['type' => 'sse', 'id' => $sseType . '-' . $hit['id'], 'title' => (string) $hit['ref'], 'sub' => $hit['type_label'] . ' · ' . $hit['title'], 'href' => '', 'group' => 'sse'];
                                 }
                             }
                         }
