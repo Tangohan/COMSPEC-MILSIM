@@ -232,7 +232,7 @@ final class AtakUnlinkedGateReportsResendAssetTest extends TestCase
     public function testNoDllChange(): void
     {
         $hpp = self::read(self::MAIN . 'script_component.hpp');
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.127"', $hpp);
+        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.128"', $hpp);
     }
 
     public function testDictionariesAreStrict(): void

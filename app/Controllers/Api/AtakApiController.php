@@ -677,6 +677,13 @@ class AtakApiController
         } catch (\Throwable) {
             return [];
         }
+        // Qualifications que le membre (ou son responsable) a choisi de ne pas montrer sur Arma : absentes de la réponse,
+        // dont le format ne change pas. Lecture directe à chaque appel : aucun cache serveur à vider après une bascule.
+        try {
+            $awards = (new \App\Services\Personnel\QualificationDisplayService())
+                ->visibleOn($awards, \App\Services\Personnel\QualificationDisplayService::GAME);
+        } catch (\Throwable) {
+        }
         $temporal = new \App\Services\Personnel\QualificationTemporalStatusService();
         // Qualifications masquées de la fiche opérateur par la communauté (réglage de la qualification).
         $hidden = [];
@@ -1275,7 +1282,60 @@ class AtakApiController
             }
         }
 
+        $this->applyPartyScope($request, $id);
+
         return $id;
+    }
+
+    /**
+     * Portée de la requête (AtakPartyScope::forRequest), connue après requireTenant : compte, clé de partie, carte
+     * réservée (communauté par défaut seulement).
+     *
+     * @var array{tenant: int, owner: string, key: string, from_request: bool, map_id: ?int}
+     */
+    private array $partyScope = ['tenant' => 0, 'owner' => '', 'key' => '', 'from_request' => false, 'map_id' => null];
+
+    /** Carte réservée à la partie ou au compte (communauté par défaut seulement), null ailleurs. */
+    private ?int $partyMapId = null;
+
+    private bool $partyScopeDone = false;
+
+    /**
+     * Communauté par défaut : tous les comptes sans communauté y écrivent. La carte demandée par le client est
+     * remplacée par une carte réservée à sa partie (clé de partie du serveur de jeu), sinon à son compte : pistes,
+     * marqueurs, tracés, messages, ordres, photos et relais d'une partie ne sont plus servis aux autres.
+     * Fait ici, au seul point de passage de toutes les routes ATAK, avant toute lecture de mapId.
+     */
+    private function applyPartyScope(Request $request, int $tenantId): void
+    {
+        if ($this->partyScopeDone) {
+            return;
+        }
+        $this->partyScopeDone = true;
+        try {
+            $body = $this->jsonBody($request);
+            $scope = \App\Support\AtakPartyScope::forRequest($tenantId, $body, (string) $request->ip());
+            $this->partyScope = $scope;
+            if ($scope['map_id'] === null) {
+                return;
+            }
+            $mapId = $scope['map_id'];
+            $this->partyMapId = $mapId;
+            $request->overrideQuery('mapId', $mapId);
+            $request->overrideQuery('map_id', $mapId);
+            $_GET['mapId'] = $mapId;
+            $_GET['map_id'] = $mapId;
+            if (HttpJsonBody::isMultipart()) {
+                $_POST['mapId'] = (string) $mapId;
+                unset($_POST['map_id']);
+            } else {
+                $body['mapId'] = $mapId;
+                unset($body['map_id']);
+                $this->jsonBodyCache = $body;
+            }
+        } catch (\Throwable) {
+            // Base indisponible : la requête échouera d'elle-même à sa première lecture.
+        }
     }
 
     /**
@@ -1820,7 +1880,8 @@ class AtakApiController
     {
         $modMapId = self::DEFAULT_MAP_ID;
         $units = $this->atak->getUnits($tenantId, $mapId);
-        if ($mapId === $modMapId) {
+        // Carte réservée d'une partie (communauté par défaut) : jamais complétée par la carte commune.
+        if ($mapId === $modMapId || $this->partyMapId !== null) {
             return $units;
         }
         $modUnits = $this->atak->getUnits($tenantId, $modMapId);
@@ -5315,6 +5376,19 @@ class AtakApiController
             return Response::json([]);
         }
 
+        // Pistes qui ne doivent plus être servies : muettes depuis plus d'un quart d'heure dans la communauté par
+        // défaut, contacts relayés (IA alliée, balise, téléphone) muets depuis plus de 12 h partout, et pistes d'un
+        // autre terrain que celui du demandeur (world_name envoyé, sinon terrain de sa propre piste pour le jeu).
+        try {
+            $rows = \App\Support\AtakPartyScope::servedUnits(
+                $rows,
+                $this->partyScope,
+                $request->query('world_name', ''),
+                \App\Support\GameFeatureGate::isGameClient()
+            );
+        } catch (\Throwable) {
+        }
+
         // Filtre opt-in : ne pas casser Tacmap (qui n’envoie pas ce paramètre).
         $onlineOnly = $request->query('online_only') === '1'
             || $request->query('onlineOnly') === '1'
@@ -6793,6 +6867,10 @@ class AtakApiController
     private function ingestPositionPayload(int $tenantId, array $actor, array $body): Response
     {
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        // Communauté par défaut : carte réservée à la partie, même si un événement du lot porte sa propre carte.
+        if ($this->partyMapId !== null) {
+            $mapId = $this->partyMapId;
+        }
         $callSign = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? ''));
         $this->recordGameIngest($tenantId, $mapId, false, is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null, $callSign);
         $steamNorm = $actor['steam_uid'] ?? null;
@@ -6943,6 +7021,7 @@ class AtakApiController
             ]);
         } catch (\Throwable) {
         }
+        $extra = \App\Support\AtakPartyScope::stampForScope($this->partyScope, $extra, $body, $isProxyTerrain);
         $upsert = $this->atak->upsertUnitPosition($tenantId, $mapId, $callSign, $posX, $posY, $heading, $role, json_encode($extra));
         if (!$isProxyTerrain) {
             // Marqueurs lus une seule fois pour les deux contrôles (PO puis points suivis : ensembles disjoints).

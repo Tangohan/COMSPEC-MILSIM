@@ -132,7 +132,7 @@ final class JnetMaSituationFoundationTest extends TestCase
                 $idx[] = $i;
             }
         }
-        self::assertCount(41, $idx, '20 lectures + 21 envois');
+        self::assertCount(42, $idx, '20 lectures + 22 envois');
         self::assertSame(count($idx) - 1, end($idx) - $idx[0], 'les routes /jnet/moi/* sont contiguës');
     }
 
