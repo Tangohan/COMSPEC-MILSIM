@@ -123,7 +123,8 @@ switch (_act) do {
     };
     case "send": {
         _arg params [["_fmt", "9"], ["_lines", []], ["_rem", ""], ["_dest", []], ["_ref", ""], ["_free", false]];
-        if (_ref isEqualTo "") then { _ref = format ["B%1%2", getPlayerUID player, round (diag_tickTime * 1000)]; };
+        // Id sûr ([A-Za-z0-9-]) : un nombre >= 1e6 passé à format donne « 6.35867e+06 », rejeté en 404 par Athena.
+        if (_ref isEqualTo "") then { _ref = format ["CAS-%1-%2", (getPlayerUID player) select [9], (round (diag_tickTime * 1000)) toFixed 0]; };
         private _from = ["jtacCs"] call comspec_atak_native_fnc_airBrief;
         private _labels = [];
         private _units = [];

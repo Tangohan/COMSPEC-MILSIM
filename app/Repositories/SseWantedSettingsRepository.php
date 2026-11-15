@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\SseWantedCatalog as C;
+use App\Support\SseWantedCodes;
 use App\Support\SseWantedRealNames;
 
 /**
@@ -101,6 +102,7 @@ final class SseWantedSettingsRepository
             'default_instructions_en' => C::text($data['default_instructions_en'] ?? $d['default_instructions_en'], C::INSTRUCTIONS_MAX),
             'disabled_types' => $disabled,
             'custom_types' => $custom,
+            'codes' => SseWantedCodes::normalizeSettings($data['codes'] ?? []),
         ];
     }
 
