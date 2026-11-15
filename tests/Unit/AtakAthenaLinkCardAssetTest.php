@@ -248,6 +248,35 @@ final class AtakAthenaLinkCardAssetTest extends TestCase
         }
     }
 
+    public function testReleaseCarriesVersionChangelogAndDictionary(): void
+    {
+        $root = dirname(__DIR__, 2);
+        self::assertSame(1, preg_match('/#define VERSION_STR "(\d+)\.(\d+)\.(\d+)"/', self::read('script_component.hpp'), $v));
+        self::assertTrue([(int) $v[1], (int) $v[2], (int) $v[3]] >= [4, 28, 0], 'ATAK natif 4.28.0 au moins');
+        $log = (string) file_get_contents($root . '/CHANGELOG-ATAK.md');
+        self::assertStringContainsString('(ATAK natif 4.28.0.AG - Washington)', $log);
+        self::assertStringContainsString('FR : Le téléphone marche sans relais, et plusieurs écrans sont rangés', $log);
+        self::assertStringContainsString('EN : The phone works without relays, and several screens are tidied up', $log);
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.28.0 Washington', (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
+        self::assertFileExists($root . '/docs/dev/ATAK-INVENTAIRE-A-RETIRER.md');
+        // Dictionnaire anglais : les textes de la carte et du réglage de la tablette de bord.
+        $en = self::read('i18n/en.txt');
+        foreach ([
+            '["1. Ouvrez cette page, ou scannez le QR code :", "1. Open this page, or scan the QR code:"]',
+            '["3. Acceptez sur le site, le téléphone se connecte seul.", "3. Approve on the site, the phone connects by itself."]',
+            '["1. Ouvrez %1 ou scannez le QR code", "1. Open %1 or scan the QR code"]',
+            '["3. Acceptez sur le site", "3. Approve on the site"]',
+            '["encore %1 min", "%1 min left"]',
+            '["2. Saisissez ce code :", "2. Enter this code:"]',
+            '["Liaison satellite", "Satellite link"]',
+            '["Relais détruit", "Relay destroyed"]',
+            '["Apps épinglées", "Pinned apps"]',
+            '["Console d\'analyse", "Analysis console"]',
+        ] as $entry) {
+            self::assertStringContainsString($entry, $en, $entry);
+        }
+    }
+
     public function testOldLayoutWasTallerThanTheScreen(): void
     {
         // Cause du vide : ligne « image » = largeur × 0,5625 × rapport, soit plus haut que toute la zone de l'app en paysage.

@@ -1,6 +1,6 @@
 # ATAK natif : inventaire de ce qui peut être retiré ou fusionné
 
-Date : 2026-11-15. Version de départ : ATAK 4.26.0. Ce document est un rapport : rien n'a été supprimé pour l'écrire.
+Date : 2026-11-15. Version de départ : ATAK 4.26.0 (PR livrée en 4.28.0). Ce document est un rapport : rien n'a été supprimé pour l'écrire.
 
 ## Méthode
 
@@ -66,7 +66,7 @@ Classé par gain décroissant (octets retirables, puis complexité). Tailles en 
 | 17 | Menus ACE en double | `functions/shell/fn_aceMenu.sqf` | 9 entrées, environ 60 lignes | Faible | Fusionner |
 | 18 | Chemins de compatibilité | `fn_importLegacyData`, `fn_tocAccess` « legacy », `fn_tocWall` | 2,2 Ko + gardes | Moyen (mods mélangés) | Garder, dater le retrait |
 | 19 | Notifications Arma déclarées, plus utilisées | `config.cpp` (`CfgNotifications`) | 16 lignes | Nul | Retirer |
-| 20 | Réglages réseau sans effet en liaison satellite | `XEH_preInit.sqf` | Lisibilité (jusqu'à 89 réglages) | Faible | À compléter par la PR |
+| 20 | Réglages réseau sans effet en liaison satellite | `XEH_preInit.sqf` | Lisibilité (`relay_only` en double, 4 réglages sans effet en satellite) | Faible | Regrouper, fusionner `relay_only` |
 | 21 | Réglages CBA morts | `XEH_preInit.sqf` | 0 | Sans objet | Rien à retirer |
 
 ## 1. Objets et classes de config
@@ -200,9 +200,17 @@ La PR ajoute le réglage « Liaison du téléphone » (`comspec_atak_native_link
 - En liaison satellite, `fn_relayNet "only"` et `"required"` sont faux : `relay_only` et `relay_gate` n'ont plus
   d'effet ; les relais présents « ne font qu'améliorer le débit » (en-tête de `fn_linkMode.sqf`).
 - Candidats à vérifier, 89 réglages : `relay_*` (15), `mesh_*` (37), `mpu*` (15), `radio_*` (9), `net_*` (13).
-- **À compléter par la PR** : la liste exacte des réglages ignorés en mode satellite dépend du volet réseau en cours
-  d'écriture. Recommandation : les griser ou les regrouper sous une sous-catégorie « Liaison par relais » plutôt que de
-  les retirer (réglages de serveur enregistrés).
+- Liste arrêtée par la PR (4.28.0), sans effet en liaison satellite : « Exiger un relais pour le réseau MPU/radio »
+  (`relay_gate`), case « Relais obligatoires » du module « Poser un relais » (`COMSPEC_ATAK_RelaysRequired`), dégâts
+  des relais, saturation et trafic de fond des relais (rien à saturer sans relais).
+- Valent « Relais obligatoires » quand « Liaison du téléphone » est sur Automatique : « Réseau uniquement par les
+  relais » (`relay_only`, règle du site `net_relay_only`), case du module et action Zeus (`COMSPEC_ATAK_RelayOnly`),
+  mode réaliste d'Athena (`COMSPEC_LinkViaRelays`). Sans effet sur Satellite.
+- Inchangés dans les deux modes : mode avion, objet obligatoire pour le réseau, radio de données obligatoire,
+  brouilleurs, zones coupées par le serveur, batterie vide, mode hors connexion.
+- Recommandation : regrouper ces réglages sous une sous-catégorie « Liaison par relais » plutôt que de les retirer
+  (réglages de serveur enregistrés) ; `relay_only` fait double emploi avec la valeur « Relais obligatoires » du
+  nouveau réglage : à fusionner après une version de transition.
 
 ## 4. Actions ACE et menus en double
 
