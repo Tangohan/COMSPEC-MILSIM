@@ -373,6 +373,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <a href="<?= $h($homeHref) ?>">Mon extranet</a>
     <a href="<?= $h(url('jnet?commun=1')) ?>">Espace commun</a>
     <a href="<?= $h(url('jnet/courrier')) ?>">Messagerie</a>
+    <a href="<?= $h(url('jnet/guide')) ?>">Guide</a>
     <a href="<?= $h(url('dashboard')) ?>">Quitter JNET</a>
 </footer>
 <?php if ($shareTargets !== [] && $view !== 'partager'): ?>

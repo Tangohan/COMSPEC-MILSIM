@@ -149,6 +149,7 @@ $itemRows = static function (array $section) use ($h, $pad, $arrow): string {
     <div class="ja-hd__r">
         <span class="ja-who">extranet<?= $community !== '' ? ' · ' . $h($community) : '' ?></span>
         <?= JnetUi::account($operator) ?>
+        <a class="ja-ib" href="<?= $h(url('jnet/guide')) ?>"><svg class="ja-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8M12 17v.01"/></svg><span class="ja-ib__t">Guide</span></a>
         <a class="ja-ib" href="<?= $h(url('jnet/courrier')) ?>"><?= JnetUi::icon('mail') ?><span class="ja-ib__t">Messagerie</span><?= $unreadMail > 0 ? ' <b>' . min(99, $unreadMail) . '</b>' : '' ?></a>
         <a class="ja-ib" href="<?= $h(url('dashboard')) ?>"><?= JnetUi::icon('home') ?><span class="ja-ib__t">Accueil Athena</span></a>
         <?php if (!empty($hubCanTba)): ?><a class="ja-ib" href="<?= $h(url('back-office')) ?>"><?= JnetUi::icon('manage') ?><span class="ja-ib__t">Gestion</span></a><?php endif; ?>
