@@ -510,6 +510,7 @@ final class AtakExperienceService
             ['id' => 'DataLink', 'name' => 'Extraction', 'description' => 'Extraction de données au câble DL-7', 'section' => 'Renseignement'],
             ['id' => 'Osint', 'name' => 'OSINT', 'description' => 'Renseignement en sources ouvertes', 'section' => 'Renseignement'],
             ['id' => 'Wanted', 'name' => 'Recherchés', 'description' => 'Personnes recherchées (HVT) de la communauté', 'section' => 'Renseignement'],
+            ['id' => 'Fiches', 'name' => 'Fiches SSE', 'description' => 'Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre', 'section' => 'Renseignement'],
             ['id' => 'Tasks', 'name' => 'Tâches', 'description' => 'Tâches et ordres reçus', 'section' => 'Mission'],
             ['id' => 'Reports', 'name' => 'Comptes rendus', 'description' => 'Comptes rendus de fin de mission', 'section' => 'Mission'],
             ['id' => 'Briefing', 'name' => 'Briefing', 'description' => 'Diapositives et consignes de la mission', 'section' => 'Mission'],
