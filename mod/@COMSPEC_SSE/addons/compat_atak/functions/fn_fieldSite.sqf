@@ -49,7 +49,7 @@ private _steps = [
     ["search", "Fouille", _n get "search", _total],
     ["bio", "Biométrie", _n get "bio", _n get "persons"],
     ["digital", "Extraction numérique", _n get "digitalDone", _n get "digital"],
-    ["seal", "Scellés", _n get "seal", _n get "objects"],
+    ["seal", "Pièces", _n get "seal", _n get "objects"],
     ["tx", "Transmission", _n get "tx", _total]
 ];
 private _parts = _steps select { (_x select 3) > 0 };

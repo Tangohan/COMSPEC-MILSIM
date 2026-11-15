@@ -9,7 +9,7 @@ One complete guide per tool: what it is for, where to find it (Zeus, Eden, ACE, 
 | Country of the papers (France, Germany, United States…: formats, MRZ, numbers; adding a country) | Zeus, mission maker, developer | [pays_des_papiers.en.md](pays_des_papiers.en.md) |
 | Document extensions (creating your own types: `CfgComspecDocuments`) | Addon developer | [extensions_documents.en.md](extensions_documents.en.md) |
 | « SSE ROLEPLAY · Extensions » menu | Zeus, administrator | [menu_extensions.en.md](menu_extensions.en.md) |
-| Identity check (ACE, viewer, levels N0 to N4, ID Check app, checkpoints) | Player, Zeus | [controle_identite.en.md](controle_identite.en.md) |
+| Identity verification (ACE, viewer, levels N0 to N4, ID Check app, checkpoints) | Player, Zeus | [controle_identite.en.md](controle_identite.en.md) |
 | Area AI (AI workshop) | Zeus | [ia_de_la_zone.en.md](ia_de_la_zone.en.md) |
 | Talking to AIs: understood questions, answers written by the game master, what an AI may bring up | Player, Zeus, mission lead | [reponses_ia.en.md](reponses_ia.en.md) |
 | Covers and « Ma couverture » (My cover) | Infiltrated player, Zeus | [ma_couverture.en.md](ma_couverture.en.md) |

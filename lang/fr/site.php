@@ -64,7 +64,7 @@ return [
     'sse_mod_graph_t' => 'Graphe d’intelligence',
     'sse_mod_graph_b' => 'Nœuds et relations pour visualiser pivots et associations sur le terrain.',
     'sse_mod_evidence_t' => 'Preuves & chaîne',
-    'sse_mod_evidence_b' => 'Scellés, preuves et suivi de possession pour garder la trace des objets.',
+    'sse_mod_evidence_b' => 'Pièces, preuves et suivi de possession pour garder la trace des objets.',
     'sse_mod_mission_t' => 'Intel de mission',
     'sse_mod_mission_b' => 'Fusion des niveaux observé / rapporté / évalué / confirmé pour le briefing.',
     'sse_mod_zeus_t' => 'Contrôle Zeus',

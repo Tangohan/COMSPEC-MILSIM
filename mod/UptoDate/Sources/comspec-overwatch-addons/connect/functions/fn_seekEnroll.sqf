@@ -1,7 +1,7 @@
 /*
     ENROLL du SEEK II (touche A2) : enregistrement d'un inconnu sans ressaisie.
 
-    SUJET prérempli depuis le document présenté au contrôle d'identité, sinon l'identité SSE de la
+    SUJET prérempli depuis le document présenté au vérification d'identité, sinon l'identité SSE de la
     cible (déjà posée à l'ouverture), toujours modifiable ; CONTEXTE prérempli (circonstance
     « contrôle », grille, heure, unité affichées) ; TERRAIN optionnel. Les onglets se cochent seuls
     (fn_ssePersonRefreshPanels) ; SIGN n'exige que le minimum (fn_seekState).

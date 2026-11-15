@@ -1,5 +1,5 @@
 /*
-    Consultation des fichiers (poste du joueur) : téléphone (app Fichiers), SEEK II, contrôle d'identité.
+    Consultation des fichiers (poste du joueur) : téléphone (app Fichiers), SEEK II, vérification d'identité.
     [_type, _critères, _source, _étiquette] call comspec_sse_fnc_fileQuery -> étiquette de la demande
       _type      QW personne (last, first, dob) · QA document (number, country, docType) · QB biométrie (bioKey ou rec)
                  · QV véhicule (plate)

@@ -4,7 +4,7 @@ French version: [ia_de_la_zone.md](ia_de_la_zone.md). Guides index: [index.en.md
 
 ## What it is for
 
-The SSE editor's **Area AI** window sets, for nearby or selected AIs, **who they are at an identity check**: Athena profile, papers they carry and their nature (genuine, cover, forged), behaviour when checked, side. It also lets you see its papers as the player will, fix them, write **what it answers** when spoken to (**Questions and answers…**) and keep it in the **map memory** for the next games.
+The SSE editor's **Area AI** window sets, for nearby or selected AIs, **who they are at an identity verification**: Athena profile, papers they carry and their nature (genuine, cover, forged), behaviour when checked, side. It also lets you see its papers as the player will, fix them, write **what it answers** when spoken to (**Questions and answers…**) and keep it in the **map memory** for the next games.
 
 Without it, AIs get papers "by side" (Identity CBA settings) and answer on their own, from their character and cover.
 

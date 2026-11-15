@@ -5,4 +5,4 @@
 
 #define REQUIRED_VERSION 2.14
 
-#define VERSION_CONFIG version = 1.9; versionStr = "1.9.1"; versionAr[] = {1,9,1,0}
+#define VERSION_CONFIG version = 1.9; versionStr = "1.9.2"; versionAr[] = {1,9,2,0}

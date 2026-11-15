@@ -4,7 +4,7 @@
       Entités         personnes, objets et modules SSE posés, avec leurs attributs et synchronisations
       Liaisons        liens entre entités et organisations (modules, attributs, biométrie, contenu des objets), réseaux
       Organigramme    organisations de la carte et de la campagne du site, membres par rôle, cellules, objets rattachés
-      Items et membres objets reliés à chaque personne, objets sans lien, registre des scellés de la campagne
+      Items et membres objets reliés à chaque personne, objets sans lien, registre des pièces de la campagne
       Campagne        modules de mission de la carte, configuration complète de la campagne lue sur le site
       Site Athena     campagnes de la communauté, choix de la campagne lue, avis de recherche croisés avec la carte
     Même technique que comspec_sse_fnc_openGuide : fenêtre posée sur l'écran d'Eden, créée une fois le menu refermé.

@@ -1,5 +1,5 @@
 /*
-    Demandes de contrôle d'identité (SERVEUR). Appel : ["send", [op, args]] call comspec_sse_fnc_idClient.
+    Demandes de vérification d'identité (SERVEUR). Appel : ["send", [op, args]] call comspec_sse_fnc_idClient.
     Le demandeur est retrouvé par remoteExecutedOwner (jamais cru sur parole) ; contrôles : distance (3 m, NFC 1,5 m,
     plus une marge de latence), jeton de présentation (réglage, 120 s), anti-flood (0,5 s par opération), durée réelle
     de l'action (« begin » envoyé au début de la barre de progression).

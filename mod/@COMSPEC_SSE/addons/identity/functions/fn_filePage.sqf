@@ -8,7 +8,7 @@
                 « Réessayer ») ; n° de requête, heure, sources LOCAL / ATHENA, état d'Athena en une ligne (jamais
                 bloquant), mentions (ARMÉ ET DANGEREUX, mandat, recherché, document douteux…), fiches résumées, contrôles
                 subis, « Copier le numéro »
-      JOURNAL   consultations de la partie (téléphone, SEEK II, contrôle d'identité), erreurs comprises ; un clic rouvre
+      JOURNAL   consultations de la partie (téléphone, SEEK II, vérification d'identité), erreurs comprises ; un clic rouvre
     Lien profond (comspec_sse_fnc_openApp « FICHIERS ») : type, critères, source, run (recherche lancée tout de suite).
     Actions : comspec_sse_fnc_fileAction. Mise en page par fn_formRender (textes qui passent à la ligne, portrait et
     paysage). Aucun message en alerte de l'interface d'Arma : tout est dans l'app.
@@ -54,7 +54,7 @@ private _tab = _st getOrDefault ["tab", "query"];
 private _hist = _st getOrDefault ["history", []];
 private _online = (missionNamespace getVariable ["comspec_sse_idDll", false]) isEqualTo true;
 private _labels = createHashMapFromArray [
-    ["armed_dangerous", ["ARMÉ ET DANGEREUX", "red"]], ["hvt", ["HVT : cible prioritaire", "red"]], ["warrant", ["Mandat", "red"]],
+    ["armed_dangerous", ["ARMÉ ET DANGEREUX", "red"]], ["hvt", ["HVT : cible prioritaire", "red"]], ["warrant", ["Avis de recherche", "red"]],
     ["wanted", ["Recherché", "red"]], ["missing", ["Personne disparue", "amber"]], ["stolen", ["Document volé", "red"]],
     ["revoked", ["Document révoqué", "red"]], ["doubtful", ["Document douteux", "amber"]], ["bolo", ["BOLO", "amber"]], ["lost", ["Document perdu", "amber"]],
     ["flagged", ["Signalé", "amber"]], ["holder_mismatch", ["Titulaire différent", "amber"]], ["enemy_force", ["Force ennemie", "amber"]],
@@ -85,7 +85,7 @@ _rows pushBack ["segment", "", [
 ]];
 
 if (_tab isEqualTo "journal") exitWith {
-    if (_hist isEqualTo []) then { _rows pushBack ["empty", _icon, "Aucune consultation" call _tr, "Les consultations de la partie (téléphone, SEEK II, contrôle d'identité) s'affichent ici." call _tr]; };
+    if (_hist isEqualTo []) then { _rows pushBack ["empty", _icon, "Aucune consultation" call _tr, "Les consultations de la partie (téléphone, SEEK II, vérification d'identité) s'affichent ici." call _tr]; };
     for "_i" from ((count _hist) - 1) to 0 step -1 do {
         private _r = _hist select _i;
         private _o = _r call _outcome;

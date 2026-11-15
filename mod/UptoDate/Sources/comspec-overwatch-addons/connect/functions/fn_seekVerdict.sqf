@@ -117,7 +117,7 @@ private _verdict = switch (true) do {
 };
 
 private _labels = createHashMapFromArray [
-    ["wanted", "recherché"], ["warrant", "mandat"], ["flagged", "signalé"], ["hvt", "cible prioritaire (HVT)"],
+    ["wanted", "recherché"], ["warrant", "avis de recherche"], ["flagged", "signalé"], ["hvt", "cible prioritaire (HVT)"],
     ["bolo", "avis de recherche (BOLO)"], ["stolen", "document volé"], ["lost", "document perdu"],
     ["revoked", "document révoqué"], ["expired", "document expiré"], ["missing", "personne disparue"],
     ["armed_dangerous", "armé et dangereux"], ["caution", "prudence"], ["holder_mismatch", "porteur différent du titulaire"]
@@ -176,7 +176,7 @@ if (_hasDoc) then {
         });
     };
 } else {
-    _lines pushBack format ["<t size='0.42' color='%1'>%2</t>", _cMute, "Aucun document présenté (contrôle d'identité)." call _tr];
+    _lines pushBack format ["<t size='0.42' color='%1'>%2</t>", _cMute, "Aucun document présenté (vérification d'identité)." call _tr];
 };
 if ((_bio getOrDefault ["mismatch", false]) isEqualTo true) then {
     _lines pushBack format ["<t size='0.42' font='TahomaB' color='%1'>%2</t>", _cBad, "Identité déclarée ≠ dossier biométrique (faux papiers ?)" call _tr];

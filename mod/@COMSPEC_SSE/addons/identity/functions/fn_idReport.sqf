@@ -33,7 +33,7 @@ if (!isNull _subj) then {
 // Ce qu'il a fait au contrôle (dernière réponse reçue de cette personne).
 private _last = missionNamespace getVariable ["comspec_sse_idLastAnswer", []];
 private _attitude = if ((count _last) >= 3 && {(_last select 0) isEqualTo _subj} && {!isNull _subj}) then { _last select 2 } else { "" };
-private _activity = format [("Contrôle d'identité, verdict %1" call comspec_sse_fnc_tr), _verdict] + (["", " · " + (_attitude call comspec_sse_fnc_tr)] select (_attitude isNotEqualTo ""));
+private _activity = format [("Vérification d'identité, verdict %1" call comspec_sse_fnc_tr), _verdict] + (["", " · " + (_attitude call comspec_sse_fnc_tr)] select (_attitude isNotEqualTo ""));
 
 if (_kind isEqualTo "SALUTE") exitWith {
     private _dr = uiNamespace getVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
@@ -63,7 +63,7 @@ private _vals = createHashMapFromArray [
     ["grid", _grid],
     ["time", _dtg],
     ["action", ["SURVEILLANCE", "SIGNALÉ"] select (_verdict in ["FAUX", "INCONNU", "VOLE", "REVOQUE", "SIGNALE", "RECHERCHE", "HVT"])],
-    ["remarks", (format ["Contrôle d'identité : %1, %2. Verdict %3.%4%5%6", _who, _paper, _verdict,
+    ["remarks", (format ["Vérification d'identité : %1, %2. Verdict %3.%4%5%6", _who, _paper, _verdict,
         ["", format [" %1.", _attitude]] select (_attitude isNotEqualTo ""),
         ["", format [" Tenue : %1.", _dress joinString ", "]] select (_dress isNotEqualTo []),
         ["", format [" Armes : %1.", _arms joinString ", "]] select (_arms isNotEqualTo [])]) select [0, 480]]

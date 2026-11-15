@@ -1,4 +1,4 @@
-# Identity check
+# Identity verification
 
 French version: [controle_identite.md](controle_identite.md). Guides index: [index.en.md](index.en.md). Detailed reference (realistic AI, checkpoints, HVT, API): [../guide/Controle_identite.md](../guide/Controle_identite.md).
 
@@ -10,13 +10,13 @@ Checking the papers of a person (AI or player): asking for them, examining them 
 
 | Need | Path |
 |---|---|
-| Check a person | ACE menu on the person › **Contrôle d'identité** (Identity check) |
-| Check the occupants of a vehicle | ACE menu of the stopped vehicle › **Contrôle d'identité › Contrôler les occupants** (Identity check › Check the occupants) or **Faire descendre** (Order out) |
+| Check a person | ACE menu on the person › **Vérification d'identité** (Identity verification) |
+| Check the occupants of a vehicle | ACE menu of the stopped vehicle › **Vérification d'identité › Contrôler les occupants** (Identity verification › Check the occupants) or **Faire descendre** (Order out) |
 | My own papers | Personal ACE menu › **Mes papiers** (My papers) |
 | Scanner, logs, BOLO | ATAK phone › Intelligence › **Contrôle ID** (ID Check) app (tabs **CONTRÔLE** (CHECK), **HISTORIQUE** (HISTORY), **BOLO**) |
 | Settings | Esc › Options › Addon settings › **COMSPEC SSE › Identité** (COMSPEC SSE › Identity) |
 
-## The ACE menu « Contrôle d'identité »
+## The ACE menu « Vérification d'identité »
 
 | Action | Duration | Condition | Effect |
 |---|---|---|---|
@@ -67,22 +67,22 @@ Other buttons of the app: **Transmettre à Athena** (Send to Athena) (becomes «
 
 Situation: your buddy team holds a roadblock; a car stops, two civilians on board.
 
-1. ACE menu of the vehicle › **Contrôle d'identité › Faire descendre**, then on the driver › **Demander les papiers**. He hands over an identity card: it opens in the viewer.
+1. ACE menu of the vehicle › **Vérification d'identité › Faire descendre**, then on the driver › **Demander les papiers**. He hands over an identity card: it opens in the viewer.
 2. **RECTO / VERSO**, **ZOOM**: the font of the name looks different. Status line: « Caractères du nom irréguliers… ».
 3. **SCANNER (ATAK)** › **Lire la MRZ (N1)**: « MRZ différente du recto : le nom ne correspond pas. » Verdict **FAUX DOCUMENT**.
 4. **Interroger la base (N3)**: « AVIS : personne RECHERCHÉE (réf. …) ». The phone vibrates.
 5. **Relever le document** (or RELEVER in the viewer): the log goes into your logbook and to Athena. **Joindre à une FRM** then **SPOTREP** to report it.
-6. Handcuff (ACE): ACE menu › **Contrôle d'identité › Saisir** the document (chain of custody); **Fouiller les papiers** for the rest.
+6. Handcuff (ACE): ACE menu › **Vérification d'identité › Saisir** the document (chain of custody); **Fouiller les papiers** for the rest.
 
 ## AI checkpoints
 
-Eden module **Poser un checkpoint IA** (Place an AI checkpoint) (category COMSPEC · Identité / COMSPEC · Identity) or Zeus ZEN **COMSPEC · Identité › Poser un checkpoint IA**: **Rayon (m)** (Radius (m)) (0 = setting « Distance des checkpoints » / Checkpoint distance, 25 m), **Camp du poste** (Post side) (Automatique / BLUFOR / OPFOR / Indépendant / Civil (police) — Automatic / BLUFOR / OPFOR / Independent / Civilian (police)), **Équipement du poste** (Post equipment) (Visuel seul N0 / Scanner MRZ N1 / Lecteur NFC N2 / Liaison base N3 — Visual only N0 / MRZ scanner N1 / NFC reader N2 / Database link N3), **Sévérité** (Severity) (Laxiste / Normale / Stricte — Lax / Normal / Strict), **Nom du poste** (Post name). Guards: synchronised units, otherwise AI of that side in the area.
+Eden module **Poser un checkpoint IA** (Place an AI checkpoint) (category COMSPEC · Identité / COMSPEC · Identity) or Zeus ZEN **COMSPEC · Identité › Poser un checkpoint IA**: **Rayon (m)** (Radius (m)) (0 = setting « Distance des checkpoints » / Checkpoint distance, 25 m), **Camp du poste** (Post side) (Automatique / BLUFOR / OPFOR / Indépendant / Civil (police) — Automatic / BLUFOR / OPFOR / Independent / Civilian (security)), **Équipement du poste** (Post equipment) (Visuel seul N0 / Scanner MRZ N1 / Lecteur NFC N2 / Liaison base N3 — Visual only N0 / MRZ scanner N1 / NFC reader N2 / Database link N3), **Sévérité** (Severity) (Laxiste / Normale / Stricte — Lax / Normal / Strict), **Nom du poste** (Post name). Guards: synchronised units, otherwise AI of that side in the area.
 
 A player who enters: « Papiers, s'il vous plaît » on the ATAK, 45 s (setting) to **Mes papiers › Présenter** within 3 m of the guard; examination according to the equipment; 2 cover-story questions (3 at a strict post); outcome: let through · search (8 s) · detain (3 min, Zeus notified) · raise the alarm · open fire. **Retirer un checkpoint IA** (Remove an AI checkpoint), **Déclencher un contrôle** (Trigger a check) (on a person, by the post covering them or the nearest armed AI), **Forcer un état IA** (Force an AI state) (Interpellé, Coopère, Ment, Nerveux, Refuse, Fuit, Agressif, Se rend, Appelle des renforts, Calme — Stopped, Cooperates, Lies, Nervous, Refuses, Flees, Aggressive, Surrenders, Calls reinforcements, Calm) and **Imposer un couvre-feu** (Impose a curfew) complete the Zeus toolkit.
 
 ## Settings (COMSPEC SSE › Identité)
 
-Contrôle d'identité (Identity check) (yes) · Difficulté des contrôles (Check difficulty) (Arcade / **Standard** / Réaliste — Arcade / Standard / Realistic) · Configurer une IA à sa pose (Zeus) (Configure an AI when placed (Zeus)) (no) · IA sans papiers (AI without papers) (0 %) · Photo d'identité en direct (Live ID photo) (yes) · Pays des papiers (Country of the papers: Auto (by map), real then fictional countries) · Pays par défaut des papiers (Default country of the papers: Altis) (Country of the papers) (Selon la carte / According to the map) · Papiers des IA (AI papers) (yes) · Rendre les papiers du kit au respawn (Return kit papers on respawn) (yes) · Civils qui présentent leurs papiers (Civilians who present their papers) (90 %) · Insurgés porteurs de faux papiers (Insurgents carrying forged papers) (60 %) · Durée d'une présentation (Presentation duration) (120 s) · Transmission automatique à Athena (Automatic transmission to Athena) (yes; the community setting prevails) · Documents et avis d'Athena (Athena documents and notices) (yes) · Opération Athena (clé) (Athena operation (key)) · IA réalistes au contrôle (Realistic AI when checked) (yes) · Agressivité des IA (AI aggressiveness) (50 %) · Distance des checkpoints (Checkpoint distance) (25 m) · Ouvrir les papiers tendus à l'écran (yes) · Délai pour présenter ses papiers (Time to present papers) (45 s) · Les checkpoints contrôlent aussi les IA (Checkpoints also check AI) (yes) · Couvre-feu (Curfew) (no) · Infiltré captif tant que sa couverture tient (Infiltrator captive while their cover holds) (yes) · Soupçons avant que la couverture saute (Suspicion before the cover is blown) (100) · Distance des témoins (Witness distance) (50 m) · Questions de légende (Cover-story questions) (yes) · Délai pour répondre (Time to answer) (20 s) · Comparaison du visage (N4) (yes) · Durée de la comparaison du visage (Face comparison duration) (8 s) · Notifier les BOLO (Notify BOLOs) (yes).
+Vérification d'identité (Identity verification) (yes) · Difficulté des contrôles (Check difficulty) (Arcade / **Standard** / Réaliste — Arcade / Standard / Realistic) · Configurer une IA à sa pose (Zeus) (Configure an AI when placed (Zeus)) (no) · IA sans papiers (AI without papers) (0 %) · Photo d'identité en direct (Live ID photo) (yes) · Pays des papiers (Country of the papers: Auto (by map), real then fictional countries) · Pays par défaut des papiers (Default country of the papers: Altis) (Country of the papers) (Selon la carte / According to the map) · Papiers des IA (AI papers) (yes) · Rendre les papiers du kit au respawn (Return kit papers on respawn) (yes) · Civils qui présentent leurs papiers (Civilians who present their papers) (90 %) · Insurgés porteurs de faux papiers (Insurgents carrying forged papers) (60 %) · Durée d'une présentation (Presentation duration) (120 s) · Transmission automatique à Athena (Automatic transmission to Athena) (yes; the community setting prevails) · Documents et avis d'Athena (Athena documents and notices) (yes) · Opération Athena (clé) (Athena operation (key)) · IA réalistes au contrôle (Realistic AI when checked) (yes) · Agressivité des IA (AI aggressiveness) (50 %) · Distance des checkpoints (Checkpoint distance) (25 m) · Ouvrir les papiers tendus à l'écran (yes) · Délai pour présenter ses papiers (Time to present papers) (45 s) · Les checkpoints contrôlent aussi les IA (Checkpoints also check AI) (yes) · Couvre-feu (Curfew) (no) · Infiltré captif tant que sa couverture tient (Infiltrator captive while their cover holds) (yes) · Soupçons avant que la couverture saute (Suspicion before the cover is blown) (100) · Distance des témoins (Witness distance) (50 m) · Questions de légende (Cover-story questions) (yes) · Délai pour répondre (Time to answer) (20 s) · Comparaison du visage (N4) (yes) · Durée de la comparaison du visage (Face comparison duration) (8 s) · Notifier les BOLO (Notify BOLOs) (yes).
 
 ## Common pitfalls
 

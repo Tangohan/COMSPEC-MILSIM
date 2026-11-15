@@ -227,7 +227,7 @@ if ((count _shown) > 0) then {
     _res set ["encounters", _shown getOrDefault ["encounters", []]];
     _res set ["athenaRef", _shown getOrDefault ["athenaRef", ""]];
     _res set ["action", switch (_tier) do {
-        case 1: { "DETAIN : interpeller, retenir le sujet, aviser le PC" };
+        case 1: { "DETAIN : appréhender, retenir le sujet, aviser le PC" };
         case 2: { "QUESTION / DETAIN : questionner, retenir, aviser le PC" };
         case 3: { "QUESTION · DENY ACCESS : questionner, refuser l'accès" };
         case 4: { "POUR INFO : consigner le contact, poursuivre" };

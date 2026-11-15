@@ -37,7 +37,7 @@ private _icon = "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa";
 private _cond = { [_this select 0] call comspec_sse_fnc_canInspect };
 
 // Règle de conception : le minimum d'actions ACE. Ne restent que les gestes physiques au contact
-// (fouiller, mettre sous scellé) et les actions des kits portés ; tout le reste (approfondir, documents,
+// (fouiller, prendre en charge) et les actions des kits portés ; tout le reste (approfondir, documents,
 // chronologie, terminal, photos, numérique, journal) passe par l'app « SSE terrain » du téléphone ATAK.
 // Enfants : triplets ACE [action, [], cible] (jamais createAction brut).
 private _insertWith = {
@@ -72,10 +72,10 @@ private _personChildren = [
     (["COMSPEC_SSE_Search", "Fouiller", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1, false] call comspec_sse_fnc_doSearch }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction)
 ];
 
-// Mettre sous scellé = collecte + scellé dans le même geste (sachet consommé).
+// Prendre en charge = collecte + scellé dans le même geste (sachet consommé).
 private _objectChildren = [
     (["COMSPEC_SSE_SearchObj", "Fouiller", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1, true] call comspec_sse_fnc_doSearch }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction),
-    (["COMSPEC_SSE_Seal", "Mettre sous scellé", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0, _this select 1, true] call comspec_sse_fnc_doCollect },
+    (["COMSPEC_SSE_Seal", "Prendre en charge", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0, _this select 1, true] call comspec_sse_fnc_doCollect },
         { ([_this select 0] call comspec_sse_fnc_canInspect) && {"COMSPEC_SSE_EvidenceBag" in (items (_this select 1))} }, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction)
 ];
 ([] call comspec_sse_fnc_kitActions) params ["_kitPerson", "_kitObject"];

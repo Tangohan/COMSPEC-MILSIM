@@ -4,7 +4,7 @@ Version anglaise : [ia_de_la_zone.en.md](ia_de_la_zone.en.md). Sommaire : [index
 
 ## À quoi ça sert
 
-La fenêtre **IA de la zone** de l'éditeur SSE règle, pour les IA proches ou sélectionnées, **qui elles sont au contrôle d'identité** : profil Athena, papiers qu'elles portent et leur nature (vrais, couverture, faux), comportement quand on les contrôle, camp. Elle sert aussi à voir ses papiers tels que le joueur les verra, à les corriger, à écrire **ce qu'elle répond** quand on lui parle (**Questions et réponses…**) et à la garder en **mémoire de la carte** pour les prochaines parties.
+La fenêtre **IA de la zone** de l'éditeur SSE règle, pour les IA proches ou sélectionnées, **qui elles sont au vérification d'identité** : profil Athena, papiers qu'elles portent et leur nature (vrais, couverture, faux), comportement quand on les contrôle, camp. Elle sert aussi à voir ses papiers tels que le joueur les verra, à les corriger, à écrire **ce qu'elle répond** quand on lui parle (**Questions et réponses…**) et à la garder en **mémoire de la carte** pour les prochaines parties.
 
 Sans elle, les IA reçoivent des papiers « selon leur camp » (réglages CBA Identité) et répondent seules, selon leur caractère et leur couverture.
 

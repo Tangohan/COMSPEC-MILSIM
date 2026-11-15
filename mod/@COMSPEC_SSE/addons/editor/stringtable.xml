@@ -73,9 +73,9 @@
             <French>Tous les états</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_ED_Filters_D">
-            <Original>Side, role (civilian, military, suspect, HVT) and state (Athena profile, generated identity, papers decided at first request, kept for next games).</Original>
-            <English>Side, role (civilian, military, suspect, HVT) and state (Athena profile, generated identity, papers decided at first request, kept for next games).</English>
-            <French>Camp, rôle (civil, militaire, suspect, HVT) et état (profil Athena, identité générée, papiers décidés à la première demande, gardée pour les prochaines parties).</French>
+            <Original>Side, role (civilian, military, subject, HVT) and state (Athena profile, generated identity, papers decided at first request, kept for next games).</Original>
+            <English>Side, role (civilian, military, subject, HVT) and state (Athena profile, generated identity, papers decided at first request, kept for next games).</English>
+            <French>Camp, rôle (civil, militaire, sujet, HVT) et état (profil Athena, identité générée, papiers décidés à la première demande, gardée pour les prochaines parties).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_ED_Side_auto">
             <Original>Do not change</Original>
@@ -133,9 +133,9 @@
             <French>Militaire</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_ED_Role_suspect">
-            <Original>Suspect</Original>
-            <English>Suspect</English>
-            <French>Suspect</French>
+            <Original>Subject</Original>
+            <English>Subject</English>
+            <French>Sujet</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_ED_Role_hvt">
             <Original>HVT</Original>
@@ -989,9 +989,9 @@
             <French>Filtres (%1)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_AZ_Filters_D">
-            <Original>Show only one side, one role or one state. E.g. only the suspects.</Original>
-            <English>Show only one side, one role or one state. E.g. only the suspects.</English>
-            <French>Montrer seulement un camp, un rôle ou un état. Ex. : seulement les suspects.</French>
+            <Original>Show only one side, one role or one state. E.g. only the subjects.</Original>
+            <English>Show only one side, one role or one state. E.g. only the subjects.</English>
+            <French>Montrer seulement un camp, un rôle ou un état. Ex. : seulement les sujets.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_AZ_FiSide">
             <Original>Side</Original>

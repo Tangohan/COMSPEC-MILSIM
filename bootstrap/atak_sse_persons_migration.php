@@ -255,6 +255,8 @@ return static function (PDO $pdo, ?callable $log = null): void {
             'signed_atak_id' => "VARCHAR(64) DEFAULT NULL",
             'signed_at' => 'DATETIME DEFAULT NULL',
             'identity_query_json' => 'JSON NULL',
+            // Signature tracée au pad du SEEK II (PNG rendu côté serveur à partir des traits).
+            'signature_image' => 'VARCHAR(255) DEFAULT NULL',
         ];
         foreach ($additions as $col => $ddl) {
             if ($columnExists($pdo, 'sse_persons', $col)) {

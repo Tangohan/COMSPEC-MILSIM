@@ -9,7 +9,7 @@
         « Rattaché à une organisation » sur les objets, module « Organisation » ;
       - Zeus (ZEN) : affecter, générer un réseau, rattacher, révéler, tableau vue Zeus,
         altérer un scellé (exercice) ;
-      - ACE : tableau des liens, registre des scellés, remise des scellés à un équipier.
+      - ACE : tableau des liens, registre des pièces, remise des scellés à un équipier.
 */
 class CfgPatches {
     class comspec_sse_analysis {

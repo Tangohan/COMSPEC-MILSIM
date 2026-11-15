@@ -32,7 +32,7 @@ Le même contenu, en plus court, est dans le jeu : **Échap › Manuel de terrai
 | **Dataset** | Un **scénario prêt à jouer** : une liste de rôles nommés (chef, artificier, courrier...), les liens entre eux et une graine fixe. Les mêmes rôles donnent toujours les mêmes noms, alias, téléphones, documents et empreintes. Aujourd'hui : **FALCON**. | Vous le choisissez dans une liste. Vous ne le créez pas. |
 | **Niveau de révélation** | 0 à 3. Décide combien de rôles d'un dataset sont distribués, donc jusqu'où les joueurs peuvent remonter le réseau. | Vous, dans le module Directeur de scénario. |
 | **Modèle** | Une **recette de génération** : profil, région, thème, alias, messages, documents. Donne un *style*, pas des personnages fixes. 24 modèles intégrés, plus ceux que vous enregistrez au Zeus. | Vous, dans une liste ; ou vous en créez un au Zeus. |
-| **Campagne** | Ce qui survit d'une mission à l'autre : graine biométrique, personnages récurrents, organisations, ce que les joueurs savent, registre des scellés. | **Vous inventez son identifiant** (ex. `OP-SABLE`). Rien à demander à personne. |
+| **Campagne** | Ce qui survit d'une mission à l'autre : graine biométrique, personnages récurrents, organisations, ce que les joueurs savent, registre des pièces. | **Vous inventez son identifiant** (ex. `OP-SABLE`). Rien à demander à personne. |
 | **Référence de dossier** | Le numéro d'une **affaire ouverte sur Athena** (ex. `SSE-2026-0007`). Les fiches transmises par les joueurs y sont rangées. | **Athena l'attribue** quand vous ouvrez l'affaire. Vous la recopiez dans la mission. |
 | **Graine** | Un nombre ou un texte qui rend la génération reproductible : même graine, mêmes résultats. 0 ou vide = automatique. | Rarement à toucher. |
 | **Palier d'accès (DOMEX)** | Où en est l'accès à un support numérique : non identifié, découvert, accès en cours, accès établi, exploité. | Vous, ou le Zeus pendant la partie. |
@@ -65,7 +65,7 @@ Eden › menu **COMSPEC SSE** › **Tableau de bord SSE** ouvre une vue en lectu
 | **Entités** | Chaque personne, objet et module SSE avec ses attributs réglés, ses synchronisations, ses liaisons, sa fiche dans la campagne du site et un éventuel avis de recherche. **Sélectionner dans Eden** ferme la fenêtre et amène la caméra sur l'entité. |
 | **Liaisons** | Tous les liens, rangés par origine : modules Organisation et Lier des entités, attributs Organisation, biométrie (parenté, empreintes latentes), contenu des objets (propriétaire apparent, compte, contacts, organisation), modules appliqués aux entités ; puis les réseaux (même ID réseau). |
 | **Organigramme** | Organisations de la carte et de la campagne du site fusionnées : organisations filles, membres classés par rôle, cellules, objets rattachés, personnages récurrents sans organisation. Chaque élément porte sa source : [Eden], [site] ou [Eden + site]. |
-| **Items et membres** | Les objets reliés à chaque personne, les objets rattachés aux organisations, les objets SSE sans lien, et le registre des scellés de la campagne du site. |
+| **Items et membres** | Les objets reliés à chaque personne, les objets rattachés aux organisations, les objets SSE sans lien, et le registre des pièces de la campagne du site. |
 | **Campagne** | Les modules de mission de la carte avec tous leurs réglages, et la configuration complète de la campagne lue sur le site : graine, dates, missions jouées, journal, personnages récurrents. |
 | **Site Athena** | Les campagnes de la communauté (choisir celle à lire), et les avis de recherche croisés avec les personnes de la carte. |
 
@@ -81,7 +81,7 @@ But : une cellule de trois hommes dans une maison, un ordinateur et des papiers 
 2. **Rendez les joueurs capables d'exploiter** : rien à faire, les actions ACE sont toujours là. Pour le terminal biométrique, posez le module **Doter en terminal SEEK** (catégorie *3. Mission et scénario*) près du point de départ des joueurs, rayon 25 m.
 3. **Générez le site** : posez le module **Créer un site SSE complet** (catégorie *1. Sites et objets*) au centre de la maison. Rayon 35 m, type *Cellule insurgée*, richesse *Détaillée*. Tout ce qui est dans le rayon reçoit identités, téléphones, documents et liens.
 4. **Choisissez l'apparence des fiches** (facultatif) : module **Présentation des documents SSE**, modèle *Terrain — feuille tachée*.
-5. **Lancez** : en jeu, menu ACE sur un prisonnier › **SSE** › *Fouiller*, *Biométrie › Capture complète* ; sur l'ordinateur › *Exploitation numérique* ; sur la caisse › *Fouiller*, *Collecter*, *Mettre sous scellé*. Menu ACE personnel › **COMSPEC SSE** › *Tableau des liens* pour voir le réseau apparaître.
+5. **Lancez** : en jeu, menu ACE sur un prisonnier › **SSE** › *Fouiller*, *Biométrie › Capture complète* ; sur l'ordinateur › *Exploitation numérique* ; sur la caisse › *Fouiller*, *Collecter*, *Prendre en charge*. Menu ACE personnel › **COMSPEC SSE** › *Tableau des liens* pour voir le réseau apparaître.
 
 Variante sans préparation : au Zeus, **COMSPEC SSE · Outils › Tutoriel : poser un exercice ici** pose une cellule complète prête à exploiter.
 
@@ -150,7 +150,7 @@ Autre moyen, pour tout un serveur : réglage CBA **COMSPEC SSE › Réseau › R
 
 ## 6. Tutoriel 4 : une campagne sur plusieurs missions
 
-Une campagne garde d'une mission à l'autre : les personnages récurrents (mêmes noms, mêmes empreintes), les organisations, ce que les joueurs ont découvert et le registre des scellés.
+Une campagne garde d'une mission à l'autre : les personnages récurrents (mêmes noms, mêmes empreintes), les organisations, ce que les joueurs ont découvert et le registre des pièces.
 
 **L'identifiant, c'est vous qui l'inventez.** Un nom court, par exemple `OP-SABLE`. Il est mis en majuscules, les espaces et la ponctuation deviennent des tirets (`op sable` devient `OP-SABLE`).
 
@@ -323,7 +323,7 @@ Double-clic sur une unité ou un objet. Les catégories SSE :
 | **Kit d'empreintes SSE** | `COMSPEC_SSE_FingerprintKit` | Empreintes, empreintes latentes sur objets et armes au sol. | oui |
 | **Kit ADN SSE** | `COMSPEC_SSE_DNKit` | Prélèvement ADN ; le résultat revient du laboratoire après un délai (15 min par défaut). | oui |
 | **Appareil photo SSE** | `COMSPEC_SSE_Camera` | Photographier, photo faciale. | oui |
-| **Sachet de preuve SSE** | `COMSPEC_SSE_EvidenceBag` | Collecter, mettre sous scellé, collecter un support USB/SD, révéler une cache. **N'est pas consommé.** | oui |
+| **Sachet de preuve SSE** | `COMSPEC_SSE_EvidenceBag` | Collecter, prendre en charge, collecter un support USB/SD, révéler une cache. **N'est pas consommé.** | oui |
 | **Gants d'examen SSE** | `COMSPEC_SSE_Gloves` | Ambiance : aucun geste ne les exige. | oui |
 | **Pochette documents SSE** | `COMSPEC_SSE_DocumentBag` | Ambiance. | oui |
 | **Terminal SSE terrain** | `COMSPEC_SSE_Terminal` | Ambiance : le terminal SSE s'ouvre sans lui. | oui |
@@ -342,11 +342,11 @@ Les objets d'autres mods sont acceptés en substitut quand le réglage *Accepter
 Sous-menu **Biométrie** : Ouvrir SEEK II, Empreintes (8 s), Iris (5 s), Photo faciale (3 s), ADN (12 s), Capture complète (25 s), Identifier (8 s).
 Sous-menu **Exploitation numérique** : identifier l'appareil, contacts, messages, appels, photos, coordonnées, extraction complète, informations système, utilisateurs, documents, navigateur, messagerie, supports connectés, identifiants, collecter un support USB/SD.
 
-**Sur un objet** : Examiner, Fouiller (15 s), Collecter (8 s, sachet), Lire documents, Exploiter radio (radios), Ouvrir le terminal SSE, Approfondir, Mettre sous scellé (sachet), Relever des empreintes latentes.
+**Sur un objet** : Examiner, Fouiller (15 s), Collecter (8 s, sachet), Lire documents, Exploiter radio (radios), Ouvrir le terminal SSE, Approfondir, Prendre en charge (sachet), Relever des empreintes latentes.
 
-**Autres** : Mettre / retirer un sac de tête ; Remettre mes pièces scellées (sur un équipier) ; avec l'ATAK natif, Brancher / Débrancher l'ATAK (câble DL-7).
+**Autres** : Mettre / retirer un sac de tête ; Remettre mes pièces (sur un équipier) ; avec l'ATAK natif, Brancher / Débrancher l'ATAK (câble DL-7).
 
-**Menu personnel** (Ctrl+Windows › COMSPEC SSE) : Journal SSE, Journal technique, Ouvrir le terminal SSE, Équiper le kit SSE, Tableau des liens, Registre des scellés, Pièces que je détiens, Campagne en cours, Guide SSE (manuel). Raccourci : Ctrl+Maj+S ouvre le terminal SEEK.
+**Menu personnel** (Ctrl+Windows › COMSPEC SSE) : Journal SSE, Journal technique, Ouvrir le terminal SSE, Équiper le kit SSE, Tableau des liens, Registre des pièces, Pièces que je détiens, Campagne en cours, Guide SSE (manuel). Raccourci : Ctrl+Maj+S ouvre le terminal SEEK.
 
 ---
 

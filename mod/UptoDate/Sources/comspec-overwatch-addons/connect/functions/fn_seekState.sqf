@@ -2,7 +2,7 @@
     État du SEEK II : ce qui est fait, ce qui manque, document présenté, sujet saisi.
     Lecture seule : ne change rien à l'écran.
 
-    ["doc", [_target]]  -> HashMap du document présenté par la cible lors du contrôle d'identité
+    ["doc", [_target]]  -> HashMap du document présenté par la cible lors du vérification d'identité
                            en cours (last, first, dob, number, country, type), vide sinon
     ["subject"]         -> [nom, prénom, date de naissance, inconnu (bool)] tel que saisi à l'écran
     ["steps"]           -> HashMap : subject, context, fp, iris, face, query, sent (bool),
