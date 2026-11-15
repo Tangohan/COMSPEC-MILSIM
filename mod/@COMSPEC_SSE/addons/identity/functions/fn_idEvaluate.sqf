@@ -32,6 +32,10 @@ date params ["_yy", "_mm", "_dd"];
 // précision exacte des nombres SQF).
 private _days = { private _p = (_this splitString "-") apply { parseNumber _x }; ((_p param [0, 9999]) * 372) + ((_p param [1, 12]) * 31) + (_p param [2, 31]) };
 private _expired = ((_doc getOrDefault ["expires", "9999-12-31"]) call _days) < (_yy * 372 + _mm * 31 + _dd);
+// Papier d'Athena dont la date d'émission imprimée est postérieure à la date de jeu : pas encore émis, donc invalide.
+// Papiers nés en jeu et date absente ou illisible : sans effet (comportement inchangé).
+private _issued = _doc getOrDefault ["issued", ""];
+private _notYet = (_doc getOrDefault ["athenaId", ""]) isNotEqualTo "" && {_issued isEqualType ""} && {(count (_issued splitString "-")) isEqualTo 3} && {(_issued call _days) > (_yy * 372 + _mm * 31 + _dd)};
 private _flaws = _doc getOrDefault ["flaws", []];
 private _ctrlKey = if (isNull _ctrl) then { "?" } else { [getPlayerUID _ctrl, netId _ctrl] select ((getPlayerUID _ctrl) isEqualTo "") };
 
@@ -59,6 +63,7 @@ switch (_level) do {
         if (_expired) then {
             _lines pushBack format ["Document expiré depuis le %1.", _doc get "expires"]; _codes pushBack "expired"; ["doubt", "expire"] call _worse;
         };
+        if (_notYet) then { _lines pushBack format ["Date d'émission postérieure à la date du jour (%1) : papier pas encore émis.", _issued]; _codes pushBack "not_issued"; ["fail", "faux"] call _worse; };
         // Couverture (papiers « couverture » ou infiltré) : une tenue ou un équipement qui ne collent pas aux papiers se
         // remarquent, plus ou moins selon le contrôleur. Les civils ordinaires ne coûtent rien ici.
         if (!isNull _subj && {(_subj getVariable ["comspec_sse_idCoverOn", false]) || {(_doc getOrDefault ["kind", ""]) isEqualTo "cover"}}) then {
@@ -104,6 +109,7 @@ switch (_level) do {
             _lines pushBack "MRZ différente du recto : la date de naissance ne correspond pas."; _codes pushBack "mrz_viz_dob"; ["fail", "faux"] call _worse;
         };
         if (_expired) then { _lines pushBack format ["Document expiré (%1).", _doc get "expires"]; _codes pushBack "expired"; ["doubt", "expire"] call _worse; };
+        if (_notYet) then { _lines pushBack format ["Date d'émission postérieure à la date du jour (%1) : papier pas encore émis.", _issued]; _codes pushBack "not_issued"; ["fail", "faux"] call _worse; };
         if ((_res get "state") isEqualTo "ok") then { _lines pushBack "MRZ conforme ICAO, chiffres de contrôle justes, identique au recto."; };
     };
     case 2: {
@@ -142,6 +148,10 @@ switch (_level) do {
             };
         };
         if (_expired) then { _lines pushBack "Document expiré."; _codes pushBack "expired"; ["doubt", "expire"] call _worse; };
+        if (_notYet) then { _lines pushBack format ["Date d'émission postérieure à la date du jour (%1) : papier pas encore émis.", _issued]; _codes pushBack "not_issued"; ["fail", "faux"] call _worse; };
+        // Référence du papier enregistrée sur le site (DOC-000123) : rappelée au contrôle, sans effet sur le verdict.
+        private _paperRef = _ath getOrDefault ["ref", ""];
+        if (_paperRef isEqualType "" && {_paperRef isNotEqualTo ""}) then { _lines pushBack format ["Référence du papier : %1.", _paperRef]; _codes pushBack "paper_ref"; };
         // Carte militaire : le fichier donne la force et le grade ; une force ennemie du contrôleur est signalée.
         if ((_doc getOrDefault ["type", ""]) isEqualTo "military_id") then {
             _lines pushBack format ["Fichier militaire : %1, %2.", _doc getOrDefault ["force", "?"], _doc getOrDefault ["rank", "?"]];

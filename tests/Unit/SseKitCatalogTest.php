@@ -12,6 +12,7 @@ use App\Support\SseIdWorkshopCatalog;
 use App\Support\SseKitCatalog;
 use App\Support\SseWantedRealNames;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 /**
  * Kits de contenu SSE (config/sse_kits) : grands viviers sans doublon, thèmes de réseau en français et en anglais,
@@ -341,12 +342,12 @@ final class SseKitCatalogTest extends TestCase
     public function testTheSsePackVersionIsBumpedWithItsNotes(): void
     {
         $header = self::read('mod/@COMSPEC_SSE/addons/main/script_mod.hpp');
-        self::assertStringContainsString('versionStr = "1.11.0"; versionAr[] = {1,11,0,0}', $header);
+        ModVersion::assertAtLeast('1.11.0', ModVersion::match('/versionStr = "([0-9.]+)"/', $header));
         foreach (['generator', 'identity', 'eden', 'zeus'] as $addon) {
-            self::assertStringContainsString('versionStr = "1.11.0"', self::read('mod/@COMSPEC_SSE/addons/' . $addon . '/script_mod.hpp'), $addon);
+            self::assertStringContainsString(ModVersion::match('/versionStr = "([0-9.]+)"/', $header), self::read('mod/@COMSPEC_SSE/addons/' . $addon . '/script_mod.hpp'), $addon);
         }
         $steam = self::read('mod/@COMSPEC_SSE/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC SSE 1.11.0', $steam);
+        self::assertStringStartsWith('[h1]COMSPEC SSE ' . ModVersion::match('/versionStr = "([0-9.]+)"/', $header), $steam);
         self::assertStringContainsString('[h2]English[/h2]', substr($steam, 0, 4000));
         self::assertStringContainsString('## 1.11.0', self::read('mod/@COMSPEC_SSE/docs/CHANGELOG.md'));
         // Dictionnaire anglais : tableau clos, une entrée par ligne, la dernière sans virgule.

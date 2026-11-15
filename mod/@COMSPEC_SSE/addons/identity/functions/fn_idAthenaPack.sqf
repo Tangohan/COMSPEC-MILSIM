@@ -32,6 +32,10 @@
     chaque paquet, puis papiers remis aux joueurs déjà connectés (fn_idKit).
     Avis (watch) : en plus du contrat, game_ref (BOLO / HVT nés en jeu), bio_key, known_docs, status : un avis déjà connu
     (même réf., même BOLO) n'est pas doublé ; un avis avec visage ou papiers connus redevient un BOLO (checkpoints).
+    Papiers (atelier de papiers, facultatif) : ref (DOC-000123), issued_at, layout (modern | classic | compact | custom),
+      print {place_of_issue, height, eyes, address, personal_number, categories, service, rank, phone, signature, stamp,
+      remarks} et images {photo, signature, background} (chemins du site, ou null) : normalisés en texte et HashMap par
+      _normDoc, lus par fn_idPaperOf et fn_idEvaluate (N3 : référence, papier pas encore émis).
     Lot 6 (atelier Athena, rétrocompatible : blocs absents = rien) :
       briefs     uid, user_id, scope, identity_id, title, cover_name, biography, legend, contacts, instructions, phone,
                  address : brief RP du joueur (légende fn_idLegend, app Ma couverture) ; identité de couverture =
@@ -56,7 +60,34 @@ private _rec = {
     { _m set [_x, _r param [_forEachIndex, ""]]; } forEach _fields;
     _m
 };
-private _docFields = ["id", "identity_id", "holder_person_id", "type", "country", "number", "issued_on", "expires_on", "authority", "chip", "origin", "integrity", "validity", "report", "forgery_kind", "forgery_quality"];
+private _docFields = ["id", "identity_id", "holder_person_id", "type", "country", "number", "issued_on", "expires_on", "authority", "chip", "origin", "integrity", "validity", "report", "forgery_kind", "forgery_quality", "ref", "issued_at", "layout", "print", "images"];
+// Champs d'atelier du papier (site, facultatifs) : ref, issued_at, layout, print {champ: texte}, images {photo, signature,
+// background} = chemins du site, jamais chargés (Arma ne lit pas d'image par HTTP). Absents (ancien serveur) ou null :
+// chaînes et tables vides, aucune erreur. Borné : 200 caractères par texte, 16 champs imprimés, chemins relatifs sans
+// « .. », sans schéma (« : ») ni antislash.
+private _normDoc = {
+    private _d = _this;
+    private _s = { if (_this isEqualType "") then { _this select [0, 200] } else { "" } };
+    { _d set [_x, (_d getOrDefault [_x, ""]) call _s]; } forEach ["ref", "issued_at", "layout"];
+    private _pairs = {
+        private _out = createHashMap;
+        if (_this isEqualType []) then {
+            { if (_x isEqualType [] && {(count _x) isEqualTo 2} && {(_x select 0) isEqualType ""} && {(count _out) < 16}) then { _out set [_x select 0, (_x select 1) call _s]; }; } forEach _this;
+        };
+        _out
+    };
+    private _pr = (_d getOrDefault ["print", []]) call _pairs;
+    { if ((_pr get _x) isEqualTo "") then { _pr deleteAt _x; }; } forEach (keys _pr);
+    _d set ["print", _pr];
+    private _im = (_d getOrDefault ["images", []]) call _pairs;
+    private _imOut = createHashMap;
+    {
+        private _v = _im getOrDefault [_x, ""];
+        if ((_v find "..") >= 0 || {(_v find ":") >= 0} || {(_v find (toString [92])) >= 0}) then { _v = ""; };
+        _imOut set [_x, _v];
+    } forEach ["photo", "signature", "background"];
+    _d set ["images", _imOut];
+};
 private _idFields = ["id", "person_id", "kind", "last_name", "first_name", "sex", "birth_date", "birth_place", "nationality", "arma_key", "profession"];
 // Papier du paquet -> registre (base Athena, base locale N3, clé biométrique). [_d, _ids, _reg] call _addDoc.
 private _addDoc = {
@@ -148,7 +179,8 @@ switch (_op) do {
         if (!_self) then { missionNamespace setVariable ["comspec_sse_idPackTs", _p param [2, ""]]; };
         private _buf = "";
         private _ok = true;
-        for "_i" from 0 to (_n - 1) do {
+        // Garde-fou : le DLL découpe en morceaux de 6000 octets (sous la limite de retour d'extension) ; 400 morceaux au plus.
+        for "_i" from 0 to ((_n min 400) - 1) do {
             private _c = ["GetIdentityPackChunk", [str _i]] call comspec_sse_fnc_extensionCall;
             if ((_c select [0, 3]) isNotEqualTo "OK|") exitWith { _ok = false; };
             _buf = _buf + (_c select [3]);
@@ -195,6 +227,7 @@ switch (_op) do {
         private _kept = [];
         {
             private _d = [_x, _docFields] call _rec;
+            _d call _normDoc;
             private _did = str (_d getOrDefault ["id", ""]);
             private _known = (_reg get "athenaById") getOrDefault [_did, ""];
             // Papier du kit seulement ; déjà connu par le paquet complet du serveur : celui-ci l'emporte.
@@ -303,7 +336,8 @@ switch (_op) do {
         private _byId = _reg getOrDefault ["athenaById", createHashMap];
         _reg set ["athenaById", _byId];
         {
-            private _d = [_x, ["id", "identity_id", "holder_person_id", "type", "country", "number", "issued_on", "expires_on", "authority", "chip", "origin", "integrity", "validity", "report", "forgery_kind", "forgery_quality"]] call _rec;
+            private _d = [_x, _docFields] call _rec;
+            _d call _normDoc;
             private _idn = _ids getOrDefault [str (_d getOrDefault ["identity_id", ""]), createHashMap];
             _d set ["identity", _idn];
             private _k = format ["%1|%2|%3", _d getOrDefault ["country", ""], _d getOrDefault ["type", ""], _d getOrDefault ["number", ""]];
