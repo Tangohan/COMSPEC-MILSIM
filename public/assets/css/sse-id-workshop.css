@@ -288,7 +288,7 @@ label.idw-check {
     #idw-preview .idw-face { break-inside: avoid; position: relative; }
     #idw-preview[data-marking="discreet"] .idw-face::after {
         content: "Document de jeu – sans valeur · Game document – no value";
-        position: absolute; right: 8px; bottom: 4px; z-index: 20;
+        position: absolute; right: 8px; bottom: 4px; z-index: 9;
         font: 600 6px Arial, sans-serif; color: rgba(40, 40, 48, 0.5);
     }
 }
