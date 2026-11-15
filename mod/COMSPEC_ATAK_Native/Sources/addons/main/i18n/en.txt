@@ -24472,5 +24472,11 @@
 ["DANGER CLOSE", "DANGER CLOSE"],
 ["WP %1", "WP %1"],
 ["splash", "splash"],
-["App interdite ou désinstallée : pas de bandeau", "App forbidden or uninstalled: no banner"]
+["App interdite ou désinstallée : pas de bandeau", "App forbidden or uninstalled: no banner"],
+["Photos : fenêtre de jeu introuvable, réessayez dans un instant", "Photos: game window not found, try again in a moment"],
+["La prise de vue a été interrompue : photo non enregistrée, reprenez-la.", "The shot was interrupted: photo not saved, take it again."],
+["Capture refusée par le jeu : passez la qualité HDR au moins sur Moyen (options d'affichage), puis reprenez la photo.", "Capture refused by the game: set HDR quality to at least Medium (display options), then take the photo again."],
+["Liaison Athena dégradée : reconnectez-vous, puis reprenez la photo.", "Athena link degraded: reconnect, then take the photo again."],
+["File d'attente des photos pleine : réessayez dans un instant.", "Photo queue full: try again in a moment."],
+["Photo gardée sur le poste : à envoyer depuis la Galerie", "Photo kept on the device: send it from the Gallery"]
 ]

@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Appareil photo : la prise de vue ne laisse plus l'écran et le menu d'actions bloqués (ATAK natif 4.17.1.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : Appareil photo : la prise de vue ne vous laisse plus bloqué
+- Quand une prise de vue échoue ou est interrompue, l'écran, l'interface du jeu et le menu d'actions de la molette sont toujours rendus : plus de plein écran figé ni de molette qui ne répond plus.
+- Si la photo n'a pas pu être prise, le téléphone le dit en une phrase au lieu d'annoncer une photo prise : capture refusée par le jeu (qualité HDR à passer sur Moyen au moins), liaison Athena dégradée ou file d'attente pleine.
+- Le plein écran ne s'ouvre plus sans pouvoir en sortir, et la réparation de l'affichage (action ACE) le referme aussi.
+- Si le problème revient, le journal envoyé au support dit à quelle étape la prise de vue s'est arrêtée.
+EN : Camera: taking a photo no longer leaves you stuck
+- When a shot fails or is interrupted, the screen, the game interface and the scroll-wheel action menu are always given back: no more frozen full screen or unresponsive wheel.
+- If the photo could not be taken, the phone says so in one sentence instead of announcing a photo taken: capture refused by the game (set HDR quality to Medium or higher), degraded Athena link or full queue.
+- Full screen no longer opens when you could not leave it, and the display repair (ACE action) closes it too.
+- If the problem comes back, the log sent to support says at which step the shot stopped.
+
+### Détail technique
+- **Cause certaine** : le déclenchement (`fn_photoCam` « shoot », `fn_photoMode` « SHOOT ») est un script `spawn` qui, entre le début et la fin, masque tous les contrôles, pose une caméra scriptée de prise de vue (`cameraEffect Internal`), coupe le HUD (`showHUD false`, téléphone) et allume la lumière du flash, puis rend le tout à la dernière ligne. Une erreur de script (SQF n'a pas de `try` pour elle) arrête ce script net : caméra de prise de vue jamais détruite (image figée « plein écran »), HUD jamais rendu, contrôles masqués, `COMSPEC_ATAK_PhotoShooting` resté vrai. Seul le viseur du téléphone avait un relâchement de 5 s, et seulement pour la variable. Le plein écran n'en avait aucun.
+- **Cause plausible, non vérifiée en jeu** : `showHUD false` cache aussi le menu d'actions de la molette ; un HUD non rendu le laisserait absent jusqu'à la fin de la session (symptôme rapporté : « interactions à la molette impossibles »). L'état du HUD d'avant n'était de plus lu qu'au début du cliché : un second cliché lu pendant un HUD resté caché l'aurait gardé caché.
+- **Cause plausible, non vérifiée** : la capture du poste seul (`_noNet`, ATAK sans Link ou hors réseau) ignorait le retour de `screenshot` (faux en cas de refus du jeu, qualité HDR basse) et annonçait « Photo prise » : aucune image, aucun message.
+- **Correctif** : un seul chemin de nettoyage, `fn_photoCam` « restore », qui rend lumière, caméra de prise de vue, contrôles masqués et HUD (lus au début du cliché dans sa fiche `COMSPEC_ATAK_PhotoShot`), puis remet `COMSPEC_ATAK_PhotoShooting` à faux. Appelé par : la fin normale des deux déclenchements, un chien de garde de 6 s armé par « begin » (script arrêté par une erreur), le relâchement de 5 s du viseur, la sortie du plein écran (`fn_photoMode` « EXIT », qui passe donc aussi par là pour Espace, mort, véhicule, téléphone perdu) et la réparation de l'affichage (`fn_vehicleKeys` « repair »). Chaque étape saute un objet déjà disparu. Un cliché interrompu affiche une phrase dans le téléphone (sous le viseur en plein écran).
+- Plein écran : refusé sans fenêtre de jeu (46) (ni clic ni Espace ne seraient reçus) ; un mode resté « actif » sans viseur (ouverture arrêtée par une erreur) est nettoyé à la demande suivante au lieu de refuser toute nouvelle photo ; « EXIT » accepte un 3e paramètre vrai pour sortir sans rouvrir le téléphone (réparation de l'affichage).
+- Messages : `fn_photoCam` « why » traduit le détail de la liaison (`COMSPEC_LastReconUploadDetail` : `screenshot_rejected`, `file_not_found`, `not_connected`, `queue_full`) en une phrase ; capture du poste seul refusée par le jeu : plus de « Photo prise », photo non comptée, pas d'éclair blanc. Six textes anglais dans `i18n/en.txt`. COMSPEC Link 2.0.125 inchangé (ses propres alertes de capture refusée restent).
+- **Journal RPT** (catégorie PHOTO, recopié dans le journal de session COMSPEC) : `Cliché N (téléphone|plein écran) : début…`, `caméra de prise de vue en place`, `capture lancée vers Athena` / `capture du poste … acceptée|REFUSÉE par le jeu`, `capture terminée, envoi accepté …, détail de la liaison …`, `nettoyage (fin | chien de garde | sortie du plein écran | réparation…) après X s ; caméra …, lumière …, HUD …`, et pour le plein écran `ouvert (…)` / `fermeture (…)` / `refusé : fenêtre de jeu (46) introuvable`. Un « début » sans « capture » ni « nettoyage (fin) » suivi d'un « nettoyage (chien de garde) » : le script a été arrêté (erreur de script juste au-dessus dans le RPT) ou a duré plus de 6 s.
+- Non essayé en jeu. Test : `tests/Unit/AtakPhotoModeCleanupAssetTest.php`.
+
 ## Carte : mini-apps épinglées, interface renforcée, correctifs et dessin allégé (ATAK natif 4.17.0.AG - Washington)
 
 ### Résumé joueur
