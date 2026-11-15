@@ -38,6 +38,33 @@ final class SseIdCheckService
         return preg_match('/^[A-Za-z0-9_.:\-]{4,80}$/', $key) === 1;
     }
 
+    /**
+     * Date de délivrance remontée par le terminal (AAAA-MM-JJ, JJ.MM.AAAA ou JJ/MM/AAAA) ramenée à AAAA-MM-JJ ; chaîne vide si elle
+     * n'est pas une date réelle.
+     */
+    public static function paperDate(mixed $v): string
+    {
+        $t = is_scalar($v) ? trim((string) $v) : '';
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})(?:[ T].*)?$/', $t, $m) === 1) {
+            [$y, $mo, $d] = [(int) $m[1], (int) $m[2], (int) $m[3]];
+        } elseif (preg_match('/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})$/', $t, $m) === 1) {
+            [$d, $mo, $y] = [(int) $m[1], (int) $m[2], (int) $m[3]];
+        } else {
+            return '';
+        }
+
+        return $y >= 1900 && $y <= 2200 && checkdate($mo, $d, $y) ? sprintf('%04d-%02d-%02d', $y, $mo, $d) : '';
+    }
+
+    /** Autorité émettrice remontée : texte d'une ligne, sans caractère de contrôle, 160 caractères au plus. */
+    public static function paperAuthority(mixed $v): string
+    {
+        $t = is_scalar($v) ? (string) $v : '';
+        $t = (string) preg_replace('/\p{Cc}+/u', ' ', $t);
+
+        return mb_substr(trim((string) preg_replace('/\s+/u', ' ', $t)), 0, 160);
+    }
+
     /** Niveau « N0 » à « N4 » ; le mod envoie aussi le numéro seul (0 à 4). */
     public static function levelCode(mixed $level): ?string
     {
@@ -138,6 +165,15 @@ final class SseIdCheckService
             }
         }
         sort($levels);
+        // Papier présenté : date de délivrance et autorité émettrice (lues sur le papier par le terminal, facultatives). Rangées sous
+        // « paper » dans les résultats (pas un niveau de contrôle) : aucune colonne, aucune migration.
+        $paper = array_filter([
+            'issued' => self::paperDate($document['issued'] ?? null),
+            'authority' => self::paperAuthority($document['authority'] ?? null),
+        ], static fn (string $v): bool => $v !== '');
+        if ($paper !== []) {
+            $results['paper'] = $paper;
+        }
         $resultsJson = json_encode($results, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
         if (!is_string($resultsJson) || strlen($resultsJson) > self::MAX_RESULTS_BYTES) {
             $resultsJson = '{}';
