@@ -141,7 +141,11 @@ $itemRows = static function (array $section) use ($h, $pad, $arrow): string {
 <a class="ja-skip" href="#hb-main">Aller au contenu</a>
 
 <header class="ja-hd">
-    <a class="ja-brand" href="<?= $h(url('jnet')) ?>"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
+    <a class="ja-brand" href="<?= $h(url('jnet')) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
+    <nav class="ja-hnav" aria-label="Navigation JNET">
+        <a href="<?= $h(url('jnet')) ?>" aria-current="page">Mon extranet</a>
+        <a href="<?= $h((string) $org['href']) ?>">Espace commun</a>
+    </nav>
     <div class="ja-hd__r">
         <span class="ja-who">extranet<?= $community !== '' ? ' · ' . $h($community) : '' ?></span>
         <?= JnetUi::account($operator) ?>
@@ -160,6 +164,10 @@ $itemRows = static function (array $section) use ($h, $pad, $arrow): string {
     <section class="hb-gate" aria-labelledby="hb-title">
         <h1 class="ja-disp ja-disp--xl" id="hb-title">Une unité.<br><span>Un espace.</span></h1>
         <p class="ja-lead">Consignes, suivi, photos et documents : tout ce qui concerne votre unité, et rien d’autre. Choisissez votre espace.</p>
+        <a class="hb-common" href="<?= $h((string) $org['href']) ?>">
+            <span class="hb-common__t"><b>Espace commun</b><small>La situation de toute l’organisation : ses unités, ses échanges, ses opérations<?= (int) ($org['unread'] ?? 0) > 0 ? ' · ' . (int) $org['unread'] . ' non lu' . ((int) $org['unread'] > 1 ? 's' : '') : '' ?></small></span>
+            <?= $arrow ?>
+        </a>
     </section>
 
     <nav class="ja-tabs ja-tabs--page hb-tabs" aria-label="Rubriques de l’extranet" data-hb-tabs>

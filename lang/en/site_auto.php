@@ -65893,4 +65893,17 @@ return [
     'Quitter JNET' => 'Leave JNET',
     'Une unité.' => 'One unit.',
     'Avec les unités liées' => 'With linked units',
+    // JNET : navigation, fil d'Ariane et annuaire du personnel.
+    'ATHENA — Mon extranet' => 'ATHENA — My extranet',
+    'La situation de toute l’organisation : ses unités, ses échanges, ses opérations%1' => 'The situation of the whole organization: its units, exchanges and operations%1',
+    'En service (%1)' => 'In service (%1)',
+    'Indisponibles (%1)' => 'Unavailable (%1)',
+    'Essayez un autre nom, ou retirez un filtre.' => 'Try another name, or remove a filter.',
+    'Les membres apparaissent ici dès que leur compte est actif dans la communauté.' => 'Members appear here as soon as their account is active in the community.',
+    'Ouvrir la fiche de %1' => 'Open the record of %1',
+    'Mon extranet : toutes vos unités et rubriques' => 'My extranet: all your units and sections',
+    'Nom, indicatif, fonction, unité' => 'Name, callsign, role, unit',
+    'Regrouper' => 'Group by',
+    'sur %1 membres' => 'of %1 members',
+    'sur %1 membre' => 'of %1 member',
 ];

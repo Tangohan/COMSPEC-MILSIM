@@ -29,7 +29,8 @@
   --ja-warn: #fbbf24;
   --ja-bad: #f87171;
   --ja-info: #60a5fa;
-  --ja-gut: max(clamp(16px, 3vw, 40px), calc((100% - 1320px) / 2 + clamp(16px, 3vw, 40px)));
+  /* Pleine largeur, gouttières fluides : pas de colonne centrée (en-tête, contenu et pied suivent la même marge). */
+  --ja-gut: clamp(16px, 3vw, 40px);
   --ja-font: Inter, system-ui, sans-serif;
   --ja-mono: 'JetBrains Mono', ui-monospace, monospace;
 
@@ -263,6 +264,51 @@ html:has(.ja) {
 
 .ja-hd form {
   margin: 0;
+}
+
+/* Liens de navigation de l'en-tête dont le libellé reste lisible à toutes les largeurs (Mon extranet, Espace commun). */
+.ja-ib--nav {
+  color: var(--ja-ink);
+}
+
+.ja-ib--nav .ja-ib__t {
+  display: inline;
+}
+
+.ja-ib--nav.is-on {
+  border-color: var(--u);
+  color: var(--u);
+}
+
+/* Navigation de l'extranet dans l'en-tête d'une page sans rubriques (hub) : deux destinations nommées. */
+.ja-hnav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ja-hnav a {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--ja-muted);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ja-hnav a:hover {
+  color: var(--ja-ink);
+  background: var(--ja-c3);
+}
+
+.ja-hnav a[aria-current='page'] {
+  color: var(--ja-ink);
+  box-shadow: inset 0 -2px 0 var(--u);
+  border-radius: 0;
 }
 
 /* En-tête sur deux lignes : identité et actions, puis les rubriques sur toute la largeur. */
@@ -639,9 +685,64 @@ html:has(.ja) {
 .ja-main {
   flex: 1 0 auto;
   width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 0 clamp(16px, 3vw, 40px) 72px;
+  max-width: none;
+  margin: 0;
+  padding: 0 var(--ja-gut) 72px;
+}
+
+/* —— Fil d'Ariane : Mon extranet › rubrique › page —— */
+
+.ja-crumbs {
+  padding: 18px 0 0;
+}
+
+.ja-crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ja-muted);
+}
+
+.ja-crumbs li {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.ja-crumbs li + li::before {
+  content: '\203A';
+  margin: 0 9px;
+  color: var(--ja-dim);
+  font-weight: 400;
+}
+
+.ja-crumbs a {
+  display: inline-block;
+  padding: 4px 0;
+  color: var(--ja-muted);
+}
+
+.ja-crumbs a:hover {
+  color: var(--u);
+}
+
+.ja-crumbs [aria-current='page'] {
+  color: var(--ja-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(60vw, 520px);
+}
+
+/* La mesure de lecture se limite sur les paragraphes de texte, jamais sur le conteneur. */
+:where(.ja-main) p:not([class]) {
+  max-width: 78ch;
 }
 
 .ja-sec {
@@ -858,6 +959,15 @@ a.ja-stat:hover::after {
 }
 
 @media (max-width: 640px) {
+  .ja-brand--sm span {
+    display: none;
+  }
+
+  .ja-hnav {
+    order: 3;
+    flex: 1 1 100%;
+  }
+
   .ja-hd {
     gap: 8px 10px;
     flex-wrap: wrap;
