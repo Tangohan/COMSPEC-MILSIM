@@ -19,7 +19,7 @@
 .toc-ph-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--toc-line); }
 .toc-ph-list li { border-bottom: 1px solid var(--toc-line); }
 .toc-ph-row {
-  display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; grid-template-areas: "dot main state" ". pos meta"; align-items: center; gap: 2px var(--sp-m);
+  display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; grid-template-areas: "dot main state" ". sub sub"; align-items: center; gap: 2px var(--sp-m);
   width: 100%; min-height: 64px; padding: var(--sp-s) var(--sp-s); background: transparent; border: 0; color: var(--toc-text); font: 400 14px var(--sans); text-align: left; cursor: pointer;
 }
 .toc-ph-row:hover { background: var(--toc-bg2); }
@@ -33,8 +33,9 @@
 .toc-ph-main b { text-transform: uppercase; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .toc-ph-main small, .toc-ph-pos small { color: var(--toc-text2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .toc-ph-state { grid-area: state; display: inline-flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-.toc-ph-pos { grid-area: pos; display: flex; align-items: baseline; gap: var(--sp-m); min-width: 0; }
-.toc-ph-meta { grid-area: meta; display: inline-flex; align-items: center; gap: var(--sp-s); justify-content: flex-end; }
+.toc-ph-sub { grid-area: sub; display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-m); min-width: 0; }
+.toc-ph-pos { display: flex; align-items: baseline; gap: var(--sp-m); min-width: 0; white-space: nowrap; }
+.toc-ph-meta { display: inline-flex; flex: none; align-items: center; gap: var(--sp-s); justify-content: flex-end; }
 .toc-ph-bat { font-size: 13px; color: var(--toc-text2); }
 .toc-ph-bat.is-low { color: var(--toc-red); }
 .toc-ph-fixmark { color: var(--toc-accent); font-size: 16px; }
@@ -91,7 +92,7 @@
 .toc-ph-jmain b { text-transform: uppercase; }
 .toc-ph-jlevel { color: var(--toc-amber); }
 .toc-ph-jlevel::before { content: "·"; margin-right: var(--sp-s); color: var(--toc-muted); }
-.toc-ph-jmain small { color: var(--toc-text2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toc-ph-jmain small { color: var(--toc-text2); font-size: 13px; overflow-wrap: anywhere; }
 
 /* Fenêtre de confirmation */
 .toc-ph-modal-veil { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: var(--sp-l); background: rgba(7, 10, 13, .72); }

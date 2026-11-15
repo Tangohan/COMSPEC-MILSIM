@@ -120,9 +120,9 @@ window.TocPhones = (function () {
       '<span class="toc-ph-dot is-' + tone + '" aria-hidden="true"></span>' +
       '<span class="toc-ph-main"><b>' + esc(p.callsign) + '</b><small>' + esc(p.group || p.role || '') + '</small></span>' +
       '<span class="toc-ph-state">' + pill(STATE_LABEL[p.state], tone) + kind + '</span>' +
-      '<span class="toc-ph-pos">' + posTxt + '<small>' + (p.age != null ? esc(ageText(p.age)) : '') + '</small></span>' +
+      '<span class="toc-ph-sub"><span class="toc-ph-pos">' + posTxt + '<small>' + (p.age != null ? esc(ageText(p.age)) : '') + '</small></span>' +
       '<span class="toc-ph-meta">' + (p.battery != null ? '<span class="mono toc-ph-bat' + (p.battery <= 20 ? ' is-low' : '') + '">' + p.battery + ' %</span>' : '') +
-      (p.pending ? '<span class="toc-badge">' + p.pending + '</span>' : '') + (fix ? '<span class="toc-ph-fixmark" title="' + esc('Dernière position obtenue') + '">◎</span>' : '') + '</span>' +
+      (p.pending ? '<span class="toc-badge">' + p.pending + '</span>' : '') + (fix ? '<span class="toc-ph-fixmark" title="' + esc('Dernière position obtenue') + '">◎</span>' : '') + '</span></span>' +
       '</button></li>';
   }
   function listHtml() {
