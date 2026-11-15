@@ -2119,6 +2119,9 @@ return function (Router $router) {
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/telecharger', [OrganizationDataQualityController::class, 'downloadData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/supprimer', [OrganizationDataQualityController::class, 'purgeData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/postes/{id}/restaurer', [OrganizationDataQualityController::class, 'restoreBillet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/anciens-noms/reprendre', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'importNames'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/anciens-noms/annuler', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'revertNames'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/bilans-automatiques', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'retroSetting'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Fiabilisation des données (campagne annuelle de relecture des fiches) : mêmes droits que la qualité des données.
     $router->get('/back-office/organisation/fiabilisation', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/fiabilisation/creer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

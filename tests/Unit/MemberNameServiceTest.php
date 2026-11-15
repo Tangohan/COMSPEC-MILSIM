@@ -144,7 +144,8 @@ final class MemberNameServiceTest extends TestCase
         self::assertSame('JDE', $svc->ensureTrigram(1, 20), 'JDU et JDP sont pris dans la communauté');
         self::assertSame(['assigned' => 0, 'failed' => 0], $svc->assignMissing(1));
 
-        self::assertSame([10 => 'Jean D.', 12 => 'Ghost'], $svc->labelsFor(1, [10, 12]));
+        // Sans prénom ni nom : l'indicatif passe avant le nom du compte (règle unique MemberIdentity).
+        self::assertSame([10 => 'Jean D.', 12 => 'Reaper'], $svc->labelsFor(1, [10, 12]));
         self::assertSame([10 => 'Jean DUPONT'], $svc->labelsFor(1, [10], 'card'));
         $this->setting(['list_format' => 'trigram', 'show_grade' => true, 'trigrams_enabled' => true]);
         self::assertSame([10 => 'Sgt JDU'], $svc->labelsFor(1, [10], 'list', [10 => 'Sgt']));

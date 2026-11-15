@@ -185,9 +185,10 @@ $icon = [
                     <tr class="qmx-gr" data-qmx-group="<?= $uid ?>">
                         <th colspan="<?= count($defs) + 1 ?>" scope="colgroup"><span class="qmx-gt"><i style="background:<?= $h($unitColor[$uid] ?? '#94a3b8') ?>"></i><b><?= $h($uid === 0 ? 'Sans unité' : $u['name']) ?></b><span><?= count($list) ?> membre<?= count($list) > 1 ? 's' : '' ?></span></span></th>
                     </tr>
+                    <?php member_labels_preload($list, 'user_id'); ?>
                     <?php foreach ($list as $m):
                         $mid = (int) $m['user_id'];
-                        $cs = trim((string) $m['callsign']) ?: trim((string) $m['display_name']) ?: ('#' . $mid);
+                        $cs = member_label(['id' => $mid, 'display_name' => (string) ($m['display_name'] ?? ''), 'callsign' => (string) ($m['callsign'] ?? '')], 'list');
                         ?>
                     <tr data-qmx-row data-unit="<?= $uid ?>" data-search="<?= $h(mb_strtolower($m['callsign'] . ' ' . $m['display_name'])) ?>">
                         <th scope="row">

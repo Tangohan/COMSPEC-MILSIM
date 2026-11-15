@@ -104,7 +104,18 @@ $callsign = trim((string) ($m['callsign'] ?? ''));
 $email = function_exists('email_for_display')
     ? email_for_display((string) ($m['email'] ?? ''))
     : (string) ($m['email'] ?? '');
-$name = $display !== '' ? $display : ($callsign !== '' ? $callsign : $email);
+// Nom affiché : règle unique (prénom + nom du personnage, sinon indicatif, sinon nom du compte), voir MemberIdentity.
+$identityRow = is_array($memberIdentity ?? null) ? $memberIdentity : [];
+$memberFirstName = trim((string) ($identityRow['first_name'] ?? ''));
+$memberLastName = trim((string) ($identityRow['last_name'] ?? ''));
+$nameShown = \App\Support\MemberIdentity::display([
+    'first_name' => $memberFirstName,
+    'last_name' => $memberLastName,
+    'display_name' => $display,
+    'callsign' => $callsign,
+    'trigram' => (string) ($identityRow['trigram'] ?? ''),
+], 'card', null, false);
+$name = $nameShown['source'] !== 'fallback' ? $nameShown['primary'] : $email;
 $grade = trim((string) ($m['grade_short'] ?? ''));
 if ($grade === '') {
     $grade = trim((string) ($m['grade_long'] ?? ''));
@@ -154,6 +165,8 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
 ?>
 <?php
     $civilFields = [
+        'first_name' => 'Prénom',
+        'last_name' => 'Nom',
         'birth_place' => 'Lieu de naissance',
         'family_situation' => 'Situation familiale',
         'sex' => 'Sexe',
@@ -165,7 +178,13 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         'nickname_primary' => 'Surnom',
         'motto' => 'Devise',
     ];
-    $civilValue = static function (string $key) use ($profile): string {
+    $civilValue = static function (string $key) use ($profile, $memberFirstName, $memberLastName): string {
+        if ($key === 'first_name') {
+            return $memberFirstName;
+        }
+        if ($key === 'last_name') {
+            return $memberLastName;
+        }
         $v = trim((string) ($profile[$key] ?? ''));
         if ($key === 'weight_kg' && $v !== '' && (int) $v > 0) {
             return (int) $v . ' kg';
@@ -1621,6 +1640,19 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
         </header>
         <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
         <div class="eff-dialog__grid">
+            <p class="eff-dialog__wide eff-dialog__hint">C’est le nom que tout le monde voit : fiche, annuaire, JNET, messages. Laissez vide pour ne rien changer.</p>
+            <label>Prénom<input type="text" name="first_name" id="eff-dlg-civil-first-name" maxlength="100" autocomplete="off" value="<?= $h($memberFirstName) ?>"></label>
+            <label>Nom<input type="text" name="last_name" id="eff-dlg-civil-last-name" maxlength="100" autocomplete="off" value="<?= $h($memberLastName) ?>"></label>
+            <div class="eff-dialog__wide eff-dialog__hint"><?php
+                $mnpFirst = '#eff-dlg-civil-first-name';
+                $mnpLast = '#eff-dlg-civil-last-name';
+                $mnpCallsignInput = '';
+                $mnpCallsign = $callsign;
+                $mnpAccount = $display;
+                $mnpTrigram = (string) ($identityRow['trigram'] ?? '');
+                $mnpClass = '';
+                require base_path('views/partials/member_name_preview.php');
+            ?></div>
             <label>Surnom<input type="text" name="nickname_primary" maxlength="100" value="<?= $h($profile['nickname_primary'] ?? '') ?>"></label>
             <label>Lieu de naissance<input type="text" name="birth_place" maxlength="150" value="<?= $h($profile['birth_place'] ?? '') ?>" placeholder="Ex. Lyon, France"></label>
             <?php foreach (['family_situation' => 'Situation familiale', 'sex' => 'Sexe', 'blood_type' => 'Groupe sanguin'] as $optKey => $optLabel): ?>
