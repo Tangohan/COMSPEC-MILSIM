@@ -230,7 +230,7 @@ final class AtakPhotoModeCleanupAssetTest extends TestCase
         // Le correctif est sorti dans la 4.18.0 (avec le mode Essentiel) : version 4.17.1 au moins.
         self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(17\.[1-9]|1[89]\.\d+|[2-9]\d\.\d+)"/', $hpp);
         // La DLL COMSPEC Link ne change pas dans ce correctif.
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.125"', $hpp);
+        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.126"', $hpp);
 
         $cl = str_replace("\r\n", "\n", (string) file_get_contents(self::ROOT . 'CHANGELOG-ATAK.md'));
         $title = '(ATAK natif 4.17.1.AG - Washington)';

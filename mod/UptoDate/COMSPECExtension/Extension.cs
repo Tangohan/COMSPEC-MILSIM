@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.125";
+    private const string ExtensionVersion = "2.0.126";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -5446,17 +5446,28 @@ public static partial class Extension
             if (function == "GetMarkers")
             {
                 var since = args.Length > 0 ? (args[0] ?? "") : "";
+                // Second argument « tomb » : relevé du relais (fn_markerWebSweep) avec le curseur des pierres tombales, pour
+                // apprendre les marqueurs supprimés sur Athena même après une longue absence ou une purge de plusieurs centaines.
+                var tombstones = args.Length > 1 && string.Equals((args[1] ?? "").Trim(), "tomb", StringComparison.OrdinalIgnoreCase);
                 if (!TryBuildRequestUri(_baseUrl, "/api/atak/markers?mapId=" + CurrentMapId(), out var markersUri, out var markersErr) || markersUri is null)
                     return "ERR|" + markersErr;
                 var url = markersUri.AbsoluteUri;
                 if (since.StartsWith("world:", StringComparison.OrdinalIgnoreCase))
+                {
                     url += "&world_name=" + Uri.EscapeDataString(since.Substring(6));
-                else if (!string.IsNullOrEmpty(since))
-                    url += "&since=" + Uri.EscapeDataString(since);
-                return ServePollGet("GetMarkers", url, (body, code) =>
+                    if (tombstones) url += "&deleted_since=" + Uri.EscapeDataString(TombstoneCursorText());
+                }
+                else
+                {
+                    tombstones = false;
+                    if (!string.IsNullOrEmpty(since))
+                        url += "&since=" + Uri.EscapeDataString(since);
+                }
+                var trackTombstones = tombstones;
+                return ServePollGet(trackTombstones ? "GetMarkers.T" : "GetMarkers", url, (body, code) =>
                 {
                     if (code < 200 || code >= 300) return PollHttpErr(code);
-                    return PollOkClipped(SimplifyMarkersJson(body));
+                    return PollOkClipped(SimplifyMarkersJson(body, trackTombstones));
                 });
             }
             if (function == "GetUnits")
@@ -7937,20 +7948,73 @@ public static partial class Extension
         return null;
     }
 
-    private static string SimplifyMarkersJson(string json)
+    // --- Pierres tombales des marqueurs (suppression sur Athena : poste TOC, purge, archivage) ---
+    /// <summary>Marqueurs du jeu supprimés sur Athena : curseur (instant Unix, identifiant) du dernier relevé reçu par le relais.</summary>
+    private static readonly object TombLock = new();
+    private static long _tombTs;
+    private static long _tombId;
+    /// <summary>Premier relevé : une heure en arrière (le serveur garde les pierres tombales 48 h).</summary>
+    private const long TombLookbackSeconds = 3600;
+    private const long TombMaxAgeSeconds = 172800;
+
+    /// <summary>Curseur « instant:identifiant » envoyé à Athena (paramètre deleted_since), jamais plus vieux que 48 h.</summary>
+    private static string TombstoneCursorText()
+    {
+        lock (TombLock)
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (_tombTs <= 0) { _tombTs = now - TombLookbackSeconds; _tombId = 0; }
+            if (_tombTs < now - TombMaxAgeSeconds) { _tombTs = now - TombMaxAgeSeconds; _tombId = 0; }
+            return _tombTs.ToString(CultureInfo.InvariantCulture) + ":" + _tombId.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    /// <summary>Avance le curseur, jamais en arrière ni dans le futur : un relevé rejoué ne repart pas en boucle.</summary>
+    private static void AdvanceTombstoneCursor(long ts, long id)
+    {
+        lock (TombLock)
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (ts <= 0 || ts > now + 120) return;
+            if (ts > _tombTs || (ts == _tombTs && id > _tombId)) { _tombTs = ts; _tombId = id; }
+        }
+    }
+
+    private static string SimplifyMarkersJson(string json, bool trackTombstones = false)
     {
         try
         {
             var sb = new StringBuilder();
+            // Octets disponibles avant la coupe de PollOkClipped : le curseur ne dépasse jamais ce que le jeu lira.
+            var budget = MaxOutputBytes - 4 - 3;
+            var bytes = 0;
+            long tombTs = 0, tombId = 0;
             using var doc = JsonDocument.Parse(json);
             foreach (var el in doc.RootElement.EnumerateArray())
             {
-                var id = el.GetProperty("id").GetInt32();
-                var layerId = el.TryGetProperty("layerId", out var l) ? l.GetInt32() : 1;
+                if (!el.TryGetProperty("id", out var idEl)) continue;
+                string idText;
+                long numericId = 0;
+                if (idEl.ValueKind == JsonValueKind.Number && idEl.TryGetInt64(out var n))
+                {
+                    idText = n.ToString(CultureInfo.InvariantCulture);
+                    numericId = n;
+                }
+                else if (idEl.ValueKind == JsonValueKind.String
+                    && (idEl.GetString() ?? "").StartsWith("del:", StringComparison.Ordinal)
+                    && long.TryParse((idEl.GetString() ?? "").Substring(4), NumberStyles.None, CultureInfo.InvariantCulture, out var dn))
+                {
+                    // Pierre tombale du site (« del:N », source game_del) : un identifiant texte ne doit plus faire perdre toute la liste.
+                    idText = "del:" + dn.ToString(CultureInfo.InvariantCulture);
+                    numericId = dn;
+                }
+                else continue; // autre identifiant texte (repère publié « athena:… ») : ignoré, comme avant, sans casser le reste
+                var layerId = el.TryGetProperty("layerId", out var l) && l.ValueKind == JsonValueKind.Number && l.TryGetInt32(out var li) ? li : 1;
                 var dataStr = el.TryGetProperty("markerData", out var md)
                     ? (md.ValueKind == JsonValueKind.String ? md.GetString() ?? "{}" : md.GetRawText())
                     : "{}";
                 double x = 0, y = 0;
+                long deletedAt = 0;
                 var type = "mil_dot";
                 var text = "";
                 var color = "";
@@ -7975,17 +8039,32 @@ public static partial class Extension
                         text = lb.GetString() ?? "";
                     if (root.TryGetProperty("color", out var col)) color = col.GetString() ?? "";
                     if (root.TryGetProperty("source", out var src)) source = src.GetString() ?? "";
+                    if (root.TryGetProperty("deleted_at", out var da) && da.ValueKind == JsonValueKind.Number && da.TryGetInt64(out var dat)) deletedAt = dat;
                 }
                 catch { /* blob illisible : ligne quand même, coords 0 */ }
                 text = text.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
                 color = color.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
                 source = source.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
-                sb.Append("M\t").Append(id).Append("\t").Append(layerId).Append("\t")
+                var row = new StringBuilder();
+                row.Append("M\t").Append(idText).Append("\t").Append(layerId).Append("\t")
                     .Append(x.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
                     .Append(y.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
                     .Append(type).Append("\t").Append(text).Append("\t")
-                    .Append(color).Append("\t").Append(source).Append("\n");
+                    .Append(color).Append("\t").Append(source);
+                // Colonne 9, pierres tombales seulement : instant de suppression (les lecteurs plus anciens s'arrêtent à la colonne 8).
+                if (source == "game_del") row.Append("\t").Append(deletedAt.ToString(CultureInfo.InvariantCulture));
+                row.Append("\n");
+                var rowText = row.ToString();
+                var rowBytes = Encoding.UTF8.GetByteCount(rowText);
+                if (trackTombstones && source == "game_del" && deletedAt > 0 && idText.StartsWith("del:", StringComparison.Ordinal) && bytes + rowBytes <= budget)
+                {
+                    tombTs = deletedAt;
+                    tombId = numericId;
+                }
+                bytes += rowBytes;
+                sb.Append(rowText);
             }
+            if (trackTombstones && tombTs > 0) AdvanceTombstoneCursor(tombTs, tombId);
             return sb.ToString();
         }
         catch { return "[]"; }

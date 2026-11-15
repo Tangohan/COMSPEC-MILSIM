@@ -797,6 +797,19 @@ return function (Router $router) {
     $router->post('/atak/toc/api/reports/{key}/attach', [$tocReports, 'attach'], $mwAtakMemberOnly);
     $router->get('/atak/toc/reports/{key}/export.pdf', [$tocReports, 'pdf'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/reset', [$tocApi, 'reset'], $mwAtakMemberOnly);
+    // Suppression, corbeille de 15 minutes et purge de la carte du poste TOC (docs/TOC-WEB.md) : droits vérifiés par le contrôleur.
+    $tocElements = \App\Controllers\Api\AtakTocElementsApiController::class;
+    $router->get('/atak/toc/api/elements/trash', [$tocElements, 'trash'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/elements/delete', [$tocElements, 'delete'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/elements/undo', [$tocElements, 'undo'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/elements/pin', [$tocElements, 'pin'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/elements/archive', [$tocElements, 'archive'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/purge/status', [$tocElements, 'purgeStatus'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/purge/authors', [$tocElements, 'purgeAuthors'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/purge/preview', [$tocElements, 'purgePreview'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/purge/start', [$tocElements, 'purgeStart'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/purge/step', [$tocElements, 'purgeStep'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/purge/cancel', [$tocElements, 'purgeCancel'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/plans', [$planApi, 'index'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/plans', [$planApi, 'store'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/plans/{id}', [$planApi, 'show'], $mwAtakMemberOnly);

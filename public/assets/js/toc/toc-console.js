@@ -139,6 +139,7 @@
       if (S.reports && j.reports) S.reports.onStamp(j.reports.stamp);
       var sig = JSON.stringify([j.state, j.game]);
       S.game = j.game;
+      if (S.manage && j.map) S.manage.applyRoom(j.map);
       if (sig === S.roomVersion) { renderLink(); return; }
       S.roomVersion = sig;
       S.room = j.state;
@@ -603,7 +604,7 @@
         '<button type="button" class="toc-btn is-small" data-pick="message">Message</button><button type="button" class="toc-btn is-small" data-pick="order">Ordre</button>' +
         (d.track && d.track.src === 'unit' ? '<button type="button" class="toc-btn is-small" data-pick="phone">Téléphone</button>' : '');
     } else if (canEditMarker(d)) {
-      btns += '<button type="button" class="toc-btn is-small" data-pick="edit">Modifier</button><button type="button" class="toc-btn is-small" data-pick="pin" aria-pressed="' + isPinned(d) + '">' + (isPinned(d) ? 'Désépingler' : 'Épingler') + '</button><button type="button" class="toc-btn is-small is-danger" data-pick="delete">Supprimer</button>';
+      btns += '<button type="button" class="toc-btn is-small" data-pick="select">Sélectionner</button><button type="button" class="toc-btn is-small" data-pick="edit">Modifier</button><button type="button" class="toc-btn is-small" data-pick="pin" aria-pressed="' + isPinned(d) + '">' + (isPinned(d) ? 'Désépingler' : 'Épingler') + '</button><button type="button" class="toc-btn is-small is-danger" data-pick="delete">Supprimer</button>';
     }
     box.innerHTML = '<div class="toc-pick-head"><span class="toc-pick-sym">' + it.symbol.html + '</span><div class="toc-pick-body">' + (it.tip ? it.tip(it) : '<h4>' + esc(it.title) + '</h4>') + '</div><button type="button" class="toc-btn is-small is-icon" data-pick="close" aria-label="Fermer la fiche" title="Fermer la fiche">×</button></div><div class="toc-pick-actions">' + btns + '</div>';
     box.hidden = false;
@@ -637,6 +638,7 @@
     else if (a === 'waypoint') openWindow('point', { x: Math.round(pos[0]), y: Math.round(pos[1]) });
     else if (a === 'edit' && d.type === 'marker') openWindow('marqueur', { id: d.id });
     else if (a === 'delete' && d.type === 'marker') deleteMarker(it);
+    else if (a === 'select' && d.type === 'marker') S.manage.toggleFeature(it);
     else if (a === 'pin' && d.type === 'marker') pinMarker(it);
     else if (a === 'measure') startMeasure(pos);
     else if (a.indexOf('ring:') === 0) { var r = Number(a.slice(5)); S.layers.rangeRing(r ? pos : null, r); }
@@ -670,14 +672,11 @@
       say(ok ? 'Marqueur posé : il part aussi en jeu.' : 'Marqueur refusé.', !ok);
     });
   }
+  /* Suppression d'un marqueur : boîte de dialogue du poste (toc-manage.js), corbeille de 15 minutes, jamais de confirmation native. */
   function deleteMarker(it) {
     if (!canEditMarker(it.data)) { say('Seul son auteur ou un responsable du poste peut retirer ce marqueur.', true); return; }
-    if (!window.confirm('Supprimer le marqueur « ' + (it.title || 'sans nom') + ' » ? Il est aussi retiré en jeu.')) return;
-    api('/api/markers/' + encodeURIComponent(it.data.id), { method: 'DELETE' }).then(function (j) {
-      var ok = j && j.ok !== false && !j.error;
-      if (ok) { if (S.pick === it.id) setPick(null); S.layers.reload('markers'); }
-      say(ok ? 'Marqueur supprimé.' : 'Suppression refusée.', !ok);
-    }).catch(function () { say('Réseau indisponible : action non envoyée.', true); });
+    if (S.pick === it.id) setPick(null);
+    S.manage.askDelete([{ table: 'marker', id: it.data.id }], it.title);
   }
   function addToPlan(pos) {
     var id = S.layers.shownPlan();
@@ -721,7 +720,7 @@
       if (d.type === 'marker') {
         var can = canEditMarker(d);
         var why = can ? '' : 'Réservé à son auteur ou à un responsable du poste';
-        entries.push({ sep: true }, { id: 'edit', label: 'Modifier…', disabled: !can, hint: why }, { id: 'pin', label: isPinned(d) ? 'Désépingler' : 'Épingler (reste après la bascule)', disabled: !can, hint: why }, { id: 'delete', label: 'Supprimer', danger: true, disabled: !can, hint: why });
+        entries.push({ sep: true }, { id: 'select', label: 'Ajouter à la sélection' }, { id: 'edit', label: 'Modifier…', disabled: !can, hint: why }, { id: 'pin', label: isPinned(d) ? 'Désépingler' : 'Épingler (reste après la bascule)', disabled: !can, hint: why }, { id: 'delete', label: 'Supprimer', danger: true, disabled: !can, hint: why });
       }
       entries.push({ sep: true }, { id: 'link', label: 'Partager (copier le lien)' }, { id: 'measure', label: 'Mesurer d’ici' }, { id: 'copy', label: 'Copier la grille' });
     } else {
@@ -1051,13 +1050,19 @@
     if (document.fullscreenElement) { if (document.exitFullscreen) document.exitFullscreen(); return; }
     if (root.requestFullscreen) root.requestFullscreen().catch(function () { say('Plein écran refusé par le navigateur.', true); });
   }
-  function toggleLayers(force) { if (S.layers) S.layers.openPanel(force); }
+  function toggleLayers(force) {
+    if (!S.layers) return;
+    S.layers.openPanel(force);
+    // Un seul panneau à la fois sur la carte : calques ou éléments.
+    if (!$('#toc-layers').hidden && S.manage) S.manage.openPanel(false);
+  }
   function mapCommand(c) {
     if (c === 'in') S.tm.map.zoomIn();
     else if (c === 'out') S.tm.map.zoomOut();
     else if (c === 'north') fitAll();
     else if (c === 'layers') toggleLayers();
     else if (c === 'measure') { if (S.measure) stopMeasure(); else startMeasure(null); }
+    else if (c === 'select') { if (S.manage) S.manage.toggleMode(); }
     else if (c === 'full') toggleFull();
   }
   function cycleBackground() {
@@ -1105,6 +1110,7 @@
       if (UI.menu.isOpen() || UI.drawer.isOpen()) return;
       if (e.key === 'Escape') {
         if (!$('#toc-help-overlay').hidden) { $('#toc-help-overlay').hidden = true; $('#toc-help-btn').focus(); return; }
+        if (S.manage && S.manage.escape()) return;
         if (S.measure) { stopMeasure(); return; }
         if (!$('#toc-suggest').hidden) { $('#toc-suggest').hidden = true; return; }
         if (S.layers && !$('#toc-layers').hidden) { S.layers.openPanel(false); return; }
@@ -1158,6 +1164,7 @@
     var t = terrain();
     if (!t) { setBanner('Aucun terrain n’est configuré sur le site : le poste ne peut pas afficher de carte.'); return; }
     stopMeasure();
+    if (S.manage) { S.manage.destroy(); S.manage = null; }
     if (S.layers) { S.layers.destroy(); S.layers = null; }
     if (S.sse) { S.sse.destroy(); S.sse = null; }
     if (S.tm) { S.tm.destroy(); S.tm = null; }
@@ -1185,8 +1192,15 @@
       },
       onCounts: renderLayerCount,
       onPanel: function (open) { $('#toc-layers-btn').setAttribute('aria-expanded', String(open)); $('#toc-layers-btn').classList.toggle('is-on', open); },
-      // Une épingle de rapport ouvre la fiche dans le tiroir (panneau Rapports), pas la bulle de la carte.
-      onSelect: function (it) { if (it.data && it.data.type === 'report' && it.data.key && S.reports) { S.reports.open(it.data.key); return; } setPick(it.id, false); },
+      onSelect: function (it) {
+        // Mode sélection : un clic sur un marqueur l'ajoute à la sélection ou l'en retire, sans ouvrir sa fiche.
+        if (S.manage && S.manage.mode()) { S.manage.toggleFeature(it); return; }
+        // Une épingle de rapport ouvre la fiche dans le tiroir (panneau Rapports), pas la bulle de la carte.
+        if (it.data && it.data.type === 'report' && it.data.key && S.reports) { S.reports.open(it.data.key); return; }
+        setPick(it.id, false);
+      },
+      onElements: function () { if (S.manage) S.manage.refresh(); },
+      elementActions: function (ref) { return S.manage ? S.manage.elementActions(ref) : ''; },
       reportsFeed: function () { return S.reports && S.reports.loaded() ? S.reports.pins() : null; },
       onFollow: function () { renderPick(); },
       onLayout: function (st) {
@@ -1194,6 +1208,14 @@
         el.textContent = st.hidden ? 'Plaques masquées faute de place : ' + st.hidden + ' (rapprochez).' : (st.mode === 'none' ? 'Vue d’ensemble : symboles seuls, rapprochez pour les indicatifs.' : '');
       },
       fetchPlan: function (id) { return api('/atak/toc/api/plans/' + id); }
+    });
+    // Suppression, sélection multiple, corbeille de 15 minutes et purge (toc-manage.js) : droits rejugés par le serveur.
+    S.manage = window.TocManage.create({
+      tm: S.tm, layers: S.layers, api: api, mapId: function () { return S.mapId; }, now: serverNow, say: say, userId: BOOT.userId,
+      canManage: !!BOOT.canManage, canPurge: !!BOOT.canPurge, softDelete: BOOT.softDelete !== false,
+      reload: function () { if (S.layers) { S.layers.reload('markers'); S.layers.reload('shapes'); } },
+      closeLayers: function () { if (S.layers) S.layers.openPanel(false); },
+      picked: function () { var it = pickItem(); return it && it.data && it.data.type === 'marker' && canEditMarker(it.data) ? { ref: { table: 'marker', id: it.data.id }, label: it.title } : null; }
     });
     // Calques SSE (contrôles d’identité, lieux, pistes de téléphones) : module partagé, désactivés au départ, proposés seulement si le lecteur y a droit.
     if (window.SseMapLayers) S.sse = window.SseMapLayers.mountToc(S.tm, S.mapId);
