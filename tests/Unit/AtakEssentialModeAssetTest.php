@@ -268,7 +268,7 @@ final class AtakEssentialModeAssetTest extends TestCase
         // Sortie en 4.18.0 ; les versions suivantes (4.19.0, signature du SEEK II) la contiennent.
         self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(1[89]\.\d+|[2-9]\d\.\d+)"/', $hpp);
         // La DLL COMSPEC Link ne change pas dans cette version.
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.125"', $hpp);
+        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.126"', $hpp);
 
         $cl = $this->read(self::ROOT . 'CHANGELOG-ATAK.md');
         $title = '(ATAK natif 4.18.0.AG - Washington)';

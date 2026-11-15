@@ -775,7 +775,41 @@ return function (Router $router) {
     $router->get('/atak/toc/api/state', [$tocApi, 'state'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/action', [$tocApi, 'action'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/journal', [$tocApi, 'journal'], $mwAtakMemberOnly);
+    // Actions sur les téléphones en jeu (droit atak.toc.phone, fonction activée par la communauté, CSRF, journal).
+    $tocPhone = \App\Controllers\Api\AtakTocPhoneController::class;
+    $router->get('/atak/toc/api/phones', [$tocPhone, 'index'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/phones/events', [$tocPhone, 'events'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/settings', [$tocPhone, 'settings'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/phones/{ref}', [$tocPhone, 'show'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/notify', [$tocPhone, 'notify'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/ring', [$tocPhone, 'ring'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/ring-stop', [$tocPhone, 'ringStop'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/locate', [$tocPhone, 'locate'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/triangulate', [$tocPhone, 'triangulate'], $mwAtakMemberOnly);
+    // Panneau Rapports du poste (BDA, comptes rendus, SITREP, 9-line) : lecture, lu / non lu, accusé, jonction à un plan, PDF.
+    $tocReports = \App\Controllers\Api\AtakTocReportsApiController::class;
+    $router->get('/atak/toc/api/reports', [$tocReports, 'index'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/read-all', [$tocReports, 'readAll'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/reports/plans', [$tocReports, 'plans'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/reports/{key}', [$tocReports, 'show'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/read', [$tocReports, 'read'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/ack', [$tocReports, 'ack'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/attach', [$tocReports, 'attach'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/reports/{key}/export.pdf', [$tocReports, 'pdf'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/reset', [$tocApi, 'reset'], $mwAtakMemberOnly);
+    // Suppression, corbeille de 15 minutes et purge de la carte du poste TOC (docs/TOC-WEB.md) : droits vérifiés par le contrôleur.
+    $tocElements = \App\Controllers\Api\AtakTocElementsApiController::class;
+    $router->get('/atak/toc/api/elements/trash', [$tocElements, 'trash'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/elements/delete', [$tocElements, 'delete'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/elements/undo', [$tocElements, 'undo'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/elements/pin', [$tocElements, 'pin'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/elements/archive', [$tocElements, 'archive'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/purge/status', [$tocElements, 'purgeStatus'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/purge/authors', [$tocElements, 'purgeAuthors'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/purge/preview', [$tocElements, 'purgePreview'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/purge/start', [$tocElements, 'purgeStart'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/purge/step', [$tocElements, 'purgeStep'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/purge/cancel', [$tocElements, 'purgeCancel'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/plans', [$planApi, 'index'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/plans', [$planApi, 'store'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/plans/{id}', [$planApi, 'show'], $mwAtakMemberOnly);
@@ -1189,6 +1223,15 @@ return function (Router $router) {
     $router->get('/atak/sse/recherche', [SsePortalController::class, 'search'], $mwSsePortal);
     $router->get('/atak/sse/recherche/suggestions', [SsePortalController::class, 'searchSuggest'], $mwSsePortal);
     $router->get('/atak/sse/identites', [SsePortalController::class, 'identitiesIndex'], $mwSsePortal);
+    // Page Personnes (vue de travail) : actions groupées et réglage avant /{id} ; tiroir d'aperçu et actions d'une fiche.
+    $router->post('/atak/sse/identites/lot', [\App\Controllers\Web\SsePersonWorkController::class, 'batch'], $mwSsePortal);
+    $router->post('/atak/sse/identites/reglages', [\App\Controllers\Web\SsePersonWorkController::class, 'settings'], $mwSsePortal);
+    $router->get('/atak/sse/identites/{id}/apercu', [\App\Controllers\Web\SsePersonWorkController::class, 'drawer'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/classer', [\App\Controllers\Web\SsePersonWorkController::class, 'classify'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/verrouiller', [\App\Controllers\Web\SsePersonWorkController::class, 'lock'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/deverrouiller', [\App\Controllers\Web\SsePersonWorkController::class, 'unlock'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/clore', [\App\Controllers\Web\SsePersonWorkController::class, 'close'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/rouvrir', [\App\Controllers\Web\SsePersonWorkController::class, 'reopen'], $mwSsePortal);
     $router->get('/atak/sse/identites/{id}', [SsePortalController::class, 'identityShow'], $mwSsePortal);
     $router->post('/atak/sse/identites/{id}/registre', [\App\Controllers\Web\SsePersonRegistryController::class, 'create'], $mwSsePortal);
     // Fiches PDF d'une personne ou d'une identité (identification, vigilance, renseignement, contrôle, avis) : éditeur, brouillons, aperçu, émission.
@@ -1229,6 +1272,8 @@ return function (Router $router) {
     $router->post('/atak/sse/liaisons', [\App\Controllers\Web\SseLinksController::class, 'store'], $mwSsePortal);
     $router->post('/atak/sse/liaisons/{id}/retirer', [\App\Controllers\Web\SseLinksController::class, 'remove'], $mwSsePortal);
     $router->get('/atak/sse/cerberes', [\App\Controllers\Web\SseLinksController::class, 'cerberes'], $mwSsePortal);
+    // Widget Cerbère (bouton flottant du portail) : contenu du tiroir, lecture seule.
+    $router->get('/atak/sse/cerbere/panneau', [\App\Controllers\Web\SseCerbereWidgetController::class, 'panel'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);
@@ -1372,6 +1417,10 @@ return function (Router $router) {
     $router->get('/atak/sse/anomalies', [SsePortalController::class, 'anomalies'], $mwSsePortal);
     $router->get('/atak/sse/a-trier', [\App\Controllers\Web\SseTriageController::class, 'index'], $mwSsePortal);
     $router->get('/atak/sse/a-trier/compteurs', [\App\Controllers\Web\SseTriageController::class, 'counters'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/traiter', [\App\Controllers\Web\SseTriageController::class, 'act'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/annuler', [\App\Controllers\Web\SseTriageController::class, 'undo'], $mwSsePortal);
+    $router->post('/atak/sse/a-trier/regles', [\App\Controllers\Web\SseTriageController::class, 'rulesSave'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier/regles/apercu', [\App\Controllers\Web\SseTriageController::class, 'rulesPreview'], $mwSsePortal);
     $router->get('/atak/sse/rapprochements', [SsePortalController::class, 'suggestionsIndex'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/valider', [SsePortalController::class, 'suggestionAccept'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);

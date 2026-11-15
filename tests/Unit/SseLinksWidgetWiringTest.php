@@ -107,7 +107,7 @@ final class SseLinksWidgetWiringTest extends TestCase
             self::assertMatchesRegularExpression('#' . preg_quote($panel, '#') . '[^>]*>\s*<p class="sl-desc">#', $w);
         }
         $cb = self::read('views/atak/sse/cerberes.php');
-        self::assertSame(3, preg_match_all('#class="panel-title" id="cb-[a-z]+">[^<]+</div></div>\s*<div class="panel-body">\s*<p class="muted">#', $cb));
+        self::assertSame(4, preg_match_all('#class="panel-title" id="cb-[a-z]+">[^<]+</div></div>\s*<div class="panel-body">\s*<p class="muted">#', $cb));
     }
 
     public function testStylesAreIsolatedAndRemappableThroughSlVariables(): void

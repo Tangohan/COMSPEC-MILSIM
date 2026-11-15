@@ -37,6 +37,8 @@ class MapShapeRepository
             $sql .= \App\Services\Atak\MarkerCycle\AtakMarkerCycleFilter::SHAPE_SQL;
             $params[] = $cycleStart;
         }
+        // Corbeille du poste TOC : un tracé supprimé (annulable 15 minutes) n'est plus servi.
+        $sql .= \App\Services\AtakToc\Purge\TocSoftDelete::liveSql($this->pdo());
         $sql .= ' ORDER BY id';
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
@@ -46,7 +48,7 @@ class MapShapeRepository
 
     public function get(int $tenantId, int $id): ?array
     {
-        $stmt = $this->pdo()->prepare('SELECT * FROM atak_map_shapes WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo()->prepare('SELECT * FROM atak_map_shapes WHERE tenant_id = ? AND id = ?' . \App\Services\AtakToc\Purge\TocSoftDelete::liveSql($this->pdo()));
         $stmt->execute([$tenantId, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? $this->normalizeShape($row) : null;

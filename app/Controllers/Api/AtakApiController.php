@@ -4577,6 +4577,15 @@ class AtakApiController
         // être coupée à 8 Ko), pour que le relais les retire aussi en jeu. Colonne « text » : nom Arma ; « source » : game_del.
         if ($world !== '') {
             try {
+                // Pierres tombales (additif) : `deleted_since=<instant>:<id>` demande, plus anciennes d'abord, les suppressions
+                // faites depuis ce curseur (48 h au plus), 40 par réponse ; sans lui, comportement d'avant (15 dernières minutes).
+                $cursor = \App\Services\AtakToc\Purge\TocElementStore::parseCursor((string) $request->query('deleted_since', ''));
+                if ($cursor !== null) {
+                    $tombs = (new \App\Services\AtakToc\Purge\TocElementStore(\App\Core\Database::getPdo()))
+                        ->gameTombstones($tenantId, $mapId, $cursor[0], $cursor[1], time(), 40);
+
+                    return Response::json(array_merge(\App\Services\AtakToc\Purge\TocElementStore::tombstoneRows($tombs), $out));
+                }
                 $gone = array_map(static fn (array $g): array => [
                     'id' => 'del:' . $g['id'],
                     'layerId' => 1,
