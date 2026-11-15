@@ -329,7 +329,14 @@ final class SseClearanceService
             return null;
         }
 
-        $profile = $this->profiles->getByUserId($userId);
+        try {
+            $profile = $this->profiles->getByUserId($userId);
+        } catch (\Throwable $e) {
+            // Fiche opérateur illisible (table absente, base indisponible) : les droits d'origine décident seuls.
+            error_log('Habilitation SSE : fiche opérateur illisible : ' . $e->getMessage());
+
+            return null;
+        }
         if ($profile === null) {
             return null;
         }
