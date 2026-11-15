@@ -25,7 +25,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
     <div>
         <h1><?= $isEdit ? $h($c['name']) . ' (' . $h($c['code']) . ')' : 'Nouveau pays émetteur' ?></h1>
         <?php if ($real): ?>
-            <p>Pays réel stylisé, réservé à l’univers « Réaliste — simulation » de la communauté. Ses papiers restent des documents de jeu : gabarit générique, mention SIMULATION sur chaque face, aucune armoirie ni motif officiel, photos de personnages du jeu uniquement.</p>
+            <p>Pays réel stylisé, réservé à l’univers « Réaliste — simulation » de la communauté. Ses papiers restent des documents de jeu : gabarit générique, mention de jeu toujours présente sur l’image exportée, aucune armoirie ni motif officiel, photos de personnages du jeu uniquement.</p>
         <?php else: ?>
             <p>Un pays de jeu est toujours imaginaire. Son code ne doit pas être celui d’un pays réel, sauf dans un univers de fiction (SCP, Star Wars…) ou depuis les pays réels stylisés (univers réaliste-simulation).</p>
         <?php endif; ?>
@@ -131,9 +131,9 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
         </div>
 
         <?php if ($real): ?>
-            <p style="margin-top:12px"><label><input type="checkbox" name="fictional" value="1" checked required> Document de jeu : ses papiers portent la mention SIMULATION — DOCUMENT DE JEU et n’ont aucune valeur réelle.</label></p>
+            <p style="margin-top:12px"><label><input type="checkbox" name="fictional" value="1" checked required> Document de jeu : ses papiers n’ont aucune valeur réelle et gardent la mention de jeu.</label></p>
         <?php else: ?>
-            <p style="margin-top:12px"><label><input type="checkbox" name="fictional" value="1" checked required> Pays fictif : ses papiers portent la mention SIMULATION et n’ont aucune valeur réelle.</label></p>
+            <p style="margin-top:12px"><label><input type="checkbox" name="fictional" value="1" checked required> Pays fictif : ses papiers n’ont aucune valeur réelle.</label></p>
         <?php endif; ?>
 
         <div class="idp-actions" style="margin-top:12px">

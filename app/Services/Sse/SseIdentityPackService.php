@@ -133,6 +133,19 @@ final class SseIdentityPackService
                 'report' => $d['st_report'],
                 'forgery_kind' => $d['forgery_kind'],
                 'forgery_quality' => $d['forgery_quality'],
+                // Ajouts rétrocompatibles (atelier de papiers, ignorés par un ancien mod) : référence du papier, date
+                // d'émission, modèle d'impression, champs imprimés en plus (rien d'état civil : le titulaire est dans
+                // identities[]) et chemins des images du site (photo et signature du titulaire, fond du gabarit ;
+                // null si absentes), à lire par HTTPS sur l'adresse du site.
+                'ref' => $d['ref'],
+                'issued_at' => $d['issued_at'],
+                'layout' => $d['layout'],
+                'print' => (object) array_filter((array) $d['print'], static fn (mixed $v): bool => $v !== '' && $v !== null),
+                'images' => [
+                    'photo' => $identityRows[(int) $d['identity_id']]['photo_path'] ?? null,
+                    'signature' => $identityRows[(int) $d['identity_id']]['signature_path'] ?? null,
+                    'background' => $d['background_path'],
+                ],
             ];
         }
 

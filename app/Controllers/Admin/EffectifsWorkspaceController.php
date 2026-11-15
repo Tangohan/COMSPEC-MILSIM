@@ -48,6 +48,9 @@ use App\Services\Personnel\PersonnelJobRoleStructureService;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Authorization\SystemReservedPermissions;
 use App\Services\Admin\RolePermissionService;
+use App\Services\Rbac\AccessRightsCatalog;
+use App\Services\Rbac\AccessRoleRules;
+use App\Services\Audit\AuditAction;
 use App\Services\Rbac\CommunityAccessProfiles;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Services\Export\TablePdfExportService;
@@ -3312,17 +3315,57 @@ class EffectifsWorkspaceController
             $selectedId = (int) ($selected['id'] ?? 0);
         }
         $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
+        $index = $this->accessPermissionIndex($tenantId);
+        $snapshot = $this->accessSnapshot($tenantId, $roles, $index['slugById']);
         $checkedIds = $selectedId > 0 ? $permSvc->getPermissionIdsForRole($selectedId) : [];
-        $groups = $this->accessPermissionGroups($tenantId);
-        $counts = $this->roleRepository->countPermissionsByRoleIds(array_map(
-            static fn (array $r): int => (int) ($r['id'] ?? 0),
-            $roles
-        ));
-        $memberCounts = $this->roleRepository->countMembersByRoleIds($tenantId, array_keys($counts));
+        $groups = AccessRightsCatalog::group($index['rows']);
         $selectedKind = $this->accessRoleKind($selected);
         $lockedPermissionIds = $selectedKind === 'manager'
             ? $permSvc->managerProtectedPermissionIdsForTenant($tenantId)
             : [];
+        $selectedSlugs = $snapshot['perms'][$selectedId] ?? [];
+
+        $cards = [];
+        foreach ($roles as $row) {
+            $rid = (int) ($row['id'] ?? 0);
+            $slugs = $snapshot['perms'][$rid] ?? [];
+            $cards[$rid] = [
+                'kind' => $this->accessRoleKind($row),
+                'hidden' => RoleRepository::isHiddenAccessRow($row),
+                'members' => count($snapshot['members'][$rid] ?? []),
+                'rights' => count($slugs),
+                'scope' => AccessRightsCatalog::scopeOf($slugs),
+                'critical' => count(array_filter($slugs, static fn (string $s): bool => AccessRightsCatalog::sensitivityFor($s) === AccessRightsCatalog::SENSITIVITY_CRITICAL)),
+            ];
+        }
+
+        $holders = [];
+        $holdersTotal = 0;
+        if ($selectedId > 0) {
+            $holderIds = $snapshot['members'][$selectedId] ?? [];
+            $holdersTotal = count($holderIds);
+            $holders = $this->roleRepository->memberIdentities($tenantId, $holderIds, 40);
+        }
+
+        $compareId = (int) $request->query('compare', 0);
+        $compare = null;
+        if ($compareId > 0 && $compareId !== $selectedId && isset($snapshot['perms'][$compareId])) {
+            $compareName = '';
+            foreach ($roles as $row) {
+                if ((int) ($row['id'] ?? 0) === $compareId) {
+                    $compareName = (string) ($row['name'] ?? '');
+                }
+            }
+            $compare = ['id' => $compareId, 'name' => $compareName, 'diff' => AccessRoleRules::compare($selectedSlugs, $snapshot['perms'][$compareId])];
+        }
+
+        $spaces = [];
+        try {
+            $nav = require base_path('config/navigation.php');
+            $spaces = AccessRightsCatalog::spacesOpenedBy(AccessRightsCatalog::spacesFromNavigation(is_array($nav) ? $nav : []), $selectedSlugs);
+        } catch (\Throwable) {
+            $spaces = [];
+        }
 
         return $this->shell('admin.effectifs_workspace.roles', [
             'title' => 'Accès',
@@ -3333,12 +3376,160 @@ class EffectifsWorkspaceController
             'accessPermissionGroups' => $groups,
             'checkedPermissionIds' => $checkedIds,
             'lockedPermissionIds' => $lockedPermissionIds,
-            'accessPermissionCounts' => $counts,
-            'accessMemberCounts' => $memberCounts,
+            'accessRoleCards' => $cards,
+            'accessHolders' => $holders,
+            'accessHoldersTotal' => $holdersTotal,
+            'accessCompare' => $compare,
+            'accessSpaces' => $spaces,
+            'accessTemplates' => AccessRoleRules::templates(),
+            'accessMissingRights' => AccessRightsCatalog::missingFromTenant($index['rows']),
+            'accessRequirementGaps' => AccessRoleRules::missingRequirements($selectedSlugs),
+            'accessHistory' => $this->accessRoleHistory($tenantId, $selectedId),
+            'accessRightNames' => $index['nameBySlug'],
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'rosterCounts' => $this->rosterCounts($tenantId),
             'csrfToken' => Csrf::token(),
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'effectifs-roles.css'],
         ]);
+    }
+
+    /**
+     * Droits de la communauté (jamais ceux de la plateforme), indexés pour l’écran.
+     *
+     * @return array{rows: list<array<string, mixed>>, slugById: array<int, string>, idBySlug: array<string, int>, nameBySlug: array<string, string>}
+     */
+    private function accessPermissionIndex(int $tenantId): array
+    {
+        $rows = [];
+        $slugById = [];
+        $idBySlug = [];
+        $nameBySlug = [];
+        foreach ($this->permissionRepository->allForTenant($tenantId) as $row) {
+            $slug = (string) ($row['slug'] ?? '');
+            $id = (int) ($row['id'] ?? 0);
+            if ($slug === '' || $id < 1 || SystemReservedPermissions::isReserved($slug)) {
+                continue;
+            }
+            $rows[] = $row;
+            $slugById[$id] = $slug;
+            $idBySlug[$slug] = $id;
+            $nameBySlug[$slug] = trim((string) ($row['name'] ?? '')) !== '' ? trim((string) $row['name']) : $slug;
+        }
+
+        return ['rows' => $rows, 'slugById' => $slugById, 'idBySlug' => $idBySlug, 'nameBySlug' => $nameBySlug];
+    }
+
+    /**
+     * Droits et titulaires de chaque niveau de la communauté (une seule lecture pour l’écran, l’aperçu et les gardes).
+     *
+     * @param list<array<string, mixed>> $roles
+     * @param array<int, string> $slugById
+     * @return array{perms: array<int, list<string>>, members: array<int, list<int>>}
+     */
+    private function accessSnapshot(int $tenantId, array $roles, array $slugById): array
+    {
+        $perms = [];
+        $members = [];
+        foreach ($roles as $row) {
+            $rid = (int) ($row['id'] ?? 0);
+            if ($rid < 1) {
+                continue;
+            }
+            $slugs = [];
+            foreach ($this->permissionRepository->getPermissionIdsForRole($rid) as $pid) {
+                if (isset($slugById[$pid])) {
+                    $slugs[] = $slugById[$pid];
+                }
+            }
+            $perms[$rid] = array_values(array_unique($slugs));
+            $members[$rid] = $this->roleRepository->userIdsWithRole($tenantId, $rid);
+        }
+
+        return ['perms' => $perms, 'members' => $members];
+    }
+
+    /**
+     * Derniers changements d’un niveau (même communauté, même niveau).
+     *
+     * @return list<array{when: string, who: string, what: string, added: list<string>, removed: list<string>}>
+     */
+    private function accessRoleHistory(int $tenantId, int $roleId): array
+    {
+        if ($tenantId < 1 || $roleId < 1) {
+            return [];
+        }
+        try {
+            $res = (new \App\Repositories\AuditLogRepository())->listForTenant($tenantId, ['entity_type' => 'role', 'entity_id' => $roleId], 1, 15);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($res['rows'] as $row) {
+            if ((string) ($row['entity_type'] ?? '') !== 'role') {
+                continue;
+            }
+            $payload = json_decode((string) ($row['new_value'] ?? ''), true);
+            $payload = is_array($payload) ? $payload : [];
+            $who = trim((string) ($row['actor_display_name'] ?? ''));
+            if ($who === '') {
+                $who = trim((string) ($row['actor_callsign'] ?? '')) ?: 'Système';
+            }
+            $out[] = [
+                'when' => (string) ($row['created_at'] ?? ''),
+                'who' => $who,
+                'what' => \App\Services\Audit\AuditActionLabel::toFrench((string) ($row['action'] ?? '')),
+                'added' => array_values(array_map('strval', (array) ($payload['added'] ?? []))),
+                'removed' => array_values(array_map('strval', (array) ($payload['removed'] ?? []))),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<string> $added
+     * @param list<string> $removed
+     */
+    private function logAccessRoleChange(int $tenantId, int $roleId, string $action, array $added, array $removed, array $extra = []): void
+    {
+        $actorId = (int) Session::get('user_id');
+        if ($actorId < 1) {
+            return;
+        }
+        try {
+            $payload = json_encode($extra + ['added' => $added, 'removed' => $removed, 'scope' => 'access_roles'], JSON_UNESCAPED_UNICODE);
+            (new \App\Services\Audit\AuditService())->log($action, $tenantId, $actorId, 'role', $roleId, null, $payload !== false ? $payload : null);
+        } catch (\Throwable $e) {
+            error_log('[acces] journal : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Libellés lisibles de droits, pour les messages d’erreur.
+     *
+     * @param list<string> $slugs
+     * @param array<string, string> $nameBySlug
+     */
+    private function accessRightNames(array $slugs, array $nameBySlug): string
+    {
+        $names = array_map(static fn (string $s): string => '« ' . ($nameBySlug[$s] ?? $s) . ' »', array_slice($slugs, 0, 4));
+
+        return implode(', ', $names) . (count($slugs) > 4 ? ', …' : '');
+    }
+
+    /**
+     * @param list<array<string, mixed>> $roles
+     */
+    private function accessNameTaken(array $roles, string $name, int $exceptId = 0): bool
+    {
+        $needle = mb_strtolower(trim($name));
+        foreach ($roles as $row) {
+            if ((int) ($row['id'] ?? 0) !== $exceptId && mb_strtolower(trim((string) ($row['name'] ?? ''))) === $needle) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -3356,44 +3547,94 @@ class EffectifsWorkspaceController
         };
     }
 
-    public function createAccessRole(Request $request, array $params = []): Response
+    /** Contrôles communs des écritures : droit de gérer les accès puis jeton CSRF. */
+    private function denyAccessWrite(Request $request, string $deniedMessage): ?Response
     {
-        unset($params);
         $denied = $this->denyUnlessAccess();
         if ($denied !== null) {
             return $denied;
         }
         if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
-            Session::flash('error', 'Vous n’êtes pas habilité à créer un niveau d’accès.');
+            Session::flash('error', $deniedMessage);
 
             return Response::redirect(effectifs_workspace_url('roles'));
         }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
+        if (!Csrf::verify($request)) {
+            Session::flash('error', 'Session expirée. Rechargez la page puis recommencez : rien n’a été enregistré.');
 
             return Response::redirect(effectifs_workspace_url('roles'));
+        }
+
+        return null;
+    }
+
+    public function createAccessRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        $denied = $this->denyAccessWrite($request, 'Vous n’êtes pas habilité à créer un niveau d’accès.');
+        if ($denied !== null) {
+            return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId, true);
+        $index = $this->accessPermissionIndex($tenantId);
+        $snapshot = $this->accessSnapshot($tenantId, $roles, $index['slugById']);
         $name = trim((string) $request->input('name', ''));
+        $template = trim((string) $request->input('template', ''));
+        $templates = AccessRoleRules::templates();
         $copyId = (int) $request->input('copy_from', 0);
-        $newId = $this->roleRepository->createCustomAccessRole($tenantId, $name, trim((string) $request->input('description', '')));
-        if ($newId < 1) {
+        $description = trim((string) $request->input('description', ''));
+        if ($name === '' && isset($templates[$template])) {
+            $name = $templates[$template]['name'];
+        }
+        if ($name === '') {
             Session::flash('error', 'Indiquez un nom pour le nouveau niveau d’accès.');
 
             return Response::redirect(effectifs_workspace_url('roles'));
         }
-        $sourceId = $copyId > 0 ? $copyId : (int) ($this->roleRepository->getIdBySlug($tenantId, CommunityAccessProfiles::SLUG_MEMBER) ?? 0);
-        if ($sourceId > 0) {
-            $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
-            try {
-                $permSvc->setPermissionsForAccessRole($tenantId, $newId, $permSvc->getPermissionIdsForRole($sourceId));
-            } catch (\InvalidArgumentException $e) {
-                Session::flash('error', $e->getMessage());
+        if ($this->accessNameTaken($roles, $name)) {
+            Session::flash('error', 'Un niveau d’accès porte déjà ce nom. Choisissez-en un autre pour ne pas les confondre.');
 
-                return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $newId);
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        // Source des droits : un modèle prêt à l’emploi, sinon un niveau de CETTE communauté (jamais un identifiant libre), sinon Membre.
+        $newSlugs = null;
+        if (isset($templates[$template])) {
+            $newSlugs = $templates[$template]['slugs'];
+            $description = $description !== '' ? $description : $templates[$template]['description'];
+        } else {
+            $sourceId = isset($snapshot['perms'][$copyId]) ? $copyId : (int) ($this->roleRepository->getIdBySlug($tenantId, CommunityAccessProfiles::SLUG_MEMBER) ?? 0);
+            $newSlugs = $snapshot['perms'][$sourceId] ?? [];
+        }
+        $gate = Gate::getInstance();
+        $blocked = AccessRoleRules::escalation([], $newSlugs, static fn (string $s): bool => $gate->allows($s));
+        if ($blocked !== []) {
+            Session::flash('error', 'Vous ne pouvez pas créer ce niveau : il donnerait des droits que vous n’avez pas vous-même (' . $this->accessRightNames($blocked, $index['nameBySlug']) . ').');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $newId = $this->roleRepository->createCustomAccessRole($tenantId, $name, $description);
+        if ($newId < 1) {
+            Session::flash('error', 'Le niveau d’accès n’a pas pu être créé. Réessayez dans un instant.');
+
+            return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        $ids = [];
+        foreach ($newSlugs as $slug) {
+            if (isset($index['idBySlug'][$slug])) {
+                $ids[] = $index['idBySlug'][$slug];
             }
         }
-        Session::flash('success', 'Niveau d’accès créé. Cochez ensuite ce qu’il a le droit de faire.');
+        $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
+        try {
+            $permSvc->setPermissionsForAccessRole($tenantId, $newId, $ids);
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $newId);
+        }
+        $this->logAccessRoleChange($tenantId, $newId, AuditAction::ACCESS_ROLE_CREATED, $newSlugs, [], ['name' => $name, 'from' => isset($templates[$template]) ? 'template:' . $template : 'role:' . $copyId]);
+        Session::flash('success', 'Niveau d’accès créé. Vérifiez ses droits ci-dessous, puis enregistrez si vous les modifiez.');
 
         return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $newId);
     }
@@ -3401,36 +3642,60 @@ class EffectifsWorkspaceController
     public function saveAccessRole(Request $request, array $params = []): Response
     {
         unset($params);
-        $denied = $this->denyUnlessAccess();
+        $denied = $this->denyAccessWrite($request, 'Vous n’êtes pas habilité à modifier les accès.');
         if ($denied !== null) {
             return $denied;
-        }
-        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
-            Session::flash('error', 'Vous n’êtes pas habilité à modifier les accès.');
-
-            return Response::redirect(effectifs_workspace_url('roles'));
-        }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(effectifs_workspace_url('roles'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $roleId = (int) $request->input('role_id', 0);
         if (!$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
-            Session::flash('error', 'Ce niveau d’accès ne peut pas être modifié.');
+            Session::flash('error', 'Ce niveau d’accès n’existe pas dans votre communauté ou ne peut pas être modifié.');
 
             return Response::redirect(effectifs_workspace_url('roles'));
         }
-        $this->roleRepository->updateAccessRoleLabel(
-            $tenantId,
-            $roleId,
-            (string) $request->input('name', ''),
-            (string) $request->input('description', '')
-        );
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId, true);
+        $index = $this->accessPermissionIndex($tenantId);
+        $snapshot = $this->accessSnapshot($tenantId, $roles, $index['slugById']);
+        $name = trim((string) $request->input('name', ''));
+        if ($name === '') {
+            Session::flash('error', 'Le nom du niveau ne peut pas être vide : rien n’a été enregistré.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
+        if ($this->accessNameTaken($roles, $name, $roleId)) {
+            Session::flash('error', 'Un autre niveau d’accès porte déjà ce nom : rien n’a été enregistré.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
         $rawIds = $request->input('permission_ids', []);
         $permissionIds = is_array($rawIds) ? array_map('intval', $rawIds) : [];
+        $role = $this->roleRepository->findById($roleId, $tenantId);
         $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
+        $finalIds = $permSvc->withManagerProtectedPermissions(
+            $tenantId,
+            (string) ($role['slug'] ?? ''),
+            $permSvc->assignablePermissionIdsForTenant($tenantId, $permissionIds)
+        );
+        $newSlugs = [];
+        foreach ($finalIds as $pid) {
+            if (isset($index['slugById'][$pid])) {
+                $newSlugs[] = $index['slugById'][$pid];
+            }
+        }
+        $oldSlugs = $snapshot['perms'][$roleId] ?? [];
+        $gate = Gate::getInstance();
+        $blocked = AccessRoleRules::escalation($oldSlugs, $newSlugs, static fn (string $s): bool => $gate->allows($s));
+        if ($blocked !== []) {
+            Session::flash('error', 'Vous ne pouvez pas donner des droits que vous n’avez pas vous-même (' . $this->accessRightNames($blocked, $index['nameBySlug']) . '). Rien n’a été enregistré.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
+        if (AccessRoleRules::removesLastAdmin($snapshot['perms'], $snapshot['members'], ['type' => 'save', 'role_id' => $roleId, 'slugs' => $newSlugs])) {
+            Session::flash('error', 'Ce changement retirerait « Gérer les rôles » à la dernière personne qui peut gérer les accès de la communauté. Rien n’a été enregistré.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
+        $this->roleRepository->updateAccessRoleLabel($tenantId, $roleId, $name, (string) $request->input('description', ''));
         try {
             $permSvc->setPermissionsForAccessRole($tenantId, $roleId, $permissionIds);
         } catch (\InvalidArgumentException $e) {
@@ -3438,50 +3703,142 @@ class EffectifsWorkspaceController
 
             return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
         }
-        Session::flash('success', 'Niveau d’accès enregistré.');
+        $added = array_values(array_diff($newSlugs, $oldSlugs));
+        $removed = array_values(array_diff($oldSlugs, $newSlugs));
+        $this->logAccessRoleChange($tenantId, $roleId, AuditAction::ROLE_PERMISSIONS_UPDATED, $added, $removed, ['event' => 'save']);
+        Session::flash('success', $added === [] && $removed === []
+            ? 'Niveau d’accès enregistré (droits inchangés).'
+            : 'Niveau d’accès enregistré. Droits ajoutés : ' . count($added) . ', droits retirés : ' . count($removed) . '.');
 
         return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+    }
+
+    /**
+     * Aperçu d’impact avant enregistrement : qui gagnerait ou perdrait quel droit. N’écrit rien.
+     * La communauté vient de la session ; le niveau doit appartenir à cette communauté.
+     */
+    public function previewAccessRole(Request $request, array $params = []): Response
+    {
+        unset($params);
+        if (!(int) Session::get('user_id') || !(int) Session::get('tenant_id')) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée.'], 401);
+        }
+        if (!EffectifsLmsAccess::allows(Gate::getInstance()) || !EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
+            return Response::json(['ok' => false, 'error' => 'Droits insuffisants.'], 403);
+        }
+        if (!Csrf::verify($request)) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée. Rechargez la page.'], 419);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $roleId = (int) $request->input('role_id', 0);
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId, true);
+        $role = null;
+        foreach ($roles as $row) {
+            if ((int) ($row['id'] ?? 0) === $roleId) {
+                $role = $row;
+                break;
+            }
+        }
+        if ($role === null) {
+            return Response::json(['ok' => false, 'error' => 'Niveau introuvable dans votre communauté.'], 404);
+        }
+        $index = $this->accessPermissionIndex($tenantId);
+        $snapshot = $this->accessSnapshot($tenantId, $roles, $index['slugById']);
+        $rawIds = $request->input('permission_ids', []);
+        $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
+        $finalIds = $permSvc->withManagerProtectedPermissions(
+            $tenantId,
+            (string) ($role['slug'] ?? ''),
+            $permSvc->assignablePermissionIdsForTenant($tenantId, is_array($rawIds) ? array_map('intval', $rawIds) : [])
+        );
+        $newSlugs = [];
+        foreach ($finalIds as $pid) {
+            if (isset($index['slugById'][$pid])) {
+                $newSlugs[] = $index['slugById'][$pid];
+            }
+        }
+        $impact = AccessRoleRules::impact($roleId, $newSlugs, $snapshot['perms'], $snapshot['members']);
+        $gate = Gate::getInstance();
+        $blocked = AccessRoleRules::escalation($snapshot['perms'][$roleId] ?? [], $newSlugs, static fn (string $s): bool => $gate->allows($s));
+        $lastAdmin = AccessRoleRules::removesLastAdmin($snapshot['perms'], $snapshot['members'], ['type' => 'save', 'role_id' => $roleId, 'slugs' => $newSlugs]);
+        $requirements = [];
+        foreach (AccessRoleRules::missingRequirements($newSlugs) as $slug => $missing) {
+            $requirements[] = ['right' => $index['nameBySlug'][$slug] ?? $slug, 'needs' => array_map(static fn (string $s): string => $index['nameBySlug'][$s] ?? $s, $missing)];
+        }
+        $shape = function (array $bySlug) use ($tenantId, $index): array {
+            $out = [];
+            foreach ($bySlug as $slug => $userIds) {
+                $out[] = [
+                    'slug' => $slug,
+                    'name' => $index['nameBySlug'][$slug] ?? $slug,
+                    'count' => count($userIds),
+                    'sensitivity' => AccessRightsCatalog::sensitivityFor($slug),
+                    'people' => array_map(static fn (array $p): array => ['name' => $p['name'], 'url' => effectifs_member_url($p['id'])], $this->roleRepository->memberIdentities($tenantId, $userIds, 3)),
+                ];
+            }
+
+            return $out;
+        };
+
+        return Response::json([
+            'ok' => true,
+            'members' => $impact['members'],
+            'gain' => $shape($impact['gain']),
+            'lose' => $shape($impact['lose']),
+            'escalation' => array_map(static fn (string $s): string => $index['nameBySlug'][$s] ?? $s, $blocked),
+            'last_admin' => $lastAdmin,
+            'requirements' => $requirements,
+        ]);
     }
 
     public function restoreAccessRole(Request $request, array $params = []): Response
     {
         unset($params);
-        $denied = $this->denyUnlessAccess();
+        $denied = $this->denyAccessWrite($request, 'Vous n’êtes pas habilité à rétablir un modèle.');
         if ($denied !== null) {
             return $denied;
-        }
-        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
-            Session::flash('error', 'Vous n’êtes pas habilité à rétablir un modèle.');
-
-            return Response::redirect(effectifs_workspace_url('roles'));
-        }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(effectifs_workspace_url('roles'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $roleId = (int) $request->input('role_id', 0);
         $role = $this->roleRepository->findById($roleId, $tenantId);
         if (!$role || !CommunityAccessProfiles::isAccessSlug((string) ($role['slug'] ?? ''))) {
-            Session::flash('error', 'Seul un modèle de départ peut être rétabli.');
+            Session::flash('error', 'Seul un modèle de départ (Membre, Ressources humaines, Gestionnaire) peut être rétabli.');
 
             return Response::redirect(effectifs_workspace_url('roles') . ($roleId > 0 ? '?role=' . $roleId : ''));
         }
         $key = CommunityAccessProfiles::slugToKey((string) $role['slug']);
         $def = CommunityAccessProfiles::definitionByKey($key);
+        $wanted = CommunityAccessProfiles::permissionSlugsFor($key);
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId, true);
+        $index = $this->accessPermissionIndex($tenantId);
+        $snapshot = $this->accessSnapshot($tenantId, $roles, $index['slugById']);
+        $ids = [];
+        $newSlugs = [];
+        foreach ($wanted as $slug) {
+            if (isset($index['idBySlug'][$slug])) {
+                $ids[] = $index['idBySlug'][$slug];
+                $newSlugs[] = $slug;
+            }
+        }
+        $oldSlugs = $snapshot['perms'][$roleId] ?? [];
+        $gate = Gate::getInstance();
+        $blocked = AccessRoleRules::escalation($oldSlugs, $newSlugs, static fn (string $s): bool => $gate->allows($s));
+        if ($blocked !== []) {
+            Session::flash('error', 'Vous ne pouvez pas rétablir ce modèle : il redonnerait des droits que vous n’avez pas vous-même (' . $this->accessRightNames($blocked, $index['nameBySlug']) . ').');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
+        if (AccessRoleRules::removesLastAdmin($snapshot['perms'], $snapshot['members'], ['type' => 'save', 'role_id' => $roleId, 'slugs' => $newSlugs])) {
+            Session::flash('error', 'Rétablir ce modèle retirerait « Gérer les rôles » à la dernière personne qui peut gérer les accès. Rien n’a été modifié.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
         if ($def !== null) {
             $this->roleRepository->updateAccessRoleLabel($tenantId, $roleId, (string) $def['name'], (string) $def['description']);
         }
-        $wanted = CommunityAccessProfiles::permissionSlugsFor($key);
-        $ids = [];
-        foreach ($this->permissionRepository->allForTenant($tenantId) as $row) {
-            if (in_array((string) ($row['slug'] ?? ''), $wanted, true)) {
-                $ids[] = (int) ($row['id'] ?? 0);
-            }
-        }
         $permSvc = new RolePermissionService($this->roleRepository, $this->permissionRepository);
         $permSvc->setPermissionsForAccessRole($tenantId, $roleId, $ids);
+        $this->logAccessRoleChange($tenantId, $roleId, AuditAction::ROLE_PERMISSIONS_UPDATED, array_values(array_diff($newSlugs, $oldSlugs)), array_values(array_diff($oldSlugs, $newSlugs)), ['event' => 'restore']);
         Session::flash('success', 'Le modèle de départ a été rétabli.');
 
         return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
@@ -3490,19 +3847,9 @@ class EffectifsWorkspaceController
     public function deleteAccessRole(Request $request, array $params = []): Response
     {
         unset($params);
-        $denied = $this->denyUnlessAccess();
+        $denied = $this->denyAccessWrite($request, 'Vous n’êtes pas habilité à supprimer un niveau d’accès.');
         if ($denied !== null) {
             return $denied;
-        }
-        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
-            Session::flash('error', 'Vous n’êtes pas habilité à supprimer un niveau d’accès.');
-
-            return Response::redirect(effectifs_workspace_url('roles'));
-        }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(effectifs_workspace_url('roles'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $roleId = (int) $request->input('role_id', 0);
@@ -3512,6 +3859,14 @@ class EffectifsWorkspaceController
         $isHideable = $role !== null && CommunityAccessProfiles::isHideablePresetSlug($slug);
         if (!$isCustom && !$isHideable) {
             Session::flash('error', 'Membre et Gestionnaire ne peuvent pas être supprimés : Membre est le socle que tout le monde porte, Gestionnaire tient les clés de la communauté. Renommez-les ou changez leurs droits.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
+        }
+        $roles = $this->roleRepository->forTenantAccessProfiles($tenantId, true);
+        $index = $this->accessPermissionIndex($tenantId);
+        $snapshot = $this->accessSnapshot($tenantId, $roles, $index['slugById']);
+        if (AccessRoleRules::removesLastAdmin($snapshot['perms'], $snapshot['members'], ['type' => 'delete', 'role_id' => $roleId])) {
+            Session::flash('error', 'Ce niveau porte « Gérer les rôles » pour la dernière personne qui peut gérer les accès. Donnez d’abord ce droit à un autre niveau (ou attribuez-lui Gestionnaire), puis recommencez.');
 
             return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
         }
@@ -3529,6 +3884,7 @@ class EffectifsWorkspaceController
                 }
             }
         }
+        $moved = count($snapshot['members'][$roleId] ?? []);
         if ($isHideable) {
             // Le socle de la communauté recrée RH : on le masque au lieu de le supprimer.
             if (!$this->roleRepository->setAccessPresetHidden($tenantId, $roleId, true)) {
@@ -3536,12 +3892,14 @@ class EffectifsWorkspaceController
 
                 return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
             }
-            Session::flash('success', 'Niveau masqué : il n’est plus proposé. Les personnes concernées sont revenues au niveau Membre. Vous pouvez le réafficher à tout moment.');
+            $this->logAccessRoleChange($tenantId, $roleId, AuditAction::ACCESS_ROLE_REMOVED, [], [], ['event' => 'hide', 'members_moved' => $moved]);
+            Session::flash('success', 'Niveau masqué : il n’est plus proposé. Personnes revenues au niveau Membre : ' . $moved . '. Vous pouvez le réafficher à tout moment.');
 
             return Response::redirect(effectifs_workspace_url('roles'));
         }
         $this->roleRepository->deleteCustomAccessRole($tenantId, $roleId);
-        Session::flash('success', 'Niveau d’accès retiré. Les personnes concernées sont revenues au niveau Membre.');
+        $this->logAccessRoleChange($tenantId, $roleId, AuditAction::ACCESS_ROLE_REMOVED, [], $snapshot['perms'][$roleId] ?? [], ['event' => 'delete', 'name' => (string) ($role['name'] ?? ''), 'members_moved' => $moved]);
+        Session::flash('success', 'Niveau d’accès retiré. Personnes revenues au niveau Membre : ' . $moved . '.');
 
         return Response::redirect(effectifs_workspace_url('roles'));
     }
@@ -3549,24 +3907,17 @@ class EffectifsWorkspaceController
     public function showAccessRole(Request $request, array $params = []): Response
     {
         unset($params);
-        $denied = $this->denyUnlessAccess();
+        $denied = $this->denyAccessWrite($request, 'Vous n’êtes pas habilité à modifier les niveaux d’accès.');
         if ($denied !== null) {
             return $denied;
-        }
-        if (!EffectifsLmsAccess::canManageRoles(Gate::getInstance())) {
-            Session::flash('error', 'Vous n’êtes pas habilité à modifier les niveaux d’accès.');
-
-            return Response::redirect(effectifs_workspace_url('roles'));
-        }
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect(effectifs_workspace_url('roles'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $roleId = (int) $request->input('role_id', 0);
         if ($this->roleRepository->setAccessPresetHidden($tenantId, $roleId, false)) {
+            $this->logAccessRoleChange($tenantId, $roleId, AuditAction::ACCESS_ROLE_CREATED, [], [], ['event' => 'show']);
             Session::flash('success', 'Niveau réaffiché : il est de nouveau proposé.');
+        } else {
+            Session::flash('error', 'Ce niveau ne peut pas être réaffiché : il n’est pas masqué dans votre communauté.');
         }
 
         return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);

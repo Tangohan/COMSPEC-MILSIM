@@ -84,7 +84,7 @@ require __DIR__ . '/_subnav.php';
         <fieldset>
             <legend>Couverture et légende</legend>
             <div class="idp-statuses">
-                <div><label for="k-phone">Téléphone simulé</label><input id="k-phone" name="phone" value="<?= $h($t['phone'] ?? '') ?>" maxlength="40" placeholder="+000 00 00 00 00"<?= $dis ?>></div>
+                <div><label for="k-phone">Téléphone</label><input id="k-phone" name="phone" value="<?= $h($t['phone'] ?? '') ?>" maxlength="40" placeholder="+000 00 00 00 00"<?= $dis ?>></div>
                 <div><label for="k-address">Adresse (fictive)</label><input id="k-address" name="address" value="<?= $h($t['address'] ?? '') ?>" maxlength="255"<?= $dis ?>></div>
                 <div style="grid-column: 1 / -1"><label for="k-bio">Biographie</label><textarea id="k-bio" name="biography" maxlength="2000"<?= $dis ?>><?= $h($t['biography'] ?? '') ?></textarea></div>
                 <div style="grid-column: 1 / -1"><label for="k-legend">Légende (histoire à tenir)</label><textarea id="k-legend" name="legend" maxlength="2000"<?= $dis ?>><?= $h($t['legend'] ?? '') ?></textarea></div>

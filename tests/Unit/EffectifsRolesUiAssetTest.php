@@ -15,9 +15,10 @@ final class EffectifsRolesUiAssetTest extends TestCase
         $member = (string) file_get_contents($root . '/views/admin/effectifs_workspace/member.php');
 
         self::assertStringContainsString('Niveaux d’accès', $view);
-        self::assertStringContainsString('Comme un rôle Discord', $view);
+        self::assertStringContainsString('Un niveau d’accès regroupe des droits', $view);
         self::assertStringContainsString('permission_ids[]', $view);
-        self::assertStringContainsString('Nouveau niveau', $view);
+        self::assertStringContainsString('Créer un niveau', $view);
+        self::assertStringContainsString('Vue d’ensemble', $view);
         self::assertStringContainsString('toujours requis', $view);
         self::assertStringContainsString('data-perm-locked', $view);
         self::assertStringContainsString('clés de la communauté', $view);
