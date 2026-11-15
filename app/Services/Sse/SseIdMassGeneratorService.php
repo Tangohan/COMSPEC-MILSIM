@@ -48,7 +48,7 @@ final class SseIdMassGeneratorService
     }
 
     /**
-     * Paramètres saisis ramenés aux valeurs permises. Sans habilitation Confidentiel, aucun faux (vérité de jeu).
+     * Paramètres saisis ramenés aux valeurs permises. Sans habilitation Secret (S), aucun faux (vérité de jeu).
      *
      * @param array<string, mixed> $in
      * @param list<string> $countryCodes pays actifs de la communauté

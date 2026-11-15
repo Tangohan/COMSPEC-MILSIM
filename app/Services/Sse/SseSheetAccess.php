@@ -109,7 +109,7 @@ final class SseSheetAccess
                 return 'Droit manquant : écrire dans « ' . Rights::sectionLabel('fichiers') . ' » (gestion des dossiers SSE). Demandez-le à un gestionnaire des accès SSE.';
             }
 
-            return $this->wanted->canGeneratePdf() ? null : 'Droit manquant : exporter depuis « ' . Rights::sectionLabel('papiers') . ' » avec l’habilitation Encadrement. Demandez-le à un gestionnaire des accès SSE.';
+            return $this->wanted->canGeneratePdf() ? null : 'Droit manquant : exporter depuis « ' . Rights::sectionLabel('papiers') . ' » avec l’habilitation Confidentiel (C). Demandez-le à un gestionnaire des accès SSE.';
         }
         foreach (D::MODELS[$model]['needs'] as [$section, $level]) {
             if (!($this->allows)($section, $level)) {

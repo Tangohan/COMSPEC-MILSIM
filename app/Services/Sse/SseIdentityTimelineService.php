@@ -15,7 +15,7 @@ use App\Support\SseWantedCatalog as C;
  * mentions, actions du journal d'audit, reprises Athena/jeu champ par champ (ancien puis nouveau).
  *
  * La lecture ne montre jamais ce que le lecteur n'a pas le droit de voir : mêmes droits que la fiche. Les lignes de vérité de
- * jeu (nature de l'identité, rattachement, reprises avec le jeu) exigent l'habilitation Confidentiel ; un papier ou un
+ * jeu (nature de l'identité, rattachement, reprises avec le jeu) exigent l'habilitation Secret (S) ; un papier ou un
  * contrôle d'une identité d'emprunt ou falsifiée est masqué sans cette habilitation. Chaque source manquante (étape de base
  * de données pas encore passée) est ignorée. Cette classe ne fait que lire.
  */

@@ -161,9 +161,9 @@ final class TenantPermissionCatalog
             ['slug' => 'atak.sse.export', 'module' => 'atak', 'action' => 'export', 'name' => 'Exporter les dossiers de renseignement (PDF)'],
             ['slug' => 'atak.sse.files.admin', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les fichiers SSE (fiches, fusion, photos, journal, extractions, réglages)'],
             ['slug' => 'atak.sse.lore.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Préparer le lore des sessions (personnes, connu ou caché, phases, synchronisation avec le jeu)'],
-            ['slug' => 'atak.sse.clearance.encadrement', 'module' => 'atak', 'action' => 'view', 'name' => 'Lire le renseignement jusqu’au niveau Encadrement'],
-            ['slug' => 'atak.sse.clearance.confidentiel', 'module' => 'atak', 'action' => 'view', 'name' => 'Lire le renseignement jusqu’au niveau Confidentiel'],
-            ['slug' => 'atak.sse.clearance.tres_restreint', 'module' => 'atak', 'action' => 'view', 'name' => 'Lire le renseignement jusqu’au niveau Diffusion très restreinte'],
+            ['slug' => 'atak.sse.clearance.encadrement', 'module' => 'atak', 'action' => 'view', 'name' => 'Lire le renseignement jusqu’au niveau Confidentiel (C)'],
+            ['slug' => 'atak.sse.clearance.confidentiel', 'module' => 'atak', 'action' => 'view', 'name' => 'Lire le renseignement jusqu’au niveau Secret (S)'],
+            ['slug' => 'atak.sse.clearance.tres_restreint', 'module' => 'atak', 'action' => 'view', 'name' => 'Lire le renseignement jusqu’au niveau Très secret (TS)'],
         ];
     }
 

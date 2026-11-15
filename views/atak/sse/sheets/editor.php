@@ -83,10 +83,10 @@ $subjectName = (string) ($subject['person']['display_name'] ?? $subject['identit
                 </select>
             </div>
             <div>
-                <label for="shx-class">Diffusion (classification)</label>
+                <label for="shx-class">Classification</label>
                 <select id="shx-class" name="classification">
                     <?php foreach ($levels as $l): ?>
-                        <option value="<?= $h($l) ?>" <?= $level === $l ? 'selected' : '' ?>><?= $h(SseRedactionService::levelLabel($l)) ?></option>
+                        <option value="<?= $h($l) ?>" <?= $level === $l ? 'selected' : '' ?>><?= $h(SseRedactionService::levelLabel($l) . ' — ' . \App\Support\SseUsClassification::banner($l)) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <p class="hint">Les données au-dessus de ce niveau (identité, lieu, biométrie…) sont remplacées par une barre dans le PDF et dans les variables.</p>

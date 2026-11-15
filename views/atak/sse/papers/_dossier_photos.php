@@ -134,8 +134,8 @@ $gTile = static function (array $it, bool $hero = false) use ($h, $day, $gTitle,
 <?php if ($gLocked): ?>
     <div class="idg-state idg-state--locked">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-        <strong>Photos réservées à l’habilitation Confidentiel</strong>
-        <p>Les images de cette identité ne s’affichent qu’avec l’habilitation Confidentiel, comme sa nature.</p>
+        <strong>Photos réservées à l’habilitation Secret (S)</strong>
+        <p>Les images de cette identité ne s’affichent qu’avec l’habilitation Secret (S), comme sa nature.</p>
     </div>
 <?php else: ?>
 <div class="idg" data-idg>

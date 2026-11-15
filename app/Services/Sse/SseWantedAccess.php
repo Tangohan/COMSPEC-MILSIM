@@ -19,7 +19,7 @@ use App\Support\SseAccessCatalog as Rights;
  *    dossiers SSE, attribution des accès ou gestion des fichiers), jamais en invité ;
  *  - générer le PDF : ce même droit d'écrire ET celui de l'atelier de papiers (écrire dans « papiers » avec l'habilitation
  *    Encadrement) ET celui d'exporter de la section « papiers » ;
- *  - vérité de jeu (nature d'une identité, rattachement à une fiche) : habilitation Confidentiel.
+ *  - vérité de jeu (nature d'une identité, rattachement à une fiche) : habilitation Secret (S).
  *
  * La porte d'entrée (droit d'entrer et confidentialité du portail) reste celle des routes (SsePortalAccessMiddleware et
  * SseConfidentialityMiddleware).

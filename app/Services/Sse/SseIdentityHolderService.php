@@ -15,7 +15,7 @@ use App\Support\SseIdentityCatalog;
  * Ce service dit de quelle nature est l'identité et, pour une identité civile rattachée à un compte, si son nom diffère encore
  * de l'état civil actuel du membre (indicateur « nom différent », avec le lien vers la fiche papiers du membre pour corriger).
  *
- * Lecture seule. Les natures cachées sans l'habilitation Confidentiel (couverture, falsifiée, alias) ne sont jamais nommées.
+ * Lecture seule. Les natures cachées sans l'habilitation Secret (S) (couverture, falsifiée, alias) ne sont jamais nommées.
  */
 final class SseIdentityHolderService
 {
