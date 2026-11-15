@@ -142,6 +142,16 @@ final class SseFileQueryService
         $qrn = (string) $logged['qrn'];
         // Sujet consulté (une seule identité répond) : la consultation compte dans ses contacts antérieurs.
         $hitIds = array_values(array_unique(array_map(static fn (array $i): int => (int) $i['id'], $result['report']['identities'] ?? [])));
+        if (count($hitIds) === 1 && in_array($source, ['game', 'phone', 'seek'], true)) {
+            // Identité sous avis de recherche actif consultée depuis le jeu : détection système.
+            SseWantedDetectionService::tryReport($tenantId, $hitIds[0], $source === 'seek' ? 'seek' : 'file_query', [
+                'source' => 'game',
+                'source_ref' => $qrn !== '' ? $qrn : null,
+                'place' => ($grid = self::str($ctx['grid'] ?? null, 32)) !== null ? 'Grille ' . $grid : null,
+                'operator_label' => $ctx['operator_label'] ?? null,
+                'operator_user_id' => $ctx['operator_user_id'] ?? null,
+            ]);
+        }
         if ((int) $logged['id'] > 0 && count($hitIds) === 1) {
             try {
                 $this->files->db()->execute('UPDATE sse_file_queries SET identity_id = :i WHERE id = :id AND tenant_id = :t', ['i' => $hitIds[0], 'id' => (int) $logged['id'], 't' => $tenantId]);

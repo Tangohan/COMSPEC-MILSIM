@@ -84,6 +84,8 @@ final class SseIdentityRepository
         if ($userId > 0) {
             $this->linkUser($id, $tenantId, $userId);
         }
+        // Chronologie de l'identité : la création est notée (jamais bloquant).
+        (new SseIdentityEventRepository($this->db))->tryAdd($tenantId, $id, 'identity.created', 'Identité créée.', ['ref' => SseIdentityCatalog::identityRef($id)]);
 
         return $id;
     }
@@ -127,8 +129,11 @@ final class SseIdentityRepository
     public function update(int $id, int $tenantId, array $data): bool
     {
         $row = self::normalize($data);
+        $before = SseIdentityEventRepository::ready()
+            ? $this->db->fetchOne('SELECT * FROM sse_identities WHERE id = :id AND tenant_id = :t', ['id' => $id, 't' => $tenantId])
+            : null;
 
-        return $this->db->execute(
+        $changed = $this->db->execute(
             'UPDATE sse_identities SET context_id = :ctx, op_key = :op, person_id = :person, kind = :kind, last_name = :last,
                 first_name = :first, sex = :sex, birth_date = :dob, birth_place = :pob, nationality = :nat, arma_key = :arma,
                 profession = :prof, notes = :notes, category = :cat, side = :side, faction = :faction, language = :lang, zone = :zone,
@@ -160,6 +165,12 @@ final class SseIdentityRepository
                 't' => $tenantId,
             ]
         ) > 0;
+        // Chronologie de l'identité : champs modifiés, ancienne puis nouvelle valeur.
+        if ($changed && $before !== null) {
+            (new SseIdentityEventRepository($this->db))->traceChanges($tenantId, $id, $before, array_merge($before, $row));
+        }
+
+        return $changed;
     }
 
     /** @return array<string, mixed>|null */
@@ -182,7 +193,13 @@ final class SseIdentityRepository
             return false;
         }
 
-        return $this->db->execute('UPDATE sse_identities SET ' . implode(', ', $set) . ', updated_at = :now WHERE id = :id AND tenant_id = :t', $params) > 0;
+        $changed = $this->db->execute('UPDATE sse_identities SET ' . implode(', ', $set) . ', updated_at = :now WHERE id = :id AND tenant_id = :t', $params) > 0;
+        if ($changed) {
+            $what = array_keys(array_intersect_key($images, ['photo_path' => 1, 'signature_path' => 1]));
+            (new SseIdentityEventRepository($this->db))->tryAdd($tenantId, $id, 'identity.photo', 'Photo ou signature du titulaire modifiée.', ['fields' => $what]);
+        }
+
+        return $changed;
     }
 
     public function find(int $id, int $tenantId): ?array

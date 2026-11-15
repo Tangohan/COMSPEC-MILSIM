@@ -20,6 +20,21 @@ final class JnetUi
         'assets/images/night-team.jpg',
         'assets/images/hero-explosion.jpg',
         'assets/images/login-accueil-nvg-forest.jpg',
+        'assets/images/jnet/forward-group-1.jpg',
+        'assets/images/jnet/forward-group-2.jpg',
+        'assets/images/jnet/forward-group-3.jpg',
+    ];
+
+    /**
+     * Photos d'équipe (visages masqués) du héros de l'espace commun : {chemin 1920 px, chemin 960 px pour mobile, largeur de
+     * la grande, hauteur de la grande}. Les grandes sont aussi des photos génériques d'unité (GENERIC_PHOTOS).
+     *
+     * @var list<array{0: string, 1: string, 2: int, 3: int}>
+     */
+    public const FORWARD_GROUP_PHOTOS = [
+        ['assets/images/jnet/forward-group-1.jpg', 'assets/images/jnet/forward-group-1-960.jpg', 1920, 875],
+        ['assets/images/jnet/forward-group-2.jpg', 'assets/images/jnet/forward-group-2-960.jpg', 1920, 1366],
+        ['assets/images/jnet/forward-group-3.jpg', 'assets/images/jnet/forward-group-3-960.jpg', 1818, 1256],
     ];
 
     /** Chemin (relatif à public/) de la photo générique d'une unité : toujours la même pour un même identifiant. */
@@ -28,6 +43,18 @@ final class JnetUi
         $n = count(self::GENERIC_PHOTOS);
 
         return self::GENERIC_PHOTOS[(($unitId % $n) + $n) % $n];
+    }
+
+    /**
+     * Photo d'équipe du héros pour une graine stable (la communauté) : [grande, petite, largeur, hauteur].
+     *
+     * @return array{0: string, 1: string, 2: int, 3: int}
+     */
+    public static function forwardGroup(int $seed): array
+    {
+        $n = count(self::FORWARD_GROUP_PHOTOS);
+
+        return self::FORWARD_GROUP_PHOTOS[(($seed % $n) + $n) % $n];
     }
 
     /**

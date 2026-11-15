@@ -14,7 +14,7 @@
       validity          valid | revoked | suspended… (papier Athena ; "" sinon)
       kind              civil | cover | forged | generated | alias (vérité de jeu : serveur seulement, ne la diffusez pas)
       custody           [[heure, évènement (issued | take | put | transfer), nom, Steam ID]…] (20 derniers)
-    Un papier ramassé garde l'identité de son propriétaire : c'est elle qu'un contrôle d'identité affiche, jamais celle
+    Un papier ramassé garde l'identité de son propriétaire : c'est elle qu'un vérification d'identité affiche, jamais celle
     du porteur (la photo reste le visage du propriétaire, fn_idServer : faceNetId).
     Arma n'a pas de variable par objet d'inventaire : chaque exemplaire est une classe libre (CfgWeapons_instances.hpp)
     reliée au document par le registre du serveur (byClass). Voir docs/guide/Controle_identite.md (Papiers reliés à Athena).

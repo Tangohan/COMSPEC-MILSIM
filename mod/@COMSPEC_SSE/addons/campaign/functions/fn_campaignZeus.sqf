@@ -16,7 +16,7 @@ switch (_mode) do {
         [
             "Campagne SSE : charger ou créer",
             [
-                ["COMBO", ["Campagne sauvegardée", "Charger remplace les organisations, ce que les joueurs savent et le registre des scellés de la partie en cours."], [_ids, _lbls, 0]],
+                ["COMBO", ["Campagne sauvegardée", "Charger remplace les organisations, ce que les joueurs savent et le registre des pièces de la partie en cours."], [_ids, _lbls, 0]],
                 ["EDIT", ["Nouvelle : identifiant", "Lettres et chiffres, par exemple OP-SABLE ou BOOTCAMP."], ""],
                 ["EDIT", "Nouvelle : nom", ""],
                 ["COMBO", "Nouvelle : type", _types],

@@ -742,3 +742,18 @@ Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le con
 - Jeu vers site : le mod (`fn_tocWeb`) envoie l'instantané de la salle TOC d'un camp par la commande COMSPEC Link existante `BriefingPlan.Push`, avec `"channel": "toc_room"`, `side`, `mapId`, `mission_key`, `world`, `rev`, `wc` (ids des commandes web appliquées) et `room` (chronos, main courante, EXCHECK, demandes, FLASH, postes, pertes, satellites, écrans, heure locale). Sans UID de joueur. Une révision plus ancienne de la même mission est ignorée.
 - Site vers jeu : file `atak_web_commands`, genre `toc`, cible `*`, argument `s` = camp ; commandes `timeradd`, `timerstart`, `timerstop`, `timerreset`, `timerdel`, `log`, `flash`, `flashclear`, `exadd`, `exdone`, `exundo`, `exdel`, `reqset`, `kill`, `plnclr`, `plnadd`. Fil ASCII de 480 caractères au plus.
 - Détail, règle d'autorité et correspondance des types de plan : `docs/TOC-WEB.md`.
+
+---
+
+## ICD-SSE-WANTED-001 — Avis de recherche : champ additif `wanted` d'un contrôle d'identité
+
+Canal : `SubmitIdCheck` (aucune nouvelle DLL) → `POST /api/sse/identity/checks` (contrôle ordinaire, sans `kind` particulier). La réponse garde `id`, `ref` et `duplicate` ; elle reçoit en plus un objet `wanted` (champ additif : un client qui l'ignore fonctionne comme avant).
+
+| Champ | Type | Sens |
+|---|---|---|
+| `wanted.wanted` | booléen | l'identité reconnue par le contrôle fait l'objet d'un avis de recherche actif |
+| `wanted.ref` | texte | référence de l'avis (absente si `wanted` est faux) |
+| `wanted.threat_level` | texte | `low`, `medium`, `high` ou `critical` |
+| `wanted.instruction` | texte | consigne courte (120 caractères au plus) |
+
+Sans avis actif, avec une identité non reconnue ou si la base n'est pas prête : `{"wanted": false}`. L'avis est un fait de jeu de rôle (identités fictives). Le contrôle d'une identité sous avis crée aussi, côté site, une détection système (liste des détections du portail SSE, historique de l'identité, notification aux utilisateurs concernés). Affichage en jeu (« RECHERCHÉ ») : pas encore prévu côté mod.

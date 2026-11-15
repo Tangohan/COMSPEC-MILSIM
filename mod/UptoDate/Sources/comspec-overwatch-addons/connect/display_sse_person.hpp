@@ -50,6 +50,7 @@
 //   9544 rendre le dossier actif
 //   9551-9556 libellés page sujet   9560-9565 libellés autres pages
 //   9566 jauge de complétude (revue)   9567 cadre lecture visage   9568 carte signature
+//   9700-9704 page 11 signature (pad tracé, consigne, VALIDER, EFFACER, RETOUR)
 //   9545-9550 dessins des tuiles d'accueil
 //   9574 silhouette  9575 viseur r2t  9576 gabarit  9577 infos cliché
 //   9578 angle  9579 zoom -  9557 zoom +  (page visage)
@@ -838,8 +839,8 @@ class COMSPEC_SsePerson_Dialog {
             idc = 9519;
             text = "SIGNER";
             x = IN_X2; y = SEC_Y; w = HALF_W; h = BTN_H;
-            tooltip = "Signer la fiche avec l’indicatif ATAK de l’opérateur.";
-            action = "[] call comspec_overwatch_connect_fnc_sseSignAtak;";
+            tooltip = "Signer la fiche : tracez votre signature à la souris.";
+            action = "['open'] call comspec_overwatch_connect_fnc_seekSignPad;";
         };
         class BtnSave: COMSPEC_SeekBtnPrimary {
             idc = 9516;
@@ -852,6 +853,39 @@ class COMSPEC_SsePerson_Dialog {
             text = "ANNULER";
             x = (IN_X + TX_W + SP); y = FOOT_Y; w = CANCEL_W; h = BTN_H;
             action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 2; } else { closeDialog 0; };";
+        };
+
+        // ================= PAGE 11 — SIGNATURE (pad tracé à la souris) =================
+        // Les traits sont captés par le dialogue (fn_seekSignPad) ; le pad n'est qu'une surface claire.
+        class SignHint: COMSPEC_SeekText {
+            idc = 9701;
+            text = "";
+            x = IN_X; y = BODY_Y; w = IN_W; h = LBL_H;
+        };
+        class SignPad: RscText {
+            idc = 9700;
+            x = IN_X; y = (BODY_Y + LBL_H + SEEK_U(0.002)); w = IN_W; h = (FOOT_Y - SEEK_U(0.004) - (BODY_Y + LBL_H + SEEK_U(0.002)));
+            colorBackground[] = {1, 1, 1, 1};
+        };
+        class SignOk: COMSPEC_SeekBtnPrimary {
+            idc = 9702;
+            text = "VALIDER";
+            x = IN_X; y = FOOT_Y; w = ((IN_W - 2 * SP) * 0.40); h = BTN_H;
+            tooltip = "Signer la fiche avec ce tracé";
+            action = "['accept'] call comspec_overwatch_connect_fnc_seekSignPad;";
+        };
+        class SignClear: COMSPEC_SeekBtn {
+            idc = 9703;
+            text = "EFFACER";
+            x = (IN_X + (IN_W - 2 * SP) * 0.40 + SP); y = FOOT_Y; w = ((IN_W - 2 * SP) * 0.32); h = BTN_H;
+            tooltip = "Effacer le tracé";
+            action = "['clear'] call comspec_overwatch_connect_fnc_seekSignPad;";
+        };
+        class SignBack: COMSPEC_SeekBtnDanger {
+            idc = 9704;
+            text = "RETOUR";
+            x = (IN_X + (IN_W - 2 * SP) * 0.72 + 2 * SP); y = FOOT_Y; w = ((IN_W - 2 * SP) * 0.28); h = BTN_H;
+            action = "['back'] call comspec_overwatch_connect_fnc_seekSignPad;";
         };
 
         // ================= PAGE 7 — TERRAIN (ancien hub vert) =================

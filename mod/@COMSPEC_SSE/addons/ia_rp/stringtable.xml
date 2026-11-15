@@ -853,9 +853,9 @@
             <French>Insurgé</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_RolePolice">
-            <Original>Police / guard</Original>
-            <English>Police / guard</English>
-            <French>Policier / garde</French>
+            <Original>Security / guard</Original>
+            <English>Security / guard</English>
+            <French>Garde / sécurité</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Role_D">
             <Original>Who this person really is, also used by realistic AIs at checks. Automatic: from its side and papers. Example: Agent for an undercover with a prepared cover.</Original>
@@ -1355,7 +1355,7 @@
         <Key ID="STR_COMSPEC_IARP_Z_St_interpelle">
             <Original>Stopped for a check</Original>
             <English>Stopped for a check</English>
-            <French>Interpellé</French>
+            <French>Appréhendé</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Z_St_ment">
             <Original>Lies (tells its cover story)</Original>
@@ -1593,9 +1593,9 @@
             <French>Identité et papiers</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_G_identity_D">
-            <Original>Name, first name, age, family, address: taken from her SSE identity. Papers: she answers, then the usual ACE identity check starts (3 m at most) and the document window opens if she presents them.</Original>
-            <English>Name, first name, age, family, address: taken from her SSE identity. Papers: she answers, then the usual ACE identity check starts (3 m at most) and the document window opens if she presents them.</English>
-            <French>Nom, prénom, âge, famille, adresse : tirés de son identité SSE. Papiers : elle répond, puis le contrôle d'identité ACE habituel part (3 m au plus) et la fenêtre du document s'ouvre si elle les présente.</French>
+            <Original>Name, first name, age, family, address: taken from her SSE identity. Papers: she answers, then the usual ACE identity verification starts (3 m at most) and the document window opens if she presents them.</Original>
+            <English>Name, first name, age, family, address: taken from her SSE identity. Papers: she answers, then the usual ACE identity verification starts (3 m at most) and the document window opens if she presents them.</English>
+            <French>Nom, prénom, âge, famille, adresse : tirés de son identité SSE. Papiers : elle répond, puis le vérification d'identité ACE habituel part (3 m au plus) et la fenêtre du document s'ouvre si elle les présente.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_G_cover_T">
             <Original>Cover questions</Original>
@@ -1728,9 +1728,9 @@
             <French>Relations</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_G_relations_D">
-            <Original>A person, her neighbours, the village elder, the police, the army, what she thinks of armed groups, whether she trusts you, whether she is threatened.</Original>
-            <English>A person, her neighbours, the village elder, the police, the army, what she thinks of armed groups, whether she trusts you, whether she is threatened.</English>
-            <French>Une personne, ses voisins, le chef du village, la police, l'armée, ce qu'elle pense des groupes armés, sa confiance en vous, si on la menace.</French>
+            <Original>A person, her neighbours, the village elder, the security forces, the army, what she thinks of armed groups, whether she trusts you, whether she is threatened.</Original>
+            <English>A person, her neighbours, the village elder, the security forces, the army, what she thinks of armed groups, whether she trusts you, whether she is threatened.</English>
+            <French>Une personne, ses voisins, le chef du village, les forces de sécurité, l'armée, ce qu'elle pense des groupes armés, sa confiance en vous, si on la menace.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_G_personal_T">
             <Original>Personal</Original>
@@ -2661,9 +2661,9 @@
             <French>Tout son groupe</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Z_EmoGroup_D">
-            <Original>Applies this setting to every AI of their group. Example: a police patrol that is not afraid of weapons.</Original>
-            <English>Applies this setting to every AI of their group. Example: a police patrol that is not afraid of weapons.</English>
-            <French>Applique ce réglage à toutes les IA de son groupe. Exemple : une patrouille de policiers qui ne craint pas les armes.</French>
+            <Original>Applies this setting to every AI of their group. Example: a security patrol that is not afraid of weapons.</Original>
+            <English>Applies this setting to every AI of their group. Example: a security patrol that is not afraid of weapons.</English>
+            <French>Applique ce réglage à toutes les IA de son groupe. Exemple : une patrouille de sécurité qui ne craint pas les armes.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_E_EmoMode_D">
             <Original>Mission setting: follows the global setting (COMSPEC SSE › AI roleplay, can be saved in the mission). Custom: the boxes below (unticking one box is enough). Tick all (normal), Stoic (distrust only), Very emotional (nervousness and fear at least 75), Untick all (neutral: no emotion, she still talks). This AI's setting wins over the global one; it is saved in her AI roleplay profile. Example: Stoic for a bodyguard, untick « Fear of weapons » for a police officer.</Original>
@@ -2671,9 +2671,9 @@
             <French>Réglage de la mission : suit le réglage global (COMSPEC SSE › IA RP, enregistrable dans la mission). Personnalisé : les cases ci-dessous (décocher une case suffit). Tout cocher (normal), Impassible (méfiance seule), Très émotif (nervosité et peur à 75 au moins), Tout décocher (neutre : aucune émotion, elle parle quand même). Le réglage de cette IA l'emporte sur le global ; il est gardé dans son profil IA RP. Exemple : Impassible pour un garde du corps, « Peur des armes » décochée pour un policier.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_E_EmoGroup_D">
-            <Original>Gives this AI's emotion setting to the AIs of her group that have none of their own. Example: the leader of a police patrol set to Stoic, the whole patrol follows.</Original>
-            <English>Gives this AI's emotion setting to the AIs of her group that have none of their own. Example: the leader of a police patrol set to Stoic, the whole patrol follows.</English>
-            <French>Donne le réglage d'émotions de cette IA aux IA de son groupe qui n'ont pas le leur. Exemple : le chef d'une patrouille de policiers réglé Impassible, toute la patrouille suit.</French>
+            <Original>Gives this AI's emotion setting to the AIs of her group that have none of their own. Example: the leader of a security patrol set to Stoic, the whole patrol follows.</Original>
+            <English>Gives this AI's emotion setting to the AIs of her group that have none of their own. Example: the leader of a security patrol set to Stoic, the whole patrol follows.</English>
+            <French>Donne le réglage d'émotions de cette IA aux IA de son groupe qui n'ont pas le leur. Exemple : le chef d'une patrouille de sécurité réglé Impassible, toute la patrouille suit.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_ManE_T">
             <Original>AI emotions</Original>

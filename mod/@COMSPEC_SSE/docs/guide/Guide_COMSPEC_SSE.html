@@ -75,7 +75,7 @@
 <div class="box"><b>Dans le jeu.</b> Ce guide existe aussi dans le jeu : <b>MANUEL SSE</b> (Échap › Manuel de terrain › COMSPEC SSE ; téléphone ATAK › app SSE terrain › JOURNAL › « Guide SSE » ; menu COMSPEC SSE de la barre d'Eden ; module Zeus « Ouvrir le manuel » ; bouton « ? » des fenêtres SSE), avec un sommaire et un champ de recherche. Une page par outil : voir le chapitre 15.</div>
 
 <h1 id="c1">1. Présentation</h1>
-<p>Le SSE (<i>Sensitive Site Exploitation</i>) regroupe tout ce qu'une équipe fait sur un objectif une fois la zone tenue : identifier les personnes, relever les corps, fouiller, saisir et sceller les preuves, exploiter les téléphones et les ordinateurs, puis transmettre. COMSPEC SSE reproduit ce travail dans Arma 3 avec une logique de bout en bout : ce que vous trouvez sur le terrain alimente une base biométrique, un registre des scellés et un tableau des liens qui se remplit au fil des missions.</p>
+<p>Le SSE (<i>Sensitive Site Exploitation</i>) regroupe tout ce qu'une équipe fait sur un objectif une fois la zone tenue : identifier les personnes, relever les corps, fouiller, saisir et sceller les preuves, exploiter les téléphones et les ordinateurs, puis transmettre. COMSPEC SSE reproduit ce travail dans Arma 3 avec une logique de bout en bout : ce que vous trouvez sur le terrain alimente une base biométrique, un registre des pièces et un tableau des liens qui se remplit au fil des missions.</p>
 <h2>Ce que fait le mod</h2>
 <ul>
   <li><b>Biométrie réaliste.</b> Chaque personnage a ses empreintes, ses iris, son visage et son ADN. La qualité d'un relevé dépend des conditions, et la recherche dans la base peut se tromper comme un vrai système.</li>
@@ -88,7 +88,7 @@
 <h2>Qui fait quoi</h2>
 <table>
   <tr><th>Rôle</th><th>Ce qu'il utilise</th><th>Chapitres</th></tr>
-  <tr><td>Joueur, opérateur SSE</td><td>Menus ACE, terminal SEEK II, tableau des liens, registre des scellés</td><td>3 à 8</td></tr>
+  <tr><td>Joueur, opérateur SSE</td><td>Menus ACE, terminal SEEK II, tableau des liens, registre des pièces</td><td>3 à 8</td></tr>
   <tr><td>Chef de mission</td><td>Attributs et modules Eden, campagnes</td><td>9, 10, 12</td></tr>
   <tr><td>Zeus</td><td>Modules ZEN « COMSPEC SSE », tableau vue Zeus, exercice</td><td>11, 13</td></tr>
 </table>
@@ -113,9 +113,9 @@
 <table>
   <tr><th>Où</th><th>Comment</th><th>Ce qu'on y trouve</th></tr>
   <tr><td>Sur une personne</td><td>Interaction ACE, COMSPEC SSE</td><td>Photographier, fouiller, relevés biométriques, sac de tête, lire les documents, terminal SEEK, approfondir l'exploitation, chronologie</td></tr>
-  <tr><td>Sur un objet</td><td>Interaction ACE, SSE</td><td>Examiner, fouiller, collecter, mettre sous scellé, lire les documents, exploiter (radio, téléphone, ordinateur)</td></tr>
-  <tr><td>Sur un équipier</td><td>Interaction ACE</td><td>Remettre mes pièces scellées</td></tr>
-  <tr><td>Sur soi</td><td>Interaction personnelle ACE, COMSPEC SSE</td><td>Journal, terminal SEEK, tableau des liens, registre des scellés, pièces que je détiens, campagne en cours, guide, équiper le kit</td></tr>
+  <tr><td>Sur un objet</td><td>Interaction ACE, SSE</td><td>Examiner, fouiller, collecter, prendre en charge, lire les documents, exploiter (radio, téléphone, ordinateur)</td></tr>
+  <tr><td>Sur un équipier</td><td>Interaction ACE</td><td>Remettre mes pièces</td></tr>
+  <tr><td>Sur soi</td><td>Interaction personnelle ACE, COMSPEC SSE</td><td>Journal, terminal SEEK, tableau des liens, registre des pièces, pièces que je détiens, campagne en cours, guide, équiper le kit</td></tr>
 </table>
 <p>Le raccourci <span class="k">Ctrl+Maj+S</span> ouvre le terminal SEEK (modifiable dans les touches CBA).</p>
 <h2>Le matériel</h2>
@@ -125,7 +125,7 @@
   <tr><td>Kit d'empreintes</td><td>Empreintes et latentes sur les objets</td></tr>
   <tr><td>Kit ADN</td><td>Prélèvement envoyé au laboratoire</td></tr>
   <tr><td>Appareil photo</td><td>Photos de preuve et de visage</td></tr>
-  <tr><td>Sachet de preuve</td><td>Collecte et mise sous scellé</td></tr>
+  <tr><td>Sachet de preuve</td><td>Collecte et prise en charge</td></tr>
   <tr><td>Gants d'examen</td><td>Manipulation des pièces</td></tr>
   <tr><td>Sac de tête (capture)</td><td>À poser sur un prisonnier</td></tr>
 </table>
@@ -165,15 +165,15 @@
 <h2>Le cycle d'une pièce</h2>
 <ol class="steps">
   <li><b>Saisie.</b> « Collecter » un objet ouvre une pièce : numéro <span class="k">P-dossier-0001</span>, objet, étiquette, saisisseur, heure, position.</li>
-  <li><b>Scellé.</b> « Mettre sous scellé » pose un scellé numéroté <span class="k">SC-000000</span>. Le saisisseur devient détenteur.</li>
+  <li><b>Scellé.</b> « Prendre en charge » pose un scellé numéroté <span class="k">SC-000000</span>. Le saisisseur devient détenteur.</li>
   <li><b>Photo.</b> Chaque photographie de la pièce est inscrite (cap et qualité).</li>
   <li><b>Ouverture.</b> Exploiter une pièce scellée brise d'abord le scellé ; c'est inscrit, et un rappel invite à resceller.</li>
-  <li><b>Rescellé.</b> La remettre sous scellé lui donne un nouveau numéro ; les anciens restent au journal.</li>
-  <li><b>Remise.</b> Menu ACE sur un équipier, « Remettre mes pièces scellées » : chaque pièce change de détenteur, avec émargement au journal.</li>
+  <li><b>Rescellé.</b> La reprendre en charge lui donne un nouveau numéro ; les anciens restent au journal.</li>
+  <li><b>Remise.</b> Menu ACE sur un équipier, « Remettre mes pièces » : chaque pièce change de détenteur, avec émargement au journal.</li>
 </ol>
 <h2>Un journal infalsifiable</h2>
 <p>Chaque ligne du journal porte l'empreinte de son contenu et de la ligne précédente. Si une ligne est modifiée après coup, la chaîne casse : le registre affiche la pièce en rouge et désigne la ligne altérée. Pour les exercices, le Zeus peut altérer un journal (« Scellé : altérer le journal ») et voir si l'équipe le repère.</p>
-<p>Le registre se consulte dans le menu personnel, « Registre des scellés ». « Pièces que je détiens » liste ce que vous portez. Le journal part avec la fiche transmise au portail.</p>
+<p>Le registre se consulte dans le menu personnel, « Registre des pièces ». « Pièces que je détiens » liste ce que vous portez. Le journal part avec la fiche transmise au portail.</p>
 
 <h1 id="c7">7. Exploitation numérique et câble DL-7</h1>
 <p>Téléphones, ordinateurs, clés USB, cartes mémoire et radios contiennent des données générées et cohérentes avec leur propriétaire : fichiers, courriels, SMS, contacts, journal d'appels, historique de navigation, éléments supprimés, identifiants, lieux, photos, fichiers chiffrés.</p>
@@ -216,7 +216,7 @@
   <li>sa graine biométrique : les mêmes personnages ont les mêmes empreintes ;</li>
   <li>ses personnages récurrents : même nom, même alias, même appartenance ;</li>
   <li>ses organisations et ce que les joueurs en savent ;</li>
-  <li>les rencontres biométriques et le registre des scellés (les pièces des missions précédentes sont archivées) ;</li>
+  <li>les rencontres biométriques et le registre des pièces (les pièces des missions précédentes sont archivées) ;</li>
   <li>un journal de campagne (une ligne par mission).</li>
 </ul>
 <h2>Trois types</h2>
@@ -237,7 +237,7 @@
 <h2>Dans Athena : gérer et partager</h2>
 <p>Quand le serveur est relié à Athena (COMSPEC Link 2.0.67), chaque sauvegarde est copiée dans <b>Bureau SSE › Campagnes</b> (réglage CBA « Copier les sauvegardes dans Athena », activé par défaut). Le module Zeus « Campagne : envoyer à Athena » le fait à la demande. Sans liaison, collez dans Athena le texte du module « Exporter ».</p>
 <ul>
-  <li><b>Lire</b> : ORBAT des organisations avec ce que les joueurs savent, personnages, registre des scellés avec le journal de chaque pièce, journal de campagne.</li>
+  <li><b>Lire</b> : ORBAT des organisations avec ce que les joueurs savent, personnages, registre des pièces avec le journal de chaque pièce, journal de campagne.</li>
   <li><b>Gérer</b> : renommer, changer de type, dupliquer pour un drill (mêmes personnages et même biométrie, rien de découvert), remettre à zéro les découvertes, archiver, supprimer.</li>
   <li><b>Revenir en jeu</b> : module Zeus « Campagne : récupérer depuis Athena », avec ou sans chargement immédiat.</li>
 </ul>
@@ -340,13 +340,13 @@
   <tr><td>Documents d'identité et types</td><td>Carte d'identité, passeport, permis, carte militaire et types des extensions ; fenêtre « Choisir un document » (pays, type, aperçu, nature, procédé, qualité, nom imprimé, champs, cible ou « Poser au sol ») ; photo d'identité en direct</td><td>Zeus « Donner des papiers » ; Eden « Donner un document » et attribut Papiers</td><td><a href="../guides/documents_et_types.md">documents_et_types.md</a></td></tr>
   <tr><td>Extensions de documents</td><td>Addon tiers qui déclare ses types dans <span class="k">CfgComspecDocuments</span> (champ par champ) et se présente dans <span class="k">CfgComspecDocumentExtensions</span> ; exemple livré dans le pack SSE, coupé par défaut</td><td><span class="k">extensions/example_documents/</span></td><td><a href="../guides/extensions_documents.md">extensions_documents.md</a></td></tr>
   <tr><td>Menu « SSE ROLEPLAY · Extensions »</td><td>Extensions détectées (nom, auteur, version, modèles, aperçu), Activer / Désactiver (serveur), tuto intégré « Comment ça marche » (bouton Aide, config.cpp à copier)</td><td>Échap, Zeus, Eden, réglages CBA</td><td><a href="../guides/menu_extensions.md">menu_extensions.md</a></td></tr>
-  <tr><td>Contrôle d'identité</td><td>Demander, examiner (visionneuse : RECTO / VERSO, ZOOM, SCANNER (ATAK), RELEVER, FERMER), niveaux N0 à N4, fouille et saisie, checkpoints IA, app Contrôle ID, réglages</td><td>Menu ACE « Contrôle d'identité » ; téléphone › Contrôle ID</td><td><a href="../guides/controle_identite.md">controle_identite.md</a></td></tr>
+  <tr><td>Vérification d'identité</td><td>Demander, examiner (visionneuse : RECTO / VERSO, ZOOM, SCANNER (ATAK), RELEVER, FERMER), niveaux N0 à N4, fouille et saisie, checkpoints IA, app Contrôle ID, réglages</td><td>Menu ACE « Vérification d'identité » ; téléphone › Contrôle ID</td><td><a href="../guides/controle_identite.md">controle_identite.md</a></td></tr>
   <tr><td>IA de la zone</td><td>Trois étapes : choisir les IA (liste), les régler (onglets Identité, Papiers, Comportement, Camp ; leur papier dessiné à droite), appliquer ou garder en mémoire de la carte</td><td>Zeus « Configurer une IA » ; éditeur › IA DE LA ZONE</td><td><a href="../guides/ia_de_la_zone.md">ia_de_la_zone.md</a></td></tr>
   <tr><td>Couvertures et « Ma couverture »</td><td>Infiltrer, légende, cohérence, questions des gardes, ce qui brûle une couverture</td><td>Zeus « Donner une couverture » ; téléphone › Ma couverture</td><td><a href="../guides/ma_couverture.md">ma_couverture.md</a></td></tr>
   <tr><td>Tableau des liens</td><td>GRAPHE / ORBAT, filtres, DÉTAIL, vue Zeus et RÉVÉLER</td><td>Téléphone › SSE terrain › SITE ; Zeus « Ouvrir le tableau des liens »</td><td><a href="../guides/tableau_des_liens.md">tableau_des_liens.md</a></td></tr>
   <tr><td>Modules Zeus et Eden</td><td>Catégories COMSPEC · Identité, Renseignement (SSE), Mission ; attributs Eden ; noms exacts</td><td>ZEN ; Eden › Systèmes › Modules et attributs</td><td><a href="../guides/modules_zeus_eden.md">modules_zeus_eden.md</a></td></tr>
   <tr><td>Biométrie et SEEK II</td><td>Relevés, IDENTIFIER, lecture des résultats, réglages du personnage</td><td>Ctrl+Maj+S ; SSE terrain › CIBLE › SEEK II</td><td><a href="../guides/biometrie.md">biometrie.md</a></td></tr>
-  <tr><td>Preuves, scellés et renseignement</td><td>Fouiller, mettre sous scellé, chaîne de possession, paliers d'exploitation, DL-7</td><td>Menu ACE « SSE » sur un objet ; SSE terrain</td><td><a href="../guides/preuves.md">preuves.md</a></td></tr>
+  <tr><td>Preuves, pièces et renseignement</td><td>Fouiller, prendre en charge, chaîne de possession, paliers d'exploitation, DL-7</td><td>Menu ACE « SSE » sur un objet ; SSE terrain</td><td><a href="../guides/preuves.md">preuves.md</a></td></tr>
   <tr><td>Générateur SSE</td><td>Profils, sites, modèles, brief, datasets et niveaux de révélation</td><td>Modules Eden et Zeus</td><td><a href="../guides/generateur.md">generateur.md</a></td></tr>
   <tr><td>Téléphone ATAK : scanner, apps SSE, fouille</td><td>Apps SSE terrain et Contrôle ID, scanner par niveaux, notifications, toutes les fouilles</td><td>Téléphone ATAK ; menu ACE</td><td><a href="../guides/scanner_atak_fouille.md">scanner_atak_fouille.md</a></td></tr>
 </table>

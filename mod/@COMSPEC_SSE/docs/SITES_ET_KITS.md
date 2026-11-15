@@ -109,7 +109,7 @@ Le SSE n'a plus de menu ACE personnel. Le travail passe par l'app **SSE terrain*
 | Geste (interaction ACE sur la cible) | Kit porté | Consommation |
 |---|---|---|
 | Fouiller (personne, objet) | aucun | - |
-| Mettre sous scellé (collecte + scellé) | Sachet de preuve | 1 sachet |
+| Prendre en charge (collecte + scellé) | Sachet de preuve | 1 sachet |
 | Relever les empreintes (personne) | Kit empreintes (sans SEEK II) | 10 relevés par kit |
 | Relever des empreintes latentes (objet, arme au sol, trace de sang) | Kit empreintes | 10 relevés par kit |
 | Prélèvement ADN (personne, trace de sang) | Kit ADN ou kit d'écouvillons | 12 par kit |

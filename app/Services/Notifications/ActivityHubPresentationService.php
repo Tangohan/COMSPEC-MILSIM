@@ -76,6 +76,14 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'sse_wanted_detection' => [
+                'title' => 'Avis de recherche : ' . mb_substr(trim((string) ($payload['label'] ?? 'identité détectée')), 0, 80),
+                'detail' => 'Une identité sous avis de recherche a été repérée (avis ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ').',
+                'href' => is_string($payload['path'] ?? null) && preg_match('#^atak/sse/avis[A-Za-z0-9/_\-]*$#', (string) $payload['path']) === 1
+                    ? url((string) $payload['path']) : url('atak/sse/avis/detections'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'steam_removed_by_owner' => [
                 'title' => 'Compte Steam retiré de votre compte',
                 'detail' => 'Ce compte Steam était aussi relié à un autre compte Athena, dont le titulaire a prouvé qu’il lui appartient en se connectant à Steam. S’il est bien à vous, reliez-le de nouveau avec « Se connecter avec Steam ».',

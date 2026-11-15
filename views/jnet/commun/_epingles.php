@@ -71,7 +71,7 @@ $moveForm = static function (int $id, string $dir, string $label, string $icon, 
         <?php endif; ?>
 
         <?php if ($canPin && $count < $max): ?>
-            <div class="jc-finder" data-jc-finder data-url="<?= $h(url('jnet/liens/recherche')) ?>" data-action="<?= $h(url('jnet/commun/epingles')) ?>" hidden>
+            <div class="jc-finder" data-jc-finder data-url="<?= $h(url('jnet/liens/recherche')) ?>" data-action="<?= $h(url('jnet/commun/epingles')) ?>" data-label="Épingler" hidden>
                 <h2 class="jc-finder__t">Épingler une unité ou une page</h2>
                 <label class="jc-search">
                     <span class="ja-sr">Chercher une unité ou une page à épingler</span>

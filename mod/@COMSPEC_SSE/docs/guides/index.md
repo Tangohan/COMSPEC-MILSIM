@@ -9,14 +9,14 @@ Un guide complet par outil : à quoi il sert, où le trouver (Zeus, Eden, ACE, t
 | Pays des papiers (France, Allemagne, États-Unis… : formats, MRZ, numéros ; ajouter un pays) | Zeus, chef de mission, développeur | [pays_des_papiers.md](pays_des_papiers.md) |
 | Extensions de documents (créer ses types : `CfgComspecDocuments`) | Développeur d'addon | [extensions_documents.md](extensions_documents.md) |
 | Menu « SSE ROLEPLAY · Extensions » | Zeus, administrateur | [menu_extensions.md](menu_extensions.md) |
-| Contrôle d'identité (ACE, visionneuse, niveaux N0 à N4, app Contrôle ID, checkpoints) | Joueur, Zeus | [controle_identite.md](controle_identite.md) |
+| Vérification d'identité (ACE, visionneuse, niveaux N0 à N4, app Contrôle ID, checkpoints) | Joueur, Zeus | [controle_identite.md](controle_identite.md) |
 | IA de la zone (atelier IA) | Zeus | [ia_de_la_zone.md](ia_de_la_zone.md) |
 | Parler aux IA : questions comprises, réponses écrites par le maître du jeu, ce qu'une IA peut évoquer | Joueur, Zeus, chef de mission | [reponses_ia.md](reponses_ia.md) |
 | Couvertures et « Ma couverture » | Joueur infiltré, Zeus | [ma_couverture.md](ma_couverture.md) |
 | Tableau des liens | Joueur, Zeus | [tableau_des_liens.md](tableau_des_liens.md) |
 | Modules Zeus et Eden | Zeus, chef de mission | [modules_zeus_eden.md](modules_zeus_eden.md) |
 | Biométrie et SEEK II | Joueur | [biometrie.md](biometrie.md) |
-| Preuves, scellés et renseignement | Joueur | [preuves.md](preuves.md) |
+| Preuves, pièces et renseignement | Joueur | [preuves.md](preuves.md) |
 | Générateur SSE | Zeus, chef de mission | [generateur.md](generateur.md) |
 | Téléphone ATAK : scanner, apps SSE, fouille | Joueur | [scanner_atak_fouille.md](scanner_atak_fouille.md) |
 

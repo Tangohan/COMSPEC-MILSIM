@@ -132,7 +132,7 @@ switch (_op) do {
         };
         if (_aiPid isEqualTo "done") exitWith { true };
         // Population préparée sur Athena (paquet, bloc « population ») : une identité du même camp et de la même catégorie
-        // (civil, militaire, suspect, HVT), avec ses papiers émis, remise une seule fois.
+        // (civil, militaire, sujet, HVT), avec ses papiers émis, remise une seule fois.
         private _pop = _reg getOrDefault ["population", []];
         private _given = 0;
         if (_pop isNotEqualTo [] && {!isPlayer _u} && {(_u getVariable ["COMSPEC_ID_Carry", "auto"]) isEqualTo "auto"} && {missionNamespace getVariable ["comspec_sse_id_aiPapers", true]}) then {

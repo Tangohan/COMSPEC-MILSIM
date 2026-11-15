@@ -1,5 +1,5 @@
 /*
-    Sous-actions ACE du contrôle d'identité, calculées à l'ouverture du menu (insertChildren) : rien par image.
+    Sous-actions ACE du vérification d'identité, calculées à l'ouverture du menu (insertChildren) : rien par image.
     [_mode, _target, _player, _arg] call comspec_sse_fnc_idActionChildren -> [[action, [], cible]…]
       tokens   documents que la cible m'a présentés (jeton encore valable) : examiner / saisir
       found    documents trouvés à la dernière fouille de la cible : examiner / saisir

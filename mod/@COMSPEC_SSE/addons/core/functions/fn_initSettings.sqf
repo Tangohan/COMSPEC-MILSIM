@@ -23,7 +23,7 @@
 [
     "comspec_sse_requireEquipment",
     "CHECKBOX",
-    ["Matériel SSE obligatoire", "Coché : chaque action demande le bon matériel (ou un équivalent) : appareil photo pour les photos, kit d'empreintes pour les empreintes, kit ADN, terminal SEEK II pour le SEEK et l'iris, sachet de preuve pour ramasser et mettre sous scellé."],
+    ["Matériel SSE obligatoire", "Coché : chaque action demande le bon matériel (ou un équivalent) : appareil photo pour les photos, kit d'empreintes pour les empreintes, kit ADN, terminal SEEK II pour le SEEK et l'iris, sachet de preuve pour ramasser et prendre en charge."],
     ["COMSPEC SSE", "Matériel"],
     true,
     1,

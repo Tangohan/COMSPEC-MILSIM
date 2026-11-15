@@ -1,5 +1,5 @@
 /*
-    Réglages CBA du contrôle d'identité (COMSPEC SSE › Identité). Tous globaux : le serveur décide (papiers des IA,
+    Réglages CBA du vérification d'identité (COMSPEC SSE › Identité). Tous globaux : le serveur décide (papiers des IA,
     réactions, évaluation), les clients affichent les mêmes durées et la même difficulté.
 */
 if (isNil "CBA_fnc_addSetting") exitWith { false };
@@ -9,7 +9,7 @@ private _add = {
     [_var, _type, _label, _cat, _value, 1, {}, false] call comspec_sse_fnc_addSetting;
 };
 
-["comspec_sse_id_enabled", "CHECKBOX", ["Contrôle d'identité", "Papiers d'identité fictifs, contrôle par le menu ACE et l'app Contrôle ID du téléphone."], true] call _add;
+["comspec_sse_id_enabled", "CHECKBOX", ["Vérification d'identité", "Papiers d'identité fictifs, contrôle par le menu ACE et l'app Contrôle ID du téléphone."], true] call _add;
 ["comspec_sse_id_difficulty", "LIST", ["Difficulté des contrôles", "Arcade : les anomalies se voient facilement. Réaliste : un bon faux passe souvent l'examen visuel, la nuit tout est plus dur."], [[0, 1, 2], ["Arcade", "Standard", "Réaliste"], 1]] call _add;
 ["comspec_sse_id_zeusAutoConfig", "CHECKBOX", ["Configurer une IA à sa pose (Zeus)", "Ouvre la fenêtre de configuration (éditeur SSE, IA de la zone) dès qu'un Zeus pose une IA."], false] call _add;
 ["comspec_sse_id_noPapers", "SLIDER", ["IA sans papiers (%)", "Part des IA qui n'ont vraiment aucun papier sur elles et l'affirment au contrôle. 0 : toute IA a au moins une identité générée."], [0, 100, 0, 0]] call _add;
@@ -43,7 +43,7 @@ private _names = _codes apply {
 ["comspec_sse_id_aiFsm", "CHECKBOX", ["IA réalistes au contrôle", "Une IA contrôlée réagit selon son profil, son état et la situation : elle coopère, ment, devient nerveuse, refuse, s'enfuit, se rend, menace ou appelle des renforts. Décoché : réponses simples."], true] call _add;
 ["comspec_sse_id_aiAggro", "SLIDER", ["Agressivité des IA (%)", "Plus haut : les suspects contrôlés sont plus tendus, fuient, menacent et appellent des renforts plus souvent. 50 : réaliste."], [0, 100, 50, 0]] call _add;
 ["comspec_sse_id_cpRadius", "SLIDER", ["Distance des checkpoints (m)", "Rayon de la zone contrôlée par un checkpoint IA quand le module n'en impose pas."], [10, 100, 25, 0]] call _add;
-["comspec_sse_id_autoView", "CHECKBOX", ["Ouvrir les papiers tendus à l'écran", "Quand une IA ou un joueur vous tend ses papiers, le document s'ouvre tout de suite en grand (recto, verso, zoom). Décoché : il faut passer par le menu ACE › Contrôle d'identité › Examiner."], true] call _add;
+["comspec_sse_id_autoView", "CHECKBOX", ["Ouvrir les papiers tendus à l'écran", "Quand une IA ou un joueur vous tend ses papiers, le document s'ouvre tout de suite en grand (recto, verso, zoom). Décoché : il faut passer par le menu ACE › Vérification d'identité › Examiner."], true] call _add;
 ["comspec_sse_id_cpDelay", "SLIDER", ["Délai pour présenter ses papiers (s)", "Temps laissé à un joueur arrêté par un checkpoint IA pour présenter ses papiers (menu ACE personnel › Mes papiers)."], [15, 60, 45, 0]] call _add;
 ["comspec_sse_id_cpAmbient", "CHECKBOX", ["Les checkpoints contrôlent aussi les IA", "Ambiance : de temps en temps, les gardes arrêtent une IA qui passe, lisent ses papiers, puis la laissent partir ou la retiennent."], true] call _add;
 ["comspec_sse_id_curfew", "CHECKBOX", ["Couvre-feu", "Les civils dehors sont plus nerveux quand on les contrôle. Le Zeus peut aussi l'imposer ou le lever en cours de mission."], false] call _add;

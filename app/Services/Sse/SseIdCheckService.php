@@ -174,8 +174,24 @@ final class SseIdCheckService
         ]);
         if (!$stored['duplicate']) {
             $this->matches->remember($tenantId, $mapId, $bioKey, $link['person_id'], $documentIdentity, $subjectSteam);
+            // Identité sous avis de recherche actif : détection système (sans effet sur le contrôle ni sur l'identité).
+            $seek = ($results['N4']['source'] ?? '') === 'seek';
+            SseWantedDetectionService::tryReport($tenantId, $link['identity_id'], $seek ? 'seek' : 'id_check', [
+                'source' => 'game',
+                'source_ref' => (string) $stored['ref'],
+                'place' => ($grid = $str($body['grid'] ?? null, 32)) !== null ? 'Grille ' . $grid : null,
+                'operator_label' => $str($controller['callsign'] ?? null, 80),
+            ]);
         }
 
         return $stored;
+    }
+
+    /** Identité à laquelle le contrôle a été rattaché (papier, personne ou clé biométrique), ou null. */
+    public function identityOf(int $tenantId, int $checkId): ?int
+    {
+        $row = $this->checks->find($checkId, $tenantId);
+
+        return $row !== null && (int) ($row['identity_id'] ?? 0) > 0 ? (int) $row['identity_id'] : null;
     }
 }

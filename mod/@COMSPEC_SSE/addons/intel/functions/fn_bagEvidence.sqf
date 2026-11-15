@@ -11,12 +11,12 @@ params [
 
 if (isNull _entity) exitWith { false };
 if !("COMSPEC_SSE_EvidenceBag" in (items _player)) exitWith {
-    ["Sachet de preuve SSE requis pour mettre la pièce sous scellé.", "WARNING"] call comspec_sse_fnc_notify;
+    ["Sachet de preuve SSE requis pour prendre la pièce en charge.", "WARNING"] call comspec_sse_fnc_notify;
     false
 };
 private _state = [_entity, "evidenceState"] call comspec_sse_fnc_getSection;
 if (!isNil "_state" && {_state isEqualType createHashMap} && {_state getOrDefault ["bagged", false]}) exitWith {
-    [format ["Pièce déjà sous scellé (%1).", _state getOrDefault ["evidenceLabel", "?"]], "WARNING"] call comspec_sse_fnc_notify;
+    [format ["Pièce déjà prise en charge (%1).", _state getOrDefault ["evidenceLabel", "?"]], "WARNING"] call comspec_sse_fnc_notify;
     false
 };
 
@@ -35,7 +35,7 @@ private _label = [_entity] call comspec_sse_fnc_makeEvidenceLabel;
 
 [_entity, _player, "bag", _label] call comspec_sse_fnc_registerActionHistory;
 ["SSE_RecordCollected", [_entity, _label]] call comspec_sse_fnc_emitEvent;
-// Registre des scellés : numéro de scellé et ligne au journal de la pièce (le serveur répond).
+// Registre des pièces : numéro de scellé et ligne au journal de la pièce (le serveur répond).
 if (!isNil "comspec_sse_fnc_custody") exitWith { ["seal", [_entity, _player, ""]] call comspec_sse_fnc_custody; true };
-[format ["Preuve mise sous scellé\n%1", _label], "SUCCESS"] call comspec_sse_fnc_notify;
+[format ["Pièce prise en charge\n%1", _label], "SUCCESS"] call comspec_sse_fnc_notify;
 true

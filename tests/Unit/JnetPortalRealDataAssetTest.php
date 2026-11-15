@@ -41,7 +41,7 @@ final class JnetPortalRealDataAssetTest extends TestCase
         $css = (string) file_get_contents($root . '/public/assets/css/jnet_portal.css');
 
         // L'espace commun est un centre de commandement par salons (voir JnetCommonSpaceTest) : états vides honnêtes par salon.
-        self::assertStringContainsString('commun/_rail.php', $home);
+        self::assertStringContainsString('commun/_bar.php', $home);
         self::assertStringContainsString('commun/_aside.php', $home);
         self::assertStringContainsString('Aucune annonce pour le moment', (string) file_get_contents($root . '/views/jnet/commun/_annonces.php'));
         self::assertStringContainsString('Aucun dossier de renseignement ouvert', (string) file_get_contents($root . '/views/jnet/commun/_cibles.php'));

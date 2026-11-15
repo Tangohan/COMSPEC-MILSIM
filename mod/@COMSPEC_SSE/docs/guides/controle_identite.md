@@ -1,4 +1,4 @@
-# Contrôle d'identité
+# Vérification d'identité
 
 Version anglaise : [controle_identite.en.md](controle_identite.en.md). Sommaire : [index.md](index.md). Référence détaillée (IA réalistes, checkpoints, HVT, API) : [../guide/Controle_identite.md](../guide/Controle_identite.md).
 
@@ -10,13 +10,13 @@ Contrôler les papiers d'une personne (IA ou joueur) : les demander, les examine
 
 | Besoin | Chemin |
 |---|---|
-| Contrôler une personne | Menu ACE sur la personne › **Contrôle d'identité** |
-| Contrôler les occupants d'un véhicule | Menu ACE du véhicule arrêté › **Contrôle d'identité › Contrôler les occupants** ou **Faire descendre** |
+| Contrôler une personne | Menu ACE sur la personne › **Vérification d'identité** |
+| Contrôler les occupants d'un véhicule | Menu ACE du véhicule arrêté › **Vérification d'identité › Contrôler les occupants** ou **Faire descendre** |
 | Mes propres papiers | Menu ACE personnel › **Mes papiers** |
 | Scanner, relevés, BOLO | Téléphone ATAK › Renseignement › app **Contrôle ID** (onglets **CONTRÔLE**, **HISTORIQUE**, **BOLO**) |
 | Réglages | Échap › Options › Réglages des addons › **COMSPEC SSE › Identité** |
 
-## Le menu ACE « Contrôle d'identité »
+## Le menu ACE « Vérification d'identité »
 
 | Action | Durée | Condition | Effet |
 |---|---|---|---|
@@ -67,12 +67,12 @@ Autres boutons de l'app : **Transmettre à Athena** (devient « Transmis »), **
 
 Situation : votre binôme tient un barrage ; une voiture s'arrête, deux civils à bord.
 
-1. Menu ACE du véhicule › **Contrôle d'identité › Faire descendre**, puis sur le conducteur › **Demander les papiers**. Il tend une carte d'identité : elle s'ouvre dans la visionneuse.
+1. Menu ACE du véhicule › **Vérification d'identité › Faire descendre**, puis sur le conducteur › **Demander les papiers**. Il tend une carte d'identité : elle s'ouvre dans la visionneuse.
 2. **RECTO / VERSO**, **ZOOM** : la police du nom paraît différente. Ligne d'état : « Caractères du nom irréguliers… ».
 3. **SCANNER (ATAK)** › **Lire la MRZ (N1)** : « MRZ différente du recto : le nom ne correspond pas. » Verdict **FAUX DOCUMENT**.
 4. **Interroger la base (N3)** : « AVIS : personne RECHERCHÉE (réf. …) ». Le téléphone vibre.
 5. **Relever le document** (ou RELEVER dans la visionneuse) : le relevé va dans votre carnet et sur Athena. **Joindre à une FRM** puis **SPOTREP** pour le rendre compte.
-6. Menottez (ACE) : menu ACE › **Contrôle d'identité › Saisir** le document (chaîne de possession) ; **Fouiller les papiers** pour le reste.
+6. Menottez (ACE) : menu ACE › **Vérification d'identité › Saisir** le document (chaîne de possession) ; **Fouiller les papiers** pour le reste.
 
 ## Les checkpoints IA
 
@@ -82,7 +82,7 @@ Un joueur qui entre : « Papiers, s'il vous plaît » sur l'ATAK, 45 s (réglage
 
 ## Réglages (COMSPEC SSE › Identité)
 
-Contrôle d'identité (oui) · Difficulté des contrôles (Arcade / **Standard** / Réaliste) · Configurer une IA à sa pose (Zeus) (non) · IA sans papiers (0 %) · Photo d'identité en direct (oui) · Pays des papiers (Auto (selon la carte), pays réels puis fictifs) · Pays par défaut des papiers (Altis) (Selon la carte) · Papiers des IA (oui) · Rendre les papiers du kit au respawn (oui) · Civils qui présentent leurs papiers (90 %) · Insurgés porteurs de faux papiers (60 %) · Durée d'une présentation (120 s) · Transmission automatique à Athena (oui ; le réglage de la communauté l'emporte) · Documents et avis d'Athena (oui) · Opération Athena (clé) · IA réalistes au contrôle (oui) · Agressivité des IA (50 %) · Distance des checkpoints (25 m) · Ouvrir les papiers tendus à l'écran (oui) · Délai pour présenter ses papiers (45 s) · Les checkpoints contrôlent aussi les IA (oui) · Couvre-feu (non) · Infiltré captif tant que sa couverture tient (oui) · Soupçons avant que la couverture saute (100) · Distance des témoins (50 m) · Questions de légende (oui) · Délai pour répondre (20 s) · Comparaison du visage (N4) (oui) · Durée de la comparaison du visage (8 s) · Notifier les BOLO (oui).
+Vérification d'identité (oui) · Difficulté des contrôles (Arcade / **Standard** / Réaliste) · Configurer une IA à sa pose (Zeus) (non) · IA sans papiers (0 %) · Photo d'identité en direct (oui) · Pays des papiers (Auto (selon la carte), pays réels puis fictifs) · Pays par défaut des papiers (Altis) (Selon la carte) · Papiers des IA (oui) · Rendre les papiers du kit au respawn (oui) · Civils qui présentent leurs papiers (90 %) · Insurgés porteurs de faux papiers (60 %) · Durée d'une présentation (120 s) · Transmission automatique à Athena (oui ; le réglage de la communauté l'emporte) · Documents et avis d'Athena (oui) · Opération Athena (clé) · IA réalistes au contrôle (oui) · Agressivité des IA (50 %) · Distance des checkpoints (25 m) · Ouvrir les papiers tendus à l'écran (oui) · Délai pour présenter ses papiers (45 s) · Les checkpoints contrôlent aussi les IA (oui) · Couvre-feu (non) · Infiltré captif tant que sa couverture tient (oui) · Soupçons avant que la couverture saute (100) · Distance des témoins (50 m) · Questions de légende (oui) · Délai pour répondre (20 s) · Comparaison du visage (N4) (oui) · Durée de la comparaison du visage (8 s) · Notifier les BOLO (oui).
 
 ## Pièges fréquents
 

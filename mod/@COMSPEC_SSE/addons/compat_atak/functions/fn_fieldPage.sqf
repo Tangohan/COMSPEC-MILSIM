@@ -77,8 +77,8 @@ switch (_tab) do {
                 format ["%1 · %2", [_x] call _esc, [_p getOrDefault ["label", ""]] call _esc],
                 format ["%1 %2", [_p getOrDefault ["seal", "-"]] call _esc, [(_p getOrDefault ["state", ""]) call _tr] call _esc]];
         } forEach _held;
-        _rows pushBack ["buttons", [["Registre des scellés" call _tr, ["registry"] call _act, true]]];
-        _rows pushBack ["text", format ["<t size='0.85' color='#8b98a7'>%1</t>", "Remise en main propre : interaction sur l'équipier (Remettre mes pièces scellées)." call _tr]];
+        _rows pushBack ["buttons", [["Registre des pièces" call _tr, ["registry"] call _act, true]]];
+        _rows pushBack ["text", format ["<t size='0.85' color='#8b98a7'>%1</t>", "Remise en main propre : interaction sur l'équipier (Remettre mes pièces)." call _tr]];
     };
     case "journal": {
         private _j = [] call comspec_sse_fnc_getJournal;
@@ -140,7 +140,7 @@ switch (_tab) do {
             format ["<t size='1.1' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8b98a7'>%2 · %3 · %4 m</t>",
                 [_name] call _esc, _type call _tr, _state call _tr, round (player distance _t)], [], [0.29, 0.64, 1, 1]];
         _rows pushBack ["info", "Exploitation" call _tr, _lvl call _tr];
-        _rows pushBack ["info", "Pièce / scellé" call _tr, [format ["%1 %2", _pid, _piece getOrDefault ["seal", ""]], "non saisie" call _tr] select (_pid isEqualTo "")];
+        _rows pushBack ["info", "Pièce / sachet" call _tr, [format ["%1 %2", _pid, _piece getOrDefault ["seal", ""]], "non saisie" call _tr] select (_pid isEqualTo "")];
         _rows pushBack ["info", "Photos de preuve" call _tr, [str _nPh, "aucune (app Photo)" call _tr] select (_nPh isEqualTo 0)];
 
         private _btns = [

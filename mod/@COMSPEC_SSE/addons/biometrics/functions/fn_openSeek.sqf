@@ -5,7 +5,7 @@
 
     [_target] call comspec_sse_fnc_openSeek -> Bool
     Appelée par : action ACE du kit SEEK II (interaction/fn_kitActions), app SSE terrain du téléphone
-    (compat_atak/fn_fieldAction « seek »), BII-10 (compat_bii), niveau N4 du contrôle d'identité,
+    (compat_atak/fn_fieldAction « seek »), BII-10 (compat_bii), niveau N4 du vérification d'identité,
     Ctrl+Shift+S (fn_openSeekKeybind).
 */
 params [

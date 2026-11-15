@@ -19,7 +19,7 @@
     Rien ne s'affiche par-dessus le jeu : fenêtre du mod si aucune autre n'est ouverte, sinon notification du téléphone
     (centre de notifications de l'ATAK, app Contrôle ID) et menu ACE personnel. Jamais d'accord automatique.
     Journal : chaque contrôle (accepté, refusé, sans réponse) et chaque présentation part à Athena dans la forme d'un
-    contrôle d'identité (fn_fileSubmit : licence acceptée seulement, file hors ligne sans liaison), si la transmission
+    vérification d'identité (fn_fileSubmit : licence acceptée seulement, file hors ligne sans liaison), si la transmission
     automatique est active. Niveau N0 « non fait », constats p2p, p2p_accepted | p2p_refused | p2p_no_answer | p2p_presented.
 */
 params [["_op", "", [""]], ["_a", []]];
@@ -35,7 +35,7 @@ private _phone = { params ["_t", ["_type", "INFO"]]; [_t, _type, "", "IDCHECK"] 
 private _buzz = { if (!isNil "comspec_atak_native_fnc_vibrate") then { [] call comspec_atak_native_fnc_vibrate; }; };
 private _pend = (missionNamespace getVariable ["comspec_sse_idP2pPending", []]) select { !isNull (_x select 0) && {(_x select 1) > time} };
 missionNamespace setVariable ["comspec_sse_idP2pPending", _pend];
-// Papiers reçus : jetons locaux (menu ACE › Contrôle d'identité › Contrôler l'identité), puis visionneuse ou liste.
+// Papiers reçus : jetons locaux (menu ACE › Vérification d'identité › Contrôler l'identité), puis visionneuse ou liste.
 private _receive = {
     params ["_holder", "_docs", "_how"];
     private _tokens = missionNamespace getVariable ["comspec_sse_idTokens", createHashMap];

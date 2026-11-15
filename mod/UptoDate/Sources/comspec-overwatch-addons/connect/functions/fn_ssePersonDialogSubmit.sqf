@@ -191,12 +191,14 @@ if (!(_sig isEqualType [])) then { _sig = []; };
 private _sigJson = "null";
 if ((count _sig) >= 4) then {
     _sigJson = format [
-        '{"callsign":"%1","terminal_uid":"%2","atak_id":"%3","signed_at":"%4",%5}',
+        '{"callsign":"%1","terminal_uid":"%2","atak_id":"%3","signed_at":"%4",%5%6}',
         [_sig select 0] call _escape,
         [_sig select 1] call _escape,
         [_sig select 2] call _escape,
         [_sig select 3] call _escape,
-        _locFrag
+        _locFrag,
+        // Traits de la signature tracée au pad (points 0..1000) : le site redessine le PNG.
+        ["json"] call comspec_overwatch_connect_fnc_seekSignPad
     ];
 };
 

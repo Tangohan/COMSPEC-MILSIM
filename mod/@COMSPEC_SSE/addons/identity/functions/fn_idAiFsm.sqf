@@ -1,5 +1,5 @@
 /*
-    IA réalistes face au contrôle d'identité (SERVEUR) : machine à états CBA (CBA_statemachine_fnc_create, addState,
+    IA réalistes face au vérification d'identité (SERVEUR) : machine à états CBA (CBA_statemachine_fnc_create, addState,
     addTransition). La liste ne contient que les IA engagées dans un contrôle (interpellées par un joueur, un checkpoint
     IA ou le Zeus) : la machine traite UNE unité par image, les autres IA ne coûtent rien. Chaque unité ne recalcule
     son contexte qu'une fois par seconde (fn_idAiBrain), les ordres partent là où elle est locale (comspec_sse_idAiDo).

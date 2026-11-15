@@ -96,7 +96,7 @@ if (!hasInterface) exitWith {};
             format ["État — %1", name _u],
             [["LIST", ["État", "Ordres réels donnés à l'IA (arrêt, fuite, reddition ACE, hostilité, renforts…). Elle réagit de nouveau d'elle-même 30 s plus tard."],
                 [["interpelle", "coopere", "ment", "nerveux", "refuse", "fuit", "agressif", "rendu", "renforts", "calme"],
-                 ["Interpellé", "Coopère", "Ment (présente sa couverture)", "Nerveux", "Refuse", "Fuit", "Agressif", "Se rend", "Appelle des renforts", "Calme (laisser partir)"], 0]]],
+                 ["Appréhendé", "Coopère", "Ment (présente sa couverture)", "Nerveux", "Refuse", "Fuit", "Agressif", "Se rend", "Appelle des renforts", "Calme (laisser partir)"], 0]]],
             { params ["_v", "_args"]; ["send", ["fsmForce", [player, _args select 0, _v select 0]]] call comspec_sse_fnc_idClient; }, {}, [_u]
         ] call comspec_sse_fnc_zenDialog;
     }, "\z\comspec_sse\addons\zeus\data\mod_person.paa"] call comspec_sse_fnc_zenModule;
@@ -199,7 +199,7 @@ if (!hasInterface) exitWith {};
                 ["EDIT", ["Nom", "Nom à surveiller."], ""],
                 ["EDIT", ["Prénom", ""], ""],
                 ["EDIT", ["Alias", ""], ""],
-                ["LIST", ["Niveau", "Surveillance : signalé. Recherché : à interpeller. HVT : cible prioritaire."], [["surveillance", "recherche", "hvt"], ["Sous surveillance", "Recherché", "HVT"], 1]],
+                ["LIST", ["Niveau", "Surveillance : signalé. Recherché : à capturer. HVT : cible prioritaire."], [["surveillance", "recherche", "hvt"], ["Sous surveillance", "Recherché", "HVT"], 1]],
                 ["EDIT", ["Papiers connus", "Numéros de documents, séparés par des virgules."], ""],
                 ["EDIT", ["Signalement", "Description, véhicule, consignes (diffusé avec l'avis)."], ""]
             ],

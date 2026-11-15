@@ -106,7 +106,7 @@ final class SseAccessCatalog
         'fichiers' => [
             'label' => 'Fichiers et sujets',
             'hint' => 'Passage aux fichiers, fiches des sujets, alias, liens, notes, mentions, fiches SEEK II et personnes du référentiel.',
-            'paths' => ['fichiers', 'identites', 'personnes'],
+            'paths' => ['fichiers', 'identites', 'personnes', 'avis'],
             'legacy' => ['read' => 'entrant', 'write' => 'files_manage', 'add' => 'account', 'delete' => 'files_manage', 'export' => 'entrant', 'manage' => 'files_admin'],
         ],
         'photos' => [

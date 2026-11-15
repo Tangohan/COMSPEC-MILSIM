@@ -5,7 +5,7 @@
         military_id), country, number, last, first, dob (AAAA-MM-JJ), expires, holder (objet : personne qui présente,
         facultatif), place (grille, sinon celle du joueur), clock (HH:MM, sinon l'heure du jeu), visual (résultat de
         l'examen visuel : ras | doute | faux | expire…), docId (identifiant SSE du document, facultatif).
-    Effets : (1) fiche du contrôle d'identité en cours complétée (« Document relevé », historique de l'app Contrôle ID),
+    Effets : (1) fiche du vérification d'identité en cours complétée (« Document relevé », historique de l'app Contrôle ID),
       ou nouvelle fiche si ce document n'est pas en cours ; (2) noté au fichier de la mission (contrôle subi) ;
       (3) remonté à Athena (contrôle subi et journal du passage aux fichiers : genre id_record, file hors ligne sans liaison) ;
       (4) évènement CBA local comspec_sse_controlRecorded [clé, relevé].

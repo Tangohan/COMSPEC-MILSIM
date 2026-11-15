@@ -86,7 +86,7 @@ if (_tab isEqualTo "history") then {
     };
 } else {
     if ((count _cur) isEqualTo 0) exitWith {
-        _rows pushBack ["empty", _icon, "Aucun contrôle en cours" call _tr, "Menu ACE sur une personne : Contrôle d'identité, Demander les papiers, puis Contrôler l'identité." call _tr];
+        _rows pushBack ["empty", _icon, "Aucun contrôle en cours" call _tr, "Menu ACE sur une personne : Vérification d'identité, Demander les papiers, puis Contrôler l'identité." call _tr];
     };
     private _d = _cur get "doc";
     private _lv = _cur get "levels";

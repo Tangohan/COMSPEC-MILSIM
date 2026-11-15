@@ -23,7 +23,7 @@ if (_callsign isEqualTo "") then { _callsign = groupId group player; };
 private _date = _rec getOrDefault ["date", date];
 private _dmy = format ["%1/%2/%3", [_date select 2, 2] call CBA_fnc_formatNumber, [_date select 1, 2] call CBA_fnc_formatNumber, _date select 0];
 private _lines = [
-    format ["Contrôle d'identité %1 au %2 : %3 %4, né(e) le %5 à %6.", _rec getOrDefault ["clock", ""], _rec getOrDefault ["grid", ""],
+    format ["Vérification d'identité %1 au %2 : %3 %4, né(e) le %5 à %6.", _rec getOrDefault ["clock", ""], _rec getOrDefault ["grid", ""],
         toUpper (_d getOrDefault ["last", ""]), _d getOrDefault ["first", ""], _d getOrDefault ["dob", ""], _d getOrDefault ["pob", ""]],
     format ["Document : %1 %2 n° %3, expire le %4.", _type, _d getOrDefault ["country", ""], _d getOrDefault ["number", ""], _d getOrDefault ["expires", ""]],
     format ["Verdict : %1.", toUpper _v],
@@ -63,12 +63,12 @@ private _grid8 = if (isNil "comspec_atak_native_fnc_gridRef") then { _rec getOrD
 _draft set ["grid", _grid8];
 _draft set ["date", format ["%1 %2", _dmy, _rec getOrDefault ["clock", ""]]];
 private _loc = nearestLocations [ASLToAGL _pos, ["NameCityCapital", "NameCity", "NameVillage", "NameLocal"], 1500];
-if ((trim (_draft getOrDefault ["place", ""])) isEqualTo "" && {_loc isNotEqualTo []}) then { _draft set ["place", format ["Contrôle d'identité, %1", text (_loc select 0)]]; };
+if ((trim (_draft getOrDefault ["place", ""])) isEqualTo "" && {_loc isNotEqualTo []}) then { _draft set ["place", format ["Vérification d'identité, %1", text (_loc select 0)]]; };
 // Photo du document : pièce jointe de la fiche (si elle n'y est pas déjà et qu'il reste de la place).
 if (_photo isNotEqualTo "" && {_photo isNotEqualTo "releve"}) then {
     private _pieces = uiNamespace getVariable ["COMSPEC_ATAK_FrsPieces", []];
     if ((_pieces findIf { (_x select 1) isEqualTo _photo }) < 0 && {(count _pieces) < 4}) then {
-        _pieces pushBack ["capture", _photo, format ["Document %1", toUpper (_d getOrDefault ["last", ""])], _grid8, "", format ["Contrôle d'identité %1", _rec getOrDefault ["clock", ""]]];
+        _pieces pushBack ["capture", _photo, format ["Document %1", toUpper (_d getOrDefault ["last", ""])], _grid8, "", format ["Vérification d'identité %1", _rec getOrDefault ["clock", ""]]];
     };
     uiNamespace setVariable ["COMSPEC_ATAK_FrsPieces", _pieces];
 };
