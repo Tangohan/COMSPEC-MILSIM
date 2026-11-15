@@ -517,6 +517,11 @@ return function (Router $router) {
     $router->post('/jnet/courrier/{id}/reponse', [JnetPortalController::class, 'mailReply'], [AuthMiddleware::class]);
     $router->get('/jnet/systeme', [JnetPortalController::class, 'system'], [AuthMiddleware::class]);
     $router->post('/jnet/systeme/bascule', [JnetPortalController::class, 'switchPortal'], [AuthMiddleware::class]);
+    // Espace commun : éléments épinglés (le droit de publier pour l'organisation et la visibilité sont revérifiés côté serveur).
+    $router->post('/jnet/commun/epingles', [\App\Controllers\Web\JnetCommonController::class, 'pin'], [AuthMiddleware::class]);
+    $router->post('/jnet/commun/epingles/ordre', [\App\Controllers\Web\JnetCommonController::class, 'reorder'], [AuthMiddleware::class]);
+    $router->post('/jnet/commun/epingles/{id}/retirer', [\App\Controllers\Web\JnetCommonController::class, 'unpin'], [AuthMiddleware::class]);
+    $router->post('/jnet/commun/epingles/{id}/deplacer', [\App\Controllers\Web\JnetCommonController::class, 'move'], [AuthMiddleware::class]);
     /*
      * Pages « Ma situation » du membre dans JNET (/jnet/moi/*), en un seul bloc. Mêmes contrôleurs, mêmes droits et mêmes données
      * qu'avant : la connexion et un contexte de communauté réelle (l'ancienne exception ma-situation d'OrganizationAdminMiddleware,

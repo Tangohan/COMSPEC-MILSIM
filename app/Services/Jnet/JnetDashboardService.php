@@ -45,7 +45,11 @@ final class JnetDashboardService
     public function setIntelligenceGate(?callable $gate): void
     {
         $this->intelGate = $gate;
-        unset($this->memo['intel']);
+        foreach (array_keys($this->memo) as $memoKey) {
+            if ($memoKey === 'intel' || str_starts_with((string) $memoKey, 'targets:')) {
+                unset($this->memo[$memoKey]);
+            }
+        }
     }
 
     /**
@@ -746,6 +750,20 @@ final class JnetDashboardService
      */
     public function loadTargets(int $tenantId): array
     {
+        // Mémo par requête : l'espace commun lit les cibles pour la liste, les épingles et les fiches.
+        $memoKey = 'targets:' . $tenantId;
+        if (!array_key_exists($memoKey, $this->memo)) {
+            $this->memo[$memoKey] = $this->loadTargetsUncached($tenantId);
+        }
+
+        return $this->memo[$memoKey];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function loadTargetsUncached(int $tenantId): array
+    {
         $out = [];
         // Dossiers du renseignement SSE : réservés à ceux qui peuvent entrer au bureau SSE (voir mayReadIntelligence).
         if (!$this->mayReadIntelligence()) {
@@ -1416,6 +1434,104 @@ final class JnetDashboardService
             'tres_faible' => 15,
             default => null,
         };
+    }
+
+    /**
+     * Renseignements récents pour l'espace commun : événements et fiches terrain SSE, du plus récent au plus ancien. Vide
+     * derrière la porte du renseignement (mayReadIntelligence) : rien n'est lu en base sans elle.
+     *
+     * @return list<array{ref: string, kind: string, title: string, detail: string, by: string, at: string, href: string}>
+     */
+    public function intelItems(int $tenantId, int $limit = 40): array
+    {
+        if (!$this->mayReadIntelligence()) {
+            return [];
+        }
+        $limit = max(1, min(80, $limit));
+        $items = [];
+        try {
+            foreach ($this->intelEvents->listForTenant($tenantId, ['limit' => $limit]) as $ev) {
+                $items[] = $this->intelEventItem($ev);
+            }
+        } catch (\Throwable) {
+        }
+        try {
+            foreach ($this->fieldNotes->listForTenant($tenantId, ['limit' => $limit]) as $note) {
+                $items[] = $this->intelNoteItem($note);
+            }
+        } catch (\Throwable) {
+        }
+        usort($items, static fn (array $a, array $b): int => (strtotime($b['at']) ?: 0) <=> (strtotime($a['at']) ?: 0));
+
+        return array_slice($items, 0, $limit);
+    }
+
+    /**
+     * Un renseignement par sa référence (« ev-3 » événement, « fn-8 » fiche terrain), derrière la même porte. Null s'il est
+     * inconnu ou si le lecteur n'a pas accès au renseignement : les deux cas sont indiscernables.
+     *
+     * @return array{ref: string, kind: string, title: string, detail: string, by: string, at: string, href: string}|null
+     */
+    public function findIntelItem(int $tenantId, string $ref): ?array
+    {
+        if (!$this->mayReadIntelligence() || preg_match('/^(ev|fn)-([1-9]\d{0,9})$/', $ref, $m) !== 1) {
+            return null;
+        }
+        try {
+            $row = $m[1] === 'ev'
+                ? $this->intelEvents->findById($tenantId, (int) $m[2])
+                : $this->fieldNotes->findForTenant($tenantId, (int) $m[2]);
+        } catch (\Throwable) {
+            return null;
+        }
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return $m[1] === 'ev' ? $this->intelEventItem($row) : $this->intelNoteItem($row);
+    }
+
+    /**
+     * @param array<string, mixed> $ev
+     * @return array{ref: string, kind: string, title: string, detail: string, by: string, at: string, href: string}
+     */
+    private function intelEventItem(array $ev): array
+    {
+        $href = url('atak/sse');
+        if ((int) ($ev['interest_case_id'] ?? 0) > 0) {
+            $href = url('atak/sse/interet/' . (int) $ev['interest_case_id']);
+        }
+        $title = trim((string) ($ev['event_type_label'] ?? $ev['event_type'] ?? ''));
+
+        return [
+            'ref' => 'ev-' . (int) ($ev['id'] ?? 0),
+            'kind' => 'Événement',
+            'title' => $title !== '' ? $title : 'Événement',
+            'detail' => trim((string) ($ev['summary'] ?? '')),
+            'by' => trim(implode(' · ', array_filter([trim((string) ($ev['unit_label'] ?? '')), trim((string) ($ev['author_label'] ?? ''))]))),
+            'at' => (string) ($ev['event_time'] ?? $ev['created_at'] ?? ''),
+            'href' => $href,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $note
+     * @return array{ref: string, kind: string, title: string, detail: string, by: string, at: string, href: string}
+     */
+    private function intelNoteItem(array $note): array
+    {
+        $id = (int) ($note['id'] ?? 0);
+        $title = trim((string) ($note['title'] ?? $note['note_kind_label'] ?? ''));
+
+        return [
+            'ref' => 'fn-' . $id,
+            'kind' => 'Fiche terrain',
+            'title' => $title !== '' ? $title : 'Fiche terrain',
+            'detail' => trim((string) ($note['place_label'] ?? '')),
+            'by' => '',
+            'at' => (string) ($note['observed_at'] ?? $note['created_at'] ?? ''),
+            'href' => $id > 0 ? url('atak/sse/fiches/' . $id) : url('atak/sse/fiches'),
+        ];
     }
 
     private function formatWhen(string $raw): string

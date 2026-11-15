@@ -40,11 +40,11 @@ final class JnetPortalRealDataAssetTest extends TestCase
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/JnetPortalController.php');
         $css = (string) file_get_contents($root . '/public/assets/css/jnet_portal.css');
 
-        self::assertStringContainsString('jnet-shortcuts', $home);
-        self::assertStringContainsString('Articles de l’unité', $home);
-        self::assertStringContainsString('Documents publiés', $home);
-        self::assertStringContainsString('Aucune opération engagée', $home);
-        self::assertStringContainsString('Aucun article publié', $home);
+        // L'espace commun est un centre de commandement par salons (voir JnetCommonSpaceTest) : états vides honnêtes par salon.
+        self::assertStringContainsString('commun/_rail.php', $home);
+        self::assertStringContainsString('commun/_aside.php', $home);
+        self::assertStringContainsString('Aucune annonce pour le moment', (string) file_get_contents($root . '/views/jnet/commun/_annonces.php'));
+        self::assertStringContainsString('Aucun dossier de renseignement ouvert', (string) file_get_contents($root . '/views/jnet/commun/_cibles.php'));
         self::assertStringNotContainsString('Mission board', $home);
 
         self::assertStringContainsString('L’organigramme n’est pas encore renseigné', $unit);
@@ -122,19 +122,16 @@ final class JnetPortalRealDataAssetTest extends TestCase
 
         // Hiérarchie : cartes par commandement et organigramme (arbre), au choix.
         $views = (string) file_get_contents($root . '/views/jnet/_unit_views.php');
-        self::assertStringContainsString('_unit_views.php', $home);
         self::assertStringContainsString('_unit_views.php', $space);
         self::assertStringContainsString('_unit_tree.php', $views);
         self::assertStringContainsString('_unit_card.php', $views);
         self::assertStringContainsString('jnet.view.', $js);
 
         // Bandeau de diffusion sur les deux écrans.
-        self::assertStringContainsString('_diffusion.php', $home);
         self::assertStringContainsString('_diffusion.php', $space);
         self::assertStringNotContainsString("\$commands", $home);
 
         // Guide sur les deux écrans.
-        self::assertStringContainsString('_guide.php', $home);
         self::assertStringContainsString('_guide.php', $space);
         self::assertStringContainsString('Comment fonctionne JNET', $guide);
 
