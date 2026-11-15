@@ -280,6 +280,9 @@ class PublicCvDataLoader
     private function qualifications(int $userId, int $tenantId): array
     {
         $rows = $this->safe(static fn () => (new QualificationAwardRepository())->listForUser($userId, $tenantId)) ?? [];
+        // Qualifications que le membre (ou son responsable) a masquées de son profil : interrupteur « Visible sur le profil ».
+        $rows = $this->safe(fn () => (new \App\Services\Personnel\QualificationDisplayService($this->pdo()))
+            ->visibleOn($rows, \App\Services\Personnel\QualificationDisplayService::PROFILE)) ?? $rows;
         // Qualifications que la communauté a choisi de ne pas montrer sur la page publique.
         $hidden = array_flip($this->safe(static fn () => (new \App\Repositories\QualificationAwardRuleRepository())->hiddenDefinitionIds($tenantId, 'show_on_profile')) ?? []);
         $out = [];
