@@ -103,7 +103,7 @@
                 return same[i];
             }
         }
-        var note = make('div', 'sse-note sse-note--' + kind);
+        var note = make('div', 'sse-note sse-toast sse-note--' + kind);
         note.setAttribute('data-sse-note', kind);
         note.tabIndex = -1;
         note.appendChild(make('span', 'sse-note__icon', ICONS[kind]));

@@ -6,6 +6,7 @@ namespace App\Services\Cron\Jobs;
 
 use App\Core\Database;
 use App\Services\Cron\CronJobInterface;
+use App\Services\Cron\CronSchedule;
 use App\Services\Sse\SseAnalyticalEngineService;
 use App\Services\Sse\SseAnalystDigestService;
 
@@ -85,7 +86,7 @@ final class SseAnalyticalNightlyCronJob implements CronJobInterface
         }
 
         $mailSummary = '';
-        if ($this->digest !== null) {
+        if ($this->digest !== null && !CronSchedule::isDisabled(SseAnalystDigestService::JOB_KEY)) {
             try {
                 $mail = $this->digest->runAllTenants();
                 $mailSummary = ' · point SSE ' . (string) ($mail['summary'] ?? '');

@@ -11,6 +11,7 @@ use App\Middleware\OrganizationAdminMiddleware;
 use App\Repositories\DataCampaignRepository;
 use App\Services\Cron\CronSchedule;
 use App\Services\Cron\Jobs\DataCampaignCronJob;
+use App\Services\DataCampaign\DataCampaignRecordReader;
 use App\Services\DataCampaign\DataCampaignService;
 use App\Services\Effectifs\MemberChronology;
 use App\Services\Email\EmailEvents;
@@ -20,6 +21,7 @@ use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignCalendar;
 use App\Support\DataCampaignLoginPrompt;
+use App\Support\DataCampaignPage;
 use App\Support\DataCampaignProgress;
 use App\Support\DataCampaignScope;
 use App\Support\DataCampaignSnapshot;
@@ -954,6 +956,19 @@ final class DataCampaignTest extends TestCase
 
     // ------------------------------------------------------------------ migration
 
+    public function testOpeningNotificationCarriesTheOriginAndTheStartDate(): void
+    {
+        $s = $this->service();
+        $created = $s->createCampaign(self::TENANT, 1, ['year' => 2026, 'opens_on' => '2026-12-01', 'due_on' => '2026-12-31']);
+        self::assertTrue($s->openCampaign(self::TENANT, 1, (int) $created['id'])['ok']);
+        $open = array_values(array_filter($this->payloads, static fn (array $n): bool => $n['type'] === DataCampaignService::NOTIFY_OPEN));
+        self::assertNotSame([], $open);
+        self::assertSame('organization', $open[0]['payload']['origin']);
+        self::assertSame('2026-12-01', $open[0]['payload']['opens_on']);
+        self::assertSame('2026-12-31', $open[0]['payload']['due_on']);
+        self::assertArrayHasKey('org', $open[0]['payload']);
+    }
+
     public function testTheMigrationIsIdempotentReversibleAndRegistered(): void
     {
         $sql = (string) file_get_contents(self::ROOT . '/migrations/2026_11_15_090_data_campaigns.sql');
@@ -1102,6 +1117,65 @@ final class DataCampaignTest extends TestCase
         $s->answer(self::TENANT, 12, $id, 'identity', 'flag', 'Mon prénom est mal écrit');
         self::assertFalse($s->confirmAll(self::TENANT, 12, $id)['ok']);
         self::assertFalse($s->confirmAll(self::TENANT, 11, $id + 50)['ok'], 'campagne inconnue');
+    }
+
+    public function testAMissingRequiredValueMakesTheBlockToCompleteWhateverTheLanguage(): void
+    {
+        $row = static fn (string $v, array $extra = []): array => ['state' => '', 'rows' => [['label' => 'Prénom', 'value' => $v] + $extra, ['label' => 'Nom', 'value' => 'Durand']]];
+        // Le lecteur remplace l'absence par « Non renseigné » : c'est bien « À compléter », jamais « À confirmer ».
+        self::assertSame('incomplete', DataCampaignLoginPrompt::blockStatus($row(DataCampaignPage::MISSING)));
+        self::assertSame('incomplete', DataCampaignLoginPrompt::blockStatus($row('', ['missing' => true])));
+        self::assertSame('incomplete', DataCampaignLoginPrompt::blockStatus($row('Alain', ['missing' => true, 'required' => true])));
+        self::assertSame('to_confirm', DataCampaignLoginPrompt::blockStatus($row('Alain')));
+        // Une valeur facultative absente ne bloque pas.
+        self::assertSame('to_confirm', DataCampaignLoginPrompt::blockStatus($row(DataCampaignPage::MISSING, ['missing' => true, 'required' => false])));
+        self::assertSame(['Prénom'], DataCampaignLoginPrompt::missingLabels($row(DataCampaignPage::MISSING)));
+        self::assertTrue(DataCampaignPage::isMissingValue(null));
+        self::assertTrue(DataCampaignPage::isMissingValue(' — '));
+        self::assertFalse(DataCampaignPage::isMissingValue('Non renseigné par erreur'));
+    }
+
+    public function testTheReaderMarksRequiredAndOptionalRowsWithoutChangingTheStoredText(): void
+    {
+        $reader = new DataCampaignRecordReader();
+        $identity = (new \ReflectionMethod($reader, 'identity'))->invoke($reader, [
+            'user' => ['display_name' => 'Pseudo', 'callsign' => 'RAVEN-2'],
+            'snapshot' => ['callsign' => 'RAVEN-2'],
+            'profile' => [],
+            'tenantId' => 1,
+        ]);
+        $byLabel = [];
+        foreach ($identity['rows'] as $r) {
+            $byLabel[$r['label']] = $r;
+        }
+        // Membre qui n'a qu'un indicatif : prénom et nom restent à compléter.
+        self::assertTrue($byLabel['Prénom']['required'] && $byLabel['Prénom']['missing']);
+        self::assertTrue($byLabel['Nom']['required'] && $byLabel['Nom']['missing']);
+        self::assertSame('Non renseigné', $byLabel['Prénom']['value'], 'texte stocké inchangé : les empreintes déjà confirmées restent valides');
+        self::assertFalse($byLabel['Surnom principal']['required']);
+        self::assertFalse($byLabel['Indicatif']['missing']);
+        self::assertSame('incomplete', DataCampaignLoginPrompt::blockStatus($identity));
+        // Les lignes marquées ne changent pas l'empreinte d'un bloc.
+        self::assertSame(DataCampaignSnapshot::hash([['label' => 'Prénom', 'value' => 'Non renseigné']]), DataCampaignSnapshot::hash([$byLabel['Prénom']]));
+
+        $contact = (new \ReflectionMethod($reader, 'contact'))->invoke($reader, ['user' => ['email' => ''], 'snapshot' => [], 'profile' => [], 'tenantId' => 1]);
+        self::assertSame(['Adresse e-mail du compte'], DataCampaignLoginPrompt::missingLabels($contact));
+        $full = (new \ReflectionMethod($reader, 'contact'))->invoke($reader, ['user' => ['email' => 'a@b.fr'], 'snapshot' => [], 'profile' => [], 'tenantId' => 1]);
+        self::assertSame('to_confirm', DataCampaignLoginPrompt::blockStatus($full));
+    }
+
+    public function testConfirmAllIsRefusedByTheServerWhileARequiredValueIsMissing(): void
+    {
+        $s = $this->service();
+        $id = $this->openCampaign($s);
+        $this->reader->data[11]['identity'] = ['Prénom' => 'Non renseigné', 'Nom' => 'Durand'];
+        $result = $s->confirmAll(self::TENANT, 11, $id);
+        self::assertFalse($result['ok']);
+        self::assertStringContainsString('Prénom', $result['message'], 'le message dit quoi compléter');
+        self::assertSame(1, $s->pendingBadge(self::TENANT, 11), 'rien n’a été confirmé');
+        // Valeur présente : « Tout confirmer » repasse.
+        $this->reader->data[11]['identity'] = ['Prénom' => 'Alain', 'Nom' => 'Durand'];
+        self::assertTrue($s->confirmAll(self::TENANT, 11, $id)['ok']);
     }
 
     public function testTheLoginHookIsWiredWithoutBreakingTheReturnUrlOrTheJnetModal(): void

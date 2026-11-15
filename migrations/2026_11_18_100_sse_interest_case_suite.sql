@@ -1,5 +1,5 @@
 -- Dossiers d'intérêt SSE : historique champ par champ, éléments liés et abonnés (les colonnes de sse_interest_cases sont
--- ajoutées par l'étape, voir database/steps/4690_sse_interest_case_suite.php). Aucune donnée n'est ajoutée ni modifiée.
+-- ajoutées par l'étape, voir database/steps/4710_sse_interest_case_suite.php). Aucune donnée n'est ajoutée ni modifiée.
 -- Retour arrière : migrations/rollback/sse_interest_case_suite_down.sql.
 
 CREATE TABLE IF NOT EXISTS sse_interest_case_history (

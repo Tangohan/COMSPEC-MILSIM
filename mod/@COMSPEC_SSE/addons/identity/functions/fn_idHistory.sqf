@@ -21,6 +21,12 @@ private _verdict = {
     params ["_rec"];
     private _best = "ras";
     { if ((_rank find (_y getOrDefault ["verdict", "ras"])) > (_rank find _best)) then { _best = _y getOrDefault ["verdict", "ras"]; }; } forEach (_rec getOrDefault ["levels", createHashMap]);
+    // Avis de recherche relayé par le site après la transmission du contrôle (fn_idWantedCheck) : « recherche », « hvt » pour un type HVT.
+    private _w = _rec getOrDefault ["wanted", []];
+    if (_w isEqualType [] && {(count _w) >= 2}) then {
+        private _wv = ["recherche", "hvt"] select ((_w select 1) isEqualTo "hvt");
+        if ((_rank find _wv) > (_rank find _best)) then { _best = _wv; };
+    };
     _best
 };
 private _render = {

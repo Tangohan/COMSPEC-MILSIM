@@ -146,6 +146,11 @@ class Application
             \App\Support\SseIdentityPackCache::invalidateAfter($this->request, $response);
         } catch (\Throwable) {
         }
+        // Écriture réussie du portail SSE : file « À trier » (cache de 30 s) relue.
+        try {
+            \App\Services\Sse\SseTriageInbox::invalidateAfter($this->request, $response);
+        } catch (\Throwable) {
+        }
         $response->send();
         // Mesure de charge et détecteurs : une ligne de tampon par requête, regroupement après la réponse.
         \App\Services\Watch\WatchRecorder::finish($this->request, $response);

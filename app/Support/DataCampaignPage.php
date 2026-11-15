@@ -17,6 +17,18 @@ final class DataCampaignPage
     /** Valeur que le lecteur de fiche écrit quand une donnée manque. */
     public const MISSING = 'Non renseigné';
 
+    /**
+     * POINT UNIQUE : une valeur est manquante quand elle est vide, un tiret ou le libellé « Non renseigné » que le lecteur de
+     * fiche met à la place d'une donnée absente. Le libellé est stocké en français (c'est aussi ce que l'empreinte voit) :
+     * la traduction n'a lieu qu'à l'affichage, la comparaison ne dépend donc pas de la langue du membre.
+     */
+    public static function isMissingValue(mixed $value): bool
+    {
+        $v = is_scalar($value) ? trim((string) $value) : '';
+
+        return $v === '' || $v === '—' || $v === '-' || $v === self::MISSING;
+    }
+
     /** Ordre d'affichage : ce que le membre doit faire d'abord, puis le suivi, puis ce qui est fait. */
     private const PRIORITY = ['incomplete' => 0, 'to_confirm' => 1, 'flagged' => 2, 'ok' => 3];
 
@@ -236,7 +248,7 @@ final class DataCampaignPage
                 ];
             })(),
             DataCampaignBlocks::IDENTIFIERS => [
-                $item('Membre', self::maskId($present($get('Numéro de membre de la communauté')))),
+                $item('Membre', self::maskId($present($get('Matricule de votre organisation')))),
                 $item('Matricule', self::maskId($present($get('Matricule de service')))),
                 $item('Trigramme', $present($get('Trigramme'))),
                 $item('Radio', $present($get('Indicatif radio'))),

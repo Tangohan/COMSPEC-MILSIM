@@ -559,6 +559,7 @@ return function (Router $router) {
     $router->post('/jnet/moi/carnet-de-vol/{entryId}/supprimer', $moi(PilotLogbookController::class, 'delete'), $mwMoi);
     $router->get('/jnet/moi/mes-papiers', $moi($moiPapers, 'mine'), $mwMoi);
     $router->post('/jnet/moi/mes-papiers/couverture', $moi($moiCover, 'generateMine'), $mwMoi);
+    $router->post('/jnet/moi/mes-papiers/etat-civil', $moi($moiPapers, 'alignMine'), $mwMoi);
     $router->get('/jnet/moi/mes-papiers/couverture/{exportId}/telecharger', $moi($moiCover, 'downloadMine'), $mwMoi);
     $router->get('/jnet/moi/liaison-atak', $moi(MemberSituationController::class, 'liaisonAtak'), $mwMoi);
     $router->get('/jnet/moi/appareils', $moi(MemberSituationController::class, 'appareils'), $mwMoi);
@@ -1219,6 +1220,10 @@ return function (Router $router) {
     $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
     $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
+    $router->get('/atak/sse/avis/pieces/{id}/image', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentImage'], $mwSsePortal);
+    $router->post('/atak/sse/avis/pieces/{id}/retirer', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentRemove'], $mwSsePortal);
+    $router->post('/atak/sse/avis/pieces/{id}/principale', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentMain'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/pieces', [\App\Controllers\Web\SseWantedNoticeController::class, 'attachmentAdd'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);
@@ -1301,6 +1306,8 @@ return function (Router $router) {
     $router->get('/atak/sse/papiers/membres', [\App\Controllers\Web\SseIdentityRegistryController::class, 'membersIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'memberShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilAlign'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/etat-civil/volontaire', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilOverride'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identites/{identityId}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'identityPhoto'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], $mwSsePortal);
@@ -1357,6 +1364,8 @@ return function (Router $router) {
     $router->get('/atak/sse/objets/{type}', [SsePortalController::class, 'objectRegistry'], $mwSsePortal);
     $router->get('/atak/sse/chronologie', [SsePortalController::class, 'timeline'], $mwSsePortal);
     $router->get('/atak/sse/anomalies', [SsePortalController::class, 'anomalies'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier', [\App\Controllers\Web\SseTriageController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/a-trier/compteurs', [\App\Controllers\Web\SseTriageController::class, 'counters'], $mwSsePortal);
     $router->get('/atak/sse/rapprochements', [SsePortalController::class, 'suggestionsIndex'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/valider', [SsePortalController::class, 'suggestionAccept'], $mwSsePortal);
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
@@ -2550,6 +2559,8 @@ return function (Router $router) {
     // Fiche membre › Identité & papiers (COMSPEC IDENTITY) : identités, papiers, kit de mission.
     $router->post('/back-office/ressources/effectifs/membres/{id}/qualifications-suggerees', [\App\Controllers\Admin\MemberQualificationSuggestionsController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilAlign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/etat-civil/volontaire', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilOverride'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites/{identityId}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'identityPhoto'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -3356,6 +3367,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
     // Catalogue du mod SSE (ICD-SSE-CATALOGUE-001) : listes des modules Zeus, des attributs Eden et des écrans du joueur.
     $router->get('/api/game/v1/sse/catalogue', [\App\Controllers\Api\Game\GameSseCatalogueApiController::class, 'show']);
+    // Fiches du portail SSE (avis de recherche, fiches émises) lues par le téléphone ATAK (ICD-SSE-FICHES-001) : filtrées par la
+    // classification et l'habilitation du porteur ; une référence qui porte « / » s'écrit %2F (ou ?ref=).
+    $router->get('/api/game/v1/sse/fiches', [\App\Controllers\Api\Game\GameSseFichesApiController::class, 'show']);
+    $router->get('/api/game/v1/sse/fiches/{ref}', [\App\Controllers\Api\Game\GameSseFichesApiController::class, 'detail']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     // Auto-test de la liaison (Dépannage liaison en jeu) : contrôles serveur, lecture seule.
@@ -3717,6 +3732,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/notes/{id}/pieces', [SseFieldNoteApiController::class, 'attachmentStore']);
     // Avis de recherche (téléphone en jeu).
     $router->get('/api/sse/wanted', [SseApiController::class, 'wanted']);
+    $router->get('/api/sse/wanted/notices', [SseApiController::class, 'wantedNotices']);
     $router->get('/api/sse/campaigns', [\App\Controllers\Api\SseCampaignApiController::class, 'index']);
     $router->post('/api/sse/campaigns/sync', [\App\Controllers\Api\SseCampaignApiController::class, 'sync']);
     $router->get('/api/sse/campaigns/{key}/text', [\App\Controllers\Api\SseCampaignApiController::class, 'text']);

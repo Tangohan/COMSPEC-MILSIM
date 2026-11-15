@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignLoginPrompt;
+use App\Support\DataCampaignOrigin;
 use App\Support\DataCampaignPage;
 
 /**
@@ -19,6 +20,8 @@ use App\Support\DataCampaignPage;
  * @var string $step « accueil », une clé de bloc ou « recap »
  * @var list<array<string, mixed>> $history campagnes passées du membre
  * @var array<string, mixed>|null $unitFollow suivi de l'unité pour qui la commande
+ * @var array<string, mixed>|null $preamble préambule de la campagne (DataCampaignOrigin::describe), recalculé s'il manque
+ * @var list<array<string, mixed>> $otherCampaigns autres campagnes ouvertes qui concernent le membre (même forme)
  * @var string $csrfToken
  */
 
@@ -48,6 +51,8 @@ $icons = [
     'back' => '<path d="m14 6-6 6 6 6"/>',
     'alert' => '<path d="M12 4 3 19.5h18z"/><path d="M12 10v4.5M12 17.2v.1"/>',
     'edit' => '<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',
+    'info' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2M12 7.8v.1"/>',
+    'chev' => '<path d="m7 10 5 5 5-5"/>',
 ];
 $requestLabel = static function (array $f): string {
     if ((string) ($f['status'] ?? '') === 'handled') {
@@ -93,6 +98,13 @@ $stepUrl = static fn (string $key): string => jnet_moi_url('fiabilisation', ['et
     $due = DataCampaignPage::due((string) ($campaign['due_on'] ?? ''), $today, $confirmed);
     $later = !empty($comingFromLogin) ? jnet_moi_url('fiabilisation/plus-tard') : '';
     $isBlock = isset($blocks[$step]);
+    $pre = is_array($preamble ?? null) ? $preamble : DataCampaignOrigin::describe($campaign, ['lang' => function_exists('locale') ? locale() : 'fr', 'today' => $today]);
+    $otherCampaigns = is_array($otherCampaigns ?? null) ? $otherCampaigns : [];
+    $stateTone = ['upcoming' => 'dcm-badge--info', 'last_day' => 'dcm-badge--warn', 'overdue' => 'dcm-badge--warn'];
+    $preBadge = $pre['state'] !== DataCampaignOrigin::ONGOING && $pre['state'] !== DataCampaignOrigin::UNDATED && !$confirmed
+        ? '<span class="dcm-badge ' . ($stateTone[$pre['state']] ?? 'dcm-badge--neutral') . '">' . $h(DataCampaignOrigin::stateLabel($pre['state'], $pre['lang'])) . '</span>'
+        : '';
+    $contactUrl = url('jnet/courrier/nouveau');
     ?>
 
     <?php if ($step !== DataCampaignLoginPrompt::STEP && ($isBlock || $step === 'recap')): ?>
@@ -105,6 +117,19 @@ $stepUrl = static fn (string $key): string => jnet_moi_url('fiabilisation', ['et
                 <li><a class="dcm-step dcm-step--recap<?= $step === 'recap' ? ' is-current' : '' ?>" href="<?= $h($stepUrl('recap')) ?>"<?= $step === 'recap' ? ' aria-current="step"' : '' ?>><span aria-hidden="true"><?= $svg($icons['shield']) ?></span><span class="dcm-sr">Récapitulatif</span></a></li>
             </ol>
         </nav>
+        <details class="dcm-pre dcm-pre--mini" id="dcm-pre-mini">
+            <summary class="dcm-pre__sum">
+                <?= $svg($icons['info']) ?>
+                <span class="dcm-pre__line"><?= $h($pre['summary']) ?></span>
+                <?= $preBadge ?>
+                <?= $svg($icons['chev'], 'dcm-svg dcm-pre__chev') ?>
+            </summary>
+            <ul class="dcm-pre__list">
+                <li><?= $h($pre['who']) ?></li>
+                <li><?= $h($pre['when']) ?></li>
+                <li><?= $h($pre['changes']) ?></li>
+            </ul>
+        </details>
     <?php endif; ?>
 
     <?php if ($step === DataCampaignLoginPrompt::STEP):
@@ -131,6 +156,38 @@ $stepUrl = static fn (string $key): string => jnet_moi_url('fiabilisation', ['et
             return $out . '<a class="dcm-btn ' . ($primary ? 'dcm-btn--outline' : 'dcm-btn--ghost') . '" href="' . $h($stepUrl($row['key'])) . '" aria-describedby="' . $id . '">' . $h(DataCampaignPage::actionLabel($status)) . '</a></li>';
         };
         ?>
+        <section class="dcm-pre" aria-labelledby="dcm-pre-title">
+            <details class="dcm-pre__box" data-dcm-pre="<?= $h($pre['key']) ?>" open>
+                <summary class="dcm-pre__sum">
+                    <span class="dcm-ic"><?= $svg($icons['info']) ?></span>
+                    <span class="dcm-pre__head">
+                        <h2 class="dcm-pre__title" id="dcm-pre-title">Pourquoi cette demande ?</h2>
+                        <span class="dcm-pre__line"><?= $h($pre['summary']) ?></span>
+                    </span>
+                    <?= $preBadge ?>
+                    <?= $svg($icons['chev'], 'dcm-svg dcm-pre__chev') ?>
+                </summary>
+                <ul class="dcm-pre__list">
+                    <?php foreach ($pre['bullets'] as $bullet): ?><li><?= $h($bullet) ?></li><?php endforeach; ?>
+                </ul>
+                <p class="dcm-pre__contact"><span><?= $h($pre['contact']) ?></span> <a class="dcm-btn dcm-btn--ghost" href="<?= $h($contactUrl) ?>"><?= $h($pre['contact_link']) ?></a></p>
+            </details>
+        </section>
+
+        <?php if ($otherCampaigns !== []): ?>
+            <section class="dcm-others" aria-labelledby="dcm-others-title">
+                <h2 class="dcm-group__title" id="dcm-others-title">Autres campagnes ouvertes <span class="dcm-count"><?= count($otherCampaigns) ?></span></h2>
+                <ul class="dcm-others__list">
+                    <?php foreach ($otherCampaigns as $o): ?>
+                        <li>
+                            <span class="dcm-others__name"><?= $h($o['title'] !== '' ? $o['title'] : $o['who_short']) ?></span>
+                            <span class="dcm-others__meta"><?= $h($o['summary']) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
+
         <section class="dcm-hero<?= $confirmed ? ' is-done' : '' ?>" aria-labelledby="dcm-hero-title">
             <div class="dcm-hero__row">
                 <div class="dcm-hero__main">
@@ -168,17 +225,6 @@ $stepUrl = static fn (string $key): string => jnet_moi_url('fiabilisation', ['et
             </section>
         <?php endif; ?>
 
-        <?php if (!$confirmed): ?>
-            <section class="dcm-reassure" aria-label="Ce qu’il faut savoir">
-                <p><?= $svg($icons['clock']) ?><span><strong>Environ 2 minutes.</strong> Un coup d’œil par bloc suffit.</span></p>
-                <p><?= $svg($icons['lock']) ?><span><strong>Vos réponses restent privées.</strong> Seuls vous et l’encadrement de la campagne les voient.</span></p>
-                <p><?= $svg($icons['shield']) ?><span><strong>Rien ne change sans validation.</strong> Une correction demandée passe par la validation habituelle.</span></p>
-                <details class="dcm-more">
-                    <summary>Et si je ne fais rien ?</summary>
-                    <p>Rien n’est supprimé ni bloqué : votre fiche reste telle quelle. Elle ne sera simplement pas considérée comme fiable, vous recevrez des rappels, l’encadrement verra qu’elle n’est pas confirmée et cette page vous sera reproposée à votre prochaine connexion.</p>
-                </details>
-            </section>
-        <?php endif; ?>
 
         <?php if (!$confirmed || $later !== ''): ?>
         <div class="dcm-cta" role="group" aria-label="Actions">
@@ -217,13 +263,19 @@ $stepUrl = static fn (string $key): string => jnet_moi_url('fiabilisation', ['et
                 <p class="dcm-alert"><?= $svg($icons['alert']) ?><span>Cette partie a changé depuis votre dernière réponse : relisez-la et répondez de nouveau.</span></p>
             <?php endif; ?>
 
+            <?php $toComplete = $status === 'incomplete' ? DataCampaignLoginPrompt::missingLabels($b) : []; ?>
+            <?php if ($status === 'incomplete'): ?>
+                <p class="dcm-alert"><?= $svg($icons['alert']) ?><span><?= $toComplete !== []
+                    ? 'À compléter : ' . $h(implode(', ', $toComplete)) . '. Choisissez « À corriger » ci-dessous et indiquez la bonne valeur : l’encadrement la valide. « Tout confirmer » n’est pas proposé tant qu’il manque une information.'
+                    : 'Aucune donnée n’est enregistrée dans cette partie. Choisissez « À corriger » ci-dessous pour le dire à l’encadrement.' ?></span></p>
+            <?php endif; ?>
             <div class="dcm-detail">
                 <?php if (!empty($b['portrait'])): ?>
                     <img class="dcm-portrait" src="<?= $h($b['portrait']) ?>" alt="Votre portrait enregistré" width="112" height="112" loading="lazy">
                 <?php endif; ?>
                 <?php if ($b['rows'] !== []): ?>
                     <dl class="dcm-rows">
-                        <?php foreach ($b['rows'] as $row): $missing = (string) $row['value'] === DataCampaignPage::MISSING; ?>
+                        <?php foreach ($b['rows'] as $row): $missing = DataCampaignPage::isMissingValue($row['value'] ?? ''); ?>
                             <div class="dcm-rows__line<?= $missing ? ' is-missing' : '' ?>">
                                 <dt><?= $h($row['label']) ?></dt>
                                 <dd><?= $h($row['value']) ?></dd>

@@ -81,14 +81,31 @@ final class DataCampaignLoginPrompt
         if ($rows === [] && empty($block['portrait'])) {
             return 'incomplete';
         }
-        foreach ($rows as $row) {
-            $value = trim((string) (is_array($row) ? ($row['value'] ?? '') : ''));
-            if ($value === '' || $value === '—' || $value === '-') {
-                return 'incomplete';
+
+        return self::missingLabels($block) !== [] ? 'incomplete' : 'to_confirm';
+    }
+
+    /**
+     * Libellés des lignes REQUISES dont la valeur manque (vide, tiret ou « Non renseigné »). Une ligne dit elle-même si elle
+     * est requise (`required`) et manquante (`missing`) : le lecteur de fiche le sait mieux que le texte affiché. Une ligne
+     * sans ces indications (anciennes lectures, lecteurs de test) est requise et jugée sur sa valeur.
+     *
+     * @param array<string, mixed> $block
+     * @return list<string>
+     */
+    public static function missingLabels(array $block): array
+    {
+        $out = [];
+        foreach (is_array($block['rows'] ?? null) ? $block['rows'] : [] as $row) {
+            if (!is_array($row) || !(bool) ($row['required'] ?? true)) {
+                continue;
+            }
+            if (!empty($row['missing']) || DataCampaignPage::isMissingValue($row['value'] ?? '')) {
+                $out[] = (string) ($row['label'] ?? '');
             }
         }
 
-        return 'to_confirm';
+        return $out;
     }
 
     /**

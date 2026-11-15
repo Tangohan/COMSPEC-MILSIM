@@ -7,9 +7,12 @@ namespace App\Services\Sse;
 use App\Repositories\SseAuditLogRepository;
 use App\Repositories\SseIdentityEventRepository;
 use App\Repositories\SseIdentityRepository;
+use App\Repositories\SseWantedExtrasRepository;
 use App\Repositories\SseWantedNoticeRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Support\SseWantedCatalog as C;
+use App\Support\SseWantedCodes;
+use App\Support\SseWantedPhysical;
 use App\Support\SseWantedRealNames;
 
 /**
@@ -29,6 +32,7 @@ final class SseWantedService
         private ?SseIdentityEventRepository $events = null,
         private ?SseWantedSettingsRepository $settings = null,
         private ?SseAuditLogRepository $audit = null,
+        private ?SseWantedExtrasRepository $extras = null,
     ) {
         $this->notices ??= new SseWantedNoticeRepository();
         $this->identities ??= new SseIdentityRepository();
@@ -41,9 +45,10 @@ final class SseWantedService
      *
      * @param array<string, mixed> $input
      * @param array<string, mixed> $config réglages de la communauté
+     * @param string $lang langue du texte composé à partir des codes (« fr » ou « en »)
      * @return array{data: array<string, mixed>, errors: list<string>}
      */
-    public static function validate(array $input, array $config, ?\DateTimeImmutable $now = null): array
+    public static function validate(array $input, array $config, ?\DateTimeImmutable $now = null, string $lang = 'fr'): array
     {
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $errors = [];
@@ -63,13 +68,33 @@ final class SseWantedService
             $errors[] = 'État « armé et dangereux » invalide.';
             $armed = 'unknown';
         }
+        // Codes de motifs et de mesures : codes connus de la communauté seulement ; le texte vide est composé à partir d'eux.
+        $selection = SseWantedCodes::normalizeSelection([
+            SseWantedCodes::REASONS => $input['codes_reasons'] ?? [],
+            SseWantedCodes::MEASURES => $input['codes_measures'] ?? [],
+        ], $config);
         $reason = C::text($input['reason'] ?? '', C::REASON_MAX);
+        if ($reason === '' && $selection[SseWantedCodes::REASONS] !== []) {
+            $reason = SseWantedCodes::compose($selection[SseWantedCodes::REASONS], SseWantedCodes::REASONS, $lang === 'en' ? 'en' : 'fr', $config);
+        }
         if (mb_strlen($reason) < self::MIN_TEXT) {
             $errors[] = 'Indiquez les motifs ou la raison de l’intérêt (au moins quelques mots).';
         }
         $instructions = C::text($input['instructions'] ?? '', C::INSTRUCTIONS_MAX);
+        if ($instructions === '' && $selection[SseWantedCodes::MEASURES] !== []) {
+            $instructions = SseWantedCodes::compose($selection[SseWantedCodes::MEASURES], SseWantedCodes::MEASURES, $lang === 'en' ? 'en' : 'fr', $config);
+        }
         if ($instructions === '') {
             $instructions = C::text($config['default_instructions_fr'] ?? '', C::INSTRUCTIONS_MAX);
+        }
+        $templateKey = is_string($input['codes_template'] ?? null) ? $input['codes_template'] : '';
+        $template = $templateKey !== '' && isset(SseWantedCodes::templates($config)[$templateKey]) ? $templateKey : null;
+        $physical = SseWantedPhysical::normalize(is_array($input['physical'] ?? null) ? $input['physical'] : []);
+        foreach ([$physical['marks'] ?? '', $physical['tattoos'] ?? '', $physical['scars'] ?? '', $physical['clothing'] ?? '', $physical['notes'] ?? ''] as $text) {
+            if (is_string($text) && SseWantedRealNames::find($text) !== null) {
+                $errors[] = 'Le signalement ne cite pas d’organisation réelle : utilisez un texte fictif.';
+                break;
+            }
         }
         $issuedRaw = $input['issued_at'] ?? '';
         $issued = C::dateTime($issuedRaw);
@@ -117,6 +142,8 @@ final class SseWantedService
                 'contact_detail' => $contactDetail !== '' ? $contactDetail : null,
                 'issued_at' => $issued,
                 'expires_at' => $expires,
+                'codes' => SseWantedCodes::snapshot($selection, $config, $template),
+                'physical' => $physical,
             ],
             'errors' => array_values(array_unique($errors)),
         ];
@@ -126,7 +153,7 @@ final class SseWantedService
      * Place un avis sur une identité de la communauté.
      *
      * @param array<string, mixed> $input
-     * @return array{ok: true, id: int, ref: string}|array{ok: false, error: string, errors: list<string>}
+     * @return array{ok: true, id: int, ref: string, warnings: list<string>}|array{ok: false, error: string, errors: list<string>}
      */
     public function place(int $tenantId, int $identityId, array $input, SseWantedAccess $access): array
     {
@@ -141,11 +168,14 @@ final class SseWantedService
             return ['ok' => false, 'error' => 'identity', 'errors' => ['Identité introuvable.']];
         }
         $config = $this->settings->get($tenantId);
-        $checked = self::validate($input, $config);
+        $checked = self::validate($input, $config, null, ($input['lang'] ?? '') === 'en' ? 'en' : 'fr');
         if ($checked['errors'] !== []) {
             return ['ok' => false, 'error' => 'invalid', 'errors' => $checked['errors']];
         }
         $data = $checked['data'];
+        $codes = $data['codes'];
+        $physical = $data['physical'];
+        unset($data['codes'], $data['physical']);
         $data['authority'] = (string) $config['authority_fr'];
         $id = $this->notices->create($tenantId, $identityId, $data, (string) $config['ref_format'], $access->userId());
         if ($id === null) {
@@ -153,14 +183,30 @@ final class SseWantedService
         }
         $notice = $this->notices->find($tenantId, $id);
         $ref = (string) ($notice['ref'] ?? '');
+        $warnings = [];
+        $hasCodes = $codes['reasons'] !== [] || $codes['measures'] !== [];
+        if ($hasCodes || $physical !== null) {
+            $saved = false;
+            try {
+                $saved = ($this->extras ??= new SseWantedExtrasRepository())->save($tenantId, $id, $hasCodes ? $codes : null, $physical);
+            } catch (\Throwable $e) {
+                error_log('Avis de recherche : codes non enregistrés : ' . $e->getMessage());
+            }
+            if (!$saved) {
+                $warnings[] = 'L’avis est placé, mais ses codes et son signalement n’ont pas pu être enregistrés (étape de base de données « codification des avis » en attente) : le texte de l’avis est complet.';
+            }
+        }
         $this->trace($tenantId, $identityId, $id, 'notice.placed', sprintf(
             'Avis de recherche %s placé : %s, menace %s.',
             $ref,
             C::typeLabel((string) $data['notice_type'], $config),
             mb_strtolower(C::label(C::THREATS, (string) $data['threat_level']))
-        ), ['ref' => $ref, 'type' => $data['notice_type'], 'threat' => $data['threat_level'], 'armed' => $data['armed']], $access);
+        ), [
+            'ref' => $ref, 'type' => $data['notice_type'], 'threat' => $data['threat_level'], 'armed' => $data['armed'],
+            'reasons' => array_column($codes['reasons'], 'code'), 'measures' => array_column($codes['measures'], 'code'),
+        ], $access);
 
-        return ['ok' => true, 'id' => $id, 'ref' => $ref];
+        return ['ok' => true, 'id' => $id, 'ref' => $ref, 'warnings' => $warnings];
     }
 
     /**

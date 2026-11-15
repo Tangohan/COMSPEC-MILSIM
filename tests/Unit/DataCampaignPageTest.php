@@ -176,7 +176,7 @@ final class DataCampaignPageTest extends TestCase
         self::assertSame('m•••••@example.fr', DataCampaignPage::maskEmail('mathieu.delacroix@example.fr'));
 
         $block = ['rows' => [
-            ['label' => 'Numéro de membre de la communauté', 'value' => 'M-004217'],
+            ['label' => 'Matricule de votre organisation', 'value' => 'M-004217'],
             ['label' => 'Matricule de service', 'value' => '2024-0873116'],
             ['label' => 'Trigramme', 'value' => 'DLC'],
             ['label' => 'Indicatif radio', 'value' => 'RAVEN-2'],
@@ -240,7 +240,7 @@ final class DataCampaignPageTest extends TestCase
     public function testEveryPageTextHasAnEnglishTranslation(): void
     {
         $en = require self::ROOT . '/lang/en/site_auto.php';
-        $texts = [DataCampaignPage::pageTitle(), DataCampaignPage::pageLead(), DataCampaignPage::progressLabel(1, 1), 'Tout confirmer', 'Continuer'];
+        $texts = [DataCampaignPage::pageTitle(), DataCampaignPage::pageLead(), DataCampaignPage::progressLabel(1, 1), 'Tout confirmer', 'Continuer', 'Pourquoi cette demande ?', 'Autres campagnes ouvertes'];
         foreach (['ok', 'to_confirm', 'incomplete', 'flagged'] as $status) {
             $texts[] = DataCampaignPage::statusLabel($status);
             $texts[] = DataCampaignPage::actionLabel($status);

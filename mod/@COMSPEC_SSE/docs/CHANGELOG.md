@@ -1,5 +1,25 @@
 # COMSPEC SSE — historique des versions
 
+## 1.13.0 — 15/11/2026 · « Recherchée » au contrôle d'identité
+
+**Relancer Arma complètement.** Sources seulement dans cette livraison : le PBO `comspec_sse_identity` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer (COMSPEC Link reste 2.0.125).
+
+### Résumé joueur
+Type : nouveauté
+FR : Une personne recherchée est marquée au contrôle d'identité
+- Une fois le contrôle transmis à Athena, une personne sous avis de recherche actif est marquée « personne recherchée » (« HVT » pour une cible prioritaire), même si l'avis vient d'être posé sur le portail.
+- La carte du contrôle montre la référence de l'avis, la menace, « armé et dangereux » et la mesure à prendre.
+- Le détail complet de l'avis se lit dans l'app Fiches du téléphone ATAK (mod COMSPEC ATAK 4.22.0).
+EN : A wanted person is marked at the identity check
+- Once the check is sent to Athena, a person under an active wanted notice is marked "wanted person" ("HVT" for a priority target), even if the notice has just been placed on the portal.
+- The check card shows the notice reference, the threat, "armed and dangerous" and the action to be taken.
+- The full notice can be read in the ATAK phone's Records app (COMSPEC ATAK mod 4.22.0).
+
+### Détail technique
+- `fn_idWantedCheck.sqf` (nouveau) : après `OK|id|réf` de `SubmitIdCheck`, une seconde commande `{"kind":"sse_fiches","op":"wanted","check":id}` demande au site l'avis actif de l'identité du contrôle (réponse `[version, "wanted", avis, réf, type, menace, armé, mesure]`). COMSPEC Link ne relaie que `OK|id|réf` pour un contrôle : plutôt que changer la DLL (version, attestation, reconstruction), on reprend le canal « kind » déjà utilisé par le catalogue. Jamais pour l'identité d'un membre.
+- `fn_idHistory.sqf` : le verdict global tient compte de la clé `wanted` de la fiche (« recherche », « hvt » pour un type HVT) ; `fn_idPage.sqf` : carte « AVIS DE RECHERCHE » sous le verdict ; `fn_idAthenaSubmit.sqf` : l'appel suit la transmission réussie.
+- Les contrôles mis en file d'attente hors liaison n'ont pas ce second appel (l'avis du paquet d'identités reste la référence locale).
+- **À tester en jeu** : contrôler une personne sous avis posé après le début de la mission ; vérifier la bannière « personne recherchée » et la carte de l'avis.
 ## 1.12.0 — 15/11/2026 · Le mod lit les nouveaux champs des papiers du site
 
 **Relancer Arma complètement.** Sources seulement dans cette livraison : le PBO `comspec_sse_identity` et les `script_mod.hpp` des 23 addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer. Les deux libellés anglais sont dans le dictionnaire de l'ATAK natif (`main/i18n/en.txt`) : anglais à partir du prochain `main.pbo`, français d'ici là.
