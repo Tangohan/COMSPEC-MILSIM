@@ -142,7 +142,7 @@ final class EffectifsSearchTest extends TestCase
         Gate::getInstance()->setPermissions(['organization.effectifs.hub.view']);
         $ok = json_decode($controller->search(new Request())->body(), true);
         self::assertTrue($ok['ok']);
-        self::assertSame('Ryan Mercer', $ok['members'][0]['name']);
+        self::assertSame('Viper', $ok['members'][0]['name'], 'Sans prénom ni nom : l’indicatif, puis le nom du compte.');
         self::assertStringContainsString('/membres/7', $ok['members'][0]['url']);
     }
 }
