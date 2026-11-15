@@ -238,6 +238,7 @@ use App\Middleware\AtakModuleSanctionMiddleware;
 use App\Middleware\AtakWebAccessMiddleware;
 use App\Middleware\SsePortalAccessMiddleware;
 use App\Middleware\SseConfidentialityMiddleware;
+use App\Middleware\SseSectionAccessMiddleware;
 use App\Middleware\CourrierModuleSanctionMiddleware;
 use App\Controllers\Web\ActivityHubController;
 use App\Controllers\Web\MemberAlertsController;
@@ -264,7 +265,7 @@ return function (Router $router) {
     $mwAtakWeb = [AtakWebAccessMiddleware::class, AtakModuleSanctionMiddleware::class];
     $mwAtakMemberOnly = [AuthMiddleware::class, AtakModuleSanctionMiddleware::class];
     $mwSseClearance = [SsePortalAccessMiddleware::class];
-    $mwSsePortal = [SsePortalAccessMiddleware::class, SseConfidentialityMiddleware::class];
+    $mwSsePortal = [SsePortalAccessMiddleware::class, SseConfidentialityMiddleware::class, SseSectionAccessMiddleware::class];
     $mwCourrier = [AuthMiddleware::class, CourrierModuleSanctionMiddleware::class];
 
     $router->get('/', [HomeController::class, 'index']);
@@ -1475,6 +1476,18 @@ return function (Router $router) {
     $router->post('/atak/sse/dev/modeles/{id}/supprimer', [SseArmaModelsController::class, 'modelDelete'], $mwSsePortal);
     $router->get('/atak/sse/dev/modeles/{id}/export', [SseArmaModelsController::class, 'modelExport'], $mwSsePortal);
     $router->get('/atak/sse/acces', [SsePortalController::class, 'accessAdmin'], $mwSsePortal);
+    // Droits d'accès du portail SSE (onglet réservé au droit de gestion SSE, vérifié par le contrôleur : tout le reste est renvoyé à l'accueil).
+    $sseRights = \App\Controllers\Web\SseAccessRightsController::class;
+    $router->get('/atak/sse/droits', [$sseRights, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/droits/membre', [$sseRights, 'member'], $mwSsePortal);
+    $router->get('/atak/sse/droits/membre/{id}', [$sseRights, 'member'], $mwSsePortal);
+    $router->post('/atak/sse/droits/membre/{id}/derogation', [$sseRights, 'ruleStore'], $mwSsePortal);
+    $router->get('/atak/sse/droits/qui', [$sseRights, 'who'], $mwSsePortal);
+    $router->get('/atak/sse/droits/historique', [$sseRights, 'history'], $mwSsePortal);
+    $router->post('/atak/sse/droits/modele', [$sseRights, 'template'], $mwSsePortal);
+    $router->post('/atak/sse/droits/regle/{id}/retirer', [$sseRights, 'ruleRevoke'], $mwSsePortal);
+    $router->get('/atak/sse/droits/section/{section}', [$sseRights, 'section'], $mwSsePortal);
+    $router->post('/atak/sse/droits/section/{section}/regle', [$sseRights, 'ruleStore'], $mwSsePortal);
     $router->post('/atak/sse/acces', [SsePortalController::class, 'accessIssue'], $mwSsePortal);
     $router->post('/atak/sse/acces/{id}/revoquer', [SsePortalController::class, 'accessRevoke'], $mwSsePortal);
     $router->get('/atak/sse/guide', [SsePortalController::class, 'guide'], $mwSsePortal);

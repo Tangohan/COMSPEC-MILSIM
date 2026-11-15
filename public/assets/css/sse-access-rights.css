@@ -1,0 +1,81 @@
+/* =====================================================================================================================
+   Droits d'accès SSE : onglets, grille sections x niveaux, formulaires de règles, aperçu. Prolonge le kit « SSE Fichiers »
+   (variables --fx-*) ; thème sombre du Bureau ; aucun texte sous 12 px ; grilles en minmax(0, 1fr) ; aucune animation.
+   ===================================================================================================================== */
+.sar { display: flex; flex-direction: column; gap: 16px; padding-bottom: 32px; }
+.sar .fx-card { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.sar .fx-card > * { margin-top: 0; margin-bottom: 0; }
+.sar-h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: var(--fx-tx); text-transform: none; }
+.sar-h3 { margin: 4px 0 0; font-size: 14px; font-weight: 700; color: var(--fx-tx); text-transform: none; }
+
+/* Onglets de la page */
+.sar-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 14px 0 0; padding: 0; border-bottom: 1px solid var(--fx-ln2); }
+.sar-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-bottom: 0; border-radius: 5px 5px 0 0; color: var(--fx-mu); font-weight: 600; }
+.sar-tabs a:hover { color: var(--fx-tx); background: var(--fx-s2); }
+.sar-tabs a[aria-current="page"] { color: var(--fx-tx); background: var(--fx-s1); border-color: var(--fx-ln2); box-shadow: inset 0 -2px 0 var(--fx-ac); }
+.sar-tabs a:focus-visible { outline: 2px solid var(--fx-ac); outline-offset: -2px; }
+
+/* Grille */
+.sar-grid th[scope="row"] { display: flex; flex-direction: column; gap: 4px; min-width: 190px; font-size: 14px; color: var(--fx-tx); }
+.sar-grid th[scope="row"] small { font-weight: 400; max-width: 34ch; }
+.sar-grid td { min-width: 112px; }
+.sar-cell { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 6px 8px; margin: -6px -8px; border-radius: 4px; color: var(--fx-tx); }
+.sar-cell:hover { background: var(--fx-s2); }
+.sar-cell:focus-visible { outline: 2px solid var(--fx-ac); outline-offset: 1px; }
+.sar-def { color: var(--fx-mu); font-size: 13px; }
+.sar-na { color: var(--fx-dim); font-size: 12px; }
+.fx-flg.sar-allow { background: var(--fx-acd); color: var(--fx-ac2); }
+.fx-flg.sar-deny { background: var(--fx-redd); color: var(--fx-red); }
+
+/* Niveaux d'une section */
+.sar-level.is-focus { border-color: var(--fx-ac); }
+.sar-inline { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.sar-small { height: 34px; min-width: 140px; width: auto; flex: 1 1 140px; font-size: 13px; }
+
+/* Formulaires */
+.sar-form { display: flex; flex-direction: column; gap: 14px; }
+.sar-g { align-items: start; }
+.sar-fs { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.sar-fs > legend { padding: 0; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: var(--fx-mu); }
+.sar-levels { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.sar-check, .sar-radio { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; line-height: 1.45; }
+.sar-check input, .sar-radio input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--fx-ac); flex: none; }
+.sar-radio > span { display: flex; flex-direction: column; gap: 2px; }
+.sar-check input:focus-visible, .sar-radio input:focus-visible { outline: 2px solid var(--fx-ac); outline-offset: 2px; }
+
+/* Listes, aide, aperçu */
+.sar-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
+.sar-order { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.55; color: var(--fx-mu); }
+.sar-order b { color: var(--fx-tx); }
+.sar-big { font-size: 18px; line-height: 1.5; margin: 0; }
+.sar-big b { font-family: var(--fx-mono); color: var(--fx-ac2); }
+.sar-warn { border-color: rgba(251, 191, 36, .35); background: var(--fx-ambd); flex-direction: column; margin-top: 12px; }
+.sar-warn b { color: var(--fx-amb); }
+.sar-warn p { margin: 0; }
+
+@media (max-width: 720px) {
+    .sar .fx-card { padding: 14px; }
+    .sar .fx-tb.resp, .sar .fx-tb.resp tbody, .sar .fx-tb.resp tr, .sar .fx-tb.resp th, .sar .fx-tb.resp td { display: block; width: auto; min-width: 0; max-width: 100%; }
+    .sar .fx-tb.resp td[data-label] { display: flex; gap: 8px; align-items: flex-start; }
+    .sar .fx-tb.resp td[data-label]::before { content: attr(data-label); flex: 0 0 34%; font-size: 12px; font-weight: 700; color: var(--fx-dim); }
+    .sar .fx-tb.resp td[data-label] > * { min-width: 0; }
+    .sar-grid th[scope="row"] { padding: 10px 16px 4px; background: none; }
+    .sar-grid th[scope="row"] small { display: block; margin-top: 4px; }
+    .sar-cell { margin: 0; padding: 0; }
+    .sar-tabs a { flex: 1 1 auto; justify-content: center; padding: 0 10px; }
+    .sar .btn { width: 100%; }
+    .sar-inline { width: 100%; }
+}
+@media (max-width: 540px) {
+    .fx-g2 { grid-template-columns: minmax(0, 1fr); }
+}
+.sar-empty { margin: 0; padding: 4px 0; color: var(--fx-mu); line-height: 1.5; }
+.sar-empty b { color: var(--fx-tx); font-weight: 700; margin-right: 6px; }
+.sar-why { display: block; margin-top: 4px; }
+.sar-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.sar-stats > div { background: var(--fx-s2); border: 1px solid var(--fx-ln); border-radius: 5px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.sar-stats dt { font-size: 12px; font-weight: 700; color: var(--fx-mu); }
+.sar-stats dd { margin: 0; font-family: var(--fx-mono); font-size: 24px; font-weight: 800; color: var(--fx-ac2); }
+@media (max-width: 540px) { .sar-stats { grid-template-columns: minmax(0, 1fr); } }
+.sar-kinds { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12px; color: var(--fx-mu); }
+.sar-kinds b { color: var(--fx-tx); font-family: var(--fx-mono); }

@@ -116,6 +116,42 @@ final class LegacyDataCounter
         );
     }
 
+    /**
+     * Les membres sans prénom ni nom (les mêmes que le compte de no_civil_name), pour mener à chaque fiche.
+     *
+     * @return list<array{id: int, label: string}>
+     */
+    public function membersWithoutCivilName(int $tenantId, int $limit = 20): array
+    {
+        $table = $this->civilNameTable();
+        if ($tenantId < 1 || $table === null) {
+            return [];
+        }
+        $limit = max(1, min(100, $limit));
+        $label = $this->schema->columnExists('users', 'display_name') ? 'u.display_name' : "''";
+        $call = $this->schema->columnExists('users', 'callsign') ? 'u.callsign' : "''";
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT u.id, {$label} AS display_name, {$call} AS callsign FROM users u WHERE " . $this->memberWhere()
+                . " AND NOT EXISTS (SELECT 1 FROM {$table} x WHERE x.user_id = u.id AND (TRIM(COALESCE(x.first_name, '')) <> '' OR TRIM(COALESCE(x.last_name, '')) <> ''))"
+                . " ORDER BY u.id LIMIT {$limit}"
+            );
+            $st->execute($this->memberParams($tenantId));
+            $out = [];
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $name = trim((string) ($row['callsign'] ?? ''));
+                $name = $name !== '' ? $name : trim((string) ($row['display_name'] ?? ''));
+                $out[] = ['id' => (int) $row['id'], 'label' => $name !== '' ? $name : '#' . (int) $row['id']];
+            }
+
+            return $out;
+        } catch (Throwable $e) {
+            error_log('[legacy_data] membres sans nom : ' . $e->getMessage());
+
+            return [];
+        }
+    }
+
     /** Membres sans prénom ni nom dont l'ancien nom de personnage permettrait une reprise (voir LegacyIdentityImport). */
     private function importableNames(int $tenantId): int
     {
