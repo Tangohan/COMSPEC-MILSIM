@@ -1,0 +1,354 @@
+/*
+ * Bureau SSE — système d'interface commun (chargé en dernier, après sse_portal / sse_workspace / sse_shell).
+ * Un seul jeu de jetons et de composants pour toutes les pages du portail : en-tête de page, cartes de
+ * chiffres, filtres, panneaux, tableaux (empilés en cartes sur téléphone), badges, boutons, états vides.
+ * Aucune classe nouvelle à poser dans les vues : ce fichier remet en cohérence les composants existants
+ * (.page-heading, .metrics-grid, .toolbar, .panel, .table-wrap, .badge, .btn, .empty-state).
+ * Le script sse-ui.js complète les tableaux avec les intitulés de colonne (data-label) pour l'empilement mobile.
+ */
+body.sse-iw {
+    --ui-radius: 12px;
+    --ui-radius-sm: 8px;
+    --ui-surface: #10151b;
+    --ui-surface-2: #151c24;
+    --ui-surface-3: #1a222c;
+    --ui-line: rgba(238, 242, 240, 0.1);
+    --ui-line-strong: rgba(238, 242, 240, 0.18);
+    --ui-ink: #eef2f0;
+    --ui-text: rgba(238, 242, 240, 0.78);
+    --ui-dim: rgba(238, 242, 240, 0.62);
+    --ui-accent: #34d399;
+    --ui-accent-deep: #059669;
+    --ui-warn: #f5b042;
+    --ui-danger: #f87171;
+    --ui-fs-small: .78rem;
+    --ui-fs-body: .88rem;
+    --ui-control-h: 40px;
+}
+
+/* —— Mobile : la page ne dépasse jamais l'écran (une colonne « 1fr » s'étirait à la largeur de son contenu) —— */
+.sx-app { max-width: 100vw; overflow-x: clip; }
+@media (max-width: 980px) {
+    .iw-shell.sx-shell { grid-template-columns: minmax(0, 1fr); }
+}
+.sx-main { min-width: 0; }
+.iw-app.sx-app { width: 100%; min-width: 0; }
+.sx-topbar, .sx-classbar { max-width: 100%; }
+.sx-topbar .sx-search, .sx-topbar .sx-search input { min-width: 0; max-width: 100%; }
+.sx-topbar .sx-search input { width: 100%; }
+
+/* —— En-tête de page —— */
+body.sse-iw .sx-main .page-heading {
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 24px;
+    padding-bottom: 18px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--ui-line);
+}
+body.sse-iw .sx-main .page-heading > div:first-child { min-width: 0; flex: 1 1 auto; }
+@media (min-width: 721px) {
+    body.sse-iw .sx-main .page-heading > div:first-child { flex-basis: 22rem; }
+}
+body.sse-iw .sx-main .page-heading p { color: var(--ui-dim); }
+
+/* —— Cartes de chiffres —— */
+body.sse-iw .sx-main .metrics-grid {
+    display: grid;
+    padding: 0;
+    border: 0;
+    background: none;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+body.sse-iw .sx-main .metric {
+    width: auto;
+    min-width: 0;
+    justify-self: stretch;
+    min-height: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.35);
+}
+body.sse-iw .sx-main .metric-label {
+    color: var(--ui-dim);
+    font-family: var(--sans);
+    font-size: var(--ui-fs-small);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+body.sse-iw .sx-main .metric-value {
+    margin-top: 4px;
+    color: var(--ui-ink);
+    font-family: var(--sans);
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+body.sse-iw .sx-main .metric-detail {
+    margin-top: 4px;
+    color: var(--ui-dim);
+    font-family: var(--sans);
+    font-size: var(--ui-fs-small);
+}
+@media (max-width: 640px) {
+    body.sse-iw .sx-main .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    body.sse-iw .sx-main .metric { padding: 12px; }
+    body.sse-iw .sx-main .metric-value { font-size: 1.4rem; }
+}
+
+/* —— Filtres —— */
+body.sse-iw .sx-main .toolbar {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    align-items: end;
+    gap: 12px 14px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+}
+body.sse-iw .sx-main .toolbar-field--wide { grid-column: 1 / -1; }
+body.sse-iw .sx-main .toolbar-actions { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
+@media (min-width: 900px) {
+    body.sse-iw .sx-main .toolbar-actions { grid-column: auto; }
+}
+body.sse-iw .sx-main .toolbar label,
+body.sse-iw .sx-main .field-label,
+body.sse-iw .sx-main label {
+    margin: 0 0 6px;
+    color: var(--ui-dim);
+    font-family: var(--sans);
+    font-size: var(--ui-fs-small);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* —— Champs —— */
+body.sse-iw .sx-main input[type="text"],
+body.sse-iw .sx-main input[type="search"],
+body.sse-iw .sx-main input[type="number"],
+body.sse-iw .sx-main input[type="email"],
+body.sse-iw .sx-main input[type="date"],
+body.sse-iw .sx-main input[type="datetime-local"],
+body.sse-iw .sx-main input[type="password"],
+body.sse-iw .sx-main input[type="url"],
+body.sse-iw .sx-main input[type="file"],
+body.sse-iw .sx-main select,
+body.sse-iw .sx-main textarea {
+    min-height: var(--ui-control-h);
+    border: 1px solid var(--ui-line-strong);
+    border-radius: var(--ui-radius-sm);
+    background: #0b0f13;
+    color: var(--ui-ink);
+    font-family: var(--sans);
+    font-size: var(--ui-fs-body);
+}
+body.sse-iw .sx-main textarea { min-height: 110px; line-height: 1.5; }
+body.sse-iw .sx-main input:focus,
+body.sse-iw .sx-main select:focus,
+body.sse-iw .sx-main textarea:focus {
+    border-color: var(--ui-accent);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+    outline: none;
+}
+body.sse-iw .sx-main ::placeholder { color: rgba(238, 242, 240, 0.4); }
+
+/* —— Boutons : un principal (vert), un secondaire (contour), un danger —— */
+body.sse-iw .sx-main .btn {
+    min-height: var(--ui-control-h);
+    padding: 0 16px;
+    border: 1px solid var(--ui-accent-deep);
+    border-radius: var(--ui-radius-sm);
+    background: var(--ui-accent-deep);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: var(--ui-fs-body);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: none;
+    cursor: pointer;
+}
+body.sse-iw .sx-main .btn:hover { background: #067a55; border-color: var(--ui-accent); }
+body.sse-iw .sx-main .btn--ghost,
+body.sse-iw .sx-main .btn.btn--secondary {
+    border-color: var(--ui-line-strong);
+    background: transparent;
+    color: var(--ui-ink);
+}
+body.sse-iw .sx-main .btn--ghost:hover { background: rgba(238, 242, 240, 0.06); border-color: var(--ui-dim); }
+body.sse-iw .sx-main .btn--danger {
+    border-color: rgba(248, 113, 113, 0.5);
+    background: transparent;
+    color: var(--ui-danger);
+}
+body.sse-iw .sx-main .btn--danger:hover { background: rgba(248, 113, 113, 0.12); }
+body.sse-iw .sx-main .btn--sm { min-height: 32px; padding: 0 12px; font-size: var(--ui-fs-small); }
+body.sse-iw .sx-main .btn:focus-visible,
+body.sse-iw .sx-main .btn-open:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+body.sse-iw .sx-main .btn-open {
+    min-height: 34px;
+    border-radius: var(--ui-radius-sm);
+    font-family: var(--sans);
+    font-size: var(--ui-fs-small);
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* —— Panneaux —— */
+body.sse-iw .sx-main .panel {
+    border: 1px solid var(--ui-line);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    overflow: hidden;
+}
+body.sse-iw .sx-main .panel + .panel { margin-top: 16px; }
+body.sse-iw .sx-main .panel-header {
+    min-height: 48px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ui-line);
+    background: var(--ui-surface-2);
+}
+body.sse-iw .sx-main .panel-title {
+    color: var(--ui-ink);
+    font-family: var(--sans);
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+}
+body.sse-iw .sx-main .panel-meta {
+    color: var(--ui-dim);
+    font-family: var(--sans);
+    font-size: var(--ui-fs-small);
+    letter-spacing: 0;
+    text-transform: none;
+}
+body.sse-iw .sx-main .panel-body { padding: 16px; color: var(--ui-text); font-size: var(--ui-fs-body); line-height: 1.55; }
+
+/* —— Tableaux —— */
+body.sse-iw .sx-main table { min-width: 0; }
+body.sse-iw .sx-main .table-wrap { overflow-x: auto; }
+body.sse-iw .sx-main th {
+    padding: 11px 16px;
+    background: var(--ui-surface-2);
+    color: var(--ui-dim);
+    font-family: var(--sans);
+    font-size: var(--ui-fs-small);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+}
+body.sse-iw .sx-main td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--ui-line);
+    color: var(--ui-text);
+    font-size: var(--ui-fs-body);
+}
+body.sse-iw .sx-main tbody tr:last-child td { border-bottom: 0; }
+body.sse-iw .sx-main tbody tr:hover { background: rgba(52, 211, 153, 0.05); }
+body.sse-iw .sx-main td code { font-family: var(--sx-mono); font-size: .82rem; color: var(--ui-ink); }
+body.sse-iw .sx-main .record-name { color: var(--ui-ink); }
+body.sse-iw .sx-main .record-sub,
+body.sse-iw .sx-main .record-id { font-family: var(--sans); font-size: var(--ui-fs-small); color: var(--ui-dim); }
+
+/* Téléphone : chaque ligne devient une carte « intitulé : valeur » (sse-ui.js pose data-label et data-sse-stack). */
+@media (max-width: 720px) {
+    body.sse-iw .sx-main .table-wrap { overflow-x: visible; }
+    body.sse-iw .sx-main table[data-sse-stack] { display: block; width: 100%; }
+    body.sse-iw .sx-main table[data-sse-stack] thead {
+        position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0);
+    }
+    body.sse-iw .sx-main table[data-sse-stack] tbody { display: grid; gap: 10px; padding: 12px; }
+    body.sse-iw .sx-main table[data-sse-stack] tr {
+        display: block;
+        border: 1px solid var(--ui-line);
+        border-radius: var(--ui-radius-sm);
+        background: var(--ui-surface-2);
+        overflow: hidden;
+    }
+    body.sse-iw .sx-main table[data-sse-stack] td {
+        display: grid;
+        grid-template-columns: minmax(6rem, 36%) minmax(0, 1fr);
+        gap: 4px 12px;
+        align-items: start;
+        padding: 9px 14px;
+        border-bottom: 1px solid var(--ui-line);
+        overflow-wrap: anywhere;
+        text-align: left;
+        white-space: normal;
+    }
+    body.sse-iw .sx-main table[data-sse-stack] td:last-child { border-bottom: 0; }
+    body.sse-iw .sx-main table[data-sse-stack] td > .badge,
+    body.sse-iw .sx-main table[data-sse-stack] td > code { justify-self: start; }
+    body.sse-iw .sx-main table[data-sse-stack] td::before {
+        content: attr(data-label);
+        color: var(--ui-dim);
+        font-size: var(--ui-fs-small);
+        font-weight: 600;
+    }
+    body.sse-iw .sx-main table[data-sse-stack] td:not([data-label])::before,
+    body.sse-iw .sx-main table[data-sse-stack] td[data-label=""]::before { content: none; }
+    body.sse-iw .sx-main table[data-sse-stack] td:not([data-label]),
+    body.sse-iw .sx-main table[data-sse-stack] td[data-label=""] { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* —— Pastilles d'état —— */
+body.sse-iw .sx-main .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    background: rgba(5, 150, 105, 0.14);
+    color: #a7f3d0;
+    font-family: var(--sans);
+    font-size: var(--ui-fs-small);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+}
+body.sse-iw .sx-main .badge--amber { border-color: rgba(245, 176, 66, 0.45); background: rgba(245, 158, 11, 0.12); color: #fcd9a0; }
+body.sse-iw .sx-main .badge--red { border-color: rgba(248, 113, 113, 0.45); background: rgba(220, 38, 38, 0.14); color: #fecaca; }
+body.sse-iw .sx-main .badge--gray { border-color: var(--ui-line-strong); background: rgba(238, 242, 240, 0.06); color: var(--ui-text); }
+
+/* —— États vides : un cercle, un titre, une phrase qui dit quoi faire —— */
+body.sse-iw .sx-main .empty-state {
+    min-height: 0;
+    padding: 36px 20px;
+    background: transparent;
+}
+body.sse-iw .sx-main .empty-state-inner {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    width: min(100%, 34rem);
+    max-width: 34rem;
+    margin: 0 auto;
+    text-align: center;
+}
+body.sse-iw .sx-main .empty-state-inner:not(:has(.empty-symbol))::before {
+    content: "";
+    width: 44px;
+    height: 44px;
+    margin-bottom: 8px;
+    border: 1px dashed var(--ui-line-strong);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(52, 211, 153, 0.35) 0 4px, transparent 5px);
+}
+body.sse-iw .sx-main .empty-state strong { color: var(--ui-ink); font-size: 1rem; font-weight: 700; }
+body.sse-iw .sx-main .empty-state p { max-width: 46ch; margin: 0; color: var(--ui-dim); font-size: var(--ui-fs-body); line-height: 1.55; }
+
+/* —— Pas de texte illisible : plancher de taille sur les petites légendes du portail —— */
+body.sse-iw .sx-main .muted,
+body.sse-iw .sx-main small { font-size: max(var(--ui-fs-small), 11.5px); }

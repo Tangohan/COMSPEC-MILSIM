@@ -71,6 +71,13 @@ if ($photoUrl === null) {
         break;
     }
 }
+// Sans photo du titulaire ni du dossier : le cliché SEEK II de l'identité, puis la photo de la fiche personne liée.
+if ($photoUrl === null && is_array($seekImages ?? null) && ($seekImages[0]['url'] ?? '') !== '') {
+    $photoUrl = (string) $seekImages[0]['url'];
+}
+if ($photoUrl === null && $showPerson && is_array($person['primary_photo'] ?? null) && ($person['primary_photo']['url'] ?? '') !== '') {
+    $photoUrl = (string) $person['primary_photo']['url'];
+}
 $aliasLine = [];
 if (($identity['alias'] ?? null) !== null) {
     $aliasLine[] = (string) $identity['alias'];
@@ -156,7 +163,7 @@ require __DIR__ . '/_subnav.php';
                     <a href="<?= $h(url($self . '#photos')) ?>" data-dos-go>Photo et signature du titulaire</a>
                     <a href="<?= $h(SseFileController::replayUrl('QW', ['last' => $identity['last_name'], 'first' => $identity['first_name'], 'dob' => $identity['birth_date'] ?? ''])) ?>">Passer aux fichiers</a>
                     <a href="<?= $h(url($filesSubject)) ?>">Fiche des fichiers</a>
-                    <?php if ($showPerson): ?><a href="<?= $h(url('atak/sse/identites/' . (int) $person['id'])) ?>">Fiche personne</a><?php endif; ?>
+                    <?php if ($showPerson): ?><a href="<?= $h(url('atak/sse/identites/' . (int) $person['id'] . '?fiche=personne')) ?>">Fiche personne</a><?php endif; ?>
                 </div>
             </details>
         </div>
@@ -212,7 +219,7 @@ require __DIR__ . '/_subnav.php';
                         <dt>Profession</dt><dd class="<?= ($identity['profession'] ?? null) === null ? 'is-empty' : '' ?>"><?= $h($identity['profession'] ?? 'Non renseignée') ?></dd>
                         <dt>Langue</dt><dd class="<?= ($identity['language'] ?? null) === null ? 'is-empty' : '' ?>"><?= $h($identity['language'] ?? 'Non renseignée') ?></dd>
                         <dt>Nature</dt><dd><?= $canSeeTruth ? $h($identity['kind_label']) : '<span class="idp-hidden">Réservée à l’habilitation Confidentiel</span>' ?></dd>
-                        <?php if ($showPerson): ?><dt>Fiche personne</dt><dd><a class="link" href="<?= $h(url('atak/sse/identites/' . (int) $person['id'])) ?>"><?= $h($person['display_name'] ?? ('IDN-' . (int) $person['id'])) ?></a></dd><?php endif; ?>
+                        <?php if ($showPerson): ?><dt>Fiche personne</dt><dd><a class="link" href="<?= $h(url('atak/sse/identites/' . (int) $person['id'] . '?fiche=personne')) ?>"><?= $h($person['display_name'] ?? ('IDN-' . (int) $person['id'])) ?></a></dd><?php endif; ?>
                         <dt>Personnage en jeu</dt><dd class="<?= ($identity['arma_key'] ?? null) === null ? 'is-empty' : '' ?>"><?= $h($identity['arma_key'] ?? 'Aucun') ?></dd>
                         <dt>Carte</dt><dd><?= $identity['context_id'] !== null ? '#' . (int) $identity['context_id'] : 'Toutes les cartes' ?></dd>
                         <dt>Opération</dt><dd><?= $h($identity['op_key'] ?? 'Toutes les opérations') ?></dd>

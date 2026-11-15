@@ -72,9 +72,6 @@ $total = count($persons);
             ?>
                 <article class="sse-record" data-status="<?= $h($statusSlug) ?>">
                     <header class="sse-record-head">
-                        <a class="link" href="<?= $h(url('atak/sse/identites/' . (int) ($p['id'] ?? 0))) ?>">
-                            IDN-<?= $h(str_pad((string) ((int) ($p['id'] ?? 0)), 5, '0', STR_PAD_LEFT)) ?>
-                        </a>
                         <?php if ($photoUrl !== ''): ?>
                             <a class="sse-mugshot sse-scan" href="<?= $h($photoUrl) ?>" target="_blank" rel="noopener"
                                title="<?= $h($photo['angle_label'] ?? 'Photographie') ?>">

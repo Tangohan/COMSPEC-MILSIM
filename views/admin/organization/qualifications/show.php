@@ -274,7 +274,7 @@ $eventLabels = [
                     <li><div class="qfs-who"><b translate="no"><?= $h($who($row['member'])) ?></b><small><?= $h(\App\Support\QualificationAdminStatus::label(\App\Services\Personnel\QualificationAwardRuleService::adminStatus($award))) ?><?= trim((string) ($award['revocation_reason'] ?? '')) !== '' ? ' · ' . $h($award['revocation_reason']) : '' ?></small></div>
                         <?php if (\App\Services\Personnel\QualificationAwardRuleService::adminStatus($award) === \App\Support\QualificationAdminStatus::FAILED && (int) $award['user_id'] !== (int) \App\Core\Session::get('user_id')): ?>
                         <div class="qfs-acts">
-                            <form method="post" data-ath-quiet action="<?= $h(url('back-office/referentiels/qualifications/propositions/' . (int) $award['id'] . '/annuler')) ?>" onsubmit="return confirm(<?= $h(json_encode('Annuler l’ajournement ? La qualification repart en attente de validation.', JSON_UNESCAPED_UNICODE)) ?>)">
+                            <form method="post" data-ath-quiet action="<?= $h(url('back-office/referentiels/qualifications/propositions/' . (int) $award['id'] . '/annuler')) ?>" data-ui-confirm="1" data-ui-confirm-title="Annuler l’ajournement ?" data-ui-confirm-body="La qualification repart en attente de validation.">
                                 <?= \App\Core\Csrf::field() ?>
                                 <input type="hidden" name="definition_id" value="<?= $id ?>">
                                 <button type="submit" class="qmx-btn qmx-btn--sm">Annuler l’ajournement</button>

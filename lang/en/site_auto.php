@@ -67379,8 +67379,6 @@ return [
     'ajourné' => 'deferred',
     'Ajournés' => 'Deferred',
     'Annuler l’ajournement' => 'Undo the deferral',
-    'Annuler l’ajournement ? Le palier repart en attente de la décision d’un instructeur.' => 'Undo the deferral? The stage goes back to waiting for an instructor’s decision.',
-    'Annuler l’ajournement ? La qualification repart en attente de validation.' => 'Undo the deferral? The qualification goes back to waiting for validation.',
     'Un ajournement par erreur peut être annulé.' => 'A deferral made by mistake can be undone.',
     'Un ajournement fait par erreur s’annule ici : le palier repart en attente de la décision d’un instructeur.' => 'A deferral made by mistake can be undone here: the stage goes back to waiting for an instructor’s decision.',
     'Votre propre ajournement : un autre instructeur doit l’annuler.' => 'Your own deferral: another instructor must undo it.',
@@ -67392,4 +67390,19 @@ return [
     // SSE identités : avis de recherche, fiche en dossier, historique et détections.
     'Les avis de recherche relèvent de la section « Fichiers et sujets » : votre accès actuel ne permet pas de les lire.' => 'Wanted notices belong to the “Files and subjects” section: your current access does not let you read them.',
     'Les détections relèvent de la section « Fichiers et sujets » : votre accès actuel ne permet pas de les lire.' => 'Detections belong to the “Files and subjects” section: your current access does not let you read them.',
+    // SSE identités : avis de recherche, fiche en dossier, historique et détections.
+    'Aucune identité du registre n’est rattachée à cette personne. Créez-la pour pouvoir placer un avis de recherche, éditer la notice PDF et suivre l’historique et les détections.' => 'No registry identity is attached to this person. Create it to place a wanted notice, issue the PDF notice and follow the history and detections.',
+    'Cette personne a une identité au registre :' => 'This person has a registry identity:',
+    'Créer l’identité du registre' => 'Create the registry identity',
+    'Dossier d’identité du registre' => 'Registry identity file',
+    'Images du sujet (SEEK II)' => 'Subject images (SEEK II)',
+    'Le dossier d’identité de cette personne relève de la vérité de jeu : il demande l’habilitation Confidentiel.' => 'This person\'s identity file is game truth: it requires Confidential clearance.',
+    'Ouvrir le dossier d’identité' => 'Open the identity file',
+    'Notice PDF' => 'PDF notice',
+    'Identité du registre créée depuis la fiche personne IDN-%1.' => 'Registry identity created from the person record IDN-%1.',
+    'Une identité du registre est déjà rattachée à cette personne, ou la fiche n’a ni nom ni prénom.' => 'A registry identity is already attached to this person, or the record has neither last nor first name.',
+    'Identité du registre créée : vous pouvez y placer un avis de recherche.' => 'Registry identity created: you can now place a wanted notice on it.',
+    'Annuler l’ajournement ?' => 'Undo the deferral?',
+    'Le palier repart en attente de la décision d’un instructeur.' => 'The stage goes back to waiting for an instructor’s decision.',
+    'La qualification repart en attente de validation.' => 'The qualification goes back to waiting for validation.',
 ];

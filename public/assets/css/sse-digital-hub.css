@@ -104,7 +104,7 @@
 }
 .dl-next__copy { display: grid; gap: 2px; min-width: 0; }
 .dl-next__kicker {
-    font-size: 0.68rem;
+    font-size: .72rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -300,7 +300,7 @@
     height: 20px;
     padding: 0 7px;
     border-radius: 6px;
-    font-size: 0.66rem;
+    font-size: .72rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;

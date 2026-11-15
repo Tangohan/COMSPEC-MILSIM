@@ -74,6 +74,8 @@ $pid = (int) ($person['id'] ?? 0);
     </div>
 </div>
 
+<?php require __DIR__ . '/_person_registry.php'; ?>
+
 <div class="iw-confidence" style="margin-bottom:12px">
     <div><span>Fiabilité source</span><strong><?= $h((string) ($confidence['source'] ?? '—')) ?></strong></div>
     <div><span>Crédibilité info</span><strong><?= $h((string) ($confidence['credibility'] ?? '—')) ?></strong></div>

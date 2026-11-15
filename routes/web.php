@@ -1188,6 +1188,7 @@ return function (Router $router) {
     $router->get('/atak/sse/recherche/suggestions', [SsePortalController::class, 'searchSuggest'], $mwSsePortal);
     $router->get('/atak/sse/identites', [SsePortalController::class, 'identitiesIndex'], $mwSsePortal);
     $router->get('/atak/sse/identites/{id}', [SsePortalController::class, 'identityShow'], $mwSsePortal);
+    $router->post('/atak/sse/identites/{id}/registre', [\App\Controllers\Web\SsePersonRegistryController::class, 'create'], $mwSsePortal);
     // RENS › Identités & documents (COMSPEC IDENTITY) : « nouvelle » / « nouveau » avant /{id}.
     $router->get('/atak/sse/papiers', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentsIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identitiesIndex'], $mwSsePortal);
