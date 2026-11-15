@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Services\AtakToc\TocAccess;
+use App\Services\AtakToc\TocReportService;
 use App\Services\AtakToc\TocRoomService;
 
 /**
@@ -61,7 +62,18 @@ final class AtakTocApiController extends AtakTocBaseController
             'state' => $view['state'],
             'game' => $view['game'],
             'map' => ['rev' => $mapRev, 'event' => $mapEvent],
+            // Canal de synchro du panneau Rapports : l'empreinte change quand un rapport arrive ou évolue (la liste se relit alors).
+            'reports' => ['stamp' => $this->reportStamp($mapId)],
         ], $view['version'] . '-' . intdiv(time(), 5) . '-' . $mapRev);
+    }
+
+    private function reportStamp(int $mapId): string
+    {
+        try {
+            return (new TocReportService())->stamp($this->tenantId(), $mapId);
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     public function action(Request $request, array $params = []): Response

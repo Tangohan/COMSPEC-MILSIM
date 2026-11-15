@@ -26,8 +26,9 @@ d'opération sur les terrains Arma, reliés au jeu dans les deux sens.
 - `4370_atak_toc_plans` : tables `atak_plans`, `atak_plan_elements`, `atak_plan_phases`, `atak_plan_versions`, `atak_plan_shares`, `atak_plan_comments`, `atak_plan_presence`, `atak_toc_rooms`, `atak_toc_actions`.
 - `4380_atak_toc_permissions` : droits `atak.toc.use` et `atak.toc.manage`.
 - `4630_atak_marker_cycles` : tables `atak_marker_cycle_settings`, `atak_marker_archives`, `atak_marker_archive_items` (cycle de 24 h des marqueurs, voir plus bas).
-- `4750_atak_toc_soft_delete` : colonnes `deleted_at`, `deleted_by`, `delete_batch` sur `atak_markers` et `atak_map_shapes` (corbeille de 15 minutes, pierres tombales du jeu) et table `atak_toc_purges` (état et journal des purges). Retour arrière : `migrations/rollback/atak_toc_purges_down.sql`. Sans elle : mode dégradé (suppression définitive avec confirmation, purge désactivée, message clair).
-- `4760_atak_toc_purge_permission` : crée le droit `atak.toc.purge` dans chaque communauté, sans l'attribuer.
+- `4750_atak_toc_report_reads` : table `atak_toc_report_reads` (lu / non lu des rapports par opérateur, panneau Rapports). Sans elle, le panneau marche : tout est « non lu », rien n'est conservé, et il le dit. Retour arrière : `migrations/rollback/atak_toc_report_reads_down.sql`.
+- `4770_atak_toc_soft_delete` : colonnes `deleted_at`, `deleted_by`, `delete_batch` sur `atak_markers` et `atak_map_shapes` (corbeille de 15 minutes, pierres tombales du jeu) et table `atak_toc_purges` (état et journal des purges). Retour arrière : `migrations/rollback/atak_toc_purges_down.sql`. Sans elle : mode dégradé (suppression définitive avec confirmation, purge désactivée, message clair).
+- `4780_atak_toc_purge_permission` : crée le droit `atak.toc.purge` dans chaque communauté, sans l'attribuer.
 
 ## Console : rubriques, onglets et sources
 
@@ -35,7 +36,7 @@ Quatre rubriques, chacune avec ses onglets (Alt + 1 à 4, flèches sur la barre)
 
 | Rubrique | Onglets |
 |---|---|
-| Situation | Groupes, ORBAT, Réseau, Flux |
+| Situation | Groupes, ORBAT, Réseau, Flux, Rapports |
 | Conduite | Ordres, Demandes, Chronos, EXCHECK, Main courante, Pertes |
 | Plans | Plans web, Camp |
 | Salle | Écrans, SAT, Radio |
@@ -119,7 +120,7 @@ Case à cocher, nombre d'éléments, opacité, source et heure de la dernière m
 | Zones (battleplan) | jeu + web | oui (ATAK web) |
 | Points et itinéraires | jeu + web | oui (console : « Point de passage… » ; ATAK web) |
 | Relais et couverture réseau | jeu | non |
-| Comptes rendus géolocalisés | jeu | non |
+| Rapports : BDA, comptes rendus, SITREP, 9-line (épingles par type, un clic ouvre la fiche) | jeu | accusé de réception (panneau Rapports) |
 | Photos géolocalisées (12 h, camp du poste) | jeu | non |
 | Demandes du poste | jeu + web | réponse (onglet Demandes) |
 | Ordres avec point | web | oui (ATAK web) |
@@ -127,6 +128,19 @@ Case à cocher, nombre d'éléments, opacité, source et heure de la dernière m
 | Tracés de l'app Traçage, cibles et tâches | — | affichés « pas remonté par le jeu au site pour l'instant » |
 
 Réalisme : les calques lisent les mêmes API que la carte ATAK web, avec les mêmes droits et le même brouillage. Rien n'y entre que ce que le réseau connaît. Limite connue : `/api/recon/images` ne filtre pas par carte. Les photos sont donc posées seulement si elles sont dans le terrain, récentes (12 h) et du camp du poste.
+
+## Panneau Rapports
+
+Onglet **Situation › Rapports** : tous les rapports tactiques du jeu en une liste de type ticketing. Droit : `atak.toc.use` (le même que le poste), communauté de la session.
+
+- **Sources** : `atak_tactical_reports` (BDA, contact TIC, SALUTE, SPOTREP, SITREP, patrouille, blessé, logistique, engin explosif, NRBC, ordre de conduite, fin d'opération, libres : POST `/api/atak/reports` depuis le téléphone, via COMSPEC Link) et `atak_nine_line` (9-line CAS, 5-line, MEDEVAC / CASEVAC : POST `/api/cas` et `/api/atak/medevac`). Familles du panneau : BDA, Comptes rendus, SITREP, 9-line, Autres.
+- **Liste** : onglets de familles avec compteurs et pastille de non lus, recherche (indicatif, grille, texte, sans tenir compte des accents), « Non lus », filtres (période, carte ou toutes les cartes, unité ou émetteur, priorité, statut ouvert ou clos), tri (récents, non lus, priorité, anciens).
+- **Fiche** (tiroir, aussi par lien `/atak/toc?onglet=rapports#rapport=tr-12`) : BDA (résultat en grand, cible, munition, dommages collatéraux, observateur, heure, position), comptes rendus et SITREP (faits, textes longs, autres informations), 9-line et MEDEVAC (lignes numérotées, avancement, géométrie du JTAC) ; onglet Suivi : accusé de réception, plans où le rapport est joint, jonction à un plan et à une phase (un repère par rapport et par plan, uid `rep-tr-12`), lu / non lu ; PDF ; lien. Ouvrir la fiche la marque lue.
+- **Carte** : épingles du calque « Rapports » (icône par type, étiquette = résultat du BDA, ● = non lu) ; un clic ouvre la fiche.
+- **Synchro** : `/atak/toc/api/state` porte `reports.stamp` (empreinte de 12 caractères : nombre, dernier identifiant et dernière modification des deux sources) ; quand elle change, le panneau relit sa liste.
+- **Habilitation** : un rapport au-dessus de celle de l'opérateur (classification UNCLASSIFIED, RESTRICTED, CONFIDENTIAL, SECRET ou visibilité COMMAND_ONLY, RESTRICTED, rapprochées de l'échelle américaine SSE : CUI, C, S, TS) n'est ni listé, ni ouvert, ni exporté (réponse « introuvable ») ; la liste dit seulement combien sont cachés. Les passages caviardés du bureau Remontées sont masqués au niveau de l'opérateur, et la fiche structurée d'un rapport caviardé est retirée.
+- **PDF** : `GET /atak/toc/reports/{clé}/export.pdf`, gabarit sobre inspiré des rapports militaires américains (bandeaux de classification, À / DE / OBJET / DIFFUSION, GDH), niveaux américains fictifs, « Document de fiction — jeu de rôle Arma 3 » à chaque page, aucun nom d'organisation réelle ; caviardage en rectangles noirs.
+- **API** : `GET /atak/toc/api/reports`, `GET …/reports/{clé}`, `POST …/reports/{clé}/read`, `…/ack`, `…/attach`, `POST …/reports/read-all`, `GET …/reports/plans`. Clés : `tr-12` (compte rendu), `nl-7` (9-line). Écritures : CSRF et 60 à 240 actions par minute.
 
 ## Fonds de carte
 
@@ -327,7 +341,7 @@ Les marqueurs et tracés de la carte (poste TOC web, ATAK web / Overwatch, TACMA
 - **Éphémère** (archivé à la bascule) : marqueurs de carte (`atak_markers`, dont ceux du jeu) et tracés (`atak_map_shapes`). **Durable** (jamais touché) : éléments épinglés (le « Permanent » des marqueurs, `web_permanent`), plans d'opération et leurs phases, salle TOC, lieux et calques SSE, ordre de bataille, comptes, positions et pistes (déjà limitées par leur durée de vie).
 - **Lecture** : `AtakMarkerCycleFilter::cutoff()` ajoute à `AtakDataRepository::getMarkers` et `MapShapeRepository::list` le filtre « modifié depuis le début du cycle, ou épinglé ». Cycle désactivé ou tables absentes : aucun filtre, comportement d'avant.
 - **Archivage** : tâche planifiée `atak_marker_cycle` (tous les quarts d'heure, verrou `GET_LOCK`, 2000 éléments au plus par passage, lots de 500). L'instantané est écrit dans une transaction **avant** tout retrait ; si l'écriture échoue rien n'est retiré. Rejouable : un élément n'est jamais archivé deux fois dans la même mission. Les cycles manqués sont rattrapés un par un ; ce qui date de plus de 30 jours est regroupé dans une seule mission « Missions antérieures au … ».
-- **Jeu** : un marqueur du jeu appartient au cycle de sa dernière mise à jour. Archivé, il reste 48 h en pierre tombale (voir plus bas) : le jeu le retire de sa carte native et ne le renvoie pas. Avant la migration 4750, il était retiré sans être masqué et le jeu le renvoyait s'il le modifiait.
+- **Jeu** : un marqueur du jeu appartient au cycle de sa dernière mise à jour. Archivé, il reste 48 h en pierre tombale (voir plus bas) : le jeu le retire de sa carte native et ne le renvoie pas. Avant la migration 4770, il était retiré sans être masqué et le jeu le renvoyait s'il le modifiait.
 - **API** (membre connecté, communauté de la session, CSRF sur les écritures) : `GET /api/atak/cycle/status`, `GET /api/atak/cycle/archives`, `GET /api/atak/cycle/archives/{id}` (lecture seule), `GET …/export.json`, `POST …/restore`, `POST …/delete` (phrase SUPPRIMER), `POST /api/atak/cycle/settings`, `POST /api/atak/cycle/pin`.
 
 ## Supprimer, annuler et purger la carte

@@ -135,7 +135,7 @@ final class AtakTocManageAssetTest extends TestCase
         self::assertStringContainsString('Purger la carte', $meta['explanation']);
         // Aucun niveau d'accès ne le reçoit : ni la matrice des modules, ni l'étape qui crée le droit.
         self::assertStringNotContainsString('atak.toc.purge', $this->file('app/Services/Rbac/RolePermissionMatrixCatalog.php'));
-        $step = $this->file('database/steps/4760_atak_toc_purge_permission.php');
+        $step = $this->file('database/steps/4780_atak_toc_purge_permission.php');
         self::assertStringNotContainsString('role_permissions', $step);
         self::assertStringContainsString("'atak.toc.purge'", $step);
         self::assertFileExists(self::ROOT . '/migrations/rollback/atak_toc_purge_permission_down.sql');
@@ -154,13 +154,13 @@ final class AtakTocManageAssetTest extends TestCase
     public function testMigrationStepsAreRegisteredNumberedAndReversible(): void
     {
         $registry = $this->file('database/steps/registry.php');
-        foreach (['4750_atak_toc_soft_delete.php' => 'atak_toc_soft_delete', '4760_atak_toc_purge_permission.php' => 'atak_toc_purge_permission'] as $file => $id) {
+        foreach (['4770_atak_toc_soft_delete.php' => 'atak_toc_soft_delete', '4780_atak_toc_purge_permission.php' => 'atak_toc_purge_permission'] as $file => $id) {
             self::assertMatchesRegularExpression("/\\['id' => '" . $id . "', 'label' => '[^\\n]+', 'group' => 'schema', 'file' => '" . preg_quote($file, '/') . "', 'rerun' => true\\]/", $registry);
             self::assertFileExists(self::ROOT . '/database/steps/' . $file);
         }
-        self::assertSame(1, substr_count($registry, "'file' => '4750_"));
-        self::assertSame(1, substr_count($registry, "'file' => '4760_"));
-        $step = $this->file('database/steps/4750_atak_toc_soft_delete.php');
+        self::assertSame(1, substr_count($registry, "'file' => '4770_"));
+        self::assertSame(1, substr_count($registry, "'file' => '4780_"));
+        $step = $this->file('database/steps/4770_atak_toc_soft_delete.php');
         self::assertStringNotContainsString('ADD UNIQUE KEY', $step, 'compatible sqlite');
         self::assertStringContainsString('addColumnIfMissing', $step);
         self::assertStringContainsString('addIndexIfMissing', $step);

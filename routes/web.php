@@ -775,6 +775,16 @@ return function (Router $router) {
     $router->get('/atak/toc/api/state', [$tocApi, 'state'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/action', [$tocApi, 'action'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/journal', [$tocApi, 'journal'], $mwAtakMemberOnly);
+    // Panneau Rapports du poste (BDA, comptes rendus, SITREP, 9-line) : lecture, lu / non lu, accusé, jonction à un plan, PDF.
+    $tocReports = \App\Controllers\Api\AtakTocReportsApiController::class;
+    $router->get('/atak/toc/api/reports', [$tocReports, 'index'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/read-all', [$tocReports, 'readAll'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/reports/plans', [$tocReports, 'plans'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/reports/{key}', [$tocReports, 'show'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/read', [$tocReports, 'read'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/ack', [$tocReports, 'ack'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/reports/{key}/attach', [$tocReports, 'attach'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/reports/{key}/export.pdf', [$tocReports, 'pdf'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/reset', [$tocApi, 'reset'], $mwAtakMemberOnly);
     // Suppression, corbeille de 15 minutes et purge de la carte du poste TOC (docs/TOC-WEB.md) : droits vérifiés par le contrôleur.
     $tocElements = \App\Controllers\Api\AtakTocElementsApiController::class;
