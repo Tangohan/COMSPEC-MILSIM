@@ -171,7 +171,7 @@ final class SsePersonWorkViewTest extends TestCase
         foreach (['Toutes', 'Recherchées', 'Non signées', 'Classifiées', 'Verrouillées', 'Closes', 'Récentes'] as $tab) {
             self::assertStringContainsString('<span>' . $tab . '</span><span class="pe-count">', $html);
         }
-        foreach (['classify', 'lock', 'unlock', 'close', 'reopen', 'link', 'settings', 'help'] as $dialog) {
+        foreach (['classify', 'lock', 'unlock', 'close', 'reopen', 'settings', 'help'] as $dialog) {
             self::assertStringContainsString('id="pe-dlg-' . $dialog . '"', $html);
         }
         foreach (['Résolu', 'Neutralisé', 'Détenu transféré', 'Décédé', 'Doublon fusionné', 'Erreur'] as $reason) {
@@ -181,7 +181,10 @@ final class SsePersonWorkViewTest extends TestCase
         self::assertStringContainsString('Tableau', $html);
         self::assertStringContainsString('Cartes compactes', $html);
         self::assertStringContainsString('Exporter CSV', $html);
-        self::assertStringContainsString('Ajouter à un dossier', $html);
+        // Rattacher une sélection passe par la fenêtre universelle (SseAttachWindow), plus par une liste déroulante de dossiers.
+        self::assertStringContainsString('data-ra-open data-ra-type="person" data-ra-collect=".pe-check input:checked"', $html);
+        self::assertStringNotContainsString('id="pe-dlg-link"', $html);
+        self::assertStringNotContainsString('Ajouter à un dossier', $html);
     }
 
     public function testDialogsOnlyOfferLevelsUpToTheViewersClearance(): void

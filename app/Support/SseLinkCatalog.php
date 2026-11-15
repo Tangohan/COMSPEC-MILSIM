@@ -47,6 +47,11 @@ final class SseLinkCatalog
         'site' => ['label' => 'Site', 'icon' => 'pin', 'section' => 'dossiers'],
         'transmission' => ['label' => 'Transmission', 'icon' => 'signal', 'section' => 'dossiers'],
         'campaign' => ['label' => 'Campagne', 'icon' => 'flag', 'section' => 'outils'],
+        'lead' => ['label' => 'Piste', 'icon' => 'arrow', 'section' => 'dossiers'],
+        'mesh' => ['label' => 'Investigation', 'icon' => 'link', 'section' => 'dossiers'],
+        'organization' => ['label' => 'Organisation', 'icon' => 'flag', 'section' => 'dossiers'],
+        'vehicle' => ['label' => 'Véhicule', 'icon' => 'tag', 'section' => 'dossiers'],
+        'equipment' => ['label' => 'Matériel', 'icon' => 'tag', 'section' => 'dossiers'],
         'jnet' => ['label' => 'Compte rendu JNET', 'icon' => 'jnet', 'section' => ''],
     ];
 
@@ -70,6 +75,10 @@ final class SseLinkCatalog
         'cited_in' => ['cité dans', 'cite'],
         'detected_on' => ['détecté sur', 'détecté par'],
         'cross_checked' => ['rapproché de', 'rapproché de'],
+        'concerns' => ['concerne', 'est concerné par'],
+        'evidence_of' => ['preuve de', 'a pour preuve'],
+        'mentions' => ['mentionne', 'mentionné dans'],
+        'verify_with' => ['à vérifier avec', 'à vérifier avec'],
         'related' => ['lié à', 'lié à'],
     ];
 
