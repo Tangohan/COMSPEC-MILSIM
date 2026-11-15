@@ -117,6 +117,10 @@ uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
 
 call _titleDo;
 
+// Textes nouveaux pour fn_tr pendant ce rendu (ni en cache ni sans lettre) : nombre et temps relevés après la page.
+private _trN0 = missionNamespace getVariable ["COMSPEC_ATAK_TrMiss", 0];
+private _trT0 = missionNamespace getVariable ["COMSPEC_ATAK_TrMissT", 0];
+private _perfC0 = diag_tickTime;
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };
     case "FOLDER": { [] call comspec_atak_native_fnc_pageFolder; };
@@ -187,6 +191,14 @@ switch (_page) do {
             [_page] call comspec_atak_native_fnc_pageText;
         };
     };
+};
+// Mesures (fn_perfAcc, RPT, rien à l'écran) : contenu seul de la page (sans effacement, mise en page, calques ni
+// toasts), et part de la traduction des textes jamais vus (une ligne « Lent » au-dessus de 8 ms dans un rendu).
+[format ["page %1 (contenu)", _page], _perfC0] call comspec_atak_native_fnc_perfAcc;
+private _trN = (missionNamespace getVariable ["COMSPEC_ATAK_TrMiss", 0]) - _trN0;
+if (_trN > 0) then {
+    ["traduction : textes nouveaux (rendu)", diag_tickTime - ((missionNamespace getVariable ["COMSPEC_ATAK_TrMissT", 0]) - _trT0), 8, -1,
+        format ["Traduction de %1 textes nouveaux pendant le rendu de la page %2", _trN, _page]] call comspec_atak_native_fnc_perfAcc;
 };
 // Événement pour les modules : une app vient de s'afficher.
 ["comspec_atak_native_pageOpened", [_page]] call CBA_fnc_localEvent;

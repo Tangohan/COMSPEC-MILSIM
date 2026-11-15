@@ -143,6 +143,9 @@ $row = function (array $it, bool $showType, string $groupReason = '') use ($h, $
             <summary aria-label="Actions pour : <?= $h($label) ?>"><span>Actions</span></summary>
             <div class="tr-pop tr-pop--menu">
                 <a class="tr-btn" href="<?= $h($open) ?>">Ouvrir</a>
+                <?php if ($canTreat && in_array((string) ($it['subject_type'] ?? ''), ['case', 'identity'], true) && (int) ($it['subject_id'] ?? 0) > 0 && !in_array($label, $system, true)): ?>
+                    <button type="button" class="tr-btn" data-ra-open data-ra-pieces="<?= $h($it['subject_type'] . ':' . (int) $it['subject_id']) ?>" aria-haspopup="dialog">Rattacher à…</button>
+                <?php endif; ?>
                 <?php if ($open !== (string) $it['href']): ?><a class="tr-btn" href="<?= $h($it['href']) ?>">Voir dans <?= $h($sourceLabel((string) $it['source'])) ?></a><?php endif; ?>
                 <?php if ($canTreat): ?>
                     <?php if ($triageView === 'a-traiter' || $triageView === 'mes'): ?>
@@ -513,6 +516,9 @@ $ruleFacts = static function (array $rule) use ($sourceLabel, $sourceTypes): str
         </dialog>
     <?php endif; ?>
 </div>
+<?php
+?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::render(); ?>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

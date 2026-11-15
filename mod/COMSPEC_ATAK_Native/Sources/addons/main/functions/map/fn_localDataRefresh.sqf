@@ -315,13 +315,21 @@ if ((count _gDrop) > 0 && {missionNamespace getVariable ["COMSPEC_ATAK_DiagDup",
 // Aucune IA ennemie sur la carte, même repérée (choix de la communauté) : ni calcul local, ni contact relayé par Athena.
 // Filtres du BFT (fn_bftFilter : IA, aériens, véhicules, pistes anciennes ou hors ligne, distance) : masquées sur la carte aussi.
 // Une seule passe sur les clés (+_units recopiait en profondeur toutes les pistes, deux fois par passage).
+// Réglages du filtre lus une fois par passage (perf lot 2 ; avant : six lectures du profil par piste) ; aucun filtre
+// actif (cas courant) : la fonction n'est pas appelée, elle rendrait vrai pour toutes les pistes.
+private _bftCfg = ["cfg"] call comspec_atak_native_fnc_bftFilter;
+private _bftOff = _bftCfg select 6;
 {
     private _e = _units get _x;
-    if ((_e getOrDefault ["affiliation", ""]) isEqualTo "hostile" || {!([_e] call comspec_atak_native_fnc_bftFilter)}) then { _units deleteAt _x; };
+    if ((_e getOrDefault ["affiliation", ""]) isEqualTo "hostile" || {!_bftOff && {!([_e, _bftCfg] call comspec_atak_native_fnc_bftFilter)}}) then { _units deleteAt _x; };
 } forEach (keys _units);
 // Signature fournie : la table des unités change à chaque passage (positions), la comparer par « str » ne servait qu'à
 // convertir en texte toutes les unités du camp, une ou quatre fois par seconde.
-["units",_units,-1,str diag_tickTime] call comspec_atak_native_fnc_storeSet;
+// Numéro de passage (perf lot 2 ; avant : « str diag_tickTime », six chiffres seulement : après 28 h de jeu deux passages
+// de la même seconde avaient la même signature et le second était ignoré).
+private _unitsSeq = (uiNamespace getVariable ["COMSPEC_ATAK_UnitsSeq", 0]) + 1;
+uiNamespace setVariable ["COMSPEC_ATAK_UnitsSeq", _unitsSeq];
+["units",_units,-1,"n" + str _unitsSeq] call comspec_atak_native_fnc_storeSet;
 
 // Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection
 // et l'inspecteur (local = true) et on n'ajoute que les marqueurs Athena absents du jeu.
@@ -346,8 +354,11 @@ private _entry = {
 };
 private _local = createHashMap;
 if (_full) then {
+    private _tFull = diag_tickTime;
     { _local set [_x, _x call _entry]; } forEach allMapMarkers;
-    _mk = [diag_tickTime + 300, _local, _remRev, (_mk param [3, 0]) + 1, createHashMap];
+    // 5 min + 100 s (perf lot 2) : pas dans la même seconde que la relecture des marqueurs de la carte ni celle des traits.
+    _mk = [diag_tickTime + 400, _local, _remRev, (_mk param [3, 0]) + 1, createHashMap];
+    ["marqueurs : table complète (sélection)", _tFull, 8, -1, format ["marqueurs : table complète (sélection, %1 marqueurs)", count _local]] call comspec_atak_native_fnc_perfAcc;
 } else {
     _local = _mk select 1;
     { if ((markerShape _x) isEqualTo "") then { _local deleteAt _x; } else { _local set [_x, _x call _entry]; }; } forEach (keys _dirty);

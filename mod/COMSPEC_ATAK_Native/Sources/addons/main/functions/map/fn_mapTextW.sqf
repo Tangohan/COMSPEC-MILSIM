@@ -12,6 +12,9 @@ if (isNil "_cache" || {(count _cache) > 4000}) then { _cache = createHashMap; ui
 private _key = [_txt, _font, _size];
 private _w = _cache getOrDefault [_key, -1];
 if (_w >= 0) exitWith { _w };
+// Mesure sur le texte caché (texte encore jamais vu à cette taille) : comptée au RPT (« largeurs de texte (mesures) »,
+// perf lot 2) pour savoir ce que pèsent les mesures d'un changement de palier de zoom.
+private _tW = diag_tickTime;
 private _c = uiNamespace getVariable ["COMSPEC_ATAK_TextWCtrl", controlNull];
 if (isNull _c) then {
     private _d = [] call comspec_atak_native_fnc_display;
@@ -30,4 +33,5 @@ if (!isNull _c) then {
 };
 if (_w <= 0) then { _w = (count _txt) * _size * 0.5 * pixelW / pixelH; };
 _cache set [_key, _w];
+["largeurs de texte (mesures)", _tW] call comspec_atak_native_fnc_perfAcc;
 _w

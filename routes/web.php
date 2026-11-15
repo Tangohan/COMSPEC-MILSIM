@@ -1277,6 +1277,23 @@ return function (Router $router) {
     $router->get('/atak/sse/liaisons/recherche', [\App\Controllers\Web\SseLinksController::class, 'search'], $mwSsePortal);
     $router->post('/atak/sse/liaisons', [\App\Controllers\Web\SseLinksController::class, 'store'], $mwSsePortal);
     $router->post('/atak/sse/liaisons/{id}/retirer', [\App\Controllers\Web\SseLinksController::class, 'remove'], $mwSsePortal);
+    // Fenêtre « Rattacher » universelle : lecture JSON (contexte, cibles d'un périmètre, détail d'une cible), écritures (CSRF, débit limité), pistes.
+    $router->get('/atak/sse/rattacher/contexte', [\App\Controllers\Web\SseAttachController::class, 'context'], $mwSsePortal);
+    $router->get('/atak/sse/rattacher/cibles', [\App\Controllers\Web\SseAttachController::class, 'targets'], $mwSsePortal);
+    $router->get('/atak/sse/rattacher/cible', [\App\Controllers\Web\SseAttachController::class, 'target'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher/apercu', [\App\Controllers\Web\SseAttachController::class, 'preview'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher/annuler', [\App\Controllers\Web\SseAttachController::class, 'undo'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher/creer', [\App\Controllers\Web\SseAttachController::class, 'create'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher/aligner', [\App\Controllers\Web\SseAttachController::class, 'align'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher/reglage', [\App\Controllers\Web\SseAttachController::class, 'setting'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher/{id}/modifier', [\App\Controllers\Web\SseAttachController::class, 'update'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher/{id}/detacher', [\App\Controllers\Web\SseAttachController::class, 'detach'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher/{id}/deplacer', [\App\Controllers\Web\SseAttachController::class, 'move'], $mwSsePortal);
+    $router->post('/atak/sse/rattacher', [\App\Controllers\Web\SseAttachController::class, 'store'], $mwSsePortal);
+    $router->get('/atak/sse/pistes', [\App\Controllers\Web\SseAttachController::class, 'leads'], $mwSsePortal);
+    $router->post('/atak/sse/pistes', [\App\Controllers\Web\SseAttachController::class, 'leadStore'], $mwSsePortal);
+    $router->get('/atak/sse/pistes/{id}', [\App\Controllers\Web\SseAttachController::class, 'leadShow'], $mwSsePortal);
+    $router->post('/atak/sse/pistes/{id}', [\App\Controllers\Web\SseAttachController::class, 'leadUpdate'], $mwSsePortal);
     $router->get('/atak/sse/cerberes', [\App\Controllers\Web\SseLinksController::class, 'cerberes'], $mwSsePortal);
     // Widget Cerbère (bouton flottant du portail) : contenu du tiroir, lecture seule.
     $router->get('/atak/sse/cerbere/panneau', [\App\Controllers\Web\SseCerbereWidgetController::class, 'panel'], $mwSsePortal);
@@ -1452,6 +1469,11 @@ return function (Router $router) {
     $router->post('/atak/sse/fiches/{id}/pieces/{attachmentId}/supprimer', [SseFieldNoteController::class, 'attachmentDelete'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/suivi', [SseFieldNoteController::class, 'triage'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/rattachement', [SseFieldNoteController::class, 'attachCase'], $mwSsePortal);
+    // Remontées vues du bureau SSE : même service que le back-office (IntelIntakeDesk), habillage du portail.
+    $router->get('/atak/sse/remontees', [\App\Controllers\Web\SseIntakeController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/remontees/{source}/{id}', [\App\Controllers\Web\SseIntakeController::class, 'show'], $mwSsePortal);
+    $router->get('/atak/sse/remontees/{source}/{id}/suggestions', [\App\Controllers\Web\SseIntakeController::class, 'suggestions'], $mwSsePortal);
+    $router->post('/atak/sse/remontees/{source}/{id}/{action}', [\App\Controllers\Web\SseIntakeController::class, 'action'], $mwSsePortal);
     $router->get('/atak/sse/collecte', [SsePortalController::class, 'collecteHub'], $mwSsePortal);
     $router->get('/atak/sse/validation', [SsePortalController::class, 'validationQueue'], $mwSsePortal);
     $router->get('/atak/sse/rapports', [SsePortalController::class, 'reportsHub'], $mwSsePortal);
@@ -2139,6 +2161,7 @@ return function (Router $router) {
     $router->get('/back-office/discord-bot', [OrganizationDiscordBotController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/discord-bot/retour', [OrganizationDiscordBotController::class, 'callback'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/discord-bot/reglages', [OrganizationDiscordBotController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/discord-bot/remontees', [OrganizationDiscordBotController::class, 'saveIntake'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/discord-bot/tester', [OrganizationDiscordBotController::class, 'test'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/discord-bot/delier', [OrganizationDiscordBotController::class, 'unlink'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/discord-bot/rappel/fermer', [OrganizationDiscordBotController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2886,6 +2909,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/remontees/joueurs', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'players'], [AuthMiddleware::class]);
     $router->get('/back-office/remontees/joueurs/{key}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'player'], [AuthMiddleware::class]);
     $router->get('/back-office/remontees/{source}/{id}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'show'], [AuthMiddleware::class]);
+    $router->get('/back-office/remontees/{source}/{id}/suggestions', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'suggestions'], [AuthMiddleware::class]);
     $router->post('/back-office/remontees/{source}/{id}/{action}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'action'], [AuthMiddleware::class]);
     $router->get('/back-office/atak/fire-teams/create', [AdminFireTeamsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/fire-teams/store', [AdminFireTeamsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

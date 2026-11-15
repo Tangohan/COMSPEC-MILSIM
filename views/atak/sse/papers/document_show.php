@@ -65,6 +65,7 @@ $pdlWidget = trim((string) ob_get_clean());
 // Sans le widget Liaisons (indisponible), le bouton reste accessible dans sa propre barre.
 echo $pdlWidget !== '' ? $pdlWidget : ($pdlMenu !== '' ? '<div class="pdl-bar">' . $pdlMenu . '</div>' : '');
 ?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::section('paper', (int) $doc['id']); ?>
 
 <?php
 $aiLinks = [];

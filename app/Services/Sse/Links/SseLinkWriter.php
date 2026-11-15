@@ -115,6 +115,8 @@ final class SseLinkWriter
         if (!$this->links()->delete($tenant, $linkId)) {
             return $fail('Le lien n’a pas pu être retiré.');
         }
+        // Le lien portait peut-être un rattachement enrichi (fenêtre « Rattacher ») : il devient un historique, la colonne suit.
+        \App\Services\Sse\Attach\SseAttachService::onLinkRemoved($tenant, $row, $uid);
         $this->audit($tenant, $uid, 'entity_link.remove', $linkId, ['from' => C::ref((string) $row['source_type'], (string) $row['source_id']), 'to' => C::ref((string) $row['target_type'], (string) $row['target_id']), 'reason' => (string) $row['reason']]);
 
         return ['ok' => true, 'error' => null];

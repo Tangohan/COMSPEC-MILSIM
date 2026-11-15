@@ -109,7 +109,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
         <div class="fnr-actions" data-cw-lift>
             <?php if ($canManage): ?>
                 <button type="button" class="btn fnr-act" data-fnr-open="fnr-dlg-suivi" aria-haspopup="dialog"><?= $ico($icons['flag']) ?><span class="fnr-act__long">Modifier le suivi</span><span class="fnr-act__short" aria-hidden="true">Suivi</span></button>
-                <button type="button" class="btn btn--ghost fnr-act" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog"><?= $ico($icons['folder']) ?><span class="fnr-act__long">Rattacher à un dossier</span><span class="fnr-act__short" aria-hidden="true">Dossier</span></button>
+                <button type="button" class="btn btn--ghost fnr-act" data-ra-open data-ra-pieces="note:<?= (int) $noteId ?>" aria-haspopup="dialog"><?= $ico($icons['folder']) ?><span class="fnr-act__long">Rattacher à…</span><span class="fnr-act__short" aria-hidden="true">Rattacher</span></button>
             <?php endif; ?>
             <?php if ($canAttach): ?>
                 <button type="button" class="btn <?= $canManage ? 'btn--ghost' : '' ?> fnr-act" data-fnr-open="fnr-dlg-piece" aria-haspopup="dialog"><?= $ico($icons['clip']) ?><span class="fnr-act__long">Joindre une pièce</span><span class="fnr-act__short" aria-hidden="true">Pièce</span></button>
@@ -282,6 +282,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
             <section class="fnr-panel" role="tabpanel" id="fnr-panel-suivi" aria-labelledby="fnr-tab-suivi" data-fnr-panel="suivi" hidden>
                 <h2 class="fnr-panel__title">Suivi</h2>
                 <p class="fnr-desc">Ce que le bureau a fait de la fiche, du plus récent au plus ancien.</p>
+                <?php if (!empty($intakeDesk)): $intakePart = 'panel'; require __DIR__ . '/_intake_suivi.php'; else: ?>
                 <div class="fnr-state fnr-state--<?= $h($statusTone) ?>">
                     <p class="fnr-state__label"><span class="fnr-dot" aria-hidden="true"></span><?= $h($statusLabel) ?></p>
                     <?php if (isset($statusHints[$status])): ?><p class="fnr-state__hint"><?= $h($statusHints[$status]) ?></p><?php endif; ?>
@@ -306,6 +307,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                             <p>Les changements d’état, de type et de contenu de la fiche s’inscriront ici.</p>
                         </div>
                     <?php endif; ?>
+                <?php endif; ?>
                 <?php endif; ?>
             </section>
 
@@ -366,14 +368,14 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                         <span class="fnr-case__go">Ouvrir le dossier</span>
                     </a>
                     <?php if ($canManage): ?>
-                        <button type="button" class="btn btn--ghost fnr-wide" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog">Changer de dossier</button>
+                        <button type="button" class="btn btn--ghost fnr-wide" data-ra-open data-ra-pieces="note:<?= (int) $noteId ?>" aria-haspopup="dialog">Rattacher ailleurs</button>
                     <?php endif; ?>
                 <?php else: ?>
                     <div class="fnr-empty">
                         <strong>Aucun dossier</strong>
-                        <p><?= $canManage ? 'Rattachez la fiche à un dossier pour la retrouver avec les autres éléments de l’affaire.' : 'Cette fiche n’est versée dans aucun dossier du bureau.' ?></p>
+                        <p><?= $canManage ? 'Rattachez la fiche à un dossier, une piste ou une personne pour la retrouver avec les autres éléments de l’affaire.' : 'Cette fiche n’est versée dans aucun dossier du bureau.' ?></p>
                         <?php if ($canManage): ?>
-                            <button type="button" class="btn" data-fnr-open="fnr-dlg-dossier" aria-haspopup="dialog">Rattacher à un dossier</button>
+                            <button type="button" class="btn" data-ra-open data-ra-pieces="note:<?= (int) $noteId ?>" aria-haspopup="dialog">Rattacher à…</button>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -383,6 +385,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                 <h2 class="fnr-panel__title">Liaisons</h2>
                 <p class="fnr-desc">Les personnes, papiers et dossiers reliés à cette fiche, à la main ou par Cerbère.</p>
                 <?php \App\Services\Sse\Links\SseLinksWidget::render('note', $noteId); ?>
+                <?php \App\Services\Sse\Attach\SseAttachWindow::section('note', $noteId, ['slim' => true]); ?>
             </section>
         </aside>
     </div>
@@ -417,35 +420,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
             </form>
         </dialog>
 
-        <dialog class="fnr-dialog" id="fnr-dlg-dossier" aria-labelledby="fnr-dlg-dossier-title">
-            <form method="post" action="<?= $h(url($base . '/rattachement')) ?>" class="fnr-dialog__card">
-                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                <header class="fnr-dialog__head">
-                    <div>
-                        <h2 id="fnr-dlg-dossier-title">Rattachement</h2>
-                        <p class="fnr-desc">La fiche apparaît dans le dossier choisi, sans rien conclure sur les personnes citées.</p>
-                    </div>
-                    <button type="button" class="fnr-dialog__close" data-fnr-close aria-label="Fermer la fenêtre"><?= $ico($icons['close']) ?></button>
-                </header>
-                <div class="fnr-dialog__body">
-                    <label class="fnr-field" for="fiche-dossier">Dossier de rattachement
-                        <select id="fiche-dossier" name="case_id" autofocus>
-                            <option value="0">Aucun dossier</option>
-                            <?php foreach ($openCases as $case): ?>
-                                <option value="<?= (int) $case['id'] ?>" <?= (int) ($note['case_id'] ?? 0) === (int) $case['id'] ? 'selected' : '' ?>><?= $h($case['label']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <?php if ($openCases === []): ?>
-                        <p class="fnr-dim">Aucun dossier ouvert ne vous est accessible pour le moment.</p>
-                    <?php endif; ?>
-                </div>
-                <footer class="fnr-dialog__foot">
-                    <button type="button" class="btn btn--ghost" data-fnr-close>Annuler</button>
-                    <button type="submit" class="btn">Rattacher</button>
-                </footer>
-            </form>
-        </dialog>
+        <?php \App\Services\Sse\Attach\SseAttachWindow::render(); ?>
     <?php endif; ?>
 
     <?php if ($canAttach): ?>
@@ -497,6 +472,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
             </form>
         </dialog>
     <?php endif; ?>
+    <?php if (!empty($intakeDesk)): $intakePart = 'dialogs'; require __DIR__ . '/_intake_suivi.php'; endif; ?>
 </div>
 
 <?php

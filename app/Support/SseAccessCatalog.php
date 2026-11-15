@@ -187,7 +187,7 @@ final class SseAccessCatalog
         'dossiers' => [
             'label' => 'Dossiers d’enquête',
             'hint' => 'Dossiers validés et d’intérêt, investigations, sites, objets, rédaction, rapports, transmissions, collecte et validation.',
-            'paths' => ['dossiers', 'interet', 'toiles', 'sites', 'objets', 'documents', 'bibliotheque', 'presentation', 'rapports', 'transmissions', 'collecte', 'validation'],
+            'paths' => ['dossiers', 'interet', 'toiles', 'pistes', 'sites', 'objets', 'documents', 'bibliotheque', 'presentation', 'rapports', 'transmissions', 'collecte', 'validation'],
             'legacy' => ['read' => 'entrant', 'write' => 'manage', 'add' => 'manage', 'delete' => 'manage', 'export' => 'export', 'manage' => 'grant'],
         ],
         'analyse' => [
@@ -211,7 +211,7 @@ final class SseAccessCatalog
         'terrain' => [
             'label' => 'Fiches de renseignement',
             'hint' => 'Notes libres remontées du terrain, avec pièces jointes, tri et rattachement aux dossiers.',
-            'paths' => ['fiches'],
+            'paths' => ['fiches', 'remontees'],
             'legacy' => ['read' => 'entrant', 'write' => 'field_write', 'add' => 'field_write', 'delete' => 'manage', 'export' => 'export', 'manage' => 'manage'],
         ],
         'identites_service' => [

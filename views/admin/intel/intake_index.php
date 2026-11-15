@@ -1,184 +1,192 @@
 <?php
 declare(strict_types=1);
 
+use App\Services\Intel\IntelIntakeDesk;
+use App\Services\Intel\IntelIntakePresenter as P;
 use App\Services\Intel\IntelIntakeService;
 
-/** @var bool $intakeReady */
-/** @var list<array<string, mixed>> $intakeItems */
-/** @var array{open: int, closed: int, mine: int, deleted: int} $intakeCounts */
-/** @var string $intakeTab */
-/** @var array{source: string, type: string, q: string, assignee: string} $intakeFilters */
-/** @var array<string, string> $intakeTypes */
-/** @var list<array{id: int, label: string}> $intakeMembers */
-
+/**
+ * Back-office « Remontées » — liste des comptes rendus et des fiches, avec leurs pastilles.
+ * Filtres (état, source, type, traitant), filtres par pastille, colonnes triables ; cartes sur téléphone.
+ *
+ * @var bool $intakeReady
+ * @var list<array<string, mixed>> $intakeItems lignes passées par IntelIntakeDesk::refine
+ * @var array{open: int, closed: int, mine: int, deleted: int, states?: array<string, int>} $intakeCounts
+ * @var string $intakeTab
+ * @var array{source: string, type: string, q: string, assignee: string} $intakeFilters
+ * @var array<string, string> $intakeTypes
+ * @var list<array{id: int, label: string}> $intakeMembers
+ * @var string $intakeBadge
+ * @var array<string, int> $intakeBadgeCounts
+ * @var string $intakeSort
+ * @var string $intakeDir
+ */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $items = is_array($intakeItems ?? null) ? $intakeItems : [];
 $counts = $intakeCounts ?? ['open' => 0, 'closed' => 0, 'mine' => 0, 'deleted' => 0];
 $tab = (string) ($intakeTab ?? 'open');
 $f = $intakeFilters ?? ['source' => '', 'type' => '', 'q' => '', 'assignee' => ''];
 $members = $intakeMembers ?? [];
+$badgeFilter = (string) ($intakeBadge ?? '');
+$badgeCounts = is_array($intakeBadgeCounts ?? null) ? $intakeBadgeCounts : [];
+$sort = (string) ($intakeSort ?? 'recu');
+$dir = (string) ($intakeDir ?? 'desc');
 
-$link = static function (array $over) use ($f, $tab): string {
-    $q = array_filter(array_merge(['etat' => $tab, 'source' => $f['source'], 'type' => $f['type'], 'q' => $f['q'], 'attribue' => $f['assignee']], $over), static fn ($v): bool => $v !== '' && $v !== null);
+$link = static function (array $over) use ($f, $tab, $badgeFilter, $sort, $dir): string {
+    $q = array_filter(array_merge([
+        'etat' => $tab, 'source' => $f['source'], 'type' => $f['type'], 'q' => $f['q'], 'attribue' => $f['assignee'],
+        'pastille' => $badgeFilter, 'tri' => $sort === 'recu' ? '' : $sort, 'ordre' => $dir === 'desc' ? '' : $dir,
+    ], $over), static fn ($v): bool => $v !== '' && $v !== null);
 
     return url('back-office/remontees' . ($q !== [] ? '?' . http_build_query($q) : ''));
 };
-$ago = static function (string $ts): string {
-    $t = strtotime($ts);
-    if ($t === false) {
-        return '';
+$sortLink = static function (string $key, string $label) use ($link, $sort, $dir, $h): string {
+    $active = $sort === $key;
+    $next = $active && $dir === 'desc' ? 'asc' : 'desc';
+
+    return '<a class="rmt-sort' . ($active ? ' is-active' : '') . '" href="' . $h($link(['tri' => $key, 'ordre' => $next])) . '">'
+        . $h($label) . ($active ? ' <span aria-hidden="true">' . ($dir === 'asc' ? '↑' : '↓') . '</span><span class="rmt-sr">' . ($dir === 'asc' ? 'ordre croissant' : 'ordre décroissant') . '</span>' : '') . '</a>';
+};
+$ariaSort = static fn (string $key): string => $sort === $key ? ' aria-sort="' . ($dir === 'asc' ? 'ascending' : 'descending') . '"' : '';
+$badge = static fn (array $b): string => '<li class="rmt-badge rmt-badge--' . $h($b['tone']) . '"' . ($b['title'] !== '' ? ' title="' . $h($b['title']) . '"' : '') . '><span class="rmt-badge__dot" aria-hidden="true"></span>' . $h($b['label']) . '</li>';
+// Deux lignes de pastilles : ce qui décide (état, retard, urgence), puis le reste.
+$split = static function (array $badges): array {
+    $main = [];
+    $rest = [];
+    foreach ($badges as $b) {
+        if (in_array($b['key'], ['etat', 'supprimee', 'retard', 'urgence'], true)) {
+            $main[] = $b;
+        } else {
+            $rest[] = $b;
+        }
     }
-    $d = time() - $t;
 
-    return match (true) {
-        $d < 90 => 'à l’instant',
-        $d < 3600 => 'il y a ' . (int) round($d / 60) . ' min',
-        $d < 86400 => 'il y a ' . (int) round($d / 3600) . ' h',
-        $d < 86400 * 30 => 'il y a ' . (int) round($d / 86400) . ' j',
-        default => 'le ' . date('d/m/Y', $t),
-    };
+    return [$main, $rest];
 };
-$stateIcon = static fn (string $s): string => match ($s) {
-    'a_traiter' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></svg>',
-    'en_cours' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>',
-    'exploitee' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.8" fill="currentColor"/><path d="M5 8.2l2 2 4-4.2" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    'non_exploitable' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.2 11.8l7.6-7.6" stroke="currentColor" stroke-width="1.6"/></svg>',
-    'transmise' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.3 8h5.2M8.4 5.8 10.6 8l-2.2 2.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    'doublon' => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.1" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9.9" cy="8" r="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
-    default => '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.8" fill="currentColor"/><path d="M5.5 5.5l5 5m0-5l-5 5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
-};
-// Priorité du compte rendu ou urgence de la fiche ; routine et normal ne sont pas affichés.
-$prioLabel = ['FLASH' => 'Flash', 'IMMEDIATE' => 'Immédiat', 'PRIORITY' => 'Prioritaire', 'critique' => 'Critique', 'urgent' => 'Urgent'];
+$hasFilters = $f['q'] !== '' || $f['source'] !== '' || $f['type'] !== '' || $f['assignee'] !== '' || $badgeFilter !== '';
 ?>
-<div class="rmt">
-    <div class="rmt__frame">
-        <header class="rmt__hero">
-            <p class="rmt__kicker">Renseignement · Suivi</p>
-            <h1 class="rmt__title">Remontées</h1>
-            <p class="rmt__lead">Tous les comptes rendus et toutes les fiches de renseignement (FRS : FRM, FRO, FRC, FRA, FRT) arrivés du terrain, du téléphone ATAK et du bureau SSE. Ouvrez une remontée pour la commenter, l’attribuer, changer son type, corriger ses données, la caviarder, la marquer exploitée, transmise ou doublon. La vue <strong>Par joueur</strong> réunit tout ce que chaque joueur a envoyé du jeu (MEDEVAC, SIGINT, photos, POI, pertes…).</p>
-        </header>
-        <?php $rmtNav = 'list'; require base_path('views/admin/intel/_intake_nav.php'); ?>
+<div class="rmt rmt-list">
+    <header class="rmt-pagehead">
+        <div>
+            <h1 class="rmt-title">Remontées</h1>
+            <p class="rmt-desc">Comptes rendus et fiches de renseignement arrivés du terrain, à prendre en compte puis à exploiter.</p>
+        </div>
+    </header>
+    <?php $rmtNav = 'list'; require base_path('views/admin/intel/_intake_nav.php'); ?>
 
-        <?php if (empty($intakeReady)): ?>
-            <p class="rmt__notice">Les tables du suivi des remontées ne sont pas encore créées : un administrateur plateforme doit lancer <strong>run-migrations.php</strong>.</p>
-        <?php else: ?>
+    <?php if (empty($intakeReady)): ?>
+        <p class="rmt-notice">Les tables du suivi des remontées ne sont pas encore créées : un administrateur de la plateforme doit lancer la mise à jour de la base.</p>
+    <?php else: ?>
 
-        <form class="rmt__filters" method="get" action="<?= $h(url('back-office/remontees')) ?>" role="search">
-            <label class="rmt__search">
-                <span class="rmt__sr">Rechercher</span>
-                <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                <input type="search" name="q" value="<?= $h($f['q']) ?>" placeholder="Référence, texte, indicatif…">
-            </label>
-            <label class="rmt__select"><span class="rmt__sr">État</span>
-                <select name="etat">
-                    <?php foreach (['open' => 'Ouvertes', 'closed' => 'Traitées', 'mine' => 'Attribuées à moi', 'all' => 'Tous les états', 'deleted' => 'Supprimées'] as $k => $label): ?>
-                        <option value="<?= $h($k) ?>"<?= $tab === $k ? ' selected' : '' ?>><?= $h($label) ?></option>
-                    <?php endforeach; ?>
-                    <optgroup label="État précis">
-                        <?php foreach (IntelIntakeService::STATES as $k => $label): ?>
-                            <option value="<?= $h($k) ?>"<?= $tab === $k ? ' selected' : '' ?>><?= $h($label) ?> (<?= (int) ($counts['states'][$k] ?? 0) ?>)</option>
-                        <?php endforeach; ?>
-                    </optgroup>
-                </select>
-            </label>
-            <label class="rmt__select"><span class="rmt__sr">Source</span>
-                <select name="source">
-                    <option value="">Toutes les sources</option>
-                    <?php foreach (IntelIntakeService::SOURCES as $k => $label): ?>
-                        <option value="<?= $h($k) ?>"<?= $f['source'] === $k ? ' selected' : '' ?>><?= $h($label) ?>s</option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label class="rmt__select"><span class="rmt__sr">Type</span>
-                <select name="type">
-                    <option value="">Tous les types</option>
-                    <?php foreach ($intakeTypes as $code => $label): ?>
-                        <option value="<?= $h($code) ?>"<?= $f['type'] === $code ? ' selected' : '' ?>><?= $h($code . ' · ' . $label) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label class="rmt__select"><span class="rmt__sr">Attribution</span>
-                <select name="attribue">
-                    <option value="">Attribuée à tous</option>
-                    <option value="none"<?= $f['assignee'] === 'none' ? ' selected' : '' ?>>Non attribuée</option>
-                    <?php foreach ($members as $m): ?>
-                        <option value="<?= (int) $m['id'] ?>"<?= $f['assignee'] === (string) $m['id'] ? ' selected' : '' ?>><?= $h($m['label']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <button type="submit" class="rmt__btn">Filtrer</button>
-            <?php if ($f['q'] !== '' || $f['source'] !== '' || $f['type'] !== '' || $f['assignee'] !== ''): ?>
-                <a class="rmt__clear" href="<?= $h(url('back-office/remontees?etat=' . $tab)) ?>">Effacer les filtres</a>
-            <?php endif; ?>
-        </form>
-
-        <section class="rmt__box" aria-label="Remontées">
-            <nav class="rmt__tabs" aria-label="État">
-                <?php foreach ([
-                    'open' => ['Ouvertes', $counts['open'], 'a_traiter'],
-                    'closed' => ['Traitées', $counts['closed'], 'exploitee'],
-                    'mine' => ['Attribuées à moi', $counts['mine'], 'en_cours'],
-                    'deleted' => ['Supprimées', $counts['deleted'], 'close'],
-                ] as $k => [$label, $n, $icon]): ?>
-                    <a href="<?= $h($link(['etat' => $k])) ?>" class="rmt__tab rmt__tab--<?= $h($k) ?><?= $tab === $k ? ' is-active' : '' ?>"<?= $tab === $k ? ' aria-current="page"' : '' ?>>
-                        <span class="rmt__state rmt__state--<?= $h($icon) ?>"><?= $stateIcon($icon) ?></span>
-                        <strong><?= (int) $n ?></strong> <?= $h($label) ?>
-                    </a>
+    <form class="rmt-filters" method="get" action="<?= $h(url('back-office/remontees')) ?>" role="search">
+        <div class="rmt-filters__search">
+            <label class="rmt-label" for="rmt-q">Rechercher</label>
+            <input id="rmt-q" type="search" name="q" value="<?= $h($f['q']) ?>" placeholder="Référence, texte, indicatif">
+        </div>
+        <div>
+            <label class="rmt-label" for="rmt-etat">État</label>
+            <select id="rmt-etat" name="etat">
+                <?php foreach (['open' => 'Ouvertes', 'closed' => 'Traitées', 'mine' => 'Attribuées à moi', 'all' => 'Tous les états', 'deleted' => 'Supprimées'] as $k => $label): ?>
+                    <option value="<?= $h($k) ?>"<?= $tab === $k ? ' selected' : '' ?>><?= $h($label) ?> (<?= (int) ($k === 'all' ? $counts['open'] + $counts['closed'] : ($counts[$k] ?? 0)) ?>)</option>
                 <?php endforeach; ?>
-                <?php if (isset(IntelIntakeService::STATES[$tab])): ?>
-                    <a href="<?= $h($link(['etat' => $tab])) ?>" class="rmt__tab is-active" aria-current="page" title="<?= $h(IntelIntakeService::STATE_HINTS[$tab] ?? '') ?>">
-                        <span class="rmt__state rmt__state--<?= $h($tab) ?>"><?= $stateIcon($tab) ?></span>
-                        <strong><?= (int) ($counts['states'][$tab] ?? 0) ?></strong> <?= $h(IntelIntakeService::STATES[$tab]) ?>
-                    </a>
-                <?php endif; ?>
-            </nav>
+                <optgroup label="État précis">
+                    <?php foreach (IntelIntakeService::STATES as $k => $label): ?>
+                        <option value="<?= $h($k) ?>"<?= $tab === $k ? ' selected' : '' ?>><?= $h($label) ?> (<?= (int) ($counts['states'][$k] ?? 0) ?>)</option>
+                    <?php endforeach; ?>
+                </optgroup>
+            </select>
+        </div>
+        <div>
+            <label class="rmt-label" for="rmt-source">Source</label>
+            <select id="rmt-source" name="source">
+                <option value="">Toutes les sources</option>
+                <option value="cr"<?= $f['source'] === 'cr' ? ' selected' : '' ?>>Comptes rendus</option>
+                <option value="fiche"<?= $f['source'] === 'fiche' ? ' selected' : '' ?>>Fiches de renseignement</option>
+            </select>
+        </div>
+        <div>
+            <label class="rmt-label" for="rmt-typef">Type</label>
+            <select id="rmt-typef" name="type">
+                <option value="">Tous les types</option>
+                <?php foreach ($intakeTypes as $code => $label): ?>
+                    <option value="<?= $h($code) ?>"<?= $f['type'] === $code ? ' selected' : '' ?>><?= $h($code . ' · ' . $label) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
+            <label class="rmt-label" for="rmt-attr">Traitant</label>
+            <select id="rmt-attr" name="attribue">
+                <option value="">Tous les traitants</option>
+                <option value="none"<?= $f['assignee'] === 'none' ? ' selected' : '' ?>>Sans traitant</option>
+                <?php foreach ($members as $m): ?>
+                    <option value="<?= (int) $m['id'] ?>"<?= $f['assignee'] === (string) $m['id'] ? ' selected' : '' ?>><?= $h($m['label']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="rmt-filters__go">
+            <?php if ($badgeFilter !== ''): ?><input type="hidden" name="pastille" value="<?= $h($badgeFilter) ?>"><?php endif; ?>
+            <button type="submit" class="rmt-btn rmt-btn--primary">Filtrer</button>
+            <?php if ($hasFilters): ?><a class="rmt-btn" href="<?= $h(url('back-office/remontees?etat=' . rawurlencode($tab))) ?>">Effacer</a><?php endif; ?>
+        </div>
+    </form>
 
-            <?php if ($items === []): ?>
-                <div class="rmt__empty">
-                    <p class="rmt__empty-title">Rien ici.</p>
-                    <p>Les comptes rendus arrivent de l’app Comptes rendus du téléphone ATAK, les fiches de l’app FRS et du bureau SSE.</p>
-                </div>
-            <?php else: ?>
-                <ul class="rmt__list">
+    <ul class="rmt-pills" aria-label="Filtrer par pastille">
+        <li><a class="rmt-pill<?= $badgeFilter === '' ? ' is-active' : '' ?>" href="<?= $h($link(['pastille' => ''])) ?>"<?= $badgeFilter === '' ? ' aria-current="true"' : '' ?>>Toutes</a></li>
+        <?php foreach (IntelIntakeDesk::BADGE_FILTERS as $k => $label): $n = (int) ($badgeCounts[$k] ?? 0); ?>
+            <li><a class="rmt-pill rmt-pill--<?= $h($k) ?><?= $badgeFilter === $k ? ' is-active' : '' ?><?= $n > 0 ? ' is-on' : '' ?>" href="<?= $h($link(['pastille' => $badgeFilter === $k ? '' : $k])) ?>"<?= $badgeFilter === $k ? ' aria-current="true"' : '' ?>><?= $h($label) ?> <strong><?= $n ?></strong></a></li>
+        <?php endforeach; ?>
+    </ul>
+
+    <?php if ($items === []): ?>
+        <div class="rmt-empty">
+            <strong>Aucune remontée ici</strong>
+            <p><?= $hasFilters ? 'Aucune remontée ne correspond à ces filtres.' : 'Les comptes rendus arrivent du téléphone ATAK, les fiches de l’application FRS et du bureau SSE.' ?></p>
+        </div>
+    <?php else: ?>
+        <div class="rmt-tablewrap">
+            <table class="rmt-table">
+                <caption class="rmt-sr">Remontées, <?= count($items) ?> ligne(s)</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Remontée</th>
+                        <th scope="col"<?= $ariaSort('etat') ?>><?= $sortLink('etat', 'État') ?> · <?= $sortLink('urgence', 'Urgence') ?></th>
+                        <th scope="col"<?= $ariaSort('emetteur') ?>><?= $sortLink('emetteur', 'Émetteur') ?></th>
+                        <th scope="col"<?= $ariaSort('recu') ?>><?= $sortLink('recu', 'Reçue') ?></th>
+                        <th scope="col"<?= $ariaSort('attente') ?>><?= $sortLink('attente', 'Attente') ?></th>
+                        <th scope="col"<?= $ariaSort('traitant') ?>><?= $sortLink('traitant', 'Traitant') ?></th>
+                    </tr>
+                </thead>
+                <tbody>
                     <?php foreach ($items as $it):
                         $href = url('back-office/remontees/' . $it['source'] . '/' . $it['id']);
-                        $prio = $prioLabel[(string) $it['priority']] ?? '';
+                        [$main, $rest] = $split($it['badges']);
                     ?>
-                        <li class="rmt__row">
-                            <span class="rmt__state rmt__state--<?= $h($it['state']) ?>" title="<?= $h($it['state_label']) ?>"><?= $stateIcon((string) $it['state']) ?><span class="rmt__sr"><?= $h($it['state_label']) ?></span></span>
-                            <div class="rmt__main">
-                                <a class="rmt__link" href="<?= $h($href) ?>"><?= $h($it['title'] !== '' ? $it['title'] : $it['type_label']) ?></a>
-                                <span class="rmt__label rmt__label--<?= $h($it['source']) ?>"><?= $h($it['type']) ?></span>
-                                <?php if ($prio !== ''): ?><span class="rmt__label rmt__label--hot"><?= $h($prio) ?></span><?php endif; ?>
-                                <?php if (!empty($it['redacted'])): ?><span class="rmt__label">Caviardée</span><?php endif; ?>
-                                <p class="rmt__meta">
-                                    <?= $h($it['ref']) ?> · <?= $h($it['type_label']) ?> · remontée <span title="<?= $h($it['at']) ?>"><?= $h($ago((string) $it['at'])) ?></span> par <strong><?= $h($it['author']) ?></strong>
-                                    <?php if ((string) ($it['author_steam'] ?? '') !== ''): ?><span class="rmt__mono" title="Identifiant Steam">· <?= $h($it['author_steam']) ?></span><?php endif; ?>
-                                    · <?= $h($it['state_label']) ?>
-                                </p>
-                                <?php if (trim((string) ($it['grid'] ?? '')) !== '' || (string) ($it['mission'] ?? '') !== '' || (int) ($it['attachments'] ?? 0) > 0): ?>
-                                    <p class="rmt__meta rmt__meta--chips">
-                                        <?php if (trim((string) ($it['grid'] ?? '')) !== ''): ?><span class="rmt__chip" title="Position">⌖ <?= $h(trim((string) $it['grid'])) ?></span><?php endif; ?>
-                                        <?php if ((string) ($it['mission'] ?? '') !== ''): ?><span class="rmt__chip" title="Mission"><?= $h($it['mission']) ?></span><?php endif; ?>
-                                        <?php if ((int) ($it['attachments'] ?? 0) > 0): ?><span class="rmt__chip" title="Pièces jointes"><?= (int) $it['attachments'] ?> pièce<?= (int) $it['attachments'] > 1 ? 's' : '' ?> jointe<?= (int) $it['attachments'] > 1 ? 's' : '' ?></span><?php endif; ?>
-                                    </p>
-                                <?php endif; ?>
-                            </div>
-                            <div class="rmt__side">
-                                <?php if ($it['assignee_user_id'] !== null): ?>
-                                    <span class="rmt__avatar" title="Attribuée à <?= $h($it['assignee_label']) ?>"><?= $h(mb_strtoupper(mb_substr((string) $it['assignee_label'], 0, 2))) ?></span>
-                                <?php endif; ?>
-                                <?php if ((int) $it['comments'] > 0): ?>
-                                    <a class="rmt__comments" href="<?= $h($href) ?>#fil" title="<?= (int) $it['comments'] ?> commentaire(s)">
-                                        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><?= (int) $it['comments'] ?>
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-                        </li>
+                        <tr class="<?= $it['delay']['late'] ? 'is-late' : '' ?>">
+                            <td>
+                                <a class="rmt-row__title" href="<?= $h($href) ?>" translate="no"><?= $h($it['title'] !== '' ? $it['title'] : $it['type_label']) ?></a>
+                                <span class="rmt-row__ref"><span class="rmt-mono"><?= $h($it['ref']) ?></span> · <?= $h($it['type'] . ' · ' . $it['type_label']) ?><?= (int) $it['comments'] > 0 ? ' · ' . (int) $it['comments'] . ' commentaire' . ((int) $it['comments'] > 1 ? 's' : '') : '' ?></span>
+                                <?php if ($rest !== []): ?><ul class="rmt-badges rmt-badges--rest"><?php foreach ($rest as $b): ?><?= $badge($b) ?><?php endforeach; ?></ul><?php endif; ?>
+                            </td>
+                            <td><ul class="rmt-badges"><?php foreach ($main as $b): ?><?= $badge($b) ?><?php endforeach; ?></ul></td>
+                            <td translate="no"><?= $h($it['author']) ?></td>
+                            <td class="rmt-nowrap" title="<?= $h(P::when((string) $it['at'])) ?>"><?= $h(P::ago((string) $it['at'])) ?></td>
+                            <td class="rmt-nowrap<?= $it['delay']['late'] ? ' rmt-late' : '' ?>"><?= $h($it['delay']['label']) ?></td>
+                            <td translate="no"><?= $it['assignee_user_id'] !== null ? $h($it['assignee_label']) : '<span class="rmt-dim" translate="yes">Personne</span>' ?></td>
+                        </tr>
                     <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-        </section>
-        <?php endif; ?>
-    </div>
+                </tbody>
+            </table>
+        </div>
+        <ul class="rmt-cards">
+            <?php foreach ($items as $it): $href = url('back-office/remontees/' . $it['source'] . '/' . $it['id']); ?>
+                <li class="rmt-card<?= $it['delay']['late'] ? ' is-late' : '' ?>">
+                    <a class="rmt-row__title" href="<?= $h($href) ?>" translate="no"><?= $h($it['title'] !== '' ? $it['title'] : $it['type_label']) ?></a>
+                    <p><span class="rmt-mono"><?= $h($it['ref']) ?></span> · <?= $h($it['type_label']) ?></p>
+                    <ul class="rmt-badges"><?php foreach ($it['badges'] as $b): ?><?= $badge($b) ?><?php endforeach; ?></ul>
+                    <p><span translate="no"><?= $h($it['author']) ?></span> · <?= $h(P::ago((string) $it['at'])) ?> · <span class="<?= $it['delay']['late'] ? 'rmt-late' : '' ?>"><?= $h($it['delay']['label']) ?></span><?= $it['assignee_user_id'] !== null ? ' · traitant : <span translate="no">' . $h($it['assignee_label']) . '</span>' : '' ?></p>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+    <?php endif; ?>
 </div>
