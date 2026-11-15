@@ -84,7 +84,7 @@ final class SseIdentityRegistryController
 
         return $this->view('atak.sse.papers.documents', [
             'title' => 'Papiers d’identité',
-            'documents' => $this->documents->list($tenantId, $filters),
+            'documents' => (new \App\Services\Sse\SseIdentityHolderService())->annotate($tenantId, $this->documents->list($tenantId, $filters), $truth),
             'filters' => $filters,
             'counts' => $this->documents->counts($tenantId),
             'countries' => $this->countries->listForTenant($tenantId),
