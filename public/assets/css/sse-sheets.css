@@ -1,0 +1,94 @@
+/*
+ * SSE › Fiches PDF : bloc « Émettre un document » (fiche personne et fiche du registre), éditeur de textes, documents émis et
+ * trames de phrases. Reprend les variables du portail (thème sombre de sse_ui.css) ; cibles tactiles de 44 px au moins.
+ */
+.shx {
+    margin: 0 0 12px;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green-bright, #5fb06a);
+    background: var(--surface);
+}
+.shx__head { margin: 0 0 0.75rem; }
+.shx__title { margin: 0; font-size: 1.05rem; color: var(--text-strong, var(--text)); }
+.shx__sub { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.8rem; }
+.shx__buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.shx__form { margin: 0; display: contents; }
+.shx__btn { min-height: 44px; padding: 0.55rem 0.95rem; text-align: center; }
+.shx__btn--small { min-height: 44px; padding: 0.4rem 0.7rem; }
+.shx__btn--primary { border-color: #6fae6b; background: #35502f; color: #eaf5e6; }
+.shx__btn--primary:hover { background: #3f6137; }
+.shx__note { margin: 0; padding: 0.65rem 0.8rem; border: 1px dashed var(--border); color: var(--muted); font-size: 0.8rem; }
+.shx__locked { margin: 0.75rem 0 0; font-size: 0.78rem; color: var(--muted); }
+.shx__locked > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.shx__locked ul { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+.shx__locked li { margin: 0.25rem 0; }
+.shx__links { margin: 0.75rem 0 0; display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-size: 0.8rem; }
+.shx__links .link { min-height: 44px; display: inline-flex; align-items: center; }
+
+.shx-done {
+    display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; justify-content: space-between;
+    margin: 0 0 1rem; padding: 0.8rem 1rem; border: 1px solid rgba(5, 150, 105, 0.55); background: rgba(5, 150, 105, 0.1);
+}
+.shx-done > div { display: grid; gap: 0.15rem; min-width: 0; }
+
+.shx-form { display: grid; gap: 12px; }
+.shx-form label { display: block; margin: 0 0 0.25rem; color: var(--muted); font-size: 0.78rem; }
+.shx-form select, .shx-form input[type="text"], .shx-form textarea { width: 100%; box-sizing: border-box; min-height: 44px; }
+.shx-form .hint { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.72rem; }
+.shx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.9rem; }
+.shx-texts { display: grid; gap: 1.1rem; }
+.shx-field { min-width: 0; }
+.shx-field__top { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; }
+.shx-field__top label { margin: 0; color: var(--text); font-size: 0.86rem; font-weight: 600; }
+.shx-count { font-family: var(--mono, ui-monospace, monospace); font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+.shx-field.is-near .shx-count { color: var(--amber, #f59e0b); }
+.shx-field.is-over .shx-count { color: #f87171; font-weight: 700; }
+.shx-field textarea { min-height: 6rem; resize: vertical; line-height: 1.45; }
+.shx-field.is-over textarea { border-color: #f87171; }
+.shx-toolbar { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.4rem 0; }
+.shx-tool {
+    min-height: 44px; min-width: 44px; padding: 0.3rem 0.65rem; border: 1px solid var(--border); background: var(--surface-2, #1a222c);
+    color: var(--text); font-size: 0.78rem; cursor: pointer;
+}
+.shx-tool:hover { border-color: var(--green-bright, #5fb06a); }
+.shx-tool--select { max-width: 100%; width: auto !important; }
+.shx-over { margin: 0.35rem 0 0; padding: 0.4rem 0.6rem; border: 1px solid rgba(245, 158, 11, 0.55); background: rgba(245, 158, 11, 0.09); color: #f1c36c; font-size: 0.78rem; }
+.shx-layout { margin: 0; color: var(--muted); font-size: 0.8rem; }
+.shx-layout.is-warn { color: #f1c36c; }
+.shx-layout.is-bad { color: #f87171; }
+.shx-sensitive { margin: 0; padding: 0.5rem 0.7rem; border: 1px dashed var(--amber, #f59e0b); color: var(--text); font-size: 0.78rem; }
+.shx-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; }
+.shx-check { display: flex !important; align-items: center; gap: 0.6rem; min-height: 44px; margin: 0 !important; color: var(--text) !important; font-size: 0.82rem !important; }
+.shx-check input { width: 22px; height: 22px; flex: none; }
+.shx-drafts { list-style: none; margin: 0.8rem 0 0; padding: 0; display: grid; gap: 0.3rem; }
+.shx-drafts li { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center; min-height: 44px; border-top: 1px solid var(--border-soft, var(--border)); }
+.shx-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; position: sticky; bottom: 0; padding: 0.6rem 0; background: var(--bg, var(--surface)); z-index: 2; }
+.shx-printed { margin: 0.4rem 0 0; font-size: 0.78rem; }
+.shx-printed > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--muted); }
+.shx-printed__k { margin: 0.5rem 0 0; color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.shx-printed__t { margin: 0.1rem 0 0; white-space: normal; overflow-wrap: anywhere; }
+.shx-phrases { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.shx-phrases li { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: space-between; padding: 0.7rem 0; border-top: 1px solid var(--border-soft, var(--border)); }
+.shx-phrases li > div:first-child { min-width: 0; flex: 1 1 18rem; }
+.shx-phrases p { margin: 0.3rem 0 0; font-size: 0.82rem; overflow-wrap: anywhere; }
+.shx-phrases__act { display: flex; gap: 0.4rem; align-items: flex-start; }
+.shx-phrases__act form { margin: 0; }
+
+@media (max-width: 640px) {
+    .shx { padding: 0.8rem; }
+    .shx__buttons .shx__btn, .shx__buttons .shx__form { flex: 1 1 100%; }
+    .shx__buttons .shx__form .shx__btn { width: 100%; }
+    .shx-actions .shx__btn { flex: 1 1 100%; }
+    .shx-tool--select { flex: 1 1 100%; }
+}
+
+.shx__title { text-transform: none; letter-spacing: 0; }
+.shx__btn:not(.shx__btn--primary):not(.shx__btn--small) { background: transparent; border-color: var(--border); color: #e6edf3; }
+.shx__btn:not(.shx__btn--primary):hover { border-color: var(--green-bright, #5fb06a); }
+.shx-tool--select { max-width: 17rem; flex: 0 1 auto; }
+body.sse-theme-bureau .shx .shx__btn:not(.shx__btn--primary):not(.shx__btn--small),
+body.sse-theme-bureau .shx-form .shx__btn:not(.shx__btn--primary):not(.shx__btn--small) { background: transparent; border-color: var(--border); color: #e6edf3; }
+body.sse-theme-bureau .shx .shx__btn--primary,
+body.sse-theme-bureau .shx-form .shx__btn--primary,
+body.sse-theme-bureau .shx-done .shx__btn--primary { background: #35502f; border-color: #6fae6b; color: #eaf5e6; }

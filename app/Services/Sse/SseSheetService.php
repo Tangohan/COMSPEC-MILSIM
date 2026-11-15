@@ -1,0 +1,501 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Sse;
+
+use App\Core\Session;
+use App\Repositories\SseCaseRepository;
+use App\Repositories\SseIdentityEventRepository;
+use App\Repositories\SseSheetRepository;
+use App\Repositories\SseWantedNoticeRepository;
+use App\Repositories\SseWantedSettingsRepository;
+use App\Support\Pdf\AthenaPdfTheme;
+use App\Support\SseSheetCatalog as D;
+use App\Support\SseSheetText as T;
+use App\Support\SseWantedCatalog as C;
+
+/**
+ * Fiches PDF d'une personne ou d'une identité fictive : prépare les textes (trames par défaut, variables résolues selon
+ * l'habilitation, assainissement, contrôle des fuites), génère l'aperçu, émet (référence, journal, historique) et ré-édite un
+ * document déjà émis depuis le texte réellement imprimé. Émettre ou prévisualiser ne modifie jamais la fiche.
+ */
+final class SseSheetService
+{
+    /** Plafond de débit : émissions par utilisateur sur la fenêtre. */
+    public const ISSUE_LIMIT = 20;
+
+    public const ISSUE_WINDOW_MINUTES = 10;
+
+    /** Aperçus par minute et par session. */
+    public const PREVIEW_LIMIT = 30;
+
+    public function __construct(
+        private ?SseSheetFactsService $facts = null,
+        private ?SseSheetRepository $repo = null,
+        private ?SseWantedSettingsRepository $settings = null,
+        private ?SseSheetPdf $template = null,
+    ) {
+        $this->facts ??= new SseSheetFactsService();
+        $this->repo ??= new SseSheetRepository();
+        $this->settings ??= new SseWantedSettingsRepository();
+        $this->template ??= new SseSheetPdf();
+    }
+
+    /** Niveaux de diffusion proposés au rédacteur : du plus large à son habilitation (jamais au-dessus). @return list<string> */
+    public static function levelsFor(SseSheetAccess $access): array
+    {
+        $own = SseRedactionService::levelRank($access->level());
+
+        return array_values(array_filter(array_keys(SseRedactionService::LEVELS), static fn (string $l): bool => SseRedactionService::levelRank($l) <= $own));
+    }
+
+    /** Niveau demandé, ramené à l'habilitation du rédacteur. */
+    public static function clampLevel(mixed $requested, SseSheetAccess $access): string
+    {
+        $r = is_string($requested) ? $requested : '';
+        if (!isset(SseRedactionService::LEVELS[$r]) || SseRedactionService::levelRank($r) > SseRedactionService::levelRank($access->level())) {
+            return isset(SseRedactionService::LEVELS[$access->level()]) ? $access->level() : SseCaseRepository::CLASS_INTERNAL;
+        }
+
+        return $r;
+    }
+
+    /** @return array{0: string, 1: string} libellés français et anglais d'un niveau de diffusion */
+    public static function levelLabels(string $level): array
+    {
+        $en = [
+            SseCaseRepository::CLASS_INTERNAL => 'Internal distribution', SseCaseRepository::CLASS_COMMAND => 'Command staff',
+            SseCaseRepository::CLASS_CONFIDENTIAL => 'Confidential', SseCaseRepository::CLASS_RESTRICTED => 'Highly restricted distribution',
+        ];
+
+        return [SseCaseRepository::CLASSIFICATION_LABELS[$level] ?? $level, $en[$level] ?? $level];
+    }
+
+    /**
+     * Textes par défaut du modèle, déjà résolus selon le niveau de diffusion (une variable de donnée masquée donne la barre).
+     *
+     * @param array{person: ?array<string, mixed>, identity: ?array<string, mixed>, identities: list<array<string, mixed>>, person_id: ?int, identity_id: ?int, ref: string} $subject
+     * @return array<string, string>
+     */
+    public function defaults(int $tenantId, array $subject, string $model, string $lang, string $level, SseSheetAccess $access): array
+    {
+        $lang = D::lang($lang);
+        $raw = $this->facts->raw($tenantId, $subject, $access, $lang);
+
+        return $this->defaultTexts($tenantId, $model, $lang, $raw, $level, 'APERCU');
+    }
+
+    /**
+     * Prépare une fiche : textes assainis et résolus, données caviardées, contrôles de longueur et de fuite. Rien n'est écrit.
+     *
+     * @param array{person: ?array<string, mixed>, identity: ?array<string, mixed>, identities: list<array<string, mixed>>, person_id: ?int, identity_id: ?int, ref: string} $subject
+     * @param array<string, mixed> $input lang, classification, faces, validity, threat, armed, checks (liste de références), texts (clé => texte)
+     * @return array{ok: bool, errors: list<string>, data: ?array<string, mixed>, texts: array<string, string>, level: string, lang: string, faces: string, sensitive: list<string>, snapshot: array<string, mixed>, params: array<string, mixed>}
+     */
+    public function prepare(int $tenantId, array $subject, string $model, array $input, SseSheetAccess $access, string $ref = 'APERCU'): array
+    {
+        $lang = D::lang($input['lang'] ?? 'fr');
+        $level = self::clampLevel($input['classification'] ?? '', $access);
+        $faces = D::faces($input['faces'] ?? null);
+        $out = ['ok' => false, 'errors' => [], 'data' => null, 'texts' => [], 'level' => $level, 'lang' => $lang, 'faces' => $faces, 'sensitive' => [], 'snapshot' => [], 'params' => []];
+        if (!D::exists($model) || $model === 'notice') {
+            $out['errors'][] = 'Modèle inconnu.';
+
+            return $out;
+        }
+        $raw = $this->facts->raw($tenantId, $subject, $access, $lang);
+        // Contrôles retenus (fiche de contrôle) : seulement ceux de la fiche, jamais une référence étrangère.
+        if (isset($input['checks']) && is_array($input['checks'])) {
+            $wanted = array_map('strval', $input['checks']);
+            $raw['checks'] = array_values(array_filter($raw['checks'], static fn (array $c): bool => in_array((string) $c['ref'], $wanted, true)));
+        }
+        $masked = $this->facts->mask($raw, $level);
+        $facts = $masked['facts'];
+        $threat = (string) ($input['threat'] ?? $facts['threat']);
+        $facts['threat'] = isset(C::THREATS[$threat]) ? $threat : (string) $facts['threat'];
+        $armed = (string) ($input['armed'] ?? $facts['armed']);
+        $facts['armed'] = isset(C::ARMED[$armed]) ? $armed : ((string) $facts['armed'] !== '' ? (string) $facts['armed'] : 'unknown');
+
+        $config = $this->settings->get($tenantId);
+        $authority = [(string) $config['authority_fr'], (string) $config['authority_en']];
+        $service = trim((string) $config['contact_label']);
+        $issued = gmdate('Y-m-d');
+        $context = ['ref' => $ref, 'service' => $service, 'date' => $issued];
+        $vars = $this->facts->variables($facts, $lang, $context);
+
+        $texts = [];
+        $used = [];
+        $typed = is_array($input['texts'] ?? null) ? $input['texts'] : [];
+        foreach (D::texts($model) as [$key, $max, $labels]) {
+            $source = array_key_exists($key, $typed) ? T::clean($typed[$key], $max * 2) : $this->defaultSource($model, $key, $lang, $raw);
+            $res = T::resolve($source, $vars);
+            $used = array_merge($used, $res['used']);
+            $clean = T::clean($res['text'], $max + 1000);
+            if (T::length($clean) > $max) {
+                $out['errors'][] = sprintf('« %s » : %d caractères au lieu de %d au plus.', $labels[0], T::length($clean), $max);
+            }
+            $texts[$key] = T::clean($clean, $max);
+        }
+        foreach ($this->facts->leaks($raw, $texts, $level) as $secret) {
+            $out['errors'][] = sprintf('Le texte reprend « %s », une donnée réservée à une diffusion plus restreinte : retirez-la ou relevez la classification.', $secret);
+        }
+
+        $validity = null;
+        if ($model === 'vigilance') {
+            $validity = D::validity($input['validity'] ?? D::DEFAULT_VALIDITY);
+        }
+        $validUntil = $validity !== null ? gmdate('Y-m-d', strtotime($issued . ' UTC +' . $validity . ' days')) : null;
+        $labels = self::levelLabels($level);
+        $sensitive = array_values(array_unique(array_merge($masked['shown'], T::categories($used))));
+        $data = [
+            'model' => $model, 'lang' => $lang, 'faces' => $faces, 'ref' => $ref,
+            'title' => D::MODELS[$model]['label'], 'accent' => SseSheetPdf::ACCENTS[$model] ?? [55, 65, 81],
+            'authority' => $authority, 'service' => $service,
+            'issued_at' => $issued, 'valid_until' => $validUntil, 'classification' => $labels,
+            'facts' => $facts, 'texts' => $texts, 'text_labels' => $this->textLabels($model),
+            'watermark' => (bool) $config['watermark'], 'footer' => (bool) $config['footer'],
+            'emblem' => (string) $config['emblem'],
+            'generated_at' => gmdate($lang === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC',
+        ];
+        $out['ok'] = $out['errors'] === [];
+        $out['data'] = $data;
+        $out['texts'] = $texts;
+        $out['sensitive'] = $sensitive;
+        $out['params'] = ['lang' => $lang, 'classification' => $level, 'faces' => $faces, 'validity' => $validity, 'threat' => $facts['threat'], 'armed' => $facts['armed'], 'checks' => array_values(array_map(static fn (array $c): string => (string) $c['ref'], $facts['checks']))];
+        // Instantané imprimé : données caviardées, sans image (les clichés sont rechargés au re-téléchargement).
+        $out['snapshot'] = ['data' => array_diff_key($data, ['emblem' => 1, 'generated_at' => 1]), 'photos' => $facts['photos']];
+
+        return $out;
+    }
+
+    /**
+     * Octets du PDF à partir des données préparées (images chargées ici), ou null (moteur PDF indisponible).
+     *
+     * @param array<string, mixed> $data
+     * @return array{bytes: string, pages: int, overflow: list<string>}|null
+     */
+    public function render(int $tenantId, array $data): ?array
+    {
+        $photos = [];
+        foreach ((array) ($data['facts']['photos'] ?? []) as $path) {
+            $bytes = SseWantedNoticePdfService::imageBytes((string) $path, false);
+            if ($bytes !== null) {
+                $photos[] = $bytes;
+            }
+        }
+        $data['photo'] = $photos[0] ?? null;
+        $data['extra_photos'] = array_slice($photos, 1, 3);
+        $data['emblem_path'] = null;
+        if (($data['emblem'] ?? 'neutral') === 'community') {
+            try {
+                $logo = AthenaPdfTheme::meta(['tenant_id' => $tenantId])['logo'];
+                $data['emblem_path'] = is_string($logo) ? $logo : null;
+            } catch (\Throwable) {
+                $data['emblem_path'] = null;
+            }
+        }
+        $data['generated_at'] ??= gmdate($data['lang'] === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC';
+
+        return $this->template->render($data);
+    }
+
+    /**
+     * Aperçu : PDF et rapport de mise en page, sans rien écrire.
+     *
+     * @param array<string, mixed> $subject
+     * @param array<string, mixed> $input
+     * @return array{ok: bool, errors: list<string>, bytes: ?string, pages: int, overflow: list<string>, sensitive: list<string>}
+     */
+    public function preview(int $tenantId, array $subject, string $model, array $input, SseSheetAccess $access): array
+    {
+        if ($model === 'notice') {
+            return $this->previewNotice($tenantId, $subject, $input, $access);
+        }
+        $p = $this->prepare($tenantId, $subject, $model, $input, $access, 'APERCU-' . (D::MODELS[$model]['prefix'] ?? 'FX'));
+        $rendered = $p['data'] !== null ? $this->render($tenantId, $p['data']) : null;
+        if ($rendered === null && $p['errors'] === []) {
+            $p['errors'][] = 'Le PDF n’a pas pu être généré : le moteur PDF ou ses polices sont indisponibles.';
+        }
+
+        return ['ok' => $rendered !== null, 'errors' => $p['errors'], 'bytes' => $rendered['bytes'] ?? null, 'pages' => $rendered['pages'] ?? 0, 'overflow' => $rendered['overflow'] ?? [], 'sensitive' => $p['sensitive']];
+    }
+
+    /**
+     * Émet la fiche : droits, plafond de débit, aperçu sans erreur, référence, enregistrement (texte imprimé conservé) puis trace
+     * dans la chronologie de l'identité. La fiche elle-même n'est jamais modifiée.
+     *
+     * @param array<string, mixed> $subject
+     * @param array<string, mixed> $input
+     * @return array{ok: bool, errors: list<string>, error: string, id: int, ref: string, bytes: ?string, filename: string, pages: int}
+     */
+    public function issue(int $tenantId, array $subject, string $model, array $input, SseSheetAccess $access): array
+    {
+        $fail = static fn (string $code, array $errors = []): array => ['ok' => false, 'errors' => $errors, 'error' => $code, 'id' => 0, 'ref' => '', 'bytes' => null, 'filename' => '', 'pages' => 0];
+        $denial = $access->denial($model);
+        if ($denial !== null) {
+            return $fail('forbidden', [$denial]);
+        }
+        if ($model !== 'notice' && !SseSheetRepository::ready()) {
+            return $fail('unavailable', ['Les fiches PDF seront disponibles dès que l’étape de base de données « fiches PDF » aura été passée par l’équipe technique.']);
+        }
+        $userId = $access->userId();
+        if ($userId !== null && SseSheetRepository::ready()) {
+            $since = gmdate('Y-m-d H:i:s', time() - self::ISSUE_WINDOW_MINUTES * 60);
+            if ($this->repo->countIssuesSince($tenantId, $userId, $since) >= self::ISSUE_LIMIT) {
+                return $fail('rate', [sprintf('Trop d’émissions en peu de temps (%d en %d minutes) : patientez avant d’en émettre une autre.', self::ISSUE_LIMIT, self::ISSUE_WINDOW_MINUTES)]);
+            }
+        }
+        for ($attempt = 0; $attempt < 4; ++$attempt) {
+            $notice = null;
+            if ($model === 'notice') {
+                $built = $this->buildNotice($tenantId, $subject, $input, $access);
+                if ($built['error'] !== '') {
+                    return $fail($built['error'], $built['errors']);
+                }
+                $ref = SseSheetRepository::ready() ? $this->repo->nextRef($tenantId, 'notice', (string) $built['notice']['ref'], $attempt) : ['ref' => (string) $built['notice']['ref'], 'year' => (int) gmdate('Y'), 'seq' => 0];
+                $rendered = $built['bytes'];
+                $texts = $built['texts'];
+                $snapshot = ['notice_id' => (int) $built['notice']['id'], 'notice_ref' => (string) $built['notice']['ref'], 'params' => $built['params']];
+                $sensitive = $built['sensitive'];
+                $level = $built['level'];
+                $lang = $built['lang'];
+                $faces = $built['faces'];
+                $pages = $built['pages'];
+                $notice = $built['notice'];
+            } else {
+                $ref = $this->repo->nextRef($tenantId, $model, null, $attempt);
+                $p = $this->prepare($tenantId, $subject, $model, $input, $access, $ref['ref']);
+                if (!$p['ok'] || $p['data'] === null) {
+                    return $fail('invalid', $p['errors']);
+                }
+                $r = $this->render($tenantId, $p['data']);
+                if ($r === null) {
+                    return $fail('engine', ['Le PDF n’a pas pu être généré : le moteur PDF ou ses polices sont indisponibles.']);
+                }
+                $rendered = $r['bytes'];
+                $texts = $p['texts'];
+                $snapshot = $p['snapshot'] + ['params' => $p['params']];
+                $sensitive = $p['sensitive'];
+                $level = $p['level'];
+                $lang = $p['lang'];
+                $faces = $p['faces'];
+                $pages = $r['pages'];
+            }
+            $id = 0;
+            if (SseSheetRepository::ready()) {
+                try {
+                    $id = $this->repo->createIssue($tenantId, [
+                        'person_id' => $subject['person_id'], 'identity_id' => $subject['identity_id'], 'model' => $model, 'lang' => $lang, 'classification' => $level,
+                        'faces' => $faces, 'texts' => $texts, 'snapshot' => $snapshot, 'sensitive' => $sensitive, 'user_id' => $userId, 'label' => $access->actorLabel(),
+                    ], $ref);
+                } catch (\PDOException) {
+                    continue;
+                }
+            }
+            $this->trace($tenantId, $subject, $model, $ref['ref'], $lang, $notice !== null ? (int) $notice['id'] : null, $access);
+
+            return ['ok' => true, 'errors' => [], 'error' => '', 'id' => $id, 'ref' => $model === 'notice' ? (string) ($notice['ref'] ?? $ref['ref']) : $ref['ref'], 'bytes' => $rendered, 'filename' => self::filename($model, (string) ($notice['ref'] ?? $ref['ref']), $lang), 'pages' => $pages];
+        }
+
+        return $fail('conflict', ['La référence du document n’a pas pu être réservée : réessayez.']);
+    }
+
+    /**
+     * Re-télécharge un document émis : mêmes textes, même niveau de diffusion. Il faut au moins l'habilitation de sa
+     * classification et le droit de lire les fichiers.
+     *
+     * @return array{ok: bool, error: string, bytes: ?string, filename: string, issue: ?array<string, mixed>}
+     */
+    public function reissue(int $tenantId, int $issueId, SseSheetAccess $access): array
+    {
+        $fail = static fn (string $e, ?array $issue = null): array => ['ok' => false, 'error' => $e, 'bytes' => null, 'filename' => '', 'issue' => $issue];
+        $issue = $this->repo->findIssue($tenantId, $issueId);
+        if ($issue === null) {
+            return $fail('notfound');
+        }
+        if (!$access->canDraft() || SseRedactionService::levelRank($issue['classification']) > SseRedactionService::levelRank($access->level())) {
+            return $fail('forbidden', $issue);
+        }
+        $snap = $issue['snapshot'];
+        if ($issue['model'] === 'notice') {
+            $notice = (new SseWantedNoticeRepository())->find($tenantId, (int) ($snap['notice_id'] ?? 0));
+            if ($notice === null) {
+                return $fail('notfound', $issue);
+            }
+            $svc = new SseWantedNoticePdfService();
+            $data = $svc->data($tenantId, $notice, $issue['lang'], $issue['faces']);
+            if ($data === null) {
+                return $fail('notfound', $issue);
+            }
+            foreach (['reason', 'instructions'] as $k) {
+                if (isset($issue['texts'][$k])) {
+                    $data[$k] = T::plain((string) $issue['texts'][$k]);
+                }
+            }
+            $bytes = (new SseWantedNoticePdf())->render($data);
+        } else {
+            $data = is_array($snap['data'] ?? null) ? $snap['data'] : [];
+            if ($data === []) {
+                return $fail('notfound', $issue);
+            }
+            $data['ref'] = $issue['ref'];
+            $data['texts'] = $issue['texts'];
+            $data['facts']['photos'] = is_array($snap['photos'] ?? null) ? $snap['photos'] : [];
+            $data['emblem'] = (string) $this->settings->get($tenantId)['emblem'];
+            $bytes = $this->render($tenantId, $data)['bytes'] ?? null;
+        }
+        if ($bytes === null) {
+            return $fail('engine', $issue);
+        }
+
+        return ['ok' => true, 'error' => '', 'bytes' => $bytes, 'filename' => self::filename($issue['model'], (string) ($snap['notice_ref'] ?? $issue['ref']), $issue['lang']), 'issue' => $issue];
+    }
+
+    /** Nom de fichier sûr, fabriqué ici : « fiche-vigilance-FV-2026-0007-fr.pdf ». */
+    public static function filename(string $model, string $ref, string $lang): string
+    {
+        $safe = trim((string) preg_replace('/[^A-Za-z0-9]+/', '-', $ref), '-');
+        $m = trim((string) preg_replace('/[^a-z]+/', '', $model));
+
+        return ($model === 'notice' ? 'avis' : 'fiche-' . ($m !== '' ? $m : 'doc')) . '-' . ($safe !== '' ? $safe : 'doc') . '-' . D::lang($lang) . '.pdf';
+    }
+
+    /** Aperçus par minute : plafond par session (compteur en session, pas de base). */
+    public static function previewAllowed(): bool
+    {
+        $now = time();
+        $hits = array_values(array_filter((array) Session::get('sse_sheet_previews', []), static fn ($t): bool => is_int($t) && $now - $t < 60));
+        if (count($hits) >= self::PREVIEW_LIMIT) {
+            Session::set('sse_sheet_previews', $hits);
+
+            return false;
+        }
+        $hits[] = $now;
+        Session::set('sse_sheet_previews', $hits);
+
+        return true;
+    }
+
+    // ----------------------------------------------------------------- Avis
+
+    /**
+     * L'avis actif de la fiche, ses textes (modifiables) et son PDF. La notice garde son moteur (SseWantedNoticePdf).
+     *
+     * @param array<string, mixed> $subject
+     * @param array<string, mixed> $input
+     * @return array{error: string, errors: list<string>, notice: ?array<string, mixed>, bytes: ?string, texts: array<string, string>, params: array<string, mixed>, sensitive: list<string>, level: string, lang: string, faces: string, pages: int}
+     */
+    private function buildNotice(int $tenantId, array $subject, array $input, SseSheetAccess $access): array
+    {
+        $none = ['error' => '', 'errors' => [], 'notice' => null, 'bytes' => null, 'texts' => [], 'params' => [], 'sensitive' => [], 'level' => SseCaseRepository::CLASS_INTERNAL, 'lang' => 'fr', 'faces' => 'auto', 'pages' => 1];
+        $identityId = (int) ($subject['identity_id'] ?? 0);
+        $notice = $identityId > 0 ? (new SseWantedNoticeRepository())->activeForIdentity($tenantId, $identityId) : null;
+        if ($notice === null) {
+            return ['error' => 'nonotice', 'errors' => ['Aucun avis de recherche actif : placez-en un depuis la fiche du registre.']] + $none;
+        }
+        $lang = D::lang($input['lang'] ?? 'fr');
+        $faces = D::faces($input['faces'] ?? null);
+        $level = self::clampLevel($input['classification'] ?? '', $access);
+        $svc = new SseWantedNoticePdfService();
+        $data = $svc->data($tenantId, $notice, $lang, $faces);
+        if ($data === null) {
+            return ['error' => 'notfound', 'errors' => ['Avis introuvable.']] + $none;
+        }
+        // Textes modifiables de la notice : motifs et mesures, assainis ; ce que la notice imprime est du texte brut.
+        $raw = $this->facts->raw($tenantId, $subject, $access, $lang);
+        $texts = [];
+        $errors = [];
+        $typed = is_array($input['texts'] ?? null) ? $input['texts'] : [];
+        $vars = $this->facts->variables($this->facts->mask($raw, $level)['facts'], $lang, ['ref' => (string) $notice['ref'], 'service' => (string) ($notice['contact_label'] ?? ''), 'date' => gmdate('Y-m-d')]);
+        foreach (D::texts('notice') as [$key, $max, $labels]) {
+            $source = array_key_exists($key, $typed) ? T::clean($typed[$key], $max * 2) : T::clean((string) ($notice[$key] ?? ''), $max);
+            $res = T::resolve($source, $vars);
+            $clean = T::clean($res['text'], $max + 1000);
+            if (T::length($clean) > $max) {
+                $errors[] = sprintf('« %s » : %d caractères au lieu de %d au plus.', $labels[0], T::length($clean), $max);
+            }
+            $texts[$key] = T::clean($clean, $max);
+        }
+        if ($errors !== []) {
+            return ['error' => 'invalid', 'errors' => $errors] + $none;
+        }
+        foreach ($texts as $k => $v) {
+            $data[$k] = T::plain($v);
+        }
+        $bytes = (new SseWantedNoticePdf())->render($data);
+        if ($bytes === null) {
+            return ['error' => 'engine', 'errors' => ['Le PDF n’a pas pu être généré : le moteur PDF ou ses polices sont indisponibles.']] + $none;
+        }
+
+        return [
+            'error' => '', 'errors' => [], 'notice' => $notice, 'bytes' => $bytes, 'texts' => $texts,
+            'params' => ['lang' => $lang, 'classification' => $level, 'faces' => $faces], 'sensitive' => ['identite'], 'level' => $level, 'lang' => $lang, 'faces' => $faces,
+            'pages' => max(1, preg_match_all('~/Type\s*/Page\b(?!s)~', $bytes) ?: 1),
+        ];
+    }
+
+    /** @param array<string, mixed> $subject @param array<string, mixed> $input @return array{ok: bool, errors: list<string>, bytes: ?string, pages: int, overflow: list<string>, sensitive: list<string>} */
+    private function previewNotice(int $tenantId, array $subject, array $input, SseSheetAccess $access): array
+    {
+        $b = $this->buildNotice($tenantId, $subject, $input, $access);
+
+        return ['ok' => $b['bytes'] !== null, 'errors' => $b['errors'], 'bytes' => $b['bytes'], 'pages' => $b['pages'], 'overflow' => [], 'sensitive' => $b['sensitive']];
+    }
+
+    // ---------------------------------------------------------------- Outils
+
+    /** @param array<string, mixed> $raw @return array<string, string> */
+    private function defaultTexts(int $tenantId, string $model, string $lang, array $raw, string $level, string $ref): array
+    {
+        $masked = $this->facts->mask($raw, $level);
+        $config = $this->settings->get($tenantId);
+        $vars = $this->facts->variables($masked['facts'], $lang, ['ref' => $ref, 'service' => (string) $config['contact_label'], 'date' => gmdate('Y-m-d')]);
+        $out = [];
+        foreach (D::texts($model) as [$key, $max]) {
+            $source = $model === 'notice' ? T::clean((string) ($raw['notice'][$key] ?? ''), $max) : $this->defaultSource($model, $key, $lang, $raw);
+            $out[$key] = T::clean(T::resolve($source, $vars)['text'], $max);
+        }
+
+        return $out;
+    }
+
+    /** @param array<string, mixed> $raw */
+    private function defaultSource(string $model, string $key, string $lang, array $raw): string
+    {
+        unset($raw);
+
+        return D::default($model, $key, $lang);
+    }
+
+    /** @return array<string, array{0: string, 1: string}> */
+    private function textLabels(string $model): array
+    {
+        $out = [];
+        foreach (D::texts($model) as [$key, , $labels]) {
+            $out[$key] = $labels;
+        }
+
+        return $out;
+    }
+
+    /** @param array<string, mixed> $subject */
+    private function trace(int $tenantId, array $subject, string $model, string $docRef, string $lang, ?int $noticeId, SseSheetAccess $access): void
+    {
+        $identityId = (int) ($subject['identity_id'] ?? 0);
+        if ($identityId < 1 || !SseIdentityEventRepository::ready()) {
+            return;
+        }
+        $labels = D::MODELS[$model]['label'];
+        try {
+            (new SseIdentityEventRepository())->add(
+                $tenantId, $identityId, $model === 'notice' ? 'notice.pdf' : 'document.issued',
+                sprintf('%s %s émis (%s).', $labels[0], $docRef, strtoupper($lang)),
+                ['ref' => $docRef, 'doc_ref' => $docRef, 'lang' => $lang, 'model' => $model, 'model_label_fr' => $labels[0], 'model_label_en' => $labels[1]],
+                $access->userId(), $access->actorLabel(), 'base', 'web', $noticeId
+            );
+        } catch (\Throwable $e) {
+            error_log('Fiches PDF : émission non notée dans la chronologie : ' . $e->getMessage());
+        }
+    }
+}

@@ -899,7 +899,20 @@ final class SseIdentityRegistryController
             }
         }
 
+        // Bloc « Émettre un document » : mêmes modèles et mêmes droits que sur la fiche personne.
+        $sheetMenu = [];
+        try {
+            $sheetAccess = \App\Services\Sse\SseSheetAccess::fromSession($this->access, $this->clearance);
+            $sheetSubject = (new \App\Services\Sse\SseSheetFactsService())->subject($tenantId, 'identity', (int) $identity['id'], $sheetAccess);
+            if ($sheetSubject !== null) {
+                $sheetMenu = \App\Services\Sse\SseSheetMenu::build($tenantId, $sheetSubject, 'identite', $sheetAccess, $this->access->isGuest(), !function_exists('site_lang') || site_lang() === 'fr' ? 'fr' : 'en');
+            }
+        } catch (\Throwable $e) {
+            error_log('Fiche identité : documents à émettre indisponibles : ' . $e->getMessage());
+        }
+
         return $this->view('atak.sse.papers.identity_show', [
+            'sheetMenu' => $sheetMenu,
             'title' => $identity['ref'] . ' — ' . $identity['display_name'],
             'identity' => $identity,
             'person' => $person,

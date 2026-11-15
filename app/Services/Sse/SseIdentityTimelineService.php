@@ -84,7 +84,7 @@ final class SseIdentityTimelineService
         }
         // Avis, détections, mentions, photos et consultations des fichiers : section « fichiers », à lire pour les voir.
         if (!$access->canRead()) {
-            $filesTypes = ['notice.placed', 'notice.lifted', 'notice.captured', 'notice.expired', 'notice.pdf', 'detection.raised', 'detection.handled', 'file.mention', 'file.photo', 'query.recorded'];
+            $filesTypes = ['notice.placed', 'notice.lifted', 'notice.captured', 'notice.expired', 'notice.pdf', 'document.issued', 'detection.raised', 'detection.handled', 'file.mention', 'file.photo', 'query.recorded'];
             $rows = array_values(array_filter($rows, static fn (array $r): bool => !in_array($r['type'], $filesTypes, true)));
         }
         // Une modification de photo déjà notée par un événement propre n'est pas répétée par le journal d'audit.
@@ -158,6 +158,11 @@ final class SseIdentityTimelineService
             'notice.captured' => $this->tr(sprintf('Avis %s clos : personne capturée. %s', $ref, (string) ($d['reason'] ?? '')), sprintf('Notice %s closed: subject captured. %s', $ref, (string) ($d['reason'] ?? '')), $lang),
             'notice.expired' => $this->tr(sprintf('Avis %s expiré (date d’expiration atteinte).', $ref), sprintf('Notice %s expired (expiry date reached).', $ref), $lang),
             'notice.pdf' => $this->tr(sprintf('Notice PDF %s générée pour l’avis %s.', strtoupper((string) ($d['lang'] ?? 'fr')), $ref), sprintf('%s PDF notice generated for notice %s.', strtoupper((string) ($d['lang'] ?? 'fr')), $ref), $lang),
+            'document.issued' => $this->tr(
+                sprintf('Document émis : %s %s (%s).', (string) ($d['model_label_fr'] ?? ''), (string) ($d['doc_ref'] ?? ''), strtoupper((string) ($d['lang'] ?? 'fr'))),
+                sprintf('Document issued: %s %s (%s).', (string) ($d['model_label_en'] ?? ''), (string) ($d['doc_ref'] ?? ''), strtoupper((string) ($d['lang'] ?? 'fr'))),
+                $lang
+            ),
             'detection.raised' => $this->tr(
                 sprintf('Détection système : %s (avis %s).', C::label(C::DETECTION_TYPES, (string) ($d['type'] ?? ''), 'fr'), $ref),
                 sprintf('System detection: %s (notice %s).', C::label(C::DETECTION_TYPES, (string) ($d['type'] ?? ''), 'en'), $ref),

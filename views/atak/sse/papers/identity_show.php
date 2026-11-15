@@ -123,6 +123,7 @@ $tabs = [
     ['historique', 'Historique', count($timeline), false],
     ['detections', 'Détections', count($detections), (int) ($detectionCounts['new'] ?? 0) > 0],
     ['avis', 'Avis de recherche', $notice !== null ? '1' : (count($notices) > 0 ? (string) count($notices) : null), $notice !== null],
+    ['documents-emis', 'Documents émis', count((array) ($sheetMenu['issues'] ?? [])) ?: null, false],
 ];
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-dossier.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-identity-photos.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-identity-dossier.js')) . '" defer></script><script src="' . $h(asset_url('assets/js/sse-identity-photos.js')) . '" defer></script>';
@@ -182,6 +183,8 @@ require __DIR__ . '/_subnav.php';
             </details>
         </div>
     </header>
+
+    <?php require dirname(__DIR__) . '/_sheet_menu.php'; ?>
 
     <?php if ($notice !== null): ?>
         <section class="dos-wanted" aria-label="Avis de recherche actif">
@@ -435,6 +438,11 @@ require __DIR__ . '/_subnav.php';
     <section class="dos-panel" id="avis" role="tabpanel" aria-labelledby="tab-avis" tabindex="-1">
         <h2 class="dos-panel__title">Avis de recherche</h2>
         <?php require __DIR__ . '/_dossier_notice.php'; ?>
+    </section>
+
+    <section class="dos-panel" id="documents-emis" role="tabpanel" aria-labelledby="tab-documents-emis" tabindex="-1">
+        <h2 class="dos-panel__title">Documents émis</h2>
+        <?php $issuesEmbedded = true; if (!empty($sheetMenu['ready']) && ($sheetMenu['reason'] ?? null) === null) { require dirname(__DIR__) . '/_sheet_issues.php'; } ?>
     </section>
 </div>
 <?php
