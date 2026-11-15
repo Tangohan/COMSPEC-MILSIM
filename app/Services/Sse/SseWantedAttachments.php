@@ -19,7 +19,7 @@ use App\Support\SseWantedCatalog as C;
  *
  * Contrôles à l'ajout : vrai type lu dans le contenu (JPEG, PNG, WebP), 5 Mo au plus, image réencodée (métadonnées EXIF, GPS et
  * XMP perdues), miniature, communauté de la session, droit de gérer les fichiers SSE. Si l'identité de l'avis est celle d'un
- * MEMBRE (CONFIDENTIEL ÉLEVÉ, SseMemberImageGate), rien n'est joint, listé ni servi sans l'autorisation hiérarchique du lecteur.
+ * MEMBRE (TRÈS SECRET (TS), SseMemberImageGate), rien n'est joint, listé ni servi sans l'autorisation hiérarchique du lecteur.
  * Chaque ajout et chaque retrait est noté dans la chronologie de l'identité.
  *
  * Pour le PDF : {@see self::forNotice()} (lecteur de la session, mêmes règles). Les images ne vont jamais au jeu (Arma ne charge
@@ -148,7 +148,7 @@ final class SseWantedAttachments
     }
 
     /**
-     * Le lecteur peut-il voir les images de cette identité ? Une identité de membre est CONFIDENTIEL ÉLEVÉ.
+     * Le lecteur peut-il voir les images de cette identité ? Une identité de membre est TRÈS SECRET (TS).
      *
      * @return array{allowed: bool, confidential: bool, reason: string, owner: ?int}
      */
@@ -190,7 +190,7 @@ final class SseWantedAttachments
             return ['ok' => false, 'error' => 'Photo introuvable parmi celles de cette identité.'];
         }
         if (!$this->gate()->forPhoto($tenantId, $photo)['allowed']) {
-            return ['ok' => false, 'error' => 'Cette photo est classée CONFIDENTIEL ÉLEVÉ : vous n’y avez pas accès.'];
+            return ['ok' => false, 'error' => 'Cette photo est classée TRÈS SECRET (TS) : vous n’y avez pas accès.'];
         }
         $abs = (new SseSeekPhotoService($this->records()))->absolutePath($photo, $tenantId) ?? SseMemberImageGate::publicAbsolutePath($photo, null, $this->privateDir);
         $size = $abs !== null ? @filesize($abs) : false;
@@ -217,7 +217,7 @@ final class SseWantedAttachments
         }
         $identityId = (int) $notice['identity_id'];
         if (!$this->identityVisible($tenantId, $identityId)['allowed']) {
-            return ['ok' => false, 'error' => 'L’identité de cet avis est celle d’un membre (CONFIDENTIEL ÉLEVÉ) : aucune image n’y est jointe sans autorisation hiérarchique.'];
+            return ['ok' => false, 'error' => 'L’identité de cet avis est celle d’un membre (TRÈS SECRET (TS)) : aucune image n’y est jointe sans autorisation hiérarchique.'];
         }
         if (count($this->repo()->forNotice($tenantId, (int) $notice['id'])) >= SseWantedAttachmentRepository::MAX_PER_NOTICE) {
             return ['ok' => false, 'error' => 'Six images au plus par avis.'];

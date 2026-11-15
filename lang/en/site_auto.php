@@ -68750,7 +68750,7 @@ return [
 
     // Avis de recherche : codification, signalement physique, pièces jointes.
     'Aucune image jointe à cet avis.' => 'No image attached to this notice.',
-    'Cette identité est celle d’un membre (CONFIDENTIEL ÉLEVÉ) : les images de l’avis ne s’affichent qu’avec l’autorisation de la hiérarchie du membre.' => 'This identity belongs to a member (HIGH CONFIDENTIAL): the notice images are only shown with the authorization of the member’s chain of command.',
+    'Cette identité est celle d’un membre (TRÈS SECRET (TS)) : les images de l’avis ne s’affichent qu’avec l’autorisation de la hiérarchie du membre.' => 'This identity belongs to a member (TOP SECRET (TS)): the notice images are only shown with the authorization of the member’s chain of command.',
     'Codes de mesures' => 'Measure codes',
     'Codes de motifs' => 'Reason codes',
     'JPEG, PNG ou WebP, 5 Mo au plus, six images par avis. Les métadonnées sont retirées ; les images restent dans l’espace privé et vont au PDF, jamais au jeu.' => 'JPEG, PNG or WebP, 5 MB at most, six images per notice. Metadata is removed; images stay in the private space and go to the PDF, never to the game.',
@@ -68767,7 +68767,7 @@ return [
     'Aucun code ne correspond.' => 'No code matches.',
     'Aucun état civil : ni nom, ni date de naissance, ni adresse. Les champs courts vont au PDF et au jeu.' => 'No civil status: no name, date of birth or address. The short fields go to the PDF and the game.',
     'Autres précisions' => 'Other details',
-    'Cette identité est celle d’un membre (CONFIDENTIEL ÉLEVÉ) : aucune image n’est jointe sans l’autorisation de la hiérarchie du membre.' => 'This identity belongs to a member (HIGH CONFIDENTIAL): no image is attached without the authorization of the member’s chain of command.',
+    'Cette identité est celle d’un membre (TRÈS SECRET (TS)) : aucune image n’est jointe sans l’autorisation de la hiérarchie du membre.' => 'This identity belongs to a member (TOP SECRET (TS)): no image is attached without the authorization of the member’s chain of command.',
     'Cette identité est celle d’un membre : son signalement n’est pas copié depuis la fiche. Décrivez seulement ce que cet avis doit dire.' => 'This identity belongs to a member: their description is not copied from the record. Only describe what this notice must say.',
     'Choisir des codes' => 'Choose codes',
     'Codes de mesures à prendre' => 'Action codes',
