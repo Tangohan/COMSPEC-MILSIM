@@ -104,6 +104,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_workspace.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_field_note.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_shell.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_ui.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/app-update-modal.css')) ?>">
     <?php if (!empty($sseNeedLeaflet)): ?>
         <link rel="stylesheet" href="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
@@ -286,6 +287,7 @@ window.SSE_CTX = {
 <script type="application/json" id="sx-palette-data"><?= json_encode($ssePalette, $jsonFlags | JSON_HEX_QUOT) ?></script>
 <script src="<?= $h(asset_url('assets/js/sse-context-menu.js')) ?>"></script>
 <script src="<?= $h(asset_url('assets/js/sse-shell.js')) ?>"></script>
+<script src="<?= $h(asset_url('assets/js/sse-ui.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-global-search.js')) ?>"></script>
 <script>
   window.APP_VERSION = <?= json_encode(platform_app_version(), JSON_UNESCAPED_UNICODE) ?>;

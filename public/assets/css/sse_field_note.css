@@ -75,7 +75,7 @@
 
 .fn-topbar-slot small {
     color: var(--fn-muted);
-    font-size: 0.66rem;
+    font-size: .72rem;
     font-weight: 500;
 }
 
@@ -124,7 +124,7 @@
 .fn-tag {
     display: inline-block;
     padding: 2px 7px;
-    font-size: 0.62rem;
+    font-size: .72rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: #fff;
@@ -140,7 +140,7 @@
 .fn-tag--kind { background: var(--fn-accent-soft); }
 
 .fn-tagbar-hint {
-    font-size: 0.6rem;
+    font-size: .72rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--fn-muted);
@@ -204,7 +204,7 @@
 .fn-edge span {
     display: block;
     writing-mode: vertical-rl;
-    font-size: 0.58rem;
+    font-size: .72rem;
     font-weight: 600;
     letter-spacing: 0.06em;
     white-space: nowrap;
@@ -252,7 +252,7 @@
     border-radius: 3px;
     background: var(--fn-critical);
     color: #fff;
-    font-size: 0.66rem;
+    font-size: .72rem;
     font-weight: 700;
     letter-spacing: 0.04em;
 }
@@ -393,7 +393,7 @@
 }
 
 .fn-attachment-meta {
-    font-size: 0.66rem;
+    font-size: .72rem;
     color: var(--fn-muted);
 }
 
@@ -404,7 +404,7 @@
     border-radius: 4px;
     color: #fca5a5;
     cursor: pointer;
-    font-size: 0.66rem;
+    font-size: .72rem;
     padding: 3px 8px;
 }
 
@@ -753,7 +753,7 @@
     display: inline-block;
     padding: 2px 7px;
     border-radius: 3px;
-    font-size: 0.62rem;
+    font-size: .72rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: #fff;
@@ -869,10 +869,10 @@
 .sse-reading .sse-note-badges { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .sse-reading__grade { flex: none; display: grid; place-items: center; align-content: center; width: 4.6rem; height: 4.6rem; border: 3px solid var(--rd-accent); border-radius: 0.4rem; color: var(--rd-accent); transform: rotate(-4deg); }
 .sse-reading__grade strong { font-size: 1.6rem; line-height: 1; font-weight: 900; }
-.sse-reading__grade span { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+.sse-reading__grade span { font-size: .72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
 .sse-reading__facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); margin: 0; background: var(--rd-soft); border-bottom: 1px solid #e5e7eb; }
 .sse-reading__facts > div { padding: 0.65rem 1.6rem 0.65rem; border-bottom: 1px solid rgba(17, 24, 39, 0.06); }
-.sse-reading__facts dt { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #6b7280; }
+.sse-reading__facts dt { font-size: .72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #6b7280; }
 .sse-reading__facts dd { margin: 0.15rem 0 0; font-size: 0.86rem; color: #111827; overflow-wrap: anywhere; }
 .sse-reading__body, .sse-reading__atts { padding: 1.3rem 1.6rem 0.4rem; }
 .sse-reading h2 { margin: 0 0 0.6rem; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rd-accent); display: flex; gap: 0.5rem; align-items: baseline; }
@@ -887,7 +887,7 @@
 .sse-reading__atts figcaption { padding: 0.45rem 0.6rem; font-size: 0.75rem; color: #4b5563; }
 .sse-reading__atts figure form { padding: 0 0.6rem 0.5rem; }
 .sse-reading__foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.6rem 1.2rem; margin: 0.6rem 1.6rem 0; padding: 0.9rem 0 1rem; border-top: 1px dashed #cbd5e1; font-size: 0.84rem; color: #111827; }
-.sse-reading__foot span { display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #6b7280; }
+.sse-reading__foot span { display: block; font-size: .72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #6b7280; }
 .sse-reading__foot a { color: #1d4ed8; }
 .sse-reading__triage { margin: 0 1.6rem 1rem; padding: 0.6rem 0.8rem; border-left: 3px solid var(--rd-accent); background: var(--rd-soft); font-size: 0.86rem; color: #111827; }
 .sse-reading__triage span { font-weight: 700; margin-right: 0.3rem; }
