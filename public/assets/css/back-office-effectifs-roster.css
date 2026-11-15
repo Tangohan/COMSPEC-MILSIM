@@ -811,7 +811,7 @@ button.eff-das__edit {
   }
 
   .bo-eff-workspace .eff-mq-more > summary {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
   }
 
   .bo-eff-workspace .eff-mq-more__panel {
@@ -829,8 +829,8 @@ button.eff-das__edit {
   .bo-eff-workspace .eff-mq-seg button {
     flex: 1 1 auto;
     justify-content: center;
-    min-width: 2.5rem;
-    height: 2.5rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
   }
 
   .bo-eff-workspace .eff-mq-views {
@@ -842,24 +842,24 @@ button.eff-das__edit {
   .bo-eff-workspace .eff-mq-meta__export a {
     display: inline-flex;
     align-items: center;
-    min-height: 2.5rem;
+    min-height: 2.75rem;
     padding: 0.25rem 0.75rem;
   }
 
   .bo-eff-workspace .eff-mq-more__actions .eff-catalog__btn {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
   }
 
   .bo-eff-workspace .eff-das__edit,
   .bo-eff-workspace .eff-das__dossier,
   .bo-eff-workspace .eff-sheets__qual-count {
-    min-width: 2.5rem;
-    min-height: 2.5rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
   }
 
   .bo-eff-workspace .eff-das__edit {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
     opacity: 1;
   }
 
@@ -867,13 +867,13 @@ button.eff-das__edit {
   .bo-eff-workspace #eff-roster-table.eff-das__table .eff-sheets__chip,
   .bo-eff-workspace #eff-roster-table.eff-das__table .eff-das__actions-col a,
   .bo-eff-workspace #eff-roster-table.eff-das__table .eff-das__actions-col button {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
   }
 
   .bo-eff-workspace #eff-roster-table.eff-das__table .eff-mq-mb__name {
     display: inline-flex;
     align-items: center;
-    min-height: 2.5rem;
+    min-height: 2.75rem;
   }
 
   .bo-eff-workspace #eff-roster-table.eff-das__table .eff-sheets__pop-panel {
@@ -893,12 +893,157 @@ button.eff-das__edit {
   .bo-eff-workspace .eff-sheets__pop-form input[type="date"],
   .bo-eff-workspace .eff-sheets__pop-form .eff-catalog__btn,
   .bo-eff-workspace .eff-sheets__pop-link {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
     font-size: 1rem;
   }
 
   .bo-eff-workspace .eff-sheets__pop-link {
     display: flex;
     align-items: center;
+  }
+
+  /* Vue générale : une carte par membre (nom, grade, affectation, emploi, statut, actions), le détail est sur la fiche. */
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody tr.eff-mq-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.15rem 0.6rem;
+    box-sizing: border-box;
+    width: calc(100% - 1.2rem);
+    margin: 0.6rem 0.6rem 0;
+    padding: 0.6rem 0.75rem 0.75rem;
+    border: 1px solid var(--ath-line, #e3e8ea);
+    border-radius: 0.8rem;
+    background: var(--ath-surface, #fff);
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td.eff-das__check {
+    top: 0.2rem;
+    right: 0.2rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td.eff-das__check input {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td.eff-mq-col-member {
+    display: block;
+    flex: 1 1 calc(100% - 3rem);
+    max-width: calc(100% - 3rem);
+    min-width: 0;
+    padding: 0;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td.eff-mq-col-member[data-label]::before {
+    display: none;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td.eff-mq-col-member .eff-mq-mb {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td.eff-mq-col-member .eff-mq-mb__txt {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Grade"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Affectation"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Emploi"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Statut"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Qualifs"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="À traiter"] {
+    display: block;
+    flex: 1 1 calc(50% - 0.6rem);
+    min-width: 0;
+    padding: 0.3rem 0;
+    text-align: left;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label]::before {
+    display: block;
+    margin-bottom: 0.1rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td > * {
+    max-width: 100%;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Rôle"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Présence"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Dernière connexion"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Niveau d’accès"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Ancienneté"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Temps en mission"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Heures de vol"],
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td[data-label="Dossier"] {
+    display: none;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td.eff-das__actions-col {
+    flex: 1 1 100%;
+    padding: 0.4rem 0 0;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general .eff-sheets__actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general .eff-sheets__actions > * {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  .bo-eff-workspace .eff-mq-bar .eff-mq-sel,
+  .bo-eff-workspace .eff-mq-search input {
+    min-height: 2.75rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td > * {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td .eff-sheets__assign,
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td .eff-das__unit-wrap {
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general .eff-sheets__actions {
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general .eff-sheets__actions {
+    flex-direction: row;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td .eff-das__edit {
+    display: none;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td .eff-sheets__fonction,
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td .eff-das__muted {
+    text-align: left;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td .eff-sheets__assign,
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table.eff-das__table--general tbody td .eff-das__unit-wrap {
+    text-align: left;
   }
 }

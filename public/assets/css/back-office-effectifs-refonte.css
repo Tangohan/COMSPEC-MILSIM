@@ -1305,3 +1305,49 @@ button.eff-fix-link {
   border-color: var(--ath-accent, #0b8a5c);
   color: var(--ath-accent, #0b8a5c);
 }
+
+/* Mobile : en-tête compact, onglets défilants et raccourcis à 44 px (bureau inchangé). */
+@media (max-width: 560px) {
+  .bo-eff-workspace .bo-eff-hero__in {
+    padding: 0.9rem 0.9rem 0.75rem;
+  }
+
+  .bo-eff-workspace .bo-eff-hero__lead {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 0.82rem;
+  }
+
+  .bo-eff-workspace .bo-eff-hero__acts {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .bo-eff-workspace .bo-eff-hb {
+    min-height: 2.75rem;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 0.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .bo-eff-workspace .bo-eff-tab,
+  .bo-eff-workspace .bo-eff-tabs__more > summary,
+  .bo-eff-workspace .bo-eff-quick__search,
+  .bo-eff-workspace .bo-eff-quick__page {
+    min-height: 2.75rem;
+  }
+
+  .bo-eff-workspace .bo-eff-tabs__scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+}
