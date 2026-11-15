@@ -65962,4 +65962,8 @@ return [
     'Unités liées.' => 'Linked units.',
     'Validé par le système Athena. Ce néant n’est pas un bilan rédigé : si vous renseignez un bilan ci-dessous, il le remplace (le néant reste dans le journal du dossier).' => 'Validated by the Athena system. This nil report is not a written report: if you fill in a report below, it replaces the nil report (the nil report stays in the file’s log).',
     'Voir les unités liées' => 'View linked units',
+    'Mon espace JNET' => 'My JNET space',
+    'Fiche, unité et démarches' => 'File, unit and requests',
+    'Retour à mon espace JNET' => 'Back to my JNET space',
+    'Tout écouter' => 'Play all',
 ];

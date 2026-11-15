@@ -281,7 +281,9 @@ final class JnetMaSituationFoundationTest extends TestCase
     {
         $src = self::read('app/Controllers/Admin/Organization/MemberSituationController.php');
         self::assertStringNotContainsString("Response::view('layout.main'", $src);
-        self::assertGreaterThanOrEqual(10, substr_count($src, 'JnetMemberShell::view($request,'));
+        // Dix pages rendues par la coque ; la page Événements d'une formule sans ce module renvoie à la page de formules du portail.
+        self::assertGreaterThanOrEqual(9, substr_count($src, 'JnetMemberShell::view($request,'));
+        self::assertStringContainsString("Response::redirect(url('platform/upgrade') . '?from=events')", $src);
         self::assertStringNotContainsString("url('back-office/ma-situation", $src);
         self::assertStringContainsString("jnet_moi_url('qualifications/' . \$awardId . '/brevet')", $src);
     }
@@ -325,8 +327,9 @@ final class JnetMaSituationFoundationTest extends TestCase
         self::assertSame(1, substr_count($html, 'Message déjà lu par le contrôleur'));
         // Pastille des qualifications à renouveler reprise du menu.
         self::assertMatchesRegularExpression('#Mes qualifications<em>3</em>#', $html);
-        // Pas de surtitre au-dessus du titre de la page.
-        self::assertMatchesRegularExpression('#<main[^>]*>\s*<header class="jp-head">\s*<h1#', $html);
+        // Fil d'Ariane (Mon extranet, Mon espace, la page), puis le titre : pas de surtitre au-dessus du titre de la page.
+        self::assertMatchesRegularExpression('#<main[^>]*>\s*<nav class="ja-crumbs".*?</nav>\s*<header class="jp-head">\s*<h1#s', $html);
+        self::assertMatchesRegularExpression('#<a href="[^"]*jnet/espaces">Mon espace</a>#', $html);
         self::assertStringNotContainsString('<pre', $html);
         self::assertStringNotContainsString('Warning:', $html);
         self::assertStringNotContainsString('Fatal error', $html);

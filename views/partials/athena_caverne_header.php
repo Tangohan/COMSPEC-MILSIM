@@ -98,7 +98,8 @@ if ($canOpenBackOffice && class_exists(\App\Support\PortalAccessChoice::class)) 
     }
     if ($boPlainMember) {
         $boHref = \App\Support\PortalAccessChoice::plainMemberHome();
-        $boPath = 'jnet';
+        // Chemin de filtrage : l'espace du membre (/jnet/moi) est ouvert à tout membre connecté, comme l'était la racine du back-office.
+        $boPath = 'jnet/moi';
         if ($boHref === url('dashboard')) {
             $canOpenBackOffice = false;
         }

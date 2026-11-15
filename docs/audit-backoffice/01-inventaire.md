@@ -8,7 +8,7 @@ Conventions :
 - Abréviations des droits : voir le [README](README.md#conventions). Toutes les colonnes sont des FAIT tirés des audits, sauf mention HYPOTHÈSE.
 - Fréquences : non mesurées (voir les audits).
 - Sources : `01` = `audit/01-personnel.md`, `02` = `02-acces.md`, `03` = `03-operations.md`, `04` = `04-organisation.md`, `05` = `05-navigation-ui.md`.
-- Pages « Ma situation » (`BO/ma-situation/*`) : passées dans JNET, sous `/jnet/moi/*` (table `App\Support\JnetMemberPaths`). Les lectures de l'ancienne adresse répondent 301 en un saut (requête conservée) ; les envois (POST) y restent servis. Un membre sans rôle de gestion qui ouvre `/back-office` est renvoyé vers JNET (`PortalAccessChoice::isPlainMember`). Dans les tableaux ci-dessous, lire `BO/ma-situation/…` comme `/jnet/moi/…`.
+- Pages « Ma situation » (`BO/ma-situation/*`) : passées dans JNET, sous `/jnet/moi/*` (table `App\Support\JnetMemberPaths`). Les lectures de l'ancienne adresse répondent 301 en un saut (requête conservée) ; les envois (POST) y restent servis. Un membre sans rôle de gestion qui ouvre `/back-office` est renvoyé vers JNET (`PortalAccessChoice::isPlainMember`) ; ses liens (barre haute, menus Espace et profil, centre d'actions, entrée « Mon back-office » du méga-menu) mènent à JNET, ou disparaissent si son arrivée est le tableau de bord (profils sans JNET). Dans les tableaux ci-dessous, lire `BO/ma-situation/…` comme `/jnet/moi/…`.
 
 ## Volumétrie
 
