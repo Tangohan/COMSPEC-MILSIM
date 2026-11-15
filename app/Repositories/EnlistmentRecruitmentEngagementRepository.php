@@ -39,6 +39,8 @@ final class EnlistmentRecruitmentEngagementRepository
 
     private static ?bool $retroTable = null;
 
+    private static ?bool $autoCloseColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -62,6 +64,20 @@ final class EnlistmentRecruitmentEngagementRepository
         }
 
         return self::$retroTable;
+    }
+
+    /**
+     * Colonne qui distingue un bilan « néant » posé par Athena d'un bilan rédigé par un membre
+     * (étape 4550 ; tant qu'elle manque, aucun néant n'est enregistré et rien ne change à l'écran).
+     */
+    public function autoCloseColumnExists(): bool
+    {
+        if (self::$autoCloseColumn === null) {
+            $st = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistment_retro_feedbacks' AND COLUMN_NAME = 'auto_closed_at' LIMIT 1");
+            self::$autoCloseColumn = $st && (bool) $st->fetchColumn();
+        }
+
+        return self::$autoCloseColumn;
     }
 
     public function engagementReady(): bool
@@ -173,10 +189,13 @@ final class EnlistmentRecruitmentEngagementRepository
         if ($comment === '') {
             return false;
         }
+        // Un bilan rédigé remplace un éventuel néant d'Athena : la mention « clos par Athena » disparaît de la ligne
+        // (le néant reste dans le journal du dossier).
+        $clearAuto = $this->autoCloseColumnExists() ? ', auto_closed_at = NULL' : '';
         $stmt = $this->pdo->prepare(
             'INSERT INTO enlistment_retro_feedbacks (tenant_id, enlistment_id, feedback_scope, author_user_id, rating, comment, created_at)
              VALUES (?, ?, ?, ?, ?, ?, NOW())
-             ON DUPLICATE KEY UPDATE author_user_id = VALUES(author_user_id), rating = VALUES(rating), comment = VALUES(comment), updated_at = NOW()'
+             ON DUPLICATE KEY UPDATE author_user_id = VALUES(author_user_id), rating = VALUES(rating), comment = VALUES(comment), updated_at = NOW()' . $clearAuto
         );
 
         return $stmt->execute([$tenantId, $enlistmentId, self::SCOPE_STAFF_ONE_MONTH, $authorUserId, $rating, $comment]);
@@ -327,6 +346,101 @@ final class EnlistmentRecruitmentEngagementRepository
                 'created_at' => (string) ($r['created_at'] ?? ''),
                 'age_days' => max(30, (int) ($r['age_days'] ?? 30)),
             ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Candidatures acceptées sans aucun bilan d'équipe, dont l'acceptation est assez ancienne pour que le seuil de
+     * clôture automatique puisse être atteint (préfiltre SQL ; la règle exacte est EnlistmentRetroAutoClose::isDue).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listStaffRetroAutoCloseCandidates(int $tenantId, int $limit): array
+    {
+        if (!$this->retroTableExists() || $tenantId < 1) {
+            return [];
+        }
+        $lim = max(1, min(200, $limit));
+        $minAge = \App\Support\EnlistmentRetroAutoClose::acceptanceAgeDays();
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id, e.tenant_id, e.first_name, e.last_name, e.status, e.created_at, e.reviewed_at, e.reviewed_by
+             FROM enlistments e
+             LEFT JOIN enlistment_retro_feedbacks r
+               ON r.tenant_id = e.tenant_id
+              AND r.enlistment_id = e.id
+              AND (
+                    r.feedback_scope = ?
+                    OR r.feedback_scope = 'staff'
+                    OR r.feedback_scope LIKE 'staff\\_%' ESCAPE '\\\\'
+              )
+             WHERE e.tenant_id = ?
+               AND e.status = 'reviewed'
+               AND DATE(COALESCE(e.reviewed_at, e.created_at)) <= DATE_SUB(CURDATE(), INTERVAL {$minAge} DAY)
+               AND r.id IS NULL
+             ORDER BY COALESCE(e.reviewed_at, e.created_at) ASC, e.id ASC
+             LIMIT {$lim}"
+        );
+        $stmt->execute([self::SCOPE_STAFF_ONE_MONTH, $tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Enregistre le bilan « néant » d'Athena : sans auteur ni note, avec la mention explicite, horodaté.
+     * Idempotent : si une ligne de bilan d'équipe existe déjà (humaine ou néant), rien n'est écrit et false est rendu.
+     */
+    public function autoCloseStaffRetro(int $tenantId, int $enlistmentId, string $comment): bool
+    {
+        if (!$this->retroTableExists() || !$this->autoCloseColumnExists() || $tenantId < 1 || $enlistmentId < 1) {
+            return false;
+        }
+        $comment = trim($comment);
+        if ($comment === '') {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO enlistment_retro_feedbacks (tenant_id, enlistment_id, feedback_scope, author_user_id, rating, comment, created_at, auto_closed_at)
+             VALUES (?, ?, ?, NULL, NULL, ?, NOW(), NOW())
+             ON DUPLICATE KEY UPDATE id = id'
+        );
+        $stmt->execute([$tenantId, $enlistmentId, self::SCOPE_STAFF_ONE_MONTH, $comment]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Parmi ces dossiers, ceux dont le bilan d'équipe est un néant d'Athena (vide si la colonne manque).
+     *
+     * @param list<int> $enlistmentIds
+     * @return array<int, true> id dossier => true
+     */
+    public function mapStaffRetroAutoClosedIds(int $tenantId, array $enlistmentIds): array
+    {
+        if (!$this->retroTableExists() || !$this->autoCloseColumnExists() || $tenantId < 1) {
+            return [];
+        }
+        $ids = [];
+        foreach ($enlistmentIds as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT enlistment_id FROM enlistment_retro_feedbacks
+             WHERE tenant_id = ? AND feedback_scope = ? AND auto_closed_at IS NOT NULL
+               AND enlistment_id IN ({$placeholders})"
+        );
+        $stmt->execute(array_merge([$tenantId, self::SCOPE_STAFF_ONE_MONTH], array_values($ids)));
+        $out = [];
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[(int) ($r['enlistment_id'] ?? 0)] = true;
         }
 
         return $out;

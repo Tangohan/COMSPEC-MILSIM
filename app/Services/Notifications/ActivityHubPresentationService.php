@@ -144,6 +144,16 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            \App\Support\EnlistmentRetroAutoClose::NOTIFICATION_TYPE => [
+                'title' => 'Bilan 30 jours clos automatiquement (néant)',
+                'detail' => 'Pour ' . (trim((string) ($payload['candidate'] ?? '')) !== '' ? trim((string) $payload['candidate']) : 'un candidat accepté')
+                    . ' : bilan non renseigné dans les délais. Vous pouvez rédiger un bilan qui le remplace.',
+                'href' => (int) ($payload['enlistment_id'] ?? 0) > 0
+                    ? url('back-office/recruitments/' . (int) $payload['enlistment_id'] . '?dossier=1#bilan-recrutement')
+                    : url('back-office/recruitments'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'atak_mod_report_reply' => [
                 'title' => !empty($payload['auto'])
                     ? 'Réponse sur une erreur détectée par votre mod'
