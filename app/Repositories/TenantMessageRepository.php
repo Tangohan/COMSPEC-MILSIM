@@ -259,10 +259,10 @@ class TenantMessageRepository
             $stmt = $this->pdo->prepare(
                 "SELECT t.id, t.subject, t.created_at, t.updated_at, t.created_by_user_id,
                 tu.last_read_at,
-                cu.display_name AS creator_name,
+                cu.display_name AS creator_name, cu.callsign AS creator_callsign,
                 agg.message_count, agg.unread_count,
                 lm.body AS last_preview, lm.sender_user_id AS last_sender_id, lm.created_at AS last_message_at,
-                lu.display_name AS last_sender_name
+                lu.display_name AS last_sender_name, lu.callsign AS last_sender_callsign
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
                 LEFT JOIN users cu ON cu.id = t.created_by_user_id
@@ -296,6 +296,8 @@ class TenantMessageRepository
             $row['has_unread'] = $row['unread_count'] > 0;
         }
         unset($row);
+        $rows = $this->relabelMembers($rows, 'created_by_user_id', 'creator_name', 'creator_callsign', $tenantId);
+        $rows = $this->relabelMembers($rows, 'last_sender_id', 'last_sender_name', 'last_sender_callsign', $tenantId);
 
         return $rows;
     }
@@ -397,7 +399,35 @@ class TenantMessageRepository
         );
         $stmt->execute([$threadId]);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->relabelMembers($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], 'sender_user_id', 'display_name', 'callsign');
+    }
+
+    /**
+     * Remplace le nom affiché des membres d'une liste par la règle unique (prénom + nom du personnage, indicatif, nom du
+     * compte). Le nom du compte d'origine reste dans « account_name » (clé du nom + « _account »).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function relabelMembers(array $rows, string $idKey, string $nameKey, string $callsignKey, int $tenantId = 0): array
+    {
+        $tenantId = $tenantId > 0 ? $tenantId : (int) \App\Core\Session::get('tenant_id');
+        \App\Support\MemberIdentity::preload($tenantId, array_map(static fn (array $r): int => (int) ($r[$idKey] ?? 0), $rows));
+        foreach ($rows as &$row) {
+            $id = (int) ($row[$idKey] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $row[$nameKey . '_account'] = $row[$nameKey] ?? '';
+            $row[$nameKey] = member_label([
+                'id' => $id,
+                'display_name' => (string) ($row[$nameKey] ?? ''),
+                'callsign' => (string) ($row[$callsignKey] ?? ''),
+            ], 'list', $tenantId);
+        }
+        unset($row);
+
+        return $rows;
     }
 
     /**
@@ -577,7 +607,7 @@ class TenantMessageRepository
             );
             $stmt->execute([$threadId]);
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return $this->relabelMembers($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], 'user_id', 'display_name', 'callsign');
         } catch (\PDOException) {
             return [];
         }

@@ -2651,11 +2651,20 @@ if (!function_exists('member_name')) {
             $row['trigram'] = '';
         }
 
-        return \App\Support\MemberName::format(
-            $row,
-            \App\Services\Personnel\MemberNameSettings::formatFor($settings, $context),
-            $allowGrade && $settings['show_grade']
-        );
+        return \App\Support\MemberIdentity::display($row, $context, $tenantId, $allowGrade, $settings)['primary'];
+    }
+}
+
+if (!function_exists('member_label')) {
+    /**
+     * Nom d'un membre dont la ligne ne porte que id (ou user_id), display_name, callsign : le prénom et le nom du
+     * personnage sont repris de sa fiche, puis règle unique (indicatif, nom du compte, « Membre »). Texte brut.
+     *
+     * @param array<string, mixed> $row
+     */
+    function member_label(array $row, string $context = 'list', ?int $tenantId = null): string
+    {
+        return \App\Support\MemberIdentity::labelForUser($row, $context, $tenantId);
     }
 }
 

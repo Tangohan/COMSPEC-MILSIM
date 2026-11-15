@@ -90,6 +90,78 @@ final class MemberIdentity
         ];
     }
 
+    /** @var array<string, array<string, mixed>> identités déjà chargées (« communauté:membre ») */
+    private static array $directory = [];
+
+    /** Instant du premier chargement : au-delà de 30 s (tâche longue, worker), la mémoire est vidée. */
+    private static int $directoryAt = 0;
+
+    /**
+     * Charge d'un coup l'identité du personnage (prénom, nom, trigramme) des membres d'une liste, pour que
+     * {@see self::displayForUser()} n'interroge pas la base ligne par ligne.
+     *
+     * @param list<int> $userIds
+     */
+    public static function preload(int $tenantId, array $userIds, ?\App\Services\Personnel\MemberNameService $service = null): void
+    {
+        if (self::$directoryAt !== 0 && time() - self::$directoryAt > 30) {
+            self::forgetPreloaded();
+        }
+        $missing = [];
+        foreach ($userIds as $id) {
+            $id = (int) $id;
+            if ($id > 0 && !isset(self::$directory[$tenantId . ':' . $id])) {
+                $missing[] = $id;
+            }
+        }
+        if ($tenantId < 1 || $missing === []) {
+            return;
+        }
+        try {
+            $found = ($service ?? new \App\Services\Personnel\MemberNameService())->identitiesFor($tenantId, $missing);
+        } catch (\Throwable) {
+            $found = [];
+        }
+        self::$directoryAt = self::$directoryAt !== 0 ? self::$directoryAt : time();
+        foreach ($missing as $id) {
+            self::$directory[$tenantId . ':' . $id] = $found[$id] ?? [];
+        }
+    }
+
+    /** Oublie les identités chargées (tests, fin de tâche longue). */
+    public static function forgetPreloaded(): void
+    {
+        self::$directory = [];
+        self::$directoryAt = 0;
+    }
+
+    /**
+     * Comme {@see self::display()} pour une ligne qui ne porte que id/user_id, display_name, callsign (requêtes SQL
+     * d'écrans) : le prénom et le nom du personnage sont repris de user_profiles (jamais de l'identité légale).
+     * Une ligne masquée reste masquée.
+     *
+     * @param array<string, mixed> $row
+     * @return array{primary: string, secondary: string, callsign: string, trigram: string, source: string}
+     */
+    public static function displayForUser(array $row, string $context = self::LIST, ?int $tenantId = null, bool $allowGrade = true): array
+    {
+        $tenantId ??= (int) Session::get('tenant_id');
+        $id = (int) ($row['id'] ?? $row['user_id'] ?? 0);
+        $row = array_diff_key($row, ['first_name' => 1, 'last_name' => 1]);
+        if ($id > 0 && $tenantId > 0 && !MemberName::isMasked($row)) {
+            self::preload($tenantId, [$id]);
+            $row = MemberName::withIdentity($row, self::$directory[$tenantId . ':' . $id] ?? null);
+        }
+
+        return self::display($row, $context, $tenantId, $allowGrade);
+    }
+
+    /** Nom principal d'une ligne de membre (id, display_name, callsign) : texte brut. @param array<string, mixed> $row */
+    public static function labelForUser(array $row, string $context = self::LIST, ?int $tenantId = null): string
+    {
+        return self::displayForUser($row, $context, $tenantId, false)['primary'];
+    }
+
     /**
      * Prénom ou nom saisi dans un formulaire : espaces nettoyés, longueur bornée, null si la saisie contient du HTML
      * ou des caractères de contrôle (refusée), chaîne vide si rien n'est saisi.

@@ -241,7 +241,8 @@ final class JnetPortalController
         if (in_array($view, ['accueil', 'taches'], true) && $shown['taches']) {
             $w['tasks'] = $repo->tasks($tenantId, $unitId);
             foreach ($memberCards as $p) {
-                $w['assignees'][(int) $p['id']] = (string) (($p['callsign'] ?? '') !== '' ? $p['callsign'] : ($p['name'] ?? ''));
+                // Nom de la carte (prénom + nom du personnage, sinon indicatif) : la règle unique, comme l'annuaire.
+                $w['assignees'][(int) $p['id']] = (string) (($p['name'] ?? '') !== '' ? $p['name'] : ($p['callsign'] ?? ''));
             }
         }
         if (in_array($view, ['accueil', 'pages'], true) && $shown['pages']) {
