@@ -164,6 +164,58 @@ final class AccessRoleRules
     }
 
     /**
+     * Plan de copie ou de déplacement de membres d'un niveau vers un autre.
+     * Seuls les titulaires du niveau source sont retenus (un identifiant étranger est ignoré, jamais appliqué).
+     *
+     * @param list<int> $sourceMembers
+     * @param list<int> $targetMembers
+     * @param list<int>|null $selected null = tous les titulaires du niveau source
+     * @return array{receive: list<int>, already: list<int>, ignored: list<int>, leave: list<int>}
+     */
+    public static function planTransfer(array $sourceMembers, array $targetMembers, ?array $selected, bool $move): array
+    {
+        $source = array_values(array_unique(array_map('intval', $sourceMembers)));
+        $target = array_flip(array_map('intval', $targetMembers));
+        $wanted = $selected === null ? $source : array_values(array_unique(array_map('intval', $selected)));
+        $ignored = array_values(array_diff($wanted, $source));
+        $picked = array_values(array_intersect($wanted, $source));
+        $receive = [];
+        $already = [];
+        foreach ($picked as $uid) {
+            if (isset($target[$uid])) {
+                $already[] = $uid;
+            } else {
+                $receive[] = $uid;
+            }
+        }
+
+        return ['receive' => $receive, 'already' => $already, 'ignored' => $ignored, 'leave' => $move ? $picked : []];
+    }
+
+    /**
+     * Un déplacement retirerait-il le droit-clé à la dernière personne qui le tient ?
+     *
+     * @param array<int, list<string>> $rolePermissions
+     * @param array<int, list<int>> $roleMembers avant
+     * @param array<int, list<int>> $newRoleMembers après
+     */
+    public static function membersChangeRemovesLastAdmin(array $rolePermissions, array $roleMembers, array $newRoleMembers): bool
+    {
+        $holders = static function (array $members) use ($rolePermissions): array {
+            $out = [];
+            foreach (self::rightsByUser($rolePermissions, $members) as $uid => $slugs) {
+                if (PermissionImplication::isGranted($slugs, self::ADMIN_KEY)) {
+                    $out[] = (int) $uid;
+                }
+            }
+
+            return $out;
+        };
+
+        return $holders($roleMembers) !== [] && $holders($newRoleMembers) === [];
+    }
+
+    /**
      * Incohérences d’une sélection : droit coché sans les droits qu’il suppose.
      *
      * @param list<string> $slugs

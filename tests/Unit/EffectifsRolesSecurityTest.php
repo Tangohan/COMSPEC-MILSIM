@@ -28,17 +28,19 @@ final class EffectifsRolesSecurityTest extends TestCase
     {
         self::assertStringContainsString('Csrf::verify($request)', $this->method('denyAccessWrite'));
         self::assertStringContainsString('canManageRoles', $this->method('denyAccessWrite'));
-        foreach (['createAccessRole', 'saveAccessRole', 'restoreAccessRole', 'deleteAccessRole', 'showAccessRole'] as $m) {
+        foreach (['createAccessRole', 'saveAccessRole', 'restoreAccessRole', 'deleteAccessRole', 'showAccessRole', 'moveRoleMembers'] as $m) {
             self::assertStringContainsString('$this->denyAccessWrite($request', $this->method($m), $m);
         }
-        $preview = $this->method('previewAccessRole');
-        self::assertStringContainsString('Csrf::verify($request)', $preview);
-        self::assertStringContainsString('canManageRoles', $preview);
+        foreach (['previewAccessRole', 'previewRoleMembers'] as $m) {
+            $preview = $this->method($m);
+            self::assertStringContainsString('Csrf::verify($request)', $preview);
+            self::assertStringContainsString('canManageRoles', $preview);
+        }
     }
 
     public function testCommunityIsNeverReadFromTheRequest(): void
     {
-        foreach (['roles', 'createAccessRole', 'saveAccessRole', 'previewAccessRole', 'restoreAccessRole', 'deleteAccessRole', 'showAccessRole'] as $m) {
+        foreach (['roles', 'createAccessRole', 'saveAccessRole', 'previewAccessRole', 'restoreAccessRole', 'deleteAccessRole', 'showAccessRole', 'moveRoleMembers', 'previewRoleMembers'] as $m) {
             $body = $this->method($m);
             self::assertStringContainsString("Session::get('tenant_id')", $body, $m);
             self::assertStringNotContainsString("input('tenant_id'", $body, $m);
@@ -67,10 +69,29 @@ final class EffectifsRolesSecurityTest extends TestCase
         }
     }
 
+    public function testMemberTransferIsBoundToTheCommunityAndTheActorsRights(): void
+    {
+        $plan = $this->method('roleMembersPlan');
+        self::assertStringContainsString('forTenantAccessProfiles($tenantId, true)', $plan);
+        self::assertStringContainsString('Niveau introuvable dans votre communauté.', $plan);
+        self::assertStringContainsString('AccessRoleRules::planTransfer(', $plan);
+        $move = $this->method('moveRoleMembers');
+        self::assertStringContainsString('AccessRoleRules::escalation(', $move);
+        self::assertStringContainsString('membersChangeRemovesLastAdmin(', $move);
+        self::assertStringContainsString('syncOrganizationRoles(', $move);
+        self::assertStringContainsString('InvalidArgumentException', $move);
+        self::assertStringContainsString('ACCESS_ROLE_MEMBERS', $move);
+    }
+
+    public function testColorIsValidatedBeforeSaving(): void
+    {
+        self::assertStringContainsString('AccessRoleColor::normalize(', $this->method('saveAccessRole'));
+    }
+
     public function testRoutesKeepOrganizationAdminMiddleware(): void
     {
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
-        foreach (['', '/apercu', '/nouveau', '/retablir', '/supprimer', '/reafficher'] as $suffix) {
+        foreach (['', '/apercu', '/membres', '/membres/apercu', '/nouveau', '/retablir', '/supprimer', '/reafficher'] as $suffix) {
             $verb = $suffix === '' ? '(?:get|post)' : 'post';
             $re = '#\$router->' . $verb . "\\('/back-office/ressources/effectifs/roles" . preg_quote($suffix, '#') . "',[^;]*OrganizationAdminMiddleware::class\\]\\);#";
             self::assertMatchesRegularExpression($re, $routes, 'route roles' . $suffix);
