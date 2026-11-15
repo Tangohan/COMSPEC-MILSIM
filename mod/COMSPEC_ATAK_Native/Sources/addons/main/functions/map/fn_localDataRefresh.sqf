@@ -262,6 +262,56 @@ private _crews = createHashMap;
     if (_drop) then { _units deleteAt _x; };
 } forEach (keys _units);
 
+// Dédoublonnage défensif (4.24.3) : un allié affiché en double sur la carte du téléphone (traînée de symboles empilés,
+// signalée en aéronef) ne vient pas de cette table (clé = netId ou « athena: » + indicatif, refaite à chaque passage) mais de
+// pistes Athena périmées du même endroit. Une piste Athena alliée non en direct est retirée (1) si elle a plus de 30 min,
+// (2) si un allié en direct ou une piste plus fraîche est à moins de 6 m ; on ne garde que la plus fraîche d'un tas.
+// Aucune piste en direct, aucune unité du jeu, aucun téléphone tracé n'est jamais retiré. Journal RPT : variable
+// missionNamespace COMSPEC_ATAK_DiagDup = true (désactivé par défaut, rien à l'écran).
+private _gCells = createHashMap;
+private _gNear = {
+    params ["_cx", "_cy", "_p"];
+    private _hit = false;
+    for "_i" from -1 to 1 do {
+        for "_j" from -1 to 1 do {
+            if (!_hit) then { _hit = ((_gCells getOrDefault [[_cx + _i, _cy + _j], []]) findIf { (_x distance2D _p) < 6 }) >= 0; };
+        };
+    };
+    _hit
+};
+private _gGhosts = [];
+{
+    private _ge = _y;
+    if ((_ge getOrDefault ["affiliation", ""]) isNotEqualTo "friend" || {_ge getOrDefault ["phone", false]}) then { continue };
+    private _gp = _ge getOrDefault ["position", []];
+    if ((count _gp) < 2) then { continue };
+    private _gk = [floor ((_gp select 0) / 6), floor ((_gp select 1) / 6)];
+    if ((isNull (_ge getOrDefault ["object", objNull])) && {(_ge getOrDefault ["freshness", "LIVE"]) isNotEqualTo "LIVE"}) then {
+        _gGhosts pushBack [_ge getOrDefault ["updated", 0], _x, _gk, _gp];
+    } else {
+        private _gl = _gCells getOrDefault [_gk, []];
+        if ((count _gl) isEqualTo 0) then { _gCells set [_gk, _gl]; };
+        _gl pushBack _gp;
+    };
+} forEach _units;
+_gGhosts sort false;
+private _gDrop = [];
+{
+    _x params ["_gu", "_gid", "_gk", "_gp"];
+    if ((diag_tickTime - _gu) > 1800 || {[_gk select 0, _gk select 1, _gp] call _gNear}) then {
+        _gDrop pushBack _gid;
+    } else {
+        private _gl = _gCells getOrDefault [_gk, []];
+        if ((count _gl) isEqualTo 0) then { _gCells set [_gk, _gl]; };
+        _gl pushBack _gp;
+    };
+} forEach _gGhosts;
+{ _units deleteAt _x; } forEach _gDrop;
+if ((count _gDrop) > 0 && {missionNamespace getVariable ["COMSPEC_ATAK_DiagDup", false]} && {diag_tickTime > (missionNamespace getVariable ["COMSPEC_ATAK_DiagDupAt", 0])}) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_DiagDupAt", diag_tickTime + 10];
+    diag_log format ["[COMSPEC ATAK][DUP] %1 piste(s) Athena périmée(s) retirée(s) de la carte (sur %2) : %3", count _gDrop, count _units, _gDrop select [0, 8]];
+};
+
 // Aucune IA ennemie sur la carte, même repérée (choix de la communauté) : ni calcul local, ni contact relayé par Athena.
 // Filtres du BFT (fn_bftFilter : IA, aériens, véhicules, pistes anciennes ou hors ligne, distance) : masquées sur la carte aussi.
 // Une seule passe sur les clés (+_units recopiait en profondeur toutes les pistes, deux fois par passage).

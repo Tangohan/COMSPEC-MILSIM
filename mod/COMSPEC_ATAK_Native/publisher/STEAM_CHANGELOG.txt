@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.24.3 Washington — plus d'alliés empilés en traînée sur la carte du téléphone / no more stacked ally symbols on the phone map[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Carte[/b] : un allié qui se déplace vite (hélicoptère, avion) ne s'affiche plus des dizaines de fois sur la carte du téléphone. Seule sa position la plus récente est gardée.
+[*] Une position périmée depuis plus de 30 minutes disparaît.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Map[/b]: an ally moving fast (helicopter, plane) is no longer shown dozens of times on the phone map. Only the latest position is kept.
+[*] An outdated position older than 30 minutes disappears.
+[/list]
+
 [h1]COMSPEC ATAK 4.24.2 Washington — « Démarrer et décoller » adapté à chaque drone / "Start and Takeoff" adapted to each drone[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

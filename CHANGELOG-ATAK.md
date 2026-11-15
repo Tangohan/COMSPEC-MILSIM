@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Carte du téléphone : plus de symboles d'alliés empilés en traînée (ATAK natif 4.24.3.AG - Washington, COMSPEC Link 2.0.126)
+
+### Résumé joueur
+Type : correctif
+FR : Un allié ne s'affiche plus des dizaines de fois sur la carte du téléphone
+- Quand un allié se déplace vite (hélicoptère, avion), d'anciennes positions périmées ne restent plus empilées en traînée de symboles sur la carte du téléphone.
+- Seule la position la plus récente est gardée ; une position périmée depuis plus de 30 minutes disparaît.
+- Rien ne s'affiche à l'écran : la carte est simplement propre.
+- Mets à jour le mod, puis redémarre complètement Arma 3.
+EN : An ally is no longer shown dozens of times on the phone map
+- When an ally moves fast (helicopter, plane), old outdated positions no longer stay stacked as a trail of symbols on the phone map.
+- Only the latest position is kept; an outdated position older than 30 minutes disappears.
+- Nothing is shown on screen: the map is simply clean.
+- Update the mod, then restart Arma 3 completely.
+
+### Détail technique
+- **Cause : probable, non prouvée en jeu.** Le téléphone redessine ses unités depuis une table refaite à chaque passage (`fn_localDataRefresh`, clé = netId ou `athena:` + indicatif) : un symbole en double ne peut venir que de pistes Athena (`fn_pollUnits`) d'indicatifs distincts, périmées et empilées au même endroit, qui n'étaient jamais retirées (seul le filtre BFT optionnel les masquait). La traînée du joueur (`COMSPEC_ATAK_SelfTrailPts`) était déjà bornée (400 points, durée réglable) et dessinée en lignes, pas en symboles. Les marqueurs web (`del:N`, `fn_markerWebSweep`) ne dessinent aucun symbole d'unité : écartés.
+- **SQF** (`fn_localDataRefresh`) : une piste Athena alliée non en direct (hors téléphone tracé, hors unité du jeu) est retirée si elle a plus de 30 minutes, ou si un allié en direct ou une piste plus fraîche est à moins de 6 m ; une seule survit par tas. Journal RPT `[COMSPEC ATAK][DUP]` seulement si `COMSPEC_ATAK_DiagDup` vaut `true` (désactivé par défaut, au plus un message toutes les 10 s, rien à l'écran).
+- **Site** : `AtakUnitRowDedupe::byCallSign` (une ligne par indicatif : meilleure liaison, puis la plus récente) appliqué à `GET /api/units`. Test : `tests/Unit/AtakUnitDuplicateMarkersTest.php`.
+- **DLL** : aucune modification, COMSPEC Link reste 2.0.126.
+- **À tester en jeu** : voler en hélicoptère avec un second joueur équipé, carte du téléphone ouverte (un seul symbole par allié, pas de traînée) ; activer `COMSPEC_ATAK_DiagDup` et lire le RPT pour savoir si des pistes sont retirées (ce qui confirmerait la cause).
+
+---
+
 ## Drones : « Démarrer et décoller » adapté à chaque drone, tous les drones d'Arma 3 et le RQ-11 Raven (ATAK natif 4.24.2.AG - Washington, COMSPEC Link 2.0.126)
 
 ### Résumé joueur
