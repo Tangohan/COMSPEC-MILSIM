@@ -32,7 +32,9 @@ final class AtakAceRootSettingAssetTest extends TestCase
     {
         $en = self::read(self::MAIN . 'i18n/en.txt');
         self::assertStringContainsString('["Menu ACE : entrées ATAK à la racine", "ACE menu: ATAK entries at the root"],', $en);
-        self::assertMatchesRegularExpression('/\["ATAK · Menu ACE", "ATAK · ACE menu"\]\R\]\s*$/', $en, 'aucune virgule après la dernière entrée');
+        // Chaque sortie ajoute ses lignes à la fin du dictionnaire : l'entrée ACE n'est plus la dernière, mais sa ligne garde sa virgule.
+        self::assertStringContainsString('["ATAK · Menu ACE", "ATAK · ACE menu"]', $en);
+        self::assertMatchesRegularExpression('/\["[^\n]*"\]\R\]\s*$/', $en, 'aucune virgule après la dernière entrée');
         self::assertStringNotContainsString('\\"', $en);
     }
 
