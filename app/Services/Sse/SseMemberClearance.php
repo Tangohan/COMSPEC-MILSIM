@@ -80,7 +80,7 @@ final class SseMemberClearance
             'explicit' => 'Habilitation explicite portée par ses niveaux d’accès.',
             'role' => 'Reportée de ses droits SSE existants.',
             'profile' => 'Inscrite sur sa fiche opérateur.',
-            default => 'Aucune habilitation : diffusion interne seulement.',
+            default => 'Aucune habilitation : information non classifiée contrôlée (CUI) seulement.',
         };
     }
 

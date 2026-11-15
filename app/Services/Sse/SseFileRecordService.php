@@ -79,7 +79,7 @@ final class SseFileRecordService
         $links = array_values(array_filter($this->records->linksFor($tenantId, [$identityId])[$identityId] ?? [], $keepRow));
         $photoAllowed = $gm || V::field($rawProfile, 'photo', $phase);
         $photos = $photoAllowed ? array_values(array_filter($this->records->photosFor($tenantId, [$identityId])[$identityId] ?? [], $keepRow)) : [];
-        // Images d'un membre : CONFIDENTIEL ÉLEVÉ (SseMemberImageGate). Refusées, ni cliché ni chemin ne sortent de la fiche.
+        // Images d'un membre : TRÈS SECRET (TS) (SseMemberImageGate). Refusées, ni cliché ni chemin ne sortent de la fiche.
         $gate = SseMemberImageGate::forSession();
         $imageAccess = $gate->forIdentity($tenantId, $identity);
         $imageLock = null;
@@ -497,7 +497,6 @@ final class SseFileRecordService
         }
         $lines[] = '';
         $lines[] = $r['response']['code'] === 'hit' ? (string) $pack['records']['hit'] : 'CONFIRM WITH ORIGINATING AGENCY BEFORE ANY ACTION.';
-        $lines[] = 'SIMULATION — FICTIONAL DATA';
 
         return implode("\n", $lines);
     }

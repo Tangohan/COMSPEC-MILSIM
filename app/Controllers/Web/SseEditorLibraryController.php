@@ -23,7 +23,7 @@ use App\Services\Sse\SseEditorLibraryService;
  * Bureau SSE › Bibliothèque de l'éditeur : les contenus enregistrés par le mod (ICD-SSE-EDITOR-001). Ils se créent dans
  * le jeu ; une identité, un papier ou un kit peut être attribué ici à un joueur (SseEditorAssignmentService).
  *
- * Mêmes règles que l'API pour une session du portail : compte identifié et habilitation Confidentiel. La communauté est
+ * Mêmes règles que l'API pour une session du portail : compte identifié et habilitation Secret (S). La communauté est
  * celle de la session, comme dans l'API : c'est dans celle-là que l'habilitation est calculée. Attribuer demande en plus
  * le droit de gérer les papiers des membres, jamais un accès invité.
  */
@@ -58,7 +58,7 @@ final class SseEditorLibraryController
     public function index(Request $request, array $params = []): Response
     {
         if (!self::allowed($this->clearance)) {
-            Session::flash('error', 'Compte identifié et habilitation Confidentiel requis pour la bibliothèque de l’éditeur.');
+            Session::flash('error', 'Compte identifié et habilitation Secret (S) requis pour la bibliothèque de l’éditeur.');
 
             return Response::redirect(url('atak/sse/operations'));
         }
@@ -106,7 +106,7 @@ final class SseEditorLibraryController
     {
         $back = url('atak/sse/editeur');
         if (!$this->canAssign()) {
-            Session::flash('error', 'Attribuer un contenu demande l’habilitation Confidentiel et le droit de gérer les papiers des membres.');
+            Session::flash('error', 'Attribuer un contenu demande l’habilitation Secret (S) et le droit de gérer les papiers des membres.');
 
             return Response::redirect($back);
         }

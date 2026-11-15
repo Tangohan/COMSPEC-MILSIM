@@ -1201,6 +1201,7 @@ return function (Router $router) {
     $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/brouillon/{draft}/supprimer', [\App\Controllers\Web\SseSheetController::class, 'draftDelete'], $mwSsePortal);
     $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/apercu', [\App\Controllers\Web\SseSheetController::class, 'preview'], $mwSsePortal);
     $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/emettre', [\App\Controllers\Web\SseSheetController::class, 'issue'], $mwSsePortal);
+    $router->post('/atak/sse/identites/emission/{kind}/{id}/{model}/rapide', [\App\Controllers\Web\SseSheetController::class, 'quick'], $mwSsePortal);
     // RENS › Identités & documents (COMSPEC IDENTITY) : « nouvelle » / « nouveau » avant /{id}.
     $router->get('/atak/sse/papiers', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentsIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identitiesIndex'], $mwSsePortal);

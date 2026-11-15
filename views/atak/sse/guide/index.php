@@ -8,7 +8,7 @@ $sseAccessUrl = (string) ($sseAccessUrl ?? url('atak/sse/acces'));
 $canGrant = (bool) ($canGrant ?? false);
 $classifBanner = function_exists('sse_ui_classification_label')
     ? sse_ui_classification_label()
-    : 'Confidentiel';
+    : 'Secret (S)';
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $tocGroups = [

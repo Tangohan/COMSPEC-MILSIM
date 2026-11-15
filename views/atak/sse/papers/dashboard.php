@@ -83,7 +83,7 @@ $drafts = $board['drafts'];
 <p class="muted idp-board-note">
     <?= (int) $board['forgeries'] ?> faux détecté(s)
     <?php if ($board['real_forgeries'] !== null): ?>· <?= (int) $board['real_forgeries'] ?> réellement présenté(s) d’après le registre
-    <?php else: ?>· Vérité de jeu réservée à l’habilitation Confidentiel<?php endif; ?>
+    <?php else: ?>· Vérité de jeu réservée à l’habilitation Secret (S)<?php endif; ?>
 </p>
 
 <?php if (!empty($board['truncated'])): ?><p class="muted">Seuls les 2 000 contrôles les plus récents sont comptés : choisissez une opération.</p><?php endif; ?>

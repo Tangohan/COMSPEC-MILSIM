@@ -65,10 +65,10 @@ final class SseIntelCycleCatalog
 
     /** @var array<string,string> — aligné sur SseCaseRepository / SseRedactionService */
     public const RELEASE_LEVELS = [
-        'interne' => 'Usage interne',
-        'encadrement' => 'Encadrement',
-        'confidentiel' => 'Confidentiel',
-        'tres_restreint' => 'Diffusion très restreinte',
+        'interne' => 'Information non classifiée contrôlée (CUI)',
+        'encadrement' => 'Confidentiel (C)',
+        'confidentiel' => 'Secret (S)',
+        'tres_restreint' => 'Très secret (TS)',
     ];
 
     /** @var array<string,string> */

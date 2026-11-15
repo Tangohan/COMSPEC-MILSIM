@@ -5,15 +5,18 @@ declare(strict_types=1);
 use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignLoginPrompt;
+use App\Support\DataCampaignPage;
 
 /**
- * Ma situation > Fiabilisation des données : le membre relit SA fiche, partie par partie.
+ * Ma situation > Fiabilisation des données : le membre relit SA fiche, bloc par bloc.
+ * Vue d'ensemble (étape « accueil »), page d'un bloc, récapitulatif et confirmation. Toute la logique d'ordre, de progression
+ * et de libellés est dans App\Support\DataCampaignPage ; les états viennent de DataCampaignLoginPrompt (inchangés).
  *
  * @var bool $schemaReady
  * @var array<string, mixed>|null $campaign campagne ouverte qui concerne le membre
  * @var array<string, mixed>|null $member sa ligne de suivi
  * @var array<string, mixed>|null $campaignView parties lues (DataCampaignService::memberView)
- * @var string $step partie affichée (clé de bloc) ou « recap »
+ * @var string $step « accueil », une clé de bloc ou « recap »
  * @var list<array<string, mixed>> $history campagnes passées du membre
  * @var array<string, mixed>|null $unitFollow suivi de l'unité pour qui la commande
  * @var string $csrfToken
@@ -27,18 +30,30 @@ $step = (string) ($step ?? '');
 $history = is_array($history ?? null) ? $history : [];
 $unitFollow = is_array($unitFollow ?? null) ? $unitFollow : null;
 $csrfToken = (string) ($csrfToken ?? '');
+$today = (string) ($today ?? date('Y-m-d'));
 $day = static function (string $raw): string {
     $ts = strtotime($raw);
 
     return $ts !== false && $raw !== '' ? date('d/m/Y', $ts) : '';
 };
 $fieldLabels = PersonnelCorrectionRequestService::CORRECTABLE_FIELDS;
-$stateLabel = ['ok' => 'Confirmé exact', 'flag' => 'À corriger', '' => 'À faire'];
-$stateClass = ['ok' => 'msd-pill--ok', 'flag' => 'msd-pill--warn', '' => 'msd-pill--muted'];
+$badgeClass = ['ok' => 'dcm-badge--ok', 'to_confirm' => 'dcm-badge--neutral', 'incomplete' => 'dcm-badge--warn', 'flagged' => 'dcm-badge--info'];
+$badge = static fn (string $status): string => '<span class="dcm-badge ' . ($badgeClass[$status] ?? 'dcm-badge--neutral') . '">' . htmlspecialchars(DataCampaignPage::statusLabel($status), ENT_QUOTES, 'UTF-8') . '</span>';
+$svg = static fn (string $path, string $class = 'dcm-svg'): string => '<svg class="' . $class . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $path . '</svg>';
+$icons = [
+    'clock' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.2 2"/>',
+    'lock' => '<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+    'check' => '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    'shield' => '<path d="M12 3 4.5 6v5.5c0 4.4 3 7.6 7.5 9.5 4.5-1.9 7.5-5.1 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>',
+    'back' => '<path d="m14 6-6 6 6 6"/>',
+    'alert' => '<path d="M12 4 3 19.5h18z"/><path d="M12 10v4.5M12 17.2v.1"/>',
+    'edit' => '<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',
+];
 $requestLabel = static function (array $f): string {
     if ((string) ($f['status'] ?? '') === 'handled') {
         return 'Traité par l’encadrement';
     }
+
     return match ((string) ($f['request_status'] ?? '')) {
         'pending' => 'Demande de correction en attente de décision',
         'approved' => 'Demande acceptée : la fiche a été corrigée',
@@ -47,291 +62,290 @@ $requestLabel = static function (array $f): string {
         default => 'Transmis à l’encadrement',
     };
 };
-$base = jnet_moi_url('fiabilisation');
+$flagList = static function (array $flags, bool $withBlock) use ($h, $requestLabel): string {
+    $out = '<div class="dcm-flags">';
+    foreach ($flags as $f) {
+        $out .= '<div class="dcm-flag"><p class="dcm-flag__state">' . ($withBlock ? $h(DataCampaignBlocks::label((string) $f['block_key'])) . ' · ' : '') . $h($requestLabel($f)) . '</p><p class="dcm-flag__text">' . $h($f['message']) . '</p>';
+        $answer = trim((string) ($f['answer'] ?? '')) !== '' ? (string) $f['answer'] : (string) ($f['request_note'] ?? '');
+        if (trim($answer) !== '') {
+            $out .= '<p class="dcm-flag__answer">Réponse : ' . $h($answer) . '</p>';
+        }
+        $out .= '</div>';
+    }
+
+    return $out . '</div>';
+};
+$stepUrl = static fn (string $key): string => jnet_moi_url('fiabilisation', ['etape' => $key]);
 ?>
-<div class="msd dc">
+<div class="dcm">
 <?php if (!$schemaReady || $campaign === null || $view === null): ?>
-    <section class="msd-card" aria-labelledby="dc-none-title">
-        <header class="msd-card__head"><h2 class="msd-card__title" id="dc-none-title">Aucune campagne ouverte</h2></header>
-        <p class="dc-text">Une fois par an, la communauté vous demande de relire votre fiche et de confirmer qu’elle est exacte. Il n’y a rien à faire pour le moment : vous serez prévenu quand une campagne sera ouverte.</p>
-        <p class="dc-text"><a class="dc-link" href="<?= $h(jnet_moi_url('ma-fiche')) ?>">Voir ma fiche</a></p>
+    <section class="dcm-panel dcm-empty" aria-labelledby="dcm-none-title">
+        <span class="dcm-bigic"><?= $svg($icons['check']) ?></span>
+        <h2 class="dcm-panel__title" id="dcm-none-title">Aucune campagne ouverte</h2>
+        <p class="dcm-text">Une fois par an, la communauté vous demande de relire votre fiche et de confirmer qu’elle est exacte. Il n’y a rien à faire pour le moment : vous serez prévenu quand une campagne sera ouverte.</p>
+        <p class="dcm-actions"><a class="dcm-btn dcm-btn--ghost" href="<?= $h(jnet_moi_url('ma-fiche')) ?>">Voir ma fiche</a></p>
     </section>
 <?php else:
     $blocks = $view['blocks'];
     $confirmedAt = (string) ($view['confirmed_at'] ?? '');
-    $due = $day((string) ($campaign['due_on'] ?? ''));
+    $confirmed = $confirmedAt !== '';
+    $prog = DataCampaignPage::progress($blocks);
+    $due = DataCampaignPage::due((string) ($campaign['due_on'] ?? ''), $today, $confirmed);
+    $later = !empty($comingFromLogin) ? jnet_moi_url('fiabilisation/plus-tard') : '';
+    $isBlock = isset($blocks[$step]);
     ?>
-    <section class="msd-card" aria-labelledby="dc-intro-title">
-        <header class="msd-card__head">
-            <h2 class="msd-card__title" id="dc-intro-title"><?= $h($campaign['title'] ?? 'Fiabilisation des données') ?></h2>
-            <span class="msd-card__count"><?= (int) $view['answered'] ?> partie<?= (int) $view['answered'] > 1 ? 's' : '' ?> sur <?= (int) $view['total'] ?></span>
-        </header>
-        <p class="dc-text">
-            <?php if ($confirmedAt !== ''): ?>
-                Vous avez confirmé votre fiche le <b><?= $h($day($confirmedAt)) ?></b>. Merci.
-            <?php else: ?>
-                Relisez chaque partie de votre fiche : dites si c’est exact ou ce qui est à corriger, puis confirmez votre fiche.
-            <?php endif; ?>
-        </p>
-        <?php if ($confirmedAt === '' && $due !== ''): ?>
-            <p class="dc-text">Date limite : <b><?= $h($due) ?></b></p>
-        <?php endif; ?>
-        <p class="dc-note">Ces informations sont lues dans votre fiche telle qu’elle est enregistrée. Votre réponse n’est visible que de vous et de l’encadrement chargé de la campagne. Rien n’est modifié automatiquement : une correction passe par la validation habituelle.</p>
 
-        <nav class="dc-steps" aria-label="Parties de la fiche">
-            <ol>
-                <li class="<?= $step === DataCampaignLoginPrompt::STEP ? 'is-current' : '' ?>">
-                    <a href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => DataCampaignLoginPrompt::STEP])) ?>"<?= $step === DataCampaignLoginPrompt::STEP ? ' aria-current="step"' : '' ?>>
-                        <span class="dc-steps__name">Vue d’ensemble</span>
-                    </a>
-                </li>
-                <?php foreach ($blocks as $key => $b): ?>
-                    <li class="<?= $step === $key ? 'is-current' : '' ?>">
-                        <a href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => $key])) ?>"<?= $step === $key ? ' aria-current="step"' : '' ?>>
-                            <span class="dc-steps__name"><?= $h($b['label']) ?></span>
-                            <span class="msd-pill <?= $stateClass[(string) $b['state']] ?? 'msd-pill--muted' ?>"><?= $h($stateLabel[(string) $b['state']] ?? 'À faire') ?></span>
-                        </a>
-                    </li>
+    <?php if ($step !== DataCampaignLoginPrompt::STEP && ($isBlock || $step === 'recap')): ?>
+        <nav class="dcm-steps" aria-label="Blocs de la fiche">
+            <a class="dcm-back" href="<?= $h($stepUrl(DataCampaignLoginPrompt::STEP)) ?>"><?= $svg($icons['back']) ?><span>Vue d’ensemble</span></a>
+            <ol class="dcm-steps__list">
+                <?php $n = 0; foreach ($blocks as $key => $b): $n++; $st = DataCampaignLoginPrompt::blockStatus($b); ?>
+                    <li><a class="dcm-step dcm-step--<?= $h($st) ?><?= $step === $key ? ' is-current' : '' ?>" href="<?= $h($stepUrl((string) $key)) ?>"<?= $step === $key ? ' aria-current="step"' : '' ?>><span aria-hidden="true"><?= $st === 'ok' ? $svg($icons['check']) : $n ?></span><span class="dcm-sr"><?= $h($b['label']) ?></span><span class="dcm-sr"><?= $h(DataCampaignPage::statusLabel($st)) ?></span></a></li>
                 <?php endforeach; ?>
-                <li class="<?= $step === 'recap' ? 'is-current' : '' ?>">
-                    <a href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => 'recap'])) ?>"<?= $step === 'recap' ? ' aria-current="step"' : '' ?>>
-                        <span class="dc-steps__name">Récapitulatif</span>
-                        <span class="msd-pill <?= $confirmedAt !== '' ? 'msd-pill--ok' : 'msd-pill--muted' ?>"><?= $confirmedAt !== '' ? 'Confirmée' : 'À faire' ?></span>
-                    </a>
-                </li>
+                <li><a class="dcm-step dcm-step--recap<?= $step === 'recap' ? ' is-current' : '' ?>" href="<?= $h($stepUrl('recap')) ?>"<?= $step === 'recap' ? ' aria-current="step"' : '' ?>><span aria-hidden="true"><?= $svg($icons['shield']) ?></span><span class="dcm-sr">Récapitulatif</span></a></li>
             </ol>
         </nav>
-    </section>
+    <?php endif; ?>
 
     <?php if ($step === DataCampaignLoginPrompt::STEP):
-        $sum = DataCampaignLoginPrompt::summarize($blocks);
-        $overdue = DataCampaignLoginPrompt::tone((string) ($campaign['due_on'] ?? ''), (string) ($today ?? date('Y-m-d'))) === 'overdue' && $confirmedAt === '';
-        $statusLabel = ['ok' => 'Exact', 'to_confirm' => 'À confirmer', 'incomplete' => 'À compléter', 'flagged' => 'Correction demandée'];
-        $statusClass = ['ok' => 'msd-pill--ok', 'to_confirm' => 'msd-pill--muted', 'incomplete' => 'msd-pill--warn', 'flagged' => 'msd-pill--warn'];
-        $later = !empty($comingFromLogin) ? jnet_moi_url('fiabilisation/plus-tard') : '';
+        $groups = DataCampaignPage::groups($blocks);
+        $action = DataCampaignPage::primaryAction($blocks, $confirmed);
+        $card = static function (array $row) use ($h, $badge, $svg, $stepUrl): string {
+            $b = $row['block'];
+            $status = $row['status'];
+            $id = 'dcm-b-' . $h($row['key']);
+            $out = '<li class="dcm-card dcm-card--' . $h($status) . '"><div class="dcm-card__head"><span class="dcm-ic">' . $svg(DataCampaignPage::iconPath($row['key'])) . '</span><h3 class="dcm-card__name" id="' . $id . '">' . $h($b['label']) . '</h3>' . $badge($status) . '</div>';
+            $items = DataCampaignPage::summary($row['key'], $b);
+            if ($items !== []) {
+                $out .= '<dl class="dcm-sum">';
+                foreach ($items as $it) {
+                    $out .= '<div class="dcm-sum__item' . ($it['missing'] ? ' is-missing' : '') . '"><dt>' . $h($it['label']) . '</dt><dd>' . $h($it['value']) . '</dd></div>';
+                }
+                $out .= '</dl>';
+            }
+            if (!empty($b['changed_since_answer'])) {
+                $out .= '<p class="dcm-hint">Cette partie a changé depuis votre dernière réponse : relisez-la.</p>';
+            }
+            $primary = DataCampaignPage::isTodo($status) || $status === 'flagged';
+
+            return $out . '<a class="dcm-btn ' . ($primary ? 'dcm-btn--outline' : 'dcm-btn--ghost') . '" href="' . $h($stepUrl($row['key'])) . '" aria-describedby="' . $id . '">' . $h(DataCampaignPage::actionLabel($status)) . '</a></li>';
+        };
         ?>
-        <section class="msd-card dc-overview" aria-labelledby="dc-overview-title">
-            <header class="msd-card__head">
-                <h2 class="msd-card__title" id="dc-overview-title"><?= $confirmedAt !== '' ? 'Votre fiche est confirmée' : 'Vérifions ensemble votre fiche' ?></h2>
-                <span class="msd-card__count"><?= (int) $sum['percent'] ?> %</span>
-            </header>
-            <?php if ($confirmedAt !== ''): ?>
-                <p class="dc-text">Vous avez confirmé votre fiche le <b><?= $h($day($confirmedAt)) ?></b>. Merci : vous n’avez plus rien à faire.</p>
-            <?php elseif ($overdue): ?>
-                <p class="dc-alert">La date limite du <b><?= $h($due) ?></b> est dépassée et votre fiche n’est pas encore confirmée. Prenez quelques minutes maintenant : l’encadrement est prévenu des fiches non confirmées.</p>
-            <?php else: ?>
-                <p class="dc-text">Votre communauté vous demande de relire votre fiche et de confirmer qu’elle est exacte. Cela prend quelques minutes<?= $due !== '' ? ', avant le <b>' . $h($due) . '</b>' : '' ?>.</p>
-            <?php endif; ?>
-            <div class="dc-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $sum['percent'] ?>" aria-label="Avancement de la vérification">
-                <span class="dc-progress__bar" style="width: <?= (int) $sum['percent'] ?>%"></span>
+        <section class="dcm-hero<?= $confirmed ? ' is-done' : '' ?>" aria-labelledby="dcm-hero-title">
+            <div class="dcm-hero__row">
+                <div class="dcm-hero__main">
+                    <?php if ($confirmed): ?>
+                        <span class="dcm-bigic dcm-bigic--ok"><?= $svg($icons['check']) ?></span>
+                        <h2 class="dcm-hero__title" id="dcm-hero-title">Votre fiche est confirmée</h2>
+                        <p class="dcm-hero__sub">Confirmée le <?= $h($day($confirmedAt)) ?>. Merci : vous n’avez plus rien à faire.</p>
+                    <?php else: ?>
+                        <h2 class="dcm-hero__title" id="dcm-hero-title"><?= $h(DataCampaignPage::progressLabel($prog['confirmed'], $prog['total'])) ?></h2>
+                        <p class="dcm-hero__sub"><?= $h(DataCampaignPage::remainingLabel($prog['remaining'], $prog['flagged'])) ?><?php if ($prog['flagged'] > 0): ?> · <?= $h(DataCampaignPage::flaggedLabel($prog['flagged'])) ?><?php endif; ?></p>
+                    <?php endif; ?>
+                </div>
+                <?php if ($due['tone'] !== 'none'): ?>
+                    <p class="dcm-due dcm-due--<?= $h($due['tone']) ?>"><?= $svg($icons['clock']) ?><span><?= $h($due['date']) ?></span><span class="dcm-due__delay"><?= $h($due['delay']) ?></span></p>
+                <?php endif; ?>
             </div>
-            <p class="dc-note">Exacts : <?= (int) $sum['ok'] ?> · À confirmer : <?= (int) $sum['to_confirm'] ?> · À compléter : <?= (int) $sum['incomplete'] ?> · Correction demandée : <?= (int) $sum['flagged'] ?></p>
-
-            <ul class="dc-overview__list">
-                <?php foreach ($blocks as $key => $b):
-                    $status = DataCampaignLoginPrompt::blockStatus($b);
-                    ?>
-                    <li class="dc-overview__item">
-                        <details<?= $status === 'incomplete' || $status === 'flagged' ? ' open' : '' ?>>
-                            <summary>
-                                <span class="dc-steps__name"><?= $h($b['label']) ?></span>
-                                <span class="msd-pill <?= $statusClass[$status] ?>"><?= $h($statusLabel[$status]) ?></span>
-                            </summary>
-                            <?php if (!empty($b['changed_since_answer'])): ?>
-                                <p class="dc-alert">Cette partie a changé depuis votre dernière réponse : relisez-la.</p>
-                            <?php endif; ?>
-                            <?php if ($b['rows'] !== []): ?>
-                                <dl class="dc-rows">
-                                    <?php foreach ($b['rows'] as $row): ?>
-                                        <div class="dc-rows__line">
-                                            <dt><?= $h($row['label']) ?></dt>
-                                            <dd><?= $h($row['value']) ?></dd>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </dl>
-                            <?php else: ?>
-                                <p class="dc-note">Rien n’est encore renseigné dans cette partie.</p>
-                            <?php endif; ?>
-                            <p class="dc-links">
-                                <a class="dc-link" href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => $key])) ?>"><?= $status === 'ok' ? 'Revoir cette partie' : 'Vérifier ou corriger cette partie' ?></a>
-                                <?php foreach ($b['links'] as $link): ?>
-                                    <a class="dc-link" href="<?= $h($link['href']) ?>"><?= $h($link['label']) ?></a>
-                                <?php endforeach; ?>
-                            </p>
-                        </details>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-
-            <?php if ($confirmedAt === ''): ?>
-                <p class="dc-note">Si vous ne faites rien : rien n’est supprimé ni bloqué et votre fiche reste telle quelle. Mais elle ne sera pas considérée comme fiable, vous recevrez des rappels, l’encadrement verra que votre fiche n’est pas confirmée et cette page vous sera de nouveau proposée à votre prochaine connexion.</p>
+            <div class="dcm-bar" role="progressbar" aria-valuemin="0" aria-valuemax="<?= (int) $prog['total'] ?>" aria-valuenow="<?= (int) $prog['confirmed'] ?>" aria-valuetext="<?= $h(DataCampaignPage::progressLabel($prog['confirmed'], $prog['total'])) ?>">
+                <span class="dcm-bar__ok" style="width: <?= (int) $prog['percent'] ?>%"></span><span class="dcm-bar__flag" style="width: <?= (int) $prog['flaggedPercent'] ?>%"></span>
+            </div>
+            <?php if (!$confirmed && $due['tone'] === 'late'): ?>
+                <p class="dcm-alert"><?= $svg($icons['alert']) ?><span>La date limite est dépassée. Prenez 2 minutes maintenant : l’encadrement est prévenu des fiches non confirmées.</span></p>
             <?php endif; ?>
-            <div class="dc-actions dc-overview__actions">
-                <?php if ($confirmedAt === '' && $sum['can_confirm_all']): ?>
+        </section>
+
+        <?php if ($groups['todo'] !== []): ?>
+            <section class="dcm-group" aria-labelledby="dcm-todo-title">
+                <h2 class="dcm-group__title" id="dcm-todo-title">À traiter <span class="dcm-count"><?= count($groups['todo']) ?></span></h2>
+                <ul class="dcm-cards"><?php foreach ($groups['todo'] as $row) { echo $card($row); } ?></ul>
+            </section>
+        <?php endif; ?>
+        <?php if ($groups['done'] !== []): ?>
+            <section class="dcm-group" aria-labelledby="dcm-done-title">
+                <h2 class="dcm-group__title" id="dcm-done-title"><?= $groups['todo'] === [] ? 'Vos blocs' : 'Déjà traités' ?> <span class="dcm-count"><?= count($groups['done']) ?></span></h2>
+                <ul class="dcm-cards"><?php foreach ($groups['done'] as $row) { echo $card($row); } ?></ul>
+            </section>
+        <?php endif; ?>
+
+        <?php if (!$confirmed): ?>
+            <section class="dcm-reassure" aria-label="Ce qu’il faut savoir">
+                <p><?= $svg($icons['clock']) ?><span><strong>Environ 2 minutes.</strong> Un coup d’œil par bloc suffit.</span></p>
+                <p><?= $svg($icons['lock']) ?><span><strong>Vos réponses restent privées.</strong> Seuls vous et l’encadrement de la campagne les voient.</span></p>
+                <p><?= $svg($icons['shield']) ?><span><strong>Rien ne change sans validation.</strong> Une correction demandée passe par la validation habituelle.</span></p>
+                <details class="dcm-more">
+                    <summary>Et si je ne fais rien ?</summary>
+                    <p>Rien n’est supprimé ni bloqué : votre fiche reste telle quelle. Elle ne sera simplement pas considérée comme fiable, vous recevrez des rappels, l’encadrement verra qu’elle n’est pas confirmée et cette page vous sera reproposée à votre prochaine connexion.</p>
+                </details>
+            </section>
+        <?php endif; ?>
+
+        <?php if (!$confirmed || $later !== ''): ?>
+        <div class="dcm-cta" role="group" aria-label="Actions">
+            <?php if (!$confirmed): ?><p class="dcm-cta__text"><?= $h(DataCampaignPage::remainingLabel($prog['remaining'], $prog['flagged'])) ?></p><?php endif; ?>
+            <?php if ($confirmed): ?>
+                <?php if ($later !== ''): ?><a class="dcm-btn dcm-btn--primary" href="<?= $h($later) ?>">Continuer</a><?php endif; ?>
+            <?php else: ?>
+                <?php if ($later !== ''): ?><a class="dcm-btn dcm-btn--quiet" href="<?= $h($later) ?>">Plus tard</a><?php endif; ?>
+                <?php if ($action['kind'] === 'confirm_all'): ?>
                     <form method="post" action="<?= $h(jnet_moi_url('fiabilisation/tout-confirmer')) ?>">
                         <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
                         <input type="hidden" name="campaign" value="<?= (int) $campaign['id'] ?>">
-                        <button type="submit" class="dc-btn">Tout est exact : tout confirmer</button>
+                        <button type="submit" class="dcm-btn dcm-btn--primary">Tout confirmer</button>
                     </form>
-                <?php elseif ($confirmedAt === ''): ?>
-                    <a class="dc-btn" href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => (string) (array_key_first(array_filter($blocks, static fn (array $b): bool => DataCampaignLoginPrompt::blockStatus($b) !== 'ok')) ?? 'recap')])) ?>">Vérifier partie par partie</a>
+                <?php else: ?>
+                    <a class="dcm-btn dcm-btn--primary" href="<?= $h($stepUrl($action['step'])) ?>"><?= $h($action['label']) ?></a>
                 <?php endif; ?>
-                <?php if ($later !== ''): ?>
-                    <a class="dc-btn dc-btn--ghost" href="<?= $h($later) ?>">Plus tard</a>
-                <?php endif; ?>
-            </div>
-        </section>
-    <?php elseif (isset($blocks[$step])):
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    <?php elseif ($isBlock):
         $b = $blocks[$step];
+        $status = DataCampaignLoginPrompt::blockStatus($b);
         $fields = is_array($b['fields'] ?? null) ? $b['fields'] : [];
         ?>
-        <section class="msd-card" aria-labelledby="dc-block-title">
-            <header class="msd-card__head">
-                <h2 class="msd-card__title" id="dc-block-title"><?= $h($b['label']) ?></h2>
-                <span class="msd-pill <?= $stateClass[(string) $b['state']] ?? 'msd-pill--muted' ?>"><?= $h($stateLabel[(string) $b['state']] ?? 'À faire') ?></span>
+        <section class="dcm-panel" aria-labelledby="dcm-block-title">
+            <header class="dcm-panel__head">
+                <span class="dcm-ic dcm-ic--lg"><?= $svg(DataCampaignPage::iconPath($step)) ?></span>
+                <div class="dcm-panel__headtext">
+                    <h2 class="dcm-panel__title" id="dcm-block-title"><?= $h($b['label']) ?></h2>
+                    <p class="dcm-text dcm-text--muted"><?= $h($b['lead']) ?></p>
+                </div>
+                <?= $badge($status) ?>
             </header>
-            <p class="dc-text"><?= $h($b['lead']) ?></p>
             <?php if (!empty($b['changed_since_answer'])): ?>
-                <p class="dc-alert">Cette partie a changé depuis votre dernière réponse : relisez-la et répondez de nouveau.</p>
+                <p class="dcm-alert"><?= $svg($icons['alert']) ?><span>Cette partie a changé depuis votre dernière réponse : relisez-la et répondez de nouveau.</span></p>
             <?php endif; ?>
 
-            <?php if (!empty($b['portrait'])): ?>
-                <p class="dc-portrait"><img src="<?= $h($b['portrait']) ?>" alt="Votre portrait enregistré" width="120" height="120" loading="lazy"></p>
-            <?php endif; ?>
-
-            <?php if ($b['rows'] !== []): ?>
-                <dl class="dc-rows">
-                    <?php foreach ($b['rows'] as $row): ?>
-                        <div class="dc-rows__line">
-                            <dt><?= $h($row['label']) ?></dt>
-                            <dd><?= $h($row['value']) ?></dd>
-                        </div>
-                    <?php endforeach; ?>
-                </dl>
-            <?php endif; ?>
+            <div class="dcm-detail">
+                <?php if (!empty($b['portrait'])): ?>
+                    <img class="dcm-portrait" src="<?= $h($b['portrait']) ?>" alt="Votre portrait enregistré" width="112" height="112" loading="lazy">
+                <?php endif; ?>
+                <?php if ($b['rows'] !== []): ?>
+                    <dl class="dcm-rows">
+                        <?php foreach ($b['rows'] as $row): $missing = (string) $row['value'] === DataCampaignPage::MISSING; ?>
+                            <div class="dcm-rows__line<?= $missing ? ' is-missing' : '' ?>">
+                                <dt><?= $h($row['label']) ?></dt>
+                                <dd><?= $h($row['value']) ?></dd>
+                            </div>
+                        <?php endforeach; ?>
+                    </dl>
+                <?php endif; ?>
+            </div>
             <?php if ($b['notice'] !== ''): ?>
-                <p class="dc-note"><?= $h($b['notice']) ?></p>
+                <p class="dcm-hint"><?= $h($b['notice']) ?></p>
             <?php endif; ?>
             <?php if ($b['links'] !== []): ?>
-                <p class="dc-links">
+                <p class="dcm-links">
                     <?php foreach ($b['links'] as $link): ?>
-                        <a class="dc-link" href="<?= $h($link['href']) ?>"><?= $h($link['label']) ?></a>
+                        <a class="dcm-btn dcm-btn--ghost" href="<?= $h($link['href']) ?>"><?= $h($link['label']) ?></a>
                     <?php endforeach; ?>
                 </p>
             <?php endif; ?>
 
             <?php if ($b['flags'] !== []): ?>
-                <div class="dc-flags" aria-label="Suivi de vos signalements">
-                    <?php foreach ($b['flags'] as $f): ?>
-                        <div class="dc-flag">
-                            <p class="dc-flag__state"><?= $h($requestLabel($f)) ?></p>
-                            <p class="dc-flag__text"><?= $h($f['message']) ?></p>
-                            <?php if (trim((string) ($f['answer'] ?? '')) !== ''): ?>
-                                <p class="dc-flag__answer">Réponse : <?= $h($f['answer']) ?></p>
-                            <?php elseif (trim((string) ($f['request_note'] ?? '')) !== ''): ?>
-                                <p class="dc-flag__answer">Réponse : <?= $h($f['request_note']) ?></p>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+                <?= $flagList($b['flags'], false) ?>
             <?php endif; ?>
 
-            <div class="dc-actions">
+            <div class="dcm-actions">
                 <form method="post" action="<?= $h(jnet_moi_url('fiabilisation/repondre')) ?>">
                     <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
                     <input type="hidden" name="campaign" value="<?= (int) $campaign['id'] ?>">
                     <input type="hidden" name="block" value="<?= $h($b['key']) ?>">
                     <input type="hidden" name="verdict" value="ok">
-                    <button type="submit" class="dc-btn">C’est exact</button>
+                    <button type="submit" class="dcm-btn dcm-btn--primary">C’est exact</button>
                 </form>
-                <details class="dc-fix">
-                    <summary class="dc-btn dc-btn--ghost">À corriger</summary>
-                    <form method="post" action="<?= $h(jnet_moi_url('fiabilisation/repondre')) ?>" class="dc-form">
+                <details class="dcm-fix">
+                    <summary class="dcm-btn dcm-btn--ghost"><?= $svg($icons['edit']) ?>À corriger</summary>
+                    <form method="post" action="<?= $h(jnet_moi_url('fiabilisation/repondre')) ?>" class="dcm-form">
                         <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
                         <input type="hidden" name="campaign" value="<?= (int) $campaign['id'] ?>">
                         <input type="hidden" name="block" value="<?= $h($b['key']) ?>">
                         <input type="hidden" name="verdict" value="flag">
-                        <label class="dc-field">
+                        <label class="dcm-field">
                             <span>Qu’est-ce qui n’est pas exact ?</span>
                             <textarea name="message" rows="4" minlength="5" maxlength="1000" required placeholder="Dites ce qui est faux et ce que ça devrait être."></textarea>
                         </label>
                         <?php if ($fields !== []): ?>
-                            <p class="dc-note">Si vous connaissez la bonne valeur, indiquez-la : elle part en demande de correction, validée par l’encadrement. Laissez vide ce qui ne change pas.</p>
+                            <p class="dcm-hint">Si vous connaissez la bonne valeur, indiquez-la : elle part en demande de correction, validée par l’encadrement. Laissez vide ce qui ne change pas.</p>
                             <?php foreach ($fields as $field): ?>
-                                <label class="dc-field">
+                                <label class="dcm-field">
                                     <span><?= $h($fieldLabels[$field] ?? $field) ?></span>
                                     <input type="<?= $field === 'enlistment_date' ? 'date' : 'text' ?>" name="f[<?= $h($field) ?>]" maxlength="200" autocomplete="off">
                                 </label>
                             <?php endforeach; ?>
                         <?php endif; ?>
                         <?php if ($b['key'] === DataCampaignBlocks::IDENTITY): ?>
-                            <p class="dc-note">Pour changer votre image, utilisez « Envoyer un nouveau portrait » ci-dessus : l’envoi est celui de votre compte.</p>
+                            <p class="dcm-hint">Pour changer votre image, utilisez « Envoyer un nouveau portrait » ci-dessus : l’envoi est celui de votre compte.</p>
                         <?php endif; ?>
-                        <button type="submit" class="dc-btn">Envoyer le signalement</button>
+                        <button type="submit" class="dcm-btn dcm-btn--primary">Envoyer le signalement</button>
                     </form>
                 </details>
             </div>
         </section>
     <?php elseif ($step === 'recap'): ?>
-        <section class="msd-card" aria-labelledby="dc-recap-title">
-            <header class="msd-card__head"><h2 class="msd-card__title" id="dc-recap-title">Récapitulatif</h2></header>
-            <ul class="dc-recap">
-                <?php foreach ($blocks as $key => $b): ?>
+        <section class="dcm-panel<?= $confirmed ? ' dcm-panel--done' : '' ?>" aria-labelledby="dcm-recap-title">
+            <header class="dcm-panel__head">
+                <?php if ($confirmed): ?><span class="dcm-bigic dcm-bigic--ok"><?= $svg($icons['check']) ?></span><?php endif; ?>
+                <div class="dcm-panel__headtext">
+                    <h2 class="dcm-panel__title" id="dcm-recap-title"><?= $confirmed ? 'Votre fiche est confirmée' : 'Récapitulatif' ?></h2>
+                    <p class="dcm-text dcm-text--muted">
+                        <?php if ($confirmed): ?>Confirmée le <?= $h($day($confirmedAt)) ?>. Merci : vous n’avez plus rien à faire. Vous pouvez encore signaler une erreur depuis chaque bloc tant que la campagne est ouverte.
+                        <?php elseif ($view['complete']): ?>Tous les blocs ont une réponse. Il ne reste qu’à confirmer votre fiche.
+                        <?php else: ?>Il reste des blocs à vérifier avant de pouvoir confirmer votre fiche.<?php endif; ?>
+                    </p>
+                </div>
+            </header>
+            <ul class="dcm-recap">
+                <?php foreach (DataCampaignPage::ordered($blocks) as $row): ?>
                     <li>
-                        <a href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => $key])) ?>"><?= $h($b['label']) ?></a>
-                        <span class="msd-pill <?= $stateClass[(string) $b['state']] ?? 'msd-pill--muted' ?>"><?= $h($stateLabel[(string) $b['state']] ?? 'À faire') ?></span>
+                        <span class="dcm-ic"><?= $svg(DataCampaignPage::iconPath($row['key'])) ?></span>
+                        <a class="dcm-recap__name" href="<?= $h($stepUrl($row['key'])) ?>"><?= $h($row['block']['label']) ?></a>
+                        <?= $badge($row['status']) ?>
                     </li>
                 <?php endforeach; ?>
             </ul>
 
             <?php if ($view['flags'] !== []): ?>
-                <h3 class="dc-sub">Suivi de vos signalements</h3>
-                <div class="dc-flags">
-                    <?php foreach ($view['flags'] as $f): ?>
-                        <div class="dc-flag">
-                            <p class="dc-flag__state"><?= $h(DataCampaignBlocks::label((string) $f['block_key'])) ?> · <?= $h($requestLabel($f)) ?></p>
-                            <p class="dc-flag__text"><?= $h($f['message']) ?></p>
-                            <?php if (trim((string) ($f['answer'] ?? '')) !== ''): ?>
-                                <p class="dc-flag__answer">Réponse : <?= $h($f['answer']) ?></p>
-                            <?php elseif (trim((string) ($f['request_note'] ?? '')) !== ''): ?>
-                                <p class="dc-flag__answer">Réponse : <?= $h($f['request_note']) ?></p>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+                <h3 class="dcm-sub">Suivi de vos signalements</h3>
+                <?= $flagList($view['flags'], true) ?>
             <?php endif; ?>
 
             <?php if (!empty($view['changed'])): ?>
-                <p class="dc-alert">Depuis votre confirmation, une donnée a été modifiée dans votre fiche (<?= $h(implode(', ', array_map(static fn (string $k): string => DataCampaignBlocks::label($k), $view['changed']))) ?>). La campagne garde ce que vous aviez confirmé.</p>
+                <p class="dcm-alert"><?= $svg($icons['alert']) ?><span>Depuis votre confirmation, une donnée a été modifiée dans votre fiche (<?= $h(implode(', ', array_map(static fn (string $k): string => DataCampaignBlocks::label($k), $view['changed']))) ?>). La campagne garde ce que vous aviez confirmé.</span></p>
             <?php endif; ?>
 
-            <?php if ($confirmedAt !== ''): ?>
-                <p class="dc-text">Fiche confirmée le <b><?= $h($day($confirmedAt)) ?></b>. Vous pouvez encore signaler une erreur depuis chaque partie tant que la campagne est ouverte.</p>
-            <?php elseif ($view['complete']): ?>
-                <form method="post" action="<?= $h(jnet_moi_url('fiabilisation/confirmer')) ?>" class="dc-actions">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                    <input type="hidden" name="campaign" value="<?= (int) $campaign['id'] ?>">
-                    <button type="submit" class="dc-btn">Confirmer ma fiche</button>
-                </form>
-                <p class="dc-note">La date de confirmation et ce que vous avez vu sont enregistrés.</p>
-            <?php else: ?>
-                <p class="dc-text">Il reste des parties à vérifier avant de pouvoir confirmer votre fiche.</p>
-            <?php endif; ?>
+            <div class="dcm-actions">
+                <?php if ($confirmed): ?>
+                    <a class="dcm-btn dcm-btn--primary" href="<?= $h(url('jnet/espaces')) ?>">Retour à mon espace</a>
+                <?php elseif ($view['complete']): ?>
+                    <form method="post" action="<?= $h(jnet_moi_url('fiabilisation/confirmer')) ?>">
+                        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                        <input type="hidden" name="campaign" value="<?= (int) $campaign['id'] ?>">
+                        <button type="submit" class="dcm-btn dcm-btn--primary">Confirmer ma fiche</button>
+                    </form>
+                    <p class="dcm-hint">La date de confirmation et ce que vous avez vu sont enregistrés.</p>
+                <?php else: ?>
+                    <a class="dcm-btn dcm-btn--primary" href="<?= $h($stepUrl(DataCampaignPage::primaryAction($blocks, false)['step'])) ?>">Continuer</a>
+                <?php endif; ?>
+            </div>
         </section>
     <?php endif; ?>
 
     <?php if ($unitFollow !== null): ?>
-        <section class="msd-card" aria-labelledby="dc-unit-title">
-            <header class="msd-card__head">
-                <h2 class="msd-card__title" id="dc-unit-title">Suivi de mon unité</h2>
-                <span class="msd-card__count"><?= (int) $unitFollow['totals']['confirmed'] ?> confirmé<?= (int) $unitFollow['totals']['confirmed'] > 1 ? 's' : '' ?> sur <?= (int) $unitFollow['totals']['total'] ?></span>
+        <section class="dcm-panel" aria-labelledby="dcm-unit-title">
+            <header class="dcm-panel__head">
+                <div class="dcm-panel__headtext">
+                    <h2 class="dcm-panel__title" id="dcm-unit-title">Suivi de mon unité</h2>
+                    <p class="dcm-text dcm-text--muted">Vous voyez l’état d’avancement des membres de l’unité que vous commandez, pas le contenu de leurs réponses.</p>
+                </div>
+                <span class="dcm-badge dcm-badge--neutral"><?= (int) $unitFollow['totals']['confirmed'] ?> confirmé<?= (int) $unitFollow['totals']['confirmed'] > 1 ? 's' : '' ?> sur <?= (int) $unitFollow['totals']['total'] ?></span>
             </header>
-            <p class="dc-note">Vous voyez l’état d’avancement des membres de l’unité que vous commandez, pas le contenu de leurs réponses.</p>
-            <ul class="dc-recap">
+            <ul class="dcm-recap">
                 <?php foreach ($unitFollow['members'] as $m): ?>
                     <li>
-                        <span><?= $h($m['display_name'] !== '' ? $m['display_name'] : $m['callsign']) ?></span>
-                        <span class="msd-pill <?= $m['bucket'] === 'confirmed' ? 'msd-pill--ok' : ($m['bucket'] === 'flagged' ? 'msd-pill--warn' : 'msd-pill--muted') ?>"><?= $m['bucket'] === 'confirmed' ? 'Confirmé' : ($m['bucket'] === 'flagged' ? 'Avec signalement' : 'Sans réponse') ?></span>
+                        <span class="dcm-recap__name"><?= $h($m['display_name'] !== '' ? $m['display_name'] : $m['callsign']) ?></span>
+                        <span class="dcm-badge <?= $m['bucket'] === 'confirmed' ? 'dcm-badge--ok' : ($m['bucket'] === 'flagged' ? 'dcm-badge--info' : 'dcm-badge--neutral') ?>"><?= $m['bucket'] === 'confirmed' ? 'Confirmé' : ($m['bucket'] === 'flagged' ? 'Avec signalement' : 'Sans réponse') ?></span>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -340,13 +354,13 @@ $base = jnet_moi_url('fiabilisation');
 <?php endif; ?>
 
 <?php if ($history !== []): ?>
-    <section class="msd-card" aria-labelledby="dc-history-title">
-        <header class="msd-card__head"><h2 class="msd-card__title" id="dc-history-title">Mes campagnes</h2></header>
-        <ul class="dc-recap">
-            <?php foreach ($history as $row): ?>
+    <section class="dcm-panel" aria-labelledby="dcm-history-title">
+        <h2 class="dcm-panel__title" id="dcm-history-title">Mes campagnes</h2>
+        <ul class="dcm-recap">
+            <?php foreach ($history as $row): $ok = trim((string) ($row['confirmed_at'] ?? '')) !== ''; ?>
                 <li>
-                    <span><?= $h($row['title'] ?? '') ?> (<?= (int) ($row['campaign_year'] ?? 0) ?>)</span>
-                    <span class="msd-pill <?= trim((string) ($row['confirmed_at'] ?? '')) !== '' ? 'msd-pill--ok' : 'msd-pill--muted' ?>"><?= trim((string) ($row['confirmed_at'] ?? '')) !== '' ? 'Fiabilisée le ' . $h($day((string) $row['confirmed_at'])) : 'Non confirmée' ?></span>
+                    <span class="dcm-recap__name"><?= $h($row['title'] ?? '') ?> (<?= (int) ($row['campaign_year'] ?? 0) ?>)</span>
+                    <span class="dcm-badge <?= $ok ? 'dcm-badge--ok' : 'dcm-badge--neutral' ?>"><?= $ok ? 'Fiabilisée le ' . $h($day((string) $row['confirmed_at'])) : 'Non confirmée' ?></span>
                 </li>
             <?php endforeach; ?>
         </ul>

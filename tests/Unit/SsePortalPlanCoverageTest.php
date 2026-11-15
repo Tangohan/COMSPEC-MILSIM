@@ -80,9 +80,9 @@ final class SsePortalPlanCoverageTest extends TestCase
     public function testClassificationLabelsAreMetierFrench(): void
     {
         $labels = \App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS;
-        self::assertSame('Diffusion interne', $labels['interne']);
-        self::assertSame('Encadrement', $labels['encadrement']);
-        self::assertSame('Confidentiel', $labels['confidentiel']);
-        self::assertSame('Diffusion très restreinte', $labels['tres_restreint']);
+        self::assertSame('Information non classifiée contrôlée (CUI)', $labels['interne']);
+        self::assertSame('Confidentiel (C)', $labels['encadrement']);
+        self::assertSame('Secret (S)', $labels['confidentiel']);
+        self::assertSame('Très secret (TS)', $labels['tres_restreint']);
     }
 }

@@ -13,7 +13,7 @@ use App\Repositories\SseCaseRepository;
  *  - porte d'entrée : compte connecté (pas une session invitée), droit d'entrer au Bureau SSE sans code
  *    (SseAccessCodeService::canEnterWithoutCode), engagement de confidentialité accepté dans cette communauté ;
  *  - contrôles et lieux : la porte (les pages « Contrôles reçus » et « Sites exploités » n'exigent rien de plus en lecture) ;
- *  - noms de fiche : la porte, et si la communauté caviarde ses écrans de travail, l'habilitation Confidentiel ;
+ *  - noms de fiche : la porte, et si la communauté caviarde ses écrans de travail, l'habilitation Secret (S) ;
  *  - pistes de téléphones : la porte (la page « Téléphones du jeu » n'exige rien de plus en lecture).
  *
  * Remplaçable en bloc par l'adaptateur de SseAccessPolicy sans toucher au reste (voir SseMapLayerGate).

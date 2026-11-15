@@ -135,7 +135,7 @@ final class SseDocumentMarkings
     {
         $pool = [
             'NE PAS REPRODUIRE',
-            'DIFFUSION RESTREINTE',
+            'CUI',
             'ORIGINE PROTÉGÉE',
             'NON EXPORTABLE',
             'USAGE INTERNE',

@@ -40,6 +40,20 @@ if (!function_exists('platform_app_version')) {
     }
 }
 
+if (!function_exists('sse_fiction_footer')) {
+    /**
+     * Mention unique et discrète du portail SSE : une ligne de pied en petit texte gris, jamais un bandeau.
+     * $printed = true pour les documents imprimés ou exportés (« Document de fiction — jeu de rôle Arma 3 »).
+     */
+    function sse_fiction_footer(bool $printed = false): string
+    {
+        $text = $printed ? 'Document de fiction — jeu de rôle Arma 3' : 'Jeu de rôle Arma 3 — données fictives';
+        $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+
+        return $printed ? $text : '<p class="sse-fiction-footer">' . $text . '</p>';
+    }
+}
+
 if (!function_exists('asset_url')) {
     /**
      * URL d’asset avec cache-busting ?v=identifiant du déploiement (commit Git) : change à chaque mise à jour du site.
@@ -2597,10 +2611,10 @@ if (!function_exists('sse_ui_classification_options')) {
         }
 
         return [
-            'encadrement' => 'Encadrement',
-            'confidentiel' => 'Confidentiel',
-            'tres_restreint' => 'Diffusion très restreinte',
-            'interne' => 'Diffusion interne',
+            'encadrement' => 'Confidentiel (C)',
+            'confidentiel' => 'Secret (S)',
+            'tres_restreint' => 'Très secret (TS)',
+            'interne' => 'Information non classifiée contrôlée (CUI)',
         ];
     }
 }
@@ -2645,7 +2659,7 @@ if (!function_exists('sse_ui_classification_label')) {
         $code = sse_ui_classification_normalize($code ?? sse_ui_classification());
         $opts = sse_ui_classification_options();
 
-        return $opts[$code] ?? 'Confidentiel';
+        return $opts[$code] ?? 'Secret (S)';
     }
 }
 

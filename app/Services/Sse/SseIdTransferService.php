@@ -13,9 +13,9 @@ use App\Support\SseIdentityCatalog;
  * Import et export des identités et des papiers (COMSPEC IDENTITY, Lot 6), en CSV (une ligne par papier, ou par
  * identité sans papier) ou en JSON.
  *
- * Export : la vérité de jeu (nature, origine, falsification) n'est écrite qu'avec l'habilitation Confidentiel.
+ * Export : la vérité de jeu (nature, origine, falsification) n'est écrite qu'avec l'habilitation Secret (S).
  * Import : tout arrive en brouillon (rien ne part en jeu sans validation) ; pays inconnu, numéro hors format ou déjà
- * attribué = ligne écartée ; couverture et faux seulement avec l'habilitation Confidentiel.
+ * attribué = ligne écartée ; couverture et faux seulement avec l'habilitation Secret (S).
  */
 final class SseIdTransferService
 {
@@ -28,7 +28,7 @@ final class SseIdTransferService
         'authority', 'workflow', 'origin', 'integrity', 'validity', 'report', 'chip', 'forgery_kind', 'forgery_quality', 'map', 'op',
     ];
 
-    /** Colonnes réservées à l'habilitation Confidentiel. */
+    /** Colonnes réservées à l'habilitation Secret (S). */
     private const TRUTH_COLUMNS = ['kind', 'origin', 'forgery_kind', 'forgery_quality'];
 
     public function __construct(

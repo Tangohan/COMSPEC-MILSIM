@@ -20,7 +20,7 @@ if ($coverUnit === '') {
 
 $caseRef = (string) ($case['reference_code'] ?? 'AFF-····-····');
 $caseTitle = (string) ($case['title'] ?? 'Dossier sans intitulé');
-$classLabel = (string) ($case['classification_label'] ?? 'Confidentiel');
+$classLabel = (string) ($case['classification_label'] ?? 'Secret (S)');
 $classUpper = mb_strtoupper($classLabel, 'UTF-8');
 $statusLabel = (string) ($case['status_label'] ?? 'En cours');
 $statusKey = (string) ($case['status'] ?? '');

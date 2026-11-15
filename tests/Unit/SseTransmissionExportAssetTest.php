@@ -64,9 +64,9 @@ final class SseTransmissionExportAssetTest extends TestCase
         $show = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak/sse/transmission_show.php');
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
 
-        self::assertStringContainsString('Télécharger le journal (PDF)', $view);
+        self::assertStringContainsString('Exporter le journal (PDF)', $view);
         self::assertStringContainsString('Relais Discord', $view);
-        self::assertStringContainsString('Ajouter le relais', $view);
+        self::assertStringContainsString('Ajouter un relais', $view);
         self::assertStringContainsString('Télécharger en PDF', $show);
         self::assertStringContainsString('Envoyer vers Discord', $show);
         self::assertStringContainsString("/atak/sse/transmissions/pdf", $routes);

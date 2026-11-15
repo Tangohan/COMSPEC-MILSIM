@@ -660,7 +660,7 @@ final class SseAccessSimpleSubjectsTest extends TestCase
         self::assertSame('explicit', $view(17)['source']);
         self::assertSame('confidentiel', $view(13)['level'], 'la fiche l’emporte sur le report plus bas');
         self::assertSame('profile', $view(13)['source']);
-        self::assertSame('Confidentiel', $view(13)['label']);
+        self::assertSame('Secret (S)', $view(13)['label']);
         self::assertSame('floor', $view(18)['source'], 'sans aucun droit SSE : diffusion interne');
         self::assertSame('confidentiel', $view(11)['level'], 'gestion des dossiers : report en confidentiel');
         // Même règle que la session : la fonction partagée donne la même réponse.

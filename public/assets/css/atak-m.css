@@ -247,8 +247,6 @@ body[data-view="carte"] .mm-foot { display: none; }
 .mm-map .leaflet-tooltip { background: rgba(5,5,5,.9); color: var(--mm-text); border: 1px solid var(--mm-line); font: 600 12px var(--mm-mono); }
 
 /* Contrôle ID (COMSPEC IDENTITY) : contrôles dépliables, liseré à la couleur du verdict, niveaux, photos. */
-.mm-idc-sim { margin: 8px 0 0; font: 600 12px var(--mm-mono); color: var(--mm-amber); }
-.mm-idc-sim strong { letter-spacing: .14em; margin-right: 6px; }
 .mm-idc-list { display: flex; flex-direction: column; gap: 10px; }
 .mm-idc { background: var(--mm-panel); border: 1px solid var(--mm-line); border-left: 6px solid var(--mm-dim); border-radius: 4px; }
 .mm-idc--ok { border-left-color: var(--mm-green); }

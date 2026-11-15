@@ -21,7 +21,7 @@ use App\Support\TrainingCertificatePdfEngine;
  */
 final class SseTransmissionPdfService
 {
-    private const MARKING = 'Diffusion restreinte · usage interne SSE';
+    private const MARKING = 'CUI · usage interne SSE';
 
     /** Regroupement des champs du payload par thème (ordre d'affichage). */
     private const GROUPS = [
