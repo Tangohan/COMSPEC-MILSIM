@@ -59,10 +59,34 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 // hasard (5 s au plus) au lieu de toutes à la même image. Avant, les boucles de 1, 2, 5 et 10 s tombaient ensemble à
 // chaque multiple de 10 s (à-coup régulier) et toutes partaient dans les premières secondes de l'arrivée en jeu.
 // Mêmes paramètres que CBA_fnc_addPerFrameHandler ; ne renvoie pas d'identifiant (aucun appelant ne le garde).
+// Sonde permanente (fn_perfAcc) : chaque boucle passe par COMSPEC_ATAK_PfhProbe, qui la chronomètre sous la clé
+// « PFH nom » (part du mod dans une image figée, bilan des 30 s) et laisse une ligne « [PERF] Lent : Boucle nom » si un
+// passage dépasse 8 ms. Nom : 4e paramètre, sinon la première fonction COMSPEC appelée par le code. Rien à l'écran.
+// Points d'accroche pour tout le code COMSPEC (ATAK, Overwatch, SSE ; tester !isNil avant l'appel) :
+//   [code, délai, arguments, nom] call COMSPEC_ATAK_PfhSpread   boucle au départ décalé, sans identifiant
+//   [code, délai, arguments, nom] call COMSPEC_ATAK_PfhAdd      boucle immédiate, rend l'identifiant CBA
+COMSPEC_ATAK_PfhProbe = {
+    params ["_comspecPfhA", "_comspecPfhH"];
+    private _comspecPfhT = diag_tickTime;
+    [_comspecPfhA select 1, _comspecPfhH] call (_comspecPfhA select 0);
+    [_comspecPfhA select 2, _comspecPfhT, 8, -1, _comspecPfhA select 3] call comspec_atak_native_fnc_perfAcc;
+};
+COMSPEC_ATAK_PfhName = {
+    params ["_code", ["_name", ""]];
+    if (_name isEqualTo "") then {
+        private _calls = ((str _code) regexFind ["comspec_[A-Za-z0-9_]+_fnc_([A-Za-z0-9_]+)", 0]) apply { ((_x select 1) select 0) };
+        _name = (_calls select { !((toLower _x) in ["hasdevice", "display", "bridge", "linkquality", "log", "notify", "perfacc", "tr"]) }) param [0, _calls param [0, "sans nom"]];
+    };
+    ["PFH " + _name, "Boucle " + _name]
+};
+COMSPEC_ATAK_PfhAdd = {
+    params ["_code", ["_delay", 0], ["_args", []], ["_name", ""]];
+    [COMSPEC_ATAK_PfhProbe, _delay, [_code, _args] + ([_code, _name] call COMSPEC_ATAK_PfhName)] call CBA_fnc_addPerFrameHandler
+};
 COMSPEC_ATAK_PfhSpread = {
-    params ["_code", ["_delay", 0], ["_args", []]];
-    if (_delay <= 0) exitWith { [_code, _delay, _args] call CBA_fnc_addPerFrameHandler; nil };
-    [{ _this call CBA_fnc_addPerFrameHandler; }, [_code, _delay, _args], random (_delay min 5)] call comspec_atak_native_fnc_waitAndExec;
+    params ["_code", ["_delay", 0], ["_args", []], ["_name", ""]];
+    if (_delay <= 0) exitWith { [_code, _delay, _args, _name] call COMSPEC_ATAK_PfhAdd; nil };
+    [{ _this call COMSPEC_ATAK_PfhAdd; }, [_code, _delay, _args, _name], random (_delay min 5)] call comspec_atak_native_fnc_waitAndExec;
     nil
 };
 

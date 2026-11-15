@@ -268,6 +268,8 @@ switch (_act) do {
     case "tick": {
         if (!hasInterface) exitWith {};
         private _t0 = diag_tickTime;
+        // Passage relancé depuis un script (fin de lecture du maillage) : étalé sur plusieurs images, rangé à part.
+        private _f0 = diag_frameNo;
         if !(call _active) exitWith {
             if ((player getVariable ["COMSPEC_ATAK_MpuNode", []]) isNotEqualTo []) then { player setVariable ["COMSPEC_ATAK_MpuNode", []]; };
             uiNamespace setVariable ["COMSPEC_ATAK_MpuStatus", nil];
@@ -428,7 +430,7 @@ switch (_act) do {
                 ["tick"] call comspec_atak_native_fnc_mpuLink;
             };
         };
-        ["radio de données", _t0] call comspec_atak_native_fnc_perfAcc;
+        ["radio de données", _t0, -1, _f0] call comspec_atak_native_fnc_perfAcc;
     };
     case "mesh": {
         // Graphe unique (fn_meshGraph) : calculé ici seulement sans serveur de référence, puis lu comme partout ailleurs.
