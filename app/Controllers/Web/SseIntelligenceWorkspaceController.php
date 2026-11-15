@@ -13,6 +13,8 @@ use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseAnalysisService;
 use App\Services\Sse\SseIntelligenceWorkspaceService;
 use App\Services\Sse\SseIntelCycleService;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Page Intelligence Workspace (LOT 1) — coque 3 colonnes branchée aux données réelles.
@@ -268,11 +270,7 @@ final class SseIntelligenceWorkspaceController
 
     private function canManage(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('analyse', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     private function canGrant(): bool

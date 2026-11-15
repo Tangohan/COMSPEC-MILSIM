@@ -17,9 +17,11 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Sse\MemberIdentityPapersService;
 use App\Services\Sse\MemberIdentitySyncService;
+use App\Services\Sse\SseAccessPolicy;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Support\EffectifsLmsAccess;
+use App\Support\SseAccessCatalog;
 use App\Support\JnetMemberShell;
 use App\Support\SseIdentityCatalog;
 
@@ -66,7 +68,9 @@ final class MemberIdentityPapersController
             $command = $confidential = false;
         }
 
-        $sseManage = $gate->allows('atak.sse.case.manage') || $gate->allows('atak.sse.grant') || $gate->allows('admin.access');
+        // Droit d'écrire dans les papiers (SseAccessPolicy) : la gestion des dossiers SSE par défaut, étendue ou restreinte par les règles.
+        // Appelé aussi hors du bureau SSE (fiche membre) : pas de session SSE à juger, le droit d'entrer suffit pour une règle d'accord.
+        $sseManage = SseAccessPolicy::sessionAllows('papiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => false, 'door_mode' => SseAccessPolicy::DOOR_ENTRY]);
         $rights = MemberIdentityPapersService::rights($sseManage, EffectifsLmsAccess::canEditProfiles($gate), $command, $confidential);
 
         return $rights + ['sse' => self::sseSurfaceAllowed($sseManage, $command)];
