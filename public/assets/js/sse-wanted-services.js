@@ -401,6 +401,11 @@
     restoreDraft();
     buildCombo();
     if (combo) { combo.paint(); }
+    // Dernier service utilisé dans ce navigateur, quand la communauté n'en impose pas un et que le serveur n'en connaît pas.
+    if (!D.hasOld && select && !select.value && !D.default && !D.last) {
+        var remembered = store('get', D.recentKey || 'ws-service');
+        if (remembered && byCode[remembered]) { select.value = remembered; if (combo) { combo.paint(); } }
+    }
     current = byCode[select ? select.value : ''] || null;
     renderCard(current);
     if (!D.hasOld && current && expires && !expires.value && noExp && noExp.value !== '1' && (current.prefill || {}).expiry_days > 0) { setExpiry(current.prefill.expiry_days); }

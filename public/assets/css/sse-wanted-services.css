@@ -165,7 +165,7 @@
 
 /* Tiroir « Nouveau service » */
 .ws-dialog .ws-dialog__body { display: grid; gap: 1rem; align-content: start; }
-.ws-dialog .ws-tabs { display: flex; gap: 0.25rem; overflow-x: auto; border-bottom: 1px solid var(--ws-line, #232b31); margin: 0 -0.25rem; padding: 0 0.25rem; }
+.ws-dialog .ws-tabs { flex: none; min-height: 46px; display: flex; gap: 0.25rem; overflow-x: auto; border-bottom: 1px solid var(--ws-line, #232b31); margin: 0 -0.25rem; padding: 0 0.25rem; }
 .ws-dialog .ws-tab { flex: 0 0 auto; min-height: 44px; padding: 0 1rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--ws-muted); font: inherit; font-size: 0.92rem; font-weight: 600; cursor: pointer; }
 .ws-dialog .ws-tab[aria-selected="true"] { color: var(--ws-strong); border-bottom-color: var(--ws-accent); }
 .ws-dialog .ws-pane { display: grid; gap: 1rem; }
@@ -228,7 +228,7 @@
 .ws-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.5rem; border-bottom: 1px solid var(--ws-line); }
 .ws-dialog__head h2 { margin: 0; font-size: 1.15rem; font-weight: 700; line-height: 1.3; color: var(--ws-strong); letter-spacing: 0; text-transform: none; }
 .ws-dialog__head p { margin: 0.4rem 0 0; font-size: 0.9rem; color: var(--ws-muted); }
-.ws-dialog__body { flex: 1 1 auto; min-height: 0; padding: 1.5rem; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 1rem; align-content: start; }
+.ws-dialog__body { flex: 1 1 auto; min-height: 0; padding: 1.5rem; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-auto-rows: max-content; gap: 1rem; align-content: start; }
 .ws-dialog__foot { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end; align-items: center; padding: 1rem 1.5rem; border-top: 1px solid var(--ws-line); background: var(--ws-sunken); }
 .ws-iconbtn { flex: 0 0 auto; width: 44px; height: 44px; margin: -0.5rem -0.5rem 0 0; display: inline-grid; place-items: center; border: 0; background: transparent; color: var(--ws-muted); cursor: pointer; }
 .ws-iconbtn:hover { color: var(--ws-strong); }
