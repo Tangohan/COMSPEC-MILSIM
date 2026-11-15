@@ -22,7 +22,7 @@ use App\Support\SseAccessCatalog as C;
  */
 class SseAccessRuleService
 {
-    private const NOTHING_TO_CREATE = 'Aucune règle à créer : tout est déjà en place ou hors de vos droits.';
+    private const NOTHING_TO_CREATE = 'Aucune règle à créer : rien ne s’applique à cette sélection (niveaux sans objet ou hors de vos droits).';
 
     /** @var \Closure(array<string, mixed>): void|null */
     private ?\Closure $audit;
@@ -129,7 +129,8 @@ class SseAccessRuleService
             return ['rules' => [], 'errors' => array_values(array_unique($errors)), 'skipped' => []];
         }
 
-        $live = $this->rules()->liveRules($tenantId);
+        // État frais : un aperçu ou un enregistrement ne se décide jamais sur une copie périmée des règles.
+        $live = $this->rules()->liveRules($tenantId, true);
         $room = C::MAX_ACTIVE_RULES - count($live);
         foreach (array_keys($levels) as $lv) {
             if (!C::applies($section, $lv)) {
@@ -217,7 +218,7 @@ class SseAccessRuleService
             return ['rules' => [], 'errors' => $errors, 'skipped' => array_values(array_unique($skipped))];
         }
 
-        return ['rules' => $rules, 'errors' => $rules === [] ? ['Aucune règle à créer : tout est déjà en place ou hors de vos droits.'] : [], 'skipped' => array_values(array_unique($skipped))];
+        return ['rules' => $rules, 'errors' => $rules === [] ? [self::NOTHING_TO_CREATE] : [], 'skipped' => array_values(array_unique($skipped))];
     }
 
     /**
@@ -279,7 +280,7 @@ class SseAccessRuleService
             return ['rules' => [], 'errors' => $errors, 'skipped' => $skipped];
         }
 
-        return ['rules' => $rules, 'errors' => $rules === [] ? ['Aucune règle à créer : tout est déjà en place ou hors de vos droits.'] : [], 'skipped' => $skipped];
+        return ['rules' => $rules, 'errors' => $rules === [] ? [self::NOTHING_TO_CREATE] : [], 'skipped' => $skipped];
     }
 
     /**
@@ -326,7 +327,47 @@ class SseAccessRuleService
             return ['rules' => [], 'errors' => $errors, 'skipped' => array_values(array_unique($skipped))];
         }
 
-        return ['rules' => $rules, 'errors' => $rules === [] ? ['Aucune règle à créer : tout est déjà en place ou hors de vos droits.'] : [], 'skipped' => array_values(array_unique($skipped))];
+        return ['rules' => $rules, 'errors' => $rules === [] ? [self::NOTHING_TO_CREATE] : [], 'skipped' => array_values(array_unique($skipped))];
+    }
+
+    /**
+     * Ce qui s'est réellement passé, en une phrase puis une liste : « N règles créées : … », ou « aucune règle créée : … »
+     * avec la raison (déjà en place, hors de vos droits). Même texte pour l'aperçu et l'enregistrement.
+     *
+     * @param array{rules: list<array<string, mixed>>, errors: list<string>, skipped: list<string>} $plan
+     * @param int $created règles réellement écrites (0 : aperçu ou rien d'écrit)
+     */
+    public static function describeResult(array $plan, int $created): string
+    {
+        $made = [];
+        foreach ($plan['rules'] as $r) {
+            $made[] = C::sectionLabel((string) $r['section']) . ' · ' . C::levelLabel((string) $r['level']);
+        }
+        $list = count($made) > 8 ? implode(', ', array_slice($made, 0, 8)) . '…' : implode(', ', $made);
+        $skipped = $plan['skipped'] !== [] ? ' Non créées : ' . implode(' ', array_slice($plan['skipped'], 0, 6)) . (count($plan['skipped']) > 6 ? ' …' : '') : '';
+        if ($created > 0) {
+            return ($created === 1 ? '1 règle créée' : $created . ' règles créées') . ' : ' . $list . '.' . $skipped;
+        }
+        if ($plan['rules'] === []) {
+            return 'Aucune règle créée.' . ($skipped !== '' ? $skipped : ' ' . implode(' ', $plan['errors']));
+        }
+
+        return 'Rien n’a été enregistré : réessayez.';
+    }
+
+    /** Le plan ne crée rien uniquement parce que tout est déjà en place (et non parce qu'il est refusé) ? */
+    public static function onlyAlreadyInPlace(array $plan): bool
+    {
+        if ($plan['rules'] !== [] || $plan['skipped'] === []) {
+            return false;
+        }
+        foreach ($plan['skipped'] as $note) {
+            if (!str_contains($note, 'est déjà réglé ainsi')) {
+                return false;
+            }
+        }
+
+        return array_values(array_diff($plan['errors'], [self::NOTHING_TO_CREATE])) === [];
     }
 
     // ------------------------------------------------------------------ Écriture

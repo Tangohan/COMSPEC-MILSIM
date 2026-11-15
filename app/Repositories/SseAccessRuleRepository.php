@@ -76,12 +76,17 @@ class SseAccessRuleRepository
     /**
      * Règles non retirées de la communauté (dates non filtrées), mémorisées pour la requête.
      *
+     * @param bool $fresh lire la base sans passer par aucune copie (planification d'une écriture)
      * @return list<array<string, mixed>>
      */
-    public function liveRules(int $tenantId): array
+    public function liveRules(int $tenantId, bool $fresh = false): array
     {
         if ($tenantId < 1 || !$this->ready()) {
             return [];
+        }
+        if ($fresh) {
+            // Lecture directe de la base : ni la mémoire de la requête ni la copie partagée (planifier, c'est décider d'écrire).
+            return $this->memo[$tenantId] = $this->loadLive($tenantId);
         }
         if (!isset($this->memo[$tenantId])) {
             $key = self::CACHE_NS . ':' . $tenantId . ':g' . ShortCache::gen(self::CACHE_NS . ':' . $tenantId);

@@ -31,6 +31,12 @@ class MapShapeRepository
             $params[] = $since;
             $params[] = $since;
         }
+        // Cycle de 24 h : tracés du cycle en cours et tracés épinglés seulement.
+        $cycleStart = \App\Services\Atak\MarkerCycle\AtakMarkerCycleFilter::cutoff($tenantId);
+        if ($cycleStart !== null) {
+            $sql .= \App\Services\Atak\MarkerCycle\AtakMarkerCycleFilter::SHAPE_SQL;
+            $params[] = $cycleStart;
+        }
         $sql .= ' ORDER BY id';
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);

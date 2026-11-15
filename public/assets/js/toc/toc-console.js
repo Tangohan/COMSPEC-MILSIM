@@ -573,6 +573,16 @@
     renderPick();
     if (S.tab === 'groupes' || S.tab === 'orbat') renderPanel();
   }
+  function isPinned(d) { return !!(d && d.d && d.d.web_permanent); }
+  function pinMarker(it) {
+    var want = !isPinned(it.data);
+    if (!window.AtakMarkerCycle) return;
+    window.AtakMarkerCycle.pin('marker', it.data.id, want).then(function (ok) {
+      if (!ok) { say('Impossible d’épingler ce marqueur.'); return; }
+      S.layers.reload('markers');
+      say(want ? 'Marqueur épinglé : il reste affiché après la bascule du cycle.' : 'Marqueur désépinglé : il sera archivé à la prochaine bascule.');
+    });
+  }
   function canEditMarker(d) { return !!(d && d.type === 'marker' && String(d.id).indexOf('athena:') !== 0 && (d.own || BOOT.canManage)); }
   function renderPick() {
     var box = $('#toc-pick');
@@ -585,7 +595,7 @@
       btns += '<button type="button" class="toc-btn is-small' + (following ? ' is-on' : '') + '" data-pick="follow" aria-pressed="' + following + '">' + (following ? 'Ne plus suivre' : 'Suivre') + '</button>' +
         '<button type="button" class="toc-btn is-small" data-pick="message">Message</button><button type="button" class="toc-btn is-small" data-pick="order">Ordre</button>';
     } else if (canEditMarker(d)) {
-      btns += '<button type="button" class="toc-btn is-small" data-pick="edit">Modifier</button><button type="button" class="toc-btn is-small is-danger" data-pick="delete">Supprimer</button>';
+      btns += '<button type="button" class="toc-btn is-small" data-pick="edit">Modifier</button><button type="button" class="toc-btn is-small" data-pick="pin" aria-pressed="' + isPinned(d) + '">' + (isPinned(d) ? 'Désépingler' : 'Épingler') + '</button><button type="button" class="toc-btn is-small is-danger" data-pick="delete">Supprimer</button>';
     }
     box.innerHTML = '<div class="toc-pick-head"><span class="toc-pick-sym">' + it.symbol.html + '</span><div class="toc-pick-body">' + (it.tip ? it.tip(it) : '<h4>' + esc(it.title) + '</h4>') + '</div><button type="button" class="toc-btn is-small is-icon" data-pick="close" aria-label="Fermer la fiche" title="Fermer la fiche">×</button></div><div class="toc-pick-actions">' + btns + '</div>';
     box.hidden = false;
@@ -618,6 +628,7 @@
     else if (a === 'waypoint') openWindow('point', { x: Math.round(pos[0]), y: Math.round(pos[1]) });
     else if (a === 'edit' && d.type === 'marker') openWindow('marqueur', { id: d.id });
     else if (a === 'delete' && d.type === 'marker') deleteMarker(it);
+    else if (a === 'pin' && d.type === 'marker') pinMarker(it);
     else if (a === 'measure') startMeasure(pos);
     else if (a.indexOf('ring:') === 0) { var r = Number(a.slice(5)); S.layers.rangeRing(r ? pos : null, r); }
     else if (a.indexOf('report:') === 0) quickMarker(pos, a.slice(7));
@@ -701,7 +712,7 @@
       if (d.type === 'marker') {
         var can = canEditMarker(d);
         var why = can ? '' : 'Réservé à son auteur ou à un responsable du poste';
-        entries.push({ sep: true }, { id: 'edit', label: 'Modifier…', disabled: !can, hint: why }, { id: 'delete', label: 'Supprimer', danger: true, disabled: !can, hint: why });
+        entries.push({ sep: true }, { id: 'edit', label: 'Modifier…', disabled: !can, hint: why }, { id: 'pin', label: isPinned(d) ? 'Désépingler' : 'Épingler (reste après la bascule)', disabled: !can, hint: why }, { id: 'delete', label: 'Supprimer', danger: true, disabled: !can, hint: why });
       }
       entries.push({ sep: true }, { id: 'link', label: 'Partager (copier le lien)' }, { id: 'measure', label: 'Mesurer d’ici' }, { id: 'copy', label: 'Copier la grille' });
     } else {
