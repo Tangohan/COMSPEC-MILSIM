@@ -2668,6 +2668,21 @@ if (!function_exists('member_label')) {
     }
 }
 
+if (!function_exists('member_labels_preload')) {
+    /**
+     * Charge d'un coup l'identité du personnage des membres d'une liste avant une boucle d'appels à member_label().
+     *
+     * @param list<array<string, mixed>> $rows
+     */
+    function member_labels_preload(array $rows, string $idKey = 'id', ?int $tenantId = null): void
+    {
+        \App\Support\MemberIdentity::preload(
+            $tenantId ?? (int) \App\Core\Session::get('tenant_id'),
+            array_map(static fn ($r): int => is_array($r) ? (int) ($r[$idKey] ?? 0) : 0, $rows)
+        );
+    }
+}
+
 if (!function_exists('member_identity')) {
     /**
      * Point unique d'affichage d'un membre : nom principal, ligne secondaire, indicatif, trigramme, origine du nom.

@@ -163,6 +163,20 @@ final class MemberIdentity
     }
 
     /**
+     * Nom d'un membre pour un écran de gestion : comme {@see self::labelForUser()}, mais « Membre n° 12 » quand rien
+     * n'identifie le membre (le numéro permet de le retrouver). Texte brut.
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function numberedLabelForUser(array $row, string $context = self::LIST, ?int $tenantId = null): string
+    {
+        $out = self::displayForUser($row, $context, $tenantId, false);
+        $id = (int) ($row['id'] ?? $row['user_id'] ?? 0);
+
+        return ($out['source'] === self::SOURCE_FALLBACK && $id > 0) ? MemberName::FALLBACK . ' n° ' . $id : $out['primary'];
+    }
+
+    /**
      * Prénom ou nom saisi dans un formulaire : espaces nettoyés, longueur bornée, null si la saisie contient du HTML
      * ou des caractères de contrôle (refusée), chaîne vide si rien n'est saisi.
      */

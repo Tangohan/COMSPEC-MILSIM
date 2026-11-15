@@ -443,7 +443,7 @@ final class OrganizationMemberNumberController
                 } else {
                     $uid = (int) $user['id'];
                     $item['user_id'] = $uid;
-                    $item['name'] = trim((string) ($user['display_name'] ?? '')) ?: trim((string) ($user['callsign'] ?? ''));
+                    $item['name'] = member_label(['id' => $uid, 'display_name' => (string) ($user['display_name'] ?? ''), 'callsign' => (string) ($user['callsign'] ?? '')], 'list', $tenantId);
                     $item['current'] = (string) ($this->memberNumbers->getForUser($tenantId, $uid) ?? '');
                     if (mb_strtolower($item['current']) === mb_strtolower($r['number'])) {
                         $item['status'] = 'same';

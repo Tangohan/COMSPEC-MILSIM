@@ -344,7 +344,7 @@ $eventLabels = [
                 <ul class="qfs-hist">
                     <?php foreach ($history as $ev):
                         $perf = trim((string) ($ev['performer_name'] ?? ''));
-                        $memberName = trim((string) ($ev['callsign'] ?? '')) ?: trim((string) ($ev['display_name'] ?? ''));
+                        $memberName = member_label(['id' => (int) ($ev['user_id'] ?? 0), 'display_name' => (string) ($ev['display_name'] ?? ''), 'callsign' => (string) ($ev['callsign'] ?? '')], 'list');
                         ?>
                     <li>
                         <time datetime="<?= $h(substr((string) ($ev['event_date'] ?? ''), 0, 10)) ?>"><?= $h($fd((string) ($ev['event_date'] ?? ''))) ?></time>

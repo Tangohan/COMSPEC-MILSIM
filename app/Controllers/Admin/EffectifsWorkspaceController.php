@@ -1300,9 +1300,11 @@ class EffectifsWorkspaceController
         $accounts = [];
         if ($selected !== null) {
             $history = (new \App\Repositories\RosterFicheEventRepository())->listForUser($tenantId, $ficheId, 60);
-            foreach ($this->userRepository->allForTenant($tenantId) as $u) {
+            $allUsers = $this->userRepository->allForTenant($tenantId);
+            \App\Support\MemberIdentity::preload($tenantId, array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $allUsers));
+            foreach ($allUsers as $u) {
                 if (\App\Services\Effectifs\NoAccountDirectory::classify($u) === null && !\App\Support\RosterOnlyMember::isRosterEmail((string) ($u['email'] ?? '')) && (int) ($u['tenant_id'] ?? 0) === $tenantId) {
-                    $label = trim((string) ($u['display_name'] ?? '')) ?: trim((string) ($u['callsign'] ?? ''));
+                    $label = member_label(['id' => (int) $u['id'], 'display_name' => (string) ($u['display_name'] ?? ''), 'callsign' => (string) ($u['callsign'] ?? '')], 'list', $tenantId);
                     if ($label !== '') {
                         $accounts[] = ['id' => (int) $u['id'], 'label' => $label . ' #' . (int) $u['id']];
                     }

@@ -108,7 +108,7 @@ final class RoleplayFollowupNotificationService
             if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $tenant = $this->tenantRepository->findById($tenantId);
                 $tenantName = trim((string) ($tenant['name'] ?? 'Votre communauté'));
-                $displayName = trim((string) ($user['display_name'] ?? '')) ?: trim((string) ($user['callsign'] ?? 'Membre'));
+                $displayName = member_label(['id' => $recipientUserId, 'display_name' => (string) ($user['display_name'] ?? ''), 'callsign' => (string) ($user['callsign'] ?? '')], 'list', $tenantId);
                 $this->emailService->sendTemplated(
                     EmailEvents::ROLEPLAY_FOLLOWUP_UPDATED,
                     'roleplay_followup_updated',
@@ -239,7 +239,7 @@ final class RoleplayFollowupNotificationService
             return 'Tutorat : affectation retirée.';
         }
         $u = $this->userRepository->findById($newId, $tenantId);
-        $label = $u ? (trim((string) ($u['display_name'] ?? '')) ?: trim((string) ($u['callsign'] ?? ''))) : '';
+        $label = $u ? member_label(['id' => $newId, 'display_name' => (string) ($u['display_name'] ?? ''), 'callsign' => (string) ($u['callsign'] ?? '')], 'list', $tenantId) : '';
 
         return 'Tuteur : ' . ($label !== '' ? $label : ('compte #' . $newId));
     }

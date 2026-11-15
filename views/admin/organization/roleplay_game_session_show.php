@@ -192,7 +192,7 @@ $stateButton = static function (string $state, string $label, string $class = 'a
             </thead>
             <tbody>
                 <?php foreach ($members as $m):
-                    $who = trim((string) ($m['display_name'] ?? '')) ?: trim((string) ($m['callsign'] ?? ''));
+                    $who = member_label(['id' => (int) ($m['user_id'] ?? $m['id'] ?? 0), 'display_name' => (string) ($m['display_name'] ?? ''), 'callsign' => (string) ($m['callsign'] ?? '')], 'list');
                     [$pLabel, $pTone] = $presence($m);
                     [$cLabel, $cTone] = $countLabel($m);
                     $isCounted = !empty($m['attendance_valid']) && empty($m['rh_excluded']);
