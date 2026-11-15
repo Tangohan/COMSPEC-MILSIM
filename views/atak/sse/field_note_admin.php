@@ -447,7 +447,7 @@ $renderRows = static function (array $rows, bool $withFamily) use ($h, $json, $l
                 <div class="fnr-dialog__body">
                     <div class="fng-grid2" data-fng-when="create">
                         <label class="fnr-field" for="fng-tag-code">Code court
-                            <input id="fng-tag-code" type="text" name="code" maxlength="<?= (int) $cat::CODE_MAX ?>" required autocapitalize="characters" placeholder="Ex. ROUTE WATCH">
+                            <input id="fng-tag-code" type="text" name="code" maxlength="<?= (int) $cat::CODE_MAX ?>" required autocapitalize="characters" placeholder="Ex. SECTEUR NORD">
                             <span class="fng-help">Majuscules, chiffres, espaces ou tirets. Il ne change plus après la création.</span>
                         </label>
                         <label class="fnr-field" for="fng-tag-family" data-fng-when="create-tag">Famille

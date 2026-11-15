@@ -158,14 +158,14 @@ final class SseFieldNoteShowPageTest extends TestCase
     {
         $page = self::page(self::render('b'));
         self::assertSame(1, substr_count($page, '<div class="fnr-tabs" role="tablist"'), 'une barre d’onglets propre à la page');
-        foreach (['essentiel', 'suivi', 'pieces', 'dossier', 'liaisons'] as $i => $tab) {
+        foreach (['essentiel', 'etiquettes', 'suivi', 'pieces', 'dossier', 'liaisons'] as $i => $tab) {
             self::assertMatchesRegularExpression('#<button type="button" role="tab" id="fnr-tab-' . $tab . '" aria-controls="fnr-panel-' . $tab . '" aria-selected="' . ($i === 0 ? 'true' : 'false') . '"#', $page);
             self::assertMatchesRegularExpression('#<section class="fnr-panel" role="tabpanel" id="fnr-panel-' . $tab . '" aria-labelledby="fnr-tab-' . $tab . '" data-fnr-panel="' . $tab . '"' . ($i === 0 ? '' : ' hidden') . '>\s*<h2 class="fnr-panel__title">[^<]+(<span class="fnr-count">[^<]+</span>)?</h2>\s*<p class="fnr-desc">[^<]+</p>#', $page, $tab);
         }
         $src = self::read(self::VIEW);
         // Titre de chaque onglet et de chaque fenêtre : une ligne de description juste dessous.
-        self::assertSame(5, preg_match_all('#<h2 class="fnr-panel__title">.*?</h2>\s*<p class="fnr-desc">#', $src));
-        self::assertSame(3, preg_match_all('#<h2 id="fnr-dlg-[a-z]+-title">[^<]+</h2>\s*<p class="fnr-desc">#', $src));
+        self::assertSame(6, preg_match_all('#<h2 class="fnr-panel__title">.*?</h2>\s*<p class="fnr-desc">#', $src));
+        self::assertSame(4, preg_match_all('#<h2 id="fnr-dlg-[a-z]+-title">[^<]+</h2>\s*<p class="fnr-desc">#', $src));
     }
 
     public function testNoEyebrowNoRejectedDesignSystem(): void
