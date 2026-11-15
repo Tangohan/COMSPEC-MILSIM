@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Photo du joueur de retour, fonction et grade sur le dossier de l'écran des rôles (ATAK natif 4.26.1.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.3.1)
+
+### Résumé joueur
+Type : correctif
+FR : Ta photo s'affiche de nouveau, et le dossier de l'écran des rôles montre ta vraie fonction
+- Ton portrait Athena s'affiche de nouveau sur le téléphone (réglages rapides, Profil, Groupe, Messages) à la place des initiales, et sur le dossier de l'écran des rôles.
+- Sur le dossier de l'écran des rôles, la ligne Fonction montre ta fonction dans ta communauté, plus le nom du poste choisi, et ton grade s'affiche.
+- Une ligne sans valeur est masquée, une longue liste de qualifications ne déborde plus, et sans photo le cadre le dit.
+- Mets à jour COMSPEC ATAK et COMSPEC Lobby, puis redémarre complètement Arma 3. Joue une partie pour que ton dossier se mette à jour.
+EN : Your photo shows again, and the role screen dossier shows your real role
+- Your Athena portrait shows again on the phone (quick settings, Profile, Group, Messages) instead of the initials, and on the role screen dossier.
+- On the role screen dossier, the Role line shows your role in your community, no longer the name of the chosen slot, and your rank is shown.
+- An empty line is hidden, a long list of qualifications no longer overflows, and without a photo the frame says so.
+- Update COMSPEC ATAK and COMSPEC Lobby, then restart Arma 3 completely. Play one game so your dossier updates.
+
+### Détail technique
+- **Cause de la photo absente (régression de COMSPEC Link 2.0.124)** : le cache des images téléchargées était passé de `comspec_cache` du dossier du jeu à `Documents\Arma 3 - COMSPEC\Cache`. Arma ne lit pas une texture dans ce dossier : `fn_texUsable` rendait un chemin vide (initiales sur le téléphone) et l'écran des rôles passait par le navigateur intégré, qui refuse le `.paa` (`ImageDataChunk local:` répond `invalid_image`). Journal du 15/11 : « Image refusée par Arma » et « portrait indisponible (invalid_image) », alors que le téléchargement réussit. Le site n'est pas en cause : le portrait opérateur (`uploads/portraits`) n'a pas été touché par le rangement privé des images SSE.
+- **DLL (COMSPEC Link 2.0.128)** : `ImageCacheDirs()` remet `comspec_cache\briefing` du dossier du jeu en premier, puis Documents, puis TEMP. Un portrait déjà téléchargé dans un autre dossier de cache est copié dans le dossier du jeu, sans nouvelle requête.
+- **ATAK natif 4.26.1** : `fn_texUsable` essaie le chemin relatif `comspec_cache\…` après `fileExists`, et n'appelle plus `getTextureInfo` sur un chemin qu'Arma ne lit pas (fenêtre « Picture … not found »). `fn_avatarPath` range le grade et la fonction du membre (profil de la liaison Athena) dans la carte de l'écran des rôles. `LINK_VERSION_STR` 2.0.128.
+- **COMSPEC Lobby 0.3.1** : la fonction du dossier est celle du membre (carte Athena), jamais le texte du poste ; « Synchroniser » lit le grade et la fonction gardés par la DLL (`GetAuthState`, sans réseau) et prend la copie JPEG du site quand la texture n'est pas lisible ; lignes vides masquées, qualifications coupées à la largeur (`getTextWidth`), « Sans photo » et raison sur la ligne d'état.
+- **Site** : `GameAuthService` lit le grade de la communauté de la session (profil de communauté compris), plus seulement celui de la communauté d'origine du compte ; `OperatorPortraits` ne sert jamais au jeu un chemin d'image SSE privée.
+- **Non vérifié en jeu** : aucun binaire n'est livré dans cette PR. À tester après reconstruction : portrait sur le téléphone et à l'écran des rôles (dossier du jeu inscriptible ou non), lignes Grade et Fonction, membre sans fonction, longue liste de qualifications en 16:9 et 4:3.
+
+---
+
 ## Contrôle d'identité : la photo du papier remonte sur Athena (ATAK natif 4.26.0.AG - Washington, COMSPEC Link 2.0.127)
 
 ### Résumé joueur

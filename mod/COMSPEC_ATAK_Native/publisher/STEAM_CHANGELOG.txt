@@ -1,3 +1,23 @@
+[h1]COMSPEC ATAK 4.26.1 Washington — ta photo s'affiche de nouveau / your photo shows again[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Photo du joueur[/b] : ton portrait Athena s'affiche de nouveau sur le téléphone (réglages rapides, Profil, Groupe, Messages) à la place des initiales, et les diapositives du briefing aussi.
+[*] Plus de fenêtre « Picture not found » quand une image ne peut pas être lue.
+[*] Écran des rôles (COMSPEC Lobby 0.3.1) : ton grade et ta fonction dans ta communauté sont gardés pour ton dossier.
+[*] COMSPEC Link passe en 2.0.128.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Player photo[/b]: your Athena portrait shows again on the phone (quick settings, Profile, Group, Messages) instead of the initials, and so do briefing slides.
+[*] No more "Picture not found" window when an image cannot be read.
+[*] Role screen (COMSPEC Lobby 0.3.1): your rank and your role in your community are kept for your dossier.
+[*] COMSPEC Link is now 2.0.128.
+[/list]
+
 [h1]COMSPEC ATAK 4.26.0 Washington — contrôle d'identité : la photo du papier remonte sur Athena / identity check: the paper photo goes up to Athena[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
