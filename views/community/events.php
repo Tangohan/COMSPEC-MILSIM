@@ -395,7 +395,7 @@ $eventCount = count($events);
     }
     .events-detail__rsvp-col .muted { color: #94a3b8; font-size: 0.75rem; }
 </style>
-<div class="bg-slate-50 <?= $eventsInBackOffice ? 'pb-8 sm:pb-10' : 'pb-16 sm:pb-24' ?>">
+<div class="<?= !empty($jnetMemberShell) ? 'ath-main__body jnet-moi-events' : 'bg-slate-50' ?> <?= $eventsInBackOffice ? 'pb-8 sm:pb-10' : 'pb-16 sm:pb-24' ?>">
     <?php if (!$eventsInBackOffice): ?>
     <div class="relative overflow-hidden border-b border-slate-800/80 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white">
         <div class="relative mx-auto max-w-[1600px] px-4 pt-10 pb-12 sm:px-6 sm:pt-14 sm:pb-16 lg:px-8">
@@ -437,7 +437,7 @@ $eventCount = count($events);
         <div class="w-full max-w-none overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm" data-events-sheets>
             <div class="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
                 <div class="min-w-0">
-                    <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-500">Calendrier communautaire</p>
+                    <?php if (empty($jnetMemberShell)): ?><p class="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-500">Calendrier communautaire</p><?php endif; ?>
                     <h2 class="mt-0.5 text-lg font-black tracking-tight text-slate-900 sm:text-xl">Prochains rendez-vous</h2>
                     <p class="mt-1 text-xs text-slate-600">
                         <?= $eventCount === 0
@@ -676,7 +676,7 @@ $eventCount = count($events);
                                                 Vous êtes <?= (string) ($mySlotAssignment['status'] ?? '') === 'waitlisted' ? 'en liste d’attente sur un poste' : 'inscrit sur un poste' ?> pour cet événement.
                                                 <form method="post" action="<?= url('evenements/' . $eid . '/slots/desinscription') ?>" style="display:inline">
                                                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-                                                    <?php if ($eventsInBackOffice): ?><input type="hidden" name="return_to" value="bo"><?php endif; ?>
+                                                    <?php if ($eventsInBackOffice): ?><input type="hidden" name="return_to" value="jnet"><?php endif; ?>
                                                     <button type="submit" class="events-sheets__btn">Me désinscrire</button>
                                                 </form>
                                             </p>
@@ -700,7 +700,7 @@ $eventCount = count($events);
                                                         <?php if ($currentUserId && !$mySlotAssignment): ?>
                                                         <form method="post" action="<?= url('evenements/' . $eid . '/slots/' . $sid . '/inscription') ?>">
                                                             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-                                                            <?php if ($eventsInBackOffice): ?><input type="hidden" name="return_to" value="bo"><?php endif; ?>
+                                                            <?php if ($eventsInBackOffice): ?><input type="hidden" name="return_to" value="jnet"><?php endif; ?>
                                                             <button type="submit" class="events-sheets__btn"><?= $full ? 'Liste d’attente' : 'S’inscrire' ?></button>
                                                         </form>
                                                         <?php else: ?>

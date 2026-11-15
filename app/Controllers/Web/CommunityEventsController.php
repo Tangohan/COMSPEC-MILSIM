@@ -115,11 +115,13 @@ final class CommunityEventsController
         $returnTo = trim((string) $request->input('return_to', ''));
         $referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
         if (
-            $returnTo === 'bo'
+            $returnTo === 'jnet'
+            || $returnTo === 'bo'
             || $returnTo === 'back-office/ma-situation/evenements'
             || str_contains($referer, 'ma-situation/evenements')
+            || str_contains($referer, 'jnet/moi/evenements')
         ) {
-            return url('back-office/ma-situation/evenements');
+            return jnet_moi_url('evenements');
         }
 
         return url('evenements');

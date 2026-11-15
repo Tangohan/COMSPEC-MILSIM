@@ -356,7 +356,9 @@ final class MemberSituationController
             'boPageTitle' => 'Événements',
             'boPageKicker' => 'OPÉRATEUR · ÉVÉNEMENTS',
             'boPageSubtitle' => 'Vos prochains rendez-vous, le calendrier de l’unité et votre historique de participation.',
-            'backOfficePageCss' => ['back-office-member-events.css'],
+            // Les cartes d'événements (community/events.php) sont en utilitaires Tailwind : sa feuille passe avant celles de JNET.
+            'jnetPageCssFirst' => ['tailwind.css'],
+            'backOfficePageCss' => ['back-office-member-events.css', 'jnet_moi_evenements.css'],
             'eventsInBackOffice' => true,
             'boSkipSessionFlashes' => true,
             'memberEventsVue' => $vue,
