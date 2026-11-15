@@ -187,9 +187,9 @@ final class SseLinksWidgetWiringTest extends TestCase
         $registry = self::read('database/steps/registry.php');
         self::assertMatchesRegularExpression("/\\['id' => 'sse_entity_links', 'label' => '[^']+', 'group' => 'schema', 'file' => '4720_sse_entity_links\\.php', 'rerun' => true\\],/", $registry);
         self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4720_sse_entity_links.php');
-        // Le numéro est libre : une seule étape 4720.
-        $files = array_map('basename', glob(dirname(__DIR__, 2) . '/database/steps/47*_*.php') ?: []);
-        self::assertSame(1, count(array_filter($files, static fn (string $f): bool => str_starts_with($f, '4720_'))));
+        // Un seul fichier d'étape pour cette table (d'autres étapes peuvent porter le même numéro sur main : seul le nom compte).
+        $files = array_map('basename', glob(dirname(__DIR__, 2) . '/database/steps/*_sse_entity_links.php') ?: []);
+        self::assertSame(['4720_sse_entity_links.php'], $files);
         $step = self::read('database/steps/4720_sse_entity_links.php');
         self::assertStringContainsString('CREATE TABLE IF NOT EXISTS', $sql);
         self::assertStringContainsString('runSqlFile', $step);

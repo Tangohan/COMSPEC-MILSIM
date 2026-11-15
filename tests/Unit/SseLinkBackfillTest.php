@@ -38,7 +38,7 @@ final class SseLinkBackfillTest extends TestCase
         SseLinksSqlite::close();
     }
 
-    private function count(string $where = '1 = 1'): int
+    private function linkCount(string $where = '1 = 1'): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM sse_entity_links WHERE ' . $where)->fetchColumn();
     }
@@ -63,7 +63,7 @@ final class SseLinkBackfillTest extends TestCase
         self::assertTrue($r['done']);
         self::assertGreaterThan(30, $r['missing'], 'les liens déductibles des colonnes seraient créés');
         self::assertSame(0, $r['created']);
-        self::assertSame(0, $this->count());
+        self::assertSame(0, $this->linkCount());
         self::assertSame($before, $this->snapshot());
     }
 
@@ -73,8 +73,8 @@ final class SseLinkBackfillTest extends TestCase
         $r = (new SseLinkBackfill($this->pdo))->run(true);
         self::assertSame($r['missing'], $r['created']);
         self::assertSame(0, $r['errors']);
-        self::assertSame($r['created'], $this->count());
-        self::assertSame($this->count(), $this->count("rule_code = 'cerbere.backfill.column' AND created_by = 'system'"));
+        self::assertSame($r['created'], $this->linkCount());
+        self::assertSame($this->linkCount(), $this->linkCount("rule_code = 'cerbere.backfill.column' AND created_by = 'system'"));
         // Une ligne précise : l'identité du registre rattachée à la personne, à la date de création de l'identité.
         $row = $this->pdo->query("SELECT * FROM sse_entity_links WHERE source_type = 'identity' AND source_id = '" . $this->ids['identity'] . "' AND target_type = 'person'")->fetch(PDO::FETCH_ASSOC);
         self::assertSame('attached_to', $row['relation']);
@@ -92,11 +92,11 @@ final class SseLinkBackfillTest extends TestCase
     {
         $job = new SseLinkBackfill($this->pdo);
         $first = $job->run(true);
-        $n = $this->count();
+        $n = $this->linkCount();
         $second = $job->run(true);
         self::assertSame(0, $second['created']);
         self::assertSame(0, $second['missing']);
-        self::assertSame($n, $this->count());
+        self::assertSame($n, $this->linkCount());
         self::assertSame($first['created'], $second['existing']);
     }
 
@@ -106,9 +106,9 @@ final class SseLinkBackfillTest extends TestCase
         $this->pdo->exec("INSERT INTO sse_entity_links (tenant_id, source_type, source_id, target_type, target_id, relation, reason, rule_code, created_by, created_at) VALUES (1, 'check', '{$this->ids['check1']}', 'identity', '{$this->ids['identity']}', 'identified_as', 'Papier présenté.', 'cerbere.link.check_document', 'system', '2026-11-02 14:00:01')");
         $this->pdo->exec("INSERT INTO sse_entity_links (tenant_id, source_type, source_id, target_type, target_id, relation, reason, rule_code, created_by, created_at) VALUES (1, 'person', '{$this->ids['person']}', 'check', '{$this->ids['check2']}', 'related', 'Posé à la main.', 'manual.link', 'user', '2026-11-05 10:00:00')");
         (new SseLinkBackfill($this->pdo))->run(true);
-        self::assertSame(1, $this->count("source_id = '{$this->ids['check1']}' AND source_type = 'check' AND target_type = 'identity'"));
+        self::assertSame(1, $this->linkCount("source_id = '{$this->ids['check1']}' AND source_type = 'check' AND target_type = 'identity'"));
         self::assertSame('cerbere.link.check_document', $this->pdo->query("SELECT rule_code FROM sse_entity_links WHERE source_type = 'check' AND source_id = '{$this->ids['check1']}' AND target_type = 'identity'")->fetchColumn());
-        self::assertSame(0, $this->count("source_type = 'check' AND source_id = '{$this->ids['check2']}' AND target_type = 'person'"), 'le lien manuel inverse suffit');
+        self::assertSame(0, $this->linkCount("source_type = 'check' AND source_id = '{$this->ids['check2']}' AND target_type = 'person'"), 'le lien manuel inverse suffit');
         self::assertSame('manual.link', $this->pdo->query("SELECT rule_code FROM sse_entity_links WHERE source_type = 'person' AND target_type = 'check' AND target_id = '{$this->ids['check2']}'")->fetchColumn());
     }
 
@@ -126,19 +126,19 @@ final class SseLinkBackfillTest extends TestCase
             $step = $job->run(true, 1, 2, $cursor, 3);
             $cursor = $step['done'] ? null : $step['cursor'];
         }
-        self::assertSame($all, $this->count());
+        self::assertSame($all, $this->linkCount());
         self::assertSame(0, $job->run(false)['missing']);
     }
 
     public function testAnotherCommunityOnlyGetsItsOwnLinks(): void
     {
         (new SseLinkBackfill($this->pdo))->run(true, 2);
-        self::assertSame(0, $this->count('tenant_id = 1'));
+        self::assertSame(0, $this->linkCount('tenant_id = 1'));
         // La communauté 2 n'a que sa personne : aucune colonne à relier, rien d'inventé.
-        self::assertSame(0, $this->count('tenant_id = 2'));
+        self::assertSame(0, $this->linkCount('tenant_id = 2'));
         (new SseLinkBackfill($this->pdo))->run(true, 1);
-        self::assertGreaterThan(30, $this->count('tenant_id = 1'));
-        self::assertSame(0, $this->count('tenant_id = 2'));
+        self::assertGreaterThan(30, $this->linkCount('tenant_id = 1'));
+        self::assertSame(0, $this->linkCount('tenant_id = 2'));
     }
 
     public function testTheBackfilledLinksAppearInThePathAsRecordedByCerbere(): void
