@@ -253,7 +253,7 @@ final class SseIdOperationRepository
                 'sides' => SseIdWorkshopCatalog::sides((string) ($r['sides'] ?? '')),
                 'zone' => (string) ($r['identity_zone'] ?? ''),
                 'notes' => (string) ($r['notes'] ?? ''),
-                // Photo d'un membre : CONFIDENTIEL ÉLEVÉ, jamais l'adresse publique (SseMemberImageGate::maskIdentity).
+                // Photo d'un membre : TRÈS SECRET (TS), jamais l'adresse publique (SseMemberImageGate::maskIdentity).
                 'photo_path' => \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity((int) $r['tenant_id'], [
                     'id' => (int) $r['identity_id'], 'tenant_id' => (int) $r['tenant_id'], 'user_id' => $r['user_id'] ?? null,
                     'photo_path' => ($r['photo_path'] ?? null) !== null && $r['photo_path'] !== '' ? (string) $r['photo_path'] : null,

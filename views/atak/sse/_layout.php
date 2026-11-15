@@ -45,7 +45,7 @@ if ($clearanceUntil > $nowTs) {
 $sessionKindLabel = $isGuest ? 'Session invitée' : 'Session authentifiée';
 $classifBanner = function_exists('sse_ui_classification_label')
     ? sse_ui_classification_label()
-    : 'Confidentiel';
+    : 'Secret (S)';
 
 // Navigation unique (barre latérale, accueil, fil d'Ariane, palette Ctrl+K), filtrée selon les droits.
 $sseNavData ??= SsePortalNav::forSession($canManage, $canGrant, $isGuest, isset($canMemberPapers) ? (bool) $canMemberPapers : null);
@@ -64,7 +64,7 @@ foreach ($sseNav as $section) {
 
 // Habilitation réelle de la session (plafond de lecture), affichée dans le bandeau.
 $sseClearanceKey = 'interne';
-$sseClearanceText = 'Diffusion interne';
+$sseClearanceText = \App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS['interne'];
 $sseClearanceOrigin = '';
 try {
     $sseClearanceSvc = new \App\Services\Sse\SseClearanceService();
@@ -167,9 +167,9 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
         </div>
     </header>
 
-    <div class="iw-classbar sx-classbar sx-classbar--<?= $h($sseClearanceTone) ?>" role="status" title="<?= $h($sseClearanceOrigin) ?>">
-        <strong>Habilitation <?= $h(mb_strtoupper($sseClearanceText)) ?></strong>
-        <span>Diffusion restreinte · personnel habilité · journalisation active</span>
+    <div class="iw-classbar sx-classbar sx-classbar--<?= $h($sseClearanceTone) ?>" role="status" title="<?= $h(trim($sseClearanceText . ' — ' . $sseClearanceOrigin, ' —')) ?>">
+        <strong><?= $h(\App\Support\SseUsClassification::banner($sseClearanceKey)) ?></strong>
+        <span>Accès réservé au personnel habilité · Journalisation active</span>
         <?php if ($isGuest && $guestLabel !== ''): ?>
             <em><?= $h($guestLabel) ?></em>
         <?php endif; ?>

@@ -522,9 +522,9 @@ final class SseFileSearchService
     }
 
     /**
-     * Images d'une correspondance : celles d'un membre (CONFIDENTIEL ÉLEVÉ) ne sont ni listées ni adressables sans autorisation
+     * Images d'une correspondance : celles d'un membre (TRÈS SECRET (TS)) ne sont ni listées ni adressables sans autorisation
      * hiérarchique (SseMemberImageGate). Ajoute « photo » (cliché montré), « photo_src » (adresse prête à l'emploi : protégée pour un
-     * membre, jamais le dossier public) et, quand l'image est masquée, « image_lock » pour le cadre « CONFIDENTIEL ÉLEVÉ ».
+     * membre, jamais le dossier public) et, quand l'image est masquée, « image_lock » pour le cadre « TRÈS SECRET (TS) ».
      *
      * @param array<string, mixed> $hit
      * @param list<array<string, mixed>> $visiblePhotos

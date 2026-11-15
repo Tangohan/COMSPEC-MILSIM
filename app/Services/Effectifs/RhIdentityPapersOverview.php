@@ -11,7 +11,7 @@ use App\Support\SseIdentityCatalog;
  * Documents RH > « Documents d'identité » : les papiers fictifs de COMSPEC Identity, regroupés par membre.
  *
  * Ce sont des papiers de jeu (aucune vraie pièce d'identité). Un infiltré ne doit pas être démasqué par une
- * consultation RH : sans l'habilitation Confidentiel (`$truth`), la requête elle-même écarte toute identité qui n'est
+ * consultation RH : sans l'habilitation Secret (S) (`$truth`), la requête elle-même écarte toute identité qui n'est
  * pas la civile (alias, couverture, falsifiée, générée) et tout papier qui n'est pas « délivré officiellement ».
  * Rien n'est filtré après coup dans la vue : ce qui est écarté n'est ni compté ni nommé. Aucune adresse e-mail,
  * aucun numéro de papier, aucun signalement de recherche ou de surveillance n'est lu.

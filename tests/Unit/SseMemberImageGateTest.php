@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\SseFilesSqlite;
 
 /**
- * Images des membres classées CONFIDENTIEL ÉLEVÉ : classification (calculée sur les liens existants, fail-closed), accès (titulaire,
+ * Images des membres classées TRÈS SECRET (TS) : classification (calculée sur les liens existants, fail-closed), accès (titulaire,
  * hiérarchie directe et indirecte, habilitation avec droit explicite, dérogation datée), et refus SANS AUCUN OCTET sur chaque chemin de
  * lecture (liste, fiche, image, adresse d'identité, recherche de la photothèque), journalisation, demande d'accès, isolation des communautés.
  * Données fictives : des octets quelconques, jamais de vrai visage.
@@ -151,7 +151,7 @@ final class SseMemberImageGateTest extends TestCase
         self::assertTrue($gate->isConfidential($gate->photoState(1, $photo ?? [])));
         $civilPhoto = (new SseFileRecordRepository())->photo(1, $w['civilPhoto']);
         self::assertFalse($gate->isConfidential($gate->photoState(1, $civilPhoto ?? [])));
-        self::assertSame('CONFIDENTIEL ÉLEVÉ', SseMemberImageGate::LABEL);
+        self::assertSame('TRÈS SECRET (TS)', SseMemberImageGate::LABEL);
     }
 
     public function testUnattachedSeekPhotoFollowsItsSeekRecordAndAmbiguousIsFailClosed(): void
@@ -162,7 +162,7 @@ final class SseMemberImageGateTest extends TestCase
         self::assertSame(self::OWNER, $gate->photoState(1, $linked)['owner'], 'fiche SEEK II rattachée à un membre');
         self::assertSame(SseMemberImageGate::CLASS_PUBLIC, $gate->photoState(1, ['identity_id' => null, 'source' => 'seek', 'source_ref' => 'REC-AUCUN'])['class'], 'aucun lien membre');
         self::assertSame(SseMemberImageGate::CLASS_PUBLIC, $gate->photoState(1, ['identity_id' => null, 'source' => 'upload'])['class']);
-        // Ambigu : identité introuvable ou d'une autre communauté => CONFIDENTIEL ÉLEVÉ sans propriétaire.
+        // Ambigu : identité introuvable ou d'une autre communauté => TRÈS SECRET (TS) sans propriétaire.
         $ghost = $gate->photoState(1, ['identity_id' => 99999, 'source' => 'upload']);
         self::assertSame(SseMemberImageGate::CLASS_UNREADABLE, $ghost['class']);
         self::assertNull($ghost['owner']);
@@ -309,7 +309,7 @@ final class SseMemberImageGateTest extends TestCase
         self::assertNull($locked['photo'], 'aucun cliché');
         self::assertNull($locked['photo_src'], 'aucune adresse');
         self::assertNull($locked['identity']['photo_path'], 'aucun chemin d\'image');
-        self::assertSame('CONFIDENTIEL ÉLEVÉ', $locked['image_lock']['label']);
+        self::assertSame('TRÈS SECRET (TS)', $locked['image_lock']['label']);
         self::assertTrue($locked['image_lock']['can_request']);
         $raw = json_encode($locked, JSON_UNESCAPED_UNICODE);
         self::assertStringNotContainsString('sse-id-photos', (string) $raw);
@@ -346,7 +346,7 @@ final class SseMemberImageGateTest extends TestCase
             }
         }
         $html = $this->renderFile('/views/atak/sse/files/_hit.php', ['hit' => $keep[0], 'purpose' => '']);
-        self::assertStringContainsString('CONFIDENTIEL ÉLEVÉ', $html);
+        self::assertStringContainsString('TRÈS SECRET (TS)', $html);
         self::assertStringContainsString('class="fx-lk"', $html);
         self::assertStringNotContainsString('<img', $html);
         self::assertStringNotContainsString('uploads/', $html);
@@ -385,7 +385,7 @@ final class SseMemberImageGateTest extends TestCase
         $locked = $this->gate(self::PEER)->maskIdentity(1, $identity);
         self::assertNull($locked['photo_path']);
         self::assertNull($locked['signature_path']);
-        self::assertSame('CONFIDENTIEL ÉLEVÉ', $locked['image_lock']['label']);
+        self::assertSame('TRÈS SECRET (TS)', $locked['image_lock']['label']);
         $boss = $this->gate(self::CMD1)->maskIdentity(1, $identity);
         self::assertSame('atak/sse/fichiers/identites/' . $w['member'] . '/photo', $boss['photo_path']);
         self::assertSame('hierarchy', $boss['image_banner']);

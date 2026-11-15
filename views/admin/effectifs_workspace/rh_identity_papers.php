@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Effectifs > Documents RH > Documents d'identité (?vue=identite).
  * Papiers FICTIFS de COMSPEC Identity (jeu), regroupés par membre : type, état, lien vers la fiche ou l'atelier.
- * Les couvertures, alias et faux ne sont lus qu'avec l'habilitation Confidentiel (voir RhIdentityPapersOverview) :
+ * Les couvertures, alias et faux ne sont lus qu'avec l'habilitation Secret (S) (voir RhIdentityPapersOverview) :
  * ce qui est écarté n'apparaît dans aucun compteur. Aucune adresse e-mail, aucun numéro de papier.
  */
 

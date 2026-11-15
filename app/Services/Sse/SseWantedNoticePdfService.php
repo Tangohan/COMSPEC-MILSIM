@@ -99,7 +99,7 @@ final class SseWantedNoticePdfService
         $expires = $notice['expires_at'] ?? null;
         $extra = [];
         $photo = null;
-        // Image d'un membre : CONFIDENTIEL ÉLEVÉ. Sans autorisation (ou sans trace au journal d'audit), l'avis part sans photo ni signature.
+        // Image d'un membre : TRÈS SECRET (TS). Sans autorisation (ou sans trace au journal d'audit), l'avis part sans photo ni signature.
         $imagesOk = $this->imagesAllowed($tenantId, $identity);
         foreach ($imagesOk ? $this->photoCandidates($tenantId, $identity) : [] as $path) {
             $bytes = self::imageBytes($path, false);

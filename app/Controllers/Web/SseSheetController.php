@@ -199,6 +199,34 @@ final class SseSheetController
         return $this->pdf($res['bytes'], $res['filename'], false);
     }
 
+    /**
+     * Génération rapide : le PDF est émis directement, textes tirés des trames du modèle (rien à remplir), avec la classification
+     * par défaut de la communauté. Mêmes droits, même jeton CSRF, même plafond de débit que l'émission depuis l'éditeur ; le
+     * texte réellement imprimé est conservé au journal d'émission.
+     */
+    public function quick(Request $request, array $params = []): Response
+    {
+        $ctx = $this->context($params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$subject, $kind, $model] = $ctx;
+        $back = $kind === 'identite' ? url('atak/sse/papiers/identites/' . (int) ($params['id'] ?? 0)) : url('atak/sse/identites/' . (int) ($params['id'] ?? 0) . '?fiche=personne');
+        if ($model === 'notice') {
+            return $this->flashBack('error', 'L’avis de recherche se télécharge depuis son propre bouton.', $back);
+        }
+        if (!Csrf::verify($request)) {
+            return $this->flashBack('error', 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la page puis recommencez.', $back);
+        }
+        $r = $this->r();
+        $res = $this->service->issue($r->tenantId(), $subject, $model, $this->service->quickInput($r->tenantId(), $r, SseWantedNoticeController::readerLang()), $r);
+        if (!$res['ok'] || $res['bytes'] === null) {
+            return $this->flashBack('error', $res['errors'] !== [] ? implode(' ', $res['errors']) : 'Le document n’a pas pu être émis.', $back);
+        }
+
+        return $this->pdf($res['bytes'], $res['filename'], false);
+    }
+
     /** Re-téléchargement d'un document émis (texte imprimé conservé) : au moins l'habilitation de sa classification. */
     public function download(Request $request, array $params = []): Response
     {

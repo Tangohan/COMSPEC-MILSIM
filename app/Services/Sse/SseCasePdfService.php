@@ -142,7 +142,7 @@ final class SseCasePdfService
         $this->caseMeta = $case;
 
         $ref = (string) ($case['reference_code'] ?? '');
-        $classLabel = (string) ($case['classification_label'] ?? 'Confidentiel');
+        $classLabel = (string) ($case['classification_label'] ?? 'Secret (S)');
         $version = $releaseLevel === null
             ? 'Version intégrale'
             : ($hidden === [] ? 'Version intégrale' : 'Version expurgée') . ' · ' . SseRedactionService::levelLabel($releaseLevel);
@@ -225,7 +225,7 @@ final class SseCasePdfService
     ): string {
         $caseRef = (string) ($case['reference_code'] ?? '');
         $caseTitle = (string) ($case['title'] ?? 'Dossier sans intitulé');
-        $classLabel = (string) ($case['classification_label'] ?? 'Confidentiel');
+        $classLabel = (string) ($case['classification_label'] ?? 'Secret (S)');
         $classUpper = mb_strtoupper($classLabel, 'UTF-8');
         $classCode = SseCaseRepository::normalizeClassification((string) ($case['classification'] ?? 'encadrement'));
         $tone = $this->classTone($classCode);

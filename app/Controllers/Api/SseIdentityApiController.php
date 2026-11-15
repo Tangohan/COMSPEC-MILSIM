@@ -284,7 +284,7 @@ final class SseIdentityApiController
                 if (!$allowed) {
                     return Response::json([
                         'error' => 'clearance_required',
-                        'message' => 'Compte relié et habilitation Confidentiel requis pour la bibliothèque de l’éditeur.',
+                        'message' => 'Compte relié et habilitation Secret (S) requis pour la bibliothèque de l’éditeur.',
                     ], 403);
                 }
             }
@@ -318,7 +318,7 @@ final class SseIdentityApiController
                 default => $sessionUser > 0 && $this->clearance->allows(SseCaseRepository::CLASS_CONFIDENTIAL),
             };
             if (!$allowed) {
-                return Response::json(['error' => 'clearance_required', 'message' => 'Compte relié et habilitation Confidentiel requis pour les profils d’IA.'], 403);
+                return Response::json(['error' => 'clearance_required', 'message' => 'Compte relié et habilitation Secret (S) requis pour les profils d’IA.'], 403);
             }
             $result = (new \App\Services\Sse\SseAiProfileService())->handle($tenantId, $gameUser ?? ($sessionUser > 0 ? $sessionUser : null), $mapId, $body);
         } catch (\PDOException) {

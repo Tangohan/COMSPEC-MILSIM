@@ -406,7 +406,7 @@ final class SseFileRecordController
     /**
      * Image d'une photo de la photothèque rangée à l'abri (cliché du terminal SEEK II) : GET fichiers/photos/{id}/image.
      * Mêmes droits que la photothèque (accès au portail SSE, porte d'entrée comprise), communauté de la session, jamais
-     * la photo d'une identité couverture ou fausse sans l'habilitation Confidentiel ; un identifiant d'une autre
+     * la photo d'une identité couverture ou fausse sans l'habilitation Secret (S) ; un identifiant d'une autre
      * communauté, d'une photo masquée ou d'un chemin étranger répond 404, sans rien révéler.
      */
     public function photoImage(Request $request, array $params = []): Response
@@ -444,7 +444,7 @@ final class SseFileRecordController
                 }
             }
         }
-        // Image d'un membre : CONFIDENTIEL ÉLEVÉ, titulaire, hiérarchie, habilitation ou dérogation seulement ; jamais un octet sinon.
+        // Image d'un membre : TRÈS SECRET (TS), titulaire, hiérarchie, habilitation ou dérogation seulement ; jamais un octet sinon.
         $gate = SseMemberImageGate::forSession();
         $access = $gate->forPhoto($tenantId, $photo);
         if (!$access['allowed']) {
@@ -491,8 +491,8 @@ final class SseFileRecordController
 
     /**
      * Image d'une identité du registre (photo d'identité ou signature) : GET fichiers/identites/{id}/photo ou /signature.
-     * Seule adresse des portraits et signatures des MEMBRES dans le portail (jamais le dossier public) : CONFIDENTIEL ÉLEVÉ, lue par le
-     * titulaire, sa hiérarchie, une habilitation « Très restreint » avec le droit « Identités de service » ou une dérogation, et journalisée.
+     * Seule adresse des portraits et signatures des MEMBRES dans le portail (jamais le dossier public) : TRÈS SECRET (TS), lue par le
+     * titulaire, sa hiérarchie, une habilitation « Très secret (TS) » avec le droit « Identités de service » ou une dérogation, et journalisée.
      * Identité d'une autre communauté, image absente ou refus : 404 identique, sans rien révéler.
      */
     public function identityImage(Request $request, array $params = []): Response
@@ -593,7 +593,7 @@ final class SseFileRecordController
         ]);
     }
 
-    /** « Demander l'accès » depuis un cadre CONFIDENTIEL ÉLEVÉ : POST fichiers/acces-images/demande. */
+    /** « Demander l'accès » depuis un cadre TRÈS SECRET (TS) : POST fichiers/acces-images/demande. */
     public function accessRequestStore(Request $request, array $params = []): Response
     {
         $gate = SseMemberImageGate::forSession();

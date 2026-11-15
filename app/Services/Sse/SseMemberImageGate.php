@@ -12,17 +12,17 @@ use App\Repositories\SseMemberImageGrantRepository;
 use App\Services\Effectifs\PersonnelCommandChainService;
 
 /**
- * Images des membres : classification « CONFIDENTIEL ÉLEVÉ » et contrôle d'accès, pour TOUS les chemins de lecture.
+ * Images des membres : classification « TRÈS SECRET (TS) » et contrôle d'accès, pour TOUS les chemins de lecture.
  *
  * ## Règle de classification (calculée à partir des liens existants, aucune donnée à migrer)
  *
- * Une image est CONFIDENTIEL ÉLEVÉ quand son propriétaire est un membre de la communauté :
+ * Une image est TRÈS SECRET (TS) quand son propriétaire est un membre de la communauté :
  *  - toute image d'une identité du registre rattachée à un compte (sse_identities.user_id > 0) : portrait ou photo d'identité
  *    officielle, identité de couverture, d'emprunt ou fausse préparée pour ce membre, papiers, signature ;
  *  - tout cliché de la photothèque (sse_file_photos, quelle que soit sa source : upload, atak, seek, person, extraction)
  *    rattaché à une telle identité, ou, pour un cliché SEEK II pas encore rattaché, dont la fiche SEEK II l'est ;
  *  - CAS AMBIGU : une image rattachée à une identité introuvable, d'une autre communauté ou illisible est classée
- *    CONFIDENTIEL ÉLEVÉ sans propriétaire connu (fail-closed).
+ *    TRÈS SECRET (TS) sans propriétaire connu (fail-closed).
  * Les images de sujets non membres (civils, cibles du lore, clichés non rattachés sans lien membre) ne changent pas.
  *
  * ## Qui peut lire une image classée (et aucune autre voie)
@@ -38,7 +38,7 @@ use App\Services\Effectifs\PersonnelCommandChainService;
  */
 final class SseMemberImageGate
 {
-    public const LABEL = 'CONFIDENTIEL ÉLEVÉ';
+    public const LABEL = 'TRÈS SECRET (TS)';
 
     public const WHY_HOLDER = 'holder';
     public const WHY_HIERARCHY = 'hierarchy';
@@ -60,7 +60,7 @@ final class SseMemberImageGate
 
     /**
      * @param (\Closure(int, int): list<int>)|null $chain supérieurs d'un membre : (communauté, membre) => comptes, du N+1 au sommet
-     * @param (\Closure(int, int): bool)|null $clearance habilitation « Très restreint » et droit « Identités de service » : (communauté, lecteur)
+     * @param (\Closure(int, int): bool)|null $clearance habilitation « Très secret (TS) » et droit « Identités de service » : (communauté, lecteur)
      * @param (\Closure(array<string, mixed>): void)|null $audit écrit une ligne du journal d'audit SSE (lève une exception si impossible)
      * @param (\Closure(int, int, array<string, mixed>): void)|null $notify prévient un membre : (communauté, compte, contenu)
      * @param (\Closure(): string)|null $clock « Y-m-d H:i:s »
@@ -215,7 +215,7 @@ final class SseMemberImageGate
 
     /**
      * Chemin disque d'une ancienne image rangée sous public/uploads (envoi de membre, ATAK), pour la servir par la route protégée quand
-     * elle est CONFIDENTIEL ÉLEVÉ (jamais depuis SseSeekPhotoService, qui ne touche pas au dossier public). Même exigence de nom qu'à l'envoi ; null hors de ce dossier ou si le fichier manque.
+     * elle est TRÈS SECRET (TS) (jamais depuis SseSeekPhotoService, qui ne touche pas au dossier public). Même exigence de nom qu'à l'envoi ; null hors de ce dossier ou si le fichier manque.
      *
      * @param array<string, mixed> $photo
      */
@@ -330,7 +330,7 @@ final class SseMemberImageGate
     }
 
     /**
-     * Images d'un membre désigné par son compte (couvertures exportées, papiers générés pour lui) : toujours CONFIDENTIEL ÉLEVÉ.
+     * Images d'un membre désigné par son compte (couvertures exportées, papiers générés pour lui) : toujours TRÈS SECRET (TS).
      *
      * @return array{allowed: bool, reason: string, confidential: bool, owner: ?int, state: array{class: string, owner: ?int, identity_id: ?int}}
      */
@@ -416,7 +416,7 @@ final class SseMemberImageGate
 
     /**
      * Clichés d'un écran : ceux que le lecteur ne peut pas voir sont retirés (ni adresse, ni chemin) et comptés ; ceux qu'il peut voir
-     * passent par la route protégée quand ils sont CONFIDENTIEL ÉLEVÉ.
+     * passent par la route protégée quand ils sont TRÈS SECRET (TS).
      *
      * @param list<array<string, mixed>> $photos lignes hydratées de sse_file_photos
      * @return array{photos: list<array<string, mixed>>, hidden: int, lock: ?array<string, mixed>, banner: ?string}
@@ -444,7 +444,7 @@ final class SseMemberImageGate
     }
 
     /**
-     * Ce que le cadre « CONFIDENTIEL ÉLEVÉ » a besoin de savoir.
+     * Ce que le cadre « TRÈS SECRET (TS) » a besoin de savoir.
      *
      * @return array{label: string, owner: ?int, can_request: bool, pending: bool}
      */
@@ -472,7 +472,7 @@ final class SseMemberImageGate
     // ------------------------------------------------------------------ Journal d'audit
 
     /**
-     * Journalise la consultation d'une image CONFIDENTIEL ÉLEVÉ servie (qui, quand, quelle image, pourquoi l'accès a été ouvert).
+     * Journalise la consultation d'une image TRÈS SECRET (TS) servie (qui, quand, quelle image, pourquoi l'accès a été ouvert).
      * Lève une exception si le journal est impossible : l'appelant refuse alors de servir l'image (pas d'accès sans trace).
      */
     public function recordConsultation(int $tenantId, int $viewer, string $imageType, int $imageId, ?int $owner, string $reason): void

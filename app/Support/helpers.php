@@ -2597,10 +2597,10 @@ if (!function_exists('sse_ui_classification_options')) {
         }
 
         return [
-            'encadrement' => 'Encadrement',
-            'confidentiel' => 'Confidentiel',
-            'tres_restreint' => 'Diffusion très restreinte',
-            'interne' => 'Diffusion interne',
+            'encadrement' => 'Confidentiel (C)',
+            'confidentiel' => 'Secret (S)',
+            'tres_restreint' => 'Très secret (TS)',
+            'interne' => 'Information non classifiée contrôlée (CUI)',
         ];
     }
 }
@@ -2645,7 +2645,7 @@ if (!function_exists('sse_ui_classification_label')) {
         $code = sse_ui_classification_normalize($code ?? sse_ui_classification());
         $opts = sse_ui_classification_options();
 
-        return $opts[$code] ?? 'Confidentiel';
+        return $opts[$code] ?? 'Secret (S)';
     }
 }
 

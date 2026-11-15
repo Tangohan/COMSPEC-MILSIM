@@ -93,7 +93,7 @@ final class SseSeekPhotoService
         if ($path === '') {
             return null;
         }
-        // Image d'un membre (CONFIDENTIEL ÉLEVÉ, voir SseMemberImageGate) : toujours la route protégée, jamais une adresse publique.
+        // Image d'un membre (TRÈS SECRET (TS), voir SseMemberImageGate) : toujours la route protégée, jamais une adresse publique.
         if (self::isPrivatePath($path) || !empty($photo['confidential'])) {
             return function_exists('url') ? url('atak/sse/fichiers/photos/' . (int) ($photo['id'] ?? 0) . '/image') : null;
         }
@@ -244,7 +244,7 @@ final class SseSeekPhotoService
             return [];
         }
         try {
-            // Images d'un membre : CONFIDENTIEL ÉLEVÉ (SseMemberImageGate). Refusées : ni liste, ni adresse.
+            // Images d'un membre : TRÈS SECRET (TS) (SseMemberImageGate). Refusées : ni liste, ni adresse.
             $gate = SseMemberImageGate::forSession();
             $idAccess = $gate->forIdentity($tenantId, $identityId);
             if (!$idAccess['allowed']) {
