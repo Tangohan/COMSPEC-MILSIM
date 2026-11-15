@@ -82,6 +82,18 @@
         });
     }
 
+    form.addEventListener('submit', function (event) {
+        if (form.getAttribute('data-sse-sent') === '1') {
+            event.preventDefault();
+            return;
+        }
+        form.setAttribute('data-sse-sent', '1');
+        var button = form.querySelector('[data-sse-submit]');
+        if (button) {
+            window.setTimeout(function () { button.disabled = true; }, 0);
+        }
+    });
+
     form.addEventListener('change', refresh);
     form.addEventListener('input', function (event) {
         if (event.target && event.target.name === 'reason') {
