@@ -67653,4 +67653,6 @@ return [
     ' Non créées : ' => ' Not created: ',
     '1 règle créée' => '1 rule created',
     '%1 règles créées' => '%1 rules created',
+    'Supprimer ce paquet ?' => 'Delete this package?',
+    'Les membres déjà intégrés gardent ce qu’ils ont reçu.' => 'Members already onboarded keep what they received.',
 ];
