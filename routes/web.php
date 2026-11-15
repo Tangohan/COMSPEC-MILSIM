@@ -2123,6 +2123,8 @@ return function (Router $router) {
     $router->get('/back-office/organisation/fiabilisation', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/fiabilisation/creer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/fiabilisation/reglages', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/ouvrir-maintenant', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'openNow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/modifier', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/fiabilisation/{id}', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/fiabilisation/{id}/export', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/fiabilisation/{id}/ouvrir', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'open'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

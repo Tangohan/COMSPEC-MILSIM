@@ -41,6 +41,11 @@ $dayTime = static function (string $raw): string {
 
     return $ts !== false && $raw !== '' ? date('d/m/Y H:i', $ts) : '—';
 };
+$forcedOn = static function (string $raw): string {
+    $ts = strtotime($raw);
+
+    return $ts !== false && $raw !== '' ? date('d/m/Y', $ts) : '';
+};
 $statusText = ['draft' => 'Brouillon', 'open' => 'Ouverte', 'closed' => 'Clôturée'];
 $bucketText = ['confirmed' => 'Confirmé', 'flagged' => 'Avec signalements', 'none' => 'Sans réponse'];
 $bucketClass = ['confirmed' => 'dc-pill--ok', 'flagged' => 'dc-pill--warn', 'none' => 'dc-pill--muted'];
@@ -71,7 +76,18 @@ $closedFlags = array_values(array_filter($overview['flags'], static fn (array $f
             Parties relues : <?= $h(implode(', ', array_map(static fn (string $k): string => DataCampaignBlocks::label($k), $campaign['blocks'] ?? []))) ?>.
             Rappels : <?= $h(implode(', ', array_map(static fn (int $d): string => $d === 0 ? 'jour J' : 'J-' . $d, $campaign['reminder_days'] ?? []))) ?>.
             <?= empty($campaign['unit_ids']) ? 'Toute la communauté.' : 'Unités choisies et leurs sous-unités.' ?>
+            <?php if (!empty($campaign['auto_created'])): ?>
+                <?= $h($forcedOn((string) ($campaign['forced_on'] ?? '')) !== '' ? 'Ouverte par Athena (forcée le ' . $forcedOn((string) $campaign['forced_on']) . ').' : 'Ouverte par Athena.') ?>
+            <?php endif; ?>
         </p>
+        <?php if ($status !== 'closed'): ?>
+            <form method="post" action="<?= $h($base . '/modifier') ?>" class="dc-form dc-form--row">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <label class="dc-field dc-field--grow"><span>Intitulé</span><input type="text" name="title" maxlength="120" value="<?= $h($campaign['title'] ?? '') ?>"></label>
+                <label class="dc-field"><span>Date limite</span><input type="date" name="due_on" value="<?= $h(substr((string) ($campaign['due_on'] ?? ''), 0, 10)) ?>" required></label>
+                <button type="submit" class="dc-btn dc-btn--ghost">Modifier</button>
+            </form>
+        <?php endif; ?>
         <div class="dc-actions">
             <?php if ($status !== 'open'): ?>
                 <form method="post" action="<?= $h($base . '/ouvrir') ?>">

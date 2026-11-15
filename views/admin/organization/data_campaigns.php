@@ -10,6 +10,7 @@ use App\Support\DataCampaignCalendar;
  * @var bool $schemaReady
  * @var list<array<string, mixed>> $campaigns
  * @var array<string, mixed> $settings
+ * @var array<string, mixed>|null $openNowPlan ce que ferait « Ouvrir maintenant » (membres concernés ou raison du refus)
  * @var array<int, array{name: string, parent_id: int}> $units
  * @var array<string, array{label: string, lead: string, fields: list<string>, volatile: bool}> $blockCatalog
  * @var int $defaultYear
@@ -24,12 +25,18 @@ $settings = is_array($settings ?? null) ? $settings : [];
 $units = is_array($units ?? null) ? $units : [];
 $blockCatalog = is_array($blockCatalog ?? null) ? $blockCatalog : [];
 $csrfToken = (string) ($csrfToken ?? '');
+$openNowPlan = is_array($openNowPlan ?? null) ? $openNowPlan : null;
 $defaultYear = (int) ($defaultYear ?? date('Y'));
 $defaultDue = (string) ($defaultDue ?? '');
 $day = static function (string $raw): string {
     $ts = strtotime($raw);
 
     return $ts !== false && $raw !== '' ? date('d/m/Y', $ts) : '—';
+};
+$forcedOn = static function (string $raw): string {
+    $ts = strtotime($raw);
+
+    return $ts !== false && $raw !== '' ? date('d/m/Y', $ts) : '';
 };
 $statusText = ['draft' => 'Brouillon', 'open' => 'Ouverte', 'closed' => 'Clôturée'];
 $statusClass = ['draft' => 'dc-pill--muted', 'open' => 'dc-pill--ok', 'closed' => 'dc-pill--info'];
@@ -67,7 +74,7 @@ $unitOptions = static function (array $units, array $selected) use ($h): string 
                     <tbody>
                     <?php foreach ($campaigns as $c): ?>
                         <tr>
-                            <td><?= $h($c['title']) ?> <span class="dc-muted">(<?= (int) $c['campaign_year'] ?><?= !empty($c['auto_created']) ? ', ouverte par Athena' : '' ?>)</span></td>
+                            <td><?= $h($c['title']) ?> <span class="dc-muted">(<?= (int) $c['campaign_year'] ?><?= !empty($c['auto_created']) ? (((string) ($c['forced_on'] ?? '')) !== '' ? ', ouverte par Athena (forcée le ' . $forcedOn((string) $c['forced_on']) . ')' : ', ouverte par Athena') : '' ?>)</span></td>
                             <td><span class="dc-pill <?= $statusClass[(string) $c['status']] ?? 'dc-pill--muted' ?>"><?= $h($statusText[(string) $c['status']] ?? $c['status']) ?></span></td>
                             <td><?= $h($day((string) ($c['opens_on'] ?? ''))) ?></td>
                             <td><?= $h($day((string) ($c['due_on'] ?? ''))) ?></td>
@@ -77,6 +84,23 @@ $unitOptions = static function (array $units, array $selected) use ($h): string 
                     </tbody>
                 </table>
             </div>
+        <?php endif; ?>
+    </section>
+
+    <section class="dc-card" aria-labelledby="dc-now-title">
+        <h2 class="dc-card__title" id="dc-now-title">Ouvrir maintenant</h2>
+        <?php if ($openNowPlan !== null && ($openNowPlan['action'] ?? '') === 'open'): ?>
+            <p class="dc-text">Athena ouvre tout de suite la campagne de cette année pour toute la communauté, comme elle le fait chaque année : <b><?= (int) $openNowPlan['members'] ?></b> membre(s) seraient concernés, prévenus par notification et e-mail, par lots.</p>
+            <?php if (!empty($openNowPlan['incomplete'])): ?>
+                <p class="dc-alert">Beaucoup de fiches sont incomplètes (prénom ou nom manquant) : complétez l’état civil avant ou pendant la campagne.</p>
+            <?php endif; ?>
+            <form method="post" action="<?= $h(url('back-office/organisation/fiabilisation/ouvrir-maintenant')) ?>" class="dc-form dc-form--row" data-confirm="Ouvrir la campagne maintenant ? <?= (int) $openNowPlan['members'] ?> membre(s) seront notifiés.">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <label class="dc-field"><span>Date limite</span><input type="date" name="deadline" value="<?= $h($defaultDue) ?>" required></label>
+                <button type="submit" class="dc-btn">Ouvrir maintenant</button>
+            </form>
+        <?php else: ?>
+            <p class="dc-text">Pas d’ouverture possible pour le moment : <?= $h($openNowPlan['reason'] ?? 'indisponible.') ?></p>
         <?php endif; ?>
     </section>
 
@@ -104,11 +128,20 @@ $unitOptions = static function (array $units, array $selected) use ($h): string 
     </section>
 
     <section class="dc-card" id="reglage" aria-labelledby="dc-auto-title">
-        <h2 class="dc-card__title" id="dc-auto-title">Ouvrir automatiquement une campagne chaque année</h2>
-        <p class="dc-text">Désactivé par défaut. Activé, Athena ouvre une campagne à la date choisie, envoie les rappels aux dates prévues (une seule fois chacun) et la clôture à la date limite. Rien ne s’ouvre seul sans ce réglage.</p>
+        <h2 class="dc-card__title" id="dc-auto-title">Ouverture automatique chaque année</h2>
+        <p class="dc-text">Activée par défaut : Athena ouvre une campagne à la date choisie, envoie les rappels aux dates prévues (une seule fois chacun), puis la clôture à la date limite et vous remet le rapport d’avancement. Elle ne modifie jamais une fiche. Une campagne créée à la main pour l’année empêche Athena d’en ouvrir une seconde.</p>
         <form method="post" action="<?= $h(url('back-office/organisation/fiabilisation/reglages')) ?>" class="dc-form dc-grid">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-            <label class="dc-check dc-field--wide"><input type="checkbox" name="auto_enabled" value="1"<?= !empty($settings['auto_enabled']) ? ' checked' : '' ?>> Ouvrir une campagne chaque année</label>
+            <fieldset class="dc-field">
+                <legend>Ouverture automatique</legend>
+                <label class="dc-check"><input type="radio" name="auto_enabled" value="1"<?= !empty($settings['auto_enabled']) ? ' checked' : '' ?>> Oui</label>
+                <label class="dc-check"><input type="radio" name="auto_enabled" value="0"<?= empty($settings['auto_enabled']) ? ' checked' : '' ?>> Non</label>
+            </fieldset>
+            <fieldset class="dc-field">
+                <legend>E-mails d’ouverture et de rappel</legend>
+                <label class="dc-check"><input type="radio" name="emails_enabled" value="1"<?= !empty($settings['emails_enabled']) ? ' checked' : '' ?>> Oui</label>
+                <label class="dc-check"><input type="radio" name="emails_enabled" value="0"<?= empty($settings['emails_enabled']) ? ' checked' : '' ?>> Non</label>
+            </fieldset>
             <div class="dc-field"><span>Ouverture (jour et mois)</span>
                 <div class="dc-inline"><input type="number" name="open_day" min="1" max="31" value="<?= $openDay ?>" aria-label="Jour d’ouverture"><input type="number" name="open_month" min="1" max="12" value="<?= $openMonth ?>" aria-label="Mois d’ouverture"></div>
             </div>
