@@ -7,7 +7,11 @@ namespace App\Services\AtakToc;
 /**
  * Droits du poste TOC web et des plans d'opération.
  *  - atak.toc.use    : tenir le poste (TOC web), créer et éditer des plans, les envoyer en jeu ;
- *  - atak.toc.manage : configurer le poste (modèles de la communauté, plans de tous, remise à zéro de la salle).
+ *  - atak.toc.manage : configurer le poste (modèles de la communauté, plans de tous, remise à zéro de la salle) ;
+ *  - atak.toc.phone  : agir sur les téléphones en jeu depuis le poste (notifier, faire sonner, localiser, trianguler).
+ *    Droit dédié, sensible, qui suppose atak.toc.use : atak.toc.manage ne l'accorde pas (l'étape 4690 le donne une fois
+ *    aux niveaux qui ont déjà atak.toc.manage, ensuite chaque communauté le coche ou non). Réglage de la communauté
+ *    (atak_toc_phone_settings) : tant qu'elle ne l'a pas activée, la fonction est refusée même avec le droit.
  * L'administration de la communauté (admin.organization) vaut les deux ; l'administrateur de la plateforme passe
  * partout (Gate). Plans : l'auteur, puis selon le partage (privé, unité, communauté) et les partages nominatifs.
  * Le lien de lecture (jeton) ouvre le plan en lecture seule à tout membre connecté de la même communauté.
@@ -16,6 +20,7 @@ final class TocAccess
 {
     public const USE = 'atak.toc.use';
     public const MANAGE = 'atak.toc.manage';
+    public const PHONE = 'atak.toc.phone';
 
     /** @var callable(string): bool */
     private $can;
@@ -50,6 +55,12 @@ final class TocAccess
     public function canUse(): bool
     {
         return ($this->can)(self::USE) || $this->canManage();
+    }
+
+    /** Droit dédié aux actions sur les téléphones (suppose de tenir le poste). L'administration de la communauté vaut ce droit. */
+    public function canPhone(): bool
+    {
+        return $this->canUse() && (($this->can)(self::PHONE) || ($this->can)('admin.organization'));
     }
 
     /** @return list<int> */

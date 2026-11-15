@@ -46,6 +46,7 @@ $tocBoot = [
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= $h($a('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
 <link rel="stylesheet" href="<?= $h($a('assets/css/atak-toc.css')) ?>">
+<link rel="stylesheet" href="<?= $h($a('assets/css/atak-toc-phones.css')) ?>">
 <link rel="stylesheet" href="<?= $h($a('assets/css/sse-map-layers.css')) ?>">
 <script>window.TOC_BOOT = <?= json_encode($tocBoot, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;</script>
 <script src="<?= $h($a('assets/vendor/leaflet-1.9.4/leaflet.js')) ?>" defer></script>

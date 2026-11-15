@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Poste TOC web : notifier, faire sonner, localiser et trianguler un téléphone en jeu (ATAK natif 4.22.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le poste TOC peut te prévenir sur ton téléphone, le faire sonner et le localiser
+- Quand ta communauté a activé la fonction, le TOC peut t'écrire depuis le site : le message arrive dans l'app Messages et dans le journal de l'app Alertes (carte « Alerte du TOC »), sans bandeau ni fenêtre, et ton téléphone vibre selon l'urgence.
+- Le TOC peut faire sonner ou vibrer ton téléphone de 3 à 30 secondes, ou lui demander sa position : le téléphone répond avec sa position du jeu et sa précision.
+- Chaque localisation ou triangulation par le TOC laisse une carte « Suivi par le TOC » avec l'heure dans l'app Alertes : tu vois toujours quand tu as été suivi.
+- Seules les positions de la partie sont concernées, jamais ton vrai appareil ni ta vraie position.
+EN : The TOC station can notify you on your phone, make it ring and locate it
+- When your community has turned the feature on, the TOC can write to you from the website: the message arrives in the Messages app and in the Alerts app journal (a "TOC alert" card), with no banner or popup, and your phone vibrates according to the urgency.
+- The TOC can make your phone ring or vibrate for 3 to 30 seconds, or ask for its position: the phone answers with its in-game position and its accuracy.
+- Every locate or triangulation by the TOC leaves a "Tracked by the TOC" card with the time in the Alerts app: you always see when you were tracked.
+- Only in-game positions are involved, never your real device or your real position.
+
+### Détail technique
+- **Site** : onglet « Téléphones » du poste TOC web (`/atak/toc`), routes `/atak/toc/api/phones…`, droit dédié `atak.toc.phone` (suppose `atak.toc.use`, sensible), réglage de communauté désactivé par défaut (`atak_toc_phone_settings`), journal de chaque demande (`atak_toc_phone_events`) et audit `atak_toc.phone.*`. Étape **4690** à lancer (`atak_toc_phone`), non exécutée par cette PR ; sans elle la fonction reste désactivée. Détail : `docs/TOC-WEB.md`.
+- **File web vers jeu** : aucune nouvelle table de commandes ni nouvel appel de la DLL. Genre `phone` du fil WC1 existant (`atak_web_commands`, lu par `GetExplosiveCommands`, compte rendu `web_cmd_ack`) ; `notify` 24 h, `ring`, `stop`, `locate`, `trace` 60 s. **COMSPEC Link inchangé (2.0.125)**, pas de recompilation de la DLL.
+- **Mod** : `fn_webCmdDispatch` (connect) envoie le genre `phone` à `fn_tocPhone` (ATAK natif). Le message va dans l'`inbox` du téléphone (Messages, canal alertes) et dans le journal d'`fn_alertsLog` (types `TOC_INFO`, `TOC_ALERT`, `TOC_URGENT`, `TOC_TRACE`, `fn_pageAlerts`, `fn_mapPinnedApp`) ; vibration par `fn_vibrate`, sonnerie par le son de notification d'ordre déjà présent. Aucun toast, `systemChat`, `hint` ni popup. Position rendue par `fn_gpsPos` et `fn_gpsFix` (jamais inventée : sans fix, « position inconnue »). Ouvrir l'app Alertes passe en « lu » les messages à accusé de réception.
+- **Triangulation** : `PhoneTriangulation`, même principe que `fn_relayNet` « locate » (distances bruitées de 5 à 25 %, moindres carrés), bruit à graine déterministe, zone d'incertitude en 1/√n.
+- Tests : `PhoneTriangulationTest`, `AtakTocPhoneServiceTest`, `AtakTocPhoneApiTest`, `AtakTocPhoneWiringTest`. Non essayé en jeu.
+
 ## Calque « Zones Athena » : le masquer ne fait plus disparaître les marqueurs de zone (ATAK natif 4.21.1.AG - Washington)
 
 ### Résumé joueur

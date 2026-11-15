@@ -774,6 +774,17 @@ return function (Router $router) {
     $router->get('/atak/toc/api/state', [$tocApi, 'state'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/action', [$tocApi, 'action'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/journal', [$tocApi, 'journal'], $mwAtakMemberOnly);
+    // Actions sur les téléphones en jeu (droit atak.toc.phone, fonction activée par la communauté, CSRF, journal).
+    $tocPhone = \App\Controllers\Api\AtakTocPhoneController::class;
+    $router->get('/atak/toc/api/phones', [$tocPhone, 'index'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/phones/events', [$tocPhone, 'events'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/settings', [$tocPhone, 'settings'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/phones/{ref}', [$tocPhone, 'show'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/notify', [$tocPhone, 'notify'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/ring', [$tocPhone, 'ring'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/ring-stop', [$tocPhone, 'ringStop'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/locate', [$tocPhone, 'locate'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/phones/{ref}/triangulate', [$tocPhone, 'triangulate'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/reset', [$tocApi, 'reset'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/plans', [$planApi, 'index'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/plans', [$planApi, 'store'], $mwAtakMemberOnly);

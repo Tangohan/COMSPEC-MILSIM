@@ -20,6 +20,7 @@ $tocKeys = [
 <head>
 <?php require __DIR__ . '/_head.php'; ?>
 <script src="<?= $h($a('assets/js/toc/toc-console-ui.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/toc-phones.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-console.js')) ?>" defer></script>
 </head>
 <body class="toc-body">

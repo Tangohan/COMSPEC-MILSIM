@@ -51,11 +51,9 @@ final class AtakZoneLayerNonDestructiveAssetTest extends TestCase
         self::assertStringContainsString('!_zonesOn && {(_id select [0, 11]) isEqualTo "COMSPEC_TZ_"}', $txt);
     }
 
-    public function testVersionBumpedAsPatch(): void
+    public function testVersionEntryStaysInTheChangelog(): void
     {
-        $hpp = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp');
-        self::assertStringContainsString('#define VERSION_STR "4.21.1"', $hpp);
-        self::assertStringContainsString('#define VERSION_NAME "4.21.1.AG - Washington"', $hpp);
+        // Le numéro courant change à chaque sortie (AtakReleaseInfoTest le lit) : ici, seule l'entrée de cette correction doit rester.
         $log = (string) file_get_contents(dirname(__DIR__, 2) . '/CHANGELOG-ATAK.md');
         self::assertStringContainsString('(ATAK natif 4.21.1.AG - Washington)', $log);
     }

@@ -24655,5 +24655,12 @@
 ["RELAIS : calcule le débit reçu autour de vous, et liste les relais.", "", "RELAYS: calculates the speed received around you, and lists the relays."],
 ["App Wave Relay : ÉTAT, RÉSEAU (nœuds, LOCALISER), RELAIS (carte de débit, liste et état des relais), VOIX.", "", "Wave Relay app: STATUS, NETWORK (nodes, LOCATE), RELAYS (throughput map, relay list and status), VOICE."],
 ["Date d'émission postérieure à la date du jour (%1) : papier pas encore émis.", "", "Issue date later than today (%1): paper not yet issued."],
-["Référence du papier : %1.", "", "Paper reference: %1."]
+["Référence du papier : %1.", "", "Paper reference: %1."],
+["ALERTE DU TOC", "", "TOC ALERT"],
+["ALERTE URGENTE DU TOC", "", "URGENT TOC ALERT"],
+["SUIVI PAR LE TOC", "", "TRACKED BY THE TOC"],
+["Votre téléphone sonne (%1 s)", "", "Your phone is ringing (%1 s)"],
+["Votre téléphone vibre (%1 s)", "", "Your phone is vibrating (%1 s)"],
+["Localisé par le TOC à %1", "", "Located by the TOC at %1"],
+["Triangulé par le TOC à %1", "", "Triangulated by the TOC at %1"]
 ]
