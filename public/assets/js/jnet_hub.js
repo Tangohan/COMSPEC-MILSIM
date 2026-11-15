@@ -104,7 +104,7 @@
     var shown = 0;
     units.forEach(function (u) {
       var ok = (q === '' || (u.getAttribute('data-q') || '').indexOf(q) !== -1)
-        && (mode === 'all' || (mode === 'mine' && u.getAttribute('data-mine') === '1') || (mode === 'unread' && Number(u.getAttribute('data-unread')) > 0));
+        && (mode === 'all' || (mode === 'mine' && u.getAttribute('data-mine') === '1') || (mode === 'unread' && Number(u.getAttribute('data-unread')) > 0) || (mode === 'linked' && u.getAttribute('data-linked') === '1'));
       u.hidden = !ok;
       if (ok) {
         shown++;

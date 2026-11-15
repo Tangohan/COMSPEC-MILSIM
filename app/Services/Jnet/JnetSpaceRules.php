@@ -165,6 +165,25 @@ final class JnetSpaceRules
         return $best;
     }
 
+    /**
+     * Le lecteur est-il membre d'une des unités données, ou d'une de leurs sous-unités ?
+     *
+     * @param list<int> $viewerUnitIds
+     * @param list<int> $unitIds
+     */
+    public static function viewerInAnyUnit(JnetSpaceTree $tree, array $viewerUnitIds, array $unitIds): bool
+    {
+        foreach ($unitIds as $unit) {
+            foreach ($viewerUnitIds as $v) {
+                if ($unit > 0 && $tree->has($v) && $tree->has($unit) && $tree->isWithin($v, $unit)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     /** Le lecteur est-il de la filiation de l'espace (membre de l'unité, d'une sous-unité ou d'une unité au-dessus) ? */
     public static function inLineage(JnetSpaceTree $tree, array $viewerUnitIds, int $spaceId): bool
     {
@@ -191,7 +210,7 @@ final class JnetSpaceRules
      *
      * @param list<int> $viewerUnitIds
      * @param list<int> $commandedUnitIds unités que le lecteur commande dans l'ORBAT
-     * @param array{require_ack?: bool, auto_relay?: bool, post_min?: string, access?: array<int, string>, managers?: list<int>} $rules
+     * @param array{require_ack?: bool, auto_relay?: bool, post_min?: string, access?: array<int, string>, managers?: list<int>, link_read?: list<int>} $rules
      * @return array{read: bool, write: bool, lead: bool, publish: bool, chief: bool}
      */
     public static function rights(
@@ -215,8 +234,11 @@ final class JnetSpaceRules
         $grant = self::grantLevel($tree, $viewerUnitIds, $access);
         $manager = in_array($userId, $managers, true);
         $lead = $manager || $grant === 'lead';
+        // Liaison d'unités avec « lecture de l'espace » cochée par le chef : elle ouvre la lecture seulement, jamais l'écriture
+        // ni la publication, et ne compte que si l'espace voit déjà le lecteur par l'ORBAT ($tree->has).
+        $linkRead = self::viewerInAnyUnit($tree, $viewerUnitIds, array_map('intval', (array) ($rules['link_read'] ?? [])));
         $read = $tree->has($spaceId)
-            && ($access === [] || $orgReader || $lead || $grant !== null || self::inLineage($tree, $viewerUnitIds, $spaceId));
+            && ($access === [] || $orgReader || $lead || $grant !== null || self::inLineage($tree, $viewerUnitIds, $spaceId) || $linkRead);
         $write = $read && ($lead || ($grant === 'read' ? false : ($baseWrite || $grant === 'write')));
 
         return [

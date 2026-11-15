@@ -1083,6 +1083,179 @@
             if (e.key === 'ArrowDown' && !mod && collapsed && rg[0] === text.length) { if (stepStop(f, 1)) { e.preventDefault(); } }
         });
 
+        // —— Citer une unité, un membre, une opération ou une page : « @ » ou « [[ » ouvre une recherche ——
+        // Le texte garde une marque simple « [[type:identifiant|libellé]] » ; à l'affichage, le serveur la remplace par un lien
+        // si le lecteur voit l'objet, par « Lien masqué » sinon. Sans ce script, la marque se tape à la main ou le lien se pose
+        // depuis « Lier à… » : rien n'en dépend.
+        var mentionUrl = editor.getAttribute('data-uw-mention-search') || '';
+        var mentionSpace = editor.getAttribute('data-uw-mention-space') || '0';
+        var MENTION_ICONS = {
+            unite: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6',
+            membre: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z|M4 21a8 8 0 0 1 16 0',
+            operation: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z|M12 7v5l3 2',
+            page: 'M6 3h9l4 4v14H6z|M9 13h7|M9 17h7'
+        };
+        var mpop = null;
+        var closeMention = function () {
+            if (!mpop) { return; }
+            var m = mpop;
+            mpop = null;
+            document.removeEventListener('mousedown', m.outside, true);
+            window.removeEventListener('resize', m.place);
+            window.removeEventListener('scroll', m.place, true);
+            if (m.node.parentNode) { m.node.parentNode.removeChild(m.node); }
+        };
+        var caretRect = function (f) {
+            if (f.tagName === 'DIV') {
+                var sel = window.getSelection();
+                if (sel && sel.rangeCount && f.contains(sel.anchorNode)) {
+                    var r = sel.getRangeAt(0).getBoundingClientRect();
+                    if (r && (r.width || r.height)) { return { left: r.left, top: r.top, bottom: r.bottom }; }
+                }
+            }
+            return rectOf(f);
+        };
+        var openMention = function (f, pos, trigger) {
+            if (!window.JnetLinks || !mentionUrl) { return; }
+            closePop(false);
+            closeMention();
+            var node = el('div', 'uw-pop');
+            node.setAttribute('role', 'dialog');
+            node.setAttribute('aria-label', 'Citer une unité, un membre, une opération ou une page');
+            var row = el('div', 'uw-pop__q');
+            row.appendChild(el('span', '', trigger === '[[' ? '[[' : '@'));
+            var q = document.createElement('input');
+            q.type = 'text';
+            q.autocomplete = 'off';
+            q.maxLength = 80;
+            q.setAttribute('role', 'combobox');
+            q.setAttribute('aria-expanded', 'true');
+            q.setAttribute('aria-controls', 'uw-mention-list');
+            q.setAttribute('aria-label', 'Chercher une unité, un membre, une opération ou une page');
+            q.placeholder = 'Unité, membre, opération, page';
+            row.appendChild(q);
+            node.appendChild(row);
+            var ul = el('ul');
+            ul.id = 'uw-mention-list';
+            ul.setAttribute('role', 'listbox');
+            ul.setAttribute('aria-label', 'Résultats');
+            node.appendChild(ul);
+            var shown = [];
+            var active = 0;
+            var seq = 0;
+            var timer = null;
+            var mark = function (i) {
+                if (!shown.length) { return; }
+                active = (i + shown.length) % shown.length;
+                shown.forEach(function (s, k) { s.li.setAttribute('aria-selected', k === active ? 'true' : 'false'); });
+                q.setAttribute('aria-activedescendant', shown[active].li.id);
+                shown[active].li.scrollIntoView({ block: 'nearest' });
+            };
+            var note = function (text) {
+                ul.textContent = '';
+                shown = [];
+                ul.appendChild(el('li', 'uw-pop__none', text));
+            };
+            var cancel = function () {
+                closeMention();
+                // La saisie n'était pas une citation : on rend ce qui avait été tapé.
+                var t = getText(f);
+                setText(f, t.slice(0, pos) + trigger + t.slice(pos));
+                setCaret(f, pos + trigger.length);
+                markDirty();
+            };
+            var choose = function (r) {
+                var token = '[[' + r.type + ':' + String(r.ref).split(':').slice(1).join(':') + '|' + String(r.title).replace(/[\[\]|\r\n]+/g, ' ').trim().slice(0, 80) + ']] ';
+                var t = getText(f);
+                var max = parseInt(f.getAttribute('data-max') || f.getAttribute('maxlength') || '0', 10);
+                if (max > 0 && t.length + token.length > max) {
+                    toast('Pas assez de place dans ce bloc pour la citation.', true);
+                    return;
+                }
+                closeMention();
+                setText(f, t.slice(0, pos) + token + t.slice(pos));
+                setCaret(f, pos + token.length);
+                markDirty();
+            };
+            var render = function (rows) {
+                ul.textContent = '';
+                shown = [];
+                if (!rows.length) { note('Aucun résultat parmi ce que vous pouvez voir.'); return; }
+                rows.forEach(function (r, k) {
+                    var li = el('li');
+                    li.id = 'uw-mention-' + k;
+                    li.setAttribute('role', 'option');
+                    li.setAttribute('aria-selected', 'false');
+                    var ic = el('span', 'uw-pop__i');
+                    ic.appendChild(icon(MENTION_ICONS[r.type] || MENTION_ICONS.page));
+                    var tx = el('span', 'uw-pop__t');
+                    tx.appendChild(el('b', '', r.title));
+                    tx.appendChild(el('small', '', r.typeLabel + (r.sub ? ' · ' + r.sub : '')));
+                    li.appendChild(ic);
+                    li.appendChild(tx);
+                    li.addEventListener('mousemove', function () { mark(k); });
+                    li.addEventListener('mousedown', function (e) { e.preventDefault(); });
+                    li.addEventListener('click', function () { choose(r); });
+                    ul.appendChild(li);
+                    shown.push({ li: li, r: r });
+                });
+                mark(0);
+            };
+            var run = function () {
+                var text = q.value.trim();
+                if (text.length < 2) { note('Tapez au moins deux lettres.'); return; }
+                var mine = ++seq;
+                window.JnetLinks.search(mentionUrl, text, 'unite,membre,operation,page', mentionSpace).then(function (rows) { if (mine === seq && mpop) { render(rows); } });
+            };
+            var place = function () {
+                var r = caretRect(f);
+                var w = node.offsetWidth;
+                var hh = node.offsetHeight;
+                var left = Math.min(Math.max(8, r.left), Math.max(8, window.innerWidth - w - 8));
+                var below = r.bottom + 6;
+                var top = below + hh <= window.innerHeight - 8 ? below : Math.max(8, Math.min(r.top - hh - 6, window.innerHeight - hh - 8));
+                node.style.left = left + 'px';
+                node.style.top = top + 'px';
+            };
+            node.addEventListener('keydown', function (e) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); mark(active + 1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); mark(active - 1); }
+                else if (e.key === 'Enter') { e.preventDefault(); if (shown[active]) { choose(shown[active].r); } }
+                else if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); cancel(); }
+                else if (e.key === 'Backspace' && q.value === '') { e.preventDefault(); cancel(); }
+            });
+            q.addEventListener('input', function () { window.clearTimeout(timer); timer = window.setTimeout(run, 180); });
+            var outside = function (e) { if (!node.contains(e.target)) { cancel(); } };
+            document.addEventListener('mousedown', outside, true);
+            window.addEventListener('resize', place);
+            window.addEventListener('scroll', place, true);
+            document.body.appendChild(node);
+            mpop = { node: node, outside: outside, place: place };
+            note('Tapez au moins deux lettres.');
+            place();
+            q.focus();
+        };
+        editor.addEventListener('input', function (e) {
+            var f = e.target;
+            if (e.isComposing || !f || !f.classList || !f.classList.contains('uw-ed') || !f.closest('[data-uw-block]')) { return; }
+            if (!window.JnetLinks || !mentionUrl || mpop) { return; }
+            var type = typeOf(f.closest('[data-uw-block]'));
+            if (type === 'poll' || type === 'count' || type === 'div') { return; }
+            if (e.inputType !== 'insertText' || (e.data !== '@' && e.data !== '[')) { return; }
+            var rg = caretRange(f);
+            if (rg[0] !== rg[1]) { return; }
+            var text = getText(f);
+            var before = text.slice(0, rg[0]);
+            var trigger = '';
+            if (before.slice(-2) === '[[') { trigger = '[['; }
+            else if (before.slice(-1) === '@' && (before.length === 1 || /[\s(]/.test(before.charAt(before.length - 2)))) { trigger = '@'; }
+            if (trigger === '') { return; }
+            var pos = rg[0] - trigger.length;
+            setText(f, text.slice(0, pos) + text.slice(rg[0]));
+            setCaret(f, pos);
+            openMention(f, pos, trigger);
+        });
+
         // Ctrl+S (ou Cmd+S) : enregistre tout de suite, sans quitter la page.
         document.addEventListener('keydown', function (e) {
             if ((e.ctrlKey || e.metaKey) && !e.altKey && String(e.key).toLowerCase() === 's') {

@@ -6,6 +6,7 @@ namespace App\Services\Jnet;
 
 use App\Core\Gate;
 use App\Repositories\JnetExchangeRepository;
+use App\Repositories\JnetLinksRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Support\JnetSpaceTree;
@@ -34,6 +35,11 @@ final class JnetSpaceService
     /** @var array<string, array{read: bool, write: bool, lead: bool, publish: bool, chief: bool}> */
     private array $rightsCache = [];
 
+    /** @var array<string, list<array<string, mixed>>> liaisons d'unités effectives, par communauté et espace */
+    private array $linkCache = [];
+
+    private ?JnetLinksRepository $links = null;
+
     public function __construct(
         private ?JnetDashboardService $dashboard = null,
         private ?JnetExchangeRepository $exchanges = null,
@@ -50,6 +56,86 @@ final class JnetSpaceService
     public function exchangesReady(): bool
     {
         return $this->exchanges->schemaReady();
+    }
+
+    public function dashboard(): JnetDashboardService
+    {
+        return $this->dashboard;
+    }
+
+    public function exchangesRepo(): JnetExchangeRepository
+    {
+        return $this->exchanges;
+    }
+
+    public function linksRepo(): JnetLinksRepository
+    {
+        return $this->links ??= new JnetLinksRepository();
+    }
+
+    /**
+     * Liaisons d'unités effectives de l'espace (statut « active » aujourd'hui), vues de cet espace : l'autre unité, le
+     * type, le rôle de l'espace (out, in, mutual) et si le chef a accordé la lecture de son espace. Ni à venir, ni
+     * échue, ni terminée : seule une liaison active produit un effet.
+     *
+     * @return list<array{id: int, other: int, kind: string, role: string, owner: int, grant_read: bool}>
+     */
+    public function activeUnitLinks(int $tenantId, int $spaceId): array
+    {
+        $key = $tenantId . ':' . $spaceId;
+        if (isset($this->linkCache[$key])) {
+            return $this->linkCache[$key];
+        }
+        $out = [];
+        $today = date('Y-m-d');
+        try {
+            foreach ($this->linksRepo()->unitLinksOf($tenantId, $spaceId) as $l) {
+                if (!JnetLinkRules::isEffective(JnetLinkRules::statusOf($l, $today))) {
+                    continue;
+                }
+                $mine = (int) $l['unit_id'] === $spaceId;
+                $out[] = [
+                    'id' => (int) $l['id'],
+                    'other' => $mine ? (int) $l['partner_unit_id'] : (int) $l['unit_id'],
+                    'kind' => (string) $l['kind'],
+                    'role' => $mine ? (string) $l['direction'] : JnetLinkRules::oppositeRole((string) $l['direction']),
+                    'owner' => (int) $l['unit_id'],
+                    'grant_read' => (bool) $l['grant_read'],
+                ];
+            }
+        } catch (\Throwable) {
+            $out = [];
+        }
+
+        return $this->linkCache[$key] = $out;
+    }
+
+    /** Autres extrémités des liaisons de l'espace, quel que soit leur statut (pour classer les échanges déjà partagés). @return list<int> */
+    private function linkedUnitIdsEver(int $tenantId, int $spaceId): array
+    {
+        try {
+            $ids = [];
+            foreach ($this->linksRepo()->unitLinksOf($tenantId, $spaceId) as $l) {
+                $ids[] = (int) $l['unit_id'] === $spaceId ? (int) $l['partner_unit_id'] : (int) $l['unit_id'];
+            }
+
+            return array_values(array_unique($ids));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** Unités dont les membres lisent l'espace parce que son chef l'a coché sur une liaison active. @return list<int> */
+    private function linkReadGrantees(int $tenantId, int $spaceId): array
+    {
+        $out = [];
+        foreach ($this->activeUnitLinks($tenantId, $spaceId) as $l) {
+            if ($l['grant_read'] && $l['owner'] === $spaceId) {
+                $out[] = $l['other'];
+            }
+        }
+
+        return $out;
     }
 
     public function tree(int $tenantId, int $viewerUserId): JnetSpaceTree
@@ -169,7 +255,9 @@ final class JnetSpaceService
             ];
             $data['posture'] = $this->dashboard->postureFor($tenantId);
         } else {
-            $down = $internal = $up = [];
+            $down = $internal = $up = $linked = [];
+            // Unités liées à cet espace (même terminées) : leurs échanges latéraux ne sont pas « reçus du commandement ».
+            $linkedIds = $this->linkedUnitIdsEver($tenantId, $spaceId);
             foreach ($exchanges as $e) {
                 $concerned = array_merge([$e['from_unit_id']], $e['targets']);
                 $touches = false;
@@ -183,6 +271,11 @@ final class JnetSpaceService
                     continue;
                 }
                 $dir = $tree->directionFor($spaceId, $e['from_unit_id'], $e['targets']);
+                if ($dir === JnetSpaceTree::DIR_LATERAL && $linkedIds !== []
+                    && (in_array((int) $e['from_unit_id'], $linkedIds, true) || array_intersect(array_map('intval', $e['targets']), $linkedIds) !== [])) {
+                    $linked[] = $e;
+                    continue;
+                }
                 match ($dir) {
                     JnetSpaceTree::DIR_INTERNAL => $internal[] = $e,
                     JnetSpaceTree::DIR_UP => $up[] = $e,
@@ -192,6 +285,7 @@ final class JnetSpaceService
             $data['received'] = array_slice($this->decorate($tree, $down, $viewerUserId, $spaceId, $byUserId), 0, 12);
             $data['internal'] = array_slice($this->decorate($tree, $internal, $viewerUserId, $spaceId, $byUserId), 0, 15);
             $data['sentUp'] = array_slice($this->decorate($tree, $up, $viewerUserId, $spaceId, $byUserId), 0, 12);
+            $data['linked'] = array_slice($this->decorate($tree, $linked, $viewerUserId, $spaceId, $byUserId), 0, 12);
             $data['members'] = $this->membersOf($tree->node($spaceId)['members'] ?? [], $byUserId);
             $data['subTree'] = $this->unitTree($tree, $spaceId, $byUserId, $ops, $lastActivity, 1);
         }
@@ -335,7 +429,7 @@ final class JnetSpaceService
             $this->isOrgWideWriter(),
             $this->isOrgWideReader(),
             $this->isSpaceChief($tenantId, $viewerUserId, $spaceId),
-            $this->settings()->rules($tenantId, $spaceId)
+            $this->settings()->rules($tenantId, $spaceId) + ['link_read' => $this->linkReadGrantees($tenantId, $spaceId)]
         );
     }
 
@@ -370,7 +464,7 @@ final class JnetSpaceService
      * Unités où le lecteur peut partager un élément : celles où il peut publier (réglages compris), sauf l'espace d'où
      * part l'élément.
      *
-     * @return list<array{id: int, label: string}>
+     * @return list<array{id: int, label: string, via?: string, linkKind?: string}>
      */
     public function shareTargets(int $tenantId, int $viewerUserId, int $fromSpaceId): array
     {
@@ -387,8 +481,97 @@ final class JnetSpaceService
             }
             $out[] = ['id' => $id, 'label' => (string) ($tree->node($id)['label'] ?? 'Unité')];
         }
+        // Unités liées par une liaison active : on peut leur partager une information depuis cet espace (jamais un ordre),
+        // à condition de pouvoir déjà publier dans cet espace. Marquées « via » pour que l'envoi suive la règle des liaisons.
+        if ($fromSpaceId > 0 && $tree->has($fromSpaceId) && $this->rights($tenantId, $viewerUserId, $fromSpaceId)['publish']) {
+            $have = array_column($out, 'id');
+            foreach ($this->activeUnitLinks($tenantId, $fromSpaceId) as $l) {
+                if ($l['other'] === $fromSpaceId || in_array($l['other'], $have, true) || !$tree->has($l['other'])) {
+                    continue;
+                }
+                $have[] = $l['other'];
+                $out[] = ['id' => $l['other'], 'label' => (string) ($tree->node($l['other'])['label'] ?? 'Unité'), 'via' => 'liaison', 'linkKind' => JnetLinkRules::UNIT_KINDS[$l['kind']] ?? 'Liaison'];
+            }
+        }
 
         return $out;
+    }
+
+    /**
+     * Partage d'une information vers une unité liée (liaison active) depuis un espace où le lecteur peut publier : un
+     * échange « information », émis au nom de l'espace et adressé à l'unité liée. Jamais un ordre, jamais d'accusé de
+     * lecture exigé, jamais de relais automatique. Retourne un message d'erreur, ou null.
+     */
+    public function shareViaLink(int $tenantId, int $viewerUserId, int $fromSpaceId, int $targetId, string $title, string $body, string $link): ?string
+    {
+        if (!$this->exchangesReady()) {
+            return 'Les échanges ne sont pas encore activés (migration à appliquer).';
+        }
+        $tree = $this->tree($tenantId, $viewerUserId);
+        if ($fromSpaceId <= 0 || !$tree->has($fromSpaceId) || !$tree->has($targetId)) {
+            return 'Espace introuvable.';
+        }
+        if (!$this->rights($tenantId, $viewerUserId, $fromSpaceId)['publish']) {
+            return 'Vous ne pouvez pas publier dans cet espace.';
+        }
+        $linked = false;
+        foreach ($this->activeUnitLinks($tenantId, $fromSpaceId) as $l) {
+            if ($l['other'] === $targetId) {
+                $linked = true;
+                break;
+            }
+        }
+        if (!$linked) {
+            return 'Aucune liaison active avec cette unité.';
+        }
+        $title = trim(preg_replace('/\s+/u', ' ', $title) ?? '');
+        $body = trim($body);
+        if ($title === '' || mb_strlen($title) > self::TITLE_MAX || mb_strlen($body) > self::BODY_MAX) {
+            return 'Le titre ou le texte de l’information n’est pas valable.';
+        }
+        $link = trim($link);
+        if ($link !== '') {
+            if (!self::isInternalLink($link)) {
+                return 'Le lien doit pointer vers une page d’Athena (chemin commençant par /).';
+            }
+            $link = self::relativeAppPath($link);
+        }
+        try {
+            $this->exchanges->create($tenantId, $fromSpaceId, $viewerUserId, 'info', $title, $body, $link !== '' ? $link : null, false, [$targetId]);
+        } catch (\Throwable) {
+            return 'L’information n’a pas pu être enregistrée.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Un échange que le lecteur voit, avec les mêmes filtres que les écrans (unité émettrice et destinataires visibles
+     * pour lui, ORBAT confidentiel compris) ; son auteur le voit toujours. Sert à décider d'un lien : null = masqué.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function viewerExchange(int $tenantId, int $viewerUserId, int $exchangeId): ?array
+    {
+        $row = $this->exchanges->find($tenantId, $exchangeId);
+        if ($row === null) {
+            return null;
+        }
+        $tree = $this->tree($tenantId, $viewerUserId);
+        $from = (int) $row['from_unit_id'];
+        if ($from !== JnetSpaceTree::ORG && !$tree->has($from)) {
+            return null;
+        }
+        $targets = array_values(array_filter(array_map('intval', (array) $row['targets']), static fn (int $t): bool => $t === JnetSpaceTree::ORG || $tree->has($t)));
+        if ($targets === []) {
+            return null;
+        }
+        if ((int) $row['author_user_id'] !== $viewerUserId && !$tree->canSeeExchange($this->viewerUnitIds($tenantId, $viewerUserId), $from, $targets, $this->isOrgWideReader())) {
+            return null;
+        }
+        $row['targets'] = $targets;
+
+        return $row;
     }
 
     /**

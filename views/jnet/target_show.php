@@ -62,3 +62,12 @@ if ($sseHref === '') {
         </div>
     </div>
 </article>
+<?php if (is_array($linkBlock ?? null)): ?>
+    <div class="jl-wrap">
+        <?php
+        $linkMode = 'block';
+        $linkUid = 'target';
+        require base_path('views/jnet/_linked.php');
+        ?>
+    </div>
+<?php endif; ?>

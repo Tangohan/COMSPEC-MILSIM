@@ -24,13 +24,22 @@ $uid = (string) ($shareUid ?? 'p');
     <label class="uw-field" for="uw-share-target-<?= $h($uid) ?>">Partager avec</label>
     <select id="uw-share-target-<?= $h($uid) ?>" name="target" required>
         <option value="">Choisir une unité</option>
-        <?php foreach ($targets as $t): ?>
+        <?php $direct = array_values(array_filter($targets, static fn (array $t): bool => ($t['via'] ?? '') !== 'liaison')); ?>
+        <?php $viaLinks = array_values(array_filter($targets, static fn (array $t): bool => ($t['via'] ?? '') === 'liaison')); ?>
+        <?php foreach ($direct as $t): ?>
             <option value="<?= (int) $t['id'] ?>"><?= $h((string) $t['label']) ?></option>
         <?php endforeach; ?>
+        <?php if ($viaLinks !== []): ?>
+            <optgroup label="Unités liées : information seulement">
+                <?php foreach ($viaLinks as $t): ?>
+                    <option value="<?= (int) $t['id'] ?>"><?= $h((string) $t['label']) ?> (<?= $h(mb_strtolower((string) ($t['linkKind'] ?? 'liaison'))) ?>)</option>
+                <?php endforeach; ?>
+            </optgroup>
+        <?php endif; ?>
     </select>
     <label class="uw-field" for="uw-share-note-<?= $h($uid) ?>">Mot pour cette unité <small>(facultatif)</small></label>
     <textarea id="uw-share-note-<?= $h($uid) ?>" name="note" rows="2" maxlength="400" placeholder="Ce qu’elle doit en retenir."></textarea>
-    <p class="uw-note">Le partage arrive dans le fil de l’unité choisie comme une information, jamais comme un ordre. Seules les unités où vous pouvez publier sont proposées.</p>
+    <p class="uw-note">Le partage arrive dans le fil de l’unité choisie comme une information, jamais comme un ordre. Seules les unités où vous pouvez publier, et les unités liées à cet espace par une liaison active, sont proposées.</p>
     <div class="uw-form-actions">
         <button class="ja-b1 sm" type="submit">Partager</button>
     </div>

@@ -48,6 +48,9 @@ $flashOk = \App\Core\Session::getFlash('success');
 $usw = is_array($usw ?? null) ? $usw : [];
 $wShown = is_array($usw['shown'] ?? null) ? $usw['shown'] : [];
 $wCanPost = !empty($usw['canPost']);
+$wLinks = is_array($usw['links'] ?? null) ? $usw['links'] : [];
+$linked = is_array($linked ?? null) ? $linked : [];
+$openUnitLinks = array_values(array_filter(is_array($wLinks['units'] ?? null) ? $wLinks['units'] : [], static fn (array $l): bool => ($l['status'] ?? '') !== 'expired'));
 $tabs = [
     'accueil' => ['Accueil', 0],
     'echanges' => ['Ordres et échanges', count($received) + count($internal) + count($sentUp)],
@@ -58,6 +61,7 @@ $tabs = [
     'documents' => ['Documents', 0],
     'operations' => ['Opérations', (int) ($spaceOpsTotal ?? count($spaceOps))],
     'sous-unites' => ['Sous-unités', count($subTree)],
+    'liaisons' => ['Unités liées', count($openUnitLinks)],
 ];
 foreach (['taches', 'pages', 'photos', 'documents'] as $moduleKey) {
     if (empty($wShown[$moduleKey])) {
@@ -67,8 +71,45 @@ foreach (['taches', 'pages', 'photos', 'documents'] as $moduleKey) {
 if ($subTree === []) {
     unset($tabs['sous-unites']);
 }
+// La rubrique « Unités liées » n'existe que si les liaisons sont installées, et qu'il y en a une ou que le chef peut en créer.
+if (empty($wLinks['unitReady']) || ($openUnitLinks === [] && empty($wLinks['viewerChief']) && $view !== 'liaisons')) {
+    unset($tabs['liaisons']);
+}
+/** Bloc « Liés à » d'un contenu de cet espace, au format attendu par views/jnet/_linked.php. */
+$linkBlockFor = static function (string $type, int|string $id, array $items, string $types) use ($wLinks, $unitId): array {
+    $ref = $type . ':' . $id;
+
+    return [
+        'ref' => $ref,
+        'items' => $items,
+        'canAdd' => !empty($wLinks['ready']) && !empty($wLinks['canLink']),
+        'space' => $unitId,
+        'newUrl' => url('jnet/liens/nouveau?src=' . rawurlencode($ref) . '&space=' . $unitId . '&types=' . rawurlencode($types)),
+        'searchUrl' => url('jnet/liens/recherche'),
+        'createUrl' => url('jnet/liens'),
+        'removeBase' => url('jnet/liens'),
+        'types' => $types,
+    ];
+};
 $activeTab = $view === 'page' ? 'pages' : ($view === 'partager' ? 'echanges' : $view);
 $shareTargets = is_array($usw['shareTargets'] ?? null) ? $usw['shareTargets'] : [];
+/** Sous un échange : « Partager avec une autre unité » et « Liés à » / « Lier à… » (contrôlés côté serveur). */
+$exchangeTools = static function (array $ex) use ($h, $base, $exBack, $shareTargets, $wLinks, $linkBlockFor): void {
+    $items = is_array($wLinks['exchanges'][(string) (int) $ex['id']] ?? null) ? $wLinks['exchanges'][(string) (int) $ex['id']] : [];
+    $canLink = !empty($wLinks['ready']) && !empty($wLinks['canLink']);
+    if ($shareTargets === [] && !$canLink && $items === []) {
+        return;
+    }
+    echo '<div class="uw-exchange-tools">';
+    if ($shareTargets !== []) {
+        echo '<a class="uw-link" href="' . $h($base . '?vue=partager&kind=exchange&item=' . (int) $ex['id'] . '&titre=' . rawurlencode(mb_substr((string) $ex['title'], 0, 120)) . '&direct=1') . '" data-uw-share data-kind="exchange" data-item="' . (int) $ex['id'] . '" data-title="' . $h((string) $ex['title']) . '" data-back="' . $h($exBack . '#ex-' . (int) $ex['id']) . '">Partager avec une autre unité</a>';
+    }
+    $linkBlock = $linkBlockFor('echange', (int) $ex['id'], $items, 'operation,page,tache,cible,document,unite,membre');
+    $linkMode = 'inline';
+    $linkUid = 'ex' . (int) $ex['id'];
+    require base_path('views/jnet/_linked.php');
+    echo '</div>';
+};
 $tabUrl = static fn (string $key): string => $base . ($key === 'accueil' ? '?direct=1' : '?vue=' . $key . '&direct=1');
 $face = static function (array $p) use ($h): string {
     $photo = $p['photo'] ?? null;
@@ -102,6 +143,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_space.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_shell.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_workspace.css?r=202611142240')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_links.css?r=202611150001')) ?>">
 </head>
 <body class="ja us us--<?= $h($look['theme']) ?>" style="<?= $h(S::cssVars($look)) ?>" data-uw-unit="<?= $unitId ?>" data-uw-label="<?= $h($label) ?>" data-uw-view="<?= $h($view) ?>">
 <a class="ja-skip" href="#us-main">Aller au contenu</a>
@@ -190,9 +232,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
                     <?php $exVariant = $col['variant']; $exPerspective = $col['perspective']; ?>
                     <?php foreach ($col['items'] as $ex): ?>
                         <?php require base_path('views/jnet/_exchange.php'); ?>
-                        <?php if ($shareTargets !== []): ?>
-                            <p class="uw-exchange-tools"><a class="uw-link" href="<?= $h($base . '?vue=partager&kind=exchange&item=' . (int) $ex['id'] . '&titre=' . rawurlencode(mb_substr((string) $ex['title'], 0, 120)) . '&direct=1') ?>" data-uw-share data-kind="exchange" data-item="<?= (int) $ex['id'] ?>" data-title="<?= $h((string) $ex['title']) ?>" data-back="<?= $h($exBack . '#ex-' . (int) $ex['id']) ?>">Partager avec une autre unité</a></p>
-                        <?php endif; ?>
+                        <?php $exchangeTools($ex); ?>
                         <?php if ($col['key'] === 'down' && !empty($canPost) && $subTargets !== []): ?>
                             <details class="uw-relay">
                                 <summary>Relayer aux sous-unités</summary>
@@ -215,9 +255,30 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
                 </section>
             <?php endforeach; ?>
         </div>
+        <?php if ($linked !== []): ?>
+            <section class="jl-linkedflow" aria-labelledby="us-col-linked">
+                <header class="jn-flow__head">
+                    <span class="jn-flow__icon" aria-hidden="true">⇄</span>
+                    <div>
+                        <h3 id="us-col-linked">Avec les unités liées <span class="jn-flow__count"><?= count($linked) ?></span></h3>
+                        <p>Informations partagées entre <?= $h($label) ?> et ses unités liées. Jamais des ordres.</p>
+                    </div>
+                </header>
+                <?php $exVariant = 'card'; $exPerspective = ''; ?>
+                <?php foreach ($linked as $ex): ?>
+                    <?php require base_path('views/jnet/_exchange.php'); ?>
+                    <?php $exchangeTools($ex); ?>
+                <?php endforeach; ?>
+            </section>
+        <?php endif; ?>
     <?php endif; ?>
 
 <?php elseif ($view === 'effectif'): ?>
+    <?php if ((int) ($wLinks['attached'] ?? 0) > 0): ?>
+        <p class="us-note jl-attached">
+            <?= (int) $wLinks['attached'] ?> unité<?= (int) $wLinks['attached'] > 1 ? 's' : '' ?> rattachée<?= (int) $wLinks['attached'] > 1 ? 's' : '' ?> temporairement : leurs membres ne sont pas comptés dans cet effectif. <a class="uw-link" href="<?= $h($tabUrl('liaisons')) ?>">Voir les unités liées</a>
+        </p>
+    <?php endif; ?>
     <?php if ($wCanPost): ?>
         <?php require base_path('views/jnet/unit/_tracking.php'); ?>
     <?php else: ?>
@@ -260,6 +321,9 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 
 <?php elseif ($view === 'partager'): ?>
     <?php require base_path('views/jnet/unit/_share.php'); ?>
+
+<?php elseif ($view === 'liaisons'): ?>
+    <?php $ulMode = 'page'; require base_path('views/jnet/unit/_unit_links.php'); ?>
 
 <?php elseif ($view === 'operations'): ?>
     <header class="us-page">
@@ -308,6 +372,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 <?php endif; ?>
 <div class="uw-toasts" role="status" aria-live="polite" data-uw-toasts></div>
 <script src="<?= $h(asset_url('assets/js/jnet_spaces.js')) ?>" defer></script>
-<script src="<?= $h(asset_url('assets/js/jnet_unit_workspace.js?r=202611142240')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/jnet_links.js?r=202611150001')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/jnet_unit_workspace.js?r=202611150001')) ?>" defer></script>
 </body>
 </html>

@@ -16,6 +16,7 @@ declare(strict_types=1);
  * @var int $jnetUnreadMail
  * @var string $jnetPageTitle
  * @var list<string> $jnetPageCss
+ * @var list<string> $jnetPageJs scripts de la page (assets/js/), facultatifs
  */
 
 use App\Support\JnetUi;
@@ -114,5 +115,8 @@ $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet
     <span>Accès réservé aux membres affectés · journalisé</span>
     <span>JNET<?= $community !== '' ? ' · ' . $h($community) : '' ?></span>
 </footer>
+<?php foreach ((array) ($jnetPageJs ?? []) as $jsFile): ?>
+<script src="<?= $h(asset_url('assets/js/' . (string) $jsFile . '?r=202611150001')) ?>" defer></script>
+<?php endforeach; ?>
 </body>
 </html>

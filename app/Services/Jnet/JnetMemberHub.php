@@ -70,6 +70,8 @@ final class JnetMemberHub
      * @param array<int, int> $unread non-lus par espace (JnetSpaceService::unreadByUnit)
      * @param array<int, array<string, mixed>> $settings réglages d'espace par unité (JnetUnitSpaceSettings::findAll)
      * @param array<int, array{total?: int, available?: int}> $strengths effectif par unité (JnetSpaceService::strengthByUnit)
+     * @param array<int, list<array<string, mixed>>> $linkMarks liaisons d'unités actives par unité (JnetLinkService::hubMarks) :
+     *        un simple marquage de la ligne, qui n'ouvre rien
      * @return array{mine: list<array<string, mixed>>, others: list<array<string, mixed>>, tree: list<array<string, mixed>>}
      */
     public static function register(
@@ -79,7 +81,8 @@ final class JnetMemberHub
         bool $orgWriter,
         array $unread,
         array $settings,
-        array $strengths = []
+        array $strengths = [],
+        array $linkMarks = []
     ): array {
         $mine = [];
         $others = [];
@@ -116,6 +119,7 @@ final class JnetMemberHub
                 'monogram' => (string) $look['monogram'],
                 'emblem' => $look['emblem'],
                 'banner' => $look['banner'],
+                'links' => array_values((array) ($linkMarks[$id] ?? [])),
                 'photo' => JnetUi::genericPhoto($id),
             ] + self::describe($node, $available, $total > 0 ? $total : $members, $parent, $total > 0);
             $all[] = $row;

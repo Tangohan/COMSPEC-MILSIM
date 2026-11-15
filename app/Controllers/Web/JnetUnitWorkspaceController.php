@@ -11,6 +11,8 @@ use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Jnet\JnetLinkAccess;
+use App\Services\Jnet\JnetLinkService;
 use App\Services\Jnet\JnetSpaceService;
 use App\Services\Jnet\JnetUnitSpaceSettings;
 use App\Services\Jnet\JnetUnitWorkspaceService;
@@ -36,6 +38,7 @@ final class JnetUnitWorkspaceController
         private ?JnetSpaceService $spaces = null,
         private ?JnetUnitSpaceSettings $spaceSettings = null,
         private ?JnetUnitWorkspaceService $workspace = null,
+        private ?JnetLinkService $links = null,
     ) {
         $this->authService ??= \App\Core\Container::get(AuthService::class);
         $this->rbacService ??= \App\Core\Container::get(RbacService::class);
@@ -43,6 +46,7 @@ final class JnetUnitWorkspaceController
         $this->spaces ??= new JnetSpaceService();
         $this->spaceSettings ??= new JnetUnitSpaceSettings();
         $this->workspace ??= new JnetUnitWorkspaceService();
+        $this->links ??= new JnetLinkService();
     }
 
     // ——— Tâches ———
@@ -132,7 +136,7 @@ final class JnetUnitWorkspaceController
         if ($page === null) {
             return $this->done($request, $g['base'] . '?vue=pages&direct=1', 'Page introuvable.', null);
         }
-        $blocks = JnetUnitWorkspaceService::sanitizeBlocks($request->input('blocks', []));
+        $blocks = $this->withoutUnseenMentions($g, JnetUnitWorkspaceService::sanitizeBlocks($request->input('blocks', [])));
         $act = (string) $request->input('act', 'save');
         $blocks = JnetUnitWorkspaceService::applyBlockAction($blocks !== [] ? $blocks : [JnetUnitWorkspaceService::newBlock('p')], $act === 'save' ? '' : $act);
         $title = JnetUnitWorkspaceService::clean((string) $request->input('title', ''), JnetUnitWorkspaceService::TITLE_MAX, true);
@@ -149,6 +153,29 @@ final class JnetUnitWorkspaceController
         $fresh = $this->wantsJson($request) ? $repo->page($g['tenant'], $g['unit'], $pageId) : null;
 
         return $this->done($request, $g['base'] . '?vue=page&p=' . $pageId . '&direct=1', null, 'Page enregistrée.', ['version' => (string) ($fresh['updated_at'] ?? '')]);
+    }
+
+    /**
+     * Citations (« [[type:id|libellé]] ») des blocs : celles que l'auteur ne peut pas voir redeviennent du texte simple. On ne
+     * grave jamais dans une page un lien que son auteur n'aurait pas pu poser ; chaque lecteur est de toute façon contrôlé à
+     * l'affichage.
+     *
+     * @param array{tenant:int,user:int} $g
+     * @param list<array<string, mixed>> $blocks
+     * @return list<array<string, mixed>>
+     */
+    private function withoutUnseenMentions(array $g, array $blocks): array
+    {
+        $viewer = null;
+        foreach ($blocks as &$b) {
+            if (isset($b['text']) && is_string($b['text']) && str_contains($b['text'], '[[')) {
+                $viewer ??= JnetLinkAccess::forViewer($g['tenant'], $g['user'], $this->spaces);
+                $b['text'] = $this->links->sanitizeMentions($viewer, $b['text']);
+            }
+        }
+        unset($b);
+
+        return $blocks;
     }
 
     public function deletePage(Request $request, array $params = []): Response
@@ -354,7 +381,10 @@ final class JnetUnitWorkspaceController
             'page' => $g['base'] . '?vue=page&p=' . $itemId . '&direct=1',
             'file' => $g['base'] . '?vue=documents&direct=1',
         ][$kind] ?? $g['back'];
-        $allowed = array_column($this->spaces->shareTargets($g['tenant'], $g['user'], $g['unit']), 'label', 'id');
+        $offered = $this->spaces->shareTargets($g['tenant'], $g['user'], $g['unit']);
+        $allowed = array_column($offered, 'label', 'id');
+        // Unités proposées par une liaison active : l'envoi est une information au nom de CET espace, jamais un ordre.
+        $viaLink = array_column($offered, 'via', 'id');
         if (!isset($allowed[$target])) {
             return $this->done($request, $back, 'Vous ne pouvez pas partager vers cette unité.', null);
         }
@@ -402,7 +432,9 @@ final class JnetUnitWorkspaceController
         $origin = (string) ($g['tree']->node($g['unit'])['label'] ?? 'une unité');
         $intro = 'Partagé depuis ' . $origin . ($kind === 'file' ? ' : le fichier s’ouvre avec vos droits dans le partage de fichiers.' : '.');
         $text = $intro . ($note !== '' ? "\n\nMot de l’expéditeur : " . $note : '') . ($body !== '' ? "\n\n" . $body : '');
-        $error = $this->spaces->post($g['tenant'], $g['user'], $target, $type, $title, mb_substr($text, 0, 4000), $link, [$target]);
+        $error = ($viaLink[$target] ?? '') === 'liaison'
+            ? $this->spaces->shareViaLink($g['tenant'], $g['user'], $g['unit'], $target, $title, mb_substr($text, 0, 4000), $link)
+            : $this->spaces->post($g['tenant'], $g['user'], $target, $type, $title, mb_substr($text, 0, 4000), $link, [$target]);
 
         return $this->done($request, $back, $error, 'Partagé avec ' . (string) $allowed[$target] . '.');
     }

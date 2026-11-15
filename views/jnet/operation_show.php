@@ -24,3 +24,17 @@ $op = is_array($operation ?? null) ? $operation : [];
         </div>
     </div>
 </article>
+<?php if (is_array($linkBlock ?? null)): ?>
+    <div class="jl-wrap">
+        <?php
+        $linkBlock = $linkBlock + [
+            'title' => 'Tout ce qui touche cette opération',
+            'empty' => 'Aucun ordre, compte rendu, tâche, page, photo ou cible n’est encore lié à cette opération.',
+        ];
+        $linkMode = 'block';
+        $linkUid = 'op';
+        require base_path('views/jnet/_linked.php');
+        ?>
+        <p class="uw-note jl-wrap__note">Chaque lien est contrôlé avec vos droits : ce que vous ne pouvez pas voir apparaît comme « Lien masqué ».</p>
+    </div>
+<?php endif; ?>
