@@ -350,7 +350,7 @@ final class SseIdentityApiController
         try {
             $result = match ($kind) {
                 \App\Services\Sse\SsePhoneExtractionService::KIND => (new \App\Services\Sse\SsePhoneExtractionService())
-                    ->ingest($tenantId, $gameUser, $body, strlen((string) json_encode($body, JSON_UNESCAPED_UNICODE))),
+                    ->ingest($tenantId, $gameUser, $body, strlen((string) json_encode($body, JSON_UNESCAPED_UNICODE)), $mapId),
                 \App\Services\Sse\SseLoreService::KIND_PUSH => (new \App\Services\Sse\SseLoreService())->push($tenantId, $mapId, $body, $gameUser),
                 default => (new \App\Services\Sse\SseLoreService())->pull($tenantId, $body, $gameUser),
             };
