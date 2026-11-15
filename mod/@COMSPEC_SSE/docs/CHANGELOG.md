@@ -1,6 +1,6 @@
 # COMSPEC SSE — historique des versions
 
-## 1.15.0 — 15/11/2026 · Fiches et fichiers sans mention « RP » ni « simulation »
+## 1.16.0 — 15/11/2026 · Fiches et fichiers sans mention « RP » ni « simulation »
 
 **Relancer Arma complètement.** Sources seulement dans cette livraison : les PBO `comspec_sse_ui`, `comspec_sse_identity`, `comspec_sse_main` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer (COMSPEC Link reste 2.0.126).
 

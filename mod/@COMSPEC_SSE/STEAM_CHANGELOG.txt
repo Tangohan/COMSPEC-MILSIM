@@ -1,4 +1,4 @@
-[h1]COMSPEC SSE 1.15.0 — fiches et fichiers sans mention « RP » / records and files without an "RP" notice (15/11/2026)[/h1]
+[h1]COMSPEC SSE 1.16.0 — fiches et fichiers sans mention « RP » / records and files without an "RP" notice (15/11/2026)[/h1]
 [b]Relance Arma complètement. / Fully restart Arma.[/b]
 
 [h2]Français[/h2]

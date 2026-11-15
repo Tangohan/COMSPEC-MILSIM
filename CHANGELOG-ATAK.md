@@ -38,17 +38,17 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## App Fiches : plus de mention « document de fiction » sous les fiches (ATAK natif 4.26.0.AG - Washington, COMSPEC Link 2.0.126)
+## App Fiches : plus de mention « document de fiction » sous les fiches (ATAK natif 4.27.0.AG - Washington, COMSPEC Link 2.0.126)
 
 ### Résumé joueur
 Type : patch
 FR : Les fiches du téléphone ne portent plus de mention « fiction »
 - Dans l'app Fiches, la ligne « Document de fiction — jeu de rôle Arma 3 » a disparu du bas des fiches. Il reste la provenance : les fiches viennent du portail Athena et sont filtrées selon ton habilitation.
-- Avec COMSPEC SSE 1.15.0, les fiches SSE consultées en jeu n'affichent plus « usage RP » en bas de page, et le terminal des fichiers s'appelle simplement FICHIERS.
+- Avec COMSPEC SSE 1.16.0, les fiches SSE consultées en jeu n'affichent plus « usage RP » en bas de page, et le terminal des fichiers s'appelle simplement FICHIERS.
 - Mets à jour le mod, puis redémarre complètement Arma 3.
 EN : Phone records no longer carry a "fiction" notice
 - In the Records app, the line "Fictional document — Arma 3 role-play" is gone from the bottom of records. The origin stays: records come from the Athena portal and are filtered by your clearance.
-- With COMSPEC SSE 1.15.0, SSE records read in game no longer show "RP use" at the bottom, and the records terminal is simply called RECORDS.
+- With COMSPEC SSE 1.16.0, SSE records read in game no longer show "RP use" at the bottom, and the records terminal is simply called RECORDS.
 - Update the mod, then restart Arma 3 completely.
 
 ### Détail technique
