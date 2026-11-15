@@ -164,8 +164,8 @@ final class SseIdentityTimelineService
                 $lang
             ),
             'detection.raised' => $this->tr(
-                sprintf('Détection système : %s (avis %s).', C::label(C::DETECTION_TYPES, (string) ($d['type'] ?? ''), 'fr'), $ref),
-                sprintf('System detection: %s (notice %s).', C::label(C::DETECTION_TYPES, (string) ($d['type'] ?? ''), 'en'), $ref),
+                sprintf('Cerbère-Détection : %s (avis %s).', C::label(C::DETECTION_TYPES, (string) ($d['type'] ?? ''), 'fr'), $ref),
+                sprintf('Cerbère-Détection: %s (notice %s).', C::label(C::DETECTION_TYPES, (string) ($d['type'] ?? ''), 'en'), $ref),
                 $lang
             ),
             'detection.handled' => $this->tr(sprintf('Détection traitée : %s.', (string) ($d['status_label_fr'] ?? '')), sprintf('Detection handled: %s.', (string) ($d['status_label_en'] ?? '')), $lang),

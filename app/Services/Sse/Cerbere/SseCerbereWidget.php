@@ -225,7 +225,7 @@ final class SseCerbereWidget
             $out['tabs'][] = ['id' => 'overview', 'label' => 'Aperçu', 'desc' => $ctx['kind'] === SseCerbereContext::KIND_TRIAGE ? 'Vous êtes dans la boîte « À trier » : voici le détail des files et les pages utiles.' : 'Ce que Cerbère signale dans tout le bureau et les pages utiles pour le traiter.', 'rows' => $this->rows(array_slice($this->pending($ctx), 0, 5)), 'sources' => $this->sources(''), 'shortcuts' => $this->shortcuts(), 'total' => $this->snapshot()['total'], 'count' => $ctx['kind'] === SseCerbereContext::KIND_TRIAGE ? 0 : count($this->pending($ctx)), 'all' => $this->triageUrl('')];
         }
         if ($analyse) {
-            $out['tabs'][] = ['id' => 'auto', 'label' => 'Automatismes', 'desc' => 'Les traitements automatiques de Cerbère : actifs ou non, et ce qu’ils ont fait.', 'treatments' => $this->treatments(), 'count' => 0, 'link' => $this->url('atak/sse/cerberes')];
+            $out['tabs'][] = ['id' => 'auto', 'label' => 'Cerbères', 'desc' => 'Les traitements automatiques de Cerbère : actifs ou non, et ce qu’ils ont fait.', 'treatments' => $this->treatments(), 'count' => 0, 'link' => $this->url('atak/sse/cerberes')];
         }
 
         return $out;

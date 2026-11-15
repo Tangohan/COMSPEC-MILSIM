@@ -443,7 +443,7 @@ final class SseTriageInbox
 
                     return $out;
                 }],
-            ['key' => 'suggestions', 'nav' => 'rapprochements', 'label' => 'Suggestions du moteur', 'tab' => 'Suggestions', 'path' => 'atak/sse/rapprochements',
+            ['key' => 'suggestions', 'nav' => 'rapprochements', 'label' => 'Propositions de Cerbère-Validation', 'tab' => 'Suggestions', 'path' => 'atak/sse/rapprochements',
                 'load' => static function (int $t) use ($item): array {
                     $out = [];
                     foreach ((new SseSuggestionQueueRepository())->listSuggestions($t, ['limit' => self::LIMIT]) as $s) {

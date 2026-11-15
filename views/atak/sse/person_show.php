@@ -234,8 +234,8 @@ $pid = (int) ($person['id'] ?? 0);
                 <?php endif; ?>
             </div>
             <p class="sse-note" style="margin-top:10px">
-                Distinction obligatoire : fait · déclaration · observation · corrélation automatique · hypothèse · conclusion validée.
-                Une corrélation algorithmique n’est jamais un fait confirmé.
+                Distinction obligatoire : fait · déclaration · observation · corrélation de Cerbère-Corrélation · hypothèse · conclusion validée.
+                Une corrélation de Cerbère-Corrélation n’est jamais un fait confirmé.
             </p>
         </div>
     </section>
