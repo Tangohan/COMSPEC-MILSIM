@@ -2,6 +2,27 @@
 params ["_display", ["_interactive", true], ["_texture", false]];
 disableSerialization;
 if (!hasInterface || {isNull _display}) exitWith {};
+// Perf (lot 3) : retour de la miniature après un rangement (fn_displayUnload pose COMSPEC_ATAK_HudStaged). L'écran porté
+// vient d'être créé par le moteur dans cette image ; sa mise en page, sa page, ses calques, le verrou et la barre d'état
+// attendent l'image suivante au lieu de s'ajouter à la même. D'ici là l'écran n'est pas encore « le téléphone »
+// (COMSPEC_ATAK_Display reste vide : aucune boucle ne le touche), ses contrôles sont à taille nulle (ui/displays.hpp)
+// et ses cartes masquées (fn_layoutApply les remontre) : rien ne s'affiche à moitié. Écran rangé ou rouvert entre-temps
+// (fn_close retire l'écran en attente) : la suite est abandonnée.
+if (!_interactive && {!_texture} && {uiNamespace getVariable ["COMSPEC_ATAK_HudStaged", false]}) exitWith {
+    uiNamespace setVariable ["COMSPEC_ATAK_HudStaged", false];
+    uiNamespace setVariable ["COMSPEC_ATAK_HudPending", _display];
+    { (_display displayCtrl _x) ctrlShow false; } forEach [88530, 88532, 88533, 88534];
+    [{
+        params ["_display"];
+        if (isNull _display || {(uiNamespace getVariable ["COMSPEC_ATAK_HudPending", displayNull]) isNotEqualTo _display}) exitWith {};
+        uiNamespace setVariable ["COMSPEC_ATAK_HudPending", displayNull];
+        private _pl = diag_tickTime;
+        [_display, false] call comspec_atak_native_fnc_displayLoad;
+        ["téléphone : retour de la miniature (mise en page et page)", _pl] call comspec_atak_native_fnc_perfAcc;
+    }, [_display]] call comspec_atak_native_fnc_nextFrame;
+};
+uiNamespace setVariable ["COMSPEC_ATAK_HudPending", displayNull];
+private _loadT0 = diag_tickTime;
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 _state set ["display", _display];
 _state set ["interactive", _interactive];
@@ -206,5 +227,8 @@ private _perfS = diag_tickTime;
 ["check"] call comspec_atak_native_fnc_lockScreen;
 [] call comspec_atak_native_fnc_statusUpdate;
 if (_perfLog) then { ["phase", ["écran de verrouillage et barre d'état", _perfS]] call comspec_atak_native_fnc_perfLog; };
+// Mesures permanentes (fn_perfAcc, RPT) : les étapes de l'ouverture, pour savoir laquelle pèse.
+["téléphone : verrou et barre d'état (ouverture)", _perfS] call comspec_atak_native_fnc_perfAcc;
+["téléphone : ouverture (scripts de l'écran)", _loadT0] call comspec_atak_native_fnc_perfAcc;
 
 ["INFO", "UI", format ["display_created (%1)", [["HUD", "écran JPC"] select _texture, "en main"] select _interactive]] call comspec_atak_native_fnc_log;

@@ -28,6 +28,9 @@ if (_force isNotEqualTo "") then { _set = _force; };
 private _lang = [_set] call comspec_atak_native_fnc_langResolve;
 missionNamespace setVariable ["COMSPEC_ATAK_I18nCache", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_I18nCacheNum", createHashMap];
+// Ordre d'arrivée des textes gardés (fn_tr : à saturation, la moitié la plus ancienne sort, plus tout le cache).
+missionNamespace setVariable ["COMSPEC_ATAK_I18nCacheQ", []];
+missionNamespace setVariable ["COMSPEC_ATAK_I18nCacheNumQ", []];
 private _loaded = missionNamespace getVariable ["COMSPEC_ATAK_I18nLoaded", ""];
 // Dictionnaire déjà préparé pendant cette session de jeu (mission précédente) : gardé dans uiNamespace, il
 // n'est pas relu (740 Ko, 10 000 paires, plusieurs centaines de ms à chaque arrivée en mission hors français).
@@ -50,9 +53,16 @@ if (_loaded isNotEqualTo _lang) then {
     // Lu ligne à ligne (une paire par ligne, virgule de fin facultative) : une virgule oubliée après une fusion de branches
     // ne coûte rien, une ligne cassée ne perd qu'elle. Lu d'un bloc, parseSimpleArray s'arrête à la première faute et toute la
     // suite du dictionnaire est perdue. Fichier écrit autrement (tout sur une ligne, paires sur plusieurs lignes) : lecture d'un bloc.
+    // Perf (lot 3) : le fichier entier est d'abord lu d'un bloc (un seul parseSimpleArray au lieu d'un par ligne, 24 800
+    // lignes pour en.txt). Le résultat n'est gardé que s'il rend autant de paires que le fichier a de lignes de paires
+    // (toutes les lignes sauf « [ » et « ] ») : à la moindre faute, la lecture d'un bloc s'arrête avant la fin, le compte
+    // n'y est pas et la lecture ligne à ligne ci-dessous reprend, comme avant.
     private _parseLang = {
         params ["_raw"];
         if (_raw isEqualTo "") exitWith { [] };
+        private _lines = _raw splitString (toString [13, 10]);
+        private _bulk = parseSimpleArray _raw;
+        if (!isNil "_bulk" && {_bulk isEqualType []} && {(count _bulk) > 0} && {(count _bulk) >= ((count _lines) - 2)}) exitWith { _bulk };
         private _rows = [];
         {
             private _l = trim _x;
@@ -62,7 +72,7 @@ if (_loaded isNotEqualTo _lang) then {
                 private _row = parseSimpleArray _l;
                 if (!isNil "_row" && {_row isEqualType []}) then { _rows pushBack _row; };
             };
-        } forEach (_raw splitString (toString [13, 10]));
+        } forEach _lines;
         if (_rows isNotEqualTo []) exitWith { _rows };
         private _all = parseSimpleArray _raw;
         if (isNil "_all" || {!(_all isEqualType [])}) exitWith { [] };
@@ -93,31 +103,33 @@ if (_loaded isNotEqualTo _lang) then {
             if !(_up in _exact) then { _exact set [_up, toUpper _en]; };
         } else {
             // « il y a %1 s » -> morceaux ["il y a ", " s"], numéros [1].
+            // Perf (lot 3) : découpe d'un « % » au suivant (find), plus caractère par caractère (4 000 modèles, une
+            // concaténation par caractère : le gros du temps de préparation du dictionnaire). Même résultat.
             private _parts = [];
             private _ids = [];
             private _buf = "";
-            private _i = 0;
-            private _n = count _fr;
-            while { _i < _n } do {
-                private _c = _fr select [_i, 1];
-                private _d = _fr select [_i + 1, 1];
-                if (_c isEqualTo "%" && {_d in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]}) then {
-                    _parts pushBack _buf;
+            private _rest = _fr;
+            private _k = _rest find "%";
+            while { _k >= 0 } do {
+                private _d = _rest select [_k + 1, 1];
+                if (_d in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]) then {
+                    _parts pushBack (_buf + (_rest select [0, _k]));
                     _ids pushBack (parseNumber _d);
                     _buf = "";
-                    _i = _i + 2;
+                    _rest = _rest select [_k + 2];
                 } else {
                     // « %% » du modèle (format) : un seul « % » dans le texte affiché (« Batterie 99 % »).
-                    if (_c isEqualTo "%" && {_d isEqualTo "%"}) then {
-                        _buf = _buf + "%";
-                        _i = _i + 2;
+                    if (_d isEqualTo "%") then {
+                        _buf = _buf + (_rest select [0, _k]) + "%";
+                        _rest = _rest select [_k + 2];
                     } else {
-                        _buf = _buf + _c;
-                        _i = _i + 1;
+                        _buf = _buf + (_rest select [0, _k + 1]);
+                        _rest = _rest select [_k + 1];
                     };
                 };
+                _k = _rest find "%";
             };
-            _parts pushBack _buf;
+            _parts pushBack (_buf + _rest);
             // « % » sans numéro (« 40 % de pertes ») : texte fixe, cherché tel quel.
             if (_ids isEqualTo []) then { _exact set [_fr, _en]; };
             // Deux valeurs collées (« %1%2 », souvent un complément facultatif comme « (carte) » ou « , rayon 3 m ») : la
@@ -160,7 +172,17 @@ if (_loaded isNotEqualTo _lang) then {
     private _noEnd = _tpls getOrDefault [_gen, []];
     { if ((count _x) > 1 && {(_x select [0, 1]) isEqualTo _gen}) then { _tpls set [_x, (_tpls get _x) + _noEnd]; }; } forEach (keys _tpls);
     // Modèles les plus longs d'abord : « Distance au point : %1 » avant « Distance : %1 ».
-    { _tpls set [_x, [_tpls get _x, [], { -(count ((_x select 0) joinString "")) }] call BIS_fnc_sortBy]; } forEach (keys _tpls);
+    // Perf (lot 3) : tri fait ici (même ordre que BIS_fnc_sortBy : longueur, puis rang d'arrivée), sans un appel de
+    // fonction par clé ; une liste d'un seul modèle (la plupart) n'est pas triée.
+    {
+        private _tplList = _tpls get _x;
+        if ((count _tplList) > 1) then {
+            private _rank = 0;
+            _tplList = _tplList apply { _rank = _rank + 1; [-(count ((_x select 0) joinString "")), _rank, _x] };
+            _tplList sort true;
+            _tpls set [_x, _tplList apply { _x select 2 }];
+        };
+    } forEach (keys _tpls);
     missionNamespace setVariable ["COMSPEC_ATAK_I18nExact", _exact];
     missionNamespace setVariable ["COMSPEC_ATAK_I18nTpl", _tpls];
     missionNamespace setVariable ["COMSPEC_ATAK_I18nLoaded", _lang];
