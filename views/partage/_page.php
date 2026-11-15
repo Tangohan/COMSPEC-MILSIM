@@ -56,7 +56,7 @@ $tabs = [
 <a class="ja-skip" href="#fp-main">Aller au contenu</a>
 
 <header class="ja-hd ja-hd--rows">
-    <a class="ja-brand" href="<?= $h(url('jnet')) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
+    <a class="ja-brand" href="<?= $h(url('jnet')) ?>" title="Mon extranet" aria-label="ATHENA — Mon extranet"><?php $athSeasonal = athena_seasonal_logo_img(); ?><i aria-hidden="true"<?= $athSeasonal !== '' ? ' style="background:transparent"' : '' ?>><?= $athSeasonal !== '' ? $athSeasonal : 'A' ?></i><span>ATHENA<em>.</em></span></a>
     <nav class="ja-tabs" aria-label="Rubriques de l’extranet">
         <?php foreach ($tabs as $i => $tab): ?>
             <?php $count = (int) ($tab['count'] ?? 0); $on = !empty($tab['on']); ?>

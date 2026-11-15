@@ -55,7 +55,7 @@ $quickLinks = [
 >
     <div class="athena-header__inner">
         <a href="<?= $h($homeHref) ?>" class="athena-header__brand">
-            <span class="athena-header__brand-mark" aria-hidden="true"><span class="athena-header__brand-emblem"></span></span>
+            <?php $athSeasonal = athena_seasonal_logo_img(); ?><span class="athena-header__brand-mark"<?= $athSeasonal !== '' ? ' style="background:transparent"' : '' ?> aria-hidden="true"><?= $athSeasonal !== '' ? $athSeasonal : '<span class="athena-header__brand-emblem"></span>' ?></span>
             <span class="athena-header__brand-text">
                 <span class="athena-header__brand-title">Athena<span class="athena-header__brand-dot">.</span></span>
                 <span class="athena-header__brand-sub"><?= $h(__('auth.header_sub')) ?></span>
