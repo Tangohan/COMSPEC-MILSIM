@@ -95,4 +95,24 @@ final class AccessRoleRulesTest extends TestCase
             }
         }
     }
+
+    public function testTransferKeepsOnlyHoldersOfTheSourceLevel(): void
+    {
+        $plan = AccessRoleRules::planTransfer([1, 2, 3], [3, 9], [2, 3, 77], true);
+        self::assertSame([2], $plan['receive']);
+        self::assertSame([3], $plan['already']);
+        self::assertSame([77], $plan['ignored'], 'un identifiant étranger au niveau source n’est jamais appliqué');
+        self::assertSame([2, 3], $plan['leave']);
+        $all = AccessRoleRules::planTransfer([1, 2, 3], [3], null, false);
+        self::assertSame([1, 2], $all['receive']);
+        self::assertSame([], $all['leave'], 'une copie ne retire personne');
+    }
+
+    public function testMovingMembersCannotRemoveTheLastAdministrator(): void
+    {
+        $perms = [1 => ['documents.view'], 2 => ['admin.roles.manage'], 3 => ['documents.view']];
+        $before = [1 => [10, 11], 2 => [10], 3 => []];
+        self::assertTrue(AccessRoleRules::membersChangeRemovesLastAdmin($perms, $before, [1 => [10, 11], 2 => [], 3 => [10]]));
+        self::assertFalse(AccessRoleRules::membersChangeRemovesLastAdmin($perms, $before, [1 => [10, 11], 2 => [10, 11], 3 => []]));
+    }
 }
