@@ -160,7 +160,7 @@ switch (_act) do {
             ]],
             ["INTEL", "Renseignement", "app_intel", [
                 ["Recueil", ["Reco", "Salute", "Photos", "Gallery", "Livecam", "Tracking"]],
-                ["Exploitation", ["Intel", "Sse", "DataLink", "Osint", "Wanted"]]
+                ["Exploitation", ["Intel", "Sse", "DataLink", "Osint", "Wanted", "Fiches"]]
             ]],
             ["SPEC", "Spécialités", "app_medical", [
                 ["Santé", ["Medical"]],

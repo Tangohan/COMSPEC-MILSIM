@@ -113,9 +113,9 @@ final class SseCaseSectionHelp
                 'donnee' => 'Ces relations structurent la navigation et la mémoire administrative entre dossiers liés.',
             ],
             '01.14' => [
-                'title' => 'Moteur — propositions',
-                'principe' => 'Propositions automatiques de rapprochements ou de signaux à partir des éléments déjà présents.',
-                'utilite' => 'Elle accélère la découverte de liens possibles ; le moteur propose, il ne tranche jamais.',
+                'title' => 'Cerbère — propositions',
+                'principe' => 'Propositions de Cerbère : rapprochements ou signaux trouvés à partir des éléments déjà présents.',
+                'utilite' => 'Elle accélère la découverte de liens possibles ; Cerbère propose, il ne tranche jamais.',
                 'donnee' => 'Chaque proposition attend une validation humaine ; seules les validations enrichissent le graphe et le registre.',
             ],
         ];

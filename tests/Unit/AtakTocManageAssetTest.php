@@ -9,6 +9,7 @@ use App\Services\AtakToc\Purge\TocElementStore;
 use App\Services\AtakToc\TocAccess;
 use App\Services\Rbac\AccessRightsCatalog;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 /**
  * Câblage du chantier « suppression, corbeille et purge de la carte du poste TOC » : vues et scripts branchés, aucune
@@ -134,7 +135,7 @@ final class AtakTocManageAssetTest extends TestCase
         self::assertStringContainsString('Purger la carte', $meta['explanation']);
         // Aucun niveau d'accès ne le reçoit : ni la matrice des modules, ni l'étape qui crée le droit.
         self::assertStringNotContainsString('atak.toc.purge', $this->file('app/Services/Rbac/RolePermissionMatrixCatalog.php'));
-        $step = $this->file('database/steps/4700_atak_toc_purge_permission.php');
+        $step = $this->file('database/steps/4760_atak_toc_purge_permission.php');
         self::assertStringNotContainsString('role_permissions', $step);
         self::assertStringContainsString("'atak.toc.purge'", $step);
         self::assertFileExists(self::ROOT . '/migrations/rollback/atak_toc_purge_permission_down.sql');
@@ -153,13 +154,13 @@ final class AtakTocManageAssetTest extends TestCase
     public function testMigrationStepsAreRegisteredNumberedAndReversible(): void
     {
         $registry = $this->file('database/steps/registry.php');
-        foreach (['4690_atak_toc_soft_delete.php' => 'atak_toc_soft_delete', '4700_atak_toc_purge_permission.php' => 'atak_toc_purge_permission'] as $file => $id) {
+        foreach (['4750_atak_toc_soft_delete.php' => 'atak_toc_soft_delete', '4760_atak_toc_purge_permission.php' => 'atak_toc_purge_permission'] as $file => $id) {
             self::assertMatchesRegularExpression("/\\['id' => '" . $id . "', 'label' => '[^\\n]+', 'group' => 'schema', 'file' => '" . preg_quote($file, '/') . "', 'rerun' => true\\]/", $registry);
             self::assertFileExists(self::ROOT . '/database/steps/' . $file);
         }
-        self::assertSame(1, substr_count($registry, "'file' => '4690_"));
-        self::assertSame(1, substr_count($registry, "'file' => '4700_"));
-        $step = $this->file('database/steps/4690_atak_toc_soft_delete.php');
+        self::assertSame(1, substr_count($registry, "'file' => '4750_"));
+        self::assertSame(1, substr_count($registry, "'file' => '4760_"));
+        $step = $this->file('database/steps/4750_atak_toc_soft_delete.php');
         self::assertStringNotContainsString('ADD UNIQUE KEY', $step, 'compatible sqlite');
         self::assertStringContainsString('addColumnIfMissing', $step);
         self::assertStringContainsString('addIndexIfMissing', $step);
@@ -238,23 +239,35 @@ final class AtakTocManageAssetTest extends TestCase
 
     public function testVersionsAreAlignedAndTheChangelogCarriesBothSummaries(): void
     {
+        // Versions minimales (chaque sortie suivante ne casse pas ce test) ; l'alignement de Link, lui, est exact.
         $hpp = $this->file('mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp');
-        self::assertStringContainsString('#define VERSION 4.22.0', $hpp);
-        self::assertStringContainsString('#define VERSION_STR "4.22.0"', $hpp);
-        self::assertStringContainsString('#define VERSION_NAME "4.22.0.AG - Washington"', $hpp);
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.126"', $hpp);
-        self::assertStringContainsString('const string ExtensionVersion = "2.0.126";', $this->file('mod/UptoDate/COMSPECExtension/Extension.cs'));
+        ModVersion::assertAtLeast('4.23.0', ModVersion::match('/#define VERSION_STR "([0-9.]+)"/', $hpp));
+        $link = ModVersion::match('/#define LINK_VERSION_STR "([0-9.]+)"/', $hpp);
+        ModVersion::assertAtLeast('2.0.126', $link);
+        self::assertStringContainsString('const string ExtensionVersion = "' . $link . '";', $this->file('mod/UptoDate/COMSPECExtension/Extension.cs'));
         $a = $this->file('mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj');
-        self::assertStringContainsString('<Version>2.0.126</Version>', $a);
-        self::assertStringContainsString('<InformationalVersion>2.0.126</InformationalVersion>', $a);
+        self::assertStringContainsString('<Version>' . $link . '</Version>', $a);
+        self::assertStringContainsString('<InformationalVersion>' . $link . '</InformationalVersion>', $a);
         $b = $this->file('mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/COMSPECATAKNativeExtension.csproj');
-        self::assertStringContainsString('<Version>2.0.126</Version>', $b);
-        self::assertStringContainsString('<InformationalVersion>2.0.126-native</InformationalVersion>', $b);
+        self::assertStringContainsString('<Version>' . $link . '</Version>', $b);
+        self::assertStringContainsString('<InformationalVersion>' . $link . '-native</InformationalVersion>', $b);
         $log = $this->file('CHANGELOG-ATAK.md');
-        self::assertMatchesRegularExpression('/\n## [^\n]+\(ATAK natif 4\.22\.0\.AG - Washington, COMSPEC Link 2\.0\.126\)\n\n### Résumé joueur\nType : nouveauté\nFR : [^\n]+\n(- [^\n]+\n)+EN : [^\n]+\n(- [^\n]+\n)+/', $log);
+        self::assertMatchesRegularExpression('/
+## Poste TOC : suppression des marqueurs[^
+]+\(ATAK natif 4\.23\.0\.AG - Washington, COMSPEC Link 2\.0\.126\)
+
+### Résumé joueur
+Type : nouveauté
+FR : [^
+]+
+(- [^
+]+
+)+EN : [^
+]+
+(- [^
+]+
+)+/', $log);
         $steam = $this->file('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.22.0 Washington', $steam);
-        self::assertStringContainsString('[h1]COMSPEC ATAK 4.21.2 Washington', substr($steam, (int) strpos($steam, "
-[h1]")));
+        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.23.0 Washington', $steam);
     }
 }

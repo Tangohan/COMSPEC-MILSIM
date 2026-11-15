@@ -28,8 +28,10 @@ final class SseTriageWiringTest extends TestCase
         $routes = self::read('routes/web.php');
         self::assertStringContainsString("get('/atak/sse/a-trier', [\\App\\Controllers\\Web\\SseTriageController::class, 'index'], \$mwSsePortal)", $routes);
         self::assertStringContainsString("get('/atak/sse/a-trier/compteurs', [\\App\\Controllers\\Web\\SseTriageController::class, 'counters'], \$mwSsePortal)", $routes);
-        self::assertStringNotContainsString("post('/atak/sse/a-trier", $routes);
-        self::assertStringNotContainsString('Csrf', self::read('app/Controllers/Web/SseTriageController.php'), 'lecture seule : pas de jeton');
+        self::assertStringContainsString("post('/atak/sse/a-trier/traiter'", $routes, 'les écritures sont des POST');
+        $src = self::read('app/Controllers/Web/SseTriageController.php');
+        self::assertStringContainsString('Csrf::verify($request)', $src, 'toute écriture exige le jeton');
+        self::assertMatchesRegularExpression('/function counters\(Request \$request, array \$params = \[\]\): Response\s*\{\s*\[\$sections, \$snap\] = \$this->load\(\);/', $src, 'les compteurs restent en lecture seule');
     }
 
     public function testLayoutShowsTheTriageButtonAndTheBadgesInTheAside(): void
@@ -108,5 +110,36 @@ final class SseTriageWiringTest extends TestCase
         self::assertStringNotContainsString('eyebrow', strtolower($view));
         self::assertStringNotContainsString('simulation', strtolower($view));
         self::assertStringContainsString('Rien à trier', $view);
+    }
+
+    public function testTheAutomationAssetsKeepTheStandingUiRules(): void
+    {
+        $css = self::read('public/assets/css/sse-triage-auto.css');
+        self::assertStringNotContainsString('@keyframes', $css);
+        self::assertSame(0, preg_match('/animation\s*:/', $css));
+        self::assertSame(0, preg_match('/font-size:\s*(?:[0-9]|1[0-2])(?:\.\d+)?px/', $css), 'textes de 13 px au moins');
+        self::assertMatchesRegularExpression('/\.tr-btn\s*\{[^}]*min-height:\s*44px/s', $css);
+        self::assertMatchesRegularExpression('/\.tr-check\s*\{[^}]*width:\s*44px;\s*height:\s*44px/s', $css);
+        self::assertStringContainsString('@media (max-width: 720px)', $css);
+        self::assertStringNotContainsString('eyebrow', strtolower($css . self::read('views/atak/sse/triage.php') . self::read('public/assets/js/sse-triage.js')));
+        $js = self::read('public/assets/js/sse-triage.js');
+        self::assertSame(0, preg_match('/[àâçéèêëîïôûùü]/u', (string) preg_replace(['~/\*.*?\*/~s', '~(?<![:\w])//[^\n]*~'], '', $js)), 'aucun texte français dans le JavaScript : les libellés viennent de la page');
+        foreach (["'j'", "'k'", "'e'", "'s'", "'Enter'", "'?'"] as $key) {
+            self::assertStringContainsString($key, $js);
+        }
+        self::assertStringContainsString('sse-triage-keys', $js, 'raccourcis désactivables');
+        self::assertStringContainsString('UNDO_SECONDS = 15', $js);
+        $view = self::read('views/atak/sse/triage.php');
+        foreach (['assets/css/sse-triage-auto.css', 'assets/js/sse-triage.js', 'data-tr-group-ack', 'id="tr-confirm"', '<dialog', 'aria-keyshortcuts="?"'] as $needle) {
+            self::assertStringContainsString($needle, $view);
+        }
+    }
+
+    public function testTheNewTextsAreTranslatedToEnglish(): void
+    {
+        $dict = require dirname(__DIR__, 2) . '/lang/en/site_auto.php';
+        foreach (['Acquitter tout le groupe', 'Règles Cerbère-Tri', '%1 dossiers', 'Annuler (%1 s)', 'Pourquoi cet ordre', 'Photographie manquante', 'Résoudre automatiquement quand la donnée existe', 'Identité de membre (accès restreint)'] as $fr) {
+            self::assertTrue(isset($dict[$fr]), $fr);
+        }
     }
 }

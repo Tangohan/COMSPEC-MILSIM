@@ -42,6 +42,23 @@ class UserProfileRepository
     {
         $fields = ['first_name', 'last_name', 'birth_date', 'nationality', 'country_of_residence', 'public_flag_country_code', 'discord_handle', 'timezone', 'language', 'bio', 'phone'];
         $existing = $this->getByUserId($userId);
+        $this->writeProfile($userId, $data, $fields, $existing);
+        // État civil modifié : l'identité officielle du membre (registre SSE) le suit, sans jamais faire échouer l'enregistrement.
+        foreach (['first_name', 'last_name'] as $nameField) {
+            if (array_key_exists($nameField, $data) && trim((string) $data[$nameField]) !== trim((string) ($existing[$nameField] ?? ''))) {
+                \App\Services\Sse\SseMemberCivilIdentityService::onProfileChanged($userId);
+                break;
+            }
+        }
+    }
+
+    /**
+     * @param list<string> $fields
+     * @param array<string, mixed> $data
+     * @param array<string, mixed>|null $existing
+     */
+    private function writeProfile(int $userId, array $data, array $fields, ?array $existing): void
+    {
         if ($existing) {
             $set = [];
             $params = [];

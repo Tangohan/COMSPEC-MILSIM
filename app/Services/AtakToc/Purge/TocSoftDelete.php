@@ -11,7 +11,7 @@ use PDO;
 
 /**
  * Suppression douce de la carte du poste TOC (marqueurs et tracés) : constantes communes, sonde du schéma et fragments
- * SQL de lecture. Sans la migration 4690 (colonnes deleted_at / deleted_by / delete_batch), rien ne change pour la
+ * SQL de lecture. Sans la migration 4750 (colonnes deleted_at / deleted_by / delete_batch), rien ne change pour la
  * lecture : available() renvoie false, les fragments sont vides et le poste retombe en mode dégradé.
  */
 final class TocSoftDelete

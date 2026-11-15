@@ -62,6 +62,19 @@ private _add = {
 ["comspec_fb_roomEcho", "CHECKBOX", "RoomEcho", "Hearing", false] call _add;
 // 4. IA et équipe
 ["comspec_fb_aiAffected", "CHECKBOX", "AiAffected", "Ai", true] call _add;
+// Réaction des IA (fn_aiParams), réglages du serveur : s'appliquent là où l'IA est locale (serveur, headless).
+// 0 Discrète (comportement d'avant 1.0.1), 1 Réaliste (défaut), 2 Forte.
+["comspec_fb_aiReaction", "LIST", "AiReaction", "Ai", [[0, 1, 2], [
+    localize "STR_COMSPEC_FB_AiReaction_Soft", localize "STR_COMSPEC_FB_AiReaction_Real", localize "STR_COMSPEC_FB_AiReaction_Strong"
+], 1]] call _add;
+["comspec_fb_aiIntensity", "SLIDER", "AiIntensity", "Ai", [0, 2, 1, 0, true]] call _add;
+["comspec_fb_aiRadius", "SLIDER", "AiRadius", "Ai", [0.5, 3, 1.5, 0, true]] call _add;
+["comspec_fb_aiDuration", "SLIDER", "AiDuration", "Ai", [0.3, 2, 1, 0, true]] call _add;
+["comspec_fb_aiImmunity", "SLIDER", "AiImmunity", "Ai", [0, 0.5, 0.08, 0, true]] call _add;
+["comspec_fb_aiMax", "SLIDER", "AiMax", "Ai", [1, 80, 20, 0]] call _add;
+["comspec_fb_aiAnim", "CHECKBOX", "AiAnim", "Ai", true] call _add;
+// Journal des IA : une ligne par IA et par détonation dans le RPT de la machine qui la possède ; désactivé par défaut.
+["comspec_fb_aiDebug", "CHECKBOX", "AiDebug", "Ai", false] call _add;
 // Effet par camp (fn_sideRule, relu à chaque détonation ; le plus protecteur gagne) : 0 normal, 1 réduit,
 // 2 aucun effet visuel, 3 immunisé. Réglages « serveur / mission » : un Zeus ou un administrateur les change en cours
 // de partie. (L'ancien réglage comspec_fb_friendly = false, forcé par une mission, reste lu : camp du lanceur immunisé.)

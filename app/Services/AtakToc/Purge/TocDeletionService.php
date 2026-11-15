@@ -15,7 +15,7 @@ use App\Support\ShortCache;
  *    de bon ; un marqueur du jeu reste ensuite 48 h en pierre tombale pour que le jeu le retire de sa carte native ;
  *  - un élément épinglé (« Permanent ») ne part qu'avec une confirmation renforcée, distincte (phrase PERMANENT) ;
  *  - chacun supprime les siens (propriétaire, auteur) ; supprimer ceux des autres demande atak.toc.manage ;
- *  - sans la migration 4690 (mode dégradé), la suppression est définitive et demande une confirmation explicite ;
+ *  - sans la migration 4750 (mode dégradé), la suppression est définitive et demande une confirmation explicite ;
  *  - tout est borné par la communauté et la carte reçues (jamais lues dans une requête) et journalisé.
  *
  * @phpstan-type Actor array{userId: int, aliases: list<string>, manage: bool, purge: bool}

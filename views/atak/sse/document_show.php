@@ -82,6 +82,8 @@ $statusClass = match ($status) {
     </aside>
 </section>
 
+<?php \App\Services\Sse\Links\SseLinksWidget::render('document', (int) ($document['id'] ?? 0)); ?>
+
 <div class="security-notice">
     <div class="security-notice-code">SEC-DOC</div>
     <div>

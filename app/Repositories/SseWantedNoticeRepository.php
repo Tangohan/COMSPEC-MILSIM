@@ -136,7 +136,7 @@ final class SseWantedNoticeRepository
     /**
      * Liste des avis de la communauté.
      *
-     * @param array{status?: string, type?: string, threat?: string, q?: string, limit?: int, offset?: int} $filters
+     * @param array{status?: string, type?: string, threat?: string, q?: string, codes?: list<string>, q_codes?: list<string>, limit?: int, offset?: int} $filters
      * @return list<array<string, mixed>>
      */
     public function list(int $tenantId, array $filters = []): array
@@ -165,8 +165,18 @@ final class SseWantedNoticeRepository
             $params['threat'] = $threat;
         }
         $q = trim((string) ($filters['q'] ?? ''));
+        $codeFilter = array_values(array_filter((array) ($filters['codes'] ?? []), 'is_string'));
+        $extrasReady = ($codeFilter !== [] || !empty($filters['q_codes'])) && SseWantedExtrasRepository::ready();
+        if ($codeFilter !== [] && $extrasReady) {
+            $where[] = SseWantedExtrasRepository::codeClause($codeFilter, $tenantId, $params, 'n', 'cf');
+        }
         if ($q !== '') {
-            $where[] = '(n.ref LIKE :q1 OR i.last_name LIKE :q2 OR i.first_name LIKE :q3)';
+            $match = '(n.ref LIKE :q1 OR i.last_name LIKE :q2 OR i.first_name LIKE :q3';
+            $qCodes = array_values(array_filter((array) ($filters['q_codes'] ?? []), 'is_string'));
+            if ($qCodes !== [] && $extrasReady) {
+                $match .= ' OR ' . SseWantedExtrasRepository::codeClause($qCodes, $tenantId, $params, 'n', 'cq');
+            }
+            $where[] = $match . ')';
             $like = '%' . str_replace(['%', '_'], '', $q) . '%';
             $params['q1'] = $params['q2'] = $params['q3'] = $like;
         }

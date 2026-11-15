@@ -15781,6 +15781,24 @@ class AtakApiController
                 $match !== null ? (int) $match['id'] : null,
                 $serverPort
             );
+            // Session de jeu : le signe de vie d'un joueur sur un serveur déclaré de sa communauté prolonge sa session
+            // (PlayerSessionRepository fusionne les signes de vie espacés de moins de la coupure tolérée).
+            if ($match !== null) {
+                try {
+                    $rules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+                    $member = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+                    \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class)->recordHeartbeat(
+                        $tenantId,
+                        $steam,
+                        time(),
+                        $rules['gap_minutes'] * 60,
+                        $member !== null ? (int) $member['id'] : null,
+                        (int) $match['id']
+                    );
+                } catch (\Throwable) {
+                    // Table des sessions absente ou base indisponible : la réponse au joueur ne change pas.
+                }
+            }
         }
 
         if ($servers === []) {
