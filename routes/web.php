@@ -2529,6 +2529,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/roles', [EffectifsWorkspaceController::class, 'updateMemberRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/fonctions', [EffectifsWorkspaceController::class, 'updateMemberJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse', [\App\Controllers\Admin\MemberSseAccessController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse/habilitation', [\App\Controllers\Admin\MemberSseAccessController::class, 'clearance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse/apercu', [\App\Controllers\Admin\MemberSseAccessController::class, 'preview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse/{ruleId}/retirer', [\App\Controllers\Admin\MemberSseAccessController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/role-unite', [EffectifsWorkspaceController::class, 'updateMemberAssignmentRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
