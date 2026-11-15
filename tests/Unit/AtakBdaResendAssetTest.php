@@ -179,10 +179,15 @@ final class AtakBdaResendAssetTest extends TestCase
         $en = self::read(self::MAIN . 'i18n/en.txt');
         $xx = self::read('mod/COMSPEC_ATAK_Native/localisation/template/xx.txt');
         foreach ([$en, $xx] as $raw) {
-            self::assertStringStartsWith("[\r\n", $raw);
-            self::assertSame(0, preg_match('/(?<!\r)\n/', $raw), 'fin de ligne CRLF partout');
-            self::assertStringContainsString("]\r\n", substr($raw, -4));
-            $lines = explode("\r\n", rtrim($raw, "\r\n"));
+            // Fin de ligne indifférente (extraction Linux ou Windows) : le test AtakI18nFormatTest garde le format complet.
+            $raw = str_replace("
+", "
+", $raw);
+            self::assertStringStartsWith("[
+", $raw);
+            $lines = explode("
+", rtrim($raw, "
+"));
             $last = count($lines) - 2;
             // Aucune virgule après la dernière entrée, une virgule après les autres.
             self::assertSame(1, preg_match('/"\]$/', $lines[$last]), 'dernière entrée sans virgule');
