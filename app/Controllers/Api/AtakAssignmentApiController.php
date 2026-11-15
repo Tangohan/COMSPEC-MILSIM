@@ -271,6 +271,14 @@ final class AtakAssignmentApiController
     private function mapId(Request $request): int
     {
         $body = $this->body($request);
+        // Communauté par défaut : carte réservée à la partie du demandeur (AtakPartyScope), jamais celle du client.
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId > 0) {
+            $reserved = \App\Support\AtakPartyScope::forRequest($tenantId, $body, (string) $request->ip())['map_id'];
+            if ($reserved !== null) {
+                return $reserved;
+            }
+        }
         $raw = $body['mapId'] ?? $body['map_id'] ?? $request->query('mapId');
         $mapId = ($raw !== null && $raw !== '') ? (int) $raw : self::DEFAULT_MAP_ID;
 
