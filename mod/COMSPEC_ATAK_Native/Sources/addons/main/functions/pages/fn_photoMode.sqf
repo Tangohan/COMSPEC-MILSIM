@@ -12,6 +12,8 @@
     Espace : quitter et reprendre le téléphone. H (ou F1) : afficher / replier la barre des raccourcis, repliée
     d'elle-même quelques secondes après l'ouverture.
     Params : ["ENTER" | "SHOOT" | "SELFIE" | "ZOOM" | "FLASH" | "BLUR" | "HELP" | "MOUSE" | "FRAME" | "HUD" | "EXIT", légende, argument]
+    Sortie : EXIT est le seul chemin (Espace, mort, véhicule, téléphone perdu, réparation de l'affichage) ; argument true = sans
+    rouvrir le téléphone. Elle rend aussi ce qu'un cliché interrompu aurait laissé (photoCam « restore »).
 */
 params [["_mode", "ENTER"], ["_caption", ""], ["_arg", 0]];
 if (!hasInterface) exitWith { false };
@@ -29,10 +31,23 @@ private _curView = {
 };
 switch (toUpper _mode) do {
     case "ENTER": {
+        // Mode resté « actif » sans viseur (une erreur a arrêté l'ouverture) : il bloquerait toute nouvelle photo. Nettoyé d'abord.
+        if (_active && {isNull (uiNamespace getVariable ["COMSPEC_ATAK_CameraDisplay", displayNull])} && {(diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PhotoEnterAt", 0])) > 2}) then {
+            ["WARNING", "PHOTO", "Plein écran : mode resté actif sans viseur, nettoyé avant la nouvelle ouverture"] call comspec_atak_native_fnc_log;
+            ["EXIT", "", true] call comspec_atak_native_fnc_photoMode;
+            _active = false;
+        };
         if (_active) exitWith { false };
         if !([] call comspec_atak_native_fnc_bridge) exitWith { ["WARNING", "Photos : COMSPEC Overwatch doit être chargé pour l'envoi vers ATAK web", 4, 30] call comspec_atak_native_fnc_notify; false };
         if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { ["WARNING", "Photos : connectez-vous d'abord à Athena (app Athena)", 4, 30] call comspec_atak_native_fnc_notify; false };
+        // Sans fenêtre de jeu (46), ni clic ni Espace ne seraient reçus : le joueur resterait coincé en plein écran.
+        if (isNull (findDisplay 46)) exitWith {
+            ["WARNING", "PHOTO", "Plein écran refusé : la fenêtre de jeu (46) est introuvable, ni clic ni Espace ne seraient reçus"] call comspec_atak_native_fnc_log;
+            ["WARNING", "Photos : fenêtre de jeu introuvable, réessayez dans un instant", 4, 30] call comspec_atak_native_fnc_notify;
+            false
+        };
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        uiNamespace setVariable ["COMSPEC_ATAK_PhotoEnterAt", diag_tickTime];
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoMode", true];
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoCtx", [_s getOrDefault ["interactive", false], uiNamespace getVariable ["COMSPEC_ATAK_HudWanted", false], currentWeapon player, _caption, 0]];
         uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
@@ -77,6 +92,7 @@ switch (toUpper _mode) do {
         // Une boucle par image : objectif (zoom, selfie, transitions), geste du bras, sortie automatique.
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoPFH", [{ ["FRAME"] call comspec_atak_native_fnc_photoMode; }, 0] call CBA_fnc_addPerFrameHandler];
         [{ ["HUD"] call comspec_atak_native_fnc_photoMode; }] call comspec_atak_native_fnc_nextFrame;
+        ["INFO", "PHOTO", format ["Plein écran : ouvert (téléphone en main %1, arme %2, gestionnaires %3, légende %4)", (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) param [0, false], (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) param [2, ""], uiNamespace getVariable ["COMSPEC_ATAK_PhotoEH", []], _caption isNotEqualTo ""]] call comspec_atak_native_fnc_log;
         true
     };
     case "FRAME": {
@@ -456,19 +472,22 @@ switch (toUpper _mode) do {
         [_fire, [_px, _py, _pz], _meta, _st getOrDefault ["selfie", false]] spawn {
             params ["_fire", "_phone", "_meta", "_selfie"];
             disableSerialization;
+            // Ce que le cliché change (contrôles masqués, lumière) est noté dans sa fiche et rendu par un seul chemin
+            // (photoCam « restore ») : fin normale, chien de garde si une erreur arrête ce script, ou sortie du plein écran.
+            private _sh = ["begin", "FULL"] call comspec_atak_native_fnc_photoCam;
             private _ctx = uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []];
             private _caption = _ctx param [3, ""];
             if (_caption isEqualTo "") then { _caption = format ["%1 · %2 · %3°", [player] call comspec_atak_native_fnc_unitCallsign, [player] call comspec_atak_native_fnc_gridRef, round getDir player]; };
             private _cam = uiNamespace getVariable ["COMSPEC_ATAK_CameraDisplay", displayNull];
-            // Le viseur ne doit pas apparaître sur la photo (ni les cadres dessinés dans la scène).
-            uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", true];
+            ["INFO", "PHOTO", format ["Cliché %1 (plein écran) : début, objectif %2, flash %3, Athena prêt %4, Link %5, viseur %6", _sh get "id", ["arrière", "selfie"] select _selfie, ["non", "oui"] select _fire, missionNamespace getVariable ["COMSPEC_AthenaReady", false], ["absent", "présent"] select !isNil "comspec_overwatch_connect_fnc_captureReconImage", ["absent", "affiché"] select !isNull _cam]] call comspec_atak_native_fnc_log;
             // Tout ce qui est affiché est masqué (sauf l'éclair blanc), puis réaffiché tel quel après la capture.
             private _vis = [];
             if (!isNull _cam) then { _vis = (allControls _cam) select { ctrlShown _x && {(ctrlIDC _x) isNotEqualTo 2} }; { _x ctrlShow false; } forEach _vis; };
+            _sh set ["hidden", _vis];
             // Éclair réel au téléphone, très bref (visible sur la capture).
-            private _light = objNull;
             if (_fire) then {
-                _light = "#lightpoint" createVehicleLocal (ASLToAGL _phone);
+                private _light = "#lightpoint" createVehicleLocal (ASLToAGL _phone);
+                _sh set ["light", _light];
                 _light setPosASL _phone;
                 _light setLightColor [1, 0.97, 0.92];
                 // Flash doux (4.15.2) : l'ancien (luminosité 2,2 de nuit, lumière ambiante, intensité sans plafond de près)
@@ -490,32 +509,58 @@ switch (toUpper _mode) do {
             // ATAK seul (sans COMSPEC Link) : la photo reste aussi sur le poste, rien n'est envoyé.
             private _noLink = isNil "comspec_overwatch_connect_fnc_captureReconImage";
             if (_noLink) then { _noNet = true; };
+            // _saved : la capture a été acceptée par le jeu (poste seul) ; en envoi, _ok dit si la liaison l'a prise.
+            private _saved = true;
             private _ok = if (_noNet) then {
                 private _shot = format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
-                screenshot _shot;
+                private _ret = screenshot _shot;
+                // Capture refusée par le jeu (qualité HDR basse, dossier plein) : la photo n'existe pas, elle n'est pas déclarée prise.
+                _saved = !(_ret isEqualType true && {!_ret});
+                ["INFO", "PHOTO", format ["Cliché %1 : capture du poste %2, %3 (%4)", _sh get "id", _shot, ["REFUSÉE par le jeu", "acceptée"] select _saved, ["Link absent", "hors réseau"] select !_noLink]] call comspec_atak_native_fnc_log;
                 // Visages gardés avec le nom du fichier : l'envoi depuis la Galerie les floute aussi (40 photos au plus).
-                if (_faces isNotEqualTo []) then {
+                if (_saved && {_faces isNotEqualTo []}) then {
                     private _kept = profileNamespace getVariable ["COMSPEC_ATAK_PhotoFaces", []];
                     if !(_kept isEqualType []) then { _kept = []; };
                     _kept pushBack [toLower _shot, _faces];
                     profileNamespace setVariable ["COMSPEC_ATAK_PhotoFaces", _kept select [((count _kept) - 40) max 0]];
                 };
-                [["WARNING", "INFO"] select _noLink, ["Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", "Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)"] select _noLink, 5, 40] call comspec_atak_native_fnc_notify;
                 false
-            } else { ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage };
+            } else {
+                ["INFO", "PHOTO", format ["Cliché %1 : capture lancée vers Athena", _sh get "id"]] call comspec_atak_native_fnc_log;
+                private _sent = ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage;
+                ["INFO", "PHOTO", format ["Cliché %1 : capture terminée, envoi accepté %2, détail de la liaison %3", _sh get "id", _sent, missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]]] call comspec_atak_native_fnc_log;
+                _sent
+            };
             uiSleep 0.08;
-            if (!isNull _light) then { deleteVehicle _light; };
-            uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", false];
+            ["restore", "fin"] call comspec_atak_native_fnc_photoCam;
+            // Ce qui s'est passé, en une phrase sous le viseur : photo gardée, envoyée, ou la raison précise de l'échec.
+            private _why = if (_saved) then { ["", ["why"] call comspec_atak_native_fnc_photoCam] select (!_noNet && {!_ok}) } else { "Capture refusée par le jeu : passez la qualité HDR au moins sur Moyen (options d'affichage), puis reprenez la photo." };
             if (!isNull _cam) then {
-                { _x ctrlShow true; } forEach _vis;
-                private _flash = _cam displayCtrl 2;
-                _flash ctrlSetBackgroundColor [1, 1, 1, [0.45, 0.6] select _fire];
-                _flash ctrlCommit 0;
-                _flash ctrlSetBackgroundColor [1, 1, 1, 0];
-                _flash ctrlCommit ([0.35, 0.6] select _fire);
+                if (_saved) then {
+                    private _flash = _cam displayCtrl 2;
+                    _flash ctrlSetBackgroundColor [1, 1, 1, [0.45, 0.6] select _fire];
+                    _flash ctrlCommit 0;
+                    _flash ctrlSetBackgroundColor [1, 1, 1, 0];
+                    _flash ctrlCommit ([0.35, 0.6] select _fire);
+                };
                 private _n = (_ctx param [4, 0]) + ([0, 1] select _ok);
                 _ctx set [4, _n];
-                (_cam displayCtrl 4) ctrlSetText ((format ["%1%2", ["Photo non envoyée : voir Galerie > Envois", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire]) call comspec_atak_native_fnc_tr);
+                private _line = switch (true) do {
+                    case (_why isNotEqualTo ""): { _why };
+                    case (_noNet): { "Photo gardée sur le poste : à envoyer depuis la Galerie" };
+                    case (!_ok): { "Photo non envoyée : voir Galerie > Envois" };
+                    default { format ["%1 photo(s) en cours d'envoi vers Athena", _n] };
+                };
+                (_cam displayCtrl 4) ctrlSetText ((format ["%1%2", _line, ["", " · flash"] select (_fire && {_saved})]) call comspec_atak_native_fnc_tr);
+            };
+            if (_noNet) then {
+                if (_saved) then {
+                    [["WARNING", "INFO"] select _noLink, ["Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", "Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)"] select _noLink, 5, 40] call comspec_atak_native_fnc_notify;
+                } else {
+                    ["WARNING", _why, 6, 40] call comspec_atak_native_fnc_notify;
+                };
+            } else {
+                if (_why isNotEqualTo "") then { ["WARNING", _why, 6, 40] call comspec_atak_native_fnc_notify; };
             };
             playSound "ClickSoft";
         };
@@ -524,6 +569,9 @@ switch (toUpper _mode) do {
     case "EXIT": {
         if (!_active) exitWith { false };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoMode", false];
+        // Un cliché en cours (ou resté en plan) rend d'abord ce qu'il a masqué ; puis la vue, les gestionnaires et la boucle.
+        ["restore", "sortie du plein écran"] call comspec_atak_native_fnc_photoCam;
+        ["INFO", "PHOTO", format ["Plein écran : fermeture (joueur vivant %1, véhicule %2, téléphone gardé %3, réouverture %4)", alive player, vehicle player isNotEqualTo player, [] call comspec_atak_native_fnc_hasDevice, _arg isNotEqualTo true]] call comspec_atak_native_fnc_log;
         private _cam = _st getOrDefault ["cam", objNull];
         if (!isNull _cam) then { _cam cameraEffect ["terminate", "back"]; camDestroy _cam; };
         _st set ["cam", objNull];
@@ -556,7 +604,7 @@ switch (toUpper _mode) do {
         ("COMSPEC_ATAK_Camera" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
         (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) params [["_interactive", true], ["_hud", false], ["_weapon", ""]];
         if (_weapon isNotEqualTo "" && {alive player} && {vehicle player isEqualTo player}) then { player selectWeapon _weapon; };
-        if (alive player && {[] call comspec_atak_native_fnc_hasDevice}) then {
+        if (_arg isNotEqualTo true && {alive player} && {[] call comspec_atak_native_fnc_hasDevice}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", _hud];
             [{
                 params ["_interactive"];
