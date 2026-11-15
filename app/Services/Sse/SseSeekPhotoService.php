@@ -93,7 +93,8 @@ final class SseSeekPhotoService
         if ($path === '') {
             return null;
         }
-        if (self::isPrivatePath($path)) {
+        // Image d'un membre (CONFIDENTIEL ÉLEVÉ, voir SseMemberImageGate) : toujours la route protégée, jamais une adresse publique.
+        if (self::isPrivatePath($path) || !empty($photo['confidential'])) {
             return function_exists('url') ? url('atak/sse/fichiers/photos/' . (int) ($photo['id'] ?? 0) . '/image') : null;
         }
 
@@ -243,6 +244,12 @@ final class SseSeekPhotoService
             return [];
         }
         try {
+            // Images d'un membre : CONFIDENTIEL ÉLEVÉ (SseMemberImageGate). Refusées : ni liste, ni adresse.
+            $gate = SseMemberImageGate::forSession();
+            $idAccess = $gate->forIdentity($tenantId, $identityId);
+            if (!$idAccess['allowed']) {
+                return [];
+            }
             $recs = [];
             foreach ($this->files()->seekFor($tenantId, ['identity_ids' => [$identityId], 'bio_key' => trim((string) $bioKey), 'limit' => 100]) as $s) {
                 $recs[(string) $s['rec']] = $s;
@@ -260,6 +267,11 @@ final class SseSeekPhotoService
             $out = [];
             foreach ($rows as $row) {
                 $photo = SseFileRecordRepository::hydratePhoto($row);
+                $access = $gate->forPhoto($tenantId, $photo);
+                if (!$access['allowed']) {
+                    continue;
+                }
+                $photo['confidential'] = $idAccess['confidential'] || $access['confidential'];
                 $seek = $recs[(string) ($photo['source_ref'] ?? '')] ?? $this->safeSeek($tenantId, (string) ($photo['source_ref'] ?? ''));
                 $out[] = $photo + ['seek' => $seek, 'url' => self::photoUrl($photo)];
             }
@@ -293,8 +305,14 @@ final class SseSeekPhotoService
                 $params['r' . $n] = $rec;
             }
             $out = [];
+            $gate = SseMemberImageGate::forSession();
             foreach ($this->db()->fetchAll('SELECT * FROM sse_file_photos WHERE tenant_id = :t AND source = :s AND source_ref IN (' . implode(', ', $marks) . ') ORDER BY id DESC', $params) as $row) {
                 $photo = SseFileRecordRepository::hydratePhoto($row);
+                $access = $gate->forPhoto($tenantId, $photo);
+                if (!$access['allowed']) {
+                    continue;
+                }
+                $photo['confidential'] = $access['confidential'];
                 $out[(string) $photo['source_ref']][] = $photo + ['url' => self::photoUrl($photo)];
             }
 

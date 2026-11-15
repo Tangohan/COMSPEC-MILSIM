@@ -18,6 +18,7 @@ use App\Services\Sse\SseFileSearchService;
 use App\Services\Sse\SseFileXrefService;
 use App\Services\Sse\SseIdImageService;
 use App\Services\Sse\SsePhoneExtractionService;
+use App\Services\Sse\SseMemberImageGate;
 use App\Services\Sse\SseSeekPhotoService;
 use App\Support\SseFileSubjectCatalog as S;
 use App\Support\SseFileVisibility;
@@ -394,7 +395,10 @@ final class SseFileRecordController
             'title' => 'Photothèque',
             'params' => $p,
             'result' => $result,
-            'unattached' => $this->ctx->allows('photos', 'add') ? $this->safe(fn (): array => $this->records()->unattachedPhotos($tenantId, 24)) : [],
+            // Clichés non rattachés : ceux d'un membre (fiche SEEK II rattachée) ne sont ni listés ni adressables sans autorisation.
+            'unattached' => $this->ctx->allows('photos', 'add')
+                ? SseMemberImageGate::forSession()->filterPhotos($tenantId, $this->safe(fn (): array => $this->records()->unattachedPhotos($tenantId, 24)))['photos']
+                : [],
             'photoUpload' => !empty($this->ctx->settings()['member_photo_upload']) && $this->ctx->allows('photos', 'add'),
         ]);
     }
@@ -440,9 +444,27 @@ final class SseFileRecordController
                 }
             }
         }
-        $abs = (new SseSeekPhotoService($this->records()))->absolutePath($photo, $tenantId);
+        // Image d'un membre : CONFIDENTIEL ÉLEVÉ, titulaire, hiérarchie, habilitation ou dérogation seulement ; jamais un octet sinon.
+        $gate = SseMemberImageGate::forSession();
+        $access = $gate->forPhoto($tenantId, $photo);
+        if (!$access['allowed']) {
+            $gate->recordDenied($tenantId, $gate->viewerId(), 'photo', (int) $photo['id'], $access['owner']);
+
+            return $notFound();
+        }
+        $seekSvc = new SseSeekPhotoService($this->records());
+        $abs = $seekSvc->absolutePath($photo, $tenantId) ?? ($access['confidential'] ? SseMemberImageGate::publicAbsolutePath($photo) : null);
         if ($abs === null) {
             return $notFound();
+        }
+        if ($access['confidential']) {
+            try {
+                $gate->recordConsultation($tenantId, (int) $gate->viewerId(), 'photo', (int) $photo['id'], $access['owner'], $access['reason']);
+            } catch (\Throwable $e) {
+                error_log('Fichiers SSE : consultation d’une image confidentielle non journalisée, image refusée : ' . $e->getMessage());
+
+                return $notFound();
+            }
         }
         $ext = match ($photo['mime']) {
             'image/png' => 'png',
@@ -455,7 +477,7 @@ final class SseFileRecordController
             ->header('Content-Type', $mime)
             ->header('Content-Length', (string) filesize($abs))
             ->header('Content-Disposition', 'inline; filename="seek-' . (int) $photo['id'] . '.' . $ext . '"')
-            ->header('Cache-Control', 'private, max-age=3600')
+            ->header('Cache-Control', $access['confidential'] ? 'private, no-store' : 'private, max-age=3600')
             ->header('X-Content-Type-Options', 'nosniff')
             ->header('Referrer-Policy', 'no-referrer')
             ->setBodyStream(static function () use ($abs): void {
@@ -465,6 +487,155 @@ final class SseFileRecordController
                     fclose($h);
                 }
             });
+    }
+
+    /**
+     * Image d'une identité du registre (photo d'identité ou signature) : GET fichiers/identites/{id}/photo ou /signature.
+     * Seule adresse des portraits et signatures des MEMBRES dans le portail (jamais le dossier public) : CONFIDENTIEL ÉLEVÉ, lue par le
+     * titulaire, sa hiérarchie, une habilitation « Très restreint » avec le droit « Identités de service » ou une dérogation, et journalisée.
+     * Identité d'une autre communauté, image absente ou refus : 404 identique, sans rien révéler.
+     */
+    public function identityImage(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store')
+            ->setBody('Not found');
+        if (!in_array($params['kind'] ?? '', ['photo', 'signature'], true)) {
+            return $notFound();
+        }
+        $kind = (string) $params['kind'];
+        $tenantId = $this->ctx->tenantId();
+        $identity = null;
+        try {
+            $identity = $tenantId > 0 ? (new SseIdentityRepository())->find((int) ($params['id'] ?? 0), $tenantId) : null;
+        } catch (\Throwable $e) {
+            error_log('Fichiers SSE : identité illisible : ' . $e->getMessage());
+        }
+        $path = $identity !== null ? (string) ($identity[$kind . '_path'] ?? '') : '';
+        $folder = $kind === 'signature' ? 'sse-id-signatures' : 'sse-id-photos';
+        if ($identity === null || preg_match('#^uploads/' . $folder . '/' . $tenantId . '_[a-f0-9]{16}\.(jpg|png|webp)$#', $path) !== 1) {
+            return $notFound();
+        }
+        $gate = SseMemberImageGate::forSession();
+        $access = $gate->forIdentity($tenantId, $identity);
+        if (!$access['allowed']) {
+            $gate->recordDenied($tenantId, $gate->viewerId(), 'identity_' . $kind, (int) $identity['id'], $access['owner']);
+
+            return $notFound();
+        }
+        if (!$access['confidential'] && in_array($identity['kind'], ['cover', 'forged'], true) && !($this->ctx->canSee())(SseCaseRepository::CLASS_CONFIDENTIAL)) {
+            return $notFound();
+        }
+        $abs = SseMemberImageGate::publicAbsolutePath(['path' => $path]);
+        if ($abs === null) {
+            return $notFound();
+        }
+        if ($access['confidential']) {
+            try {
+                $gate->recordConsultation($tenantId, (int) $gate->viewerId(), 'identity_' . $kind, (int) $identity['id'], $access['owner'], $access['reason']);
+            } catch (\Throwable $e) {
+                error_log('Fichiers SSE : consultation d’une image confidentielle non journalisée, image refusée : ' . $e->getMessage());
+
+                return $notFound();
+            }
+        }
+        $ext = strtolower(pathinfo($abs, PATHINFO_EXTENSION));
+        $mime = ['png' => 'image/png', 'webp' => 'image/webp', 'jpg' => 'image/jpeg'][$ext] ?? 'application/octet-stream';
+
+        return (new Response())
+            ->header('Content-Type', $mime)
+            ->header('Content-Length', (string) filesize($abs))
+            ->header('Content-Disposition', 'inline; filename="identite-' . (int) $identity['id'] . '-' . $kind . '.' . $ext . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer')
+            ->setBodyStream(static function () use ($abs): void {
+                $h = fopen($abs, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
+    }
+
+    /** Demandes d'accès aux images des membres, à décider par la hiérarchie : GET fichiers/acces-images. */
+    public function accessRequests(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->ctx->tenantId();
+        $viewer = SseMemberImageGate::forSession()->viewerId();
+        $rows = [];
+        if ($viewer !== null && $tenantId > 0) {
+            try {
+                $rows = SseMemberImageGate::forSession()->decidableRequests($tenantId, $viewer);
+            } catch (\Throwable $e) {
+                error_log('Fichiers SSE : demandes d’accès illisibles : ' . $e->getMessage());
+            }
+        }
+        $names = [];
+        foreach ($rows as $r) {
+            foreach (['owner_user_id', 'grantee_user_id'] as $k) {
+                $uid = (int) $r[$k];
+                if (!isset($names[$uid])) {
+                    $u = (new \App\Repositories\UserRepository())->findById($uid, $tenantId);
+                    $names[$uid] = trim((string) ($u['callsign'] ?? '')) !== '' ? (string) $u['callsign'] : trim((string) ($u['display_name'] ?? ('Membre ' . $uid)));
+                }
+            }
+        }
+
+        return $this->ctx->render('atak.sse.files.access_requests', [
+            'title' => 'Accès aux images confidentielles',
+            'requests' => $rows,
+            'names' => $names,
+            'maxEnd' => gmdate('Y-m-d', time() + 30 * 86400),
+            'minEnd' => gmdate('Y-m-d', time() + 86400),
+        ]);
+    }
+
+    /** « Demander l'accès » depuis un cadre CONFIDENTIEL ÉLEVÉ : POST fichiers/acces-images/demande. */
+    public function accessRequestStore(Request $request, array $params = []): Response
+    {
+        $gate = SseMemberImageGate::forSession();
+        $viewer = $gate->viewerId();
+        if ($viewer === null || !$this->ctx->csrfOk($request)) {
+            return $this->ctx->denied($request, self::BASE . '/photos');
+        }
+        try {
+            $r = $gate->requestAccess($this->ctx->tenantId(), $viewer, (int) $request->inputString('owner'), $request->inputString('reason'));
+        } catch (\Throwable $e) {
+            error_log('Fichiers SSE : demande d’accès impossible : ' . $e->getMessage());
+            $r = ['ok' => false, 'message' => 'Demande impossible pour le moment.'];
+        }
+        Session::flash($r['ok'] ? 'success' : 'error', $r['message']);
+
+        return $this->ctx->back($request, self::BASE . '/photos');
+    }
+
+    /** Décision d'un supérieur : POST fichiers/acces-images/{id}. */
+    public function accessDecide(Request $request, array $params = []): Response
+    {
+        $gate = SseMemberImageGate::forSession();
+        $viewer = $gate->viewerId();
+        if ($viewer === null || !$this->ctx->csrfOk($request)) {
+            return $this->ctx->denied($request, self::BASE . '/acces-images');
+        }
+        try {
+            $r = $gate->decideRequest(
+                $this->ctx->tenantId(),
+                $viewer,
+                (int) ($params['id'] ?? 0),
+                $request->inputString('decision') === 'grant',
+                $request->inputString('reason'),
+                $request->inputString('ends_at') !== '' ? $request->inputString('ends_at') . ' 23:59:59' : null
+            );
+        } catch (\Throwable $e) {
+            error_log('Fichiers SSE : décision d’accès impossible : ' . $e->getMessage());
+            $r = ['ok' => false, 'message' => 'Décision impossible pour le moment.'];
+        }
+        Session::flash($r['ok'] ? 'success' : 'error', $r['message']);
+
+        return Response::redirect(url(self::BASE . '/acces-images'));
     }
 
     /** Deux fiches côte à côte (photos et signalement). */

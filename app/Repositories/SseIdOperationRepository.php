@@ -213,7 +213,7 @@ final class SseIdOperationRepository
     private function wantedRows(string $where, array $params): array
     {
         $rows = $this->db->fetchAll(
-            'SELECT w.*, i.last_name, i.first_name, i.kind, i.photo_path, i.zone AS identity_zone, i.alias AS identity_alias, i.person_id
+            'SELECT w.*, i.last_name, i.first_name, i.kind, i.photo_path, i.user_id, i.zone AS identity_zone, i.alias AS identity_alias, i.person_id
              FROM sse_id_op_wanted w JOIN sse_identities i ON i.id = w.identity_id AND i.tenant_id = w.tenant_id
              WHERE ' . $where . ' ORDER BY w.id LIMIT 300',
             $params
@@ -253,7 +253,11 @@ final class SseIdOperationRepository
                 'sides' => SseIdWorkshopCatalog::sides((string) ($r['sides'] ?? '')),
                 'zone' => (string) ($r['identity_zone'] ?? ''),
                 'notes' => (string) ($r['notes'] ?? ''),
-                'photo_path' => ($r['photo_path'] ?? null) !== null && $r['photo_path'] !== '' ? (string) $r['photo_path'] : null,
+                // Photo d'un membre : CONFIDENTIEL ÉLEVÉ, jamais l'adresse publique (SseMemberImageGate::maskIdentity).
+                'photo_path' => \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity((int) $r['tenant_id'], [
+                    'id' => (int) $r['identity_id'], 'tenant_id' => (int) $r['tenant_id'], 'user_id' => $r['user_id'] ?? null,
+                    'photo_path' => ($r['photo_path'] ?? null) !== null && $r['photo_path'] !== '' ? (string) $r['photo_path'] : null,
+                ])['photo_path'],
                 'batch_id' => ($r['batch_id'] ?? null) !== null ? (int) $r['batch_id'] : null,
                 'documents' => $docs[(int) $r['identity_id']] ?? [],
             ];

@@ -259,6 +259,10 @@ final class SseIdWorkshopController
         if (!$r['truth'] && in_array($identity['kind'] ?? '', \App\Services\Sse\MemberIdentityPapersService::SECRET, true)) {
             $identity = [];
         }
+        // Photo et signature d'un membre : CONFIDENTIEL ÉLEVÉ (affichage seulement ; l'enregistrement relit l'identité en base).
+        if (($identity['id'] ?? 0) > 0) {
+            $identity = \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity($tenantId, $identity);
+        }
         $countryCode = (string) ($doc['country_code'] ?? strtoupper($request->queryString('country', (string) ($identity['nationality'] ?? ''))));
         $country = null;
         foreach ($countries as $c) {

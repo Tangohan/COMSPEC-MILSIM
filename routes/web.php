@@ -1256,6 +1256,10 @@ return function (Router $router) {
     $router->post('/atak/sse/fichiers/photos', [$sseRec, 'photoUpload'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/photos/{id}/image', [$sseRec, 'photoImage'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/photos/{id}/rattacher', [$sseRec, 'photoAttach'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/identites/{id}/{kind}', [$sseRec, 'identityImage'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/acces-images', [$sseRec, 'accessRequests'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/acces-images/demande', [$sseRec, 'accessRequestStore'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/acces-images/{id}', [$sseRec, 'accessDecide'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/comparer', [$sseRec, 'compare'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/telephones', [$sseRec, 'phones'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/telephones/{id}/export', [$sseRec, 'phoneExport'], $mwSsePortal);

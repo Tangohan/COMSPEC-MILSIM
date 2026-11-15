@@ -76,6 +76,13 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'sse_member_image_request' => [
+                'title' => 'Demande d’accès aux images d’un membre',
+                'detail' => 'Un membre demande à voir les images de service d’un membre de votre chaîne de commandement.',
+                'href' => url('atak/sse/fichiers/acces-images'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'sse_wanted_detection' => [
                 'title' => 'Avis de recherche : ' . mb_substr(trim((string) ($payload['label'] ?? 'identité détectée')), 0, 80),
                 'detail' => 'Une identité sous avis de recherche a été repérée (avis ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40) . ').',

@@ -107,6 +107,13 @@ final class MemberIdentityPapersController
             $userId = (int) ($member['id'] ?? 0);
             $service = new MemberIdentityPapersService();
             $data = $service->section($tenantId, $userId, (string) ($member['steam_id'] ?? ''), $rights['truth']);
+            // Photos et signatures des identités du membre : CONFIDENTIEL ÉLEVÉ. Gérer les papiers ne suffit pas à les lire (affichage seulement).
+            $gate = \App\Services\Sse\SseMemberImageGate::forSession();
+            foreach (['identities'] as $listKey) {
+                if (is_array($data[$listKey] ?? null)) {
+                    $data[$listKey] = array_map(static fn (array $i): array => isset($i['id']) ? $gate->maskIdentity($tenantId, $i + ['user_id' => $i['user_id'] ?? $userId]) : $i, $data[$listKey]);
+                }
+            }
             $data['rights'] = $rights;
             $data['proposal'] = MemberIdentityPapersService::primaryProposal(
                 (new UserProfileRepository())->getByUserId($userId) ?? [],

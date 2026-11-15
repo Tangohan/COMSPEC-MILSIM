@@ -37,12 +37,17 @@ foreach ($photos as $ph) {
         $profile = $ph;
     }
 }
-$legacyPhoto = ($i['photo_path'] ?? null) ? user_media_public_url((string) $i['photo_path']) : null;
-$shot = static function (?array $ph, string $label, ?int $height) use ($h, $legacyPhoto): string {
+$legacyPhoto = $i['photo_src'] ?? null; // calculé par SseFileRecordService : route protégée pour un membre, rien si l'image est masquée
+$imageLock = is_array($r['image_lock'] ?? null) ? $r['image_lock'] : null;
+$shot = static function (?array $ph, string $label, ?int $height) use ($h, $legacyPhoto, $imageLock): string {
     $src = $ph !== null ? \App\Services\Sse\SseSeekPhotoService::photoUrl($ph) : ($label === 'FACE' ? $legacyPhoto : null);
     $top = $height !== null ? max(4, (int) round((200 - $height) * 1.5)) : 20;
-    $inner = $src !== null ? '<img src="' . $h($src) . '" alt="Photo ' . $h(mb_strtolower($label)) . '">'
-        : '<div class="hc"></div><div class="sil" style="top:' . $top . 'px"><i></i><u></u></div>';
+    if ($imageLock !== null) {
+        $inner = '<span class="fx-lk" role="img" aria-label="Image masquée : confidentiel élevé"><svg class="i" aria-hidden="true"><use href="#fx-lock"></use></svg><b>CONFIDENTIEL ÉLEVÉ</b></span>';
+    } else {
+        $inner = $src !== null ? '<img src="' . $h($src) . '" alt="Photo ' . $h(mb_strtolower($label)) . '">'
+            : '<div class="hc"></div><div class="sil" style="top:' . $top . 'px"><i></i><u></u></div>';
+    }
 
     return '<div class="fx-shot">' . $inner . '<div class="lb"><span>' . $h($label) . '</span><span>' . ($height !== null ? (int) $height : '') . '</span></div></div>';
 };
@@ -162,8 +167,12 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
             </section>
 
             <section class="fx-ds" id="photos">
-                <h3>Photos <small><?= count($photos) ?></small></h3>
-                <?php if ($photos !== []): ?>
+                <h3>Photos <small><?= $imageLock !== null ? 0 : count($photos) ?></small></h3>
+                <?php if (!empty($r['image_banner'])): ?><span class="fx-cband"><svg class="i" aria-hidden="true"><use href="#fx-lock"></use></svg>Confidentiel élevé</span><?php endif; ?>
+                <?php if ($imageLock !== null): ?>
+                    <p><strong>CONFIDENTIEL ÉLEVÉ</strong> : les images de ce membre sont réservées à lui-même et à sa hiérarchie.</p>
+                    <?php $lock = $imageLock; $lockBack = $self; require __DIR__ . '/_image_request.php'; ?>
+                <?php elseif ($photos !== []): ?>
                     <div class="fx-book" style="padding:0">
                         <?php foreach ($photos as $ph): ?>
                             <div class="fx-pc">

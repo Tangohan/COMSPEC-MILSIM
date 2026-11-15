@@ -266,7 +266,8 @@ final class SseAccessPolicy
     /** Garde d'origine d'un profil du catalogue, pour un compte. */
     public function legacyAllows(int $userId, int $tenantId, string $profile, bool $guest, string $mode = self::DOOR_SESSION): bool
     {
-        if (!isset(C::PROFILES[$profile]) || $profile === 'none') {
+        if (!isset(C::PROFILES[$profile]) || $profile === 'none' || $profile === 'sealed') {
+            // « sealed » : aucune garde d'origine n'ouvre (ni gestionnaire SSE, ni administrateur) ; seule une règle d'accord le fait.
             return false;
         }
         if ($profile === 'entrant') {
