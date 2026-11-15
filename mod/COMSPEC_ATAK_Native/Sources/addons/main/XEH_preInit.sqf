@@ -1247,6 +1247,10 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_anylaptop", "CHECKBOX",
     ["Tous les ordinateurs portables servent de PC de TOC", "Coché : les ordinateurs portables et postes informatiques du jeu posés dans la mission deviennent des PC de TOC (pour tous les camps). Décoché : seulement l'objet PC portable de TOC et les objets désignés par la mission (this setVariable [""COMSPEC_ATAK_Toc"", true, true])."],
     _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+// Menu ACE : les entrées à la racine de l'auto-interaction (hors menu « Téléphone ATAK »).
+["comspec_atak_native_ace_root", "CHECKBOX",
+    ["Menu ACE : entrées ATAK à la racine", "Réglage personnel. Coché (défaut) : « Poste TOC », « Messages et ordres du TOC » et « ATAK : réparer l'affichage » apparaissent à la racine du menu ACE d'auto-interaction. Décoché : elles disparaissent de la racine ; le téléphone ATAK garde « Entretien > Réparer l'écran », l'app Poste TOC du téléphone ouvre le poste, et la touche CBA « Messages et ordres du TOC » reste disponible."],
+    ["COMSPEC", "ATAK · Menu ACE"], true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_toc_direct", "CHECKBOX",
     ["Poste TOC : unités sans téléphone", "Coché : la console du poste TOC montre toutes les unités du camp, y compris celles qui n'ont pas de téléphone ATAK (position lue dans le jeu, état « sans téléphone · source directe »). Décoché : seulement les porteurs d'un téléphone, à leur dernier point reçu. Exemple : décochez pour une mission où le poste ne doit voir que le réseau ATAK."],
     _loc, true, 1] call comspec_atak_native_fnc_addSetting;
