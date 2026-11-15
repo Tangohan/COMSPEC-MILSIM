@@ -69431,7 +69431,7 @@ return [
     'Ce joueur a déjà trois messages en attente.' => 'This player already has three messages waiting.',
     'Ce téléphone n’est pas (encore) dans la liste des téléphones : ouvrez l’onglet Téléphones.' => 'This phone is not (yet) in the phone list: open the Phones tab.',
     'Ce téléphone n’est plus connu du poste.' => 'This phone is no longer known to the station.',
-    'Cette fonction n’est pas encore installée sur le site (étape 4740 à lancer).' => 'This feature is not installed on the site yet (step 4740 must be run).',
+    'Cette fonction n’est pas encore installée sur le site (étape 4760 à lancer).' => 'This feature is not installed on the site yet (step 4760 must be run).',
     'Chaque demande du poste : qui, quoi, quand et le résultat.' => 'Every request from the station: who, what, when and the result.',
     'Chaque demande est inscrite au journal : qui, quoi, quel téléphone, quand, résultat.' => 'Every request is written to the journal: who, what, which phone, when, result.',
     'Chargement des téléphones…' => 'Loading phones…',

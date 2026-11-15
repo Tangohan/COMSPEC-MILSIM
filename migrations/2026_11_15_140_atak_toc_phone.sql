@@ -1,5 +1,5 @@
 -- Actions sur les téléphones en jeu depuis le poste TOC web (notifier, faire sonner, localiser, trianguler).
--- Équivalent MySQL de bootstrap/atak_toc_phone_migration.php (exécuté par l'étape 4740). Aucune donnée existante lue ni
+-- Équivalent MySQL de bootstrap/atak_toc_phone_migration.php (exécuté par l'étape 4760). Aucune donnée existante lue ni
 -- modifiée. Sans ces tables, la fonction reste désactivée et le poste le dit. Les ordres vers le jeu passent par la file
 -- existante atak_web_commands (genre « phone »), qui n'est pas modifiée.
 -- Retour arrière : migrations/rollback/atak_toc_phone_down.sql.
