@@ -78,6 +78,12 @@ final class SseIdentitySqlite
             $out .= $m;
         });
 
+        // Étape 4690 : colonnes de l'identité officielle (user_profiles.character_birth_date si la table existe déjà).
+        $civil = require dirname(__DIR__, 2) . '/bootstrap/sse_member_civil_identity_migration.php';
+        $civil($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
+
         return $out;
     }
 

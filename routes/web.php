@@ -559,6 +559,7 @@ return function (Router $router) {
     $router->post('/jnet/moi/carnet-de-vol/{entryId}/supprimer', $moi(PilotLogbookController::class, 'delete'), $mwMoi);
     $router->get('/jnet/moi/mes-papiers', $moi($moiPapers, 'mine'), $mwMoi);
     $router->post('/jnet/moi/mes-papiers/couverture', $moi($moiCover, 'generateMine'), $mwMoi);
+    $router->post('/jnet/moi/mes-papiers/etat-civil', $moi($moiPapers, 'alignMine'), $mwMoi);
     $router->get('/jnet/moi/mes-papiers/couverture/{exportId}/telecharger', $moi($moiCover, 'downloadMine'), $mwMoi);
     $router->get('/jnet/moi/liaison-atak', $moi(MemberSituationController::class, 'liaisonAtak'), $mwMoi);
     $router->get('/jnet/moi/appareils', $moi(MemberSituationController::class, 'appareils'), $mwMoi);
@@ -1305,6 +1306,8 @@ return function (Router $router) {
     $router->get('/atak/sse/papiers/membres', [\App\Controllers\Web\SseIdentityRegistryController::class, 'membersIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'memberShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilAlign'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/etat-civil/volontaire', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilOverride'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identites/{identityId}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'identityPhoto'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], $mwSsePortal);
@@ -2544,6 +2547,8 @@ return function (Router $router) {
     // Fiche membre › Identité & papiers (COMSPEC IDENTITY) : identités, papiers, kit de mission.
     $router->post('/back-office/ressources/effectifs/membres/{id}/qualifications-suggerees', [\App\Controllers\Admin\MemberQualificationSuggestionsController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/etat-civil', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilAlign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/etat-civil/volontaire', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'civilOverride'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites/{identityId}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'identityPhoto'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
