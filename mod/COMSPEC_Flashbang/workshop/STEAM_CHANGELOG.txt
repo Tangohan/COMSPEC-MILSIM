@@ -1,3 +1,21 @@
+[h1]COMSPEC Flashbang -BetterFlash- 1.0.2 — moins de saccades en rafale / fewer stutters in bursts[/h1]
+
+[h2]Français[/h2]
+[b]Résumé joueur[/b] : moins de saccades quand une grenade à plusieurs flashs explose près de nombreuses IA.
+[list]
+[*] Les grenades à flashs multiples coûtent moins cher en rafale : les IA touchées sont traitées 6 par image au total, même si plusieurs grenades explosent ensemble, et les calculs identiques d'un flash à l'autre ne sont plus refaits.
+[*] À savoir : dans une rafale très serrée, il peut y avoir un peu moins de poussière au sol ; flash, étincelles, fumée et sons ne changent pas.
+[*] Rien n'a encore été mesuré en jeu : dis-nous ce que tu constates devant de nombreuses IA.
+[/list]
+
+[h2]English[/h2]
+[b]Player summary[/b]: fewer stutters when a multi-flash grenade goes off near many AI.
+[list]
+[*] Multi-flash grenades are cheaper in rapid bursts: affected AI units are processed 6 per frame in total, even when several grenades go off together, and calculations that give the same result from one flash to the next are no longer repeated.
+[*] Good to know: in a very tight burst there may be a little less dust on the ground; flash, sparks, smoke and sounds are unchanged.
+[*] Nothing has been measured in game yet: tell us what you notice in front of many AI.
+[/list]
+
 [h1]COMSPEC Flashbang -BetterFlash- 1.0.1 — les IA réagissent enfin / AI finally react[/h1]
 
 [h2]Français[/h2]

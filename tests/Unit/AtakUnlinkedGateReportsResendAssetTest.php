@@ -150,7 +150,7 @@ final class AtakUnlinkedGateReportsResendAssetTest extends TestCase
         self::assertStringContainsString('["blocks", _cmd] call comspec_overwatch_connect_fnc_linkGate', $hold);
         $config = self::read(self::CONN . 'config.cpp');
         self::assertStringContainsString('class linkGate {};', $config);
-        self::assertStringContainsString('versionStr = "1.6.35";', $config);
+        ModVersion::assertAtLeast('1.6.35', ModVersion::fromConfigCpp($config));
     }
 
     public function testQueuesAreKeptAndBounded(): void

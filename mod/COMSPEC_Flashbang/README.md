@@ -496,7 +496,7 @@ calculées (tests de calibration), pas encore mesurées en jeu.
 
 ## Diagnostic
 
-- Au chargement, une ligne RPT est toujours écrite : `[COMSPEC FB] chargé 1.0.1 · CBA ok · ACE=… ACRE=… TFAR=… ZEN=…
+- Au chargement, une ligne RPT est toujours écrite : `[COMSPEC FB] chargé 1.0.2 · CBA ok · ACE=… ACRE=… TFAR=… ZEN=…
   · autres flashbang: tsp=…/dka=…`.
 - En multijoueur, sur un client, une ligne 15 s après le chargement : `[COMSPEC FB] SERVEUR : mod présent (version …)`,
   `… mod absent (clients seulement)` ou `… version différente`.

@@ -1,3 +1,31 @@
+[h1]COMSPEC SSE 1.17.0 — signalement depuis le contrôle d'identité, photo du papier, moins de saccades / report from the identity check, paper photo, fewer stutters (15/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.29.0. / Fully restart Arma. Requires COMSPEC ATAK 4.29.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Signaler une personne recherchée[/b] : la carte « AVIS DE RECHERCHE » du contrôle d'identité a un bouton SIGNALER. Il envoie le signalement avec la position du contrôle, par l'app « Avis et vigilance » du téléphone ATAK. Il faut que le site Athena de ta communauté soit à jour.
+[*] [b]Photo du papier[/b] : la fenêtre du papier présenté a un bouton « PHOTO DU PAPIER ». La photo est jointe au contrôle sur Athena, seulement quand tu appuies sur ce bouton ; l'app Contrôle ID dit où en est l'envoi et propose « Renvoyer la photo ».
+[*] [b]Fiches sans mention « RP »[/b] : le bas des fiches et des dossiers n'affiche plus « usage RP / renseignement uniquement », et le terminal des fichiers s'appelle simplement FICHIERS.
+[*] [b]Moins de saccades au départ[/b] : le chargement des identités depuis Athena ne fige plus le serveur. Un paquet inchangé est reconnu tout de suite, un paquet relayé par un Zeus est appliqué petit à petit, et les IA reçoivent leurs identités par petits groupes. Ces gains n'ont pas encore été mesurés en jeu.
+[*] Aucune DLL à changer pour le SSE seul ; COMSPEC Link passe en 2.0.128 avec COMSPEC ATAK 4.29.0.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Report a wanted person[/b]: the "WANTED NOTICE" card of the identity check has a REPORT button. It sends the sighting with the check position, through the "Alerts and vigilance" app of the ATAK phone. Your community's Athena site must be up to date.
+[*] [b]Paper photo[/b]: the window of the presented paper has a "PAPER PHOTO" button. The photo is attached to the check on Athena, only when you press that button; the ID Check app tells you where the sending stands and offers "Resend photo".
+[*] [b]Records without an "RP" notice[/b]: the bottom of records and files no longer shows "RP / intelligence use only", and the records terminal is simply called RECORDS.
+[*] [b]Fewer stutters at start[/b]: loading identities from Athena no longer freezes the server. An unchanged pack is recognised at once, a pack relayed by a Zeus is applied gradually, and AI receive their identities in small groups. These gains have not been measured in game yet.
+[*] No DLL to change for SSE alone; COMSPEC Link becomes 2.0.128 with COMSPEC ATAK 4.29.0.
+[/list]
+
+[b]Versions regroupées dans cette mise à jour / Versions grouped in this update[/b]
+[list]
+[*] 1.15.0 : photo du papier au contrôle / paper photo at the check
+[*] 1.16.0 : fiches sans mention « RP » / records without an "RP" notice
+[*] 1.17.0 : signalement, moins de saccades / report, fewer stutters
+[/list]
+
 [h1]COMSPEC SSE 1.16.0 — fiches et fichiers sans mention « RP » / records and files without an "RP" notice (15/11/2026)[/h1]
 [b]Relance Arma complètement. / Fully restart Arma.[/b]
 

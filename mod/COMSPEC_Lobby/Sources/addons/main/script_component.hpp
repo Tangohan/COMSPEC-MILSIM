@@ -3,6 +3,6 @@
 #define PATHTOF(var1) \z\comspec_lobby\addons\main\var1
 #define QPATHTOF(var1) QUOTE(PATHTOF(var1))
 
-#define VERSION 0.31
-#define VERSION_STR 0.3.1
-#define VERSION_AR 0,3,1
+#define VERSION 0.4
+#define VERSION_STR 0.4.0
+#define VERSION_AR 0,4,0

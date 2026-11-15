@@ -2,6 +2,32 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC Overwatch connect 1.6.36 — moins de saccades dans les menus ACE, l'arsenal et les marqueurs / fewer stutters in ACE menus, arsenal and markers[/h1]
+[b]Publication : 15/11/2026[/b]
+[quote]
+[b]Important :[/b] quittez Arma 3 complètement, mettez à jour le pack Workshop, puis relancez. Sur serveur dédié, rechargez aussi le mod côté serveur. / Fully quit Arma 3, update the Workshop pack, then relaunch. On a dedicated server, reload the mod server-side too.
+[/quote]
+
+[h2]Français[/h2]
+[list]
+[*] À l'arrivée en mission, le menu ACE « COMSPEC Athena » se pose en douceur au lieu de figer l'image.
+[*] L'ouverture de l'arsenal ACE est allégée : le panneau des tenues Athena ne se prépare que si tu cliques sur son bouton.
+[*] Coller beaucoup de marqueurs en Zeus ne fait plus saccader.
+[*] Les joueurs sans compte Steam reconnu n'ont plus de travail inutile toutes les 8 secondes.
+[*] Mod plus léger : environ 23 Mo d'images en double ou jamais utilisées retirées. L'écran cassé, l'écran éteint et le HUD ECOTI utilisent désormais des images au format du jeu.
+[*] Rien n'a encore été mesuré en jeu : dis-nous ce que tu constates.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] When you join a mission, the "COMSPEC Athena" ACE menu is set up smoothly instead of freezing a frame.
+[*] Opening the ACE arsenal is lighter: the Athena loadouts panel is only prepared when you click its button.
+[*] Pasting many markers in Zeus no longer stutters.
+[*] Players without a recognised Steam account no longer trigger useless work every 8 seconds.
+[*] Lighter mod: about 23 MB of duplicate or never-used images removed. The cracked screen, the switched-off screen and the ECOTI HUD now use images in the game's own format.
+[*] Nothing has been measured in game yet: tell us what you notice.
+[/list]
+
 [h1]COMSPEC Overwatch — Mise à jour 1.6.12[/h1]
 [b]Publication : 22/09/2026[/b]
 [b]Pack :[/b] Overwatch 1.6.12 · Athena 1.0.166 · Extension 2.0.51

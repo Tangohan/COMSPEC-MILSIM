@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 /**
  * COMSPEC Flashbang 1.0.1 : réaction des IA à la flashbang (« les IA réagissent très très peu »).
@@ -343,12 +344,16 @@ final class FlashbangAiReactionAssetTest extends TestCase
     public function testVersionNoteDeVersionEtAucunBinaire(): void
     {
         $sc = self::read(self::MAIN . 'script_component.hpp');
-        self::assertStringContainsString('#define VERSION_STR 1.0.1', $sc);
-        self::assertStringContainsString('#define VERSION_AR 1,0,1', $sc);
-        self::assertStringContainsString('patch = 1', self::read('mod/COMSPEC_Flashbang/Sources/.hemtt/project.toml'));
-        // Premier bloc [h1] du changelog = note de version : 1.0.1, résumé joueur FR + EN.
+        // Version minimale (chaque sortie suivante ne casse pas ce test) ; l'alignement des fichiers de version, lui, est exact.
+        $v = ModVersion::match('/#define VERSION_STR (\d+\.\d+\.\d+)/', $sc);
+        ModVersion::assertAtLeast('1.0.1', $v);
+        [$maj, $min, $pat] = array_map('intval', explode('.', $v));
+        self::assertStringContainsString("#define VERSION_AR {$maj},{$min},{$pat}", $sc);
+        self::assertStringContainsString("major = {$maj}", self::read('mod/COMSPEC_Flashbang/Sources/.hemtt/project.toml'));
+        self::assertStringContainsString("patch = {$pat}", self::read('mod/COMSPEC_Flashbang/Sources/.hemtt/project.toml'));
+        // Premier bloc [h1] du changelog = note de version de la version courante, résumé joueur FR + EN.
         $log = self::read('mod/COMSPEC_Flashbang/workshop/STEAM_CHANGELOG.txt');
-        self::assertStringStartsWith('[h1]COMSPEC Flashbang -BetterFlash- 1.0.1', $log);
+        self::assertStringStartsWith('[h1]COMSPEC Flashbang -BetterFlash- ' . $v, $log);
         $blocks = preg_split('/^(?=\[h1\])/m', $log) ?: [];
         $first = '';
         foreach ($blocks as $b) {
