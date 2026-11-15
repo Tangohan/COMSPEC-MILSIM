@@ -154,6 +154,20 @@ final class QualificationRulesController
         });
     }
 
+    public function reopen(Request $request, array $params = []): Response
+    {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
+        $awardId = (int) ($params['awardId'] ?? 0);
+        $definitionId = (int) $request->input('definition_id', 0);
+
+        return $this->post($request, url(self::BASE . '/' . $definitionId), function (int $tenantId) use ($awardId): void {
+            $this->service->reopen($tenantId, $awardId, (int) Session::get('user_id'));
+            Session::flash('success', 'Ajournement annulé : la proposition est de nouveau à valider.');
+        });
+    }
+
     public function restore(Request $request, array $params = []): Response
     {
         if (($denied = $this->guardBackOfficeRight($request)) !== null) {

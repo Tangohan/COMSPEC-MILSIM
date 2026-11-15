@@ -447,6 +447,28 @@ final class PilotQualificationService
     }
 
     /**
+     * Annule l'ajournement d'un palier du cursus modèle : mêmes droits que la décision (instructeur de la filière, jamais soi-même).
+     */
+    public function reopen(int $tenantId, int $awardId, int $actorId, bool $bypassValidator = false): void
+    {
+        $award = $this->awards->find($awardId, $tenantId);
+        if ($award === null) {
+            throw new RuntimeException('Attribution introuvable.');
+        }
+        $rule = $this->rules->findByDefinition($tenantId, (int) ($award['definition_id'] ?? 0));
+        if ($rule === null) {
+            throw new RuntimeException('Cette qualification ne fait pas partie du cursus pilote.');
+        }
+        if ((int) $award['user_id'] === $actorId) {
+            throw new RuntimeException('Un autre instructeur doit annuler cet ajournement.');
+        }
+        if (!$bypassValidator && !$this->canValidate($tenantId, $rule, $actorId)) {
+            throw new RuntimeException('Seul un ' . mb_strtolower(PilotSyllabusCatalog::tierLabel((string) $rule['validator_tier'])) . ' ' . mb_strtolower(PilotSyllabusCatalog::trackLabel((string) $rule['track'])) . ' peut annuler cet ajournement.');
+        }
+        $this->transitions->reopenFailed($tenantId, $awardId, $actorId);
+    }
+
+    /**
      * Qui peut valider un palier : les titulaires du palier validateur de la même filière (instructeurs). Tant que
      * personne ne l'est encore, le premier est validé par un gestionnaire de la communauté.
      *
