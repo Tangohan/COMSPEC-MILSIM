@@ -10,7 +10,12 @@ use App\Repositories\SseIdentityEventRepository;
 use App\Repositories\SseSheetRepository;
 use App\Repositories\SseWantedNoticeRepository;
 use App\Repositories\SseWantedSettingsRepository;
+use App\Repositories\SseAlertRepository;
+use App\Repositories\SseAuditLogRepository;
 use App\Support\Pdf\AthenaPdfTheme;
+use App\Support\SseAlertLevel;
+use App\Support\SseAlertReportTo;
+use App\Support\SseWantedCodes;
 use App\Support\SseSheetCatalog as D;
 use App\Support\SseSheetText as T;
 use App\Support\SseUsClassification;
@@ -133,6 +138,19 @@ final class SseSheetService
         $authority = [(string) $config['authority_fr'], (string) $config['authority_en']];
         $service = trim((string) $config['contact_label']);
         $issued = gmdate('Y-m-d');
+        // Fiche de vigilance : niveau d'alerte, conduite à tenir et motifs codifiés, zone saisie, service à informer.
+        $alert = null;
+        if ($model === 'vigilance') {
+            $zone = C::line($input['zone'] ?? '', 120);
+            if ($zone !== '') {
+                $facts['zone'] = $zone;
+            }
+            $built = $this->alert($config, $input, $facts, $lang);
+            $alert = $built['alert'];
+            $out['errors'] = array_merge($out['errors'], $built['errors']);
+            $authority = [$alert['report']['auth_fr'] !== '' ? $alert['report']['auth_fr'] : $authority[0], $alert['report']['auth_en'] !== '' ? $alert['report']['auth_en'] : $authority[1]];
+            $service = SseAlertReportTo::label($alert['report'], $lang);
+        }
         $context = ['ref' => $ref, 'service' => $service, 'date' => $issued];
         $vars = $this->facts->variables($facts, $lang, $context);
 
@@ -158,6 +176,12 @@ final class SseSheetService
             $validity = D::validity($input['validity'] ?? D::DEFAULT_VALIDITY);
         }
         $validUntil = $validity !== null ? gmdate('Y-m-d', strtotime($issued . ' UTC +' . $validity . ' days')) : null;
+        if ($alert !== null) {
+            $token = is_string($input['_token'] ?? null) && SseAlertRepository::validToken((string) $input['_token']) ? (string) $input['_token'] : '';
+            $alert['token'] = $token;
+            $alert['url'] = SseAlertReportTo::url($token);
+            $alert['perishable'] = SseAlertLevel::perishable($validUntil);
+        }
         $labels = self::levelLabels($level);
         $sensitive = array_values(array_unique(array_merge($masked['shown'], T::categories($used))));
         $data = [
@@ -169,11 +193,22 @@ final class SseSheetService
             'emblem' => (string) $config['emblem'],
             'generated_at' => gmdate($lang === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC',
         ];
+        if ($alert !== null) {
+            $data['alert'] = $alert;
+            $data['issuer'] = $access->actorLabel();
+        }
         $out['ok'] = $out['errors'] === [];
         $out['data'] = $data;
         $out['texts'] = $texts;
         $out['sensitive'] = $sensitive;
         $out['params'] = ['lang' => $lang, 'classification' => $level, 'faces' => $faces, 'validity' => $validity, 'threat' => $facts['threat'], 'armed' => $facts['armed'], 'checks' => array_values(array_map(static fn (array $c): string => (string) $c['ref'], $facts['checks']))];
+        if ($alert !== null) {
+            $out['params'] += [
+                'measures' => array_column($alert['measures'], 'code'), 'reasons' => array_column($alert['reasons'], 'code'), 'zone' => (string) $facts['zone'],
+                'service' => $alert['report']['code'], 'service_other' => $alert['report']['code'] === '' ? $alert['report']['fr'] : '',
+                'report_delay' => $alert['report']['delay'], 'report_channel' => $alert['report']['channel'], 'level' => $alert['key'],
+            ];
+        }
         // Instantané imprimé : données caviardées, sans image (les clichés sont rechargés au re-téléchargement).
         $out['snapshot'] = ['data' => array_diff_key($data, ['emblem' => 1, 'generated_at' => 1]), 'photos' => $facts['photos']];
 
@@ -207,8 +242,74 @@ final class SseSheetService
             }
         }
         $data['generated_at'] ??= gmdate($data['lang'] === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC';
+        // Emblème téléversé du service à informer (sinon l'emblème générique dessiné par le gabarit).
+        $code = (string) ($data['alert']['report']['code'] ?? '');
+        if ($code !== '') {
+            $data['alert']['report']['emblem_bytes'] = self::serviceEmblem($tenantId, $code);
+        }
 
         return $this->template->render($data);
+    }
+
+    /** Octets de l'emblème téléversé d'un service de la communauté, ou null (aucun, étape de base absente, image illisible). */
+    public static function serviceEmblem(int $tenantId, string $code): ?string
+    {
+        try {
+            if ($code === '' || !class_exists(SseServiceEmblems::class)) {
+                return null;
+            }
+            $bytes = (new SseServiceEmblems())->bytesFor($tenantId, $code);
+
+            return is_string($bytes) && $bytes !== '' ? $bytes : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Bloc d'alerte d'une fiche de vigilance : niveau (échelle de menace des avis, relevée par l'armement), conduite à tenir et
+     * motifs codifiés (catalogue de la communauté), lignes « à ne pas faire », service à informer.
+     *
+     * @param array<string, mixed> $config
+     * @param array<string, mixed> $input measures, reasons (listes de codes ou null : valeurs d'office du niveau), service, service_other, report_delay, report_channel
+     * @param array<string, mixed> $facts
+     * @return array{alert: array<string, mixed>, errors: list<string>}
+     */
+    private function alert(array $config, array $input, array $facts, string $lang): array
+    {
+        $level = SseAlertLevel::of((string) $facts['threat'], (string) $facts['armed']);
+        $pick = static function (mixed $raw, string $kind) use ($config): array {
+            $list = is_array($raw) ? $raw : (is_string($raw) ? explode(',', $raw) : []);
+            $out = [];
+            foreach ($list as $code) {
+                $code = strtoupper(trim(is_scalar($code) ? (string) $code : ''));
+                if ($code === '' || isset($out[$code]) || SseWantedCodes::kindOf($code) !== $kind) {
+                    continue;
+                }
+                $c = SseWantedCodes::find($code, $config);
+                if ($c !== null && count($out) < D::MAX_CODES) {
+                    $out[$code] = ['code' => $code, 'fr' => (string) $c['fr'], 'en' => (string) $c['en'], 'text_fr' => (string) ($c['text_fr'] ?? ''), 'text_en' => (string) ($c['text_en'] ?? '')];
+                }
+            }
+
+            return array_values($out);
+        };
+        $measures = $pick(($input['measures'] ?? null) !== null ? $input['measures'] : SseAlertLevel::DEFAULT_MEASURES[$level['key']], SseWantedCodes::MEASURES);
+        $reasons = $pick($input['reasons'] ?? [], SseWantedCodes::REASONS);
+        $codes = array_column($measures, 'code');
+        $resolved = SseAlertReportTo::resolve($config, [
+            'service' => $input['service'] ?? '', 'other' => $input['service_other'] ?? '', 'channel' => $input['report_channel'] ?? '', 'delay' => $input['report_delay'] ?? '',
+        ]);
+
+        return [
+            'alert' => [
+                'key' => $level['key'], 'rank' => $level['rank'], 'order' => SseAlertLevel::order($codes),
+                'measures' => $measures, 'reasons' => $reasons,
+                'donts' => [SseAlertLevel::donts($codes, 'fr'), SseAlertLevel::donts($codes, 'en')],
+                'report' => $resolved['report'], 'token' => '', 'url' => '', 'perishable' => false,
+            ],
+            'errors' => $resolved['errors'],
+        ];
     }
 
     /**
@@ -278,6 +379,8 @@ final class SseSheetService
             } else {
                 // Génération rapide sans l'étape « fiches PDF » : référence locale non enregistrée, le PDF part directement.
                 $ref = SseSheetRepository::ready() ? $this->repo->nextRef($tenantId, $model, null, $attempt) : ['ref' => (D::MODELS[$model]['prefix'] ?? 'FX') . '-' . gmdate('Y') . '-Q' . strtoupper(bin2hex(random_bytes(3))), 'year' => (int) gmdate('Y'), 'seq' => 0];
+                // Adresse de signalement de la fiche de vigilance : le jeton est tiré avant l'impression (il est sur le PDF et dans le QR code).
+                $input['_token'] = $model === 'vigilance' && SseSheetRepository::ready() && SseAlertRepository::ready() ? SseAlertRepository::newToken() : null;
                 $p = $this->prepare($tenantId, $subject, $model, $input, $access, $ref['ref']);
                 if (!$p['ok'] || $p['data'] === null) {
                     return $fail('invalid', $p['errors']);
@@ -304,6 +407,16 @@ final class SseSheetService
                     ], $ref);
                 } catch (\PDOException) {
                     continue;
+                }
+            }
+            if ($id > 0 && $model === 'vigilance' && is_string($input['_token'] ?? null)) {
+                try {
+                    (new SseAlertRepository())->ensureLink($tenantId, SseAlertRepository::DOC_VIGILANCE, $id, [
+                        'token' => $input['_token'], 'report' => $snapshot['data']['alert']['report'] ?? null, 'valid_until' => $snapshot['data']['valid_until'] ?? null,
+                        'client_id' => is_string($input['cid'] ?? null) ? $input['cid'] : null, 'user_id' => $userId,
+                    ]);
+                } catch (\Throwable $e) {
+                    error_log('Fiche de vigilance : adresse de signalement non enregistrée : ' . $e->getMessage());
                 }
             }
             $this->trace($tenantId, $subject, $model, $ref['ref'], $lang, $notice !== null ? (int) $notice['id'] : null, $access);
@@ -359,6 +472,12 @@ final class SseSheetService
             $data['classification'] = self::levelLabels($data['level']);
             $data['facts']['photos'] = is_array($snap['photos'] ?? null) ? $snap['photos'] : [];
             $data['emblem'] = (string) $this->settings->get($tenantId)['emblem'];
+            // Fiche de vigilance levée depuis : le PDF re-téléchargé le dit (mention et date), sans rien changer d'autre.
+            if ($issue['model'] === 'vigilance' && is_array($data['alert'] ?? null)) {
+                $link = (new SseAlertRepository())->linkFor($tenantId, SseAlertRepository::DOC_VIGILANCE, (int) $issue['id']);
+                $data['alert']['lifted_at'] = $link['lifted_at'] ?? null;
+                $data['alert']['perishable'] = ($link['lifted_at'] ?? null) === null && SseAlertLevel::perishable((string) ($data['valid_until'] ?? ''));
+            }
             $bytes = $this->render($tenantId, $data)['bytes'] ?? null;
         }
         if ($bytes === null) {
@@ -498,6 +617,16 @@ final class SseSheetService
     /** @param array<string, mixed> $subject */
     private function trace(int $tenantId, array $subject, string $model, string $docRef, string $lang, ?int $noticeId, SseSheetAccess $access): void
     {
+        // Journal d'audit : chaque émission, avec son auteur (jamais bloquant).
+        try {
+            (new SseAuditLogRepository())->write([
+                'tenant_id' => $tenantId, 'actor_user_id' => $access->userId(), 'actor_label' => $access->actorLabel() !== '' ? $access->actorLabel() : 'Fiches PDF',
+                'action' => 'document.issued', 'object_type' => 'sse_doc_issue', 'object_uuid' => mb_substr($docRef, 0, 36), 'reason' => '',
+                'after' => ['ref' => $docRef, 'model' => $model, 'lang' => $lang, 'person_id' => $subject['person_id'] ?? null, 'identity_id' => $subject['identity_id'] ?? null],
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Fiches PDF : audit indisponible : ' . $e->getMessage());
+        }
         $identityId = (int) ($subject['identity_id'] ?? 0);
         if ($identityId < 1 || !SseIdentityEventRepository::ready()) {
             return;
