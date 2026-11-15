@@ -88,8 +88,9 @@ $sseClearanceTone = match ($sseClearanceKey) {
     'encadrement' => 'command',
     default => 'internal',
 };
-// Polices servies par le site et préchargées : le texte ne change pas de police (ni de taille) après l'affichage.
-$sseFontSans = asset_url('assets/fonts/nine-line/inter-latin.woff2');
+// Polices auto-hébergées (licence OFL) et préchargées : le texte ne change pas de police (ni de taille) après l'affichage.
+// Archivo = texte du système de design (sse-ds.css) ; JetBrains Mono = identifiants, codes, heures.
+$sseFontSans = asset_url('assets/fonts/archivo/archivo-latin.woff2');
 $sseFontMono = asset_url('assets/fonts/nine-line/jetbrains-mono-latin.woff2');
 $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS;
 ?>
@@ -104,7 +105,9 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     <link rel="preload" href="<?= $h($sseFontSans) ?>" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="<?= $h($sseFontMono) ?>" as="font" type="font/woff2" crossorigin>
     <style>
-        @font-face { font-family: "Inter"; font-style: normal; font-weight: 400 900; font-display: swap; src: url("<?= $h($sseFontSans) ?>") format("woff2"); }
+        @font-face { font-family: "Archivo"; font-style: normal; font-weight: 400 800; font-display: swap; src: url("<?= $h($sseFontSans) ?>") format("woff2"); }
+        /* Compatibilité : les feuilles du portail qui écrivent encore « Inter » reçoivent Archivo (même fichier, rien de plus à télécharger). */
+        @font-face { font-family: "Inter"; font-style: normal; font-weight: 400 800; font-display: swap; src: url("<?= $h($sseFontSans) ?>") format("woff2"); }
         @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400 800; font-display: swap; src: url("<?= $h($sseFontMono) ?>") format("woff2"); }
     </style>
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>">
@@ -112,6 +115,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_field_note.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_shell.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_ui.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-ds.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_notify.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-aside-badges.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/app-update-modal.css')) ?>">
@@ -305,6 +309,7 @@ window.SSE_CTX = {
 <script src="<?= $h(asset_url('assets/js/sse-shell.js')) ?>"></script>
 <script src="<?= $h(asset_url('assets/js/sse-aside-badges.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-ui.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/sse-ds.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-notify.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/sse-global-search.js')) ?>"></script>
 <script>

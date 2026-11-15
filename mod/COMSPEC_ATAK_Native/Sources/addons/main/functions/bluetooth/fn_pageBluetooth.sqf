@@ -27,9 +27,9 @@ private _icon = "\a3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa";
 private _dataDir = "\z\comspec_atak_native\addons\main\data\";
 private _kindIcon = createHashMapFromArray [["snd", _dataDir + "app_music.paa"], ["mus", _dataDir + "app_music.paa"], ["mp3", _dataDir + "app_music.paa"],
     ["pho", _dataDir + "app_gallery.paa"], ["pos", _dataDir + "app_map.paa"], ["wp", _dataDir + "app_waypoints.paa"], ["plan", _dataDir + "app_plan.paa"],
-    ["seek", _dataDir + "app_sse.paa"], ["sse", _dataDir + "app_sse.paa"], ["idc", _dataDir + "app_sse.paa"], ["note", _dataDir + "app_notes.paa"]];
+    ["seek", _dataDir + "app_sse.paa"], ["sse", _dataDir + "app_sse.paa"], ["idc", _dataDir + "app_sse.paa"], ["fiche", _dataDir + "app_wanted.paa"], ["note", _dataDir + "app_notes.paa"]];
 private _kindName = createHashMapFromArray [["snd", "son"], ["mus", "musique"], ["mp3", "morceau (fichier)"], ["pho", "photo"], ["pos", "position"],
-    ["wp", "itinéraire"], ["plan", "plan"], ["seek", "fiche SEEK"], ["sse", "fiche SSE"], ["idc", "papiers (contrôle ID)"], ["note", "note"]];
+    ["wp", "itinéraire"], ["plan", "plan"], ["seek", "fiche SEEK"], ["sse", "fiche SSE"], ["idc", "papiers (contrôle ID)"], ["fiche", "fiche du site"], ["note", "note"]];
 private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_btAction;", str _a, str _v] };
 // Vue dédiée d'une fiche CONTRÔLE ID (reçue ou à partager).
@@ -244,6 +244,7 @@ if ((count _inbox) > 0) then {
             case "pos": { "repère sur la carte" };
             case "seek": { "aussi dans le journal du terminal SEEK" };
             case "idc": { "vue dédiée" };
+            case "fiche": { "app Fiches, rubrique Reçues" };
             default { "" };
         };
         private _canView = !(_kind in ["pho", "mp3"]);
@@ -251,7 +252,12 @@ if ((count _inbox) > 0) then {
         private _open = if (_kind isEqualTo "idc") then {
             private _k = (createHashMapFromArray ((_data select { _x isEqualType [] && {(count _x) isEqualTo 2} }))) getOrDefault ["key", ""];
             ["idcOpen", _k] call _act
-        } else { ["view", _id] call _act };
+        } else {
+            // Fiche du site (app Fiches) : VOIR l'ouvre dans MA liste, donc selon MON habilitation.
+            if (_kind isEqualTo "fiche") then {
+                compile format ["['openRef', %1] call comspec_atak_native_fnc_fichesAction;", str (_data param [0, ""])]
+            } else { ["view", _id] call _act }
+        };
         _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · de %3 · %4%5</t>",
             [_title] call _esc, _kindName getOrDefault [_kind, "élément"], [_from] call _esc, _hh, ["", format [" · %1", _where]] select (_where isNotEqualTo "")],
             [[["VOIR", "FERMER"] select (_view isEqualTo _id), _open, false, _canView]], [COMSPEC_ATAK_Th get "textDim", _acc] select (_view isEqualTo _id)];

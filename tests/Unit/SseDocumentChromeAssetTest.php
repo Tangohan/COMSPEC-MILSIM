@@ -37,7 +37,8 @@ final class SseDocumentChromeAssetTest extends TestCase
     public function testPresentationPageAndPaperPartialAreWired(): void
     {
         $root = $this->root();
-        $view = (string) file_get_contents($root . '/views/atak/sse/document_presentation.php');
+        $view = (string) file_get_contents($root . '/views/atak/sse/document_presentation.php')
+            . (string) file_get_contents($root . '/views/atak/sse/partials/document_presentation_body.php');
         $paper = (string) file_get_contents($root . '/views/atak/sse/partials/document_paper.php');
         // La navigation du bureau est définie une seule fois (barre latérale + palette).
         $layout = (string) file_get_contents($root . '/app/Support/SsePortalNav.php');
@@ -60,7 +61,9 @@ final class SseDocumentChromeAssetTest extends TestCase
         self::assertStringContainsString('sse-doc-paper-style--stained', $css);
         self::assertStringContainsString('sse-doc-paper-style--crumpled', $css);
         self::assertStringNotContainsString('endpoint', strtolower($view));
-        self::assertStringNotContainsString('json', strtolower($view));
+        // Les données des fiches voyagent dans un bloc interne à la page : aucun mot technique dans les textes affichés.
+        $visible = strip_tags((string) preg_replace('#<(script|template)\b.*?</>#s', '', $view));
+        self::assertStringNotContainsString('json', strtolower($visible));
         self::assertStringNotContainsString('slug', strtolower($view));
     }
 
