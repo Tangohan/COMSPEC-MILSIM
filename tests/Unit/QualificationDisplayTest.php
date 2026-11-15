@@ -170,7 +170,7 @@ final class QualificationDisplayTest extends TestCase
         return ['qualification_id' => $award, 'surface' => $surface, 'visible' => $visible ? '1' : '0'] + ($csrf ? ['_csrf_token' => str_repeat('a', 64)] : []);
     }
 
-    private function count(string $table): int
+    private function rowCount(string $table): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM ' . $table)->fetchColumn();
     }
@@ -198,7 +198,7 @@ final class QualificationDisplayTest extends TestCase
         $svc->apply(self::TENANT, self::MEMBER, false, self::MEMBER, 1, Display::PROFILE, false);
         $svc->apply(self::TENANT, self::MEMBER, false, self::MEMBER, 1, Display::GAME, true);
         self::assertSame(['game' => true, 'profile' => false], $svc->states([1])[1], 'chaque bascule ne touche que sa colonne');
-        self::assertSame(1, $this->count(Display::TABLE), 'une seule ligne par attribution');
+        self::assertSame(1, $this->rowCount(Display::TABLE), 'une seule ligne par attribution');
 
         $same = $svc->apply(self::TENANT, self::MEMBER, false, self::MEMBER, 1, Display::GAME, true);
         self::assertTrue($same['ok']);
@@ -263,8 +263,8 @@ final class QualificationDisplayTest extends TestCase
         self::assertFalse($r['ok']);
         self::assertSame(403, $r['status']);
         self::assertSame('forbidden', $r['code']);
-        self::assertSame(0, $this->count(Display::TABLE));
-        self::assertSame(0, $this->count('audit_logs'));
+        self::assertSame(0, $this->rowCount(Display::TABLE));
+        self::assertSame(0, $this->rowCount('audit_logs'));
     }
 
     public function testAnotherMembersOrAnotherCommunitysQualificationCannotBeReached(): void
@@ -281,7 +281,7 @@ final class QualificationDisplayTest extends TestCase
         self::assertSame(404, $foreign['status']);
         $foreignAll = $svc->apply(self::TENANT, self::MANAGER, true, self::STRANGER, null, Display::GAME, false);
         self::assertSame(404, $foreignAll['status']);
-        self::assertSame(0, $this->count(Display::TABLE));
+        self::assertSame(0, $this->rowCount(Display::TABLE));
 
         self::assertSame(422, $svc->apply(self::TENANT, self::MEMBER, false, self::MEMBER, 1, 'partout', false)['status'], 'endroit inconnu');
         self::assertSame(401, $svc->apply(0, self::MEMBER, false, self::MEMBER, 1, Display::GAME, false)['status'], 'sans communauté de session');
@@ -294,7 +294,7 @@ final class QualificationDisplayTest extends TestCase
         [$status, $json] = $this->post('toggleMine', self::body('1', Display::GAME, false, false));
         self::assertSame(403, $status);
         self::assertSame('csrf', $json['code']);
-        self::assertSame(0, $this->count(Display::TABLE));
+        self::assertSame(0, $this->rowCount(Display::TABLE));
 
         $_SERVER['HTTP_X_CSRF_TOKEN'] = str_repeat('b', 64);
         [$status] = $this->post('toggleMine', self::body('1', Display::GAME, false, false));
@@ -468,9 +468,9 @@ final class QualificationDisplayTest extends TestCase
 
         // Sans changement réel : pas de nouvelle ligne. En masse : une ligne par qualification réellement basculée.
         $this->service()->apply(self::TENANT, self::MANAGER, true, self::MEMBER, 3, Display::PROFILE, false);
-        self::assertSame(1, $this->count('audit_logs'));
+        self::assertSame(1, $this->rowCount('audit_logs'));
         $this->service()->apply(self::TENANT, self::MEMBER, false, self::MEMBER, null, Display::PROFILE, false);
-        self::assertSame(3, $this->count('audit_logs'), 'deux qualifications restaient visibles');
+        self::assertSame(3, $this->rowCount('audit_logs'), 'deux qualifications restaient visibles');
     }
 
     // —— Interface ——
