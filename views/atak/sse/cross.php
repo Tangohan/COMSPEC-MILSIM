@@ -15,7 +15,7 @@ $entriesCount = count($entries);
 
 <div class="page-heading">
     <div>
-        <h1>Croisements</h1>
+        <h1>Croisements Cerbère</h1>
         <p>
             Correspondances probables entre fiches terrain et listes de surveillance
             de la communauté.

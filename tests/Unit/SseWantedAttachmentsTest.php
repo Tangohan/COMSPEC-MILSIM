@@ -595,7 +595,7 @@ final class SseWantedAttachmentsTest extends TestCase
         $this->realFiles = array_merge($this->realFiles, $this->rowPaths());
         SseMemberImageGate::useForSession($this->gate(self::PEER));
         $locked = (new \App\Controllers\Web\SseIdentityRegistryController())->identityShow(new Request(), ['id' => $member])->body();
-        self::assertStringContainsString('CONFIDENTIEL ÉLEVÉ', $locked);
+        self::assertStringContainsString(\App\Services\Sse\SseMemberImageGate::LABEL, $locked);
         self::assertStringNotContainsString('Photo de membre', $locked);
         self::assertStringNotContainsString('data-wc-gal-open', $locked);
         // Formulaire d'un membre : pas de joint, pas de préremplissage.

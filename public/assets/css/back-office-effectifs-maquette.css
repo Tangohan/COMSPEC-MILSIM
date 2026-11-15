@@ -2586,3 +2586,46 @@ html[data-bo-theme="dark"] .eff-ut__unit {
     flex: 1 1 100%;
   }
 }
+
+/* Colonne « Sessions de plus d'1 h » : nombre de sessions qui comptent sur 30 jours, lien vers l'onglet Disponibilité. */
+.eff-mq-sv {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  color: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.eff-mq-sv b {
+  font-size: 0.9375rem;
+}
+
+.eff-mq-sv .eff-das__sub {
+  font-size: 0.8125rem;
+}
+
+.eff-mq-sv.is-on .eff-das__sub {
+  color: var(--eff-mq-good, #059669);
+  font-weight: 700;
+}
+
+.eff-mq-sv:focus-visible {
+  outline: 2px solid var(--eff-mq-good, #059669);
+  outline-offset: 2px;
+}
+
+.eff-mq .eff-das__table thead th.eff-das__col-sv,
+.bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table thead th.eff-das__col-sv {
+  min-width: 8.5rem;
+  white-space: normal;
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  text-transform: none;
+}

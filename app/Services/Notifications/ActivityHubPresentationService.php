@@ -76,6 +76,14 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'sse_interest_case' => [
+                'title' => 'Dossier d’intérêt ' . mb_substr(trim((string) ($payload['ref'] ?? '')), 0, 40),
+                'detail' => mb_substr(trim((string) ($payload['detail'] ?? 'Un dossier d’intérêt vous concerne.')), 0, 240),
+                'href' => is_string($payload['path'] ?? null) && preg_match('#^atak/sse/interet/[0-9]{1,10}$#', (string) $payload['path']) === 1
+                    ? url((string) $payload['path']) : url('atak/sse/interet'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'sse_member_image_request' => [
                 'title' => 'Demande d’accès aux images d’un membre',
                 'detail' => 'Un membre demande à voir les images de service d’un membre de votre chaîne de commandement.',

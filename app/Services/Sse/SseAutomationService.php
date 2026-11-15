@@ -227,6 +227,7 @@ final class SseAutomationService
         }
 
         $this->cases->linkPerson($caseId, $personId, $tenantId, null, 'Classement automatique — dossier ouvert unique');
+        SseProvenance::cerbere($tenantId, ['person', $personId], ['case', $caseId], 'filed_in', 'cerbere.link.case_single_open');
         $detail = sprintf(
             '%s classée au dossier %s : c\'était le seul dossier ouvert.',
             $name,
@@ -276,6 +277,7 @@ final class SseAutomationService
             );
         }
         $this->cases->linkPerson($caseId, $personId, $tenantId, null, 'Classement automatique — dossier du jour');
+        SseProvenance::cerbere($tenantId, ['person', $personId], ['case', $caseId], 'filed_in', $found['created'] ? 'cerbere.create.case_daily' : 'cerbere.link.case_daily');
         $detail = sprintf('%s classée au dossier %s (dossier du jour ouvert par le système).', $name, $ref);
         $this->activityLog->record($tenantId, $mapId, 'SSE_AUTO', $detail, $actor ?? self::RULE_AUTHOR);
         $applied[] = ['rule' => 'A1', 'label' => 'Classement automatique', 'detail' => $detail];
@@ -348,6 +350,7 @@ final class SseAutomationService
             );
             $this->activityLog->record($tenantId, $mapId, 'SSE_AUTO', $detail, $actor ?? self::RULE_AUTHOR);
             $applied[] = ['rule' => 'A2', 'label' => 'Doublon probable', 'detail' => $detail];
+            SseProvenance::cerbere($tenantId, ['person', $personId], ['person', $otherId], 'cross_checked', 'cerbere.correlate.duplicate_biometric', 'Référence de laboratoire ' . (string) ($row['lab_reference'] ?? '') . '.');
 
             if ($caseId !== null && $caseId > 0) {
                 $this->correlation->addRelation($tenantId, $caseId, [
@@ -489,6 +492,7 @@ final class SseAutomationService
             ]);
             if ($ok) {
                 $linked++;
+                SseProvenance::cerbere($tenantId, ['person', $personId], ['person', $otherId], 'cross_checked', 'cerbere.correlate.co_presence');
             }
         }
 

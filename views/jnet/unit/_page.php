@@ -264,7 +264,7 @@ $renderBlock = static function (int|string $i, array $b, int $total) use ($h, $s
     <?php
     $pageLinkItems = is_array($usw['links']['page'] ?? null) ? $usw['links']['page'] : [];
     if (!empty($usw['links']['ready']) && ($pageLinkItems !== [] || !empty($usw['links']['canLink']))) {
-        $linkBlock = $linkBlockFor('page', $pid, $pageLinkItems, 'echange,operation,tache,cible,document,unite,membre');
+        $linkBlock = $linkBlockFor('page', $pid, $pageLinkItems, 'echange,operation,tache,cible,document,unite,membre,sse');
         $linkMode = 'block';
         $linkUid = 'page' . $pid;
         require base_path('views/jnet/_linked.php');
