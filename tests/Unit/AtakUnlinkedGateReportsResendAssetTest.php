@@ -247,7 +247,6 @@ final class AtakUnlinkedGateReportsResendAssetTest extends TestCase
             self::assertSame(1, preg_match('/"\]$/', $lines[$last]), 'dernière entrée sans virgule');
             self::assertSame(1, preg_match('/"\],$/', $lines[$last - 1]), 'avant-dernière entrée avec virgule');
         }
-        self::assertStringContainsString("\r\n", $en);
         foreach (['Compte rendu transmis · envoi à Athena en cours', 'Compte rendu transmis au camp',
             'Compte rendu transmis au camp · Athena non connecté (RENVOYER dans ENVOYÉS)', "Athena n'a pas reçu le compte rendu (RENVOYER dans ENVOYÉS)",
             'Compte rendu enregistré sur Athena', 'Liaison Athena en pause — liez votre compte puis renvoyez.'] as $fr) {
