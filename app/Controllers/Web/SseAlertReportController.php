@@ -394,18 +394,12 @@ final class SseAlertReportController
         if ($text === '') {
             return '';
         }
-        try {
-            if (!class_exists(\TCPDF2DBarcode::class, false)) {
-                require_once base_path('tcpdf/tcpdf_barcodes_2d.php');
-            }
-            // TCPDF 6 émet des avis de dépréciation sous PHP 8.4 : ils ne doivent jamais devenir une erreur de page.
-            $code = \App\Support\TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(static fn (): mixed => (new \TCPDF2DBarcode($text, 'QRCODE,M'))->getBarcodeArray());
-        } catch (\Throwable) {
+        // phpqrcode (celle des autres QR du site) : la classe QRcode de TCPDF a le même nom et ne se charge pas dans le même processus.
+        $rows = (new \App\Services\Qr\QrPngGenerator())->matrix($text);
+        if ($rows === null || $rows === []) {
             return '';
         }
-        if (!is_array($code) || empty($code['bcode']) || (int) ($code['num_rows'] ?? 0) < 1) {
-            return '';
-        }
+        $code = ['bcode' => array_map(static fn (string $r): array => array_map('intval', str_split($r)), $rows), 'num_rows' => count($rows), 'num_cols' => strlen($rows[0])];
         $n = (int) $code['num_cols'];
         $quiet = 4;
         $path = '';

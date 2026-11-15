@@ -183,20 +183,42 @@ trait SsePdfAlertArt
         $pdf->SetLineStyle(['width' => 0.25, 'join' => 'miter', 'cap' => 'butt', 'dash' => 0, 'color' => [24, 30, 38]]);
     }
 
-    /** QR code d'une adresse (généré par TCPDF, aucun service externe). Faux si l'adresse est vide ou le code impossible. */
+    /** QR code d’une adresse (phpqrcode du dépôt, aucun service externe). Faux si l'adresse est vide ou le code impossible. */
     private function artQr(string $url, float $x, float $y, float $size): bool
     {
         if ($url === '') {
             return false;
         }
-        try {
-            $style = ['border' => false, 'padding' => 0, 'fgcolor' => [0, 0, 0], 'bgcolor' => [255, 255, 255], 'module_width' => 1, 'module_height' => 1];
-            $this->pdf->write2DBarcode($url, 'QRCODE,M', $x, $y, $size, $size, $style, 'N');
-
-            return true;
-        } catch (\Throwable) {
+        // La matrice vient de phpqrcode (celle des autres QR du site) : la classe QRcode de TCPDF porte le même nom et ne peut pas
+        // être chargée dans le même processus.
+        $rows = (new \App\Services\Qr\QrPngGenerator())->matrix($url);
+        if ($rows === null || $rows === []) {
             return false;
         }
+        $n = count($rows);
+        $m = $size / $n;
+        $pdf = $this->pdf;
+        $pdf->SetFillColor(255, 255, 255);
+        $pdf->Rect($x, $y, $size, $size, 'F');
+        $pdf->SetFillColor(0, 0, 0);
+        foreach ($rows as $r => $row) {
+            $c = 0;
+            $len = strlen($row);
+            while ($c < $len) {
+                if ($row[$c] !== '1') {
+                    ++$c;
+
+                    continue;
+                }
+                $start = $c;
+                while ($c < $len && $row[$c] === '1') {
+                    ++$c;
+                }
+                $pdf->Rect($x + $start * $m, $y + $r * $m, ($c - $start) * $m, $m, 'F');
+            }
+        }
+
+        return true;
     }
 
     /**
