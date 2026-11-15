@@ -19,9 +19,51 @@ use App\Support\SseIdentityCatalog;
  */
 final class SseIdentityHolderService
 {
+    public const MEMBER = 'member';
+    public const SERVICE = 'service';
+    public const SUBJECT = 'subject';
+
+    public const NO_ISSUE = 'Ce titulaire est un sujet contrôlé ou remonté du terrain : on y consigne les papiers constatés, on n’en génère ni n’en émet. La génération est réservée aux identités d’un membre et aux couvertures ou faux préparés par le service.';
+
     public function __construct(private ?Database $db = null)
     {
         $this->db ??= Database::getInstance();
+    }
+
+    /**
+     * Qui est le titulaire d'une identité ? « member » : rattachée à un compte (user_id) ; « service » : couverture, alias ou faux
+     * préparé par le service, ou toute identité fictive sans rattachement (ambiguë : on garde l'atelier, comme avant) ;
+     * « subject » : sujet contrôlé ou remonté du terrain, soit une identité civile (sse_identities.kind = civil) rattachée à une
+     * fiche personne (person_id) et à aucun compte. Une identité générée reste « service ».
+     *
+     * @param array<string, mixed> $identity user_id, person_id, kind
+     */
+    public static function holderType(array $identity): string
+    {
+        if ((int) ($identity['user_id'] ?? 0) > 0) {
+            return self::MEMBER;
+        }
+        if ((string) ($identity['kind'] ?? '') === 'civil' && (int) ($identity['person_id'] ?? 0) > 0) {
+            return self::SUBJECT;
+        }
+
+        return self::SERVICE;
+    }
+
+    /** Les papiers de ce titulaire se constatent seulement (aucune génération, validation, émission ni copie). */
+    public static function isObservedOnly(array $identity): bool
+    {
+        return self::holderType($identity) === self::SUBJECT;
+    }
+
+    /** Authenticité constatée d'un papier (authentic | doubtful | fake) d'après son intégrité et son origine. */
+    public static function authenticityOf(array $doc): string
+    {
+        if (($doc['st_origin'] ?? '') === 'forged' || ($doc['st_integrity'] ?? '') === 'counterfeit') {
+            return 'fake';
+        }
+
+        return in_array($doc['st_integrity'] ?? '', ['altered', 'damaged'], true) ? 'doubtful' : 'authentic';
     }
 
     /**
