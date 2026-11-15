@@ -670,3 +670,6 @@ body.sse-iw .sx-main .empty-state p { color: rgba(238, 242, 240, 0.7); }
     .sx-head__actions { width: 100%; }
     .sx-head__actions .iw-btn { flex: 1; }
 }
+
+/* Mention de fiction : une ligne discrète en pied d'accueil, jamais un bandeau. */
+.sse-fiction-footer { margin: 28px 0 8px; font-size: .75rem; color: var(--sx-muted, #8a8f98); text-align: center; }

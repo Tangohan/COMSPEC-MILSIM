@@ -31,7 +31,6 @@ $origin = $isEdit ? (string) $doc['st_origin'] : match ($identity['kind']) {
     <?php if (($flashError = \App\Core\Session::getFlash('error')) !== null): ?>
         <p class="bo-member-situation__flash bo-member-situation__flash--err"><?= $h($flashError) ?></p>
     <?php endif; ?>
-    <p class="idm-sim"><strong>SIMULATION</strong> Papier fictif pour le jeu, émis par un pays imaginaire. Aucune valeur réelle.</p>
 
     <?php if ($country === null): ?>
         <p class="bo-member-situation__flash bo-member-situation__flash--err">Aucun pays émetteur actif : créez-en un dans le registre des papiers du bureau SSE.</p>

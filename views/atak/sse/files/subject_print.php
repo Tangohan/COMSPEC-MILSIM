@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * Fiche sujet imprimable (une page A4, fond clair) : en-tête du système, mise en garde, identité, signalement, alias,
- * papiers, liens, mentions, derniers contacts, message brut. Mention SIMULATION en tête et en pied.
+ * papiers, liens, mentions, derniers contacts, message brut. Un seul pied discret (fiction).
  *
  * @var array<string,mixed> $record
  * @var string $printedBy
@@ -30,7 +30,6 @@ $red = array_filter($r['flags'], static fn (array $f): bool => $f['tone'] === 'r
     @page { size: A4; margin: 14mm; }
     body { margin: 0; background: #fff; color: #111; font: 12.5px/1.45 Inter, system-ui, sans-serif; }
     .pg { max-width: 190mm; margin: 0 auto; padding: 16px; }
-    .sim { border: 1.5px solid #b45309; color: #92400e; padding: 6px 10px; font-weight: 700; letter-spacing: .08em; font-size: 12px; }
     header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-end; border-bottom: 2px solid #111; padding: 10px 0 8px; }
     h1 { margin: 0; font-size: 22px; letter-spacing: .01em; }
     .mono { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; }
@@ -45,7 +44,7 @@ $red = array_filter($r['flags'], static fn (array $f): bool => $f['tone'] === 'r
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     td, th { text-align: left; padding: 4px 6px; border-bottom: 1px solid #ddd; vertical-align: top; }
     pre { white-space: pre-wrap; font-size: 12px; border: 1px solid #999; padding: 8px; margin: 0; }
-    footer { margin-top: 14px; font-size: 12px; color: #555; display: flex; justify-content: space-between; gap: 8px; }
+    footer { margin-top: 14px; font-size: 11px; color: #777; display: flex; justify-content: space-between; gap: 8px; }
     .noprint { margin: 12px 0; }
     @media print { .noprint { display: none; } }
 </style>
@@ -53,7 +52,6 @@ $red = array_filter($r['flags'], static fn (array $f): bool => $f['tone'] === 'r
 <body>
 <div class="pg">
     <div class="noprint"><button type="button" onclick="window.print()">Imprimer</button></div>
-    <div class="sim">SIMULATION — DONNÉES FICTIVES DU JEU · AUCUNE BASE RÉELLE</div>
     <header>
         <div><div class="mono"><?= $h($r['response']['system']) ?> · <?= $h($i['ref']) ?></div><h1><?= $h(mb_strtoupper((string) $i['last_name'])) ?><?= ($i['first_name'] ?? '') !== '' ? ', ' . $h($i['first_name']) : '' ?></h1></div>
         <div class="mono"><?= $h($r['response']['text']) ?></div>
@@ -94,7 +92,7 @@ $red = array_filter($r['flags'], static fn (array $f): bool => $f['tone'] === 'r
     <?php endif; ?>
     <h2>Message brut</h2>
     <pre><?= $h($r['raw']) ?></pre>
-    <footer><span>Imprimé le <?= gmdate('Y-m-d H:i') ?>Z par <?= $h($printedBy) ?></span><span>SIMULATION — DONNÉES FICTIVES</span></footer>
+    <footer><span>Imprimé le <?= gmdate('Y-m-d H:i') ?>Z par <?= $h($printedBy) ?></span><span><?= sse_fiction_footer(true) ?></span></footer>
 </div>
 </body>
 </html>

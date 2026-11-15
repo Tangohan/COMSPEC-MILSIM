@@ -68444,4 +68444,7 @@ return [
     'l’entrée' => 'the entry',
     'ne sera plus reconnu par QUERY sur le terrain.' => 'will no longer be recognised by QUERY in the field.',
     'État de la liste' => 'List status',
+    'Jeu de rôle Arma 3 — données fictives' => 'Arma 3 role-play — fictional data',
+    'Document de fiction — jeu de rôle Arma 3' => 'Fictional document — Arma 3 role-play',
+    'Verdict rendu par le terminal sur les relevés.' => 'Verdict returned by the terminal from the readings.',
 ];

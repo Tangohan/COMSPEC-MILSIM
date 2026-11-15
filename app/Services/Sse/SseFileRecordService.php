@@ -497,7 +497,6 @@ final class SseFileRecordService
         }
         $lines[] = '';
         $lines[] = $r['response']['code'] === 'hit' ? (string) $pack['records']['hit'] : 'CONFIRM WITH ORIGINATING AGENCY BEFORE ANY ACTION.';
-        $lines[] = 'SIMULATION — FICTIONAL DATA';
 
         return implode("\n", $lines);
     }

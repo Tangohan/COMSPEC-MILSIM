@@ -73,17 +73,6 @@
   color: var(--ja-ink);
 }
 
-/* Bandeau « SIMULATION » */
-.jp .idm-sim {
-  color: var(--ja-muted);
-  border-color: color-mix(in srgb, var(--ja-warn) 55%, transparent);
-  background: transparent;
-}
-
-.jp .idm-sim strong {
-  margin-right: 8px;
-}
-
 /* Couverture : état, mode d'emploi, formulaire, historique */
 .jp .idm-cover {
   padding: 18px 20px;
