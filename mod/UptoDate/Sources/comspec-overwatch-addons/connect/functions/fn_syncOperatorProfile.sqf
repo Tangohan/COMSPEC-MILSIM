@@ -6,13 +6,16 @@
     à l'enregistrement et quand ils changent (fn_buildOperatorProfile).
     Un refus durable du site (HTTP 4xx, compte bloqué…) attend 1 min puis de plus en plus longtemps (10 min au plus)
     avant de retenter : avant, la même fiche repartait à chaque contrôle (8 s).
-    Params: [_event, _reason, _force]
+    Params: [_event, _reason, _force, _base]
+      _base : fiche légère déjà construite par fn_operatorProfileTick (même script, même instant), complétée ici
+              au lieu d'être reconstruite. Vide = tout construire.
     Retour: HashMap résultat (ok, pending, …) ou false
 */
 params [
     ["_event", "sync", [""]],
     ["_reason", "profile_sync", [""]],
-    ["_force", false, [true]]
+    ["_force", false, [true]],
+    ["_base", createHashMap, [createHashMap]]
 ];
 
 if (!hasInterface) exitWith { false };
@@ -44,7 +47,12 @@ if (!_forceEff && {diag_tickTime < (missionNamespace getVariable ["COMSPEC_Opera
 // Compte refusé ou non lié : pause partagée par tous les canaux (fn_linkGate), même pour un envoi forcé.
 if (!isNil "comspec_overwatch_connect_fnc_linkGate" && {["blocks", "OperatorSync"] call comspec_overwatch_connect_fnc_linkGate}) exitWith { false };
 
-private _payload = [player, _event, _reason] call comspec_overwatch_connect_fnc_buildOperatorProfile;
+// Steam UID absent : rien n'est construit (fn_operatorProfileUidGate journalise « Steam UID absent » une seule fois).
+if !([] call comspec_overwatch_connect_fnc_operatorProfileUidGate) exitWith { false };
+
+private _tBuild = diag_tickTime;
+private _fBuild = diag_frameNo;
+private _payload = [player, _event, _reason, false, _base] call comspec_overwatch_connect_fnc_buildOperatorProfile;
 private _fp = _payload getOrDefault ["fingerprint", ""];
 private _lastFp = missionNamespace getVariable ["COMSPEC_OperatorFingerprint", ""];
 if (!_forceEff && {(toLower _event) isNotEqualTo "register"} && {_reason isNotEqualTo "heartbeat"} && {_fp isEqualTo _lastFp} && {_fp isNotEqualTo ""}) exitWith {
@@ -67,10 +75,9 @@ _payload deleteAt "mods_key";
 private _identity = _payload getOrDefault ["identity", createHashMap];
 private _steam = _identity getOrDefault ["steam_uid", ""];
 if (_steam isEqualTo "") then { _steam = _payload getOrDefault ["steam_id", ""]; };
-if ((count _steam) < 15) exitWith {
-    ["WARN", "OperatorProfile", "Steam UID absent — fiche non transmise"] call comspec_overwatch_connect_fnc_log;
-    false
-};
+// Déjà vérifié avant la construction (fn_operatorProfileUidGate, qui écrit la ligne « Steam UID absent — fiche non
+// transmise » une fois par changement d'état) : garde-fou sans journal, pour ne jamais envoyer une fiche sans UID.
+if ((count _steam) < 15) exitWith { false };
 
 private _fncOmitLoadout = {
     params ["_map"];
@@ -107,6 +114,14 @@ if ((count _json) > 28000) then {
     _payload deleteAt "item_catalog";
     _catKey = "";
     _json = [_payload] call comspec_overwatch_connect_fnc_jsonValue;
+};
+// Mesure du travail de script seul (construction + JSON), sans l'attente de la réponse d'Athena : la ligne
+// « Fiche opérateur (…) : N ms » de fn_operatorProfileTick compte aussi cette attente. Script ordonnancé : le temps
+// est celui de l'horloge, réparti sur le nombre d'images indiqué.
+private _msBuild = round ((diag_tickTime - _tBuild) * 1000);
+if (_msBuild >= 20) then {
+    diag_log format ["[COMSPEC Overwatch][PERF] Fiche opérateur : JSON %1 Ko, construction et encodage %2 ms sur %3 image(s)",
+        (round ((count _json) / 100)) / 10, _msBuild, (diag_frameNo - _fBuild) + 1];
 };
 private _what = switch (true) do {
     case ((toLower _event) isEqualTo "register"): { "première connexion" };

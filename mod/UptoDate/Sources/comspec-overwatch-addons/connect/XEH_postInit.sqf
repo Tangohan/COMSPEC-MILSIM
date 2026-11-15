@@ -78,18 +78,10 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
             if ([_marker] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
             if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
             if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
+            // Noté dans la file (fn_markerEhQueue) : lu à l'image suivante, puis relu 0,4 s plus tard, avec un budget
+            // par image. Avant : lecture + JSON dans l'image de l'évènement, et un rappel CBA par marqueur à 0,4 s.
             private _forceNow = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
-            [_marker, false, _forceNow] call comspec_overwatch_connect_fnc_syncMapMarker;
-            [{
-                params ["_m"];
-                if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
-                if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
-                if ((getMarkerColor _m) isEqualTo "") exitWith {};
-                if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-                if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
-                private _forceLater = [_m] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
-                [_m, false, _forceLater] call comspec_overwatch_connect_fnc_syncMapMarker;
-            }, [_marker], 0.4] call CBA_fnc_waitAndExecute;
+            [_marker, false, _forceNow, true] call comspec_overwatch_connect_fnc_markerEhQueue;
         };
         missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
         COMSPEC_MapMarkerEHs = [
@@ -130,7 +122,8 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
                 private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
-                [_marker, false, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
+                // Plusieurs modifications du même marqueur dans l'image (type, couleur, texte…) : une seule lecture.
+                [_marker, false, _force] call comspec_overwatch_connect_fnc_markerEhQueue;
             }],
             addMissionEventHandler ["MarkerDeleted", {
                 private _marker = _this call comspec_overwatch_connect_fnc_resolveMarkerEhName;
@@ -143,7 +136,7 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
                 private _force = [_marker] call comspec_overwatch_connect_fnc_isSyncableMapMarker;
-                [_marker, true, _force] call comspec_overwatch_connect_fnc_syncMapMarker;
+                [_marker, true, _force] call comspec_overwatch_connect_fnc_markerEhQueue;
             }]
         ];
         ["INFO", "Markers", "EH MarkerCreated/Updated/Deleted enregistrés (early)"] call comspec_overwatch_connect_fnc_log;

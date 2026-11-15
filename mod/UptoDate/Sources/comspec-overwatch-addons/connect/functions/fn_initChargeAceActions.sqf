@@ -144,6 +144,8 @@ if (!(missionNamespace getVariable ["COMSPEC_ChargeAceClassReady", false])) then
 
 if (missionNamespace getVariable ["COMSPEC_ChargeAceSelfReady", false]) exitWith { true };
 if (!(missionNamespace getVariable ["COMSPEC_ACEMenuReady", false])) exitWith { true };
+// Menu COMSPEC en cours de pose (fn_initACE, étalée sur quelques images) : il rappelle cette fonction à la fin.
+if (missionNamespace getVariable ["COMSPEC_ACEMenuBuilding", false]) exitWith { true };
 
 missionNamespace setVariable ["COMSPEC_ChargeAceSelfReady", true, false];
 
