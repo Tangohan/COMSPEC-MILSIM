@@ -158,6 +158,8 @@ final class SsePortalNavTest extends TestCase
             '/public/atak/sse/accueil' => 'accueil',
             '/public/atak/sse/papiers' => 'papiers',
             '/public/atak/sse/papiers/documents/7' => 'papiers',
+            '/public/atak/sse/papiers/documents/7/telecharger/pdf' => 'papiers',
+            '/public/atak/sse/papiers/documents/7/face/recto' => 'papiers',
             '/public/atak/sse/papiers/tableau?op=x' => 'papiers-tableau',
             '/public/atak/sse/papiers/identites/3' => 'papiers-identites',
             '/public/atak/sse/papiers/controles/9' => 'papiers-controles',

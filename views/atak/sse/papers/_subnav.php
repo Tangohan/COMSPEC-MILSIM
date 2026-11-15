@@ -7,6 +7,8 @@ declare(strict_types=1);
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '">';
 ?>
+<?php if (empty($hideSimNote)): ?>
 <div class="idp-sim" role="note">
     <span>Papiers fictifs pour le jeu de rôle, sans valeur réelle.</span>
 </div>
+<?php endif; ?>

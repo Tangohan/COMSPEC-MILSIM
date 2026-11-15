@@ -99,6 +99,7 @@ $sseScript = '<script defer src="' . $h(asset_url('assets/js/sse-links.js')) . '
             <?= $ico('link') ?>
             <span>Liaisons (<?= $total ?>)</span>
         </button>
+        <?= (string) ($sl['actions'] ?? '') ?>
         <?php if ($mini !== []): ?>
             <ol class="sl-mini" aria-label="Éléments les plus proches">
                 <?php foreach ($mini as $it): $n = $nodes[$it['node']]; ?>

@@ -1302,6 +1302,8 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/identites/{id}/constates', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserve'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites/{id}/constates/remontees', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentObserveFromChecks'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentShow'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/documents/{id}/face/{face}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentFace'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/documents/{id}/telecharger/{format}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentDownload'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents/{id}/statuts', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStatuses'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents/{id}/cycle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentWorkflow'], $mwSsePortal);
     $router->get('/atak/sse/papiers/pays', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countriesIndex'], $mwSsePortal);
