@@ -48,9 +48,10 @@ final class BackOfficeTabs
 
     /**
      * Page d’accueil (chemin sans slash) → onglet par défaut + onglets repris d’anciennes pages.
-     * « bar » = afficher la barre d’onglets commune (false quand la page a déjà la sienne).
+     * « bar » = afficher la barre d’onglets commune (false quand la page a déjà la sienne). Un onglet peut aussi porter
+     * « bar » => false : la barre commune est alors masquée sur cet onglet seulement (son écran a déjà sa barre).
      *
-     * @var array<string, array{label: string, handler: array{0: class-string, 1: string}, middleware: list<class-string>, bar: bool, tabs: array<string, array{label: string, legacy: string, handler: array{0: class-string, 1: string}, middleware: list<class-string>}>}>
+     * @var array<string, array{label: string, handler: array{0: class-string, 1: string}, middleware: list<class-string>, bar: bool, tabs: array<string, array{label: string, legacy: string, handler: array{0: class-string, 1: string}, middleware: list<class-string>, bar?: bool}>}>
      */
     public const FAMILIES = [
         'back-office/missions' => [
@@ -143,15 +144,16 @@ final class BackOfficeTabs
         ],
         // Demandes RH : la file unique (accueil) + les anciens écrans de décision, un par type. Les droits restent ceux
         // de chaque ancien écran ; l'accueil ne liste que les types que la personne peut lire (HrRequestsDesk).
+        // Élévations et Mobilité sont servies dans la coque Effectifs, qui a sa propre barre d'onglets : pas de seconde barre.
         'back-office/demandes-rh' => [
             'label' => 'Demandes RH',
             'handler' => [HrRequestsController::class, 'index'],
             'middleware' => [AuthMiddleware::class],
             'bar' => true,
             'tabs' => [
-                'elevations' => ['label' => 'Élévations', 'legacy' => 'back-office/ressources/effectifs/elevations', 'handler' => [EffectifsWorkspaceController::class, 'elevationRequests'], 'middleware' => self::ORG],
+                'elevations' => ['label' => 'Élévations', 'legacy' => 'back-office/ressources/effectifs/elevations', 'handler' => [EffectifsWorkspaceController::class, 'elevationRequests'], 'middleware' => self::ORG, 'bar' => false],
                 'corrections' => ['label' => 'Corrections', 'legacy' => 'back-office/personnel/corrections', 'handler' => [PersonnelCorrectionController::class, 'index'], 'middleware' => [AuthMiddleware::class]],
-                'mobilite' => ['label' => 'Mobilité', 'legacy' => 'back-office/ressources/effectifs/mobilite', 'handler' => [RhDossierWorkspaceController::class, 'mobility'], 'middleware' => self::ORG],
+                'mobilite' => ['label' => 'Mobilité', 'legacy' => 'back-office/ressources/effectifs/mobilite', 'handler' => [RhDossierWorkspaceController::class, 'mobility'], 'middleware' => self::ORG, 'bar' => false],
             ],
         ],
         // Effectifs : la barre d’onglets du bureau existe déjà (views/admin/effectifs_workspace/shell.php).
@@ -254,6 +256,9 @@ final class BackOfficeTabs
         }
         $base = trim($currentPath, '/');
         $known = isset($family['tabs'][$onglet]);
+        if ($known && ($family['tabs'][$onglet]['bar'] ?? true) === false) {
+            return null;
+        }
         $items = [['label' => $family['label'], 'href' => url($base), 'active' => !$known]];
         foreach ($family['tabs'] as $key => $tab) {
             if ($allowed !== null && !$allowed($tab['legacy'])) {

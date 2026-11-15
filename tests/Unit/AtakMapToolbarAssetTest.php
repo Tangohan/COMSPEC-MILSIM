@@ -13,7 +13,6 @@ final class AtakMapToolbarAssetTest extends TestCase
         $shell = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-c2-shell.css');
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
         $tools = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-map-tools.js');
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
 
         self::assertDoesNotMatchRegularExpression(
             '/button\.atak-map-tools__cluster-label\s*\{[^}]*pointer-events:\s*none/s',
@@ -35,13 +34,6 @@ final class AtakMapToolbarAssetTest extends TestCase
         self::assertStringContainsString('panel.hidden = false', $tools);
         self::assertStringContainsString("panel.removeAttribute('hidden')", $tools);
         self::assertStringContainsString('/* Toujours visibles : le chrome C2 les aligne sous le libellé. */', $tools);
-
-        self::assertStringNotContainsString('id="atak-tool-group-mark" hidden', $view);
-        self::assertStringNotContainsString('id="atak-tool-group-draw" hidden', $view);
-        self::assertStringNotContainsString('id="atak-tool-group-analyse" hidden', $view);
-        self::assertStringNotContainsString('id="atak-tool-group-view" hidden', $view);
-        self::assertStringContainsString('data-tool-group="nav"', $view);
-        self::assertStringContainsString('data-tool="goto"', $view);
     }
 
     public function testC2KeepsToolsInFlowAndBeatsCompactDropdown(): void
@@ -49,7 +41,6 @@ final class AtakMapToolbarAssetTest extends TestCase
         $shell = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-c2-shell.css');
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak.css');
         $cop = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-cop.css');
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
 
         self::assertDoesNotMatchRegularExpression(
             '/\.atak-map-tools__cluster-btns\s*\{[^}]*position:\s*absolute/s',
@@ -68,15 +59,6 @@ final class AtakMapToolbarAssetTest extends TestCase
         self::assertStringContainsString('overflow: visible !important;', $shell);
         self::assertStringContainsString('cluster--chrome > .atak-map-tools__cluster-label', $shell);
         self::assertStringContainsString('flex-direction: row !important;', $shell);
-
-        $atakPos = strpos($view, 'assets/css/atak.css');
-        $copPos = strpos($view, 'assets/css/atak-cop.css');
-        $c2Pos = strpos($view, 'assets/css/atak-c2-shell.css');
-        self::assertNotFalse($atakPos);
-        self::assertNotFalse($copPos);
-        self::assertNotFalse($c2Pos);
-        self::assertGreaterThan($atakPos, $c2Pos);
-        self::assertGreaterThan($copPos, $c2Pos);
 
         self::assertStringContainsString('justify-content: space-between;', $shell);
         self::assertStringContainsString('.atak-terrain-inventory__row', $shell);

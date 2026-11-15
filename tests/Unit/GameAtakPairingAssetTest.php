@@ -19,7 +19,6 @@ final class GameAtakPairingAssetTest extends TestCase
         $redeem = (string) file_get_contents($root . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/functions/fn_networkRedeemPairingCode.sqf');
         $mapShow = (string) file_get_contents($root . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/functions/fn_webMapShow.sqf');
         $phone = (string) file_get_contents($root . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/web/phone.html');
-        $view = (string) file_get_contents($root . '/views/atak.php');
         $integrations = (string) file_get_contents($root . '/app/Core/ContainerIntegrations.php');
 
         self::assertStringContainsString('/api/atak/pair/start', $routes);
@@ -39,7 +38,6 @@ final class GameAtakPairingAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_fnc_webExecJS', $mapShow);
         self::assertFileExists($root . '/mod/Overwatch 2026/ProdVersion/@COMSPEC_ATAK/addons/comspec_atak_core/functions/fn_webMapRaise.sqf');
         self::assertStringContainsString('pairingWebCodeInput', $phone);
-        self::assertStringContainsString('atak-game-link-confirm', $view);
         self::assertStringContainsString('GameAtakPairingApiController', $integrations);
         self::assertFileExists($root . '/bootstrap/athena_atak_pair_migration.php');
     }

@@ -1607,10 +1607,10 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Ancienne page « Dons » : le compte PayPal se règle désormais dans Admin > Paiements (un seul réglage).
-    $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '?vue=dons'), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/dons', fn () => \App\Core\Response::redirect(url('admin/paiements') . '?vue=dons', 301), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Console d'exploitation : état du site, migrations, sauvegardes, suppressions de comptes (double vérification).
     // La console d’exploitation est un onglet de la page de pilotage : l’ancienne adresse y renvoie (même onglet).
-    $router->get('/admin/system/exploitation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin') . '?' . http_build_query(['onglet' => (string) $r->query('onglet', 'etat')] + array_filter(['q' => (string) $r->query('q', ''), 'sortie' => (string) $r->query('sortie', '')]))), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/exploitation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin') . '?' . http_build_query(['onglet' => (string) $r->query('onglet', 'etat')] + array_filter(['q' => (string) $r->query('q', ''), 'sortie' => (string) $r->query('sortie', '')])), 301), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/exploitation/code', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'sendCode'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/exploitation/verifier', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'verify'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/exploitation/verrouiller', [\App\Controllers\Admin\System\SystemOpsConsoleController::class, 'lock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1664,7 +1664,7 @@ return function (Router $router) {
     $router->get('/admin/analytics', [SystemAnalyticsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/newsletter', [SystemNewsletterAdminController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Ancienne « synthèse opérationnelle », fusionnée dans la page de pilotage.
-    $router->get('/admin/ops-center', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin')), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/ops-center', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin'), 301), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, ConfigurationUpdateIntroMiddleware::class]);
     // Menu latéral : pastilles (JSON) et favoris. Ouverts à toute personne connectée qui a un menu back-office ;
@@ -1786,7 +1786,7 @@ return function (Router $router) {
     $router->post('/back-office/organisation/matricules/retablir', [OrganizationMemberNumberController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/renumeroter', [OrganizationMemberNumberController::class, 'renumber'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Ancien « Structure & recrutement » : l’ORBAT unique fait tout (création, invitation, édition en fenêtres).
-    $router->get('/back-office/organisation/structure', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => (string) $r->query('ouvrir', '')])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/structure', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => (string) $r->query('ouvrir', '')]), 301), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/unites/{id}/activites', [UnitSheetController::class, 'storeActivity'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1819,12 +1819,13 @@ return function (Router $router) {
     $router->post('/back-office/community/discord/retirer', [\App\Controllers\Admin\Organization\OrganizationDiscordShowcaseController::class, 'withdraw'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/media', [CommunityMediaAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/media', [CommunityMediaAdminController::class, 'storeItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/media/{id}', [CommunityMediaAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/media/{id}', [CommunityMediaAdminController::class, 'updateItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/media/{id}/delete', [CommunityMediaAdminController::class, 'deleteItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Les collections avant « {id} » : sinon POST /back-office/media/collections est pris pour la fiche « collections » (updateItem).
     $router->post('/back-office/media/collections', [CommunityMediaAdminController::class, 'storeCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/media/collections/{id}', [CommunityMediaAdminController::class, 'updateCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/media/collections/{id}/delete', [CommunityMediaAdminController::class, 'deleteCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/media/{id}', [CommunityMediaAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/media/{id}', [CommunityMediaAdminController::class, 'updateItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/media/{id}/delete', [CommunityMediaAdminController::class, 'deleteItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-recovery', [OrganizationCommunityController::class, 'onboardingRecovery'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $mwIntegration = [AuthMiddleware::class, OrganizationAdminMiddleware::class];
     $router->get('/back-office/integration-membres', [MemberIntegrationAdminController::class, 'index'], $mwIntegration);
@@ -1900,7 +1901,7 @@ return function (Router $router) {
     $router->post('/back-office/security-indicators/revoke', [OrganizationSecurityIndicatorsController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/analytics/conversion', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/retours-interface', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/retours-interface')), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/back-office/retours-interface', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/retours-interface'), 301), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord', [OrganizationIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1970,8 +1971,8 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/slots', [CommunityEventsAdminController::class, 'storeSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/slots/{slotId}', [CommunityEventsAdminController::class, 'updateSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/slots/{slotId}/supprimer', [CommunityEventsAdminController::class, 'deleteSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/evenements', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/evenements/insights', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events/insights')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/evenements', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events'), 301), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/evenements/insights', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events/insights'), 301), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/missions/{id}', [MissionsPortalController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/planification', [MissionPlanningController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/planification/{id}', [MissionPlanningController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2204,7 +2205,7 @@ return function (Router $router) {
     $router->post('/back-office/personnel-job-roles/categories/save', [PersonnelJobRoleAdminController::class, 'saveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/personnel-job-roles/categories/{id}/delete', [PersonnelJobRoleAdminController::class, 'deleteCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/groups', [GroupAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/groups/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'groupe'])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/groups/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'groupe']), 301), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/groups/store', [GroupAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/groups/{id}', [GroupAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/groups/{id}/edit', [GroupAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2212,10 +2213,10 @@ return function (Router $router) {
     $router->post('/back-office/groups/{id}/delete', [GroupAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Unités (toutes, pas seulement type « groupe ») — fiche publique / ORBAT
     // Anciennes pages de gestion des unités : tout se fait dans l’ORBAT (URL conservées, redirigées).
-    $router->get('/back-office/units', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url()), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/units/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'unite'])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/units', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(), 301), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/units/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'unite']), 301), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/units/store', [AdminUnitsController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/units/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['unit' => (int) ($p['id'] ?? 0), 'modifier' => 1])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/units/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['unit' => (int) ($p['id'] ?? 0), 'modifier' => 1]), 301), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/units/{id}/update', [AdminUnitsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/units/{id}/delete', [AdminUnitsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/communications', [TenantCommunicationsController::class, 'compose'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2235,7 +2236,7 @@ return function (Router $router) {
     $router->post('/back-office/communications/groups/{id}/update', [TenantCommunicationsController::class, 'groupUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/communications/groups/{id}/delete', [TenantCommunicationsController::class, 'groupDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/teams', [TeamAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/teams/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'equipe'])), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/teams/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'equipe']), 301), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/teams/store', [TeamAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/teams/{id}', [TeamAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/teams/{id}/edit', [TeamAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2478,13 +2479,12 @@ return function (Router $router) {
     $router->post('/back-office/recruitment/offers/{id}/close', [RecruitmentOffersController::class, 'close'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitment/reference-format', [RecruitmentOffersController::class, 'referenceFormat'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitment/reference-format', [RecruitmentOffersController::class, 'referenceFormatSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    // Alias de robustesse (variantes de saisie / anciens favoris) : évite les 404 sur admin et back-office.
-    $router->get('/admin/', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin')), [AuthMiddleware::class]);
-    $router->get('/back-office/', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office')), [AuthMiddleware::class]);
-    $router->get('/backoffice', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office')), [AuthMiddleware::class]);
-    $router->get('/backoffice/', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office')), [AuthMiddleware::class]);
+    // Alias de robustesse (variantes de saisie / anciens favoris). La barre finale (« /admin/ », « /back-office/ ») est déjà
+    // retirée par Request::normalizePathFromServer : pas de route dédiée.
+    $router->get('/backoffice', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office'), 301), [AuthMiddleware::class]);
+    // /backoffice/users : directement Effectifs (/back-office/users redirige à son tour).
+    $router->get('/backoffice/users', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(effectifs_workspace_url(), 301), [AuthMiddleware::class]);
     foreach ([
-        'users',
         'invitations',
         'recruitments',
         'roles',
@@ -2502,20 +2502,20 @@ return function (Router $router) {
         'dashboard-tenues',
         'integrations',
     ] as $boLegacyTop) {
-        $router->get('/backoffice/' . $boLegacyTop, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/' . $boLegacyTop)), [AuthMiddleware::class]);
+        $router->get('/backoffice/' . $boLegacyTop, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/' . $boLegacyTop), 301), [AuthMiddleware::class]);
     }
 
     // Anciennes URL — redirections
-    $router->get('/admin/system', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin')), [AuthMiddleware::class]);
-    $router->get('/admin/organization', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office')), [AuthMiddleware::class]);
-    $router->get('/admin/configuration', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/configuration')), [AuthMiddleware::class]);
-    $router->get('/admin/recruitments', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/recruitments')), [AuthMiddleware::class]);
+    $router->get('/admin/system', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin'), 301), [AuthMiddleware::class]);
+    $router->get('/admin/organization', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office'), 301), [AuthMiddleware::class]);
+    $router->get('/admin/configuration', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/configuration'), 301), [AuthMiddleware::class]);
+    $router->get('/admin/recruitments', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/recruitments'), 301), [AuthMiddleware::class]);
     // Anciennes routes admin — redirections vers le back-office
-    $router->get('/admin/users', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/users')), [AuthMiddleware::class]);
-    $router->get('/admin/users/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/users/create')), [AuthMiddleware::class]);
-    $router->get('/admin/units', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/groups')), [AuthMiddleware::class]);
-    $router->get('/admin/units/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'groupe'])), [AuthMiddleware::class]);
-    $router->get('/admin/units/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/groups/' . ($p['id'] ?? '') . '/edit')), [AuthMiddleware::class]);
+    // GET /admin/users : page des comptes de la plateforme (SystemUsersController), déclarée plus haut.
+    $router->get('/admin/users/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(effectifs_workspace_url('nouveau'), 301), [AuthMiddleware::class]);
+    $router->get('/admin/units', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/groups'), 301), [AuthMiddleware::class]);
+    $router->get('/admin/units/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(orbat_page_url(['ouvrir' => 'groupe']), 301), [AuthMiddleware::class]);
+    $router->get('/admin/units/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/groups/' . ($p['id'] ?? '') . '/edit'), 301), [AuthMiddleware::class]);
     // Outils de la communauté sortis de /admin (réservé à l’administrateur de la plateforme) :
     // les anciennes adresses renvoient vers le back-office, qui applique ses propres contrôles.
     $legacyTenantTools = [
@@ -2527,16 +2527,16 @@ return function (Router $router) {
         '/admin/atak-mod' => 'back-office/ressources/atak-mod',
         '/admin/atak-mod-blocks' => 'back-office/ressources/atak-mod-blocks',
         '/admin/atak-diffusion-rapports' => 'back-office/ressources/atak-diffusion-rapports',
-        '/admin/atak/realism/config' => 'back-office/ressources/atak-realism/config',
+        '/admin/atak/realism/config' => 'back-office/atak/realisme?onglet=reglages',
         '/admin/atak/realism/history' => 'back-office/ressources/atak-realism/history',
         '/admin/atak/realism/verify' => 'back-office/ressources/atak-realism/verify',
         '/admin/content-moderation' => 'back-office/content-moderation',
     ];
     foreach ($legacyTenantTools as $legacyPath => $target) {
-        $router->get($legacyPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url($target)), [AuthMiddleware::class]);
+        $router->get($legacyPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url($target), 301), [AuthMiddleware::class]);
     }
-    $router->get('/admin/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/atak-mod')), [AuthMiddleware::class]);
-    $router->get('/back-office/ressources/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/atak-mod')), [AuthMiddleware::class]);
+    $router->get('/admin/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/atak-mod'), 301), [AuthMiddleware::class]);
+    $router->get('/back-office/ressources/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/ressources/atak-mod'), 301), [AuthMiddleware::class]);
     $router->get('/back-office/ressources/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports', [AdminAtakReportRoutingController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/etat', [AdminAtakReportRoutingController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2580,8 +2580,8 @@ return function (Router $router) {
     $router->post('/back-office/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/api/atak/roleplay/server-tests', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'serverTests'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/roleplay', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay')), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/admin/atak/roleplay/intel-scramble', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay') . '#intel-scramble'), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/roleplay', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay'), 301), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/roleplay/intel-scramble', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/atak/roleplay') . '#intel-scramble', 301), [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     // ARCH-006 : second enregistrement identique relays GET/DELETE + roleplay server-tests retiré.
     $router->post('/back-office/ressources/atak-realism/save', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-realism/history', [\App\Controllers\Admin\AdminAtakRealismConfigController::class, 'history'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2751,16 +2751,16 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/admin/training/audit', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'audit'), $lmsAdminMw);
     // Studio LMS : canonique = /formation/studio. Anciennes URL admin → redirection.
     $studioMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
-    $router->get('/admin/training/studio', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url()), $studioMw);
-    $router->get('/admin/training/studio/versions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url('versions')), $studioMw);
-    $router->get('/admin/training/studio/{id}/preview', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/preview')), $studioMw);
-    $router->get('/admin/training/studio/{id}/fiche', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/fiche')), $studioMw);
-    $router->get('/admin/training/studio/{id}/presentation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/presentation')), $studioMw);
-    $router->get('/admin/training/studio/{id}/structure', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/structure')), $studioMw);
-    $router->get('/admin/training/studio/echange/importer', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url(training_studio_path() . '/echange/importer')), $studioMw);
-    $router->get('/admin/training/studio/{id}/echange', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/echange')), $studioMw);
-    $router->get('/admin/training/studio/{id}/echange/export', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/echange/export')), $studioMw);
-    $router->get('/admin/training/studio/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url((string) ($p['id'] ?? ''))), $studioMw);
+    $router->get('/admin/training/studio', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(), 301), $studioMw);
+    $router->get('/admin/training/studio/versions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url('versions'), 301), $studioMw);
+    $router->get('/admin/training/studio/{id}/preview', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/preview'), 301), $studioMw);
+    $router->get('/admin/training/studio/{id}/fiche', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/fiche'), 301), $studioMw);
+    $router->get('/admin/training/studio/{id}/presentation', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/presentation'), 301), $studioMw);
+    $router->get('/admin/training/studio/{id}/structure', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/structure'), 301), $studioMw);
+    $router->get('/admin/training/studio/echange/importer', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url(training_studio_path() . '/echange/importer'), 301), $studioMw);
+    $router->get('/admin/training/studio/{id}/echange', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/echange'), 301), $studioMw);
+    $router->get('/admin/training/studio/{id}/echange/export', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url(($p['id'] ?? '') . '/echange/export'), 301), $studioMw);
+    $router->get('/admin/training/studio/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(training_studio_url((string) ($p['id'] ?? '')), 301), $studioMw);
     $interteamMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class, InterteamMissionsAccessMiddleware::class];
     $router->get('/back-office/cooperation/catalog', [CooperationCatalogWebController::class, 'index'], $interteamMw);
     $router->get('/back-office/cooperation/catalog/create', [CooperationCatalogWebController::class, 'create'], $interteamMw);
@@ -2812,34 +2812,34 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/cooperation/missions/{id}/consent', [InterteamMissionWebController::class, 'consent'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/consent/send-otp', [InterteamMissionWebController::class, 'consentSendOtp'], $interteamMw);
     $router->post('/back-office/cooperation/missions/{id}/consent/verify-otp', [InterteamMissionWebController::class, 'consentVerifyOtp'], $interteamMw);
-    $router->get('/admin/interteam-missions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_index_url()), $interteamMw);
-    $router->get('/admin/interteam-missions/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_create_url()), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_edit_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/exchange', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_exchange_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/timeline', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_timeline_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/meeting', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_meeting_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/orbat', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_orbat_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/archive', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_archive_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/negotiate', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_negotiate_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/rex', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_rex_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}/consent', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_consent_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/admin/interteam-missions/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_show_url((int) ($p['id'] ?? 0))), $interteamMw);
+    $router->get('/admin/interteam-missions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_index_url(), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_create_url(), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_edit_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/exchange', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_exchange_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/timeline', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_timeline_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/meeting', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_meeting_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/orbat', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_orbat_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/archive', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_archive_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/negotiate', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_negotiate_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/rex', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_rex_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}/consent', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_consent_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/admin/interteam-missions/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_show_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
 
     // Alias canoniques : back-office → modules métier du tenant (mêmes cibles que /admin/…)
     $tenantResMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
     $trainingResMw = [AuthMiddleware::class, TrainingTenantResourceMiddleware::class];
-    $router->get('/back-office/ressources/interteam-missions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_index_url()), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_create_url()), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_edit_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/exchange', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_exchange_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/timeline', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_timeline_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/meeting', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_meeting_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/orbat', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_orbat_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/archive', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_archive_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/negotiate', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_negotiate_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/rex', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_rex_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}/consent', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_consent_url((int) ($p['id'] ?? 0))), $interteamMw);
-    $router->get('/back-office/ressources/interteam-missions/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_show_url((int) ($p['id'] ?? 0))), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_index_url(), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_create_url(), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_edit_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/exchange', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_exchange_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/timeline', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_timeline_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/meeting', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_meeting_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/orbat', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_orbat_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/archive', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_archive_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/negotiate', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_negotiate_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/rex', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_rex_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}/consent', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_consent_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
+    $router->get('/back-office/ressources/interteam-missions/{id}', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_show_url((int) ($p['id'] ?? 0)), 301), $interteamMw);
     $lmsBoTrainingLegacyRedirect = static fn (\App\Core\Request $r, array $p): \App\Core\Response => training_lms_redirect_legacy_bo_training_to_formation($r);
 
     $router->get('/formation/charte-rh', [HrCharterDocumentAdminController::class, 'edit'], $trainingResMw);
@@ -3023,7 +3023,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
         $router->get('/' . $legacyBoPath, static fn (\App\Core\Request $r, array $p): \App\Core\Response => \App\Support\BackOfficeLegacyRedirects::response($legacyBoPath, $r->queryParams()));
     }
     foreach (['/back-office/forum-moderation', '/admin/forum-moderation'] as $legacyModerationPath) {
-        $router->get($legacyModerationPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/signalements')), [AuthMiddleware::class]);
+        $router->get($legacyModerationPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/signalements'), 301), [AuthMiddleware::class]);
     }
     $router->get('/back-office/content-moderation', [ContentModerationController::class, 'index'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
     $router->post('/back-office/content-moderation/{id}/approve', [ContentModerationController::class, 'approve'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
@@ -3069,7 +3069,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/training/enroll', [TrainingApiController::class, 'enroll'], $mwTraining);
     $router->get('/api/training/enrollments/{id}/progress', [TrainingApiController::class, 'progress'], $mwTraining);
     /** Évite l’affichage brut de JSON si l’URL est ouverte dans le navigateur (GET). */
-    $router->get('/api/training/progress/lesson', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('formations')), $mwTraining);
+    $router->get('/api/training/progress/lesson', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('academy/catalogue')), $mwTraining);
     $router->post('/api/training/progress/lesson', [TrainingApiController::class, 'progressLesson'], $mwTraining);
     $router->post('/api/training/lesson-feedback', [TrainingApiController::class, 'lessonFeedback'], $mwTraining);
     $router->get('/api/training/resource/{id}/download', [TrainingApiController::class, 'lessonResourceDownload'], $mwTraining);

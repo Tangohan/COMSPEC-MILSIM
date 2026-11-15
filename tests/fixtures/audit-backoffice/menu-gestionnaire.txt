@@ -1,5 +1,5 @@
 # TABLEAU DE BORD ET SUIVI
-Tableau de bord | /back-office
+Accueil | /back-office
 Mon service | /mon-service
 Tableau opérationnel | /back-office/tableau-operationnel
 Indicateurs | /back-office/analytics
@@ -16,13 +16,9 @@ Effectifs | /back-office/ressources/effectifs
   Affectations | /back-office/ressources/effectifs/affectations
   Chaîne de commandement | /back-office/ressources/effectifs/chaine
   Qualifications des membres | /back-office/ressources/effectifs/qualifications
-  Sanctions & absences | /back-office/moderation
   Anciens membres | /back-office/ressources/effectifs/departs
   Sans compte | /back-office/ressources/effectifs/sans-comptes
   Tableaux de données | /back-office/ressources/effectifs/tableaux
-  Registre des droits | /back-office/ressources/effectifs/registre-droits
-  Circuits de validation | /back-office/ressources/effectifs/circuits
-  Positions administratives | /back-office/ressources/effectifs/positions
 Recrutement | /back-office/recruitments
   Candidatures | /back-office/recruitments
   Vue d’ensemble | /back-office/ressources/recrutement
@@ -31,25 +27,22 @@ Recrutement | /back-office/recruitments
   Intégration des recrues | /back-office/integration-membres
   Statistiques | /back-office/ressources/recrutement/analyses
   Codes d’invitation prioritaires | /back-office/recruitments/codes-invitation
-Dossiers RH | /back-office/ressources/effectifs/a-traiter?onglet=surveiller
+Dossiers RH | /back-office/ressources/effectifs/a-traiter
   Suivi des dossiers
     À traiter | /back-office/ressources/effectifs/a-traiter
-    Corrections de fiches | /back-office/personnel/corrections
-    Demandes d’accès élevé | /back-office/ressources/effectifs/elevations
+    Demandes RH | /back-office/demandes-rh
     Documents RH | /back-office/ressources/effectifs/documents-rh
   Carrière
     Avancement | /back-office/rh/avancement
     Ancienneté | /back-office/organisation/anciennete
-    Mobilité | /back-office/ressources/effectifs/mobilite
     Vivier | /back-office/ressources/effectifs/vivier
-  Réglages RH | /back-office/ressources/effectifs/reglages
-Modération | /back-office/signalements
+Discipline | /back-office/moderation
+  Sanctions & absences | /back-office/moderation
   Signalements membres | /back-office/signalements
   Fichiers en quarantaine | /back-office/content-moderation
-# UNITÉS ET RÉFÉRENTIELS
-Organisation | /orbat
+Organigramme | /orbat
+Organisation | /back-office/groups
   Structure
-    Organigramme | /orbat
     Groupes | /back-office/groups
     Équipes | /back-office/teams
     Catalogue de l’organisation | /back-office/organisation/catalogue
@@ -70,13 +63,15 @@ Référentiels | /back-office/referentiels/grades
     Espace aérien | /back-office/espace-aerien
     Cursus pilote | /back-office/referentiels/qualifications/cursus-pilote
   Fonctions et emplois | /back-office/ressources/effectifs/fonctions
+  Positions administratives | /back-office/ressources/effectifs/positions
   Dotation | /back-office/referentiels/dotation
-# DROITS ET ACCÈS
-Rôles et habilitations | /back-office/ressources/effectifs/roles
+Droits et accès | /back-office/ressources/effectifs/roles
   Rôles et accès | /back-office/ressources/effectifs/roles
+  Registre des droits | /back-office/ressources/effectifs/registre-droits
+  Circuits de validation | /back-office/ressources/effectifs/circuits
   Accès au renseignement | /back-office/renseignement/acces
-Sécurité et blocages | /back-office/security-indicators
-Journal d’audit | /back-office/audit
+  Sécurité et blocages | /back-office/security-indicators
+  Journal d’audit | /back-office/audit
 # OPÉRATIONS
 Événements | /back-office/events
   Inscriptions en cours | /back-office/events
@@ -126,14 +121,6 @@ Matériel | /back-office/equipement-joueurs
   Kits par rôle | /back-office/kits-roles
   Arsenal et tenues | /equipment
   Tenues mises en avant | /back-office/dashboard-tenues
-Configuration et mods | /back-office/ressources/atak-config
-  Configuration ATAK | /back-office/ressources/atak-config
-  Consignes et kit ATAK | /back-office/ressources/atak-consignes
-  Serveurs de jeu | /back-office/ressources/serveurs-de-jeu
-  Mods
-    Mods (Steam Workshop) | /back-office/ressources/atak-mod
-    Restrictions d’accès au mod | /back-office/ressources/atak-mod-blocks
-  Diffusion des rapports | /back-office/ressources/atak-diffusion-rapports
 # COMMUNAUTÉ
 Vitrine et portail | /back-office/community
   Paramètres | /back-office/community
@@ -157,8 +144,17 @@ Doctrine et documents | /back-office/doctrine
   Fichiers partagés | /back-office/partage
   Gestion documentaire | /documents/gestion
 Musique | /back-office/ressources/musique
-# RÉGLAGES ET INTÉGRATIONS
+# CONFIGURATION
 Configuration | /back-office/configuration
+ATAK | /back-office/ressources/atak-config
+  Configuration ATAK | /back-office/ressources/atak-config
+  Consignes et kit ATAK | /back-office/ressources/atak-consignes
+  Serveurs de jeu | /back-office/ressources/serveurs-de-jeu
+  Mods
+    Mods (Steam Workshop) | /back-office/ressources/atak-mod
+    Restrictions d’accès au mod | /back-office/ressources/atak-mod-blocks
+  Diffusion des rapports | /back-office/ressources/atak-diffusion-rapports
+Réglages RH | /back-office/ressources/effectifs/reglages
 Configuration initiale | /back-office/configuration-initiale
 Mises à jour | /back-office/mise-a-niveau
 Messages de la plateforme | /back-office/messages-plateforme

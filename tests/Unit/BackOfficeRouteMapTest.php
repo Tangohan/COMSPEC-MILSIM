@@ -102,13 +102,11 @@ final class BackOfficeRouteMapTest extends TestCase
 
     /**
      * Routes masquées par une route enregistrée avant elles (le Router retient la première qui correspond).
+     * Vide depuis la vague de tri (media/collections déclarée avant media/{id}, doublon GET /admin/users retiré).
      *
      * @var array<string, string>
      */
-    private const KNOWN_SHADOWED = [
-        'POST /back-office/media/collections' => 'POST /back-office/media/{id} (updateItem) est enregistrée avant : créer une collection appelle updateItem avec l’identifiant « collections »',
-        'GET /admin/users' => 'doublon : la page des comptes de la plateforme répond ; la redirection vers /back-office/users plus bas n’est jamais atteinte',
-    ];
+    private const KNOWN_SHADOWED = [];
 
     /** Chemins cités par l'inventaire qui ne sont qu'un préfixe, sans page. */
     private const INVENTORY_PREFIXES = [
@@ -221,6 +219,22 @@ final class BackOfficeRouteMapTest extends TestCase
         self::assertSame([], array_values(array_diff(array_keys($seen), array_keys(self::AUTH_ONLY_CONTROLLERS))), 'Contrôleur à connexion seule non déclaré dans AUTH_ONLY_CONTROLLERS.');
     }
 
+    /**
+     * Familles dont chaque onglet garde la garde de SON ancienne page (elles diffèrent d'un onglet à l'autre) et dont
+     * l'accueil vérifie le droit dans le contrôleur : 'famille' => ['onglet' => middlewares attendus].
+     *
+     * @var array<string, array<string, list<string>>>
+     */
+    private const MIXED_GUARD_FAMILIES = [
+        // Demandes RH : l'accueil (HrRequestsController) ne liste que les types lisibles (HrRequestsDesk::visibleTypes) ;
+        // Corrections reste à connexion seule comme son ancienne page (PersonnelCorrectionController, AUTH_ONLY_CONTROLLERS).
+        'back-office/demandes-rh' => [
+            'elevations' => ['AuthMiddleware', 'OrganizationAdminMiddleware'],
+            'corrections' => ['AuthMiddleware'],
+            'mobilite' => ['AuthMiddleware', 'OrganizationAdminMiddleware'],
+        ],
+    ];
+
     /** Chaque onglet réutilise la garde de sa famille : connexion puis droit de gestion, jamais plus lâche. */
     public function testTabFamiliesKeepTheirGuards(): void
     {
@@ -229,6 +243,24 @@ final class BackOfficeRouteMapTest extends TestCase
             $route = Map::match('GET', '/' . $base);
             if ($route === null || !self::isTabDispatcher($route)) {
                 $bad[] = $base . ' : pas de route d’accueil servie par BackOfficeTabs::dispatch';
+                continue;
+            }
+            if (isset(self::MIXED_GUARD_FAMILIES[$base])) {
+                $home = new \ReflectionMethod($family['handler'][0], $family['handler'][1]);
+                $homeSrc = implode('', array_slice(file((string) $home->getFileName()) ?: [], $home->getStartLine() - 1, $home->getEndLine() - $home->getStartLine() + 1));
+                if (array_map(self::short(...), $family['middleware']) !== ['AuthMiddleware'] || !str_contains($homeSrc, 'typesForViewer')) {
+                    $bad[] = $base . ' : l’accueil doit exiger la connexion et filtrer les types lisibles';
+                }
+                $tabs = [];
+                foreach ($family['tabs'] as $key => $tab) {
+                    $tabs[$key] = array_map(self::short(...), $tab['middleware']);
+                    if ($tabs[$key] === ['AuthMiddleware'] && !isset(self::AUTH_ONLY_CONTROLLERS[self::short($tab['handler'][0])])) {
+                        $bad[] = $base . '?onglet=' . $key . ' : connexion seule hors contrôleur déclaré';
+                    }
+                }
+                if ($tabs !== self::MIXED_GUARD_FAMILIES[$base]) {
+                    $bad[] = $base . ' : gardes d’onglets différentes de celles déclarées';
+                }
                 continue;
             }
             $mw = array_map(self::short(...), $family['middleware']);

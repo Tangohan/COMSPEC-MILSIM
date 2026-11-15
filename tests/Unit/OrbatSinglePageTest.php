@@ -167,7 +167,7 @@ final class OrbatSinglePageTest extends TestCase
                 self::assertInstanceOf(\Closure::class, $byPath[$path]['handler'], $path . ' doit rediriger');
                 $_GET = $query;
                 $res = ($byPath[$path]['handler'])(new Request(), $params);
-                self::assertSame(302, $res->statusCode(), $path);
+                self::assertSame(301, $res->statusCode(), $path);
                 self::assertSame(url('orbat') . $suffix, $res->headerValue('Location'), $path);
             }
         } finally {

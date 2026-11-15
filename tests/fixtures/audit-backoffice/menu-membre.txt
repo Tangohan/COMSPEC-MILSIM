@@ -1,5 +1,5 @@
 # TABLEAU DE BORD ET SUIVI
-Tableau de bord | /back-office
+Accueil | /back-office
 Mon service | /mon-service
 # MA SITUATION
 Ma fiche | /back-office/ma-situation/ma-fiche

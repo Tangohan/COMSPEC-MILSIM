@@ -29,7 +29,6 @@ final class AtakTerrain3dAssetTest extends TestCase
     public function testTerrainMeshOffersPersistentVerticalExaggeration(): void
     {
         $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain-3d.js');
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
 
         self::assertStringContainsString('verticalExaggeration: 2.5', $javascript);
         self::assertStringContainsString('function reliefOffset(z)', $javascript);
@@ -37,15 +36,6 @@ final class AtakTerrain3dAssetTest extends TestCase
         self::assertStringContainsString('normalizedHeight * 180 * state.verticalExaggeration', $javascript);
         self::assertStringNotContainsString('normalizedHeight * 110 * state.verticalExaggeration', $javascript);
         self::assertStringNotContainsString('Math.min(550, displacement)', $javascript);
-        self::assertStringContainsString('id="atak-terrain-exaggeration"', $view);
-        self::assertStringContainsString('Exagération Z', $view);
-        self::assertStringContainsString('id="atak-terrain-pitch"', $view);
-        self::assertStringContainsString('Inclinaison', $view);
-        self::assertStringContainsString('id="atak-terrain-3d-mode"', $view);
-        self::assertStringContainsString('Vue de la carte', $view);
-        self::assertStringContainsString('<option value="flat" selected>À plat (2D)</option>', $view);
-        self::assertStringContainsString('<option value="inclined">Relief 3D</option>', $view);
-        self::assertDoesNotMatchRegularExpression('/id="atak-terrain-3d-settings"[^>]*\bhidden\b/', $view);
         self::assertStringContainsString("modeSelect.value = state.enabled ? 'inclined' : 'flat'", $javascript);
         self::assertStringContainsString('settings.hidden = false', $javascript);
         self::assertStringContainsString('settings.removeAttribute(\'hidden\')', $javascript);
@@ -97,12 +87,9 @@ final class AtakTerrain3dAssetTest extends TestCase
     public function testMapToolsKeepThe3dButtonInTheViewCluster(): void
     {
         $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-map-tools.js');
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
 
         self::assertStringContainsString("{ id: 'view3d', label: 'Vue 3D' }", $javascript);
         self::assertStringContainsString("view: ['zoom', 'view3d', 'nvg', 'cop']", $javascript);
-        self::assertStringContainsString('id="atak-view-3d"', $view);
-        self::assertStringContainsString('data-tool-slot="view3d"', $view);
     }
 
     public function testLeafletMapStaysFlatWithoutCssPerspective(): void

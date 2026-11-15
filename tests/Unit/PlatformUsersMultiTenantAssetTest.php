@@ -47,11 +47,6 @@ final class PlatformUsersMultiTenantAssetTest extends TestCase
         self::assertStringContainsString('Dossier complet', $list);
         self::assertStringContainsString('reste visible', $list);
         self::assertStringNotContainsString('sont masqués par défaut', $list);
-
-        $orgShow = (string) file_get_contents($root . '/views/admin/organization/users/show.php');
-        self::assertStringContainsString('Identifiant plateforme', $orgShow);
-        self::assertStringContainsString('Appartenances multi-communautés', $orgShow);
-        self::assertStringContainsString('Dossier plateforme complet', $orgShow);
     }
 
     public function testPlatformDirectoryDoesNotFilterOrphansByDefault(): void

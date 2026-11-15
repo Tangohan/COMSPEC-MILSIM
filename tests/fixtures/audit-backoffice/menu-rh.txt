@@ -1,5 +1,5 @@
 # TABLEAU DE BORD ET SUIVI
-Tableau de bord | /back-office
+Accueil | /back-office
 Mon service | /mon-service
 # MEMBRES ET SUIVI RH
 Effectifs | /back-office/ressources/effectifs
@@ -10,28 +10,26 @@ Effectifs | /back-office/ressources/effectifs
   Anciens membres | /back-office/ressources/effectifs/departs
   Sans compte | /back-office/ressources/effectifs/sans-comptes
   Tableaux de données | /back-office/ressources/effectifs/tableaux
-  Registre des droits | /back-office/ressources/effectifs/registre-droits
-  Circuits de validation | /back-office/ressources/effectifs/circuits
-  Positions administratives | /back-office/ressources/effectifs/positions
-Dossiers RH | /back-office/ressources/effectifs/a-traiter?onglet=surveiller
+Dossiers RH | /back-office/ressources/effectifs/a-traiter
   Suivi des dossiers
     À traiter | /back-office/ressources/effectifs/a-traiter
-    Corrections de fiches | /back-office/personnel/corrections
-    Demandes d’accès élevé | /back-office/ressources/effectifs/elevations
+    Demandes RH | /back-office/demandes-rh
     Documents RH | /back-office/ressources/effectifs/documents-rh
-  Carrière
-    Mobilité | /back-office/ressources/effectifs/mobilite
-    Vivier | /back-office/ressources/effectifs/vivier
-  Réglages RH | /back-office/ressources/effectifs/reglages
-# UNITÉS ET RÉFÉRENTIELS
+  Vivier | /back-office/ressources/effectifs/vivier
 Référentiels | /back-office/ressources/effectifs/fonctions
   Fonctions et emplois | /back-office/ressources/effectifs/fonctions
+  Positions administratives | /back-office/ressources/effectifs/positions
+Droits et accès | /back-office/ressources/effectifs/registre-droits
+  Registre des droits | /back-office/ressources/effectifs/registre-droits
+  Circuits de validation | /back-office/ressources/effectifs/circuits
 # ATAK · CARTE ET TERMINAUX
 Overwatch | /atak
 Supervision | /9-line
   9-LINE et 5-LINE | /9-line
 Matériel | /equipment
   Arsenal et tenues | /equipment
+# CONFIGURATION
+Réglages RH | /back-office/ressources/effectifs/reglages
 # MA SITUATION
 Ma fiche | /back-office/ma-situation/ma-fiche
 Mon unité | /back-office/ma-situation/unite
@@ -47,7 +45,6 @@ Mes papiers | /back-office/ma-situation/mes-papiers
 Musique | /back-office/ma-situation/musique
 Mon compte | /account
 # TERRAIN
-Overwatch | /atak
 Ma liaison ATAK | /back-office/ma-situation/liaison-atak
 Événements | /back-office/ma-situation/evenements
 # ADMINISTRATIF

@@ -69,8 +69,6 @@ final class AtakHiddenTabPollingAssetTest extends TestCase
         foreach ($checks as $file => $old) {
             self::assertStringNotContainsString($old, (string) file_get_contents($root . $file), $file);
         }
-        $page = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
-        self::assertStringContainsString('if (!document.hidden) refreshStatus(token);', $page);
     }
 
     public function testViewshedBacksOffWhenNothingChanges(): void

@@ -17,7 +17,6 @@ final class TacticalMarkerChipAssetTest extends TestCase
         $map = (string) file_get_contents($root . '/public/assets/js/atak-map.js');
         $sitrep = (string) file_get_contents($root . '/public/assets/js/atak-sitrep.js');
         $opsMap = (string) file_get_contents($root . '/public/assets/js/comspec-operational-map.js');
-        $atakView = (string) file_get_contents($root . '/views/atak.php');
         $tacmap = (string) file_get_contents($root . '/views/tacmap.php');
         $overwatch = (string) file_get_contents($root . '/views/overwatch/index.php');
         $dispatch = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
@@ -33,8 +32,6 @@ final class TacticalMarkerChipAssetTest extends TestCase
         self::assertStringContainsString('pollTacticalReports', $map);
         self::assertStringContainsString('Chip.leafletDivIcon', $sitrep);
         self::assertStringContainsString('renderTacticalReportChips', $opsMap);
-        self::assertStringContainsString('tactical-marker-chip.js', $atakView);
-        self::assertStringContainsString('tactical-marker-chip.css', $atakView);
         self::assertStringContainsString('tactical-marker-chip.js', $tacmap);
         self::assertStringContainsString('tactical-marker-chip.js', $overwatch);
         self::assertStringContainsString('$pr(280,', $dispatch);

@@ -10,18 +10,8 @@ final class AtakMapClearViewAssetTest extends TestCase
 {
     public function testToolbarOffersAHumanClearViewAction(): void
     {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
         $tools = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-map-tools.js');
 
-        self::assertStringContainsString('data-tool="clear-view"', $view);
-        $button = '';
-        if (preg_match('/<button[^>]*data-tool="clear-view"[^>]*>.*?<\/button>/s', $view, $m)) {
-            $button = $m[0];
-        }
-        self::assertStringContainsString('Tout dégager', $button);
-        self::assertStringContainsString('Les contacts encore en liaison restent', $button);
-        self::assertStringNotContainsString('endpoint', $button);
-        self::assertStringNotContainsString('JSON', $button);
         self::assertStringContainsString("{ id: 'clear-view', label: 'Tout dégager' }", $tools);
         self::assertStringContainsString("nav: ['goto', 'follow', 'clear-view']", $tools);
         self::assertStringContainsString('function clearViewOverlays()', $tools);

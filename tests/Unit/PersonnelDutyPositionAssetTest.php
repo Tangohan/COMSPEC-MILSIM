@@ -36,12 +36,6 @@ final class PersonnelDutyPositionAssetTest extends TestCase
 
     public function testOrganizerSurfacesAndCatalog(): void
     {
-        $index = (string) file_get_contents($this->root() . '/views/admin/organization/users/index.php');
-        self::assertStringContainsString("'POSITION'", $index);
-        self::assertStringContainsString('Attribuer les positions manquantes', $index);
-        self::assertStringContainsString('duty-positions/backfill', $index);
-        $show = (string) file_get_contents($this->root() . '/views/admin/organization/users/show.php');
-        self::assertStringContainsString('Passer en service actif', $show);
         $routes = (string) file_get_contents($this->root() . '/routes/web.php');
         self::assertStringContainsString("'/back-office/users/{id}/duty-position'", $routes);
         $catalog = (string) file_get_contents($this->root() . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');

@@ -14,7 +14,6 @@ final class AtakMapTileZoomAssetTest extends TestCase
         $map = (string) file_get_contents($root . '/public/assets/js/atak-map.js');
         $altis = (string) file_get_contents($root . '/public/assets/js/maps/altis.js');
         $mobile = (string) file_get_contents($root . '/public/assets/js/atak-mobile/atak-mobile.js');
-        $view = (string) file_get_contents($root . '/views/atak.php');
 
         self::assertStringContainsString('maxNativeZoom', $map);
         self::assertStringContainsString('fillTileFromParent', $map);
@@ -22,7 +21,5 @@ final class AtakMapTileZoomAssetTest extends TestCase
         self::assertStringContainsString('maxNativeZoom: 6', $altis);
         self::assertStringContainsString('maxZoom: 8', $altis);
         self::assertStringContainsString('maxNativeZoom', $mobile);
-        self::assertStringContainsString('Réparer le fond', $view);
-        self::assertStringContainsString('atak-repair-base-tiles', $view);
     }
 }

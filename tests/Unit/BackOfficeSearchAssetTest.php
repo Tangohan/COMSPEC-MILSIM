@@ -14,7 +14,6 @@ final class BackOfficeSearchAssetTest extends TestCase
         $layout = (string) file_get_contents(dirname(__DIR__, 2) . '/views/layout/main.php');
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
         $svc = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Portal/BackOfficeSearchService.php');
-        $users = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/users/index.php');
 
         self::assertStringContainsString('Pages, membres, documents', $topbar);
         self::assertStringContainsString('back_office_search.php', $layout);
@@ -24,6 +23,5 @@ final class BackOfficeSearchAssetTest extends TestCase
         self::assertStringContainsString('searchPersonnel', $svc);
         self::assertStringContainsString('Poste de situation', $svc);
         self::assertStringContainsString('Annonces et alertes', $svc);
-        self::assertStringContainsString('name="search"', $users);
     }
 }

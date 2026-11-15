@@ -212,17 +212,6 @@ final class OverwatchGlAssetTest extends TestCase
         self::assertStringContainsString('MAX_HEIGHT', $bounds);
     }
 
-    public function testClassicAtakKeepsInclinedMeshAndIsUntouchedByOverwatchGl(): void
-    {
-        $root = dirname(__DIR__, 2);
-        $view = (string) file_get_contents($root . '/views/atak.php');
-        self::assertStringContainsString('<option value="inclined">Relief 3D</option>', $view);
-        self::assertStringContainsString('atak-terrain-3d.js', $view);
-        self::assertStringContainsString('atak-scene-3d.js', $view);
-        self::assertStringNotContainsString('overwatch-gl/OverwatchGlMap.js', $view);
-        self::assertStringNotContainsString('vendor/maplibre-gl/maplibre-gl.js', $view);
-    }
-
     public function testSceneApiFiltersKindAndOmitsFileIdentifiers(): void
     {
         $root = dirname(__DIR__, 2);

@@ -10,7 +10,6 @@ final class AtakQrPhoneDetachAssetTest extends TestCase
 {
     public function testQrHubAndScreenModalUseMobileDetachedShell(): void
     {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
         $partial = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/atak_qr_phone_preview.php');
         $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-c2-shell.css');
         $hub = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-qr-hub.js');
@@ -22,9 +21,6 @@ final class AtakQrPhoneDetachAssetTest extends TestCase
         $mobileJs = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-mobile/atak-mobile.js');
         $mobileCss = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/atak-mobile.css');
 
-        self::assertStringContainsString('atak_qr_phone_preview.php', $view);
-        self::assertStringContainsString('data-qr-destination="sitac"', $view);
-        self::assertStringContainsString('Fenêtre détachée sur téléphone', $view);
         self::assertStringContainsString('COMSPEC', $partial);
         self::assertStringContainsString('atak-qr-phone__topbar', $partial);
         self::assertStringContainsString('data-skin="sitac"', $partial);

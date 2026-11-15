@@ -34,6 +34,13 @@ Pour régénérer un instantané après un changement voulu : `UPDATE_MENU_SNAPS
 - **Routes à barre finale** (`/admin/`, `/back-office/`, `/backoffice/`) : le chemin est normalisé sans barre finale (`Request::normalizePathFromServer`), ces routes ne répondent jamais. Sans effet, à retirer.
 - **Interface** : 161 vues du back-office ont leur propre `<h1>` alors que l'en-tête du shell en porte un (risque de double titre ; `shell.php` des Effectifs et `partage/index.php` en ont deux dans le même fichier) ; 179 `confirm()` natifs dans 109 fichiers (vues et scripts du back-office) ; 95 surtitres (`eyebrow`, `kicker`) dans 71 vues ; 1 vue avec un tableau sans état vide (`views/admin/organization/partials/doctrine_sop.php`).
 
+### Suivi : vague de tri (`tests/Unit/VagueTriTest.php`)
+
+- Corrigé : `POST /back-office/media/collections` atteinte (déclarée avant `/back-office/media/{id}`) ; doublon `GET /admin/users` et routes à barre finale retirés ; les quatre chaînes arrivent en un saut ; 135 des 136 redirections passent en 301 (reste `/back-office/renseignement`, entrée de module vers sa page par défaut) ; « Overwatch » n'est plus répété pour un cadre délégué.
+- « Dossiers RH » : l'onglet `surveiller` existe bien, c'est une section de la page « À traiter » (`RhActionInboxService::SECTIONS`), pas un onglet de `BackOfficeTabs`. L'entrée ouvre désormais « À traiter », comme sa première page.
+- Reste ouvert, relevé au passage : `/back-office/ressources/effectifs/alertes` répond 301 vers `a-traiter?onglet=alertes`, qui répond à son tour 302 vers `a-traiter?onglet=surveiller` (`RhDossierWorkspaceController::alerts`) : deux sauts que la carte ne voit pas, la seconde redirection étant dans un contrôleur.
+- Les écarts de sécurité 1 à 5 ci-dessus ne sont pas touchés par cette vague.
+
 ## Couverture S1 à S16
 
 | Point | État | Test |

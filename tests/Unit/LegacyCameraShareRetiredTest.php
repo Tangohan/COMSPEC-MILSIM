@@ -55,10 +55,8 @@ final class LegacyCameraShareRetiredTest extends TestCase
         $root = dirname(__DIR__, 2);
         $beta = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-beta.js');
         $cams = (string) file_get_contents($root . '/public/assets/js/atak-cams.js');
-        $atak = (string) file_get_contents($root . '/views/atak.php');
         self::assertStringNotContainsString('/api/atak/video-feeds', $beta . $cams);
         self::assertStringNotContainsString("openView('cams')", $beta);
-        self::assertStringNotContainsString('id="tab-cams"', $atak);
         self::assertStringNotContainsString('helmet-stream', (string) file_get_contents($root . '/public/assets/js/atak-unit-menu.js'));
     }
 }

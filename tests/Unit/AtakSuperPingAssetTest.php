@@ -21,7 +21,6 @@ final class AtakSuperPingAssetTest extends TestCase
         $ctx = (string) file_get_contents($this->root() . '/public/assets/js/atak-context-menu.js');
         $map = (string) file_get_contents($this->root() . '/public/assets/js/atak-map.js');
         $css = (string) file_get_contents($this->root() . '/public/assets/css/atak.css');
-        $view = (string) file_get_contents($this->root() . '/views/atak.php');
 
         self::assertStringContainsString('window.ATAKSuperPing', $js);
         self::assertStringContainsString('atak-super-ping__ring', $js);
@@ -38,7 +37,6 @@ final class AtakSuperPingAssetTest extends TestCase
         self::assertStringContainsString('ATAKSuperPing.ingest', $map);
 
         self::assertStringContainsString('@keyframes atak-super-ping-expand', $css);
-        self::assertStringContainsString('atak-super-ping.js', $view);
     }
 
     public function testInGameAtakDrawsSuperPingEllipses(): void

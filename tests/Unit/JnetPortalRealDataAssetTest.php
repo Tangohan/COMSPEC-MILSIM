@@ -39,7 +39,6 @@ final class JnetPortalRealDataAssetTest extends TestCase
         $embed = (string) file_get_contents($root . '/views/jnet/_bo_content.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/JnetPortalController.php');
         $css = (string) file_get_contents($root . '/public/assets/css/jnet_portal.css');
-        $embedCss = (string) file_get_contents($root . '/public/assets/css/jnet_bo_embed.css');
 
         self::assertStringContainsString('jnet-shortcuts', $home);
         self::assertStringContainsString('Articles de l’unité', $home);
@@ -67,7 +66,6 @@ final class JnetPortalRealDataAssetTest extends TestCase
 
         self::assertStringContainsString('.jnet-shortcuts', $css);
         self::assertStringContainsString('.jnet-linklist', $css);
-        self::assertStringContainsString('.jnet-shortcut', $embedCss);
     }
 
     public function testSpacesAndExchangesAreWired(): void

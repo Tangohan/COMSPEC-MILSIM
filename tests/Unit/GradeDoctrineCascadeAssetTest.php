@@ -13,7 +13,6 @@ final class GradeDoctrineCascadeAssetTest extends TestCase
         $root = dirname(__DIR__, 2);
         $js = (string) file_get_contents($root . '/public/assets/js/grade-doctrine-cascade.js');
         $invite = (string) file_get_contents($root . '/views/admin/organization/partials/user_invite_form_fields.php');
-        $edit = (string) file_get_contents($root . '/views/admin/organization/users/edit.php');
         $platform = (string) file_get_contents($root . '/views/admin/system/user_edit.php');
         $repo = (string) file_get_contents($root . '/app/Repositories/GradeRepository.php');
         $users = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/UserAdminController.php');
@@ -28,9 +27,6 @@ final class GradeDoctrineCascadeAssetTest extends TestCase
         self::assertStringContainsString('data-category', $invite);
         self::assertStringContainsString('grade-doctrine-cascade.js', $invite);
         self::assertStringContainsString('selon la doctrine choisie', $invite);
-
-        self::assertStringContainsString('data-grade-doctrine', $edit);
-        self::assertStringContainsString('grade-doctrine-cascade.js', $edit);
 
         self::assertStringContainsString('data-grade-doctrine', $platform);
         self::assertStringContainsString('grade-doctrine-cascade.js', $platform);

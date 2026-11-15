@@ -19,7 +19,6 @@ final class AtakReachOverlayAssetTest extends TestCase
         $units = (string) file_get_contents($this->root() . '/public/assets/js/atak-units.js');
         $overlay = (string) file_get_contents($this->root() . '/public/assets/js/atak-reach-overlay.js');
         $repo = (string) file_get_contents($this->root() . '/app/Repositories/AtakDataRepository.php');
-        $view = (string) file_get_contents($this->root() . '/views/atak.php');
         $bridge = (string) file_get_contents($this->root() . '/public/assets/js/map/atak-c2-bridge.js');
 
         self::assertStringContainsString('UNIT_RECENT_WINDOW_SECONDS = 900', $repo);
@@ -35,10 +34,6 @@ final class AtakReachOverlayAssetTest extends TestCase
         self::assertStringContainsString('var FOOT_KPH = 5', $overlay);
         self::assertStringContainsString('var VEHICLE_KPH = 40', $overlay);
         self::assertStringContainsString('La zone s’agrandit tant que le contact n’a pas repris la liaison', $overlay);
-
-        self::assertStringContainsString('atak-reach-overlay.js', $view);
-        self::assertStringContainsString('id="atak-filter-live"', $view);
-        self::assertStringContainsString('Récents', $view);
 
         self::assertStringContainsString('ATAKUnits.isRecentlySeen', $bridge);
         self::assertStringContainsString('keepLastKnown = window.ATAKUnits.isRecentlySeen(u)', $bridge);

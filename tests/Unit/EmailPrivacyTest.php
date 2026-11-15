@@ -79,10 +79,6 @@ final class EmailPrivacyTest extends TestCase
         self::assertStringContainsString("allows('admin.system')", $controller);
         self::assertStringNotContainsString("|| \$gateInst->allows('admin.organization')", $controller);
 
-        $edit = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/users/edit.php');
-        self::assertStringContainsString('viewer_can_see_emails', $edit);
-        self::assertStringContainsString('administration du site', $edit);
-
         $response = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Core/Response.php');
         self::assertStringContainsString('EmailPrivacy::maskViewData', $response);
     }

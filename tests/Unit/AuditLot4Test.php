@@ -77,11 +77,11 @@ final class AuditLot4Test extends TestCase
         self::assertStringContainsString('function_based_access_v2_migration', self::src('database/steps/3030_function_based_access_v2.php'));
         self::assertFileExists(self::root() . '/app/Services/AccessControl/FunctionBasedAccessCatalog.php');
 
-        // Vues sans route, mais encore lues par des méthodes de contrôleur et par des tests d'actifs : retrait dans une PR dédiée.
+        // Vues sans route retirées par la vague de tri, avec les méthodes de contrôleur qui les rendaient (tests/Unit/VagueTriTest.php).
         foreach (['index', 'show', 'edit'] as $view) {
-            self::assertFileExists(self::root() . '/views/admin/organization/users/' . $view . '.php');
+            self::assertFileDoesNotExist(self::root() . '/views/admin/organization/users/' . $view . '.php');
         }
-        self::assertFileExists(self::root() . '/views/atak.php');
+        self::assertFileDoesNotExist(self::root() . '/views/atak.php');
     }
 
     /**

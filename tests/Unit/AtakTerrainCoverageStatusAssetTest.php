@@ -8,40 +8,6 @@ use PHPUnit\Framework\TestCase;
 
 final class AtakTerrainCoverageStatusAssetTest extends TestCase
 {
-    public function testLookPrefsPanelListsCoverageStatusUnderTheExistingLine(): void
-    {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php');
-        $statusPos = strpos($view, 'id="atak-terrain-status"');
-        $inventoryPos = strpos($view, 'id="atak-terrain-inventory"');
-        $closePos = strpos($view, 'data-tool-ui="look-close"');
-
-        self::assertNotFalse($statusPos);
-        self::assertNotFalse($inventoryPos);
-        self::assertNotFalse($closePos);
-        self::assertGreaterThan($statusPos, $inventoryPos);
-        self::assertGreaterThan($inventoryPos, $closePos);
-
-        self::assertStringContainsString('Données terrain — aucune couverture', $view);
-        self::assertStringContainsString('Ombrage', $view);
-        self::assertStringContainsString('Relevé divers (pente, courbe', $view);
-        self::assertStringContainsString('Bâtiments', $view);
-        self::assertStringContainsString('Forêts', $view);
-        self::assertStringContainsString('Dernier relevé le', $view);
-        self::assertStringContainsString('Pas encore sur le poste', $view);
-        self::assertStringContainsString('Aucun relevé reçu pour l’instant', $view);
-
-        $blockStart = strpos($view, 'id="atak-terrain-inventory"');
-        $blockEnd = strpos($view, 'atak-map-tools__prefs-actions', $blockStart);
-        self::assertNotFalse($blockStart);
-        self::assertNotFalse($blockEnd);
-        $block = strtolower(substr($view, $blockStart, $blockEnd - $blockStart));
-        self::assertStringNotContainsString('json', $block);
-        self::assertStringNotContainsString('endpoint', $block);
-        self::assertStringNotContainsString('/api/', $block);
-        self::assertStringNotContainsString('sql', $block);
-        self::assertStringNotContainsString('sqf', $block);
-    }
-
     public function testTerrainScriptReadsCoverageFieldsIntoHumanStatus(): void
     {
         $javascript = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-terrain.js');

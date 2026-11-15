@@ -24,7 +24,6 @@ final class AtakNativeIdentityAssetTest extends TestCase
         $extension = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
         $controller = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
         $transmissions = (string) file_get_contents($root . '/public/assets/js/atak-transmissions.js');
-        $atakView = (string) file_get_contents($root . '/views/atak.php');
 
         self::assertStringContainsString('class comspec_atak_native_main', $config);
         self::assertStringNotContainsString('comspec_overwatch_connect', $config);
@@ -45,7 +44,5 @@ final class AtakNativeIdentityAssetTest extends TestCase
         self::assertStringContainsString("'has_atak_native'", $controller);
         self::assertStringContainsString("'atak_native' =>", $controller);
         self::assertStringContainsString("'site', 'atak_native', 'athena'", $transmissions);
-        self::assertStringContainsString('id="atak-tx-atak_native"', $atakView);
-        self::assertStringContainsString('id="health-tx-atak_native"', $atakView);
     }
 }

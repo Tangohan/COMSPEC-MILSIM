@@ -20,8 +20,6 @@ final class SseFieldNoteThemeTaxonomyAssetTest extends TestCase
         self::assertStringContainsString('.frs-tone-caution', $css);
         self::assertStringContainsString('.frs-tone-stable', $css);
         self::assertStringContainsString('.frs-tone-info', $css);
-        self::assertStringContainsString('frs-source-grid', (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php'));
-        self::assertStringContainsString('frs-title', (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak.php'));
     }
 
     public function testGameDialogHasSeventeenThemeToggles(): void

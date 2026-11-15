@@ -61,7 +61,6 @@ final class AtakMissionDataQuickWinsAssetTest extends TestCase
 
     public function testReplayHasMissionSelectorCasualtiesAndVehicleTracks(): void
     {
-        $view = $this->read('views/atak.php');
         $js = $this->read('public/assets/js/atak-replay.js');
         $routes = $this->read('routes/web.php');
         $svc = $this->read('app/Services/Replay/ReplayService.php');
@@ -69,7 +68,6 @@ final class AtakMissionDataQuickWinsAssetTest extends TestCase
         $ingest = $this->read('app/Services/Tactical/AtakTelemetryBatchIngest.php');
         $client = $this->read('mod/COMSPEC_ATAK_Native/Sources/addons/main/XEH_postInitClient.sqf');
 
-        self::assertStringContainsString('id="atak-replay-mission-filter"', $view);
         self::assertStringContainsString("/api/replay/sessions/{missionId}', [ReplayController::class, 'sessions']", $routes);
         self::assertStringContainsString("'mission_key=' + encodeURIComponent(missionKeyFilter)", $js);
         self::assertStringContainsString('Perte amie', $js);
@@ -89,7 +87,6 @@ final class AtakMissionDataQuickWinsAssetTest extends TestCase
         $ew = $this->read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_ewAction.sqf');
         $contacts = $this->read('public/assets/js/atak-drone-contacts.js');
         $sigint = $this->read('public/assets/js/atak-sigint.js');
-        $view = $this->read('views/atak.php');
         $tracks = $this->read('app/Repositories/TacticalTrackRepository.php');
 
         // Pistes drone : toutes les 5 s au plus, 6 par passage, nouvelles ou déplacées de 50 m, BDA une fois.
@@ -99,8 +96,6 @@ final class AtakMissionDataQuickWinsAssetTest extends TestCase
         self::assertStringContainsString('"DRN-"', $drone);
         self::assertStringContainsString('track_uid LIKE ?', $tracks);
         self::assertStringContainsString('prefix=DRN-', $contacts);
-        self::assertStringContainsString('atak-drone-contacts.js?v=', $view);
-        self::assertStringContainsString('id="atak-show-drone-contacts"', $view);
 
         // Détecteur RF : 20 s par drone, 4 par balayage, position du récepteur seulement.
         self::assertStringContainsString('"SendRfHit"', $detect);

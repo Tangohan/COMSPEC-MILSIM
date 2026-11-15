@@ -21,21 +21,18 @@ final class BackOfficeRedirectMapTest extends TestCase
     /**
      * Redirections qui mènent à une autre redirection (deux sauts) : 'ancienne adresse' => 'étape intermédiaire'.
      * Chaque ligne est un écart réel à corriger en pointant directement vers la page finale.
+     * Vide depuis la vague de tri : les quatre chaînes relevées par l'audit pointent vers la page finale.
      *
      * @var array<string, string>
      */
-    private const KNOWN_CHAINS = [
-        '/backoffice/users' => '/back-office/users (puis Effectifs)',
-        '/admin/users/create' => '/back-office/users/create (puis Effectifs › Nouveau)',
-        '/admin/atak/realism/config' => '/back-office/ressources/atak-realism/config (puis l’onglet Réglages réalisme)',
-        '/api/training/progress/lesson' => '/formations (puis le catalogue de formations)',
-    ];
+    private const KNOWN_CHAINS = [];
 
     /**
-     * Redirections héritées qui répondent 302 alors que la règle du plan (« aucune adresse supprimée : 301 »)
-     * demande une redirection permanente : figées en nombre (136 au moment de l'audit) pour ne pas en ajouter.
+     * Redirections du back-office qui répondent 302 : la règle du plan (« aucune adresse supprimée : 301 ») demande une
+     * redirection permanente pour toute page déplacée. Il y en avait 136 à l'audit ; il reste /back-office/renseignement,
+     * qui n'est pas une page déplacée mais l'entrée du module vers sa page par défaut.
      */
-    private const MAX_TEMPORARY_BACK_OFFICE_REDIRECTS = 136;
+    private const MAX_TEMPORARY_BACK_OFFICE_REDIRECTS = 1;
 
     private static function isRedirectPath(string $path): bool
     {

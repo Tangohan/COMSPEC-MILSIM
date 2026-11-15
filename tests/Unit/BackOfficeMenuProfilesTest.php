@@ -39,24 +39,21 @@ final class BackOfficeMenuProfilesTest extends TestCase
     ];
 
     /**
-     * Liens présents deux fois dans le menu d'un même profil : 'profil|libellé | chemin' => raison.
-     * (Un cadre délégué voit « Overwatch » dans son menu de gestion puis dans « Mon espace ».)
+     * Liens présents deux fois dans le menu d'un même profil : 'libellé | chemin' => raison.
+     * Vide depuis la vague de tri : « Overwatch » n'est plus répété dans « Mon espace » d'un cadre délégué.
      *
      * @var array<string, string>
      */
-    private const KNOWN_DUPLICATES = [
-        'Overwatch | /atak' => 'lien du menu de gestion et lien de « Mon espace » : volontaire pour un cadre délégué, à fusionner au lot 2.1',
-    ];
+    private const KNOWN_DUPLICATES = [];
 
     /**
      * Liens du menu dont la cible n'est pas une page directe : 'libellé | href' => raison.
      * Chacun est un écart réel à corriger (pointer vers l'onglet qui existe).
+     * Vide depuis la vague de tri : « Dossiers RH » ouvre « À traiter », comme sa première page.
      *
      * @var array<string, string>
      */
-    private const KNOWN_BAD_LINKS = [
-        'Dossiers RH | /back-office/ressources/effectifs/a-traiter?onglet=surveiller' => 'onglet « surveiller » inconnu : la famille À traiter n’a que « alertes » (inventaire 01, PER-F26)',
-    ];
+    private const KNOWN_BAD_LINKS = [];
 
     /**
      * Liens montrés à un profil que la porte de leur route refuse : 'profil | chemin' => raison.
