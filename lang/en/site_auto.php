@@ -67959,6 +67959,8 @@ return [
     'Membres copiés ou déplacés vers un niveau d’accès' => 'Members copied or moved to an access level',
     'Membres copiés vers « %1 » : %2.' => 'Members copied to “%1”: %2.',
     'Membres déplacés vers « %1 » : %2.' => 'Members moved to “%1”: %2.',
+    'Supprimer ce paquet ?' => 'Delete this package?',
+    'Les membres déjà intégrés gardent ce qu’ils ont reçu.' => 'Members already onboarded keep what they received.',
     'Fermer ce message' => 'Close this message',
     'La demande a échoué (code %1). Réessayez ; si le problème continue, prévenez un administrateur.' => 'The request failed (code %1). Try again; if the problem persists, tell an administrator.',
     'Le formulaire contient %1 erreur(s) à corriger' => 'The form has %1 error(s) to fix',
