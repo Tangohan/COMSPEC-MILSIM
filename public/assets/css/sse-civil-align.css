@@ -1,14 +1,16 @@
 /* « Aligner sur l'état civil » : bouton, fenêtre de confirmation et carte d'identité officielle.
    Styles isolés (préfixe civil-align) : le design system du portail SSE pourra les remplacer sans toucher au reste. */
 .civil-align {
-    --ca-bg: #0f1419;
-    --ca-fg: #e6edf3;
-    --ca-muted: #9aa7b4;
-    --ca-line: rgba(148, 163, 184, 0.28);
-    --ca-accent: #34d399;
+    /* Jetons du design system du portail SSE (sse-ds.css) quand ils existent, valeurs de repli ailleurs (fiche membre des effectifs). */
+    --ca-bg: var(--sse-surface, #0f1419);
+    --ca-fg: var(--sse-text, #e6edf3);
+    --ca-muted: var(--sse-muted, #9aa7b4);
+    --ca-line: var(--sse-line, rgba(148, 163, 184, 0.28));
+    --ca-accent: var(--sse-accent, #34d399);
+    font-family: var(--sse-font, inherit);
     padding: 0;
     border: 1px solid var(--ca-line);
-    border-radius: 6px;
+    border-radius: var(--sse-radius, 6px);
     background: var(--ca-bg);
     color: var(--ca-fg);
     width: min(36rem, calc(100vw - 2rem));
@@ -28,7 +30,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
+    padding: 16px 24px;
     border-bottom: 1px solid var(--ca-line);
 }
 .civil-align__head h2 {
@@ -46,7 +48,7 @@
     min-height: 2.25rem;
 }
 .civil-align__body {
-    padding: 14px 16px;
+    padding: 16px 24px;
     overflow: auto;
 }
 .civil-align__body p {
@@ -85,7 +87,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    padding: 12px 16px;
+    padding: 16px 24px;
     border-top: 1px solid var(--ca-line);
 }
 .civil-align__confirm[disabled] {

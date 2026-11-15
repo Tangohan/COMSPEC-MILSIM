@@ -421,7 +421,7 @@ final class SseMemberCivilIdentityTest extends TestCase
         self::assertSame($a, substr((string) $this->row($id)['birth_date'], 0, 10), 'la même date qu’avec la colonne : elle se recalcule à l’identique');
         $res = $this->service()->setOverride(1, 10, $id, true, 7);
         self::assertFalse($res['ok']);
-        self::assertStringContainsString('4690', $res['message']);
+        self::assertStringContainsString('4700', $res['message']);
     }
 
     public function testAFailureMidWayLeavesNothingBehind(): void
@@ -675,10 +675,10 @@ final class SseMemberCivilIdentityTest extends TestCase
         $root = dirname(__DIR__, 2);
         $registry = (string) file_get_contents($root . '/database/steps/registry.php');
         self::assertStringContainsString("['id' => 'sse_member_civil_identity'", $registry);
-        self::assertStringContainsString("'file' => '4690_sse_member_civil_identity.php', 'rerun' => true]", $registry);
-        self::assertFileExists($root . '/database/steps/4690_sse_member_civil_identity.php');
+        self::assertStringContainsString("'file' => '4700_sse_member_civil_identity.php', 'rerun' => true]", $registry);
+        self::assertFileExists($root . '/database/steps/4700_sse_member_civil_identity.php');
         self::assertFileExists($root . '/migrations/rollback/sse_member_civil_identity_down.sql');
-        self::assertSame(1, substr_count($registry, '4690_'));
+        self::assertSame(1, substr_count($registry, '4700_'));
 
         $second = SseIdentitySqlite::migrate($this->pdo);
         self::assertStringContainsString('sse_identities.name_override déjà présente', $second);

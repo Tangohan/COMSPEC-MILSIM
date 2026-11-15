@@ -75,7 +75,7 @@ final class SseMemberCivilIdentityService
         };
     }
 
-    /** Colonnes de l'étape 4690 et table d'historique présentes ? (mode dégradé sinon) @return array{override: bool, synced: bool, birth: bool, history: bool} */
+    /** Colonnes de l'étape 4700 et table d'historique présentes ? (mode dégradé sinon) @return array{override: bool, synced: bool, birth: bool, history: bool} */
     public static function capabilities(): array
     {
         $pdo = Database::getPdo();
@@ -626,7 +626,7 @@ final class SseMemberCivilIdentityService
     public function setOverride(int $tenantId, int $userId, int $identityId, bool $on, ?int $actorId): array
     {
         if (!self::capabilities()['override']) {
-            return ['ok' => false, 'message' => 'Ce réglage sera disponible après l’étape 4690 (identité officielle) de la mise à jour de la base.'];
+            return ['ok' => false, 'message' => 'Ce réglage sera disponible après l’étape 4700 (identité officielle) de la mise à jour de la base.'];
         }
         $identity = null;
         foreach ($this->civilIdentities($tenantId, $userId) as $i) {

@@ -302,6 +302,9 @@ final class AtakModReportDiscordTicketService
         $description = '## ' . self::STATUS_ICONS[$status] . ' ' . AtakModReportRepository::statusLabel($status) . ' · ' . self::STATUS_EN[$status]
             . "\n" . '**' . AtakStartupCheckService::clean((string) ($report['message'] ?? ''), 400) . '**'
             . ($detail !== '' ? "\n" . $detail : '');
+        foreach (AtakModReportClientState::hints($report, $latest) as $hint) {
+            $description .= "\n" . $hint;
+        }
         $fields = [
             ['name' => 'Joueur / Player', 'value' => $who, 'inline' => true],
             ['name' => 'Type', 'value' => $kind . ' · ' . AtakStartupCheckService::clean((string) ($report['channel'] ?? 'Core'), 40)

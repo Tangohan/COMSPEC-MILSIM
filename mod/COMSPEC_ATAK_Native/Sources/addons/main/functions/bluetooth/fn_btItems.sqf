@@ -9,6 +9,8 @@
       seek  fiche SEEK : une interrogation du journal du terminal (ref = clé du sujet)
       sse   fiche SSE : personne enregistrée au SEEK (ref = clé de la fiche, missionNamespace COMSPEC_SSE_Sheets)
       note  note du Bloc-notes (ref = id de la note ; reçue : ajoutée aux notes, marquée « reçue de … »)
+      fiche fiche du portail SSE (app Fiches) : référence, titre court, genre et niveau seulement (ref = référence) ; le destinataire
+            la range dans « Reçues » de l'app Fiches et la lit dans SA liste, donc selon SON habilitation
       idc   fiche CONTRÔLE ID (3.0.2) : un contrôle d'identité (document lu, verdict, niveaux N0 à N3, photo, contrôleur,
             heure, position), ref = clé de la fiche, missionNamespace COMSPEC_ATAK_IdChecks ; partagée par l'app Contrôle ID
             du SSE (["shareIdCheck", données] call comspec_atak_native_fnc_btAction), lue dans une vue dédiée de l'app Bluetooth
@@ -95,6 +97,11 @@ switch (_act) do {
                 reverse _out;
                 // Fiches CONTRÔLE ID (les plus récentes d'abord).
                 {
+                    private _fl = _x;
+                    _out pushBack ["fiche", _fl get "ref", format ["%1 · %2", _fl get "ref", [_fl get "name", ["kindLabel", _fl get "kind"] call comspec_atak_native_fnc_fichesAction] select ((_fl get "name") isEqualTo "")],
+                        format ["Fiche du site · %1 · %2", ["kindLabel", _fl get "kind"] call comspec_atak_native_fnc_fichesAction, _fl get "mark"], 0];
+                } forEach ((["list"] call comspec_atak_native_fnc_fichesAction) select [0, 30]);
+                {
                     private _who = [_x] call _idcWho;
                     _out pushBack ["idc", _x get "key", format ["%1 · %2", [_who, "Inconnu"] select (_who isEqualTo ""), ([_x get "verdict"] call _idcVerdict) select 0],
                         format ["Fiche contrôle ID · %1 · %2%3", _x get "time", _x get "grid", ["", format [" · reçue de %1", _x get "from"]] select ((_x get "from") isNotEqualTo "")], 0];
@@ -118,6 +125,11 @@ switch (_act) do {
             case "sse": { +(((call _sheets) select { (_x select 0) isEqualTo _ref }) param [0, []]) };
             // Fiche CONTRÔLE ID : paires [clé, valeur] (passe par le réseau), recréée en HashMap à la réception.
             case "idc": { private _c = ["idcGet", _ref] call comspec_atak_native_fnc_btItems; [toArray _c, []] select ((count _c) isEqualTo 0) };
+            // Fiche du site : référence, titre court, genre et niveau seulement ; jamais le contenu.
+            case "fiche": {
+                private _fl = ["get", _ref] call comspec_atak_native_fnc_fichesAction;
+                [[], [_fl get "ref", ["title", _ref] call comspec_atak_native_fnc_fichesAction, _fl get "kind", _fl get "level"]] select ((count _fl) > 0)
+            };
             case "note": {
                 private _n = ((profileNamespace getVariable ["COMSPEC_ATAK_Notes", []]) select { _x isEqualType [] && {(_x param [0, ""]) isEqualTo _ref} }) param [0, []];
                 [[], [_n select 1, (_n select 2) select [0, 4000]]] select ((count _n) >= 3)
@@ -179,6 +191,12 @@ switch (_act) do {
                 private _who = [_c] call _idcWho;
                 format ["fiche contrôle ID de %1 (%2), vue dédiée dans l'app Bluetooth", [_who, "inconnu"] select (_who isEqualTo ""), ([_c getOrDefault ["verdict", ""]] call _idcVerdict) select 0]
             };
+            case "fiche": {
+                _data params [["_r", ""], ["_t", ""], ["_k", ""], ["_lv", ""]];
+                if !(_r isEqualType "" && {_r isNotEqualTo ""} && {_t isEqualType ""} && {_k isEqualType ""} && {_lv isEqualType ""}) exitWith { "" };
+                ["receive", [_from, _r select [0, 40], _t select [0, 120], _k select [0, 20], _lv select [0, 20], "bt"]] call comspec_atak_native_fnc_fichesAction;
+                format ["fiche %1 (app Fiches, rubrique Reçues)", _r select [0, 40]]
+            };
             case "sse": {
                 if ((count _data) < 6) exitWith { "" };
                 private _e = +_data;
@@ -213,6 +231,10 @@ switch (_act) do {
             case "plan": {
                 _data params [["_n", ""], ["_w", ""], ["_its", []]];
                 [["Plan", _n], ["Carte", _w], ["Éléments", str (count _its)]]
+            };
+            case "fiche": {
+                _data params [["_r", ""], ["_t", ""], ["_k", ""], ["_lv", ""]];
+                [["Fiche", _r], ["Titre", _t], ["Genre", ["kindLabel", _k] call comspec_atak_native_fnc_fichesAction], ["Niveau", _lv]] select { (_x select 1) isNotEqualTo "" }
             };
             case "wp": { _data apply { [_x param [1, "WP"], [_x param [0, [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef] } };
             case "pos": { [["Position", [_data param [0, [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef], ["De", _data param [1, ""]]] };

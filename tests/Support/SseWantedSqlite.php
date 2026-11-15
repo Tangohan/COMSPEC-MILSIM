@@ -14,6 +14,9 @@ final class SseWantedSqlite
 {
     public const TABLES = ['sse_wanted_notices', 'sse_identity_events', 'sse_detections', 'sse_wanted_settings'];
 
+    /** Tables de l'étape 4690 (codification, signalement, pièces jointes). */
+    public const CODE_TABLES = ['sse_wanted_notice_extras', 'sse_wanted_attachments'];
+
     public static function open(bool $withWantedTables = true): PDO
     {
         $pdo = SseFilesSqlite::open();
@@ -23,6 +26,8 @@ final class SseWantedSqlite
             self::createWantedTables($pdo);
         }
         \App\Repositories\SseWantedNoticeRepository::forgetReady();
+        \App\Repositories\SseWantedExtrasRepository::forgetReady();
+        \App\Repositories\SseWantedAttachmentRepository::forgetReady();
         \App\Repositories\SseIdentityEventRepository::forgetReady();
 
         return $pdo;
@@ -32,8 +37,10 @@ final class SseWantedSqlite
     {
         $scratch = new MysqlDdlSqlitePdo();
         $scratch->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, name TEXT, slug TEXT)');
-        (new \App\Support\Migrations\SchemaInspector($scratch))->runSqlFile(self::sqlFile());
-        $in = "'" . implode("', '", self::TABLES) . "'";
+        $inspector = new \App\Support\Migrations\SchemaInspector($scratch);
+        $inspector->runSqlFile(self::sqlFile());
+        $inspector->runSqlFile(dirname(__DIR__, 2) . '/migrations/2026_11_16_130_sse_wanted_codes.sql');
+        $in = "'" . implode("', '", array_merge(self::TABLES, self::CODE_TABLES)) . "'";
         foreach ($scratch->query("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND tbl_name IN ({$in}) ORDER BY type = 'index', name")->fetchAll(PDO::FETCH_COLUMN) as $sql) {
             $target->exec((string) $sql);
         }

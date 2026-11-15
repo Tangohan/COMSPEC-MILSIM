@@ -778,6 +778,13 @@ private _drawConv = {
                 [_m getOrDefault ['peer', ''], _m getOrDefault ['body', '']] call comspec_atak_native_fnc_p2pSend;
                 %2", str _retry, _rr], "Renvoyer ce SMS", _thread] call _hit;
         };
+        // Fiche partagée (« [FICHE] AR-0001/2026 · … ») : un clic ouvre la carte dans l'app Fiches, lue dans MA liste (mon habilitation).
+        if ((_chips find ">FICHE<") >= 0 && {_interactive}) then {
+            private _fref = (_raw splitString " ") param [0, ""];
+            if (_fref isNotEqualTo "" && {(count _fref) <= 40}) then {
+                [[_bx, _y, _bubbleW, _h], compile format ["['openRef', %1] call comspec_atak_native_fnc_fichesAction;", str _fref], "Ouvrir la fiche", _thread] call _hit;
+            };
+        };
         _y = _y + (_h max ([0, _avH] select (_showAv && {_first}))) + _font * 0.18;
     } forEach (_items select [_from]);
     // Fil dessiné jusqu'ici : de quoi y ajouter les prochains messages (aide et tri inverse : jamais d'ajout).

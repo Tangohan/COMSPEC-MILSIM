@@ -956,6 +956,19 @@ final class DataCampaignTest extends TestCase
 
     // ------------------------------------------------------------------ migration
 
+    public function testOpeningNotificationCarriesTheOriginAndTheStartDate(): void
+    {
+        $s = $this->service();
+        $created = $s->createCampaign(self::TENANT, 1, ['year' => 2026, 'opens_on' => '2026-12-01', 'due_on' => '2026-12-31']);
+        self::assertTrue($s->openCampaign(self::TENANT, 1, (int) $created['id'])['ok']);
+        $open = array_values(array_filter($this->payloads, static fn (array $n): bool => $n['type'] === DataCampaignService::NOTIFY_OPEN));
+        self::assertNotSame([], $open);
+        self::assertSame('organization', $open[0]['payload']['origin']);
+        self::assertSame('2026-12-01', $open[0]['payload']['opens_on']);
+        self::assertSame('2026-12-31', $open[0]['payload']['due_on']);
+        self::assertArrayHasKey('org', $open[0]['payload']);
+    }
+
     public function testTheMigrationIsIdempotentReversibleAndRegistered(): void
     {
         $sql = (string) file_get_contents(self::ROOT . '/migrations/2026_11_15_090_data_campaigns.sql');

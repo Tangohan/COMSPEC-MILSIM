@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Support\Migrations\SchemaInspector;
 
 /**
- * Identité officielle d'un membre = son état civil (étape 4690). Trois colonnes, aucune donnée modifiée :
+ * Identité officielle d'un membre = son état civil (étape 4700). Trois colonnes, aucune donnée modifiée :
  *  - sse_identities.name_override : « nom volontairement différent » posé par un responsable ; l'alignement automatique, le
  *    bouton et l'outil en ligne de commande ne touchent plus à cette identité ;
  *  - sse_identities.civil_synced_at : dernier alignement sur l'état civil du membre ;

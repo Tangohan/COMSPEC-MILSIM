@@ -30,13 +30,13 @@ joueur, jamais à imprimer sur un papier de jeu).
   par défaut).
 - Anciennes valeurs dans `sse_identity_history` (décision `civil`, restaurables) ; papiers officiels annotés « mis à jour le » ;
   couvertures, alias, faux, sujets non membres jamais touchés ; « nom volontairement différent » respecté.
-- Étape de base 4690 (3 colonnes, aucune donnée modifiée) ; mode dégradé sans elle.
+- Étape de base 4700 (3 colonnes, aucune donnée modifiée) ; mode dégradé sans elle.
 
 ## Fichiers touchés
 
 `app/Services/Sse/SseMemberCivilIdentityService.php`, `SseMemberCivilIdentityBatch.php`, `tools/sse-sync-member-identities.php`,
 `app/Repositories/UserProfileRepository.php`, `app/Controllers/Admin/MemberIdentityPapersController.php`,
-`app/Services/Sse/SseIdentityHolderService.php`, `views/partials/sse_civil_align.php`, `database/steps/4690_sse_member_civil_identity.php`.
+`app/Services/Sse/SseIdentityHolderService.php`, `views/partials/sse_civil_align.php`, `database/steps/4700_sse_member_civil_identity.php`.
 
 ## Vérification
 

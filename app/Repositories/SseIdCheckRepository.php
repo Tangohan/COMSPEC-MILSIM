@@ -94,6 +94,10 @@ final class SseIdCheckRepository
             $where[] = 'verdict = :verdict';
             $params['verdict'] = $verdict;
         }
+        // Contrôles reçus sans identité rattachée (ni personne ni papier) : la file « à trier » du portail.
+        if (!empty($filters['unlinked'])) {
+            $where[] = '(person_id IS NULL AND document_id IS NULL)';
+        }
         foreach (['person_id', 'document_id'] as $k) {
             if ((int) ($filters[$k] ?? 0) > 0) {
                 $where[] = $k . ' = :' . $k;
