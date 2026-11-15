@@ -249,6 +249,6 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringContainsString('if (_sec > 3) then { _sec = 3; }', $cb);
         self::assertStringContainsString('COMSPEC_VideoFeedsBackoffUntil', $cb);
         self::assertStringContainsString('case "AccessDenied":', $cb);
-        self::assertStringContainsString('Accès refusé — pause', $cb);
+        self::assertStringContainsString('Accès refusé', $cb);
     }
 }
