@@ -282,6 +282,11 @@ final class SseIdCheckRepository
     {
         $id = (int) ($row['id'] ?? 0);
         $results = json_decode((string) ($row['results_json'] ?? ''), true);
+        // Photo du papier (SseCheckPaperImageService) : rangée dans les résultats, jamais recopiée avec eux (chemins privés).
+        $hasPaperImage = is_array($results) && is_array($results['paper_image'] ?? null);
+        if (is_array($results)) {
+            unset($results['paper_image']);
+        }
         $verdict = (string) ($row['verdict'] ?? '');
         $int = static fn (mixed $v): ?int => $v !== null && (int) $v > 0 ? (int) $v : null;
         $levels = array_values(array_filter(explode(',', (string) ($row['levels'] ?? '')), static fn (string $l): bool => isset(SseIdentityCatalog::LEVELS[$l])));
@@ -308,6 +313,7 @@ final class SseIdCheckRepository
             'controller_steam_id' => $row['controller_steam_id'] ?? null,
             'levels' => $levels,
             'results' => is_array($results) ? $results : [],
+            'has_paper_image' => $hasPaperImage,
             'verdict' => $verdict,
             'verdict_label' => SseIdentityCatalog::label(SseIdentityCatalog::VERDICTS, $verdict, 'Sans verdict'),
             'grid' => $row['grid'] ?? null,

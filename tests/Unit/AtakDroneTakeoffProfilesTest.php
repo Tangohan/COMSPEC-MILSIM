@@ -127,7 +127,7 @@ final class AtakDroneTakeoffProfilesTest extends TestCase
         $p = $this->profile();
         self::assertSame(1, preg_match('/private _launchRx = "(.*)";/', $p, $m));
         $rx = '/^' . str_replace('/', '\/', $m[1]) . '$/';
-        foreach (['RQ11_Raven', 'rq_11_raven', 'RHS_RQ11', 'CUP_B_RQ11_Raven', 'USP_RQ-11B', 'B_UAV_Raven_F', 'RQ_11B'] as $cls) {
+        foreach (['RQ11_Raven', 'rq_11_raven', 'RHS_RQ11', 'CUP_B_RQ11_Raven', 'USP_RQ-11B', 'B_UAV_Raven_F', 'RQ_11B', 'GX_RQ11B', 'gx_rq_11b_raven', 'RQ-11B', 'rq 11b'] as $cls) {
             self::assertSame(1, preg_match($rx, strtolower($cls)), $cls);
         }
         foreach (['B_UAV_01_F', 'B_UAV_02_F', 'B_UAV_05_F'] as $cls) {
@@ -225,6 +225,6 @@ final class AtakDroneTakeoffProfilesTest extends TestCase
         self::assertStringContainsString('[h1]COMSPEC ATAK 4.24.2 Washington', $steam);
         self::assertStringContainsString('Raven', $steam);
         // Aucun binaire ni DLL touché : Link reste aligné.
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.126"', $hpp);
+        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.127"', $hpp);
     }
 }

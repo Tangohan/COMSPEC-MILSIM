@@ -41,6 +41,8 @@ if ((diag_tickTime - _readyAt) < 12) then { _forceEff = false; };
 // Sortie au niveau du script : un exitWith dans le bloc « then » ne quittait que ce bloc, le délai d'attente
 // n'était jamais appliqué et une fiche refusée ou « pending » repartait à chaque contrôle (toutes les 8 s).
 if (!_forceEff && {diag_tickTime < (missionNamespace getVariable ["COMSPEC_OperatorProfileBackoffUntil", 0])}) exitWith { false };
+// Compte refusé ou non lié : pause partagée par tous les canaux (fn_linkGate), même pour un envoi forcé.
+if (!isNil "comspec_overwatch_connect_fnc_linkGate" && {["blocks", "OperatorSync"] call comspec_overwatch_connect_fnc_linkGate}) exitWith { false };
 
 private _payload = [player, _event, _reason] call comspec_overwatch_connect_fnc_buildOperatorProfile;
 private _fp = _payload getOrDefault ["fingerprint", ""];
@@ -145,6 +147,7 @@ if (_ok && {!(_result getOrDefault ["pending", false])}) then {
     missionNamespace setVariable ["COMSPEC_OperatorFingerprint", _fp, false];
     missionNamespace setVariable ["COMSPEC_OperatorRegistered", true, false];
     missionNamespace setVariable ["COMSPEC_OperatorProfileFailCount", 0, false];
+    missionNamespace setVariable ["COMSPEC_OperatorRefusalLogged", "", false];
     if (_modsKey isNotEqualTo "") then { missionNamespace setVariable ["COMSPEC_OpModsSentKey", _modsKey, false]; };
     if (_catKey isNotEqualTo "") then { missionNamespace setVariable ["COMSPEC_OpCatalogSentKey", _catKey, false]; };
     // Lu par l'app Réseau du téléphone (Synchronisation) : dernier envoi, motif, taille, nombre d'envois.
@@ -167,6 +170,11 @@ if (_result getOrDefault ["pending", false]) then {
         private _transient = _http503
             || {_authFail}
             || {(toUpper _status) in ["TIMEOUT", "NETWORK_ERROR"]};
+        // Refus du compte (401, 403, accès refusé) : la pause est partagée par tous les canaux. Le « uplink_hold » local
+        // (plus de téléphone) n'est pas un refus d'Athena.
+        if (_authFail && {(_blob find "UPLINK_HOLD") < 0}) then {
+            ["deny", "fiche refusée"] call comspec_overwatch_connect_fnc_linkGate;
+        };
         if (_transient) then {
             private _n = (missionNamespace getVariable ["COMSPEC_OperatorProfileFailCount", 0]) + 1;
             missionNamespace setVariable ["COMSPEC_OperatorProfileFailCount", _n, false];
@@ -187,7 +195,11 @@ if (_result getOrDefault ["pending", false]) then {
             missionNamespace setVariable ["COMSPEC_OperatorProfileFailCount", _n, false];
             private _delay = (60 * (2 ^ ((_n - 1) min 4))) min 600;
             missionNamespace setVariable ["COMSPEC_OperatorProfileBackoffUntil", diag_tickTime + _delay, false];
-            ["WARN", "OperatorProfile", format ["Fiche refusée par Athena (%1) : nouvel essai dans %2 min", _detail, round (_delay / 60)]] call comspec_overwatch_connect_fnc_log;
+            // Une ligne par cause, pas une par essai (la même fiche refusée revient toutes les minutes).
+            if ((missionNamespace getVariable ["COMSPEC_OperatorRefusalLogged", ""]) isNotEqualTo (str _detail)) then {
+                missionNamespace setVariable ["COMSPEC_OperatorRefusalLogged", str _detail, false];
+                ["WARN", "OperatorProfile", format ["Fiche refusée par Athena (%1) : nouvel essai dans %2 min, de plus en plus espacé", _detail, round (_delay / 60)]] call comspec_overwatch_connect_fnc_log;
+            };
         };
     };
 };

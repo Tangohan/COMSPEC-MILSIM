@@ -38,6 +38,61 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Contrôle d'identité : la photo du papier remonte sur Athena (ATAK natif 4.26.0.AG - Washington, COMSPEC Link 2.0.127)
+
+### Résumé joueur
+Type : nouveauté
+FR : Tu peux joindre une photo du papier à ton contrôle d'identité
+- Avec le mod COMSPEC SSE 1.15.0, la fenêtre qui affiche le papier présenté a un nouveau bouton « PHOTO DU PAPIER » : la photo est jointe à ton contrôle sur Athena. Rien ne part sans que tu appuies sur ce bouton.
+- La ligne sous le papier et l'app Contrôle ID te disent où en est l'envoi : en cours, envoyée, ou non envoyée avec la raison. Après un échec, le bouton « Renvoyer la photo » de l'app relance l'envoi.
+- Sur le portail, la photo s'affiche sur la fiche du contrôle, dans « Consigner depuis les contrôles » et sur le papier consigné.
+- Dans l'app Fiches, la rubrique d'un avis de recherche s'appelle maintenant « Signalement physique » (« Physical description » en anglais).
+- Mets à jour le mod et sa DLL COMSPEC Link (2.0.127), puis redémarre complètement Arma 3.
+EN : You can attach a photo of the paper to your identity check
+- With the COMSPEC SSE 1.15.0 mod, the window that shows the presented paper has a new "PAPER PHOTO" button: the photo is attached to your check on Athena. Nothing is sent unless you press that button.
+- The line under the paper and the ID Check app tell you where the sending stands: sending, sent, or not sent with the reason. After a failure, the app's "Resend photo" button sends it again.
+- On the portal, the photo shows on the check page, in "Record from checks" and on the recorded paper.
+- In the Fiches app, the section of a wanted notice is now called "Physical description" in English.
+- Update the mod and its COMSPEC Link DLL (2.0.127), then restart Arma 3 completely.
+
+### Détail technique
+- **Canal** : celui des photos du mod, réutilisé. Le jeu écrit une capture (`screenshot`, visionneuse du papier ouverte) dans le dossier Screenshots du profil ; la DLL la lit, la recadre, la compresse et l'envoie en multipart, comme les photos de l'app Caméra, les photos de visage du SEEK et les pièces de fiche. Aucun nouveau canal binaire, rien ne passe par les arguments de `callExtension`.
+- **DLL (COMSPEC Link 2.0.127)** : `Extension_IdCheckPhoto.cs`. `UploadIdCheckPhoto [clé du contrôle, fichier, x, y, largeur, hauteur]` répond `OK|queued` (cadre du papier en dix-millièmes de l'écran) et envoie en tâche de fond vers `POST /api/sse/identity/checks/image` ; `IdCheckPhotoStatus [clé]` répond `OK|none`, `OK|pending`, `OK|sent` ou `OK|failed|motif`. La commande est annoncée par `GetAtakFeatures`.
+- **Garde-fous de la DLL** : nom de fichier strict (`COMSPEC_SSE_Paper_….png`, jamais de dossier ni de « .. »), fichier cherché seulement dans les dossiers de captures (`ScreenshotDirs`, sans sous-dossier, chemin résolu comparé au dossier, liens refusés), signature PNG vérifiée, source de 96 Mo au plus, JPEG de 1,5 Mo au plus (plus grand côté ramené à 1600 px, qualité abaissée puis image réduite), 4 envois en attente au plus, 2 s entre deux envois et 12 par 10 minutes. Rien n'est écrit au journal ; la capture est effacée de Screenshots après l'envoi. Ces captures ne partent jamais vers la photothèque (`IsSseIdentityCaptureName`).
+- **Site** : `SseCheckPaperImageService` (communauté de la clé de jeu, contrôle introuvable hors de cette communauté, vrai type lu dans le contenu, 1,5 Mo, métadonnées retirées, miniature, rangement privé `sse-id-checks`, débit borné, audit). Lecture par la route contrôlée `/atak/sse/papiers/controles/{id}/photo-papier` ; une photo liée à une identité de membre n'est ni listée ni servie sans autorisation hiérarchique. Aucune migration : l'entrée vit sous `paper_image` des résultats du contrôle et n'en sort jamais avec eux.
+- **ATAK natif** : `LINK_VERSION_STR` 2.0.127 ; `fn_pageFiches` : libellé « Signalement physique » pour un avis de recherche ; dictionnaire anglais complété (photo du papier, « Physical description »).
+- **Non vérifié en jeu** : `screenshot` doit garder l'interface (la visionneuse) dans l'image, comme pour la capture de carte en rendu « Plan » ; si l'image sortait sans le papier, le bouton serait à revoir. Les deux projets de DLL compilent (`dotnet build`) ; aucun binaire n'est livré dans cette PR.
+- **À tester en jeu** : contrôler un papier, « PHOTO DU PAPIER » avant puis après « Transmettre », liaison coupée (échec puis « Renvoyer la photo »), puis ouvrir le contrôle sur le portail.
+
+---
+
+## Compte non lié sans rafales d'envois, comptes rendus avec envoi visible et RENVOYER (ATAK natif 4.25.0.AG - Washington, COMSPEC Link 2.0.126)
+
+### Résumé joueur
+Type : nouveauté
+FR : Compte non lié : le téléphone arrête d'insister, et les comptes rendus montrent leur envoi
+- Quand ton compte Athena n'est pas lié ou que l'accès est refusé, le téléphone ne retente plus sans cesse : il fait une pause de plus en plus longue, la même pour tous les envois (position, marqueurs, fiche, ordres, messages, formes, relais).
+- Ce que tu as rédigé reste en attente et repart dès que ton compte est lié, sans rien perdre. Rien ne s'affiche à l'écran du jeu.
+- Dans l'app Comptes rendus, tu vois si ton compte rendu est en cours d'envoi, enregistré sur Athena ou non reçu (avec la raison). Si l'envoi a échoué, le bouton RENVOYER apparaît sous le compte rendu, et un renvoi ne crée jamais de doublon.
+- Mets à jour le mod, puis redémarre complètement Arma 3.
+EN : Unlinked account: the phone stops insisting, and reports show their sending
+- When your Athena account is not linked or access is refused, the phone no longer retries non-stop: it pauses for longer and longer, the same pause for every send (position, markers, profile, orders, messages, shapes, relays).
+- What you wrote stays waiting and goes out as soon as your account is linked, with nothing lost. Nothing is shown on the game screen.
+- In the Reports app, you see whether your report is sending, saved on Athena or not received (with the reason). If sending failed, a RESEND button appears under the report, and resending never creates a duplicate.
+- Update the mod, then restart Arma 3 completely.
+
+### Détail technique
+- **Refus d'accès** : nouvelle fonction partagée `comspec_overwatch_connect_fnc_linkGate` (Overwatch connect 1.6.35). Un refus (`AccessDenied`, `AuthInvalidated`, fiche opérateur refusée en 401/403) démarre une pause unique de 60 s, doublée à chaque refus après son terme, plafonnée à 15 min. Elle pose aussi `COMSPEC_ApiBackoffUntil` : tous les canaux qui lisent déjà ce frein (position, véhicules, météo, flux vidéo) s'arrêtent avec elle. `fn_uplinkHold` retient les autres commandes d'envoi (ATAK natif et Overwatch passent tous par lui), les lectures (`Get*`, `Set*`), la liaison (`Init`, `Connect`, `AuthSteam`, `PairStart`, `RedeemGameLink`…) et le local passent.
+- **Reprise immédiate** : `clear` à la session ouverte (`Connected` avec `READY`), à la liaison du compte (`fn_accountLinkSubmit`), à `Entrer` (`fn_enterAthena`) et au Resynch (`fn_forceSyncData`). Le réessai automatique de `fn_extensionCallback` se fait à la fin de la pause (plus un essai fixe à 48 s) et un seul est planifié à la fois.
+- **Files** : `fn_outboxFlush` ne touche plus à la file pendant la pause et ne compte plus l'essai d'une entrée retenue (`HELD`) ; `fn_callExtLogged` met en file ce qu'un humain a rédigé et ne journalise pas l'envoi retenu ; `fn_queueMapMarker` ne vidait la file qu'en la perdant : les marqueurs retenus restent (80 au plus, 30 min au plus). Les positions ne sont toujours pas mises en file.
+- **Journal** : une ligne par changement d'état (début du refus, nouvelle cause, reprise). `UpdatePosition skip: api_backoff` et « Fiche refusée par Athena » ne reviennent plus à chaque essai. Aucun toast ni hint.
+- **Comptes rendus** : `fn_reportAction` envoie par `fn_reportWebSend` (comme l'app BDA, 4.24.1) au lieu de `submitTacticalReport` : parcours `EN ATTENTE` / `OK` / `ÉCHEC` / `HORS LIGNE` avec raison courte, identifiant client `client_id` (`CR-<UID>-<temps>-<n>`) gardé à chaque renvoi, doublon écarté par le serveur (`findByClientId`), retours sur la ligne d'état de l'app (`repStatus`, `fn_pageReports`) au lieu de la notification. Le bouton RENVOYER existait déjà sous ENVOYÉS ; il sert maintenant vraiment.
+- **Serveur** : aucun changement, le refus et la réponse sont cohérents (`uplink_hold` est une décision locale du mod, jamais une réponse du site).
+- **DLL** : aucune modification, COMSPEC Link reste 2.0.126.
+- **À tester en jeu** : compte non lié (une seule ligne de journal par changement, pas de rafale dans le RPT, aucun message à l'écran), liaison du compte (reprise immédiate, file rejouée), compte rendu avec liaison coupée (non reçu, puis RENVOYER sans doublon sur Athena).
+
+---
+
 ## Carte du téléphone : plus de symboles d'alliés empilés en traînée (ATAK natif 4.24.3.AG - Washington, COMSPEC Link 2.0.126)
 
 ### Résumé joueur

@@ -237,7 +237,7 @@ if (_open isNotEqualTo "") exitWith {
             };
             ["Motif", _f get "reason"] call _sec;
             ["Mesures à prendre", _f get "measures", true] call _sec;
-            [["Signalement", "Synthèse"] select (_kind in ["profile", "control"]), _f get "desc"] call _sec;
+            [["Signalement physique", "Synthèse"] select (_kind in ["profile", "control"]), _f get "desc"] call _sec;
             ["Observations", _f get "remarks"] call _sec;
             private _fact = {
                 params ["_label", "_v"];

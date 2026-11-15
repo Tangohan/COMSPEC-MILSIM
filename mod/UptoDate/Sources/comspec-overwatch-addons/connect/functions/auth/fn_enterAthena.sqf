@@ -20,6 +20,8 @@ private _work = {
     ["INFO", "Athena", format ["ENTRER — canal poste %1", _raw]] call comspec_overwatch_connect_fnc_log;
 
     private _opened = false;
+    // Le joueur a choisi d'entrer : la pause des envois refusés est levée.
+    ["clear"] call comspec_overwatch_connect_fnc_linkGate;
     if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
         _opened = [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
     } else {

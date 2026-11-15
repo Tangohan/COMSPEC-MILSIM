@@ -36,6 +36,8 @@ use App\Support\SseIdentityPackCache;
  *                                                 avec kind = cover_report : couverture née en jeu (SseIdGameCoverService) ;
  *                                                 avec kind = file_query | seek_record | id_record : passage aux fichiers (SseFileQueryService) ;
  *                                                 avec kind = digital_detail : contenu d'un support numérique relevé en jeu (SseDigitalLabService)
+ * - POST /api/sse/identity/checks/image       → photo du papier d'un contrôle déjà reçu (multipart « image », COMSPEC Link
+ *                                                 2.0.127 UploadIdCheckPhoto ; SseCheckPaperImageService)
  *
  * Accès : clé de jeu valable (communauté ou plateforme) — le serveur de jeu garde la vérité pour lui —, ou session du
  * portail avec l'habilitation SSE voulue (Confidentiel pour le pack, Encadrement pour le reste). Sans clé ni session :
@@ -60,6 +62,8 @@ final class SseIdentityApiController
         private ?SseEditorLibraryService $editorLibrary = null,
         private ?SseIdGameCoverService $gameCovers = null,
         private ?SseFileQueryService $files = null,
+        private ?\App\Services\Sse\SseCheckPaperImageService $paperImages = null,
+        private ?\Closure $uploadReader = null,
     ) {
         $this->gameWatch ??= new SseIdWatchFromGameService();
         $this->pack ??= new SseIdentityPackService();
@@ -249,6 +253,80 @@ final class SseIdentityApiController
         $answer['wanted'] = $this->wantedOf($tenantId, (int) $result['id']);
 
         return Response::json($answer, $result['duplicate'] ? 200 : 201);
+    }
+
+    /**
+     * POST /api/sse/identity/checks/image : photo du papier présenté, jointe à un contrôle de la communauté de la clé
+     * (champ « idempotency_key » du contrôle, ou « check_id »). Même garde que l'envoi du contrôle ; contrôle d'une autre
+     * communauté ou inconnu : introuvable. Taille, vrai type, métadonnées, rangement privé, débit et audit : voir le service.
+     */
+    public function checkImageStore(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->guard($request, SseCaseRepository::CLASS_COMMAND);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $messages = [
+            'not_found' => 'Contrôle introuvable : transmettez d’abord le contrôle.',
+            'image_required' => 'Aucune image reçue.',
+            'too_large' => 'Image trop lourde (1,5 Mo au plus).',
+            'invalid_type' => 'Image refusée : JPEG, PNG ou WebP seulement.',
+            'too_many_requests' => 'Trop d’envois : réessayez dans un moment.',
+            'unavailable' => 'Image non enregistrée pour le moment.',
+        ];
+        $fail = static function (string $error, int $status) use ($messages): Response {
+            $r = Response::json(['error' => $error, 'message' => $messages[$error] ?? 'Image refusée.'], $status);
+
+            return $status === 429 ? $r->header('Retry-After', (string) \App\Services\Sse\SseCheckPaperImageService::RATE_WINDOW) : $r;
+        };
+        $upload = $this->uploadReader !== null ? ($this->uploadReader)() : self::uploadedImage();
+        if (isset($upload['error'])) {
+            return $fail($upload['error'], $upload['error'] === 'too_large' ? 413 : 422);
+        }
+        $keyPresented = ComspecApiKeyAuth::extractPresentedKey() !== '';
+        $userId = ComspecApiKeyAuth::matchedUserId() ?? (!$keyPresented && (int) (Session::get('user_id') ?? 0) > 0 ? (int) Session::get('user_id') : null);
+        try {
+            $result = ($this->paperImages ??= new \App\Services\Sse\SseCheckPaperImageService())->ingest($tenantId, [
+                'check_id' => $request->input('check_id'),
+                'idempotency_key' => $request->input('idempotency_key'),
+            ], $upload['bytes'], $userId);
+        } catch (\Throwable $e) {
+            error_log('Photo du papier d’un contrôle non enregistrée : ' . $e->getMessage());
+
+            return $fail('unavailable', 503);
+        }
+        if (!$result['ok']) {
+            return $fail($result['error'], $result['status']);
+        }
+
+        return Response::json(['id' => $result['id'], 'ref' => $result['ref'], 'duplicate' => $result['duplicate']], $result['duplicate'] ? 200 : 201);
+    }
+
+    /**
+     * Fichier « image » de l'envoi : octets lus seulement pour un vrai fichier envoyé, de taille admise.
+     *
+     * @return array{bytes: string}|array{error: string}
+     */
+    private static function uploadedImage(): array
+    {
+        $file = $_FILES['image'] ?? null;
+        $code = is_array($file) ? (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) : UPLOAD_ERR_NO_FILE;
+        if (in_array($code, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            return ['error' => 'too_large'];
+        }
+        $tmp = is_array($file) ? (string) ($file['tmp_name'] ?? '') : '';
+        if ($code !== UPLOAD_ERR_OK || $tmp === '' || !is_uploaded_file($tmp)) {
+            return ['error' => 'image_required'];
+        }
+        $size = @filesize($tmp);
+        if ($size === false || $size <= 0) {
+            return ['error' => 'image_required'];
+        }
+        if ($size > \App\Services\Sse\SseCheckPaperImageService::MAX_BYTES) {
+            return ['error' => 'too_large'];
+        }
+
+        return ['bytes' => (string) @file_get_contents($tmp)];
     }
 
     /**

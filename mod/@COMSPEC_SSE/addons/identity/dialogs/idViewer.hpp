@@ -68,6 +68,15 @@ class COMSPEC_SSE_IdViewer {
             action = "['shoot'] call comspec_sse_fnc_idPhoto";
             colorBackground[] = {0.16, 0.28, 0.2, 1};
         };
+        // Photo du papier jointe au contrôle sur Athena (fn_idPaperPhoto, COMSPEC Link 2.0.127) : toujours un geste du joueur.
+        class BtnPaper: RscButton {
+            idc = 93716;
+            text = "PHOTO DU PAPIER";
+            tooltip = "Photo du papier jointe au contrôle sur Athena";
+            x = 0.59; y = 0.8; w = 0.1; h = 0.045;
+            action = "['shoot'] call comspec_sse_fnc_idPaperPhoto";
+            colorBackground[] = {0.16, 0.28, 0.2, 1};
+        };
         // Mon propre papier : le présenter à quelqu'un (fenêtre « Présenter mes papiers », fn_idP2pClient).
         class BtnPresent: RscButton {
             idc = 93715;

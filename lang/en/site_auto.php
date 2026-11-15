@@ -70387,4 +70387,9 @@ return [
     'Information possible' => 'Possibly true information',
     'Information douteuse' => 'Doubtful information',
     'Information improbable' => 'Improbable information',
+    'Photo du papier %1 prise au contrôle %2' => 'Photo of paper %1 taken at check %2',
+    'Photo du papier prise par le contrôleur. Cliquez pour l’ouvrir en grand.' => 'Photo of the paper taken by the checking operator. Click to open it full size.',
+    'Photo du papier présenté au contrôle %1' => 'Photo of the paper presented at check %1',
+    'Photo du papier, contrôle %1' => 'Photo of the paper, check %1',
+    'Photos du papier prises aux contrôles.' => 'Photos of the paper taken at checks.',
 ];

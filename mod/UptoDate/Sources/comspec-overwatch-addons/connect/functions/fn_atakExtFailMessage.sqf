@@ -10,6 +10,10 @@ params [
 private _d = toLower (str _detail);
 if (_d isEqualTo "" || {_d isEqualTo "0"} || {_d isEqualTo "success"}) exitWith { _fallback };
 
+// Envois en pause (compte non lié ou refusé, plus de téléphone : fn_linkGate, fn_uplinkHold) : rien n'est parti.
+if (_d find "uplink_hold" >= 0 || {_d find "link_gate" >= 0}) exitWith {
+    "Liaison Athena en pause — liez votre compte puis renvoyez."
+};
 if (_d find "unauthorized" >= 0 || {_d find "401" >= 0} || {_d find "403" >= 0}) exitWith {
     "Liaison Athena refusée — vérifiez votre compte."
 };

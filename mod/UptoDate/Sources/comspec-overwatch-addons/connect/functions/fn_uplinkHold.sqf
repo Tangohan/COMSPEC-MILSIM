@@ -20,6 +20,8 @@ if ([] call comspec_overwatch_connect_fnc_uplinkOff) exitWith {
     true
 };
 missionNamespace setVariable ["COMSPEC_UplinkHoldOff", false];
+// Compte refusé ou non lié : pause partagée par tous les canaux (fn_linkGate) ; la liaison, les lectures et le local passent.
+if (!isNil "comspec_overwatch_connect_fnc_linkGate" && {["blocks", _cmd] call comspec_overwatch_connect_fnc_linkGate}) exitWith { true };
 if (_cmd in ["Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore", "SetSteamId", "LinkBySteam", "RedeemGameLink", "PairStart", "PairStatus", "GetClientIp", "Logout", "Disconnect", "RepairLocalData", "AdminControl.Poll", "AdminControl.Ack"]) exitWith { false };
 // Téléphone : relu au plus une fois par seconde (appelé à chaque envoi).
 private _cache = missionNamespace getVariable ["COMSPEC_UplinkHoldCache", [-1e9, false]];

@@ -3,7 +3,8 @@
     [_rec] call comspec_sse_fnc_idAthenaSubmit       (fiche de fn_idHistory)
     Clé d'idempotence par fiche : un renvoi (file hors ligne, double clic) ne crée pas de doublon côté site.
     Papier présenté : date de délivrance (issued) et autorité émettrice (authority), quand le papier les porte, rejoignent
-    « document » (le site les range, bornés, pour préremplir « Consigner un papier » ; aucune image : Arma ne sait pas en sortir une).
+    « document » (le site les range, bornés, pour préremplir « Consigner un papier »). La photo du papier, si le joueur
+    l'a prise (fn_idPaperPhoto), part après la réponse du site : elle est rattachée au contrôle par la même clé.
     Sans la fonction dans la DLL (Link trop ancien) ou sans liaison : file hors ligne du SSE (fn_queueOffline),
     renvoyée par fn_flushQueue quand la liaison revient. Réponse « OK|id|réf » : référence CTRL-… gardée sur la fiche.
     JSON d'un seul bloc (constats en codes, sans phrases) : au-delà de 4 000 caractères, envoyé en morceaux de 4 000
@@ -65,6 +66,8 @@ _rec set ["sending", true];
             _ok = true;
             // Avis de recherche de la personne (le site la reconnaît par le contrôle) : « RECHERCHÉ » même sans l'avis dans le paquet du poste.
             [_rec, _p param [1, ""]] call comspec_sse_fnc_idWantedCheck;
+            // Photo du papier prise avant l'envoi (ou restée en échec) : elle suit le contrôle, maintenant connu du site.
+            if ((_rec getOrDefault ["paperState", ""]) in ["taken", "failed"]) then { ["send", _rec] call comspec_sse_fnc_idPaperPhoto; };
         };
     };
     _rec set ["sending", false];
