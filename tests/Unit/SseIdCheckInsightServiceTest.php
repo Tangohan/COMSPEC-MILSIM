@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Controllers\Web\AtakMobileAppsController;
+use App\Controllers\Web\SseFieldNoteController;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Request;
@@ -227,6 +228,56 @@ final class SseIdCheckInsightServiceTest extends TestCase
         self::assertNull(SseIdCheckService::levelCode('N7'));
         $rows = SseIdCheckInsightService::levelRows((new SseIdCheckRepository())->find($res['id'], self::OWN));
         self::assertSame(['ok', 'off', 'off', 'off'], array_column($rows, 'tone'));
+    }
+
+    public function testScopeFromAddressIsParsedAndKeptOnLinkedPages(): void
+    {
+        self::assertSame(['map' => null, 'op' => null, 'opRaw' => ''], SseIdCheckInsightService::parseScope('', ''));
+        self::assertSame(['map' => 2, 'op' => 'OP-A', 'opRaw' => 'OP-A'], SseIdCheckInsightService::parseScope('2', ' OP-A '));
+        self::assertSame(['map' => null, 'op' => '', 'opRaw' => '-'], SseIdCheckInsightService::parseScope('-4', '-'), 'tiret = hors opération');
+        self::assertSame('', SseIdCheckInsightService::scopeQuery(null, ''));
+        self::assertSame('?map=2&op=OP-A', SseIdCheckInsightService::scopeQuery(2, 'OP-A'));
+        self::assertSame('?op=-&verdict=hvt', SseIdCheckInsightService::scopeQuery(null, '-', ['verdict' => 'hvt']));
+    }
+
+    public function testChecksListFollowsTheDashboardScope(): void
+    {
+        $a = $this->check(self::OWN, 'l-1', self::STEAM, 1, 'ras', [], 'OP-A');
+        $b = $this->check(self::OWN, 'l-2', self::STEAM, 2, 'ras', [], 'OP-A');
+        $c = $this->check(self::OWN, 'l-3', self::STEAM, 1, 'hvt', [], null);
+        $repo = new SseIdCheckRepository();
+        $ids = static fn (array $rows): array => array_map('intval', array_column($rows, 'id'));
+
+        self::assertEqualsCanonicalizing([$a, $b, $c], $ids($repo->list(self::OWN, [])));
+        self::assertEqualsCanonicalizing([$a, $b], $ids($repo->list(self::OWN, ['op' => 'OP-A'])));
+        self::assertSame([$a], $ids($repo->list(self::OWN, ['op' => 'OP-A', 'map' => 1])));
+        self::assertSame([$c], $ids($repo->list(self::OWN, ['op' => ''])), 'chaîne vide = hors opération');
+        self::assertSame([], $ids($repo->list(self::FOREIGN, ['op' => 'OP-A'])), 'cloison des communautés');
+    }
+
+    public function testEmptyScopeGivesAZeroBoardButKeepsTheFrmSection(): void
+    {
+        $board = $this->insights()->dashboard(self::OWN, 99, 'OP-NULLE', false);
+        self::assertSame(0, $board['total']);
+        self::assertSame([], $board['drafts']);
+        self::assertSame([], $board['by_verdict']);
+
+        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak/sse/papers/dashboard.php');
+        self::assertLessThan(strpos($view, "if (\$board['total'] === 0)"), strpos($view, 'id="frm"'), 'l’ancre #frm existe même sans contrôle');
+        self::assertStringContainsString('Aucun contrôle pour ce périmètre', $view);
+        self::assertStringNotContainsString('panel-index', $view, 'plus de numérotation 01/01b/02');
+        self::assertStringContainsString('name="return"', $view, 'la validation revient au tableau');
+    }
+
+    public function testTriageReturnsOnlyToTheDashboard(): void
+    {
+        $default = 'https://x.test/atak/sse/fiches/9';
+        self::assertSame($default, SseFieldNoteController::triageBack('', $default));
+        self::assertSame($default, SseFieldNoteController::triageBack('https://evil.test/', $default));
+        self::assertSame($default, SseFieldNoteController::triageBack('//evil.test', $default));
+        self::assertSame($default, SseFieldNoteController::triageBack('atak/sse/papiers/tableau?x=<script>', $default));
+        self::assertStringEndsWith('atak/sse/papiers/tableau?map=2&op=OP-A#frm', SseFieldNoteController::triageBack('atak/sse/papiers/tableau?map=2&op=OP-A#frm', $default));
+        self::assertStringEndsWith('atak/sse/papiers/tableau#frm', SseFieldNoteController::triageBack('atak/sse/papiers/tableau#frm', $default));
     }
 
     public function testSiteAndPhoneAreWired(): void

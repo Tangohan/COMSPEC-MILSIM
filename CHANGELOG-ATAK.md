@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Calque « Zones Athena » : le masquer ne fait plus disparaître les marqueurs de zone (ATAK natif 4.21.1.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : Masquer les zones sur la carte de l'ATAK ne fait plus disparaître leurs marqueurs
+- Quand tu masques le calque « Zones Athena » (ou « Zones tactiques » dans les outils de la carte), les marqueurs de zone ne sont plus effacés : ils sont seulement cachés sur la carte de l'ATAK.
+- Tu les réactives par un calque ou par l'autre : tout réapparaît tel quel.
+- La carte d'Arma n'est plus touchée par ce réglage, et les autres marqueurs ne changent pas.
+EN : Hiding zones on the ATAK map no longer makes their markers disappear
+- When you hide the "Athena zones" layer (or "Tactical zones" in the map tools), zone markers are no longer wiped: they are only hidden on the ATAK map.
+- Turn them back on from either place and everything comes back as it was.
+- The Arma map is no longer affected by this setting, and other markers are unchanged.
+
+### Détail technique
+- **Cause** : le calque masqué passait `setMarkerAlphaLocal 0` sur chaque marqueur `COMSPEC_TZ_*` d'Overwatch (`fn_mapOnDraw`, balayage toutes les 2 s) et l'outil « Zones tactiques » (`fn_mapToolMenu`) les remettait à 0,7 en dur. Le calque « Zones Athena » du volet CALQUES (`fn_pageMap`) ne restaurait rien : l'alpha restait à 0, donc marqueurs perdus (même sur la carte d'Arma) jusqu'à la resynchro d'Overwatch ; l'alpha d'origine n'était jamais gardé.
+- **Correction** : plus aucun appel qui modifie un marqueur. `fn_mapGameMarkers` saute les `COMSPEC_TZ_*` à l'affichage quand le calque est masqué (clé de cache incluant l'état du calque, relecture à la bascule), `fn_mapMarkerText` ne les titre plus. Réactiver redessine les données intactes, y compris les zones reçues pendant le masquage.
+- Tests : `tests/Unit/AtakZoneLayerNonDestructiveAssetTest.php`. Non essayé en jeu.
+
 ## SEEK II et modules SSE : les listes viennent du site de la communauté (ATAK natif 4.21.0.AG - Washington)
 
 ### Résumé joueur

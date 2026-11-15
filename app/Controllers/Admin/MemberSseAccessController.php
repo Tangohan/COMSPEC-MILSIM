@@ -42,6 +42,21 @@ final class MemberSseAccessController
         return Response::redirect($back);
     }
 
+    /** POST …/membres/{id}/acces-sse/habilitation : accorde, modifie ou retire l'habilitation inscrite sur la fiche du membre. */
+    public function clearance(Request $request, array $params = []): Response
+    {
+        $memberId = (int) ($params['id'] ?? 0);
+        $back = effectifs_member_url($memberId, 'acces-sse');
+        if (($denied = $this->guard($request, $memberId, $back, true)) !== null) {
+            return $denied;
+        }
+        $level = $request->inputString('clearance_level');
+        $res = $this->rights->changeClearance($this->tenantId(), $this->userId(), $this->actorLabel(), $memberId, $level !== '' ? $level : null, $request->inputString('reason'));
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($back);
+    }
+
     /** POST …/membres/{id}/acces-sse/apercu : l'effet en une phrase, sans rien écrire (réponse JSON). */
     public function preview(Request $request, array $params = []): Response
     {
