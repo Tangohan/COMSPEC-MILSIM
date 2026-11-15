@@ -288,7 +288,7 @@ final class AtakTocTracksTest extends TestCase
         self::assertSame(1, preg_match('/var NAV = \[(.*?)\n  \];/s', $js, $m));
         self::assertSame(4, preg_match_all('/^\s{4}\[\'[a-z]+\', \'/m', $m[1]), 'quatre rubriques');
         preg_match_all('/\[\'([a-z]+)\', \'[^\']+\'\](?=[,\]])/', $m[1], $tabs);
-        self::assertSame(['groupes', 'orbat', 'reseau', 'flux', 'ordres', 'demandes', 'chronos', 'excheck', 'main', 'pertes', 'plans', 'camp', 'salle', 'sat', 'radio'], $tabs[1]);
+        self::assertSame(['groupes', 'orbat', 'reseau', 'flux', 'rapports', 'ordres', 'demandes', 'chronos', 'excheck', 'main', 'pertes', 'plans', 'camp', 'salle', 'sat', 'radio'], $tabs[1]);
         foreach (['message', 'ordre', 'marqueur', 'point'] as $win) {
             self::assertMatchesRegularExpression('/\n    ' . $win . ': function \(p\) \{/', $js, 'fenêtre de la console : ' . $win);
         }
