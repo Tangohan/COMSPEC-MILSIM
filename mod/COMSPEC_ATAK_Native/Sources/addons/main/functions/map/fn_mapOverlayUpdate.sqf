@@ -322,6 +322,15 @@ if (!isNull _cur && {!_tapeOnly}) then {
                         _c ctrlSetPosition [_p0 select 0, (_p0 select 1) + _dy, _p0 select 2, _p0 select 3];
                         _c ctrlCommit 0;
                     } forEach _txts;
+                    // Bandeaux des apps épinglées (fn_mapPinnedApp « bandFollow »), empilés au-delà du bandeau : ils suivent son
+                    // bord, l'intervalle reste celui de la grille. Ordonnée seulement (leur largeur change avec leurs boutons).
+                    private _dyF = [_shrink, -_shrink] select _top;
+                    {
+                        if (isNull _x) then { continue };
+                        if (isNil { _x getVariable "comspec_y0" }) then { _x setVariable ["comspec_y0", (ctrlPosition _x) select 1]; };
+                        _x ctrlSetPositionY ((_x getVariable "comspec_y0") + _dyF);
+                        _x ctrlCommit 0;
+                    } forEach (_ov getOrDefault ["bandFollow", []]);
                 };
             };
         };

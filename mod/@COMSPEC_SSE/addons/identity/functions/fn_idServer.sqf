@@ -686,8 +686,13 @@ switch (_op) do {
     case "pack": {
         _args params ["", ["_raw", "", [""]], ["_mode", "full", [""]]];
         if (_mode isEqualTo "full" && {[_me] call comspec_sse_fnc_isAuthority}) exitWith {
-            ["apply", _raw] call comspec_sse_fnc_idAthenaPack;
-            if ((_reg getOrDefault ["packAt", ""]) isNotEqualTo "") then { ["state", ["ok", "zeus", "", "zeus"]] call comspec_sse_fnc_idAthenaPack; };
+            // Paquet complet (jusqu'à 2,4 Mo) : appliqué dans une tâche planifiée, que le moteur étale sur plusieurs
+            // images, au lieu d'un seul bloc dans l'image où le message du Zeus arrive (gel de tout le serveur).
+            [_raw, _reg] spawn {
+                params ["_raw", "_reg"];
+                ["apply", _raw] call comspec_sse_fnc_idAthenaPack;
+                if ((_reg getOrDefault ["packAt", ""]) isNotEqualTo "") then { ["state", ["ok", "zeus", "", "zeus"]] call comspec_sse_fnc_idAthenaPack; };
+            };
         };
         ["applySelf", [_me, _raw]] call comspec_sse_fnc_idAthenaPack;
     };

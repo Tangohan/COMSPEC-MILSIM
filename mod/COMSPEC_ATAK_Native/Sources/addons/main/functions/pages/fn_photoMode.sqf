@@ -419,12 +419,14 @@ switch (toUpper _mode) do {
             _x ctrlCommit ([0, 0.25] select _fade);
         } forEach _drawn;
         // Où part la photo : Athena (réseau présent) ou poste seul, et légende choisie dans l'app.
-        private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
+        // Vraie raison d'une coupure (fn_linkMode "why") ; "" : la photo part (toujours en liaison satellite).
+        private _netWhy = ["why"] call comspec_atak_native_fnc_linkMode;
+        private _net = _netWhy isEqualTo "";
         private _cap = (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) param [3, ""];
         if !(_cap isEqualType "") then { _cap = ""; };
         _cap = [[[_cap select [0, 40], "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace, "légende automatique (grille, cap)"] select (_cap isEqualTo "");
         (_cam displayCtrl 9) ctrlSetStructuredText parseText ((format ["<t align='center'>%1   <t color='#6d7a74'>|</t>   <t color='#a9b8b0'>%2</t></t>",
-            ["<t color='#f2ab33'>HORS RÉSEAU : photo gardée sur le poste</t>", "<t color='#5cc76b'>ENVOI DIRECT VERS ATHENA</t>"] select _net, _cap]) call comspec_atak_native_fnc_tr);
+            [format ["<t color='#f2ab33'>%1</t>", format [("%1 : photo gardée sur le téléphone") call comspec_atak_native_fnc_tr, toUpper ((_netWhy) call comspec_atak_native_fnc_tr)]], "<t color='#5cc76b'>ENVOI DIRECT VERS ATHENA</t>"] select _net, _cap]) call comspec_atak_native_fnc_tr);
         (_cam displayCtrl 11) ctrlSetBackgroundColor ([[0.95, 0.67, 0.2, 0.9], [0.36, 0.78, 0.42, 0.9]] select _net);
         true
     };
@@ -505,7 +507,10 @@ switch (toUpper _mode) do {
             private _faces = [_selfie] call comspec_atak_native_fnc_photoFaces;
             (_meta select 9) append _faces;
             // Débit simulé : sans réseau, la photo reste sur le poste (app Galerie pour la retransmettre).
-            private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
+            // Liaison satellite (aucun relais dans la mission) : la photo part toujours. Liaison par relais : la vraie raison
+            // de la coupure (fn_linkMode "why" : « Relais détruit », « Aucun relais à portée »…) s'affiche avec la photo gardée.
+            private _netWhy = ["why"] call comspec_atak_native_fnc_linkMode;
+            private _noNet = _netWhy isNotEqualTo "";
             // ATAK seul (sans COMSPEC Link) : la photo reste aussi sur le poste, rien n'est envoyé.
             private _noLink = isNil "comspec_overwatch_connect_fnc_captureReconImage";
             if (_noLink) then { _noNet = true; };
@@ -555,7 +560,7 @@ switch (toUpper _mode) do {
             };
             if (_noNet) then {
                 if (_saved) then {
-                    [["WARNING", "INFO"] select _noLink, ["Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", "Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)"] select _noLink, 5, 40] call comspec_atak_native_fnc_notify;
+                    [["WARNING", "INFO"] select _noLink, [format [("%1 : photo gardée sur le téléphone, à envoyer depuis l'app Galerie") call comspec_atak_native_fnc_tr, (_netWhy) call comspec_atak_native_fnc_tr], "Photo prise : enregistrée dans le dossier Screenshots du profil Arma (envoi vers Athena avec COMSPEC Link)"] select _noLink, 5, 40] call comspec_atak_native_fnc_notify;
                 } else {
                     ["WARNING", _why, 6, 40] call comspec_atak_native_fnc_notify;
                 };

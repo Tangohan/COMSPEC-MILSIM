@@ -16,5 +16,7 @@ switch (_page) do {
     case "DATING": { ["unread"] call comspec_atak_native_fnc_hvtIntel };
     // CR de fin d'opération pas encore remis.
     case "DEBRIEF": { { (_x get "state") isNotEqualTo "done" } count (values (missionNamespace getVariable ["COMSPEC_ATAK_Dbf", createHashMap])) };
+    // Dossier SSE : somme des pastilles des apps qu'il regroupe (fn_sseHub).
+    case "SSEHUB": { ["badge"] call comspec_atak_native_fnc_sseHub };
     default { 0 };
 }

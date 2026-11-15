@@ -9,7 +9,13 @@
       10 s : images par seconde, image moyenne et pire, saccades, temps COMSPEC et autres mods, scripts en file ;
       COMSPEC : tâche n× total ms max ms (les plus coûteuses d'abord) ; autres mods : idem ; pics > 5 ms ;
       Saccade : image de plus de 33 ms et de plus du double de la moyenne, avec ce qui a tourné autour (10 par bilan).
-    Params : ["start"] | ["stop"] | ["wrap"] (nouvelles boucles) | ["frame"] (chaque image) | ["report"] (toutes les 10 s).
+    Les boucles lancées par COMSPEC_ATAK_PfhSpread ou COMSPEC_ATAK_PfhAdd sont déjà chronométrées en permanence (sonde
+    COMSPEC_ATAK_PfhProbe, mêmes clés « PFH … ») : elles ne sont pas enveloppées une seconde fois.
+    Profil d'une minute (["minute"], ou l'événement CBA local comspec_atak_native_profileMinute posé par
+    XEH_postInitClient) : profilage et mesure des performances (fn_perfLog) pendant 60 s, puis arrêt de ce qui n'était pas
+    coché dans les réglages. Tout va au RPT, rien à l'écran.
+    Params : ["start"] | ["stop"] | ["wrap"] (nouvelles boucles) | ["frame"] (chaque image) | ["report"] (toutes les 10 s)
+             | ["minute"].
 */
 params [["_mode", "report"]];
 if (!hasInterface) exitWith { false };
@@ -63,6 +69,8 @@ switch (_mode) do {
         {
             _x params ["_f", "", "", "", "", "_h"];
             if (_h in COMSPEC_ATAK_ProfOrig || {_h in COMSPEC_ATAK_ProfSkip} || {_f isEqualTo {}} || {_f isEqualTo COMSPEC_ATAK_ProfWrap}) then { continue; };
+            // Déjà chronométrée par la sonde permanente (clé « PFH nom ») : pas de seconde enveloppe.
+            if (_f isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_PfhProbe", {}])) then { continue; };
             private _s = toLower str _f;
             // Nom : la première fonction appelée (hors utilitaires), sinon le début du code.
             private _names = [];
@@ -83,6 +91,23 @@ switch (_mode) do {
             COMSPEC_ATAK_ProfOrig set [_h, [_f, [format ["[mod] %1", _name], format ["PFH %1", _name]] select _ours]];
             _x set [0, COMSPEC_ATAK_ProfWrap];
         } forEach cba_common_perFrameHandlerArray;
+        true
+    };
+    case "minute": {
+        if (missionNamespace getVariable ["COMSPEC_ATAK_ProfMinute", false]) exitWith { true };
+        missionNamespace setVariable ["COMSPEC_ATAK_ProfMinute", true];
+        diag_log "[COMSPEC ATAK NATIVE][PROF] Profil d'une minute : profilage et mesure des performances pendant 60 s";
+        ["start"] call comspec_atak_native_fnc_profiler;
+        ["start"] call comspec_atak_native_fnc_perfLog;
+        // Délai en temps réel (boucle CBA, diag_tickTime) : une seule exécution, retirée aussitôt.
+        [{
+            [_this select 1] call CBA_fnc_removePerFrameHandler;
+            missionNamespace setVariable ["COMSPEC_ATAK_ProfMinute", false];
+            ["report"] call comspec_atak_native_fnc_profiler;
+            if !(missionNamespace getVariable ["comspec_atak_native_perf_log", false]) then { ["stop"] call comspec_atak_native_fnc_perfLog; };
+            if !(missionNamespace getVariable ["comspec_atak_native_profiling", false]) then { ["stop"] call comspec_atak_native_fnc_profiler; };
+            diag_log "[COMSPEC ATAK NATIVE][PROF] Profil d'une minute terminé";
+        }, 60] call CBA_fnc_addPerFrameHandler;
         true
     };
     case "frame": {

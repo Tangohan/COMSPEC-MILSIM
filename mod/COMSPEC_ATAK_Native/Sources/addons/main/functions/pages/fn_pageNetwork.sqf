@@ -348,7 +348,8 @@ private _bearer = switch (true) do {
             ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp")]
     };
     case (_only): {
-        ["Aucun relais", "Réseau uniquement par les relais", "aucun relais reçu : aucun réseau", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
+        // Liaison par relais (fn_linkMode) : la vraie raison (relais détruit, hors service, hors de portée).
+        [["reason"] call comspec_atak_native_fnc_linkMode, "Réseau uniquement par les relais", "aucun relais reçu : aucun réseau", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
     };
     case (_hops > 1): {
         ["Maillage Wave Relay", format ["%1 sauts via équipiers", _hops - 1], format ["jusqu'à %1", [_mesh getOrDefault ["gwLabel", ""]] call _esc], "warn", 2, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
@@ -357,7 +358,8 @@ private _bearer = switch (true) do {
         ["Aucun porteur", "Relais obligatoires", "aucun relais, passerelle ou équipier à portée", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
     };
     default {
-        ["Réseau direct", "Liaison radio-data du téléphone", ["sans relais (mode arcade)", "terminal de bord du véhicule"] select (_term isNotEqualTo ""), "ok", _lq get "bars", "\z\comspec_atak_native\addons\main\data\app_network.paa"]
+        // Liaison satellite (fn_linkMode : aucun relais posé dans la mission, ou réglage) : réseau partout, sans relais.
+        ["Liaison satellite", "Liaison radio-data du téléphone", ["sans relais : réseau partout", "terminal de bord du véhicule"] select (_term isNotEqualTo ""), "ok", _lq get "bars", "\z\comspec_atak_native\addons\main\data\app_network.paa"]
     };
 };
 _nodes pushBack _bearer;

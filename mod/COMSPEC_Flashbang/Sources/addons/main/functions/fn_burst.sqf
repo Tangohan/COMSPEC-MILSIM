@@ -119,15 +119,25 @@ if (hasInterface && _showFx) then {
         _rays pushBack (_cam vectorAdd [0.6 * cos _a, 0.6 * sin _a, 0]);
     };
     private _nOpen = 0;
-    {
-        private _hit = lineIntersectsSurfaces [_src, _x, _device, vehicle (call CBA_fnc_currentUnit), true, 1, "GEOM", "VIEW"];
-        if (_hit isEqualTo []) then { _nOpen = _nOpen + 1 } else {
-            // Grille, grillage, clôture : élément fin et traversable, compté comme 0,3 d'obstacle (repli à 1 rayon inchangé).
-            private _cls = toLower typeOf ((_hit select 0) select 2);
-            private _thin = ["fence", "grille", "grill", "wire", "mesh", "net_"] select { (_cls find _x) >= 0 };
-            if (count _rays > 1 && {count _thin > 0}) then { _nOpen = _nOpen + 0.7 };
-        };
-    } forEach _rays;
+    // Rafale : les ouvertures mesurées par le flash précédent de la MÊME grenade resservent s'il a moins de 0,12 s,
+    // que la caméra a bougé de moins de 0,5 m et le point d'explosion de moins de 2 m (même nombre de rayons) : à
+    // 65 ms d'écart, les 9 rayons redonnaient le même résultat à chaque coup (jusqu'à 50 x 9 rayons par grenade).
+    private _occ = _ctx getOrDefault ["occl", []];
+    if (_occ isNotEqualTo [] && {(_tick0 - (_occ select 0)) < 0.12} && {(_occ select 4) == count _rays}
+        && {((_occ select 1) vectorDistance _cam) < 0.5} && {((_occ select 2) vectorDistance _src) < 2}) then {
+        _nOpen = _occ select 3;
+    } else {
+        {
+            private _hit = lineIntersectsSurfaces [_src, _x, _device, vehicle (call CBA_fnc_currentUnit), true, 1, "GEOM", "VIEW"];
+            if (_hit isEqualTo []) then { _nOpen = _nOpen + 1 } else {
+                // Grille, grillage, clôture : élément fin et traversable, compté comme 0,3 d'obstacle (repli à 1 rayon inchangé).
+                private _cls = toLower typeOf ((_hit select 0) select 2);
+                private _thin = ["fence", "grille", "grill", "wire", "mesh", "net_"] select { (_cls find _x) >= 0 };
+                if (count _rays > 1 && {count _thin > 0}) then { _nOpen = _nOpen + 0.7 };
+            };
+        } forEach _rays;
+        _ctx set ["occl", [_tick0, _cam, _src, _nOpen, count _rays]];
+    };
     private _open = _nOpen / count _rays;
     private _wall = _open < 0.5;
     if (count _rays > 1) then { _gain = _gain * (0.6 + 0.4 * _open) };

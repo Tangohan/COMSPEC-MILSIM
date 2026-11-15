@@ -13,6 +13,13 @@ if (isNull player) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_ACEMenuReady", false])) then {
     [] call comspec_overwatch_connect_fnc_initACE;
 };
+// fn_initACE pose ses actions sur quelques images : ce sous-menu attend la fin, pour rester à la même place dans le menu.
+if (missionNamespace getVariable ["COMSPEC_ACEMenuBuilding", false]) exitWith {
+    [{ !(missionNamespace getVariable ["COMSPEC_ACEMenuBuilding", false]) }, {
+        [] call comspec_overwatch_connect_fnc_initATAKMenu;
+    }] call CBA_fnc_waitUntilAndExecute;
+    true
+};
 
 // Évite double enregistrement (postInit + respawn)
 if (missionNamespace getVariable ["COMSPEC_ATAKMenuReady", false]) exitWith { true };

@@ -60,7 +60,8 @@ final class AtakRelayModuleTest extends TestCase
         }
         self::assertStringContainsString('["sweep"] call comspec_atak_native_fnc_relayNet;', $this->read(self::MAIN . '/XEH_postInitServer.sqf'));
         $lq = $this->read(self::MAIN . '/functions/core/fn_linkQuality.sqf');
-        self::assertStringContainsString('COMSPEC_ATAK_RelaysRequired', $lq);
+        // Relais obligatoires : la liaison passe par fn_relayNet "required" (mode de liaison, fn_linkMode), plus par le drapeau.
+        self::assertStringContainsString('["required"] call comspec_atak_native_fnc_relayNet', $lq);
         self::assertStringContainsString('comspec_atak_native_fnc_toast', $net);
         self::assertStringNotContainsString('getNearestAtakRelay', $lq);
         $ace = $this->read(self::MAIN . '/functions/shell/fn_aceMenu.sqf');

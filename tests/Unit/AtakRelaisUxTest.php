@@ -62,9 +62,13 @@ final class AtakRelaisUxTest extends TestCase
         foreach (['case "gateOn": {', 'case "gateEval": {', 'case "gate": {', 'case "deadZone": {'] as $c) {
             self::assertStringContainsString($c, $net, $c);
         }
-        // « only » (liaison du téléphone, explosifs en réseau, page Réseau) suit la règle.
+        // « only » (liaison du téléphone, explosifs en réseau, page Réseau) suit le mode de liaison de la mission
+        // (fn_linkMode, 4.27 : aucun relais posé = satellite) ; la règle du relais exigé ne vaut qu'en liaison par relais.
         $only = substr($net, (int) strpos($net, 'case "only": {'), 400);
-        self::assertStringContainsString('|| {["gateOn"] call comspec_atak_native_fnc_relayNet}', $only);
+        self::assertStringContainsString('(["get"] call comspec_atak_native_fnc_linkMode) isEqualTo "relay"', $only);
+        $gateOn = substr($net, (int) strpos($net, 'case "gateOn": {'), 400);
+        self::assertStringContainsString('((["get"] call comspec_atak_native_fnc_linkMode) isEqualTo "relay")', $gateOn);
+        self::assertStringContainsString('comspec_atak_native_relay_gate', $gateOn);
         // Le profil Arcade garde un réseau libre.
         self::assertStringContainsString('(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1', $net);
         // Graphe : plus de maillage d'équipe ni de maillage autonome sans relais.

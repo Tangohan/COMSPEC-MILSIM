@@ -268,6 +268,8 @@ switch (_act) do {
     case "tick": {
         if (!hasInterface) exitWith {};
         private _t0 = diag_tickTime;
+        // Passage relancé depuis un script (fin de lecture du maillage) : étalé sur plusieurs images, rangé à part.
+        private _f0 = diag_frameNo;
         if !(call _active) exitWith {
             if ((player getVariable ["COMSPEC_ATAK_MpuNode", []]) isNotEqualTo []) then { player setVariable ["COMSPEC_ATAK_MpuNode", []]; };
             uiNamespace setVariable ["COMSPEC_ATAK_MpuStatus", nil];
@@ -428,7 +430,7 @@ switch (_act) do {
                 ["tick"] call comspec_atak_native_fnc_mpuLink;
             };
         };
-        ["radio de données", _t0] call comspec_atak_native_fnc_perfAcc;
+        ["radio de données", _t0, -1, _f0] call comspec_atak_native_fnc_perfAcc;
     };
     case "mesh": {
         // Graphe unique (fn_meshGraph) : calculé ici seulement sans serveur de référence, puis lu comme partout ailleurs.
@@ -468,7 +470,7 @@ switch (_act) do {
         // Pont radio (fn_mpuVoice) : la radio active ACRE2 / TFAR reliée à la MPU5 par câble audio, nom de la radio dans l'action.
         ["CAManBase", 1, _path, ["COMSPEC_ATAK_MpuVoiceOn", "Relier ma radio à la MPU5 (voix)", "", { ["bridge"] call comspec_atak_native_fnc_mpuVoice; },
             { (["enabled"] call comspec_atak_native_fnc_mpuVoice) && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isEqualTo []}
-                && {["has", [player]] call comspec_atak_native_fnc_mpu5} },
+                && {["hasMpu"] call comspec_atak_native_fnc_mpu5} },
             {}, [], [0, 0, 0], 2, [false, false, false, false, false], {
                 params ["", "", "", "_ad"];
                 private _p = ["preferred"] call comspec_atak_native_fnc_mpuVoice;

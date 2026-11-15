@@ -160,7 +160,7 @@ switch (_act) do {
             ]],
             ["INTEL", "Renseignement", "app_intel", [
                 ["Recueil", ["Reco", "Salute", "Photos", "Gallery", "Livecam", "Tracking"]],
-                ["Exploitation", ["Intel", "Sse", "DataLink", "Osint", "Wanted", "Fiches"]]
+                ["Exploitation", ["Intel", "SseHub", "Sse", "DataLink", "Osint", "Wanted", "Fiches"]]
             ]],
             ["SPEC", "Spécialités", "app_medical", [
                 ["Santé", ["Medical"]],
@@ -179,6 +179,9 @@ switch (_act) do {
             ]]
         ];
         private _apps = [(([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible })] call _filter;
+        // Dossier SSE affiché : ses apps ne sont pas répétées à côté de lui (fn_sseHub).
+        private _hubIds = ["rootHidden", _apps] call comspec_atak_native_fnc_sseHub;
+        _apps = _apps select { !((_x get "id") in _hubIds) };
         private _byId = createHashMap;
         { _byId set [_x get "id", _x]; } forEach _apps;
         private _listed = [];

@@ -28,7 +28,8 @@ final class AtakPilotSpacesTest extends TestCase
         preg_match_all('/^\s*class (\w+)\s+\{ name=/m', $block, $m);
         $ids = array_column((new AtakExperienceService())->phoneApps(), 'id');
         // Hors de la règle, par conception : ce qui fait partie du téléphone et ce qui dépend des droits ou du poste.
-        $missing = array_values(array_diff($m[1], $ids, ['Settings', 'Store', 'Alerts', 'Admin', 'Toc']));
+        // SseHub : le dossier SSE du lanceur n'est pas une app, la règle se pose sur chacune des apps qu'il regroupe.
+        $missing = array_values(array_diff($m[1], $ids, ['Settings', 'Store', 'Alerts', 'Admin', 'Toc', 'SseHub']));
         self::assertSame([], $missing);
     }
 

@@ -177,17 +177,19 @@ switch (_op) do {
         private _p = _head splitString "|";
         private _n = parseNumber (_p param [1, "0"]);
         if (!_self) then { missionNamespace setVariable ["comspec_sse_idPackTs", _p param [2, ""]]; };
-        private _buf = "";
+        // Morceaux rangés puis recollés en une fois (joinString) : « tampon + morceau » recopiait tout le texte déjà lu
+        // à chaque morceau (400 morceaux de 6 000 octets = environ 480 Mo de copies pour un paquet de 2,4 Mo).
+        private _parts = [];
         private _ok = true;
         // Garde-fou : le DLL découpe en morceaux de 6000 octets (sous la limite de retour d'extension) ; 400 morceaux au plus.
         for "_i" from 0 to ((_n min 400) - 1) do {
             private _c = ["GetIdentityPackChunk", [str _i]] call comspec_sse_fnc_extensionCall;
             if ((_c select [0, 3]) isNotEqualTo "OK|") exitWith { _ok = false; };
-            _buf = _buf + (_c select [3]);
+            _parts pushBack (_c select [3]);
         };
         if (_lock) then { missionNamespace setVariable ["comspec_sse_idPackBusy", false]; };
         if (!_ok) then { missionNamespace setVariable ["comspec_sse_idPackErr", "chunk"]; };
-        [_buf, ""] select !_ok
+        [_parts joinString "", ""] select !_ok
     };
     case "applySelf": {
         if (!isServer) exitWith {};
@@ -272,19 +274,68 @@ switch (_op) do {
     };
     case "apply": {
         if (!isServer) exitWith {};
+        if !(_a isEqualType "") exitWith {};
+        // Hors tâche planifiée : d'un bloc, comme avant. En tâche planifiée (chargement du serveur, relais d'un Zeus) le
+        // moteur étale déjà les boucles sur plusieurs images : une seule application à la fois, pour que deux paquets
+        // ne s'entremêlent pas dans le registre.
+        if (!canSuspend) exitWith { ["applyNow", _a] call comspec_sse_fnc_idAthenaPack; };
+        private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        private _t = diag_tickTime;
+        waitUntil { !(_reg getOrDefault ["packApplying", false]) || {(diag_tickTime - _t) > 60} };
+        _reg set ["packApplying", true];
+        ["applyNow", _a] call comspec_sse_fnc_idAthenaPack;
+        _reg set ["packApplying", false];
+    };
+    case "applyNow": {
+        if (!isServer) exitWith {};
         private _raw = _a;
         if !(_raw isEqualType "") exitWith {};
+        private _perfT0 = diag_tickTime;
+        private _perfF0 = diag_frameNo;
+        private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        // Empreinte du texte reçu, AVANT tout décodage : un paquet inchangé (Demander la mise à jour, fenêtre IA du Zeus)
+        // ne coûte plus ni parseSimpleArray ni « str » de tout l'arbre (jusqu'à 2,4 Mo chacun, d'un bloc sur le serveur).
+        // La date de génération et « since » changent à chaque lecture : retirées du texte avant l'empreinte. Elles ne
+        // sont retirées que si elles sont à coup sûr celles de la racine (avant « settings » et « countries », donc avant
+        // tout bloc imbriqué) ; sinon (ancien format par ordre des champs, ordre inattendu) l'empreinte de l'arbre
+        // décodé sert comme avant.
+        private _limit = _raw find "[""settings"",";
+        private _limitC = _raw find "[""countries"",";
+        if (_limit < 0 || {_limitC >= 0 && {_limitC < _limit}}) then { _limit = _limitC; };
+        private _fpText = _raw;
+        private _fpSure = _limit >= 0;
+        {
+            _x params ["_tag", "_must"];
+            private _i = _fpText find _tag;
+            if (_i < 0) then {
+                if (_must) then { _fpSure = false; };
+            } else {
+                private _rest = _fpText select [_i + (count _tag)];
+                private _j = _rest find """]";
+                if (_i > _limit || {_j < 0}) then { _fpSure = false; } else {
+                    _fpText = (_fpText select [0, _i]) + (_rest select [_j + 2]);
+                    _limit = _limit - ((count _tag) + _j + 2);
+                };
+            };
+        } forEach [["[""generated_at"",""", true], ["[""since"",""", false]];
+        private _fp = "";
+        if (_fpSure) then { _fp = format ["t%1", hashValue _fpText]; };
+        _fpText = "";
+        if (_fpSure && {_fp isEqualTo (_reg getOrDefault ["packFp", ""])}) exitWith {
+            diag_log text "[COMSPEC SSE] Identité : paquet Athena inchangé depuis le dernier chargement, rien à refaire.";
+        };
         private _root = parseSimpleArray _raw;
         if !(_root isEqualType []) exitWith { diag_log text "[COMSPEC SSE] Identité : paquet Athena illisible."; };
         private _top = [_root, ["version", "generated_at", "map", "op", "countries", "identities", "documents", "watch", "kits"]] call _rec;
-        private _reg = ["init"] call comspec_sse_fnc_idRegistry;
         // Paquet identique au dernier appliqué (hors date de génération et « since », qui changent à chaque lecture) :
         // rien à refaire. Avant, chaque rechargement (Demander la mise à jour, fenêtre IA du Zeus) reprenait toutes les
         // tables, remettait le kit et rouvrait les couvertures de tous les joueurs, même sans aucun changement sur Athena.
-        private _fpKeys = (keys _top) - ["generated_at", "since"];
-        _fpKeys sort true;
-        private _fp = hashValue str (_fpKeys apply { [_x, _top get _x] });
-        if (_fp isEqualTo (_reg getOrDefault ["packFp", ""])) exitWith {
+        if (!_fpSure) then {
+            private _fpKeys = (keys _top) - ["generated_at", "since"];
+            _fpKeys sort true;
+            _fp = hashValue str (_fpKeys apply { [_x, _top get _x] });
+        };
+        if (!_fpSure && {_fp isEqualTo (_reg getOrDefault ["packFp", ""])}) exitWith {
             diag_log text "[COMSPEC SSE] Identité : paquet Athena inchangé depuis le dernier chargement, rien à refaire.";
         };
         _reg set ["packFp", _fp];
@@ -358,15 +409,19 @@ switch (_op) do {
         } forEach (_top getOrDefault ["documents", []]);
         private _bolos = _reg getOrDefault ["bolos", createHashMap];
         _reg set ["bolos", _bolos];
-        private _localRefs = (values _bolos) apply { _x getOrDefault ["gameRef", ""] };
+        // Références déjà connues rangées dans deux tables (recherche en temps constant) : « findIf » reparcourait
+        // toute la liste des avis pour chaque avis du paquet (N avis = N² comparaisons).
+        private _localRefs = createHashMapFromArray ((values _bolos) apply { [_x getOrDefault ["gameRef", ""], true] });
+        private _watchRefs = createHashMapFromArray ((_reg get "watch") apply { [_x param [4, ""], true] });
         private _boloAdded = false;
         {
             private _w = [_x, ["ref", "last_name", "first_name", "alias", "level", "person_id", "game_ref", "bio_key", "known_docs", "status"]] call _rec;
             private _ref = _w getOrDefault ["ref", ""];
             private _gr = _w getOrDefault ["game_ref", ""];
             // Déjà connu (paquet rechargé, BOLO de cette partie remonté puis revenu) : pas de doublon.
-            if (((_reg get "watch") findIf { (_x param [4, ""]) isEqualTo _ref }) >= 0 || {_gr isNotEqualTo "" && {_gr in _localRefs}}) then { continue; };
+            if (_ref in _watchRefs || {_gr isNotEqualTo "" && {_gr in _localRefs}}) then { continue; };
             (_reg get "watch") pushBack [_w getOrDefault ["last_name", ""], _w getOrDefault ["first_name", ""], _w getOrDefault ["alias", ""], _w getOrDefault ["level", "surveillance"], _ref];
+            _watchRefs set [_ref, true];
             _nW = _nW + 1;
             // Avis avec visage ou papiers connus (BOLO / HVT d'une partie précédente) : redevient un BOLO.
             private _kd = _w getOrDefault ["known_docs", []];
@@ -440,8 +495,9 @@ switch (_op) do {
         } forEach (_top getOrDefault ["wanted", []]);
         if (_boloAdded) then { ["boloList"] call comspec_sse_fnc_idHvt; };
         // Papiers révoqués depuis le dernier paquet (paquet partiel, « since ») : signalés révoqués dans la base locale.
-        private _revoked = (_top getOrDefault ["revoked", []]) apply { str _x };
-        if (_revoked isNotEqualTo []) then {
+        // Table des ids révoqués : un test par papier du registre, au lieu d'un parcours de la liste par papier.
+        private _revoked = createHashMapFromArray ((_top getOrDefault ["revoked", []]) apply { [str _x, true] });
+        if ((count _revoked) > 0) then {
             {
                 if ((str (_y getOrDefault ["id", ""])) in _revoked) then {
                     _y set ["validity", "revoked"];
@@ -461,6 +517,8 @@ switch (_op) do {
         } forEach (_top getOrDefault ["kits", []]);
         if ("kits" in _top) then { _reg set ["kits", _kits]; };
         diag_log text format ["[COMSPEC SSE] Identité : paquet Athena chargé (%1 pays, %2 documents, %3 avis, %4 kits, %5 briefs, %6 identités de population).", _nC, _nD, _nW, count _kits, count _briefs, count _pop];
+        // Mesure (RPT du serveur, rien à l'écran) : durée d'horloge et nombre d'images sur lesquelles le travail s'est étalé.
+        diag_log text format ["[COMSPEC SSE][PERF] SSE pack d'identités (application) : %1 ms sur %2 image(s), %3 octets.", round ((diag_tickTime - _perfT0) * 1000), (diag_frameNo - _perfF0) + 1, count _raw];
         // Fiches « Ma couverture » en cache sur les postes : périmées (liaison Athena, papiers, brief). Une page ouverte se
         // relit après la remise du kit ; les autres attendent leur prochaine ouverture (aucune relecture en boucle).
         [{ ["comspec_sse_idCoverDirty", []] call CBA_fnc_globalEvent; }, [], 6] call CBA_fnc_waitAndExecute;

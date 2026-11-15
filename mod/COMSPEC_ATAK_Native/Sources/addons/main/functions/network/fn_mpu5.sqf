@@ -58,6 +58,10 @@ switch (_act) do {
         uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Has", [diag_tickTime, _has]];
         _has
     };
+    // Vraie MPU5 portée (objet), même en liaison réaliste où "has" accepte toute radio de données : le pont voix relie une radio À une MPU5.
+    case "hasMpu": {
+        (((items player) + (assignedItems player)) findIf { ["isMpu", [_x]] call comspec_atak_native_fnc_mpu5 }) >= 0
+    };
     case "isMpu": {
         // Radio de données MPU5, quelle que soit sa classe : nom (COMSPEC_ATAK_MPU5, ACRE_MPU5 du mod « MPU-5 Persistent Systems »
         // et ses instances ACRE_MPU5_ID_n), classe de base ACRE2 (acre_baseClass), marque Iceman_WR_isMPU5 de ce mod, ou réglage
@@ -494,6 +498,6 @@ switch (_act) do {
             uiNamespace setVariable ["COMSPEC_ATAK_PttHeard", (uiNamespace getVariable ["COMSPEC_ATAK_PttHeard", []]) select { (_x select 0) isNotEqualTo _u }];
             call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5Rerender");
         }] call CBA_fnc_addEventHandler;
-        [{ ["tick"] call comspec_atak_native_fnc_mpu5; }, 2] call CBA_fnc_addPerFrameHandler;
+        [{ ["tick"] call comspec_atak_native_fnc_mpu5; }, 2, [], "MPU5 (passage 2 s)"] call COMSPEC_ATAK_PfhSpread;
     };
 };
