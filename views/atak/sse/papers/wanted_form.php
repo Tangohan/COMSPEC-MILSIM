@@ -237,7 +237,7 @@ $tabs = [
             <h2>Pièces jointes</h2>
             <p class="wc-sec__desc"><?= $h($tabs['files'][1]) ?></p>
             <?php if ($isMember || (!empty($attachLock) && empty($attachLock['allowed']))): ?>
-                <div class="dos-note dos-note--info">Cette identité est celle d’un membre (TRÈS SECRET (TS)) : aucune image n’est jointe sans l’autorisation de la hiérarchie du membre.</div>
+                <div class="dos-note dos-note--info">Cette identité est celle d’un membre (<?= $h(\App\Services\Sse\SseMemberImageGate::LABEL) ?>) : aucune image n’est jointe sans l’autorisation de la hiérarchie du membre.</div>
             <?php elseif (empty($attachmentsReady)): ?>
                 <div class="dos-note dos-note--info">Les pièces jointes seront disponibles dès que l’étape de base de données « codification des avis » aura été passée.</div>
             <?php else: ?>

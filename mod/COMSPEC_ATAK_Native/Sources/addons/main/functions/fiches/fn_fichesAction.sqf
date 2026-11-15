@@ -276,7 +276,7 @@ switch (_act) do {
                 private _floorMeta = +(_head param [7, []]);
                 if ((count _floorMeta) >= 4) then {
                     _floorMeta set [2, "interne"];
-                    _floorMeta set [3, [((_floor select 0) param [8, ""]), "UNCLASSIFIED//FOUO"] select (_floor isEqualTo [])];
+                    _floorMeta set [3, [((_floor select 0) param [8, ""]), "CUI"] select (_floor isEqualTo [])];
                 };
                 profileNamespace setVariable ["COMSPEC_ATAK_FichesCache", [systemTimeUTC, _head select 1, _floor, _floorMeta, _head param [8, []]]];
                 [] call comspec_atak_native_fnc_saveProfile;
