@@ -25,6 +25,14 @@ $detectionTypes = ['id_check' => 'Contrôle d’identité', 'seek' => 'Fiche SEE
     <a class="btn btn--ghost" href="<?= $h(url('atak/sse/rapprochements')) ?>">Propositions de Cerbère</a>
 </div>
 
+<section class="panel" aria-labelledby="cb-widget">
+    <div class="panel-header"><div class="panel-title" id="cb-widget">Bouton Cerbère</div></div>
+    <div class="panel-body">
+        <p class="muted">Le bouton rond en bas à droite de chaque page ouvre Cerbère : ce qu’il a fait et ce qui attend votre décision sur la page où vous êtes.</p>
+        <p><button type="button" class="btn btn--ghost" data-cw-restore>Afficher le bouton Cerbère</button> <span class="muted" data-cw-restored hidden>Le bouton est de retour sur vos pages.</span></p>
+    </div>
+</section>
+
 <?php if (!$cerbere['provenance']): ?>
     <div class="sse-note" role="note">La trace du « pourquoi » de chaque lien n’est pas encore activée sur ce site (étape « sse_entity_links »). Les traitements tournent déjà ; leurs liens seront expliqués dès que l’étape sera passée.</div>
 <?php endif; ?>
