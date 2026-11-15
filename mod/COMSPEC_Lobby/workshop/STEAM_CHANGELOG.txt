@@ -1,3 +1,25 @@
+[h1]COMSPEC Lobby 0.4.0 — fonction, grade et photo sur le dossier, Synchroniser sans gel / role, rank and photo on the dossier, Synchronise without freezing[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] Le bouton Synchroniser ne fige plus l'écran des rôles pendant que le site répond (avec COMSPEC ATAK 4.29.0 ; avec une version plus ancienne, il marche comme avant). Cliquer plusieurs fois de suite ne lance plus plusieurs synchronisations.
+[*] Ton portrait s'affiche plus vite quand tu reviens à l'écran des rôles.
+[*] La ligne Fonction montre ta fonction dans ta communauté (celle d'Athena), plus le nom du poste choisi. Ton grade s'affiche.
+[*] Ta photo s'affiche de nouveau. Sans photo, le cadre le dit.
+[*] Une ligne vide est masquée ; une longue liste de qualifications ne déborde plus.
+[*] Rien n'a encore été mesuré en jeu pour la fluidité : dis-nous ce que tu constates.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] The Synchronise button no longer freezes the role screen while the site answers (with COMSPEC ATAK 4.29.0; with an older version it works as before). Clicking several times in a row no longer starts several synchronisations.
+[*] Your portrait shows faster when you come back to the role screen.
+[*] The Role line shows your role in your community (from Athena), no longer the name of the chosen slot. Your rank is shown.
+[*] Your photo is shown again. Without a photo, the frame says so.
+[*] An empty line is hidden; a long list of qualifications no longer overflows.
+[*] Smoothness has not been measured in game yet: tell us what you notice.
+[/list]
+
 [h1]COMSPEC Lobby 0.3.1 — votre fonction, votre grade et votre photo sur le dossier / your role, rank and photo on the dossier[/h1]
 
 [h2]Français[/h2]

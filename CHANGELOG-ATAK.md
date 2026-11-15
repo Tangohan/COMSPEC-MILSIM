@@ -38,6 +38,40 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 4.29.0 Washington : Avis et vigilance, liaison satellite ou relais, téléphone plus fluide, photo du papier au contrôle (ATAK natif 4.29.0.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.4.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouvelle app Avis et vigilance, liaison satellite et téléphone plus fluide
+- Nouvelle app « Avis et vigilance » dans le dossier SSE du téléphone : tu lis les avis de recherche, notices de couleur et fiches de vigilance actifs, tu signales « Je l'ai vu » en trois gestes et, selon tes droits, tu accuses lecture, renouvelles, lèves ou émets un avis (ou le proposes au bureau). Elle demande que le site Athena de ta communauté soit à jour.
+- Liaison du téléphone : dans une mission sans aucun relais, le téléphone passe par satellite (« SAT ») et tout marche partout, photos comprises ; dès qu'un relais existe, il faut un relais en état à portée. Nouveau réglage serveur « Liaison du téléphone ». L'app Athena tient sur un seul écran, l'accueil range les apps SSE dans une tuile, et la carte a des bandeaux d'apps épinglées plus lisibles.
+- Moins de saccades : réglages enregistrés à un moment calme (jamais en plein tir), carte et pages du téléphone plus légères, salle TOC qui s'allume écran par écran, mosaïque de caméras à 4 vignettes en direct à la fois (les autres tournent à tour de rôle). Rien n'a encore été mesuré en jeu : dis-nous ce que tu constates.
+- Depuis la 4.24.3 : photo du papier jointe au contrôle d'identité (avec COMSPEC SSE 1.17.0), plus de mention « fiction » sur les fiches, ta photo, ton grade et ta fonction de retour sur le téléphone et à l'écran des rôles, comptes rendus avec envoi visible et RENVOYER. À savoir : le « kit terminal véhicule » n'est plus proposé (la tablette de bord est déjà partout), et relier sa radio à la MPU5 exige une vraie MPU5 sur soi.
+EN : New Alerts and vigilance app, satellite link and a smoother phone
+- New "Alerts and vigilance" app in the phone's SSE folder: read active wanted notices, colour notices and vigilance sheets, report "I saw it" in three taps and, according to your rights, acknowledge, renew, lift or issue a notice (or propose it to the office). It needs your community's Athena site to be up to date.
+- Phone link: in a mission with no relay at all, the phone goes through satellite ("SAT") and everything works everywhere, photos included; as soon as a relay exists, a working relay in range is needed. New server setting "Phone link". The Athena app fits on one screen, the home screen groups the SSE apps in one tile, and the map has more readable pinned-app banners.
+- Fewer stutters: settings are saved at a quiet moment (never mid-fight), the phone map and pages are lighter, the TOC room lights up screen by screen, and a camera mosaic shows 4 live tiles at a time (the others take turns). Nothing has been measured in game yet: tell us what you notice.
+- Since 4.24.3: paper photo attached to the identity check (with COMSPEC SSE 1.17.0), no more "fiction" notice on records, your photo, rank and role back on the phone and on the role screen, reports with visible sending and RESEND. Good to know: the "ATAK vehicle terminal kit" is no longer offered (the vehicle tablet is already everywhere), and linking your radio to the MPU5 requires a real MPU5 on you.
+
+### Versions regroupées dans cette mise à jour
+4.24.3 est la dernière version publiée sur Steam. Cette entrée regroupe tout ce qui est venu depuis (le détail de chaque version est plus bas) :
+- 4.25.0 : compte non lié sans rafales d'envois, comptes rendus avec envoi visible et RENVOYER.
+- 4.26.0 : photo du papier au contrôle d'identité, avec COMSPEC Link 2.0.127 et COMSPEC SSE 1.15.0.
+- 4.27.0 : mentions « fiction » retirées des fiches, avec COMSPEC SSE 1.16.0.
+- 4.27.1 : photo, grade et fonction de retour, écran des rôles, avec COMSPEC Link 2.0.128 et COMSPEC Lobby 0.3.1.
+- 4.28.0 : liaison satellite ou relais, app Athena sans vide, carte et accueil rangés, kit véhicule retiré.
+- Ajouts de 4.29.0 : app Avis et vigilance, six lots d'optimisation (profil, carte, téléphone, TOC, Overwatch connect, SSE, Flashbang, COMSPEC Link), pont voix MPU5 avec une vraie MPU5, 28 Mo de fichiers inutilisés retirés.
+
+### Détail technique
+- **Avis et vigilance** : page `SSEALERT` rangée dans le dossier SSE du lanceur, genre `sse_alertes` du canal `kind` (contrat `ICD-SSE-ALERTES-001`, aucune nouvelle DLL), `fn_pageAlertes`, `fn_alertesAction`, `fn_alertesDraft`, `fn_alertesSend` (même `cid` stable : RENVOYER sans doublon), `fn_alertesQr`. Notifications uniquement dans le téléphone (`fn_notify`), `fn_linkMode` et `fn_linkGate` respectés. Pack SSE : bouton SIGNALER sur la carte « recherchée » du contrôle d'identité. Test : `AtakAlertesAssetTest`.
+- **Optimisation (lots 1 à 6, rien mesuré en jeu)** : `fn_profileSave` seule écrivain du profil (moment calme, 10 min d'attente au plus, écriture garantie en fin de mission et au départ ; un plantage du jeu peut perdre jusqu'à 10 min de modifications non écrites), mesure `[PERF]` étendue et sonde permanente des boucles, horloge des tâches différées indépendante des sauts du temps de mission ; carte (liste de dessin rejouée, présélection des marqueurs, icônes d'aéronefs corrigées) ; téléphone (retour de la miniature en deux images, dock incrémental, dictionnaire lu d'un bloc, page Drone) ; TOC (un écran par image, mosaïque limitée à 4 caméras de rendu, flux serveur en un parcours) ; Overwatch connect 1.6.36 (menus ACE par file, arsenal paresseux) ; SSE 1.17.0 (paquet d'identités sans décodage inutile, application étalée) ; Flashbang 1.0.2 (6 IA par image toutes détonations confondues) ; Lobby 0.4.0 (Synchroniser par relève, sans geler l'écran).
+- **COMSPEC Link 2.0.128** : numéro inchangé depuis 4.27.1, mais la DLL contient en plus le lot 6 (`Disconnect` plafonné à 1,5 s, écritures disque hors du fil du jeu, commandes `AsyncKeep` / `AsyncPoll`). À reconstruire et attester avant publication ; le main.pbo attend exactement cette version.
+- **Pont voix MPU5** : `fn_mpu5`, `fn_mpuLink`, `fn_mpuVoice` : en liaison réaliste, seule une vraie MPU5 sur soi compte (avant, toute radio ACRE2 ou TFAR comptait).
+- **Nettoyage** : polices B612, Rajdhani et ShareTech, tablette du JPC, images en double ou jamais citées retirées (28 Mo, fonds d'écran du téléphone conservés) ; PNG remplacés par leurs `.paa` dans Overwatch connect. Voir `docs/dev/ATAK-INVENTAIRE-A-RETIRER.md`.
+- Non essayé en jeu : les lots d'optimisation, l'app Avis et vigilance, la liaison satellite, les textures `.paa` d'Overwatch (écran cassé, HUD ECOTI).
+
+---
+
 ## Liaison satellite sans relais, app ATHENA sans vide, carte et accueil rangés, kit de terminal de véhicule retiré (ATAK natif 4.28.0.AG - Washington)
 
 ### Résumé joueur

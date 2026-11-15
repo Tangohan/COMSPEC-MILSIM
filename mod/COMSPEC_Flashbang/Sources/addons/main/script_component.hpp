@@ -4,5 +4,5 @@
 #define QPATHTOF(var1) QUOTE(PATHTOF(var1))
 
 #define VERSION 1.0
-#define VERSION_STR 1.0.1
-#define VERSION_AR 1,0,1
+#define VERSION_STR 1.0.2
+#define VERSION_AR 1,0,2

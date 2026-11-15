@@ -1,3 +1,49 @@
+[h1]COMSPEC ATAK 4.29.0 Washington — Avis et vigilance, liaison satellite, téléphone plus fluide / Alerts and vigilance, satellite link, smoother phone[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Nouvelle app « Avis et vigilance »[/b] (dossier SSE de l'accueil) : avis de recherche, notices de couleur et fiches de vigilance actifs, avec filtres. Chaque fiche donne la conduite à tenir, le service à informer, l'adresse de signalement et un QR code. « JE L'AI VU » envoie un signalement en trois gestes ; selon tes droits, tu accuses lecture, renouvelles, lèves, émets ou proposes un avis au bureau. « Mes envois » montre ce qui est parti et propose RENVOYER après un échec. [b]Il faut que le site Athena de ta communauté soit à jour.[/b]
+[*] [b]Liaison du téléphone[/b] : dans une mission sans aucun relais, le téléphone passe par satellite (« SAT ») et tout marche partout, photos comprises. Dès qu'un relais existe (éditeur ou Zeus), il faut un relais en état à portée ; un relais détruit ne transmet plus. Nouveau réglage serveur « Liaison du téléphone » (Automatique, Satellite, Relais obligatoires).
+[*] [b]App Athena, carte, accueil[/b] : le code, l'adresse, le QR code et les boutons tiennent sur un seul écran. Bandeaux des apps épinglées alignés et lisibles, réponse à un ordre depuis le bandeau ORDRES. Les apps SSE sont rangées dans une tuile « SSE », chaque tuile a son icône.
+[*] [b]Contrôle d'identité et fiches[/b] : avec COMSPEC SSE 1.17.0, la fenêtre du papier a un bouton « PHOTO DU PAPIER » (jointe au contrôle sur Athena seulement quand tu appuies) ; l'app Contrôle ID dit où en est l'envoi et propose « Renvoyer la photo ». La mention « fiction » a disparu du bas des fiches.
+[*] [b]Photo, grade et fonction[/b] : ton portrait Athena revient sur le téléphone à la place des initiales ; avec COMSPEC Lobby 0.4.0, ton grade et ta fonction apparaissent sur le dossier de l'écran des rôles. Plus de fenêtre « Picture not found ».
+[*] [b]Compte non lié, comptes rendus[/b] : un compte non lié ne fait plus réessayer le téléphone sans cesse. Un compte rendu montre s'il part, s'il est enregistré ou non reçu (avec la raison), et RENVOYER ne crée jamais de doublon.
+[*] [b]Moins de saccades[/b] : le téléphone enregistre tes réglages à un moment calme (jamais en plein tir), la carte, le rangement du téléphone, les pages et le drone se redessinent moins, une salle TOC s'allume écran par écran. Ces gains n'ont pas encore été mesurés en jeu : dis-nous ce que tu constates.
+[*] [b]Poste TOC[/b] : une mosaïque de caméras affiche 4 vignettes en direct à la fois, les autres passent à tour de rôle.
+[*] [b]Radio MPU5[/b] : relier sa radio à la MPU5 pour la voix exige une vraie MPU5 sur soi.
+[*] [b]Mods plus légers[/b] : 28 Mo de fichiers inutilisés retirés (images en double, polices jamais proposées). Les fonds d'écran du téléphone sont tous conservés.
+[*] [b]À savoir[/b] : le « kit terminal véhicule ATAK » n'est plus proposé (la tablette de bord est déjà dans tous les véhicules ; un kit déjà dans une tenue ou une caisse reste là, sans effet). Les réglages peuvent attendre jusqu'à 10 minutes avant d'être écrits : un plantage du jeu peut en perdre les derniers changements. Un préréglage d'écrans TOC est écrit dans la minute.
+[*] COMSPEC Link passe en 2.0.128 (fin de mission sans gel prolongé : 1,5 seconde au plus).
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]New "Alerts and vigilance" app[/b] (SSE folder on the home screen): active wanted notices, colour notices and vigilance sheets, with filters. Each sheet gives the course of action, the service to inform, the reporting address and a QR code. "I SAW IT" sends a sighting in three taps; according to your rights, you acknowledge, renew, lift, issue or propose a notice to the office. "My sendings" shows what has gone out and offers RESEND after a failure. [b]Your community's Athena site must be up to date.[/b]
+[*] [b]Phone link[/b]: in a mission with no relay at all, the phone goes through satellite ("SAT") and everything works everywhere, photos included. As soon as a relay exists (editor or Zeus), a working relay in range is needed; a destroyed relay no longer transmits. New server setting "Phone link" (Automatic, Satellite, Relays required).
+[*] [b]Athena app, map, home[/b]: the code, the address, the QR code and the buttons fit on one screen. Pinned-app banners are aligned and readable, and you answer an order from the ORDERS banner. The SSE apps sit in one "SSE" tile, and every tile has its own icon.
+[*] [b]Identity check and records[/b]: with COMSPEC SSE 1.17.0, the window of the presented paper has a "PAPER PHOTO" button (attached to the check on Athena only when you press it); the ID Check app tells you where the sending stands and offers "Resend photo". The "fiction" notice is gone from the bottom of records.
+[*] [b]Photo, rank and role[/b]: your Athena portrait is back on the phone instead of the initials; with COMSPEC Lobby 0.4.0, your rank and your role show on the dossier of the role screen. No more "Picture not found" window.
+[*] [b]Unlinked account, reports[/b]: an unlinked account no longer makes the phone retry endlessly. A report shows whether it is sending, saved or not received (with the reason), and RESEND never creates a duplicate.
+[*] [b]Fewer stutters[/b]: the phone saves your settings at a quiet moment (never mid-fight); the map, putting the phone away, the pages and the drone redraw less; a TOC room lights up screen by screen. These gains have not been measured in game yet: tell us what you notice.
+[*] [b]TOC post[/b]: a camera mosaic shows 4 live tiles at a time, the others take turns.
+[*] [b]MPU5 radio[/b]: linking your radio to the MPU5 for voice requires a real MPU5 on you.
+[*] [b]Lighter mods[/b]: 28 MB of unused files removed (duplicate images, fonts that were never offered). All phone wallpapers are kept.
+[*] [b]Good to know[/b]: the "ATAK vehicle terminal kit" is no longer offered (the vehicle tablet is already in every vehicle; a kit already in a loadout or a crate stays there, with no effect). Settings can wait up to 10 minutes before being written: a game crash can lose the latest changes. A TOC screen preset is written within a minute.
+[*] COMSPEC Link is now 2.0.128 (mission end no longer freezes for long: 1.5 seconds at most).
+[/list]
+
+[b]Versions regroupées dans cette mise à jour / Versions grouped in this update[/b]
+[list]
+[*] 4.25.0 : compte non lié, comptes rendus / unlinked account, reports
+[*] 4.26.0 : photo du papier au contrôle / paper photo at the check
+[*] 4.27.0 : fiches sans « fiction » / records without "fiction"
+[*] 4.27.1 : photo, grade, fonction / photo, rank, role
+[*] 4.28.0 : liaison satellite ou relais, app Athena, carte, accueil / satellite or relay link, Athena app, map, home
+[*] 4.29.0 : Avis et vigilance, moins de saccades, MPU5, mods plus légers / Alerts and vigilance, fewer stutters, MPU5, lighter mods
+[/list]
+
 [h1]COMSPEC ATAK 4.28.0 Washington — liaison satellite sans relais, app Athena sans vide, carte et accueil rangés / satellite link without relays, Athena app without the gap, tidier map and home[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

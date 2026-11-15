@@ -1,6 +1,6 @@
 ﻿# COMSPEC Lobby
 
-Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications). Aucune dépendance autre que le jeu. Version 0.3.1 (0.3.0 essayée en jeu sur serveur dédié : voir « État »).
+Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications). Aucune dépendance autre que le jeu. Version 0.4.0 (0.3.0 essayée en jeu sur serveur dédié : voir « État »).
 
 Le système de postes d'Arma est gardé tel quel : liste des rôles, camps, pool de joueurs, paramètres de mission, verrou, expulsion, Workshop, chat. Le mod restyle l'écran (fond noir, filets fins, un accent ambre), remonte le pool de joueurs sous le dossier, et ajoute le dossier. Rien n'est remplacé ni piloté par script.
 

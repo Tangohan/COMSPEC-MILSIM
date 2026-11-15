@@ -1,5 +1,25 @@
 # COMSPEC SSE — historique des versions
 
+## 1.17.0 — 15/11/2026 · Signalement depuis le contrôle d'identité, moins de saccades au départ
+
+**Relancer Arma complètement.** Demande COMSPEC ATAK 4.29.0 (app « Avis et vigilance »). Regroupe 1.15.0 et 1.16.0 pour la publication Steam. Les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`) ; aucune DLL propre au SSE (COMSPEC Link 2.0.128 avec ATAK natif 4.29.0).
+
+### Résumé joueur
+Type : nouveauté
+FR : Signaler une personne recherchée depuis le contrôle, et moins de saccades
+- Le contrôle d'identité d'une personne recherchée propose un bouton SIGNALER : il envoie le signalement avec la position du contrôle, par l'app « Avis et vigilance » du téléphone ATAK. Il faut que le site Athena de ta communauté soit à jour.
+- Le chargement des identités depuis Athena ne fige plus le serveur : un paquet inchangé est reconnu tout de suite, un paquet relayé par un Zeus est appliqué petit à petit, et les IA reçoivent leurs identités par petits groupes. Pas encore mesuré en jeu.
+- Depuis la dernière publication : bouton « PHOTO DU PAPIER » au contrôle (1.15.0) et fiches sans mention « RP » (1.16.0).
+EN : Report a wanted person from the check, and fewer stutters
+- The identity check of a wanted person offers a REPORT button: it sends the sighting with the check position, through the "Alerts and vigilance" app of the ATAK phone. Your community's Athena site must be up to date.
+- Loading identities from Athena no longer freezes the server: an unchanged pack is recognised at once, a pack relayed by a Zeus is applied gradually, and AI receive their identities in small groups. Not measured in game yet.
+- Since the last release: "PAPER PHOTO" button at the check (1.15.0) and records without an "RP" notice (1.16.0).
+
+### Détail technique
+- `fn_idAlertReport.sqf` (nouveau), `fn_idAction.sqf`, `fn_idPage.sqf` : bouton SIGNALER de la carte « recherchée », qui passe par la page `SSEALERT` d'ATAK natif ; `identity/config.cpp` déclare la fonction.
+- `fn_idAthenaPack.sqf` : paquet reçu recollé par `joinString` (et non plus par concaténation répétée), empreinte du texte avant tout décodage, application en tâche planifiée une à la fois, tables de recherche pour les avis et les papiers révoqués ; `fn_idCoverAthena.sqf`, `fn_idCoverImport.sqf` : même recollage ; `fn_idServer.sqf` : application du paquet relayé ; `fn_idInitQueue.sqf` (nouveau) : file d'initialisation, 8 personnes par image au plus.
+- Ligne de mesure `[COMSPEC SSE][PERF] SSE pack d'identités (application)`. Non mesuré en jeu.
+
 ## 1.16.0 — 15/11/2026 · Fiches et fichiers sans mention « RP » ni « simulation »
 
 **Relancer Arma complètement.** Sources seulement dans cette livraison : les PBO `comspec_sse_ui`, `comspec_sse_identity`, `comspec_sse_main` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer (COMSPEC Link reste 2.0.127).
