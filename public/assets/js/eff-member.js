@@ -327,7 +327,9 @@
         show(serverTab.getAttribute('data-eff-fm-tab'), false);
         window.addEventListener('hashchange', revealAnchor);
         window.addEventListener('popstate', function () {
-            var wanted = new URL(window.location.href).searchParams.get('onglet');
+            var params = new URL(window.location.href).searchParams;
+            // ?ouvrir=suivi (vue équipe, tâches) ouvre l'onglet « Suivi du dossier » quand aucun onglet n'est demandé.
+            var wanted = params.get('onglet') || (params.get('ouvrir') === 'suivi' ? 'suivi' : null);
             show(wanted && panels[wanted] ? wanted : tabs[0].getAttribute('data-eff-fm-tab'), false);
         });
         revealAnchor();

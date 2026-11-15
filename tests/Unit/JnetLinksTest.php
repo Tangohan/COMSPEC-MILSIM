@@ -62,7 +62,7 @@ final class JnetLinksTest extends TestCase
         self::assertNull(R::parseRef('inconnu:3'));
         self::assertNull(R::parseRef('operation'));
         self::assertNull(R::parseRef('page:12345678901'));
-        self::assertSame(8, count(R::TYPES));
+        self::assertSame(9, count(R::TYPES), 'les huit contenus JNET et l’élément SSE (« sse », identifiant « type-numéro »)');
     }
 
     public function testPairsAreNeverSelfNorTwoUnitsNorTwoMembers(): void
@@ -635,7 +635,7 @@ final class JnetLinksTest extends TestCase
         self::assertStringContainsString("data-uw-mention-search", $js);
         self::assertStringContainsString("'@'", $js);
         self::assertStringContainsString("'[['", $js);
-        self::assertStringContainsString("'unite,membre,operation,page'", $js);
+        self::assertStringContainsString("'unite,membre,operation,page,sse'", $js);
         self::assertStringContainsString("'[[' + r.type + ':'", $js);
         self::assertStringContainsString('window.JnetLinks', $js);
         // Le texte garde sa marque simple : la page se lit et se modifie sans script (la marque se tape à la main).
@@ -656,7 +656,9 @@ final class JnetLinksTest extends TestCase
     {
         // _exchange.php est repris tel quel : les liens sont ajoutés autour, par l'espace d'unité.
         self::assertStringNotContainsString('jl-', $this->read('views/jnet/_exchange.php'));
-        self::assertStringNotContainsString('JnetLink', $this->read('views/jnet/_exchange.php'));
+        // Seule exception : le corps d'un échange qui cite un élément SSE (« [[sse:person-12|IDN-00012]] ») est lu avec les droits du lecteur.
+        self::assertSame(1, substr_count($this->read('views/jnet/_exchange.php'), 'JnetLink'));
+        self::assertStringContainsString('str_contains($body, \'[[sse:\')', $this->read('views/jnet/_exchange.php'));
         // Une page toujours rendue sans $linkBlock (anciens appels) n'affiche rien de plus.
         self::assertStringContainsString('if ($lb === null) {', $this->read('views/jnet/_linked.php'));
         // Le contrôleur d'espace compte toujours ses quinze gardes (aucune écriture ajoutée à côté).

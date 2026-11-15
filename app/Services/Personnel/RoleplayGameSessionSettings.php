@@ -20,7 +20,22 @@ final class RoleplayGameSessionSettings
             'late_tolerance_minutes' => 15,
             'heartbeat_timeout_minutes' => 15,
             'sync_enabled' => true,
+            // Sessions de jeu des joueurs (PlayerSessionService) : durée qui compte pour la disponibilité et coupure tolérée.
+            'player_min_minutes' => PlayerSessionService::DEFAULT_MIN_MINUTES,
+            'player_gap_minutes' => PlayerSessionService::DEFAULT_GAP_MINUTES,
         ];
+    }
+
+    /**
+     * Seuil et coupure tolérée des sessions de jeu d'un joueur, bornés (5 min à 8 h ; 5 à 90 min).
+     *
+     * @return array{min_minutes: int, gap_minutes: int}
+     */
+    public static function playerSessionRules(int $tenantId, ?TenantRepository $tenants = null): array
+    {
+        $cfg = self::forTenant($tenantId, $tenants);
+
+        return ['min_minutes' => (int) $cfg['player_min_minutes'], 'gap_minutes' => (int) $cfg['player_gap_minutes']];
     }
 
     /**
@@ -55,6 +70,8 @@ final class RoleplayGameSessionSettings
             'late_tolerance_minutes' => max(0, min(120, (int) ($stored['late_tolerance_minutes'] ?? $d['late_tolerance_minutes']))),
             'heartbeat_timeout_minutes' => max(5, min(60, (int) ($stored['heartbeat_timeout_minutes'] ?? $d['heartbeat_timeout_minutes']))),
             'sync_enabled' => array_key_exists('sync_enabled', $stored) ? !empty($stored['sync_enabled']) : true,
+            'player_min_minutes' => max(5, min(480, (int) ($stored['player_min_minutes'] ?? $d['player_min_minutes']))),
+            'player_gap_minutes' => max(5, min(90, (int) ($stored['player_gap_minutes'] ?? $d['player_gap_minutes']))),
         ];
     }
 
@@ -78,6 +95,8 @@ final class RoleplayGameSessionSettings
             'late_tolerance_minutes' => (int) ($post['rp_session_late_tolerance'] ?? 15),
             'heartbeat_timeout_minutes' => (int) ($post['rp_session_heartbeat_timeout'] ?? 15),
             'sync_enabled' => !empty($post['rp_session_sync_enabled']),
+            'player_min_minutes' => max(5, min(480, (int) ($post['rp_player_min_minutes'] ?? PlayerSessionService::DEFAULT_MIN_MINUTES))),
+            'player_gap_minutes' => max(5, min(90, (int) ($post['rp_player_gap_minutes'] ?? PlayerSessionService::DEFAULT_GAP_MINUTES))),
         ];
         $all = $tenants->getSettings($tenantId);
         $community = is_array($all['community'] ?? null) ? $all['community'] : [];

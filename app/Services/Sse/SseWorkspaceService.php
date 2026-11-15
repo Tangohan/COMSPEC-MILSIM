@@ -64,7 +64,7 @@ final class SseWorkspaceService
             }
         }
 
-        $interest = $this->interest->listForTenant($tenantId, []);
+        $interest = $this->interest->listForSession($tenantId);
         $interestPending = 0;
         foreach ($interest as $row) {
             $st = (string) ($row['status'] ?? '');
@@ -366,7 +366,7 @@ final class SseWorkspaceService
         }
 
         try {
-            foreach ($this->interest->listForTenant($tenantId, ['q' => $q]) as $row) {
+            foreach ($this->interest->listForSession($tenantId, $q, 20) as $row) {
                 $out[] = [
                     'type' => 'Dossier d’intérêt',
                     'ref' => (string) ($row['reference_code'] ?? ''),

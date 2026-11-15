@@ -86,6 +86,8 @@ $canOpenIntake = !$canManage ? false : \App\Controllers\Admin\AdminIntelIntakeCo
         </div>
     </header>
 
+    <?php \App\Services\Sse\Links\SseLinksWidget::render('note', (int) ($note['id'] ?? 0)); ?>
+
     <dl class="sse-reading__facts">
         <div><dt>Constat</dt><dd><?= $h($note['observed_date_label'] ?? '') ?> à <?= $h($note['observed_time_label'] ?? '') ?></dd></div>
         <div><dt>Lieu</dt><dd><?= $h(($note['place_label'] ?? '') !== '' ? $note['place_label'] : 'Non précisé') ?></dd></div>

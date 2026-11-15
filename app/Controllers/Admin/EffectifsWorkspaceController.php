@@ -274,7 +274,10 @@ class EffectifsWorkspaceController
 
         $languageCommunity = $this->communitySettingsFor($tenantId);
         $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
-        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $jobTagFilter > 0 || $unitFilter > 0 || $gradeCategoryFilter !== '';
+        // Filtre « Actif : sessions de plus d'1 h » : au moins une session qui compte sur 30 jours (ou aucune).
+        $sessionsRaw = $request->query('sessions', '');
+        $sessionsFilter = is_string($sessionsRaw) && in_array($sessionsRaw, ['actif', 'inactif'], true) ? $sessionsRaw : '';
+        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $jobTagFilter > 0 || $unitFilter > 0 || $gradeCategoryFilter !== '' || $sessionsFilter !== '';
         if ($needsFullLoad) {
             $fetchLimit = min(2000, max($total, 1));
             $baseUsers = $this->userRepository->listForTenant(
@@ -293,8 +296,13 @@ class EffectifsWorkspaceController
                 $allRows = $this->applyRosterExtraFilters($tenantId, $allRows, $languageFilter, $jobFilter, $jobTagFilter, $unitFilter, $gradeCategoryFilter);
                 $total = count($allRows);
             }
-            if (in_array($sort, ['heures_vol', 'temps_mission'], true)) {
+            if (in_array($sort, ['heures_vol', 'temps_mission'], true) || $sessionsFilter !== '') {
                 $allRows = $this->attachRosterFieldData($tenantId, $allRows, false);
+            }
+            if ($sessionsFilter !== '') {
+                $wantActive = $sessionsFilter === 'actif';
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => !empty($r['server_sessions']['active']) === $wantActive));
+                $total = count($allRows);
             }
             $allRows = $this->sortRosterRows($allRows, $sort);
             $offset = ($page - 1) * $perPage;
@@ -369,10 +377,12 @@ class EffectifsWorkspaceController
                 'sans_role' => $onlyNoRole,
                 'tri' => $sort,
                 'langue' => $languageFilter,
+                'sessions' => $sessionsFilter,
                 'vue' => $rosterView,
                 'fonction' => $jobFilter,
                 'etiquette_fonction' => $jobTagFilter,
             ],
+            'rosterSessionRules' => \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId),
             'rosterJobTags' => (new JobRoleEnrichmentService())->tags($tenantId),
             'rosterView' => $rosterView,
             'canExportPdf' => self::pdfExportsAllowed($tenantId),
@@ -1688,16 +1698,55 @@ class EffectifsWorkspaceController
             'departure_reasons' => ['end_of_engagement' => 'Fin d’engagement', 'exclusion' => 'Exclusion', 'pause' => 'Pause', 'other' => 'Autre'],
         ]);
 
+        // Onglet Disponibilité : sessions de jeu qui comptent (seuil de la communauté), lues en une requête.
+        $memberAvailability = null;
+        try {
+            $sessionRepo = \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class);
+            $sessionRules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+            $memberAvailability = $sessionRepo->panelForUser(
+                $tenantId,
+                $id,
+                $sessionRules['min_minutes'] * 60,
+                $sessionRules['gap_minutes'] * 60,
+                time(),
+                $sessionRepo->tenantTimezone($tenantId)
+            );
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: disponibilité failed: ' . $e->getMessage());
+        }
+        $availabilitySettingsUrl = \App\Support\BackOfficeRightGuard::allows(\App\Support\BackOfficeRightGuard::MANAGERS)
+            ? url('back-office/roleplay/sessions') . '#regles'
+            : '';
+
         $memberPapers = MemberIdentityPapersController::sectionFor($tenantId, $user);
-        $ficheTabs = MemberFicheTabs::visible(['papers' => is_array($memberPapers)]);
-        $ficheTab = MemberFicheTabs::resolve((string) $request->queryString('onglet', ''), $ficheTabs);
+        // Onglet « Suivi du dossier » : null (onglet absent) sans le droit de consulter ; une erreur de lecture ne casse pas la fiche.
+        $memberSuivi = null;
+        try {
+            $suiviOwners = [];
+            if ((int) ($commandChain['reports_to_id'] ?? 0) > 0) {
+                $suiviOwners[] = ['id' => (int) $commandChain['reports_to_id'], 'label' => (string) ($commandChain['reports_to_label'] ?? '') . ' (supérieur direct)'];
+            }
+            $memberSuivi = MemberDossierSuiviController::tabData($tenantId, $id, $viewerId, (string) ($row['display_name'] ?? $row['callsign'] ?? 'membre'), $request, $suiviOwners);
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: suivi du dossier failed: ' . $e->getMessage());
+        }
+        $ficheTabs = MemberFicheTabs::visible(['papers' => is_array($memberPapers), 'suivi' => is_array($memberSuivi)]);
+        // ?ouvrir=suivi (liens des tâches et de la vue équipe) ouvre l'onglet du suivi, sans JavaScript.
+        $requestedTab = (string) $request->queryString('onglet', '');
+        if ($requestedTab === '' && $request->queryString('ouvrir', '') === 'suivi') {
+            $requestedTab = 'suivi';
+        }
+        $ficheTab = MemberFicheTabs::resolve($requestedTab, $ficheTabs);
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
             // Prénom et nom du personnage (user_profiles), indicatif, trigramme : nom affiché par la règle unique.
             'memberIdentity' => $this->rosterIdentities($tenantId, [$id])[$id] ?? [],
+            'memberSuivi' => $memberSuivi,
             'ficheTabs' => $ficheTabs,
             'ficheTab' => $ficheTab,
+            'memberAvailability' => $memberAvailability,
+            'availabilitySettingsUrl' => $availabilitySettingsUrl,
             'memberChronology' => $chronology,
             'dataReliability' => $dataReliability,
             'chronologyType' => $chronologyType,
@@ -1772,7 +1821,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
@@ -2048,6 +2097,46 @@ class EffectifsWorkspaceController
     }
 
     /** Vue « anciens membres » — historique des départs, filtrable par motif. */
+    /**
+     * Suivi des dossiers : tous les membres actifs avec leur progression et leur prochaine étape, filtrables et triables.
+     * Lecture : droit de consulter le suivi (effectifs.suivi.view ou gestion du dossier) ; la relance groupée demande le droit de modifier.
+     */
+    public function suivi(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canViewSuivi($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à consulter le suivi des dossiers.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $board = (new MemberDossierSuiviController())->teamBoard($tenantId, $request);
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = \App\Services\Effectifs\Dossier\MemberDossierTeamBoard::PER_PAGE;
+        $total = count($board['rows']);
+
+        return $this->shell('admin.effectifs_workspace.suivi', [
+            'title' => 'Étapes des dossiers',
+            'effectifsNav' => 'suivi',
+            'suiviRows' => array_slice($board['rows'], ($page - 1) * $perPage, $perPage),
+            'suiviTotals' => $board['totals'],
+            'suiviUnits' => $board['units'],
+            'suiviFilters' => $board['filters'],
+            'suiviCount' => $total,
+            'suiviPage' => min($page, max(1, (int) ceil($total / $perPage))),
+            'suiviPages' => max(1, (int) ceil($total / $perPage)),
+            'suiviViewerId' => (int) Session::get('user_id'),
+            'canManageSuivi' => EffectifsLmsAccess::canManageSuivi($gate),
+            'bulkMax' => MemberDossierSuiviController::BULK_MAX,
+            'csrfToken' => Csrf::token(),
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'eff-suivi.css'],
+        ]);
+    }
+
     public function departures(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -5739,8 +5828,22 @@ class EffectifsWorkspaceController
                 $medical = [];
             }
         }
+        // Sessions de jeu qui comptent (seuil de la communauté) : une lecture pour toute la page, rien sans la table.
+        $serverSessions = [];
+        try {
+            $sessionRepo = \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class);
+            if ($sessionRepo->schemaReady()) {
+                $rules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+                $serverSessions = $sessionRepo->summariesForUsers($tenantId, $ids, $rules['min_minutes'] * 60, $rules['gap_minutes'] * 60, time(), $sessionRepo->tenantTimezone($tenantId));
+            }
+        } catch (\Throwable) {
+            $serverSessions = [];
+        }
         foreach ($rows as &$row) {
             $uid = (int) ($row['id'] ?? 0);
+            if (isset($serverSessions[$uid])) {
+                $row['server_sessions'] = \App\Services\Personnel\PlayerSessionService::rosterCell($serverSessions[$uid]);
+            }
             $sum = is_array($playtime[$uid] ?? null) ? $playtime[$uid] : [];
             $secs = (int) ($sum['total_seconds'] ?? 0);
             $row['arma_playtime_seconds'] = $secs;

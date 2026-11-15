@@ -24,9 +24,14 @@
       JVN allumées : x multiplicateur JVN ; optique / jumelles pointées sur le flash : x1,5 (halo) ;
       lunettes teintées (ACE_TintAmount) : x0,75 ; véhicule fermé : la coque bloque la ligne de vue.
     Préréglage (Réaliste / Arcade / Léger) et intensité globale s'appliquent aux deux.
-    [_unit, _ctx, _posASL, _env, _isPlayer] call comspec_fb_fnc_exposure
+      Pour une IA (fn_aiBurst), 6e argument [rayon (x), plancher de pupille] (fn_aiParams) : la distance utilisée pour le
+      bruit et pour la table de vision est divisée par le rayon (x1,5 : l'IA est touchée comme si la grenade était 1,5 fois
+      plus près), et la pupille ne descend pas sous le plancher (le réflexe de l'IA ne dépend pas du soleil comme celui
+      d'un joueur). Joueur : [] (aucun changement).
+    [_unit, _ctx, _posASL, _env, _isPlayer, _aiCfg] call comspec_fb_fnc_exposure
 */
-params ["_unit", "_ctx", "_pos", "_env", ["_isPlayer", false]];
+params ["_unit", "_ctx", "_pos", "_env", ["_isPlayer", false], ["_aiCfg", [], [[]]]];
+_aiCfg params [["_aiR", 1, [0]], ["_aiPupilMin", 0, [0]]];
 private _device = _ctx get "device";
 private _eye = eyePos _unit;
 private _d = (_eye vectorDistance _pos) max 0.3;
@@ -50,7 +55,8 @@ private _indoorUnit = [_eye, _unit, vehicle _unit] call comspec_fb_fnc_roofAbove
 private _sameRoom = _enclosed && {_indoorUnit} && {_d < ((_env getOrDefault ["maxAxis", 8]) max 4)};
 
 // ------------------------------------------------------------------ audition
-private _L = 170 - 20 * (log (_d / 1.5) / log 10); // SQF log = népérien : log10(x) = ln(x) / ln(10)
+private _dEff = (_d / (_aiR max 0.3)) max 0.3;
+private _L = 170 - 20 * (log (_dEff / 1.5) / log 10); // SQF log = népérien : log10(x) = ln(x) / ln(10)
 _L = _L + (switch (_class) do { case "petite_piece": {6}; case "couloir": {5}; case "piece": {4}; case "hangar": {2}; default {0} });
 if (_blocked && {!_sameRoom}) then { _L = _L - 25 };
 private _protDb = missionNamespace getVariable ["comspec_fb_earProtectionDb", 25];
@@ -73,7 +79,7 @@ private _rFull = (missionNamespace getVariable ["comspec_fb_radiusFull", 3]) max
 private _rMax = (missionNamespace getVariable ["comspec_fb_radiusMax", 25]) max (_rFull + 1);
 private _mult = _env getOrDefault ["mult", 1];
 if (_enclosed) then { _rFull = _rFull * _mult; _rMax = _rMax * _mult };
-private _dn = if (_d <= _rFull) then { 3 * _d / _rFull } else { 3 + 22 * (_d - _rFull) / (_rMax - _rFull) };
+private _dn = if (_dEff <= _rFull) then { 3 * _dEff / _rFull } else { 3 + 22 * (_dEff - _rFull) / (_rMax - _rFull) };
 // Extérieur dégagé (grenade sans toit) : table à chute rapide, axe étiré par « Portée de l'éblouissement en extérieur ».
 private _outdoor = !_enclosed;
 if (_outdoor) then { _dn = _dn / (((missionNamespace getVariable ["comspec_fb_outdoorRange", 1]) max 0.5) min 1.5) };
@@ -107,6 +113,7 @@ if (_fIn > 0) then {
         // couvert (x0,6), grande ouverte la nuit ou dans un local sombre (x multiplicateur nuit). Luminosité réelle :
         // soleil ou lune levés x ciel dégagé ; sous un toit, au plus 0,25.
         private _pupil = [_lum, _d, missionNamespace getVariable ["comspec_fb_nightMult", 1]] call comspec_fb_fnc_pupil;
+        _pupil = _pupil max _aiPupilMin;
         _vis = _vis * _pupil;
         _info set ["pupille", _pupil];
         if (_outdoor) then { _vis = _vis * (missionNamespace getVariable ["comspec_fb_outdoorIntensity", 1]) };

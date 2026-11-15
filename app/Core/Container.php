@@ -3132,6 +3132,7 @@ class Container
             \App\Repositories\MapShapeRepository::class => new \App\Repositories\MapShapeRepository(),
             \App\Repositories\LaserCodeRepository::class => new \App\Repositories\LaserCodeRepository(),
             \App\Repositories\ArmaPlaytimeRepository::class => new \App\Repositories\ArmaPlaytimeRepository(),
+            \App\Repositories\PlayerSessionRepository::class => new \App\Repositories\PlayerSessionRepository(),
             // Heures de vol du tableur des effectifs : sans cette entrée, l'appel levait « Unknown service » et la colonne restait vide.
             \App\Repositories\AtakDistanceRepository::class => new \App\Repositories\AtakDistanceRepository(),
             \App\Repositories\TacticalBriefingSlideRepository::class => new \App\Repositories\TacticalBriefingSlideRepository(),

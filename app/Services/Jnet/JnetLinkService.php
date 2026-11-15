@@ -217,6 +217,8 @@ final class JnetLinkService
     public function resolveMentions(JnetLinkViewer $v, array $texts): array
     {
         $out = [];
+        // Le chemin de liaison d'un élément SSE coûte quelques requêtes : plafonné par affichage.
+        $pathBudget = 10;
         foreach ($texts as $text) {
             foreach (JnetLinkRules::mentions((string) $text) as $m) {
                 $ref = $m['type'] . ':' . $m['id'];
@@ -225,10 +227,33 @@ final class JnetLinkService
                 }
                 $seen = in_array($m['type'], JnetLinkRules::MENTION_TYPES, true) ? $v->see($m['type'], $m['id']) : null;
                 $out[$ref] = $seen === null ? null : ['title' => $seen['title'], 'href' => $seen['href']];
+                if ($seen !== null && $m['type'] === 'sse') {
+                    $out[$ref] += ['ref' => (string) ($seen['ref'] ?? ''), 'type_label' => (string) ($seen['type_label'] ?? ''), 'path' => $v instanceof JnetSseViewer && $pathBudget-- > 0 ? $v->ssePath($m['id']) : []];
+                }
             }
         }
 
         return $out;
+    }
+
+    /**
+     * Texte d'un échange ou d'une page en HTML pour le lecteur de la session : les citations d'éléments SSE (« [[sse:person-12|IDN-00012]] »)
+     * sont résolues avec SES droits, le reste est échappé.
+     */
+    public static function richText(string $text): string
+    {
+        $tenant = (int) \App\Core\Session::get('tenant_id');
+        $user = (int) \App\Core\Session::get('user_id');
+        $resolved = [];
+        if ($tenant > 0 && $user > 0) {
+            try {
+                $resolved = (new self())->resolveMentions(JnetLinkAccess::forViewer($tenant, $user), [$text]);
+            } catch (\Throwable) {
+                $resolved = [];
+            }
+        }
+
+        return JnetLinkRules::renderMentions($text, $resolved);
     }
 
     /** Texte d'une page à l'enregistrement : les citations que l'auteur ne peut pas voir redeviennent du texte simple. */

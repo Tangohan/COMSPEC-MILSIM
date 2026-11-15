@@ -76,7 +76,7 @@ final class MemberFicheTabsTest extends TestCase
         foreach (MemberFicheTabs::slugs() as $slug) {
             $chunk = self::panelChunk($view, $slug);
             foreach (MemberFicheTabs::anchors($slug) as $anchor) {
-                if (in_array($anchor, ['papiers', 'invitations'], true)) {
+                if (in_array($anchor, ['papiers', 'invitations', 'disponibilite', 'suivi'], true)) {
                     continue; // insérées par un partiel qui garde son ancre
                 }
                 self::assertStringContainsString('id="' . $anchor . '"', $chunk, '#' . $anchor . ' hors de l’onglet ' . $slug);
@@ -99,7 +99,7 @@ final class MemberFicheTabsTest extends TestCase
         self::assertSame('identite', MemberFicheTabs::resolve(null, $with));
         $view = self::read('views/admin/effectifs_workspace/member.php');
         self::assertStringContainsString("is_array(\$memberPapers ?? null)", $view);
-        self::assertStringContainsString('MemberFicheTabs::visible([\'papers\' => is_array($memberPapers)])', self::read('app/Controllers/Admin/EffectifsWorkspaceController.php'));
+        self::assertStringContainsString('MemberFicheTabs::visible([\'papers\' => is_array($memberPapers), \'suivi\' => is_array($memberSuivi)])', self::read('app/Controllers/Admin/EffectifsWorkspaceController.php'));
     }
 
     public function testWithoutJavaScriptEveryPanelIsDisplayed(): void
