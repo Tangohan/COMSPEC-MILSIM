@@ -12,6 +12,17 @@ $missionDuty = is_array($mon_service['mission_duty'] ?? null) ? $mon_service['mi
 $csrf = \App\Core\Csrf::token();
 $statusLabels = ['open' => 'À traiter', 'acknowledged' => 'Pris en compte', 'in_progress' => 'En cours', 'completed' => 'Terminée', 'cancelled' => 'Annulée'];
 $priorityLabels = ['critical' => 'Critique', 'high' => 'Haute priorité', 'normal' => 'Priorité normale', 'low' => 'Basse priorité'];
+// Un membre sans rôle de gestion retourne à son espace JNET, pas dans le back-office (rien à proposer si son arrivée est le tableau de bord).
+$backHref = url('back-office');
+$backLabel = 'Retour au back-office';
+try {
+    if (\App\Support\PortalAccessChoice::isPlainMember()) {
+        $backHref = \App\Support\PortalAccessChoice::plainMemberHome();
+        $backLabel = 'Retour à mon espace JNET';
+    }
+} catch (\Throwable) {
+}
+$showBackLink = $backHref !== url('dashboard');
 ?>
 <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
     <header class="mb-8">
@@ -217,6 +228,6 @@ $priorityLabels = ['critical' => 'Critique', 'high' => 'Haute priorité', 'norma
 
     <p class="mt-12 text-center text-sm text-slate-500">
         <a href="<?= htmlspecialchars(url('hub'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au centre de commandement</a>
-        · <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au back-office</a>
+        <?php if ($showBackLink): ?>· <a href="<?= htmlspecialchars($backHref, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800"><?= htmlspecialchars($backLabel, ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?>
     </p>
 </div>

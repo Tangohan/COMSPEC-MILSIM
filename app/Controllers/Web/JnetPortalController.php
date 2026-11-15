@@ -1426,6 +1426,10 @@ final class JnetPortalController
         $lead = trim((string) ($vars['boPageSubtitle'] ?? ''));
         $css = array_values(array_filter(array_map('strval', (array) ($vars['backOfficePageCss'] ?? []))));
         $js = array_values(array_filter(array_map('strval', (array) ($vars['jnetPageJs'] ?? []))));
+        // Repli des images cassées (portraits, couvertures, photos de camarades) : la coque du back-office le chargeait sur toute page.
+        if (is_file(base_path('public/assets/js/img-fallback.js')) && !in_array('img-fallback.js', $js, true)) {
+            $js[] = 'img-fallback.js';
+        }
         // Feuilles à charger AVANT celles de JNET (tailwind.css : son préflight ne doit jamais l'emporter sur l'extranet).
         $cssFirst = array_values(array_filter(array_map('strval', (array) ($vars['jnetPageCssFirst'] ?? []))));
         $cssAll = array_merge(['jnet_member.css'], $css, $this->memberDarkCss());

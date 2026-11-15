@@ -19,6 +19,17 @@ if ($memberShell) {
     $error = $error ?: ($passedError !== '' ? $passedError : null);
     $success = $success ?: ($passedSuccess !== '' ? $passedSuccess : null);
 }
+// Les pages du membre affichaient avant, dans la coque du back-office, aussi les avertissements, les informations et les
+// refus d'accès (AccessDeniedStayMiddleware renvoie sur la page d'origine avec le message en session) : ils sont repris ici.
+$extraFlashes = [];
+if ($memberShell) {
+    foreach (['toast_error' => 'jnet-flash--err', 'toast_warning' => 'jnet-flash--err', 'warning' => '', 'info' => ''] as $flashKey => $flashClass) {
+        $flashText = \App\Core\Session::getFlash($flashKey);
+        if (is_scalar($flashText) && trim((string) $flashText) !== '') {
+            $extraFlashes[] = ['class' => $flashClass, 'text' => trim((string) $flashText)];
+        }
+    }
+}
 
 ?>
 <div class="jnet-embed">
@@ -28,6 +39,9 @@ if ($memberShell) {
     <?php if ($success): ?>
         <div class="jnet-flash jnet-flash--ok" role="status"><?= $h((string) $success) ?></div>
     <?php endif; ?>
+    <?php foreach ($extraFlashes as $extraFlash): ?>
+        <div class="jnet-flash<?= $extraFlash['class'] !== '' ? ' ' . $h($extraFlash['class']) : '' ?>" role="<?= $extraFlash['class'] !== '' ? 'alert' : 'status' ?>"><?= $h($extraFlash['text']) ?></div>
+    <?php endforeach; ?>
 
     <div class="jnet-stage jnet-stage--bo">
         <?php

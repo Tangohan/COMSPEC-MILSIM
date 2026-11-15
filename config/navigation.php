@@ -435,7 +435,7 @@ return [
                     'links' => [
                         // La racine est aussi l'espace personnel en lecture seule des opérateurs.
                         // Les pages de gestion placées dessous conservent leurs propres permissions.
-                        ['label' => 'Mon back-office', 'path' => 'back-office', 'auth_only' => true],
+                        ['label' => 'Mon back-office', 'path' => 'back-office', 'auth_only' => true, 'plain_member_home' => true],
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
                         ['label' => 'Pilotage du mur opérationnel', 'path' => 'back-office/tableau-operationnel', 'any_permissions' => ['operational.board.edit', 'admin.organization', 'admin.access', 'admin.system'], 'description' => 'Événements, articles, ATAK et mur de consignes'],
                         ['label' => 'E-mails aux membres', 'path' => 'back-office/communications', 'any_permissions' => ['comms.email.send.orbat', 'comms.email.send.mission', 'comms.email.send.activity', 'comms.email.send.custom', 'comms.email.broadcast', 'comms.email_templates.manage', 'comms.notifications.history.view'], 'description' => 'Diffusions, modèles et groupes de destinataires'],

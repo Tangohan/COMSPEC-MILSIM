@@ -248,8 +248,16 @@ function navigation_resolve_link(array $link): ?array
         return null;
     }
     $pathFragment = (string) ($link['path'] ?? '');
+    // Entrée « Mon back-office » : un membre sans rôle de gestion va à son espace JNET (rien si son arrivée est le tableau de bord).
+    if (!empty($link['plain_member_home']) && \App\Support\PortalAccessChoice::isPlainMember()) {
+        if (\App\Support\PortalAccessChoice::plainMemberHome() === url('dashboard')) {
+            return null;
+        }
+        $link['label'] = 'Mon espace JNET';
+        $pathFragment = 'jnet';
+    }
     $routePath = navigation_route_path($pathFragment);
-    $match = $link['active_match'] ?? navigation_infer_active_match($routePath);
+    $match =$link['active_match'] ?? navigation_infer_active_match($routePath);
 
     $out = [
         'label' => (string) ($link['label'] ?? ''),

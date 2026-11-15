@@ -314,10 +314,8 @@ final class MemberSituationController
     {
         $payload = Container::get(CommunityEventsController::class)->buildIndexPayload();
         if ($payload['blocked']) {
-            return JnetMemberShell::view($request, $this->boShell(array_merge([
-                'title' => 'Événements',
-                'content' => 'platform.upgrade',
-            ], $payload['vars'])));
+            // Page de formules du portail (comme le carnet de vol) : la coque JNET ne charge pas le style de cette page.
+            return Response::redirect(url('platform/upgrade') . '?from=events');
         }
 
         $vue = (string) $request->query('vue', 'a_venir');

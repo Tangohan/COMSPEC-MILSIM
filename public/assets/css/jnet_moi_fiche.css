@@ -29,6 +29,7 @@
 
 /* Pas de surtitre au-dessus des titres : le nom du dossier est le premier texte de la carte. */
 .jp .jnet-moi-fiche .personnel-file-hero__eyebrow,
+.jp .jnet-moi-fiche .pd-orbat-hero__kicker,
 .jp .jnet-moi-fiche .adv-kicker {
   display: none;
 }

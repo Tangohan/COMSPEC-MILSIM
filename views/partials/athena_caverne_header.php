@@ -85,6 +85,25 @@ if (function_exists('i18n_phrase')) {
 
 $canAdmin = function_exists('can') && (can('admin.organization') || can('admin.access'));
 $canOpenBackOffice = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
+// Un membre sans rôle de gestion n'a rien à faire dans le back-office : son espace est JNET (/jnet/moi). Sans JNET
+// (profils Effectifs et Carte ATAK), l'arrivée est le tableau de bord : on masque alors l'entrée, qui ne ferait que recharger.
+$boPlainMember = false;
+$boHref = url('back-office');
+$boPath = 'back-office';
+if ($canOpenBackOffice && class_exists(\App\Support\PortalAccessChoice::class)) {
+    try {
+        $boPlainMember = \App\Support\PortalAccessChoice::isPlainMember();
+    } catch (\Throwable) {
+        $boPlainMember = false;
+    }
+    if ($boPlainMember) {
+        $boHref = \App\Support\PortalAccessChoice::plainMemberHome();
+        $boPath = 'jnet';
+        if ($boHref === url('dashboard')) {
+            $canOpenBackOffice = false;
+        }
+    }
+}
 $showStaff = !empty($show_staff_enlistments) || $canAdmin;
 $canRecruit = $showStaff || (function_exists('can') && can('organization.recruitment.manage'));
 $canDocsMenu = !function_exists('can') || can('documents.view');
@@ -147,7 +166,7 @@ if ($canRecruit) {
     ];
 }
 if ($canOpenBackOffice) {
-    $navItems[] = ['key' => 'admin', 'label' => $canAdmin ? 'Gestion' : 'Mon espace', 'href' => url('back-office'), 'path' => 'back-office'];
+    $navItems[] = ['key' => 'admin', 'label' => $canAdmin ? 'Gestion' : 'Mon espace', 'href' => $boHref, 'path' => $boPath];
 }
 $navItems = array_values(array_filter(
     $navItems,
@@ -212,10 +231,10 @@ if ($canRecruit) {
 if ($canOpenBackOffice) {
     $espaceLinks[] = [
         'abbr' => 'BO',
-        'label' => $canAdmin ? 'Back-office' : 'Mon back-office',
-        'desc' => $canAdmin ? 'Gestion de la communauté' : 'Synthèse opérationnelle personnelle',
-        'href' => url('back-office'),
-        'path' => 'back-office',
+        'label' => $canAdmin ? 'Back-office' : ($boPlainMember ? 'Mon espace JNET' : 'Mon back-office'),
+        'desc' => $canAdmin ? 'Gestion de la communauté' : ($boPlainMember ? 'Fiche, unité et démarches' : 'Synthèse opérationnelle personnelle'),
+        'href' => $boHref,
+        'path' => $boPath,
     ];
 }
 $espaceLinks = array_values(array_filter(
@@ -465,10 +484,10 @@ if ($canInvitationsMenu) {
 }
 if ($canOpenBackOffice) {
     $profileMenuItems[] = [
-        'label' => $canAdmin ? 'Commandement' : 'Mon back-office',
-        'desc' => $canAdmin ? 'Espace état-major' : 'Synthèse opérationnelle personnelle',
-        'href' => url('back-office'),
-        'path' => 'back-office',
+        'label' => $canAdmin ? 'Commandement' : ($boPlainMember ? 'Mon espace JNET' : 'Mon back-office'),
+        'desc' => $canAdmin ? 'Espace état-major' : ($boPlainMember ? 'Fiche, unité et démarches' : 'Synthèse opérationnelle personnelle'),
+        'href' => $boHref,
+        'path' => $boPath,
     ];
 }
 $profileMenuItems[] = ['label' => 'Paramètres', 'desc' => 'Compte et préférences', 'href' => url('account'), 'path' => 'account'];

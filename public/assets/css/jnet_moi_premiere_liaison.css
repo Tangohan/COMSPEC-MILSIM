@@ -34,3 +34,17 @@
     padding-bottom: 24px;
   }
 }
+
+/* Pas de surtitre au-dessus des titres d'étape : « sur votre PC », « en jeu »… passe sous le titre, en sous-titre. */
+.jp .fl-step__head > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.jp .fl-step__kicker {
+  order: 2;
+  margin: 2px 0 0;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
