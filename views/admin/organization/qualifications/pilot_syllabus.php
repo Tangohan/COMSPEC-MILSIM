@@ -221,7 +221,7 @@ $athKpis = [
                     <?php endif; ?>
                 </span>
                 <?php if ($canValidate && $allowed): ?>
-                <form method="post" action="<?= $h(url($base . '/propositions/' . (int) $it['award_id'] . '/annuler')) ?>" class="pcs-pending__actions" onsubmit="return confirm(<?= $h(json_encode('Annuler l’ajournement ? Le palier repart en attente de la décision d’un instructeur.', JSON_UNESCAPED_UNICODE)) ?>)">
+                <form method="post" action="<?= $h(url($base . '/propositions/' . (int) $it['award_id'] . '/annuler')) ?>" class="pcs-pending__actions" data-ui-confirm="1" data-ui-confirm-title="Annuler l’ajournement ?" data-ui-confirm-body="Le palier repart en attente de la décision d’un instructeur.">
                     <?= \App\Core\Csrf::field() ?>
                     <button type="submit" class="ath-btn">Annuler l’ajournement</button>
                 </form>
