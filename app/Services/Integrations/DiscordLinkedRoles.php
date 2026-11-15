@@ -206,6 +206,40 @@ final class DiscordLinkedRoles
         ];
     }
 
+    /**
+     * Fin de l'invitation du bot (scopes bot, identify, guilds) : échange le code puis lit les serveurs de la personne qui
+     * invite. Rien n'est conservé : les jetons sont rendus à Discord aussitôt.
+     *
+     * @return list<array{id:string, name:string, owner:bool, permissions:int}>|null null si Discord refuse
+     */
+    public function guildsOfInviter(string $code, string $redirectUri): ?array
+    {
+        if (!$this->configured()) {
+            return null;
+        }
+        $tokens = $this->token(['grant_type' => 'authorization_code', 'code' => $code, 'redirect_uri' => $redirectUri]);
+        if ($tokens === null) {
+            return null;
+        }
+        $guilds = $this->call('GET', '/users/@me/guilds', $tokens['access_token']);
+        $this->request('POST', self::API . '/oauth2/token/revoke', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query([
+            'token' => $tokens['access_token'], 'token_type_hint' => 'access_token',
+            'client_id' => $this->clientId(), 'client_secret' => $this->clientSecret(),
+        ]));
+        if ($guilds === null) {
+            return null;
+        }
+        $out = [];
+        foreach ($guilds as $g) {
+            if (is_array($g) && preg_match('/^\d{15,24}$/', (string) ($g['id'] ?? '')) === 1) {
+                $out[] = ['id' => (string) $g['id'], 'name' => mb_substr((string) ($g['name'] ?? ''), 0, 100),
+                    'owner' => ($g['owner'] ?? false) === true, 'permissions' => (int) ($g['permissions'] ?? 0)];
+            }
+        }
+
+        return $out;
+    }
+
     // ---- Ce que Discord reçoit ----------------------------------------------------------------------------------
 
     /**

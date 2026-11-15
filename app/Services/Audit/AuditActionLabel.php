@@ -51,6 +51,9 @@ final class AuditActionLabel
         'discord_webhook.saved' => 'Salon Discord enregistré',
         'discord_webhook.removed' => 'Salon Discord retiré',
         'discord_webhook.tested' => 'Salon Discord testé',
+        'discord_bot.linked' => 'Serveur Discord relié au bot Athena',
+        'discord_bot.settings' => 'Réglages du bot Discord enregistrés',
+        'discord_bot.unlinked' => 'Serveur Discord délié du bot Athena',
         // Modération
         'moderation.action_applied' => 'Action de modération appliquée',
         'moderation.action_revoked' => 'Action de modération révoquée',

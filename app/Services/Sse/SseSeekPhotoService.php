@@ -94,7 +94,7 @@ final class SseSeekPhotoService
             return null;
         }
         // Image d'un membre (CONFIDENTIEL ÉLEVÉ, voir SseMemberImageGate) : toujours la route protégée, jamais une adresse publique.
-        if (self::isPrivatePath($path) || !empty($photo['confidential'])) {
+        if (self::isPrivatePath($path) || \App\Support\SseImageStorage::isStoredPath($path) || !empty($photo['confidential'])) {
             return function_exists('url') ? url('atak/sse/fichiers/photos/' . (int) ($photo['id'] ?? 0) . '/image') : null;
         }
 

@@ -453,7 +453,8 @@ final class SseFileRecordController
             return $notFound();
         }
         $seekSvc = new SseSeekPhotoService($this->records());
-        $abs = $seekSvc->absolutePath($photo, $tenantId) ?? ($access['confidential'] ? SseMemberImageGate::publicAbsolutePath($photo) : null);
+        $abs = $seekSvc->absolutePath($photo, $tenantId)
+            ?? ($access['confidential'] || \App\Support\SseImageStorage::isStoredPath((string) $photo['path']) ? SseMemberImageGate::publicAbsolutePath($photo) : null);
         if ($abs === null) {
             return $notFound();
         }
@@ -466,12 +467,12 @@ final class SseFileRecordController
                 return $notFound();
             }
         }
-        $ext = match ($photo['mime']) {
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            default => 'jpg',
-        };
-        $mime = ['png' => 'image/png', 'webp' => 'image/webp', 'jpg' => 'image/jpeg'][$ext];
+        // Type annoncé = type réel du contenu (jamais la colonne mime ni l'extension) ; pas une image : pas un octet.
+        $mime = \App\Support\SseImageStorage::verifiedMime($abs);
+        if ($mime === null) {
+            return $notFound();
+        }
+        $ext = ['image/png' => 'png', 'image/webp' => 'webp', 'image/jpeg' => 'jpg'][$mime];
 
         return (new Response())
             ->header('Content-Type', $mime)
@@ -515,7 +516,8 @@ final class SseFileRecordController
         }
         $path = $identity !== null ? (string) ($identity[$kind . '_path'] ?? '') : '';
         $folder = $kind === 'signature' ? 'sse-id-signatures' : 'sse-id-photos';
-        if ($identity === null || preg_match('#^uploads/' . $folder . '/' . $tenantId . '_[a-f0-9]{16}\.(jpg|png|webp)$#', $path) !== 1) {
+        // Espace privé (sse-private/…) ou emplacement hérité (uploads/…) le temps de la migration des fichiers.
+        if ($identity === null || preg_match('#^(?:uploads|sse-private)/' . $folder . '/' . $tenantId . '_[a-f0-9]{16}\.(jpg|png|webp)$#', $path) !== 1) {
             return $notFound();
         }
         $gate = SseMemberImageGate::forSession();
@@ -541,13 +543,83 @@ final class SseFileRecordController
                 return $notFound();
             }
         }
+        // Type annoncé = type réel du contenu (jamais l'extension) ; un fichier qui n'est pas une image n'est pas servi.
+        $mime = \App\Support\SseImageStorage::verifiedMime($abs);
+        if ($mime === null) {
+            return $notFound();
+        }
         $ext = strtolower(pathinfo($abs, PATHINFO_EXTENSION));
-        $mime = ['png' => 'image/png', 'webp' => 'image/webp', 'jpg' => 'image/jpeg'][$ext] ?? 'application/octet-stream';
 
         return (new Response())
             ->header('Content-Type', $mime)
             ->header('Content-Length', (string) filesize($abs))
             ->header('Content-Disposition', 'inline; filename="identite-' . (int) $identity['id'] . '-' . $kind . '.' . $ext . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer')
+            ->setBodyStream(static function () use ($abs): void {
+                $h = fopen($abs, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
+    }
+
+    /**
+     * Image de fond d'un papier à gabarit personnalisé : GET fichiers/documents/{id}/fond. Rangée dans l'espace privé SSE, jamais
+     * servie par le dossier public. Mêmes règles que le portrait de l'identité du papier (CONFIDENTIEL ÉLEVÉ pour un membre,
+     * habilitation Confidentiel pour une couverture ou une fausse identité) ; autre communauté, absente ou refus : 404 identique.
+     */
+    public function documentBackground(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store')
+            ->setBody('Not found');
+        $tenantId = $this->ctx->tenantId();
+        $doc = null;
+        $identity = null;
+        try {
+            $doc = $tenantId > 0 ? (new \App\Repositories\SseIdDocumentRepository())->find((int) ($params['id'] ?? 0), $tenantId) : null;
+            $identity = $doc !== null && (int) ($doc['identity_id'] ?? 0) > 0 ? (new SseIdentityRepository())->find((int) $doc['identity_id'], $tenantId) : null;
+        } catch (\Throwable $e) {
+            error_log('Fichiers SSE : papier illisible : ' . $e->getMessage());
+        }
+        $path = $doc !== null ? (string) ($doc['background_path'] ?? '') : '';
+        if ($doc === null || $identity === null || preg_match('#^(?:uploads|sse-private)/sse-id-backgrounds/' . $tenantId . '_[a-f0-9]{16}\.(jpg|png|webp)$#', $path) !== 1) {
+            return $notFound();
+        }
+        $gate = SseMemberImageGate::forSession();
+        $access = $gate->forIdentity($tenantId, $identity);
+        if (!$access['allowed']) {
+            $gate->recordDenied($tenantId, $gate->viewerId(), 'document_background', (int) $doc['id'], $access['owner']);
+
+            return $notFound();
+        }
+        if (!$access['confidential'] && in_array($identity['kind'], ['cover', 'forged'], true) && !($this->ctx->canSee())(SseCaseRepository::CLASS_CONFIDENTIAL)) {
+            return $notFound();
+        }
+        $abs = SseMemberImageGate::publicAbsolutePath(['path' => $path]);
+        $mime = $abs !== null ? \App\Support\SseImageStorage::verifiedMime($abs) : null;
+        if ($abs === null || $mime === null) {
+            return $notFound();
+        }
+        if ($access['confidential']) {
+            try {
+                $gate->recordConsultation($tenantId, (int) $gate->viewerId(), 'document_background', (int) $doc['id'], $access['owner'], $access['reason']);
+            } catch (\Throwable $e) {
+                error_log('Fichiers SSE : consultation d’une image confidentielle non journalisée, image refusée : ' . $e->getMessage());
+
+                return $notFound();
+            }
+        }
+
+        return (new Response())
+            ->header('Content-Type', $mime)
+            ->header('Content-Length', (string) filesize($abs))
+            ->header('Content-Disposition', 'inline; filename="papier-' . (int) $doc['id'] . '-fond.' . strtolower(pathinfo($abs, PATHINFO_EXTENSION)) . '"')
             ->header('Cache-Control', 'private, no-store')
             ->header('X-Content-Type-Options', 'nosniff')
             ->header('Referrer-Policy', 'no-referrer')
@@ -670,7 +742,7 @@ final class SseFileRecordController
 
             return $this->ctx->back($request, self::BASE . '/photos');
         }
-        $abs = base_path('public/' . ltrim($stored['path'], '/'));
+        $abs = (string) \App\Support\SseImageStorage::readable((string) $stored['path']);
         $size = is_file($abs) ? @getimagesize($abs) : false;
         $kind = in_array($request->inputString('kind'), ['front', 'profile', 'field', 'document'], true) ? $request->inputString('kind') : 'field';
         $this->records()->addPhoto($tenantId, [

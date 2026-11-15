@@ -1,0 +1,13 @@
+# Rotation des journaux du bot Discord Athena (installé dans /etc/logrotate.d/ par install.sh).
+# Hebdomadaire, huit semaines, compressé. copytruncate : systemd garde le fichier ouvert, il ne faut donc pas le déplacer.
+/var/log/athena-discord-bot/*.log {
+    weekly
+    rotate 8
+    maxsize 50M
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    create 0640 athena-bot athena-bot
+}
