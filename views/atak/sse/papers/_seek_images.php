@@ -71,7 +71,7 @@ $seekKinds = ['front' => 'Face', 'profile' => 'Profil', 'field' => 'Terrain'];
                                     <?php foreach (($cap['notes'] ?? []) as $capNote): ?><br><span translate="no"><?= $h(\App\Support\SseCaptureNotes::label((string) $capMod) . ' : ' . $capNote) ?></span><?php endforeach; ?>
                                 <?php endforeach; ?>
                                 <?php $seekSig = trim((string) ($seek['signature_image'] ?? '')); ?>
-                                <?php if ($seekSig !== ''): ?><br><img src="<?= $h(url($seekSig)) ?>" alt="Signature tracée au SEEK II, fiche <?= $h($rec) ?>" loading="lazy" style="height:28px;background:#fff;border-radius:3px"><?php endif; ?>
+                                <?php if ($seekSig !== ''): ?><br><img src="<?= $h(\App\Support\SseImageStorage::inlineSrc($seekSig)) ?>" alt="Signature tracée au SEEK II, fiche <?= $h($rec) ?>" loading="lazy" style="height:28px;background:#fff;border-radius:3px"><?php endif; ?>
                             </figcaption>
                         </figure>
                         <?php if ($src !== ''): ?>

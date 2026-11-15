@@ -78,7 +78,7 @@ $photoMaxMb = \App\Services\Sse\SseIdImageService::maxMb('photo');
 $photoField = static function (array $i) use ($ph, $manage, $base, $csrfToken, $photoMaxMb): void {
     $iid = (int) $i['id'];
     $photo = (string) ($i['photo_path'] ?? '');
-    $photoUrl = $photo !== '' ? (preg_match('#^https?://#', $photo) === 1 ? $photo : url($photo)) : '';
+    $photoUrl = $photo !== '' ? (preg_match('#^https?://#', $photo) === 1 ? $photo : (\App\Support\SseImageStorage::isStoredPath($photo) ? (string) \App\Support\SseImageStorage::dataUri($photo) : url($photo))) : '';
     ?>
     <div class="idm-photo" id="papiers-photo-<?= $iid ?>">
         <span class="idm-photo__frame" data-photo-frame>

@@ -272,15 +272,15 @@ final class SignaturePadTest extends TestCase
         $res = $svc->fromDataUrl(self::url(self::inkPng()), 7, 'sse_identity');
         self::assertTrue($res['ok'], (string) ($res['error'] ?? ''));
         $path = (string) ($res['path'] ?? '');
-        self::assertMatchesRegularExpression('#^uploads/sse-id-signatures/7_[0-9a-f]{16}\.png$#', $path);
-        $file = $this->dir . '/' . $path;
+        self::assertMatchesRegularExpression('#^sse-private/sse-id-signatures/7_[0-9a-f]{16}\.png$#', $path);
+        $file = (string) \App\Support\SseImageStorage::absolute($path, $this->dir, $this->dir . '/.private-sse-images');
         self::assertTrue(is_file($file));
         $stored = (string) file_get_contents($file);
         self::assertSame('image/png', SseIdImageService::sniff($stored));
         self::assertStringNotContainsString('<?php', $stored);
         // même dossier, même format de nom que l'envoi de fichier
         $viaFile = $images->storeFile($file, 'signature', 7);
-        self::assertMatchesRegularExpression('#^uploads/sse-id-signatures/7_[0-9a-f]{16}\.png$#', (string) ($viaFile['path'] ?? ''));
+        self::assertMatchesRegularExpression('#^sse-private/sse-id-signatures/7_[0-9a-f]{16}\.png$#', (string) ($viaFile['path'] ?? ''));
         // deux envois : deux noms différents, jamais un nom fourni
         $again = $svc->fromDataUrl(self::url(self::inkPng()), 7, 'sse_identity');
         self::assertNotSame($path, $again['path'] ?? null);
@@ -292,7 +292,7 @@ final class SignaturePadTest extends TestCase
         self::assertFalse($svc->fromDataUrl(self::url(self::inkPng()), 7, 'autre')['ok']);
         self::assertFalse($svc->fromDataUrl(self::url(self::inkPng()), 0, 'sse_identity')['ok']);
         self::assertFalse($svc->fromDataUrl('data:image/png;base64,AAAA', 7, 'sse_identity')['ok']);
-        self::assertSame([], glob($this->dir . '/uploads/*/*') ?: []);
+        self::assertSame([], glob($this->dir . '/{uploads,.private-sse-images}/*/*', GLOB_BRACE) ?: []);
     }
 
     // ------------------------------------------------------------------ contrôleur : dessin ou fichier
@@ -313,7 +313,7 @@ final class SignaturePadTest extends TestCase
         $_FILES['signature'] = ['name' => 'evil.php', 'type' => 'image/png', 'tmp_name' => $this->dir . '/absent.png', 'error' => UPLOAD_ERR_OK, 'size' => 10];
         $res = $this->storeSignature();
         self::assertTrue($res['ok']);
-        self::assertMatchesRegularExpression('#^uploads/sse-id-signatures/7_[0-9a-f]{16}\.png$#', (string) $res['path']);
+        self::assertMatchesRegularExpression('#^sse-private/sse-id-signatures/7_[0-9a-f]{16}\.png$#', (string) $res['path']);
     }
 
     public function testControllerRefusesABadDrawingEvenWithAValidFile(): void

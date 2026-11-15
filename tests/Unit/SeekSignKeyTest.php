@@ -108,7 +108,7 @@ final class SeekSignKeyTest extends TestCase
         ]);
         $res = SseSignatureStrokes::store(self::signature(), 1, new SignatureImageService(new SseIdImageService($this->dir, false)));
         self::assertTrue($res['ok'], (string) ($res['error'] ?? ''));
-        self::assertFileExists($this->dir . '/' . $res['path']);
+        self::assertNotNull(\App\Support\SseImageStorage::absolute((string) $res['path'], $this->dir, $this->dir . '/.private-sse-images'));
 
         self::assertTrue($files->setSeekSignatureImage($stored['id'], 1, (string) $res['path']));
         $row = $files->findSeek($stored['id'], 1);

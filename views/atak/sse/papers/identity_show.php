@@ -68,7 +68,7 @@ $day = static function (?string $v) use ($dlang): string {
 };
 $age = SseFileSearchService::age($identity['birth_date'] ?? null, gmdate('Y-m-d'));
 $display = (string) ($identity['display_name'] ?? '');
-$photoUrl = ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null;
+$photoUrl = \App\Support\SseImageStorage::identityUrl($identity, 'photo');
 if ($photoUrl === null) {
     foreach ($filePhotos as $fp) {
         $photoUrl = (string) \App\Services\Sse\SseSeekPhotoService::photoUrl($fp);
@@ -111,8 +111,8 @@ $photoGallery = SseIdentityPhotoGallery::build(
     $filePhotos,
     is_array($seekImages ?? null) ? $seekImages : [],
     null,
-    ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null,
-    ($identity['signature_path'] ?? null) !== null ? (string) url((string) $identity['signature_path']) : null
+    \App\Support\SseImageStorage::identityUrl($identity, 'photo'),
+    \App\Support\SseImageStorage::identityUrl($identity, 'signature')
 );
 $photoCount = ($canSeeTruth || !$secret) ? $photoGallery['total'] : 0;
 $tabs = [
