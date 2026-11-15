@@ -27,7 +27,7 @@ final class SseSheetRepository
         $this->db = $db ?? Database::getInstance();
     }
 
-    /** Les trois tables existent-elles ? (étape 4660 pas encore passée : seul l'avis de recherche reste émettable) */
+    /** Les trois tables existent-elles ? (étape 4670 pas encore passée : seul l'avis de recherche reste émettable) */
     public static function ready(): bool
     {
         try {
