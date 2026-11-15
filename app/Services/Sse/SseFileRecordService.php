@@ -251,7 +251,7 @@ final class SseFileRecordService
         $list = [];
         foreach ($checks as $c) {
             $list[] = [
-                'kind' => 'check', 'label' => 'Contrôle d’identité', 'ref' => (string) $c['ref'], 'at' => (string) $c['created_at'],
+                'kind' => 'check', 'label' => 'Vérification d’identité sur le terrain', 'ref' => (string) $c['ref'], 'at' => (string) $c['created_at'],
                 'where' => (string) ($c['grid'] ?? ''), 'who' => (string) ($c['controller_callsign'] ?? ''), 'outcome' => (string) ($c['verdict_label'] ?? ''),
                 'game_time' => (string) ($c['game_time'] ?? ''),
             ];

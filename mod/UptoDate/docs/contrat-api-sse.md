@@ -27,7 +27,7 @@ Auth : même modèle que les autres endpoints ATAK Arma (`ComspecApiKeyAuth` + `
 | id_document_type, id_document_number | VARCHAR | nullable |
 | distinguishing_marks | TEXT | |
 | affiliation | VARCHAR | |
-| circumstances | VARCHAR(64) | contrôle, perquisition, reddition, autre |
+| circumstances | VARCHAR(64) | code de contexte d'acquisition (voir docs/sse-contextes-acquisition.md) : exploitation_site_sensible, raid_action_directe, point_controle_tactique, enrolement_biometrique, autre… Les anciens codes controle, perquisition, reddition restent acceptés tels quels. |
 | statements | TEXT | déclarations |
 | confidence_level | VARCHAR(32) | faible, moyenne, haute |
 | weapons_json | JSON | liste armement |
@@ -84,7 +84,7 @@ JSON body (clés techniques ; UI Arma = libellés métier) :
   "id_document_number": "",
   "distinguishing_marks": "",
   "affiliation": "",
-  "circumstances": "controle",
+  "circumstances": "exploitation_site_sensible",
   "statements": "",
   "confidence_level": "moyenne",
   "weapons": [{"name": "AK-74", "type": "rifle"}],

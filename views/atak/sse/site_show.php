@@ -24,7 +24,7 @@ $custodyLabels = [
     'MARKED' => 'Marqué',
     'COLLECTED' => 'Collecté',
     'PACKAGED' => 'Conditionné',
-    'SEALED' => 'Scellé',
+    'SEALED' => 'Sous chaîne de possession',
     'TRANSFERRED' => 'Transmis',
     'EXPLOITED' => 'Exploité',
 ];
@@ -150,7 +150,7 @@ foreach ($rooms as $r) {
             <span class="panel-index">03.03</span>
             Saisies versées
         </div>
-        <div class="panel-meta">Procès-verbal de saisie</div>
+        <div class="panel-meta">Rapport de collecte</div>
     </div>
 
     <?php if ($seizures === []): ?>
@@ -190,7 +190,7 @@ foreach ($rooms as $r) {
                                 <span class="record-sub"><?= $h($s['notes']) ?></span>
                             <?php endif; ?>
                             <?php if (!empty($s['seal_code'])): ?>
-                                <span class="record-sub">Scellé <?= $h($s['seal_code']) ?></span>
+                                <span class="record-sub">Étiquette <?= $h($s['seal_code']) ?></span>
                             <?php endif; ?>
                         </td>
                         <td class="record-id">×<?= (int) ($s['quantity'] ?? 1) ?></td>

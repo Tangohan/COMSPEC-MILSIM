@@ -813,4 +813,5 @@ return [
     'preparer_un_plan_sur_la_carte_le_briefer_par_phases_l_envoyer_en_jeu' => 'Prepare a plan on the map, brief it phase by phase, send it into the game',
     'console_du_poste_de_commandement' => 'Command post console',
     'preparer_et_envoyer_en_jeu' => 'Prepare and send into the game',
+    'fichiers_verifications_d_identite_seek_ii_et_telephones' => 'Records, identity verifications, SEEK II and phones',
 ];

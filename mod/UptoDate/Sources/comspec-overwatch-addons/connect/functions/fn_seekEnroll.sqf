@@ -41,9 +41,15 @@ if ((count _doc) > 0) then {
 if ((trim (ctrlText (_disp displayCtrl 9501))) isNotEqualTo "" || {(trim (ctrlText (_disp displayCtrl 9502))) isNotEqualTo ""}) then {
     uiNamespace setVariable ["COMSPEC_SeekUnknown", false];
 };
-// Circonstance par défaut : contrôle.
+// Contexte d'acquisition par défaut : enrôlement biométrique (BATS / SEEK).
 private _circ = _disp displayCtrl 9506;
-if (!isNull _circ && {(lbCurSel _circ) < 0}) then { _circ lbSetCurSel 0; };
+if (!isNull _circ) then {
+    private _enrolIdx = 0;
+    for "_i" from 0 to ((lbSize _circ) - 1) do {
+        if ((_circ lbData _i) isEqualTo "enrolement_biometrique") exitWith { _enrolIdx = _i; };
+    };
+    if ((lbCurSel _circ) < 0 || {(lbCurSel _circ) == 0}) then { _circ lbSetCurSel _enrolIdx; };
+};
 uiNamespace setVariable ["COMSPEC_SsePerson_IdentityCache", [
     trim (ctrlText (_disp displayCtrl 9501)), trim (ctrlText (_disp displayCtrl 9502)), trim (ctrlText (_disp displayCtrl 9503)),
     trim (ctrlText (_disp displayCtrl 9504)), trim (ctrlText (_disp displayCtrl 9507)), trim (ctrlText (_disp displayCtrl 9508))
