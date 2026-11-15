@@ -321,7 +321,7 @@ switch (_act) do {
             private _still = _why isEqualTo "" && {((["link", [_old select 1, (_old select 4) * 1.2, _old select 5, _eye]] call comspec_atak_native_fnc_relayNet) select 1) > 0};
             if (!_still) then {
                 private _msg = if (_why isNotEqualTo "") then { format ["Relais perdu : %1 (%2)", _lastN, _why] } else { format ["Hors de portée : %1", _lastN] };
-                _msg = _msg + ([[", liaison dégradée", ", plus aucun réseau"] select (["only"] call comspec_atak_native_fnc_relayNet), format [", bascule sur %1", _best select 1]] select (_best isNotEqualTo []));
+                _msg = _msg + ([[", liaison dégradée", ", plus aucun réseau"] select (["only"] call comspec_atak_native_fnc_relayNet), format [", bascule sur %1", _best param [1, ""]]] select (_best isNotEqualTo []));
                 if !([_msg, 4] call comspec_atak_native_fnc_toast) then { ["WARNING", _msg, 4, 30] call comspec_atak_native_fnc_notify; };
             };
         };
