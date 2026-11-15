@@ -6,8 +6,8 @@
  * Textes en français (traduits par le dictionnaire du site : chaque texte est une phrase entière ou un modèle « … %1 … »). */
 window.TocManage = (function () {
   'use strict';
-  var KIND = { marker: 'Marqueur', form: 'Forme', route: 'Route', zone: 'Zone', ping: 'Ping', track: 'Piste' };
-  var KIND_PLURAL = { marker: 'Marqueurs', form: 'Formes', route: 'Routes', zone: 'Zones', ping: 'Pings', track: 'Pistes muettes' };
+  var KIND = { marker: 'Marqueur', form: 'Forme dessinée', route: 'Route tracée', zone: 'Zone tracée', ping: 'Ping', track: 'Piste muette' };
+  var KIND_PLURAL = { marker: 'Marqueurs', form: 'Formes dessinées', route: 'Routes tracées', zone: 'Zones tracées', ping: 'Pings', track: 'Pistes muettes' };
   var PURGE_TYPES = ['marker', 'form', 'route', 'zone', 'ping', 'track'];
   var ERR = {
     csrf: 'Session expirée : rechargez la page.', rate_limited: 'Trop d’actions d’affilée : attendez quelques secondes.', forbidden: 'Vous n’avez pas le droit de faire cela.',
@@ -113,6 +113,7 @@ window.TocManage = (function () {
       renderHighlights();
       var n = count();
       el.selbar.hidden = n === 0 || !!draw;
+      el.panel.classList.toggle('has-sel', n > 0);
       if (n) {
         var pinned = selected().filter(function (e) { return e.pinned; }).length;
         el.selCount.innerHTML = '<b>' + n + '</b> <span>' + (n === 1 ? 'élément sélectionné' : 'éléments sélectionnés') + '</span>' + (pinned ? ' <span class="toc-selbar-pin">' + pl(pinned, 'dont %1 permanent', 'dont %1 permanents') + '</span>' : '');
@@ -387,6 +388,8 @@ window.TocManage = (function () {
     }
     function openPanel(on) {
       el.panel.hidden = !on;
+      // Écrans étroits : la feuille plein écran passe au-dessus du panneau de l'onglet (voir atak-toc-manage.css).
+      document.documentElement.classList.toggle('toc-manage-open', !!on);
       el.btn.setAttribute('aria-expanded', String(on));
       el.btn.classList.toggle('is-on', on);
       if (on) { refresh(); loadTrash(); if (opts.closeLayers) opts.closeLayers(); }
@@ -551,6 +554,8 @@ window.TocManage = (function () {
     }
     function progressView() {
       var j = P.job;
+      el.dlg.classList.remove('is-wide');
+      el.dlgBody.className = 'toc-dlg-box';
       var running = j.status === 'archiving' || j.status === 'deleting';
       var title = running ? 'Purge en cours' : (j.status === 'done' ? 'Purge terminée' : (j.status === 'cancelled' ? 'Purge interrompue' : 'Purge arrêtée'));
       var desc = running ? 'Les lots de 500 éléments se suivent : vous pouvez fermer cette fenêtre, la purge se reprend depuis le bouton Purger.' : (j.status === 'done' ? 'La carte a été purgée. Marqueurs et tracés restent 15 minutes dans la corbeille.' : (j.status === 'failed' ? (ERR[j.error] || 'La purge s’est arrêtée.') : 'Ce qui a déjà été supprimé reste dans la corbeille pendant 15 minutes.'));
@@ -758,6 +763,7 @@ window.TocManage = (function () {
         el.container.classList.remove('is-selecting');
         el.selbar.hidden = true;
         el.panel.hidden = true;
+        document.documentElement.classList.remove('toc-manage-open');
       }
     };
   }

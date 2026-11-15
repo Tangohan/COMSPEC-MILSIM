@@ -90,7 +90,7 @@ $tocKeys = [
             <div class="toc-manage-filters">
               <label class="toc-sr" for="toc-mg-type">Type d’élément</label>
               <select id="toc-mg-type" class="toc-select" data-mg-filter="type">
-                <option value="">Tous les types</option><option value="marker">Marqueurs</option><option value="form">Formes</option><option value="route">Routes</option><option value="zone">Zones</option>
+                <option value="">Tous les types</option><option value="marker">Marqueurs</option><option value="form">Formes dessinées</option><option value="route">Routes tracées</option><option value="zone">Zones tracées</option>
               </select>
               <label class="toc-sr" for="toc-mg-q">Chercher un élément</label>
               <input id="toc-mg-q" class="toc-input" type="search" data-mg-filter="q" placeholder="Nom, auteur…" autocomplete="off">
