@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Sse;
 
+use App\Support\SseImageStorage;
+
 /**
  * Images des papiers fictifs (COMSPEC IDENTITY) : photo du titulaire, signature, drapeau ou emblème d'un pays,
  * image de fond d'un gabarit personnalisé.
@@ -13,16 +15,19 @@ namespace App\Services\Sse;
  * commentaires) sont toujours retirées : l'image est réencodée par GD (et réduite, la photo recadrée au format
  * 35×45 si besoin) ; sans GD, les blocs de métadonnées sont retirés du fichier d'origine (repli, sans réduction).
  *
- * Rangement : public/uploads/<dossier>/<tenant>_<aléa>.<ext> (nom imprévisible, préfixé par la communauté).
+ * Rangement : HORS du dossier public, storage/private/sse-images/<dossier>/<tenant>_<aléa>.<ext> (nom imprévisible,
+ * préfixé par la communauté), chemin gardé « sse-private/<dossier>/<fichier> » (App\Support\SseImageStorage), servi
+ * seulement par les routes contrôlées du portail SSE. Seuls les drapeaux de pays (publics par nature) restent sous
+ * public/uploads/sse-flags.
  */
 final class SseIdImageService
 {
-    /** Usage => [dossier, taille max en octets, plus grand côté en pixels, format de sortie GD]. */
+    /** Usage => [dossier, taille max en octets, plus grand côté en pixels, format de sortie GD, rangé dans l'espace privé]. */
     public const KINDS = [
-        'photo' => ['sse-id-photos', 4 * 1024 * 1024, 1200, 'jpg'],
-        'signature' => ['sse-id-signatures', 1024 * 1024, 900, 'png'],
-        'flag' => ['sse-flags', 1024 * 1024, 800, 'png'],
-        'background' => ['sse-id-backgrounds', 3 * 1024 * 1024, 1600, 'jpg'],
+        'photo' => ['sse-id-photos', 4 * 1024 * 1024, 1200, 'jpg', true],
+        'signature' => ['sse-id-signatures', 1024 * 1024, 900, 'png', true],
+        'flag' => ['sse-flags', 1024 * 1024, 800, 'png', false],
+        'background' => ['sse-id-backgrounds', 3 * 1024 * 1024, 1600, 'jpg', true],
     ];
 
     /** Rapport largeur / hauteur de la photo d'identité (35 × 45 mm) ; le carré est aussi accepté. */
@@ -30,9 +35,16 @@ final class SseIdImageService
 
     private const EXT = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'];
 
-    public function __construct(private ?string $publicDir = null, private ?bool $useGd = null)
+    /**
+     * @param string|null $publicDir  racine publique (drapeaux seulement) ; tests : dossier temporaire
+     * @param string|null $privateDir espace privé des images sensibles ; sans lui, un dossier voisin de $publicDir si celui-ci est
+     *                                donné (jamais le vrai storage/ pendant un test), sinon storage/private/sse-images
+     */
+    public function __construct(private ?string $publicDir = null, private ?bool $useGd = null, private ?string $privateDir = null)
     {
+        $this->privateDir ??= $this->publicDir !== null ? rtrim($this->publicDir, '/\\') . DIRECTORY_SEPARATOR . '.private-sse-images' : null;
         $this->publicDir ??= base_path('public');
+        $this->privateDir = SseImageStorage::privateRoot($this->privateDir);
         $this->useGd ??= function_exists('imagecreatefromstring');
     }
 
@@ -90,7 +102,7 @@ final class SseIdImageService
         if (!isset(self::KINDS[$kind]) || $tenantId <= 0) {
             return ['ok' => false, 'error' => 'Image refusée.'];
         }
-        [$folder, $maxBytes, $maxSide, $outFormat] = self::KINDS[$kind];
+        [$folder, $maxBytes, $maxSide, $outFormat, $private] = self::KINDS[$kind];
         if ($bytes === '' || strlen($bytes) > $maxBytes) {
             return ['ok' => false, 'error' => self::sizeError($kind)];
         }
@@ -110,16 +122,18 @@ final class SseIdImageService
             $out = [$clean, self::EXT[$mime]];
         }
         [$data, $ext] = $out;
-        $dir = rtrim((string) $this->publicDir, '/\\') . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $folder;
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+        $name = $tenantId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $dir = $private
+            ? (string) $this->privateDir . DIRECTORY_SEPARATOR . $folder
+            : rtrim((string) $this->publicDir, '/\\') . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $folder;
+        if (!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)) {
             return ['ok' => false, 'error' => 'Enregistrement de l’image impossible.'];
         }
-        $name = $tenantId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
         if (@file_put_contents($dir . DIRECTORY_SEPARATOR . $name, $data) === false) {
             return ['ok' => false, 'error' => 'Enregistrement de l’image impossible.'];
         }
 
-        return ['ok' => true, 'path' => 'uploads/' . $folder . '/' . $name];
+        return ['ok' => true, 'path' => $private ? SseImageStorage::privatePath($folder, $name) : 'uploads/' . $folder . '/' . $name];
     }
 
     /** Vrai type d'image lu dans les premiers octets (finfo s'il est présent, sinon signature du format). */

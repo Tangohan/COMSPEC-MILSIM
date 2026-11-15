@@ -36,6 +36,12 @@ final class SseIdImageServiceTest extends TestCase
         rmdir($this->dir);
     }
 
+    /** Fichier rangé par le service : espace privé (images sensibles) ou dossier public (drapeaux). */
+    private function abs(string $path): string
+    {
+        return (string) \App\Support\SseImageStorage::absolute($path, $this->dir, $this->dir . '/.private-sse-images');
+    }
+
     private function file(string $bytes): string
     {
         $p = $this->dir . DIRECTORY_SEPARATOR . bin2hex(random_bytes(4)) . '.bin';
@@ -80,7 +86,7 @@ final class SseIdImageServiceTest extends TestCase
         self::assertFalse($svc->storeFile($this->file(self::pngWithText()), 'script', 1)['ok'], 'usage inconnu');
         self::assertSame(['ok' => false, 'none' => true], $svc->storeUpload(null, 'photo', 1));
         self::assertFalse($svc->storeUpload(['error' => UPLOAD_ERR_OK, 'tmp_name' => $this->file(self::pngWithText()), 'size' => 10], 'photo', 1)['ok'], 'fichier non téléversé refusé');
-        self::assertSame([], glob($this->dir . '/uploads/*/*') ?: []);
+        self::assertSame([], glob($this->dir . '/{uploads,.private-sse-images}/*/*', GLOB_BRACE) ?: []);
     }
 
     public function testFallbackWithoutGdStripsExifAndTextMetadataPerTenant(): void
@@ -88,8 +94,8 @@ final class SseIdImageServiceTest extends TestCase
         $svc = new SseIdImageService($this->dir, false);
         $res = $svc->storeFile($this->file(self::jpegWithExif()), 'photo', 7);
         self::assertTrue($res['ok'], (string) ($res['error'] ?? ''));
-        self::assertMatchesRegularExpression('#^uploads/sse-id-photos/7_[a-f0-9]{16}\.jpg$#', (string) $res['path']);
-        $out = (string) file_get_contents($this->dir . '/' . $res['path']);
+        self::assertMatchesRegularExpression('#^sse-private/sse-id-photos/7_[a-f0-9]{16}\.jpg$#', (string) $res['path']);
+        $out = (string) file_get_contents($this->abs((string) $res['path']));
         self::assertStringNotContainsString('Exif', $out);
         self::assertStringNotContainsString('SECRET-POSITION', $out);
         self::assertStringStartsWith("\xFF\xD8\xFF\xE0", $out, 'JFIF gardé');
@@ -97,10 +103,10 @@ final class SseIdImageServiceTest extends TestCase
 
         $png = $svc->storeFile($this->file(self::pngWithText()), 'signature', 7);
         self::assertTrue($png['ok']);
-        $out = (string) file_get_contents($this->dir . '/' . $png['path']);
+        $out = (string) file_get_contents($this->abs((string) $png['path']));
         self::assertStringNotContainsString('SECRET-AUTHOR', $out);
         self::assertStringContainsString('IDAT', $out);
-        self::assertStringStartsWith('uploads/sse-id-signatures/7_', (string) $png['path']);
+        self::assertStringStartsWith('sse-private/sse-id-signatures/7_', (string) $png['path']);
 
         $webp = 'RIFF' . pack('V', 4 + 18 + 18 + 14) . 'WEBP'
             . 'VP8X' . pack('V', 10) . "\x0C" . str_repeat("\0", 9)
@@ -129,7 +135,7 @@ final class SseIdImageServiceTest extends TestCase
 
         $res = (new SseIdImageService($this->dir, true))->storeFile($this->file($jpeg), 'photo', 3);
         self::assertTrue($res['ok'], (string) ($res['error'] ?? ''));
-        $out = (string) file_get_contents($this->dir . '/' . $res['path']);
+        $out = (string) file_get_contents($this->abs((string) $res['path']));
         self::assertStringNotContainsString('SECRET-POSITION', $out);
         self::assertStringNotContainsString('Exif', $out);
         $size = getimagesizefromstring($out);
@@ -143,7 +149,7 @@ final class SseIdImageServiceTest extends TestCase
         imagedestroy($wide);
         $bg = (new SseIdImageService($this->dir, true))->storeFile($this->file($png), 'background', 3);
         self::assertTrue($bg['ok']);
-        $size = getimagesizefromstring((string) file_get_contents($this->dir . '/' . $bg['path']));
+        $size = getimagesizefromstring((string) file_get_contents($this->abs((string) $bg['path'])));
         self::assertSame([1600, 533], [$size[0], $size[1]], 'fond réduit, pas recadré');
     }
 
@@ -160,28 +166,29 @@ final class SseIdImageServiceTest extends TestCase
             $res = $svc->save(1, [
                 'last_name' => 'Marek', 'first_name' => 'Ana', 'sex' => 'F', 'birth_date' => '1991-02-03', 'nationality' => 'ALT',
                 'doc_type' => 'id_card', 'country_code' => 'ALT', 'doc_number' => '', 'layout' => 'custom',
-            ], null, null, false, 3, 'uploads/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg');
+            ], null, null, false, 3, 'sse-private/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg');
             self::assertTrue($res['ok'], (string) ($res['error'] ?? ''));
             $docs = new SseIdDocumentRepository();
             $ids = new SseIdentityRepository();
             $doc = (array) $docs->find((int) $res['id'], 1);
             self::assertSame('custom', $doc['layout']);
             $iid = (int) $doc['identity_id'];
-            self::assertFalse($ids->setImages($iid, 2, ['signature_path' => 'uploads/sse-id-signatures/2_x.png']), 'autre communauté');
-            self::assertFalse($docs->setBackground((int) $doc['id'], 2, 'uploads/sse-id-backgrounds/2_x.jpg'), 'autre communauté');
-            self::assertTrue($ids->setImages($iid, 1, ['signature_path' => 'uploads/sse-id-signatures/1_bbbbbbbbbbbbbbbb.png']));
-            self::assertTrue($docs->setBackground((int) $doc['id'], 1, 'uploads/sse-id-backgrounds/1_cccccccccccccccc.jpg'));
+            self::assertFalse($ids->setImages($iid, 2, ['signature_path' => 'sse-private/sse-id-signatures/2_x.png']), 'autre communauté');
+            self::assertFalse($docs->setBackground((int) $doc['id'], 2, 'sse-private/sse-id-backgrounds/2_x.jpg'), 'autre communauté');
+            self::assertTrue($ids->setImages($iid, 1, ['signature_path' => 'sse-private/sse-id-signatures/1_bbbbbbbbbbbbbbbb.png']));
+            self::assertTrue($docs->setBackground((int) $doc['id'], 1, 'sse-private/sse-id-backgrounds/1_cccccccccccccccc.jpg'));
             $identity = (array) $ids->find($iid, 1);
-            self::assertSame('uploads/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg', $identity['photo_path'], 'signature sans toucher à la photo');
-            self::assertSame('uploads/sse-id-signatures/1_bbbbbbbbbbbbbbbb.png', $identity['signature_path']);
+            self::assertSame('sse-private/sse-id-photos/1_aaaaaaaaaaaaaaaa.jpg', $identity['photo_path'], 'signature sans toucher à la photo');
+            self::assertSame('sse-private/sse-id-signatures/1_bbbbbbbbbbbbbbbb.png', $identity['signature_path']);
             $doc = (array) $docs->find((int) $doc['id'], 1);
             $copy = (array) $docs->find((int) $svc->duplicate(1, $doc, 3), 1);
             self::assertSame($doc['background_path'], $copy['background_path'], 'la copie garde le fond');
 
             $preview = SseIdWorkshopService::previewModel($doc, $identity, null, 'standard');
-            self::assertStringContainsString('1_aaaaaaaaaaaaaaaa.jpg', (string) $preview['identity']['photo_url']);
-            self::assertStringContainsString('1_bbbbbbbbbbbbbbbb.png', (string) $preview['identity']['signature_url']);
-            self::assertStringContainsString('1_cccccccccccccccc.jpg', (string) $preview['background_url']);
+            self::assertStringContainsString('/atak/sse/fichiers/identites/' . $iid . '/photo', (string) $preview['identity']['photo_url'], 'route protégée, jamais le fichier');
+            self::assertStringNotContainsString('1_aaaaaaaaaaaaaaaa', (string) $preview['identity']['photo_url']);
+            self::assertStringContainsString('/atak/sse/fichiers/identites/' . $iid . '/signature', (string) $preview['identity']['signature_url']);
+            self::assertStringContainsString('/atak/sse/fichiers/documents/' . (int) $doc['id'] . '/fond', (string) $preview['background_url']);
             $html = (static function (array $preview): string {
                 ob_start();
                 require dirname(__DIR__, 2) . '/views/atak/sse/papers/_doc_preview.php';

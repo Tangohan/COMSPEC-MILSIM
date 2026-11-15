@@ -833,7 +833,7 @@ final class SsePersonRepository
     /** Range le PNG de la signature tracée au SEEK II (chemin relatif à public/, choisi par le serveur). */
     public function setSignatureImage(int $id, int $tenantId, string $path): bool
     {
-        if ($id <= 0 || $tenantId <= 0 || !preg_match('#^uploads/sse-id-signatures/[A-Za-z0-9_]+\.png$#', $path)) {
+        if ($id <= 0 || $tenantId <= 0 || !preg_match('#^(?:uploads|sse-private)/sse-id-signatures/[A-Za-z0-9_]+\.png$#', $path)) {
             return false;
         }
         try {

@@ -414,7 +414,7 @@ final class SseFileRepository
     /** Signature tracée au SEEK II par le contrôleur (chemin choisi par le serveur sous uploads/sse-id-signatures). */
     public function setSeekSignatureImage(int $id, int $tenantId, string $path): bool
     {
-        if ($id <= 0 || $tenantId <= 0 || preg_match('#^uploads/sse-id-signatures/[A-Za-z0-9_]+\.png$#', $path) !== 1) {
+        if ($id <= 0 || $tenantId <= 0 || preg_match('#^(?:uploads|sse-private)/sse-id-signatures/[A-Za-z0-9_]+\.png$#', $path) !== 1) {
             return false;
         }
         try {
