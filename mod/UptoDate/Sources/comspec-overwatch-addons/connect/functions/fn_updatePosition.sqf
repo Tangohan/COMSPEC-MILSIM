@@ -28,6 +28,8 @@ private _fnc_skip = {
     private _last = missionNamespace getVariable ["COMSPEC_PosSkipLogAt", -1e9];
     private _lastReason = missionNamespace getVariable ["COMSPEC_PosSkipReason", ""];
     if ((_now - _last) < 15 && {_reason isEqualTo _lastReason}) exitWith {};
+    // Pause d'API (refus, compte non lié) : une ligne au début, pas une toutes les 15 s tant qu'elle dure.
+    if (_reason isEqualTo "api_backoff" && {_lastReason isEqualTo "api_backoff"}) exitWith {};
     missionNamespace setVariable ["COMSPEC_PosSkipLogAt", _now, false];
     missionNamespace setVariable ["COMSPEC_PosSkipReason", _reason, false];
     diag_log format ["[COMSPEC] UpdatePosition skip: %1 (state=%2)", _reason, getClientStateNumber];
@@ -64,6 +66,8 @@ private _backoffUntil = missionNamespace getVariable ["COMSPEC_ApiBackoffUntil",
 if (!_force && {diag_tickTime < _backoffUntil}) exitWith {
     ["api_backoff"] call _fnc_skip;
 };
+// Pause finie : le prochain frein sera de nouveau signalé une fois.
+if ((missionNamespace getVariable ["COMSPEC_PosSkipReason", ""]) isEqualTo "api_backoff") then { missionNamespace setVariable ["COMSPEC_PosSkipReason", "", false]; };
 
 // Joueur sans tablette, suivi téléphone Zeus : même filtrage de données que les IA.
 if (

@@ -52,6 +52,7 @@ if (_remain > 0) exitWith {
 missionNamespace setVariable ["COMSPEC_ForceSyncAt", _now, false];
 
 // Lever freins API (sinon une sync « coincée » reste bloquée même en Resynch forcé).
+["clear"] call comspec_overwatch_connect_fnc_linkGate;
 missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
 missionNamespace setVariable ["COMSPEC_SendBackoffSec", 0, false];
 missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];

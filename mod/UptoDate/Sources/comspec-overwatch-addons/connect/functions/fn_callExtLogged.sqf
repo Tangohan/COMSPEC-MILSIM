@@ -41,7 +41,14 @@ if (_label isEqualTo "") then { _label = _cmd; };
 // l'extension serait appelée quand même.
 private _mustQueue = false;
 private _queueReason = "offline";
-if (_queueable) then {
+// Compte refusé ou non lié (fn_linkGate) : rien ne part, sans bruit au journal. Ce qu'un humain a rédigé reste en file.
+private _gated = !isNil "comspec_overwatch_connect_fnc_linkGate" && {["blocks", _cmd] call comspec_overwatch_connect_fnc_linkGate};
+if (_gated && {!_queueable}) exitWith { [false, "HELD", "link_gate"] };
+if (_gated) then {
+    _mustQueue = true;
+    _queueReason = "link_gate";
+};
+if (_queueable && {!_gated}) then {
     private _link = [false] call comspec_overwatch_connect_fnc_canTransmit;
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])
         || { !(_link getOrDefault ["can_transmit", true]) }) then {

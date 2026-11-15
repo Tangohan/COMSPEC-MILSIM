@@ -66,6 +66,8 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
         missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
         missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
+        // Session ouverte (compte lié) : reprise immédiate des envois retenus par le frein partagé (fn_linkGate).
+        if ((missionNamespace getVariable ["comspec_overwatch_auth_state", ""]) isEqualTo "READY") then { ["clear"] call comspec_overwatch_connect_fnc_linkGate; };
         private _label = [_uri] call comspec_overwatch_connect_fnc_portalLabel;
         [format ["[Athena] Connecte a %1", _label], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         // Pas de bandeau / chat pendant le handshake au démarrage (1 message max ailleurs)
@@ -88,7 +90,7 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_LinkDetail", _msg, false];
         ["WARN", "Athena", format ["Extension Error: %1", _msg]] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] %1", _msg], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_LinkNotifAt", -1e9])) >= 30) then {
+        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_LinkNotifAt", -1e9])) >= 30 && {!(["active"] call comspec_overwatch_connect_fnc_linkGate)}) then {
             missionNamespace setVariable ["COMSPEC_LinkNotifAt", diag_tickTime, false];
             ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
         };
@@ -98,13 +100,17 @@ switch (_function) do {
         private _sec = parseNumber _data;
         if (!(_sec isEqualType 0) || {_sec < 10}) then { _sec = 45; };
         if (_sec > 600) then { _sec = 600; };
-        missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _sec, false];
-        missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + _sec, false];
-        if (_sec >= 45) then {
+        // Pause partagée par tous les canaux, doublée à chaque refus (fn_linkGate) ; au moins le délai demandé par la DLL.
+        // Une ligne de journal par changement d'état, pas une par refus.
+        if (["deny", "accès refusé"] call comspec_overwatch_connect_fnc_linkGate) then {
+            ["[Athena] Accès refusé — envois en pause", "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+        };
+        if (_sec > (missionNamespace getVariable ["COMSPEC_LinkGateStep", 60])) then {
+            missionNamespace setVariable ["COMSPEC_LinkGateUntil", diag_tickTime + _sec, false];
+            missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + _sec, false];
+            missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + _sec, false];
             missionNamespace setVariable ["COMSPEC_SendBackoffSec", _sec, false];
         };
-        ["WARN", "Athena", format ["Accès refusé — pause %1 s, nouvelle tentative ensuite", round _sec]] call comspec_overwatch_connect_fnc_log;
-        [format ["[Athena] Accès refusé — pause %1 s", round _sec], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
     };
     case "AuthInvalidated": {
         // La DLL a confirmé le 401 par un nouvel appel client-init : ce n'est pas
@@ -150,20 +156,27 @@ switch (_function) do {
         };
         missionNamespace setVariable ["COMSPEC_LinkDetail", [_permDetail, "Session Athena refusée — reconnectez-vous"] select (_permDetail isEqualTo ""), false];
         // Pause courte : un appairage juste après doit pouvoir rouvrir le canal.
-        missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", diag_tickTime + 45, false];
-        missionNamespace setVariable ["COMSPEC_VideoFeedsBackoffUntil", diag_tickTime + 45, false];
+        // Pause partagée par tous les canaux, doublée à chaque nouveau refus (fn_linkGate), reprise dès la liaison.
+        private _newState = ["deny", [_permDetail, "session refusée"] select (_permDetail isEqualTo "")] call comspec_overwatch_connect_fnc_linkGate;
         // Ne pas remettre SyncLoopsStarted à false : les PFH restent (gate AthenaReady)
         // et reopenTransmitChannel évite ainsi d’empiler une 2ᵉ série de boucles.
-        ["ERROR", "Athena", "Session refusée par le poste — transmissions arrêtées", _data] call comspec_overwatch_connect_fnc_log;
-        ["[Athena] Session expirée ou compte non lié. Reconnectez-vous avant de transmettre.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
+        // Une ligne de journal et une annonce dans le téléphone par changement d'état, pas une par refus.
+        if (_newState) then {
+            ["ERROR", "Athena", "Session refusée par le poste — transmissions arrêtées", _data] call comspec_overwatch_connect_fnc_log;
+            ["[Athena] Session expirée ou compte non lié. Reconnectez-vous avant de transmettre.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
+        };
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
         ["COMSPEC_AthenaLinkChanged", ["offline"]] call CBA_fnc_localEvent;
         if (_permDetail isNotEqualTo "") exitWith {
             [format ["[Athena] Refus d'Athena (%1) : plus d'envoi jusqu'à une nouvelle liaison ou Reconnecter Athena.", _permDetail], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         };
-        // Cause inconnue : après la pause, retenter l’ouverture du canal (souvent un 401 précoce).
+        // Cause inconnue : à la fin de la pause (60 s, puis de plus en plus longue), retenter l’ouverture du canal (souvent un 401 précoce).
+        // Un seul essai planifié à la fois : un refus de plus pendant la pause n'en ajoute pas.
+        if (missionNamespace getVariable ["COMSPEC_LinkGateRetryPlanned", false]) exitWith {};
+        missionNamespace setVariable ["COMSPEC_LinkGateRetryPlanned", true, false];
         [{
+            missionNamespace setVariable ["COMSPEC_LinkGateRetryPlanned", false, false];
             if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith {};
             if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
                 private _ok = [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
@@ -171,7 +184,7 @@ switch (_function) do {
                     ["INFO", "Athena", "Canal poste rouvert après refus temporaire"] call comspec_overwatch_connect_fnc_log;
                 };
             };
-        }, [], 48] call CBA_fnc_waitAndExecute;
+        }, [], ((["left"] call comspec_overwatch_connect_fnc_linkGate) + 1) max 5] call CBA_fnc_waitAndExecute;
     };
     case "RateLimited": {
         // La DLL envoie la pause (Retry-After). Repli : backoff exponentiel.
