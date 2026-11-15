@@ -72,6 +72,8 @@ foreach ($rooms as $r) {
     </div>
 </div>
 
+<?php \App\Services\Sse\Links\SseLinksWidget::render('site', (int) ($site['id'] ?? 0)); ?>
+
 <div class="metrics-grid">
     <div class="metric">
         <div class="metric-label">Pièces fouillées</div>

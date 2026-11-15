@@ -22,7 +22,7 @@ window.TocLayers = (function () {
     { id: 'camp', label: 'Plan du camp (app Plan, PC du poste)', source: 'jeu', every: 10, on: true },
     { id: 'zones', label: 'Zones (battleplan)', source: 'jeu + web', every: 15, on: true },
     { id: 'relays', label: 'Relais et couverture réseau', source: 'jeu', every: 30, on: false },
-    { id: 'reports', label: 'Comptes rendus géolocalisés', source: 'jeu', every: 10, on: true },
+    { id: 'reports', label: 'Rapports : BDA, comptes rendus, SITREP, 9-line', source: 'jeu', every: 10, on: true },
     { id: 'photos', label: 'Photos géolocalisées', source: 'jeu', every: 30, on: false },
     { id: 'requests', label: 'Demandes du poste (MEDEVAC, feux, ravitaillement)', source: 'jeu + web', every: 0, on: true },
     { id: 'orders', label: 'Ordres avec point', source: 'web', every: 15, on: false },
@@ -571,7 +571,31 @@ window.TocLayers = (function () {
         mark('relays', items);
       }).catch(function () { fail('relays'); });
     }
+    /** Poste TOC web : les épingles viennent du panneau Rapports (mêmes rapports, même lu / non lu) ; un clic ouvre la fiche. */
+    function pinReports(list) {
+      var items = [];
+      feedItems = [];
+      list.forEach(function (r) {
+        feedItems.push({ id: r.key, t: r.t, kind: r.type_label, who: r.who, pos: r.pos, text: r.summary || r.title, prio: r.priority });
+        var p = r.pos;
+        if (!p) return;
+        var col = r.rank >= 3 ? '#ff5f56' : (r.rank === 2 ? '#f5b841' : (r.rank === 1 ? '#62b0f5' : '#98a4ae'));
+        var lines = [esc(r.summary || r.title), '<span class="mono">' + r.t + 'Z · ' + esc(r.grid || G.grid(p[0], p[1], 8)) + '</span>', '<span>' + esc(r.priority_label) + '</span> · ' + esc(r.status_label)];
+        var title = r.type_label + ' · ' + r.who;
+        items.push({ pts: [p], side: '', ts: r.at, title: title, lines: lines, feat: {
+          id: 'rp' + r.key, kind: 'marker', pos: p, symbol: iconSymbol(r.icon || 'report', col, 26), title: r.family === 'bda' && r.result ? r.result.label : r.type, sub: [], badge: (r.read ? '' : '● ') + r.t, tone: 'live', color: col, prio: PRIO.reports + (r.read ? 0 : 20), labelMax: 14, data: { type: 'report', id: r.id, key: r.key },
+          tip: function () { return popup(title, lines); }
+        } });
+      });
+      mark('reports', items);
+      if (opts.onData) opts.onData('reports');
+    }
     function loadReports() {
+      var feed = opts.reportsFeed ? opts.reportsFeed() : undefined;
+      if (feed !== undefined) {
+        if (feed !== null) pinReports(feed);
+        return Promise.resolve();
+      }
       return get('/api/atak/reports?mapId=' + opts.mapId + '&limit=80', 'reports').then(function (j) {
         if (j === null) { touched(['reports']); return; }
         var items = [];

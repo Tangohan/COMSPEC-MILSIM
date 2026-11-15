@@ -61,6 +61,8 @@ _rec set ["sending", true];
             private _p = _raw splitString "|";
             _rec set ["ref", _p param [2, _p param [1, ""]]];
             _ok = true;
+            // Avis de recherche de la personne (le site la reconnaît par le contrôle) : « RECHERCHÉ » même sans l'avis dans le paquet du poste.
+            [_rec, _p param [1, ""]] call comspec_sse_fnc_idWantedCheck;
         };
     };
     _rec set ["sending", false];

@@ -6,6 +6,8 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\SilentSchemaMigration;
+use App\Support\SseSignalIdentity;
+use App\Support\SseSignalSchema;
 
 /**
  * File de rapprochements / signaux produits par le moteur SSE.
@@ -43,6 +45,17 @@ final class SseSuggestionQueueRepository
         'reopen_suggest' => 'Réouverture suggérée',
     ];
 
+    /** Statuts d'un signal : seuls les « open » sont montrés et comptés ; les autres gardent l'historique. */
+    public const SIGNAL_STATUSES = [
+        'open' => 'Ouvert',
+        'dormant' => 'En veille',
+        'resolved' => 'Résolu',
+        'merged' => 'Fusionné',
+    ];
+
+    /** Auteur des clôtures automatiques du passage nocturne (affiché « Cerbère-Détection »). */
+    public const AUTO_RESOLVER = 'cerbere-detection';
+
     public const SIGNAL_TYPES = [
         'anomaly' => 'Anomalie',
         'completeness' => 'Complétude',
@@ -56,10 +69,16 @@ final class SseSuggestionQueueRepository
         'classification' => 'Classification',
     ];
 
-    public function __construct(private ?Database $db = null)
+    /** @param (\Closure(): string)|null $clock « Y-m-d H:i:s » en UTC (tests) */
+    public function __construct(private ?Database $db = null, private ?\Closure $clock = null)
     {
         $this->db ??= Database::getInstance();
         SilentSchemaMigration::run(base_path('bootstrap/atak_sse_engine_migration.php'));
+    }
+
+    private function now(): string
+    {
+        return $this->clock !== null ? (string) ($this->clock)() : gmdate('Y-m-d H:i:s');
     }
 
     /**
@@ -324,6 +343,13 @@ final class SseSuggestionQueueRepository
     }
 
     /**
+     * Enregistre l'observation d'un signal par le moteur : UN SEUL signal ouvert par (dossier, type, règle, variante).
+     *
+     * - aucun signal ouvert pour cette clé : il est créé ;
+     * - un signal ouvert existe : il est mis à jour (titre, détail, gravité, dernière observation), jamais doublé ; si le
+     *   contenu change alors qu'il était « en veille », il se rouvre ; les éventuels doublons plus récents sont fusionnés ;
+     * - un signal résolu ou fusionné ne compte plus : si la condition réapparaît, un nouveau signal s'ouvre.
+     *
      * @param array<string,mixed> $data
      */
     public function addSignal(int $tenantId, array $data): ?int
@@ -333,29 +359,227 @@ final class SseSuggestionQueueRepository
         if ($title === '') {
             return null;
         }
+        $title = mb_substr($title, 0, 220);
+        $caseId = ((int) ($data['case_id'] ?? 0)) ?: null;
+        $rule = mb_substr((string) ($data['rule_key'] ?? $type), 0, 64);
+        $detail = ($data['detail'] ?? null) ?: null;
+        $severity = (string) ($data['severity'] ?? 'info');
         $payload = $data['payload'] ?? null;
+        $payloadJson = is_array($payload) ? json_encode($payload, JSON_UNESCAPED_UNICODE) : null;
+        $run = ($data['run_id'] ?? null) ?: null;
+        $key = SseSignalIdentity::key($caseId, $type, $rule, SseSignalIdentity::variant($type, $title, $detail === null ? null : (string) $detail));
+        $now = $this->now();
         try {
-            $this->db->execute(
-                'INSERT INTO sse_engine_signals
-                    (tenant_id, case_id, signal_type, severity, title, detail, payload_json, status, rule_key, run_id)
-                 VALUES (:t, :c, :type, :sev, :title, :detail, :payload, \'open\', :rule, :run)',
-                [
-                    't' => $tenantId,
-                    'c' => ((int) ($data['case_id'] ?? 0)) ?: null,
-                    'type' => $type,
-                    'sev' => (string) ($data['severity'] ?? 'info'),
-                    'title' => mb_substr($title, 0, 220),
-                    'detail' => ($data['detail'] ?? null) ?: null,
-                    'payload' => is_array($payload) ? json_encode($payload, JSON_UNESCAPED_UNICODE) : null,
-                    'rule' => mb_substr((string) ($data['rule_key'] ?? $type), 0, 64),
-                    'run' => ($data['run_id'] ?? null) ?: null,
-                ]
-            );
+            $cols = SseSignalSchema::columns();
+            $open = $this->openSignalsForKey($tenantId, $caseId, $type, $rule, $key);
+            if ($open === []) {
+                $fields = ['tenant_id' => $tenantId, 'case_id' => $caseId, 'signal_type' => $type, 'severity' => $severity, 'title' => $title,
+                    'detail' => $detail, 'payload_json' => $payloadJson, 'status' => 'open', 'rule_key' => $rule, 'run_id' => $run,
+                    'created_at' => $now, 'updated_at' => $now];
+                if ($cols['dedup_key']) {
+                    $fields['dedup_key'] = $key;
+                }
+                if ($cols['last_seen_at']) {
+                    $fields['last_seen_at'] = $now;
+                }
+                if ($cols['seen_count']) {
+                    $fields['seen_count'] = 1;
+                }
+                if ($cols['changed_at']) {
+                    $fields['changed_at'] = $now;
+                }
 
-            return (int) Database::getPdo()->lastInsertId();
+                return $this->db->insert(
+                    'INSERT INTO sse_engine_signals (' . implode(', ', array_keys($fields)) . ') VALUES (:' . implode(', :', array_keys($fields)) . ')',
+                    $fields
+                );
+            }
+
+            $keep = $open[0];
+            $changed = (string) $keep['title'] !== $title || (string) ($keep['detail'] ?? '') !== (string) ($detail ?? '') || (string) $keep['severity'] !== $severity;
+            $set = ['title = :title', 'detail = :detail', 'severity = :sev', 'payload_json = :payload', 'run_id = :run', 'updated_at = :now'];
+            $params = ['title' => $title, 'detail' => $detail, 'sev' => $severity, 'payload' => $payloadJson, 'run' => $run, 'now' => $now, 'id' => (int) $keep['id'], 't' => $tenantId];
+            if ((string) $keep['status'] === 'dormant' && $changed) {
+                $set[] = "status = 'open'";
+            }
+            if ($cols['dedup_key']) {
+                $set[] = 'dedup_key = :dk';
+                $params['dk'] = $key;
+            }
+            if ($cols['last_seen_at']) {
+                $set[] = 'last_seen_at = :now2';
+                $params['now2'] = $now;
+            }
+            if ($cols['seen_count']) {
+                $set[] = 'seen_count = COALESCE(seen_count, 0) + 1';
+            }
+            if ($cols['changed_at'] && $changed) {
+                $set[] = 'changed_at = :now3';
+                $params['now3'] = $now;
+            }
+            $this->db->execute('UPDATE sse_engine_signals SET ' . implode(', ', $set) . ' WHERE id = :id AND tenant_id = :t', $params);
+            foreach (array_slice($open, 1) as $duplicate) {
+                $this->closeSignal($tenantId, (int) $duplicate['id'], 'merged', 'cerbere-dedoublonnage', (int) $keep['id']);
+            }
+
+            return (int) $keep['id'];
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Signaux ouverts ou en veille d'une clé, le plus ancien d'abord.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private function openSignalsForKey(int $tenantId, ?int $caseId, string $type, string $rule, string $key): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT * FROM sse_engine_signals WHERE tenant_id = :t AND status IN (\'open\', \'dormant\') AND signal_type = :ty AND rule_key = :r AND '
+            . ($caseId !== null ? 'case_id = :c' : 'case_id IS NULL') . ' ORDER BY id ASC LIMIT 200',
+            ['t' => $tenantId, 'ty' => $type, 'r' => $rule] + ($caseId !== null ? ['c' => $caseId] : [])
+        );
+
+        return array_values(array_filter($rows, static fn (array $r): bool => SseSignalIdentity::keyFor($r) === $key));
+    }
+
+    /** Ferme un signal (résolu ou fusionné) en gardant la ligne : la date et l'auteur de la clôture sont tracés quand les colonnes existent. */
+    public function closeSignal(int $tenantId, int $id, string $status, string $by, ?int $mergedInto = null): bool
+    {
+        if (!in_array($status, ['resolved', 'merged', 'dormant', 'open'], true)) {
+            return false;
+        }
+        $cols = SseSignalSchema::columns();
+        $set = ['status = :st', 'updated_at = :now'];
+        $params = ['st' => $status, 'now' => $this->now(), 'id' => $id, 't' => $tenantId];
+        if ($cols['resolved_at'] && in_array($status, ['resolved', 'merged'], true)) {
+            $set[] = 'resolved_at = :ra';
+            $params['ra'] = $params['now'];
+        }
+        if ($cols['resolved_by'] && in_array($status, ['resolved', 'merged'], true)) {
+            $set[] = 'resolved_by = :rb';
+            $params['rb'] = mb_substr($by, 0, 40);
+        }
+        if ($cols['merged_into'] && $mergedInto !== null) {
+            $set[] = 'merged_into = :mi';
+            $params['mi'] = $mergedInto;
+        }
+
+        try {
+            return $this->db->execute(
+                'UPDATE sse_engine_signals SET ' . implode(', ', $set) . ' WHERE id = :id AND tenant_id = :t AND status IN (\'open\', \'dormant\')',
+                $params
+            ) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Résolution automatique : après le passage du moteur sur un dossier (ou sur le niveau communauté, $caseId null), tout signal
+     * encore ouvert que ce passage n'a pas observé décrit une condition disparue (photo ajoutée, site rattaché, complétude
+     * remontée…) : il est clos, avec date et auteur « Cerbère-Détection ».
+     *
+     * @return int nombre de signaux clos
+     */
+    public function resolveUnobserved(int $tenantId, ?int $caseId, string $runId): int
+    {
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT id FROM sse_engine_signals WHERE tenant_id = :t AND status IN (\'open\', \'dormant\') AND COALESCE(run_id, \'\') <> :run AND '
+                . ($caseId !== null ? 'case_id = :c' : 'case_id IS NULL'),
+                ['t' => $tenantId, 'run' => $runId] + ($caseId !== null ? ['c' => $caseId] : [])
+            );
+        } catch (\Throwable) {
+            return 0;
+        }
+        $n = 0;
+        foreach ($rows as $row) {
+            if ($this->closeSignal($tenantId, (int) $row['id'], 'resolved', self::AUTO_RESOLVER)) {
+                $n++;
+            }
+        }
+
+        return $n;
+    }
+
+    /**
+     * Expiration : un signal ouvert d'un type qui expire (« Complétude faible ») sans changement de contenu depuis $days jours
+     * passe « en veille » au lieu de rester dans « À trier ». Un changement le rouvre (addSignal).
+     *
+     * @return int nombre de signaux mis en veille
+     */
+    public function expireStale(int $tenantId, int $days = SseSignalIdentity::DORMANT_AFTER_DAYS): int
+    {
+        $days = max(1, $days);
+        $since = gmdate('Y-m-d H:i:s', strtotime($this->now() . ' UTC') - $days * 86400);
+        $changed = SseSignalSchema::has('changed_at') ? 'COALESCE(changed_at, created_at)' : 'created_at';
+        $types = SseSignalIdentity::EXPIRING_TYPES;
+        $in = implode(',', array_map(static fn (int $i): string => ':ty' . $i, array_keys($types)));
+        $params = ['t' => $tenantId, 'since' => $since];
+        foreach ($types as $i => $type) {
+            $params['ty' . $i] = $type;
+        }
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT id FROM sse_engine_signals WHERE tenant_id = :t AND status = \'open\' AND signal_type IN (' . $in . ') AND ' . $changed . ' <= :since',
+                $params
+            );
+            $n = 0;
+            foreach ($rows as $row) {
+                $n += $this->db->execute(
+                    'UPDATE sse_engine_signals SET status = \'dormant\', updated_at = :now WHERE id = :id AND tenant_id = :t AND status = \'open\'',
+                    ['now' => $this->now(), 'id' => (int) $row['id'], 't' => $tenantId]
+                );
+            }
+
+            return $n;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
+     * Signaux ouverts d'une communauté pour « À trier », dédoublonnés par identité (dossier, type, règle, variante) : le plus ancien
+     * est la source (son numéro et sa date de création), le plus récent apporte le contenu à jour. Fonctionne avant le rattrapage
+     * des doublons existants (tools/sse-dedupe-signals.php) : la boîte ne montre déjà qu'une ligne par identité.
+     *
+     * @return list<array<string,mixed>> plus graves d'abord ; « duplicates » : nombre de lignes fusionnées dans celle-ci
+     */
+    public function listOpenSignalsDeduped(int $tenantId, int $limit = 100): array
+    {
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT * FROM sse_engine_signals WHERE tenant_id = :t AND status = \'open\' ORDER BY id ASC LIMIT 5000',
+                ['t' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        $groups = [];
+        foreach ($rows as $row) {
+            $key = SseSignalIdentity::keyFor($row);
+            if (!isset($groups[$key])) {
+                $row['duplicates'] = 0;
+                $groups[$key] = $row;
+                continue;
+            }
+            $source = $groups[$key];
+            $latest = $row;
+            $latest['id'] = $source['id'];
+            $latest['created_at'] = $source['created_at'];
+            $latest['duplicates'] = (int) $source['duplicates'] + 1;
+            $groups[$key] = $latest;
+        }
+        $rank = ['critical' => 3, 'high' => 2, 'medium' => 1];
+        $out = array_values($groups);
+        usort($out, static fn (array $a, array $b): int => (($rank[(string) $b['severity']] ?? 0) <=> ($rank[(string) $a['severity']] ?? 0)) ?: ((int) $b['id'] <=> (int) $a['id']));
+        foreach ($out as &$row) {
+            $row['signal_type_label'] = self::SIGNAL_TYPES[(string) ($row['signal_type'] ?? '')] ?? (string) ($row['signal_type'] ?? '');
+        }
+
+        return array_slice($out, 0, max(1, $limit));
     }
 
     /**

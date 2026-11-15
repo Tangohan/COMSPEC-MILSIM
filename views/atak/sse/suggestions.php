@@ -26,11 +26,11 @@ $fmtWhen = static function (mixed $raw): string {
 ?>
 <div class="page-heading">
     <div>
-        <h1>Rapprochements moteur</h1>
+        <h1>Propositions de Cerbère</h1>
         <p>
             Propositions seulement — possible, probable, candidat à confirmation.
             Aucune fusion ni relation « confirmée » sans validation humaine.
-            Un passage moteur (manuel ou nocturne) peut aussi envoyer le point e-mail aux analystes.
+            Un passage de Cerbère (manuel ou nocturne) peut aussi envoyer le point e-mail aux analystes.
         </p>
     </div>
     <?php if ($canManage): ?>

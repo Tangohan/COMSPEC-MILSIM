@@ -9,7 +9,7 @@ use PDO;
 
 /**
  * Lectures et écritures de la page « Personnes » (vue de travail) : lots de données jointes à la liste, classification,
- * verrouillage, clôture et dates d'ouverture. Toute requête est bornée à la communauté. Les colonnes viennent de l'étape 4700 :
+ * verrouillage, clôture et dates d'ouverture. Toute requête est bornée à la communauté. Les colonnes viennent de l'étape 4760 :
  * sans elle, {@see self::ready()} est faux et la page reste en lecture seule (aucune écriture n'est tentée).
  */
 final class SsePersonWorkRepository
@@ -29,7 +29,7 @@ final class SsePersonWorkRepository
         $this->db = $db ?? Database::getInstance();
     }
 
-    /** Les colonnes de classification, verrouillage et clôture existent-elles ? (étape 4700) */
+    /** Les colonnes de classification, verrouillage et clôture existent-elles ? (étape 4760) */
     public static function ready(): bool
     {
         return self::probe(self::$ready, 'SELECT classification, locked_at, locked_by, lock_reason, lock_until, closed_at, closed_by, close_reason FROM sse_persons WHERE 1 = 0');

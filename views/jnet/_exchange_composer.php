@@ -52,6 +52,19 @@ $relationHelp = [
             <textarea id="<?= $uid ?>-body" name="body" class="jn-input" rows="3" maxlength="4000"
                       placeholder="Consignes, horaires, position…"><?= $h((string) ($draft['body'] ?? '')) ?></textarea>
         </div>
+        <div class="jn-cite" data-jn-cite data-jn-cite-target="<?= $uid ?>-body" data-jn-cite-search="<?= $h(url('jnet/liens/recherche')) ?>" data-jn-cite-space="<?= $spaceId ?>">
+            <button type="button" class="jn-btn jn-btn--ghost" data-jn-cite-open aria-expanded="false" aria-controls="<?= $uid ?>-cite">Citer un élément SSE</button>
+            <p class="jn-hint">Ajoute au détail une citation (référence seulement) : chaque lecteur la voit avec ses propres droits SSE, sinon « Élément restreint ».</p>
+            <div class="jn-cite__pop" id="<?= $uid ?>-cite" hidden>
+                <label class="jn-cite__q">
+                    <span>Référence ou nom</span>
+                    <input type="search" class="jn-input" data-jn-cite-q maxlength="80" autocomplete="off" placeholder="IDN-00012, CTRL-3, Karim…">
+                </label>
+                <ul class="jn-cite__list" data-jn-cite-list role="listbox" aria-label="Résultats"></ul>
+                <span hidden data-jn-cite-msg="none">Aucun résultat parmi ce que vous pouvez lire.</span>
+                <span hidden data-jn-cite-msg="short">Tapez au moins deux caractères.</span>
+            </div>
+        </div>
         <div class="jn-field">
             <label for="<?= $uid ?>-link">Lien Athena <small>(facultatif)</small></label>
             <input id="<?= $uid ?>-link" name="link" class="jn-input" placeholder="Collez l’adresse d’une page Athena : document, fiche, carte…" value="<?= $h((string) ($draft['link'] ?? '')) ?>">
@@ -75,3 +88,6 @@ $relationHelp = [
         </div>
     </form>
 </details>
+<?php if (empty($GLOBALS['jnSseCiteScript'])): $GLOBALS['jnSseCiteScript'] = true; ?>
+<script defer src="<?= $h(asset_url('assets/js/jnet-sse-cite.js')) ?>"></script>
+<?php endif; ?>

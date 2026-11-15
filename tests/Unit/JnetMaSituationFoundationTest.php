@@ -63,7 +63,7 @@ final class JnetMaSituationFoundationTest extends TestCase
     {
         self::assertCount(17, JnetMemberPaths::PAGES);
         self::assertCount(3, JnetMemberPaths::DOWNLOADS);
-        self::assertCount(20, JnetMemberPaths::POSTS);
+        self::assertCount(21, JnetMemberPaths::POSTS);
         foreach (['ma-fiche', 'ma-fiche/modifier', 'mes-demarches', 'unite', 'evenements', 'avancement', 'carriere', 'decorations',
             'qualifications', 'coffre', 'dotation', 'carnet-de-vol', 'mes-papiers', 'liaison-atak', 'appareils', 'premiere-liaison', 'musique'] as $slug) {
             self::assertArrayHasKey($slug, JnetMemberPaths::PAGES, $slug);
@@ -132,7 +132,7 @@ final class JnetMaSituationFoundationTest extends TestCase
                 $idx[] = $i;
             }
         }
-        self::assertCount(40, $idx, '20 lectures + 20 envois');
+        self::assertCount(41, $idx, '20 lectures + 21 envois');
         self::assertSame(count($idx) - 1, end($idx) - $idx[0], 'les routes /jnet/moi/* sont contiguës');
     }
 

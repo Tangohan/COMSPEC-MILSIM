@@ -44,7 +44,12 @@ class CfgFunctions {
             class tinnitusTick {};
             class hearing {};
             class glare {};
+            class aiParams {};
+            class aiBurst {};
+            class aiBatch {};
             class aiHit {};
+            class aiTick {};
+            class aiState {};
             class aiRestore {};
         };
         class editeur {

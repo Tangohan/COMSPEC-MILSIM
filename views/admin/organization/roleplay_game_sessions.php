@@ -354,6 +354,16 @@ $stateButton = static function (int $id, string $state, string $label, string $c
                     <input type="number" min="5" max="60" name="rp_session_heartbeat_timeout" value="<?= (int) ($cfg['heartbeat_timeout_minutes'] ?? 15) ?>">
                     <small>Au-delà, une déconnexion interrompt le décompte jusqu’au retour du joueur.</small>
                 </label>
+                <label class="rps-field">
+                    <span>Session de jeu qui compte (minutes)</span>
+                    <input type="number" min="5" max="480" name="rp_player_min_minutes" value="<?= (int) ($cfg['player_min_minutes'] ?? 60) ?>">
+                    <small>Disponibilité des membres : une session sur votre serveur ne compte que si le joueur y est resté au moins ce temps (60 minutes : sessions de plus d’1 h).</small>
+                </label>
+                <label class="rps-field">
+                    <span>Coupure entre deux sessions (minutes)</span>
+                    <input type="number" min="5" max="90" name="rp_player_gap_minutes" value="<?= (int) ($cfg['player_gap_minutes'] ?? 25) ?>">
+                    <small>Une reconnexion plus rapide que cela reste la même session. Le mod signale sa présence toutes les 10 minutes.</small>
+                </label>
                 <label class="rps-field rps-field--wide">
                     <span>Catégories d’heures (une par ligne)</span>
                     <textarea name="rp_session_hour_categories" rows="4"><?= $h(implode("\n", array_map('strval', $cats))) ?></textarea>
