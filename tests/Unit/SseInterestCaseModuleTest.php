@@ -23,7 +23,7 @@ final class SseInterestCaseModuleTest extends TestCase
 
     private static function read(string $path): string
     {
-        return (string) file_get_contents(self::ROOT . $path);
+        return str_replace("\r\n", "\n", (string) file_get_contents(self::ROOT . $path));
     }
 
     // ------------------------------------------------------------------ Mini-balisage
