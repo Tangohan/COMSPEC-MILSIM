@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Support\AdministrativePositionCatalog as Catalog;
 use App\Support\EffectifsLmsAccess;
+use App\Support\SqlText;
 use PDO;
 use Throwable;
 
@@ -150,7 +151,7 @@ final class AdministrativePositionsController
                      WHERE id = ? AND tenant_id = ?'
                 )->execute([$values['label'], $values['summary'], $values['detail'], $values['mission'], $values['service'], $values['strength'], $values['tone'], $id, $tenantId]);
                 // Le rôle d'affichage porté par les membres suit le nouveau nom.
-                $this->db()->prepare('UPDATE roles SET name = ?, description = ? WHERE tenant_id = ? AND slug = ?')
+                $this->db()->prepare('UPDATE roles SET name = ?, description = ? WHERE tenant_id = ? AND ' . SqlText::equals($this->db(), 'slug'))
                     ->execute([$values['label'], $values['summary'], $tenantId, $editing['slug']]);
                 Session::flash('success', 'Position « ' . $values['label'] . ' » enregistrée.');
             }

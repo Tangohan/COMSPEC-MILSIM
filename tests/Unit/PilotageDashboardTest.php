@@ -225,7 +225,7 @@ final class PilotageDashboardTest extends TestCase
             'orgMessagesRecent' => [['id' => 3, 'subject' => 'Briefing', 'last_preview' => 'Relire les ordres', 'updated_at' => '2026-11-01 09:00:00', 'thread_unread' => true]],
             'orgActivityChart' => ['days' => ['31', '01'], 'portal' => [3, 5], 'atak' => [1, 2], 'max' => 5, 'period_days' => 2],
         ]);
-        foreach (['Jake &lt;b&gt;G&lt;/b&gt;', 'La prochaine opération est dans <b>2 jours</b>', 'Op. Aube Rouge', 'role="timer"', 'Ouvrir la fiche', 'reponses-nominatives', 'Campagne Altis', '11 nouvelles configurations', 'back-office/mise-a-niveau', 'lors de la migration', 'James Alexander', 'Examiner', 'Parcours des recrues', 'back-office/recruitments/5', 'Transmissions', 'pil-spark', 'Briefing', 'Non lu', 'État des unités', 'back-office/organisation/disponibilite'] as $needle) {
+        foreach (['Jake &lt;b&gt;G&lt;/b&gt;', 'La prochaine opération est dans <b>2 jours</b>', 'Op. Aube Rouge', 'role="timer"', 'Ouvrir la fiche', 'reponses-nominatives', 'Campagne Altis', '11 nouvelles configurations', 'back-office/mise-a-niveau', 'lors de la migration', 'James Alexander', 'Examiner', 'id="pil-rec-title">Recrutement<', 'back-office/recruitments/5', 'Transmissions', 'pil-spark', 'Briefing', 'Non lu', 'État des unités', 'back-office/organisation/disponibilite'] as $needle) {
             self::assertStringContainsString($needle, $html, $needle);
         }
         self::assertStringNotContainsString('Jake <b>G</b>', $html);
@@ -255,7 +255,7 @@ final class PilotageDashboardTest extends TestCase
         }
 
         $html = $this->render($p);
-        self::assertStringNotContainsString('Parcours des recrues', $html);
+        self::assertStringNotContainsString('pil-rec-title', $html);
         self::assertStringNotContainsString('back-office/recruitments', $html);
         self::assertStringNotContainsString('Ouvrir la fiche', $html);
         self::assertStringNotContainsString('>Effectifs<', $html);

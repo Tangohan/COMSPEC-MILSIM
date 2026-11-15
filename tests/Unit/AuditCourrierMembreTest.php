@@ -87,6 +87,12 @@ final class AuditCourrierMembreTest extends TestCase
             {
             }
 
+            // SqlText::equals lit le pilote pour choisir la forme de la comparaison du slug.
+            public function getAttribute(int $attribute): mixed
+            {
+                return 'sqlite';
+            }
+
             public function prepare(string $query, array $options = []): \PDOStatement|false
             {
                 $st = new class () extends \PDOStatement {

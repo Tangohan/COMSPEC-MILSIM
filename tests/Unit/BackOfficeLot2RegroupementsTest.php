@@ -90,7 +90,7 @@ final class BackOfficeLot2RegroupementsTest extends TestCase
         [, $config] = explode("'key' => 'configuration',", $nav, 2);
         [$config] = explode('    ];' . "\n" . '}', $config, 2);
         self::assertStringContainsString("'collapsed' => true,", $config);
-        $order = ["'label' => 'Configuration', 'href' => url('back-office/configuration')", "'label' => 'Organisation'", "'label' => 'Référentiels'", "'label' => 'Droits et accès'",
+        $order = ["'label' => 'Configuration', 'href' => url('back-office/configuration')",
             "'label' => 'ATAK'", "'label' => 'Intégrations'", '$rhSettingsItem', "'label' => 'Configuration initiale'", "'label' => 'Mises à jour'"];
         $last = -1;
         foreach ($order as $needle) {

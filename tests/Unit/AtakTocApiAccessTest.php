@@ -204,7 +204,8 @@ final class AtakTocApiAccessTest extends TestCase
         // Liens précis avant {id} (le premier qui correspond gagne).
         self::assertLessThan(strpos($routes, "'/atak/toc/plans/{id}', [\$tocWeb"), strpos($routes, "'/atak/toc/plans/lien/{token}'"));
         $web = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/AtakTocController.php');
-        self::assertSame(3, substr_count($web, '$this->access->canUse()) {' . "\n" . '            return $this->denied();'));
+        // Console, liste des plans, guide de l'éditeur (planHelp) et éditeur : chaque page refuse sans le droit.
+        self::assertSame(4, substr_count($web, '$this->access->canUse()) {' . "\n" . '            return $this->denied();'));
         self::assertStringContainsString('Csrf::verify($request)', $web);
     }
 

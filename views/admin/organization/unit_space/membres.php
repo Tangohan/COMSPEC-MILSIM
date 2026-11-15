@@ -26,7 +26,12 @@ $smRosterUrl = effectifs_workspace_url() . '?unite=' . $unitIdNow;
         <p class="text-sm text-slate-600">Aucun membre actif n’est rattaché à cette unité<?= $smScope > 1 ? ' ni à ses sous-unités' : '' ?>.</p>
     <?php else: ?>
         <p class="text-sm text-slate-600">
-            <?= (int) $smTotal ?> membre<?= $smTotal > 1 ? 's' : '' ?> actif<?= $smTotal > 1 ? 's' : '' ?><?= $smScope > 1 ? ' dans l’unité et ses ' . ($smScope - 1) . ' sous-unité' . ($smScope > 2 ? 's' : '') : '' ?>, par grade.
+            <?php /* Deux phrases entières : le traducteur ne sait pas séparer deux valeurs collées (accord + périmètre). */ ?>
+            <?php if ($smScope > 1): ?>
+            <?= (int) $smTotal ?> membre<?= $smTotal > 1 ? 's' : '' ?> actif<?= $smTotal > 1 ? 's' : '' ?> dans l’unité et ses <?= (int) ($smScope - 1) ?> sous-unité<?= $smScope > 2 ? 's' : '' ?>, par grade.
+            <?php else: ?>
+            <?= (int) $smTotal ?> membre<?= $smTotal > 1 ? 's' : '' ?> actif<?= $smTotal > 1 ? 's' : '' ?>, par grade.
+            <?php endif; ?>
             Cliquez sur un nom pour ouvrir sa fiche.
         </p>
         <div class="overflow-x-auto">

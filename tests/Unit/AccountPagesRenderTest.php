@@ -106,7 +106,8 @@ final class AccountPagesRenderTest extends TestCase
             'error' => null,
         ]);
 
-        foreach (['id="etat-du-compte"', 'id="activite"', 'id="sessions"', 'Réglages fréquents', 'Activité récente', 'Connexion réussie', 'Déconnecter mes autres sessions', '3<small>/4</small>', 'Presque complet', '1 actif sur 2', 'Mot de passe modifié.'] as $needle) {
+        // État du compte : une seule liste « à faire » (personnage et portrait manquent ici), le reste sur une ligne « déjà en place ».
+        foreach (['id="etat-du-compte"', 'id="activite"', 'id="sessions"', 'Réglages fréquents', 'Activité récente', 'Connexion réussie', 'Déconnecter mes autres sessions', '2 choses à faire', 'Créez votre personnage', 'Votre portrait remplace la silhouette partout sur le site.', 'aria-label="Déjà en place"', '1 actif sur 2', 'Mot de passe modifié.'] as $needle) {
             self::assertStringContainsString($needle, $html);
         }
         self::assertStringContainsString('aria-current="page"', $html);

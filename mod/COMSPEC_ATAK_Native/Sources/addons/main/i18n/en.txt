@@ -24443,7 +24443,7 @@
 ["Le réseau passe sans relais ; ajoutez-en pour un réseau réaliste (couverture, brouillage, répéteurs).", "The network works without relays; add some for a realistic network (coverage, jamming, repeaters)."],
 ["Ces joueurs n'ont pas de réseau en jeu : posez un relais de leur camp (ou sans camp).", "These players have no network in game: place a relay for their side (or with no side)."],
 ["Puissance du flash", "Flash power"],
-["Force du flash de l'appareil photo du téléphone. 100 % : réglage normal. Baissez si vos photos de nuit sont trop claires, montez si elles sont trop sombres.", "Strength of the phone camera flash. 100%: normal setting. Lower it if your night photos are too bright, raise it if they are too dark."]
+["Force du flash de l'appareil photo du téléphone. 100 % : réglage normal. Baissez si vos photos de nuit sont trop claires, montez si elles sont trop sombres.", "Strength of the phone camera flash. 100%: normal setting. Lower it if your night photos are too bright, raise it if they are too dark."],
 ["SMS", "SMS"],
 ["Aucun SMS", "No SMS"],
 ["%1 non lu(s)", "%1 unread"],
