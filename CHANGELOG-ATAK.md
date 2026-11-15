@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## SEEK II et modules SSE : les listes viennent du site de la communauté (ATAK natif 4.21.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : SEEK II et modules SSE, les listes viennent du site de votre communauté
+- SEEK II : le statut et le contexte d'acquisition proposés sont ceux que votre communauté a réglés sur le site. Sur la page ENVOI, une liste montre les dossiers ouverts : en choisir un remplit le code dossier, la saisie à la main reste possible.
+- Zeus et éditeur (mod COMSPEC SSE 1.10.0) : le module « Référence de dossier » propose les dossiers du site, et le nouveau module « Identité du site (Athena) » pose sur un PNJ une personne du lore de la session, un avis de recherche, un contexte d'acquisition et un dossier, choisis dans des listes avec un filtre.
+- Chaque écran dit d'où vient sa liste : « Listes du site » avec l'heure de la dernière synchro, ou les listes du mod quand le site ne répond pas. Le bouton ACTUALISER relit le site.
+- Rien à régler : les listes sont lues au début de la mission, puis à l'ouverture des écrans quand elles ont plus de dix minutes.
+EN : SEEK II and SSE modules, lists now come from your community's site
+- SEEK II: the status and acquisition context offered are the ones your community set up on the site. On the SUBMIT page, a list shows the open cases: picking one fills in the case code, and you can still type it by hand.
+- Zeus and editor (COMSPEC SSE mod 1.10.0): the "Case reference" module offers the site's cases, and the new "Site identity (Athena)" module gives an NPC a person from the session lore, a wanted notice, an acquisition context and a case, picked from lists with a filter.
+- Each screen says where its list comes from: "Site lists" with the time of the last sync, or the mod's own lists when the site does not answer. The REFRESH button reads the site again.
+- Nothing to set up: lists are read when the mission starts, then when a screen opens if they are more than ten minutes old.
+
+### Détail technique
+- **Contrat** : `docs/technical/ICD-SSE-CATALOGUE.md` (ICD-SSE-CATALOGUE-001). Site : `GET /api/game/v1/sse/catalogue` (`GameSseCatalogueApiController`, `SseGameCatalogueService`), communauté de la clé ou du jeton de jeu seulement (jamais un paramètre), ETag et `since_rev`, plafonds par liste (`truncated`), 90 lectures par minute par communauté et par compte. Même contenu en pages parseSimpleArray de 7 400 octets au plus par le `kind` `sse_catalogue` de `POST /api/sse/identity/checks`.
+- **DLL inchangée** : le mod lit le catalogue par `SubmitIdCheck` (COMSPEC Link 2.0.125, `LINK_VERSION_STR` inchangé).
+- **Mod, cache** : `comspec_overwatch_connect_fnc_sseCatalogue` (`rows`, `choices`, `ensure`, `refresh`, `fetch`, `reset`, `state`, `status`) ; listes en `uiNamespace`, référentiels gardés en `profileNamespace` (`COMSPEC_SseCatalogueRef`) pour le repli, listes vivantes oubliées à chaque début de mission ; événement `comspec_sse_catalogueUpdated`. Un échec ne retente pas avant 60 s.
+- **SEEK II** : `fn_sseCatalogueSeek` remplit 9505 (statut), 9506 (contexte) et le nouveau menu 9569 (dossiers ouverts) ; l'origine des listes s'affiche dans les libellés 9561 et 9565. Les listes du mod restent le repli.
+- **Pack SSE 1.10.0** : `comspec_sse_fnc_catalogue` (passe la main à l'ATAK natif), ligne `CATALOG` de `comspec_sse_fnc_uiForm` (filtre, ligne d'état 93603, bouton 93622), module `COMSPEC_SSE_Module_SiteIdentity` et `comspec_sse_fnc_siteIdentityApply` (serveur), attributs Eden `COMSPEC_SSE_Cat*Combo` (`comspec_sse_fnc_edenCatalogue`). La fiche personne envoie le contexte, le dossier et l'avis choisis pour le sujet (`circumstances`, `case_reference`, `wanted_ref`).
+- Tests : `tests/Unit/SseGameCatalogueTest.php`. Non essayé en jeu : voir la liste « à vérifier en jeu » de la PR.
+
+---
+
 ## SEEK II : lecteur d'empreintes animé, mini-jeux facultatifs, terminal réductible, blessures prises en compte (ATAK natif 4.20.0.AG - Washington)
 
 ### Résumé joueur

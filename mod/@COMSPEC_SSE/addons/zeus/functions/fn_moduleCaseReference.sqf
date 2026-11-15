@@ -24,6 +24,9 @@ private _apply = {
 };
 
 private _ref = _logic getVariable ["Reference", ""];
+// Eden : le dossier choisi dans la liste du site l'emporte sur la référence saisie.
+private _listed = _logic getVariable ["ReferenceList", ""];
+if (_listed isEqualType "" && {(trim _listed) isNotEqualTo ""}) then { _ref = _listed; };
 if (_ref isEqualTo "" && {!isNil "comspec_sse_fnc_getCaseReference"}) then {
     _ref = [] call comspec_sse_fnc_getCaseReference;
 };
@@ -31,13 +34,18 @@ if (_ref isEqualTo "" && {!isNil "comspec_sse_fnc_getCaseReference"}) then {
 if (_ctx get "zeus") then {
     [
         "Référence de dossier SSE",
-        [["EDIT", "Référence", "Ex. SSE-2026-0007. Vide = efface la référence active.", _ref]],
+        [
+            // Dossiers ouverts sur le site de la communauté ; la saisie reste possible pour un dossier pas encore créé.
+            ["CATALOG", "Dossier du site", "Dossiers ouverts sur le site de la communauté.", ["cases", [], [], toUpper (trim _ref), "Aucun (référence saisie ci-dessous)"]],
+            ["EDIT", "Autre référence", "Ex. SSE-2026-0007. Sert si aucun dossier n'est choisi dans la liste. Les deux vides : efface la référence active.", ""]
+        ],
         {
             params ["_values", "_args"];
-            [_values select 0] call (_args select 0);
+            _values params ["_listed", "_typed"];
+            [[_typed, _listed] select (_listed isNotEqualTo "")] call (_args select 0);
         },
         [_apply],
-        "Toutes les fiches transmises ensuite sont classées dans ce dossier."
+        "Toutes les fiches transmises ensuite sont classées dans ce dossier. La liste vient du site de la communauté."
     ] call comspec_sse_fnc_uiForm;
 } else {
     if ((trim _ref) isNotEqualTo "") then { [_ref] call _apply; };

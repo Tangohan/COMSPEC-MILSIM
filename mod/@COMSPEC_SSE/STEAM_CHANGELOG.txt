@@ -1,3 +1,24 @@
+[h1]COMSPEC SSE 1.10.0 — listes du site dans les modules Zeus et l'éditeur / site lists in Zeus modules and the editor[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.21.0 pour lire les listes du site. / Fully restart Arma. Requires COMSPEC ATAK 4.21.0 to read the site lists.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Référence de dossier[/b] : le module propose les dossiers ouverts sur le site de la communauté ; la saisie à la main reste possible pour un dossier pas encore créé.
+[*] [b]Nouveau module « Identité du site (Athena) »[/b] : pose sur un PNJ une personne du lore de la session, un avis de recherche, un contexte d'acquisition et un dossier, choisis dans des listes avec un filtre.
+[*] [b]Éditeur[/b] : les mêmes listes dans les attributs quand la connexion Athena du menu COMSPEC SSE est ouverte ; sinon la valeur enregistrée est gardée et appliquée au lancement de la mission.
+[*] Chaque formulaire dit d'où vient sa liste (site et heure de synchro, ou listes du mod) et a un bouton ACTUALISER.
+[*] La fiche transmise porte le contexte, le dossier et l'avis choisis pour le sujet.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Case reference[/b]: the module offers the cases open on the community site; you can still type a case that does not exist yet.
+[*] [b]New "Site identity (Athena)" module[/b]: gives an NPC a person from the session lore, a wanted notice, an acquisition context and a case, picked from lists with a filter.
+[*] [b]Editor[/b]: the same lists in the attributes when the Athena connection of the COMSPEC SSE menu is open; otherwise the saved value is kept and applied when the mission starts.
+[*] Each form says where its list comes from (site and sync time, or the mod's own lists) and has a REFRESH button.
+[*] The record sent carries the context, case and notice picked for the subject.
+[/list]
+
 [h1]COMSPEC SSE 1.9.3 — blessures prises en compte à la capture biométrique / injuries taken into account in biometric capture[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.20.0. / Fully restart Arma. Requires COMSPEC ATAK 4.20.0.[/b]
 

@@ -1480,7 +1480,7 @@ final class SseApiController
             'last_name', 'first_name', 'alias', 'status', 'age_estimated', 'nationality',
             'language_spoken', 'distinguishing_marks', 'affiliation', 'circumstances',
             'statements', 'confidence_level', 'grid_reference', 'submitter_callsign',
-            'submitter_steam_id', 'target_unit_netid', 'case_code', 'pos_x', 'pos_y', 'pos_z',
+            'submitter_steam_id', 'target_unit_netid', 'case_code', 'wanted_ref', 'pos_x', 'pos_y', 'pos_z',
             'capture_pos_x', 'capture_pos_y', 'capture_pos_z', 'biometrics_simulated',
             'consent_recorded', 'weapons', 'equipment', 'medical_context', 'identity_query',
             'signature', 'biometric_samples',
