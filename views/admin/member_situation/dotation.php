@@ -26,7 +26,6 @@ $date = static function (mixed $raw): string {
 $iconKit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>';
 
 $summary = [
-    'kicker' => 'Dossier individuel · Dotation',
     'focus' => [
         'label' => 'Matériel en main',
         'value' => $inHand > 0 ? $inHand . ' article' . ($inHand > 1 ? 's' : '') : 'Aucun article',
@@ -35,8 +34,8 @@ $summary = [
         'empty' => $inHand === 0,
     ],
     'links' => [
-        ['label' => 'Mon coffre', 'href' => url('back-office/ma-situation/coffre')],
-        ['label' => 'Dossier de carrière', 'href' => url('back-office/ma-situation/carriere')],
+        ['label' => 'Mon coffre', 'href' => jnet_moi_url('coffre')],
+        ['label' => 'Dossier de carrière', 'href' => jnet_moi_url('carriere')],
     ],
     'stats' => [
         ['label' => 'Articles', 'value' => count($assignments), 'note' => 'Toutes attributions confondues.'],
@@ -52,7 +51,6 @@ $summary = [
     <section class="msd-card" aria-labelledby="msd-dotation-title">
         <header class="msd-card__head">
             <div>
-                <p class="msd-card__kicker">Inventaire</p>
                 <h2 class="msd-card__title" id="msd-dotation-title">Mon matériel</h2>
             </div>
             <?php if ($assignments !== []): ?>
@@ -75,10 +73,10 @@ $summary = [
                             <span class="msd-pill msd-pill--<?= $h($tone($status)) ?>"><?= $h(AdvancementCodes::equipmentLabel($status)) ?></span>
                         </div>
                         <div>
-                            <p class="msd-item__kicker"><?= $h((string) ($row['category'] ?? '') !== '' ? $row['category'] : 'Matériel') ?></p>
                             <h3 class="msd-item__title"><?= $h((string) ($row['definition_name'] ?? '')) ?></h3>
                         </div>
                         <dl class="msd-item__facts">
+                            <div><dt>Catégorie</dt><dd><?= $h((string) ($row['category'] ?? '') !== '' ? $row['category'] : 'Matériel') ?></dd></div>
                             <div><dt>N° de série</dt><dd class="msd-mono"><?= $h((string) ($row['serial_number'] ?? '') !== '' ? $row['serial_number'] : '—') ?></dd></div>
                             <div><dt>Attribué le</dt><dd><?= $h($date($row['assigned_at'] ?? '')) ?></dd></div>
                         </dl>

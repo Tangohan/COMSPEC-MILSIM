@@ -48,14 +48,12 @@ $sectionMeta = [
     ],
 ];
 $summary = [
-    'kicker' => 'Dossier individuel · Coffre',
-    'title' => 'Mon coffre',
     'lead' => 'Toutes les pièces qui vous concernent, au même endroit : dossier RH, brevets et attestations. Les documents réservés à l’encadrement restent hors de ce coffre.',
     'links' => [
-        ['label' => 'Mes qualifications', 'href' => url('back-office/ma-situation/qualifications'), 'primary' => true],
-        ['label' => 'Ma fiche', 'href' => url('back-office/ma-situation/ma-fiche')],
-        ['label' => 'Dossier de carrière', 'href' => url('back-office/ma-situation/carriere')],
-        ['label' => 'Mes démarches', 'href' => url('back-office/ma-situation/mes-demarches')],
+        ['label' => 'Mes qualifications', 'href' => jnet_moi_url('qualifications'), 'primary' => true],
+        ['label' => 'Ma fiche', 'href' => jnet_moi_url('ma-fiche')],
+        ['label' => 'Dossier de carrière', 'href' => jnet_moi_url('carriere')],
+        ['label' => 'Mes démarches', 'href' => jnet_moi_url('mes-demarches')],
     ],
     'stats' => [
         ['label' => 'Pièces', 'value' => $total, 'note' => 'Dans votre coffre.'],

@@ -215,7 +215,6 @@ $statusTone = static fn (string $s): string => match ($s) {
     <section class="mav-card" aria-labelledby="mav-cond-title">
         <header class="mav-card__head">
             <div>
-                <p class="mav-card__kicker">Prochain grade</p>
                 <h2 id="mav-cond-title" class="mav-card__title">Conditions pour devenir <?= $h((string) ($next['grade_label'] ?? '')) ?></h2>
             </div>
             <span class="mav-pill mav-pill--<?= !empty($next['automatic']) ? 'ok' : 'muted' ?>"><?= $h($modeLabel[(string) ($next['mode'] ?? 'none')] ?? '') ?></span>
@@ -250,7 +249,7 @@ $statusTone = static fn (string $s): string => match ($s) {
                 <p class="mav-note mav-note--info">Votre candidature au tableau d’avancement est déjà enregistrée.</p>
             <?php elseif (!empty($next['campaign_id'])): ?>
                 <h3 class="mav-action__title">Candidater au tableau d’avancement</h3>
-                <form method="post" class="mav-form" action="<?= $h(url('back-office/ma-situation/avancement/' . (int) $next['campaign_id'] . '/volontaire')) ?>">
+                <form method="post" class="mav-form" action="<?= $h(jnet_moi_url('avancement/' . (int) $next['campaign_id'] . '/volontaire')) ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <div class="mav-form__grid">
                         <?php $renderTargets('mav-target-campaign'); ?>
@@ -264,7 +263,7 @@ $statusTone = static fn (string $s): string => match ($s) {
                 </form>
             <?php else: ?>
                 <h3 class="mav-action__title">Demander l’avancement au choix</h3>
-                <form method="post" class="mav-form" action="<?= $h(url('back-office/ma-situation/avancement/demande')) ?>">
+                <form method="post" class="mav-form" action="<?= $h(jnet_moi_url('avancement/demande')) ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="target_label" value="<?= $h((string) ($next['grade_label'] ?? '')) ?>">
                     <div class="mav-form__grid">
@@ -299,7 +298,7 @@ $statusTone = static fn (string $s): string => match ($s) {
         <?php if (!empty($offer['already_volunteered'])): ?>
             <p class="mav-note mav-note--info">Votre candidature est déjà enregistrée.</p>
         <?php elseif (!empty($offer['is_eligible'])): ?>
-            <form method="post" class="mav-form" action="<?= $h(url('back-office/ma-situation/avancement/' . (int) $offer['campaign_id'] . '/volontaire')) ?>">
+            <form method="post" class="mav-form" action="<?= $h(jnet_moi_url('avancement/' . (int) $offer['campaign_id'] . '/volontaire')) ?>">
                 <?= \App\Core\Csrf::field() ?>
                 <div class="mav-form__grid"><?php $renderTargets('mav-target-offer'); ?></div>
                 <div class="mav-form__foot"><button class="ath-btn ath-btn--solid" type="submit">Me porter volontaire</button></div>
@@ -312,7 +311,6 @@ $statusTone = static fn (string $s): string => match ($s) {
         <section class="mav-card" aria-labelledby="mav-aff-title">
             <header class="mav-card__head">
                 <div>
-                    <p class="mav-card__kicker">Mobilité</p>
                     <h2 id="mav-aff-title" class="mav-card__title">Demande d’affectation</h2>
                 </div>
             </header>
@@ -324,7 +322,7 @@ $statusTone = static fn (string $s): string => match ($s) {
             <?php else: ?>
                 <details class="mav-disclosure">
                     <summary>Déposer une demande d’affectation</summary>
-                    <form method="post" class="mav-form" action="<?= $h(url('back-office/ma-situation/avancement/affectation')) ?>">
+                    <form method="post" class="mav-form" action="<?= $h(jnet_moi_url('avancement/affectation')) ?>">
                         <?= \App\Core\Csrf::field() ?>
                         <div class="mav-form__grid">
                             <?php $renderTargets('mav-target-assign'); ?>
@@ -384,7 +382,6 @@ $statusTone = static fn (string $s): string => match ($s) {
         <section class="mav-card" aria-labelledby="mav-op-title">
             <header class="mav-card__head">
                 <div>
-                    <p class="mav-card__kicker">Commandement</p>
                     <h2 id="mav-op-title" class="mav-card__title">Avis de commandement</h2>
                 </div>
             </header>
@@ -415,7 +412,6 @@ $statusTone = static fn (string $s): string => match ($s) {
     <section class="mav-card" aria-labelledby="mav-hist-title">
         <header class="mav-card__head">
             <div>
-                <p class="mav-card__kicker">Carrière</p>
                 <h2 id="mav-hist-title" class="mav-card__title">Historique des grades <?= adv_info('Historique', 'Chaque promotion (initial, ancienneté, choix ou exception) reste une ligne. On corrige en ajoutant, pas en écrasant.') ?></h2>
             </div>
         </header>

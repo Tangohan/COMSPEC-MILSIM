@@ -39,15 +39,14 @@ foreach ($awards as $row) {
 $iconDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 19h16"/></svg>';
 $iconRefresh = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>';
 $summary = [
-    'kicker' => 'Dossier individuel · Qualifications',
     'title' => 'Qualifications & brevets',
     'lead' => 'Vos titres enregistrés sur le dossier, avec les brevets lorsque la qualification est obtenue. Ouvrez aussi Mon coffre pour toutes les pièces qui vous concernent.',
     'links' => [
-        ['label' => 'Ouvrir mon coffre', 'href' => url('back-office/ma-situation/coffre'), 'primary' => true],
-        ['label' => 'Voir dans ma fiche', 'href' => url('back-office/ma-situation/ma-fiche') . '?onglet=formation'],
-        ['label' => 'Dossier de carrière', 'href' => url('back-office/ma-situation/carriere')],
-        ['label' => 'Mes décorations', 'href' => url('back-office/ma-situation/decorations')],
-        ['label' => 'Mon avancement', 'href' => url('back-office/ma-situation/avancement')],
+        ['label' => 'Ouvrir mon coffre', 'href' => jnet_moi_url('coffre'), 'primary' => true],
+        ['label' => 'Voir dans ma fiche', 'href' => jnet_moi_url('ma-fiche') . '?onglet=formation'],
+        ['label' => 'Dossier de carrière', 'href' => jnet_moi_url('carriere')],
+        ['label' => 'Mes décorations', 'href' => jnet_moi_url('decorations')],
+        ['label' => 'Mon avancement', 'href' => jnet_moi_url('avancement')],
     ],
     'stats' => [
         ['label' => 'Qualifications', 'value' => $count, 'note' => 'Enregistrées sur votre dossier.'],
@@ -214,22 +213,22 @@ $summary = [
                         <span class="bo-qual-card__foot-txt"><?= $hasCert ? 'Brevet disponible' : 'Brevet non généré' ?></span>
                         <div class="bo-doc-card__actions">
                             <?php if ($hasCert && $id > 0): ?>
-                                <a class="ath-btn ath-btn--solid bo-qual-card__download" href="<?= $h(url('back-office/ma-situation/qualifications/' . $id . '/brevet')) ?>"><?= $iconDown ?> Télécharger le brevet</a>
+                                <a class="ath-btn ath-btn--solid bo-qual-card__download" href="<?= $h(jnet_moi_url('qualifications/' . $id . '/brevet')) ?>"><?= $iconDown ?> Télécharger le brevet</a>
                             <?php endif; ?>
                             <?php if ($canGenerate && $id > 0): ?>
-                                <form method="post" action="<?= $h(url('back-office/ma-situation/qualifications/' . $id . '/generer-brevet')) ?>" class="bo-doc-card__form">
+                                <form method="post" action="<?= $h(jnet_moi_url('qualifications/' . $id . '/generer-brevet')) ?>" class="bo-doc-card__form">
                                     <?= \App\Core\Csrf::field() ?>
                                     <button type="submit" class="ath-btn ath-btn--solid bo-qual-card__generate"><?= $iconDown ?> Générer le brevet</button>
                                 </form>
                             <?php elseif ($canRegenerate && $id > 0): ?>
-                                <form method="post" action="<?= $h(url('back-office/ma-situation/qualifications/' . $id . '/generer-brevet')) ?>" class="bo-doc-card__form">
+                                <form method="post" action="<?= $h(jnet_moi_url('qualifications/' . $id . '/generer-brevet')) ?>" class="bo-doc-card__form">
                                     <?= \App\Core\Csrf::field() ?>
                                     <button type="submit" class="ath-btn bo-qual-card__generate" title="Recalcule le document avec votre pseudo actuel"><?= $iconRefresh ?> Mettre à jour le brevet</button>
                                 </form>
                             <?php elseif (!$hasCert): ?>
                                 <p class="bo-doc-card__hint">Brevet non disponible pour ce statut.</p>
                             <?php endif; ?>
-                            <a class="ath-btn" href="<?= $h(url('back-office/ma-situation/ma-fiche') . '?onglet=formation') ?>">Voir le détail</a>
+                            <a class="ath-btn" href="<?= $h(jnet_moi_url('ma-fiche') . '?onglet=formation') ?>">Voir le détail</a>
                         </div>
                     </div>
                 </article>

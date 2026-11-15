@@ -59,7 +59,6 @@ $iconRank = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 $iconClock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 
 $summary = [
-    'kicker' => 'Dossier individuel · Carrière',
     'focus' => [
         'label' => 'Grade actuel',
         'value' => $currentGrade !== null ? $gradeName($currentGrade) : 'Non renseigné',
@@ -70,9 +69,9 @@ $summary = [
         'empty' => $currentGrade === null,
     ],
     'links' => [
-        ['label' => 'Mon avancement', 'href' => url('back-office/ma-situation/avancement'), 'primary' => true],
-        ['label' => 'Mes qualifications', 'href' => url('back-office/ma-situation/qualifications')],
-        ['label' => 'Mes décorations', 'href' => url('back-office/ma-situation/decorations')],
+        ['label' => 'Mon avancement', 'href' => jnet_moi_url('avancement'), 'primary' => true],
+        ['label' => 'Mes qualifications', 'href' => jnet_moi_url('qualifications')],
+        ['label' => 'Mes décorations', 'href' => jnet_moi_url('decorations')],
     ],
     'stats' => [
         ['label' => 'Événements', 'value' => count($timeline), 'note' => 'Inscrits à votre dossier.'],
@@ -92,7 +91,6 @@ $summary = [
         <section class="msd-card" aria-labelledby="msd-grades-title">
             <header class="msd-card__head">
                 <div>
-                    <p class="msd-card__kicker">Grades</p>
                     <h2 class="msd-card__title" id="msd-grades-title">Historique de grade</h2>
                 </div>
                 <span class="msd-card__count"><?= count($gradeHistory) ?> grade<?= count($gradeHistory) > 1 ? 's' : '' ?></span>
@@ -119,7 +117,6 @@ $summary = [
     <section class="msd-card" aria-labelledby="msd-timeline-title">
         <header class="msd-card__head">
             <div>
-                <p class="msd-card__kicker">Chronologie</p>
                 <h2 class="msd-card__title" id="msd-timeline-title">Mon parcours</h2>
             </div>
             <?php if ($timeline !== []): ?>
