@@ -194,7 +194,7 @@ body.sse-iw kbd {
 .sx-nav__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sx-nav__ext { color: var(--sx-faint); font-size: .72rem; }
 .sx-nav__foot { gap: 6px; }
-.sx-nav__keys { color: var(--sx-faint); font-size: .62rem; }
+.sx-nav__keys { color: var(--sx-faint); font-size: .72rem; }
 .sx-main:focus { outline: none; }
 
 /* —— Tiroir mobile —— */
@@ -289,7 +289,7 @@ body.sse-iw kbd {
 .sx-palette__item.is-active a { background: rgba(52, 211, 153, 0.14); box-shadow: inset 3px 0 0 var(--sx-acc); }
 .sx-palette__item mark { background: none; color: var(--sx-acc); }
 .sx-palette__empty { padding: 1.2rem; text-align: center; color: var(--sx-dim); font-size: .85rem; }
-.sx-palette__foot { display: flex; gap: 6px; align-items: center; margin: 0; padding: .55rem 14px; border-top: 1px solid var(--sx-line); font-size: .66rem; color: var(--sx-faint); }
+.sx-palette__foot { display: flex; gap: 6px; align-items: center; margin: 0; padding: .55rem 14px; border-top: 1px solid var(--sx-line); font-size: .72rem; color: var(--sx-faint); }
 
 /* —— Sas : bouton « Entrer sans code » lisible (lien stylé en bouton) —— */
 .sse-gate-hub__btn--enter,
