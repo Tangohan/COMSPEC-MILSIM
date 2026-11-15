@@ -27,7 +27,7 @@ $effectifsEmbedded = !empty($effectifsEmbedded);
 $returnViewRh = trim((string) ($_GET['return_view'] ?? '')) === 'rh';
 $personnelBackUrl = $effectifsEditContext
     ? effectifs_workspace_url('membres/' . (int) ($targetUser['id'] ?? 0))
-    : ($isMe ? url('personnel/me') : url('personnel/' . (int) ($targetUser['id'] ?? 0)));
+    : ($isMe ? jnet_moi_url('ma-fiche') : url('personnel/' . (int) ($targetUser['id'] ?? 0)));
 if ($returnViewRh) {
     $personnelBackUrl .= '?view=rh';
 }
@@ -205,15 +205,17 @@ $editValidTabIds = implode(',', array_map(
     $editNavFlat
 ));
 ?>
-<div class="pd-page" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>', dirty: false }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }; $watch('tab', v => { if (v) history.replaceState(null, '', '#' + v) })">
+<div class="pd-page<?= !empty($jnetMemberShell) ? ' ath-main__body jnet-moi-fiche' : '' ?>" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>', dirty: false }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }; $watch('tab', v => { if (v) history.replaceState(null, '', '#' + v) })">
   <div class="pd-container">
     <?php if (!$effectifsEmbedded): ?>
     <header class="pd-header">
+      <?php if (empty($jnetMemberShell)): ?>
       <div>
         <p class="pd-header__eyebrow"><?= $effectifsEditContext ? 'Bureau effectifs' : 'Dossier personnel' ?></p>
         <h1 class="pd-header__title">Éditer le dossier<?= trim((string) ($targetUser['display_name'] ?? '')) !== '' ? ' — ' . htmlspecialchars(trim((string) $targetUser['display_name']), ENT_QUOTES, 'UTF-8') : '' ?></h1>
         <p class="pd-header__sub">Identité, affectation, immersion et affichage — un onglet à la fois, comme un tableau de bord administratif.</p>
       </div>
+      <?php endif; ?>
       <div class="pd-header__actions">
         <a href="<?= htmlspecialchars($personnelBackUrl, ENT_QUOTES, 'UTF-8') ?>" class="pd-btn">← <?= $effectifsEditContext ? 'Fiche Effectifs' : 'Fiche' ?></a>
         <?php if (!$effectifsEditContext && \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>

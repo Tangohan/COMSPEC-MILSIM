@@ -600,6 +600,10 @@ $personnelFileShell = $personnelFileIsRhFull
     ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
     : 'w-full max-w-none';
 $personnelFileRootClass = 'personnel-file-root personnel-file';
+// Dans JNET (/jnet/moi/ma-fiche) : même classe de portée que le back-office pour les variantes nuit des utilitaires et des champs.
+if (!empty($jnetMemberShell)) {
+    $personnelFileRootClass .= ' ath-main__body jnet-moi-fiche';
+}
 if ($personnelFileIsRhFull) {
     $personnelFileRootClass .= ' personnel-file--rh-full pt-20 pb-10';
 } else {
@@ -620,7 +624,7 @@ if ($personnelFileIsRhFull) {
             <div class="personnel-file-hero__identity">
                 <p class="personnel-file-hero__eyebrow">Dossier personnel</p>
                 <?php $pfDonorUid = (int) (is_array($targetUser) ? ($targetUser['id'] ?? 0) : 0); $pfDonorTier = \App\Services\Billing\DonorService::userTier($pfDonorUid); ?>
-                <h1 class="personnel-file-hero__name" data-donor-skip data-staff-skip><?= staff_name((string) $displayName, $pfDonorUid, true) ?><?= \App\Services\Billing\DonorService::mark($pfDonorUid, true) ?></h1>
+                <h<?= !empty($jnetMemberShell) ? '2' : '1' ?> class="personnel-file-hero__name" data-donor-skip data-staff-skip><?= staff_name((string) $displayName, $pfDonorUid, true) ?><?= \App\Services\Billing\DonorService::mark($pfDonorUid, true) ?></h<?= !empty($jnetMemberShell) ? '2' : '1' ?>>
                 <?php if ($personnelAnonymizedForViewer): ?>
                 <p class="personnel-file-hero__confidential"><?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, null, true) ?></p>
                 <?php endif; ?>
@@ -824,8 +828,8 @@ if ($personnelFileIsRhFull) {
         </nav>
         <div class="personnel-file-hub-actions">
             <?php if ($canEditProfile && !empty($viewerIsPersonnelSubject)): ?>
-            <a href="<?= url('back-office/ma-situation/ma-fiche/modifier') ?>">Modifier ma fiche</a>
-            <a href="<?= url('back-office/ma-situation/ma-fiche/modifier') ?>#edit-portrait">Portrait</a>
+            <a href="<?= jnet_moi_url('ma-fiche/modifier') ?>">Modifier ma fiche</a>
+            <a href="<?= jnet_moi_url('ma-fiche/modifier') ?>#edit-portrait">Portrait</a>
             <?php elseif ($canEditProfile && \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance())): ?>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $targetUser['id']) . '#edit-portrait', ENT_QUOTES, 'UTF-8') ?>">Portrait</a>
             <?php endif; ?>
@@ -834,7 +838,7 @@ if ($personnelFileIsRhFull) {
             <a href="<?= url('documents') ?>">Documents</a>
             <?php if ($viewerIsPersonnelSubject): ?>
             <a href="<?= url('formations/mes-formations') ?>">Mes formations</a>
-            <a href="<?= htmlspecialchars(url('back-office/ma-situation/mes-demarches'), ENT_QUOTES, 'UTF-8') ?>">Mes démarches</a>
+            <a href="<?= htmlspecialchars(jnet_moi_url('mes-demarches'), ENT_QUOTES, 'UTF-8') ?>">Mes démarches</a>
             <?php endif; ?>
         </div>
             <div class="personnel-file-main min-w-0 space-y-5">
@@ -1754,7 +1758,7 @@ if ($personnelFileIsRhFull) {
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
                         <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Absences déclarées</h2>
                         <?php if (!empty($personnelIsSelf)): ?>
-                            <a href="<?= htmlspecialchars(url('back-office/ma-situation/mes-demarches'), ENT_QUOTES, 'UTF-8') ?>#absences" class="text-xs font-semibold text-emerald-700 underline decoration-emerald-600/30 underline-offset-2 hover:text-emerald-900">Déclarer ou interrompre</a>
+                            <a href="<?= htmlspecialchars(jnet_moi_url('mes-demarches'), ENT_QUOTES, 'UTF-8') ?>#absences" class="text-xs font-semibold text-emerald-700 underline decoration-emerald-600/30 underline-offset-2 hover:text-emerald-900">Déclarer ou interrompre</a>
                         <?php endif; ?>
                     </div>
                     <?php if ($personnelAbsences === []): ?>

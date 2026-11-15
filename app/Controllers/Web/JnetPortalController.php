@@ -1420,14 +1420,19 @@ final class JnetPortalController
         }
         $slug = JnetMemberPaths::slugOf($request->path()) ?? '';
         $page = JnetMemberPaths::pageOf($slug) ?? '';
+        // « Modifier ma fiche » allume l'entrée « Ma fiche » du rail.
+        $page = $page === 'ma-fiche/modifier' ? 'ma-fiche' : $page;
         $title = trim((string) ($vars['boPageTitle'] ?? '')) !== '' ? (string) $vars['boPageTitle'] : (string) ($vars['title'] ?? 'Mon espace');
         $lead = trim((string) ($vars['boPageSubtitle'] ?? ''));
         $css = array_values(array_filter(array_map('strval', (array) ($vars['backOfficePageCss'] ?? []))));
         $js = array_values(array_filter(array_map('strval', (array) ($vars['jnetPageJs'] ?? []))));
+        // Feuilles à charger AVANT celles de JNET (tailwind.css : son préflight ne doit jamais l'emporter sur l'extranet).
+        $cssFirst = array_values(array_filter(array_map('strval', (array) ($vars['jnetPageCssFirst'] ?? []))));
+        $cssAll = array_merge(['jnet_member.css'], $css, $this->memberDarkCss());
         $memberCtx = $this->memberContext($ctx['tenant_id'], $ctx['user_id']);
         $offered = PortalAccessChoice::jnetOfferedTo($memberCtx['tenantType']);
         // Les clés de coque priment sur celles de la page ; les autres variables de la page passent telles quelles.
-        unset($vars['title'], $vars['jnetInnerView'], $vars['jnetPageTitle'], $vars['jnetPageCss'], $vars['jnetPageJs']);
+        unset($vars['title'], $vars['jnetInnerView'], $vars['jnetPageTitle'], $vars['jnetPageCss'], $vars['jnetPageJs'], $vars['jnetPageCssFirst']);
 
         return $this->render('member', $title, array_merge($vars, [
             'jnetInnerView' => (string) ($vars['content'] ?? 'jnet.home'),
@@ -1436,7 +1441,9 @@ final class JnetPortalController
             'jnetMemberRail' => JnetMemberHub::sections($memberCtx),
             'jnetShowExtranetTabs' => $offered,
             'jnetPageLead' => $lead,
-        ]), 'hub', array_merge(['jnet_member.css'], $css, $this->memberDarkCss()), $js);
+        ], $cssFirst === [] ? [] : [
+            'jnetPageCss' => array_merge($cssFirst, ['jnet_portal.css', 'jnet_spaces.css'], $cssAll),
+        ]), 'hub', $cssFirst === [] ? $cssAll : [], $js);
     }
 
     /**

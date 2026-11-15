@@ -1,0 +1,62 @@
+/**
+ * JNET — Ma fiche et Modifier ma fiche (/jnet/moi/ma-fiche, /jnet/moi/ma-fiche/modifier).
+ * Chargé après tailwind.css (préflight) et jnet_member.css : les feuilles de la fiche (personnel-*.css, decorations-kit.css)
+ * viennent avant, leurs variantes sombres (back-office-dark.generated.css) après. Ici : la fiche s'adapte à la coque JNET.
+ */
+
+[x-cloak] {
+  display: none !important;
+}
+
+/* La coque JNET fournit déjà le titre, les gouttières et le fond : la fiche ne les double pas. */
+.jp .jnet-moi-fiche.ath-main__body {
+  padding-top: 0;
+  padding-bottom: 24px;
+  background: transparent;
+  color: inherit;
+}
+
+.jp .jnet-moi-fiche.ath-main__body.personnel-file--public,
+.jp .jnet-moi-fiche.ath-main__body.personnel-file--rh-full {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.jp .jnet-moi-fiche .personnel-file-hero {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Pas de surtitre au-dessus des titres : le nom du dossier est le premier texte de la carte. */
+.jp .jnet-moi-fiche .personnel-file-hero__eyebrow,
+.jp .jnet-moi-fiche .adv-kicker {
+  display: none;
+}
+
+/* Modifier ma fiche : pleine largeur, comme les autres pages de l'extranet. */
+.jp .jnet-moi-fiche .pd-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.jp .jnet-moi-fiche.pd-page {
+  padding: 0 0 24px;
+  min-height: 0;
+  --pd-primary: var(--u);
+  --pd-primary-hover: var(--u);
+}
+
+/* Boutons principaux aux couleurs de JNET. */
+.jp .jnet-moi-fiche .pd-btn--primary {
+  border-color: var(--u);
+  background: var(--u);
+  color: var(--ja-on-u);
+}
+
+.jp .jnet-moi-fiche .pd-btn--primary:hover {
+  border-color: var(--u);
+  background: var(--u);
+  color: var(--ja-on-u);
+  filter: brightness(1.12);
+}
