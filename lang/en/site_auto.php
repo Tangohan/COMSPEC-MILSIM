@@ -66550,4 +66550,6 @@ return [
     'Vérifier les données anciennes' => 'Check old data',
     'Les administrateurs de la communauté.' => 'Community administrators.',
     'Au fil des versions, les écrans ont changé de façon d’afficher les personnes et les dossiers. Les données saisies il y a longtemps peuvent être incomplètes. Athena ne les supprime ni ne les écrase jamais : cet avis vous dit ce qui est incomplet pour que vous le complétiez.' => 'Over the versions, screens changed how they show people and files. Data entered long ago can be incomplete. Athena never deletes or overwrites it: this notice tells you what is incomplete so you can complete it.',
+    'Pour que chaque membre relise et corrige sa propre fiche, lancez une' => 'For each member to review and correct their own record, start a',
+    'campagne de fiabilisation des données' => 'data reliability campaign',
 ];

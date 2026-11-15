@@ -54,6 +54,7 @@ $lgLinks = [
                     </li>
                     <?php endforeach; ?>
                 </ul>
+                <p class="bo-dq-section__lead">Pour que chaque membre relise et corrige sa propre fiche, lancez une <a href="<?= $h(url('back-office/organisation/fiabilisation')) ?>">campagne de fiabilisation des données</a>.</p>
                 <?php endif; ?>
 
                 <?php if ($lgImportable > 0 || $lgBatches !== [] || $lgSim !== null): ?>
