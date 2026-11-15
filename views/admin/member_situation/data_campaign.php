@@ -217,13 +217,19 @@ $stepUrl = static fn (string $key): string => jnet_moi_url('fiabilisation', ['et
                 <p class="dcm-alert"><?= $svg($icons['alert']) ?><span>Cette partie a changé depuis votre dernière réponse : relisez-la et répondez de nouveau.</span></p>
             <?php endif; ?>
 
+            <?php $toComplete = $status === 'incomplete' ? DataCampaignLoginPrompt::missingLabels($b) : []; ?>
+            <?php if ($status === 'incomplete'): ?>
+                <p class="dcm-alert"><?= $svg($icons['alert']) ?><span><?= $toComplete !== []
+                    ? 'À compléter : ' . $h(implode(', ', $toComplete)) . '. Choisissez « À corriger » ci-dessous et indiquez la bonne valeur : l’encadrement la valide. « Tout confirmer » n’est pas proposé tant qu’il manque une information.'
+                    : 'Aucune donnée n’est enregistrée dans cette partie. Choisissez « À corriger » ci-dessous pour le dire à l’encadrement.' ?></span></p>
+            <?php endif; ?>
             <div class="dcm-detail">
                 <?php if (!empty($b['portrait'])): ?>
                     <img class="dcm-portrait" src="<?= $h($b['portrait']) ?>" alt="Votre portrait enregistré" width="112" height="112" loading="lazy">
                 <?php endif; ?>
                 <?php if ($b['rows'] !== []): ?>
                     <dl class="dcm-rows">
-                        <?php foreach ($b['rows'] as $row): $missing = (string) $row['value'] === DataCampaignPage::MISSING; ?>
+                        <?php foreach ($b['rows'] as $row): $missing = DataCampaignPage::isMissingValue($row['value'] ?? ''); ?>
                             <div class="dcm-rows__line<?= $missing ? ' is-missing' : '' ?>">
                                 <dt><?= $h($row['label']) ?></dt>
                                 <dd><?= $h($row['value']) ?></dd>

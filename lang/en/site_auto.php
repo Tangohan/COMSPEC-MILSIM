@@ -66474,6 +66474,7 @@ return [
     'Image enregistrée : %1' => 'Stored image: %1',
     'Envoyer un nouveau portrait' => 'Send a new portrait',
     'Numéro de membre de la communauté' => 'Community member number',
+    'Matricule de votre organisation' => 'Your organization registration number',
     'Identifiant Athena' => 'Athena identifier',
     'Matricule de service' => 'Service number',
     'Indicatifs radio secondaires' => 'Secondary radio callsigns',
@@ -68515,4 +68516,8 @@ return [
     'Identité #%1' => 'Identity #%1',
     'Expire %1' => 'Expires %1',
     'Demande d’accès aux images' => 'Image access request',
+    'Des informations manquent : %1. Ouvrez ces parties pour les compléter avant de confirmer.' => 'Some information is missing: %1. Open these parts to complete them before confirming.',
+    'Certaines parties sont signalées : relisez-les une par une avant de confirmer.' => 'Some parts are flagged: review them one by one before confirming.',
+    '. Choisissez « À corriger » ci-dessous et indiquez la bonne valeur : l’encadrement la valide. « Tout confirmer » n’est pas proposé tant qu’il manque une information.' => '. Choose “To fix” below and enter the right value: the staff validates it. “Confirm all” is not offered while information is missing.',
+    'Aucune donnée n’est enregistrée dans cette partie. Choisissez « À corriger » ci-dessous pour le dire à l’encadrement.' => 'No data is recorded in this part. Choose “To fix” below to tell the staff.',
 ];
