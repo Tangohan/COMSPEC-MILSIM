@@ -60,18 +60,18 @@ class DataCampaignRepository
     // ---------------------------------------------------------------- réglages
 
     /**
-     * @return array{auto_enabled: bool, open_md: string, close_md: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>, last_auto_year: int}
+     * @return array{auto_enabled: bool, emails_enabled: bool, open_md: string, close_md: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>}
      */
     public function settings(int $tenantId): array
     {
         $defaults = [
-            'auto_enabled' => false,
+            'auto_enabled' => true,
+            'emails_enabled' => true,
             'open_md' => DataCampaignCalendar::DEFAULT_OPEN_MD,
             'close_md' => DataCampaignCalendar::DEFAULT_CLOSE_MD,
             'blocks' => DataCampaignBlocks::keys(),
             'unit_ids' => [],
             'reminder_days' => DataCampaignCalendar::DEFAULT_REMINDER_DAYS,
-            'last_auto_year' => 0,
         ];
         if (!$this->schemaReady()) {
             return $defaults;
@@ -89,34 +89,36 @@ class DataCampaignRepository
 
     /**
      * @param array<string, mixed> $row
-     * @return array{auto_enabled: bool, open_md: string, close_md: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>, last_auto_year: int}
+     * @return array{auto_enabled: bool, emails_enabled: bool, open_md: string, close_md: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>}
      */
     public static function normalizeSettings(array $row): array
     {
+        // Sans ligne ou sans valeur, l'ouverture automatique et les e-mails sont activés (la gestion peut les couper).
         return [
-            'auto_enabled' => !empty($row['auto_enabled']),
+            'auto_enabled' => !array_key_exists('auto_enabled', $row) || !empty($row['auto_enabled']),
+            'emails_enabled' => !array_key_exists('emails_enabled', $row) || !empty($row['emails_enabled']),
             'open_md' => DataCampaignCalendar::normalizeMd((string) ($row['open_md'] ?? ''), DataCampaignCalendar::DEFAULT_OPEN_MD),
             'close_md' => DataCampaignCalendar::normalizeMd((string) ($row['close_md'] ?? ''), DataCampaignCalendar::DEFAULT_CLOSE_MD),
             'blocks' => DataCampaignBlocks::normalize($row['blocks_json'] ?? null),
             'unit_ids' => self::ids($row['unit_ids_json'] ?? null),
             'reminder_days' => DataCampaignCalendar::normalizeReminderDays($row['reminder_days_json'] ?? null),
-            'last_auto_year' => (int) ($row['last_auto_year'] ?? 0),
         ];
     }
 
-    /** @param array{auto_enabled: bool, open_md: string, close_md: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>} $s */
+    /** @param array{auto_enabled: bool, emails_enabled: bool, open_md: string, close_md: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>} $s */
     public function saveSettings(int $tenantId, array $s, int $userId): void
     {
         $st = $this->db()->prepare(
-            'INSERT INTO data_campaign_settings (tenant_id, auto_enabled, open_md, close_md, blocks_json, unit_ids_json, reminder_days_json, updated_by, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-             ON DUPLICATE KEY UPDATE auto_enabled = VALUES(auto_enabled), open_md = VALUES(open_md), close_md = VALUES(close_md),
+            'INSERT INTO data_campaign_settings (tenant_id, auto_enabled, emails_enabled, open_md, close_md, blocks_json, unit_ids_json, reminder_days_json, updated_by, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE auto_enabled = VALUES(auto_enabled), emails_enabled = VALUES(emails_enabled), open_md = VALUES(open_md), close_md = VALUES(close_md),
                blocks_json = VALUES(blocks_json), unit_ids_json = VALUES(unit_ids_json), reminder_days_json = VALUES(reminder_days_json),
                updated_by = VALUES(updated_by), updated_at = NOW()'
         );
         $st->execute([
             $tenantId,
             $s['auto_enabled'] ? 1 : 0,
+            $s['emails_enabled'] ? 1 : 0,
             $s['open_md'],
             $s['close_md'],
             json_encode($s['blocks']),
@@ -124,11 +126,6 @@ class DataCampaignRepository
             json_encode($s['reminder_days']),
             $userId > 0 ? $userId : null,
         ]);
-    }
-
-    public function markAutoYear(int $tenantId, int $year): void
-    {
-        $this->db()->prepare('UPDATE data_campaign_settings SET last_auto_year = ? WHERE tenant_id = ?')->execute([$year, $tenantId]);
     }
 
     /** @return list<int> communautés qui ont au moins une campagne ouverte */
@@ -155,29 +152,86 @@ class DataCampaignRepository
         return (int) ($st->fetchColumn() ?: 0);
     }
 
-    /** @return list<int> communautés qui ont activé l'ouverture automatique */
+    /**
+     * Communautés où l'ouverture automatique n'a pas été coupée : toutes les communautés réelles, sauf celles dont la gestion a
+     * réglé « Ouverture automatique : Non ».
+     *
+     * @return list<int>
+     */
     public function tenantsWithAutoEnabled(): array
     {
         if (!$this->schemaReady()) {
             return [];
         }
-        $st = $this->db()->query('SELECT tenant_id FROM data_campaign_settings WHERE auto_enabled = 1 ORDER BY tenant_id ASC');
+        $st = $this->db()->query(
+            'SELECT t.id FROM tenants t LEFT JOIN data_campaign_settings s ON s.tenant_id = t.id WHERE t.id > 1 AND (s.tenant_id IS NULL OR s.auto_enabled = 1) ORDER BY t.id ASC'
+        );
 
         return $st === false ? [] : array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
     }
 
+    /**
+     * Parmi ces membres, combien se sont connectés depuis $days jours (la colonne de dernière connexion absente : tous comptent).
+     *
+     * @param list<int> $userIds
+     */
+    public function recentlyActiveCount(array $userIds, int $days = 90): int
+    {
+        $userIds = array_values(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0));
+        if ($userIds === []) {
+            return 0;
+        }
+        try {
+            $n = 0;
+            foreach (array_chunk($userIds, 500) as $chunk) {
+                $st = $this->db()->prepare('SELECT COUNT(*) FROM users WHERE id IN (' . implode(',', $chunk) . ') AND last_login_at >= DATE_SUB(NOW(), INTERVAL ' . max(1, $days) . ' DAY)');
+                $st->execute();
+                $n += (int) $st->fetchColumn();
+            }
+
+            return $n;
+        } catch (\Throwable) {
+            return count($userIds);
+        }
+    }
+
+    /**
+     * Parmi ces membres, combien n'ont pas de prénom ou pas de nom d'état civil renseigné (fiches très incomplètes).
+     *
+     * @param list<int> $userIds
+     */
+    public function withoutCivilNameCount(array $userIds): int
+    {
+        $userIds = array_values(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0));
+        if ($userIds === []) {
+            return 0;
+        }
+        $n = 0;
+        foreach (array_chunk($userIds, 500) as $chunk) {
+            $st = $this->db()->prepare(
+                "SELECT COUNT(*) FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id IN (" . implode(',', $chunk) . ")
+                 AND (p.user_id IS NULL OR TRIM(COALESCE(p.first_name, '')) = '' OR TRIM(COALESCE(p.last_name, '')) = '')"
+            );
+            $st->execute();
+            $n += (int) $st->fetchColumn();
+        }
+
+        return $n;
+    }
     // ---------------------------------------------------------------- campagnes
 
     /**
-     * @param array{year: int, title: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>, opens_on: ?string, due_on: ?string, auto: bool} $c
+     * @param array{year: int, title: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>, opens_on: ?string, due_on: ?string, auto: bool, forced_on?: ?string} $c
+     * @return int identifiant, 0 si la communauté a déjà une campagne ouverte par Athena pour cette année (clé unique)
      */
     public function createCampaign(int $tenantId, array $c, int $userId): int
     {
         $st = $this->db()->prepare(
-            'INSERT INTO data_campaigns (tenant_id, campaign_year, title, status, blocks_json, unit_ids_json, reminder_days_json, opens_on, due_on, auto_created, created_by, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+            'INSERT INTO data_campaigns (tenant_id, campaign_year, title, status, blocks_json, unit_ids_json, reminder_days_json, opens_on, due_on, auto_created, auto_year, forced_on, created_by, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
         );
-        $st->execute([
+        try {
+            $st->execute([
             $tenantId,
             $c['year'],
             $c['title'],
@@ -188,10 +242,29 @@ class DataCampaignRepository
             $c['opens_on'],
             $c['due_on'],
             $c['auto'] ? 1 : 0,
+            $c['auto'] ? $c['year'] : null,
+            $c['forced_on'] ?? null,
             $userId > 0 ? $userId : null,
-        ]);
+            ]);
+        } catch (\PDOException $e) {
+            if ((string) $e->getCode() === '23000') {
+                return 0;
+            }
+            throw $e;
+        }
 
         return (int) $this->db()->lastInsertId();
+    }
+
+    /**
+     * Titre et date limite d'une campagne qui n'est pas close.
+     */
+    public function updateCampaign(int $id, int $tenantId, string $title, string $dueOn): bool
+    {
+        $st = $this->db()->prepare("UPDATE data_campaigns SET title = ?, due_on = ? WHERE id = ? AND tenant_id = ? AND status <> 'closed'");
+        $st->execute([$title, $dueOn, $id, $tenantId]);
+
+        return $st->rowCount() > 0;
     }
 
     /** @return array<string, mixed>|null */
@@ -244,10 +317,10 @@ class DataCampaignRepository
         return array_map([self::class, 'hydrateCampaign'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
     }
 
-    /** Campagne créée par la tâche planifiée pour cette année, ouverte ou close (null si aucune). @return array<string, mixed>|null */
-    public function autoCampaignForYear(int $tenantId, int $year): ?array
+    /** Campagne de cette année (manuelle ou ouverte par Athena, brouillon, ouverte ou close), null si aucune. @return array<string, mixed>|null */
+    public function campaignForYear(int $tenantId, int $year): ?array
     {
-        $st = $this->db()->prepare('SELECT * FROM data_campaigns WHERE tenant_id = ? AND campaign_year = ? AND auto_created = 1 ORDER BY id DESC LIMIT 1');
+        $st = $this->db()->prepare('SELECT * FROM data_campaigns WHERE tenant_id = ? AND campaign_year = ? ORDER BY id DESC LIMIT 1');
         $st->execute([$tenantId, $year]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
@@ -364,7 +437,7 @@ class DataCampaignRepository
                     (SELECT COUNT(*) FROM data_campaign_flags f LEFT JOIN {$requests} r ON r.id = f.correction_request_id AND r.tenant_id = f.tenant_id
                       WHERE f.campaign_id = m.campaign_id AND f.user_id = m.user_id AND f.status = 'open'
                         AND (f.correction_request_id IS NULL OR r.id IS NULL OR r.status = 'pending')) AS open_flags,
-                    (SELECT MAX(r.created_at) FROM data_campaign_reminders r WHERE r.campaign_id = m.campaign_id AND r.user_id = m.user_id) AS last_reminded_at
+                    (SELECT MAX(r.created_at) FROM data_campaign_reminders r WHERE r.campaign_id = m.campaign_id AND r.user_id = m.user_id AND r.slot <> 'open') AS last_reminded_at
              FROM data_campaign_members m
              LEFT JOIN users u ON u.id = m.user_id
              WHERE m.campaign_id = ? AND m.tenant_id = ?{$where}
@@ -593,7 +666,7 @@ class DataCampaignRepository
     /** Dernier rappel (tout type) reçu par ce membre dans cette campagne, ou chaîne vide. */
     public function lastReminderAt(int $campaignId, int $userId): string
     {
-        $st = $this->db()->prepare('SELECT MAX(created_at) FROM data_campaign_reminders WHERE campaign_id = ? AND user_id = ?');
+        $st = $this->db()->prepare("SELECT MAX(created_at) FROM data_campaign_reminders WHERE campaign_id = ? AND user_id = ? AND slot <> 'open'");
         $st->execute([$campaignId, $userId]);
 
         return (string) ($st->fetchColumn() ?: '');

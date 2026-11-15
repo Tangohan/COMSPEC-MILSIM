@@ -205,9 +205,29 @@ final class ActivityHubPresentationService
             // Campagne de fiabilisation des données : ouverture, rappel, réponse de l'encadrement à un signalement.
             \App\Services\DataCampaign\DataCampaignService::NOTIFY_OPEN,
             \App\Services\DataCampaign\DataCampaignService::NOTIFY_REMINDER,
-            \App\Services\DataCampaign\DataCampaignService::NOTIFY_FLAG_HANDLED => (static function () use ($type, $payload, $unread, $at): array {
+            \App\Services\DataCampaign\DataCampaignService::NOTIFY_FLAG_HANDLED,
+            \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_OPENED,
+            \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_CLOSED => (static function () use ($type, $payload, $unread, $at): array {
                 $due = trim((string) ($payload['due_on'] ?? ''));
                 $dueText = $due !== '' && strtotime($due) !== false ? date('d/m/Y', (int) strtotime($due)) : '';
+                if ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_OPENED || $type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_CLOSED) {
+                    $cid = (int) ($payload['campaign_id'] ?? 0);
+                    if ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_AUTO_OPENED) {
+                        $n = (int) ($payload['members'] ?? 0);
+                        $title = self::fr() ? 'Campagne de fiabilisation ouverte automatiquement' : 'Data reliability campaign opened automatically';
+                        $detail = self::fr() ? 'Campagne de fiabilisation ouverte automatiquement, ' . $n . ' membre(s) concerné(s).' : 'Data reliability campaign opened automatically, ' . $n . ' member(s) concerned.';
+                        if (!empty($payload['incomplete'])) {
+                            $detail .= self::fr() ? ' Beaucoup de fiches sont incomplètes : complétez l’état civil avant ou pendant la campagne.' : ' Many records are incomplete: complete the civil identity before or during the campaign.';
+                        }
+                    } else {
+                        $title = self::fr() ? 'Campagne de fiabilisation close : rapport d’avancement' : 'Data reliability campaign closed: progress report';
+                        $detail = self::fr()
+                            ? (int) ($payload['confirmed'] ?? 0) . ' confirmée(s), ' . (int) ($payload['flagged'] ?? 0) . ' avec signalements, ' . (int) ($payload['none'] ?? 0) . ' sans réponse.'
+                            : (int) ($payload['confirmed'] ?? 0) . ' confirmed, ' . (int) ($payload['flagged'] ?? 0) . ' with reports, ' . (int) ($payload['none'] ?? 0) . ' unanswered.';
+                    }
+
+                    return ['title' => $title, 'detail' => $detail, 'href' => url('back-office/organisation/fiabilisation' . ($cid > 0 ? '/' . $cid : '')), 'unread' => $unread, 'at' => $at];
+                }
                 if ($type === \App\Services\DataCampaign\DataCampaignService::NOTIFY_FLAG_HANDLED) {
                     $title = self::fr() ? 'Votre signalement sur votre fiche a reçu une réponse' : 'Your report on your record has been answered';
                     $detail = self::fr() ? 'L’encadrement a traité ce que vous avez signalé : la réponse est sur la page de vérification de votre fiche.' : 'The staff handled what you reported: the answer is on your record check page.';

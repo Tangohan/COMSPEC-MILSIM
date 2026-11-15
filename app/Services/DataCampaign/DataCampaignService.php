@@ -31,6 +31,16 @@ class DataCampaignService
     public const NOTIFY_OPEN = 'data_campaign_open';
     public const NOTIFY_REMINDER = 'data_campaign_reminder';
     public const NOTIFY_FLAG_HANDLED = 'data_campaign_flag_handled';
+    /** Avis à la gestion : Athena a ouvert une campagne (un seul avis par campagne). */
+    public const NOTIFY_AUTO_OPENED = 'data_campaign_auto_opened';
+    /** Rapport d'avancement à la gestion à la clôture d'une campagne à sa date limite. */
+    public const NOTIFY_AUTO_CLOSED = 'data_campaign_auto_closed';
+
+    /** Une communauté sans membre connecté depuis ce nombre de jours n'est pas concernée par l'ouverture d'Athena. */
+    public const ACTIVE_DAYS = 90;
+
+    /** Au-delà de cette part de fiches sans prénom ou sans nom, l'avis à la gestion ajoute « fiches incomplètes ». */
+    public const INCOMPLETE_RATIO = 0.5;
 
     /** Une relance (manuelle) au plus par membre et par période de ce nombre d'heures. */
     public const REMINDER_COOLDOWN_HOURS = 72;
@@ -57,6 +67,12 @@ class DataCampaignService
     /** @var (\Closure(): int)|null */
     private ?\Closure $clock;
 
+    /** @var (\Closure(int): list<int>)|null */
+    private ?\Closure $managers;
+
+    /** @var array{notified: int, mails: int} envois du passage en cours */
+    private array $stats = ['notified' => 0, 'mails' => 0];
+
     public function __construct(
         private ?DataCampaignRepository $repo = null,
         private ?DataCampaignRecordReader $reader = null,
@@ -65,12 +81,14 @@ class DataCampaignService
         ?\Closure $mailer = null,
         ?\Closure $corrector = null,
         ?\Closure $clock = null,
+        ?\Closure $managers = null,
     ) {
         $this->audit = $audit;
         $this->notifier = $notifier;
         $this->mailer = $mailer;
         $this->corrector = $corrector;
         $this->clock = $clock;
+        $this->managers = $managers;
     }
 
     private function repo(): DataCampaignRepository
@@ -129,9 +147,10 @@ class DataCampaignService
             'opens_on' => $opens,
             'due_on' => $due,
             'auto' => $auto,
+            'forced_on' => $auto ? self::date($input['forced_on'] ?? null) : null,
         ], $actorId);
         if ($id < 1) {
-            return ['ok' => false, 'message' => 'La campagne n’a pas pu être créée.'];
+            return ['ok' => false, 'message' => $auto ? 'Athena a déjà ouvert une campagne pour cette année.' : 'La campagne n’a pas pu être créée.'];
         }
         $this->audit('data_campaign.created', $tenantId, $actorId, $id, ['year' => $year, 'auto' => $auto]);
 
@@ -139,11 +158,13 @@ class DataCampaignService
     }
 
     /**
-     * Ouvre la campagne : les membres du périmètre y sont inscrits (leur fiche n'est pas touchée) et reçoivent une notification.
+     * Ouvre la campagne : les membres du périmètre y sont inscrits (leur fiche n'est pas touchée) et reçoivent la notification
+     * d'ouverture, par lots (le reste part aux passages suivants de la tâche planifiée, une seule fois chacun).
      *
-     * @return array{ok: bool, message: string, enrolled?: int}
+     * @param array{email?: bool, budget?: int} $options
+     * @return array{ok: bool, message: string, enrolled?: int, served?: int}
      */
-    public function openCampaign(int $tenantId, int $actorId, int $campaignId): array
+    public function openCampaign(int $tenantId, int $actorId, int $campaignId, array $options = []): array
     {
         $c = $this->repo()->findCampaign($campaignId, $tenantId);
         if ($c === null) {
@@ -163,14 +184,36 @@ class DataCampaignService
         if (!$this->repo()->setStatus($campaignId, $tenantId, DataCampaignRepository::STATUS_OPEN, $actorId)) {
             return ['ok' => false, 'message' => 'La campagne n’a pas pu être ouverte.'];
         }
-        $sent = 0;
-        foreach (array_slice($enroll, 0, 2000) as $m) {
-            $this->notify($tenantId, $m['user_id'], self::NOTIFY_OPEN, ['campaign_id' => $campaignId, 'year' => $c['campaign_year'], 'due_on' => (string) ($c['due_on'] ?? '')]);
-            $sent++;
-        }
-        $this->audit('data_campaign.opened', $tenantId, $actorId, $campaignId, ['members' => count($enroll), 'notified' => $sent]);
+        $opened = $this->repo()->findCampaign($campaignId, $tenantId) ?? $c;
+        $served = $this->announceOpen($opened, (int) ($options['budget'] ?? self::BATCH), ($options['email'] ?? $this->mailsEnabled($tenantId)) !== false);
+        $this->audit('data_campaign.opened', $tenantId, $actorId, $campaignId, ['members' => count($enroll), 'notified' => $served]);
 
-        return ['ok' => true, 'message' => 'Campagne ouverte : ' . count($enroll) . ' membre(s) invité(s) à vérifier leur fiche.', 'enrolled' => $enrolled];
+        return ['ok' => true, 'message' => 'Campagne ouverte : ' . count($enroll) . ' membre(s) invité(s) à vérifier leur fiche.', 'enrolled' => $enrolled, 'served' => $served];
+    }
+
+    /**
+     * Titre et date limite d'une campagne (la gestion peut corriger celle qu'Athena a ouverte ou une campagne manuelle).
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function updateCampaign(int $tenantId, int $actorId, int $campaignId, string $title, string $dueOn): array
+    {
+        $c = $this->repo()->findCampaign($campaignId, $tenantId);
+        if ($c === null) {
+            return ['ok' => false, 'message' => 'Campagne introuvable.'];
+        }
+        $due = self::date($dueOn);
+        if ($due === null || $due < substr((string) ($c['opens_on'] ?? ''), 0, 10)) {
+            return ['ok' => false, 'message' => 'Indiquez une date limite valide, après l’ouverture.'];
+        }
+        $title = trim((string) preg_replace('/\s+/u', ' ', $title));
+        $title = $title !== '' ? mb_substr($title, 0, self::TITLE_MAX) : (string) $c['title'];
+        if (!$this->repo()->updateCampaign($campaignId, $tenantId, $title, $due)) {
+            return ['ok' => false, 'message' => 'Une campagne close ne se modifie plus.'];
+        }
+        $this->audit('data_campaign.updated', $tenantId, $actorId, $campaignId, ['due_on' => $due]);
+
+        return ['ok' => true, 'message' => 'Campagne modifiée.'];
     }
 
     /** @return array{ok: bool, message: string} */
@@ -201,7 +244,8 @@ class DataCampaignService
     {
         $units = $this->repo()->units($tenantId);
         $settings = [
-            'auto_enabled' => (string) ($input['auto_enabled'] ?? '0') === '1',
+            'auto_enabled' => (string) ($input['auto_enabled'] ?? '1') !== '0',
+            'emails_enabled' => (string) ($input['emails_enabled'] ?? '1') !== '0',
             'open_md' => DataCampaignCalendar::normalizeMd(self::md((string) ($input['open_md'] ?? '')), DataCampaignCalendar::DEFAULT_OPEN_MD),
             'close_md' => DataCampaignCalendar::normalizeMd(self::md((string) ($input['close_md'] ?? '')), DataCampaignCalendar::DEFAULT_CLOSE_MD),
             'blocks' => DataCampaignBlocks::normalize($input['blocks'] ?? null),
@@ -209,11 +253,11 @@ class DataCampaignService
             'reminder_days' => DataCampaignCalendar::normalizeReminderDays($input['reminder_days'] ?? null),
         ];
         $this->repo()->saveSettings($tenantId, $settings, $actorId);
-        $this->audit('data_campaign.settings', $tenantId, $actorId, 0, ['auto_enabled' => $settings['auto_enabled'], 'open_md' => $settings['open_md'], 'close_md' => $settings['close_md']]);
+        $this->audit('data_campaign.settings', $tenantId, $actorId, 0, ['auto_enabled' => $settings['auto_enabled'], 'emails_enabled' => $settings['emails_enabled'], 'open_md' => $settings['open_md'], 'close_md' => $settings['close_md']]);
 
         return ['ok' => true, 'message' => $settings['auto_enabled']
-            ? 'Réglage enregistré : une campagne s’ouvrira chaque année à la date choisie.'
-            : 'Réglage enregistré : aucune campagne ne s’ouvrira seule.'];
+            ? 'Réglage enregistré : Athena ouvrira une campagne chaque année à la date choisie.'
+            : 'Réglage enregistré : Athena n’ouvrira pas de campagne seule ; vous pouvez toujours en créer une à la main.'];
     }
 
     // ------------------------------------------------------------------ membre
@@ -595,7 +639,7 @@ class DataCampaignService
             if ($sent >= self::BATCH) {
                 break;
             }
-            if ($this->deliver($c, $uid, $slot, $actorId)) {
+            if ($this->deliver($c, $uid, $slot, $actorId, $this->mailsEnabled($tenantId))) {
                 $sent++;
             } else {
                 $skipped++;
@@ -643,40 +687,65 @@ class DataCampaignService
         return ['Membre', 'Indicatif', 'Unité', 'Statut', 'Parties répondues', 'Signalements ouverts', 'Confirmé le', 'Dernière relance'];
     }
 
-    // ------------------------------------------------------------------ tâche planifiée
+    // ------------------------------------------------------------------ ouverture automatique, ouverture forcée, rappels
 
     /**
-     * Un passage de la tâche planifiée : ouverture annuelle (communautés qui l'ont activée), clôture des campagnes
-     * automatiques échues, rappels aux dates prévues (une seule fois chacun). Idempotent, une communauté à la fois,
-     * au plus BATCH envois.
+     * Un passage unique, utilisé tel quel par la tâche planifiée, par la commande data-campaign.php (--open-now) et par le
+     * bouton « Ouvrir maintenant » : aucune logique n'est dupliquée.
      *
-     * @return array{opened: int, closed: int, reminders: int, tenants: int, errors: int}
+     *  - ouverture annuelle pour toute communauté qui ne l'a pas coupée, dans sa période (1er au 31 décembre par défaut) ;
+     *    avec « force », elle se fait tout de suite, hors période ;
+     *  - garde-fous communs : une seule campagne par communauté et par année (une campagne manuelle compte), jamais pour une
+     *    communauté sans membre connecté récemment, au plus BATCH membres servis par passage ;
+     *  - clôture des campagnes dont la date limite est passée, avec un rapport d'avancement pour la gestion ;
+     *  - notification d'ouverture (puis rappels J-14, J-3 et jour J), une seule fois par membre ;
+     *  - jamais la moindre modification d'une fiche. « dry_run » ne lit que : rien n'est écrit ni envoyé.
+     *
+     * @param array{force?: bool, tenant?: int|null, deadline?: string|null, blocks?: list<string>|null, email?: bool, dry_run?: bool, actor?: int} $options
+     * @return array{opened: int, closed: int, reminders: int, notified: int, mails: int, tenants: int, errors: int, plan: list<array<string, mixed>>}
      */
-    public function runScheduled(): array
+    public function runScheduled(array $options = []): array
     {
-        $out = ['opened' => 0, 'closed' => 0, 'reminders' => 0, 'tenants' => 0, 'errors' => 0];
+        $out = ['opened' => 0, 'closed' => 0, 'reminders' => 0, 'notified' => 0, 'mails' => 0, 'tenants' => 0, 'errors' => 0, 'plan' => []];
         if (!$this->repo()->schemaReady()) {
             return $out;
         }
+        $force = !empty($options['force']);
+        $dry = !empty($options['dry_run']);
+        $actor = (int) ($options['actor'] ?? 0);
         $today = $this->today();
         $year = (int) substr($today, 0, 4);
-        $tenants = array_values(array_unique(array_merge($this->repo()->tenantsWithAutoEnabled(), $this->repo()->tenantsWithOpenCampaign())));
+        $only = (int) ($options['tenant'] ?? 0);
+        $tenants = $only > 0
+            ? [$only]
+            : array_values(array_unique(array_merge($this->repo()->tenantsWithAutoEnabled(), $this->repo()->tenantsWithOpenCampaign())));
+        $this->stats = ['notified' => 0, 'mails' => 0];
         $budget = self::BATCH;
         foreach ($tenants as $tenantId) {
             try {
                 $out['tenants']++;
                 $settings = $this->repo()->settings($tenantId);
-                if ($settings['auto_enabled'] && $settings['last_auto_year'] < $year
-                    && DataCampaignCalendar::shouldAutoOpen($today, $year, $settings['open_md'], $settings['close_md'])) {
-                    $out['opened'] += $this->autoOpen($tenantId, $year, $settings) ? 1 : 0;
+                $withMail = ($options['email'] ?? true) !== false && $settings['emails_enabled'];
+                $plan = $this->planOpen($tenantId, $settings, $today, $year, $force, $options);
+                if ($dry || $force || $plan['action'] === 'open') {
+                    $out['plan'][] = $plan;
+                }
+                if ($dry) {
+                    continue;
+                }
+                if ($plan['action'] === 'open' && $this->openAutomatically($tenantId, $plan, $settings, $force, $actor, $today, $withMail, $budget)) {
+                    $out['opened']++;
                 }
                 foreach ($this->repo()->openCampaigns($tenantId) as $c) {
-                    if (!empty($c['auto_created']) && (string) ($c['due_on'] ?? '') !== '' && (string) $c['due_on'] < $today) {
-                        $out['closed'] += $this->closeCampaign($tenantId, 0, $c['id'])['ok'] ? 1 : 0;
+                    if ((string) ($c['due_on'] ?? '') !== '' && (string) $c['due_on'] < $today) {
+                        $out['closed'] += $this->closeWithReport($c) ? 1 : 0;
                         continue;
                     }
                     if ($budget > 0) {
-                        $sent = $this->runReminders($c, $today, $budget);
+                        $budget -= $this->announceOpen($c, $budget, $withMail);
+                    }
+                    if ($budget > 0) {
+                        $sent = $this->runReminders($c, $today, $budget, $withMail);
                         $budget -= $sent;
                         $out['reminders'] += $sent;
                     }
@@ -689,36 +758,161 @@ class DataCampaignService
                 break;
             }
         }
+        $out['notified'] = $this->stats['notified'];
+        $out['mails'] = $this->stats['mails'];
 
         return $out;
     }
 
     /**
-     * @param array{auto_enabled: bool, open_md: string, close_md: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>, last_auto_year: int} $settings
+     * Ce que ferait un passage pour une communauté, sans rien écrire.
+     *
+     * @param array{auto_enabled: bool, emails_enabled: bool, open_md: string, close_md: string, blocks: list<string>, unit_ids: list<int>, reminder_days: list<int>} $settings
+     * @param array<string, mixed> $options
+     * @return array{tenant_id: int, action: string, reason: string, members: int, incomplete: bool, due_on: string, blocks: list<string>, unit_ids: list<int>, user_ids: list<int>}
      */
-    private function autoOpen(int $tenantId, int $year, array $settings): bool
+    private function planOpen(int $tenantId, array $settings, string $today, int $year, bool $force, array $options): array
     {
-        $existing = $this->repo()->autoCampaignForYear($tenantId, $year);
-        if ($existing !== null) {
-            $this->repo()->markAutoYear($tenantId, $year);
-
-            return false;
+        $plan = ['tenant_id' => $tenantId, 'action' => 'skip', 'reason' => '', 'members' => 0, 'incomplete' => false, 'due_on' => '', 'blocks' => $settings['blocks'], 'unit_ids' => $settings['unit_ids'], 'user_ids' => []];
+        if (!$force) {
+            if (!$settings['auto_enabled']) {
+                return ['reason' => 'Ouverture automatique coupée par la gestion.'] + $plan;
+            }
+            if (!DataCampaignCalendar::shouldAutoOpen($today, $year, $settings['open_md'], $settings['close_md'])) {
+                return ['reason' => 'Hors de la période d’ouverture.'] + $plan;
+            }
         }
-        $window = DataCampaignCalendar::window($year, $settings['open_md'], $settings['close_md']);
-        $created = $this->createCampaign($tenantId, 0, [
-            'year' => $year,
-            'blocks' => $settings['blocks'],
-            'unit_ids' => $settings['unit_ids'],
+        if ($this->repo()->campaignForYear($tenantId, $year) !== null) {
+            return ['reason' => 'Une campagne existe déjà pour cette année.'] + $plan;
+        }
+        if ($force) {
+            $due = self::date($options['deadline'] ?? null) ?? DataCampaignCalendar::dateIn($year, DataCampaignCalendar::DEFAULT_CLOSE_MD);
+            if (is_array($options['blocks'] ?? null) && $options['blocks'] !== []) {
+                $plan['blocks'] = DataCampaignBlocks::normalize($options['blocks']);
+            }
+        } else {
+            $due = DataCampaignCalendar::window($year, $settings['open_md'], $settings['close_md'])['due_on'];
+        }
+        if ($due < $today) {
+            return ['reason' => 'La date limite est déjà passée.', 'due_on' => $due] + $plan;
+        }
+        $plan['due_on'] = $due;
+        $units = $this->repo()->units($tenantId);
+        foreach ($this->repo()->roster($tenantId) as $m) {
+            if (DataCampaignScope::memberInCampaign($m['unit_id'], $settings['unit_ids'], $units)) {
+                $plan['user_ids'][] = $m['user_id'];
+            }
+        }
+        $plan['members'] = count($plan['user_ids']);
+        if ($plan['members'] === 0) {
+            return ['reason' => 'Aucun membre actif.'] + $plan;
+        }
+        if ($this->repo()->recentlyActiveCount($plan['user_ids'], self::ACTIVE_DAYS) === 0) {
+            return ['reason' => 'Aucun membre connecté depuis ' . self::ACTIVE_DAYS . ' jours.'] + $plan;
+        }
+        $plan['incomplete'] = $this->repo()->withoutCivilNameCount($plan['user_ids']) > $plan['members'] * self::INCOMPLETE_RATIO;
+        $plan['action'] = 'open';
+
+        return $plan;
+    }
+
+    /**
+     * Crée et ouvre la campagne décidée par planOpen(), puis prévient les responsables (un seul avis).
+     *
+     * @param array<string, mixed> $plan
+     * @param array<string, mixed> $settings
+     */
+    private function openAutomatically(int $tenantId, array $plan, array $settings, bool $force, int $actor, string $today, bool $withMail, int &$budget): bool
+    {
+        $created = $this->createCampaign($tenantId, $actor, [
+            'year' => (int) substr($today, 0, 4),
+            'blocks' => $plan['blocks'],
+            'unit_ids' => $plan['unit_ids'],
             'reminder_days' => $settings['reminder_days'],
-            'opens_on' => $this->today(),
-            'due_on' => $window['due_on'],
+            'opens_on' => $today,
+            'due_on' => $plan['due_on'],
+            'forced_on' => $force ? $today : null,
         ], true);
         if (!$created['ok'] || (int) ($created['id'] ?? 0) < 1) {
             return false;
         }
-        $this->repo()->markAutoYear($tenantId, $year);
+        $opened = $this->openCampaign($tenantId, $actor, (int) $created['id'], ['email' => $withMail, 'budget' => $budget]);
+        if (!$opened['ok']) {
+            return false;
+        }
+        $budget -= (int) ($opened['served'] ?? 0);
+        foreach ($this->managerIds($tenantId) as $managerId) {
+            $this->notify($tenantId, $managerId, self::NOTIFY_AUTO_OPENED, [
+                'campaign_id' => (int) $created['id'],
+                'members' => (int) $plan['members'],
+                'incomplete' => (bool) $plan['incomplete'],
+                'forced' => $force,
+            ]);
+        }
+        $this->audit('data_campaign.opened_by_athena', $tenantId, $actor, (int) $created['id'], ['members' => $plan['members'], 'forced' => $force, 'incomplete' => $plan['incomplete']]);
 
-        return $this->openCampaign($tenantId, 0, (int) $created['id'])['ok'];
+        return true;
+    }
+
+    /**
+     * Clôt une campagne dont la date limite est passée et envoie à la gestion le rapport d'avancement.
+     *
+     * @param array<string, mixed> $c
+     */
+    private function closeWithReport(array $c): bool
+    {
+        $tenantId = (int) $c['tenant_id'];
+        if (!$this->closeCampaign($tenantId, 0, (int) $c['id'])['ok']) {
+            return false;
+        }
+        $totals = DataCampaignProgress::totals($this->repo()->members((int) $c['id'], $tenantId));
+        foreach ($this->managerIds($tenantId) as $managerId) {
+            $this->notify($tenantId, $managerId, self::NOTIFY_AUTO_CLOSED, ['campaign_id' => (int) $c['id']] + $totals);
+        }
+
+        return true;
+    }
+
+    /**
+     * Notification d'ouverture (et e-mail, par la file existante) aux membres inscrits, par lots : chaque membre la reçoit une
+     * seule fois, même si la commande ou la tâche est relancée. Retourne le nombre de membres servis.
+     *
+     * @param array<string, mixed> $c
+     */
+    private function announceOpen(array $c, int $budget, bool $withMail): int
+    {
+        $campaignId = (int) $c['id'];
+        $tenantId = (int) $c['tenant_id'];
+        if ($budget < 1 || in_array('open', $this->repo()->doneSlots($campaignId), true)) {
+            return 0;
+        }
+        $served = array_flip($this->repo()->usersWithSlot($campaignId, 'open'));
+        $sent = 0;
+        $pending = 0;
+        foreach ($this->repo()->members($campaignId, $tenantId) as $m) {
+            $uid = (int) $m['user_id'];
+            if (isset($served[$uid])) {
+                continue;
+            }
+            if ($sent >= $budget) {
+                $pending++;
+                continue;
+            }
+            if (!$this->repo()->reserveReminder($campaignId, $tenantId, $uid, 'open')) {
+                continue;
+            }
+            $this->notify($tenantId, $uid, self::NOTIFY_OPEN, ['campaign_id' => $campaignId, 'year' => $c['campaign_year'], 'due_on' => (string) ($c['due_on'] ?? '')]);
+            if ($withMail && $this->mail($tenantId, $uid, $c)) {
+                $this->stats['mails']++;
+            }
+            $this->stats['notified']++;
+            $sent++;
+        }
+        if ($pending === 0) {
+            $this->repo()->reserveReminder($campaignId, $tenantId, 0, 'open');
+        }
+
+        return $sent;
     }
 
     /**
@@ -726,7 +920,7 @@ class DataCampaignService
      *
      * @param array<string, mixed> $c
      */
-    private function runReminders(array $c, string $today, int $budget): int
+    private function runReminders(array $c, string $today, int $budget, bool $withMail): int
     {
         $tenantId = (int) $c['tenant_id'];
         $openedOn = substr((string) ($c['opened_at'] ?? $c['opens_on'] ?? $today), 0, 10);
@@ -748,7 +942,7 @@ class DataCampaignService
                     $pending++;
                     continue;
                 }
-                if ($this->deliver($c, $uid, $slot, 0)) {
+                if ($this->deliver($c, $uid, $slot, 0, $withMail)) {
                     $sent++;
                 }
             }
@@ -766,16 +960,44 @@ class DataCampaignService
      *
      * @param array<string, mixed> $c
      */
-    private function deliver(array $c, int $userId, string $slot, int $actorId): bool
+    private function deliver(array $c, int $userId, string $slot, int $actorId, bool $withMail): bool
     {
         $tenantId = (int) $c['tenant_id'];
         if (!$this->repo()->reserveReminder($c['id'], $tenantId, $userId, $slot, $actorId)) {
             return false;
         }
         $this->notify($tenantId, $userId, self::NOTIFY_REMINDER, ['campaign_id' => $c['id'], 'year' => $c['campaign_year'], 'due_on' => (string) ($c['due_on'] ?? '')]);
-        $this->mail($tenantId, $userId, $c);
+        $this->stats['notified']++;
+        if ($withMail && $this->mail($tenantId, $userId, $c)) {
+            $this->stats['mails']++;
+        }
 
         return true;
+    }
+
+    /**
+     * Responsables à prévenir : ceux qui traitent les corrections de fiches (mêmes droits que la gestion de la campagne).
+     *
+     * @return list<int>
+     */
+    private function managerIds(int $tenantId): array
+    {
+        try {
+            if ($this->managers !== null) {
+                return array_values(array_map('intval', ($this->managers)($tenantId)));
+            }
+            $rows = Container::get(\App\Services\Personnel\PersonnelCorrectionRequestService::class)->listStaffRecipients($tenantId);
+
+            return array_values(array_map(static fn (array $r): int => (int) $r['user_id'], $rows));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** Les e-mails d'ouverture et de rappel sont-ils actifs pour cette communauté ? (réglage, activé par défaut) */
+    private function mailsEnabled(int $tenantId): bool
+    {
+        return $this->repo()->settings($tenantId)['emails_enabled'];
     }
 
     // ------------------------------------------------------------------ effets de bord injectables
