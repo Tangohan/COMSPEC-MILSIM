@@ -59,7 +59,7 @@ final class SseNotifyAssetTest extends TestCase
     {
         $html = $this->render('<b>x</b>', 'Fiche enregistrée.');
         self::assertStringContainsString('data-sse-stack="status" role="status"', $html);
-        self::assertMatchesRegularExpression('#role="status">\s*<div class="sse-note sse-note--success" data-sse-note="success"#', $html);
+        self::assertMatchesRegularExpression('#role="status">\s*<div class="sse-note sse-toast sse-note--success" data-sse-note="success"#', $html);
         self::assertStringNotContainsString('<b>x</b>', $html);
         self::assertStringContainsString('&lt;b&gt;x&lt;/b&gt;', $html);
     }
@@ -119,7 +119,7 @@ final class SseNotifyAssetTest extends TestCase
         self::assertStringNotContainsString('animation:', $outside);
         self::assertStringContainsString('min-height: 44px', $css);
         self::assertStringContainsString('min-width: 44px', $css);
-        self::assertStringContainsString('border: 2px solid var(--nt-line)', $css);
+        self::assertStringContainsString('border: 1px solid var(--nt-line)', $css);
         self::assertStringContainsString('[aria-invalid="true"]', $css);
         self::assertStringContainsString('.is-pinned', $css);
         self::assertStringNotContainsString('eyebrow', strtolower($css));
@@ -127,15 +127,26 @@ final class SseNotifyAssetTest extends TestCase
 
     public function testErrorColoursReachWcagAaContrastOnTheirBackground(): void
     {
+        // Les jetons des messages pointent vers --sse-* (sse-ds.css) : on résout la chaîne, puis on mesure le contraste.
         $css = $this->read('public/assets/css/sse_notify.css');
-        foreach (['err' => ['bg', 'ink'], 'ok' => ['bg', 'ink'], 'warn' => ['bg', 'ink']] as $tone => $_) {
-            self::assertSame(1, preg_match('/--nt-' . $tone . '-bg:\s*(#[0-9a-f]{6});/i', $css, $bg), $tone);
-            self::assertSame(1, preg_match('/--nt-' . $tone . '-ink:\s*(#[0-9a-f]{6});/i', $css, $ink), $tone);
-            self::assertGreaterThanOrEqual(7.0, self::contrast($bg[1], $ink[1]), 'contraste du ton ' . $tone);
+        $ds = $this->read('public/assets/css/sse-ds.css');
+        $token = static function (string $name) use ($ds): string {
+            self::assertSame(1, preg_match('/' . preg_quote($name, '/') . ':\s*(#[0-9a-f]{6});/i', $ds, $m), $name);
+
+            return $m[1];
+        };
+        $resolve = function (string $nt) use ($css, $token): string {
+            self::assertSame(1, preg_match('/' . preg_quote($nt, '/') . ':\s*var\((--sse-[a-z-]+)\);/', $css, $m), $nt);
+
+            return $token($m[1]);
+        };
+        foreach (['err', 'ok', 'warn'] as $tone) {
+            self::assertGreaterThanOrEqual(7.0, self::contrast($resolve('--nt-' . $tone . '-bg'), $resolve('--nt-' . $tone . '-ink')), 'contraste du ton ' . $tone);
         }
-        self::assertSame(1, preg_match('/--nt-err-icon:\s*(#[0-9a-f]{6});/i', $css, $icon));
-        preg_match('/--nt-err-bg:\s*(#[0-9a-f]{6});/i', $css, $bg);
-        self::assertGreaterThanOrEqual(4.5, self::contrast($bg[1], $icon[1]));
+        self::assertGreaterThanOrEqual(4.5, self::contrast($resolve('--nt-err-bg'), $resolve('--nt-err-icon')));
+        self::assertGreaterThanOrEqual(4.5, self::contrast($resolve('--nt-warn-bg'), $resolve('--nt-warn-icon')));
+        self::assertGreaterThanOrEqual(4.5, self::contrast($resolve('--nt-ok-bg'), $resolve('--nt-ok-icon')));
+        self::assertGreaterThanOrEqual(4.5, self::contrast($token('--sse-raised'), $token('--sse-strong')), 'titre blanc sur la surface du toast');
     }
 
     public function testAjaxFailuresOfThePortalReachTheComponentInsteadOfNativeAlerts(): void
