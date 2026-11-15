@@ -291,7 +291,7 @@ final class SseSheetTest extends TestCase
         self::assertNull(\Tests\Support\PdfText::fictionMention((string) $res['bytes']));
 
         $root = dirname(__DIR__, 2) . '/app/';
-        foreach (['Services/Sse/SseSheetPdf.php', 'Services/Sse/SseSheetService.php', 'Services/Sse/SseSheetFactsService.php', 'Support/SseSheetCatalog.php', 'Support/SseSheetText.php', 'Services/Sse/SseSheetMenu.php'] as $file) {
+        foreach (['Services/Sse/SseSheetPdf.php', 'Services/Sse/SseSheetService.php', 'Services/Sse/SseSheetFactsService.php', 'Support/SseSheetCatalog.php', 'Support/SseSheetText.php', 'Services/Sse/SseSheetMenu.php', 'Services/Sse/SseSheetPdfRedaction.php', 'Services/Sse/SseSheetReissueService.php', 'Services/Sse/SseSheetIssueView.php', 'Support/SseRedactionExplain.php'] as $file) {
             $source = (string) file_get_contents($root . $file);
             self::assertNull(SseWantedRealNames::find($source), $file . ' cite une organisation réelle : ' . (string) SseWantedRealNames::find($source));
             foreach (['interpol', 'europol', 'fbi', 'gendarmerie', 'police nationale', 'scotland yard', 'nato', 'otan'] as $word) {

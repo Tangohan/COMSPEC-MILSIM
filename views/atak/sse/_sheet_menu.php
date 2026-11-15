@@ -55,6 +55,17 @@ require __DIR__ . '/_vigilance_banner.php';
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+        <?php
+        $mDef = (string) ($m['default_level'] ?? '');
+        if ($mAllowed !== [] && $mDef !== ''):
+            $mHidden = array_map(static fn (string $c): string => \App\Support\SseRedactionExplain::label($c, $mLang), array_keys(array_filter(\App\Services\Sse\SseRedactionService::CATEGORIES, static fn (array $meta, string $c): bool => !\App\Services\Sse\SseRedactionService::visibleAt($c, $mDef), ARRAY_FILTER_USE_BOTH)));
+            ?>
+            <p class="shx__default-note" role="note">
+                En un clic, le document est diffusé au niveau <strong><?= $h(\App\Support\SseUsClassification::abbr($mDef)) ?></strong> (réglage de la communauté).
+                <?php if ($mHidden === []): ?>Rien n’est masqué.<?php else: ?>Passages masqués : <?= $h(implode(', ', $mHidden)) ?>.<?php endif; ?>
+                « Personnaliser les textes » permet de choisir le niveau et d’en voir l’effet avant d’émettre.
+            </p>
+        <?php endif; ?>
         <?php if ($mLocked !== []): ?>
             <details class="shx__locked">
                 <summary title="<?= $h(implode(' — ', array_map(static fn (array $l): string => $l['label'] . ' : ' . $l['reason'], $mLocked))) ?>"><?= count($mLocked) ?> modèle(s) non disponible(s)</summary>

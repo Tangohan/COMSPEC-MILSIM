@@ -27,6 +27,7 @@ final class SseSheetPdf
 {
     use SsePdfAlertArt;
     use SseSheetPdfVigilance;
+    use SseSheetPdfRedaction;
 
     private const INK = [24, 30, 38];
     private const MUTED = [98, 108, 120];
@@ -120,7 +121,7 @@ final class SseSheetPdf
      * PDF de la fiche, ou null si le moteur PDF ou ses polices manquent.
      *
      * @param Sheet $d
-     * @return array{bytes: string, pages: int, overflow: list<string>}|null
+     * @return array{bytes: string, pages: int, overflow: list<string>, redaction: array{total: int, by: array<string, int>}}|null
      */
     public function render(array $d): ?array
     {
@@ -129,7 +130,18 @@ final class SseSheetPdf
         }
 
         return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($d): array {
-            return $this->draw($d);
+            // Première passe : compte les barres réellement dessinées. S'il y en a, seconde passe avec le bloc d'explication et les lettres de repère.
+            $this->rxCounts = [];
+            $this->rxStart(null);
+            $out = $this->draw($d);
+            $seen = array_keys(array_filter($this->rxCounts, static fn (int $n): bool => $n > 0));
+            if ($seen !== []) {
+                $this->rxStart(\App\Support\SseRedactionExplain::letters($seen));
+                $out = $this->draw($d);
+            }
+            $out['redaction'] = $this->rxResult();
+
+            return $out;
         });
     }
 
@@ -143,6 +155,8 @@ final class SseSheetPdf
         $this->none = [];
         $this->n = 0;
         $this->pages = 1;
+        $this->rxCounts = [];
+        $this->rxMeasuring = 0;
         $pdf = new class ('P', 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
             public function __construct(string $orientation, string $unit, string $format, bool $unicode, string $encoding, bool $diskcache)
             {
@@ -169,6 +183,7 @@ final class SseSheetPdf
         } else {
             $this->front();
         }
+        $this->rxBlock();
         match ($d['model']) {
             'identification' => $this->identification(),
             'vigilance' => $this->vigilance(),
@@ -612,9 +627,11 @@ final class SseSheetPdf
     {
         $this->pdf->SetFont($this->sans, '', 8.8);
         $h = 0.0;
+        ++$this->rxMeasuring;
         foreach (array_slice($items, 0, 8) as $item) {
             $h += min(9.0, max(4.6, $this->pdf->getStringHeight($w, $this->plain((string) $item)) + 0.4));
         }
+        --$this->rxMeasuring;
 
         return $h;
     }
@@ -755,7 +772,11 @@ final class SseSheetPdf
     private function wrapHtml(string $html, float $size): string
     {
         // Caviardage : rectangle noir (fond noir sur espaces insécables), largeur fixe.
-        $html = (string) preg_replace('/' . self::BLOCK . '+/u', '<span style="background-color:#000000;color:#000000;">' . str_repeat('&nbsp;', 9) . '</span>', $html);
+        $html = (string) preg_replace_callback('/' . self::BLOCK . '+/u', function (array $m): string {
+            $letter = $this->rxMark($m[0]);
+
+            return '<span style="background-color:#000000;color:#000000;">' . str_repeat('&nbsp;', 9) . '</span>' . ($letter !== '' ? '<sup style="font-size:62%;"><b>' . $letter . '</b></sup>' : '');
+        }, $html);
 
         $family = $this->face(strip_tags($html)) !== $this->sans ? 'font-family:dejavusans;' : '';
 
@@ -770,7 +791,9 @@ final class SseSheetPdf
         $pdf->startTransaction();
         $y0 = $pdf->GetY();
         $pageBefore = $pdf->getPage();
+        ++$this->rxMeasuring;
         $pdf->writeHTMLCell($w, 0, self::MARGIN + 4.0, 20.0, $this->wrapHtml($html, $size), 0, 1, false, true, 'L', true);
+        --$this->rxMeasuring;
         $h = ($pdf->getPage() === $pageBefore ? $pdf->GetY() : 280.0) - 20.0;
         $pdf->rollbackTransaction(true);
         $pdf->SetY($y0);
@@ -900,6 +923,7 @@ final class SseSheetPdf
         $d = $this->d;
         $pdf = $this->pdf;
         $l = self::MARGIN;
+        $this->rxLegend();
         $pdf->SetDrawColor(...self::INK);
         $pdf->SetLineWidth(0.3);
         $pdf->Line($l, 272.6, self::PAGE_W - $l, 272.6);
@@ -1077,7 +1101,8 @@ final class SseSheetPdf
             if (str_starts_with($part, self::BLOCK)) {
                 $bw = min(self::BAR_W, max(4.0, $x + $w - $cx));
                 $pdf->Rect($cx, $y + 0.5, $bw, $size * 0.3528 * 0.85, 'F');
-                $cx += $bw + 1.0;
+                $cx += $bw + 1.0 + $this->rxLetter($this->rxMark($part), $cx + $bw + 0.4, $y + 0.5, $size);
+                $pdf->SetFillColor(0, 0, 0);
 
                 continue;
             }
@@ -1097,7 +1122,11 @@ final class SseSheetPdf
     /** Texte sans aucun bloc de caviardage (listes, tableaux, objet) : un caviardage devient « [CAVIARDÉ] » / « [REDACTED] ». */
     private function plain(string $text): string
     {
-        return (string) preg_replace('/' . self::BLOCK . '+/u', $this->lang === 1 ? '[REDACTED]' : '[CAVIARDÉ]', $text);
+        return (string) preg_replace_callback('/' . self::BLOCK . '+/u', function (array $m): string {
+            $letter = $this->rxMark($m[0]);
+
+            return ($this->lang === 1 ? '[REDACTED' : '[CAVIARDÉ') . ($letter !== '' ? ' ' . $letter : '') . ']';
+        }, $text);
     }
 
     /** @return array{0: string, 1: float} */

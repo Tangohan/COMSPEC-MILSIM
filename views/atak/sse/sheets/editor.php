@@ -20,7 +20,9 @@ declare(strict_types=1);
 use App\Core\Csrf;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseSheetService;
+use App\Support\SseRedactionExplain as X;
 use App\Support\SseSheetCatalog as D;
+use App\Support\SseUsClassification;
 use App\Support\SseWantedCatalog as W;
 
 // Fiche de vigilance : écran d'émission en étapes (niveau, consignes, cadre, service à informer, aperçu et émission).
@@ -93,7 +95,7 @@ $subjectName = (string) ($subject['person']['display_name'] ?? $subject['identit
                 <label for="shx-class">Classification</label>
                 <select id="shx-class" name="classification">
                     <?php foreach ($levels as $l): ?>
-                        <option value="<?= $h($l) ?>" <?= $level === $l ? 'selected' : '' ?>><?= $h(SseRedactionService::levelLabel($l) . ' — ' . \App\Support\SseUsClassification::banner($l)) ?></option>
+                        <option value="<?= $h($l) ?>" <?= $level === $l ? 'selected' : '' ?>><?= $h(SseRedactionService::levelLabel($l) . ' — ' . SseUsClassification::banner($l)) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <p class="hint">Les données au-dessus de ce niveau (identité, lieu, biométrie…) sont remplacées par une barre dans le PDF et dans les variables.</p>
@@ -137,6 +139,49 @@ $subjectName = (string) ($subject['person']['display_name'] ?? $subject['identit
             <?php endif; ?>
         </div>
     </section>
+
+    <?php if ($model !== 'notice' && is_array($redactionPreview ?? null)): ?>
+        <?php
+        $rp = $redactionPreview;
+        $ulang = $ui === 1 ? 'en' : 'fr';
+        $topAbbr = SseUsClassification::abbr((string) $rp['top']);
+        ?>
+        <section class="panel shx-redact" id="shx-redact" data-shx-redact>
+            <div class="panel-header"><div class="panel-title">Ce qui sera masqué à ce niveau</div></div>
+            <div class="panel-body">
+                <p class="shx-issues__intro">Le niveau de diffusion décide des passages noircis dans le PDF ; il ne dépend pas de la classification de la personne. Chaque catégorie de donnée exige un niveau minimal.</p>
+                <p class="shx-redact__default">Votre habilitation : <strong><?= $h(SseUsClassification::abbr($rights->level())) ?></strong>. Les émissions en un clic utilisent le niveau par défaut de la communauté : <strong><?= $h(SseUsClassification::abbr((string) ($defaultLevel ?? $level))) ?></strong>.</p>
+                <?php foreach ($rp['levels'] as $lv => $info): ?>
+                    <?php
+                    $below = SseRedactionService::levelRank((string) $lv) < SseRedactionService::levelRank((string) $rp['top']);
+                    ?>
+                    <div class="shx-redact__lvl" data-level="<?= $h($lv) ?>"<?= $lv === $level ? '' : ' hidden' ?>>
+                        <?php if ((int) $info['hidden_fields'] < 1): ?>
+                            <p class="shx-redact__sum shx-redact__sum--ok"><strong>Rien ne sera masqué</strong> à ce niveau : toutes les données de cette fiche seront lisibles.</p>
+                        <?php else: ?>
+                            <p class="shx-redact__sum"><strong><?= (int) $info['hidden_fields'] ?> champ(s)</strong> de cette personne seront remplacés par une barre noire.</p>
+                        <?php endif; ?>
+                        <?php if ($below): ?>
+                            <p class="shx-redact__warn" role="note">Ce niveau est inférieur à celui des données les plus sensibles de la fiche (<?= $h($topAbbr) ?>) : une partie de la fiche sera noircie.</p>
+                        <?php endif; ?>
+                        <ul class="shx-cats shx-cats--preview">
+                            <?php foreach ($rp['counts'] as $cat => $n): ?>
+                                <?php $hid = in_array($cat, $info['hidden'], true); ?>
+                                <li class="<?= $hid && $n > 0 ? 'is-off' : 'is-on' ?>">
+                                    <span class="shx-cats__body"><strong><?= $h(X::label((string) $cat, $ulang)) ?></strong> <span class="muted"><?= $h(X::help((string) $cat, $ulang)) ?></span></span>
+                                    <span class="shx-cats__need">
+                                        <?php if ($n < 1): ?>Aucune donnée
+                                        <?php elseif ($hid): ?><strong>Masqué</strong> : requiert <?= $h(X::need((string) $cat)) ?> · <?= (int) $n ?> champ(s)
+                                        <?php else: ?>Lisible · <?= (int) $n ?> champ(s)<?php endif; ?>
+                                    </span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <?php if ($model === 'control'): ?>
         <section class="panel">

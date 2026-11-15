@@ -11,6 +11,7 @@ use App\Repositories\SseIdentityRepository;
 use App\Repositories\SsePersonRepository;
 use App\Support\SseFileSubjectCatalog as S;
 use App\Support\SseIdentityCatalog as IC;
+use App\Support\SseRedactionExplain;
 use App\Support\SseSheetText;
 use App\Support\SseWantedCatalog as C;
 
@@ -34,11 +35,17 @@ final class SseSheetFactsService
     private const HAIR_EN = ['black' => 'Black', 'brown' => 'Brown', 'blond' => 'Blond', 'red' => 'Red', 'gray' => 'Grey', 'white' => 'White', 'bald' => 'Bald or shaved'];
 
     /** Champs simples masqués : champ => catégorie de SseRedactionService. */
-    private const SCALAR_CATEGORY = [
+    public const SCALAR_CATEGORY = [
         'last_name' => 'identite', 'first_name' => 'identite', 'display' => 'identite', 'birth_date' => 'identite', 'birth_place' => 'identite',
         'nationality' => 'identite', 'id_document' => 'identite', 'place' => 'lieu', 'last_seen_place' => 'lieu', 'last_seen_at' => 'horodatage',
         'zone' => 'lieu',
     ];
+
+    /** Listes de liens masquées : genre de lien => catégorie. */
+    public const LINK_CATEGORY = ['address' => 'lieu', 'associate' => 'identite'];
+
+    /** Champs d'un contrôle masqués : champ => catégorie. */
+    public const CHECK_CATEGORY = ['place' => 'lieu', 'at' => 'horodatage', 'controller' => 'source', 'presented' => 'identite'];
 
     public function __construct(
         private ?SsePersonRepository $persons = null,
@@ -215,28 +222,29 @@ final class SseSheetFactsService
 
             return $ok;
         };
-        $bar = static fn (mixed $v): string => SseRedactionService::bar(is_scalar($v) ? (string) $v : null);
+        // La barre porte sa catégorie (SseRedactionExplain::TAG) : le PDF et la page disent QUELLE catégorie cache chaque passage.
+        $bar = static fn (mixed $v, string $category): string => SseRedactionExplain::bar($category);
         $f = $raw;
         foreach (self::SCALAR_CATEGORY as $field => $category) {
             if (isset($f[$field]) && is_string($f[$field]) && $f[$field] !== '' && !$see($category)) {
-                $f[$field] = $bar($f[$field]);
+                $f[$field] = $bar($f[$field], $category);
             }
         }
         if ($f['aliases'] !== [] && !$see('identite')) {
-            $f['aliases'] = [$bar('alias')];
+            $f['aliases'] = [$bar('alias', 'identite')];
         }
         if (!$see('biometrie')) {
-            $f['bio'] = ['prints' => $bar('x'), 'iris' => $bar('x'), 'dna' => $bar('x'), 'quality' => null, 'tier' => '', 'subject_id' => '', 'seek_stage' => '', 'masked' => true];
+            $f['bio'] = ['prints' => $bar('x', 'biometrie'), 'iris' => $bar('x', 'biometrie'), 'dna' => $bar('x', 'biometrie'), 'quality' => null, 'tier' => '', 'subject_id' => '', 'seek_stage' => '', 'masked' => true];
         }
-        foreach (['address' => 'lieu', 'associate' => 'identite'] as $kind => $category) {
+        foreach (self::LINK_CATEGORY as $kind => $category) {
             if ($f['links'][$kind] !== [] && !$see($category)) {
-                $f['links'][$kind] = array_map(static fn ($v): string => $bar($v), $f['links'][$kind]);
+                $f['links'][$kind] = array_map(static fn ($v): string => $bar($v, $category), $f['links'][$kind]);
             }
         }
         foreach ($f['checks'] as $i => $c) {
-            foreach (['place' => 'lieu', 'at' => 'horodatage', 'controller' => 'source', 'presented' => 'identite'] as $field => $category) {
+            foreach (self::CHECK_CATEGORY as $field => $category) {
                 if (($c[$field] ?? '') !== '' && !$see($category)) {
-                    $f['checks'][$i][$field] = $bar($c[$field]);
+                    $f['checks'][$i][$field] = $bar($c[$field], $category);
                 }
             }
         }

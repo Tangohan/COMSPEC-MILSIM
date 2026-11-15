@@ -13,9 +13,11 @@ use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseSheetAccess;
 use App\Services\Sse\SseSheetFactsService;
+use App\Services\Sse\SseSheetReissueService;
 use App\Services\Sse\SseSheetService;
 use App\Services\Sse\SseVigilanceFollow;
 use App\Repositories\SseWantedSettingsRepository;
+use App\Support\SseRedactionExplain;
 use App\Support\SseSheetCatalog as D;
 use App\Support\SseSheetText as T;
 use App\Support\SseWantedCatalog as C;
@@ -250,6 +252,30 @@ final class SseSheetController
         return $this->pdf($res['bytes'], $res['filename'], $request->queryString('mode') === 'impression');
     }
 
+    /**
+     * Réémission d'un document émis à un niveau de diffusion supérieur (motif obligatoire, plafond : l'habilitation de l'opérateur).
+     * L'ancien document est conservé ; le nouveau porte sa propre référence, liée à l'ancienne. Journalisée.
+     */
+    public function reissueHigher(Request $request, array $params = []): Response
+    {
+        $r = $this->r();
+        $id = (int) ($params['id'] ?? 0);
+        $issue = $r->canDraft() && SseSheetRepository::ready() ? $this->repo->findIssue($r->tenantId(), $id) : null;
+        if ($issue === null) {
+            return $this->flashBack('error', $r->canDraft() ? 'Document introuvable.' : 'Action non autorisée.', url('atak/sse/identites'));
+        }
+        $back = SseSheetReissueService::backUrl($issue);
+        if (!Csrf::verify($request)) {
+            return $this->flashBack('error', 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la page puis recommencez.', $back);
+        }
+        $res = (new SseSheetReissueService($this->repo, $this->facts, $this->service))->reissue($r->tenantId(), $id, $request->inputString('classification'), $request->inputString('reason'), $r);
+        if (!$res['ok']) {
+            return $this->flashBack('error', $res['message'], $back);
+        }
+
+        return $this->flashBack('success', 'Document ' . $res['ref'] . ' émis à un niveau supérieur (réémission de ' . $res['old_ref'] . '). L’ancien document est conservé.', $back);
+    }
+
     // ----------------------------------------------------------------- Phrases
 
     public function phrases(Request $request, array $params = []): Response
@@ -474,9 +500,20 @@ final class SseSheetController
             'threat' => (string) ($old['threat'] ?? $raw['threat']), 'armed' => (string) ($old['armed'] ?? ($raw['armed'] !== '' ? $raw['armed'] : 'unknown')),
             'validity' => D::validity($old['validity'] ?? D::DEFAULT_VALIDITY), 'faces' => D::faces($old['faces'] ?? null),
             'variables' => $variables, 'variableDefs' => T::VARIABLES,
+            'redactionPreview' => SseRedactionExplain::preview($raw, SseSheetService::levelsFor($r)),
+            'defaultLevel' => SseSheetService::clampLevel($this->settingsDefault($tenantId), $r),
             'rights' => $r, 'back' => $kind === 'identite' ? url('atak/sse/papiers/identites/' . (int) $subject['identity_id']) : url('atak/sse/identites/' . (int) $subject['person_id'] . '?fiche=personne'),
             'readerLang' => SseWantedNoticeController::readerLang(),
         ], $status);
+    }
+
+    private function settingsDefault(int $tenantId): string
+    {
+        try {
+            return (string) ((new \App\Repositories\SseWantedSettingsRepository())->get($tenantId)['default_classification'] ?? '');
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     private function editorUrl(string $kind, int $id, string $model): string
