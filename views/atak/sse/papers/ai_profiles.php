@@ -7,7 +7,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array{q:string,side:string,category:string} $filters */
 /** @var array{view:bool,manage:bool,truth:bool} $rights */
 $canEdit = $rights['manage'] && $rights['truth'];
-$categories = ['civilian' => 'Civil', 'military' => 'Militaire', 'suspect' => 'Suspect', 'hvt' => 'HVT'];
+$categories = ['civilian' => 'Civil', 'military' => 'Militaire', 'suspect' => 'Personne d’intérêt (PoI)', 'hvt' => 'HVT'];
 $sides = ['civ' => 'Civils', 'west' => 'BLUFOR', 'east' => 'OPFOR', 'guer' => 'Indépendants'];
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 require __DIR__ . '/_subnav.php';

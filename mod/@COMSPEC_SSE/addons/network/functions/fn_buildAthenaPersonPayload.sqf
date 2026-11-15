@@ -78,7 +78,7 @@ createHashMapFromArray [
     ["nationality", _id getOrDefault ["nationality", ""]],
     ["language_spoken", _id getOrDefault ["language", ""]],
     ["affiliation", _id getOrDefault ["role", ""]],
-    ["circumstances", _extra getOrDefault ["circumstances", "perquisition"]],
+    ["circumstances", _extra getOrDefault ["circumstances", "exploitation_site_sensible"]],
     ["confidence_level", _extra getOrDefault ["confidence_level", "moyenne"]],
     ["biometrics_simulated", true],
     ["consent_recorded", false],

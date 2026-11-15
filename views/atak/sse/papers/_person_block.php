@@ -92,7 +92,7 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
         <?php endif; ?>
 
         <?php if ($dossier['groups'] === []): ?>
-        <h3 style="margin:14px 0 6px;font-size:.9rem">Contrôles d’identité reçus</h3>
+        <h3 style="margin:14px 0 6px;font-size:.9rem">Vérifications d’identité sur le terrain reçues</h3>
         <?php if ($idPapers['checks'] === []): ?>
             <p class="muted">Aucun contrôle reçu du terrain pour cette personne.</p>
         <?php else: ?>

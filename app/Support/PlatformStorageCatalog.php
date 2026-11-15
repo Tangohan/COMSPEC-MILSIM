@@ -151,8 +151,8 @@ final class PlatformStorageCatalog
             ],
             [
                 'key' => 'sse_checks',
-                'title' => 'Contrôles d’identité (SSE)',
-                'blurb' => 'Journal des contrôles d’identité faits en jeu. Les papiers émis ne sont pas touchés.',
+                'title' => 'Vérifications d’identité sur le terrain (SSE)',
+                'blurb' => 'Journal des vérifications d’identité faites en jeu. Les papiers émis ne sont pas touchés.',
                 'sources' => [
                     ['table' => 'sse_id_checks', 'id' => 'id', 'tenant_sql' => 't.tenant_id = :t', 'file_columns' => [], 'roots' => []],
                 ],

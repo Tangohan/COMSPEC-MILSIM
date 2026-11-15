@@ -183,7 +183,7 @@ final class YearReviewStory
                 $p['sse_notes'] > 0 ? ['Fiches de renseignement SSE', $int($p['sse_notes'])] : null,
                 $p['sse_photos'] > 0 ? ['Photos SSE', $int($p['sse_photos'])] : null,
                 $p['sse_samples'] > 0 ? ['Prélèvements biométriques', $int($p['sse_samples'])] : null,
-                $p['sse_custody'] > 0 ? ['Saisies sous scellés', $int($p['sse_custody'])] : null,
+                $p['sse_custody'] > 0 ? ['Saisies sous chaîne de possession', $int($p['sse_custody'])] : null,
                 $p['cr'] > 0 ? ['Comptes rendus tactiques', $int($p['cr'])] : null,
                 $p['debriefs'] > 0 ? ['Debriefings remplis', $int($p['debriefs'])] : null,
                 $p['medevac_requests'] > 0 ? ['Demandes MEDEVAC', $int($p['medevac_requests'])] : null,
