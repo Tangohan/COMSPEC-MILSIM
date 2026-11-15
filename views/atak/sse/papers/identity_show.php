@@ -71,7 +71,7 @@ $display = (string) ($identity['display_name'] ?? '');
 $photoUrl = ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null;
 if ($photoUrl === null) {
     foreach ($filePhotos as $fp) {
-        $photoUrl = (string) user_media_public_url((string) $fp['path']);
+        $photoUrl = (string) \App\Services\Sse\SseSeekPhotoService::photoUrl($fp);
         break;
     }
 }
@@ -370,6 +370,12 @@ require __DIR__ . '/_subnav.php';
 
     <section class="dos-panel" id="photos" role="tabpanel" aria-labelledby="tab-photos" tabindex="-1">
         <h2 class="dos-panel__title">Photos</h2>
+        <?php if (is_array($identity['image_lock'] ?? null)): ?>
+            <div class="dos-card"><div class="dos-empty"><strong>CONFIDENTIEL ÉLEVÉ</strong>Les images de ce membre sont réservées à lui-même et à sa hiérarchie.
+                <?php $lock = $identity['image_lock']; $lockBack = 'atak/sse/papiers/identites/' . (int) $identity['id']; $csrfToken = \App\Core\Csrf::token(); require dirname(__DIR__) . '/files/_image_request.php'; ?></div></div>
+        <?php elseif (!empty($identity['image_banner'])): ?>
+            <p class="dos-note">Confidentiel élevé : images d’un membre, consultation journalisée.</p>
+        <?php endif; ?>
         <?php require __DIR__ . '/_dossier_photos.php'; ?>
     </section>
 

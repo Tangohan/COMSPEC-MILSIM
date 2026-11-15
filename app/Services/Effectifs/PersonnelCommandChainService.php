@@ -202,6 +202,34 @@ final class PersonnelCommandChainService
     }
 
     /**
+     * Identifiants des supérieurs hiérarchiques d'un membre, directs et indirects (du N+1 jusqu'au sommet). Même règle que
+     * l'écran Chaîne, sans calculer les libellés de toute la communauté. Une erreur de lecture se propage : l'appelant
+     * (accès aux images confidentielles) refuse alors, il ne devine rien.
+     *
+     * @return list<int>
+     */
+    public function chainIdsForUser(int $tenantId, int $userId): array
+    {
+        if ($tenantId < 1 || $userId < 1) {
+            return [];
+        }
+        $unitsById = [];
+        foreach ($this->units->allForTenant($tenantId) as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            if ($id > 0) {
+                $unitsById[$id] = $u;
+            }
+        }
+
+        return array_values(array_map('intval', self::resolveChainIds(
+            $userId,
+            $unitsById,
+            $this->assignments->primaryUnitIdByUserForTenant($tenantId),
+            self::commandedUnitIdsByUser($unitsById)
+        )));
+    }
+
+    /**
      * Tout est vérifié avant la première écriture : un refus ne laisse jamais une partie des chefs enregistrée.
      *
      * @param array<int|string, mixed> $commanderByUnit unit_id => user_id (0 = aucun)

@@ -67,7 +67,7 @@ final class SseAccessRightsController
             'title' => 'Qui peut quoi',
             'tab' => 'quoi',
             'board' => $this->matrix()->board($tenantId, fn (string $key): bool => $this->mayView($key)),
-            'sections' => array_values(array_filter(C::sectionKeys(), fn (string $key): bool => $this->mayView($key))),
+            'sections' => array_values(array_filter(array_keys(C::SECTIONS), fn (string $key): bool => $this->mayView($key))),
             'rulesTotal' => $this->policy->rules()->countLive($tenantId),
             'ready' => $this->policy->rules()->ready(),
             'picker' => $this->pickerOptions($tenantId),

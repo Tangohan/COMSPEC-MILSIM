@@ -99,7 +99,9 @@ final class SseWantedNoticePdfService
         $expires = $notice['expires_at'] ?? null;
         $extra = [];
         $photo = null;
-        foreach ($this->photoCandidates($tenantId, $identity) as $path) {
+        // Image d'un membre : CONFIDENTIEL ÉLEVÉ. Sans autorisation (ou sans trace au journal d'audit), l'avis part sans photo ni signature.
+        $imagesOk = $this->imagesAllowed($tenantId, $identity);
+        foreach ($imagesOk ? $this->photoCandidates($tenantId, $identity) : [] as $path) {
             $bytes = self::imageBytes($path, false);
             if ($bytes === null) {
                 continue;
@@ -110,7 +112,7 @@ final class SseWantedNoticePdfService
                 $extra[] = $bytes;
             }
         }
-        $signature = ($identity['signature_path'] ?? null) !== null ? self::imageBytes((string) $identity['signature_path'], true) : null;
+        $signature = $imagesOk && ($identity['signature_path'] ?? null) !== null ? self::imageBytes((string) $identity['signature_path'], true) : null;
         $emblem = null;
         if ($config['emblem'] === 'community') {
             try {
@@ -184,6 +186,29 @@ final class SseWantedNoticePdfService
         }
 
         return ['bytes' => $bytes, 'filename' => self::filename((string) $notice['ref'], (string) $data['lang'])];
+    }
+
+    /** @param array<string, mixed> $identity */
+    private function imagesAllowed(int $tenantId, array $identity): bool
+    {
+        $gate = SseMemberImageGate::forSession();
+        $access = $gate->forIdentity($tenantId, $identity);
+        if (!$access['allowed']) {
+            $gate->recordDenied($tenantId, $gate->viewerId(), 'wanted_pdf', (int) ($identity['id'] ?? 0), $access['owner']);
+
+            return false;
+        }
+        if ($access['confidential'] && $access['reason'] !== SseMemberImageGate::WHY_HOLDER) {
+            try {
+                $gate->recordConsultation($tenantId, (int) $gate->viewerId(), 'wanted_pdf', (int) ($identity['id'] ?? 0), $access['owner'], $access['reason']);
+            } catch (\Throwable $e) {
+                error_log('Avis de recherche : consultation d’une image confidentielle non journalisée, images omises : ' . $e->getMessage());
+
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** @param array<string, mixed> $identity @return list<string> */

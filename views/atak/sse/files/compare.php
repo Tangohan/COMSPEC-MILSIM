@@ -44,7 +44,7 @@ $rb = $b !== null ? $rows($b) : [];
                 <?php $ph = $r['photos'][0] ?? null; ?>
                 <article class="fx-card">
                     <div class="fx-idb" style="grid-template-columns:auto minmax(0,1fr)">
-                        <div class="fx-shot"><?php if ($ph !== null): ?><img src="<?= $h(\App\Services\Sse\SseSeekPhotoService::photoUrl($ph)) ?>" alt=""><?php else: ?><div class="hc"></div><div class="sil" style="top:20px"><i></i><u></u></div><?php endif; ?><div class="lb"><span>FACE</span><span></span></div></div>
+                        <div class="fx-shot"><?php if (is_array($r['image_lock'] ?? null)): ?><?php $lock = $r['image_lock']; require __DIR__ . '/_image_lock.php'; ?><?php elseif ($ph !== null): ?><img src="<?= $h(\App\Services\Sse\SseSeekPhotoService::photoUrl($ph)) ?>" alt=""><?php else: ?><div class="hc"></div><div class="sil" style="top:20px"><i></i><u></u></div><?php endif; ?><div class="lb"><span>FACE</span><span></span></div></div>
                         <div style="min-width:0"><h2 translate="no"><a href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $r['identity']['id'])) ?>"><?= $h($r['identity']['display_name']) ?></a></h2><small class="fx-help"><?= $h($r['identity']['ref']) ?></small></div>
                     </div>
                 </article>

@@ -675,10 +675,39 @@ final class SseFileRecordRepository
     }
 
     /**
+     * Clichés des identités. Par défaut filtrés pour le lecteur de la session : une image de membre (CONFIDENTIEL ÉLEVÉ) qu'il n'a pas
+     * le droit de voir n'est jamais rendue, quel que soit l'écran, l'export ou le service appelant ; celles qu'il peut voir portent
+     * « confidential » (adresse protégée). $gated = false : lecture brute, réservée aux traitements qui n'affichent rien (compter, fusionner).
+     *
      * @param list<int> $identityIds
      * @return array<int, list<array<string, mixed>>>
      */
-    public function photosFor(int $tenantId, array $identityIds): array
+    public function photosFor(int $tenantId, array $identityIds, bool $gated = true): array
+    {
+        $out = $this->photosForRaw($tenantId, $identityIds);
+        if (!$gated) {
+            return $out;
+        }
+        $gate = \App\Services\Sse\SseMemberImageGate::forSession();
+        foreach ($out as $iid => $list) {
+            $kept = [];
+            foreach ($list as $photo) {
+                $access = $gate->forPhoto($tenantId, $photo + ['identity_id' => $photo['identity_id'] ?? $iid]);
+                if ($access['allowed']) {
+                    $kept[] = $access['confidential'] ? $photo + ['confidential' => true] : $photo;
+                }
+            }
+            $out[$iid] = $kept;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<int> $identityIds
+     * @return array<int, list<array<string, mixed>>>
+     */
+    private function photosForRaw(int $tenantId, array $identityIds): array
     {
         $ids = self::ids($identityIds);
         if ($ids === []) {
@@ -709,13 +738,23 @@ final class SseFileRecordRepository
         return $out;
     }
 
-    /** @return list<array<string, mixed>> photos sans fiche (à rattacher) */
+    /** @return list<array<string, mixed>> photos sans fiche (à rattacher), sans celles d'un membre que le lecteur n'a pas le droit de voir */
     public function unattachedPhotos(int $tenantId, int $limit = 60): array
     {
-        return array_map([self::class, 'hydratePhoto'], $this->db->fetchAll(
+        $gate = \App\Services\Sse\SseMemberImageGate::forSession();
+        $out = [];
+        foreach ($this->db->fetchAll(
             'SELECT * FROM sse_file_photos WHERE tenant_id = :t AND identity_id IS NULL ORDER BY id DESC LIMIT ' . max(1, min(200, $limit)),
             ['t' => $tenantId]
-        ));
+        ) as $r) {
+            $photo = self::hydratePhoto($r);
+            $access = $gate->forPhoto($tenantId, $photo);
+            if ($access['allowed']) {
+                $out[] = $access['confidential'] ? $photo + ['confidential' => true] : $photo;
+            }
+        }
+
+        return $out;
     }
 
     public function photoBySource(int $tenantId, string $source, string $ref): ?array

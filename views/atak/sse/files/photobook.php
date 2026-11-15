@@ -68,9 +68,15 @@ $all = ($_GET['toutes'] ?? '') === '1';
                 <form method="get" action="<?= $h(url('atak/sse/fichiers/comparer')) ?>" data-fx-compare>
                     <div class="fx-book">
                         <?php foreach ($result['hits'] as $hit): ?>
-                            <?php $i = $hit['identity']; $pp = $hit['profile'] ?? []; $src = isset($hit['photo']['path']) ? \App\Services\Sse\SseSeekPhotoService::photoUrl($hit['photo']) : (($i['photo_path'] ?? null) ? user_media_public_url((string) $i['photo_path']) : null); $cc = (string) ($pp['country'] ?? $i['nationality'] ?? 'USA'); ?>
+                            <?php $i = $hit['identity']; $pp = $hit['profile'] ?? []; $src = $hit['photo_src'] ?? null; $lock = is_array($hit['image_lock'] ?? null) ? $hit['image_lock'] : null; $cc = (string) ($pp['country'] ?? $i['nationality'] ?? 'USA'); ?>
                             <div class="fx-pc">
-                                <a class="ph" href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $i['id'])) ?>"><?php if ($src !== null): ?><img src="<?= $h($src) ?>" alt="Photo de <?= $h($i['display_name']) ?>" loading="lazy"><?php else: ?><?= $h(mb_strtoupper(mb_substr((string) $i['first_name'], 0, 1) . mb_substr((string) $i['last_name'], 0, 1))) ?><?php endif; ?></a>
+                                <?php if ($lock !== null): ?>
+                                    <a class="ph" href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $i['id'])) ?>" aria-label="Photo masquée de <?= $h($i['display_name']) ?> : confidentiel élevé"><?php require __DIR__ . '/_image_lock.php'; ?></a>
+                                    <?php $lockShells = $lockShells ?? []; $lockBack = 'atak/sse/fichiers/photos'; require __DIR__ . '/_image_request.php'; ?>
+                                <?php else: ?>
+                                    <a class="ph" href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $i['id'])) ?>"><?php if ($src !== null): ?><img src="<?= $h($src) ?>" alt="Photo de <?= $h($i['display_name']) ?>" loading="lazy"><?php else: ?><?= $h(mb_strtoupper(mb_substr((string) $i['first_name'], 0, 1) . mb_substr((string) $i['last_name'], 0, 1))) ?><?php endif; ?></a>
+                                    <?php if (!empty($hit['image_banner'])): ?><span class="fx-cband"><svg class="i" aria-hidden="true"><use href="#fx-lock"></use></svg>Confidentiel élevé</span><?php endif; ?>
+                                <?php endif; ?>
                                 <b translate="no"><?= $h($i['display_name']) ?></b>
                                 <small><?= $h($i['sex'] ?? 'X') ?><?= ($pp['height_cm'] ?? null) !== null ? ' · ' . $h(RF::height((int) $pp['height_cm'], $cc)) : '' ?></small>
                                 <label><input type="checkbox" name="pick[]" value="<?= (int) $i['id'] ?>"> Comparer</label>
@@ -80,6 +86,7 @@ $all = ($_GET['toutes'] ?? '') === '1';
                     <input type="hidden" name="a" value=""><input type="hidden" name="b" value="">
                     <div class="fx-ff"><button class="btn" type="submit" data-fx-compare-go disabled>Comparer les deux fiches cochées</button></div>
                 </form>
+                <?= implode('', $lockShells ?? []) ?>
                 <?php if ($result['pages'] > 1): ?>
                     <nav class="fx-pager" aria-label="Pages"><span>Page <?= (int) $result['page'] ?> sur <?= (int) $result['pages'] ?></span><span>
                         <?php if ($result['page'] > 1): ?><a class="btn sm" href="<?= $h(url('atak/sse/fichiers/photos') . '?' . http_build_query(array_filter($p) + ['page' => $result['page'] - 1, 'toutes' => $all ? '1' : ''])) ?>">Précédente</a><?php endif; ?>

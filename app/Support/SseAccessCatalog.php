@@ -147,13 +147,17 @@ final class SseAccessCatalog
         'lore' => ['label' => 'Préparation du lore des sessions', 'account' => true, 'any' => ['atak.sse.lore.manage', 'admin.access']],
         'field_write' => ['label' => 'Rédaction des fiches de renseignement', 'account' => true, 'any' => ['atak.sse.access', 'atak.sse.case.manage', 'admin.access']],
         'none' => ['label' => 'Sans objet', 'account' => true, 'any' => []],
+        // Refusé à tous tant qu'une règle d'accord ne l'ouvre pas : ni gestionnaire SSE ni administrateur n'y suffisent (SseAccessPolicy::legacyAllows).
+        'sealed' => ['label' => 'Fermé par défaut : seule une règle d’accord explicite l’ouvre', 'account' => true, 'any' => ['sse.sealed.never']],
     ];
 
     /**
      * Sections du portail : libellé, explication, chemins (après « atak/sse/ ») et profil d'origine de chaque niveau.
      * « exists » suit toujours le profil de « read ».
      *
-     * @var array<string, array{label: string, hint: string, paths: list<string>, legacy: array<string, string>}>
+     * « sealed » : section fermée par défaut, jamais comprise dans « toutes les sections » (modèles, accords simples).
+     *
+     * @var array<string, array{label: string, hint: string, paths: list<string>, legacy: array<string, string>, sealed?: bool}>
      */
     public const SECTIONS = [
         'fichiers' => [
@@ -210,6 +214,13 @@ final class SseAccessCatalog
             'paths' => ['fiches'],
             'legacy' => ['read' => 'entrant', 'write' => 'field_write', 'add' => 'field_write', 'delete' => 'manage', 'export' => 'export', 'manage' => 'manage'],
         ],
+        'identites_service' => [
+            'label' => 'Identités de service des membres',
+            'hint' => 'Images des membres (portrait, identité, couverture, papiers, clichés SEEK) classées Confidentiel élevé. Fermé à tous par défaut : en plus de l’habilitation Très restreint, le titulaire, sa hiérarchie ou une règle d’accord explicite ici donnent la lecture.',
+            'paths' => ['identites-service'],
+            'sealed' => true,
+            'legacy' => ['read' => 'sealed', 'write' => 'none', 'add' => 'none', 'delete' => 'none', 'export' => 'none', 'manage' => 'none'],
+        ],
         'outils' => [
             'label' => 'Modèles, campagnes et éditeur',
             'hint' => 'Modèles de mission, campagnes partagées et bibliothèque de l’éditeur du jeu.',
@@ -251,7 +262,7 @@ final class SseAccessCatalog
     /** @return list<string> */
     public static function sectionKeys(): array
     {
-        return array_keys(self::SECTIONS);
+        return array_keys(array_filter(self::SECTIONS, static fn (array $def): bool => empty($def['sealed'])));
     }
 
     /** @return list<string> */

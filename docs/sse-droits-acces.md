@@ -24,6 +24,7 @@ Chaque changement est aussi écrit dans le journal d'audit SSE (`sse_audit_log`,
 | `lore` | Lore et téléphones du jeu | `fichiers/lore`, `maitre-jeu` |
 | `journal` | Journal | `fichiers/journal` |
 | `terrain` | Fiches de renseignement | `fiches` |
+| `identites_service` | Identités de service des membres | aucune page : droit de lire les images des membres (voir « Images des membres ») |
 | `outils` | Modèles, campagnes et éditeur | `campagnes`, `dev`, `editeur` |
 
 Les pages hors section (accueil, recherche, guide, codes d'accès, droits d'accès) ne dépendent d'aucune règle.
@@ -49,6 +50,7 @@ Ils sont décrits une seule fois, dans `App\Support\SseAccessCatalog` (profils),
 | `export` | `atak.sse.export` ou `admin.access` |
 | `lore` | `atak.sse.lore.manage` ou `admin.access` |
 | `field_write` | `atak.sse.access`, `atak.sse.case.manage` ou `admin.access` |
+| `sealed` | personne : fermé par défaut, seule une règle d'accord explicite l'ouvre (ni gestionnaire SSE ni administrateur) |
 
 | Section | exists, read | write | add | delete | export | manage |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -61,6 +63,7 @@ Ils sont décrits une seule fois, dans `App\Support\SseAccessCatalog` (profils),
 | `lore` | lore | lore | lore | lore | lore | lore |
 | `journal` | entrant | sans objet | sans objet | sans objet | sans objet | sans objet |
 | `terrain` | entrant | field_write | field_write | manage | export | manage |
+| `identites_service` | sealed | sans objet | sans objet | sans objet | sans objet | sans objet |
 | `outils` | entrant | manage | manage | manage | entrant | manage |
 
 Quelques actions gardent leur propre garde d'origine, passée à la politique comme « legacy » : mentions et signalements de papiers (`manage`), rattachement d'une extraction à une fiche (`files_manage`), API `/api/sse/v1` en écriture (`manage` ou `atak.access`), pages du back-office (administrateur de la communauté compris).
@@ -132,3 +135,25 @@ Un accès simple pose plusieurs niveaux : voir (existence, lecture), écrire (+ 
 ## Bloc « Accès SSE » de la fiche effectif
 
 Fiche d'un membre (`/back-office/ressources/effectifs/membres/{id}`), onglet « Accès », carte « Accès SSE » ; la fenêtre s'ouvre aussi par `?ouvrir=acces-sse`. Réservée au droit de gestion SSE (invisible sinon). Elle montre les droits par section (voir, écrire, gérer) avec leur origine (droit d'origine, position, fonction, qualification, identité, unité, niveau d'accès), « Donner un accès » et « Retirer un accès » (règle d'identité datée avec motif, aperçu en une phrase), « Retirer » en un clic sur une règle d'identité du membre, et l'historique. Tout passe par `SseAccessMemberRights` puis `SseAccessRuleService` : mêmes garde-fous, communauté de la session.
+
+## Images des membres : CONFIDENTIEL ÉLEVÉ
+
+Toute image dont le propriétaire est un membre de la communauté est classée CONFIDENTIEL ÉLEVÉ, calculée sur les liens existants (aucune
+donnée à migrer) : image d'une identité rattachée à un compte (`sse_identities.user_id`) : portrait ou identité officielle, identité de
+couverture, d'emprunt ou fausse préparée pour lui, papiers, signature ; cliché de la photothèque (`sse_file_photos`) rattaché à une telle
+identité, ou cliché SEEK II dont la fiche l'est ; couverture exportée (`sse_cover_exports`). Cas ambigu (identité introuvable, d'une autre
+communauté, illisible) : CONFIDENTIEL ÉLEVÉ sans propriétaire. Les sujets non membres ne changent pas.
+
+Lecture seulement par : (a) le titulaire ; (b) un supérieur hiérarchique direct ou indirect (chaîne de commandement,
+`PersonnelCommandChainService::chainIdsForUser`) ; (c) une habilitation « Très restreint » (`SseClearanceService`) ET une règle d'accord sur la
+section `identites_service` (fermée par défaut : profil `sealed`, jamais comprise dans « toutes les sections ») ; (d) une dérogation datée, avec
+motif, de 30 jours au plus, accordée par un supérieur du membre (`sse_member_image_grants`, étape `sse_member_image_grants`). Gestionnaire SSE,
+administrateur de la communauté ou de la plateforme ne suffisent pas. Erreur de calcul : l'image est masquée.
+
+Chemins couverts (`SseMemberImageGate`) : photothèque (liste, comparaison, fiche, impression), `fichiers/photos/{id}/image`,
+`fichiers/identites/{id}/photo|signature`, clichés SEEK II, fiches papiers (identité, papier, atelier, préparation de mission, fiche membre),
+avis de recherche (PDF), couvertures exportées, compteurs de photos de l'administration des fichiers. Chaque consultation d'une image
+confidentielle est écrite au journal d'audit SSE (`member_image.view`, motif d'accès : titulaire, hiérarchie, habilitation, dérogation) ; un refus
+sur une adresse directe (`member_image.denied`), une demande (`member_image.request`) et une décision (`member_image.grant` ou `member_image.deny`)
+aussi. Sans trace possible, l'image n'est pas servie.
+
