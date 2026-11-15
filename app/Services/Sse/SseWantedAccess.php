@@ -7,16 +7,18 @@ namespace App\Services\Sse;
 use App\Controllers\Web\SseIdWorkshopController;
 use App\Core\Session;
 use App\Repositories\SseCaseRepository;
+use App\Support\SseAccessCatalog as Rights;
 
 /**
- * Adaptateur des droits de l'avis de recherche : une seule classe à remplacer le jour où une politique d'accès commune du
- * portail SSE (SseAccessPolicy) prend le relais des gardes actuelles. Elle ne crée aucun droit : elle réutilise les gardes
- * qui existent.
+ * Adaptateur des droits de l'avis de recherche : une seule classe qui dit qui peut quoi, à remplacer si la politique d'accès
+ * du portail SSE (SseAccessPolicy) change d'interface. Elle ne crée aucun droit : elle interroge la politique sur les
+ * sections qui existent déjà (règles de la communauté comprises) et l'habilitation de lecture.
  *
- *  - lire (fiche, liste des avis, détections) : accès au portail SSE, comme les fichiers ;
- *  - placer, lever un avis, traiter une détection : gestion des dossiers SSE, attribution des accès ou gestion des fichiers
- *    (atak.sse.case.manage, atak.sse.grant, atak.sse.files.admin, admin.access), jamais en invité ;
- *  - générer le PDF : ces mêmes droits de gestion ET ceux de l'atelier de papiers (gestion SSE et habilitation Encadrement) ;
+ *  - lire (avis, détections, chronologie des avis) : lire la section « fichiers » ;
+ *  - placer, lever un avis, traiter une détection, régler la notice : écrire dans la section « fichiers » (gestion des
+ *    dossiers SSE, attribution des accès ou gestion des fichiers), jamais en invité ;
+ *  - générer le PDF : ce même droit d'écrire ET celui de l'atelier de papiers (écrire dans « papiers » avec l'habilitation
+ *    Encadrement) ET celui d'exporter de la section « papiers » ;
  *  - vérité de jeu (nature d'une identité, rattachement à une fiche) : habilitation Confidentiel.
  *
  * La porte d'entrée (droit d'entrer et confidentialité du portail) reste celle des routes (SsePortalAccessMiddleware et
@@ -32,6 +34,7 @@ final class SseWantedAccess
         private int $tenantId,
         private ?int $userId,
         private string $actorLabel = '',
+        private bool $read = true,
     ) {
     }
 
@@ -42,28 +45,35 @@ final class SseWantedAccess
         $clearance ??= new SseClearanceService($access);
         $guest = $access->isGuest();
         $userId = (int) Session::get('user_id');
-        $can = static function (array $perms): bool {
-            if (!function_exists('can')) {
+        $signed = !$guest && $userId > 0;
+        $tenantId = $access->tenantId();
+        $tenantId = $tenantId > 0 ? $tenantId : (int) Session::get('tenant_id');
+        $context = ['guest' => $guest, 'tenant_id' => $tenantId];
+        $allows = static function (string $section, string $level) use ($context): bool {
+            try {
+                return SseAccessPolicy::sessionAllows($section, $level, $context);
+            } catch (\Throwable) {
                 return false;
             }
-            foreach ($perms as $p) {
-                if (can($p)) {
-                    return true;
-                }
-            }
-
-            return false;
         };
-        $signed = !$guest && $userId > 0;
-        $manage = $signed && $can(['atak.sse.case.manage', 'atak.sse.grant', 'atak.sse.files.admin', 'admin.access']);
-        $sseManage = $signed && $can(['atak.sse.case.manage', 'atak.sse.grant', 'admin.access']);
+        $read = $allows('fichiers', Rights::LEVEL_READ);
+        $manage = $signed && $allows('fichiers', Rights::LEVEL_WRITE);
         $command = self::allows($clearance, SseCaseRepository::CLASS_COMMAND);
         $truth = self::allows($clearance, SseCaseRepository::CLASS_CONFIDENTIAL);
-        $workshop = SseIdWorkshopController::rightsFor(!$signed, $sseManage, $command, $truth);
-        $tenantId = $access->tenantId();
+        // Atelier de papiers : écrire dans « papiers » avec l'habilitation Encadrement ; le PDF sort du bureau : exporter.
+        $workshop = SseIdWorkshopController::rightsFor(!$signed, $signed && $allows('papiers', Rights::LEVEL_WRITE), $command, $truth);
         $label = trim((string) (Session::get('callsign') ?? Session::get('display_name') ?? ''));
 
-        return new self($guest, $manage, $workshop['manage'], $truth, $tenantId > 0 ? $tenantId : (int) Session::get('tenant_id'), $userId > 0 ? $userId : null, $label);
+        return new self(
+            $guest,
+            $manage,
+            $workshop['manage'] && $allows('papiers', Rights::LEVEL_EXPORT),
+            $truth,
+            $tenantId,
+            $userId > 0 ? $userId : null,
+            $label,
+            $read
+        );
     }
 
     private static function allows(SseClearanceService $clearance, string $level): bool
@@ -90,10 +100,10 @@ final class SseWantedAccess
         return $this->actorLabel;
     }
 
-    /** Lire la fiche, les avis et les détections : accès au portail SSE (la porte des routes), invité compris. */
+    /** Lire les avis, les détections et leur trace : lire la section « fichiers » (la porte du portail est celle des routes). */
     public function canRead(): bool
     {
-        return $this->tenantId > 0;
+        return $this->read && $this->tenantId > 0;
     }
 
     /** Placer ou lever un avis, traiter une détection, régler la notice. */

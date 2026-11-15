@@ -21,7 +21,15 @@ final class PhotoViewer
         public readonly bool $sseDoor = false,
         public readonly bool $sseManage = false,
         public readonly bool $clearConfidential = false,
+        /** Verser une photo au dossier SSE (section Photothèque, niveau « verser ») ; null : comme la porte SSE. */
+        public readonly ?bool $sseTransfer = null,
     ) {
+    }
+
+    /** Le lecteur peut-il verser une photo du site au dossier SSE ? */
+    public function mayTransferToSse(): bool
+    {
+        return $this->sseTransfer ?? $this->sseDoor;
     }
 
     /** Un compte de la communauté (jamais une session invitée par code, ni sans communauté). */

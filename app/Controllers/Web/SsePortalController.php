@@ -49,6 +49,8 @@ use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\SseAnalyticalCatalog;
 use App\Support\SseTextVariables;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 final class SsePortalController
 {
@@ -3853,7 +3855,7 @@ final class SsePortalController
         $q = trim((string) $request->query('q', ''));
         $results = [];
         try {
-            $results = $this->workspace->globalSearch($this->tenantId(), $q, $this->access->caseScope());
+            $results = $this->visibleResults($this->workspace->globalSearch($this->tenantId(), $q, $this->access->caseScope()));
         } catch (\Throwable $e) {
             error_log('[sse.search] ' . $e->getMessage() . ' — ' . $e->getFile() . ':' . $e->getLine());
             Session::flash('error', 'La recherche n’a pas pu aboutir. Réessayez dans un instant.');
@@ -3868,13 +3870,46 @@ final class SsePortalController
         ]);
     }
 
+    /**
+     * Retire des résultats de recherche ceux dont la section n'est pas lisible par la session (droits d'accès SSE) ; sans règle,
+     * rien n'est retiré. Une section se déduit de l'adresse du résultat.
+     *
+     * @param mixed $results
+     * @return list<array<string, mixed>>
+     */
+    private function visibleResults(mixed $results): array
+    {
+        if (!is_array($results)) {
+            return [];
+        }
+        $guest = $this->access->isGuest();
+        $tenant = $this->tenantId();
+        $memo = [];
+        $out = [];
+        foreach ($results as $r) {
+            if (!is_array($r)) {
+                continue;
+            }
+            $section = SseAccessCatalog::sectionForPath((string) ($r['href'] ?? ''));
+            if ($section !== null) {
+                $memo[$section] ??= SseAccessPolicy::sessionAllows($section, SseAccessCatalog::LEVEL_READ, ['guest' => $guest, 'tenant_id' => $tenant]);
+                if (!$memo[$section]) {
+                    continue;
+                }
+            }
+            $out[] = $r;
+        }
+
+        return $out;
+    }
+
     public function searchSuggest(Request $request, array $params = []): Response
     {
         $q = trim((string) $request->query('q', ''));
         $results = [];
         if (mb_strlen($q) >= 2) {
             try {
-                $results = $this->workspace->globalSearch($this->tenantId(), $q, $this->access->caseScope(), 12);
+                $results = $this->visibleResults($this->workspace->globalSearch($this->tenantId(), $q, $this->access->caseScope(), 12));
             } catch (\Throwable $e) {
                 error_log('[sse.searchSuggest] ' . $e->getMessage());
             }
@@ -5353,20 +5388,12 @@ final class SsePortalController
 
     private function canManage(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('dossiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     private function canBypassInterestAcl(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can') && (can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('dossiers', SseAccessCatalog::LEVEL_MANAGE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     /** @param array<string, mixed> $case */
@@ -5429,12 +5456,8 @@ final class SsePortalController
 
     private function canExport(): bool
     {
-        if ($this->access->isGuest()) {
-            // Invité : export interdit par défaut (périmètre lecture)
-            return false;
-        }
-
-        return function_exists('can') && (can('atak.sse.export') || can('admin.access'));
+        // Invité : export interdit par défaut (périmètre lecture), comme avant.
+        return SseAccessPolicy::sessionAllows('dossiers', SseAccessCatalog::LEVEL_EXPORT, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     /**

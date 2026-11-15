@@ -16,6 +16,8 @@ use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseFileQueryService;
 use App\Support\SseFileCatalog;
 use App\Support\SseIdentityCatalog;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Portail SSE — RENS › Identités & documents › Passage aux fichiers.
@@ -230,10 +232,14 @@ final class SseFileController
             'q' => mb_substr(trim($request->queryString('q')), 0, 80),
         ];
 
+        $records = $this->safeList(fn (): array => $this->files()->listSeek($this->tenantId(), $filters));
+
         return $this->render('atak.sse.files.seek', [
             'title' => 'Fiches SEEK II',
-            'records' => $this->safeList(fn (): array => $this->files()->listSeek($this->tenantId(), $filters)),
+            'records' => $records,
             'filters' => $filters,
+            // Clichés du visage pris au terminal, par fiche (REC) : miniature, ouverte par la route protégée du portail.
+            'photos' => (new \App\Services\Sse\SseSeekPhotoService())->forRecs($this->tenantId(), array_map(static fn (array $r): string => (string) $r['rec'], $records)),
         ]);
     }
 
@@ -605,10 +611,9 @@ final class SseFileController
     /** Mêmes droits que les statuts d'un papier (SseIdentityRegistryController::canManage). */
     private function canManage(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
+        // Mentions, signalements de papiers : garde d'origine « gestion des dossiers SSE » (profil manage), comme les papiers.
+        $ctx = ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()];
 
-        return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('fichiers', SseAccessCatalog::LEVEL_WRITE, $ctx + ['legacy' => SseAccessPolicy::sessionProfile('manage', $ctx)]);
     }
 }

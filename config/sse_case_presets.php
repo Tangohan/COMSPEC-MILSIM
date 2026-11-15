@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 /**
  * Presets métier pour le dossier SSE (création rapide identité / pièce).
- * Libellés destinés à l’opérateur — pas de jargon technique.
+ * Libellés destinés à l’opérateur — pas de jargon technique. Le champ « circumstances » d'un modèle rapide est un code
+ * de contexte d'acquisition (config/sse_acquisition_contexts.php).
  */
 return [
     'identity_status' => [
         ['key' => 'civil', 'label' => 'Civil', 'hint' => 'Habitant / passant'],
         ['key' => 'combattant', 'label' => 'Combattant', 'hint' => 'Armé ou affilié'],
-        ['key' => 'detenu', 'label' => 'Détenu', 'hint' => 'Sous garde'],
+        ['key' => 'detenu', 'label' => 'Détenu', 'hint' => 'Détention tactique'],
         ['key' => 'prioritaire', 'label' => 'Prioritaire', 'hint' => 'Intérêt élevé'],
     ],
     'identity_quick' => [
@@ -19,32 +20,32 @@ return [
             'label' => 'Inconnu du terrain',
             'alias' => 'INCONNU',
             'status' => 'civil',
-            'circumstances' => 'Contrôle / contact terrain — identité à confirmer.',
+            'circumstances' => 'point_controle_tactique',
         ],
         [
             'key' => 'detenus_capture',
-            'label' => 'Capture / détention',
+            'label' => 'Capture / détention tactique',
             'alias' => '',
             'status' => 'detenu',
-            'circumstances' => 'Personne placée sous garde après intervention.',
+            'circumstances' => 'capture_champ_bataille',
         ],
         [
             'key' => 'hvt_suspect',
-            'label' => 'Suspect prioritaire',
+            'label' => 'Personne d’intérêt prioritaire',
             'alias' => '',
             'status' => 'prioritaire',
-            'circumstances' => 'Signalement prioritaire — à croiser avec les listes.',
+            'circumstances' => 'fouille_haute_valeur',
         ],
         [
             'key' => 'guide_local',
             'label' => 'Guide / contact local',
             'alias' => '',
             'status' => 'civil',
-            'circumstances' => 'Interlocuteur local — rôle et fiabilité à préciser.',
+            'circumstances' => 'engagement_chef_local',
         ],
     ],
     'evidence' => [
-        ['key' => 'phone', 'label' => 'Téléphone saisi', 'caption' => 'Appareil récupéré sur le terrain'],
+        ['key' => 'phone', 'label' => 'Téléphone saisi', 'caption' => 'Appareil récupéré sur l’objectif (CELLEX)'],
         ['key' => 'id_doc', 'label' => 'Pièce d’identité', 'caption' => 'Document d’identité photographié ou saisi'],
         ['key' => 'weapon', 'label' => 'Armement', 'caption' => 'Arme ou munitions constatées'],
         ['key' => 'photo_face', 'label' => 'Photo faciale', 'caption' => 'Cliché visage pour identification'],

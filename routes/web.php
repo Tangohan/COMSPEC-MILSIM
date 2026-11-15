@@ -238,6 +238,7 @@ use App\Middleware\AtakModuleSanctionMiddleware;
 use App\Middleware\AtakWebAccessMiddleware;
 use App\Middleware\SsePortalAccessMiddleware;
 use App\Middleware\SseConfidentialityMiddleware;
+use App\Middleware\SseSectionAccessMiddleware;
 use App\Middleware\CourrierModuleSanctionMiddleware;
 use App\Controllers\Web\ActivityHubController;
 use App\Controllers\Web\MemberAlertsController;
@@ -264,7 +265,7 @@ return function (Router $router) {
     $mwAtakWeb = [AtakWebAccessMiddleware::class, AtakModuleSanctionMiddleware::class];
     $mwAtakMemberOnly = [AuthMiddleware::class, AtakModuleSanctionMiddleware::class];
     $mwSseClearance = [SsePortalAccessMiddleware::class];
-    $mwSsePortal = [SsePortalAccessMiddleware::class, SseConfidentialityMiddleware::class];
+    $mwSsePortal = [SsePortalAccessMiddleware::class, SseConfidentialityMiddleware::class, SseSectionAccessMiddleware::class];
     $mwCourrier = [AuthMiddleware::class, CourrierModuleSanctionMiddleware::class];
 
     $router->get('/', [HomeController::class, 'index']);
@@ -580,6 +581,8 @@ return function (Router $router) {
     $router->get('/' . \App\Support\JnetMemberPaths::path('fiabilisation'), $moi($moiCampaign, 'index'), $mwMoi);
     $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/repondre'), $moi($moiCampaign, 'answer'), $mwMoi);
     $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/confirmer'), $moi($moiCampaign, 'confirm'), $mwMoi);
+    $router->post('/' . \App\Support\JnetMemberPaths::path('fiabilisation/tout-confirmer'), $moi($moiCampaign, 'confirmAll'), $mwMoi);
+    $router->get('/' . \App\Support\JnetMemberPaths::path('fiabilisation/plus-tard'), $moi($moiCampaign, 'later'), $mwMoi);
     // Anciennes adresses à paramètres (téléchargements, flux audio) : 301 en un saut, requête conservée. Les pages sans paramètre
     // sont dans BackOfficeLegacyRedirects (JnetMemberPaths::legacyRedirects()).
     foreach (\App\Support\JnetMemberPaths::DOWNLOADS as $moiDownload) {
@@ -1168,6 +1171,7 @@ return function (Router $router) {
     $router->post('/back-office/renseignement/fichiers/fusion', [$boSseFiles, 'merge'], [AuthMiddleware::class]);
     $router->post('/back-office/renseignement/fichiers/extractions/{id}', [$boSseFiles, 'moderate'], [AuthMiddleware::class]);
     $router->post('/back-office/renseignement/fichiers/reglages', [$boSseFiles, 'settingsSave'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/fichiers/contextes', [$boSseFiles, 'contextsSave'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement/fichiers/{tab}', [$boSseFiles, 'index'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/renseignement/acces')), [AuthMiddleware::class]);
     $router->get('/atak/sse/accueil', [SsePortalController::class, 'home'], $mwSsePortal);
@@ -1248,6 +1252,7 @@ return function (Router $router) {
     $router->get('/atak/sse/fichiers/source/{type}/{id}', [$sseRec, 'source'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/photos', [$sseRec, 'photobook'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/photos', [$sseRec, 'photoUpload'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/photos/{id}/image', [$sseRec, 'photoImage'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/photos/{id}/rattacher', [$sseRec, 'photoAttach'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/comparer', [$sseRec, 'compare'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/telephones', [$sseRec, 'phones'], $mwSsePortal);
@@ -1481,6 +1486,18 @@ return function (Router $router) {
     $router->post('/atak/sse/dev/modeles/{id}/supprimer', [SseArmaModelsController::class, 'modelDelete'], $mwSsePortal);
     $router->get('/atak/sse/dev/modeles/{id}/export', [SseArmaModelsController::class, 'modelExport'], $mwSsePortal);
     $router->get('/atak/sse/acces', [SsePortalController::class, 'accessAdmin'], $mwSsePortal);
+    // Droits d'accès du portail SSE (onglet réservé au droit de gestion SSE, vérifié par le contrôleur : tout le reste est renvoyé à l'accueil).
+    $sseRights = \App\Controllers\Web\SseAccessRightsController::class;
+    $router->get('/atak/sse/droits', [$sseRights, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/droits/membre', [$sseRights, 'member'], $mwSsePortal);
+    $router->get('/atak/sse/droits/membre/{id}', [$sseRights, 'member'], $mwSsePortal);
+    $router->post('/atak/sse/droits/membre/{id}/derogation', [$sseRights, 'ruleStore'], $mwSsePortal);
+    $router->get('/atak/sse/droits/qui', [$sseRights, 'who'], $mwSsePortal);
+    $router->get('/atak/sse/droits/historique', [$sseRights, 'history'], $mwSsePortal);
+    $router->post('/atak/sse/droits/modele', [$sseRights, 'template'], $mwSsePortal);
+    $router->post('/atak/sse/droits/regle/{id}/retirer', [$sseRights, 'ruleRevoke'], $mwSsePortal);
+    $router->get('/atak/sse/droits/section/{section}', [$sseRights, 'section'], $mwSsePortal);
+    $router->post('/atak/sse/droits/section/{section}/regle', [$sseRights, 'ruleStore'], $mwSsePortal);
     $router->post('/atak/sse/acces', [SsePortalController::class, 'accessIssue'], $mwSsePortal);
     $router->post('/atak/sse/acces/{id}/revoquer', [SsePortalController::class, 'accessRevoke'], $mwSsePortal);
     $router->get('/atak/sse/guide', [SsePortalController::class, 'guide'], $mwSsePortal);
@@ -2129,10 +2146,15 @@ return function (Router $router) {
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/telecharger', [OrganizationDataQualityController::class, 'downloadData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/donnees/{key}/supprimer', [OrganizationDataQualityController::class, 'purgeData'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/qualite-donnees/postes/{id}/restaurer', [OrganizationDataQualityController::class, 'restoreBillet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/anciens-noms/reprendre', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'importNames'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/anciens-noms/annuler', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'revertNames'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/qualite-donnees/bilans-automatiques', [\App\Controllers\Admin\Organization\OrganizationLegacyDataController::class, 'retroSetting'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Fiabilisation des données (campagne annuelle de relecture des fiches) : mêmes droits que la qualité des données.
     $router->get('/back-office/organisation/fiabilisation', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/fiabilisation/creer', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/fiabilisation/reglages', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/ouvrir-maintenant', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'openNow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/fiabilisation/{id}/modifier', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/fiabilisation/{id}', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/fiabilisation/{id}/export', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/fiabilisation/{id}/ouvrir', [\App\Controllers\Admin\Organization\DataCampaignAdminController::class, 'open'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2488,6 +2510,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/envoyer-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncSend'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateForMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/couverture/{exportId}/telecharger', [\App\Controllers\Admin\MemberCoverExportController::class, 'downloadForMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/membres', [\App\Controllers\Admin\LegacyPersonnelRedirectController::class, 'roster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -3572,6 +3595,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // SSE — Sensitive Site Exploitation (renseignement interpersonnel)
     $router->get('/api/sse/persons', [SseApiController::class, 'personsIndex']);
     $router->post('/api/sse/persons', [SseApiController::class, 'personsStore']);
+    // Calques SSE des cartes (contrôles d'identité, lieux, pistes de téléphones) : GeoJSON, lecture seule, porte SSE (docs/sse-calques-api.md)
+    $router->get('/api/sse/v1/calques', [\App\Controllers\Api\SseMapLayersApiController::class, 'index']);
     // LOT 1 — Intelligence Workspace API v1
     $router->get('/api/sse/v1/workspace/summary', [SseIntelApiController::class, 'workspaceSummary']);
     $router->get('/api/sse/v1/inbox', [SseIntelApiController::class, 'inboxIndex']);

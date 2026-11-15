@@ -19,6 +19,7 @@ use App\Services\Notifications\ActivityHubPresentationService;
 use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignCalendar;
+use App\Support\DataCampaignLoginPrompt;
 use App\Support\DataCampaignProgress;
 use App\Support\DataCampaignScope;
 use App\Support\DataCampaignSnapshot;
@@ -45,6 +46,9 @@ final class DataCampaignTest extends TestCase
     /** @var list<array{string, int, int, int}> */
     private array $audits = [];
 
+    /** @var list<array{user: int, type: string, payload: array<string, mixed>}> */
+    private array $payloads = [];
+
     /** @var list<array{int, string}> */
     private array $notices = [];
 
@@ -60,7 +64,7 @@ final class DataCampaignTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->audits = $this->notices = $this->mails = $this->corrections = [];
+        $this->audits = $this->notices = $this->mails = $this->corrections = $this->payloads = [];
         $this->timezone = date_default_timezone_get();
         date_default_timezone_set('UTC');
         $this->now = (int) strtotime('2026-12-01 10:00:00 UTC');
@@ -90,6 +94,7 @@ final class DataCampaignTest extends TestCase
             },
             function (int $tenantId, int $userId, string $type, array $payload): void {
                 $this->notices[] = [$userId, $type];
+                $this->payloads[] = ['user' => $userId, 'type' => $type, 'payload' => $payload];
             },
             function (int $tenantId, int $userId, array $campaign): bool {
                 $this->mails[] = $userId;
@@ -101,7 +106,8 @@ final class DataCampaignTest extends TestCase
 
                 return $correctionOk ? ['ok' => true, 'message' => 'Demande envoyée.', 'request_id' => 500 + count($this->corrections)] : ['ok' => false, 'message' => 'Une demande est déjà en attente.'];
             },
-            fn (): int => $this->now
+            fn (): int => $this->now,
+            fn (int $tenantId): array => [900, 901]
         );
     }
 
@@ -430,6 +436,7 @@ final class DataCampaignTest extends TestCase
     {
         $s = $this->service();
         $id = $this->openCampaign($s, ['blocks' => ['identity']]);
+        $this->mails = [];
         $this->answerAll2($s, $id, 11, ['identity']);
         $s->confirm(self::TENANT, 11, $id);
         $r = $s->remind(self::TENANT, 1, $id, null, null);
@@ -450,41 +457,82 @@ final class DataCampaignTest extends TestCase
         self::assertSame(0, $s->remind(self::TENANT, 1, $id, null, [])['sent']);
     }
 
-    public function testNothingOpensWithoutTheSettingAndTheAnnualCampaignOpensOnlyOnce(): void
+    public function testAthenaOpensTheAnnualCampaignByDefaultForEveryCommunityAndOnlyOnce(): void
     {
         $s = $this->service();
-        // Réglage absent : aucune campagne, même le 1er décembre.
-        $out = $s->runScheduled();
-        self::assertSame(0, $out['opened']);
-        self::assertSame([], $this->repo->campaigns);
-
-        $saved = $s->saveSettings(self::TENANT, 1, ['auto_enabled' => '1', 'open_md' => '12-01', 'close_md' => '12-31', 'blocks' => ['identity', 'qualifications']]);
-        self::assertTrue($saved['ok']);
+        // Aucun réglage enregistré : l'ouverture automatique est active par défaut.
+        self::assertTrue($this->repo->settings(self::TENANT)['auto_enabled']);
+        self::assertTrue($this->repo->settings(self::TENANT)['emails_enabled']);
+        $this->now = (int) strtotime('2026-11-30 10:00:00 UTC');
+        self::assertSame(0, $s->runScheduled()['opened'], 'avant la période');
+        $this->now = (int) strtotime('2026-12-01 10:00:00 UTC');
         $out = $s->runScheduled();
         self::assertSame(1, $out['opened']);
         $c = $this->repo->campaigns[1];
         self::assertSame('open', $c['status']);
         self::assertSame(1, (int) $c['auto_created']);
-        self::assertSame(['identity', 'qualifications'], $c['blocks']);
+        self::assertSame(DataCampaignBlocks::keys(), $c['blocks'], 'tous les blocs par défaut');
+        self::assertSame([], $c['unit_ids'], 'tous les membres actifs');
         self::assertSame('2026-12-31', $c['due_on']);
+        self::assertNull($c['forced_on']);
         self::assertCount(4, $this->repo->memberRows);
+        self::assertSame(4, $out['notified']);
+        self::assertSame(4, $out['mails'], 'e-mails activés par défaut');
+        // Les responsables reçoivent un seul avis, les membres la notification d'ouverture.
+        $managerNotices = array_values(array_filter($this->payloads, static fn (array $n): bool => $n['type'] === DataCampaignService::NOTIFY_AUTO_OPENED));
+        self::assertSame([900, 901], array_column($managerNotices, 'user'));
+        self::assertSame(4, $managerNotices[0]['payload']['members']);
+        self::assertFalse($managerNotices[0]['payload']['incomplete']);
+        self::assertFalse($managerNotices[0]['payload']['forced']);
 
-        // Idempotent : le passage suivant, le même jour, n'ouvre rien de plus ; même après une clôture manuelle.
+        // Idempotent : ni un second passage, ni une clôture manuelle ne produisent une seconde campagne ou un second envoi.
+        $count = count($this->notices);
         self::assertSame(0, $s->runScheduled()['opened']);
         $s->closeCampaign(self::TENANT, 1, 1);
         self::assertSame(0, $s->runScheduled()['opened']);
         self::assertCount(1, $this->repo->campaigns);
-
-        // Réglage coupé : rien non plus l'année suivante.
-        $s->saveSettings(self::TENANT, 1, ['auto_enabled' => '0']);
-        $this->now = (int) strtotime('2027-12-05 10:00:00 UTC');
-        self::assertSame(0, $s->runScheduled()['opened']);
+        self::assertSame($count, count($this->notices), 'aucun envoi de plus');
     }
 
-    public function testScheduledRemindersAreSentOncePerMemberAndAutomaticCampaignsCloseAfterTheDeadline(): void
+    public function testAManualCampaignOfTheYearPreventsASecondOneAndTheSettingCanSwitchTheAutomatismOff(): void
     {
         $s = $this->service();
-        $s->saveSettings(self::TENANT, 1, ['auto_enabled' => '1', 'blocks' => ['identity']]);
+        $manual = $s->createCampaign(self::TENANT, 5, ['year' => 2026, 'due_on' => '2026-12-20', 'unit_ids' => [2]]);
+        self::assertTrue($manual['ok']);
+        self::assertSame(0, $s->runScheduled()['opened'], 'une campagne manuelle (même brouillon) de l\'année suffit');
+        self::assertCount(1, $this->repo->campaigns);
+
+        // « Ouverture automatique : Non » : rien de plus, ni cette année ni l'année suivante.
+        $other = $this->service();
+        $this->repo->campaigns = [];
+        self::assertTrue($other->saveSettings(self::TENANT, 1, ['auto_enabled' => '0'])['ok']);
+        self::assertSame(0, $other->runScheduled()['opened']);
+        $this->now = (int) strtotime('2027-12-05 10:00:00 UTC');
+        self::assertSame(0, $other->runScheduled()['opened']);
+        self::assertSame([], $this->repo->campaigns);
+        // La gestion peut toujours créer et ouvrir à la main.
+        $made = $other->createCampaign(self::TENANT, 1, ['year' => 2027, 'due_on' => '2027-12-20']);
+        self::assertTrue($made['ok']);
+        self::assertTrue($other->openCampaign(self::TENANT, 1, (int) $made['id'])['ok']);
+    }
+
+    public function testManagementCanEditOrCancelTheCampaignAthenaOpened(): void
+    {
+        $s = $this->service();
+        $s->runScheduled();
+        self::assertTrue($s->updateCampaign(self::TENANT, 1, 1, 'Relecture de fin d’année', '2026-12-24')['ok']);
+        self::assertSame('2026-12-24', $this->repo->campaigns[1]['due_on']);
+        self::assertSame('Relecture de fin d’année', $this->repo->campaigns[1]['title']);
+        self::assertFalse($s->updateCampaign(self::TENANT, 1, 1, 'x', '2026-11-01')['ok'], 'avant l\'ouverture');
+        self::assertFalse($s->updateCampaign(self::TENANT, 1, 1, 'x', 'n\'importe quoi')['ok']);
+        self::assertTrue($s->closeCampaign(self::TENANT, 1, 1)['ok'], 'annuler = clôturer');
+        self::assertFalse($s->updateCampaign(self::TENANT, 1, 1, 'x', '2026-12-30')['ok'], 'une campagne close ne se modifie plus');
+    }
+
+    public function testScheduledRemindersAreSentOncePerMemberAndCampaignsCloseAfterTheDeadlineWithAReport(): void
+    {
+        $s = $this->service();
+        $s->saveSettings(self::TENANT, 1, ['blocks' => ['identity']]);
         $s->runScheduled();
         self::assertSame(1, count($this->repo->campaigns));
         $this->mails = [];
@@ -508,14 +556,41 @@ final class DataCampaignTest extends TestCase
         self::assertSame(3, $third['reminders']);
         self::assertSame(1, count(array_filter($this->repo->reminderRows, static fn (array $r): bool => $r['slot'] === 'j14' && (int) $r['user_id'] === 11)));
 
-        // Après la date limite, la campagne ouverte par Athena est close.
+        // Après la date limite, la campagne est close et la gestion reçoit le rapport d'avancement.
         $this->now = (int) strtotime('2027-01-02 08:00:00 UTC');
         $last = $s->runScheduled();
         self::assertSame(1, $last['closed']);
         self::assertSame('closed', $this->repo->campaigns[1]['status']);
+        $reports = array_values(array_filter($this->payloads, static fn (array $n): bool => $n['type'] === DataCampaignService::NOTIFY_AUTO_CLOSED));
+        self::assertSame([900, 901], array_column($reports, 'user'));
+        self::assertSame(1, $reports[0]['payload']['confirmed']);
+        self::assertSame(3, $reports[0]['payload']['none']);
+        self::assertSame(4, $reports[0]['payload']['total']);
     }
 
-    public function testTheReminderBatchIsBoundedAndTheRestPartsOnTheNextPass(): void
+    public function testNotificationsAreBoundedPerPassAndNeverSentTwice(): void
+    {
+        $s = $this->service();
+        $this->repo->rosterRows = [];
+        for ($i = 1; $i <= DataCampaignService::BATCH + 20; $i++) {
+            $this->repo->rosterRows[] = ['user_id' => 100 + $i, 'unit_id' => 0, 'display_name' => 'M' . $i, 'callsign' => ''];
+        }
+        $first = $s->runScheduled();
+        self::assertSame(1, $first['opened']);
+        self::assertSame(DataCampaignService::BATCH, $first['notified'], 'au plus 150 membres servis par passage');
+        self::assertSame(DataCampaignService::BATCH, $first['mails']);
+        $second = $s->runScheduled();
+        self::assertSame(0, $second['opened']);
+        self::assertSame(20, $second['notified'], 'le reste part au passage suivant');
+        self::assertSame(['open'], $this->repo->doneSlots(1));
+        $third = $s->runScheduled();
+        self::assertSame(0, $third['notified']);
+        $perUser = array_count_values(array_column(array_filter($this->notices, static fn (array $n): bool => $n[1] === DataCampaignService::NOTIFY_OPEN), 0));
+        self::assertSame(1, max($perUser));
+        self::assertCount(DataCampaignService::BATCH + 20, $perUser);
+    }
+
+    public function testRemindersAreBoundedToo(): void
     {
         $s = $this->service();
         $this->repo->rosterRows = [];
@@ -524,11 +599,172 @@ final class DataCampaignTest extends TestCase
         }
         $this->openCampaign($s, ['reminder_days' => [14], 'opens_on' => '2026-12-01']);
         $this->now = (int) strtotime('2026-12-17 08:00:00 UTC');
-        self::assertSame(DataCampaignService::BATCH, $s->runScheduled()['reminders']);
-        self::assertSame([], $this->repo->doneSlots(1), 'pas terminé : le reste part au passage suivant');
-        self::assertSame(20, $s->runScheduled()['reminders']);
-        self::assertSame(['j14'], $this->repo->doneSlots(1));
+        // Les 20 derniers membres reçoivent d'abord leur notification d'ouverture, puis le reste du lot part en rappels.
+        self::assertSame(DataCampaignService::BATCH - 20, $s->runScheduled()['reminders']);
+        self::assertSame(['open'], $this->repo->doneSlots(1));
+        self::assertSame(40, $s->runScheduled()['reminders']);
+        self::assertSame(['open', 'j14'], $this->repo->doneSlots(1));
         self::assertSame(0, $s->runScheduled()['reminders']);
+    }
+
+    // ------------------------------------------------------------------ ouverture forcée (commande et bouton) et simulation
+
+    public function testForcedOpeningUsesTheSameServiceOutsideThePeriodAndIsIdempotent(): void
+    {
+        $s = $this->service();
+        $this->now = (int) strtotime('2026-06-10 09:00:00 UTC');
+        self::assertSame(0, $s->runScheduled()['opened'], 'hors période : la tâche planifiée n\'ouvre rien');
+        $options = ['force' => true, 'tenant' => self::TENANT, 'actor' => 3];
+        $first = $s->runScheduled($options);
+        self::assertSame(1, $first['opened']);
+        self::assertSame(4, $first['notified']);
+        $c = $this->repo->campaigns[1];
+        self::assertSame('2026-06-10', $c['forced_on']);
+        self::assertSame('2026-12-31', $c['due_on'], 'date limite par défaut : 31 décembre de l\'année');
+        self::assertSame(1, (int) $c['auto_created']);
+        self::assertContains('data_campaign.opened_by_athena', array_column($this->audits, 0));
+
+        // Relancer la commande ne renvoie aucune notification déjà envoyée et ne crée pas de seconde campagne.
+        $notices = count($this->notices);
+        $again = $s->runScheduled($options);
+        self::assertSame(0, $again['opened']);
+        self::assertSame(0, $again['notified']);
+        self::assertSame($notices, count($this->notices));
+        self::assertCount(1, $this->repo->campaigns);
+        self::assertSame('Une campagne existe déjà pour cette année.', $again['plan'][0]['reason']);
+    }
+
+    public function testForcedOpeningHonoursDeadlineBlocksAndNoEmail(): void
+    {
+        $s = $this->service();
+        $this->now = (int) strtotime('2026-06-10 09:00:00 UTC');
+        $out = $s->runScheduled(['force' => true, 'tenant' => self::TENANT, 'deadline' => '2026-09-30', 'blocks' => ['identity', 'hours'], 'email' => false]);
+        self::assertSame(1, $out['opened']);
+        self::assertSame('2026-09-30', $this->repo->campaigns[1]['due_on']);
+        self::assertSame(['identity', 'hours'], $this->repo->campaigns[1]['blocks']);
+        self::assertSame(4, $out['notified']);
+        self::assertSame(0, $out['mails'], '--no-email');
+        self::assertSame([], $this->mails);
+        // Une date limite passée est refusée.
+        $this->repo->campaigns = [];
+        $late = $s->runScheduled(['force' => true, 'tenant' => self::TENANT, 'deadline' => '2026-06-01']);
+        self::assertSame(0, $late['opened']);
+        self::assertSame('La date limite est déjà passée.', $late['plan'][0]['reason']);
+    }
+
+    public function testForcedOpeningRespectsAManualCampaignOfTheYear(): void
+    {
+        $s = $this->service();
+        $s->createCampaign(self::TENANT, 5, ['year' => 2026, 'due_on' => '2026-12-20']);
+        $out = $s->runScheduled(['force' => true, 'tenant' => self::TENANT]);
+        self::assertSame(0, $out['opened']);
+        self::assertCount(1, $this->repo->campaigns);
+        self::assertSame(0, $out['notified']);
+    }
+
+    public function testTheBulkCommandSkipsCommunitiesThatSwitchedTheAutomatismOffUnlessNamed(): void
+    {
+        $s = $this->service();
+        $this->repo->tenantIds = [7, 8];
+        $this->repo->settingsByTenant[8] = ['auto_enabled' => 0];
+        $this->now = (int) strtotime('2026-06-10 09:00:00 UTC');
+        $bulk = $s->runScheduled(['force' => true, 'dry_run' => true]);
+        self::assertSame([7], array_column(array_filter($bulk['plan'], static fn (array $p): bool => $p['action'] === 'open'), 'tenant_id'));
+        $named = $s->runScheduled(['force' => true, 'dry_run' => true, 'tenant' => 8]);
+        self::assertSame('open', $named['plan'][0]['action']);
+    }
+
+    public function testDryRunListsCommunitiesAndMemberCountsWithoutWritingOrSendingAnything(): void
+    {
+        $s = $this->service();
+        $this->now = (int) strtotime('2026-06-10 09:00:00 UTC');
+        $out = $s->runScheduled(['force' => true, 'dry_run' => true]);
+        self::assertSame(1, $out['tenants']);
+        self::assertSame('open', $out['plan'][0]['action']);
+        self::assertSame(4, $out['plan'][0]['members']);
+        self::assertSame(self::TENANT, $out['plan'][0]['tenant_id']);
+        self::assertSame(0, $out['opened']);
+        self::assertSame(0, $out['notified']);
+        self::assertSame([], $this->repo->campaigns);
+        self::assertSame([], $this->repo->memberRows);
+        self::assertSame([], $this->notices);
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->audits);
+        self::assertSame(0, $this->repo->writes);
+        // La simulation de la tâche planifiée, un jour de la période, n'écrit rien non plus.
+        $this->now = (int) strtotime('2026-12-01 09:00:00 UTC');
+        $s->runScheduled(['dry_run' => true]);
+        self::assertSame(0, $this->repo->writes);
+        self::assertSame([], $this->repo->campaigns);
+    }
+
+    public function testADormantCommunityIsLeftAloneAndIncompleteRecordsAddANoticeToTheManagers(): void
+    {
+        $s = $this->service();
+        $this->repo->recentUsers = [];
+        $out = $s->runScheduled();
+        self::assertSame(0, $out['opened']);
+        self::assertSame([], $this->repo->campaigns);
+        $forced = $s->runScheduled(['force' => true, 'dry_run' => true, 'tenant' => self::TENANT]);
+        self::assertSame('skip', $forced['plan'][0]['action'], 'mêmes garde-fous pour l\'ouverture forcée');
+        self::assertStringContainsString('connecté', $forced['plan'][0]['reason']);
+
+        $this->repo->recentUsers = null;
+        $this->repo->withoutName = [11, 12, 13];
+        $opened = $s->runScheduled();
+        self::assertSame(1, $opened['opened']);
+        $notice = array_values(array_filter($this->payloads, static fn (array $n): bool => $n['type'] === DataCampaignService::NOTIFY_AUTO_OPENED))[0];
+        self::assertTrue($notice['payload']['incomplete'], 'plus de la moitié des fiches sans prénom ni nom');
+
+        // Moins de la moitié : pas d'avis « fiches incomplètes ».
+        $this->payloads = [];
+        $this->repo->campaigns = [];
+        $this->repo->memberRows = [];
+        $this->repo->withoutName = [11];
+        $s->runScheduled();
+        $notice = array_values(array_filter($this->payloads, static fn (array $n): bool => $n['type'] === DataCampaignService::NOTIFY_AUTO_OPENED))[0];
+        self::assertFalse($notice['payload']['incomplete']);
+    }
+
+    public function testEmailsCanBeSwitchedOffForACommunityWhileNotificationsStay(): void
+    {
+        $s = $this->service();
+        $s->saveSettings(self::TENANT, 1, ['emails_enabled' => '0']);
+        $out = $s->runScheduled();
+        self::assertSame(1, $out['opened']);
+        self::assertSame(4, $out['notified']);
+        self::assertSame(0, $out['mails']);
+        self::assertSame([], $this->mails);
+    }
+
+    public function testTheCommandTheButtonAndTheDocumentationExistAndShareTheService(): void
+    {
+        $cli = (string) file_get_contents(self::ROOT . '/data-campaign.php');
+        foreach (['--open-now', '--dry-run', '--no-email', '--deadline=', '--blocks=', '--tenant='] as $flag) {
+            self::assertStringContainsString($flag, $cli, $flag);
+        }
+        self::assertStringContainsString('DataCampaignService::class)->runScheduled($options)', $cli, 'aucune logique dupliquée');
+        self::assertStringContainsString("PHP_SAPI !== 'cli'", $cli);
+        self::assertDoesNotMatchRegularExpression('/INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|->prepare\(/i', $cli);
+        $admin = (string) file_get_contents(self::ROOT . '/app/Controllers/Admin/Organization/DataCampaignAdminController.php');
+        preg_match('/function openNow\(.*?\n    \}/s', $admin, $m);
+        self::assertStringContainsString('writeContext(', $m[0]);
+        self::assertStringContainsString("'force' => true", $m[0]);
+        self::assertStringContainsString('runScheduled(', $m[0]);
+        $route = Map::match('POST', '/back-office/organisation/fiabilisation/ouvrir-maintenant');
+        self::assertNotNull($route);
+        self::assertSame([AuthMiddleware::class, OrganizationAdminMiddleware::class], $route['middleware']);
+        $view = (string) file_get_contents(self::ROOT . '/views/admin/organization/data_campaigns.php');
+        self::assertStringContainsString('data-confirm="Ouvrir la campagne maintenant ?', $view, 'confirmation du nombre de membres avant l\'envoi');
+        self::assertStringContainsString('Ouverte par Athena', (string) file_get_contents(self::ROOT . '/views/admin/organization/data_campaign_show.php'));
+        $doc = (string) file_get_contents(self::ROOT . '/docs/fiabilisation-donnees.md');
+        foreach (['--open-now --dry-run', 'migration', 'Procédure de lancement'] as $needle) {
+            self::assertStringContainsString($needle, $doc, $needle);
+        }
+        $sql = (string) file_get_contents(self::ROOT . '/migrations/2026_11_15_090_data_campaigns.sql');
+        self::assertStringContainsString('auto_enabled TINYINT(1) NOT NULL DEFAULT 1', $sql, 'ouverture automatique active par défaut');
+        self::assertStringContainsString('UNIQUE KEY uq_data_campaign_auto (tenant_id, auto_year)', $sql, 'une campagne d\'Athena par communauté et par année');
+        self::assertStringContainsString('emails_enabled TINYINT(1) NOT NULL DEFAULT 1', $sql);
     }
 
     public function testTheCronJobReportsTheScheduledPassAndIsScheduled(): void
@@ -615,7 +851,7 @@ final class DataCampaignTest extends TestCase
         }
         self::assertStringContainsString('transition(', $admin);
         $member = (string) file_get_contents(self::ROOT . '/app/Controllers/Web/MemberDataCampaignController.php');
-        self::assertSame(2, substr_count($member, 'Csrf::validate('), 'repondre et confirmer');
+        self::assertSame(3, substr_count($member, 'Csrf::validate('), 'repondre, confirmer et tout-confirmer');
         self::assertStringContainsString("Session::get('tenant_id')", $member);
         self::assertStringContainsString('$this->authService->user()', $member);
         // L'identifiant du membre ne vient jamais de la requête.
@@ -727,7 +963,7 @@ final class DataCampaignTest extends TestCase
             self::assertStringContainsString('DROP TABLE IF EXISTS ' . $table . ';', $down, $table);
         }
         self::assertDoesNotMatchRegularExpression('/INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM/i', $sql, 'aucune donnée écrite par la migration');
-        self::assertStringContainsString('auto_enabled TINYINT(1) NOT NULL DEFAULT 0', $sql, 'désactivé par défaut');
+        self::assertStringContainsString('auto_enabled TINYINT(1) NOT NULL DEFAULT 1', $sql, 'activée par défaut');
         self::assertStringContainsString('UNIQUE KEY uq_data_campaign_reminder (campaign_id, user_id, slot)', $sql, 'un rappel une seule fois');
         self::assertStringContainsString('UNIQUE KEY uq_data_campaign_member (campaign_id, user_id)', $sql);
         $step = (string) file_get_contents(self::ROOT . '/database/steps/4580_data_campaigns.php');
@@ -760,7 +996,7 @@ final class DataCampaignTest extends TestCase
         self::assertSame([], $repo->listCampaigns(1));
         self::assertNull($repo->currentOpenCampaign(1));
         self::assertSame([], $repo->tenantsWithAutoEnabled());
-        self::assertFalse($repo->settings(1)['auto_enabled']);
+        self::assertTrue($repo->settings(1)['auto_enabled'], 'défaut : ouverture automatique active');
         $service = new DataCampaignService($repo, $this->reader);
         self::assertNull($service->activeFor(1, 1));
         self::assertSame(0, $service->pendingBadge(1, 1));
@@ -801,6 +1037,84 @@ final class DataCampaignTest extends TestCase
             }
             self::assertArrayHasKey($class, $imported, $file . ' appelle ' . $class . ' sans « use »');
         }
+    }
+
+    // ------------------------------------------------------------------ fiabilisation à la connexion
+
+    public function testLoginPromptRulesNeverTriggerForGuestsImpersonationOrAjax(): void
+    {
+        $base = ['pending' => true, 'hasOrganization' => true, 'continueUrl' => '/public/jnet'];
+        self::assertTrue(DataCampaignLoginPrompt::shouldPrompt($base));
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['pending' => false] + $base));
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['hasOrganization' => false] + $base), 'compte invité ou sans organisation');
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['impersonating' => true] + $base));
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['ajax' => true] + $base));
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['continueUrl' => '/public/jnet/moi/fiabilisation?etape=recap'] + $base), 'déjà sur la campagne');
+    }
+
+    public function testLoginPromptToneBecomesInsistentAfterTheDueDateButNeverBlocks(): void
+    {
+        self::assertSame('open', DataCampaignLoginPrompt::tone('2026-12-31', '2026-12-31'));
+        self::assertSame('overdue', DataCampaignLoginPrompt::tone('2026-12-31', '2027-01-01'));
+        self::assertSame('open', DataCampaignLoginPrompt::tone('', '2027-01-01'));
+        // Après la date limite, la décision de redirection est la même : l'écran n'est jamais forcé en dehors de la connexion.
+        self::assertTrue(DataCampaignLoginPrompt::shouldPrompt(['pending' => true, 'hasOrganization' => true]));
+    }
+
+    public function testBlockStatusAndSummaryDriveTheOverviewAndTheConfirmAllButton(): void
+    {
+        $ok = ['state' => 'ok', 'rows' => [['label' => 'A', 'value' => 'x']]];
+        $todo = ['state' => '', 'rows' => [['label' => 'A', 'value' => 'x']]];
+        $empty = ['state' => '', 'rows' => []];
+        $blank = ['state' => '', 'rows' => [['label' => 'A', 'value' => ' — ']]];
+        $flag = ['state' => 'flag', 'rows' => [['label' => 'A', 'value' => 'x']]];
+        self::assertSame('ok', DataCampaignLoginPrompt::blockStatus($ok));
+        self::assertSame('to_confirm', DataCampaignLoginPrompt::blockStatus($todo));
+        self::assertSame('incomplete', DataCampaignLoginPrompt::blockStatus($empty));
+        self::assertSame('incomplete', DataCampaignLoginPrompt::blockStatus($blank));
+        self::assertSame('flagged', DataCampaignLoginPrompt::blockStatus($flag));
+        $all = DataCampaignLoginPrompt::summarize(['a' => $ok, 'b' => $todo]);
+        self::assertTrue($all['can_confirm_all']);
+        self::assertSame(50, $all['percent']);
+        self::assertFalse(DataCampaignLoginPrompt::summarize(['a' => $ok, 'b' => $empty])['can_confirm_all']);
+        self::assertFalse(DataCampaignLoginPrompt::summarize(['a' => $flag])['can_confirm_all']);
+        self::assertSame(0, DataCampaignLoginPrompt::summarize([])['percent']);
+    }
+
+    public function testConfirmAllAnswersEveryPartThenConfirmsTheFile(): void
+    {
+        $s = $this->service();
+        $id = $this->openCampaign($s);
+        $result = $s->confirmAll(self::TENANT, 11, $id);
+        self::assertTrue($result['ok'], $result['message']);
+        self::assertSame(0, $s->pendingBadge(self::TENANT, 11));
+    }
+
+    public function testConfirmAllRefusesWhenAPartIsIncompleteOrFlagged(): void
+    {
+        $s = $this->service();
+        $id = $this->openCampaign($s);
+        $this->reader->data[11]['identity'] = [];
+        self::assertFalse($s->confirmAll(self::TENANT, 11, $id)['ok'], 'une partie vide est à compléter');
+        $this->reader->data = [];
+        $s->answer(self::TENANT, 12, $id, 'identity', 'flag', 'Mon prénom est mal écrit');
+        self::assertFalse($s->confirmAll(self::TENANT, 12, $id)['ok']);
+        self::assertFalse($s->confirmAll(self::TENANT, 11, $id + 50)['ok'], 'campagne inconnue');
+    }
+
+    public function testTheLoginHookIsWiredWithoutBreakingTheReturnUrlOrTheJnetModal(): void
+    {
+        $auth = (string) file_get_contents(self::ROOT . '/app/Controllers/Auth/AuthController.php');
+        $resolve = strpos($auth, '$this->resolvePostLoginContinueUrl();');
+        $hook = strpos($auth, 'DataCampaignLoginPrompt::prepare($user, $continueUrl)');
+        $arm = strpos($auth, 'LoginWelcomeGate::arm($continueUrl);');
+        self::assertNotFalse($hook);
+        self::assertTrue($resolve < $hook && $hook < $arm, 'la destination d\'origine est résolue avant, et gardée par la fiabilisation');
+        $prompt = (string) file_get_contents(self::ROOT . '/app/Support/DataCampaignLoginPrompt.php');
+        self::assertStringContainsString('Session::set(self::SESSION_CONTINUE, $continueUrl)', $prompt);
+        $routes = (string) file_get_contents(self::ROOT . '/routes/web.php');
+        self::assertStringContainsString("path('fiabilisation/plus-tard')", $routes);
+        self::assertStringContainsString("path('fiabilisation/tout-confirmer')", $routes);
     }
 
     public function testTheViewsCarryNoSmallLabelAboveATitleAndNoEmoji(): void

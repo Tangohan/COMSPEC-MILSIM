@@ -34,6 +34,30 @@ require __DIR__ . '/_subnav.php';
     <div class="metric"><div class="metric-label">Signaux</div><div class="metric-value"><?= count($findings) ?></div><div class="metric-detail">Propositions</div></div>
 </div>
 
+<?php
+$cc = is_array($contentCounts ?? null) ? $contentCounts : [];
+$ccLabels = ['contacts' => 'Contacts', 'messages' => 'Messages', 'calls' => 'Appels', 'media' => 'Images', 'locations' => 'Positions', 'accounts' => 'Comptes', 'applications' => 'Applications', 'networks' => 'Réseaux'];
+$ccTotal = array_sum(array_map('intval', $cc));
+?>
+<section class="panel" id="content-releve">
+    <div class="panel-header"><div class="panel-title"><span class="panel-index">02.09</span> Contenu relevé</div></div>
+    <div class="panel-body">
+        <?php if ($ccTotal === 0): ?>
+            <p><strong>Aucun contenu relevé sur ce support.</strong></p>
+            <p class="muted">Pour avoir des données : en jeu, exploitez le support à fond (outil d’exploitation numérique du SSE, extraction complète), puis transmettez-le avec le terminal SEEK ou l’app SSE de l’ATAK. La gestion peut aussi lancer une acquisition simulée ci-dessous. Rien n’est inventé : sans extraction, il n’y a rien à afficher.</p>
+        <?php else: ?>
+            <p style="display:flex;flex-wrap:wrap;gap:6px 18px;margin:0">
+                <?php foreach ($ccLabels as $k => $lab): ?><?php if ((int) ($cc[$k] ?? 0) > 0): ?><span><strong><?= (int) $cc[$k] ?></strong> <?= $h($lab) ?></span><?php endif; ?><?php endforeach; ?>
+            </p>
+            <p style="margin:8px 0 0">
+                <?php if ($isPhone): ?><a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/supports/' . $id . '/telephone')) ?>">Ouvrir l’extraction mobile</a> · <?php endif; ?>
+                <?php if ($isComputer): ?><a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/supports/' . $id . '/ordinateur')) ?>">Ouvrir la vue ordinateur</a> · <?php endif; ?>
+                <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/communications?device_id=' . $id)) ?>">Communications</a>
+            </p>
+        <?php endif; ?>
+    </div>
+</section>
+
 <section class="panel">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">02.10</span> Identification</div></div>
     <div class="panel-body" style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
@@ -144,7 +168,7 @@ $packets = is_array($packets ?? null) ? $packets : [];
     <div class="panel-header"><div class="panel-title"><span class="panel-index">02.13</span> Signaux analytiques</div></div>
     <div class="panel-body">
         <?php if ($findings === []): ?>
-            <p class="muted">Aucun signal. Lancez une acquisition pour produire des propositions.</p>
+            <p class="muted">Aucun signal. Les signaux sont des propositions automatiques : la gestion en obtient en lançant une acquisition simulée ; le contenu relevé en jeu n’en produit pas de lui-même.</p>
         <?php else: ?>
             <?php foreach ($findings as $f): ?>
                 <div class="iw-alert is-moderee" style="margin-bottom:8px">

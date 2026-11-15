@@ -149,7 +149,7 @@ final class PhotoPolicy
     /** @param array{tenant_id: int, deleted: bool, confidential: bool, sse: bool, author_user_id: int} $f */
     public static function canTransferToSse(PhotoViewer $v, array $f): bool
     {
-        return self::canView($v, $f) && $v->sseDoor && !$f['sse'];
+        return self::canView($v, $f) && $v->mayTransferToSse() && !$f['sse'];
     }
 
     /** @param array{tenant_id: int, deleted: bool, confidential: bool, sse: bool, author_user_id: int} $f */

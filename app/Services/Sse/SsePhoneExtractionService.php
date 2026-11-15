@@ -57,7 +57,7 @@ final class SsePhoneExtractionService
      * @param array<string, mixed> $body
      * @return array{id: int, ref: string, duplicate: bool}|array{error: string, status: int}
      */
-    public function ingest(int $tenantId, ?int $userId, array $body, int $rawBytes): array
+    public function ingest(int $tenantId, ?int $userId, array $body, int $rawBytes, int $mapId = 0): array
     {
         if ($userId === null || $userId < 1) {
             return ['error' => 'unlinked', 'status' => 403];
@@ -119,14 +119,14 @@ final class SsePhoneExtractionService
             $identityId = $aiUid !== null ? $this->records->identityIdByAiUid($tenantId, $aiUid) : null;
             $id = $this->db->insert(
                 'INSERT INTO sse_phone_extractions (tenant_id, idempotency_key, uploader_user_id, device_uid, device_label, device_model, owner_label, owner_ai_uid,
-                    owner_kind, identity_id, op_key, grid, game_time, sha256, bytes, counts_json, network_json, status, created_at)
-                 VALUES (:t, :k, :u, :d, :dl, :dm, :ol, :oa, :ok, :i, :op, :g, :gt, :sha, :b, :c, :n, :st, :now)',
+                    owner_kind, identity_id, op_key, context_id, grid, game_time, sha256, bytes, counts_json, network_json, status, created_at)
+                 VALUES (:t, :k, :u, :d, :dl, :dm, :ol, :oa, :ok, :i, :op, :ctx, :g, :gt, :sha, :b, :c, :n, :st, :now)',
                 [
                     't' => $tenantId, 'k' => $extKey, 'u' => $userId, 'd' => $uid,
                     'dl' => self::str($device['label'] ?? null, 80), 'dm' => self::str($device['model'] ?? null, 80),
                     'ol' => self::str($owner['label'] ?? null, 120), 'oa' => $aiUid,
                     'ok' => ($owner['kind'] ?? '') === 'ai' ? 'ai' : 'player', 'i' => $identityId,
-                    'op' => self::str($body['op'] ?? null, 64), 'g' => self::str($body['grid'] ?? null, 32), 'gt' => self::str($body['game_time'] ?? null, 32),
+                    'op' => self::str($body['op'] ?? null, 64), 'ctx' => $mapId > 0 ? $mapId : null, 'g' => self::str($body['grid'] ?? null, 32), 'gt' => self::str($body['game_time'] ?? null, 32),
                     'sha' => hash('sha256', ''), 'b' => 0, 'c' => '{}',
                     'n' => $network !== null ? (string) json_encode($network, JSON_UNESCAPED_UNICODE) : null,
                     'st' => ($this->records->settings($tenantId)['extractions_visibility'] ?? 'portal') === 'managers' ? 'review' : 'visible',

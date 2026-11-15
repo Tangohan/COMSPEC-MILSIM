@@ -41,6 +41,11 @@ $dayTime = static function (string $raw): string {
 
     return $ts !== false && $raw !== '' ? date('d/m/Y H:i', $ts) : '—';
 };
+$forcedOn = static function (string $raw): string {
+    $ts = strtotime($raw);
+
+    return $ts !== false && $raw !== '' ? date('d/m/Y', $ts) : '';
+};
 $statusText = ['draft' => 'Brouillon', 'open' => 'Ouverte', 'closed' => 'Clôturée'];
 $bucketText = ['confirmed' => 'Confirmé', 'flagged' => 'Avec signalements', 'none' => 'Sans réponse'];
 $bucketClass = ['confirmed' => 'dc-pill--ok', 'flagged' => 'dc-pill--warn', 'none' => 'dc-pill--muted'];
@@ -71,7 +76,18 @@ $closedFlags = array_values(array_filter($overview['flags'], static fn (array $f
             Parties relues : <?= $h(implode(', ', array_map(static fn (string $k): string => DataCampaignBlocks::label($k), $campaign['blocks'] ?? []))) ?>.
             Rappels : <?= $h(implode(', ', array_map(static fn (int $d): string => $d === 0 ? 'jour J' : 'J-' . $d, $campaign['reminder_days'] ?? []))) ?>.
             <?= empty($campaign['unit_ids']) ? 'Toute la communauté.' : 'Unités choisies et leurs sous-unités.' ?>
+            <?php if (!empty($campaign['auto_created'])): ?>
+                <?= $h($forcedOn((string) ($campaign['forced_on'] ?? '')) !== '' ? 'Ouverte par Athena (forcée le ' . $forcedOn((string) $campaign['forced_on']) . ').' : 'Ouverte par Athena.') ?>
+            <?php endif; ?>
         </p>
+        <?php if ($status !== 'closed'): ?>
+            <form method="post" action="<?= $h($base . '/modifier') ?>" class="dc-form dc-form--row">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <label class="dc-field dc-field--grow"><span>Intitulé</span><input type="text" name="title" maxlength="120" value="<?= $h($campaign['title'] ?? '') ?>"></label>
+                <label class="dc-field"><span>Date limite</span><input type="date" name="due_on" value="<?= $h(substr((string) ($campaign['due_on'] ?? ''), 0, 10)) ?>" required></label>
+                <button type="submit" class="dc-btn dc-btn--ghost">Modifier</button>
+            </form>
+        <?php endif; ?>
         <div class="dc-actions">
             <?php if ($status !== 'open'): ?>
                 <form method="post" action="<?= $h($base . '/ouvrir') ?>">
@@ -130,6 +146,8 @@ $closedFlags = array_values(array_filter($overview['flags'], static fn (array $f
                     <div class="dc-flag">
                         <p class="dc-flag__state"><b><?= $h($f['display_name'] !== '' ? $f['display_name'] : $f['callsign']) ?></b> · <?= $h(DataCampaignBlocks::label((string) $f['block_key'])) ?> · <?= $h($dayTime((string) $f['created_at'])) ?></p>
                         <p class="dc-flag__text"><?= $h($f['message']) ?></p>
+                        <?php $flagOpen = match ((string) $f['block_key']) { 'identity' => 'etat-civil', 'assignment' => 'fonctions', default => '' }; ?>
+                        <p class="dc-note"><a class="dc-link" href="<?= $h(effectifs_member_url((int) $f['user_id'], $flagOpen)) ?>">Ouvrir la fiche de ce membre</a></p>
                         <?php if ((int) ($f['correction_request_id'] ?? 0) > 0): ?>
                             <p class="dc-note"><?= $h($flagRequestLabel($f)) ?> — à décider dans <a class="dc-link" href="<?= $h(url('back-office/demandes-rh')) ?>">Demandes RH</a>. Le signalement se ferme quand la demande est décidée.</p>
                         <?php else: ?>
@@ -173,7 +191,7 @@ $closedFlags = array_values(array_filter($overview['flags'], static fn (array $f
                     <tbody>
                     <?php foreach ($members as $m): ?>
                         <tr>
-                            <td><?= $h($m['display_name'] !== '' ? $m['display_name'] : '—') ?><?= $m['callsign'] !== '' ? ' <span class="dc-muted">' . $h($m['callsign']) . '</span>' : '' ?></td>
+                            <td><a class="dc-link" href="<?= $h(effectifs_member_url((int) $m['user_id'])) ?>"><?= $h($m['display_name'] !== '' ? $m['display_name'] : '—') ?></a><?= $m['callsign'] !== '' ? ' <span class="dc-muted">' . $h($m['callsign']) . '</span>' : '' ?></td>
                             <td><?= $h($m['unit_label'] !== '' ? $m['unit_label'] : '—') ?></td>
                             <td><span class="dc-pill <?= $bucketClass[(string) $m['bucket']] ?? 'dc-pill--muted' ?>"><?= $h($bucketText[(string) $m['bucket']] ?? '') ?></span><?= (int) $m['open_flags'] > 0 ? ' <span class="dc-muted">' . (int) $m['open_flags'] . '</span>' : '' ?></td>
                             <td><?= (int) $m['answered'] ?> / <?= count($campaign['blocks'] ?? []) ?></td>

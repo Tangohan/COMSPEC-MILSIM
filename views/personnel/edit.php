@@ -431,32 +431,45 @@ $editValidTabIds = implode(',', array_map(
           </div>
           <div class="space-y-8 p-6 sm:p-8">
             <div>
-              <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Identité en jeu</h3>
+              <h3 class="mb-1 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">État civil du personnage</h3>
+              <p class="mb-4 text-[11px] leading-relaxed text-slate-600">Le prénom et le nom sont le nom que tout le monde voit : fiche, annuaire, JNET et messages. Sans eux, c’est l’indicatif qui s’affiche, puis le nom du compte.</p>
               <div class="grid gap-4 md:grid-cols-2">
                 <div>
                   <label for="rp_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
                   <input type="text" name="rp_first_name" id="rp_first_name" value="<?= htmlspecialchars($knownValue($up['first_name'] ?? '', $p['first_name'] ?? '', $targetUser['first_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-500">Prénom du personnage — identité unique (dossier, annuaire).</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Le prénom du personnage : c’est le nom que tout le monde voit.</p>
                 </div>
                 <div>
                   <label for="rp_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
                   <input type="text" name="rp_last_name" id="rp_last_name" value="<?= htmlspecialchars($knownValue($up['last_name'] ?? '', $p['last_name'] ?? '', $targetUser['last_name'] ?? '')) ?>" placeholder="Obligatoire" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-500">Nom du personnage — utilisé partout (dossier, annuaire).</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Le nom du personnage : c’est le nom que tout le monde voit.</p>
+                </div>
+                <div class="md:col-span-2">
+                  <?php
+                  $mnpFirst = '#rp_first_name';
+                  $mnpLast = '#rp_last_name';
+                  $mnpCallsignInput = '#callsign';
+                  $mnpCallsign = '';
+                  $mnpAccount = trim((string) ($targetUser['display_name'] ?? ''));
+                  $mnpTrigram = (string) ($memberTrigram ?? '');
+                  $mnpClass = 'rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-xs text-emerald-950';
+                  require base_path('views/partials/member_name_preview.php');
+                  ?>
                 </div>
                 <div class="md:col-span-2">
                   <label for="rp_bio" class="mb-1 block text-xs font-bold text-slate-600">Présentation du personnage</label>
                   <textarea name="rp_bio" id="rp_bio" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Quelques mots sur le personnage, son parcours, son ton…"><?= htmlspecialchars((string) ($up['bio'] ?? '')) ?></textarea>
                 </div>
                 <div>
-                  <label for="callsign" class="mb-1 block text-xs font-bold text-slate-600">Indicatif principal</label>
+                  <label for="callsign" class="mb-1 block text-xs font-bold text-slate-600">Indicatif</label>
                   <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($p['callsign'] ?? $targetUser['callsign'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                  <p class="mt-1 text-[11px] text-slate-500">Surnom radio / callsign utilisé en mission (ATAK, annuaire).</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Votre nom de radio : il sert sur la carte et en jeu. Il remplace le nom seulement si le prénom et le nom ne sont pas renseignés.</p>
                 </div>
                 <?php if (\App\Services\Personnel\MemberNameSettings::forTenant((int) \App\Core\Session::get('tenant_id'))['trigrams_enabled']): ?>
                 <div>
                   <label for="member_trigram" class="mb-1 block text-xs font-bold text-slate-600">Trigramme</label>
                   <input type="text" name="member_trigram" id="member_trigram" value="<?= htmlspecialchars((string) ($memberTrigram ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-mono uppercase" maxlength="3" pattern="[A-Za-z]{3}" autocomplete="off" spellcheck="false">
-                  <p class="mt-1 text-[11px] text-slate-500">Trois lettres, uniques dans la communauté (paraphes, organigramme). Calculé depuis le prénom et le nom, puis conservé même si le nom change.</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Trois lettres, uniques dans la communauté (paraphes, organigramme, certains affichages en liste). Calculé depuis le prénom et le nom, puis conservé même si le nom change.</p>
                 </div>
                 <?php endif; ?>
                 <div>
@@ -476,9 +489,9 @@ $editValidTabIds = implode(',', array_map(
                   </div>
                 </div>
                 <div>
-                  <label for="nickname_primary" class="mb-1 block text-xs font-bold text-slate-600">Surnom principal</label>
+                  <label for="nickname_primary" class="mb-1 block text-xs font-bold text-slate-600">Surnom</label>
                   <input type="text" name="nickname_primary" id="nickname_primary" value="<?= htmlspecialchars((string) ($p['nickname_primary'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="120" placeholder="Ex. Le Renard">
-                  <p class="mt-1 text-[11px] text-slate-500">Nom court complémentaire au nom du personnage ou à l’indicatif.</p>
+                  <p class="mt-1 text-[11px] text-slate-500">Un nom d’usage affiché sur la fiche ; il ne remplace jamais le prénom, le nom ni l’indicatif.</p>
                 </div>
                 <div>
                   <label for="nicknames_text" class="mb-1 block text-xs font-bold text-slate-600">Autres surnoms</label>

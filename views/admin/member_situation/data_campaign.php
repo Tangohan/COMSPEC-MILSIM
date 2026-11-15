@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Support\DataCampaignBlocks;
+use App\Support\DataCampaignLoginPrompt;
 
 /**
  * Ma situation > Fiabilisation des données : le membre relit SA fiche, partie par partie.
@@ -79,6 +80,11 @@ $base = jnet_moi_url('fiabilisation');
 
         <nav class="dc-steps" aria-label="Parties de la fiche">
             <ol>
+                <li class="<?= $step === DataCampaignLoginPrompt::STEP ? 'is-current' : '' ?>">
+                    <a href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => DataCampaignLoginPrompt::STEP])) ?>"<?= $step === DataCampaignLoginPrompt::STEP ? ' aria-current="step"' : '' ?>>
+                        <span class="dc-steps__name">Vue d’ensemble</span>
+                    </a>
+                </li>
                 <?php foreach ($blocks as $key => $b): ?>
                     <li class="<?= $step === $key ? 'is-current' : '' ?>">
                         <a href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => $key])) ?>"<?= $step === $key ? ' aria-current="step"' : '' ?>>
@@ -97,7 +103,85 @@ $base = jnet_moi_url('fiabilisation');
         </nav>
     </section>
 
-    <?php if (isset($blocks[$step])):
+    <?php if ($step === DataCampaignLoginPrompt::STEP):
+        $sum = DataCampaignLoginPrompt::summarize($blocks);
+        $overdue = DataCampaignLoginPrompt::tone((string) ($campaign['due_on'] ?? ''), (string) ($today ?? date('Y-m-d'))) === 'overdue' && $confirmedAt === '';
+        $statusLabel = ['ok' => 'Exact', 'to_confirm' => 'À confirmer', 'incomplete' => 'À compléter', 'flagged' => 'Correction demandée'];
+        $statusClass = ['ok' => 'msd-pill--ok', 'to_confirm' => 'msd-pill--muted', 'incomplete' => 'msd-pill--warn', 'flagged' => 'msd-pill--warn'];
+        $later = !empty($comingFromLogin) ? jnet_moi_url('fiabilisation/plus-tard') : '';
+        ?>
+        <section class="msd-card dc-overview" aria-labelledby="dc-overview-title">
+            <header class="msd-card__head">
+                <h2 class="msd-card__title" id="dc-overview-title"><?= $confirmedAt !== '' ? 'Votre fiche est confirmée' : 'Vérifions ensemble votre fiche' ?></h2>
+                <span class="msd-card__count"><?= (int) $sum['percent'] ?> %</span>
+            </header>
+            <?php if ($confirmedAt !== ''): ?>
+                <p class="dc-text">Vous avez confirmé votre fiche le <b><?= $h($day($confirmedAt)) ?></b>. Merci : vous n’avez plus rien à faire.</p>
+            <?php elseif ($overdue): ?>
+                <p class="dc-alert">La date limite du <b><?= $h($due) ?></b> est dépassée et votre fiche n’est pas encore confirmée. Prenez quelques minutes maintenant : l’encadrement est prévenu des fiches non confirmées.</p>
+            <?php else: ?>
+                <p class="dc-text">Votre communauté vous demande de relire votre fiche et de confirmer qu’elle est exacte. Cela prend quelques minutes<?= $due !== '' ? ', avant le <b>' . $h($due) . '</b>' : '' ?>.</p>
+            <?php endif; ?>
+            <div class="dc-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $sum['percent'] ?>" aria-label="Avancement de la vérification">
+                <span class="dc-progress__bar" style="width: <?= (int) $sum['percent'] ?>%"></span>
+            </div>
+            <p class="dc-note">Exacts : <?= (int) $sum['ok'] ?> · À confirmer : <?= (int) $sum['to_confirm'] ?> · À compléter : <?= (int) $sum['incomplete'] ?> · Correction demandée : <?= (int) $sum['flagged'] ?></p>
+
+            <ul class="dc-overview__list">
+                <?php foreach ($blocks as $key => $b):
+                    $status = DataCampaignLoginPrompt::blockStatus($b);
+                    ?>
+                    <li class="dc-overview__item">
+                        <details<?= $status === 'incomplete' || $status === 'flagged' ? ' open' : '' ?>>
+                            <summary>
+                                <span class="dc-steps__name"><?= $h($b['label']) ?></span>
+                                <span class="msd-pill <?= $statusClass[$status] ?>"><?= $h($statusLabel[$status]) ?></span>
+                            </summary>
+                            <?php if (!empty($b['changed_since_answer'])): ?>
+                                <p class="dc-alert">Cette partie a changé depuis votre dernière réponse : relisez-la.</p>
+                            <?php endif; ?>
+                            <?php if ($b['rows'] !== []): ?>
+                                <dl class="dc-rows">
+                                    <?php foreach ($b['rows'] as $row): ?>
+                                        <div class="dc-rows__line">
+                                            <dt><?= $h($row['label']) ?></dt>
+                                            <dd><?= $h($row['value']) ?></dd>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </dl>
+                            <?php else: ?>
+                                <p class="dc-note">Rien n’est encore renseigné dans cette partie.</p>
+                            <?php endif; ?>
+                            <p class="dc-links">
+                                <a class="dc-link" href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => $key])) ?>"><?= $status === 'ok' ? 'Revoir cette partie' : 'Vérifier ou corriger cette partie' ?></a>
+                                <?php foreach ($b['links'] as $link): ?>
+                                    <a class="dc-link" href="<?= $h($link['href']) ?>"><?= $h($link['label']) ?></a>
+                                <?php endforeach; ?>
+                            </p>
+                        </details>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+
+            <?php if ($confirmedAt === ''): ?>
+                <p class="dc-note">Si vous ne faites rien : rien n’est supprimé ni bloqué et votre fiche reste telle quelle. Mais elle ne sera pas considérée comme fiable, vous recevrez des rappels, l’encadrement verra que votre fiche n’est pas confirmée et cette page vous sera de nouveau proposée à votre prochaine connexion.</p>
+            <?php endif; ?>
+            <div class="dc-actions dc-overview__actions">
+                <?php if ($confirmedAt === '' && $sum['can_confirm_all']): ?>
+                    <form method="post" action="<?= $h(jnet_moi_url('fiabilisation/tout-confirmer')) ?>">
+                        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                        <input type="hidden" name="campaign" value="<?= (int) $campaign['id'] ?>">
+                        <button type="submit" class="dc-btn">Tout est exact : tout confirmer</button>
+                    </form>
+                <?php elseif ($confirmedAt === ''): ?>
+                    <a class="dc-btn" href="<?= $h(jnet_moi_url('fiabilisation', ['etape' => (string) (array_key_first(array_filter($blocks, static fn (array $b): bool => DataCampaignLoginPrompt::blockStatus($b) !== 'ok')) ?? 'recap')])) ?>">Vérifier partie par partie</a>
+                <?php endif; ?>
+                <?php if ($later !== ''): ?>
+                    <a class="dc-btn dc-btn--ghost" href="<?= $h($later) ?>">Plus tard</a>
+                <?php endif; ?>
+            </div>
+        </section>
+    <?php elseif (isset($blocks[$step])):
         $b = $blocks[$step];
         $fields = is_array($b['fields'] ?? null) ? $b['fields'] : [];
         ?>

@@ -1138,6 +1138,7 @@
     if (!t) { setBanner('Aucun terrain n’est configuré sur le site : le poste ne peut pas afficher de carte.'); return; }
     stopMeasure();
     if (S.layers) { S.layers.destroy(); S.layers = null; }
+    if (S.sse) { S.sse.destroy(); S.sse = null; }
     if (S.tm) { S.tm.destroy(); S.tm = null; }
     S.isrCentered = false;
     S.pick = null;
@@ -1171,6 +1172,8 @@
       },
       fetchPlan: function (id) { return api('/atak/toc/api/plans/' + id); }
     });
+    // Calques SSE (contrôles d’identité, lieux, pistes de téléphones) : module partagé, désactivés au départ, proposés seulement si le lecteur y a droit.
+    if (window.SseMapLayers) S.sse = window.SseMapLayers.mountToc(S.tm, S.mapId);
     var map = S.tm.map;
     map.on('contextmenu', function (e) {
       if (e.originalEvent) e.originalEvent.preventDefault();

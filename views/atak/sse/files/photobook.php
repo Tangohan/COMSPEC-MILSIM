@@ -68,7 +68,7 @@ $all = ($_GET['toutes'] ?? '') === '1';
                 <form method="get" action="<?= $h(url('atak/sse/fichiers/comparer')) ?>" data-fx-compare>
                     <div class="fx-book">
                         <?php foreach ($result['hits'] as $hit): ?>
-                            <?php $i = $hit['identity']; $pp = $hit['profile'] ?? []; $src = isset($hit['photo']['path']) ? user_media_public_url((string) $hit['photo']['path']) : (($i['photo_path'] ?? null) ? user_media_public_url((string) $i['photo_path']) : null); $cc = (string) ($pp['country'] ?? $i['nationality'] ?? 'USA'); ?>
+                            <?php $i = $hit['identity']; $pp = $hit['profile'] ?? []; $src = isset($hit['photo']['path']) ? \App\Services\Sse\SseSeekPhotoService::photoUrl($hit['photo']) : (($i['photo_path'] ?? null) ? user_media_public_url((string) $i['photo_path']) : null); $cc = (string) ($pp['country'] ?? $i['nationality'] ?? 'USA'); ?>
                             <div class="fx-pc">
                                 <a class="ph" href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $i['id'])) ?>"><?php if ($src !== null): ?><img src="<?= $h($src) ?>" alt="Photo de <?= $h($i['display_name']) ?>" loading="lazy"><?php else: ?><?= $h(mb_strtoupper(mb_substr((string) $i['first_name'], 0, 1) . mb_substr((string) $i['last_name'], 0, 1))) ?><?php endif; ?></a>
                                 <b translate="no"><?= $h($i['display_name']) ?></b>
@@ -93,7 +93,7 @@ $all = ($_GET['toutes'] ?? '') === '1';
                 <div class="fx-book">
                     <?php foreach ($unattached as $ph): ?>
                         <div class="fx-pc">
-                            <span class="ph"><img src="<?= $h(user_media_public_url((string) $ph['path'])) ?>" alt="<?= $h($ph['caption'] ?? 'Photo à rattacher') ?>" loading="lazy"></span>
+                            <span class="ph"><img src="<?= $h(\App\Services\Sse\SseSeekPhotoService::photoUrl($ph)) ?>" alt="<?= $h($ph['caption'] ?? 'Photo à rattacher') ?>" loading="lazy"></span>
                             <small translate="no"><?= $h($ph['caption'] ?? substr((string) $ph['created_at'], 0, 16)) ?></small>
                             <form method="post" action="<?= $h(url('atak/sse/fichiers/photos/' . (int) $ph['id'] . '/rattacher')) ?>" style="display:flex;gap:6px"><?= $csrf ?>
                                 <input class="fx-in mono" name="target" placeholder="IDT-…" aria-label="Fiche à rattacher" style="height:32px">

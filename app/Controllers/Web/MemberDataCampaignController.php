@@ -13,6 +13,7 @@ use App\Repositories\DataCampaignRepository;
 use App\Services\Auth\AuthService;
 use App\Services\DataCampaign\DataCampaignService;
 use App\Support\DataCampaignBlocks;
+use App\Support\DataCampaignLoginPrompt;
 use App\Support\DataCampaignScope;
 use App\Support\JnetMemberShell;
 
@@ -52,7 +53,9 @@ final class MemberDataCampaignController
             $view = $this->service->memberView($tenantId, $userId, $active['campaign'], $active['member']);
             $keys = array_keys($view['blocks']);
             $asked = $request->queryString('etape', '');
-            $step = $asked === 'recap' || in_array($asked, $keys, true) ? $asked : $this->firstOpenStep($view['blocks']);
+            // Arrivé par la connexion (destination gardée en session) : vue d'ensemble d'abord.
+            $default = DataCampaignLoginPrompt::continueUrl() !== null ? DataCampaignLoginPrompt::STEP : $this->firstOpenStep($view['blocks']);
+            $step = in_array($asked, ['recap', DataCampaignLoginPrompt::STEP], true) || in_array($asked, $keys, true) ? $asked : $default;
         }
 
         return JnetMemberShell::view($request, [
@@ -69,6 +72,8 @@ final class MemberDataCampaignController
             'history' => $ready ? $this->repo->historyForUser($tenantId, $userId) : [],
             'unitFollow' => $ready && $active !== null ? $this->unitFollow($tenantId, $userId, $active['campaign']) : null,
             'csrfToken' => Csrf::token(),
+            'comingFromLogin' => DataCampaignLoginPrompt::continueUrl() !== null,
+            'today' => date('Y-m-d'),
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
@@ -138,6 +143,43 @@ final class MemberDataCampaignController
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(jnet_moi_url('fiabilisation', ['etape' => 'recap']));
+    }
+
+    /** POST /jnet/moi/fiabilisation/tout-confirmer : toutes les parties lues et complètes sont confirmées, puis la fiche. */
+    public function confirmAll(Request $request, array $params = []): Response
+    {
+        $ctx = $this->context();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId] = $ctx;
+        if (!$request->isPost() || !Csrf::validate(is_string($t = $request->input('_csrf_token')) ? $t : null)) {
+            Session::flash('error', 'Session expirée. Rechargez la page et réessayez.');
+
+            return Response::redirect(jnet_moi_url('fiabilisation', ['etape' => DataCampaignLoginPrompt::STEP]));
+        }
+        $result = $this->service->confirmAll($tenantId, $userId, (int) $request->input('campaign', 0));
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+        if (!$result['ok']) {
+            return Response::redirect(jnet_moi_url('fiabilisation', ['etape' => DataCampaignLoginPrompt::STEP]));
+        }
+        // Fiche confirmée : on reprend la destination d'origine de la connexion, s'il y en a une.
+        if (DataCampaignLoginPrompt::continueUrl() !== null) {
+            return Response::redirect(DataCampaignLoginPrompt::consumeContinue());
+        }
+
+        return Response::redirect(jnet_moi_url('fiabilisation', ['etape' => 'recap']));
+    }
+
+    /** GET /jnet/moi/fiabilisation/plus-tard : retour à la destination demandée ; la page reviendra à la prochaine connexion. */
+    public function later(Request $request, array $params = []): Response
+    {
+        $ctx = $this->context();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+
+        return Response::redirect(DataCampaignLoginPrompt::consumeContinue());
     }
 
     /**

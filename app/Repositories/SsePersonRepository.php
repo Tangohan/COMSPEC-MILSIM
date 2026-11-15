@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Core\Database;
 use App\Support\SilentSchemaMigration;
 use App\Support\SqlText;
+use App\Support\SseAcquisitionContexts;
 use PDO;
 
 /**
@@ -28,6 +29,9 @@ final class SsePersonRepository
     ];
 
     private Database $db;
+
+    /** @var array<int, SseAcquisitionContexts> Contextes d'acquisition par communauté (lus une fois par requête). */
+    private array $contexts = [];
 
     public function __construct(?Database $db = null)
     {
@@ -132,7 +136,7 @@ final class SsePersonRepository
             'id_document_number' => $this->nullIfEmpty($data['id_document_number'] ?? null),
             'distinguishing_marks' => $this->nullIfEmpty($data['distinguishing_marks'] ?? null),
             'affiliation' => $this->nullIfEmpty($data['affiliation'] ?? null),
-            'circumstances' => $this->nullIfEmpty($data['circumstances'] ?? null),
+            'circumstances' => SseAcquisitionContexts::storeValue($data['circumstances'] ?? null),
             'statements' => $this->nullIfEmpty($data['statements'] ?? null),
             'confidence_level' => $this->nullIfEmpty($data['confidence_level'] ?? null),
             'weapons_json' => json_encode($weapons, JSON_UNESCAPED_UNICODE),
@@ -676,7 +680,7 @@ final class SsePersonRepository
             'distinguishing_marks' => $row['distinguishing_marks'] ?? null,
             'affiliation' => $row['affiliation'] ?? null,
             'circumstances' => $row['circumstances'] ?? null,
-            'circumstances_label' => $this->circumstancesLabel((string) ($row['circumstances'] ?? '')),
+            'circumstances_label' => $this->circumstancesLabel((string) ($row['circumstances'] ?? ''), (int) ($row['tenant_id'] ?? 0)),
             'statements' => $row['statements'] ?? null,
             'confidence_level' => $row['confidence_level'] ?? null,
             'weapons' => $weapons,
@@ -1105,15 +1109,15 @@ final class SsePersonRepository
         return $name !== '' ? $name : 'Personne sans nom';
     }
 
-    private function circumstancesLabel(string $code): string
+    /**
+     * Contexte d'acquisition affiché. Le code stocké n'est jamais réécrit : un ancien code (controle, perquisition,
+     * reddition, autre) s'affiche avec son équivalent actuel, un texte libre déjà en base reste tel quel.
+     */
+    private function circumstancesLabel(string $code, int $tenantId = 0): string
     {
-        return match (strtolower(trim($code))) {
-            'controle' => 'Contrôle',
-            'perquisition' => 'Perquisition',
-            'reddition' => 'Reddition',
-            'autre' => 'Autre',
-            default => $code !== '' ? $code : '—',
-        };
+        $this->contexts[$tenantId] ??= SseAcquisitionContexts::forTenant($tenantId);
+
+        return $this->contexts[$tenantId]->label($code);
     }
 
     private function angleLabel(string $angle): string

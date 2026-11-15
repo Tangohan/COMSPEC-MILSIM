@@ -61,6 +61,9 @@ final class SseWantedNoticeController
     public function index(Request $request, array $params = []): Response
     {
         $r = $this->r();
+        if (!$r->canRead()) {
+            return $this->denied(url('atak/sse/accueil'));
+        }
         $tenantId = $r->tenantId();
         $ready = SseWantedNoticeRepository::ready();
         $filters = [
@@ -200,6 +203,9 @@ final class SseWantedNoticeController
     public function detections(Request $request, array $params = []): Response
     {
         $r = $this->r();
+        if (!$r->canRead()) {
+            return $this->denied(url('atak/sse/accueil'));
+        }
         $tenantId = $r->tenantId();
         $status = $request->queryString('statut', 'new');
         if (!in_array($status, ['', 'new', 'acknowledged', 'dismissed'], true)) {

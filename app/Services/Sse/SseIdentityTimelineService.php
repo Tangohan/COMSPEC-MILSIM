@@ -82,6 +82,11 @@ final class SseIdentityTimelineService
         if ($wanted !== null) {
             $rows = array_values(array_filter($rows, static fn (array $r): bool => in_array($r['type'], $wanted, true)));
         }
+        // Avis, détections, mentions, photos et consultations des fichiers : section « fichiers », à lire pour les voir.
+        if (!$access->canRead()) {
+            $filesTypes = ['notice.placed', 'notice.lifted', 'notice.captured', 'notice.expired', 'notice.pdf', 'detection.raised', 'detection.handled', 'file.mention', 'file.photo', 'query.recorded'];
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => !in_array($r['type'], $filesTypes, true)));
+        }
         // Une modification de photo déjà notée par un événement propre n'est pas répétée par le journal d'audit.
         $photoTimes = [];
         foreach ($rows as $r) {

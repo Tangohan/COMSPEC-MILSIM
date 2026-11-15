@@ -27,7 +27,7 @@ final class SseFileXrefService
         'field_note' => ['table' => 'sse_field_notes', 'label' => 'Fiche de renseignement'],
         'tactical' => ['table' => 'atak_tactical_reports', 'label' => 'Compte rendu ATAK'],
         'aar' => ['table' => 'aar_reports', 'label' => 'Compte rendu post-opération'],
-        'check' => ['table' => 'sse_id_checks', 'label' => 'Contrôle d’identité'],
+        'check' => ['table' => 'sse_id_checks', 'label' => 'Vérification d’identité sur le terrain'],
         'ext_item' => ['table' => 'sse_phone_extraction_items', 'label' => 'Extraction de téléphone'],
         'note' => ['table' => 'sse_file_notes', 'label' => 'Annotation d’une fiche'],
     ];

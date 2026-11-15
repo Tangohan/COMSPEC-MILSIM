@@ -617,6 +617,12 @@ final class SseFileQueryService
                 $row['document_id'] ?? null,
                 (int) $check['id']
             );
+            // Cliché du visage arrivé avant la fiche (file hors ligne du jeu) : il rejoint l'identité de la fiche.
+            try {
+                (new SseSeekPhotoService(null, $this->files))->attachForRec($tenantId, $stored['rec'], isset($row['identity_id']) ? (int) $row['identity_id'] : null);
+            } catch (\Throwable $e) {
+                error_log('Fiche SEEK II : photos déjà reçues non rattachées : ' . $e->getMessage());
+            }
         }
 
         return ['id' => $stored['id'], 'ref' => $stored['rec'], 'check_ref' => $checkRef, 'duplicate' => false];

@@ -34,6 +34,7 @@ class CfgFunctions {
             class buildAthenaPersonPayload {};
             class buildAthenaBiometricsPayload {};
             class buildAthenaDigitalPayload {};
+            class buildAthenaDigitalDetail {};
             class submitPersonRecord {};
             class submitBiometricsSim {};
             class submitDigitalAcquisition {};

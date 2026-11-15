@@ -187,6 +187,23 @@ private _payload = createHashMapFromArray [
 ];
 [_snd, "sending"] call _ack;
 [_payload] call comspec_sse_fnc_fileSubmit;
+
+// Photo du visage : le cliché pris au SEEK n'était jointe qu'à la TRANSMISSION de la fiche personne
+// (fn_ssePersonDialogSubmit) ; SIGNER ET ENVOYER n'envoie que la fiche SEEK, donc la photo ne partait jamais et les
+// pages SSE n'avaient aucune image. Elle part ici avec la référence REC de la fiche signée (même envoi que la photo
+// d'une fiche personne, la DLL ne vérifie pas que l'identifiant est un nombre) : le site la range sur la fiche SEEK II
+// et sur l'identité rattachée. L'ordre d'arrivée, photo ou fiche d'abord, n'a pas d'importance pour le site.
+if (_face) then {
+    private _stem = _target getVariable ["comspec_sse_facePhotoStem", ""];
+    if (!(_stem isEqualType "") || {_stem isEqualTo ""}) then { _stem = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoStem", ""]; };
+    if (_stem isEqualType "" && {_stem isNotEqualTo ""} && {(_target getVariable ["comspec_seek_photoSent", ""]) isNotEqualTo _stem}) then {
+        private _angleRaw = _target getVariable ["comspec_sse_facePhotoAngle", "face"];
+        if (!(_angleRaw isEqualType "") || {_angleRaw isEqualTo ""}) then { _angleRaw = "face"; };
+        private _pp = getPosASL _target;
+        [_rec, _stem, _callsign, (_pp select 0) toFixed 2, (_pp select 1) toFixed 2, (_pp select 2) toFixed 2, _grid, _angleRaw, _target] call comspec_overwatch_connect_fnc_sseUploadFacePhoto;
+        _target setVariable ["comspec_seek_photoSent", _stem];
+    };
+};
 // Sans accusé en 20 s : l'envoi reste dans la file du SSE, on le dit.
 [{
     params ["_idem"];

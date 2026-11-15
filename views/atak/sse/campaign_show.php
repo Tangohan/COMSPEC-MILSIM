@@ -97,7 +97,7 @@ $renderOrg = static function (string $id, int $depth) use (&$renderOrg, $orgs, $
     <div class="metric"><div class="metric-label">Missions jouées</div><div class="metric-value"><?= (int) $row['missions'] ?></div><div class="metric-detail">Sauvegarde du jeu : <?= $h($detail['updated'] ?? '') ?: '—' ?></div></div>
     <div class="metric"><div class="metric-label">Personnages</div><div class="metric-value"><?= (int) ($stats['people'] ?? 0) ?></div><div class="metric-detail"><?= (int) ($stats['recurring'] ?? 0) ?> récurrent(s), <?= (int) ($stats['known'] ?? 0) ?> connu(s) des joueurs</div></div>
     <div class="metric"><div class="metric-label">Organisations</div><div class="metric-value"><?= (int) ($stats['orgs'] ?? 0) ?></div><div class="metric-detail"><?= (int) ($stats['orgs_known'] ?? 0) ?> connue(s) des joueurs</div></div>
-    <div class="metric"><div class="metric-label">Pièces sous scellé</div><div class="metric-value"><?= (int) ($stats['pieces'] ?? 0) ?></div><div class="metric-detail"><?= (int) ($stats['tampered'] ?? 0) ?> journal(aux) altéré(s)</div></div>
+    <div class="metric"><div class="metric-label">Pièces sous chaîne de possession</div><div class="metric-value"><?= (int) ($stats['pieces'] ?? 0) ?></div><div class="metric-detail"><?= (int) ($stats['tampered'] ?? 0) ?> journal(aux) altéré(s)</div></div>
 </div>
 
 <div class="cmp-ids">
@@ -108,7 +108,7 @@ $renderOrg = static function (string $id, int $depth) use (&$renderOrg, $orgs, $
 </div>
 
 <nav class="cmp-tabs">
-    <?php foreach (['organisations' => 'Organisations', 'personnages' => 'Personnages', 'scelles' => 'Registre des scellés', 'journal' => 'Journal'] as $k => $label): ?>
+    <?php foreach (['organisations' => 'Organisations', 'personnages' => 'Personnages', 'scelles' => 'Registre de chaîne de possession', 'journal' => 'Journal'] as $k => $label): ?>
         <a href="<?= $h($base . '?vue=' . $k) ?>" class="<?= $tab === $k ? 'is-active' : '' ?>"><?= $h($label) ?></a>
     <?php endforeach; ?>
 </nav>
@@ -166,7 +166,7 @@ $renderOrg = static function (string $id, int $depth) use (&$renderOrg, $orgs, $
 <?php elseif ($tab === 'scelles'): ?>
 <section class="panel">
     <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">S.01</span> Registre des scellés</div>
+        <div class="panel-title"><span class="panel-index">S.01</span> Registre de chaîne de possession</div>
         <div class="panel-meta">Gardé seulement par les campagnes permanentes</div>
     </div>
     <div class="panel-body">
@@ -281,7 +281,7 @@ $renderOrg = static function (string $id, int $depth) use (&$renderOrg, $orgs, $
 
         <div class="cmp-danger">
             <h3>Remise à zéro, archivage, suppression</h3>
-            <form method="post" action="<?= $h($base) ?>" onsubmit="return confirm('Tout ce que les joueurs ont découvert et le registre des scellés seront effacés. Continuer ?')">
+            <form method="post" action="<?= $h($base) ?>" onsubmit="return confirm('Tout ce que les joueurs ont découvert et le registre de chaîne de possession seront effacés. Continuer ?')">
                 <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
                 <input type="hidden" name="do" value="reset">
                 <button class="btn btn--ghost" type="submit">Remettre à zéro les découvertes</button>

@@ -7,16 +7,20 @@ namespace App\Controllers\Web;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\SseCaseRepository;
 use App\Repositories\SseFileRecordRepository;
 use App\Repositories\SseFileRepository;
 use App\Repositories\SseIdentityRepository;
+use App\Repositories\SseLoreRepository;
 use App\Services\Security\FileRateLimiter;
 use App\Services\Sse\SseFileRecordService;
 use App\Services\Sse\SseFileSearchService;
 use App\Services\Sse\SseFileXrefService;
 use App\Services\Sse\SseIdImageService;
 use App\Services\Sse\SsePhoneExtractionService;
+use App\Services\Sse\SseSeekPhotoService;
 use App\Support\SseFileSubjectCatalog as S;
+use App\Support\SseFileVisibility;
 use App\Support\SseMeasure;
 
 /**
@@ -239,7 +243,7 @@ final class SseFileRecordController
                 'visibility' => (string) ($p['visibility'] ?? 'known'), 'reveal_phase' => (int) ($p['reveal_phase'] ?? 0),
             ], $uid) : null,
             'note' => $this->records()->restoreNote($tenantId, (int) $p['id'], $uid, $this->ctx->canManage()),
-            'photo' => $this->ctx->canManage() ? $this->records()->attachPhoto($tenantId, (int) $p['id'], (int) $p['identity_id']) : null,
+            'photo' => $this->ctx->allows('photos', 'delete') ? $this->records()->attachPhoto($tenantId, (int) $p['id'], (int) $p['identity_id']) : null,
             'watch' => $uid !== null ? $this->xref()->watch($tenantId, $uid, (string) $p['kind'], (array) $p['values'], ($p['identity_id'] ?? null) !== null ? (int) $p['identity_id'] : null) : null,
             default => null,
         };
@@ -390,9 +394,77 @@ final class SseFileRecordController
             'title' => 'Photothèque',
             'params' => $p,
             'result' => $result,
-            'unattached' => $this->ctx->canWrite() ? $this->safe(fn (): array => $this->records()->unattachedPhotos($tenantId, 24)) : [],
-            'photoUpload' => !empty($this->ctx->settings()['member_photo_upload']) && $this->ctx->canWrite(),
+            'unattached' => $this->ctx->allows('photos', 'add') ? $this->safe(fn (): array => $this->records()->unattachedPhotos($tenantId, 24)) : [],
+            'photoUpload' => !empty($this->ctx->settings()['member_photo_upload']) && $this->ctx->allows('photos', 'add'),
         ]);
+    }
+
+    /**
+     * Image d'une photo de la photothèque rangée à l'abri (cliché du terminal SEEK II) : GET fichiers/photos/{id}/image.
+     * Mêmes droits que la photothèque (accès au portail SSE, porte d'entrée comprise), communauté de la session, jamais
+     * la photo d'une identité couverture ou fausse sans l'habilitation Confidentiel ; un identifiant d'une autre
+     * communauté, d'une photo masquée ou d'un chemin étranger répond 404, sans rien révéler.
+     */
+    public function photoImage(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store')
+            ->setBody('Not found');
+        $tenantId = $this->ctx->tenantId();
+        $photo = null;
+        try {
+            $photo = $tenantId > 0 ? $this->records()->photo($tenantId, (int) ($params['id'] ?? 0)) : null;
+        } catch (\Throwable $e) {
+            error_log('Fichiers SSE : image illisible : ' . $e->getMessage());
+        }
+        if ($photo === null || ($photo['visibility'] === 'hidden' && !$this->ctx->canManage())) {
+            return $notFound();
+        }
+        if (($photo['identity_id'] ?? null) !== null) {
+            $identity = (new SseIdentityRepository())->find((int) $photo['identity_id'], $tenantId);
+            if ($identity === null || (in_array($identity['kind'], ['cover', 'forged'], true) && !($this->ctx->canSee())(SseCaseRepository::CLASS_CONFIDENTIAL))) {
+                return $notFound();
+            }
+            // Lore de session : une photo que la fiche ne montre pas encore à l'opérateur ne se lit pas non plus par son adresse.
+            if (!$this->ctx->canLore()) {
+                try {
+                    $profile = $this->records()->profile($tenantId, (int) $photo['identity_id']);
+                    $phase = SseFileVisibility::phaseOf($profile, (new SseLoreRepository())->phases($tenantId));
+                    if (!SseFileVisibility::inFiles($profile) || !SseFileVisibility::field($profile, 'photo', $phase)) {
+                        return $notFound();
+                    }
+                } catch (\Throwable $e) {
+                    error_log('Fichiers SSE : lore de la photo illisible : ' . $e->getMessage());
+                }
+            }
+        }
+        $abs = (new SseSeekPhotoService($this->records()))->absolutePath($photo, $tenantId);
+        if ($abs === null) {
+            return $notFound();
+        }
+        $ext = match ($photo['mime']) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+        $mime = ['png' => 'image/png', 'webp' => 'image/webp', 'jpg' => 'image/jpeg'][$ext];
+
+        return (new Response())
+            ->header('Content-Type', $mime)
+            ->header('Content-Length', (string) filesize($abs))
+            ->header('Content-Disposition', 'inline; filename="seek-' . (int) $photo['id'] . '.' . $ext . '"')
+            ->header('Cache-Control', 'private, max-age=3600')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer')
+            ->setBodyStream(static function () use ($abs): void {
+                $h = fopen($abs, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
     }
 
     /** Deux fiches côte à côte (photos et signalement). */
@@ -409,7 +481,7 @@ final class SseFileRecordController
     public function photoUpload(Request $request, array $params = []): Response
     {
         $tenantId = $this->ctx->tenantId();
-        if (!$this->ctx->canWrite() || !$this->ctx->csrfOk($request) || empty($this->ctx->settings()['member_photo_upload'])) {
+        if (!$this->ctx->allows('photos', 'add') || !$this->ctx->csrfOk($request) || empty($this->ctx->settings()['member_photo_upload'])) {
             return $this->ctx->denied($request, self::BASE . '/photos');
         }
         if ((new FileRateLimiter())->tooManyAttempts('sse_files_photo|' . $tenantId . '|' . (int) $this->ctx->userId(), 30, 3600)) {
@@ -451,8 +523,8 @@ final class SseFileRecordController
     {
         $tenantId = $this->ctx->tenantId();
         $photo = $this->records()->photo($tenantId, (int) ($params['id'] ?? 0));
-        if ($photo === null || !$this->ctx->canWrite() || !$this->ctx->csrfOk($request)
-            || ($request->inputString('detach') === '1' && !$this->ctx->canManage())) {
+        if ($photo === null || !$this->ctx->allows('photos', 'write') || !$this->ctx->csrfOk($request)
+            || ($request->inputString('detach') === '1' && !$this->ctx->allows('photos', 'delete'))) {
             return $this->ctx->denied($request, self::BASE . '/photos');
         }
         $ref = strtoupper(trim($request->inputString('target')));
@@ -506,7 +578,7 @@ final class SseFileRecordController
     {
         $tenantId = $this->ctx->tenantId();
         $uid = $this->ctx->userId();
-        $moderator = $this->ctx->canAdmin();
+        $moderator = $this->ctx->allows('extractions', 'manage');
         $mine = $request->queryString('miens') === '1' && $uid !== null;
         $list = ['rows' => [], 'total' => 0];
         $devices = [];
@@ -530,7 +602,7 @@ final class SseFileRecordController
     public function phoneShow(Request $request, array $params = []): Response
     {
         $tenantId = $this->ctx->tenantId();
-        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->canAdmin());
+        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->allows('extractions', 'manage'));
         if ($ext === null) {
             return $this->notFound();
         }
@@ -553,8 +625,8 @@ final class SseFileRecordController
     public function phoneExport(Request $request, array $params = []): Response
     {
         $tenantId = $this->ctx->tenantId();
-        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->canAdmin());
-        if ($ext === null || !$this->ctx->canWrite()) {
+        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->allows('extractions', 'manage'));
+        if ($ext === null || !$this->ctx->allows('extractions', 'export')) {
             return $this->notFound();
         }
         $items = $this->extractions()->listItems($tenantId, (int) $ext['id'], '');
@@ -582,8 +654,8 @@ final class SseFileRecordController
     public function phoneAttach(Request $request, array $params = []): Response
     {
         $tenantId = $this->ctx->tenantId();
-        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->canAdmin());
-        if ($ext === null || !$this->ctx->canManage() || !$this->ctx->csrfOk($request)) {
+        $ext = $this->extractions()->find($tenantId, (int) ($params['id'] ?? 0), $this->ctx->allows('extractions', 'manage'));
+        if ($ext === null || !$this->ctx->allows('extractions', 'write', $this->ctx->profile('files_manage')) || !$this->ctx->csrfOk($request)) {
             return $this->ctx->denied($request, self::BASE . '/telephones');
         }
         $ref = strtoupper(trim($request->inputString('target')));

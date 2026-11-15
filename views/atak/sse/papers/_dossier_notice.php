@@ -30,7 +30,9 @@ $fmt = static function (?string $v) use ($dlang): string {
 };
 $self = 'atak/sse/papiers/identites/' . (int) $iid;
 ?>
-<?php if (empty($wantedReady)): ?>
+<?php if (isset($wantedReadable) && !$wantedReadable): ?>
+    <div class="dos-note dos-note--info">Les avis de recherche relèvent de la section « Fichiers et sujets » : votre accès actuel ne permet pas de les lire.</div>
+<?php elseif (empty($wantedReady)): ?>
     <div class="dos-note dos-note--info">Les avis de recherche seront disponibles dès que l’étape de base de données « avis de recherche » aura été passée par l’équipe technique. Rien d’autre n’est modifié en attendant.</div>
 <?php elseif ($notice === null): ?>
     <div class="dos-card">

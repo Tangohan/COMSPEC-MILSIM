@@ -2056,7 +2056,9 @@ class PersonnelController
         $rpTutorChoices = [];
         $roleplayEventTypes = ['entretien', 'medical', 'rotation', 'formation', 'recrutement', 'tutorat', 'administratif'];
         if ($roleplayFollowupConfig['enabled'] && ($isSelf || $this->canStaffEditPersonnel())) {
-            foreach ($this->userRepository->allForTenant($tenantId) as $u) {
+            $allUsers = $this->userRepository->allForTenant($tenantId);
+            \App\Support\MemberIdentity::preload($tenantId, array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $allUsers));
+            foreach ($allUsers as $u) {
                 if (($u['status'] ?? 'active') !== 'active') {
                     continue;
                 }
@@ -2064,7 +2066,7 @@ class PersonnelController
                 if ($id < 1) {
                     continue;
                 }
-                $label = trim((string) ($u['display_name'] ?? '')) ?: (trim((string) ($u['callsign'] ?? '')) ?: trim((string) ($u['email'] ?? '')));
+                $label = member_label(['id' => $id, 'display_name' => (string) ($u['display_name'] ?? ''), 'callsign' => (string) ($u['callsign'] ?? '')], 'list', $tenantId);
                 if ($label === '') {
                     $label = 'Compte #' . $id;
                 }
@@ -2677,7 +2679,7 @@ class PersonnelController
             $oldTutorId = (int) ($existingProfile['rp_tutor_user_id'] ?? 0);
             if ($newTutorId > 0 && $newTutorId !== $oldTutorId) {
                 $tu = $this->userRepository->findById($newTutorId, $tenantId);
-                $tuLabel = $tu ? (trim((string) ($tu['display_name'] ?? '')) ?: trim((string) ($tu['callsign'] ?? ''))) : ('#' . $newTutorId);
+                $tuLabel = $tu ? member_label(['id' => $newTutorId, 'display_name' => (string) ($tu['display_name'] ?? ''), 'callsign' => (string) ($tu['callsign'] ?? '')], 'list', $tenantId) : ('#' . $newTutorId);
                 $this->personnelRoleplayTimelineRepository->addEvent(
                     $tenantId,
                     (int) $target['id'],

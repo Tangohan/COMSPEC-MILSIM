@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $rows = is_array($rows ?? null) ? $rows : [];
+member_labels_preload($rows, 'user_id');
 $byStep = is_array($byStep ?? null) ? $byStep : [];
 $filters = is_array($filters ?? null) ? $filters : [];
 $viewMode = ($viewMode ?? 'tableau') === 'colonnes' ? 'colonnes' : 'tableau';
@@ -99,7 +100,7 @@ $statusLabels = is_array($statusLabels ?? null) ? $statusLabels : [];
                 <h3><?= $h($label) ?> · <?= count($cards) ?></h3>
                 <?php foreach ($cards as $row): ?>
                     <a class="mi-card" href="<?= $h(url('back-office/integration-membres/' . (int) $row['id'])) ?>">
-                        <strong><?= $h($row['display_name'] ?? $row['callsign'] ?? 'Membre') ?></strong>
+                        <strong><?= $h(member_label(['id' => (int) ($row['user_id'] ?? 0), 'display_name' => (string) ($row['display_name'] ?? ''), 'callsign' => (string) ($row['callsign'] ?? '')], 'list')) ?></strong>
                         <span class="mi-muted"><?= $h($statusLabels[(string) ($row['status'] ?? '')] ?? ($row['status'] ?? '')) ?></span>
                         <div class="mi-progress" style="margin-top:.4rem"><span style="width:<?= max(0, min(100, (int) ($row['progress_percent'] ?? 0))) ?>%"></span></div>
                     </a>
@@ -127,7 +128,7 @@ $statusLabels = is_array($statusLabels ?? null) ? $statusLabels : [];
         <tbody>
         <?php foreach ($rows as $row): ?>
             <tr>
-                <td><a href="<?= $h(url('back-office/integration-membres/' . (int) $row['id'])) ?>"><?= $h($row['display_name'] ?? $row['callsign'] ?? 'Membre') ?></a></td>
+                <td><a href="<?= $h(url('back-office/integration-membres/' . (int) $row['id'])) ?>"><?= $h(member_label(['id' => (int) ($row['user_id'] ?? 0), 'display_name' => (string) ($row['display_name'] ?? ''), 'callsign' => (string) ($row['callsign'] ?? '')], 'list')) ?></a></td>
                 <td><?= $h($statusLabels[(string) ($row['status'] ?? '')] ?? ($row['status'] ?? '')) ?></td>
                 <td><?= $h($row['current_step_title'] ?? '—') ?></td>
                 <td><?= (int) ($row['progress_percent'] ?? 0) ?> %</td>

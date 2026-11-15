@@ -42,13 +42,15 @@ final class SseIdentityDossierService
     {
         $id = (int) $identity['id'];
         $lang = C::lang($lang);
+        // Avis, détections et mentions relèvent de la section « fichiers » : sans le droit de la lire, ils restent hors du dossier.
+        $readable = $access->canRead();
         $ready = SseWantedNoticeRepository::ready();
         $config = $this->settings->get($tenantId);
         $notice = null;
         $notices = [];
         $detections = [];
         $counts = ['new' => 0, 'acknowledged' => 0, 'dismissed' => 0];
-        if ($ready) {
+        if ($ready && $readable) {
             (new SseWantedService($this->notices))->expireDue($tenantId, $id);
             $notice = $this->safe(fn (): ?array => $this->notices->activeForIdentity($tenantId, $id));
             $notices = $this->safe(fn (): array => $this->notices->listForIdentity($tenantId, $id, 50)) ?? [];
@@ -81,11 +83,12 @@ final class SseIdentityDossierService
             $this->safe(fn (): array => $this->records()->photosFor($tenantId, [$id])[$id] ?? []) ?? [],
             static fn (array $p): bool => ($p['visibility'] ?? 'known') !== 'hidden'
         ));
-        $mentions = $this->safe(fn (): array => (new SseFileRepository())->activeMentionsFor($tenantId, [$id], [])) ?? [];
+        $mentions = $readable ? ($this->safe(fn (): array => (new SseFileRepository())->activeMentionsFor($tenantId, [$id], [])) ?? []) : [];
         $timeline = $this->timeline->build($tenantId, $identity, $access, $lang, $filter);
 
         return [
             'wantedReady' => $ready,
+            'wantedReadable' => $readable,
             'wantedConfig' => $config,
             'wantedTypes' => C::types($config),
             'notice' => $notice,

@@ -1958,3 +1958,58 @@
   .bo-eff-workspace .pos-form__grid { grid-template-columns: minmax(0, 1fr); }
   .bo-eff-workspace .pos-tones { grid-column: auto; }
 }
+
+/* Fenêtres des fiches sur téléphone : une colonne, hauteur de l'écran visible (barre d'adresse comprise), cibles de 40 px,
+   champs à 16 px pour que le navigateur ne zoome pas à la saisie. */
+@media (max-width: 560px) {
+  .eff-dialog,
+  .eff-dialog--wide,
+  .eff-dialog--decision {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .eff-dialog__body {
+    max-height: calc(100vh - 1rem);
+    max-height: calc(100dvh - 1rem);
+    padding: 0.85rem 0.9rem;
+  }
+
+  .eff-dialog__head {
+    margin: -0.85rem -0.9rem 0;
+    padding: 0.7rem 0.9rem;
+    top: -0.85rem;
+  }
+
+  .eff-dialog__foot {
+    margin: 0.25rem -0.9rem -0.85rem;
+    padding: 0.7rem 0.9rem;
+    bottom: -0.85rem;
+  }
+
+  .eff-dialog__foot > * {
+    flex: 1 1 auto;
+    min-height: 2.5rem;
+  }
+
+  .eff-dialog__close {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  .eff-dialog__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eff-dialog input[type="text"],
+  .eff-dialog input[type="number"],
+  .eff-dialog input[type="date"],
+  .eff-dialog input[type="search"],
+  .eff-dialog select,
+  .eff-dialog textarea {
+    min-height: 2.5rem;
+    font-size: 1rem;
+  }
+}

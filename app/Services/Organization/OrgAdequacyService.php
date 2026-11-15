@@ -280,10 +280,10 @@ final class OrgAdequacyService
             'reassign' => ['label' => 'Réaffecter', 'href' => effectifs_workspace_url('affectations') . ($unitId > 0 ? '?unite=' . $unitId : '')],
             'deputy' => $unitId > 0 ? ['label' => 'Nommer un adjoint', 'href' => url('back-office/organisation/unites/' . $unitId)] : null,
             'structure' => $unitId > 0 ? ['label' => 'Ouvrir l’unité', 'href' => url('back-office/organisation/unites/' . $unitId)] : null,
-            'assign' => $userId > 0 ? ['label' => 'Affecter', 'href' => effectifs_workspace_url('membres/' . $userId)] : null,
-            'member' => $userId > 0 ? ['label' => 'Renseigner le grade', 'href' => effectifs_workspace_url('membres/' . $userId)] : null,
+            'assign' => $userId > 0 ? ['label' => 'Affecter', 'href' => effectifs_member_url($userId, '', 'unite')] : null,
+            'member' => $userId > 0 ? ['label' => 'Renseigner le grade', 'href' => effectifs_member_url($userId, '', 'grade')] : null,
             'qualification' => $userId > 0 ? ['label' => 'Attribuer la qualification', 'href' => url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . $userId] : null,
-            'job' => $userId > 0 ? ['label' => 'Attribuer l’emploi', 'href' => effectifs_workspace_url('membres/' . $userId)] : null,
+            'job' => $userId > 0 ? ['label' => 'Attribuer l’emploi', 'href' => effectifs_member_url($userId, 'fonctions')] : null,
             'grades' => ['label' => 'Ouvrir le référentiel des grades', 'href' => url('back-office/referentiels/grades')],
             default => null,
         };

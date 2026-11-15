@@ -36,7 +36,7 @@ $monthKey = date('Y-m');
 $monthLabel = \App\Support\LocalizedCalendar::month((int) date('n')) . ' ' . date('Y');
 
 $memberName = static function (array $u): string {
-    return trim((string) ($u['display_name'] ?? '')) ?: (trim((string) ($u['callsign'] ?? '')) ?: 'Membre');
+    return member_label(['id' => (int) ($u['id'] ?? $u['user_id'] ?? 0), 'display_name' => (string) ($u['display_name'] ?? ''), 'callsign' => (string) ($u['callsign'] ?? '')], 'list');
 };
 $usersById = [];
 foreach ($users as $u) {

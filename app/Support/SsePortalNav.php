@@ -64,7 +64,7 @@ final class SsePortalNav
                 ['id' => 'presentation', 'label' => 'Présentation des documents', 'hint' => 'Bandeau, pied de page et papier des documents.', 'path' => 'atak/sse/presentation', 'icon' => 'paper'],
             ]],
             ['id' => 'identite', 'label' => 'Identités et papiers', 'hint' => 'Les papiers fictifs du jeu, de leur création à leur émission, et ceux des membres.', 'items' => array_values(array_filter([
-                ['id' => 'papiers-tableau', 'label' => 'Tableau de bord', 'hint' => 'Contrôles, faux détectés et recherchés interpellés par opération.', 'path' => 'atak/sse/papiers/tableau', 'icon' => 'ops', 'keywords' => 'identite controle tableau bord operation faux recherches'],
+                ['id' => 'papiers-tableau', 'label' => 'Tableau de bord', 'hint' => 'Contrôles, faux détectés et recherchés appréhendés par opération.', 'path' => 'atak/sse/papiers/tableau', 'icon' => 'ops', 'keywords' => 'identite controle tableau bord operation faux recherches'],
                 ['id' => 'papiers', 'label' => 'Papiers d’identité', 'hint' => 'Registre des papiers d’identité fictifs émis pour le jeu.', 'path' => 'atak/sse/papiers', 'icon' => 'doc', 'aliases' => ['atak/sse/papiers/documents'], 'keywords' => 'papiers passeport carte permis registre mrz documents identite'],
                 ['id' => 'papiers-identites', 'label' => 'Identités fictives', 'hint' => 'Identités (réelles, de couverture, falsifiées) portées par les papiers.', 'path' => 'atak/sse/papiers/identites', 'icon' => 'id', 'keywords' => 'identites fictives couverture alias faux'],
                 ['id' => 'avis-recherche', 'label' => 'Avis de recherche', 'hint' => 'Avis posés depuis les fiches des identités fictives, avec leur notice PDF.', 'path' => 'atak/sse/avis', 'icon' => 'alert', 'aliases' => ['atak/sse/avis/reglages'], 'keywords' => 'avis recherche wanted notice rouge hvt recherche arrestation'],
@@ -76,7 +76,7 @@ final class SsePortalNav
                 $only($canMemberPapers, ['id' => 'papiers-briefs', 'label' => 'Briefs de couverture', 'hint' => 'Biographie, légende et consignes remises aux joueurs couverts.', 'path' => 'atak/sse/papiers/briefs', 'icon' => 'note', 'keywords' => 'briefs couverture legende biographie consignes']),
                 $only($canMemberPapers, ['id' => 'papiers-echanges', 'label' => 'Import et export', 'hint' => 'Importer ou exporter identités et papiers (CSV, JSON).', 'path' => 'atak/sse/papiers/echanges', 'icon' => 'transfer', 'keywords' => 'import export csv json identites papiers']),
             ]))],
-            ['id' => 'fichiers', 'label' => 'Fichiers et contrôles', 'hint' => 'Interroger les fichiers et suivre les contrôles d’identité faits en jeu.', 'items' => array_values(array_filter([
+            ['id' => 'fichiers', 'label' => 'Fichiers et contrôles', 'hint' => 'Interroger les fichiers et suivre les vérifications d’identité faites en jeu.', 'items' => array_values(array_filter([
                 ['id' => 'fichiers', 'label' => 'Passage aux fichiers', 'hint' => 'Interroger les fichiers comme depuis un terminal de patrouille.', 'path' => 'atak/sse/fichiers', 'icon' => 'search', 'aliases' => ['atak/sse/fichiers/sujet', 'atak/sse/fichiers/source', 'atak/sse/fichiers/comparer'], 'keywords' => 'fichiers requete hit terminal patrouille alias recherche sujet fiche'],
                 ['id' => 'fichiers-photos', 'label' => 'Photothèque', 'hint' => 'Photos signalétiques filtrées par signalement, comparaison de deux fiches.', 'path' => 'atak/sse/fichiers/photos', 'icon' => 'id', 'keywords' => 'photos photographie signalement visage comparer trombinoscope'],
                 ['id' => 'fichiers-telephones', 'label' => 'Téléphones du jeu', 'hint' => 'Extractions des téléphones ATAK synchronisés depuis le jeu.', 'path' => 'atak/sse/fichiers/telephones', 'icon' => 'collect', 'keywords' => 'telephone extraction atak contacts messages positions'],
@@ -84,19 +84,20 @@ final class SsePortalNav
                 ['id' => 'fichiers-journal', 'label' => 'Journal des consultations', 'hint' => 'Toutes les consultations des fichiers, sur le site ou en jeu.', 'path' => 'atak/sse/fichiers/journal', 'icon' => 'time', 'keywords' => 'journal consultations historique'],
                 ['id' => 'fichiers-mentions', 'label' => 'Mentions aux fichiers', 'hint' => 'Mandats, avis de recherche, signalements et consignes de prudence.', 'path' => 'atak/sse/fichiers/mentions', 'icon' => 'alert', 'keywords' => 'mentions mandat recherche signalement disparu arme dangereux'],
                 ['id' => 'fichiers-seek', 'label' => 'Fiches SEEK II', 'hint' => 'Enregistrements biométriques faits en jeu avec le SEEK II.', 'path' => 'atak/sse/fichiers/seek', 'icon' => 'id', 'keywords' => 'seek biometrie empreintes iris visage'],
-                ['id' => 'papiers-controles', 'label' => 'Contrôles reçus', 'hint' => 'Contrôles d’identité transmis depuis le terrain.', 'path' => 'atak/sse/papiers/controles', 'icon' => 'queue', 'keywords' => 'controles identite verdict terrain checkpoint'],
+                ['id' => 'papiers-controles', 'label' => 'Contrôles reçus', 'hint' => 'Vérifications d’identité transmises depuis le terrain.', 'path' => 'atak/sse/papiers/controles', 'icon' => 'queue', 'keywords' => 'controles identite verdict terrain checkpoint'],
                 ['id' => 'papiers-frm', 'label' => 'FRM à valider', 'hint' => 'Brouillons de fiches FRM nés des contrôles, à valider.', 'path' => 'atak/sse/papiers/tableau#frm', 'icon' => 'note', 'keywords' => 'frm brouillons valider fiches controles'],
             ]))],
             ['id' => 'roleplay', 'label' => 'IA et roleplay', 'hint' => 'Préparer ce que les joueurs rencontreront en jeu : population, IA, campagnes, scénarios.', 'items' => array_values(array_filter([
                 $only($canMemberPapers, ['id' => 'papiers-profils-ia', 'label' => 'Profils IA', 'hint' => 'Identité, camp, papiers et comportement à relier aux IA en jeu (Zeus, Eden).', 'path' => 'atak/sse/papiers/profils-ia', 'icon' => 'person', 'keywords' => 'ia pnj zeus eden profil population']),
                 $only($canMemberPapers, ['id' => 'papiers-preparation', 'label' => 'Préparation de mission', 'hint' => 'Générer la population, les recherchés et les HVT d’une opération.', 'path' => 'atak/sse/papiers/preparation', 'icon' => 'prepare', 'keywords' => 'preparation mission population civils militaires suspects hvt recherches generation']),
-                ['id' => 'campagnes', 'label' => 'Campagnes', 'hint' => 'Personnages, organisations et scellés du mod, partagés entre communautés.', 'path' => 'atak/sse/campagnes', 'icon' => 'flag', 'keywords' => 'campagnes personnages scelles'],
+                ['id' => 'campagnes', 'label' => 'Campagnes', 'hint' => 'Personnages, organisations et pièces sous chaîne de possession du mod, partagés entre communautés.', 'path' => 'atak/sse/campagnes', 'icon' => 'flag', 'keywords' => 'campagnes personnages scelles'],
                 ['id' => 'dev', 'label' => 'Modèles de mission', 'hint' => 'Créer et emporter des modèles de mission pour Arma.', 'path' => 'atak/sse/dev', 'icon' => 'prepare', 'keywords' => 'modeles scenario import'],
                 $only($canEditorLibrary, ['id' => 'editeur', 'label' => 'Bibliothèque de l’éditeur', 'hint' => 'Contenus de l’éditeur SSE du jeu, en lecture seule.', 'path' => 'atak/sse/editeur', 'icon' => 'library', 'keywords' => 'editeur mod renseignements identites papiers kits dossiers contenus']),
                 $only($canManage, ['id' => 'maitre-jeu', 'label' => 'Maître du jeu', 'hint' => 'Identités, listes et histoires lues par le terminal SEEK.', 'path' => 'atak/sse/maitre-jeu', 'icon' => 'dice', 'keywords' => 'zeus seek']),
             ]))],
             ['id' => 'outils', 'label' => 'Outils et réglages', 'hint' => 'Accès au bureau et mode d’emploi.', 'items' => array_values(array_filter([
                 $only($canGrant && !$isGuest, ['id' => 'acces', 'label' => 'Habilitations et codes', 'hint' => 'Codes d’accès temporaires et niveaux de diffusion.', 'path' => 'atak/sse/acces', 'icon' => 'admin', 'keywords' => 'codes acces administration']),
+                $only($canGrant && !$isGuest, ['id' => 'droits', 'label' => 'Droits d’accès', 'hint' => 'Qui peut voir, lire, écrire, verser, supprimer, exporter et gérer, section par section.', 'path' => 'atak/sse/droits', 'icon' => 'admin', 'aliases' => ['atak/sse/droits/membre', 'atak/sse/droits/qui', 'atak/sse/droits/historique'], 'keywords' => 'droits acces lecture ecriture permissions sections niveaux regles derogations']),
                 ['id' => 'guide', 'label' => 'Documentation', 'hint' => 'Mode d’emploi du bureau SSE.', 'path' => 'atak/sse/guide', 'icon' => 'help', 'aliases' => ['atak/sse/documentation'], 'keywords' => 'aide guide manuel'],
             ]))],
         ];
@@ -112,7 +113,7 @@ final class SsePortalNav
     /** Lore des sessions : MJ (atak.sse.lore.manage) ou administrateur, jamais en session invitée. */
     public static function canLore(bool $isGuest): bool
     {
-        return !$isGuest && function_exists('can') && (can('atak.sse.lore.manage') || can('admin.access'));
+        return \App\Services\Sse\SseAccessPolicy::sessionAllows('lore', \App\Support\SseAccessCatalog::LEVEL_READ, ['guest' => $isGuest]);
     }
 
     public static function forSession(bool $canManage, bool $canGrant, bool $isGuest, ?bool $canMemberPapers = null): array
@@ -131,10 +132,54 @@ final class SsePortalNav
             $canEditor = false;
         }
 
-        return [
-            'sections' => self::sections($canManage, $canGrant, $isGuest, $canMemberPapers, $canEditor),
-            'restricted' => self::restricted($canManage, $canGrant, $isGuest, $canMemberPapers, $canEditor),
-        ];
+        $sections = self::sections($canManage, $canGrant, $isGuest, $canMemberPapers, $canEditor);
+        $restricted = self::restricted($canManage, $canGrant, $isGuest, $canMemberPapers, $canEditor);
+        try {
+            // Droits d'accès de la communauté (SseAccessPolicy) : sans règle, rien n'est retiré de la navigation.
+            $policy = \App\Services\Sse\SseAccessPolicy::forSession();
+            $tenantId = (int) \App\Core\Session::get('tenant_id');
+            if ($policy->hasRules($tenantId)) {
+                $filtered = self::withAccessRules($sections, static fn (string $section, string $level): bool => \App\Services\Sse\SseAccessPolicy::sessionAllows($section, $level, ['guest' => $isGuest]));
+                $sections = $filtered['sections'];
+                $restricted = array_merge($restricted, $filtered['restricted']);
+            }
+        } catch (\Throwable) {
+        }
+
+        return ['sections' => $sections, 'restricted' => $restricted];
+    }
+
+    /**
+     * Retire de la navigation les espaces dont la section n'est pas lisible (« lire ») ; ceux dont l'existence reste visible
+     * (« voir l'existence ») passent dans la liste des espaces restreints avec la raison.
+     *
+     * @param list<array<string, mixed>> $sections
+     * @param callable(string, string): bool $allows (section, niveau) : le droit est-il accordé ?
+     * @return array{sections: list<array<string, mixed>>, restricted: list<array{label: string, reason: string}>}
+     */
+    public static function withAccessRules(array $sections, callable $allows): array
+    {
+        $restricted = [];
+        $memo = [];
+        foreach ($sections as $i => $section) {
+            $kept = [];
+            foreach ($section['items'] as $item) {
+                $key = \App\Support\SseAccessCatalog::sectionForPath((string) $item['path']);
+                if ($key === null || !empty($item['external'])) {
+                    $kept[] = $item;
+                    continue;
+                }
+                $memo[$key] ??= [$allows($key, \App\Support\SseAccessCatalog::LEVEL_READ), $allows($key, \App\Support\SseAccessCatalog::LEVEL_EXISTS)];
+                if ($memo[$key][0]) {
+                    $kept[] = $item;
+                } elseif ($memo[$key][1]) {
+                    $restricted[] = ['label' => (string) $item['label'], 'reason' => 'Accès restreint par les droits d’accès de votre communauté : demandez-le à la gestion SSE.'];
+                }
+            }
+            $sections[$i]['items'] = array_values($kept);
+        }
+
+        return ['sections' => array_values(array_filter($sections, static fn (array $sec): bool => $sec['items'] !== [])), 'restricted' => $restricted];
     }
 
     /**

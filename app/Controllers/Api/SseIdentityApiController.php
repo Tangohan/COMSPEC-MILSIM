@@ -11,6 +11,7 @@ use App\Repositories\SseCaseRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseClearanceService;
+use App\Services\Sse\SseDigitalLabService;
 use App\Services\Sse\SseEditorLibraryService;
 use App\Services\Sse\SseFileQueryService;
 use App\Services\Sse\SseIdCheckService;
@@ -33,7 +34,8 @@ use App\Support\SseIdentityPackCache;
  *                                                 avis né en jeu (BOLO, HVT désignée), créé ou mis à jour (lots 4 et 5) ;
  *                                                 avec kind = editor_… : bibliothèque de l'éditeur SSE (SseEditorLibraryService) ;
  *                                                 avec kind = cover_report : couverture née en jeu (SseIdGameCoverService) ;
- *                                                 avec kind = file_query | seek_record | id_record : passage aux fichiers (SseFileQueryService)
+ *                                                 avec kind = file_query | seek_record | id_record : passage aux fichiers (SseFileQueryService) ;
+ *                                                 avec kind = digital_detail : contenu d'un support numérique relevé en jeu (SseDigitalLabService)
  *
  * Accès : clé de jeu valable (communauté ou plateforme) — le serveur de jeu garde la vérité pour lui —, ou session du
  * portail avec l'habilitation SSE voulue (Confidentiel pour le pack, Encadrement pour le reste). Sans clé ni session :
@@ -193,6 +195,12 @@ final class SseIdentityApiController
         if (($body['kind'] ?? null) === \App\Services\Sse\SsePhoneExtractionService::KIND
             || in_array($body['kind'] ?? null, \App\Services\Sse\SseLoreService::KINDS, true)) {
             return $this->filesGameResponse($tenantId, $mapId, $body);
+        }
+
+        // Contenu d'un support numérique relevé en jeu (contacts, messages, appels, images, positions, comptes) : remplit le
+        // laboratoire numérique (envoi découpé par la file du SSE, comme les fiches SEEK II).
+        if (($body['kind'] ?? null) === SseDigitalLabService::DETAIL_KIND) {
+            return $this->digitalDetailResponse($tenantId, $body);
         }
 
         // Passage aux fichiers : consultation faite hors liaison, fiche biométrique SEEK II (réponse id + ref).
@@ -370,7 +378,7 @@ final class SseIdentityApiController
         try {
             $result = match ($kind) {
                 \App\Services\Sse\SsePhoneExtractionService::KIND => (new \App\Services\Sse\SsePhoneExtractionService())
-                    ->ingest($tenantId, $gameUser, $body, strlen((string) json_encode($body, JSON_UNESCAPED_UNICODE))),
+                    ->ingest($tenantId, $gameUser, $body, strlen((string) json_encode($body, JSON_UNESCAPED_UNICODE)), $mapId),
                 \App\Services\Sse\SseLoreService::KIND_PUSH => (new \App\Services\Sse\SseLoreService())->push($tenantId, $mapId, $body, $gameUser),
                 default => (new \App\Services\Sse\SseLoreService())->pull($tenantId, $body, $gameUser),
             };
@@ -394,6 +402,36 @@ final class SseIdentityApiController
         }
 
         return Response::json($result, !empty($result['duplicate']) ? 200 : 201);
+    }
+
+    /**
+     * Contenu d'un support numérique relevé en jeu (kind digital_detail, ICD labo numérique). Le compte est celui du jeton de
+     * jeu quand il existe ; débit et taille bornés. Réponse : support, acquisition et nombre d'éléments écrits par rubrique.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function digitalDetailResponse(int $tenantId, array $body): Response
+    {
+        $gameUser = ComspecApiKeyAuth::matchedUserId();
+        $limiter = new \App\Services\Security\FileRateLimiter();
+        if ($limiter->tooManyAttempts('sse_digital_detail|' . $tenantId . '|' . (int) $gameUser, 60, 600)) {
+            return Response::json(['error' => 'too_many_requests', 'message' => 'Trop d’envois : réessayez dans un moment.', 'retry_after' => 600], 429)->header('Retry-After', '600');
+        }
+        if (strlen((string) json_encode($body, JSON_UNESCAPED_UNICODE)) > 524288) {
+            return Response::json(['error' => 'too_large', 'message' => 'Envoi trop volumineux.'], 422);
+        }
+        try {
+            $result = (new \App\Services\Sse\SseDigitalLabService())->ingestDetailPayload($tenantId, $body, $gameUser);
+        } catch (\PDOException $e) {
+            error_log('Laboratoire numérique : détail du support non enregistré : ' . $e->getMessage());
+
+            return Response::json(['error' => 'unavailable', 'message' => 'Envoi non enregistré pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            return Response::json(['error' => $result['error'], 'message' => 'Contenu du support vide ou sans identifiant : rien n’a été enregistré.'], 422);
+        }
+
+        return Response::json($result, $result['duplicate'] ? 200 : 201);
     }
 
     /**

@@ -41,18 +41,17 @@ $documentId = (int) ($document_id ?? 0);
                 </div>
 
                 <div x-show="usePad" x-cloak>
-                    <div class="border border-slate-200 rounded overflow-hidden bg-white">
-                        <canvas id="signature-pad-canvas"
-                                class="block w-full cursor-crosshair bg-white"
-                                style="touch-action: none; height: 160px;"
-                                width="400"
-                                height="160"
-                                aria-label="Zone de signature"></canvas>
-                        <div class="p-2 flex gap-2 bg-slate-50 border-t border-slate-100">
-                            <button type="button" @click="clearPad()" class="px-2 py-1 text-xs border border-slate-200 rounded hover:bg-slate-100">Effacer</button>
-                            <span class="text-[11px] text-slate-400 self-center">Dessinez avec la souris ou le doigt</span>
-                        </div>
-                    </div>
+                    <?php
+                    $sigpad = [
+                        'id' => 'courrier-modal-pad',
+                        'label' => 'Dessinez votre signature',
+                        'height' => 160,
+                        'ink' => '#0b1220',
+                        'background' => 'white',
+                        'max_side' => 800,
+                    ];
+                    require __DIR__ . '/../../partials/signature_pad.php';
+                    ?>
                 </div>
             </div>
 
@@ -112,11 +111,6 @@ $documentId = (int) ($document_id ?? 0);
             savedSignatureName: 'Signature principale',
             sending: false,
             error: '',
-            canvas: null,
-            ctx: null,
-            drawing: false,
-            hasInk: false,
-            _padBound: false,
 
             init() {
                 var self = this;
@@ -139,142 +133,30 @@ $documentId = (int) ($document_id ?? 0);
                 this.error = '';
                 this.usePad = true;
                 this.selectedSignatureId = '';
-                this.hasInk = false;
-                var self = this;
-                this.$nextTick(function () {
-                    requestAnimationFrame(function () {
-                        self.initPad(true);
-                    });
-                });
+                var pad = this.pad();
+                if (pad) {
+                    pad.clear();
+                }
             },
 
             close() {
                 this.open = false;
-                this.drawing = false;
             },
 
             switchToPad() {
                 this.usePad = true;
-                var self = this;
-                this.$nextTick(function () {
-                    requestAnimationFrame(function () {
-                        self.initPad(false);
-                    });
-                });
             },
 
-            initPad(forceClear) {
-                var el = document.getElementById('signature-pad-canvas');
-                if (!el) {
-                    return;
-                }
-                this.canvas = el;
-                var rect = el.getBoundingClientRect();
-                var cssW = Math.max(280, Math.floor(rect.width) || 400);
-                var cssH = 160;
-                var dpr = window.devicePixelRatio || 1;
-                this.padCssW = cssW;
-                this.padCssH = cssH;
-
-                el.width = Math.floor(cssW * dpr);
-                el.height = Math.floor(cssH * dpr);
-                el.style.width = cssW + 'px';
-                el.style.height = cssH + 'px';
-
-                this.ctx = el.getContext('2d');
-                if (!this.ctx) {
-                    return;
-                }
-                this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-                this.ctx.lineWidth = 2.25;
-                this.ctx.lineCap = 'round';
-                this.ctx.lineJoin = 'round';
-                this.ctx.strokeStyle = '#0b1220';
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.fillRect(0, 0, cssW, cssH);
-
-                if (forceClear) {
-                    this.hasInk = false;
-                }
-
-                if (this._padBound) {
-                    return;
-                }
-                this._padBound = true;
-
-                var self = this;
-                var pos = function (e) {
-                    var r = el.getBoundingClientRect();
-                    var t = (e.touches && e.touches[0]) ? e.touches[0] : e;
-                    var w = self.padCssW || r.width || 400;
-                    var h = self.padCssH || r.height || 160;
-                    var scaleX = w / Math.max(1, r.width);
-                    var scaleY = h / Math.max(1, r.height);
-                    return {
-                        x: (t.clientX - r.left) * scaleX,
-                        y: (t.clientY - r.top) * scaleY
-                    };
-                };
-                var start = function (e) {
-                    if (!self.usePad || !self.open) {
-                        return;
-                    }
-                    e.preventDefault();
-                    self.drawing = true;
-                    var p = pos(e);
-                    self.ctx.beginPath();
-                    self.ctx.moveTo(p.x, p.y);
-                };
-                var move = function (e) {
-                    if (!self.drawing || !self.usePad) {
-                        return;
-                    }
-                    e.preventDefault();
-                    var p = pos(e);
-                    self.ctx.lineTo(p.x, p.y);
-                    self.ctx.stroke();
-                    self.hasInk = true;
-                };
-                var end = function (e) {
-                    if (e) {
-                        e.preventDefault();
-                    }
-                    self.drawing = false;
-                };
-
-                el.addEventListener('mousedown', start);
-                el.addEventListener('mousemove', move);
-                el.addEventListener('mouseup', end);
-                el.addEventListener('mouseleave', end);
-                el.addEventListener('touchstart', start, { passive: false });
-                el.addEventListener('touchmove', move, { passive: false });
-                el.addEventListener('touchend', end, { passive: false });
-                el.addEventListener('touchcancel', end, { passive: false });
-            },
-
-            clearPad() {
-                if (!this.canvas || !this.ctx) {
-                    this.initPad(true);
-                    return;
-                }
-                var w = this.padCssW || this.canvas.clientWidth || 400;
-                var h = this.padCssH || this.canvas.clientHeight || 160;
-                var dpr = window.devicePixelRatio || 1;
-                this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.fillRect(0, 0, w, h);
-                this.ctx.strokeStyle = '#0b1220';
-                this.ctx.lineWidth = 2.25;
-                this.ctx.lineCap = 'round';
-                this.ctx.lineJoin = 'round';
-                this.hasInk = false;
+            pad() {
+                return window.ComspecSignaturePad ? window.ComspecSignaturePad.get('courrier-modal-pad') : null;
             },
 
             getPadDataUrl() {
-                if (!this.canvas || !this.hasInk) {
+                var pad = this.pad();
+                if (!pad || pad.isEmpty()) {
                     return null;
                 }
-                return this.canvas.toDataURL('image/png');
+                return pad.toDataURL();
             },
 
             submitSign() {

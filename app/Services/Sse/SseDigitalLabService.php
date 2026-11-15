@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Repositories\SseDigitalLabRepository;
+use App\Support\SseDigitalTerrainDetail;
 use App\Support\SseDomexContract;
 
 /**
@@ -13,6 +14,9 @@ use App\Support\SseDomexContract;
  */
 final class SseDigitalLabService
 {
+    /** kind de POST /api/sse/identity/checks : contenu d'un support relevé en jeu (voir ingestDetailPayload). */
+    public const DETAIL_KIND = 'digital_detail';
+
     public function __construct(
         private ?SseDigitalLabRepository $repo = null,
         private ?SseTerrainService $terrain = null,
@@ -77,7 +81,10 @@ final class SseDigitalLabService
      *     device_id: int,
      *     seizure_id: int,
      *     acquisition_id: int,
-     *     reference_code: string
+     *     reference_code: string,
+     *     packets_created: int,
+     *     packets_total: int,
+     *     detail: array<string, int>
      * }
      */
     public function ingestFromTerrain(int $tenantId, array $body, ?int $userId = null): array
@@ -109,6 +116,12 @@ final class SseDigitalLabService
                 $body,
                 $userId
             );
+            // Support déjà connu (envoi du résumé d'abord, puis du détail relevé) : le contenu s'ajoute une seule fois.
+            $detailCounts = [];
+            $detail = $this->terrainDetail($body);
+            if (!SseDigitalTerrainDetail::isEmpty($detail) && isset($acq['id'])) {
+                $detailCounts = $this->storeDetail($tenantId, (int) $existing['id'], (int) $acq['id'], $detail, $userId);
+            }
 
             return [
                 'ok' => true,
@@ -119,6 +132,7 @@ final class SseDigitalLabService
                 'reference_code' => (string) ($acq['reference_code'] ?? $existing['reference_code'] ?? ''),
                 'packets_created' => $packets['created'],
                 'packets_total' => $packets['total'],
+                'detail' => $detailCounts,
             ];
         }
 
@@ -242,6 +256,29 @@ final class SseDigitalLabService
             ], $userId);
         }
 
+        // Contenu relevé en jeu (contacts, messages, appels, images, positions, comptes, applications, pièces) : c'est lui
+        // qui remplit les écrans téléphone, ordinateur, communications, artefacts et chronologie. Sans contenu (ancien
+        // mod, support seulement identifié), l'acquisition le dit : réserves, jamais de données inventées.
+        $detail = $this->terrainDetail($body);
+        $detailCounts = [];
+        if (!SseDigitalTerrainDetail::isEmpty($detail)) {
+            $detailCounts = $this->storeDetail($tenantId, $deviceId, $acqId, $detail, $userId);
+        } else {
+            $totals = [];
+            foreach (['contacts' => 'contacts', 'messages' => 'messages', 'calls' => 'appels', 'images' => 'images', 'locations' => 'positions'] as $key => $label) {
+                if ((int) ($phone[$key] ?? 0) > 0) {
+                    $totals[] = (int) $phone[$key] . ' ' . $label;
+                }
+            }
+            $this->repo->updateAcquisition($acqId, $tenantId, [
+                'status' => 'completed_with_reserves',
+                'is_partial' => 1,
+                'reserves' => 'Support identifié, contenu non relevé : le terrain n’a transmis que '
+                    . ($totals !== [] ? 'les totaux (' . implode(', ', $totals) . ')' : 'son identification')
+                    . '. Extraire le support en jeu (exploitation complète) puis le retransmettre pour remplir les contacts, messages, appels et images.',
+            ]);
+        }
+
         $this->repo->updateDeviceStatus($deviceId, $tenantId, 'acquired');
         $packets = $this->ingestDomexPayload($tenantId, $deviceId, $acqId, $body, $userId);
         $acq = $this->repo->findAcquisition($acqId, $tenantId);
@@ -264,7 +301,166 @@ final class SseDigitalLabService
             'reference_code' => (string) ($acq['reference_code'] ?? ''),
             'packets_created' => $packets['created'],
             'packets_total' => $packets['total'],
+            'detail' => $detailCounts,
         ];
+    }
+
+    /**
+     * Détail d'un support envoyé à part (kind « digital_detail » de POST /api/sse/identity/checks, par la file du SSE qui
+     * découpe les gros envois) : même identifiant de support (record_id) que l'acquisition. Si le support n'est pas encore
+     * au laboratoire (détail arrivé avant l'acquisition), il est créé avec ce détail ; l'acquisition qui suivra le retrouvera.
+     *
+     * @param array<string, mixed> $body
+     * @return array{ok: bool, duplicate: bool, device_id: int, acquisition_id: int, detail: array<string, int>}|array{error: string}
+     */
+    public function ingestDetailPayload(int $tenantId, array $body, ?int $userId = null): array
+    {
+        $armaId = trim((string) ($body['record_id'] ?? $body['sse_uid'] ?? ''));
+        if ($armaId === '' || mb_strlen($armaId) > 120) {
+            return ['error' => 'record_id_required'];
+        }
+        if (SseDigitalTerrainDetail::isEmpty($this->terrainDetail($body))) {
+            return ['error' => 'detail_empty'];
+        }
+        $existing = $this->repo->findDeviceByArmaObjectId($tenantId, $armaId);
+        $result = $this->ingestFromTerrain($tenantId, $body + ['record_id' => $armaId], $userId);
+        $stored = array_sum($result['detail'] ?? []) > 0;
+
+        return [
+            'ok' => true,
+            'duplicate' => $existing !== null && !$stored,
+            'device_id' => (int) $result['device_id'],
+            'acquisition_id' => (int) $result['acquisition_id'],
+            'detail' => $result['detail'] ?? [],
+        ];
+    }
+
+    /**
+     * Contenu normalisé d'un envoi du terrain : phone_data / computer_data, sinon ce que disent les lignes d'extraction
+     * des anciens mods (contacts et SMS cités). Jamais de données inventées.
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, list<array<string, mixed>>>
+     */
+    public function terrainDetail(array $body): array
+    {
+        $phone = is_array($body['phone_data'] ?? null) ? $body['phone_data'] : [];
+        $computer = is_array($body['computer_data'] ?? null) ? $body['computer_data'] : [];
+        if ($phone === [] && $computer === []) {
+            $lines = [];
+            foreach ((is_array($body['extraction_lines'] ?? null) ? $body['extraction_lines'] : []) as $line) {
+                if (is_scalar($line)) {
+                    $lines[] = (string) $line;
+                }
+            }
+            $phone = SseDigitalTerrainDetail::fromLines($lines);
+        }
+
+        return SseDigitalTerrainDetail::normalize($phone, $computer);
+    }
+
+    /**
+     * Écrit le contenu relevé en jeu dans les rubriques du laboratoire (contacts, messages, appels, médias, positions,
+     * comptes, applications, réseaux, artefacts) et la chronologie (événements datés seulement).
+     *
+     * Idempotent par élément : un envoi rejoué, ou un détail découpé en plusieurs envois, n'écrit jamais deux fois la même
+     * ligne (contact, message, appel, image, position, compte, application, réseau, artefact).
+     *
+     * @param array<string, list<array<string, mixed>>> $detail sortie de SseDigitalTerrainDetail::normalize
+     * @return array<string, int> nombre d'éléments NOUVEAUX écrits par rubrique
+     */
+    public function storeDetail(int $tenantId, int $deviceId, int $acqId, array $detail, ?int $userId = null): array
+    {
+        $sig = static fn (array $r, array $keys): string => mb_strtolower(implode('|', array_map(static fn (string $k): string => (string) ($r[$k] ?? ''), $keys)));
+        $existing = [
+            'contacts' => [$this->repo->listContacts($deviceId, $tenantId), ['display_name', 'phone_number']],
+            'messages' => [$this->repo->listMessages($deviceId, $tenantId), ['body', 'sent_at', 'sender_label']],
+            'calls' => [$this->repo->listCalls($deviceId, $tenantId), ['peer_label', 'peer_number', 'started_at', 'duration_sec']],
+            'media' => [$this->repo->listMedia($deviceId, $tenantId), ['name', 'captured_at']],
+            'locations' => [$this->repo->listLocations($deviceId, $tenantId), ['label', 'source_label', 'observed_at']],
+            'accounts' => [$this->repo->listAccounts($deviceId, $tenantId), ['service_label', 'username']],
+            'applications' => [$this->repo->listApplications($deviceId, $tenantId), ['app_name']],
+            'networks' => [$this->repo->listNetworks($deviceId, $tenantId), ['ssid_or_name']],
+            'artifacts' => [$this->repo->listArtifacts($tenantId, ['device_id' => $deviceId, 'limit' => 500]), ['category', 'name']],
+        ];
+        /** @var array<string, array<string, true>> $seen */
+        $seen = [];
+        foreach ($existing as $k => [$rows, $keys]) {
+            foreach ($rows as $r) {
+                $seen[$k][$sig($r, $keys)] = true;
+            }
+        }
+        $writers = [
+            'contacts' => fn (array $r): int => $this->repo->createContact($tenantId, $deviceId, $acqId, $r),
+            'messages' => fn (array $r): int => $this->repo->createMessage($tenantId, $deviceId, $acqId, $r),
+            'calls' => fn (array $r): int => $this->repo->createCall($tenantId, $deviceId, $acqId, $r),
+            'media' => fn (array $r): int => $this->repo->createMedia($tenantId, $deviceId, $acqId, $r),
+            'locations' => fn (array $r): int => $this->repo->createLocation($tenantId, $deviceId, $acqId, $r),
+            'accounts' => fn (array $r): int => $this->repo->createAccount($tenantId, $deviceId, $acqId, $r),
+            'applications' => fn (array $r): int => $this->repo->createApplication($tenantId, $deviceId, $acqId, $r),
+            'networks' => fn (array $r): int => $this->repo->createNetwork($tenantId, $deviceId, $acqId, $r),
+            'artifacts' => fn (array $r): int => $this->repo->createArtifact($tenantId, $deviceId, $acqId, $r + ['status' => 'unexamined'], $userId),
+        ];
+        $counts = array_fill_keys(array_keys($writers), 0);
+        $written = [];
+        foreach ($writers as $k => $write) {
+            foreach ($detail[$k] ?? [] as $r) {
+                $key = $sig($r, $existing[$k][1]);
+                if (isset($seen[$k][$key])) {
+                    continue;
+                }
+                $seen[$k][$key] = true;
+                $write($r);
+                $counts[$k]++;
+                $written[$k][] = $r;
+            }
+        }
+
+        // Chronologie : seulement ce qui porte une vraie date relevée sur le support.
+        $events = 0;
+        foreach ([
+            ['messages', 'sent_at', 'message', static fn (array $r): string => 'Message ' . ($r['direction'] === 'inbound' ? 'reçu' : 'envoyé') . ($r['sender_label'] !== null ? ' — ' . $r['sender_label'] : '')],
+            ['calls', 'started_at', 'call', static fn (array $r): string => 'Appel ' . ($r['direction'] === 'missed' ? 'manqué' : ($r['direction'] === 'inbound' ? 'reçu' : 'émis')) . ($r['peer_label'] !== null ? ' — ' . $r['peer_label'] : '')],
+            ['media', 'captured_at', 'media', static fn (array $r): string => 'Image — ' . $r['name']],
+            ['locations', 'observed_at', 'location', static fn (array $r): string => 'Position — ' . ($r['label'] ?? $r['source_label'] ?? '')],
+        ] as [$key, $dateKey, $type, $title]) {
+            foreach ($written[$key] ?? [] as $r) {
+                if ($events >= 80 || ($r[$dateKey] ?? null) === null) {
+                    continue;
+                }
+                $this->repo->createTimelineEvent($tenantId, [
+                    'device_id' => $deviceId,
+                    'acquisition_id' => $acqId,
+                    'event_type' => $type,
+                    'event_at' => $r[$dateKey],
+                    'title' => mb_substr($title($r), 0, 160),
+                    'detail' => isset($r['body']) ? mb_substr((string) $r['body'], 0, 300) : null,
+                ], $userId);
+                $events++;
+            }
+        }
+
+        $total = array_sum($counts);
+        if ($total > 0) {
+            $acq = $this->repo->findAcquisition($acqId, $tenantId);
+            $this->repo->updateAcquisition($acqId, $tenantId, [
+                'artifact_count' => (int) ($acq['artifact_count'] ?? 0) + $counts['artifacts'],
+                'file_count' => (int) ($acq['file_count'] ?? 0) + $total,
+                // Le contenu est là : la réserve « seulement les totaux » posée à l'identification ne tient plus.
+                'status' => 'completed',
+                'is_partial' => 0,
+                'reserves' => null,
+            ]);
+            $parts = [];
+            foreach (['contacts' => 'contacts', 'messages' => 'messages', 'calls' => 'appels', 'media' => 'images', 'locations' => 'positions', 'accounts' => 'comptes', 'applications' => 'applications', 'networks' => 'réseaux', 'artifacts' => 'pièces'] as $k => $label) {
+                if ($counts[$k] > 0) {
+                    $parts[] = $counts[$k] . ' ' . $label;
+                }
+            }
+            $this->repo->addAcquisitionLog($tenantId, $acqId, 'Contenu du support relevé en jeu : ' . implode(', ', $parts) . '.', 'info', $userId);
+        }
+
+        return $counts;
     }
 
     /**

@@ -13,7 +13,8 @@ declare(strict_types=1);
  *   php recruitment-retro-auto-close.php                       exécution réelle (comme la tâche planifiée)
  *
  * Avant le premier passage en production : lancer --dry-run ; la tâche planifiée rattrape ensuite les dossiers
- * déjà en retard (au plus 100 par exécution, 25 par communauté).
+ * déjà en retard (au plus 100 par exécution, 25 par communauté). Fenêtre de sécurité : un dossier en retard de plus de
+ * 180 jours (ancienne communauté) n'est jamais clos ni notifié ; la simulation les compte séparément.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -48,8 +49,14 @@ if ($dryRun) {
     foreach ($r['would_close'] as $c) {
         echo sprintf("  communauté %d · dossier #%d · %s · attendu depuis %d j\n", $c['tenant_id'], $c['enlistment_id'], $c['name'], $c['late_days']);
     }
+    foreach ($r['stale'] as $tenantId => $n) {
+        echo sprintf("  communauté %d · %d dossier(s) en retard de plus de %d j : laissés intacts (ni clos, ni notifiés)\n", $tenantId, $n, EnlistmentRetroAutoClose::AUTO_CLOSE_MAX_LATE_DAYS);
+    }
+    foreach ($r['disabled'] as $tenantId) {
+        echo sprintf("  communauté %d · clôture automatique désactivée par la communauté\n", $tenantId);
+    }
     exit($r['ok'] ? 0 : 1);
 }
-echo date('c') . ' — ' . $r['closed'] . ' bilan(s) clos automatiquement (néant), ' . $r['errors'] . " erreur(s).\n";
+echo date('c') . ' — ' . $r['closed'] . ' bilan(s) clos automatiquement (néant), ' . $r['errors'] . ' erreur(s), ' . array_sum($r['stale']) . " dossier(s) ancien(s) laissé(s) intact(s).\n";
 
 exit($r['ok'] ? 0 : 1);

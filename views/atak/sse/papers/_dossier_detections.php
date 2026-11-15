@@ -23,7 +23,9 @@ $fmt = static function (?string $v) use ($dlang): string {
 };
 ?>
 <p class="muted">Quand cette identité réapparaît pendant qu’un avis de recherche est actif (contrôle d’identité, scan SEEK II, consultation des fichiers, photo, téléphone ou plaque rattachés), le système crée une détection. Une détection ne modifie jamais l’identité. <a class="link" href="<?= $h(url('atak/sse/avis/detections')) ?>">Toutes les détections</a></p>
-<?php if ($detections === []): ?>
+<?php if (isset($wantedReadable) && !$wantedReadable): ?>
+    <div class="dos-note dos-note--info">Les détections relèvent de la section « Fichiers et sujets » : votre accès actuel ne permet pas de les lire.</div>
+<?php elseif ($detections === []): ?>
     <div class="dos-card"><div class="dos-empty"><strong>Aucune détection</strong><?= !empty($wantedReady) ? 'Aucune apparition de cette identité n’a été repérée sous avis de recherche.' : 'Les détections seront disponibles une fois l’étape de base de données des avis de recherche passée.' ?></div></div>
 <?php else: ?>
     <div class="panel"><div class="table-wrap"><table>

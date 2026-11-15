@@ -16,7 +16,9 @@ use App\Repositories\SseIdentityRepository;
 use App\Repositories\SseWantedDetectionRepository;
 use App\Repositories\SseWantedNoticeRepository;
 use App\Repositories\SseWantedSettingsRepository;
+use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseIdCheckService;
+use App\Services\Sse\SseIdentityDossierService;
 use App\Services\Sse\SseIdentityTimelineService;
 use App\Services\Sse\SseWantedAccess;
 use App\Services\Sse\SseWantedDetectionService;
@@ -54,7 +56,12 @@ final class SseWantedNoticeTest extends TestCase
         \App\Core\Csrf::token();
         $this->pdo = SseWantedSqlite::open();
         $this->pdo->exec("INSERT INTO users (id, tenant_id, steam_id, display_name) VALUES (7, 1, '76561198000000007', 'Vrai Membre')");
-        $_SESSION = ['user_id' => 7, 'tenant_id' => 1, 'callsign' => 'ANALYSTE', '_csrf_token' => 'jeton', 'sse_tenant_id' => 1, 'sse_guest' => false];
+        // Session du bureau SSE ouverte (porte d'entrée : session active et engagement de confidentialité signé).
+        $_SESSION = [
+            'user_id' => 7, 'tenant_id' => 1, 'callsign' => 'ANALYSTE', '_csrf_token' => 'jeton',
+            'sse_tenant_id' => 1, 'sse_guest' => false, 'sse_clearance_until' => time() + 3600, 'sse_access_code_id' => 0,
+            'sse_confidentiality_version' => SseAccessCodeService::CONFIDENTIALITY_VERSION, 'sse_confidentiality_tenant_id' => 1, 'sse_confidentiality_code_id' => 0,
+        ];
         $_POST = [];
         $_GET = [];
         Gate::reset();
@@ -221,6 +228,32 @@ final class SseWantedNoticeTest extends TestCase
         self::assertFalse($guest->canManage());
         self::assertTrue($reader->canRead());
         self::assertSame(['base'], $reader->timelineSections());
+    }
+
+    public function testReadersWithoutTheFilesSectionSeeNoNoticeNorDetection(): void
+    {
+        $id = $this->identity();
+        $this->place($id);
+        $this->detector()->report(1, $id, 'id_check', ['source' => 'game', 'source_ref' => 'CTRL-1']);
+        $identity = (new SseIdentityRepository())->find($id, 1);
+        self::assertNotNull($identity);
+        $blind = new SseWantedAccess(false, false, false, false, 1, 7, 'LECTEUR', false);
+        self::assertFalse($blind->canRead());
+        $dossier = (new SseIdentityDossierService())->build(1, $identity, $blind, 'fr');
+        self::assertNull($dossier['notice']);
+        self::assertSame([], $dossier['detections']);
+        self::assertFalse($dossier['wantedReadable']);
+        $types = array_column($dossier['timeline'], 'type');
+        self::assertNotContains('notice.placed', $types);
+        self::assertNotContains('detection.raised', $types);
+        self::assertContains('identity.created', $types);
+
+        $seeing = (new SseIdentityDossierService())->build(1, $identity, self::manager(), 'fr');
+        self::assertNotNull($seeing['notice']);
+        self::assertCount(1, $seeing['detections']);
+        $controller = new SseWantedNoticeController(null, null, null, null, null, null, null, $blind);
+        self::assertSame(302, $controller->index(new Request())->statusCode());
+        self::assertSame(302, $controller->detections(new Request())->statusCode());
     }
 
     public function testControllerWritesNeedTheCsrfTokenAndTheRights(): void
@@ -714,7 +747,6 @@ final class SseWantedNoticeTest extends TestCase
     public function testViewsRenderForReal(): void
     {
         Gate::getInstance()->setPermissions(['admin.access', 'atak.sse.case.manage', 'atak.sse.clearance.confidentiel', 'atak.sse.clearance.encadrement']);
-        $_SESSION += ['sse_clearance_until' => time() + 3600];
         $id = $this->identity(1, 'Karimzadeh', 'Élodie', ['alias' => 'Abou Hamza']);
         $notice = $this->place($id, ['reason' => 'Motif <b>à échapper</b> pour le jeu de rôle.']);
         $this->detector()->report(1, $id, 'id_check', ['source' => 'game', 'source_ref' => 'CTRL-4', 'place' => 'Grille 1', 'operator_label' => 'RAVEN']);
