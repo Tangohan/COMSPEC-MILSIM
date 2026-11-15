@@ -6,6 +6,7 @@ declare(strict_types=1);
 // Tenu par tools/i18n/site_i18n.py (extract, merge). %1, %2... : valeurs insérées par la vue.
 
 return [
+    'Signature tracée au SEEK II, fiche %1' => 'Signature drawn on the SEEK II, record %1',
     'Signature tracée au SEEK II' => 'Signature drawn on the SEEK II',
     'Signature SEEK II' => 'SEEK II signature',
     // Calques SSE des cartes (contrôles d’identité, lieux, pistes de téléphones).

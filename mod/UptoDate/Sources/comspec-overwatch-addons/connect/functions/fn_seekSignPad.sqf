@@ -107,11 +107,14 @@ switch (_op) do {
         ""
     };
     case "open": {
+        // _args = [true] : appelé par la touche SIGN, VALIDER relance l'envoi (fn_seekSend) après la signature.
+        _st set ["sendAfter", _args param [0, false]];
         [11] call comspec_overwatch_connect_fnc_sseTerminalPage;
         ["Tracez votre signature à la souris, bouton gauche maintenu."] call _say;
         ""
     };
     case "back": {
+        _st set ["sendAfter", false];
         [6] call comspec_overwatch_connect_fnc_sseTerminalPage;
         ""
     };
@@ -204,7 +207,12 @@ switch (_op) do {
         };
         uiNamespace setVariable ["COMSPEC_SsePerson_SignStrokes", [_strokes, call _aspect]];
         [] call comspec_overwatch_connect_fnc_sseSignAtak;
-        [6] call comspec_overwatch_connect_fnc_sseTerminalPage;
+        if (_st getOrDefault ["sendAfter", false]) then {
+            _st set ["sendAfter", false];
+            ["send"] call comspec_overwatch_connect_fnc_seekSend;
+        } else {
+            [6] call comspec_overwatch_connect_fnc_sseTerminalPage;
+        };
         ""
     };
     case "json": {
