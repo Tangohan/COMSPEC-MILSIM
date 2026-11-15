@@ -4,6 +4,7 @@
     MRZ en police à chasse fixe. Mêmes coordonnées que tools/gen_id_assets.py (étiquettes peintes sur le gabarit).
     ["load", display] · ["side"] recto / verso · ["zoom"] · ["scan"] passage aux fichiers (app Fichiers de l'ATAK) · ["render"] · ["buttons"]
     ["status", texte, couleur] : ligne d'état sous le document (retours de la fenêtre : jamais une alerte Arma).
+    Bouton « Photo du papier » (fn_idPaperPhoto) : capture du papier affiché, jointe au contrôle sur Athena.
     Bouton « Relever » (fn_idPhoto) : champs du document notés au relevé de contrôle ; ouvert depuis l'app pour un relevé,
     il part tout seul une demi-seconde après l'affichage. Bouton explicite quand le relevé est impossible.
     Défauts physiques d'un faux rendus tels quels (hologramme absent, police différente, photo rapportée) : un
@@ -31,7 +32,7 @@ private _buttons = {
     (_st getOrDefault ["geo", [0.2, 0.2, 0.6, 0.4]]) params ["_cx", "_cy", "_cw", "_ch"];
     private _by = _cy + _ch + _vh * 0.075;
     private _own = _st get "own";
-    private _btns = [[93710, (_st getOrDefault ["sides", 2]) > 1], [93711, !_zeus], [93712, !_own && {!_zeus}], [93714, !_own && {!_zeus}], [93715, _own && {!_zeus}], [93713, !_zeus]];
+    private _btns = [[93710, (_st getOrDefault ["sides", 2]) > 1], [93711, !_zeus], [93712, !_own && {!_zeus}], [93714, !_own && {!_zeus}], [93716, !_own && {!_zeus}], [93715, _own && {!_zeus}], [93713, !_zeus]];
     { (_d displayCtrl (_x select 0)) ctrlShow (_x select 1); } forEach _btns;
     _btns = _btns select { _x select 1 };
     private _nb = count _btns;
@@ -48,6 +49,13 @@ private _buttons = {
     _b ctrlSetTooltip (([_why, "Champs du document notés au relevé de contrôle (téléphone › Contrôles)"] select (_why isEqualTo "")) call comspec_sse_fnc_tr);
     _b ctrlEnable _ok;
     _b ctrlSetTextColor ([[0.7, 0.72, 0.75, 1], [1, 1, 1, 1]] select _ok);
+    // Photo du papier : texte et activation selon l'état de l'envoi (fn_idPaperPhoto « can »).
+    private _bp = _d displayCtrl 93716;
+    (["can"] call comspec_sse_fnc_idPaperPhoto) params ["_okP", "_whyP", "_shortP"];
+    _bp ctrlSetText ((["PHOTO DU PAPIER", _shortP] select (_shortP isNotEqualTo "")) call comspec_sse_fnc_tr);
+    _bp ctrlSetTooltip (([_whyP, "Photo du papier jointe au contrôle sur Athena"] select (_whyP isEqualTo "")) call comspec_sse_fnc_tr);
+    _bp ctrlEnable _okP;
+    _bp ctrlSetTextColor ([[0.7, 0.72, 0.75, 1], [1, 1, 1, 1]] select _okP);
 };
 if (_op isEqualTo "buttons") exitWith { call _buttons };
 

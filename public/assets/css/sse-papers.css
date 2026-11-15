@@ -153,3 +153,13 @@ body.sse-iw .sx-main .idp-grid > .panel { margin-top: 0; }
 @media (max-width: 720px) {
     body.sse-iw .sx-main .idp-actions form .btn { width: 100%; }
 }
+/* Photo du papier prise au contrôle (fiche du contrôle). */
+.idp-paper-shot { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
+.idp-paper-shot p { margin: 0; flex: 1 1 220px; }
+.idp-paper-shot img {
+    display: block;
+    width: min(360px, 100%);
+    height: auto;
+    border-radius: 3px;
+    border: 1px solid var(--border-soft, rgba(127, 127, 127, 0.2));
+}

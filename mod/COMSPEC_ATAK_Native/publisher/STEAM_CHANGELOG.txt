@@ -14,6 +14,26 @@
 [*] With COMSPEC SSE 1.16.0, SSE records read in game no longer show "RP use" at the bottom.
 [/list]
 
+[h1]COMSPEC ATAK 4.26.0 Washington — contrôle d'identité : la photo du papier remonte sur Athena / identity check: the paper photo goes up to Athena[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Photo du papier[/b] : avec COMSPEC SSE 1.15.0, la fenêtre du papier présenté a un bouton « PHOTO DU PAPIER ». La photo est jointe à ton contrôle sur Athena, seulement quand tu appuies sur ce bouton.
+[*] L'app Contrôle ID dit où en est l'envoi (en cours, envoyée, non envoyée avec la raison) et propose « Renvoyer la photo » après un échec.
+[*] App Fiches : la rubrique d'un avis de recherche s'appelle « Signalement physique ».
+[*] COMSPEC Link passe en 2.0.127.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Paper photo[/b]: with COMSPEC SSE 1.15.0, the window of the presented paper has a "PAPER PHOTO" button. The photo is attached to your check on Athena, only when you press that button.
+[*] The ID Check app tells you where the sending stands (sending, sent, not sent with the reason) and offers "Resend photo" after a failure.
+[*] Fiches app: the section of a wanted notice is now called "Physical description".
+[*] COMSPEC Link is now 2.0.127.
+[/list]
+
 [h1]COMSPEC ATAK 4.25.0 Washington — compte non lié sans rafales d'envois, comptes rendus avec envoi visible / unlinked account without send bursts, reports with visible sending[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

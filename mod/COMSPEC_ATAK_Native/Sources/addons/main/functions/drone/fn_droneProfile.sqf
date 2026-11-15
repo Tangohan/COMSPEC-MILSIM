@@ -41,8 +41,8 @@ private _classes = [
     ["PLANE", ["UAV_02_base_F", "B_UAV_02_F", "B_UAV_02_CAS_F", "O_UAV_02_F", "O_UAV_02_CAS_F", "I_UAV_02_F", "I_UAV_02_CAS_F", "UAV_04_base_F", "O_T_UAV_04_CAS_F", "UAV_05_base_F", "B_UAV_05_F"]],
     ["UGV", ["UGV_01_base_F", "B_UGV_01_F", "B_UGV_01_rcws_F", "O_UGV_01_F", "O_UGV_01_rcws_F", "I_UGV_01_F", "I_UGV_01_rcws_F", "UGV_02_Base_F", "B_T_UGV_01_F", "O_T_UGV_01_F"]]
 ];
-// Lancé à la main : RQ-11 Raven et variantes (RHS, CUP, USP, ACE...), reconnus par le nom de classe.
-private _launchRx = ".*(raven|rq_?11|rq-11).*";
+// Lancé à la main : RQ-11 Raven et variantes (GX Drones « RQ-11B », RHS, CUP, USP, ACE...), reconnus par le nom de classe ou le nom affiché.
+private _launchRx = ".*(raven|rq[ _-]?11).*";
 
 private _kindOfClass = {
     params ["_cls"];
@@ -57,7 +57,7 @@ private _kindOfClass = {
     if (_forced isEqualTo "") then { _forced = getText (_cfg >> "comspec_droneProfile"); };
     if (_forced in ["QUAD", "HELI", "PLANE", "LAUNCH", "UGV"]) exitWith { _forced };
     if (_ground) exitWith { "UGV" };
-    if (_plane && {_cl regexMatch _launchRx}) exitWith { "LAUNCH" };
+    if (_plane && {_cl regexMatch _launchRx || {(toLower getText (_cfg >> "displayName")) regexMatch _launchRx}}) exitWith { "LAUNCH" };
     // La table ne vaut que si elle est d'accord avec la simulation de la config (la config gagne en cas de conflit).
     private _hit = "";
     { _x params ["_k", "_list"]; if (_hit isEqualTo "" && {(_list findIf { _cls isKindOf _x }) >= 0}) then { _hit = _k; }; } forEach _classes;
