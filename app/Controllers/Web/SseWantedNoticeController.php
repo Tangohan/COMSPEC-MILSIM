@@ -33,6 +33,9 @@ final class SseWantedNoticeController
     private const BASE = 'atak/sse/avis';
 
     private const PAPERS = 'atak/sse/papiers/identites';
+    public const TOKEN_EXPIRED = 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la page puis recommencez.';
+    public const NEED_MANAGE = 'Droit manquant : écrire dans « Fichiers et sujets » (gestion des dossiers ou des fichiers SSE).';
+    public const NEED_PDF = 'Droit manquant : la notice PDF demande aussi d’écrire dans « Papiers et couvertures », d’exporter les papiers et l’habilitation Encadrement.';
 
     private ?SseWantedAccess $rights = null;
 
@@ -111,7 +114,7 @@ final class SseWantedNoticeController
             return $this->flashBack('error', 'Identité introuvable.', url(self::PAPERS));
         }
         if (!$r->canManage()) {
-            return $this->denied(url(self::PAPERS . '/' . (int) $identity['id']));
+            return $this->denied(url(self::PAPERS . '/' . (int) $identity['id']), self::NEED_MANAGE);
         }
 
         return $this->renderPlaceForm($identity, [], []);
@@ -126,8 +129,11 @@ final class SseWantedNoticeController
             return $this->flashBack('error', 'Identité introuvable.', url(self::PAPERS));
         }
         $back = url(self::PAPERS . '/' . (int) $identity['id']);
-        if (!self::csrfOk($request) || !$r->canManage()) {
-            return $this->denied($back);
+        if (!self::csrfOk($request)) {
+            return $this->denied($back, self::TOKEN_EXPIRED);
+        }
+        if (!$r->canManage()) {
+            return $this->denied($back, self::NEED_MANAGE);
         }
         $input = $this->placeInput($request);
         $res = $this->service->place($tenantId, (int) $identity['id'], $input, $r);
@@ -154,8 +160,11 @@ final class SseWantedNoticeController
             return $this->flashBack('error', 'Avis introuvable.', url(self::BASE));
         }
         $back = url(self::PAPERS . '/' . (int) $notice['identity_id']) . '#avis';
-        if (!self::csrfOk($request) || !$r->canManage()) {
-            return $this->denied($back);
+        if (!self::csrfOk($request)) {
+            return $this->denied($back, self::TOKEN_EXPIRED);
+        }
+        if (!$r->canManage()) {
+            return $this->denied($back, self::NEED_MANAGE);
         }
         $res = $this->service->lift($tenantId, (int) $notice['id'], $request->inputString('status', 'lifted'), $request->inputString('reason'), $r);
         if ($res['ok'] !== true) {
@@ -175,7 +184,7 @@ final class SseWantedNoticeController
         $notice = $this->safe(fn (): ?array => $this->notices->find($tenantId, (int) ($params['id'] ?? 0)));
         $back = $notice !== null ? url(self::PAPERS . '/' . (int) $notice['identity_id']) . '#avis' : url(self::BASE);
         if (!$r->canGeneratePdf()) {
-            return $this->denied($back);
+            return $this->denied($back, $r->canManage() ? self::NEED_PDF : self::NEED_MANAGE);
         }
         if ($notice === null) {
             return $this->flashBack('error', 'Avis introuvable.', url(self::BASE));
@@ -231,8 +240,11 @@ final class SseWantedNoticeController
         $r = $this->r();
         $tenantId = $r->tenantId();
         $back = url(self::BASE . '/detections');
-        if (!self::csrfOk($request) || !$r->canManage()) {
-            return $this->denied($back);
+        if (!self::csrfOk($request)) {
+            return $this->denied($back, self::TOKEN_EXPIRED);
+        }
+        if (!$r->canManage()) {
+            return $this->denied($back, self::NEED_MANAGE);
         }
         $row = $this->safe(fn (): ?array => $this->detections->find($tenantId, (int) ($params['id'] ?? 0)));
         $status = $request->inputString('status');
@@ -270,8 +282,11 @@ final class SseWantedNoticeController
     public function settingsSave(Request $request, array $params = []): Response
     {
         $r = $this->r();
-        if (!self::csrfOk($request) || !$r->canManage()) {
-            return $this->denied(url(self::BASE));
+        if (!self::csrfOk($request)) {
+            return $this->denied(url(self::BASE), self::TOKEN_EXPIRED);
+        }
+        if (!$r->canManage()) {
+            return $this->denied(url(self::BASE), self::NEED_MANAGE);
         }
         $tenantId = $r->tenantId();
         $checked = SseWantedSettingsRepository::validate([
@@ -403,9 +418,9 @@ final class SseWantedNoticeController
         return $this->rights ??= SseWantedAccess::fromSession($this->access, $this->clearance);
     }
 
-    private function denied(string $back): Response
+    private function denied(string $back, string $why = 'Action non autorisée.'): Response
     {
-        return $this->flashBack('error', 'Action non autorisée.', $back);
+        return $this->flashBack('error', $why, $back);
     }
 
     private function flashBack(string $type, string $message, string $to): Response

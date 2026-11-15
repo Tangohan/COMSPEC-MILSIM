@@ -200,6 +200,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
           </div>
         </div>
         <div id="tacmap-map"></div>
+<?php $cycleId = 'tacmap-cycle'; $cycleMap = (int) $overwatchDefaultMapId; $cycleMapSelector = '#tacmap-workspace'; $cycleClass = ''; $cycleFloating = true; require base_path('views/partials/atak_marker_cycle.php'); ?>
 <?php $sseMlId = 'tacmap-sse-ml'; $sseMlFloating = true; $sseMlBase = rtrim($base, '/'); require base_path('views/partials/sse_map_layers.php'); ?>
 
         <div class="tacmap-drawer" id="tacmap-table-drawer">

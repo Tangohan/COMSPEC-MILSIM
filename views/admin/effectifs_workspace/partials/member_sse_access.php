@@ -25,6 +25,7 @@ foreach (C::SIMPLE_ACCESS as $key => $def) {
     $sseAccessLabels[$key] = $def['label'];
 }
 $sseState = ['scheduled' => 'À venir', 'expired' => 'Échue', 'active' => 'En cours'];
+$sseClr = is_array($sseAccess['clearance'] ?? null) ? $sseAccess['clearance'] : null;
 $sseDates = static fn (array $r): string => $r['ends_at'] !== null && $r['ends_at'] !== '' ? 'jusqu’au ' . substr((string) $r['ends_at'], 0, 10) : 'sans date de fin';
 ?>
 <?php if ($ssePart === 'card'): ?>
@@ -36,6 +37,12 @@ $sseDates = static fn (array $r): string => $r['ends_at'] !== null && $r['ends_a
             <button type="button" class="eff-fm-btn is-sm" data-dialog-open="eff-dlg-acces-sse" data-sse-mode="deny">Retirer un accès</button>
         </div>
     </div>
+    <?php if ($sseClr !== null): ?>
+        <div class="eff-sse-clr">
+            <span class="eff-sse-badge is-lvl-<?= $h($sseClr['level']) ?>">Habilitation SSE : <?= $h($sseClr['label']) ?></span>
+            <p class="eff-fm-lead"><?= $h($sseClr['source_label']) ?><?php if ($sseClr['profile_level'] !== null): ?> Niveau inscrit sur la fiche : <?= $h($sseClr['profile_label']) ?>.<?php endif; ?><?php if (is_array($sseClr['last'])): ?> Dernière modification par <?= $h($sseClr['last']['actor_label']) ?>, le <?= $h(substr((string) $sseClr['last']['created_at'], 0, 10)) ?>.<?php endif; ?> Le niveau de la fiche n’a pas d’échéance propre.</p>
+        </div>
+    <?php endif; ?>
     <?php if (empty($sseAccess['ready'])): ?>
         <p class="eff-fm-lead">Les droits d’accès SSE ne sont pas encore installés dans cette communauté : les droits d’origine s’appliquent seuls.</p>
     <?php else: ?>
@@ -86,12 +93,37 @@ $sseDates = static fn (array $r): string => $r['ends_at'] !== null && $r['ends_a
     <?php endif; ?>
 </article>
 <?php else: ?>
-<dialog class="eff-dialog eff-dialog--wide eff-sse-dialog" id="eff-dlg-acces-sse" aria-labelledby="eff-dlg-acces-sse-title" data-sse-preview-url="<?= $h($sseBase . '/apercu') ?>">
     <div class="eff-dialog__body">
         <header class="eff-dialog__head">
             <h2 id="eff-dlg-acces-sse-title">Accès SSE de <?= $h($name) ?></h2>
             <button type="button" class="eff-dialog__close" data-dialog-close aria-label="Fermer">×</button>
         </header>
+        <?php if ($sseClr !== null): ?>
+        <section class="eff-sse-sec eff-sse-sec--first" aria-labelledby="eff-sse-clr-t">
+            <h3 id="eff-sse-clr-t">Habilitation SSE : <?= $h($sseClr['label']) ?></h3>
+            <p class="eff-card__hint"><?= $h($sseClr['source_label']) ?></p>
+            <?php if (!empty($sseClr['may_change'])): ?>
+                <form method="post" action="<?= $h($sseBase . '/habilitation') ?>" class="eff-sse-form">
+                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                    <div class="eff-sse-g">
+                        <label>Niveau inscrit sur la fiche
+                            <select name="clearance_level">
+                                <option value=""<?= $sseClr['profile_level'] === null ? ' selected' : '' ?>>Aucun (retirer l’habilitation de la fiche)</option>
+                                <?php foreach ($sseClr['options'] as $code => $lab): ?>
+                                    <option value="<?= $h($code) ?>"<?= $sseClr['profile_level'] === $code ? ' selected' : '' ?>><?= $h($lab) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label>Motif (obligatoire, 5 caractères au moins)<input type="text" name="reason" maxlength="<?= (int) C::REASON_MAX ?>" required minlength="<?= (int) C::REASON_MIN ?>" autocomplete="off"></label>
+                    </div>
+                    <p class="eff-card__hint">Vous ne pouvez pas inscrire un niveau plus haut que votre propre habilitation. Une habilitation qui vient de ses niveaux d’accès ou de ses droits SSE ne change pas d’ici : réglez le niveau d’accès du membre.</p>
+                    <div class="eff-dialog__foot"><span class="eff-dialog__spacer"></span><button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’habilitation</button></div>
+                </form>
+            <?php else: ?>
+                <p class="eff-card__hint">Le niveau inscrit pour ce membre dépasse votre habilitation : vous ne pouvez pas le modifier.</p>
+            <?php endif; ?>
+        </section>
+        <?php endif; ?>
         <?php if (empty($sseAccess['ready'])): ?>
             <p class="eff-card__hint">Les droits d’accès SSE ne sont pas encore installés dans cette communauté.</p>
         <?php else: ?>
@@ -168,5 +200,4 @@ $sseDates = static fn (array $r): string => $r['ends_at'] !== null && $r['ends_a
         </section>
         <?php endif; ?>
     </div>
-</dialog>
 <?php endif; ?>

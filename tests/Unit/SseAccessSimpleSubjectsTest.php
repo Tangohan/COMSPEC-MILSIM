@@ -12,6 +12,8 @@ use App\Services\Sse\SseAccessMemberRights;
 use App\Services\Sse\SseAccessPolicy;
 use App\Services\Sse\SseAccessRuleService;
 use App\Services\Sse\SseAccessSubjects;
+use App\Services\Sse\SseClearanceService;
+use App\Services\Sse\SseMemberClearance;
 use App\Support\AdministrativePositionCatalog;
 use App\Support\SseAccessCatalog as C;
 use PDO;
@@ -41,6 +43,9 @@ final class SseAccessSimpleSubjectsTest extends TestCase
     private array $perms = [];
     /** @var array<int, array<string, mixed>> */
     private array $audit = [];
+    /** @var array<int, ?string> niveau d'habilitation inscrit sur la fiche de chaque membre */
+    private array $profileLevels = [];
+    private string $ceiling = 'tres_restreint';
 
     protected function setUp(): void
     {
@@ -103,6 +108,8 @@ final class SseAccessSimpleSubjectsTest extends TestCase
             20 => ['atak.sse.access'],
         ];
         $this->audit = [];
+        $this->profileLevels = [];
+        $this->ceiling = 'tres_restreint';
         $this->rules = new SseAccessRuleRepository($this->pdo);
         $this->policy = $this->makePolicy();
         $this->service = $this->makeService();
@@ -477,7 +484,21 @@ final class SseAccessSimpleSubjectsTest extends TestCase
 
     private function rights(): SseAccessMemberRights
     {
-        return new SseAccessMemberRights($this->policy, $this->service, new SseAccessMatrix($this->policy, $this->directory()), $this->directory());
+        $clearance = new SseMemberClearance(
+            fn (int $u, int $t, string $slug): bool => in_array($slug, $this->perms[$u] ?? [], true),
+            fn (int $u): ?string => $this->profileLevels[$u] ?? null,
+            function (int $u, ?string $level): bool {
+                $this->profileLevels[$u] = $level;
+
+                return true;
+            },
+            function (array $row): void {
+                $this->audit[] = $row;
+            },
+            fn (int $t, int $u): ?array => null,
+        );
+
+        return new SseAccessMemberRights($this->policy, $this->service, new SseAccessMatrix($this->policy, $this->directory()), $this->directory(), $clearance, fn (): string => $this->ceiling);
     }
 
     public function testMemberBlockIsInvisibleToEveryoneButSseManagers(): void
@@ -625,6 +646,149 @@ final class SseAccessSimpleSubjectsTest extends TestCase
             self::assertDoesNotMatchRegularExpression('/font-size:\s*(?:[0-9]|1[01])px/', $src, $file . ' : aucun texte sous 12 px');
         }
     }
+    // ------------------------------------------------------------------ Niveau d'habilitation sur la fiche
+
+    public function testClearanceLevelOfAMemberFollowsTheSessionRule(): void
+    {
+        $this->perms[17] = ['atak.sse.access', 'atak.sse.clearance.confidentiel'];
+        $this->profileLevels[13] = 'confidentiel';
+        $view = fn (int $id): array => $this->rights()->overview(1, 10, $id)['clearance'];
+        self::assertSame('tres_restreint', $view(10)['level']);
+        self::assertSame('role', $view(10)['source'], 'report du droit d’attribution des accès');
+        self::assertSame('encadrement', $view(12)['level']);
+        self::assertSame('confidentiel', $view(17)['level']);
+        self::assertSame('explicit', $view(17)['source']);
+        self::assertSame('confidentiel', $view(13)['level'], 'la fiche l’emporte sur le report plus bas');
+        self::assertSame('profile', $view(13)['source']);
+        self::assertSame('Confidentiel', $view(13)['label']);
+        self::assertSame('floor', $view(18)['source'], 'sans aucun droit SSE : diffusion interne');
+        self::assertSame('confidentiel', $view(11)['level'], 'gestion des dossiers : report en confidentiel');
+        // Même règle que la session : la fonction partagée donne la même réponse.
+        $can = static fn (string $slug): bool => $slug === 'atak.sse.access';
+        self::assertSame(['level' => 'encadrement', 'source' => 'role'], SseClearanceService::resolve($can, null));
+        self::assertSame(['level' => 'tres_restreint', 'source' => 'profile'], SseClearanceService::resolve($can, 'tres_restreint'));
+        self::assertNull(SseClearanceService::normalizeProfileLevel('inconnu'));
+        self::assertSame('confidentiel', SseClearanceService::normalizeProfileLevel(' Confidentiel '));
+    }
+
+    public function testGrantingAClearanceNeedsTheRightReasonAndNeverExceedsYourOwn(): void
+    {
+        $rights = $this->rights();
+        $this->ceiling = 'confidentiel';
+        self::assertFalse($rights->changeClearance(1, 10, 'Dix', 12, 'tres_restreint', 'Mission spéciale')['ok'], 'pas plus haut que son propre plafond');
+        self::assertFalse($rights->changeClearance(1, 10, 'Dix', 12, 'confidentiel', '')['ok'], 'motif obligatoire');
+        self::assertFalse($rights->changeClearance(1, 10, 'Dix', 12, 'nimporte', 'Mission spéciale')['ok'], 'niveau inconnu');
+        self::assertFalse($rights->changeClearance(1, 11, 'Onze', 12, 'encadrement', 'Mission spéciale')['ok'], 'pas gestionnaire');
+        self::assertFalse($rights->changeClearance(1, 10, 'Dix', 14, 'encadrement', 'Mission spéciale')['ok'], 'membre masqué par l’annuaire');
+        self::assertFalse($rights->changeClearance(1, 10, 'Dix', 20, 'encadrement', 'Mission spéciale')['ok'], 'membre d’une autre communauté');
+        self::assertSame([], $this->profileLevels);
+        self::assertSame([], $this->audit);
+
+        self::assertTrue($rights->changeClearance(1, 10, 'Dix', 12, 'confidentiel', 'Mission spéciale')['ok']);
+        self::assertSame('confidentiel', $this->profileLevels[12]);
+        self::assertSame('member_clearance.set', $this->audit[0]['action']);
+        self::assertSame('member_clearance', $this->audit[0]['object_type']);
+        self::assertSame(12, $this->audit[0]['object_id']);
+        self::assertSame(['level' => 'confidentiel'], $this->audit[0]['after']);
+        self::assertSame('confidentiel', $rights->overview(1, 10, 12)['clearance']['level']);
+        self::assertFalse($rights->changeClearance(1, 10, 'Dix', 12, 'confidentiel', 'Mission spéciale')['ok'], 'déjà ce niveau');
+    }
+
+    public function testAMemberAboveYourClearanceCannotBeChangedOrRemoved(): void
+    {
+        $rights = $this->rights();
+        $this->profileLevels[13] = 'tres_restreint';
+        $this->ceiling = 'confidentiel';
+        $view = $rights->overview(1, 10, 13)['clearance'];
+        self::assertFalse($view['may_change']);
+        self::assertSame(['encadrement', 'confidentiel'], array_keys($view['options']), 'jamais au-dessus de son propre plafond');
+        self::assertFalse($rights->changeClearance(1, 10, 'Dix', 13, null, 'Retrait demandé')['ok']);
+        self::assertSame('tres_restreint', $this->profileLevels[13]);
+        $this->ceiling = 'tres_restreint';
+        self::assertTrue($rights->changeClearance(1, 10, 'Dix', 13, null, 'Fin de mission')['ok']);
+        self::assertNull($this->profileLevels[13]);
+        self::assertSame('member_clearance.remove', $this->audit[0]['action']);
+    }
+
+    public function testTheClearanceBadgeAndFormAreWiredAndHiddenFromNonManagers(): void
+    {
+        self::assertNull($this->rights()->overview(1, 11, 12), 'ni badge ni habilitation pour qui ne gère pas les accès SSE');
+        self::assertStringContainsString("acces-sse/habilitation'", self::read('routes/web.php'));
+        self::assertStringContainsString('changeClearance(', self::read('app/Controllers/Admin/MemberSseAccessController.php'));
+        self::assertStringContainsString('eff-sse-badge--hero', self::read('views/admin/effectifs_workspace/member.php'));
+        $partial = self::read('views/admin/effectifs_workspace/partials/member_sse_access.php');
+        self::assertStringContainsString("/habilitation'", $partial);
+        self::assertStringContainsString('_csrf_token', $partial);
+        $en = require dirname(__DIR__, 2) . '/lang/en/site_auto.php';
+        foreach (['Habilitation SSE : %1', 'Enregistrer l’habilitation', 'Aucun (retirer l’habilitation de la fiche)'] as $t) {
+            self::assertArrayHasKey($t, $en);
+        }
+    }
+
+    // ------------------------------------------------------------------ Message fidèle à ce qui a été fait (double envoi, copie périmée)
+
+    public function testSavingTwiceNeverContradictsItself(): void
+    {
+        $in = ['sections' => ['dossiers'], 'access' => 'ecrire', 'reason' => 'Renfort enquête Alpha'];
+        $rights = $this->rights();
+        $first = $rights->save(1, 10, 'Dix', 12, $in);
+        self::assertTrue($first['ok']);
+        self::assertStringContainsString('4 règles créées', $first['message']);
+        self::assertStringContainsString('Dossiers d’enquête · Écrire', $first['message']);
+        $count = $this->rules->countLive(1);
+        // Le même envoi arrive une seconde fois (double clic) : rien n'est doublé, et le message dit ce qui existe.
+        $second = $rights->save(1, 10, 'Dix', 12, $in);
+        self::assertTrue($second['ok'], 'déjà en place n’est pas une erreur');
+        self::assertStringContainsString('Aucune règle créée', $second['message']);
+        self::assertStringContainsString('déjà réglé ainsi', $second['message']);
+        self::assertStringNotContainsString('règles créées :', $second['message']);
+        self::assertSame($count, $this->rules->countLive(1));
+    }
+
+    public function testThePreviewAndTheSaveUseTheSamePlanAndTheSameWords(): void
+    {
+        $input = $this->simple(['subject_type' => 'position', 'subject_id' => 50]);
+        $preview = $this->service->planSimple(1, 10, $input);
+        $saved = $this->service->planSimple(1, 10, $input);
+        self::assertSame($preview['rules'], $saved['rules']);
+        $ids = $this->service->commit(1, 10, 'Dix', $saved['rules']);
+        self::assertStringStartsWith(count($ids) . ' règles créées', SseAccessRuleService::describeResult($saved, count($ids)));
+        $again = $this->service->planSimple(1, 10, $input);
+        self::assertSame([], $again['rules']);
+        self::assertTrue(SseAccessRuleService::onlyAlreadyInPlace($again));
+        self::assertStringStartsWith('Aucune règle créée.', SseAccessRuleService::describeResult($again, 0));
+        // Un refus pour droits insuffisants n'est PAS présenté comme « déjà en place ».
+        $denied = $this->service->planSimple(1, 15, $this->simple(['sections' => ['dossiers'], 'access' => 'gerer', 'subject_type' => 'position', 'subject_id' => 51, 'reason' => 'Responsable du bureau']));
+        self::assertFalse(SseAccessRuleService::onlyAlreadyInPlace($denied));
+    }
+
+    public function testPlanningNeverTrustsAStaleCopyOfTheRules(): void
+    {
+        $in = $this->simple(['subject_type' => 'position', 'subject_id' => 50]);
+        $ids = $this->service->commit(1, 10, 'Dix', $this->service->planSimple(1, 10, $in)['rules']);
+        self::assertNotSame([], $ids);
+        $this->rules->liveRules(1);
+        // La copie gardée de la requête (ou partagée) croit encore que les règles existent ; elles ont été retirées ailleurs.
+        $this->pdo->exec("UPDATE sse_access_rules SET revoked_at = '" . self::NOW . "'");
+        self::assertNotSame([], $this->rules->liveRules(1), 'copie périmée');
+        $plan = $this->service->planSimple(1, 10, $in);
+        self::assertSame([], $plan['errors']);
+        self::assertCount(count($ids), $plan['rules'], 'l’aperçu et l’enregistrement lisent l’état réel : les règles sont recréées');
+        self::assertSame([], $this->rules->liveRules(1, true));
+    }
+
+    public function testTheSubmitTokenAndTheDoubleClickGuardAreWired(): void
+    {
+        $ctl = self::read('app/Controllers/Web/SseAccessRightsController.php');
+        self::assertStringContainsString("inputString('submit_token')", $ctl);
+        self::assertStringContainsString('consumeToken(', $ctl);
+        self::assertStringContainsString("'submitToken' => \$this->issueToken()", $ctl);
+        self::assertStringContainsString('name="submit_token"', self::read('views/atak/sse/rights/preview.php'));
+        self::assertStringContainsString('data-sar-sent', self::read('public/assets/js/sse-access-picker.js'));
+        self::assertStringContainsString('data-sse-sent', self::read('public/assets/js/eff-member-sse-access.js'));
+        self::assertStringContainsString('liveRules($tenantId, true)', self::read('app/Services/Sse/SseAccessRuleService.php'));
+    }
+
     public function testNoMigrationIsNeededTheTypesFitTheExistingColumn(): void
     {
         foreach ([C::SUBJECT_POSITION, C::SUBJECT_JOB, C::SUBJECT_QUALIF, C::SUBJECT_USER] as $type) {

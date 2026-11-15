@@ -58,3 +58,19 @@ html[data-bo-theme="dark"] .eff-sse-sec, html[data-bo-theme="dark"] .eff-sse-lis
 html[data-bo-theme="dark"] .eff-sse-fs > legend, html[data-bo-theme="dark"] .eff-sse-opt small, html[data-bo-theme="dark"] .eff-sse-list small { color: #94a3b8; }
 .eff-sse-g input { width: 100%; box-sizing: border-box; }
 #acces-sse { grid-column: 1 / -1; min-width: 0; }
+
+/* Niveau d'habilitation SSE : badge (en-tête de fiche et carte) */
+.eff-sse-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 999px; background: #f1f5f9; color: #334155; font: inherit; font-size: 12px; font-weight: 700; line-height: 1.2; }
+button.eff-sse-badge { cursor: pointer; }
+button.eff-sse-badge:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }
+.eff-sse-badge.is-lvl-encadrement { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+.eff-sse-badge.is-lvl-confidentiel { background: #fffbeb; border-color: #fde68a; color: #78350f; }
+.eff-sse-badge.is-lvl-tres_restreint { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.eff-sse-clr { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.eff-sse-clr .eff-fm-lead { margin: 0; }
+.eff-sse-sec--first { margin-top: 0; padding-top: 0; border-top: 0; }
+.eff-sse-form select { min-height: 40px; max-width: 100%; width: 100%; box-sizing: border-box; }
+html[data-bo-theme="dark"] .eff-sse-badge { background: #1e293b; border-color: #475569; color: #e2e8f0; }
+html[data-bo-theme="dark"] .eff-sse-badge.is-lvl-encadrement { background: rgba(59, 130, 246, .18); border-color: #3b82f6; color: #bfdbfe; }
+html[data-bo-theme="dark"] .eff-sse-badge.is-lvl-confidentiel { background: rgba(245, 158, 11, .16); border-color: #d97706; color: #fde68a; }
+html[data-bo-theme="dark"] .eff-sse-badge.is-lvl-tres_restreint { background: rgba(239, 68, 68, .16); border-color: #dc2626; color: #fecaca; }

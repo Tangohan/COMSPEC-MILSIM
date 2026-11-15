@@ -233,16 +233,31 @@ final class SseIdRealCountryTest extends TestCase
         $html = (string) ob_get_clean();
         $faces = substr_count($html, 'class="idw-face ');
         self::assertSame(5, $faces);
-        self::assertSame($faces, substr_count($html, 'class="idw-watermark"'), 'filigrane sur chaque face');
-        self::assertSame($faces, substr_count($html, RC::FACE_MENTION), 'mention sur chaque face');
+        // Marquage discret par défaut : aperçu propre à l'écran, marque incrustée dans l'image exportée.
+        self::assertSame('discreet', $preview['marking']);
+        self::assertSame(0, substr_count($html, 'idw-watermark'));
+        self::assertStringContainsString('data-marking="discreet"', $html);
         self::assertStringContainsString('idw-zone--americas', $html);
+        // Pays réel : le réglage « aucun marquage visible » retombe sur discret, non désactivable.
+        $none = SseIdWorkshopService::previewModel($doc, $identity, $us, 'none');
+        self::assertSame('discreet', $none['marking']);
+        self::assertTrue($none['marking_locked']);
+        // Mode standard (ancien rendu) : filigrane et mention sur chaque face.
+        $std = SseIdWorkshopService::previewModel($doc, $identity, $us, 'standard');
+        ob_start();
+        $preview = $std;
+        require dirname(__DIR__, 2) . '/views/atak/sse/papers/_doc_preview.php';
+        $htmlStd = (string) ob_get_clean();
+        self::assertSame($faces, substr_count($htmlStd, 'class="idw-watermark"'), 'filigrane sur chaque face (standard)');
+        self::assertSame($faces, substr_count($htmlStd, RC::FACE_MENTION), 'mention sur chaque face (standard)');
 
         $css = self::read('public/assets/css/sse-id-workshop.css');
         self::assertMatchesRegularExpression('/\.idw-watermark \{[^}]*inset: -40%;[^}]*rotate\(-24deg\)/s', $css, 'diagonale sur toute la surface');
         $js = self::read('public/assets/js/sse-id-workshop.js');
         self::assertStringContainsString("var BAND = 'DOCUMENT DE JEU – SANS VALEUR", $js);
         self::assertLessThan(strpos($js, "canvas.toDataURL('image/png')"), strpos($js, 'stampGameMarks(canvas);'), 'marques incrustées avant l’export');
-        self::assertStringContainsString("ctx.fillText('SIMULATION", $js);
+        self::assertStringContainsString("var MICRO = 'Document de jeu – sans valeur", $js);
+        self::assertStringContainsString("if (m === 'none' && real) return 'discreet';", $js, 'pays réel : jamais sans marque, même DOM retouché');
     }
 
     public function testImportScreenAndFormsCarryTheGuardrails(): void
@@ -252,10 +267,10 @@ final class SseIdRealCountryTest extends TestCase
         self::assertStringContainsString('name="guardrails" value="1" required', $view);
         self::assertStringContainsString('name="codes[]"', $view);
         self::assertStringContainsString('\App\Core\Csrf::field()', $view);
-        self::assertStringContainsString('idr-spec__wm', $view);
+        self::assertStringNotContainsString('idr-spec__wm', $view);
         self::assertStringContainsString('RC::FACE_MENTION', $view);
         self::assertStringContainsString("url('atak/sse/papiers/pays/reels')", self::read('views/atak/sse/papers/countries.php'));
-        self::assertStringContainsString('Ajouter des pays réels (simulation)', self::read('views/atak/sse/papers/countries.php'));
+        self::assertStringContainsString('Ajouter des pays réels', self::read('views/atak/sse/papers/countries.php'));
         $form = self::read('views/atak/sse/papers/country_form.php');
         self::assertStringContainsString('<?php if ($real): ?>', $form);
         self::assertStringContainsString('Aucune image téléversée : pas d’armoiries', $form);

@@ -2530,6 +2530,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/roles', [EffectifsWorkspaceController::class, 'updateMemberRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/fonctions', [EffectifsWorkspaceController::class, 'updateMemberJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse', [\App\Controllers\Admin\MemberSseAccessController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse/habilitation', [\App\Controllers\Admin\MemberSseAccessController::class, 'clearance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse/apercu', [\App\Controllers\Admin\MemberSseAccessController::class, 'preview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse/{ruleId}/retirer', [\App\Controllers\Admin\MemberSseAccessController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/role-unite', [EffectifsWorkspaceController::class, 'updateMemberAssignmentRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2591,6 +2592,10 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/liens-invitation/{id}/revoquer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/supprimer', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/liens-invitation/{id}/reactiver', [\App\Controllers\Admin\Organization\RecruitmentInviteLinksController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Paquets d'intégration (ce que reçoit un nouveau membre) : avant « {id} » pour la même raison.
+    $router->get('/back-office/recruitments/paquets-integration', [\App\Controllers\Admin\AdminIntegrationPackagesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/paquets-integration', [\App\Controllers\Admin\AdminIntegrationPackagesController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/paquets-integration/{id}/supprimer', [\App\Controllers\Admin\AdminIntegrationPackagesController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboarding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboardingSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -3393,6 +3398,16 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);
     $router->post('/api/atak/map/clear', [AtakApiController::class, 'mapClear']);
     $router->post('/api/atak/map/clear/undo', [AtakApiController::class, 'mapClearUndo']);
+    // Cycle de 24 h des marqueurs et missions archivées (poste TOC web, ATAK web, TACMAP) : membre connecté, communauté de la session.
+    $markerCycle = \App\Controllers\Api\AtakMarkerCycleApiController::class;
+    $router->get('/api/atak/cycle/status', [$markerCycle, 'status']);
+    $router->get('/api/atak/cycle/archives', [$markerCycle, 'archives']);
+    $router->get('/api/atak/cycle/archives/{id}', [$markerCycle, 'show']);
+    $router->get('/api/atak/cycle/archives/{id}/export.json', [$markerCycle, 'export']);
+    $router->post('/api/atak/cycle/archives/{id}/restore', [$markerCycle, 'restore']);
+    $router->post('/api/atak/cycle/archives/{id}/delete', [$markerCycle, 'delete']);
+    $router->post('/api/atak/cycle/settings', [$markerCycle, 'settings']);
+    $router->post('/api/atak/cycle/pin', [$markerCycle, 'pin']);
     $router->get('/api/atak/markers', [AtakApiController::class, 'markersIndex']);
     $router->get('/api/atak/marker-detection-rules', [AtakApiController::class, 'markerDetectionRulesIndex']);
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);

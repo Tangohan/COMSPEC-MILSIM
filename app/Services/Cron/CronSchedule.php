@@ -74,6 +74,8 @@ final class CronSchedule
         'contact_mail_sync' => 5,
         // Fiabilisation des données : ouverture annuelle (si activée), clôture des campagnes échues, rappels J-14, J-3 et jour J.
         'data_campaign' => 60,
+        // Cycle de 24 h des marqueurs : un quart d'heure après la bascule au plus ; chaque passage est borné (rattrapage progressif).
+        'atak_marker_cycle' => 15,
         // Le récapitulatif vérifie sa propre cadence (Administration > Envois d'e-mails).
         'mail_ops_digest' => 5,
         'athena_heritage_snapshot' => 1440,

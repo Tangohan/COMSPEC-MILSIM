@@ -97,7 +97,7 @@ final class SsePortalNav
             ]))],
             ['id' => 'outils', 'label' => 'Outils et réglages', 'hint' => 'Accès au bureau et mode d’emploi.', 'items' => array_values(array_filter([
                 $only($canGrant && !$isGuest, ['id' => 'acces', 'label' => 'Habilitations et codes', 'hint' => 'Codes d’accès temporaires et niveaux de diffusion.', 'path' => 'atak/sse/acces', 'icon' => 'admin', 'keywords' => 'codes acces administration']),
-                $only($canGrant && !$isGuest, ['id' => 'droits', 'label' => 'Droits d’accès', 'hint' => 'Qui peut voir, lire, écrire, verser, supprimer, exporter et gérer, section par section.', 'path' => 'atak/sse/droits', 'icon' => 'admin', 'aliases' => ['atak/sse/droits/membre', 'atak/sse/droits/qui', 'atak/sse/droits/historique'], 'keywords' => 'droits acces lecture ecriture permissions sections niveaux regles derogations']),
+                $only($canGrant && !$isGuest, ['id' => 'droits', 'label' => 'Droits d’accès', 'hint' => 'Qui peut voir, lire, écrire, verser, supprimer, exporter et gérer, section par section.', 'path' => 'atak/sse/droits', 'icon' => 'admin', 'aliases' => ['atak/sse/droits/membre', 'atak/sse/droits/qui', 'atak/sse/droits/historique', 'atak/sse/droits/grille', 'atak/sse/droits/personnes'], 'keywords' => 'droits acces qui peut quoi position qualification lecture ecriture permissions sections niveaux regles derogations']),
                 ['id' => 'guide', 'label' => 'Documentation', 'hint' => 'Mode d’emploi du bureau SSE.', 'path' => 'atak/sse/guide', 'icon' => 'help', 'aliases' => ['atak/sse/documentation'], 'keywords' => 'aide guide manuel'],
             ]))],
         ];

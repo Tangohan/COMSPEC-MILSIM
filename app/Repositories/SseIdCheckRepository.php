@@ -100,6 +100,19 @@ final class SseIdCheckRepository
                 $params[$k] = (int) $filters[$k];
             }
         }
+        if ((int) ($filters['map'] ?? 0) > 0) {
+            $where[] = 'context_id = :m';
+            $params['m'] = (int) $filters['map'];
+        }
+        // Opération : absente du filtre = toutes ; chaîne vide = contrôles hors opération.
+        if (array_key_exists('op', $filters) && $filters['op'] !== null) {
+            if ((string) $filters['op'] === '') {
+                $where[] = "(op_key IS NULL OR op_key = '')";
+            } else {
+                $where[] = 'op_key = :op';
+                $params['op'] = (string) $filters['op'];
+            }
+        }
         $q = trim((string) ($filters['q'] ?? ''));
         if ($q !== '') {
             $where[] = '(COALESCE(doc_number, \'\') LIKE :q1 OR COALESCE(presented_last, \'\') LIKE :q2 OR COALESCE(controller_callsign, \'\') LIKE :q3 OR COALESCE(grid, \'\') LIKE :q4)';
