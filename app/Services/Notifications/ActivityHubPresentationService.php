@@ -58,6 +58,15 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'dossier_step_reminder' => [
+                'title' => 'Une étape de votre dossier attend votre action',
+                'detail' => mb_substr(trim((string) ($payload['step'] ?? '')), 0, 180)
+                    . (is_string($payload['due_on'] ?? null) && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $payload['due_on']) === 1 ? ' · avant le ' . date('d/m/Y', (int) strtotime((string) $payload['due_on'])) : ''),
+                'href' => is_string($payload['path'] ?? null) && in_array((string) $payload['path'], ['mon-integration', 'jnet/moi', 'jnet/moi/fiabilisation', 'jnet/moi/carriere', 'jnet/moi/qualifications'], true)
+                    ? url((string) $payload['path']) : url('activite'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'photo_library_mention', 'photo_library_comment' => [
                 'title' => $type === 'photo_library_mention'
                     ? trim((string) ($payload['by'] ?? 'Un membre')) . ' vous a cité sur une photo'

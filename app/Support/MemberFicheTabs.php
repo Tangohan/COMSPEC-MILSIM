@@ -17,7 +17,7 @@ final class MemberFicheTabs
 
     /**
      * Ordre d'affichage. `anchors` : ancres des cartes que l'onglet contient (hors cartes insérées par un partiel
-     * propre, qui gardent leur ancre : `papiers`, `invitations`). `needs` : l'onglet n'existe que si ce droit de
+     * propre, qui gardent leur ancre : `papiers`, `invitations`, `suivi`). `needs` : l'onglet n'existe que si ce droit de
      * lecture est accordé au lecteur.
      *
      * @var array<string, array{label: string, anchors: list<string>, needs?: string}>
@@ -32,6 +32,7 @@ final class MemberFicheTabs
         'statut' => ['label' => 'Position et statut', 'anchors' => ['statut-position', 'statut', 'depart']],
         'suivi-rh' => ['label' => 'Suivi RH', 'anchors' => ['suivi-rh', 'presence', 'absences', 'sanctions', 'documents-rh', 'mobilite', 'fiabilisation']],
         'disponibilite' => ['label' => 'Disponibilité', 'anchors' => ['disponibilite']],
+        'suivi' => ['label' => 'Suivi du dossier', 'anchors' => ['suivi'], 'needs' => 'suivi'],
         'historique' => ['label' => 'Historique', 'anchors' => ['historique', 'historique-rh', 'chronologie']],
     ];
 
