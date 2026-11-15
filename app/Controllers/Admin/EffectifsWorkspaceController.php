@@ -1689,13 +1689,30 @@ class EffectifsWorkspaceController
         ]);
 
         $memberPapers = MemberIdentityPapersController::sectionFor($tenantId, $user);
-        $ficheTabs = MemberFicheTabs::visible(['papers' => is_array($memberPapers)]);
-        $ficheTab = MemberFicheTabs::resolve((string) $request->queryString('onglet', ''), $ficheTabs);
+        // Onglet « Suivi du dossier » : null (onglet absent) sans le droit de consulter ; une erreur de lecture ne casse pas la fiche.
+        $memberSuivi = null;
+        try {
+            $suiviOwners = [];
+            if ((int) ($commandChain['reports_to_id'] ?? 0) > 0) {
+                $suiviOwners[] = ['id' => (int) $commandChain['reports_to_id'], 'label' => (string) ($commandChain['reports_to_label'] ?? '') . ' (supérieur direct)'];
+            }
+            $memberSuivi = MemberDossierSuiviController::tabData($tenantId, $id, $viewerId, (string) ($row['display_name'] ?? $row['callsign'] ?? 'membre'), $request, $suiviOwners);
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: suivi du dossier failed: ' . $e->getMessage());
+        }
+        $ficheTabs = MemberFicheTabs::visible(['papers' => is_array($memberPapers), 'suivi' => is_array($memberSuivi)]);
+        // ?ouvrir=suivi (liens des tâches et de la vue équipe) ouvre l'onglet du suivi, sans JavaScript.
+        $requestedTab = (string) $request->queryString('onglet', '');
+        if ($requestedTab === '' && $request->queryString('ouvrir', '') === 'suivi') {
+            $requestedTab = 'suivi';
+        }
+        $ficheTab = MemberFicheTabs::resolve($requestedTab, $ficheTabs);
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
             // Prénom et nom du personnage (user_profiles), indicatif, trigramme : nom affiché par la règle unique.
             'memberIdentity' => $this->rosterIdentities($tenantId, [$id])[$id] ?? [],
+            'memberSuivi' => $memberSuivi,
             'ficheTabs' => $ficheTabs,
             'ficheTab' => $ficheTab,
             'memberChronology' => $chronology,
@@ -1772,7 +1789,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
@@ -2048,6 +2065,46 @@ class EffectifsWorkspaceController
     }
 
     /** Vue « anciens membres » — historique des départs, filtrable par motif. */
+    /**
+     * Suivi des dossiers : tous les membres actifs avec leur progression et leur prochaine étape, filtrables et triables.
+     * Lecture : droit de consulter le suivi (effectifs.suivi.view ou gestion du dossier) ; la relance groupée demande le droit de modifier.
+     */
+    public function suivi(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canViewSuivi($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à consulter le suivi des dossiers.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $board = (new MemberDossierSuiviController())->teamBoard($tenantId, $request);
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = \App\Services\Effectifs\Dossier\MemberDossierTeamBoard::PER_PAGE;
+        $total = count($board['rows']);
+
+        return $this->shell('admin.effectifs_workspace.suivi', [
+            'title' => 'Étapes des dossiers',
+            'effectifsNav' => 'suivi',
+            'suiviRows' => array_slice($board['rows'], ($page - 1) * $perPage, $perPage),
+            'suiviTotals' => $board['totals'],
+            'suiviUnits' => $board['units'],
+            'suiviFilters' => $board['filters'],
+            'suiviCount' => $total,
+            'suiviPage' => min($page, max(1, (int) ceil($total / $perPage))),
+            'suiviPages' => max(1, (int) ceil($total / $perPage)),
+            'suiviViewerId' => (int) Session::get('user_id'),
+            'canManageSuivi' => EffectifsLmsAccess::canManageSuivi($gate),
+            'bulkMax' => MemberDossierSuiviController::BULK_MAX,
+            'csrfToken' => Csrf::token(),
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'eff-suivi.css'],
+        ]);
+    }
+
     public function departures(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
