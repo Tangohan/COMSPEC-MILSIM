@@ -39,22 +39,27 @@ private _fill = {
 
 // Contextes d'acquisition (forces spéciales) : mêmes codes que config/sse_acquisition_contexts.php sur le site. La
 // communauté peut en retirer, en renommer et en ajouter : sa liste remplace celle-ci dès que le site répond.
-(["choices", ["contexts",
-    [
-        "exploitation_site_sensible", "raid_action_directe", "interdiction_embuscade", "fouille_haute_valeur", "cordon_fouille",
-        "point_controle_tactique", "fouille_patrouille", "interrogatoire_tactique", "engagement_chef_local", "source_humaine",
-        "enrolement_biometrique", "capture_champ_bataille", "remise_force_partenaire", "materiel_ennemi_capture",
-        "document_media_capture", "reconnaissance_speciale", "recuperation_personnel", "autre"
-    ],
-    [
-        "Exploitation de site sensible (SSE)", "Action directe : assaut sur l’objectif", "Interdiction ou embuscade",
-        "Fouille d’une cible HVT à la capture", "Cordon et fouille", "Point de contrôle tactique (TCP)",
-        "Fouille opportuniste en patrouille", "Interrogatoire tactique (TQ)", "Rencontre avec un chef local (KLE)",
-        "Source humaine (HUMINT / CI)", "Enrôlement biométrique (BATS / SEEK)", "Reddition ou capture au combat (EPW)",
-        "Remise à une force partenaire", "Matériel ennemi capturé (CEM)", "Document ou média capturé (DOMEX)",
-        "Reconnaissance spéciale (SR)", "Récupération de personnel", "Autre (précisez)"
-    ]
-]] call comspec_overwatch_connect_fnc_sseCatalogue) params ["_cCodes", "_cLabels", "_cSource"];
+private _local = [
+    ["exploitation_site_sensible", "Exploitation de site sensible (SSE)"],
+    ["raid_action_directe", "Action directe : assaut sur l’objectif"],
+    ["interdiction_embuscade", "Interdiction ou embuscade"],
+    ["fouille_haute_valeur", "Fouille d’une cible HVT à la capture"],
+    ["cordon_fouille", "Cordon et fouille"],
+    ["point_controle_tactique", "Point de contrôle tactique (TCP)"],
+    ["fouille_patrouille", "Fouille opportuniste en patrouille"],
+    ["interrogatoire_tactique", "Interrogatoire tactique (TQ)"],
+    ["engagement_chef_local", "Rencontre avec un chef local (KLE)"],
+    ["source_humaine", "Source humaine (HUMINT / CI)"],
+    ["enrolement_biometrique", "Enrôlement biométrique (BATS / SEEK)"],
+    ["capture_champ_bataille", "Reddition ou capture au combat (EPW)"],
+    ["remise_force_partenaire", "Remise à une force partenaire"],
+    ["materiel_ennemi_capture", "Matériel ennemi capturé (CEM)"],
+    ["document_media_capture", "Document ou média capturé (DOMEX)"],
+    ["reconnaissance_speciale", "Reconnaissance spéciale (SR)"],
+    ["recuperation_personnel", "Récupération de personnel"],
+    ["autre", "Autre (précisez)"]
+];
+(["choices", ["contexts", _local apply { _x select 0 }, _local apply { _x select 1 }]] call comspec_overwatch_connect_fnc_sseCatalogue) params ["_cCodes", "_cLabels", "_cSource"];
 [9506, _cCodes, _cLabels, _cSource isEqualTo "local"] call _fill;
 
 // Dossiers ouverts : première ligne neutre, le code reste saisissable à la main (dossier pas encore créé sur le site).
