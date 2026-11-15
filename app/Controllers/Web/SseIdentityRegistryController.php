@@ -22,6 +22,8 @@ use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\MemberIdentityPapersService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdCheckInsightService;
+use App\Services\Sse\SseIdentityDossierService;
+use App\Services\Sse\SseWantedAccess;
 use App\Services\Sse\SseIdSubjectMatchService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Services\Sse\SseMrzService;
@@ -774,6 +776,17 @@ final class SseIdentityRegistryController
         }
         $person = ($identity['person_id'] ?? 0) > 0 ? $this->persons->findById((int) $identity['person_id'], $tenantId) : null;
 
+        // Fiche en dossier : avis de recherche, détections, chronologie, signalement (jamais bloquant : une source qui
+        // manque donne une section vide).
+        $wantedRights = SseWantedAccess::fromSession($this->access, $this->clearance);
+        $dossier = [];
+        try {
+            $lang = !function_exists('site_lang') || site_lang() === 'fr' ? 'fr' : 'en';
+            $dossier = (new SseIdentityDossierService())->build($tenantId, $identity, $wantedRights, $lang, $request->queryString('historique'));
+        } catch (\Throwable $e) {
+            error_log('Fiche identité : dossier incomplet : ' . $e->getMessage());
+        }
+
         // Images des fiches SEEK II de cette identité (cliché du visage pris au terminal) et mentions aux fichiers : jamais
         // pour une identité couverture ou fausse sans l'habilitation Confidentiel (même règle que le reste de la fiche).
         $seekImages = [];
@@ -795,9 +808,10 @@ final class SseIdentityRegistryController
             'countries' => $this->countries->listForTenant($tenantId),
             'papersTab' => 'identites',
             'personPhotos' => \App\Services\Sse\SseIdWorkshopService::personPhotos($tenantId, $identity['person_id']),
+            'wantedRights' => $wantedRights,
             'seekImages' => $seekImages,
             'fileMentions' => $fileMentions,
-        ]);
+        ] + $dossier);
     }
 
     // ------------------------------------------------------- Papiers des membres

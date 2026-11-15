@@ -230,11 +230,31 @@ final class SseIdentityApiController
             ], 422);
         }
 
-        return Response::json([
+        $answer = [
             'id' => $result['id'],
             'ref' => $result['ref'],
             'duplicate' => $result['duplicate'],
-        ], $result['duplicate'] ? 200 : 201);
+        ];
+        // Champ additif : l'identité contrôlée est-elle sous avis de recherche actif ? (booléen, référence de l'avis, niveau de
+        // menace, consigne courte). Un client qui l'ignore continue de fonctionner comme avant.
+        $answer['wanted'] = $this->wantedOf($tenantId, (int) $result['id']);
+
+        return Response::json($answer, $result['duplicate'] ? 200 : 201);
+    }
+
+    /**
+     * Avis de recherche de l'identité reconnue par un contrôle (jamais d'erreur : sans avis, ou si la base n'est pas prête,
+     * « wanted: false »).
+     *
+     * @return array{wanted: bool, ref?: string, threat_level?: string, instruction?: string}
+     */
+    private function wantedOf(int $tenantId, int $checkId): array
+    {
+        try {
+            return (new \App\Services\Sse\SseWantedDetectionService())->wantedPayload($tenantId, $this->checks->identityOf($tenantId, $checkId));
+        } catch (\Throwable) {
+            return ['wanted' => false];
+        }
     }
 
     /**

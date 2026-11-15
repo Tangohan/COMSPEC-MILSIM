@@ -442,7 +442,7 @@ final class SseFileRecordRepository
         }
         $linked = (int) ($data['linked_identity_id'] ?? 0);
 
-        return $this->db->insert(
+        $linkId = $this->db->insert(
             'INSERT INTO sse_file_links (tenant_id, identity_id, kind, value, value_norm, detail_json, linked_identity_id, relation, flag, visibility, reveal_phase, created_by_user_id, created_at)
              VALUES (:t, :i, :k, :v, :vn, :d, :l, :r, :f, :vis, :ph, :u, :now)',
             [
@@ -457,6 +457,36 @@ final class SseFileRecordRepository
                 'u' => $userId, 'now' => gmdate('Y-m-d H:i:s'),
             ]
         );
+        $this->detectLink($tenantId, $identityId, $kind, $value, $linkId);
+
+        return $linkId;
+    }
+
+    /**
+     * Téléphone, plaque, adresse ou personne liée rattachés à une identité sous avis actif, ou déjà portés par une autre
+     * identité sous avis (recoupement) : détection système. Sans effet sur les identités.
+     */
+    private function detectLink(int $tenantId, int $identityId, string $kind, string $value, int $linkId): void
+    {
+        [$userId, $label] = SseIdentityEventRepository::currentActor();
+        $type = $kind === 'phone' ? 'phone' : 'link';
+        $ctx = ['source' => 'web', 'source_ref' => 'link:' . $linkId, 'operator_label' => $label, 'operator_user_id' => $userId];
+        \App\Services\Sse\SseWantedDetectionService::tryReport($tenantId, $identityId, $type, $ctx);
+        if (!in_array($kind, ['phone', 'vehicle', 'email'], true) || $value === '') {
+            return;
+        }
+        try {
+            $seen = [];
+            foreach ($this->linksByValue($tenantId, $kind, self::linkNorm($kind, $value), 20) as $other) {
+                $oid = (int) $other['identity_id'];
+                if ($oid > 0 && $oid !== $identityId && !isset($seen[$oid])) {
+                    $seen[$oid] = true;
+                    \App\Services\Sse\SseWantedDetectionService::tryReport($tenantId, $oid, $type, ['source_ref' => 'xref:' . $linkId . ':' . $oid] + $ctx);
+                }
+            }
+        } catch (\Throwable) {
+            // Recoupement indisponible : la détection du rattachement a déjà eu lieu.
+        }
     }
 
     /** Forme de recherche d'un lien : téléphone (9 derniers chiffres), plaque ou courriel compactés, adresse normalisée. */
@@ -585,7 +615,7 @@ final class SseFileRecordRepository
     {
         $iid = (int) ($data['identity_id'] ?? 0);
 
-        return $this->db->insert(
+        $photoId = $this->db->insert(
             'INSERT INTO sse_file_photos (tenant_id, identity_id, path, mime, width, height, bytes, sha1, kind, source, source_ref, caption, visibility, uploaded_by_user_id, created_at)
              VALUES (:t, :i, :p, :m, :w, :h, :b, :s, :k, :src, :ref, :c, :v, :u, :now)',
             [
@@ -599,6 +629,23 @@ final class SseFileRecordRepository
                 'u' => $userId, 'now' => gmdate('Y-m-d H:i:s'),
             ]
         );
+        if ($iid > 0 && $photoId > 0) {
+            self::detectPhoto($tenantId, $iid, $photoId, (string) ($data['source'] ?? 'upload'));
+        }
+
+        return $photoId;
+    }
+
+    /** Photo ajoutée à une identité sous avis de recherche actif : détection système (sans effet sur l'identité). */
+    private static function detectPhoto(int $tenantId, int $identityId, int $photoId, string $source): void
+    {
+        [$userId, $label] = SseIdentityEventRepository::currentActor();
+        \App\Services\Sse\SseWantedDetectionService::tryReport($tenantId, $identityId, 'photo', [
+            'source' => in_array($source, ['atak', 'seek'], true) ? 'game' : 'web',
+            'source_ref' => 'photo:' . $photoId,
+            'operator_label' => $label,
+            'operator_user_id' => $userId,
+        ]);
     }
 
     /** @return array<string, mixed>|null */
@@ -611,10 +658,15 @@ final class SseFileRecordRepository
 
     public function attachPhoto(int $tenantId, int $photoId, ?int $identityId): bool
     {
-        return $this->db->execute(
+        $done = $this->db->execute(
             'UPDATE sse_file_photos SET identity_id = :i WHERE id = :id AND tenant_id = :t',
             ['i' => $identityId !== null && $identityId > 0 ? $identityId : null, 'id' => $photoId, 't' => $tenantId]
         ) > 0;
+        if ($done && $identityId !== null && $identityId > 0) {
+            self::detectPhoto($tenantId, $identityId, $photoId, 'upload');
+        }
+
+        return $done;
     }
 
     public function deletePhoto(int $tenantId, int $photoId): bool

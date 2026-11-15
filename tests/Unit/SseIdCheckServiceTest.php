@@ -199,7 +199,9 @@ final class SseIdCheckServiceTest extends TestCase
         $created = $this->controller(true, $json)->checksStore(new Request());
         self::assertSame(201, $created->statusCode());
         $data = json_decode($created->body(), true);
-        self::assertSame(['id', 'ref', 'duplicate'], array_keys($data));
+        // « wanted » est un champ additif (avis de recherche de l'identité contrôlée) : les trois champs d'origine sont intacts.
+        self::assertSame(['id', 'ref', 'duplicate', 'wanted'], array_keys($data));
+        self::assertSame(['wanted' => false], $data['wanted']);
         self::assertSame('CTRL-' . $data['id'], $data['ref']);
 
         $replay = $this->controller(true, $json)->checksStore(new Request());
