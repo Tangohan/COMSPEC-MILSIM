@@ -96,6 +96,8 @@ final class SseWantedNoticeController
         $config = $this->settings->get($tenantId);
         $extras = [];
         $attachCounts = [];
+        $noticeIds = [];
+        $pendingIds = [];
         if ($ready) {
             $this->service->expireDue($tenantId);
             // Filtre par code, et recherche libre qui trouve aussi les codes dont le libellé correspond.
@@ -127,9 +129,9 @@ final class SseWantedNoticeController
             'filters' => $filters,
             'counts' => $counts,
             'newDetections' => $newDetections,
-            'pendingCount' => count($pendingIds ?? []),
-            'pendingIds' => $pendingIds ?? [],
-            'noticeMeta' => $this->safe(fn (): array => (new SseWantedMetaRepository())->forNotices($tenantId, $noticeIds ?? [])) ?? [],
+            'pendingCount' => count($pendingIds),
+            'pendingIds' => $pendingIds,
+            'noticeMeta' => $this->safe(fn (): array => (new SseWantedMetaRepository())->forNotices($tenantId, $noticeIds)) ?? [],
             'wantedReady' => $ready,
             'wantedConfig' => $config,
             'wantedTypes' => C::types($config),
