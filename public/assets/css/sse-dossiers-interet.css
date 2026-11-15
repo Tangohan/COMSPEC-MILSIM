@@ -1,7 +1,7 @@
 /*
  * Dossiers d'intérêt du bureau SSE : file « ticketing », tiroir d'aperçu, fiche à onglets, modales.
- * Toutes les valeurs passent par les variables --di-* de .di : pour reprendre le système de design SSE (--sse-*), il suffit de
- * remapper ce bloc. Textes de 13 px au moins, cibles de 44 px au moins, rien de collé aux bords.
+ * Toutes les valeurs passent par les variables --di-* de .di, alignées sur les couleurs du portail SSE (sse_portal.css) : pour
+ * changer de palette, il suffit de remapper ce bloc. Textes de 13 px au moins, cibles de 44 px au moins, rien de collé aux bords.
  */
 .di {
     --di-bg: #0a0d0f;
