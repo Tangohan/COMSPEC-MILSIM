@@ -677,6 +677,13 @@ class AtakApiController
         } catch (\Throwable) {
             return [];
         }
+        // Qualifications que le membre (ou son responsable) a choisi de ne pas montrer sur Arma : absentes de la réponse,
+        // dont le format ne change pas. Lecture directe à chaque appel : aucun cache serveur à vider après une bascule.
+        try {
+            $awards = (new \App\Services\Personnel\QualificationDisplayService())
+                ->visibleOn($awards, \App\Services\Personnel\QualificationDisplayService::GAME);
+        } catch (\Throwable) {
+        }
         $temporal = new \App\Services\Personnel\QualificationTemporalStatusService();
         // Qualifications masquées de la fiche opérateur par la communauté (réglage de la qualification).
         $hidden = [];

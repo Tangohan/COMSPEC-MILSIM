@@ -1,0 +1,368 @@
+/*
+ * Affichage des qualifications : deux interrupteurs par qualification (visible sur Arma, visible sur le profil).
+ * Vue : views/partials/qualification_display.php, posée dans la fiche Effectifs (.eff-fm) et dans
+ * « Mes qualifications » (JNET). Portée : .qd. Le bloc suit sa propre largeur (container query) : sous 620 px,
+ * chaque qualification devient une carte, les deux interrupteurs se rangent sous le nom avec leur libellé.
+ */
+.qd {
+  --qd-surface: var(--fm-surface, #ffffff);
+  --qd-muted-bg: var(--fm-surface-muted, #f1f5f9);
+  --qd-text: var(--fm-text, #0f172a);
+  --qd-muted: var(--fm-muted, #56657a);
+  --qd-border: var(--fm-border, #e2e8f0);
+  --qd-on: var(--fm-primary, #059669);
+  --qd-off: #7b8794;
+  --qd-thumb: #ffffff;
+  --qd-danger: #b42318;
+  --qd-warn-bg: var(--fm-warning-soft, #fffbeb);
+  --qd-warn-line: var(--fm-warning-line, #fde68a);
+  --qd-warn-ink: var(--fm-warning-ink, #78350f);
+  container-type: inline-size;
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--qd-border);
+  border-radius: 12px;
+  background: var(--qd-surface);
+  color: var(--qd-text);
+  font-size: 14px;
+}
+
+.qd__title {
+  margin: 0 0 6px;
+  color: var(--qd-text);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.qd__lead,
+.qd__empty {
+  margin: 0 0 14px;
+  color: var(--qd-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.qd__empty {
+  margin-bottom: 0;
+}
+
+.qd__note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--qd-warn-line);
+  border-radius: 8px;
+  background: var(--qd-warn-bg);
+  color: var(--qd-warn-ink);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.qd__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.qd__head,
+.qd__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 224px 224px minmax(96px, 140px);
+  align-items: center;
+  gap: 16px;
+}
+
+.qd__head {
+  align-items: end;
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--qd-border);
+}
+
+.qd__col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  color: var(--qd-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.qd__bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.qd__bulk-btn {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--qd-border);
+  border-radius: 8px;
+  background: var(--qd-surface);
+  color: var(--qd-text);
+  font: 600 13px/1.2 inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.qd__bulk-btn:hover {
+  background: var(--qd-muted-bg);
+}
+
+.qd__bulk-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.qd__row {
+  min-height: 56px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--qd-border);
+}
+
+.qd__row:last-child {
+  border-bottom: 0;
+}
+
+.qd__name {
+  min-width: 0;
+}
+
+.qd__name b {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--qd-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.qd__name small {
+  display: block;
+  margin-top: 2px;
+  color: var(--qd-muted);
+  font-size: 13px;
+}
+
+.qd__cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.qd__cell-label {
+  display: none;
+  color: var(--qd-text);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.qd__state,
+.qd__status {
+  min-width: 0;
+  color: var(--qd-on);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.qd__status {
+  min-height: 20px;
+  margin: 10px 12px 0;
+}
+
+.qd__state .is-error,
+.qd__status.is-error {
+  color: var(--qd-danger);
+}
+
+/* Interrupteur : bouton de 44 px de haut au moins, piste de 44 × 24 px, état écrit à côté (pas seulement une couleur). */
+.qd-sw {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 4px 0 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--qd-text);
+  font: 600 13px/1 inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.qd-sw__track {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--qd-off);
+  transition: background-color 0.15s ease;
+}
+
+.qd-sw__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--qd-thumb);
+  transition: transform 0.15s ease;
+}
+
+.qd-sw[aria-checked="true"] .qd-sw__track {
+  background: var(--qd-on);
+}
+
+.qd-sw[aria-checked="true"] .qd-sw__thumb {
+  transform: translateX(20px);
+}
+
+.qd-sw__txt {
+  min-width: 2.2em;
+  text-align: left;
+}
+
+.qd-sw[aria-checked="true"] .qd-sw__txt--off,
+.qd-sw[aria-checked="false"] .qd-sw__txt--on {
+  display: none;
+}
+
+.qd-sw[aria-checked="false"] .qd-sw__txt {
+  color: var(--qd-muted);
+}
+
+.qd-sw:focus-visible,
+.qd__bulk-btn:focus-visible {
+  outline: 2px solid var(--qd-on);
+  outline-offset: 2px;
+}
+
+.qd-sw[aria-busy="true"] {
+  cursor: progress;
+}
+
+.qd-sw[aria-busy="true"] .qd-sw__track {
+  opacity: 0.6;
+}
+
+.qd-sw:disabled {
+  cursor: not-allowed;
+}
+
+.qd-sw:disabled .qd-sw__track {
+  opacity: 0.55;
+}
+
+/* Fiche Effectifs : la carte prend toute la largeur de la rubrique. */
+.eff-fm-cards > .eff-fm-qd {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+/* Indication dans la liste des qualifications de la fiche : « Masquée sur Arma », « Masquée sur le profil ». */
+.qd-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.qd-flag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 9px;
+  border: 1px dashed var(--fm-border-strong, #cbd5e1);
+  border-radius: 999px;
+  color: var(--fm-muted, #56657a);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.qd-flag[hidden] {
+  display: none;
+}
+
+@container (max-width: 620px) {
+  .qd__head {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 0 0 12px;
+  }
+
+  .qd__head--plain,
+  .qd__col--name,
+  .qd__col--state {
+    display: none;
+  }
+
+  .qd__col {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .qd__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding: 12px 0;
+  }
+
+  .qd__cell {
+    justify-content: space-between;
+  }
+
+  .qd__cell-label {
+    display: block;
+  }
+
+  .qd__state:not(:has(:not(:empty))) {
+    display: none;
+  }
+
+  .qd__status {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .qd {
+    padding: 16px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qd-sw__track,
+  .qd-sw__thumb {
+    transition: none;
+  }
+}
+
+/* « Mes qualifications » (JNET) : fond clair de la page, sans les variables de la fiche. */
+.bo-member-situation .qd {
+  --qd-surface: #ffffff;
+  --qd-muted: #51606b;
+  --qd-border: #dfe5e8;
+  --qd-on: #0b7a52;
+}
+
+html[data-bo-theme="dark"] .qd {
+  --qd-off: #5d6b66;
+  --qd-thumb: #f4f7f5;
+  --qd-danger: #fca5a5;
+}

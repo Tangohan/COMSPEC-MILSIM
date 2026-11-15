@@ -27,7 +27,7 @@ final class MemberFicheTabs
         'papiers' => ['label' => 'Identité & papiers', 'anchors' => ['papiers'], 'needs' => 'papers'],
         'poste' => ['label' => 'Affectation et poste', 'anchors' => ['poste', 'unite', 'equipe', 'role-unite', 'fonctions']],
         'carriere' => ['label' => 'Carrière', 'anchors' => ['carriere', 'grade', 'anciennete', 'elevation']],
-        'qualifications' => ['label' => 'Qualifications et distinctions', 'anchors' => ['qualifications-distinctions', 'qualifications', 'distinctions', 'decerner']],
+        'qualifications' => ['label' => 'Qualifications et distinctions', 'anchors' => ['qualifications-distinctions', 'qualifications', 'qualifications-affichage', 'distinctions', 'decerner']],
         'acces' => ['label' => 'Accès', 'anchors' => ['acces-niveau', 'acces', 'acces-sse']],
         'statut' => ['label' => 'Position et statut', 'anchors' => ['statut-position', 'statut', 'depart']],
         'suivi-rh' => ['label' => 'Suivi RH', 'anchors' => ['suivi-rh', 'presence', 'absences', 'sanctions', 'documents-rh', 'mobilite', 'fiabilisation']],

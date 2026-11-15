@@ -1565,6 +1565,17 @@ class EffectifsWorkspaceController
                 ? $this->personnelQualificationRepository->listForUser($id, (int) $tenantId)
                 : [];
         }
+        // Interrupteurs « Visible sur Arma » / « Visible sur le profil » : le membre sur sa propre fiche, ou un responsable
+        // des fiches ou du référentiel. Les autres lecteurs voient l'état, sans pouvoir le changer.
+        $qualificationDisplay = null;
+        try {
+            $qualificationDisplay = (new \App\Services\Personnel\QualificationDisplayService())->panel(
+                $qualifications,
+                url('back-office/ressources/effectifs/membres/' . $id . '/qualifications/affichage'),
+                $viewerId === $id || MemberQualificationDisplayController::canManage($gate)
+            );
+        } catch (\Throwable) {
+        }
         $absences = $this->personnelAbsenceRepository->tableExists()
             ? $this->personnelAbsenceRepository->listForUser($tenantId, $id, 40)
             : [];
@@ -1808,6 +1819,7 @@ class EffectifsWorkspaceController
             'memberServiceHistory' => $serviceHistory,
             'memberStageBilans' => $stageBilans,
             'memberIndividualBilansOn' => $individualBilansOn,
+            'qualificationDisplay' => $qualificationDisplay,
             'dutyPosition' => $dutyPosition,
             'dutyPositionSlug' => $dutyPositionSlug,
             'remainingTrainingDays' => $remainingTrainingDays,
@@ -1821,7 +1833,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css', 'qualification-display.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),

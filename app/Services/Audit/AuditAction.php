@@ -159,6 +159,9 @@ final class AuditAction
     public const MEMBER_DOSSIER_STEP = 'member_dossier.step';
     public const MEMBER_DOSSIER_REMIND = 'member_dossier.remind';
 
+    /** Qualification d'un membre affichée ou masquée sur Arma ou sur le profil (interrupteurs de la fiche). */
+    public const QUALIFICATION_DISPLAY_UPDATED = 'personnel.qualification_display_updated';
+
     /** Journalisation convention slugs site.* / community.* / intra.* (migration progressive). */
     public const PERMISSION_SCOPE_MIGRATION = 'permission.scope_migration';
 
