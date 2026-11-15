@@ -586,7 +586,7 @@ final class SseSheetTest extends TestCase
         self::assertSame('schema', $entry['group']);
         self::assertTrue($entry['rerun']);
         self::assertFileExists($root . '/database/steps/' . $entry['file']);
-        self::assertSame(1, count(array_keys($numbers, 4660, true)), 'Numéro d’étape unique');
+        self::assertSame(1, count(array_keys($numbers, 4670, true)), 'Numéro d’étape unique');
         self::assertFileExists($root . '/migrations/rollback/sse_documents_down.sql');
         $sql = (string) file_get_contents($root . '/migrations/2026_11_16_100_sse_documents.sql');
         self::assertStringNotContainsString('ADD UNIQUE KEY', $sql);
