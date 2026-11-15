@@ -28,8 +28,10 @@ class PhotoSseTransfer
         private ?SseIdentityRepository $identities = null,
         private ?SseAuditLogRepository $audit = null,
         private ?string $publicDir = null,
+        private ?string $privateDir = null,
     ) {
         $this->publicDir ??= base_path('public');
+        $this->privateDir = \App\Support\SseImageStorage::privateRoot($this->privateDir);
     }
 
     private function photos(): PhotoLibraryRepository
@@ -110,7 +112,7 @@ class PhotoSseTransfer
         $newPath = ReconImageStorage::relocate((string) ($row['image_path'] ?? ''), true);
         if ($newPath === null) {
             $this->records()->deletePhoto($tenantId, $ssePhotoId);
-            @unlink($this->publicDir . '/' . $relative);
+            $this->removeCopy($relative);
 
             return ['ok' => false, 'error' => 'Impossible de mettre la photo à l’abri.'];
         }
@@ -146,9 +148,7 @@ class PhotoSseTransfer
             if ($copy !== null && ($copy['source'] ?? '') === 'atak' && ($copy['source_ref'] ?? '') === 'lib:' . $photoId) {
                 $this->records()->deletePhoto($tenantId, $ssePhotoId);
                 $copyPath = (string) ($copy['path'] ?? '');
-                if (preg_match('#^uploads/sse-id-photos/[0-9]{1,10}_[a-f0-9]{16}\.(?:jpg|png|webp)$#', $copyPath) === 1) {
-                    @unlink($this->publicDir . '/' . $copyPath);
-                }
+                $this->removeCopy($copyPath);
             }
         }
         $this->photos()->updatePhotoColumns($tenantId, $photoId, [
@@ -186,15 +186,24 @@ class PhotoSseTransfer
         };
     }
 
-    /** Copie sous public/uploads/sse-id-photos, comme les photos envoyées depuis l'écran SSE (nom imprévisible). */
+    /** Supprime une copie rangée par storeCopy (espace privé) ou, avant la migration des fichiers, sous public/uploads. */
+    private function removeCopy(string $path): void
+    {
+        $abs = \App\Support\SseImageStorage::absolute($path, $this->publicDir, $this->privateDir);
+        if ($abs !== null) {
+            @unlink($abs);
+        }
+    }
+
+    /** Copie dans l'espace privé SSE (storage/private/sse-images/sse-id-photos), nom imprévisible comme les photos envoyées depuis l'écran SSE. */
     private function storeCopy(int $tenantId, string $bytes, string $mime): ?string
     {
         $ext = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'][$mime] ?? null;
         if ($ext === null || $tenantId < 1) {
             return null;
         }
-        $dir = rtrim((string) $this->publicDir, '/\\') . '/uploads/sse-id-photos';
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+        $dir = (string) $this->privateDir . '/sse-id-photos';
+        if (!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)) {
             return null;
         }
         $name = $tenantId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
@@ -202,7 +211,7 @@ class PhotoSseTransfer
             return null;
         }
 
-        return 'uploads/sse-id-photos/' . $name;
+        return \App\Support\SseImageStorage::privatePath('sse-id-photos', $name);
     }
 
     /** @param array<string, mixed>|null $before @param array<string, mixed>|null $after */

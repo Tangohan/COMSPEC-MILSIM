@@ -93,8 +93,8 @@ final class SseSignatureStrokesTest extends TestCase
         $svc = new SignatureImageService(new SseIdImageService($this->dir, false));
         $res = SseSignatureStrokes::store(self::good(), 7, $svc);
         $this->assertTrue($res['ok'], (string) ($res['error'] ?? ''));
-        $this->assertMatchesRegularExpression('#^uploads/sse-id-signatures/7_[0-9a-f]+\.png$#', (string) $res['path']);
-        $this->assertFileExists($this->dir . '/' . $res['path']);
+        $this->assertMatchesRegularExpression('#^sse-private/sse-id-signatures/7_[0-9a-f]+\.png$#', (string) $res['path']);
+        $this->assertNotNull(\App\Support\SseImageStorage::absolute((string) $res['path'], $this->dir, $this->dir . '/.private-sse-images'));
     }
 
     public function testStoreRefusesBadInputAndBadTenant(): void

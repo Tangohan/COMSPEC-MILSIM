@@ -1,1 +1,5 @@
 lang/en/site_auto.php merge=union
+
+# Scripts et unité systemd du bot Discord : toujours LF (exécutés sous Linux)
+deploy/discord-bot/* text eol=lf
+deploy/systemd/* text eol=lf

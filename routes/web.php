@@ -245,6 +245,7 @@ use App\Controllers\Web\MemberAlertsController;
 use App\Controllers\Web\CommunityCalendarFeedController;
 use App\Controllers\Web\OperateurTerrainController;
 use App\Controllers\Api\IntegrationsPublicEventsController;
+use App\Controllers\Admin\Organization\OrganizationDiscordBotController;
 use App\Controllers\Admin\Organization\OrganizationIntegrationsController;
 use App\Controllers\Admin\Organization\ComplianceBundleExportController;
 use App\Controllers\Admin\Organization\DoctrineAdminController;
@@ -1268,6 +1269,7 @@ return function (Router $router) {
     $router->get('/atak/sse/fichiers/photos/{id}/image', [$sseRec, 'photoImage'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/photos/{id}/rattacher', [$sseRec, 'photoAttach'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/identites/{id}/{kind}', [$sseRec, 'identityImage'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/documents/{id}/fond', [$sseRec, 'documentBackground'], $mwSsePortal);
     $router->get('/atak/sse/fichiers/acces-images', [$sseRec, 'accessRequests'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/acces-images/demande', [$sseRec, 'accessRequestStore'], $mwSsePortal);
     $router->post('/atak/sse/fichiers/acces-images/{id}', [$sseRec, 'accessDecide'], $mwSsePortal);
@@ -2046,6 +2048,12 @@ return function (Router $router) {
     $router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/analytics/conversion', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/retours-interface', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/retours-interface'), 301), [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/back-office/discord-bot', [OrganizationDiscordBotController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/discord-bot/retour', [OrganizationDiscordBotController::class, 'callback'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/discord-bot/reglages', [OrganizationDiscordBotController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/discord-bot/tester', [OrganizationDiscordBotController::class, 'test'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/discord-bot/delier', [OrganizationDiscordBotController::class, 'unlink'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/discord-bot/rappel/fermer', [OrganizationDiscordBotController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord', [OrganizationIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

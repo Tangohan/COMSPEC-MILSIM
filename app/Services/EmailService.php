@@ -681,6 +681,7 @@ final class EmailService
                 'tenantName' => $tenantName,
                 'dashboardUrl' => $dashboardUrl,
                 'communitySettingsUrl' => $communitySettingsUrl,
+                'discordBotUrl' => url('back-office/discord-bot'),
             ],
             $tenantId,
             null,

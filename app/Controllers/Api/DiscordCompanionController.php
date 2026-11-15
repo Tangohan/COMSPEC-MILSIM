@@ -6,8 +6,10 @@ namespace App\Controllers\Api;
 
 use App\Core\Request;
 use App\Core\Response;
+use App\Repositories\DiscordBotRepository;
 use App\Repositories\DiscordCompanionRepository;
 use App\Repositories\EventAutomationRepository;
+use App\Services\Integrations\DiscordBotBureau;
 use App\Services\Integrations\DiscordCompanionSettings;
 use App\Services\Integrations\DiscordEventAttendanceService;
 use App\Services\Integrations\DiscordWebhookDirectory;
@@ -15,7 +17,7 @@ use App\Services\Integrations\DiscordWebhookDirectory;
 /** API privée du processus Companion, distincte des clés API des communautés. */
 final class DiscordCompanionController
 {
-    public function __construct(private ?DiscordCompanionSettings $settings = null)
+    public function __construct(private ?DiscordCompanionSettings $settings = null, private ?DiscordBotBureau $bureau = null)
     {
     }
 
@@ -32,6 +34,9 @@ final class DiscordCompanionController
             $data = json_decode($raw, true, 64, JSON_THROW_ON_ERROR);
             if (!is_array($data)) throw new \RuntimeException('invalid_payload');
             $op = $request->inputString('op');
+            if (in_array($op, ['cmd', 'reminders', 'reminder_ack', 'roles_plan', 'welcome', 'guild_removed'], true)) {
+                return $this->bureau($op, $this->snowflake($data['guild_id'] ?? ''), $data);
+            }
             $repo = new DiscordCompanionRepository();
             $events = new EventAutomationRepository();
             if ($op === 'jobs') return Response::json(['jobs' => $repo->jobs()]);
@@ -48,6 +53,7 @@ final class DiscordCompanionController
                 } else {
                     $repo->updateChannels($guild, (string) ($data['guild_name'] ?? ''), $channels);
                 }
+                $this->markSeen($guild, $data);
                 return Response::json(['ok' => true]);
             }
             $eventId = (int) ($data['event_id'] ?? 0);
@@ -82,6 +88,61 @@ final class DiscordCompanionController
             $allowed = ['companion.invalid_code', 'companion.already_bound', 'invalid_payload', 'invalid_channel', 'invalid_id', 'message_mismatch', 'too_many_reactions'];
             return Response::json(['error' => in_array($e->getMessage(), $allowed, true) ? $e->getMessage() : 'companion_failed'], 422);
         }
+    }
+
+    /** Le bot signale sa présence (et les rôles que la communauté peut désigner) : état « connecté » côté site. @param array<string, mixed> $data */
+    private function markSeen(string $guild, array $data): void
+    {
+        try {
+            $roles = null;
+            if (isset($data['roles']) && is_array($data['roles'])) {
+                $roles = [];
+                foreach (array_slice($data['roles'], 0, 250, true) as $id => $name) {
+                    $roles[$this->snowflake($id)] = DiscordWebhookDirectory::cleanChannel((string) $name);
+                }
+            }
+            (new DiscordBotRepository())->markSeen($guild, $roles);
+        } catch (\Throwable) {
+            // Migration du bureau pas encore passée : le bot garde son fonctionnement « événements ».
+        }
+    }
+
+    /**
+     * Bureau des effectifs : commandes lancées sur Discord, rappels, rôles. La communauté vient du serveur lié, jamais de la saisie.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function bureau(string $op, string $guild, array $data): Response
+    {
+        $bureau = $this->bureau ??= new DiscordBotBureau();
+        try {
+            return match ($op) {
+                'cmd' => Response::json($bureau->command(
+                    (string) ($data['command'] ?? ''),
+                    $guild,
+                    $this->snowflake($data['user_id'] ?? ''),
+                    ['query' => (string) ($data['query'] ?? '')]
+                )),
+                'reminders' => Response::json(['reminders' => $bureau->reminders($guild)]),
+                'reminder_ack' => Response::json(['ok' => $bureau->acknowledge($guild, (string) ($data['kind'] ?? ''), (string) ($data['ref'] ?? ''))]),
+                'roles_plan' => Response::json($bureau->rolesPlan($guild)),
+                'welcome' => Response::json($bureau->welcome($guild)),
+                default => $this->guildRemoved($bureau, $guild),
+            };
+        } catch (\Throwable $e) {
+            if ($e->getMessage() === 'invalid_id') {
+                throw $e;
+            }
+
+            return Response::json(['ok' => false, 'error' => 'bureau_unavailable']);
+        }
+    }
+
+    private function guildRemoved(DiscordBotBureau $bureau, string $guild): Response
+    {
+        $bureau->guildRemoved($guild);
+
+        return Response::json(['ok' => true]);
     }
 
     private function snowflake(mixed $id): string

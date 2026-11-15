@@ -435,6 +435,8 @@ $flashSuccess = \App\Core\Session::getFlash('success');
 
         <p class="bo-int-guide__note"><?= $icon('send') ?> Pour présenter votre communauté sur le Discord Athena (salon des communautés), voyez <a href="<?= $h(url('back-office/community/discord')) ?>">Annoncer sur Discord</a>.</p>
 
+        <p class="bo-int-guide__note"><?= $icon('send') ?> Pour que vos équipes consultent les effectifs et les candidatures depuis Discord, ajoutez le <a href="<?= $h(url('back-office/discord-bot')) ?>">bot Athena à votre serveur</a>.</p>
+
         <!-- Usages -->
         <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>" id="discord-usages" class="bo-int-discord" data-discord-form>
             <?= \App\Core\Csrf::field() ?>
