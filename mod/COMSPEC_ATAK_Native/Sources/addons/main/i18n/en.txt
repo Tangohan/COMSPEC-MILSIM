@@ -24694,5 +24694,7 @@
 ["Asie du Sud-Est", "South-East Asia"],
 ["Corne de l'Afrique", "Horn of Africa"],
 ["Libye", "Libya"],
-["Yémen", "Yemen"]
+["Yémen", "Yemen"],
+["Date d'émission postérieure à la date du jour (%1) : papier pas encore émis.", "Issue date later than today (%1): paper not yet issued."],
+["Référence du papier : %1.", "Paper reference: %1."]
 ]
