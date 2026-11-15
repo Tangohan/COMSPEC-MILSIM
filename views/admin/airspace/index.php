@@ -179,7 +179,7 @@ $aeroTabCounts = ['ligne' => count($queue), 'carnet' => (int) ($counts['declared
                     <small class="aero-hint">Réservé aux instructeurs de la filière.</small>
                     <?php elseif ($allowed): ?>
                     <div class="aero-qi__acts">
-                        <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote/propositions/' . (int) $it['item']['award_id'] . '/annuler')) ?>" onsubmit="return confirm(<?= $h(json_encode('Annuler l’ajournement ? Le palier repart en attente de la décision d’un instructeur.', JSON_UNESCAPED_UNICODE)) ?>)">
+                        <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote/propositions/' . (int) $it['item']['award_id'] . '/annuler')) ?>" data-ui-confirm="1" data-ui-confirm-title="Annuler l’ajournement ?" data-ui-confirm-body="Le palier repart en attente de la décision d’un instructeur.">
                             <?= \App\Core\Csrf::field() ?><input type="hidden" name="retour" value="<?= $h($retour) ?>">
                             <button type="submit" class="aero-btn sm">Annuler l’ajournement</button>
                         </form>

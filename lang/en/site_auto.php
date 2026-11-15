@@ -67379,8 +67379,6 @@ return [
     'ajourné' => 'deferred',
     'Ajournés' => 'Deferred',
     'Annuler l’ajournement' => 'Undo the deferral',
-    'Annuler l’ajournement ? Le palier repart en attente de la décision d’un instructeur.' => 'Undo the deferral? The stage goes back to waiting for an instructor’s decision.',
-    'Annuler l’ajournement ? La qualification repart en attente de validation.' => 'Undo the deferral? The qualification goes back to waiting for validation.',
     'Un ajournement par erreur peut être annulé.' => 'A deferral made by mistake can be undone.',
     'Un ajournement fait par erreur s’annule ici : le palier repart en attente de la décision d’un instructeur.' => 'A deferral made by mistake can be undone here: the stage goes back to waiting for an instructor’s decision.',
     'Votre propre ajournement : un autre instructeur doit l’annuler.' => 'Your own deferral: another instructor must undo it.',
@@ -67404,4 +67402,7 @@ return [
     'Identité du registre créée depuis la fiche personne IDN-%1.' => 'Registry identity created from the person record IDN-%1.',
     'Une identité du registre est déjà rattachée à cette personne, ou la fiche n’a ni nom ni prénom.' => 'A registry identity is already attached to this person, or the record has neither last nor first name.',
     'Identité du registre créée : vous pouvez y placer un avis de recherche.' => 'Registry identity created: you can now place a wanted notice on it.',
+    'Annuler l’ajournement ?' => 'Undo the deferral?',
+    'Le palier repart en attente de la décision d’un instructeur.' => 'The stage goes back to waiting for an instructor’s decision.',
+    'La qualification repart en attente de validation.' => 'The qualification goes back to waiting for validation.',
 ];
