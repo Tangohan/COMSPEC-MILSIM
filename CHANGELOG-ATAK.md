@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## App BDA : l'échec d'envoi à Athena se voit et le bilan se renvoie (ATAK natif 4.24.1.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : App BDA : tu vois si ton bilan est arrivé sur Athena, et tu peux le renvoyer
+- Chaque bilan que tu transmets affiche maintenant son parcours dans la liste : envoi en cours, enregistré sur Athena, ou non reçu avec la raison en quelques mots.
+- Si Athena n'a pas reçu ton bilan, un bouton RENVOYER apparaît sous ce bilan. Le renvoyer ne crée jamais de doublon sur le poste TOC.
+- Les retours s'affichent dans la ligne d'état en haut de l'app : plus de notification à l'écran.
+EN : BDA app: you can see whether your BDA reached Athena, and resend it
+- Each BDA you send now shows where it stands in the list: sending, saved on Athena, or not received with a short reason.
+- If Athena did not receive your BDA, a RESEND button appears under it. Resending never creates a duplicate on the TOC post.
+- Feedback shows in the status line at the top of the app: no more on-screen notification.
+
+### Détail technique
+- **Mod** : `fn_bdaAction` envoie le BDA via la nouvelle `fn_reportWebSend` (POST `/api/atak/reports` par la commande `SubmitTacticalReport` existante, sans toucher à la DLL) dans un `spawn` : le résultat réel (`OK`, `ÉCHEC` avec raison courte, `HORS LIGNE`) est gardé sur le bilan (`web`, `webWhy`) au lieu d'être supposé réussi. Aucun `announce` Overwatch, toast, hint ni systemChat : retour par la ligne d'état `bdaStatus` de la page et par `fn_reportWebState` (partagée avec l'app Comptes rendus, dont la liste « Envoyés » l'utilise maintenant pour son parcours Athena).
+- **Renvoi** : action `web` et bouton RENVOYER (échec ou hors ligne) ; un envoi en cours n'est pas relancé. Chaque bilan porte un identifiant client `cid` (`client_id` dans `structured_data`), identique à chaque renvoi.
+- **Site** : `POST /api/atak/reports` reconnaît `structured_data.client_id` (`AtakTacticalReportRepository::findByClientId`, même communauté, même carte, même joueur) et renvoie la fiche existante (`duplicate: true`) au lieu d'en créer une seconde. Aucune migration.
+- **Textes** : `en.txt` et le modèle `xx.txt`.
+- **Non fait** : l'app Comptes rendus garde son envoi synchrone (`_toWeb`) ; reprise automatique non ajoutée (l'app Comptes rendus n'en a pas).
+- **À tester en jeu** : transmettre un BDA avec Athena connecté (parcours « Athena ✓ » après quelques secondes), puis couper la liaison Athena et recommencer (« non reçu » + RENVOYER), rétablir la liaison et renvoyer : un seul bilan sur le poste TOC.
+
+---
 ## Poste TOC : suppression des marqueurs, corbeille de 15 minutes et purge de la carte, retrait des marqueurs supprimés dans le jeu (ATAK natif 4.24.0.AG - Washington, COMSPEC Link 2.0.126)
 
 ### Résumé joueur
