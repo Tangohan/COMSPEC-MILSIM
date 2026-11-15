@@ -10,11 +10,13 @@ use App\Repositories\PersonnelExtrasRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\MemberNameService;
+use App\Services\Personnel\MemberNameSettings;
 use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Services\Personnel\PilotLogbookService;
 use App\Services\Personnel\PilotQualificationService;
 use App\Services\Platform\FeatureGateService;
 use App\Support\DataCampaignBlocks;
+use App\Support\DataCampaignPage;
 use App\Support\DataCampaignSnapshot;
 use App\Support\JnetMemberPaths;
 
@@ -39,7 +41,7 @@ class DataCampaignRecordReader
 
     /**
      * @param list<string> $blocks blocs demandés (DataCampaignBlocks)
-     * @return array<string, array{rows: list<array{label: string, value: string}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}>
+     * @return array<string, array{rows: list<array{label: string, value: string, missing?: bool, required?: bool}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}>
      */
     public function read(int $tenantId, int $userId, array $blocks): array
     {
@@ -110,15 +112,15 @@ class DataCampaignRecordReader
 
     /**
      * @param array{user: array<string, mixed>, snapshot: array<string, mixed>, profile: array<string, mixed>, tenantId: int} $ctx
-     * @return array{rows: list<array{label: string, value: string}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
+     * @return array{rows: list<array{label: string, value: string, missing?: bool, required?: bool}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
      */
     private function identity(array $ctx): array
     {
         $s = $ctx['snapshot'];
         $p = $ctx['profile'];
         $rows = [
-            ['label' => 'Prénom', 'value' => self::text($s['first_name'] ?? '')],
-            ['label' => 'Nom', 'value' => self::text($s['last_name'] ?? '')],
+            ['label' => 'Prénom', 'value' => self::text($s['first_name'] ?? ''), 'required' => true],
+            ['label' => 'Nom', 'value' => self::text($s['last_name'] ?? ''), 'required' => true],
             ['label' => 'Nom affiché', 'value' => self::text($ctx['user']['display_name'] ?? '')],
             ['label' => 'Nom du personnage', 'value' => self::text($p['character_name'] ?? '')],
             ['label' => 'Indicatif', 'value' => self::text($s['callsign'] ?? ($ctx['user']['callsign'] ?? ''))],
@@ -137,7 +139,7 @@ class DataCampaignRecordReader
 
     /**
      * @param array{user: array<string, mixed>, snapshot: array<string, mixed>, profile: array<string, mixed>, tenantId: int} $ctx
-     * @return array{rows: list<array{label: string, value: string}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
+     * @return array{rows: list<array{label: string, value: string, missing?: bool, required?: bool}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
      */
     private function identifiers(int $tenantId, int $userId, array $ctx): array
     {
@@ -160,7 +162,7 @@ class DataCampaignRecordReader
             ['label' => 'Identifiant Athena', 'value' => self::text($u['athena_identifier'] ?? '')],
             ['label' => 'Matricule de service', 'value' => $service],
             ['label' => 'Matricule du dossier', 'value' => self::text($s['matricule_internal'] ?? '')],
-            ['label' => 'Trigramme', 'value' => self::text($trigram)],
+            ['label' => 'Trigramme', 'value' => self::text($trigram), 'required' => self::trigramsUsed($tenantId)],
             ['label' => 'Indicatif radio', 'value' => self::text($s['callsign'] ?? ($u['callsign'] ?? ''))],
             ['label' => 'Indicatifs radio secondaires', 'value' => implode(' · ', $secondary)],
         ];
@@ -170,7 +172,7 @@ class DataCampaignRecordReader
 
     /**
      * @param array{user: array<string, mixed>, snapshot: array<string, mixed>, profile: array<string, mixed>, tenantId: int} $ctx
-     * @return array{rows: list<array{label: string, value: string}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
+     * @return array{rows: list<array{label: string, value: string, missing?: bool, required?: bool}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
      */
     private function assignment(int $tenantId, array $ctx): array
     {
@@ -181,9 +183,9 @@ class DataCampaignRecordReader
         $jobs = $corr->displayFieldLines('job_roles', $s['job_roles'] ?? '', $tenantId);
         $since = self::text($s['enlistment_date'] ?? '');
         $rows = [
-            ['label' => 'Grade', 'value' => self::text($grade)],
+            ['label' => 'Grade', 'value' => self::text($grade), 'required' => true],
             ['label' => 'Grade affiché', 'value' => self::text($s['rank_display'] ?? '')],
-            ['label' => 'Unités', 'value' => implode(' · ', $units)],
+            ['label' => 'Unités', 'value' => implode(' · ', $units), 'required' => true],
             ['label' => 'Fonctions', 'value' => implode(' · ', $jobs)],
             ['label' => 'Date d’engagement', 'value' => self::frenchDate($since)],
         ];
@@ -197,7 +199,7 @@ class DataCampaignRecordReader
     }
 
     /**
-     * @return array{rows: list<array{label: string, value: string}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
+     * @return array{rows: list<array{label: string, value: string, missing?: bool, required?: bool}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
      */
     private function qualifications(int $tenantId, int $userId): array
     {
@@ -227,7 +229,7 @@ class DataCampaignRecordReader
     }
 
     /**
-     * @return array{rows: list<array{label: string, value: string}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
+     * @return array{rows: list<array{label: string, value: string, missing?: bool, required?: bool}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
      */
     private function hours(int $tenantId, int $userId): array
     {
@@ -280,12 +282,12 @@ class DataCampaignRecordReader
 
     /**
      * @param array{user: array<string, mixed>, snapshot: array<string, mixed>, profile: array<string, mixed>, tenantId: int} $ctx
-     * @return array{rows: list<array{label: string, value: string}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
+     * @return array{rows: list<array{label: string, value: string, missing?: bool, required?: bool}>, portrait: ?string, notice: string, links: list<array{label: string, href: string}>}
      */
     private function contact(array $ctx): array
     {
         return [
-            'rows' => self::filled([['label' => 'Adresse e-mail du compte', 'value' => self::text($ctx['user']['email'] ?? '')]]),
+            'rows' => self::filled([['label' => 'Adresse e-mail du compte', 'value' => self::text($ctx['user']['email'] ?? ''), 'required' => true]]),
             'portrait' => null,
             'notice' => 'Votre adresse e-mail ne se corrige pas ici : elle se change dans votre compte.',
             'links' => [['label' => 'Mon compte', 'href' => url('account')]],
@@ -293,12 +295,31 @@ class DataCampaignRecordReader
     }
 
     /**
-     * @param list<array{label: string, value: string}> $rows
-     * @return list<array{label: string, value: string}>
+     * @param list<array{label: string, value: string, missing?: bool, required?: bool}> $rows
+     * @return list<array{label: string, value: string, missing?: bool, required?: bool}>
      */
     private static function filled(array $rows): array
     {
-        return array_map(static fn (array $r): array => ['label' => $r['label'], 'value' => $r['value'] !== '' ? $r['value'] : 'Non renseigné'], $rows);
+        return array_map(static function (array $r): array {
+            $missing = DataCampaignPage::isMissingValue($r['value']);
+
+            return [
+                'label' => $r['label'],
+                'value' => $missing ? DataCampaignPage::MISSING : $r['value'],
+                'missing' => $missing,
+                'required' => (bool) ($r['required'] ?? false),
+            ];
+        }, $rows);
+    }
+
+    /** Réglage de la communauté : trigrammes en usage ? Sans réglage lisible, oui (valeur par défaut). */
+    private static function trigramsUsed(int $tenantId): bool
+    {
+        try {
+            return (bool) MemberNameSettings::forTenant($tenantId)['trigrams_enabled'];
+        } catch (\Throwable) {
+            return true;
+        }
     }
 
     private static function text(mixed $v): string
