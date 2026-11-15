@@ -67526,4 +67526,10 @@ return [
     'Ce niveau est déjà celui de la fiche.' => 'This level is already the record’s level.',
     'Habilitation de la fiche retirée.' => 'Clearance removed from the record.',
     'Habilitation de la fiche enregistrée.' => 'Clearance saved on the record.',
+    'Cette demande a déjà été enregistrée : rien n’a été recréé.' => 'This request was already saved: nothing was created again.',
+    'Aucune règle à créer : rien ne s’applique à cette sélection (niveaux sans objet ou hors de vos droits).' => 'No rule to create: nothing applies to this selection (levels not applicable or outside your rights).',
+    'Aucune règle créée.' => 'No rule created.',
+    ' Non créées : ' => ' Not created: ',
+    '1 règle créée' => '1 rule created',
+    '%1 règles créées' => '%1 rules created',
 ];
