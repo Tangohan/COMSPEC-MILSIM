@@ -16,6 +16,8 @@ use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseFieldNoteService;
 use App\Support\SseFieldNoteCatalog;
+use App\Services\Sse\SseAccessPolicy;
+use App\Support\SseAccessCatalog;
 
 /**
  * Fiches de renseignement simplifiées du bureau SSE.
@@ -400,22 +402,12 @@ final class SseFieldNoteController
      */
     private function canWrite(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can')
-            && (can('atak.sse.access') || can('atak.sse.case.manage') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('terrain', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     private function canManage(): bool
     {
-        if ($this->access->isGuest()) {
-            return false;
-        }
-
-        return function_exists('can')
-            && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+        return SseAccessPolicy::sessionAllows('terrain', SseAccessCatalog::LEVEL_MANAGE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
     }
 
     private function canGrant(): bool

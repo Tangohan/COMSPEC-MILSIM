@@ -19,6 +19,7 @@ use App\Services\Notifications\ActivityHubPresentationService;
 use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignCalendar;
+use App\Support\DataCampaignLoginPrompt;
 use App\Support\DataCampaignProgress;
 use App\Support\DataCampaignScope;
 use App\Support\DataCampaignSnapshot;
@@ -850,7 +851,7 @@ final class DataCampaignTest extends TestCase
         }
         self::assertStringContainsString('transition(', $admin);
         $member = (string) file_get_contents(self::ROOT . '/app/Controllers/Web/MemberDataCampaignController.php');
-        self::assertSame(2, substr_count($member, 'Csrf::validate('), 'repondre et confirmer');
+        self::assertSame(3, substr_count($member, 'Csrf::validate('), 'repondre, confirmer et tout-confirmer');
         self::assertStringContainsString("Session::get('tenant_id')", $member);
         self::assertStringContainsString('$this->authService->user()', $member);
         // L'identifiant du membre ne vient jamais de la requête.
@@ -1036,6 +1037,84 @@ final class DataCampaignTest extends TestCase
             }
             self::assertArrayHasKey($class, $imported, $file . ' appelle ' . $class . ' sans « use »');
         }
+    }
+
+    // ------------------------------------------------------------------ fiabilisation à la connexion
+
+    public function testLoginPromptRulesNeverTriggerForGuestsImpersonationOrAjax(): void
+    {
+        $base = ['pending' => true, 'hasOrganization' => true, 'continueUrl' => '/public/jnet'];
+        self::assertTrue(DataCampaignLoginPrompt::shouldPrompt($base));
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['pending' => false] + $base));
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['hasOrganization' => false] + $base), 'compte invité ou sans organisation');
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['impersonating' => true] + $base));
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['ajax' => true] + $base));
+        self::assertFalse(DataCampaignLoginPrompt::shouldPrompt(['continueUrl' => '/public/jnet/moi/fiabilisation?etape=recap'] + $base), 'déjà sur la campagne');
+    }
+
+    public function testLoginPromptToneBecomesInsistentAfterTheDueDateButNeverBlocks(): void
+    {
+        self::assertSame('open', DataCampaignLoginPrompt::tone('2026-12-31', '2026-12-31'));
+        self::assertSame('overdue', DataCampaignLoginPrompt::tone('2026-12-31', '2027-01-01'));
+        self::assertSame('open', DataCampaignLoginPrompt::tone('', '2027-01-01'));
+        // Après la date limite, la décision de redirection est la même : l'écran n'est jamais forcé en dehors de la connexion.
+        self::assertTrue(DataCampaignLoginPrompt::shouldPrompt(['pending' => true, 'hasOrganization' => true]));
+    }
+
+    public function testBlockStatusAndSummaryDriveTheOverviewAndTheConfirmAllButton(): void
+    {
+        $ok = ['state' => 'ok', 'rows' => [['label' => 'A', 'value' => 'x']]];
+        $todo = ['state' => '', 'rows' => [['label' => 'A', 'value' => 'x']]];
+        $empty = ['state' => '', 'rows' => []];
+        $blank = ['state' => '', 'rows' => [['label' => 'A', 'value' => ' — ']]];
+        $flag = ['state' => 'flag', 'rows' => [['label' => 'A', 'value' => 'x']]];
+        self::assertSame('ok', DataCampaignLoginPrompt::blockStatus($ok));
+        self::assertSame('to_confirm', DataCampaignLoginPrompt::blockStatus($todo));
+        self::assertSame('incomplete', DataCampaignLoginPrompt::blockStatus($empty));
+        self::assertSame('incomplete', DataCampaignLoginPrompt::blockStatus($blank));
+        self::assertSame('flagged', DataCampaignLoginPrompt::blockStatus($flag));
+        $all = DataCampaignLoginPrompt::summarize(['a' => $ok, 'b' => $todo]);
+        self::assertTrue($all['can_confirm_all']);
+        self::assertSame(50, $all['percent']);
+        self::assertFalse(DataCampaignLoginPrompt::summarize(['a' => $ok, 'b' => $empty])['can_confirm_all']);
+        self::assertFalse(DataCampaignLoginPrompt::summarize(['a' => $flag])['can_confirm_all']);
+        self::assertSame(0, DataCampaignLoginPrompt::summarize([])['percent']);
+    }
+
+    public function testConfirmAllAnswersEveryPartThenConfirmsTheFile(): void
+    {
+        $s = $this->service();
+        $id = $this->openCampaign($s);
+        $result = $s->confirmAll(self::TENANT, 11, $id);
+        self::assertTrue($result['ok'], $result['message']);
+        self::assertSame(0, $s->pendingBadge(self::TENANT, 11));
+    }
+
+    public function testConfirmAllRefusesWhenAPartIsIncompleteOrFlagged(): void
+    {
+        $s = $this->service();
+        $id = $this->openCampaign($s);
+        $this->reader->data[11]['identity'] = [];
+        self::assertFalse($s->confirmAll(self::TENANT, 11, $id)['ok'], 'une partie vide est à compléter');
+        $this->reader->data = [];
+        $s->answer(self::TENANT, 12, $id, 'identity', 'flag', 'Mon prénom est mal écrit');
+        self::assertFalse($s->confirmAll(self::TENANT, 12, $id)['ok']);
+        self::assertFalse($s->confirmAll(self::TENANT, 11, $id + 50)['ok'], 'campagne inconnue');
+    }
+
+    public function testTheLoginHookIsWiredWithoutBreakingTheReturnUrlOrTheJnetModal(): void
+    {
+        $auth = (string) file_get_contents(self::ROOT . '/app/Controllers/Auth/AuthController.php');
+        $resolve = strpos($auth, '$this->resolvePostLoginContinueUrl();');
+        $hook = strpos($auth, 'DataCampaignLoginPrompt::prepare($user, $continueUrl)');
+        $arm = strpos($auth, 'LoginWelcomeGate::arm($continueUrl);');
+        self::assertNotFalse($hook);
+        self::assertTrue($resolve < $hook && $hook < $arm, 'la destination d\'origine est résolue avant, et gardée par la fiabilisation');
+        $prompt = (string) file_get_contents(self::ROOT . '/app/Support/DataCampaignLoginPrompt.php');
+        self::assertStringContainsString('Session::set(self::SESSION_CONTINUE, $continueUrl)', $prompt);
+        $routes = (string) file_get_contents(self::ROOT . '/routes/web.php');
+        self::assertStringContainsString("path('fiabilisation/plus-tard')", $routes);
+        self::assertStringContainsString("path('fiabilisation/tout-confirmer')", $routes);
     }
 
     public function testTheViewsCarryNoSmallLabelAboveATitleAndNoEmoji(): void
