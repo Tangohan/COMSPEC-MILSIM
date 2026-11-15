@@ -117,3 +117,14 @@ html[data-bo-theme="dark"] .dc--bo, html[data-theme="dark"] .dc--bo { --dc-accen
     .dc-actions > form { width: 100%; }
 }
 .dc-fix[open] { flex-basis: 100%; }
+
+/* Vue d'ensemble à la connexion (étape « accueil ») */
+.dc-progress { height: 10px; border-radius: 999px; background: rgba(127, 127, 127, 0.22); overflow: hidden; margin: 12px 0 6px; }
+.dc-progress__bar { display: block; height: 100%; background: var(--dc-accent, #12d18e); }
+.dc-overview__list { list-style: none; margin: 14px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dc-overview__item { border: 1px solid rgba(127, 127, 127, 0.3); border-radius: 8px; padding: 10px 12px; }
+.dc-overview__item summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; font-weight: 650; }
+.dc-overview__actions { margin-top: 12px; }
+@media (max-width: 640px) {
+    .dc-overview__actions > .dc-btn, .dc-overview__actions > form { width: 100%; text-align: center; }
+}

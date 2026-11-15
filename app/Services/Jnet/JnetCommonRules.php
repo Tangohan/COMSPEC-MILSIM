@@ -16,22 +16,31 @@ use App\Support\JnetSpaceTree;
  */
 final class JnetCommonRules
 {
-    public const DEFAULT_SALON = 'annonces';
+    public const DEFAULT_SALON = 'apercu';
 
-    /** Rubriques repliables de la barre des salons, dans l'ordre. */
+    /** Rubriques de la barre des salons, dans l'ordre (un filet sépare les salons du renseignement des autres). */
     public const SECTIONS = [
         'commandement' => 'Commandement',
-        'renseignement' => 'Renseignement',
         'reperes' => 'Repères',
+        'renseignement' => 'Renseignement',
     ];
 
     /**
-     * Les salons : clé => titre, description, rubrique, porte du renseignement, icône.
+     * Les salons, dans l'ordre de la barre : clé => titre court affiché sous le bandeau, nom du salon, description, rubrique, porte du renseignement, icône.
      *
-     * @var array<string, array{label: string, desc: string, section: string, sse: bool, icon: string}>
+     * @var array<string, array{tag: string, label: string, desc: string, section: string, sse: bool, icon: string}>
      */
     public const SALONS = [
+        'apercu' => [
+            'tag' => '',
+            'label' => 'Vue d’ensemble',
+            'desc' => 'Ce qui demande une action, le pouls des unités et les prochaines échéances, en un coup d’œil.',
+            'section' => 'commandement',
+            'sse' => false,
+            'icon' => 'overview',
+        ],
         'annonces' => [
+            'tag' => 'Ce qui descend.',
             'label' => 'Annonces & ordres du jour',
             'desc' => 'Les ordres, informations et documents diffusés à l’organisation, du plus récent au plus ancien.',
             'section' => 'commandement',
@@ -39,6 +48,7 @@ final class JnetCommonRules
             'icon' => 'announce',
         ],
         'taches' => [
+            'tag' => 'Qui suit quoi.',
             'label' => 'Ordres et tâches par unité',
             'desc' => 'Pour chaque unité visible : ordres reçus, accusés attendus, tâches en cours et dernier échange.',
             'section' => 'commandement',
@@ -46,13 +56,31 @@ final class JnetCommonRules
             'icon' => 'tasks',
         ],
         'voie' => [
+            'tag' => 'À qui s’adresser.',
             'label' => 'Voie hiérarchique & contacts',
             'desc' => 'L’organigramme lisible, avec le chef et l’adjoint de chaque unité et le moyen de les joindre.',
             'section' => 'commandement',
             'sse' => false,
             'icon' => 'tree',
         ],
+        'agenda' => [
+            'tag' => 'Les dates qui comptent.',
+            'label' => 'Agenda',
+            'desc' => 'Briefings, opérations et formations à venir de la communauté, avec votre réponse.',
+            'section' => 'commandement',
+            'sse' => false,
+            'icon' => 'agenda',
+        ],
+        'epingles' => [
+            'tag' => 'Sous la main.',
+            'label' => 'Épinglés',
+            'desc' => 'Les éléments que l’encadrement garde sous la main, dans l’ordre qu’il a choisi.',
+            'section' => 'reperes',
+            'sse' => false,
+            'icon' => 'pin',
+        ],
         'renseignements' => [
+            'tag' => 'Renseignements.',
             'label' => 'Renseignements',
             'desc' => 'Les événements et fiches terrain récents du bureau SSE.',
             'section' => 'renseignement',
@@ -60,18 +88,12 @@ final class JnetCommonRules
             'icon' => 'intel',
         ],
         'cibles' => [
+            'tag' => 'Cibles.',
             'label' => 'Cibles',
             'desc' => 'Les dossiers d’intérêt suivis par le bureau SSE, avec leur priorité et leur dernière mise à jour.',
             'section' => 'renseignement',
             'sse' => true,
             'icon' => 'target',
-        ],
-        'epingles' => [
-            'label' => 'Épinglés',
-            'desc' => 'Les éléments que l’encadrement garde sous la main, dans l’ordre qu’il a choisi.',
-            'section' => 'reperes',
-            'sse' => false,
-            'icon' => 'pin',
         ],
     ];
 
@@ -104,6 +126,8 @@ final class JnetCommonRules
     public static function icon(string $name): string
     {
         $paths = [
+            'overview' => '<rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/>',
+            'agenda' => '<rect x="3.5" y="4.5" width="17" height="16" rx="2"/><path d="M16 2.5v4M8 2.5v4M3.5 10h17"/>',
             'announce' => '<path d="M4 10v4h3l7 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>',
             'tasks' => '<path d="M5 6h14M5 12h14M5 18h9M3.5 6l.8.8L6 5M3.5 12l.8.8L6 11"/>',
             'tree' => '<rect x="9" y="3" width="6" height="4" rx="1"/><rect x="3" y="17" width="6" height="4" rx="1"/><rect x="15" y="17" width="6" height="4" rx="1"/><path d="M12 7v5M6 17v-5h12v5"/>',
@@ -120,6 +144,13 @@ final class JnetCommonRules
             'user' => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/>',
             'grip' => '<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/>',
             'close' => '<path d="m6 6 12 12M18 6 6 18"/>',
+            'check' => '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+            'clock' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+            'alert' => '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.01"/>',
+            'arrow' => '<path d="M5 12h14M13 6l6 6-6 6"/>',
+            'copy' => '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+            'msg' => '<path d="M20.5 15a2 2 0 0 1-2 2H8l-4.5 4V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/>',
+            'doc' => '<path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M14 3.5v5h5"/>',
         ];
 
         return '<svg class="jc-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . ($paths[$name] ?? '') . '</svg>';
@@ -133,7 +164,7 @@ final class JnetCommonRules
      */
     public static function path(string $salon, array $params = []): string
     {
-        $allowed = ['type', 'portee', 'q', 'echelon', 'etat', 'retard', 'tri', 'sens', 'unite', 'priorite'];
+        $allowed = ['type', 'portee', 'q', 'echelon', 'etat', 'retard', 'tri', 'sens', 'unite', 'priorite', 'branche', 'genre'];
         $query = ['commun' => '1', 'salon' => self::salon($salon)];
         foreach ($params as $key => $value) {
             if (in_array($key, $allowed, true) && (string) $value !== '') {
@@ -254,6 +285,52 @@ final class JnetCommonRules
         }
 
         return array_values(array_filter($rows, static fn (array $r): bool => isset($matched[(int) $r['id']])));
+    }
+
+    /**
+     * « Ma branche » : les unités du lecteur, leurs ascendants et tout ce qui est dessous, indexées par identifiant.
+     *
+     * @param list<int> $viewerUnits
+     * @return array<int, true>
+     */
+    public static function branchIds(JnetSpaceTree $tree, array $viewerUnits): array
+    {
+        $ids = [];
+        foreach ($viewerUnits as $v) {
+            if (!$tree->has($v)) {
+                continue;
+            }
+            foreach (array_merge($tree->chain($v), $tree->descendants($v)) as $id) {
+                if ($id !== JnetSpaceTree::ORG) {
+                    $ids[$id] = true;
+                }
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * L'unité la plus basse de l'arbre parmi celles du lecteur (point de départ de « Ma voie »), 0 s'il n'en a aucune.
+     *
+     * @param list<int> $viewerUnits
+     */
+    public static function lowestUnit(JnetSpaceTree $tree, array $viewerUnits): int
+    {
+        $best = 0;
+        $depth = -1;
+        foreach ($viewerUnits as $v) {
+            if (!$tree->has($v)) {
+                continue;
+            }
+            $d = count($tree->ancestors($v));
+            if ($d > $depth) {
+                $best = $v;
+                $depth = $d;
+            }
+        }
+
+        return $best;
     }
 
     /**

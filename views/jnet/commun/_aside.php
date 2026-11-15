@@ -1,7 +1,7 @@
 <?php
 /**
- * Panneau de droite (grands écrans, repliable) : éléments épinglés (revérifiés pour ce lecteur) et unités à l'activité
- * récente. Rien n'est inventé : un bloc sans donnée est omis ou dit qu'il est vide.
+ * Panneau de droite (grands écrans, repliable) : fil d'activité (les derniers échanges visibles du lecteur) et éléments
+ * épinglés (revérifiés pour ce lecteur). Rien n'est inventé : un bloc sans donnée dit qu'il est vide.
  *
  * @var array<string, mixed> $cm
  * @var list<array<string, mixed>> $pins
@@ -11,16 +11,47 @@ use App\Services\Jnet\JnetCommonRules;
 use App\Support\JnetUi;
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-$recent = is_array($cm['recent'] ?? null) ? $cm['recent'] : [];
+$feed = is_array($cm['feed'] ?? null) ? $cm['feed'] : [];
 ?>
-<aside class="jc-aside" id="jc-aside" data-jc-aside aria-label="Panneau : épinglés et activité récente">
+<aside class="jc-aside" id="jc-aside" data-jc-aside aria-label="Panneau : activité et épinglés">
 <div class="jc-sticky">
-    <section class="jc-card" aria-labelledby="jc-aside-pins">
-        <h2 id="jc-aside-pins" class="jc-card__t"><?= JnetCommonRules::icon('pin') ?><span>Épinglés</span></h2>
+    <section class="jc-panel" aria-labelledby="jc-aside-feed">
+        <header class="jc-panel__h">
+            <h2 id="jc-aside-feed" class="jc-panel__t"><span class="jc-live" aria-hidden="true"></span>Fil d’activité</h2>
+            <span class="jc-mono">récent</span>
+        </header>
+        <?php if ($feed === []): ?>
+            <p class="jc-muted jc-panel__empty">Aucun échange récent.</p>
+        <?php else: ?>
+            <ul class="jc-fe">
+                <?php foreach ($feed as $f): ?>
+                    <?php
+                    $href = $f['orgLevel']
+                        ? url(JnetCommonRules::path('annonces')) . '#ex-' . (int) $f['id']
+                        : url(JnetCommonRules::path('annonces', ['portee' => 'tout'])) . '#ex-' . (int) $f['id'];
+                    ?>
+                    <li>
+                        <a class="jc-fi" href="<?= $h($href) ?>" data-jc-salon="annonces"<?= (string) $f['accent'] !== '' ? ' style="--u:' . $h((string) $f['accent']) . '"' : '' ?>>
+                            <?= JnetUi::crest(mb_strtoupper(mb_substr((string) $f['label'], 0, 2)), (string) $f['badge'], 'jc-logo') ?>
+                            <span class="jc-fi__t">
+                                <span class="jc-fi__x"><b translate="no"><?= $h((string) $f['author']) ?></b> a diffusé <b translate="no"><?= $h((string) $f['title']) ?></b></span>
+                                <small><?= $h((string) $f['when']) ?></small>
+                            </span>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </section>
+
+    <section class="jc-panel" aria-labelledby="jc-aside-pins">
+        <header class="jc-panel__h">
+            <h2 id="jc-aside-pins" class="jc-panel__t"><?= JnetCommonRules::icon('pin') ?>Épinglés</h2>
+        </header>
         <?php if (empty($cm['pinsReady'])): ?>
-            <p class="jc-muted">Les épingles ne sont pas encore activées.</p>
+            <p class="jc-muted jc-panel__empty">Les épingles ne sont pas encore activées.</p>
         <?php elseif ($pins === []): ?>
-            <p class="jc-muted">Rien d’épinglé pour le moment.</p>
+            <p class="jc-muted jc-panel__empty">Rien d’épinglé pour le moment.</p>
         <?php else: ?>
             <ol class="jc-plist">
                 <?php foreach ($pins as $p): ?>
@@ -40,20 +71,6 @@ $recent = is_array($cm['recent'] ?? null) ? $cm['recent'] : [];
         <?php endif; ?>
     </section>
 
-    <?php if ($recent !== []): ?>
-        <section class="jc-card" aria-labelledby="jc-aside-recent">
-            <h2 id="jc-aside-recent" class="jc-card__t"><?= JnetCommonRules::icon('user') ?><span>Unités récemment actives</span></h2>
-            <ul class="jc-rlist">
-                <?php foreach ($recent as $u): ?>
-                    <li>
-                        <a class="jc-rlist__item" href="<?= $h((string) $u['href']) ?>"<?= (string) $u['accent'] !== '' ? ' style="--u:' . $h((string) $u['accent']) . '"' : '' ?>>
-                            <?= JnetUi::crest(mb_strtoupper(mb_substr((string) $u['label'], 0, 2)), (string) $u['badge'], 'jc-logo') ?>
-                            <span class="jc-rlist__t"><strong translate="no"><?= $h((string) $u['label']) ?></strong><em>Dernier échange <?= $h((string) $u['when']) ?></em></span>
-                        </a>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </section>
-    <?php endif; ?>
+    <p class="jc-hint"><kbd>/</kbd> chercher · <kbd>Alt</kbd> + <kbd>↑</kbd><kbd>↓</kbd> changer de salon · <kbd>Échap</kbd> fermer</p>
 </div>
 </aside>

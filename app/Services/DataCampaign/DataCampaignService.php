@@ -8,6 +8,7 @@ use App\Core\Container;
 use App\Repositories\DataCampaignRepository;
 use App\Support\DataCampaignBlocks;
 use App\Support\DataCampaignCalendar;
+use App\Support\DataCampaignLoginPrompt;
 use App\Support\DataCampaignProgress;
 use App\Support\DataCampaignScope;
 use App\Support\DataCampaignSnapshot;
@@ -471,6 +472,34 @@ class DataCampaignService
         $this->repo()->confirm($campaignId, $userId, $answers, $snapshot, $hash);
 
         return ['ok' => true, 'message' => 'Votre fiche est confirmée le ' . date('d/m/Y', $this->now()) . '. Merci.', 'hash' => $hash];
+    }
+
+    /**
+     * « Tout confirmer » : confirme exactes les parties lues et complètes qui n'ont pas encore de réponse, puis confirme
+     * la fiche. Refuse si une partie est à compléter ou signalée : ces parties demandent un vrai regard du membre.
+     *
+     * @return array{ok: bool, message: string, hash?: string}
+     */
+    public function confirmAll(int $tenantId, int $userId, int $campaignId): array
+    {
+        $ctx = $this->openContext($tenantId, $userId, $campaignId);
+        if (isset($ctx['error'])) {
+            return ['ok' => false, 'message' => $ctx['error']];
+        }
+        $view = $this->memberView($tenantId, $userId, $ctx['campaign'], $ctx['member']);
+        if (!DataCampaignLoginPrompt::summarize($view['blocks'])['can_confirm_all']) {
+            return ['ok' => false, 'message' => 'Certaines parties sont à compléter ou à corriger : relisez-les une par une avant de confirmer.'];
+        }
+        foreach ($view['blocks'] as $key => $block) {
+            if ((string) $block['state'] === '') {
+                $answer = $this->answer($tenantId, $userId, $campaignId, (string) $key, 'ok');
+                if (!$answer['ok']) {
+                    return $answer;
+                }
+            }
+        }
+
+        return $this->confirm($tenantId, $userId, $campaignId);
     }
 
     /**
