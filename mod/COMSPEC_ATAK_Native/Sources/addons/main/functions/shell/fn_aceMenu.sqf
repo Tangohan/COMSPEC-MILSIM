@@ -182,21 +182,6 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
         { ["can", _target] call comspec_atak_native_fnc_vehicleGateway },
         { [_target] call (missionNamespace getVariable "COMSPEC_ATAK_GwKids") }] call comspec_atak_native_fnc_aceAction;
     [_x, 0, ["ACE_MainActions"], _a, true] call ace_interact_menu_fnc_addActionToClass;
-    // Kit terminal (réglage serveur « avec le kit installé ») : tablette durcie posée dans le véhicule.
-    private _k = ["COMSPEC_ATAK_VehKit", "Installer le terminal ATAK", "\z\comspec_atak_native\addons\main\data\item_vehiclekit.paa", {
-        params ["_target", "_player"];
-        [8, [_target, _player], {
-            (_this select 0) params ["_v", "_p"];
-            if !("COMSPEC_ATAK_VehicleKit" in (items _p)) exitWith {};
-            _p removeItem "COMSPEC_ATAK_VehicleKit";
-            _v setVariable ["COMSPEC_ATAK_VehTerm", true, true];
-            ["INFO", "Terminal ATAK installé : l'équipage a la tablette de bord", 4, 30] call comspec_atak_native_fnc_notify;
-        }, {}, ("Installation du terminal ATAK…" call comspec_atak_native_fnc_tr)] call ace_common_fnc_progressBar;
-    }, {
-        (missionNamespace getVariable ["comspec_atak_native_vehicle_terminal", "all"]) isEqualTo "kit" && {alive _target}
-            && {!(_target getVariable ["COMSPEC_ATAK_VehTerm", false])} && {"COMSPEC_ATAK_VehicleKit" in (items _player)}
-    }] call comspec_atak_native_fnc_aceAction;
-    [_x, 0, ["ACE_MainActions"], _k, true] call ace_interact_menu_fnc_addActionToClass;
 } forEach ["LandVehicle", "Ship", "Helicopter"];
 
 // Relais du réseau ATAK (module « Poser un relais » ou Overwatch), sur l'objet relais : état, couper, allumer, batterie.

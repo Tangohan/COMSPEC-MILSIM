@@ -153,12 +153,13 @@ final class AtakEssentialModeAssetTest extends TestCase
         // Réglages > Applications et panneau SITUATION de la carte : la ligne à interrupteur.
         self::assertStringContainsString('_appsRows append (["rows"] call comspec_atak_native_fnc_essentialMode);', $this->main('functions/pages/fn_pageSettings.sqf'));
         $map = $this->main('functions/pages/fn_pageMap.sqf');
-        self::assertStringContainsString('_rows append (["rows"] call comspec_atak_native_fnc_essentialMode);', $map);
+        // Volet SITUATION : la même ligne, compacte (libellé + interrupteur), son explication dépliable (AtakMapPinsPanelAssetTest).
+        $essentialRow = '{ [_x, "essential"] call _foldSwitch; } forEach (["rows"] call comspec_atak_native_fnc_essentialMode);';
+        $pinnedRow = '_rows append (["panelRows", [_helpOpen isEqualTo "pins", "pins" call _helpCode]] call comspec_atak_native_fnc_mapPinnedApp);';
+        self::assertStringContainsString($essentialRow, $map);
+        self::assertStringContainsString($pinnedRow, $map);
         // Posée avant les apps épinglées, sans toucher au bandeau des coordonnées ni à RECHERCHER.
-        self::assertLessThan(
-            (int) strpos($map, '_rows append (["rows"] call comspec_atak_native_fnc_mapPinnedApp);'),
-            (int) strpos($map, '_rows append (["rows"] call comspec_atak_native_fnc_essentialMode);')
-        );
+        self::assertLessThan((int) strpos($map, $pinnedRow), (int) strpos($map, $essentialRow));
         self::assertStringContainsString('["switch", "Mode Essentiel", call _on,', $fn);
         self::assertStringContainsString(', _isLocked, "essentialMode"]', $fn);
         // App Store : une phrase quand le mode est actif.

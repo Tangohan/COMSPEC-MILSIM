@@ -67,8 +67,8 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_CapGo", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_CapHolders", []];
         missionNamespace setVariable ["COMSPEC_ATAK_CaptureList", [], true];
-        [{ ["tick"] call comspec_atak_native_fnc_captureServer; }, 3] call CBA_fnc_addPerFrameHandler;
-        [{ ["exploit"] call comspec_atak_native_fnc_captureServer; }, 5] call CBA_fnc_addPerFrameHandler;
+        [{ ["tick"] call comspec_atak_native_fnc_captureServer; }, 3, [], "téléphones capturés (passage 3 s)"] call COMSPEC_ATAK_PfhSpread;
+        [{ ["exploit"] call comspec_atak_native_fnc_captureServer; }, 5, [], "téléphones capturés (exploitation)"] call COMSPEC_ATAK_PfhSpread;
     };
     case "dropped": {
         _arg params [["_h", objNull]];

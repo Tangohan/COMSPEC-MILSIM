@@ -41,6 +41,7 @@ final class SsePortalNav
                 ['id' => 'interet', 'label' => 'Dossiers d’intérêt', 'hint' => 'Signalements à qualifier : hypothèses, pas encore d’identité certaine.', 'path' => 'atak/sse/interet', 'icon' => 'interest', 'keywords' => 'pressee signalements'],
                 ['id' => 'dossiers', 'label' => 'Dossiers validés', 'hint' => 'Affaires structurées : preuves, notes, personnel, comptes rendus.', 'path' => 'atak/sse/dossiers', 'icon' => 'folder', 'keywords' => 'affaires cases preuves enquetes'],
                 ['id' => 'toiles', 'label' => 'Investigations', 'hint' => 'Tableaux des liens : relier personnes, lieux et objets.', 'path' => 'atak/sse/toiles', 'icon' => 'mesh', 'keywords' => 'tableau des liens graphe relationnel toiles reseau'],
+                ['id' => 'pistes', 'label' => 'Pistes', 'hint' => 'Hypothèses de travail : ce qui est à vérifier, suivi puis clos.', 'path' => 'atak/sse/pistes', 'icon' => 'target', 'keywords' => 'piste hypothese a verifier suivre'],
             ]],
             ['id' => 'referentiel', 'label' => 'Référentiel', 'hint' => 'Personnes, organisations, lieux et objets connus du bureau.', 'items' => [
                 ['id' => 'identites', 'label' => 'Personnes', 'hint' => 'Fiches personnes et indices biométriques.', 'path' => 'atak/sse/identites', 'icon' => 'id', 'aliases' => ['atak/sse/personnes'], 'keywords' => 'identites personnes biometrie'],
@@ -65,7 +66,7 @@ final class SsePortalNav
                 ['id' => 'presentation', 'label' => 'Présentation des documents', 'hint' => 'Bandeau, pied de page et papier des documents.', 'path' => 'atak/sse/presentation', 'icon' => 'paper'],
                 ['id' => 'fiches-gestion', 'label' => 'Gestion des fiches', 'hint' => 'Étiquettes, catégories, types de fiche, trames et règles des fiches de renseignement.', 'path' => 'atak/sse/fiches/gestion', 'icon' => 'library', 'keywords' => 'etiquettes categories types modeles regles referentiel tags humint pir noforn import export'],
             ]],
-            ['id' => 'identite', 'label' => 'Identités et papiers', 'hint' => 'Les papiers fictifs du jeu, de leur création à leur émission, et ceux des membres.', 'items' => array_values(array_filter([
+            ['id' => 'identite', 'label' => 'Identités et papiers', 'hint' => 'Les papiers d’identité, de leur création à leur émission, et ceux des membres.', 'items' => array_values(array_filter([
                 ['id' => 'papiers-tableau', 'label' => 'Tableau de bord', 'hint' => 'Contrôles, faux détectés et recherchés appréhendés par opération.', 'path' => 'atak/sse/papiers/tableau', 'icon' => 'ops', 'keywords' => 'identite controle tableau bord operation faux recherches'],
                 ['id' => 'papiers', 'label' => 'Papiers d’identité', 'hint' => 'Registre des papiers d’identité fictifs émis pour le jeu.', 'path' => 'atak/sse/papiers', 'icon' => 'doc', 'aliases' => ['atak/sse/papiers/documents'], 'keywords' => 'papiers passeport carte permis registre mrz documents identite'],
                 ['id' => 'papiers-identites', 'label' => 'Identités fictives', 'hint' => 'Identités (réelles, de couverture, falsifiées) portées par les papiers.', 'path' => 'atak/sse/papiers/identites', 'icon' => 'id', 'keywords' => 'identites fictives couverture alias faux'],

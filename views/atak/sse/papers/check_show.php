@@ -40,6 +40,7 @@ require __DIR__ . '/_subnav.php';
 </div>
 
 <?php \App\Services\Sse\Links\SseLinksWidget::render('check', (int) $check['id']); ?>
+<?php \App\Services\Sse\Attach\SseAttachWindow::section('check', (int) $check['id']); ?>
 
 <section class="panel">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Ce qui a été présenté</div></div>

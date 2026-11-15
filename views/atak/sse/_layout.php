@@ -51,7 +51,9 @@ $classifBanner = function_exists('sse_ui_classification_label')
 $sseNavData ??= SsePortalNav::forSession($canManage, $canGrant, $isGuest, isset($canMemberPapers) ? (bool) $canMemberPapers : null);
 $sseNav = $sseNavData['sections'];
 // Boîte « À trier » et pastilles des files (SseTriageInbox) : jamais bloquant, absent si la lecture échoue.
-$sseTriage = \App\Support\SseTriageBadges::forNav($sseNav);
+$sseTriage = is_array($sseTriageSnapshot ?? null)
+    ? \App\Support\SseTriageBadges::fromSnapshot($sseNav, $sseTriageSnapshot) // déjà lue par la page (accueil du bureau)
+    : \App\Support\SseTriageBadges::forNav($sseNav);
 $sseTriageTone = 'neutral';
 foreach ($sseTriage['entries'] as $sseTriageEntry) {
     $sseTriageTone = \App\Support\SseTriageBadges::worst($sseTriageTone, $sseTriageEntry['tone']);

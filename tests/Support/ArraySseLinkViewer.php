@@ -34,6 +34,7 @@ final class ArraySseLinkViewer implements SseLinkViewer
         private ?array $caseScope = null,
         private array $interest = [],
         private bool $guest = false,
+        private array $manage = [],
     ) {
     }
 
@@ -75,6 +76,12 @@ final class ArraySseLinkViewer implements SseLinkViewer
     public function canWrite(string $section): bool
     {
         return !$this->isGuest() && in_array($section, $this->write, true);
+    }
+
+    /** Droit « gérer » : les sections listées dans $manage (propriété posée par with()). */
+    public function canManage(string $section): bool
+    {
+        return !$this->isGuest() && in_array($section, $this->manage, true);
     }
 
     public function canSeeTruth(): bool

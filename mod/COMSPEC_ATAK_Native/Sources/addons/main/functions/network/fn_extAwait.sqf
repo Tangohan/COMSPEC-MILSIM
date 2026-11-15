@@ -28,7 +28,8 @@ if (!canSuspend && {!(_ext in _noAsync)} && {!isNil {missionNamespace getVariabl
 private _pt = diag_tickTime;
 if (!canSuspend || {_ext in _noAsync} || {isNil {missionNamespace getVariable "COMSPEC_ATAK_ExtensionEH"}}) exitWith {
     private _r = _ext callExtension [_cmd, _args];
-    if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; };
+    // Toujours chronométré : appel direct de plus de 20 ms noté « [PERF] Lent : DLL commande (direct) ».
+    [["DLL (appels directs)", "DLL " + _cmd] select (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]), _pt, 20, -1, format ["DLL %1 %2 (direct)", _ext, _cmd]] call comspec_atak_native_fnc_perfAcc;
     // Mesure des performances (fn_perfLog) : appel direct de plus de 5 ms noté dans le journal.
     if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["ext", [_ext, _cmd, _pt]] call comspec_atak_native_fnc_perfLog; };
     _r
@@ -49,7 +50,8 @@ isNil {
     _pending set [_ticket, false];
 };
 private _r = _ext callExtension ["Async", [_ticket, _cmd] + _args];
-if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL Async " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; };
+// Dépôt de la commande (la DLL répond tout de suite, le travail part sur son fil) : chronométré aussi, même seuil.
+[["DLL (dépôts Async)", "DLL Async " + _cmd] select (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]), _pt, 20, -1, format ["DLL %1 Async %2 (dépôt)", _ext, _cmd]] call comspec_atak_native_fnc_perfAcc;
 if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["ext", [_ext, "Async " + _cmd, _pt]] call comspec_atak_native_fnc_perfLog; };
 private _q = if (_r isEqualType []) then { _r param [0, ""] } else { _r };
 if !(_q isEqualType "") then { _q = str _q; };

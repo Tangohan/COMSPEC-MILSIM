@@ -80,7 +80,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
             };
         } forEach (missionNamespace getVariable ["COMSPEC_ATAK_DataNodes", []]);
         missionNamespace setVariable ["COMSPEC_ATAK_DataAce", _done select { !isNull _x }];
-    }, 5] call CBA_fnc_addPerFrameHandler;
+    }, 5, [], "câbles de données (menus ACE)"] call COMSPEC_ATAK_PfhSpread;
 };
 
 [{
@@ -91,5 +91,5 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         private _titles = call (missionNamespace getVariable ["COMSPEC_ATAK_DataActTitles", { ["", ""] }]);
         { if (_x isEqualType 0 && {_x >= 0}) then { player setUserActionText [_x, _titles select _forEachIndex]; }; } forEach (player getVariable ["COMSPEC_ATAK_DataActions", []]);
     };
-}, 0.25] call CBA_fnc_addPerFrameHandler;
+}, 0.25, [], "câbles de données (passage 0,25 s)"] call COMSPEC_ATAK_PfhSpread;
 true

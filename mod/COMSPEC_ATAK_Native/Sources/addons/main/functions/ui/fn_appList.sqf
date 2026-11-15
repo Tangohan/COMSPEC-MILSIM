@@ -27,7 +27,10 @@ private _apps = _sorted apply {
         ["desc", getText (_cfg >> "desc")],
         ["page", toUpper getText (_cfg >> "page")],
         ["section", getText (_cfg >> "section")],
-        ["icon", getText (_cfg >> "icon")],
+        // Icône propre à chaque app : celles du pack SSE qui déclarent une icône déjà prise par une app de l'ATAK (fn_sseHub).
+        ["icon", ["icon", [_x select 1, getText (_cfg >> "icon")]] call comspec_atak_native_fnc_sseHub],
+        // hidden=1 : app pas encore proposée (fn_appVisible).
+        ["hidden", (getNumber (_cfg >> "hidden")) > 0],
         ["dock", (getNumber (_cfg >> "dock")) > 0],
         ["module", (getText (_cfg >> "function")) isNotEqualTo ""],
         ["wip", (getNumber (_cfg >> "wip")) > 0],
