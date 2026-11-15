@@ -201,11 +201,16 @@
 
 /* —— Bandeau du tableau de bord —— */
 
+/* Bande noire pleine largeur, dans le prolongement du briefing du jour (même noir, même largeur de contenu) :
+   plus de bloc flottant qui laisse des marges claires de chaque côté. */
 .jnb {
   position: relative;
-  max-width: 100rem;
-  margin: 16px auto 0;
+  margin: 0;
   font-family: Inter, system-ui, sans-serif;
+  background: #050505;
+  color: #f4f4f0;
+  border-top: 1px solid rgba(52, 211, 153, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .jnb__in {
@@ -213,42 +218,62 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px 28px;
-  overflow: hidden;
-  padding: 22px 64px 22px 28px;
-  border-left: 4px solid #34d399;
-  background: #050505;
-  color: #f4f4f0;
+  gap: 12px 20px;
+  max-width: 74.5rem;
+  margin: 0 auto;
+  padding: 14px 3.25rem 14px 1.25rem;
 }
 
-.jnb__in::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 0% 0%, rgba(4, 120, 87, 0.4), transparent 60%);
-  pointer-events: none;
+/* Même colonne que le briefing du jour (.dash-hero__shell : 72rem de contenu, 2rem de marge dès 768 px). */
+@media (min-width: 768px) {
+  .jnb__in {
+    max-width: 76rem;
+    padding: 16px 4rem 16px 2rem;
+  }
+}
+
+.jnb__mark {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  border-radius: 10px;
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+}
+
+.jnb__mark svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .jnb__text {
   position: relative;
-  flex: 1 1 340px;
+  flex: 1 1 280px;
   min-width: 0;
 }
 
 .jnb__title {
-  margin: 0 0 4px;
-  font-size: clamp(18px, 2.2vw, 24px);
-  font-weight: 900;
-  font-style: italic;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  margin: 0;
+  font-size: clamp(15px, 1.6vw, 18px);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
 }
 
 .jnb__lead {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.5;
-  color: rgba(244, 244, 240, 0.72);
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(244, 244, 240, 0.66);
 }
 
 .jnb__actions {
@@ -256,18 +281,18 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 18px;
+  gap: 8px 16px;
 }
 
 .jnb__btn {
   display: inline-flex;
   align-items: center;
-  min-height: 46px;
-  padding: 0 22px;
-  border-radius: 4px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 8px;
   background: #34d399;
   color: #050505;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -277,8 +302,8 @@
 }
 
 .jnb__link {
-  color: #f4f4f0;
-  font-size: 14px;
+  color: rgba(244, 244, 240, 0.85);
+  font-size: 13px;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -290,15 +315,16 @@
 
 .jnb__x {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 50%;
+  right: 0.75rem;
   z-index: 1;
   width: 44px;
   height: 44px;
+  margin-top: -22px;
   border: 0;
   background: transparent;
-  color: rgba(244, 244, 240, 0.65);
-  font-size: 26px;
+  color: rgba(244, 244, 240, 0.6);
+  font-size: 24px;
   line-height: 1;
   cursor: pointer;
 }
@@ -316,8 +342,9 @@
 /* Bandeau masqué : un lien discret pour le réafficher. */
 
 .jnb-back {
-  max-width: 100rem;
-  margin: 8px auto 0;
+  max-width: 76rem;
+  margin: 6px auto 0;
+  padding: 0 2rem;
   text-align: right;
 }
 
@@ -340,7 +367,11 @@
 
 @media (max-width: 640px) {
   .jnb__in {
-    padding: 20px 52px 20px 18px;
+    padding: 14px 48px 14px 16px;
+  }
+
+  .jnb__lead {
+    display: none;
   }
 
   .jnb__btn {

@@ -684,9 +684,9 @@ final class PhotoLibraryRefontTest extends TestCase
         self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4570_photo_library.php');
         $steps = array_map('basename', glob(dirname(__DIR__, 2) . '/database/steps/4*.php') ?: []);
         sort($steps);
-        // Numéro unique : d'autres étapes peuvent suivre (les numéros croissent), aucune ne reprend 4570.
-        self::assertContains('4570_photo_library.php', $steps);
-        self::assertCount(1, array_filter($steps, static fn (string $f): bool => str_starts_with($f, '4570_')), 'numéro d\'étape unique');
+        // Numérotée après toutes les étapes qui existaient alors ; les étapes suivantes (4575 et plus) viennent après elle.
+        $upTo = array_values(array_filter($steps, static fn (string $s): bool => strcmp($s, '4570_photo_library.php') <= 0));
+        self::assertSame('4570_photo_library.php', end($upTo), 'numérotée après la dernière étape');
         $step = $this->read('database/steps/4570_photo_library.php');
         self::assertStringContainsString('tableExists', $step);
         self::assertStringContainsString('addColumnIfMissing(\'recon_images\', \'author_user_id\'', $step);
