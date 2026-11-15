@@ -130,7 +130,7 @@ final class AccessRightsCatalog
         'admin.audit.view', 'admin.compliance.export', 'admin.branding.manage', 'admin.members.moderate',
         'personnel.sensitive.view', 'personnel.member_number.manage',
         'atak.sse.grant', 'atak.sse.files.admin', 'atak.sse.case.manage', 'atak.config.manage',
-        'atak.command.alert', 'atak.certificates.manage', 'atak.toc.manage', 'atak.toc.phone',
+        'atak.command.alert', 'atak.certificates.manage', 'atak.toc.manage', 'atak.toc.purge', 'atak.toc.phone',
         'finances.manage', 'finances.export', 'documents.access.manage',
         'organization.manage_unit_visibility', 'personnel.manage_visibility',
     ];
@@ -173,7 +173,8 @@ final class AccessRightsCatalog
         'atak.command.alert' => 'Envoyer une alerte plein écran à tous les opérateurs en jeu.',
         'atak.certificates.manage' => 'Émettre ou révoquer les certificats des terminaux.',
         'atak.toc.use' => 'Tenir le poste TOC web et préparer des plans d’opération.',
-        'atak.toc.manage' => 'Régler le poste TOC web et gérer les plans de tous les membres.',
+        'atak.toc.manage' => 'Régler le poste TOC web, gérer les plans de tous les membres et supprimer les marqueurs et tracés des autres sur la carte (annulable 15 minutes).',
+        'atak.toc.purge' => 'Purger la carte du poste TOC web en masse : tout un type, un auteur, un âge ou une zone. Aperçu et archivage de la mission avant suppression ; ne se donne pas par défaut.',
         'atak.toc.phone' => 'Notifier, faire sonner, localiser ou trianguler un téléphone en jeu depuis le poste TOC web. Se règle aussi dans la communauté (désactivé par défaut) ; chaque demande est journalisée.',
         'atak.mission_cycle.manage' => 'Conduire le cycle de mission : briefing, exécution, après-action.',
         'finances.view' => 'Consulter budget et cotisations, sans rien modifier.',
@@ -199,6 +200,7 @@ final class AccessRightsCatalog
         'atak.sse.clearance.confidentiel' => ['atak.sse.clearance.encadrement'],
         'atak.sse.clearance.tres_restreint' => ['atak.sse.clearance.confidentiel'],
         'atak.toc.manage' => ['atak.toc.use'],
+        'atak.toc.purge' => ['atak.toc.manage'],
         'atak.toc.phone' => ['atak.toc.use'],
         'admin.permissions.manage' => ['admin.roles.manage'],
     ];

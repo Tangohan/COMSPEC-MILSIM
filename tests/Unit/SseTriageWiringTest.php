@@ -135,6 +135,18 @@ final class SseTriageWiringTest extends TestCase
         }
     }
 
+    public function testRowMenusAreFixedPopoversThatNothingClips(): void
+    {
+        $css = self::read('public/assets/css/sse-triage-auto.css');
+        self::assertMatchesRegularExpression('/\.tr-pop\s*\{[^}]*position:\s*fixed/s', $css);
+        self::assertMatchesRegularExpression('/\.tr-pop\s*\{[^}]*z-index:\s*80/s', $css);
+        self::assertDoesNotMatchRegularExpression('/\.tr-listbox\s*\{[^}]*overflow:\s*hidden/s', $css, 'la liste ne coupe plus les menus');
+        $js = self::read('public/assets/js/sse-triage.js');
+        foreach (['getBoundingClientRect', "'Escape'", 'r.top - h - 4', 'closePopups'] as $needle) {
+            self::assertStringContainsString($needle, $js);
+        }
+    }
+
     public function testTheNewTextsAreTranslatedToEnglish(): void
     {
         $dict = require dirname(__DIR__, 2) . '/lang/en/site_auto.php';

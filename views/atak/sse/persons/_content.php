@@ -242,7 +242,7 @@ $levels = W::assignableLevels($viewer->level);
             <input id="pe-q" name="q" type="search" value="<?= $h($q['q']) ?>" placeholder="Nom, alias, IDN, nationalité, grille…" autocomplete="off" enterkeyhint="search" data-pe-search>
             <kbd class="pe-kbd" aria-hidden="true">/</kbd>
         </div>
-        <details class="pe-filters"<?= $filterCount > 0 ? ' open' : '' ?>>
+        <details class="pe-filters">
             <summary class="pe-btn"><?= $ico('filter') ?><span>Filtres</span><?php if ($filterCount > 0): ?><span class="pe-count"><?= $filterCount ?></span><?php endif; ?></summary>
             <div class="pe-filters__panel">
                 <label>Statut

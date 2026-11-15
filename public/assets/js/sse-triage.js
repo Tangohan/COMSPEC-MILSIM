@@ -150,6 +150,55 @@
   var needsReload = false;
   if (rulesDialog) rulesDialog.addEventListener('close', function () { if (needsReload) window.location.reload(); });
 
+  // ---- Menus et explications : fenêtres fixes placées sous le bouton, retournées vers le haut près du bas de l'écran.
+  var popups = $$('details.tr-menu, details.tr-why');
+  function place(d) {
+    var pop = $('.tr-pop', d);
+    var sum = $('summary', d);
+    if (!pop || !sum) return;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var r = sum.getBoundingClientRect();
+    pop.style.maxHeight = (vh - 16) + 'px';
+    var w = pop.offsetWidth;
+    var h = pop.offsetHeight;
+    var left = Math.max(8, Math.min(r.right - w, vw - w - 8));
+    var top = r.bottom + 4;
+    if (top + h > vh - 8) {
+      top = r.top - h - 4 >= 8 ? r.top - h - 4 : Math.max(8, vh - h - 8);
+    }
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.setAttribute('data-placed', '1');
+  }
+  function closePopups(except) {
+    popups.forEach(function (d) {
+      if (d !== except && d.open) { d.open = false; }
+    });
+  }
+  popups.forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      var pop = $('.tr-pop', d);
+      if (d.open) { closePopups(d); place(d); } else if (pop) { pop.removeAttribute('data-placed'); }
+    });
+  });
+  document.addEventListener('click', function (e) {
+    var inside = e.target.closest ? e.target.closest('details.tr-menu, details.tr-why') : null;
+    closePopups(inside);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      var open = popups.filter(function (d) { return d.open; });
+      if (open.length) { $('summary', open[0]).focus(); closePopups(null); }
+    }
+  });
+  function replace() { popups.forEach(function (d) { if (d.open) place(d); }); }
+  window.addEventListener('resize', replace);
+  window.addEventListener('scroll', function (e) {
+    if (e.target && e.target.nodeType === 1 && e.target.closest && e.target.closest('.tr-pop')) return;
+    replace();
+  }, true);
+
   // ---- Sélection et barre d'actions groupées.
   var bulk = $('[data-tr-bulk]');
   function selectedRows() { return $$('[data-tr-row]').filter(function (r) { var c = $('[data-tr-select]', r); return c && c.checked; }); }
