@@ -3547,6 +3547,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // SSE — Sensitive Site Exploitation (renseignement interpersonnel)
     $router->get('/api/sse/persons', [SseApiController::class, 'personsIndex']);
     $router->post('/api/sse/persons', [SseApiController::class, 'personsStore']);
+    // Calques SSE des cartes (contrôles d'identité, lieux, pistes de téléphones) : GeoJSON, lecture seule, porte SSE (docs/sse-calques-api.md)
+    $router->get('/api/sse/v1/calques', [\App\Controllers\Api\SseMapLayersApiController::class, 'index']);
     // LOT 1 — Intelligence Workspace API v1
     $router->get('/api/sse/v1/workspace/summary', [SseIntelApiController::class, 'workspaceSummary']);
     $router->get('/api/sse/v1/inbox', [SseIntelApiController::class, 'inboxIndex']);

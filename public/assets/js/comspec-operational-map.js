@@ -1952,6 +1952,10 @@
       state.currentMapSlug = slug;
       updateTheatreLabel();
       updateSyncBadge();
+      // Calques SSE (sse-map-layers.js) : carte prête. Seules les cartes du jeu ont des mètres Arma (monde et image : non pris en charge).
+      try {
+        window.dispatchEvent(new CustomEvent('comspec:tacmap-ready', { detail: { map: map, type: state.currentMapType, mapId: state.currentMapId, getMapId: function () { return state.currentMapId; } } }));
+      } catch (e) { /* l'événement est facultatif */ }
 
       mapIntervals.forEach(function (id) { clearInterval(id); });
       mapIntervals = [];

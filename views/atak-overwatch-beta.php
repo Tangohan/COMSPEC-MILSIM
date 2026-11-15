@@ -55,6 +55,7 @@ $icon = static function (string $path): string {
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-mapkit.css?v=<?= $h($owAsset) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/sse-map-layers.css?v=<?= $h($assetVer) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($owAsset) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-orbat.css?v=<?= $h($owAsset) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-commands.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-commands.css')) ?>">
@@ -455,6 +456,7 @@ $icon = static function (string $path): string {
         <label class="ow-row">Opacité de la chaleur
           <input type="range" id="ow-heat-opacity" min="10" max="80" step="5" value="40">
         </label>
+<?php $sseMlId = 'ow-sse-ml'; $sseMlFloating = false; $sseMlBase = rtrim($base, '/'); require base_path('views/partials/sse_map_layers.php'); ?>
         <p class="ow-kicker">Personnalisation</p>
         <label class="ow-row">Police de l’interface
           <span class="ow-select"><select id="ow-ui-font">
@@ -1215,6 +1217,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-unit-dossier.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-motion-map.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-sse-layers.js?v=<?= $h($assetVer) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/sse-map-layers.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-radio.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-iff.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-super-ping.js?v=<?= $h($assetVer) ?>"></script>
