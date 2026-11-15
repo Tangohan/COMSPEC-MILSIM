@@ -70331,4 +70331,18 @@ return [
     'Afficher le bouton Cerbère' => 'Show the Cerbère button',
     'Le bouton est de retour sur vos pages.' => 'The button is back on your pages.',
     'Le bouton rond en bas à droite de chaque page ouvre Cerbère : ce qu’il a fait et ce qui attend votre décision sur la page où vous êtes.' => 'The round button at the bottom right of every page opens Cerbère: what it did and what is waiting for your decision on the page you are on.',
+    // Documents et PDF sans mention de jeu : textes d’aide des écrans.
+    'Papiers d’identité du personnage, kit porté en mission et contrôles subis en jeu.' => 'The character’s identity documents, the kit carried on missions and the checks undergone in game.',
+    'Les papiers des pays imaginaires ne portent aucune marque visible. Ceux des pays réels stylisés gardent au minimum le marquage discret.' => 'Documents of imaginary countries carry no visible mark. Those of stylised real countries keep at least the discreet marking.',
+    'Marquage des papiers des pays réels stylisés' => 'Marking of stylised real-country documents',
+    'Pied de page (facultatif)' => 'Footer (optional)',
+    'À ne jamais diffuser hors de la communauté.' => 'Never share outside the community.',
+    'Affichés sur chaque papier émis pour cette identité. Sans portrait, le papier montre une silhouette.' => 'Shown on every document issued for this identity. Without a portrait, the document shows a silhouette.',
+    'L’image exportée n’a aucune marque visible.' => 'The exported image has no visible mark.',
+    'Pays réel stylisé : l’image exportée garde sa mention de jeu.' => 'Stylised real country: the exported image keeps its game notice.',
+    'À ne jamais diffuser hors de la communauté. Émettre ne modifie jamais la fiche.' => 'Never share outside the community. Issuing never changes the record.',
+    'N’envoyez jamais la photo d’une vraie personne, ni la vôtre.' => 'Never upload a photo of a real person, including yourself.',
+    'Il ne part en jeu qu’une fois émis.' => 'It only goes into the game once issued.',
+    'Présentation actuelle du dossier : bandeau rouge, feuille crème.' => 'Current record presentation: red banner, cream sheet.',
+    'Notes de travail froissées, ton informel.' => 'Crumpled working notes, informal tone.',
 ];

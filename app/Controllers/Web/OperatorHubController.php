@@ -653,7 +653,7 @@ final class OperatorHubController
         return $this->back('operateur/identite/documents', $res['ok'] ? 'success' : 'error', $res['message']);
     }
 
-    /** Spécimen d'un papier du membre : page seule, imprimable (PDF) et enregistrable en image, mention SPÉCIMEN · SIMULATION. */
+    /** Spécimen d'un papier du membre : page seule, imprimable (PDF) et enregistrable en image ; mention de jeu pour un pays réel stylisé seulement. */
     public function documentSpecimen(Request $request, array $params = []): Response
     {
         $ctx = ($this->context)();

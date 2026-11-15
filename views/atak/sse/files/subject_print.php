@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * Fiche sujet imprimable (une page A4, fond clair) : en-tête du système, mise en garde, identité, signalement, alias,
- * papiers, liens, mentions, derniers contacts, message brut. Un seul pied discret (fiction).
+ * papiers, liens, mentions, derniers contacts, message brut. Pied : date et auteur de l'impression, sans mention de jeu.
  *
  * @var array<string,mixed> $record
  * @var string $printedBy
@@ -92,7 +92,7 @@ $red = array_filter($r['flags'], static fn (array $f): bool => $f['tone'] === 'r
     <?php endif; ?>
     <h2>Message brut</h2>
     <pre><?= $h($r['raw']) ?></pre>
-    <footer><span>Imprimé le <?= gmdate('Y-m-d H:i') ?>Z par <?= $h($printedBy) ?></span><span><?= sse_fiction_footer(true) ?></span></footer>
+    <footer><span>Imprimé le <?= gmdate('Y-m-d H:i') ?>Z par <?= $h($printedBy) ?></span></footer>
 </div>
 </body>
 </html>

@@ -22,7 +22,7 @@ private _chrome = if (!isNil "comspec_sse_fnc_getDocumentChrome") then {
         ["subtitle_dossier", "Compte rendu d’exploitation"],
         ["subtitle_feuille", "Feuille de consultation — lecture détaillée"],
         ["subtitle_docs", "Pièces saisies sur le terrain"],
-        ["footer", "Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement."],
+        ["footer", ""],
         ["quality_prefix", "Qualité d’exploitation"],
         ["btn_consult", "FEUILLE"],
         ["btn_transmit", "TRANSMETTRE"],
@@ -216,11 +216,20 @@ private _qLabel = if (_ql != "") then { _ql } else {
     if (_q >= 80) then {"Bonne"} else { if (_q >= 55) then {"Correcte"} else {"Partielle"} };
 };
 private _qPrefix = _chrome getOrDefault ["quality_prefix", "Qualité d’exploitation"];
-private _footer = _chrome getOrDefault ["footer", "Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement."];
-(_display displayCtrl 93018) ctrlSetStructuredText parseText ((format [
-    "<t color='%1' size='0.72' align='left'>%2 : %3 %% — %4</t><br/>" +
-    "<t color='%1' size='0.68' align='left'>%5</t>",
-    _muted, _qPrefix, _q, _qLabel, _footer
-]) call comspec_sse_fnc_tr);
+// Pied de page facultatif : sans texte, la ligne de qualité reste seule (pas de ligne vide dessous).
+private _footer = trim (_chrome getOrDefault ["footer", ""]);
+// Anciens pieds livrés (mention « usage RP ») encore enregistrés dans une mission ou reçus d'Athena : plus affichés.
+if (_footer in [
+    "Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement.",
+    "Document de travail — ne vaut pas preuve judiciaire. Usage RP / renseignement.",
+    "Brouillon RP — non opposable. À ne pas confondre avec un acte officiel.",
+    "Exemplaire d’archives — usage renseignement / RP. Ne constitue pas une preuve judiciaire.",
+    "Document de renseignement — usage RP uniquement. Ne constitue pas une preuve judiciaire."
+]) then { _footer = ""; };
+private _footLines = format ["<t color='%1' size='0.72' align='left'>%2 : %3 %% — %4</t>", _muted, _qPrefix, _q, _qLabel];
+if (_footer isNotEqualTo "") then {
+    _footLines = _footLines + format ["<br/><t color='%1' size='0.68' align='left'>%2</t>", _muted, _footer];
+};
+(_display displayCtrl 93018) ctrlSetStructuredText parseText (_footLines call comspec_sse_fnc_tr);
 
 true

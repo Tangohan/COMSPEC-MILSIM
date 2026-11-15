@@ -198,9 +198,9 @@
             <French>Où en est l'accès au support. Non identifié : personne ne l'a repéré. Découvert : trouvé, pas encore ouvert. Accès en cours : on travaille dessus. Accès établi : ouvert, les renseignements prévus pour ce palier arrivent au Bureau SSE. Exploité : terminé.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_08AA395002">
-            <Original>Optional. Notice at the bottom of each record. Empty: the template one (Standard: Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement).</Original>
-            <English>Optional. Notice at the bottom of each record. Empty: the template one (Standard: Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement).</English>
-            <French>Facultatif. Mention en bas de chaque fiche. Vide : celle du modèle (Standard : Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement).</French>
+            <Original>Optional. Notice at the bottom of each record. Empty: no notice.</Original>
+            <English>Optional. Notice at the bottom of each record. Empty: no notice.</English>
+            <French>Facultatif. Mention en bas de chaque fiche. Vide : aucune mention.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_08E9024C23">
             <Original>Paper appearance</Original>

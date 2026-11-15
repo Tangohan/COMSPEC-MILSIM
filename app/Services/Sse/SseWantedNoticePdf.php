@@ -8,16 +8,15 @@ use App\Support\Pdf\AthenaPdfTheme;
 use App\Support\TrainingCertificatePdfEngine;
 
 /**
- * Gabarit PDF « notice de recherche » pour le jeu de rôle : une page A4 (et un verso si besoin) à la mise en page d'une
+ * Gabarit PDF « notice de recherche » : une page A4 (et un verso si besoin) à la mise en page d'une
  * notice rouge d'organisation internationale de police criminelle : en-tête blanc (pictogramme neutre, autorité émettrice
- * fictive, référence), bandeau rouge, bloc d'identité à gauche et portrait à droite, mention de danger, faits, mesures à
+ * de la communauté, référence), bandeau rouge, bloc d'identité à gauche et portrait à droite, mention de danger, faits, mesures à
  * prendre, code-barres de la référence, pied de page.
  *
- * Règle de fond : cette notice est un accessoire de JEU DE RÔLE pour des personnages FICTIFS. Le gabarit ne porte aucun logo,
- * emblème, sceau ni nom d'organisation, de police ou de gouvernement réels : l'autorité émettrice vient des réglages de la
- * communauté (fictive), l'emblème est un pictogramme neutre dessiné ici ou, si la communauté le choisit, son propre logo.
- * Chaque page porte en pied la mention « Document de fiction — jeu de rôle Arma 3 » (désactivable par la gestion SSE
- * seulement) ; les métadonnées du fichier la portent toujours.
+ * Règle de fond : le gabarit ne porte aucun logo, emblème, sceau ni nom d'organisation, de police ou de gouvernement réels :
+ * l'autorité émettrice vient des réglages de la communauté (jamais un nom réel, voir SseWantedRealNames), l'emblème est un
+ * pictogramme neutre dessiné ici ou, si la communauté le choisit, son propre logo. La notice ne porte aucune mention de jeu :
+ * ni filigrane, ni ligne de pied, ni avertissement.
  *
  * Aucune donnée de membre réel n'entre ici : le gabarit ne reçoit que les champs de l'identité fictive et de l'avis.
  *
@@ -28,7 +27,7 @@ use App\Support\TrainingCertificatePdfEngine;
  *   aliases: list<string>, languages: string, type_label: string, threat_level: string, threat_label: string, armed: string,
  *   reason: string, instructions: string, zone: string, last_seen_place: string, last_seen_at: ?string, contact_label: string,
  *   contact_detail: string, photo: ?string, extra_photos: list<string>, signature: ?string, emblem_path: ?string,
- *   watermark: bool, footer: bool, faces: string, generated_at: string,
+ *   faces: string, generated_at: string,
  *   service?: ?array{code: string, ac: string, color: ?array{0: int, 1: int, 2: int}, name?: string},
  *   classification?: array{code: string, banner: string, rgb: array{0: int, 1: int, 2: int}},
  *   reasons?: list<array{code: string, label: string}>, measures?: list<array{code: string, label: string}>,
@@ -102,11 +101,6 @@ final class SseWantedNoticePdf
     private const GENERAL = [
         'Toute personne ou unité qui détient une information sur la personne recherchée est invitée à la transmettre au service demandeur indiqué en première page, par la voie de la chaîne de commandement. Ne tentez aucune intervention en dehors des règles d’engagement de votre mission.',
         'Anyone holding information on the person sought is asked to pass it to the requesting service named on the first page, through the chain of command. Do not attempt any intervention outside the rules of engagement of your mission.',
-    ];
-
-    private const DISCLAIMER = [
-        'Cette notice est un accessoire de jeu de rôle : les personnes, l’autorité émettrice et les faits sont imaginaires. Elle n’a aucune valeur en dehors du jeu et ne doit jamais être diffusée à l’extérieur de la communauté.',
-        'This notice is a role-play prop: the persons, the issuing authority and the facts are fictional. It has no value outside the game and must never be shared outside the community.',
     ];
 
     private string $sans = 'freesans';
@@ -192,8 +186,7 @@ final class SseWantedNoticePdf
         $pdf->SetCreator('Athena');
         $pdf->SetAuthor($d['authority'][$this->lang]);
         $pdf->SetTitle($d['banner'][$this->lang] . ' ' . $d['ref']);
-        $pdf->SetSubject(self::footerText(0) . ' / ' . self::footerText(1));
-        $pdf->SetKeywords('fiction, jeu de rôle, role-play, Arma 3' . (($d['classification']['banner'] ?? '') !== '' ? ', ' . $d['classification']['banner'] : ''));
+        $pdf->SetSubject((string) ($d['classification']['banner'] ?? ''));
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
         $pdf->SetMargins(self::MARGIN, self::MARGIN, self::MARGIN);
@@ -227,7 +220,6 @@ final class SseWantedNoticePdf
     {
         $pdf = $this->pdf;
         $l = self::MARGIN;
-        $this->watermark($d);
         // Couleur d'en-tête du service demandeur : filet en haut de page et autorité (sobre, jamais un insigne).
         $this->classification($d);
         $tint = is_array($d['service']['color'] ?? null) ? $d['service']['color'] : self::INK;
@@ -421,8 +413,7 @@ final class SseWantedNoticePdf
     {
         $pdf = $this->pdf;
         $l = self::MARGIN;
-        $bottom = 255.0;
-        $this->watermark($d);
+        $bottom = 270.0;
         $pdf->SetFillColor(...self::RED);
         $pdf->Rect(0, 5.0, self::PAGE_W, 13.0, 'F');
         $pdf->SetTextColor(255, 255, 255);
@@ -502,7 +493,7 @@ final class SseWantedNoticePdf
             $y += 29.0;
         }
 
-        // Instructions générales et avertissement.
+        // Instructions générales.
         if ($y + 40.0 <= $bottom) {
             $this->heading($this->t('general'), $l, $y);
             $y += 7.5;
@@ -514,17 +505,6 @@ final class SseWantedNoticePdf
                 $y = $pdf->GetY() + 2.0;
             }
         }
-        // L'avertissement est toujours imprimé, en bas de page.
-        $y = 257.0;
-        $pdf->SetDrawColor(...self::RED);
-        $pdf->SetLineWidth(0.5);
-        $pdf->Line($l, $y, $l, $y + 15.0);
-        $pdf->SetLineWidth(0.25);
-        $pdf->SetFont($this->sans, '', 7.2);
-        $pdf->SetTextColor(...self::MUTED);
-        $pdf->SetXY($l + 3.0, $y);
-        $pdf->MultiCell(self::CONTENT_W - 3.0, 3.3, self::DISCLAIMER[$this->lang] . "
-" . self::DISCLAIMER[1 - $this->lang], 0, 'L', false, 1, null, null, true, 0, false, true, 15.0, 'T', false);
     }
 
     /**
@@ -562,14 +542,6 @@ final class SseWantedNoticePdf
         $pdf->SetTextColor(...self::MUTED);
         $pdf->SetXY($l, 287.6);
         $pdf->Cell(48.0, 3.0, $d['ref'], 0, 0, 'L');
-        if ($d['footer']) {
-            $pdf->SetFont($this->sans, '', 7.2);
-            $pdf->SetXY(64.0, 280.0);
-            $pdf->Cell(82.0, 3.6, self::footerText($this->lang), 0, 1, 'C');
-            $pdf->SetFont($this->sans, 'I', 6.4);
-            $pdf->SetXY(64.0, 284.2);
-            $pdf->Cell(82.0, 3.2, self::footerText(1 - $this->lang), 0, 0, 'C');
-        }
         $pdf->SetFont($this->sans, '', 7);
         $pdf->SetXY(150.0, 280.0);
         $pdf->Cell(48.0, 3.6, $this->t('page')[$this->lang] . ' ' . $page . '/' . $pages, 0, 1, 'R');
@@ -579,7 +551,7 @@ final class SseWantedNoticePdf
     }
 
     /**
-     * Bandeaux de classification (fictifs) en haut et en bas de page, au marquage et à la couleur du niveau.
+     * Bandeaux de classification en haut et en bas de page, au marquage et à la couleur du niveau.
      *
      * @param Notice $d
      */
@@ -602,34 +574,6 @@ final class SseWantedNoticePdf
             $pdf->Cell(self::PAGE_W, 3.2, (string) $c['banner'], 0, 0, 'C');
         }
         $pdf->setFontSpacing(0);
-    }
-
-    /** @param Notice $d */
-    private function watermark(array $d): void
-    {
-        if (!$d['watermark']) {
-            return;
-        }
-        $pdf = $this->pdf;
-        $pdf->StartTransform();
-        $pdf->SetAlpha(0.05);
-        $pdf->SetTextColor(...self::RED);
-        $pdf->SetFont($this->sans, 'B', 62);
-        $text = mb_strtoupper(self::footerShort($this->lang), 'UTF-8');
-        $pdf->Rotate(38, 105.0, 160.0);
-        $pdf->Text(105.0 - $pdf->GetStringWidth($text) / 2, 152.0, $text);
-        $pdf->SetAlpha(1.0);
-        $pdf->StopTransform();
-    }
-
-    private static function footerShort(int $lang): string
-    {
-        return $lang === 1 ? 'Fiction - RP' : 'Fiction - RP';
-    }
-
-    private static function footerText(int $lang): string
-    {
-        return $lang === 1 ? 'Fictional document — Arma 3 role-play' : 'Document de fiction — jeu de rôle Arma 3';
     }
 
     /** @param Notice $d */

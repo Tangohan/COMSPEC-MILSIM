@@ -255,6 +255,8 @@ final class SseWantedMetaRepository
     public static function hydrate(?array $row): array
     {
         $service = json_decode((string) ($row['service_json'] ?? ''), true);
+        // Instantané enregistré avant le retrait des mentions de jeu : le nom livré perd son ancien « (fictif) ».
+        $service = is_array($service) ? \App\Support\SseFictionMentions::cleanServiceSnapshot($service) : $service;
         $history = json_decode((string) ($row['history_json'] ?? ''), true);
         $str = static fn (mixed $v): ?string => $v === null || $v === '' ? null : (string) $v;
         $state = (string) ($row['validation_state'] ?? self::LIVE);

@@ -119,16 +119,14 @@ final class SseWantedCatalog
 
     /** Réglages par défaut de la notice (rien de réel : autorité et service demandeur fictifs). */
     public const DEFAULTS = [
-        'authority_fr' => 'Agence interservices du renseignement — RP',
-        'authority_en' => 'Interservice Intelligence Agency — RP',
+        'authority_fr' => 'Agence interservices du renseignement',
+        'authority_en' => 'Interservice Intelligence Agency',
         'contact_label' => 'Cellule de coordination des recherches',
         'contact_detail' => '',
         'ref_format' => 'A-{N}/{Y}',
         'banner' => 'red',
         'emblem' => 'neutral',
         'pdf_lang' => 'auto',
-        'watermark' => true,
-        'footer' => true,
         'default_classification' => 'encadrement',
         'default_expiry_days' => 0,
         'default_instructions_fr' => 'Signaler toute information au service demandeur. Ne pas intervenir sans ordre de la chaîne de commandement.',
@@ -142,11 +140,6 @@ final class SseWantedCatalog
     public const REASON_MAX = 2000;
 
     public const INSTRUCTIONS_MAX = 1000;
-
-    /** Mention de pied de page de chaque page de la notice (le texte ne change pas, seul son affichage se règle). */
-    public const FICTION_FR = 'Document de fiction — jeu de rôle Arma 3';
-
-    public const FICTION_EN = 'Fictional document — Arma 3 role-play';
 
     /**
      * Types proposés à la communauté : types fournis moins ceux qu'elle a retirés, plus les siens.

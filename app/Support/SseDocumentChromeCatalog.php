@@ -27,6 +27,27 @@ final class SseDocumentChromeCatalog
     }
 
     /**
+     * Anciens pieds de page livrés (mention « usage RP » / « preuve judiciaire »), retirés des documents. Un modèle encore
+     * enregistré avec l'un de ces textes EXACTS s'affiche sans pied ; un pied personnalisé par une communauté n'est jamais
+     * touché. tools/sse-strip-fiction-mentions.php les efface en base.
+     */
+    public const LEGACY_FOOTERS = [
+        'Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement.',
+        'Document de travail — ne vaut pas preuve judiciaire. Usage RP / renseignement.',
+        'Brouillon RP — non opposable. À ne pas confondre avec un acte officiel.',
+        'Exemplaire d’archives — usage renseignement / RP. Ne constitue pas une preuve judiciaire.',
+        'Document de renseignement — usage RP uniquement. Ne constitue pas une preuve judiciaire.',
+    ];
+
+    /** Pied de page à afficher : vide pour un ancien pied livré, sinon le texte tel quel. */
+    public static function footerText(mixed $footer): string
+    {
+        $text = is_scalar($footer) ? trim((string) $footer) : '';
+
+        return in_array($text, self::LEGACY_FOOTERS, true) ? '' : $text;
+    }
+
+    /**
      * Modèles préfaits (chrome + style). Identifiants stables pour Eden / Zeus / portail.
      *
      * @return list<array<string, mixed>>
@@ -37,7 +58,7 @@ final class SseDocumentChromeCatalog
             [
                 'code' => 'standard_restreint',
                 'label' => 'Standard — CUI',
-                'description' => 'Présentation actuelle du dossier : bandeau rouge, feuille crème, mention RP.',
+                'description' => 'Présentation actuelle du dossier : bandeau rouge, feuille crème.',
                 'paper_style' => self::STYLE_CLEAN,
                 'banner' => 'CUI — EXPLOITATION TERRAIN',
                 'title_person' => 'DOSSIER SSE',
@@ -45,7 +66,7 @@ final class SseDocumentChromeCatalog
                 'subtitle_dossier' => 'Compte rendu d’exploitation',
                 'subtitle_feuille' => 'Feuille de consultation — lecture détaillée',
                 'subtitle_docs' => 'Pièces saisies sur le terrain',
-                'footer' => 'Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement.',
+                'footer' => '',
                 'quality_prefix' => 'Qualité d’exploitation',
                 'org_line' => 'ATHENA · COMPSEC',
                 'seal_top' => 'BUREAU SSE',
@@ -67,7 +88,7 @@ final class SseDocumentChromeCatalog
                 'subtitle_dossier' => 'Relevé d’exploitation sur site',
                 'subtitle_feuille' => 'Lecture détaillée — pièce terrain',
                 'subtitle_docs' => 'Documents récupérés sur place',
-                'footer' => 'Document de travail — ne vaut pas preuve judiciaire. Usage RP / renseignement.',
+                'footer' => '',
                 'quality_prefix' => 'Qualité de saisie',
                 'org_line' => 'ATHENA · CELLULE TERRAIN',
                 'seal_top' => 'SSE TERRAIN',
@@ -81,7 +102,7 @@ final class SseDocumentChromeCatalog
             [
                 'code' => 'brouillon_froisse',
                 'label' => 'Brouillon — papier froissé',
-                'description' => 'Notes de travail froissées, ton informel pour le RP.',
+                'description' => 'Notes de travail froissées, ton informel.',
                 'paper_style' => self::STYLE_CRUMPLED,
                 'banner' => 'BROUILLON — NE PAS DIFFUSER',
                 'title_person' => 'NOTES D’EXPLOITATION',
@@ -89,7 +110,7 @@ final class SseDocumentChromeCatalog
                 'subtitle_dossier' => 'Brouillon de compte rendu',
                 'subtitle_feuille' => 'Relecture — brouillon',
                 'subtitle_docs' => 'Documents non encore classés',
-                'footer' => 'Brouillon RP — non opposable. À ne pas confondre avec un acte officiel.',
+                'footer' => '',
                 'quality_prefix' => 'Avancement',
                 'org_line' => 'ATHENA · BROUILLON',
                 'seal_top' => 'TRAVAIL',
@@ -111,7 +132,7 @@ final class SseDocumentChromeCatalog
                 'subtitle_dossier' => 'Compte rendu classé',
                 'subtitle_feuille' => 'Consultation d’archives',
                 'subtitle_docs' => 'Pièces versées au dossier',
-                'footer' => 'Exemplaire d’archives — usage renseignement / RP. Ne constitue pas une preuve judiciaire.',
+                'footer' => '',
                 'quality_prefix' => 'Qualité d’exploitation',
                 'org_line' => 'ATHENA · ARCHIVES SSE',
                 'seal_top' => 'ARCHIVES',
@@ -133,7 +154,7 @@ final class SseDocumentChromeCatalog
                 'subtitle_dossier' => 'Compte rendu d’exploitation',
                 'subtitle_feuille' => 'Feuille officielle',
                 'subtitle_docs' => 'Pièces jointes',
-                'footer' => 'Document de renseignement — usage RP uniquement. Ne constitue pas une preuve judiciaire.',
+                'footer' => '',
                 'quality_prefix' => 'Qualité d’exploitation',
                 'org_line' => 'ATHENA · COMPSEC',
                 'seal_top' => 'BUREAU SSE',
@@ -183,6 +204,8 @@ final class SseDocumentChromeCatalog
                 }
             }
         }
+        // Le pied de page est facultatif : vide par défaut, et un ancien pied livré ne s'affiche plus.
+        $out['footer'] = self::footerText($chrome['footer'] ?? '');
         $style = (string) ($out['paper_style'] ?? self::STYLE_CLEAN);
         if (!isset($styles[$style])) {
             $out['paper_style'] = self::STYLE_CLEAN;

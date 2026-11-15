@@ -30,8 +30,23 @@ final class SseDocumentChromeAssetTest extends TestCase
         self::assertContains('brouillon_froisse', $codes);
 
         $def = SseDocumentChromeCatalog::defaultChrome();
-        self::assertStringContainsString('preuve', (string) ($def['footer'] ?? ''));
         self::assertSame('clean', $def['paper_style'] ?? null);
+        // Aucun modèle livré ne porte de mention de jeu : pied de page vide, description sans « RP ».
+        foreach ($prefabs as $prefab) {
+            self::assertSame('', $prefab['footer'], $prefab['code'] . ' : pied de page');
+            foreach ($prefab as $key => $value) {
+                if (is_string($value)) {
+                    self::assertNull(\App\Support\SseFictionMentions::find($value), $prefab['code'] . '.' . $key);
+                    self::assertDoesNotMatchRegularExpression('/\bRP\b/', $value, $prefab['code'] . '.' . $key);
+                }
+            }
+        }
+        self::assertSame('', SseDocumentChromeCatalog::normalize([])['footer']);
+        // Un ancien pied livré, encore enregistré, ne s'affiche plus ; un pied écrit par une communauté reste.
+        foreach (SseDocumentChromeCatalog::LEGACY_FOOTERS as $legacy) {
+            self::assertSame('', SseDocumentChromeCatalog::normalize(['footer' => $legacy])['footer']);
+        }
+        self::assertSame('Exemplaire du bureau — ne pas reproduire.', SseDocumentChromeCatalog::normalize(['footer' => ' Exemplaire du bureau — ne pas reproduire. '])['footer']);
     }
 
     public function testPresentationPageAndPaperPartialAreWired(): void

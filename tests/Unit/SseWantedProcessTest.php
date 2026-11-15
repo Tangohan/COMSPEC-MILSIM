@@ -127,7 +127,7 @@ final class SseWantedProcessTest extends TestCase
         $notice = (new SseWantedNoticeRepository())->find(1, $res['id']);
         self::assertStringContainsString('JCTC', (string) $notice['contact_label'], 'Le texte final du service est écrit dans l’avis');
         self::assertStringContainsString('FALCON NET', (string) $notice['contact_detail']);
-        self::assertSame('Cellule de contre-terrorisme interarmées (fictive)', $notice['authority']);
+        self::assertSame('Cellule de contre-terrorisme interarmées', $notice['authority']);
         $meta = $this->meta($res['id']);
         self::assertSame('SVC-CTC', $meta['service_code']);
         self::assertSame('confidentiel', $meta['classification']);
@@ -375,8 +375,8 @@ final class SseWantedProcessTest extends TestCase
         $notice = (new SseWantedNoticeRepository())->find(1, $res['id']);
         $data = (new SseWantedNoticePdfService())->data(1, $notice, 'fr');
         self::assertNotNull($data);
-        self::assertSame('Cellule de contre-terrorisme interarmées (fictive)', $data['authority'][0]);
-        self::assertSame('Joint Counter-Terrorism Cell (fictional)', $data['authority'][1]);
+        self::assertSame('Cellule de contre-terrorisme interarmées', $data['authority'][0]);
+        self::assertSame('Joint Counter-Terrorism Cell', $data['authority'][1]);
         self::assertStringContainsString('JCTC', $data['contact_label']);
         self::assertStringContainsString('FALCON NET', $data['contact_detail']);
         self::assertSame('SVC-CTC', $data['service']['code']);
