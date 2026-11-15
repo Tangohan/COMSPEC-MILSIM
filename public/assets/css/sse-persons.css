@@ -351,7 +351,7 @@ body.sse-iw .sx-main .pe .pe-search input[type="search"] { width: 100%; min-heig
 /* Cellules : le style générique des tableaux du bureau (majuscules, 11 px) ne s'applique pas ici */
 body.sse-iw .sx-main .pe-table td,
 body.sse-iw .sx-main .pe-table tbody th { font-family: inherit; font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--pe-text); background: transparent; }
-body.sse-iw .sx-main .pe-table thead th { font-family: inherit; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--pe-dim); background: var(--pe-surface-2); }
+body.sse-iw .sx-main .pe-table thead th { white-space: normal; font-family: inherit; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--pe-dim); background: var(--pe-surface-2); }
 body.sse-iw .sx-main .pe-table { min-width: 0; }
 body.sse-iw .sx-main .pe-table tbody tr:hover { background: transparent; }
 .pe .pe-name, .pe .pe-who small, .pe .pe-restricted small { white-space: normal; }

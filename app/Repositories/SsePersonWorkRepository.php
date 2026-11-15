@@ -75,7 +75,7 @@ final class SsePersonWorkRepository
     // ------------------------------------------------------------------ Lots joints à la liste
 
     /**
-     * @param list<int> $ids
+     * @param list<int> $photoIds identifiants des photos principales
      * @return array<int, string> personne => adresse publique de la photo principale
      */
     public function primaryPhotos(int $tenantId, array $photoIds): array

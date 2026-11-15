@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use App\Repositories\SseCaseRepository;
-
 /**
  * Page « Personnes » du portail SSE (vue de travail) : vocabulaire, règles de lecture et lecture des paramètres d'adresse.
  *
@@ -100,7 +98,7 @@ final class SsePersonWork
     {
         $c = strtolower(trim((string) $code));
 
-        return $c === '' || !isset(SseUsClassification::SCALE[$c]) ? -1 : array_search($c, SseUsClassification::codes(), true);
+        return $c === '' || !isset(SseUsClassification::SCALE[$c]) ? -1 : (int) array_search($c, SseUsClassification::codes(), true);
     }
 
     public static function isClassification(?string $code): bool
@@ -327,12 +325,6 @@ final class SsePersonWork
         $c = strtolower(trim((string) $code));
 
         return isset(self::CLOSE_REASONS[$c]) ? self::CLOSE_REASONS[$c][$lang === 'en' ? 1 : 0] : '';
-    }
-
-    /** Niveaux de classification accessibles dans SseCaseRepository (cohérence de l'échelle avec les dossiers). */
-    public static function scaleMatchesCases(): bool
-    {
-        return SseUsClassification::codes() === array_keys(SseCaseRepository::CLASSIFICATION_LABELS);
     }
 
     private static function textOrNull(mixed $v): ?string
