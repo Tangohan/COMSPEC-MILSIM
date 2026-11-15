@@ -970,3 +970,10 @@ body.sse-iw .sx-brand span { white-space: nowrap; }
 @media (max-width: 1180px) { body.sse-iw .sx-cmd { display: none; } body.sse-iw .sx-brand span { display: none; } }
 @media (max-width: 1180px) { .sse-table .sse-main { min-width: 0; } }
 .sse-tile__value--text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+@media (max-width: 640px) {
+    .sse-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .sse-tile { padding: 16px; }
+    .sse-tile__value { font-size: 24px; }
+    .sse-tile__value--text { font-size: 16px; }
+}
