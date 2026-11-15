@@ -7,7 +7,7 @@
  */
 
 .jc {
-  --jc-top: 108px;
+  --jc-top: 61px; /* hauteur de la barre du haut ; réajustée par le script à la hauteur mesurée */
   --jc-aside: 320px;
   --jc-ok: #34d399;
   --jc-violet: #a78bfa;
