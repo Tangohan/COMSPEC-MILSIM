@@ -7,6 +7,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,mixed> $check */
 /** @var array<string,mixed>|null $doc */
 /** @var array<string,mixed>|null $person */
+/** @var array<string,mixed>|null $paperImage photo du papier visible par ce lecteur (SseCheckPaperImageService::view) */
+$paperImage = is_array($paperImage ?? null) ? $paperImage : null;
 $results = is_array($check['results'] ?? null) ? $check['results'] : [];
 /** Résultat d'un niveau en lignes lisibles « clé : valeur ». */
 $describe = static function (mixed $res) use (&$describe): string {
@@ -51,6 +53,12 @@ require __DIR__ . '/_subnav.php';
         <div><span class="muted">Opération</span><br><strong><?= $h($check['op_key'] ?? '—') ?></strong></div>
         <div><span class="muted">Dossier</span><br><strong><?= $h($check['case_ref'] ?? '—') ?></strong></div>
     </div>
+    <?php if ($paperImage !== null): ?>
+        <div class="panel-body idp-paper-shot">
+            <a href="<?= $h($paperImage['url']) ?>" target="_blank" rel="noopener"><img src="<?= $h($paperImage['thumb_url']) ?>" alt="Photo du papier présenté au contrôle <?= $h($check['ref']) ?>" loading="lazy"></a>
+            <p class="muted">Photo du papier prise par le contrôleur. Cliquez pour l’ouvrir en grand.</p>
+        </div>
+    <?php endif; ?>
     <div class="panel-body idp-actions">
         <?php if ($doc !== null): ?>
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/papiers/documents/' . (int) $doc['id'])) ?>">Papier du registre <?= $h($doc['ref']) ?></a>

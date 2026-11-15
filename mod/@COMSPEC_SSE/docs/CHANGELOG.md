@@ -1,5 +1,32 @@
 # COMSPEC SSE — historique des versions
 
+## 1.15.0 — 15/11/2026 · Photo du papier au contrôle d'identité
+
+**Relancer Arma complètement.** Sources seulement dans cette livraison : le PBO `comspec_sse_identity` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). **COMSPEC Link 2.0.127 nécessaire** pour la photo (livrée avec COMSPEC ATAK 4.26.0) ; avec une DLL plus ancienne, le bouton est grisé et le reste fonctionne comme avant.
+
+### Résumé joueur
+Type : nouveauté
+FR : Une photo du papier peut être jointe au contrôle d'identité
+- La fenêtre qui affiche le papier présenté a un nouveau bouton « PHOTO DU PAPIER ». La photo est jointe au contrôle sur Athena, seulement quand tu appuies sur ce bouton.
+- Prise avant « Transmettre », la photo part avec le contrôle ; prise après, elle part tout de suite.
+- La ligne sous le papier et la ligne « Photo du papier » de l'app Contrôle ID disent où en est l'envoi : en cours, envoyée, ou non envoyée avec la raison. Après un échec, le bouton « Renvoyer la photo » relance l'envoi.
+- Sur le portail, la photo s'affiche sur la fiche du contrôle, dans « Consigner depuis les contrôles » et sur le papier consigné.
+EN : A photo of the paper can be attached to the identity check
+- The window that shows the presented paper has a new "PAPER PHOTO" button. The photo is attached to the check on Athena, only when you press that button.
+- Taken before "Transmit", the photo goes out with the check; taken after, it goes out right away.
+- The line under the paper and the "Paper photo" line of the ID Check app tell you where the sending stands: sending, sent, or not sent with the reason. After a failure, the "Resend photo" button sends it again.
+- On the portal, the photo shows on the check page, in "Record from checks" and on the recorded paper.
+
+### Détail technique
+- `fn_idPaperPhoto.sqf` (nouveau) : `has` (commande `UploadIdCheckPhoto` annoncée par `GetAtakFeatures`), `can`, `shoot` (capture `screenshot` nommée `COMSPEC_SSE_Paper_<6 derniers chiffres de l'UID>_<temps>.png`, cadre du papier lu dans `geo` de la visionneuse et donné en dix-millièmes de l'écran), `send` (appel de la DLL puis relevé de `IdCheckPhotoStatus` toutes les 2 s, 90 s au plus), `label`, `refresh`. État porté par la fiche : `paperShot`, `paperCrop`, `paperClock`, `paperState` (`taken`, `sending`, `sent`, `failed`), `paperWhy`.
+- `idViewer.hpp` et `fn_idViewerOnLoad.sqf` : bouton 93716 « PHOTO DU PAPIER », rangé avec les autres ; texte et activation selon l'état (« REFAIRE LA PHOTO », « ENVOI EN COURS », « PHOTO INDISPONIBLE »).
+- `fn_idPage.sqf` et `fn_idAction.sqf` : bouton « Photo du papier » (ouvre la visionneuse, la photo n'est jamais prise toute seule), « Renvoyer la photo » après un échec, ligne d'état « Photo du papier ».
+- `fn_idAthenaSubmit.sqf` : la photo prise avant l'envoi (ou restée en échec) part après la réponse `OK|id|réf` du site ; elle est rattachée au contrôle par sa clé d'idempotence.
+- Aucun message de l'interface d'Arma : ligne d'état de la visionneuse, lignes de l'app, journal RPT.
+- `fn_idZenRegister.sqf` : champ « Signalement physique » de l'avis (traduit « Physical description »).
+- Traductions EN : `tools/i18n_identity_en.tsv` (+26 lignes), reportées dans `i18n/en.txt` de l'ATAK 4.26.0.
+- **Non vérifié en jeu** : la commande `screenshot` doit garder la visionneuse dans l'image (elle le fait pour la capture de carte en rendu « Plan » de l'ATAK). **À tester** : photo avant et après « Transmettre », liaison coupée puis « Renvoyer la photo », qualité HDR basse (capture refusée par le jeu : l'état le dit).
+
 ## 1.14.0 — 15/11/2026 · Motifs et mesures au contrôle, date et autorité des papiers
 
 **Relancer Arma complètement.** Sources seulement dans cette livraison : le PBO `comspec_sse_identity` et les `script_mod.hpp` de tous les addons sont à reconstruire (`build_mod.bat`). Aucune DLL à changer (COMSPEC Link reste 2.0.125 : la DLL relaie le JSON du contrôle tel quel).

@@ -101,6 +101,9 @@ foreach ($remontees as $r) {
                                     </p>
                                     <p class="rem-dup" data-rem-dup hidden>Même papier sélectionné deux fois : un seul papier sera créé, rattaché aux deux contrôles.</p>
                                 </div>
+                                <?php if (is_array($r['paper_image'] ?? null)): ?>
+                                    <a class="rem-shot" href="<?= $h($r['paper_image']['url']) ?>" target="_blank" rel="noopener"><img src="<?= $h($r['paper_image']['thumb_url']) ?>" alt="Photo du papier <?= $h($f['doc_number']) ?> prise au contrôle <?= $h($r['ref']) ?>" loading="lazy"></a>
+                                <?php endif; ?>
                                 <?php if ($r['selectable']): ?>
                                     <button type="button" class="rem-edit" data-rem-edit aria-expanded="false" aria-controls="rem-f-<?= $id ?>">Modifier</button>
                                 <?php endif; ?>

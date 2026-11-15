@@ -1,3 +1,20 @@
+[h1]COMSPEC SSE 1.15.0 — photo du papier au contrôle d'identité / paper photo at the identity check (15/11/2026)[/h1]
+[b]Relance Arma complètement. / Fully restart Arma.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Photo du papier[/b] : la fenêtre du papier présenté a un bouton « PHOTO DU PAPIER ». La photo est jointe au contrôle sur Athena, seulement quand tu appuies sur ce bouton.
+[*] Prise avant « Transmettre », elle part avec le contrôle ; l'app Contrôle ID dit où en est l'envoi et propose « Renvoyer la photo » après un échec.
+[*] Il faut COMSPEC ATAK 4.26.0 (COMSPEC Link 2.0.127). Avec une version plus ancienne, le bouton est grisé et le reste fonctionne comme avant.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Paper photo[/b]: the window of the presented paper has a "PAPER PHOTO" button. The photo is attached to the check on Athena, only when you press that button.
+[*] Taken before "Transmit", it goes out with the check; the ID Check app tells you where the sending stands and offers "Resend photo" after a failure.
+[*] COMSPEC ATAK 4.26.0 (COMSPEC Link 2.0.127) is required. With an older version, the button is greyed out and everything else works as before.
+[/list]
+
 [h1]COMSPEC SSE 1.14.0 — motifs et mesures au contrôle, date et autorité des papiers / reasons and measures at the check, paper dates and authority (15/11/2026)[/h1]
 [b]Relance Arma complètement. / Fully restart Arma.[/b]
 

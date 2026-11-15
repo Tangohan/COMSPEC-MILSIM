@@ -222,6 +222,10 @@ final class SseCheckPaperSelectionService
             'doc_id' => $docOpen,
             'doc_ref' => $docRef,
             'fields' => $f,
+            // Rattachements bruts et présence d'une photo du papier (SseCheckPaperImageService décide qui la voit).
+            'identity_id' => (int) ($check['identity_id'] ?? 0),
+            'document_id' => $docId,
+            'has_paper_image' => !empty($check['has_paper_image']),
         ];
     }
 

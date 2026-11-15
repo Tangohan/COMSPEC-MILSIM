@@ -10,6 +10,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,mixed>|null $holder */
 /** @var list<string> $mrz */
 /** @var list<array<string,mixed>> $checks */
+/** @var list<array<string,mixed>> $paperImages photos du papier prises aux contrôles rattachés, visibles par ce lecteur */
+$paperImages = is_array($paperImages ?? null) ? $paperImages : [];
 /** @var list<array<string,mixed>> $instances */
 /** @var list<string> $transitions */
 $canSeeTruth = !empty($canSeeTruth);
@@ -191,6 +193,16 @@ if ($aiLinks !== []): ?>
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">05</span> Contrôles de ce papier</div><div class="panel-meta"><?= count($checks) ?> contrôle(s)</div></div>
+    <?php if ($paperImages !== []): ?>
+        <div class="panel-body">
+            <p class="muted">Photos du papier prises aux contrôles.</p>
+            <div class="idp-photos">
+                <?php foreach ($paperImages as $pi): ?>
+                    <a href="<?= $h($pi['url']) ?>" target="_blank" rel="noopener"><img src="<?= $h($pi['thumb_url']) ?>" alt="Photo du papier, contrôle <?= $h($pi['check_ref']) ?>" loading="lazy"></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
     <?php if ($checks === []): ?>
         <div class="panel-body"><p class="muted">Aucun contrôle reçu du terrain pour ce papier.</p></div>
     <?php else: ?>

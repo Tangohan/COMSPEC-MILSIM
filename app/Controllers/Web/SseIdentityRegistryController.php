@@ -57,6 +57,7 @@ final class SseIdentityRegistryController
         private ?SseIdCountryRepository $countries = null,
         private ?SsePersonRepository $persons = null,
         private ?SseIdentityGeneratorService $generator = null,
+        private ?\App\Services\Sse\SseCheckPaperImageService $paperImages = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->clearance ??= new SseClearanceService($this->access);
@@ -381,6 +382,7 @@ final class SseIdentityRegistryController
             'holder' => $holder,
             'mrz' => SseMrzService::forDocument($doc, $identity, (string) ($country['mrz_code'] ?? '')),
             'checks' => $this->checks->list($tenantId, ['document_id' => (int) $doc['id'], 'limit' => 50]),
+            'paperImages' => $this->paperImage(fn (\App\Services\Sse\SseCheckPaperImageService $s): array => $s->forDocument($tenantId, (int) $doc['id'])) ?? [],
             'instances' => $this->documents->instances((int) $doc['id'], $tenantId),
             'transitions' => SseIdentityCatalog::TRANSITIONS[$doc['workflow']] ?? [],
             'papersTab' => 'documents',
@@ -989,6 +991,12 @@ final class SseIdentityRegistryController
         if ($this->canManage() && \App\Services\Sse\SseIdentityHolderService::isObservedOnly($identity)) {
             try {
                 $remontees = (new \App\Services\Sse\SseCheckPaperSelectionService())->candidates($tenantId, $identity);
+                // Photo du papier prise au contrôle (aperçu) : seulement celles que ce lecteur peut voir.
+                $withImage = array_values(array_filter($remontees, static fn (array $r): bool => !empty($r['has_paper_image'])));
+                $remImages = $withImage !== [] ? ($this->paperImage(fn (\App\Services\Sse\SseCheckPaperImageService $s): array => $s->views($tenantId, $withImage)) ?? []) : [];
+                foreach ($remontees as $i => $r) {
+                    $remontees[$i]['paper_image'] = $remImages[(int) $r['id']] ?? null;
+                }
             } catch (\Throwable $e) {
                 error_log('Fiche identité : remontées des contrôles indisponibles : ' . $e->getMessage());
             }
@@ -1222,9 +1230,78 @@ final class SseIdentityRegistryController
             'check' => $check,
             'doc' => $check['document_id'] !== null ? $this->documents->find((int) $check['document_id'], $tenantId) : null,
             'canConsign' => $this->canManage() && ($check['identity_id'] ?? null) !== null && $this->isSubject((int) $check['identity_id'], $tenantId),
+            'paperImage' => $this->paperImage(fn (\App\Services\Sse\SseCheckPaperImageService $s): ?array => $s->view($tenantId, $check)),
             'person' => $check['person_id'] !== null ? $this->persons->findById((int) $check['person_id'], $tenantId) : null,
             'papersTab' => 'controles',
         ]);
+    }
+
+    /**
+     * GET /atak/sse/papiers/controles/{id}/photo-papier(?v=mini) : photo du papier d'un contrôle, servie seulement au
+     * lecteur qui a le droit de lire les papiers ; contrôle d'une autre communauté, photo d'une identité de membre sans
+     * autorisation hiérarchique, papier secret sans habilitation : introuvable, aucun octet ne part.
+     */
+    public function checkPaperImage(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store')
+            ->setBody('Not found');
+        $tenantId = $this->tenantId();
+        if ($tenantId < 1 || !SseAccessPolicy::sessionAllows('papiers', SseAccessCatalog::LEVEL_READ, ['guest' => $this->access->isGuest(), 'tenant_id' => $tenantId])) {
+            return $notFound();
+        }
+        $checkId = (int) ($params['id'] ?? 0);
+        $res = $this->paperImage(fn (\App\Services\Sse\SseCheckPaperImageService $s): ?array => $s->resolve($tenantId, $checkId, $request->queryString('v') === 'mini'));
+        if ($res === null) {
+            return $notFound();
+        }
+        if ($res['confidential']) {
+            try {
+                $gate = \App\Services\Sse\SseMemberImageGate::forSession();
+                $gate->recordConsultation($tenantId, (int) $gate->viewerId(), 'check_paper_image', $checkId, $res['owner'], $res['reason']);
+            } catch (\Throwable $e) {
+                error_log('Contrôle d’identité : consultation d’une image confidentielle non journalisée, image refusée : ' . $e->getMessage());
+
+                return $notFound();
+            }
+        }
+        $abs = $res['file'];
+        $ext = ['image/png' => 'png', 'image/webp' => 'webp', 'image/jpeg' => 'jpg'][$res['mime']] ?? 'bin';
+
+        return (new Response())
+            ->header('Content-Type', $res['mime'])
+            ->header('Content-Length', (string) filesize($abs))
+            ->header('Content-Disposition', 'inline; filename="controle-' . $checkId . '-papier.' . $ext . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Referrer-Policy', 'no-referrer')
+            ->setBodyStream(static function () use ($abs): void {
+                $h = fopen($abs, 'rb');
+                if ($h !== false) {
+                    fpassthru($h);
+                    fclose($h);
+                }
+            });
+    }
+
+    /**
+     * Lecture des photos de papier sans jamais casser l'écran : base indisponible ou erreur de calcul, rien n'est montré.
+     *
+     * @template T
+     * @param \Closure(\App\Services\Sse\SseCheckPaperImageService): T $read
+     * @return T|null
+     */
+    private function paperImage(\Closure $read): mixed
+    {
+        try {
+            return $read($this->paperImages ??= new \App\Services\Sse\SseCheckPaperImageService());
+        } catch (\Throwable $e) {
+            error_log('Photo du papier d’un contrôle indisponible : ' . $e->getMessage());
+
+            return null;
+        }
     }
 
     /**

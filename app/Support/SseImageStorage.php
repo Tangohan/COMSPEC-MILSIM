@@ -22,8 +22,11 @@ final class SseImageStorage
 
     public const PATH_PREFIX = 'sse-private/';
 
-    /** Dossiers d'images sensibles (« sse-wanted » : pièces jointes des avis de recherche, servies par la route des avis). */
-    public const FOLDERS = ['sse-id-photos', 'sse-id-signatures', 'sse-id-backgrounds', 'sse-wanted'];
+    /**
+     * Dossiers d'images sensibles (« sse-wanted » : pièces jointes des avis de recherche, servies par la route des avis ;
+     * « sse-id-checks » : photo du papier d'un contrôle d'identité, servie par la route du contrôle).
+     */
+    public const FOLDERS = ['sse-id-photos', 'sse-id-signatures', 'sse-id-backgrounds', 'sse-wanted', 'sse-id-checks'];
 
     private const NAME = '[0-9]{1,10}_[a-f0-9]{16}\.(?:jpg|png|webp)';
 

@@ -30,7 +30,7 @@ final class SseIdentityWiringAssetTest extends TestCase
             self::assertStringContainsString($needle, $routes);
         }
         // Pages du portail derrière les deux gardes du portail SSE, « nouvelle » / « nouveau » avant /{id}.
-        self::assertSame(26, preg_match_all("#'/atak/sse/papiers[^']*', \\[\\\\App\\\\Controllers\\\\Web\\\\SseIdentityRegistryController::class, '\\w+'\\], \\\$mwSsePortal\\)#", $routes));
+        self::assertSame(27, preg_match_all("#'/atak/sse/papiers[^']*', \\[\\\\App\\\\Controllers\\\\Web\\\\SseIdentityRegistryController::class, '\\w+'\\], \\\$mwSsePortal\\)#", $routes));
         self::assertLessThan(strpos($routes, "'/atak/sse/papiers/identites/{id}'"), strpos($routes, "'/atak/sse/papiers/identites/nouvelle'"));
         self::assertLessThan(strpos($routes, "'/atak/sse/papiers/documents/{id}'"), strpos($routes, "'/atak/sse/papiers/documents/nouveau'"));
         // Pays réels stylisés (univers réaliste-simulation) : import avant /pays/{id}.
@@ -57,7 +57,7 @@ final class SseIdentityWiringAssetTest extends TestCase
     public function testLinkDllServesTheFourCommandsAndAnnouncesThem(): void
     {
         $ext = self::read('mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertMatchesRegularExpression('/MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck"/', $ext);
+        self::assertMatchesRegularExpression('/MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck,UploadIdCheckPhoto"/', $ext);
         self::assertStringContainsString("if (function == \"GetIdentityPackChunk\")\n            return IdentityPackChunk(args);", str_replace("\r\n", "\n", $ext));
         self::assertStringContainsString('if (function is "GetIdentityPack" or "QueryIdDocument" or "SubmitIdCheck")', $ext);
 

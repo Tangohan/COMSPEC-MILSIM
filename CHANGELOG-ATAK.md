@@ -38,6 +38,34 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Contrôle d'identité : la photo du papier remonte sur Athena (ATAK natif 4.26.0.AG - Washington, COMSPEC Link 2.0.127)
+
+### Résumé joueur
+Type : nouveauté
+FR : Tu peux joindre une photo du papier à ton contrôle d'identité
+- Avec le mod COMSPEC SSE 1.15.0, la fenêtre qui affiche le papier présenté a un nouveau bouton « PHOTO DU PAPIER » : la photo est jointe à ton contrôle sur Athena. Rien ne part sans que tu appuies sur ce bouton.
+- La ligne sous le papier et l'app Contrôle ID te disent où en est l'envoi : en cours, envoyée, ou non envoyée avec la raison. Après un échec, le bouton « Renvoyer la photo » de l'app relance l'envoi.
+- Sur le portail, la photo s'affiche sur la fiche du contrôle, dans « Consigner depuis les contrôles » et sur le papier consigné.
+- Dans l'app Fiches, la rubrique d'un avis de recherche s'appelle maintenant « Signalement physique » (« Physical description » en anglais).
+- Mets à jour le mod et sa DLL COMSPEC Link (2.0.127), puis redémarre complètement Arma 3.
+EN : You can attach a photo of the paper to your identity check
+- With the COMSPEC SSE 1.15.0 mod, the window that shows the presented paper has a new "PAPER PHOTO" button: the photo is attached to your check on Athena. Nothing is sent unless you press that button.
+- The line under the paper and the ID Check app tell you where the sending stands: sending, sent, or not sent with the reason. After a failure, the app's "Resend photo" button sends it again.
+- On the portal, the photo shows on the check page, in "Record from checks" and on the recorded paper.
+- In the Fiches app, the section of a wanted notice is now called "Physical description" in English.
+- Update the mod and its COMSPEC Link DLL (2.0.127), then restart Arma 3 completely.
+
+### Détail technique
+- **Canal** : celui des photos du mod, réutilisé. Le jeu écrit une capture (`screenshot`, visionneuse du papier ouverte) dans le dossier Screenshots du profil ; la DLL la lit, la recadre, la compresse et l'envoie en multipart, comme les photos de l'app Caméra, les photos de visage du SEEK et les pièces de fiche. Aucun nouveau canal binaire, rien ne passe par les arguments de `callExtension`.
+- **DLL (COMSPEC Link 2.0.127)** : `Extension_IdCheckPhoto.cs`. `UploadIdCheckPhoto [clé du contrôle, fichier, x, y, largeur, hauteur]` répond `OK|queued` (cadre du papier en dix-millièmes de l'écran) et envoie en tâche de fond vers `POST /api/sse/identity/checks/image` ; `IdCheckPhotoStatus [clé]` répond `OK|none`, `OK|pending`, `OK|sent` ou `OK|failed|motif`. La commande est annoncée par `GetAtakFeatures`.
+- **Garde-fous de la DLL** : nom de fichier strict (`COMSPEC_SSE_Paper_….png`, jamais de dossier ni de « .. »), fichier cherché seulement dans les dossiers de captures (`ScreenshotDirs`, sans sous-dossier, chemin résolu comparé au dossier, liens refusés), signature PNG vérifiée, source de 96 Mo au plus, JPEG de 1,5 Mo au plus (plus grand côté ramené à 1600 px, qualité abaissée puis image réduite), 4 envois en attente au plus, 2 s entre deux envois et 12 par 10 minutes. Rien n'est écrit au journal ; la capture est effacée de Screenshots après l'envoi. Ces captures ne partent jamais vers la photothèque (`IsSseIdentityCaptureName`).
+- **Site** : `SseCheckPaperImageService` (communauté de la clé de jeu, contrôle introuvable hors de cette communauté, vrai type lu dans le contenu, 1,5 Mo, métadonnées retirées, miniature, rangement privé `sse-id-checks`, débit borné, audit). Lecture par la route contrôlée `/atak/sse/papiers/controles/{id}/photo-papier` ; une photo liée à une identité de membre n'est ni listée ni servie sans autorisation hiérarchique. Aucune migration : l'entrée vit sous `paper_image` des résultats du contrôle et n'en sort jamais avec eux.
+- **ATAK natif** : `LINK_VERSION_STR` 2.0.127 ; `fn_pageFiches` : libellé « Signalement physique » pour un avis de recherche ; dictionnaire anglais complété (photo du papier, « Physical description »).
+- **Non vérifié en jeu** : `screenshot` doit garder l'interface (la visionneuse) dans l'image, comme pour la capture de carte en rendu « Plan » ; si l'image sortait sans le papier, le bouton serait à revoir. Les deux projets de DLL compilent (`dotnet build`) ; aucun binaire n'est livré dans cette PR.
+- **À tester en jeu** : contrôler un papier, « PHOTO DU PAPIER » avant puis après « Transmettre », liaison coupée (échec puis « Renvoyer la photo »), puis ouvrir le contrôle sur le portail.
+
+---
+
 ## Compte non lié sans rafales d'envois, comptes rendus avec envoi visible et RENVOYER (ATAK natif 4.25.0.AG - Washington, COMSPEC Link 2.0.126)
 
 ### Résumé joueur

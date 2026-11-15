@@ -34,6 +34,9 @@
 .rem-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 15px; color: var(--text-strong); }
 .rem-num { font-family: var(--mono); font-size: 14px; letter-spacing: .02em; overflow-wrap: anywhere; }
 .rem-meta { margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--text); overflow-wrap: anywhere; }
+/* Aperçu de la photo du papier prise au contrôle. */
+.rem-shot { flex: none; display: block; width: 96px; margin-top: 6px; border: 1px solid var(--border-hover); }
+.rem-shot img { display: block; width: 100%; height: auto; }
 .rem-link { color: var(--green-bright); text-decoration: underline; text-underline-offset: 2px; font-size: 13px; }
 .rem-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; font-size: 13px; border: 1px solid var(--border-hover); color: var(--text-strong); }
 .rem-badge--new { border-color: var(--green); color: var(--green-bright); }

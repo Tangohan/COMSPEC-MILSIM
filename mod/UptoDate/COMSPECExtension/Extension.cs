@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.126";
+    private const string ExtensionVersion = "2.0.127";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -4016,6 +4016,11 @@ public static partial class Extension
         // COMSPEC IDENTITY (2.0.118) : morceau du pack d'identité gardé en mémoire par GetIdentityPack, sans réseau.
         if (function == "GetIdentityPackChunk")
             return IdentityPackChunk(args);
+        // COMSPEC IDENTITY (2.0.127) : photo du papier d'un contrôle (Extension_IdCheckPhoto.cs), réponse immédiate, envoi en tâche de fond.
+        if (function == "UploadIdCheckPhoto")
+            return BeginUploadIdCheckPhoto(args);
+        if (function == "IdCheckPhotoStatus")
+            return IdCheckPhotoStatus(args);
         if (function == "GetCommunityOrbatChunk")
             return CommunityOrbatChunk(args);
         if (function == "GetYearReviewChunk")
@@ -4515,7 +4520,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,ReadCoverFile,ReadCoverFileChunk,MedicalRoster,AthenaPatches,GetCommunityBrief,GetCommunityOrbat,GetCommunityOrbatChunk,GetYearReview,GetYearReviewChunk,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,ReadCoverFile,ReadCoverFileChunk,MedicalRoster,AthenaPatches,GetCommunityBrief,GetCommunityOrbat,GetCommunityOrbatChunk,GetYearReview,GetYearReviewChunk,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck,UploadIdCheckPhoto";
         }
 
         if (function == "GetCapabilities")
@@ -11856,7 +11861,7 @@ public static partial class Extension
         try
         {
             var n = Path.GetFileName(pathOrName ?? "") ?? "";
-            return n.StartsWith("COMSPEC_SSE_Face", StringComparison.OrdinalIgnoreCase);
+            return n.StartsWith("COMSPEC_SSE_Face", StringComparison.OrdinalIgnoreCase) || IsIdPaperCaptureName(n);
         }
         catch
         {

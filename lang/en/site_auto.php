@@ -70331,4 +70331,9 @@ return [
     'Afficher le bouton Cerbère' => 'Show the Cerbère button',
     'Le bouton est de retour sur vos pages.' => 'The button is back on your pages.',
     'Le bouton rond en bas à droite de chaque page ouvre Cerbère : ce qu’il a fait et ce qui attend votre décision sur la page où vous êtes.' => 'The round button at the bottom right of every page opens Cerbère: what it did and what is waiting for your decision on the page you are on.',
+    'Photo du papier %1 prise au contrôle %2' => 'Photo of paper %1 taken at check %2',
+    'Photo du papier prise par le contrôleur. Cliquez pour l’ouvrir en grand.' => 'Photo of the paper taken by the checking operator. Click to open it full size.',
+    'Photo du papier présenté au contrôle %1' => 'Photo of the paper presented at check %1',
+    'Photo du papier, contrôle %1' => 'Photo of the paper, check %1',
+    'Photos du papier prises aux contrôles.' => 'Photos of the paper taken at checks.',
 ];
