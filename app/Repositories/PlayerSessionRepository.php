@@ -10,7 +10,7 @@ use App\Support\SteamId;
 use PDO;
 
 /**
- * Sessions de jeu d'un joueur sur le serveur de sa communauté (table player_sessions, étape 4690).
+ * Sessions de jeu d'un joueur sur le serveur de sa communauté (table player_sessions, étape 4710).
  *
  * SQL portable (aucune fonction de date MySQL : les bornes sont calculées ici), pour tourner aussi sous SQLite en test.
  * Tout est limité à la communauté (tenant_id). Le rattachement Steam ↔ membre est relu à chaque lecture depuis

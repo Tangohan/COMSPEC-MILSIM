@@ -240,7 +240,7 @@ final class DataCampaignPageTest extends TestCase
     public function testEveryPageTextHasAnEnglishTranslation(): void
     {
         $en = require self::ROOT . '/lang/en/site_auto.php';
-        $texts = [DataCampaignPage::pageTitle(), DataCampaignPage::pageLead(), DataCampaignPage::progressLabel(1, 1), 'Tout confirmer', 'Continuer'];
+        $texts = [DataCampaignPage::pageTitle(), DataCampaignPage::pageLead(), DataCampaignPage::progressLabel(1, 1), 'Tout confirmer', 'Continuer', 'Pourquoi cette demande ?', 'Autres campagnes ouvertes'];
         foreach (['ok', 'to_confirm', 'incomplete', 'flagged'] as $status) {
             $texts[] = DataCampaignPage::statusLabel($status);
             $texts[] = DataCampaignPage::actionLabel($status);

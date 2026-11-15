@@ -42,6 +42,19 @@ _p2p pushBack createHashMapFromArray [["peer", _from], ["dir", "in"], ["body", _
 while {(count _p2p) > 200} do { _p2p deleteAt 0; };
 _data set ["p2p", _p2p];
 if (_id isNotEqualTo "" && {!isNull _sender}) then { ["comspec_atak_native_p2pAck", [_id, "DELIVERED", [dayTime, "HH:MM"] call BIS_fnc_timeToString], _sender] call CBA_fnc_targetEvent; };
+// Fiche partagée (« [FICHE] référence · genre · titre ») : rangée dans « Reçues » de l'app Fiches, avec la référence et le titre seulement ;
+// la fiche s'ouvre dans MA liste, donc selon MON habilitation (le site filtre).
+if ((_body select [0, 8]) isEqualTo "[FICHE] ") then {
+    private _fp = ((_body select [8]) splitString "·") apply { trim _x };
+    private _fr = ((_fp param [0, ""]) splitString " ") param [0, ""];
+    private _kinds = ["avis", "identification", "vigilance", "profile", "control"];
+    private _fk = _kinds findIf { (["kindLabel", _x] call comspec_atak_native_fnc_fichesAction) isEqualTo (_fp param [1, ""]) };
+    private _kc = "";
+    if (_fk >= 0) then { _kc = _kinds select _fk; };
+    if (_fr isNotEqualTo "" && {(count _fr) <= 40}) then {
+        ["receive", [_from, _fr, _fp param [2, ""], _kc, "", "sms"]] call comspec_atak_native_fnc_fichesAction;
+    };
+};
 private _preview = [_body, (_body select [0, 60]) + "…"] select ((count _body) > 60);
 // Notification : ouvre l'app SMS si elle est installée, sinon Messages.
 private _smsOn = (([] call comspec_atak_native_fnc_appList) findIf { (_x get "page") isEqualTo "SMS" && {[_x] call comspec_atak_native_fnc_appVisible} }) >= 0;
