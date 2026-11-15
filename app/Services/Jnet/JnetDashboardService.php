@@ -702,6 +702,8 @@ final class JnetDashboardService
             $byId[(int) ($row['id'] ?? 0)] = $row;
         }
 
+        // Prénom, nom et trigramme du personnage (user_profiles) : la même source que la fiche et l'annuaire.
+        $raw = (new \App\Services\Personnel\MemberNameService())->withIdentities($tenantId, $raw);
         $cards = [];
         foreach ($raw as $row) {
             $id = (int) ($row['id'] ?? 0);
@@ -1170,30 +1172,18 @@ final class JnetDashboardService
     {
         $id = (int) ($row['id'] ?? 0);
         $display = trim((string) ($row['display_name'] ?? ''));
-        $character = trim((string) ($row['character_name'] ?? ''));
         $callsign = trim((string) ($row['callsign'] ?? ''));
-        // Même nom que la fiche du membre (prénom + nom au format de la communauté, member_name) ; à défaut le nom du
-        // personnage, puis l'indicatif, puis le nom du compte.
-        $first = trim((string) ($row['first_name'] ?? ''));
-        $last = trim((string) ($row['last_name'] ?? ''));
-        $civil = '';
-        if (($first !== '' || $last !== '') && function_exists('member_name')) {
-            $civil = trim(member_name([
-                'first_name' => $first,
-                'last_name' => $last,
-                'display_name' => $display,
-                'callsign' => $callsign,
-                'trigram' => trim((string) ($row['trigram'] ?? '')),
-            ], 'card', null, false));
-            if ($civil === \App\Support\MemberName::FALLBACK) {
-                $civil = '';
-            }
-        }
-        $name = $civil !== ''
-            ? $civil
-            : ($character !== ''
-                ? $character
-                : ($callsign !== '' ? $callsign : ($display !== '' ? $display : 'Opérateur')));
+        // Règle unique d'affichage (App\Support\MemberIdentity) : prénom + nom au format de la fiche, puis indicatif,
+        // puis nom du compte, puis « Membre ». L'ancien champ « nom du personnage » n'est plus utilisé.
+        $identity = \App\Support\MemberIdentity::display([
+            'first_name' => (string) ($row['first_name'] ?? ''),
+            'last_name' => (string) ($row['last_name'] ?? ''),
+            'display_name' => $display,
+            'callsign' => $callsign,
+            'trigram' => (string) ($row['trigram'] ?? ''),
+            'anonymized' => !empty($row['anonymized']),
+        ], 'card', null, false);
+        $name = $identity['primary'];
         $grade = trim((string) ($row['grade_short'] ?? $row['grade_long'] ?? ''));
         $unit = trim((string) ($row['unit_name'] ?? $row['unit_code'] ?? ''));
         $function = trim((string) ($row['job_role_display'] ?? $row['role_name'] ?? ''));
@@ -1209,8 +1199,7 @@ final class JnetDashboardService
 
         $metaBits = array_values(array_filter([
             $grade !== '' ? $grade : null,
-            ($callsign !== '' && strcasecmp($callsign, $name) !== 0) ? $callsign : null,
-            ($display !== '' && strcasecmp($display, $name) !== 0 && strcasecmp($display, $callsign) !== 0) ? $display : null,
+            $identity['secondary'] !== '' ? $identity['secondary'] : null,
         ]));
 
         return [

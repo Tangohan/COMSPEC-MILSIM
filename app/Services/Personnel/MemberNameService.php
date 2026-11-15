@@ -138,6 +138,37 @@ final class MemberNameService
     }
 
     /**
+     * Pose sur chaque ligne de membre le prénom, le nom et le trigramme du PERSONNAGE (user_profiles). Les prénom et nom
+     * déjà présents dans la ligne (jointure user_legal_identities de UserRepository : identité légale du joueur)
+     * sont retirés : ils ne servent jamais à l'affichage. Une ligne masquée reste telle quelle.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public function withIdentities(int $tenantId, array $rows, string $idKey = 'id'): array
+    {
+        $ids = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row[$idKey] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        try {
+            $identities = $this->identitiesFor($tenantId, $ids);
+        } catch (\Throwable) {
+            $identities = [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row[$idKey] ?? 0);
+            $out[] = MemberName::withIdentity(array_diff_key($row, ['first_name' => 1, 'last_name' => 1, 'trigram' => 1]), $identities[$id] ?? null);
+        }
+
+        return $out;
+    }
+
+    /**
      * Identité affichable complète (nom principal, ligne secondaire, indicatif, trigramme, origine) des membres
      * demandés, par la règle unique {@see MemberIdentity}. Sert aux écrans dont la requête ne charge que
      * users.display_name et users.callsign.
