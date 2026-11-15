@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.127";
+    private const string ExtensionVersion = "2.0.128";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -7046,6 +7046,16 @@ public static partial class Extension
                             {
                                 if (File.Exists(cached) && new FileInfo(cached).Length > 0)
                                     return "OK|" + cached.Replace('\\', '/');
+                                // 2.0.128 : image déjà téléchargée dans un autre dossier de cache (Documents, de 2.0.124 à
+                                // 2.0.127 : Arma ne la lisait pas) : copiée ici, sans nouvelle requête.
+                                foreach (var otherCacheDir in ImageCacheDirs())
+                                {
+                                    var avatarElsewhere = Path.Combine(otherCacheDir, "briefing_" + safeKey + cachedExt);
+                                    if (string.Equals(avatarElsewhere, cached, StringComparison.OrdinalIgnoreCase)) continue;
+                                    if (!File.Exists(avatarElsewhere) || new FileInfo(avatarElsewhere).Length == 0) continue;
+                                    File.Copy(avatarElsewhere, cached, true);
+                                    return "OK|" + cached.Replace('\\', '/');
+                                }
                             }
                             catch { /* téléchargement normal */ }
                         }
@@ -7916,6 +7926,24 @@ public static partial class Extension
         catch { return ""; }
     }
 
+    /// <summary>
+    /// Dossiers de cache des images, par ordre de préférence. 2.0.128 : comspec_cache du dossier du jeu d'abord, le seul
+    /// qu'Arma lit en texture (chemin relatif comspec_cache\…). Documents\Arma 3 - COMSPEC\Cache, mis en premier par
+    /// 2.0.124, n'est pas lisible par le jeu : les portraits et les diapositives ne s'affichaient plus (initiales sur le
+    /// téléphone, cadre vide à l'écran des rôles, journal de TTRD du 15/11). Il reste le repli quand le dossier du jeu
+    /// n'est pas inscriptible (l'image passe alors par le navigateur intégré), puis TEMP.
+    /// </summary>
+    private static string[] ImageCacheDirs()
+    {
+        var persistent = PersistentCacheRoot();
+        return new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
+            persistent.Length > 0 ? Path.Combine(persistent, "briefing") : "",
+            Path.Combine(Path.GetTempPath(), "comspec_cache", "briefing"),
+        }.Where(d => d.Length > 0).ToArray();
+    }
+
     private static string? GetWritableCacheDir()
     {
         // Dossier déjà vérifié : réutilisé tant qu'il existe (un fichier test était écrit puis effacé à chaque
@@ -7923,18 +7951,8 @@ public static partial class Extension
         var known = _writableCacheDir;
         if (known != null && Directory.Exists(known))
             return known;
-        // Documents\Arma 3 - COMSPEC\Cache d'abord (COMSPEC Link 2.0.124) : il survit aux mises à jour du mod et au
-        // nettoyage de TEMP, donc portraits et diapositives ne sont plus retéléchargés à chaque fois (TTRD, 14/11).
-        var persistent = PersistentCacheRoot();
-        var candidates = new[]
+        foreach (var dir in ImageCacheDirs())
         {
-            persistent.Length > 0 ? Path.Combine(persistent, "briefing") : "",
-            Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
-            Path.Combine(Path.GetTempPath(), "comspec_cache", "briefing"),
-        };
-        foreach (var dir in candidates)
-        {
-            if (dir.Length == 0) continue;
             try
             {
                 Directory.CreateDirectory(dir);

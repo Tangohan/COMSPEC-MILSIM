@@ -15,6 +15,9 @@ T = {
     "SyncNoAtak": ("COMSPEC ATAK n'est pas chargé : pas de dossier Athena.", "COMSPEC ATAK is not loaded: no Athena dossier."),
     "SyncNoLink": ("Athena n'est pas joignable d'ici. Entrez en jeu : le dossier se met à jour pendant la partie.", "Athena cannot be reached from here. Join the game: the dossier updates during play."),
     "PortraitLocal": ("Portrait", "Portrait"),
+    "PortraitNone": ("Sans photo", "No photo"),
+    "PortraitHintNone": ("Aucun portrait sur votre fiche Athena (Mon compte > Portrait).", "No portrait on your Athena profile (My account > Portrait)."),
+    "PortraitHintRetry": ("Portrait pas encore lisible ici : cliquez sur Synchroniser.", "Portrait not readable here yet: click Synchronise."),
 }
 
 HERE = os.path.dirname(os.path.abspath(__file__))

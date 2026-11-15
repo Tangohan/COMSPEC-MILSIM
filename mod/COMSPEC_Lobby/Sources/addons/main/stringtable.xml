@@ -7,10 +7,25 @@
                 <English>Rank</English>
                 <French>Grade</French>
             </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PortraitHintNone">
+                <Original>Aucun portrait sur votre fiche Athena (Mon compte &gt; Portrait).</Original>
+                <English>No portrait on your Athena profile (My account &gt; Portrait).</English>
+                <French>Aucun portrait sur votre fiche Athena (Mon compte &gt; Portrait).</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PortraitHintRetry">
+                <Original>Portrait pas encore lisible ici : cliquez sur Synchroniser.</Original>
+                <English>Portrait not readable here yet: click Synchronise.</English>
+                <French>Portrait pas encore lisible ici : cliquez sur Synchroniser.</French>
+            </Key>
             <Key ID="STR_COMSPEC_LOBBY_PortraitLocal">
                 <Original>Portrait</Original>
                 <English>Portrait</English>
                 <French>Portrait</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PortraitNone">
+                <Original>Sans photo</Original>
+                <English>No photo</English>
+                <French>Sans photo</French>
             </Key>
             <Key ID="STR_COMSPEC_LOBBY_Quals">
                 <Original>Qualifications</Original>
