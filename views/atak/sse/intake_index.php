@@ -35,7 +35,7 @@ $link = static function (array $over) use ($tab, $badgeFilter, $sort, $dir, $q):
 $sortLink = static function (string $key, string $label) use ($link, $sort, $dir, $h): string {
     $active = $sort === $key;
 
-    return '<a href="' . $h($link(['tri' => $key, 'ordre' => $active && $dir === 'desc' ? 'asc' : 'desc'])) . '" title="Trier par ' . $h(mb_strtolower($label)) . '">' . $h($label) . ($active ? ' <span aria-hidden="true">' . ($dir === 'asc' ? '↑' : '↓') . '</span>' : '') . '</a>';
+    return '<a href="' . $h($link(['tri' => $key, 'ordre' => $active && $dir === 'desc' ? 'asc' : 'desc'])) . '">' . $h($label) . ($active ? ' <span aria-hidden="true">' . ($dir === 'asc' ? '↑' : '↓') . '</span>' : '') . '</a>';
 };
 $chipTone = ['danger' => 'critical', 'warn' => 'warning', 'caution' => 'caution'];
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiche-rens.css')) . '">';

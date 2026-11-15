@@ -44,7 +44,7 @@ $sortLink = static function (string $key, string $label) use ($link, $sort, $dir
     $active = $sort === $key;
     $next = $active && $dir === 'desc' ? 'asc' : 'desc';
 
-    return '<a class="rmt-sort' . ($active ? ' is-active' : '') . '" href="' . $h($link(['tri' => $key, 'ordre' => $next])) . '" title="Trier par ' . $h(mb_strtolower($label)) . '">'
+    return '<a class="rmt-sort' . ($active ? ' is-active' : '') . '" href="' . $h($link(['tri' => $key, 'ordre' => $next])) . '">'
         . $h($label) . ($active ? ' <span aria-hidden="true">' . ($dir === 'asc' ? '↑' : '↓') . '</span><span class="rmt-sr">' . ($dir === 'asc' ? 'ordre croissant' : 'ordre décroissant') . '</span>' : '') . '</a>';
 };
 $ariaSort = static fn (string $key): string => $sort === $key ? ' aria-sort="' . ($dir === 'asc' ? 'ascending' : 'descending') . '"' : '';
