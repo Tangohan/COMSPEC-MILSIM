@@ -74,6 +74,7 @@ class CfgFunctions {
             class idAction {};
             class idHistory {};
             class idAthenaPack {};
+            class idInitQueue {};
             class idAthenaSubmit {};
             class idWantedCheck {};
             class idPaperPhoto {};
@@ -180,15 +181,16 @@ class Extended_PostInit_EventHandlers {
 // Personne qui apparaît : papiers imposés par l'attribut Eden ou objets du kit (documents vierges du catalogue dans le
 // paquetage) délivrés à son nom, une seconde plus tard (clé biométrique attribuée, attributs Eden appliqués).
 // Les IA sans attribut : rien ici, papiers décidés au premier contrôle (matérialisation paresseuse).
+// Les deux tâches passent par une file (fn_idInitQueue) : mêmes délais, 8 personnes au plus par image.
 class Extended_InitPost_EventHandlers {
     class CAManBase {
         class comspec_sse_identity {
-            serverInit = "[{ ['kit', [_this select 0]] call comspec_sse_fnc_idRegistry; }, [_this select 0], 1] call CBA_fnc_waitAndExecute;";
+            serverInit = "[_this select 0, 'kit'] call comspec_sse_fnc_idInitQueue;";
         };
         // Lore de session Athena : identifiant stable (comspec_sse_aiUid) et lore déjà reçu rattaché, y compris pour une
         // IA créée après la synchro (attributs Eden et nom de variable posés avant).
         class comspec_sse_lore {
-            serverInit = "[{ if (!isNull (_this select 0)) then { ['attach', [_this select 0]] call comspec_sse_fnc_loreServer; }; }, [_this select 0], 1.5] call CBA_fnc_waitAndExecute;";
+            serverInit = "[_this select 0, 'lore'] call comspec_sse_fnc_idInitQueue;";
         };
     };
 };
