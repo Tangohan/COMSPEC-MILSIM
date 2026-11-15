@@ -86,15 +86,17 @@ if (_op isEqualTo "pull") exitWith {
         private _head = ["GetIdentityPack", [str (missionNamespace getVariable ["COMSPEC_MapId", 1]), _arg, "v=1"]] call comspec_sse_fnc_extensionCall;
         private _headOk = (_head select [0, 3]) isEqualTo "OK|";
         private _n = if (_headOk) then { parseNumber ((_head splitString "|") param [1, "0"]) } else { 0 };
-        private _buf = "";
+        // Morceaux rangés puis recollés en une fois : pas de recopie du texte déjà lu à chaque morceau.
+        private _parts = [];
         private _ok = _headOk && {_n >= 1} && {_n <= 60};
         if (_ok) then {
             for "_i" from 0 to (_n - 1) do {
                 private _c = ["GetIdentityPackChunk", [str _i]] call comspec_sse_fnc_extensionCall;
                 if ((_c select [0, 3]) isNotEqualTo "OK|") exitWith { _ok = false; };
-                _buf = _buf + (_c select [3]);
+                _parts pushBack (_c select [3]);
             };
         };
+        private _buf = _parts joinString "";
         missionNamespace setVariable ["comspec_sse_idPackBusy", false];
         switch (true) do {
             case (_head isEqualTo ""): { _res = ["no_answer", createHashMap]; };
