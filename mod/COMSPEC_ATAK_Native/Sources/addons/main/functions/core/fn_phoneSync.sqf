@@ -141,7 +141,7 @@ switch (_act) do {
                 }];
                 // Apps affichées sur le téléphone (lanceur), avec la version du mod.
                 private _ver = missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", ""];
-                _cats set ["apps", ((([] call comspec_atak_native_fnc_appList) select { !((_x getOrDefault ["id", ""]) in ["Admin"]) && {[_x] call comspec_atak_native_fnc_appVisible} }) select [0, 80]) apply {
+                _cats set ["apps", ((([] call comspec_atak_native_fnc_appList) select { !((_x getOrDefault ["id", ""]) in ["Admin"]) && {[_x, true] call comspec_atak_native_fnc_appVisible} }) select [0, 80]) apply {
                     createHashMapFromArray [["name", [_x getOrDefault ["name", ""], 190] call _txt], ["version", [_ver, 40] call _txt]]
                 }];
                 // Positions : ma trace (fn_mapPrefs « trail », 200 points au plus) puis ma position actuelle.

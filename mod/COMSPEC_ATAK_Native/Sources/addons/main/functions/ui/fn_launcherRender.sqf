@@ -112,6 +112,9 @@ if (_searchOn) then {
     _y = _y + _sh + ([_pad, _pad * 0.5] select _mini);
 };
 
+// Mode Essentiel (4.18.0, fn_essentialMode) : un bouton réduit le téléphone aux apps de base, le même bouton remet tout.
+_y = _y + (["bar", [_pad, _y, _gw, _font, _mini]] call comspec_atak_native_fnc_essentialMode);
+
 // Profil de rôle ou vue complète (fn_appSpaces) : le bouton pour passer de l'un à l'autre, rien sans profil ni apps regroupées.
 private _viewBar = ["viewBar"] call comspec_atak_native_fnc_appSpaces;
 if (_viewBar isNotEqualTo "") then {

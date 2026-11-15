@@ -36,6 +36,10 @@ private _imposed = _apps select { (_x get "st") in ["required", "forbidden"] };
 private _rows = [];
 _rows pushBack ["strip", "<t font='COMSPEC_BarlowBold'>APP STORE</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>COMSPEC ATAK</t>",
     format ["<t align='right' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1 installée(s) · %2 à installer</t>", _nIn, _nOut], [0.09, 0.12, 0.11, 1]];
+// Mode Essentiel (4.18.0, fn_essentialMode) : l'accueil ne montre que les apps de base, ici tout reste installable.
+if (["on"] call comspec_atak_native_fnc_essentialMode) then {
+    _rows pushBack ["text", format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", ("Mode Essentiel actif : l'accueil ne montre que les apps de base. Rien n'est désinstallé, coupez le mode dans Réglages ou depuis l'accueil.") call comspec_atak_native_fnc_tr], [0.16, 0.13, 0.06, 0.9]];
+};
 if ((count _imposed) > 0) then {
     private _who = [];
     { { _who pushBackUnique _x; } forEach ((["source", _x get "id"] call comspec_atak_native_fnc_appInstall) splitString " +"); } forEach _imposed;

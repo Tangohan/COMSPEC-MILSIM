@@ -276,11 +276,12 @@ private _fill = {
 // Pages épinglées d'après les réglages du joueur, dans l'ordre des emplacements, sans doublon ni valeur inconnue.
 private _sel = [];
 { private _v = missionNamespace getVariable [_x, "none"]; if (_v in _keys) then { _sel pushBackUnique _v; }; } forEach _vars;
-// Règle de l'encadrement (fn_appInstall) : une app interdite, retirée ou désinstallée n'a pas de bandeau. [page, liste de fn_appList].
+// Règle de l'encadrement (fn_appInstall) : une app interdite, retirée ou désinstallée n'a pas de bandeau ; masquée par le mode
+// Essentiel (4.18.0, fn_essentialMode), non plus : le choix est gardé, le bandeau revient avec l'app. [page, liste de fn_appList].
 private _usable = {
     params ["_page", "_list"];
     private _app = (_list select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
-    (count _app) > 0 && {["installed", _app get "id"] call comspec_atak_native_fnc_appInstall}
+    (count _app) > 0 && {["installed", _app get "id"] call comspec_atak_native_fnc_appInstall} && {!(["hides", _app get "id"] call comspec_atak_native_fnc_essentialMode)}
 };
 
 switch (_act) do {
@@ -370,7 +371,7 @@ switch (_act) do {
         [["segment", "Apps épinglées sur la carte", (([["none", "AUCUNE"]] + _apps) select { (_x select 0) isEqualTo "none" || {(_x select 0) in _ok} || {(_x select 0) in _sel} }) apply {
             _x params ["_v", "_t"];
             [_t, format ["['toggle', [%1]] call comspec_atak_native_fnc_mapPinnedApp;", str _v], [_v in _sel, _sel isEqualTo []] select (_v isEqualTo "none"),
-                ["", "App interdite ou désinstallée : pas de bandeau"] select (_v in _sel && {!(_v in _ok)})]
+                ["", ["App interdite ou désinstallée : pas de bandeau", "Masquée par le mode Essentiel : pas de bandeau"] select (["on"] call comspec_atak_native_fnc_essentialMode)] select (_v in _sel && {!(_v in _ok)})]
         }, "Trois au plus : un bandeau par app, de la taille de celui des coordonnées (non lus, étape de l'itinéraire, mission de tir, MEDEVAC, dernière alerte, heure H) ; touchez-le pour ouvrir l'app ; masquées en petit format ou si la carte est trop petite"]]
     };
     default { false };

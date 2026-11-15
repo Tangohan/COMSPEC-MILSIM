@@ -156,6 +156,14 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["comspec_atak_native_map_pinned_app_2", "App épinglée sur la carte (2)", "Deuxième bandeau, mêmes choix que le premier. Il se pose à côté du premier s'il y a la place, sinon sur une rangée de plus ; il n'est pas dessiné si la carte est trop petite."],
     ["comspec_atak_native_map_pinned_app_3", "App épinglée sur la carte (3)", "Troisième bandeau, mêmes choix que le premier. Il se pose à côté des autres s'il y a la place, sinon sur une rangée de plus ; il n'est pas dessiné si la carte est trop petite."]
 ];
+// Mode Essentiel (4.18.0, fn_essentialMode), par joueur : le téléphone ne montre que les apps de base (carte, GPS, itinéraire,
+// ordres, briefing, alertes, drone, vidéo en direct, Réglages). Coupé par défaut ; rien n'est désinstallé. Gardé dans le profil
+// (fn_setSetting) ; le bouton de l'accueil, Réglages et la carte posent ce même réglage. Imposé à tous : voir
+// comspec_atak_native_essential_force (serveur).
+["comspec_atak_native_essential_mode", "CHECKBOX",
+    ["Mode Essentiel", "Décoché par défaut. Réduit le téléphone aux apps de base : carte, GPS, itinéraire, ordres, briefing, alertes, drone et vidéo en direct (plus Réglages). Les autres apps sont masquées, pas désinstallées : leurs messages et leurs ordres restent là et reviennent dès que le mode est coupé. Aussi sur le bouton ESSENTIEL de l'écran d'accueil et dans Réglages, Applications."],
+    ["COMSPEC", "ATAK · Affichage"], false, 0,
+    { ["refresh"] call comspec_atak_native_fnc_essentialMode; }] call comspec_atak_native_fnc_addSetting;
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
 ["comspec_atak_native_full_scale", "SLIDER",
     ["Taille du téléphone en main", "Taille du téléphone quand vous l'avez en main (plein écran). 100 % = taille normale ; en dessous, il rétrécit en restant centré, texte et boutons compris."],
@@ -1042,6 +1050,12 @@ private _spc = ["COMSPEC", "ATAK · Lanceur et mode pilote"];
 ["comspec_atak_native_pilot_mode", "LIST",
     ["Mode pilote", "Écran simplifié proposé en montant dans un aéronef : grande carte, appareils alliés avec altitude et cap, FIRES en un geste, HUD discret. Au choix du joueur : coupé tant qu'il ne l'active pas dans Réglages, Applications."],
     _spc, [[0, 1, 2], ["Au choix du joueur (désactivé par défaut)", "Proposé à tous", "Coupé pour tous"], 0], 1] call comspec_atak_native_fnc_addSetting;
+// Mode Essentiel imposé à tous (4.18.0, fn_essentialMode) : tous les téléphones montrent les mêmes apps de base ; le bouton des
+// joueurs est grisé, avec la phrase qui l'explique. Une app « obligatoire » (ci-dessus) reste affichée dans le mode.
+["comspec_atak_native_essential_force", "CHECKBOX",
+    ["Mode Essentiel imposé à tous", "Décoché par défaut (chaque joueur choisit). Coché : tous les téléphones sont réduits aux apps de base (carte, GPS, itinéraire, ordres, briefing, alertes, drone et vidéo en direct) et les joueurs ne peuvent pas le couper. Pour garder une app de plus, ajoutez-la dans « Apps obligatoires » : une app obligatoire reste affichée."],
+    _spc, false, 1,
+    { ["refresh"] call comspec_atak_native_fnc_essentialMode; }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dating_specials", "LIST",
     ["Tinder : profils HVT et SSE", "À quelle fréquence Tinder glisse, entre deux joueurs, un profil d'IA de la carte (HVT ou personne SSE à moins de 5 km). Zeus peut aussi désigner une IA avec le module « Tinder : profil HVT / SSE »."],
     _sim, [[0, 1, 2, 3], ["Jamais", "Rarement (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call comspec_atak_native_fnc_addSetting;

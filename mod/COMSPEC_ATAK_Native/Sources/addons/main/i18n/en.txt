@@ -24472,5 +24472,18 @@
 ["DANGER CLOSE", "DANGER CLOSE"],
 ["WP %1", "WP %1"],
 ["splash", "splash"],
-["App interdite ou désinstallée : pas de bandeau", "App forbidden or uninstalled: no banner"]
+["App interdite ou désinstallée : pas de bandeau", "App forbidden or uninstalled: no banner"],
+["Mode Essentiel", "Essential mode"],
+["Réduit le téléphone aux apps de base : carte, GPS, itinéraire, ordres, briefing, alertes, drone et vidéo en direct. Rien n'est désinstallé ni perdu.", "Cuts the phone down to the basic apps: map, GPS, route, orders, briefing, alerts, drone and live video. Nothing is uninstalled or lost."],
+["Imposé par l'encadrement pour toute la mission : tous les téléphones montrent les mêmes apps.", "Imposed by the leadership for the whole mission: every phone shows the same apps."],
+["ESSENTIEL", "ESSENTIAL"],
+["ESSENTIEL · ACTIF", "ESSENTIAL · ON"],
+["ESSENTIEL · IMPOSÉ", "ESSENTIAL · IMPOSED"],
+["Réduit le téléphone aux apps de base : carte, GPS, ordres, drone", "Cuts the phone down to the basic apps: map, GPS, orders, drone"],
+["Mode Essentiel actif : touchez pour afficher toutes les apps", "Essential mode is on: tap to show every app"],
+["Décoché par défaut. Réduit le téléphone aux apps de base : carte, GPS, itinéraire, ordres, briefing, alertes, drone et vidéo en direct (plus Réglages). Les autres apps sont masquées, pas désinstallées : leurs messages et leurs ordres restent là et reviennent dès que le mode est coupé. Aussi sur le bouton ESSENTIEL de l'écran d'accueil et dans Réglages, Applications.", "Off by default. Cuts the phone down to the basic apps: map, GPS, route, orders, briefing, alerts, drone and live video (plus Settings). The other apps are hidden, not uninstalled: their messages and orders stay put and come back as soon as the mode is turned off. Also on the ESSENTIAL button of the home screen and in Settings, Applications."],
+["Mode Essentiel imposé à tous", "Essential mode imposed on everyone"],
+["Décoché par défaut (chaque joueur choisit). Coché : tous les téléphones sont réduits aux apps de base (carte, GPS, itinéraire, ordres, briefing, alertes, drone et vidéo en direct) et les joueurs ne peuvent pas le couper. Pour garder une app de plus, ajoutez-la dans « Apps obligatoires » : une app obligatoire reste affichée.", "Off by default (each player chooses). On: every phone is cut down to the basic apps (map, GPS, route, orders, briefing, alerts, drone and live video) and players cannot turn it off. To keep one more app, add it to «Required apps»: a required app stays displayed."],
+["Masquée par le mode Essentiel : pas de bandeau", "Hidden by Essential mode: no banner"],
+["Mode Essentiel actif : l'accueil ne montre que les apps de base. Rien n'est désinstallé, coupez le mode dans Réglages ou depuis l'accueil.", "Essential mode is on: the home screen only shows the basic apps. Nothing is uninstalled, turn the mode off in Settings or from the home screen."]
 ]

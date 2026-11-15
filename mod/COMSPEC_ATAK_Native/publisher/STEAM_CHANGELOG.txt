@@ -1,3 +1,23 @@
+[h1]COMSPEC ATAK 4.18.0 Washington — mode Essentiel / Essential mode[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Mode Essentiel[/b] : un bouton ESSENTIEL en haut de l'écran d'accueil réduit le téléphone à la carte, au GPS, à l'itinéraire, aux ordres, au briefing, aux alertes, au drone et à la vidéo en direct (plus Réglages). Retouchez-le pour tout réafficher.
+[*] Rien n'est désinstallé ni perdu : les messages reçus vous attendent dans leur app dès que le mode est coupé. Les apps masquées quittent aussi le dock, la recherche et les bandeaux épinglés sur la carte.
+[*] Le même interrupteur est dans Réglages > Applications et dans le panneau SITUATION de la carte. Votre choix est gardé d'une mission à l'autre.
+[*] [b]Groupes[/b] : l'organisateur de la mission ou l'administrateur du serveur peut imposer le mode à tous les joueurs ; le bouton est alors grisé avec une phrase qui explique pourquoi.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Essential mode[/b]: an ESSENTIAL button at the top of the home screen cuts the phone down to the map, GPS, route, orders, briefing, alerts, drone and live video (plus Settings). Touch it again to show everything.
+[*] Nothing is uninstalled or lost: received messages are waiting in their app as soon as the mode is off. Hidden apps also leave the dock, the search and the banners pinned on the map.
+[*] The same switch is in Settings > Applications and in the map's SITUATION panel. Your choice is kept from one mission to the next.
+[*] [b]Groups[/b]: the mission organiser or the server admin can impose the mode on every player; the button is then greyed out with a sentence explaining why.
+[/list]
+
 [h1]COMSPEC ATAK 4.17.0 Washington — mini-apps sur la carte, interface renforcée / mini apps on the map, stronger interface[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

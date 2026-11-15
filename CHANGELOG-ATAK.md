@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Mode Essentiel : un bouton réduit le téléphone aux apps de base (ATAK natif 4.18.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : Mode Essentiel, un téléphone réduit à l'essentiel en un bouton
+- Un bouton ESSENTIEL, en haut de l'écran d'accueil, ne garde que la carte, le GPS, l'itinéraire, les ordres, le briefing, les alertes, le drone et la vidéo en direct (plus les Réglages). Retouchez-le pour tout réafficher.
+- Rien n'est désinstallé ni perdu : les messages reçus pendant ce temps vous attendent dans leur app dès que vous coupez le mode. Les apps masquées disparaissent aussi du dock, de la recherche et des bandeaux épinglés sur la carte.
+- Le même interrupteur est dans Réglages > Applications et dans le panneau SITUATION de la carte. Votre choix est gardé d'une mission à l'autre.
+- Pour un groupe : l'organisateur de la mission ou l'administrateur du serveur peut imposer le mode à tous les joueurs. Le bouton est alors grisé, avec une phrase qui explique pourquoi, et tous les téléphones montrent les mêmes apps.
+EN : Essential mode, a phone cut down to the basics with one button
+- An ESSENTIAL button at the top of the home screen keeps only the map, GPS, route, orders, briefing, alerts, drone and live video (plus Settings). Touch it again to show everything.
+- Nothing is uninstalled or lost: messages received in the meantime are waiting in their app as soon as you turn the mode off. Hidden apps also disappear from the dock, the search and the banners pinned on the map.
+- The same switch is in Settings > Applications and in the map's SITUATION panel. Your choice is kept from one mission to the next.
+- For a group: the mission organiser or the server admin can impose the mode on every player. The button is then greyed out, with a sentence explaining why, and every phone shows the same apps.
+
+### Détail technique
+- **Fonction `fn_essentialMode`** (dossier `ui`, enregistrée dans `config.cpp`) : table unique des apps du mode en tête du fichier (clés = classes de `COMSPEC_ATAK_Apps`) : `Map`, `Gps`, `Waypoints`, `Tasks`, `Briefing`, `Alerts`, `Drone`, `Livecam`, plus `Settings` (la sortie, jamais masquée). Actions `on`, `locked`, `ids`, `hides`, `toggle`, `refresh`, `bar`, `rows`.
+- **Filtre à la source** : `fn_appVisible` appelle `["hides", id]` une seule fois par app ; accueil classique, apps regroupées (`fn_appSpaces`), recherche (`fn_launcherFilter`), dock et rail de la carte (`fn_dockRender`), dossiers (`fn_pageFolder`) et choix du dock (Réglages) passent déjà par lui, rien n'a été réécrit. L'App Store (hors table) n'est plus sur l'accueil mais reste ouvrable par Réglages. `Admin` et `Toc` gardent leur règle propre. Une app rendue obligatoire par l'encadrement (`fn_appInstall` : « Apps obligatoires », mission, Athena) reste affichée dans le mode. L'inventaire envoyé au site (`fn_phoneSync`) passe un second paramètre pour ignorer le mode : il décrit les apps installées, pas l'affichage.
+- **Messages, SMS, Radio hors du mode** : les ordres arrivent par Tâches, les alertes et les messages de l'encadrement par Alertes, la voix par la radio du jeu ; Messages sert à la conversation, pas à l'opération. Un chef de groupe qui le veut le met en « Apps obligatoires ».
+- **Rien n'est supprimé** : le mode ne touche ni `COMSPEC_ATAK_HiddenApps`, ni les données, ni les badges calculés, ni les fonctions de fond ; `fn_navigate` n'est pas modifié (un raccourci, une notification ou un outil de la carte ouvre toujours une app masquée, aucun piège). Les badges des apps masquées ne se voient plus : leurs tuiles ne sont pas dessinées.
+- **Réglages** : `comspec_atak_native_essential_mode` (par joueur, `ATAK · Affichage`, coupé par défaut, rangé dans le profil par `fn_setSetting`, une seule écriture regroupée) et `comspec_atak_native_essential_force` (serveur, catégorie `ATAK · Lanceur et mode pilote`, « imposé à tous », coupé par défaut ; même mécanisme que `comspec_atak_native_launcher_spaces`). Bouton, interrupteurs et menu CBA posent le même réglage et se tiennent donc synchronisés ; le rappel du réglage et la bascule appellent `refresh`, dédoublonné par image (`diag_frameNo`), qui réutilise le chemin `applied` de `fn_appInstall` : dock puis page ouverte redessinés une fois, rien par image.
+- **Bouton** : `bar` (accueil classique `fn_launcherRender` et accueil des apps regroupées `fn_pageSpace`) : vert « ESSENTIEL · ACTIF » ou neutre « ESSENTIEL » ; imposé : grisé, « ESSENTIEL · IMPOSÉ » et une phrase dessous. `rows` : ligne `switch` de `fn_formRender` (Réglages > Applications et panneau SITUATION de `fn_pageMap`, au-dessus des apps épinglées, sans toucher au bandeau des coordonnées ni à RECHERCHER) ; imposé, la pastille « IMPOSÉ » et l'aide expliquent. L'App Store affiche une phrase quand le mode est actif.
+- **Apps épinglées de la 4.17.0** : `fn_mapPinnedApp` (`_usable`) ne dessine plus le bandeau d'une app masquée par le mode et la ligne de choix l'indique (« Masquée par le mode Essentiel »). Le choix est conservé : le bandeau revient avec l'app. Messages, SMS, Feux, MEDEVAC, Alertes et Heure H sont donc sans bandeau dans le mode ; Ordres et Itinéraire (NAV) restent.
+- Aucune notification, aucun toast, aucun hint, aucun `systemChat`. Non essayé en jeu (aucun test en jeu possible dans ce fil) : voir la liste « à vérifier en jeu » de la PR. Tests : `tests/Unit/AtakEssentialModeAssetTest.php`.
+
 ## Carte : mini-apps épinglées, interface renforcée, correctifs et dessin allégé (ATAK natif 4.17.0.AG - Washington)
 
 ### Résumé joueur
