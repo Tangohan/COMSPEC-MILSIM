@@ -860,6 +860,8 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
             <p class="eff-fm-hint"><a href="<?= htmlspecialchars(effectifs_workspace_url('roles'), ENT_QUOTES, 'UTF-8') ?>">Corriger ce qu’un niveau a le droit de faire</a></p>
         <?php endif; ?>
     </article>
+    <?php /* Accès SSE : visible des seuls gestionnaires SSE (la variable sseAccess vaut null sinon). */ ?>
+    <div id="acces-sse"><?php $ssePart = 'card'; $sseAccess = is_array($sseAccess ?? null) ? $sseAccess : null; require __DIR__ . '/partials/member_sse_access.php'; ?></div>
         </div>
     </section>
     </div>
@@ -1850,6 +1852,10 @@ foreach ($jobRoles as $jr) {
         </form>
     </div>
 </dialog>
+<?php endif; ?>
+<?php if ($sseAccess !== null): ?>
+<?php $ssePart = 'dialog'; require __DIR__ . '/partials/member_sse_access.php'; ?>
+<script src="<?= $h(asset_url('assets/js/eff-member-sse-access.js')) ?>" defer></script>
 <?php endif; ?>
 <script src="<?= $h(asset_url('assets/js/eff-member.js')) ?>" defer></script>
 

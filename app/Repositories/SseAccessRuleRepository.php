@@ -264,6 +264,30 @@ class SseAccessRuleRepository
     }
 
     /**
+     * Historique des changements qui concernent un bénéficiaire (identité d'un membre, position, qualification…), du plus récent au plus ancien.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function historyForSubject(int $tenantId, string $type, int $id, int $limit = 30): array
+    {
+        if ($tenantId < 1 || $id < 1 || !$this->historyReady()) {
+            return [];
+        }
+        // Lecture bornée à la communauté puis filtrée ici : l'historique d'une communauté reste de quelques centaines de lignes.
+        $out = [];
+        foreach ($this->history($tenantId, 300) as $row) {
+            if ($row['subject_type'] === $type && $row['subject_id'] === $id) {
+                $out[] = $row;
+                if (count($out) >= max(1, min(100, $limit))) {
+                    break;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * @param array<string, mixed> $r
      * @return array<string, mixed>
      */

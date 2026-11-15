@@ -1432,6 +1432,21 @@ class EffectifsWorkspaceController
         return $out;
     }
 
+    /**
+     * Droits SSE effectifs du membre pour le bloc « Accès SSE » de la fiche, ou null : pas le droit de gestion SSE, membre
+     * protégé par l'annuaire ou service indisponible (la fiche ne dépend jamais de ce bloc).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function sseAccessOverview(int $tenantId, int $memberId): ?array
+    {
+        try {
+            return (new \App\Services\Sse\SseAccessMemberRights())->overview($tenantId, (int) Session::get('user_id'), $memberId);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function member(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -1683,6 +1698,8 @@ class EffectifsWorkspaceController
             'dataReliability' => $dataReliability,
             'chronologyType' => $chronologyType,
             'canViewHrDocuments' => EffectifsLmsAccess::canViewHrDocuments($gate),
+            // Bloc « Accès SSE » : réservé aux gestionnaires SSE (null sinon : rien n'est affiché ni calculé).
+            'sseAccess' => $this->sseAccessOverview($tenantId, $id),
             'canAwardDecorations' => $canAwardDecorations,
             'memberAwards' => $memberAwards,
             'awardDefinitions' => $awardDefinitions,
@@ -1751,7 +1768,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),

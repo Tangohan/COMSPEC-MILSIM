@@ -30,7 +30,7 @@ $self = $base . '/section/' . $sectionKey;
             <h1><?= $h($section['label']) ?></h1>
             <p><?= $h($section['hint']) ?></p>
         </div>
-        <a class="btn" href="<?= $h(url($base)) ?>">Retour à la grille</a>
+        <a class="btn" href="<?= $h(url($base)) ?>">Retour à « Qui peut quoi »</a>
     </div>
 
     <?php foreach (C::LEVELS as $lv => $def): ?>
@@ -52,7 +52,7 @@ $self = $base . '/section/' . $sectionKey;
                                 <td data-label="Bénéficiaire"><?= $h($r['subject_label']) ?> <small class="fx-help"><?= $h($r['subject_type_label']) ?></small></td>
                                 <td data-label="Effet"><span class="fx-flg <?= $r['effect'] === 'deny' ? 'sar-deny' : 'sar-allow' ?>"><?= $r['effect'] === 'deny' ? 'Refus' : 'Accord' ?></span></td>
                                 <td data-label="Période"><?= $r['starts_at'] === null && $r['ends_at'] === null ? 'Sans limite' : $h(($r['starts_at'] !== null ? 'du ' . substr((string) $r['starts_at'], 0, 10) . ' ' : '') . ($r['ends_at'] !== null ? 'jusqu’au ' . substr((string) $r['ends_at'], 0, 10) : '')) ?></td>
-                                <td data-label="Motif"><?= $r['reason'] !== '' ? $h($r['reason']) : '—' ?><?php if (($r['source'] ?? '') !== ''): ?> <small class="fx-help">Modèle : <?= $h(C::TEMPLATES[$r['source']]['label'] ?? $r['source']) ?></small><?php endif; ?></td>
+                                <td data-label="Motif"><?= $r['reason'] !== '' ? $h($r['reason']) : '—' ?><?php if (($r['source'] ?? '') !== ''): ?> <small class="fx-help">Modèle : <?= $h(C::sourceLabel((string) $r['source']) ?: $r['source']) ?></small><?php endif; ?></td>
                                 <td data-label="État"><?= $h($stateLabels[$r['state']] ?? $r['state']) ?></td>
                                 <td data-label="Retirer">
                                     <form method="post" action="<?= $h(url($base . '/regle/' . (int) $r['id'] . '/retirer')) ?>" class="sar-inline">
@@ -78,9 +78,9 @@ $self = $base . '/section/' . $sectionKey;
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
             <input type="hidden" name="do" value="preview">
             <div class="fx-g2 sar-g">
-                <label class="fx-f"><span>Bénéficiaire</span>
-                    <?php $selectName = 'subject_ref'; $selectId = 'sar-subject'; $selected = isset($old['subject_type'], $old['subject_id']) ? C::subjectRef((string) $old['subject_type'], (int) $old['subject_id']) : ''; require __DIR__ . '/_subject_select.php'; ?>
-                </label>
+                <div class="fx-f">
+                    <?php $pickId = 'sar-subject'; $pickLabel = 'Bénéficiaire'; $pickKinds = []; $pickSelected = isset($old['subject_type'], $old['subject_id']) ? C::subjectRef((string) $old['subject_type'], (int) $old['subject_id']) : ''; require __DIR__ . '/_beneficiary.php'; ?>
+                </div>
                 <fieldset class="sar-fs">
                     <legend>Effet</legend>
                     <label class="sar-check"><input type="radio" name="effect" value="allow" required<?= ($old['effect'] ?? 'allow') === 'allow' ? ' checked' : '' ?>> <span>Accorder</span></label>

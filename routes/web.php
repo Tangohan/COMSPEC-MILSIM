@@ -1490,6 +1490,10 @@ return function (Router $router) {
     // Droits d'accès du portail SSE (onglet réservé au droit de gestion SSE, vérifié par le contrôleur : tout le reste est renvoyé à l'accueil).
     $sseRights = \App\Controllers\Web\SseAccessRightsController::class;
     $router->get('/atak/sse/droits', [$sseRights, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/droits/grille', [$sseRights, 'grid'], $mwSsePortal);
+    $router->get('/atak/sse/droits/personnes', [$sseRights, 'people'], $mwSsePortal);
+    $router->post('/atak/sse/droits/simple', [$sseRights, 'simpleStore'], $mwSsePortal);
+    $router->post('/atak/sse/droits/situation', [$sseRights, 'recipeStore'], $mwSsePortal);
     $router->get('/atak/sse/droits/membre', [$sseRights, 'member'], $mwSsePortal);
     $router->get('/atak/sse/droits/membre/{id}', [$sseRights, 'member'], $mwSsePortal);
     $router->post('/atak/sse/droits/membre/{id}/derogation', [$sseRights, 'ruleStore'], $mwSsePortal);
@@ -2524,6 +2528,9 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/anciennete', [EffectifsWorkspaceController::class, 'updateMemberSeniority'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/roles', [EffectifsWorkspaceController::class, 'updateMemberRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/fonctions', [EffectifsWorkspaceController::class, 'updateMemberJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse', [\App\Controllers\Admin\MemberSseAccessController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse/apercu', [\App\Controllers\Admin\MemberSseAccessController::class, 'preview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/acces-sse/{ruleId}/retirer', [\App\Controllers\Admin\MemberSseAccessController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/role-unite', [EffectifsWorkspaceController::class, 'updateMemberAssignmentRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/etat-civil', [EffectifsWorkspaceController::class, 'updateMemberCivilStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/langues', [EffectifsWorkspaceController::class, 'updateMemberLanguages'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
