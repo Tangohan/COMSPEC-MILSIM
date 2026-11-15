@@ -49,6 +49,8 @@ if (_queue isEqualTo []) exitWith {
 
 // Rien ne sert d'essayer si la liaison n'est pas revenue.
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { 0 };
+// Compte refusé ou non lié (fn_linkGate) : la file reste intacte, sans tentative ni essai décompté, jusqu'à la reprise.
+if (!isNil "comspec_overwatch_connect_fnc_linkGate" && {["active"] call comspec_overwatch_connect_fnc_linkGate}) exitWith { 0 };
 private _link = [false] call comspec_overwatch_connect_fnc_canTransmit;
 if (!(_link getOrDefault ["can_transmit", true])) exitWith { 0 };
 
@@ -122,7 +124,8 @@ private _tried = 0;
                 } else {
                     _failed = _failed + 1;
                     // En fin de file : une entrée en échec ne bloque pas les suivantes (une par passage).
-                    _retryLast pushBack [_cmd, _args, _label, _linkCat, _queuedAt, _tries + 1];
+                    // Retenue par le frein partagé (fn_linkGate) : l'essai ne compte pas, l'entrée ne s'use pas.
+                    _retryLast pushBack [_cmd, _args, _label, _linkCat, _queuedAt, _tries + ([1, 0] select ((_res param [1, ""]) isEqualTo "HELD"))];
                 };
             };
         };

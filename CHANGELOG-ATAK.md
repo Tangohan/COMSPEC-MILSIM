@@ -38,6 +38,33 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Compte non lié sans rafales d'envois, comptes rendus avec envoi visible et RENVOYER (ATAK natif 4.25.0.AG - Washington, COMSPEC Link 2.0.126)
+
+### Résumé joueur
+Type : nouveauté
+FR : Compte non lié : le téléphone arrête d'insister, et les comptes rendus montrent leur envoi
+- Quand ton compte Athena n'est pas lié ou que l'accès est refusé, le téléphone ne retente plus sans cesse : il fait une pause de plus en plus longue, la même pour tous les envois (position, marqueurs, fiche, ordres, messages, formes, relais).
+- Ce que tu as rédigé reste en attente et repart dès que ton compte est lié, sans rien perdre. Rien ne s'affiche à l'écran du jeu.
+- Dans l'app Comptes rendus, tu vois si ton compte rendu est en cours d'envoi, enregistré sur Athena ou non reçu (avec la raison). Si l'envoi a échoué, le bouton RENVOYER apparaît sous le compte rendu, et un renvoi ne crée jamais de doublon.
+- Mets à jour le mod, puis redémarre complètement Arma 3.
+EN : Unlinked account: the phone stops insisting, and reports show their sending
+- When your Athena account is not linked or access is refused, the phone no longer retries non-stop: it pauses for longer and longer, the same pause for every send (position, markers, profile, orders, messages, shapes, relays).
+- What you wrote stays waiting and goes out as soon as your account is linked, with nothing lost. Nothing is shown on the game screen.
+- In the Reports app, you see whether your report is sending, saved on Athena or not received (with the reason). If sending failed, a RESEND button appears under the report, and resending never creates a duplicate.
+- Update the mod, then restart Arma 3 completely.
+
+### Détail technique
+- **Refus d'accès** : nouvelle fonction partagée `comspec_overwatch_connect_fnc_linkGate` (Overwatch connect 1.6.35). Un refus (`AccessDenied`, `AuthInvalidated`, fiche opérateur refusée en 401/403) démarre une pause unique de 60 s, doublée à chaque refus après son terme, plafonnée à 15 min. Elle pose aussi `COMSPEC_ApiBackoffUntil` : tous les canaux qui lisent déjà ce frein (position, véhicules, météo, flux vidéo) s'arrêtent avec elle. `fn_uplinkHold` retient les autres commandes d'envoi (ATAK natif et Overwatch passent tous par lui), les lectures (`Get*`, `Set*`), la liaison (`Init`, `Connect`, `AuthSteam`, `PairStart`, `RedeemGameLink`…) et le local passent.
+- **Reprise immédiate** : `clear` à la session ouverte (`Connected` avec `READY`), à la liaison du compte (`fn_accountLinkSubmit`), à `Entrer` (`fn_enterAthena`) et au Resynch (`fn_forceSyncData`). Le réessai automatique de `fn_extensionCallback` se fait à la fin de la pause (plus un essai fixe à 48 s) et un seul est planifié à la fois.
+- **Files** : `fn_outboxFlush` ne touche plus à la file pendant la pause et ne compte plus l'essai d'une entrée retenue (`HELD`) ; `fn_callExtLogged` met en file ce qu'un humain a rédigé et ne journalise pas l'envoi retenu ; `fn_queueMapMarker` ne vidait la file qu'en la perdant : les marqueurs retenus restent (80 au plus, 30 min au plus). Les positions ne sont toujours pas mises en file.
+- **Journal** : une ligne par changement d'état (début du refus, nouvelle cause, reprise). `UpdatePosition skip: api_backoff` et « Fiche refusée par Athena » ne reviennent plus à chaque essai. Aucun toast ni hint.
+- **Comptes rendus** : `fn_reportAction` envoie par `fn_reportWebSend` (comme l'app BDA, 4.24.1) au lieu de `submitTacticalReport` : parcours `EN ATTENTE` / `OK` / `ÉCHEC` / `HORS LIGNE` avec raison courte, identifiant client `client_id` (`CR-<UID>-<temps>-<n>`) gardé à chaque renvoi, doublon écarté par le serveur (`findByClientId`), retours sur la ligne d'état de l'app (`repStatus`, `fn_pageReports`) au lieu de la notification. Le bouton RENVOYER existait déjà sous ENVOYÉS ; il sert maintenant vraiment.
+- **Serveur** : aucun changement, le refus et la réponse sont cohérents (`uplink_hold` est une décision locale du mod, jamais une réponse du site).
+- **DLL** : aucune modification, COMSPEC Link reste 2.0.126.
+- **À tester en jeu** : compte non lié (une seule ligne de journal par changement, pas de rafale dans le RPT, aucun message à l'écran), liaison du compte (reprise immédiate, file rejouée), compte rendu avec liaison coupée (non reçu, puis RENVOYER sans doublon sur Athena).
+
+---
+
 ## Carte du téléphone : plus de symboles d'alliés empilés en traînée (ATAK natif 4.24.3.AG - Washington, COMSPEC Link 2.0.126)
 
 ### Résumé joueur

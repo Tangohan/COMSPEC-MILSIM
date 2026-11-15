@@ -1,3 +1,21 @@
+[h1]COMSPEC ATAK 4.25.0 Washington — compte non lié sans rafales d'envois, comptes rendus avec envoi visible / unlinked account without send bursts, reports with visible sending[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Compte non lié[/b] : quand le compte Athena n'est pas lié ou que l'accès est refusé, le téléphone ne retente plus sans cesse. Il fait une pause de plus en plus longue, la même pour tous les envois, et reprend tout de suite dès que le compte est lié.
+[*] Ce que tu as rédigé reste en attente et repart après la liaison. Rien ne s'affiche à l'écran du jeu.
+[*] [b]Comptes rendus[/b] : l'app montre si ton compte rendu est en cours d'envoi, enregistré sur Athena ou non reçu (avec la raison). Le bouton RENVOYER apparaît sous un compte rendu en échec, sans jamais créer de doublon.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Unlinked account[/b]: when the Athena account is not linked or access is refused, the phone no longer retries non-stop. It pauses for longer and longer, the same for every send, and resumes right away once the account is linked.
+[*] What you wrote stays waiting and goes out after linking. Nothing is shown on the game screen.
+[*] [b]Reports[/b]: the app shows whether your report is sending, saved on Athena or not received (with the reason). The RESEND button appears under a failed report and never creates a duplicate.
+[/list]
+
 [h1]COMSPEC ATAK 4.24.3 Washington — plus d'alliés empilés en traînée sur la carte du téléphone / no more stacked ally symbols on the phone map[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

@@ -396,6 +396,8 @@ if (_connectOk) then {
     [] call comspec_overwatch_connect_fnc_measureLatency;
     [] call comspec_overwatch_connect_fnc_refreshAccountLinkStatusBar;
 
+    // Compte lié : reprise immédiate des envois retenus (fn_linkGate).
+    ["clear"] call comspec_overwatch_connect_fnc_linkGate;
     if (!isNil "comspec_overwatch_connect_fnc_reopenTransmitChannel") then {
         [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;
     };

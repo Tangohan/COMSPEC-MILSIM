@@ -24818,5 +24818,11 @@
 ["Drone terrestre : pas de décollage. Utilisez les ordres de déplacement.", "Ground drone: no take-off. Use the movement orders."],
 ["Roulage et décollage sur la piste droit devant, sinon lancement à la main. Il tourne ensuite en orbite : un avion ne reste pas immobile.", "Rolls and takes off on the runway straight ahead, otherwise hand launch. It then circles: an aircraft cannot hold still."],
 ["Lancement à la main : tournez le drone face à un espace dégagé d'au moins 120 m avant d'appuyer. Il tourne ensuite en orbite.", "Hand launch: turn the drone to face open ground of at least 120 m before pressing. It then circles."],
-["Montée à la verticale jusqu'à la hauteur de sécurité, puis à %1 m. Tout ordre de vol donné au sol fait aussi décoller le drone.", "Climbs vertically to the safety height, then to %1 m. Any flight order given on the ground also makes the drone take off."]
+["Montée à la verticale jusqu'à la hauteur de sécurité, puis à %1 m. Tout ordre de vol donné au sol fait aussi décoller le drone.", "Climbs vertically to the safety height, then to %1 m. Any flight order given on the ground also makes the drone take off."],
+["Compte rendu transmis · envoi à Athena en cours", "Report sent · sending to Athena"],
+["Compte rendu transmis au camp", "Report sent to the camp"],
+["Compte rendu transmis au camp · Athena non connecté (RENVOYER dans ENVOYÉS)", "Report sent to the camp · Athena not connected (RESEND in SENT)"],
+["Athena n'a pas reçu le compte rendu (RENVOYER dans ENVOYÉS)", "Athena did not receive the report (RESEND in SENT)"],
+["Compte rendu enregistré sur Athena", "Report saved on Athena"],
+["Liaison Athena en pause — liez votre compte puis renvoyez.", "Athena link paused — link your account, then resend."]
 ]
