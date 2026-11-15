@@ -524,6 +524,25 @@ return function (Router $router) {
     $router->get('/jnet/intentions', [JnetPortalController::class, 'intents'], [AuthMiddleware::class]);
     $router->get('/jnet/effectifs', [JnetPortalController::class, 'roster'], [AuthMiddleware::class]);
     $router->get('/jnet/applications', [JnetPortalController::class, 'apps'], [AuthMiddleware::class]);
+    // Photothèque de l'extranet : photos terrain, visages étiquetés à la main, masques, commentaires, versement SSE.
+    $router->get('/jnet/photos', [\App\Controllers\Web\PhotoLibraryController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/jnet/photos/cibles', [\App\Controllers\Web\PhotoLibraryController::class, 'targets'], [AuthMiddleware::class]);
+    $router->get('/jnet/photos/{id}', [\App\Controllers\Web\PhotoLibraryController::class, 'show'], [AuthMiddleware::class]);
+    $router->get('/jnet/photos/{id}/image', [\App\Controllers\Web\PhotoLibraryController::class, 'image'], [AuthMiddleware::class]);
+    $router->get('/jnet/photos/{id}/donnees', [\App\Controllers\Web\PhotoLibraryController::class, 'data'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/visages', [\App\Controllers\Web\PhotoLibraryController::class, 'tagAdd'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/visages/{tid}', [\App\Controllers\Web\PhotoLibraryController::class, 'tagUpdate'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/visages/{tid}/retirer', [\App\Controllers\Web\PhotoLibraryController::class, 'tagRemove'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/masques', [\App\Controllers\Web\PhotoLibraryController::class, 'maskAdd'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/masques/{mid}/retirer', [\App\Controllers\Web\PhotoLibraryController::class, 'maskRemove'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/commentaires', [\App\Controllers\Web\PhotoLibraryController::class, 'commentAdd'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/commentaires/{cid}', [\App\Controllers\Web\PhotoLibraryController::class, 'commentEdit'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/commentaires/{cid}/supprimer', [\App\Controllers\Web\PhotoLibraryController::class, 'commentDelete'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/commentaires/{cid}/signaler', [\App\Controllers\Web\PhotoLibraryController::class, 'commentReport'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/etiquettes', [\App\Controllers\Web\PhotoLibraryController::class, 'labelAdd'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/etiquettes/retirer', [\App\Controllers\Web\PhotoLibraryController::class, 'labelRemove'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/sse', [\App\Controllers\Web\PhotoLibraryController::class, 'sseTransfer'], [AuthMiddleware::class]);
+    $router->post('/jnet/photos/{id}/sse/retirer', [\App\Controllers\Web\PhotoLibraryController::class, 'sseWithdraw'], [AuthMiddleware::class]);
     $router->get('/publier', [\App\Controllers\Web\PublicationLauncherController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/articles', [MiniArticlesController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/articles/{slug}', [MiniArticlesController::class, 'show'], [AuthMiddleware::class]);
