@@ -120,6 +120,31 @@ final class SseAccessPolicy
         return $tenantId > 0 && $this->rules()->countLive($tenantId) > 0;
     }
 
+    /**
+     * Un membre change de position, de fonction ou de qualification : on oublie ce qui a été lu de lui pendant la requête
+     * (les règles et les droits ne sont gardés dans aucun cache partagé entre requêtes pour ces appartenances).
+     */
+    public static function forgetMember(int $tenantId, int $userId): void
+    {
+        self::$session?->subjects()->forget($tenantId, $userId);
+        self::$session?->forgetEffective($tenantId, $userId);
+    }
+
+    /** @internal */
+    public function forgetEffective(int $tenantId, int $userId): void
+    {
+        if ($tenantId > 0) {
+            unset($this->effective[$tenantId . ':' . $userId]);
+
+            return;
+        }
+        foreach (array_keys($this->effective) as $key) {
+            if (str_ends_with($key, ':' . $userId)) {
+                unset($this->effective[$key]);
+            }
+        }
+    }
+
     /** Oublie ce qui a été lu (après un changement de règle). */
     public function reset(): void
     {
@@ -175,7 +200,7 @@ final class SseAccessPolicy
         $deny = [];
         $allow = [];
         foreach ($rules as $rule) {
-            if (!$this->isActive($rule, $now) || !$this->matches($rule, $uid, $mine)) {
+            if (!$this->isActive($rule, $now) || !$this->matches($rule, $tenantId, $uid, $mine)) {
                 continue;
             }
             $ruleLevel = (string) $rule['level'];
@@ -396,7 +421,7 @@ final class SseAccessPolicy
      * @param array<string, mixed> $rule
      * @param array{roles: list<int>, units: list<int>, tree: list<int>} $mine
      */
-    private function matches(array $rule, int $userId, array $mine): bool
+    private function matches(array $rule, int $tenantId, int $userId, array $mine): bool
     {
         $id = (int) $rule['subject_id'];
 
@@ -405,6 +430,10 @@ final class SseAccessPolicy
             C::SUBJECT_ROLE => in_array($id, $mine['roles'], true),
             C::SUBJECT_UNIT => in_array($id, $mine['units'], true),
             C::SUBJECT_UNIT_TREE => in_array($id, $mine['tree'], true),
+            // Une position de service est un rôle d'affichage du membre ; la fonction et la qualification valide se lisent à part (une fois par membre).
+            C::SUBJECT_POSITION => in_array($id, $mine['roles'], true),
+            C::SUBJECT_JOB => in_array($id, $this->subjects()->facetsFor($tenantId, $userId)['jobs'], true),
+            C::SUBJECT_QUALIF => in_array($id, $this->subjects()->facetsFor($tenantId, $userId)['qualifs'], true),
             default => false,
         };
     }

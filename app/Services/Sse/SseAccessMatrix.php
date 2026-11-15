@@ -118,17 +118,22 @@ class SseAccessMatrix
     /**
      * « Que peut faire ce membre ? » : pour chaque section et niveau, la réponse et son origine.
      *
-     * @return array{entry: bool, sections: list<array{key: string, label: string, cells: array<string, array{applies: bool, allowed: bool, source: string, reason: string, rule_ids: list<int>}>}>}
+     * @return array{entry: bool, sections: list<array{key: string, label: string, cells: array<string, array{applies: bool, allowed: bool, source: string, reason: string, rule_ids: list<int>, origins: list<array<string, mixed>>}>}>}
      */
     public function effectiveForMember(int $tenantId, int $userId): array
     {
         $entry = $this->policy()->hasEntryRight($userId, $tenantId);
         $sections = [];
+        $byId = [];
+        foreach ($this->policy()->rules()->liveRules($tenantId) as $r) {
+            $byId[(int) $r['id']] = $r;
+        }
+        $labels = [];
         foreach (C::SECTIONS as $key => $def) {
             $cells = [];
             foreach (C::levelKeys() as $lv) {
                 if (!C::applies($key, $lv)) {
-                    $cells[$lv] = ['applies' => false, 'allowed' => false, 'source' => SseAccessDecision::INVALID, 'reason' => 'Sans objet pour cette section.', 'rule_ids' => []];
+                    $cells[$lv] = ['applies' => false, 'allowed' => false, 'source' => SseAccessDecision::INVALID, 'reason' => 'Sans objet pour cette section.', 'rule_ids' => [], 'origins' => []];
                     continue;
                 }
                 $d = $this->policy()->decide($userId, $key, $lv, $this->ctx($tenantId));
@@ -139,12 +144,151 @@ class SseAccessMatrix
                     'source' => $d->source,
                     'reason' => $this->reason($d, $key, $lv, $entry),
                     'rule_ids' => $d->ruleIds,
+                    'origins' => $this->origins($tenantId, $d, $byId, $labels, $key, $lv),
                 ];
             }
             $sections[] = ['key' => $key, 'label' => $def['label'], 'cells' => $cells];
         }
 
         return ['entry' => $entry, 'sections' => $sections];
+    }
+
+    /**
+     * D'où vient un droit : la garde d'origine, ou la ou les règles qui ont décidé, avec le type de bénéficiaire (position,
+     * fonction, qualification, identité, unité, niveau d'accès) et le libellé.
+     *
+     * @param array<int, array<string, mixed>> $byId règles non retirées de la communauté, par identifiant
+     * @param array<string, string> $labels libellés déjà lus (type:id)
+     * @return list<array{kind: string, type: string, type_label: string, label: string, effect: string, rule_id: int, ends_at: ?string, reason: string}>
+     */
+    private function origins(int $tenantId, SseAccessDecision $d, array $byId, array &$labels, string $section, string $level): array
+    {
+        $out = [];
+        if ($d->source === SseAccessDecision::LEGACY || ($d->legacyAllowed && $d->source !== SseAccessDecision::DENY_RULE)) {
+            $out[] = ['kind' => 'legacy', 'type' => '', 'type_label' => 'Droit d’origine', 'label' => C::PROFILES[C::legacyProfile($section, $level)]['label'], 'effect' => C::EFFECT_ALLOW, 'rule_id' => 0, 'ends_at' => null, 'reason' => ''];
+        }
+        foreach ($d->ruleIds as $id) {
+            $r = $byId[$id] ?? null;
+            if ($r === null) {
+                continue;
+            }
+            $k = $r['subject_type'] . ':' . $r['subject_id'];
+            if (!isset($labels[$k])) {
+                $label = $this->policy()->subjects()->label($tenantId, (string) $r['subject_type'], (int) $r['subject_id']);
+                if ($r['subject_type'] === C::SUBJECT_USER && $label !== null && $this->directory()->member($tenantId, (int) $r['subject_id']) === null) {
+                    $label = 'Identité protégée par l’annuaire';
+                }
+                $labels[$k] = $label ?? 'Bénéficiaire supprimé';
+            }
+            $out[] = [
+                'kind' => 'rule',
+                'type' => (string) $r['subject_type'],
+                'type_label' => C::SUBJECT_TYPES[$r['subject_type']] ?? (string) $r['subject_type'],
+                'label' => $labels[$k],
+                'effect' => (string) $r['effect'],
+                'rule_id' => (int) $r['id'],
+                'ends_at' => $r['ends_at'] ?? null,
+                'reason' => (string) ($r['reason'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * « Qui peut quoi » : pour chaque section, trois colonnes (voir, écrire, gérer) de puces : les bénéficiaires dont une
+     * règle active ou à venir porte sur le niveau de la colonne. Positions, fonctions, qualifications et identités d'abord ;
+     * unités et niveaux d'accès à la suite (moins mis en avant).
+     *
+     * @param (callable(string): bool)|null $mayView sections que la personne peut voir
+     * @return list<array{key: string, label: string, columns: array<string, list<array<string, mixed>>>, applies: array<string, bool>}>
+     */
+    public function board(int $tenantId, ?callable $mayView = null): array
+    {
+        $now = $this->policy()->now();
+        $subjects = $this->policy()->subjects();
+        $labels = [];
+        $cells = [];
+        // Un bénéficiaire n'apparaît que dans sa colonne la plus haute (écrire donne aussi voir : une seule puce, sous « Écrire »).
+        $rank = array_flip(array_keys(C::SIMPLE_ACCESS));
+        $top = [];
+        foreach ($this->policy()->rules()->liveRules($tenantId) as $r) {
+            $col = C::simpleColumnOf((string) $r['level']);
+            if ($col === null || self::state($r, $now) === 'expired') {
+                continue;
+            }
+            $tk = $r['section'] . '|' . $r['subject_type'] . ':' . $r['subject_id'] . '|' . $r['effect'];
+            $top[$tk] = max($top[$tk] ?? 0, $rank[$col]);
+        }
+        foreach ($this->policy()->rules()->liveRules($tenantId) as $r) {
+            $col = C::simpleColumnOf((string) $r['level']);
+            if ($col === null || self::state($r, $now) === 'expired') {
+                continue;
+            }
+            if ($rank[$col] < $top[$r['section'] . '|' . $r['subject_type'] . ':' . $r['subject_id'] . '|' . $r['effect']]) {
+                continue;
+            }
+            $k = $r['subject_type'] . ':' . $r['subject_id'];
+            if (!isset($labels[$k])) {
+                $label = $subjects->label($tenantId, (string) $r['subject_type'], (int) $r['subject_id']);
+                if ($r['subject_type'] === C::SUBJECT_USER && $label !== null && $this->directory()->member($tenantId, (int) $r['subject_id']) === null) {
+                    $label = 'Identité protégée par l’annuaire';
+                }
+                $labels[$k] = $label ?? 'Bénéficiaire supprimé';
+            }
+            $cells[(string) $r['section']][$col][] = [
+                'rule_id' => (int) $r['id'],
+                'type' => (string) $r['subject_type'],
+                'type_label' => C::SUBJECT_TYPES[$r['subject_type']] ?? (string) $r['subject_type'],
+                'label' => $labels[$k],
+                'effect' => (string) $r['effect'],
+                'state' => self::state($r, $now),
+                'ends_at' => $r['ends_at'] ?? null,
+                'reason' => (string) ($r['reason'] ?? ''),
+                'simple' => in_array($r['subject_type'], [C::SUBJECT_POSITION, C::SUBJECT_JOB, C::SUBJECT_QUALIF, C::SUBJECT_USER], true),
+            ];
+        }
+        $out = [];
+        foreach (C::SECTIONS as $key => $def) {
+            if ($mayView !== null && !$mayView($key)) {
+                continue;
+            }
+            $columns = [];
+            $applies = [];
+            foreach (C::SIMPLE_ACCESS as $access => $acc) {
+                $chips = $cells[$key][$access] ?? [];
+                // Les bénéficiaires simples d'abord, les refus ensuite dans chaque groupe.
+                usort($chips, static fn (array $a, array $b): int => [!$a['simple'], $a['effect'] === C::EFFECT_DENY, $a['label']] <=> [!$b['simple'], $b['effect'] === C::EFFECT_DENY, $b['label']]);
+                $columns[$access] = $chips;
+                $applies[$access] = C::applies($key, $acc['shown']);
+            }
+            $out[] = ['key' => $key, 'label' => $def['label'], 'columns' => $columns, 'applies' => $applies];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Une phrase sur l'effet d'un changement, avant enregistrement (« 14 personnes gagneraient l'accès »).
+     *
+     * @param array<string, mixed> $sim résultat de simulate()
+     */
+    public static function effectLine(array $sim): string
+    {
+        $gained = (int) ($sim['gained'] ?? 0);
+        $lost = (int) ($sim['lost'] ?? 0);
+        $parts = [];
+        if ($gained > 0) {
+            $parts[] = $gained === 1 ? '1 personne gagnerait l’accès' : $gained . ' personnes gagneraient l’accès';
+        }
+        if ($lost > 0) {
+            $parts[] = $lost === 1 ? '1 personne perdrait l’accès' : $lost . ' personnes perdraient l’accès';
+        }
+        if ($parts === []) {
+            return 'Aucun changement d’accès : les personnes concernées ont déjà ces droits, ou n’ont pas le droit d’entrer au bureau SSE.';
+        }
+
+        return implode(' ; ', $parts) . (!empty($sim['truncated']) ? ' (estimation sur les premières personnes concernées)' : '') . '.';
     }
 
     /** Texte « d'où vient ce droit ». */
@@ -180,6 +324,7 @@ class SseAccessMatrix
             return $empty;
         }
         $dir = $this->directory()->visible($tenantId, '', self::MEMBER_CAP);
+        $this->policy()->subjects()->preloadFacets($tenantId, array_merge(array_column($dir['named'], 'user_id'), $dir['anonymized_ids']));
         $members = [];
         foreach ($dir['named'] as $m) {
             if (!$this->policy()->hasEntryRight($m['user_id'], $tenantId)) {
@@ -250,6 +395,7 @@ class SseAccessMatrix
             $res['truncated'] = true;
             $ids = array_slice($ids, 0, self::MEMBER_CAP);
         }
+        $subjects->preloadFacets($tenantId, $ids);
         $visible = [];
         foreach ($this->directory()->visible($tenantId, '', self::MEMBER_CAP)['named'] as $m) {
             $visible[$m['user_id']] = $m['label'];

@@ -22,6 +22,8 @@ use App\Support\SseAccessCatalog as C;
  */
 class SseAccessRuleService
 {
+    private const NOTHING_TO_CREATE = 'Aucune règle à créer : tout est déjà en place ou hors de vos droits.';
+
     /** @var \Closure(array<string, mixed>): void|null */
     private ?\Closure $audit;
 
@@ -212,6 +214,115 @@ class SseAccessRuleService
         $errors = array_values(array_unique($errors));
         if ($errors !== []) {
             // Une erreur de saisie (bénéficiaire, dates, motif) ou de droit s'applique à toutes les sections : rien n'est créé.
+            return ['rules' => [], 'errors' => $errors, 'skipped' => array_values(array_unique($skipped))];
+        }
+
+        return ['rules' => $rules, 'errors' => $rules === [] ? ['Aucune règle à créer : tout est déjà en place ou hors de vos droits.'] : [], 'skipped' => array_values(array_unique($skipped))];
+    }
+
+    /**
+     * Accord ou refus « simple » : un bénéficiaire (position, fonction, qualification, identité, unité…), un accès (voir,
+     * écrire, gérer) et une ou plusieurs sections. Chaque section passe par plan() : mêmes garde-fous (pas d'escalade,
+     * bénéficiaire de la communauté, motif, dernier gestionnaire protégé, doublons, plafond).
+     *
+     * Saisie : sections (liste ; « * » pour toutes), access (voir|ecrire|gerer), subject_type, subject_id, effect,
+     * starts_at, ends_at, reason, source.
+     *
+     * @param array<string, mixed> $input
+     * @return array{rules: list<array<string, mixed>>, errors: list<string>, skipped: list<string>}
+     */
+    public function planSimple(int $tenantId, int $actorId, array $input): array
+    {
+        $access = (string) ($input['access'] ?? '');
+        if (!isset(C::SIMPLE_ACCESS[$access])) {
+            return ['rules' => [], 'errors' => ['Choisissez ce que la personne peut faire : voir, écrire ou gérer.'], 'skipped' => []];
+        }
+        $effect = (string) ($input['effect'] ?? C::EFFECT_ALLOW);
+        $levels = $effect === C::EFFECT_DENY ? C::simpleDenyLevels($access) : C::SIMPLE_ACCESS[$access]['grant'];
+        $wanted = array_values(array_filter(array_map('strval', (array) ($input['sections'] ?? [])), static fn (string $s): bool => $s !== ''));
+        if ($wanted === []) {
+            return ['rules' => [], 'errors' => ['Choisissez au moins une section.'], 'skipped' => []];
+        }
+        if (in_array('*', $wanted, true)) {
+            $wanted = C::sectionKeys();
+        }
+        $rules = [];
+        $skipped = [];
+        $errors = [];
+        foreach (array_values(array_unique($wanted)) as $section) {
+            if (!C::hasSection($section)) {
+                $errors[] = 'Section inconnue.';
+                continue;
+            }
+            if (!$this->actorHolds($actorId, $tenantId, $section, C::LEVEL_EXISTS)) {
+                $skipped[] = C::sectionLabel($section) . ' : vous n’avez pas accès à cette section, elle n’est pas modifiée.';
+                continue;
+            }
+            $plan = $this->plan($tenantId, $actorId, [
+                'section' => $section,
+                'levels' => $levels,
+                'subject_type' => $input['subject_type'] ?? '',
+                'subject_id' => $input['subject_id'] ?? 0,
+                'effect' => $effect,
+                'starts_at' => $input['starts_at'] ?? '',
+                'ends_at' => $input['ends_at'] ?? '',
+                'reason' => $input['reason'] ?? '',
+                'source' => (string) ($input['source'] ?? ''),
+            ]);
+            $rules = array_merge($rules, $plan['rules']);
+            $skipped = array_merge($skipped, $plan['skipped']);
+            $errors = array_merge($errors, array_values(array_diff($plan['errors'], [self::NOTHING_TO_CREATE])));
+        }
+        $errors = array_values(array_unique($errors));
+        $skipped = array_values(array_unique($skipped));
+        if ($errors !== []) {
+            return ['rules' => [], 'errors' => $errors, 'skipped' => $skipped];
+        }
+
+        return ['rules' => $rules, 'errors' => $rules === [] ? ['Aucune règle à créer : tout est déjà en place ou hors de vos droits.'] : [], 'skipped' => $skipped];
+    }
+
+    /**
+     * Modèle « en situation » (C::RECIPES) : une étape par bénéficiaire choisi (position, qualification…), chacune avec
+     * son accès et ses sections. Le type de bénéficiaire de chaque étape doit être de ceux que le modèle prévoit.
+     *
+     * @param array<string, string> $refs référence « type:id » de chaque étape (index de l'étape)
+     * @param array<string, mixed> $options starts_at, ends_at, reason
+     * @return array{rules: list<array<string, mixed>>, errors: list<string>, skipped: list<string>}
+     */
+    public function planRecipe(int $tenantId, int $actorId, string $recipe, array $refs, array $options): array
+    {
+        $def = C::RECIPES[$recipe] ?? null;
+        if ($def === null) {
+            return ['rules' => [], 'errors' => ['Modèle inconnu.'], 'skipped' => []];
+        }
+        $rules = [];
+        $skipped = [];
+        $errors = [];
+        foreach ($def['steps'] as $i => $step) {
+            $ref = C::parseSubjectRef((string) ($refs[(string) $i] ?? ''));
+            if ($ref === null || !in_array($ref[0], $step['kinds'], true)) {
+                $errors[] = 'Choisissez un bénéficiaire pour « ' . $step['label'] . ' ».';
+                continue;
+            }
+            $plan = $this->planSimple($tenantId, $actorId, [
+                'sections' => $step['sections'] ?? ['*'],
+                'access' => $step['access'],
+                'subject_type' => $ref[0],
+                'subject_id' => $ref[1],
+                'effect' => C::EFFECT_ALLOW,
+                'starts_at' => $options['starts_at'] ?? '',
+                'ends_at' => $options['ends_at'] ?? '',
+                'reason' => trim((string) ($options['reason'] ?? '')) !== '' ? $options['reason'] : 'Modèle ' . $def['label'],
+                'source' => 'recipe:' . $recipe,
+            ]);
+            $rules = array_merge($rules, $plan['rules']);
+            $skipped = array_merge($skipped, $plan['skipped']);
+            // Une étape déjà en place ne bloque pas les autres : seul « rien du tout à créer » est signalé, à la fin.
+            $errors = array_merge($errors, array_values(array_diff($plan['errors'], [self::NOTHING_TO_CREATE])));
+        }
+        $errors = array_values(array_unique($errors));
+        if ($errors !== []) {
             return ['rules' => [], 'errors' => $errors, 'skipped' => array_values(array_unique($skipped))];
         }
 

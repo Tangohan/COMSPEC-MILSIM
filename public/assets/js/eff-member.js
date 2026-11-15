@@ -185,7 +185,8 @@
         'fonctions': 'eff-dlg-jobs',
         'portrait': 'eff-dlg-portrait',
         'elevation': 'eff-dlg-elevation',
-        'depart': 'eff-dlg-depart'
+        'depart': 'eff-dlg-depart',
+        'acces-sse': 'eff-dlg-acces-sse'
     };
 
     function openDialogFromHash() {

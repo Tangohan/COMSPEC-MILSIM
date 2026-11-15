@@ -331,6 +331,8 @@ final class PersonnelDutyPositionService
         }
         $kept[] = $wantId;
         $this->users->syncOrganizationRoles($userId, $tenantId, $kept, $actorUserId > 0 ? $actorUserId : null, true);
+        // Les droits d'accès du portail SSE suivent la position : ce qui en a été lu pendant la requête est oublié.
+        \App\Services\Sse\SseAccessPolicy::forgetMember($tenantId, $userId);
 
         return true;
     }

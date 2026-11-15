@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Core\Database;
+use App\Support\AdministrativePositionCatalog;
 use App\Support\SseAccessCatalog as C;
 use PDO;
 
@@ -25,6 +26,12 @@ class SseAccessSubjects
 
     /** @var array<string, bool> */
     private array $tableMemo = [];
+
+    /** @var array<string, array{jobs: list<int>, qualifs: list<int>}> fonctions et qualifications valides par membre (« tenant:user ») */
+    private array $facetMemo = [];
+
+    /** @var array<int, array<int, string>> positions de service : id du rôle d'affichage => libellé, par communauté */
+    private array $positionMemo = [];
 
     public function __construct(private ?PDO $pdo = null)
     {
@@ -54,6 +61,26 @@ class SseAccessSubjects
     {
         $this->userMemo = [];
         $this->parentMemo = [];
+        $this->facetMemo = [];
+        $this->positionMemo = [];
+    }
+
+    /** Oublie ce qui a été lu d'un seul membre (changement de position, de fonction ou de qualification). */
+    public function forget(int $tenantId, int $userId): void
+    {
+        if ($tenantId < 1) {
+            // Communauté inconnue de l'appelant (qualification) : toutes celles lues pour ce membre.
+            foreach ([&$this->userMemo, &$this->facetMemo] as &$memo) {
+                foreach (array_keys($memo) as $key) {
+                    if (str_ends_with((string) $key, ':' . $userId)) {
+                        unset($memo[$key]);
+                    }
+                }
+            }
+
+            return;
+        }
+        unset($this->userMemo[$tenantId . ':' . $userId], $this->facetMemo[$tenantId . ':' . $userId]);
     }
 
     /**
@@ -274,6 +301,20 @@ class SseAccessSubjects
                     return (string) $name . ($type === C::SUBJECT_UNIT_TREE ? ' et sous-unités' : '');
                 case C::SUBJECT_USER:
                     return $this->userLabel($tenantId, $id);
+                case C::SUBJECT_POSITION:
+                    return $this->positionRoles($tenantId)[$id] ?? null;
+                case C::SUBJECT_JOB:
+                    $st = $this->pdo()->prepare('SELECT name FROM personnel_job_roles WHERE tenant_id = ? AND id = ? LIMIT 1');
+                    $st->execute([$tenantId, $id]);
+                    $name = $st->fetchColumn();
+
+                    return $name === false ? null : (string) $name;
+                case C::SUBJECT_QUALIF:
+                    $st = $this->pdo()->prepare('SELECT name FROM personnel_qualification_definitions WHERE tenant_id = ? AND id = ? LIMIT 1');
+                    $st->execute([$tenantId, $id]);
+                    $name = $st->fetchColumn();
+
+                    return $name === false ? null : (string) $name;
             }
         } catch (\Throwable) {
             return null;
@@ -332,7 +373,14 @@ class SseAccessSubjects
                 case C::SUBJECT_USER:
                     return [$id];
                 case C::SUBJECT_ROLE:
+                case C::SUBJECT_POSITION:
                     $ids = $this->userIdsWithRole($tenantId, $id);
+                    break;
+                case C::SUBJECT_JOB:
+                    $ids = $this->userIdsWithJob($tenantId, $id);
+                    break;
+                case C::SUBJECT_QUALIF:
+                    $ids = $this->userIdsWithQualification($tenantId, $id);
                     break;
                 case C::SUBJECT_UNIT:
                     $ids = $this->userIdsInUnits($tenantId, [$id]);
@@ -418,6 +466,188 @@ class SseAccessSubjects
         unset($ids[0]);
 
         return array_map('intval', array_keys($ids));
+    }
+
+    // ------------------------------------------------------------------ Positions, fonctions, qualifications
+
+    /**
+     * Positions de service (administratives) de la communauté : id du rôle d'affichage => libellé. Les quatre positions du
+     * site et celles de la communauté, seulement quand leur rôle existe déjà (il se crée à la première attribution).
+     *
+     * @return array<int, string>
+     */
+    public function positionRoles(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        if (isset($this->positionMemo[$tenantId])) {
+            return $this->positionMemo[$tenantId];
+        }
+        $labels = [];
+        foreach (AdministrativePositionCatalog::all($tenantId) as $position) {
+            $labels[(string) $position['slug']] = (string) $position['label'];
+        }
+        $out = [];
+        if ($labels !== []) {
+            try {
+                $ph = implode(',', array_fill(0, count($labels), '?'));
+                $st = $this->pdo()->prepare('SELECT id, slug FROM roles WHERE tenant_id = ? AND slug IN (' . $ph . ')');
+                $st->execute(array_merge([$tenantId], array_keys($labels)));
+                foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                    $out[(int) $r['id']] = $labels[(string) $r['slug']] ?? (string) $r['slug'];
+                }
+            } catch (\Throwable) {
+                $out = [];
+            }
+        }
+
+        return $this->positionMemo[$tenantId] = $out;
+    }
+
+    /**
+     * Fonctions (emplois) et qualifications valides d'un membre. Une qualification compte seulement si elle est obtenue,
+     * valide ou bientôt échue ET que sa date d'échéance n'est pas passée : expirée, suspendue, révoquée ou en cours, elle
+     * ne donne rien. Les positions de service se lisent avec les niveaux d'accès (forUser, « roles »).
+     *
+     * @return array{jobs: list<int>, qualifs: list<int>}
+     */
+    public function facetsFor(int $tenantId, int $userId): array
+    {
+        $key = $tenantId . ':' . $userId;
+        if (!isset($this->facetMemo[$key])) {
+            $this->preloadFacets($tenantId, [$userId]);
+        }
+
+        return $this->facetMemo[$key] ?? ['jobs' => [], 'qualifs' => []];
+    }
+
+    /**
+     * Charge en deux requêtes les fonctions et qualifications de plusieurs membres (évite une requête par membre quand on
+     * évalue toute la communauté : « qui a accès », aperçu).
+     *
+     * @param list<int> $userIds
+     */
+    public function preloadFacets(int $tenantId, array $userIds): void
+    {
+        $todo = [];
+        foreach ($userIds as $uid) {
+            $uid = (int) $uid;
+            if ($uid > 0 && !isset($this->facetMemo[$tenantId . ':' . $uid])) {
+                $todo[$uid] = true;
+            }
+        }
+        if ($tenantId < 1 || $todo === []) {
+            return;
+        }
+        foreach (array_chunk(array_keys($todo), 400) as $chunk) {
+            $found = array_fill_keys($chunk, ['jobs' => [], 'qualifs' => []]);
+            $ph = implode(',', array_fill(0, count($chunk), '?'));
+            try {
+                if ($this->tableExists('personnel_profile_job_roles')) {
+                    $st = $this->pdo()->prepare('SELECT user_id, personnel_job_role_id FROM personnel_profile_job_roles WHERE tenant_id = ? AND user_id IN (' . $ph . ')');
+                    $st->execute(array_merge([$tenantId], $chunk));
+                    foreach ($st->fetchAll(PDO::FETCH_NUM) ?: [] as [$uid, $job]) {
+                        $found[(int) $uid]['jobs'][(int) $job] = (int) $job;
+                    }
+                }
+            } catch (\Throwable) {
+            }
+            foreach ($this->validQualificationRows($tenantId, ' AND pq.user_id IN (' . $ph . ')', $chunk) as [$uid, $def]) {
+                $found[$uid]['qualifs'][$def] = $def;
+            }
+            foreach ($found as $uid => $facets) {
+                $this->facetMemo[$tenantId . ':' . $uid] = ['jobs' => array_values($facets['jobs']), 'qualifs' => array_values($facets['qualifs'])];
+            }
+        }
+    }
+
+    /**
+     * Lignes (membre, qualification) valides aujourd'hui, avec la définition de la communauté (jamais celle d'une autre).
+     *
+     * @param list<int|string> $params
+     * @return list<array{0: int, 1: int}>
+     */
+    private function validQualificationRows(int $tenantId, string $extraWhere, array $params): array
+    {
+        if (!$this->tableExists('personnel_qualifications') || !$this->tableExists('personnel_qualification_definitions')) {
+            return [];
+        }
+        $today = date('Y-m-d');
+        $base = 'SELECT pq.user_id, pq.definition_id FROM personnel_qualifications pq
+                 INNER JOIN personnel_qualification_definitions d ON d.id = pq.definition_id AND d.tenant_id = ?
+                 WHERE pq.definition_id IS NOT NULL AND (pq.expires_at IS NULL OR pq.expires_at >= ?)';
+        // « admin_status » (référentiel enrichi) l'emporte sur « status » ; sur une vieille base sans cette colonne, « status » seul.
+        $variants = [
+            $base . " AND COALESCE(pq.admin_status, pq.status) IN ('obtained', 'valid', 'expiring')",
+            $base . " AND pq.status IN ('obtained', 'valid', 'expiring')",
+        ];
+        foreach ($variants as $sql) {
+            try {
+                $st = $this->pdo()->prepare($sql . $extraWhere);
+                $st->execute(array_merge([$tenantId, $today], $params));
+
+                return array_map(static fn (array $r): array => [(int) $r[0], (int) $r[1]], $st->fetchAll(PDO::FETCH_NUM) ?: []);
+            } catch (\Throwable) {
+            }
+        }
+
+        return [];
+    }
+
+    /** @return list<int> */
+    private function userIdsWithJob(int $tenantId, int $jobId): array
+    {
+        if (!$this->tableExists('personnel_profile_job_roles')) {
+            return [];
+        }
+        $st = $this->pdo()->prepare('SELECT user_id FROM personnel_profile_job_roles WHERE tenant_id = ? AND personnel_job_role_id = ?');
+        $st->execute([$tenantId, $jobId]);
+
+        return array_values(array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []));
+    }
+
+    /** @return list<int> */
+    private function userIdsWithQualification(int $tenantId, int $definitionId): array
+    {
+        $ids = [];
+        foreach ($this->validQualificationRows($tenantId, ' AND pq.definition_id = ?', [$definitionId]) as [$uid]) {
+            $ids[$uid] = true;
+        }
+
+        return array_map('intval', array_keys($ids));
+    }
+
+    /**
+     * Positions de service, fonctions et qualifications de la communauté, pour le champ « ajouter un bénéficiaire ».
+     *
+     * @return array{positions: list<array{id: int, label: string}>, jobs: list<array{id: int, label: string}>, qualifs: list<array{id: int, label: string}>}
+     */
+    public function simpleOptions(int $tenantId): array
+    {
+        $out = ['positions' => [], 'jobs' => [], 'qualifs' => []];
+        if ($tenantId < 1) {
+            return $out;
+        }
+        foreach ($this->positionRoles($tenantId) as $id => $label) {
+            $out['positions'][] = ['id' => $id, 'label' => $label];
+        }
+        $queries = [
+            'jobs' => 'SELECT id, name FROM personnel_job_roles WHERE tenant_id = ? ORDER BY name ASC LIMIT 600',
+            'qualifs' => 'SELECT id, name FROM personnel_qualification_definitions WHERE tenant_id = ? AND archived_at IS NULL AND COALESCE(is_active, 1) = 1 ORDER BY name ASC LIMIT 600',
+        ];
+        foreach ($queries as $key => $sql) {
+            try {
+                $st = $this->pdo()->prepare($sql);
+                $st->execute([$tenantId]);
+                foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                    $out[$key][] = ['id' => (int) $r['id'], 'label' => (string) $r['name']];
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return $out;
     }
 
     /**

@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Droits d'accès SSE : feuilles de style (kit « SSE Fichiers » et celle des droits), onglets de la page et message de
  * migration absente. Aucun surtitre : le titre de la page est le premier texte.
  *
- * @var string $tab grille|membre|qui|historique
+ * @var string $tab quoi|grille|membre|qui|historique
  * @var bool $ready les tables des règles existent
  */
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -12,8 +12,10 @@ $sseExtraStyles = ($sseExtraStyles ?? '')
     . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '">'
     . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-files-kit.css')) . '">'
     . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-access-rights.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-access-picker.js')) . '"></script>';
 $sarTabs = [
-    'grille' => ['label' => 'Grille des droits', 'path' => $base],
+    'quoi' => ['label' => 'Qui peut quoi', 'path' => $base],
+    'grille' => ['label' => 'Grille détaillée', 'path' => $base . '/grille'],
     'membre' => ['label' => 'Droits d’un membre', 'path' => $base . '/membre'],
     'qui' => ['label' => 'Qui a accès', 'path' => $base . '/qui'],
     'historique' => ['label' => 'Historique', 'path' => $base . '/historique'],

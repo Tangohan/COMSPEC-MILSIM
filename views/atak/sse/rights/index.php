@@ -22,7 +22,7 @@ $old = is_array($old ?? null) ? $old : [];
 <div class="fx sar">
     <div class="fx-th">
         <div>
-            <h1>Droits d’accès</h1>
+            <h1>Grille détaillée des droits</h1>
             <p>Qui peut voir, lire, écrire, verser, supprimer, exporter et gérer, section par section. Tant qu’aucune règle n’existe, chaque personne garde exactement les droits qu’elle avait avant : une règle ne fait que restreindre ou étendre, pour votre communauté seulement.</p>
         </div>
         <div class="fx-ws"><div><small>Règles actives</small><b><?= (int) $rulesTotal ?></b></div></div>
@@ -96,9 +96,9 @@ $old = is_array($old ?? null) ? $old : [];
                 <?php $first = false; endforeach; ?>
             </fieldset>
             <div class="fx-g3 sar-g">
-                <label class="fx-f"><span>Bénéficiaire</span>
-                    <?php $selectName = 'subject_ref'; $selectId = 'sar-tpl-subject'; $selected = isset($old['subject_type'], $old['subject_id']) ? C::subjectRef((string) $old['subject_type'], (int) $old['subject_id']) : ''; require __DIR__ . '/_subject_select.php'; ?>
-                </label>
+                <div class="fx-f">
+                    <?php $pickId = 'sar-tpl-subject'; $pickLabel = 'Bénéficiaire'; $pickKinds = []; $pickSelected = isset($old['subject_type'], $old['subject_id']) ? C::subjectRef((string) $old['subject_type'], (int) $old['subject_id']) : ''; require __DIR__ . '/_beneficiary.php'; ?>
+                </div>
                 <label class="fx-f"><span>À partir du (facultatif)</span><input class="fx-in" type="date" name="starts_at" value="<?= $h($old['starts_at'] ?? '') ?>"></label>
                 <label class="fx-f"><span>Jusqu’au (facultatif)</span><input class="fx-in" type="date" name="ends_at" value="<?= $h($old['ends_at'] ?? '') ?>"></label>
             </div>
