@@ -248,7 +248,7 @@ final class DataCampaignPage
                 ];
             })(),
             DataCampaignBlocks::IDENTIFIERS => [
-                $item('Membre', self::maskId($present($get('Numéro de membre de la communauté')))),
+                $item('Membre', self::maskId($present($get('Matricule de votre organisation')))),
                 $item('Matricule', self::maskId($present($get('Matricule de service')))),
                 $item('Trigramme', $present($get('Trigramme'))),
                 $item('Radio', $present($get('Indicatif radio'))),
