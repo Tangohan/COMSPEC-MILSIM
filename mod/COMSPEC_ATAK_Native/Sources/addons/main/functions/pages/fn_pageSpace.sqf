@@ -39,6 +39,8 @@ private _note = {
 private _spaces = ["spaces"] call comspec_atak_native_fnc_appSpaces;
 
 if (_mode isEqualTo "launcher") exitWith {
+    // Mode Essentiel (4.18.0, fn_essentialMode) : le même bouton que sur le lanceur classique, en tête de l'accueil.
+    _y = _y + (["bar", [_pad, _y, _gw, _font, _l get "mini"]] call comspec_atak_native_fnc_essentialMode);
     private _role = ["role"] call comspec_atak_native_fnc_appSpaces;
     if (_role isNotEqualTo "all") then {
         [format [("Profil : %1. Tout reste accessible par « Toutes les apps ».") call comspec_atak_native_fnc_tr, (["roleName", _role] call comspec_atak_native_fnc_appSpaces) call comspec_atak_native_fnc_tr]] call _note;

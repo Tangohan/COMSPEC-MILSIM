@@ -492,6 +492,8 @@ if (_imp > 0) then { _appsRows pushBack ["text", format ["<t size='0.8' color='"
 // Apps regroupées, profil de rôle et mode pilote (fn_appSpaces, fn_pilotMode). Le serveur peut imposer les deux premiers choix.
 private _spLocked = ["locked"] call comspec_atak_native_fnc_appSpaces;
 _appsRows pushBack ["section", "Lanceur et mode pilote", "Présenter les apps autrement, sans rien désinstaller"];
+// Mode Essentiel (4.18.0, fn_essentialMode) : le même choix que le bouton de l'accueil ; imposé par le serveur, la ligne est grisée avec sa phrase.
+_appsRows append (["rows"] call comspec_atak_native_fnc_essentialMode);
 _appsRows pushBack ["switch", "Apps regroupées", ["on"] call comspec_atak_native_fnc_appSpaces, { ["setOn", !(["on"] call comspec_atak_native_fnc_appSpaces)] call comspec_atak_native_fnc_appSpaces; },
     ["Navigation et feux, Renseignement, Spécialités, Messages, Mission et téléphone, avec des sous-groupes", "Imposé par le serveur"] select _spLocked, _spLocked, "spacesOn"];
 private _rolePref = ["rolePref"] call comspec_atak_native_fnc_appSpaces;

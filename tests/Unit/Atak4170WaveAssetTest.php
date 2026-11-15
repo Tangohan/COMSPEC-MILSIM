@@ -271,7 +271,8 @@ final class Atak4170WaveAssetTest extends TestCase
         self::assertStringContainsString('private _ok = _keys select { [_x, _list] call _usable };', $pin);
         // Proposées : AUCUNE, les apps affichables, et celles déjà épinglées (pour pouvoir les retirer), avec l'explication.
         self::assertStringContainsString('select { (_x select 0) isEqualTo "none" || {(_x select 0) in _ok} || {(_x select 0) in _sel} }', $pin);
-        self::assertStringContainsString('["", "App interdite ou désinstallée : pas de bandeau"] select (_v in _sel && {!(_v in _ok)})]', $pin);
+        // 4.18.0 : la même info-bulle, avec une phrase propre quand c'est le mode Essentiel qui masque l'app.
+        self::assertStringContainsString('["", ["App interdite ou désinstallée : pas de bandeau", "Masquée par le mode Essentiel : pas de bandeau"] select (["on"] call comspec_atak_native_fnc_essentialMode)] select (_v in _sel && {!(_v in _ok)})]', $pin);
         // 4e élément d'une option de « segment » : info-bulle du bouton, traduite.
         self::assertStringContainsString('_x params ["_text", "_code", ["_active", false], ["_tip", ""], ["_segV", ""]];', $this->read('functions/ui/fn_formRender.sqf'));
         self::assertStringContainsString('["App interdite ou désinstallée : pas de bandeau", "App forbidden or uninstalled: no banner"]', $this->read('i18n/en.txt'));
@@ -468,10 +469,8 @@ final class Atak4170WaveAssetTest extends TestCase
     public function testVersionAndChangelogs(): void
     {
         $hpp = $this->read('script_component.hpp');
-        // Version courante : 4.17.0 au moins (la 4.17.1, correctif de l'appareil photo, est figée par AtakPhotoModeCleanupAssetTest).
-        self::assertMatchesRegularExpression('/#define VERSION 4\.17\.\d+/', $hpp);
-        self::assertMatchesRegularExpression('/#define VERSION_STR "4\.17\.\d+"/', $hpp);
-        self::assertMatchesRegularExpression('/#define VERSION_NAME "4\.17\.\d+\.AG - Washington"/', $hpp);
+        // Version courante : figée par le test de la dernière version (AtakEssentialModeAssetTest) ; ici, 4.17.0 au moins.
+        self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(1[7-9]|[2-9]\d)\.\d+"/', $hpp);
         // La DLL COMSPEC Link ne change pas dans cette version.
         self::assertStringContainsString('#define LINK_VERSION_STR "2.0.125"', $hpp);
 
@@ -500,8 +499,8 @@ final class Atak4170WaveAssetTest extends TestCase
         self::assertStringContainsString('`fn_setSetting`', $entry);
 
         $steam = str_replace("\r\n", "\n", (string) file_get_contents(self::ROOT . 'mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
-        $from = (int) strpos($steam, '[h1]COMSPEC ATAK 4.17.0 Washington');
         self::assertStringContainsString('[h1]COMSPEC ATAK 4.17.0 Washington', $steam);
+        $from = (int) strpos($steam, '[h1]COMSPEC ATAK 4.17.0 Washington');
         $block = substr($steam, $from, (int) strpos($steam, '[h1]COMSPEC ATAK 4.16.0 Washington') - $from);
         self::assertStringContainsString('[h2]Français[/h2]', $block);
         self::assertStringContainsString('[h2]English[/h2]', $block);

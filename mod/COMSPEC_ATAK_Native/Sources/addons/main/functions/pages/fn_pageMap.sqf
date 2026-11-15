@@ -685,6 +685,8 @@ if (_interactive) then {
                     ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, "", "Couleurs selon l'altitude du terrain"]
                 ]]
             ];
+            // Mode Essentiel (4.18.0, fn_essentialMode) : même interrupteur que le bouton de l'accueil et de Réglages.
+            _rows append (["rows"] call comspec_atak_native_fnc_essentialMode);
             // Apps épinglées (réglages du joueur, fn_mapPinnedApp) : choix en un toucher, sans quitter la carte.
             _rows append (["rows"] call comspec_atak_native_fnc_mapPinnedApp);
             _rows pushBack ["title", "Calques"];

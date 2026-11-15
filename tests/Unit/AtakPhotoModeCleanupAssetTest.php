@@ -227,9 +227,8 @@ final class AtakPhotoModeCleanupAssetTest extends TestCase
     public function testVersionAndChangelogs(): void
     {
         $hpp = $this->read('script_component.hpp');
-        self::assertStringContainsString('#define VERSION 4.17.1', $hpp);
-        self::assertStringContainsString('#define VERSION_STR "4.17.1"', $hpp);
-        self::assertStringContainsString('#define VERSION_NAME "4.17.1.AG - Washington"', $hpp);
+        // Le correctif est sorti dans la 4.18.0 (avec le mode Essentiel) : version 4.17.1 au moins.
+        self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(17\.[1-9]|1[89]\.\d+|[2-9]\d\.\d+)"/', $hpp);
         // La DLL COMSPEC Link ne change pas dans ce correctif.
         self::assertStringContainsString('#define LINK_VERSION_STR "2.0.125"', $hpp);
 
@@ -255,8 +254,11 @@ final class AtakPhotoModeCleanupAssetTest extends TestCase
         self::assertStringContainsString('`fn_photoCam` « restore »', $entry);
 
         $steam = str_replace("\r\n", "\n", (string) file_get_contents(self::ROOT . 'mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
-        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.17.1 Washington', $steam);
+        // Note Steam de la 4.18.0 : mode Essentiel et ce correctif, dans le même bloc.
+        self::assertStringStartsWith('[h1]COMSPEC ATAK 4.18.0 Washington', $steam);
         $block = substr($steam, 0, (int) strpos($steam, '[h1]COMSPEC ATAK 4.17.0 Washington'));
+        self::assertStringContainsString('[b]Appareil photo[/b]', $block);
+        self::assertStringContainsString('[b]Camera[/b]', $block);
         self::assertStringContainsString('[h2]Français[/h2]', $block);
         self::assertStringContainsString('[h2]English[/h2]', $block);
         self::assertSame(2, substr_count($block, '[list]'));
