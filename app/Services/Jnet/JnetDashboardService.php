@@ -1354,6 +1354,12 @@ final class JnetDashboardService
         } catch (\Throwable) {
             return [];
         }
+        // Carte de l'annuaire, vue par les autres membres : sans les qualifications masquées du profil.
+        try {
+            $rows = (new \App\Services\Personnel\QualificationDisplayService())
+                ->visibleOn($rows, \App\Services\Personnel\QualificationDisplayService::PROFILE);
+        } catch (\Throwable) {
+        }
         $out = [];
         foreach ($rows as $row) {
             $name = trim((string) ($row['qualification_name'] ?? ''));

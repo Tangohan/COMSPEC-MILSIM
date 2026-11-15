@@ -48,7 +48,7 @@ final class AtakPack4150AssetTest extends TestCase
     {
         $s = self::read('mod/COMSPEC_Lobby/Sources/addons/main/functions/fn_lobbyOpen.sqf');
         self::assertStringContainsString('["GetPlayerAvatarInfo", [_uid, _tenant]] call _ext', $s);
-        self::assertStringContainsString('["DownloadBriefingSlideImage", [_url,', $s);
+        self::assertStringContainsString('["DownloadBriefingSlideImage", [_u,', $s);
         self::assertStringContainsString('if (_uid isEqualTo "") exitWith { "STR_COMSPEC_LOBBY_SyncNoUid" call _say; };', $s);
         self::assertMatchesRegularExpression('/class SyncButton: RscButtonTextOnly \{\s*idc = 9108;/', self::read('mod/COMSPEC_Lobby/Sources/addons/main/RscLobby.hpp'));
     }

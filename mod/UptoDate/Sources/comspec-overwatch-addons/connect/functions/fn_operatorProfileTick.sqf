@@ -5,6 +5,9 @@
 params [["_reason", "profile_sync", [""]]];
 
 if (!hasInterface) exitWith { false };
+// Steam UID absent : arrêt ici, avant tout script et toute construction de fiche (fn_operatorProfileUidGate : une
+// ligne au journal par changement d'état, reprise automatique quand l'UID apparaît).
+if !([] call comspec_overwatch_connect_fnc_operatorProfileUidGate) exitWith { false };
 // Appelé hors spawn (PFH, rappel CBA) : la fiche se construit et part dans un spawn, sinon l'envoi
 // (callExtension OperatorSync) figeait le jeu le temps de la requête HTTP. Un seul passage à la fois.
 if (!canSuspend) exitWith {
@@ -36,4 +39,5 @@ private _lastFp = missionNamespace getVariable ["COMSPEC_OperatorFingerprint", "
 // réels (plus de rappel toutes les 15 min, demande de TTRD).
 if (_fp isEqualTo _lastFp) exitWith { false };
 
-["sync", _reason] call comspec_overwatch_connect_fnc_syncOperatorProfile
+// La fiche légère qui vient de servir à l'empreinte est complétée (catalogue, mods) au lieu d'être reconstruite.
+["sync", _reason, false, _payload] call comspec_overwatch_connect_fnc_syncOperatorProfile

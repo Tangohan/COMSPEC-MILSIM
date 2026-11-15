@@ -393,6 +393,14 @@ final class AtakWaypointApiController
     private function contextId(Request $request): int
     {
         $body = $this->body($request);
+        // Communauté par défaut : carte réservée à la partie du demandeur (AtakPartyScope), jamais celle du client.
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId > 0) {
+            $reserved = \App\Support\AtakPartyScope::forRequest($tenantId, $body, (string) $request->ip())['map_id'];
+            if ($reserved !== null) {
+                return $reserved;
+            }
+        }
         $raw = $body['context_id'] ?? $body['mapId'] ?? $body['map_id']
             ?? $request->query('context_id') ?? $request->query('mapId');
         $contextId = ($raw !== null && $raw !== '') ? (int) $raw : self::DEFAULT_CONTEXT_ID;

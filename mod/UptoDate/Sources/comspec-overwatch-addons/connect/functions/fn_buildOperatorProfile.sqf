@@ -1,22 +1,34 @@
 /*
     Assemble le payload fiche opérateur jeu (HashMap prêt à sérialiser).
-    Params: [_unit, _event, _reason, _light]
+    Params: [_unit, _event, _reason, _light, _base]
       _light : true = seulement de quoi calculer l'empreinte (contrôle périodique), sans catalogue ni liste de mods.
+      _base  : fiche légère déjà construite à l'instant (fn_operatorProfileTick) : complétée (catalogue, mods) au lieu
+               de tout relire une seconde fois (identité, visage, équipement, versions).
     Retour: HashMap
 */
 params [
     ["_unit", objNull, [objNull]],
     ["_event", "sync", [""]],
     ["_reason", "profile_sync", [""]],
-    ["_light", false, [true]]
+    ["_light", false, [true]],
+    ["_base", createHashMap, [createHashMap]]
 ];
 
 if (isNull _unit) then { _unit = player; };
 
+private _payload = createHashMap;
+private _equipment = createHashMap;
+if (!_light && {"fingerprint" in _base} && {"equipment" in _base}) then {
+    _payload = _base;
+    _payload set ["event", _event];
+    _payload set ["reason", _reason];
+    _equipment = _payload get "equipment";
+} else {
+
 private _identity = [_unit] call comspec_overwatch_connect_fnc_collectOperatorIdentity;
 private _face = [_unit] call comspec_overwatch_connect_fnc_collectOperatorFace;
 private _medical = [_unit] call comspec_overwatch_connect_fnc_collectOperatorMedical;
-private _equipment = [_unit] call comspec_overwatch_connect_fnc_collectOperatorLoadout;
+_equipment = [_unit] call comspec_overwatch_connect_fnc_collectOperatorLoadout;
 private _versions = [] call comspec_overwatch_connect_fnc_collectOperatorVersions;
 private _environment = [] call comspec_overwatch_connect_fnc_collectOperatorEnvironment;
 private _fp = [_identity, _face, _medical, _equipment, _versions] call comspec_overwatch_connect_fnc_operatorProfileFingerprint;
@@ -49,7 +61,6 @@ private _missionFolder = _environment getOrDefault ["mission_name", ""];
 private _missionTitle = _environment getOrDefault ["briefing_name", ""];
 if (_missionTitle isEqualTo "") then { _missionTitle = _missionFolder; };
 
-private _payload = createHashMap;
 _payload set ["event", _event];
 _payload set ["reason", _reason];
 _payload set ["steam_id", _steam];
@@ -67,6 +78,7 @@ _payload set ["mission_name", _missionTitle];
 _payload set ["mission_id", _environment getOrDefault ["mission_id", _missionFolder]];
 _payload set ["world_name", _environment getOrDefault ["world_name", ""]];
 _payload set ["fingerprint", _fp];
+};
 if (_light) exitWith { _payload };
 private _full = (toLower _event) isEqualTo "register";
 // Objets portés avec leur mod (top des armes, gilets… et kits par rôle d'Athena) : à l'enregistrement, puis
@@ -81,8 +93,10 @@ if (_full || {(missionNamespace getVariable ["COMSPEC_OpCatalogSentKey", ""]) is
     _payload set ["item_catalog_key", _catalogKey];
 };
 // Mods chargés : à l'enregistrement, puis seulement quand la liste change (elle ne bouge pas en cours de partie).
+// Liste et clé gardées pour la session de jeu (fn_collectLoadedMods).
 private _mods = [] call comspec_overwatch_connect_fnc_collectLoadedMods;
-private _modsKey = str (_mods apply { _x get "dir" });
+private _modsKey = uiNamespace getVariable ["COMSPEC_OpLoadedModsKey", ""];
+if (_modsKey isEqualTo "") then { _modsKey = str (_mods apply { _x get "dir" }); };
 if (_full || {(missionNamespace getVariable ["COMSPEC_OpModsSentKey", ""]) isNotEqualTo _modsKey}) then {
     _payload set ["mods", _mods];
     _payload set ["mods_key", _modsKey];

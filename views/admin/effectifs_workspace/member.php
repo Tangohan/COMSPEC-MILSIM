@@ -1055,6 +1055,11 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
         <?php endif; ?>
         <?php
         $qualificationBadge = $qualificationBadge ?? null;
+        // État d'affichage par attribution (interrupteurs de la carte « Affichage des qualifications »).
+        $qualDisplayById = [];
+        foreach ((is_array($qualificationDisplay ?? null) ? ($qualificationDisplay['rows'] ?? []) : []) as $qdRowState) {
+            $qualDisplayById[(int) ($qdRowState['id'] ?? 0)] = $qdRowState;
+        }
         if ($qualifications === []): ?>
             <p class="eff-fm-lead">Aucune qualification enregistrée.</p>
         <?php else: ?>
@@ -1077,6 +1082,7 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
                     $qCountry = $qCatalog !== null ? (string) (\App\Support\QualificationCatalog\QualificationCatalog::pack((string) ($qCatalog['pack'] ?? ''))['country'] ?? '') : '';
                     $qDomain = \App\Support\QualificationCatalog\QualificationVisual::domain($qName . ' ' . (string) ($q['category_name'] ?? ''), $qCatalog !== null ? (string) ($qCatalog['category'] ?? '') : '');
                     $qIssuer = trim((string) ($q['issuer_name'] ?? ''));
+                    $qDisplay = $qualDisplayById[(int) ($q['id'] ?? 0)] ?? null;
                     ?>
                 <li class="eff-fm-q <?= $qTone ?><?= $isPrimary ? ' is-primary' : '' ?>">
                     <span class="eff-fm-q__ic" aria-hidden="true">
@@ -1093,6 +1099,12 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
                             <?php if ($isPrimary): ?><span class="eff-fm-q__lvl">· Principale</span><?php endif; ?>
                         </b>
                         <small><?= htmlspecialchars(\App\Support\QualificationAdminStatus::label($adminSt), ENT_QUOTES, 'UTF-8') ?></small>
+                        <?php if ($qDisplay !== null): ?>
+                        <span class="qd-flags">
+                            <span class="qd-flag" data-qd-flag="<?= (int) ($q['id'] ?? 0) ?>:game"<?= $qDisplay['game'] ? ' hidden' : '' ?>>Masquée sur Arma</span>
+                            <span class="qd-flag" data-qd-flag="<?= (int) ($q['id'] ?? 0) ?>:profile"<?= $qDisplay['profile'] ? ' hidden' : '' ?>>Masquée sur le profil</span>
+                        </span>
+                        <?php endif; ?>
                         <?php if ($qCountry !== '' || $qIssuer !== '' || trim((string) ($q['category_name'] ?? '')) !== ''): ?>
                         <small class="eff-fm-q__meta">
                             <?php if ($qCountry !== ''): ?><?= \App\Support\QualificationCatalog\CatalogCountry::flag($qCountry) ?> <span translate="no"><?= $h(\App\Support\QualificationCatalog\QualificationCatalog::countryLabel($qCountry, function_exists('locale') ? (string) locale() : 'fr')) ?></span><?php endif; ?>
@@ -1138,6 +1150,16 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications'), ENT_QUOTES, 'UTF-8') ?>">Référentiel</a>
         </div>
     </article>
+    <?php if (is_array($qualificationDisplay ?? null)): ?>
+    <div class="eff-fm-qd" id="qualifications-affichage">
+        <?php
+        $qdHeading = 'h3';
+        $qdClass = '';
+        $qdId = 'affichage-qualifications';
+        require base_path('views/partials/qualification_display.php');
+        ?>
+    </div>
+    <?php endif; ?>
     <article class="eff-fm-card" id="distinctions">
         <div class="eff-fm-card__head">
             <h3>Décorations</h3>
@@ -1876,6 +1898,7 @@ foreach ($jobRoles as $jr) {
 <script src="<?= $h(asset_url('assets/js/eff-member-sse-access.js')) ?>" defer></script>
 <?php endif; ?>
 <script src="<?= $h(asset_url('assets/js/eff-member.js')) ?>" defer></script>
+<?php if (is_array($qualificationDisplay ?? null)): ?><script src="<?= $h(asset_url('assets/js/qualification-display.js')) ?>" defer></script><?php endif; ?>
 <?php if (is_array($memberSuivi ?? null)): ?><script src="<?= $h(asset_url('assets/js/eff-suivi.js')) ?>" defer></script><?php endif; ?>
 
 <script defer src="<?= $h(asset_url('assets/js/identity-country-picker.js')) ?>"></script>
