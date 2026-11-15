@@ -278,6 +278,76 @@ final class SseIdentityRegistryController
         return Response::redirect(url(self::BASE . '/documents/' . $id));
     }
 
+    /**
+     * POST …/identites/{id}/constates/remontees : consigne en une fois les papiers choisis parmi ce que l'ATAK a remonté aux contrôles
+     * (champs préremplis, modifiables avant validation). Même droit, mêmes garde-fous et même résultat que « Consigner un papier constaté » ;
+     * le contrôle d'origine est rattaché au papier, et un papier déjà consigné ou déjà au registre n'est jamais recréé.
+     */
+    public function documentObserveFromChecks(Request $request, array $params = []): Response
+    {
+        $iid = (int) ($params['id'] ?? 0);
+        $back = url(self::BASE . '/identites/' . $iid) . '#papiers';
+        if (!Csrf::verify($request)) {
+            Session::flash('error', 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la page puis recommencez.');
+
+            return Response::redirect($back);
+        }
+        if (!$this->canManage()) {
+            Session::flash('error', 'Droit manquant : écrire dans « Papiers et couvertures » (gestion des dossiers SSE). Demandez-le à un gestionnaire des accès SSE.');
+
+            return Response::redirect($back);
+        }
+        $tenantId = $this->tenantId();
+        $identity = $this->identities->find($iid, $tenantId);
+        if ($identity === null) {
+            Session::flash('error', 'Identité introuvable.');
+
+            return Response::redirect(url(self::BASE . '/identites'));
+        }
+        if (!\App\Services\Sse\SseIdentityHolderService::isObservedOnly($identity)) {
+            Session::flash('error', 'Les papiers constatés se consignent sur un sujet contrôlé ; pour cette identité, préparez un papier.');
+
+            return Response::redirect($back);
+        }
+        $picked = $request->input('pick', []);
+        $rows = $request->input('row', []);
+        $selection = [];
+        foreach (is_array($picked) ? array_slice(array_keys($picked), 0, 100) : [] as $checkId) {
+            $selection[(int) $checkId] = is_array($rows) && is_array($rows[$checkId] ?? null) ? $rows[$checkId] : [];
+        }
+        if ($selection === []) {
+            Session::flash('error', 'Cochez au moins un papier remonté par un contrôle.');
+
+            return Response::redirect($back);
+        }
+        $res = (new \App\Services\Sse\SseCheckPaperSelectionService())->consign($tenantId, $identity, $selection, $this->userId());
+        $made = count($res['created']);
+        $reasons = array_count_values(array_column($res['skipped'], 'reason'));
+        $notes = [];
+        if (($reasons['consigne'] ?? 0) > 0) {
+            $notes[] = $reasons['consigne'] . ' déjà consigné(s)';
+        }
+        if (($reasons['registre'] ?? 0) > 0) {
+            $notes[] = $reasons['registre'] . ' déjà au registre (ouvrez le papier existant)';
+        }
+        if (($reasons['incomplet'] ?? 0) > 0) {
+            $notes[] = $reasons['incomplet'] . ' sans pays ou numéro';
+        }
+        if (($reasons['introuvable'] ?? 0) > 0) {
+            $notes[] = $reasons['introuvable'] . ' introuvable(s)';
+        }
+        if ($made > 0) {
+            Session::flash('success', $made . ' papier(s) consigné(s) depuis les contrôles. Ils ne partent pas en jeu : c’est ce qui a été vu.');
+            if ($notes !== []) {
+                Session::flash('error', 'Non repris : ' . implode(' · ', $notes));
+            }
+        } else {
+            Session::flash('error', $notes !== [] ? 'Aucun papier consigné : ' . implode(' · ', $notes) : 'Aucun papier consigné.');
+        }
+
+        return Response::redirect($back);
+    }
+
     /** @param array<string, mixed> $identity */
     private function noIssue(array $identity): Response
     {
@@ -914,7 +984,18 @@ final class SseIdentityRegistryController
             error_log('Fiche identité : documents à émettre indisponibles : ' . $e->getMessage());
         }
 
+        // Remontées des contrôles ATAK à consigner (sujet contrôlé, droit d'écriture seulement ; jamais bloquant).
+        $remontees = [];
+        if ($this->canManage() && \App\Services\Sse\SseIdentityHolderService::isObservedOnly($identity)) {
+            try {
+                $remontees = (new \App\Services\Sse\SseCheckPaperSelectionService())->candidates($tenantId, $identity);
+            } catch (\Throwable $e) {
+                error_log('Fiche identité : remontées des contrôles indisponibles : ' . $e->getMessage());
+            }
+        }
+
         return $this->view('atak.sse.papers.identity_show', [
+            'remontees' => $remontees,
             'sheetMenu' => $sheetMenu,
             'title' => $identity['ref'] . ' — ' . $identity['display_name'],
             'identity' => $identity,
@@ -1059,10 +1140,18 @@ final class SseIdentityRegistryController
         // Périmètre venu du tableau de bord (carte, opération) : mêmes paramètres d'adresse.
         $scope = SseIdCheckInsightService::parseScope($request->queryString('map'), $request->queryString('op'));
         $query = $filters + ['map' => (int) $scope['map']] + ($scope['op'] !== null ? ['op' => $scope['op']] : []);
+        $checkRows = $this->checks->list($this->tenantId(), $query);
+        // État « consigné » de chaque remontée (papier du registre rattaché) : jamais bloquant.
+        try {
+            $registry = (new \App\Services\Sse\SseCheckPaperSelectionService())->registryStates($this->tenantId(), $checkRows);
+        } catch (\Throwable $e) {
+            $registry = [];
+        }
 
         return $this->view('atak.sse.papers.checks', [
             'title' => 'Vérifications d’identité sur le terrain',
-            'checks' => $this->checks->list($this->tenantId(), $query),
+            'checks' => $checkRows,
+            'registry' => $registry,
             'filters' => $filters + ['map' => (int) $scope['map'], 'op' => $scope['opRaw']],
             'papersTab' => 'controles',
             'autoTransmit' => (new SseIdSettingsRepository())->autoTransmit($this->tenantId()),
@@ -1132,6 +1221,7 @@ final class SseIdentityRegistryController
             'title' => $check['ref'],
             'check' => $check,
             'doc' => $check['document_id'] !== null ? $this->documents->find((int) $check['document_id'], $tenantId) : null,
+            'canConsign' => $this->canManage() && ($check['identity_id'] ?? null) !== null && $this->isSubject((int) $check['identity_id'], $tenantId),
             'person' => $check['person_id'] !== null ? $this->persons->findById((int) $check['person_id'], $tenantId) : null,
             'papersTab' => 'controles',
         ]);
@@ -1289,6 +1379,14 @@ final class SseIdentityRegistryController
         $id = (int) Session::get('user_id');
 
         return $id > 0 ? $id : null;
+    }
+
+    /** L'identité est un sujet contrôlé (celle où l'on consigne les papiers constatés). */
+    private function isSubject(int $identityId, int $tenantId): bool
+    {
+        $identity = $this->identities->find($identityId, $tenantId);
+
+        return $identity !== null && \App\Services\Sse\SseIdentityHolderService::isObservedOnly($identity);
     }
 
     private function canManage(): bool
