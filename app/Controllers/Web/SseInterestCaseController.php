@@ -384,7 +384,7 @@ final class SseInterestCaseController
         try {
             $this->service->removeLink($this->actor(), $id, (int) ($params['linkId'] ?? 0), (string) $request->input('reason', ''));
         } catch (SseInterestCaseException $e) {
-            return $this->failed($e, $back, $request->all(), 'unlink');
+            return $this->failed($e, $back, [], null);
         }
         Session::flash('success', 'Lien retiré. Le motif est consigné dans l’historique.');
 

@@ -725,4 +725,12 @@ final class SseInterestCaseServiceTest extends TestCase
         $this->expectKind(SseInterestCaseException::CONFLICT, fn () => $this->f->service->update($a, $id, ['temporary_designation' => 'Second'], null, '2026-11-15 12:00:00'));
         self::assertSame('Premier', $this->f->row($id)['temporary_designation']);
     }
+
+    public function testLinksAreExposedToTheLiaisonsWidgetThroughASimpleInterface(): void
+    {
+        $id = $this->f->open(11);
+        $this->f->service->addLink($this->f->actor(11), $id, 'site', '3', '', '');
+        self::assertSame([['type' => 'site', 'id' => '3', 'label' => 'Dépôt nord']], \App\Services\Sse\SseCaseLinks::forInterestCase(1, $id));
+        self::assertSame([], \App\Services\Sse\SseCaseLinks::forInterestCase(2, $id), 'une autre communauté ne lit rien');
+    }
 }

@@ -56,7 +56,7 @@ $resetOverrides = ['q' => null, 'priorite' => null, 'type' => null, 'responsable
         </div>
         <?php if ($canCreate): ?>
             <div class="di-head__actions">
-                <button type="button" class="di-btn di-btn--primary" data-di-open="di-create"><?= $diIcon('plus') ?>Ouvrir un dossier</button>
+                <button type="button" class="di-btn di-btn--primary" data-di-open="di-create"><?= $diIcon('plus') ?><span>Ouvrir un dossier</span></button>
             </div>
         <?php endif; ?>
     </header>
@@ -80,7 +80,7 @@ $resetOverrides = ['q' => null, 'priorite' => null, 'type' => null, 'responsable
 
     <form class="di-toolbar" method="get" action="<?= $diH($base) ?>" role="search" data-di-toolbar <?= $hasFilter ? 'data-open' : '' ?>>
         <input type="hidden" name="onglet" value="<?= $diH($activeTab) ?>">
-        <button type="button" class="di-btn di-filter-toggle" data-di-filter-toggle aria-expanded="<?= $hasFilter ? 'true' : 'false' ?>">Filtres et recherche<?= $hasFilter ? ' (actifs)' : '' ?></button>
+        <button type="button" class="di-btn di-filter-toggle" data-di-filter-toggle aria-expanded="<?= $hasFilter ? 'true' : 'false' ?>"><span>Filtres et recherche</span><?php if ($hasFilter): ?><span>(actifs)</span><?php endif; ?></button>
         <div class="di-toolbar__grid">
             <div class="di-field">
                 <label for="di-q">Recherche</label>
@@ -156,10 +156,11 @@ $resetOverrides = ['q' => null, 'priorite' => null, 'type' => null, 'responsable
                     <h2>La corbeille est vide</h2>
                     <p>Les dossiers supprimés apparaissent ici et restent restaurables pendant <?= \App\Support\SseInterestCaseCatalog::TRASH_DAYS ?> jours.</p>
                 <?php else: ?>
-                    <h2><?= $activeTab === 'tous' || $activeTab === 'ouverts' ? 'Aucun dossier d’intérêt ouvert' : 'Rien dans « ' . $diH($activeMeta['label'] ?? '') . ' »' ?></h2>
-                    <p><?= $diH($activeMeta['hint'] ?? '') ?> Un dossier d’intérêt rassemble ce qu’on sait d’un sujet encore sans identité certaine : motif, observations, éléments liés et décisions.</p>
+                    <?php if ($activeTab === 'tous' || $activeTab === 'ouverts'): ?><h2>Aucun dossier d’intérêt ouvert</h2><?php else: ?><h2>Rien dans cet onglet</h2><?php endif; ?>
+                    <p><?= $diH($activeMeta['hint'] ?? '') ?></p>
+                    <p>Un dossier d’intérêt rassemble ce qu’on sait d’un sujet encore sans identité certaine : motif, observations, éléments liés et décisions.</p>
                     <div class="di-empty__actions">
-                        <?php if ($canCreate): ?><button type="button" class="di-btn di-btn--primary" data-di-open="di-create"><?= $diIcon('plus') ?>Ouvrir un dossier</button><?php endif; ?>
+                        <?php if ($canCreate): ?><button type="button" class="di-btn di-btn--primary" data-di-open="di-create"><?= $diIcon('plus') ?><span>Ouvrir un dossier</span></button><?php endif; ?>
                         <?php if ($activeTab !== 'ouverts'): ?><a class="di-btn" href="<?= $diH($link(['onglet' => 'ouverts', 'page' => null])) ?>">Voir les dossiers ouverts</a><?php endif; ?>
                     </div>
                 <?php endif; ?>

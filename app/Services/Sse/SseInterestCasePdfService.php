@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Core\Response;
-use App\Repositories\SseInterestCaseRepository as Cases;
 use App\Support\Pdf\AthenaPdfTheme as Theme;
-use App\Support\SseInterestCaseCatalog as Catalog;
 use App\Support\SseInterestMarkup;
 use App\Support\TrainingCertificatePdfEngine;
 

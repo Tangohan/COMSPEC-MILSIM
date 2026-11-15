@@ -15,7 +15,8 @@ $autoOpen = ($form['modal'] ?? '') === 'status';
         <div class="di-dialog__head">
             <div>
                 <h2 id="di-status-title">Changer l’état</h2>
-                <p class="di-lead">État actuel : <strong><?= $diH($interestCase['status_label']) ?></strong>. Les décisions de validation demandent un motif.</p>
+                <p class="di-lead"><span>État actuel :</span> <strong><?= $diH($interestCase['status_label']) ?></strong></p>
+                <p class="di-lead">Les décisions de validation demandent un motif.</p>
             </div>
             <button type="button" class="di-close" data-di-close aria-label="Fermer"><?= $diIcon('close') ?></button>
         </div>

@@ -56,7 +56,8 @@ $days = \App\Support\SseInterestCaseCatalog::TRASH_DAYS;
                 <div class="di-alert di-alert--warn" role="status">
                     <div>
                         <strong>Suppression définitive impossible</strong>
-                        <p><?= $diH(ucfirst(implode(' ; ', $purge_blockers))) ?>. Restaurez le dossier puis archivez-le : l’archivage garde tout et reste réversible.</p>
+                        <p><?= $diH(ucfirst(implode(' ; ', $purge_blockers))) ?>.</p>
+                        <p>Restaurez le dossier puis archivez-le : l’archivage garde tout et reste réversible.</p>
                     </div>
                 </div>
             <?php endif; ?>
@@ -66,7 +67,7 @@ $days = \App\Support\SseInterestCaseCatalog::TRASH_DAYS;
                 <?= $diFieldError('reason') ?>
             </div>
             <div class="di-field<?= $diErr('confirm') !== '' ? ' is-invalid' : '' ?>" data-field="confirm">
-                <label for="dip-confirm">Retapez la référence <span class="di-mono"><?= $diH($interestCase['reference_code']) ?></span> pour confirmer</label>
+                <label for="dip-confirm"><span>Retapez la référence</span> <span class="di-mono"><?= $diH($interestCase['reference_code']) ?></span> <span>pour confirmer</span></label>
                 <input class="di-input" type="text" id="dip-confirm" name="confirm" autocomplete="off" required <?= $purge_blockers !== [] ? 'disabled' : '' ?> data-di-confirm="<?= $diH($interestCase['reference_code']) ?>">
                 <?= $diFieldError('confirm') ?>
             </div>

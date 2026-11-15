@@ -43,7 +43,7 @@ $signer = (string) ($actor->label ?? 'Analyste');
                 <?php $diPickerMode = 'multi'; $diPrefix = 'dicl'; require __DIR__ . '/_link_picker.php'; $diPrefix = 'dic'; ?>
                 <label class="di-check<?= $diErr('digital_signature') !== '' ? ' is-invalid' : '' ?>" data-field="digital_signature">
                     <input type="checkbox" name="digital_signature" value="1" <?= $diOld('digital_signature', '') !== '' ? 'checked' : '' ?>>
-                    <span>Je signe numériquement ce signalement (<?= $diH($signer) ?>).</span>
+                    <span>Je signe numériquement ce signalement</span><strong><?= $diH($signer) ?></strong>
                 </label>
                 <?= $diFieldError('digital_signature') ?>
             </div>
