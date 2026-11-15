@@ -135,6 +135,7 @@ final class AdminSseFilesController
             'member_photo_upload' => $request->inputString('member_photo_upload') === '1',
             'xref_enabled' => $request->inputString('xref_enabled') === '1',
             'purpose_required' => $request->inputString('purpose_required') === '1',
+            'papers_marking' => \App\Support\SseIdMarking::normalize($request->inputString('papers_marking')),
         ], (int) Session::get('user_id'));
         $settings = $this->records()->settings($tenantId);
         $purged = (new SseFileAdminService($this->records()))->purge($tenantId, (int) $settings['query_retention_days'], (int) $settings['extraction_retention_days']);

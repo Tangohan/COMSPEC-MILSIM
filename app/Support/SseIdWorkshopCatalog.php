@@ -72,7 +72,7 @@ final class SseIdWorkshopCatalog
         'categories' => ['Catégories (permis)', 24],
         'service' => ['Service ou employeur', 60],
         'rank' => ['Grade ou fonction', 40],
-        'phone' => ['Téléphone (simulé)', 24],
+        'phone' => ['Téléphone', 24],
         'signature' => ['Signature (texte)', 40],
         'stamp' => ['Texte du tampon', 60],
         'remarks' => ['Observations', 160],

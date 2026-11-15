@@ -318,9 +318,10 @@ final class SseIdWorkshopService
      * @param array<string, mixed> $doc papier hydraté (ou brouillon de formulaire : mêmes clés)
      * @param array<string, mixed> $identity identité hydratée (mêmes clés)
      * @param array<string, mixed>|null $country pays hydraté
+     * @param string $markingSetting réglage de communauté (SseIdMarking) ; le pays réel stylisé ne descend jamais sous « discreet »
      * @return array<string, mixed>
      */
-    public static function previewModel(array $doc, array $identity, ?array $country): array
+    public static function previewModel(array $doc, array $identity, ?array $country, string $markingSetting = 'discreet'): array
     {
         $colors = array_values(array_filter([$country['color_primary'] ?? null, $country['color_secondary'] ?? null]));
         $colors += [0 => '#1f4e79', 1 => '#c9a227'];
@@ -329,6 +330,8 @@ final class SseIdWorkshopService
             : (($country['flag_path'] ?? null) !== null ? (string) url((string) $country['flag_path']) : null);
 
         return [
+            'marking' => \App\Support\SseIdMarking::effective($markingSetting, $real),
+            'marking_locked' => !\App\Support\SseIdMarking::canDisableVisible($real),
             'doc_type' => (string) ($doc['doc_type'] ?? 'id_card'),
             'doc_type_label' => SseIdentityCatalog::label(SseIdentityCatalog::DOC_TYPES, (string) ($doc['doc_type'] ?? 'id_card')),
             'layout' => SseIdWorkshopCatalog::layout($doc['layout'] ?? null),
