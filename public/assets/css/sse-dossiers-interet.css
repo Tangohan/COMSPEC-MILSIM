@@ -345,3 +345,5 @@
 .di .di-links__kind { min-width: 150px; }
 .di .di-dialog__stack { display: flex; flex-direction: column; gap: 16px; }
 .di .di-rte button { min-height: var(--di-target); }
+.di label { font-size: 14px; letter-spacing: normal; text-transform: none; }
+.di .di-check, .di .di-radio { font-size: 15px; }
