@@ -1037,6 +1037,8 @@ final class DataCampaignTest extends TestCase
             }
             self::assertArrayHasKey($class, $imported, $file . ' appelle ' . $class . ' sans « use »');
         }
+        // Une vue sans appel statique est valide : le test ne doit pas être signalé « risqué ».
+        $this->addToAssertionCount(1);
     }
 
     // ------------------------------------------------------------------ fiabilisation à la connexion
