@@ -13,7 +13,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_ecoti_fusion", true])) ex
 if ([] call comspec_overwatch_connect_fnc_ecotiA3tiPresent) exitWith {};
 if (!(_pos isEqualType []) || {(count _pos) < 3}) exitWith {};
 
-private _glow = "\z\comspec_overwatch\addons\connect\img\ecoti\ecoti_glow_ca.png";
+private _glow = "\z\comspec_overwatch\addons\connect\img\ecoti\ecoti_glow_ca.paa";
 private _theme = [] call comspec_overwatch_connect_fnc_ecotiThemeColors;
 private _col = _theme getOrDefault ["thermal", [1, 0.96, 0.88, 0.55]];
 _col = [_col] call comspec_overwatch_connect_fnc_ecotiNormalizeColor;

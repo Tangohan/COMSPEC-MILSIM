@@ -601,12 +601,12 @@ class CfgVehicles {
         hiddenSelections[]={"camo","patch"};
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\vest_phone_co.paa",""};
     };
-    // Tablette durcie à touches sur le rabat du JPC (fn_jpcScreen, tools/model_jpc_tablet.py) : coque, écran (texture UI).
+    // Ancienne tablette à touches du JPC (fn_jpcScreen, fonction fermée) : modèle et atlas retirés, la classe reste cachée (scope=1), parente des téléphones, avec le modèle du S7 en repli.
     class COMSPEC_ATAK_JpcTablet: Static {
         scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_2805C17B50";
-        model="\z\comspec_atak_native\addons\main\data\jpc_tablet.p3d";
+        model="\z\comspec_atak_native\addons\main\data\jpc_s7.p3d";
         hiddenSelections[]={"camo","screen"};
-        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_tablet_co.paa","#(argb,8,8,3)color(0,0,0,1)"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_s7_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
         hiddenSelectionsMaterials[]={"","\z\comspec_atak_native\addons\main\data\jpc_screen.rvmat"};
     };
     // Téléphone du profil ouvert sur le JPC (fn_jpcScreen, tools/model_jpc_phones.py) : S7 par défaut, coques.

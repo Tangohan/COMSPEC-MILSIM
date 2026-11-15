@@ -29,9 +29,6 @@ FAMILIES = {
     "barlow": [("BarlowCondensed-Medium", "barlowcondensed/BarlowCondensed-Medium.ttf"),
                ("BarlowCondensed-Bold", "barlowcondensed/BarlowCondensed-Bold.ttf"),
                ("BarlowCondensed-Regular", "barlowcondensed/BarlowCondensed-Regular.ttf")],
-    "b612": [("B612-Regular", "b612/B612-Regular.ttf"), ("B612-Bold", "b612/B612-Bold.ttf")],
-    "rajdhani": [("Rajdhani-Medium", "rajdhani/Rajdhani-Medium.ttf"), ("Rajdhani-Bold", "rajdhani/Rajdhani-Bold.ttf")],
-    "sharetech": [("ShareTech-Regular", "sharetech/ShareTech-Regular.ttf")],
 }
 # Latin-1 + ponctuation et symboles employés par les apps (le reste passe au repli).
 CHARS = [c for c in range(32, 127)] + [c for c in range(160, 256)] + [ord(c) for c in
@@ -104,10 +101,7 @@ def build(name, ttf, size, outdir, hemtt):
 # COMSPEC_Barlow* (classes de config et balises <t font=…>) restent sur Roboto Condensed du jeu (ROBOTO ci-dessous) :
 # la police embarquée ne s'affiche que si le joueur la choisit (Réglages > Police).
 CLASSES = [("COMSPEC_BarlowC", "barlow", "BarlowCondensed-Medium", False), ("COMSPEC_BarlowCBold", "barlow", "BarlowCondensed-Bold", True),
-           ("COMSPEC_BarlowCLight", "barlow", "BarlowCondensed-Regular", False),
-           ("COMSPEC_B612", "b612", "B612-Regular", False), ("COMSPEC_B612Bold", "b612", "B612-Bold", True),
-           ("COMSPEC_Rajdhani", "rajdhani", "Rajdhani-Medium", False), ("COMSPEC_RajdhaniBold", "rajdhani", "Rajdhani-Bold", True),
-           ("COMSPEC_ShareTech", "sharetech", "ShareTech-Regular", False)]
+           ("COMSPEC_BarlowCLight", "barlow", "BarlowCondensed-Regular", False)]
 
 
 ROBOTO_R = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 34, 35, 37, 46]
