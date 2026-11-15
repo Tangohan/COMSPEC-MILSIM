@@ -18,7 +18,6 @@ require __DIR__ . '/_head.php';
     <section class="mm-card">
       <h1 class="mm-h1">Contrôle ID</h1>
       <p class="mm-muted">Vos vérifications d’identité de la partie, sur la carte en cours. Touchez un contrôle pour son détail.</p>
-      <p class="mm-idc-sim"><strong>SIMULATION</strong> Papiers fictifs pour le jeu.</p>
     </section>
 <?php if (!empty($noSteam)): ?>
     <section class="mm-card mm-card--warn">

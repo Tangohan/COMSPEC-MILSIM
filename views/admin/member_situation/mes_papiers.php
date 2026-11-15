@@ -27,7 +27,6 @@ $mapLabel = static function (?int $ctx) use ($maps): string {
 $scopeLabels = ['default' => 'Par défaut', 'map' => 'Pour une carte', 'operation' => 'Pour une opération'];
 ?>
 <div class="bo-member-situation">
-    <p class="idm-sim"><strong>SIMULATION</strong> Papiers fictifs pour le jeu, émis par des pays imaginaires. Aucune valeur réelle.</p>
 
     <section class="idm-cover" aria-labelledby="idm-cover-title">
         <h2 id="idm-cover-title">Ma couverture</h2>

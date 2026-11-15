@@ -28,11 +28,6 @@ $total = count($persons);
         <div class="metric-detail">Terminal / terrain</div>
     </div>
     <div class="metric">
-        <div class="metric-label">Usage</div>
-        <div class="metric-value">RP</div>
-        <div class="metric-detail">Simulation scénario</div>
-    </div>
-    <div class="metric">
         <div class="metric-label">Horodatage</div>
         <div class="metric-value"><?= $h(date('H:i')) ?></div>
         <div class="metric-detail">Heure locale</div>
@@ -114,7 +109,7 @@ $total = count($persons);
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </p>
-                            <p class="sse-note">Verdict rendu par le terminal sur relevés simulés.</p>
+                            <p class="sse-note">Verdict rendu par le terminal sur les relevés.</p>
                         </div>
                     <?php endif; ?>
 
@@ -174,7 +169,7 @@ $total = count($persons);
 
                     <?php if ($samples !== []): ?>
                         <div class="sse-record-block">
-                            <div class="sse-block-title">Relevés biométriques (simulation)</div>
+                            <div class="sse-block-title">Relevés biométriques</div>
                             <ul class="sse-sample-list">
                                 <?php foreach ($samples as $s):
                                     $q = $s['quality'] === null ? null : (int) $s['quality'];
