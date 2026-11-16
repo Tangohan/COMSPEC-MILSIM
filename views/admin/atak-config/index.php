@@ -168,7 +168,7 @@ $tabs = [
     <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/atak/briefing-slides')) ?>"><?= $ico('photo') ?><b>Diapositives de briefing</b><small>Images publiées sur le tableau de briefing en jeu.</small></a>
     <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/atak/controle-serveur')) ?>"><?= $ico('shield') ?><b>Contrôle serveur</b><small>Règles fines : factions visibles, réseau simulé, ATAK natif.</small></a>
     <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/ressources/atak-mod-blocks')) ?>"><?= $ico('warn') ?><b>Restrictions d’accès</b><small>Bloquer un joueur, un poste ou un Steam.</small></a>
-    <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/renseignement/acces')) ?>"><?= $ico('intel') ?><b>Renseignement classifié</b><small>Codes d’accès temporaires au portail SSE.</small></a>
+    <a class="ath-panel bo-ac-tile" href="<?= $h(url('back-office/renseignement/acces')) ?>"><?= $ico('intel') ?><b>Renseignement classifié</b><small>Personnels, documents, droits SSE et codes temporaires.</small></a>
   </div>
 </section>
 
