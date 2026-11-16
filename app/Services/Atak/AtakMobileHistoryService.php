@@ -110,7 +110,8 @@ final class AtakMobileHistoryService
     }
 
     /**
-     * Comptes rendus envoyés par ce joueur, le plus récent d'abord.
+     * Comptes rendus envoyés par ce joueur, le plus récent d'abord. Sans partie (map_id 0) : toutes les parties de la
+     * communauté (page « Mes comptes rendus » du JNET), toujours limité à ce joueur.
      *
      * @param array<string, mixed> $link
      * @return list<array<string, mixed>>
@@ -118,8 +119,9 @@ final class AtakMobileHistoryService
     public function sent(array $link, int $limit = self::LIST_LIMIT): array
     {
         $steam = trim((string) ($link['steam_uid'] ?? ''));
+        $mapId = (int) ($link['map_id'] ?? 0);
         $who = 'submitter_user_id = ?';
-        $args = [(int) $link['tenant_id'], (int) $link['map_id'], (int) $link['user_id']];
+        $args = $mapId > 0 ? [(int) $link['tenant_id'], $mapId, (int) $link['user_id']] : [(int) $link['tenant_id'], (int) $link['user_id']];
         if ($steam !== '') {
             $who = '(submitter_user_id = ? OR submitter_steam_id = ?)';
             $args[] = $steam;
@@ -127,7 +129,7 @@ final class AtakMobileHistoryService
         $st = $this->db()->prepare(
             'SELECT id, report_type, priority, submitter_callsign, grid_reference, summary, status, report_timestamp
              FROM atak_tactical_reports
-             WHERE tenant_id = ? AND context_id = ? AND deleted_at IS NULL AND ' . $who . '
+             WHERE tenant_id = ? AND ' . ($mapId > 0 ? 'context_id = ? AND ' : '') . 'deleted_at IS NULL AND ' . $who . '
              ORDER BY report_timestamp DESC, id DESC
              LIMIT ' . max(1, min(100, $limit))
         );

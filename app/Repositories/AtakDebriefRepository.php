@@ -434,6 +434,55 @@ final class AtakDebriefRepository
     }
 
     /**
+     * CR de fin d'opération adressés à un joueur (lui seul : son compte, ou son Steam vérifié), plus récents d'abord, avec
+     * son état (state()). Les réponses des autres joueurs ne sont jamais lues.
+     *
+     * @return list<array{id: int, label: string, mission_label: string, mode: string, state: string, state_label: string, sent_at: string, done_at: string, closed: bool}>
+     */
+    public function forUser(int $tenantId, int $userId, ?string $steam = null, int $limit = 60): array
+    {
+        if ($tenantId < 1 || $userId < 1 || !$this->ready()) {
+            return [];
+        }
+        $steam = $steam !== null ? SteamId::normalize($steam) : null;
+        $who = 'r.user_id = ?';
+        $args = [$tenantId, $tenantId, $userId];
+        if ($steam !== null && $steam !== '') {
+            $who = '(r.user_id = ? OR r.steam_uid = ?)';
+            $args[] = $steam;
+        }
+        $rows = $this->rows(
+            'SELECT d.id, d.tenant_id, d.label, d.mode, d.mission_key, d.closed_at, d.questions_json,
+                    r.sent_at, r.delivered_at, r.opened_at, r.submitted_at, r.read_at,
+                    m.delivered_at AS msg_delivered_at, m.acked_at AS msg_acked_at, m.cancelled_at AS msg_cancelled_at, m.expires_at AS msg_expires_at
+             FROM atak_debrief_recipients r
+             JOIN atak_debriefs d ON d.id = r.debrief_id AND d.tenant_id = ?
+             LEFT JOIN atak_admin_messages m ON m.id = r.message_id
+             WHERE r.tenant_id = ? AND ' . $who . '
+             ORDER BY r.sent_at DESC, r.id DESC LIMIT ' . max(1, min(200, $limit)),
+            $args
+        );
+        $out = [];
+        foreach ($rows as $r) {
+            $state = self::state($r, (string) ($r['mode'] ?? 'fill'));
+            $d = $this->present($r);
+            $out[] = [
+                'id' => (int) $d['id'],
+                'label' => (string) ($d['label'] ?? ''),
+                'mission_label' => (string) ($d['mission_label'] ?? ''),
+                'mode' => (string) ($d['mode'] ?? 'fill') === 'read' ? 'read' : 'fill',
+                'state' => $state,
+                'state_label' => self::STATES[$state] ?? '',
+                'sent_at' => (string) ($r['sent_at'] ?? ''),
+                'done_at' => (string) ($r['submitted_at'] ?? $r['read_at'] ?? ''),
+                'closed' => !empty($r['closed_at']),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Demande et joueur liés à des avis ATAK (pour la fiche envoyée au téléphone).
      *
      * @param list<int> $messageIds
