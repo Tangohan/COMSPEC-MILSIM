@@ -25,22 +25,40 @@ switch (_tool) do {
         _s set ["mapHeights", _list select [((count _list) - 12) max 0]];
     };
     case "FLAT": {
-        // Clic sur une LZ déjà trouvée : elle devient un vrai marqueur (partagé, envoyé au web, supprimable).
+        // Anti-rebond : un clic = une action (400 ms), jamais de rafale.
+        if (diag_tickTime < (_s getOrDefault ["mapFlatAt", 0]) + 0.4) exitWith {};
+        _s set ["mapFlatAt", diag_tickTime];
+        private _digits = (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 8]) max 8;
+        // LZ déjà posée à moins de 30 m : le clic la sélectionne, rien n'est reposé (fiche du marqueur).
+        private _lzOld = (allMapMarkers select { (markerType _x) isEqualTo "mil_pickup" && {(markerText _x) select [0, 3] isEqualTo "LZ "} && {((markerPos _x) distance2D _pos) < 30} }) param [0, ""];
+        if (_lzOld isNotEqualTo "") exitWith {
+            _s set ["mapFlat", []];
+            _s set ["mapFlatTxt", []];
+            _s set ["selectedMarker", _lzOld];
+            _s set ["selectedEntity", createHashMap];
+            ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+        };
+        // Clic sur une zone trouvée : elle devient UN marqueur (partagé, envoyé au web, supprimable), puis retour à la
+        // sélection (comme ROUTE) : plus de pose en boucle ; pour une autre LZ, relancer l'outil.
         private _cur = +(_s getOrDefault ["mapFlat", []]);
         private _hit = _cur findIf { (_x distance2D _pos) < 30 };
         if (_hit >= 0) exitWith {
-            private _lz = _cur deleteAt _hit;
-            _s set ["mapFlat", _cur];
+            private _lz = _cur select _hit;
+            _s set ["mapFlat", []];
+            _s set ["mapFlatTxt", []];
+            ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
             private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
             private _channel = ["channel"] call comspec_atak_native_fnc_markerPlace;
             missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
             private _m = ["create", [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel], _lz, _channel]] call comspec_atak_native_fnc_markerNet;
             if (_m isEqualTo "") exitWith { ["WARNING", "Marqueur refusé sur ce canal", 3, 20] call comspec_atak_native_fnc_notify; };
+            private _g = [_lz, _digits] call comspec_atak_native_fnc_gridRef;
             _m setMarkerTypeLocal (["mil_pickup", "mil_flag"] select !(isClass (configFile >> "CfgMarkers" >> "mil_pickup")));
             _m setMarkerColorLocal "ColorGreen";
-            _m setMarkerText format ["LZ %1", _index];
+            _m setMarkerText ((format ["LZ %1 · %2", _index, _g]) select [0, 60]);
             [_m] call comspec_atak_native_fnc_markerWeb;
-            ["SUCCESS", format ["LZ %1 posée en marqueur · %2", _index, [_lz, 8] call comspec_atak_native_fnc_gridRef], 3, 20] call comspec_atak_native_fnc_notify;
+            ["SUCCESS", format ["LZ %1 posée en marqueur · %2", _index, _g], 3, 20] call comspec_atak_native_fnc_notify;
         };
         private _found = [];
         for "_r" from 0 to 200 step 25 do {
@@ -53,7 +71,10 @@ switch (_tool) do {
             if ((count _found) >= 5) exitWith {};
         };
         _s set ["mapFlat", _found];
-        ["TACTICAL", ["Aucune zone plate trouvée à 200 m", format ["%1 zone(s) plate(s) trouvée(s)", count _found]] select ((count _found) > 0), 3, 20] call comspec_atak_native_fnc_notify;
+        // Grille, distance et azimut calculés une fois ici (pas à l'image) : étiquettes « Z1 0222 2985 » sur la carte.
+        private _me = getPosASL player;
+        _s set ["mapFlatTxt", _found apply { format ["%1 %2", [_x, _digits] call comspec_atak_native_fnc_gridRef, ["dist", _me distance2D _x, _me getDir _x] call comspec_atak_native_fnc_mapFmt] }];
+        ["TACTICAL", ["Aucune zone plate trouvée à 200 m", format ["%1 zone(s) plate(s) · cliquez l'une d'elles pour poser la LZ", count _found]] select ((count _found) > 0), 3, 20] call comspec_atak_native_fnc_notify;
     };
     // Même calcul que l'app Relief (profil, nature de l'obstacle), résultat repris dans l'app.
     case "LOS": { ["los", "pos", _pos] call comspec_atak_native_fnc_reliefAction; };
