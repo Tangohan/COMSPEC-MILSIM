@@ -1856,6 +1856,47 @@ html[data-bo-theme="dark"] .eff-fm .eff-fm-btn.is-danger:hover {
   color: var(--fm-primary-strong);
 }
 
+/* Heures de jeu remontées par le mod : cumul affiché quand aucune session détaillée n'existe. */
+.eff-fm-av__pt {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--fm-border);
+  border-radius: 12px;
+  background: var(--fm-surface-muted);
+}
+
+.eff-fm-av__pt .eff-fm-av__state.is-low b {
+  color: var(--fm-text);
+}
+
+.eff-fm-av__pt-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.eff-fm-av__pt-facts dt {
+  color: var(--fm-muted);
+  font-size: 13px;
+}
+
+.eff-fm-av__pt-facts dd {
+  margin: 2px 0 0;
+  color: var(--fm-text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.eff-fm-av__pt-limit {
+  margin: 0;
+  color: var(--fm-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .eff-fm-av__chip {
   display: inline-flex;
   align-items: center;
