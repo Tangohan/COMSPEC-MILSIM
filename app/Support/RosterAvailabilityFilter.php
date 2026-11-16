@@ -8,7 +8,7 @@ namespace App\Support;
  * Filtre « À vérifier » du tableur des effectifs (paramètre sessions=verifierN).
  *
  * Garde un membre quand le suivi des sessions est actif pour lui (ligne server_sessions présente), qu'il n'a aucune
- * session qui compte depuis N jours (ou pas de Steam relié) ET qu'aucune vérification de disponibilité n'a été
+ * session qui compte depuis N jours (ou pas de Steam relié), aucune heure de jeu remontée par le mod depuis N jours ET qu'aucune vérification de disponibilité n'a été
  * enregistrée pour lui depuis N jours. Sans le suivi des sessions sur le site, le filtre ne garde personne.
  */
 final class RosterAvailabilityFilter
@@ -47,6 +47,10 @@ final class RosterAvailabilityFilter
                 return false;
             }
             $last = isset($srv['last_at']) ? (int) $srv['last_at'] : 0;
+            // Heures remontées par le mod récentes (sans session détaillée) : le membre joue, rien à vérifier.
+            if ((int) ($r['playtime_availability']['last_at'] ?? 0) >= $since) {
+                return false;
+            }
             if (!empty($srv['linked']) && $last >= $since) {
                 return false;
             }

@@ -183,7 +183,7 @@ final class MemberAvailabilityCheckController
     /**
      * Exécute les étapes pour un membre (toujours côté serveur, même à l'enregistrement).
      *
-     * @return array{steps: list<array<string, mixed>>, verdict: array{key: string, label: string, detail: string}, rules: array<string, int>}
+     * @return array{steps: list<array<string, mixed>>, verdict: array{key: string, label: string, detail: string}, rules: array<string, int>, playtime: ?array<string, mixed>}
      */
     private function execute(int $tenantId, int $memberId): array
     {
@@ -193,7 +193,9 @@ final class MemberAvailabilityCheckController
         $collector = $this->collector ?? AvailabilityFactsCollector::live($pdo, EffectifsLmsAccess::canViewSanctions(Gate::getInstance()));
         $facts = $collector->collect($tenantId, $memberId, $rules, $this->now ?? time(), $tz);
 
-        return ['steps' => AvailabilityCheck::steps($facts), 'verdict' => AvailabilityCheck::verdict($facts), 'rules' => $facts['rules']];
+        $playtime = is_array($facts['playtime'] ?? null) ? array_diff_key($facts['playtime'], ['previous' => 1]) : null;
+
+        return ['steps' => AvailabilityCheck::steps($facts), 'verdict' => AvailabilityCheck::verdict($facts), 'rules' => $facts['rules'], 'playtime' => $playtime];
     }
 
     /** @return array{0: int, 1: int}|Response communauté et responsable, ou la réponse de refus */

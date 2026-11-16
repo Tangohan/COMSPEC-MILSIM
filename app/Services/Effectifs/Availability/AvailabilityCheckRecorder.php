@@ -90,7 +90,7 @@ final class AvailabilityCheckRecorder
     /**
      * Enregistre une vérification déjà exécutée côté serveur.
      *
-     * @param array{steps: list<array<string, mixed>>, verdict: array{key: string, label: string, detail: string}, rules?: array<string, int>} $run
+     * @param array{steps: list<array<string, mixed>>, verdict: array{key: string, label: string, detail: string}, rules?: array<string, int>, playtime?: ?array<string, mixed>} $run
      * @return array{ok: bool, code: string, message: string, status: int, id?: int, follow_up_message?: string, follow_up_ok?: bool}
      */
     public function record(int $tenantId, int $actorId, int $memberId, array $run, string $conclusion, string $note, string $followUp, int $recheckDays, ?string $batchId = null, ?string $today = null): array
@@ -122,6 +122,8 @@ final class AvailabilityCheckRecorder
                 'steps' => $run['steps'] ?? [],
                 'verdict' => $run['verdict'] ?? [],
                 'rules' => $run['rules'] ?? [],
+                // Instantané du cumul d'heures remontées : la prochaine vérification mesure l'écart depuis celui-ci.
+                'playtime' => $run['playtime'] ?? null,
             ],
             'batch_id' => $batchId,
         ]);
