@@ -208,7 +208,7 @@ class IntelIntakeDiscord
             'urgency_label' => IntelIntakePresenter::urgencyLabel($source, (string) ($item['priority'] ?? '')),
             'emitter' => $lowest ? mb_substr(trim((string) ($item['author'] ?? '')), 0, 40) : '',
             'title' => $title,
-            'link' => $this->url('back-office/remontees/' . $source . '/' . (int) $item['id']),
+            'link' => $this->url('atak/sse/remontees/' . $source . '/' . (int) $item['id']),
         ];
     }
 

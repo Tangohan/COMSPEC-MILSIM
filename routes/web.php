@@ -1499,8 +1499,13 @@ return function (Router $router) {
     $router->post('/atak/sse/fiches/{id}/suivi', [SseFieldNoteController::class, 'triage'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/etiquettes', [SseFieldNoteController::class, 'tags'], $mwSsePortal);
     $router->post('/atak/sse/fiches/{id}/rattachement', [SseFieldNoteController::class, 'attachCase'], $mwSsePortal);
-    // Remontées vues du bureau SSE : même service que le back-office (IntelIntakeDesk), habillage du portail.
+    // Remontées du terrain : toutes leurs pages vivent au bureau SSE (les anciennes adresses du back-office y renvoient).
+    // Joueurs et réglages déclarés AVANT {source}/{id} : le routeur prend la première route qui correspond.
     $router->get('/atak/sse/remontees', [\App\Controllers\Web\SseIntakeController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/remontees/joueurs', [\App\Controllers\Web\SseIntakeController::class, 'players'], $mwSsePortal);
+    $router->get('/atak/sse/remontees/joueurs/{key}', [\App\Controllers\Web\SseIntakeController::class, 'player'], $mwSsePortal);
+    $router->get('/atak/sse/remontees/reglages', [\App\Controllers\Web\SseIntakeController::class, 'settings'], $mwSsePortal);
+    $router->post('/atak/sse/remontees/reglages', [\App\Controllers\Web\SseIntakeController::class, 'settingsSave'], $mwSsePortal);
     $router->get('/atak/sse/remontees/{source}/{id}', [\App\Controllers\Web\SseIntakeController::class, 'show'], $mwSsePortal);
     $router->get('/atak/sse/remontees/{source}/{id}/suggestions', [\App\Controllers\Web\SseIntakeController::class, 'suggestions'], $mwSsePortal);
     $router->post('/atak/sse/remontees/{source}/{id}/{action}', [\App\Controllers\Web\SseIntakeController::class, 'action'], $mwSsePortal);
@@ -2938,7 +2943,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/partage', [\App\Controllers\Web\FileShareController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/heures', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'hours'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/files-envoi', [\App\Controllers\Admin\AdminAtakSendQueueController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    // Remontées : comptes rendus et fiches de renseignement suivis comme des pull requests (contrôle d'accès dans le contrôleur).
+    // Remontées : anciennes adresses, renvoyées vers le bureau SSE (302 en lecture, 307 pour les formulaires) par
+    // AdminIntelIntakeController ; sans entrée au bureau, une page l'explique.
     $router->get('/back-office/remontees', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'index'], [AuthMiddleware::class]);
     // Par joueur : déclaré AVANT {source}/{id}, le routeur prend la première route qui correspond.
     $router->get('/back-office/remontees/joueurs', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'players'], [AuthMiddleware::class]);

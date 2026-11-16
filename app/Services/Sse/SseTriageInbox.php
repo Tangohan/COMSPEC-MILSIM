@@ -397,6 +397,28 @@ final class SseTriageInbox
 
                     return $out;
                 }],
+            // Remontées « À traiter » (badge de l'entrée Remontées) : référence et type seulement, jamais le texte (caviardages).
+            ['key' => 'remontees', 'nav' => 'remontees', 'label' => 'Remontée à traiter', 'tab' => 'Remontées', 'path' => 'atak/sse/remontees',
+                'load' => static function (int $t) use ($item): array {
+                    $intake = new \App\Services\Intel\IntelIntakeService();
+                    if (!$intake->schemaReady() || !\App\Controllers\Web\SseIntakeController::sessionRights(false, $t)['treat']) {
+                        return [];
+                    }
+                    $out = [];
+                    foreach ($intake->listItems($t, ['state' => 'a_traiter'], 0, self::LIMIT) as $r) {
+                        $level = \App\Services\Intel\IntelIntakePresenter::urgencyLevel((string) $r['priority']);
+                        $out[] = $item(
+                            ($r['source'] === 'fiche' ? 'note:' : 'cr:') . (int) $r['id'],
+                            (string) $r['ref'] . ' — ' . (string) $r['type_label'],
+                            \App\Services\Intel\IntelIntakeService::SOURCES[$r['source']] ?? '',
+                            (string) $r['at'],
+                            'atak/sse/remontees/' . $r['source'] . '/' . (int) $r['id'],
+                            $level === 'critical' ? 2 : ($level === 'high' ? 1 : 0)
+                        );
+                    }
+
+                    return $out;
+                }],
             ['key' => 'frm', 'nav' => 'papiers-frm', 'label' => 'FRM à valider', 'tab' => 'FRM', 'path' => 'atak/sse/papiers/tableau',
                 'load' => static function (int $t) use ($item): array {
                     $out = [];
