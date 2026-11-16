@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Sse;
 
+use App\Support\Pdf\AthenaPdfTheme;
+
 /**
  * Éléments graphiques communs des documents d'alerte du portail SSE (fiche de vigilance, notice de recherche) : pictogramme
  * d'avertissement, bande hachurée, barres de niveau, cadre plein sur tout le contour, emblème générique d'un service, QR code de
@@ -243,5 +245,75 @@ trait SsePdfAlertArt
         }
 
         return [rtrim($t) . '…', $min];
+    }
+
+    // ------------------------------------------------------------ Système typographique commun (fiche de vigilance, notices)
+
+    /** Interpolation linéaire : de $a (t = 0) à $b (t = 1). */
+    private static function artLerp(float $a, float $b, float $t): float
+    {
+        return $a + ($b - $a) * max(0.0, min(1.0, $t));
+    }
+
+    /**
+     * Titre de rubrique : numéro, titre en capitales, libellé de l'autre langue, marquage de portion à droite, filet fin avec un
+     * court repère épais à gauche (couleur $tick, encre par défaut). Hauteur utilisée : 7,4 mm.
+     *
+     * @param array{0: string, 1: string} $title
+     * @param array{0: int, 1: int, 2: int}|null $tick
+     */
+    private function artSectionHead(int $n, array $title, float $x, float $y, float $w, string $mark = '', ?array $tick = null): void
+    {
+        $pdf = $this->pdf;
+        $ink = $tick ?? self::INK;
+        $pdf->SetFont($this->sans, 'B', 8.8);
+        $pdf->SetTextColor(...self::INK);
+        $off = $n > 0 ? 5.4 : 0.0;
+        if ($n > 0) {
+            $pdf->SetXY($x, $y);
+            $pdf->Cell(5.4, 4.6, (string) $n, 0, 0, 'L');
+        }
+        $pdf->setFontSpacing(0.3);
+        [$primary, $ps] = $this->artFit(mb_strtoupper($title[$this->lang], 'UTF-8'), $w - 2.6 - $off - ($mark !== '' ? 14.0 : 0.0), 8.8, 6.8);
+        $pdf->SetFont($this->sans, 'B', $ps);
+        $pdf->SetTextColor(...self::INK);
+        $pw = $pdf->GetStringWidth($primary);
+        $pdf->SetXY($x + $off, $y);
+        $pdf->Cell($pw + 1.0, 4.6, $primary, 0, 0, 'L');
+        $pdf->setFontSpacing(0);
+        $markW = 0.0;
+        if ($mark !== '') {
+            $pdf->SetFont(AthenaPdfTheme::mono(), 'B', 6.8);
+            $markW = $pdf->GetStringWidth($mark);
+            $pdf->SetTextColor(...self::MUTED);
+            $pdf->SetXY($x + $w - $markW - 0.4, $y + 0.5);
+            $pdf->Cell($markW + 0.4, 4.0, $mark, 0, 0, 'R');
+        }
+        $pdf->SetFont($this->sans, '', 6.8);
+        $room = $w - $off - $pw - $markW - 8.0;
+        if ($room > 12.0 && $pdf->GetStringWidth($title[1 - $this->lang]) <= $room) {
+            $pdf->SetTextColor(...self::MUTED);
+            $pdf->SetXY($x + $off + $pw + 2.6, $y + 0.7);
+            $pdf->Cell($room, 3.8, $title[1 - $this->lang], 0, 0, 'L');
+        }
+        $pdf->SetDrawColor(...self::LINE);
+        $pdf->SetLineWidth(0.2);
+        $pdf->Line($x, $y + 6.0, $x + $w, $y + 6.0);
+        $pdf->SetDrawColor(...$ink);
+        $pdf->SetLineWidth(0.9);
+        $pdf->Line($x, $y + 6.0, $x + 9.0, $y + 6.0);
+        $pdf->SetLineWidth(0.25);
+    }
+
+    /** Libellé de champ : petites capitales discrètes, une ligne. */
+    private function artCaption(string $text, float $x, float $y, float $w, string $align = 'L', float $size = 6.2): void
+    {
+        $pdf = $this->pdf;
+        $pdf->SetFont($this->sans, '', $size);
+        $pdf->setFontSpacing(0.25);
+        $pdf->SetTextColor(...self::MUTED);
+        $pdf->SetXY($x, $y);
+        $pdf->Cell($w, 2.8, mb_strtoupper($text, 'UTF-8'), 0, 0, $align);
+        $pdf->setFontSpacing(0);
     }
 }
