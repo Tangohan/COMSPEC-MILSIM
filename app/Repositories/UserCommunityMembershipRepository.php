@@ -94,6 +94,17 @@ final class UserCommunityMembershipRepository
     private function periodsReady(): bool
     {
         static $ready = null;
+        if ($ready === null && $this->pdo()->inTransaction()) {
+            // Un CREATE TABLE validerait implicitement la transaction en cours (création d'une communauté,
+            // affectation…) : simple lecture, la table est créée par migrations/20261114000001_membership_periods.sql.
+            try {
+                $this->pdo()->query('SELECT 1 FROM user_community_membership_periods LIMIT 0');
+
+                return true;
+            } catch (\Throwable) {
+                return false;
+            }
+        }
         if ($ready === null) {
             try {
                 $this->pdo()->exec(
