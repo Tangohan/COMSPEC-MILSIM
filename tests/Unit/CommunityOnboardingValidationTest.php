@@ -61,6 +61,32 @@ final class CommunityOnboardingValidationTest extends TestCase
         self::assertNotSame([], $result['errors'] ?? []);
     }
 
+    public function testUnitNameLongerThanItsJobColumnIsRejectedWithAClearMessage(): void
+    {
+        $wizard = $this->baseWizard();
+        $wizard['units'][0]['name'] = str_repeat('é', CommunityOnboardingValidationService::UNIT_NAME_MAX + 1);
+        $result = (new CommunityOnboardingValidationService())->validate($wizard);
+        self::assertFalse($result['ok']);
+        self::assertSame('organization', $result['step'] ?? '');
+        self::assertStringContainsString('Le nom d’une unité ne peut pas dépasser 120 caractères', implode(' ', $result['errors'] ?? []));
+
+        $wizard['units'][0]['name'] = 'Jsoc And Taskforce 121 ' . str_repeat('x', CommunityOnboardingValidationService::UNIT_NAME_MAX - 23);
+        self::assertTrue((new CommunityOnboardingValidationService())->validate($wizard)['ok']);
+    }
+
+    public function testCustomRoleNameTooLongIsRejectedWithAClearMessage(): void
+    {
+        $wizard = $this->baseWizard();
+        $wizard['custom_roles'] = [['name' => str_repeat('R', CommunityOnboardingValidationService::CUSTOM_ROLE_NAME_MAX + 1), 'slug' => 'chef_tf', 'permission_slugs' => []]];
+        $result = (new CommunityOnboardingValidationService())->validate($wizard);
+        self::assertFalse($result['ok']);
+        self::assertSame('roles', $result['step'] ?? '');
+        self::assertContains('Le nom d’un rôle ne peut pas dépasser 80 caractères (rôle supplémentaire #1).', $result['errors'] ?? []);
+
+        $wizard['custom_roles'][0]['name'] = str_repeat('R', CommunityOnboardingValidationService::CUSTOM_ROLE_NAME_MAX);
+        self::assertTrue((new CommunityOnboardingValidationService())->validate($wizard)['ok']);
+    }
+
     /**
      * @return array<string, mixed>
      */
