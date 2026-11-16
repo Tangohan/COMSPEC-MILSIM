@@ -5026,6 +5026,19 @@ class EffectifsWorkspaceController
             }
         } catch (\Throwable) {
         }
+        // Écarts actuels (vue d’ensemble) : même évaluation que la chaîne, la fiche membre et les alertes RH.
+        try {
+            $result = $service->evaluate($tenantId);
+        } catch (\Throwable) {
+            $result = null;
+        }
+        // Retour d’un enregistrement refusé depuis la fenêtre d’un échelon : l’erreur s’affiche dans la fenêtre.
+        $openEchelon = (string) $request->query('echelon', '');
+        $openEchelon = in_array($openEchelon, \App\Services\Organization\EchelonStandards::keys(), true) ? $openEchelon : '';
+        $modalError = '';
+        if ($openEchelon !== '') {
+            $modalError = trim((string) Session::getFlash('error', ''));
+        }
 
         return $this->shell('admin.effectifs_workspace.adequation', [
             'title' => 'Adéquation de l’organisation',
@@ -5036,10 +5049,76 @@ class EffectifsWorkspaceController
             'adequacyGradeLabels' => $gradeLabels,
             'adequacyQualifications' => $qualifications,
             'adequacyJobRoles' => $jobRoles,
+            'adequacyResult' => $result,
+            'adequacyTab' => (string) $request->query('onglet', ''),
+            'adequacyOpenEchelon' => $openEchelon,
+            'adequacyModalError' => $modalError,
+            'adequacyViewerId' => (int) Session::get('user_id'),
             'canEditAdequacy' => $this->canEditAdequacy(),
             'csrfToken' => Csrf::token(),
             'rosterCounts' => $this->rosterCounts($tenantId),
         ]);
+    }
+
+    /**
+     * « Ce que ça change » : écarts par échelon avec les réglages en cours de saisie, comparés aux réglages
+     * enregistrés. Rien n’est enregistré ; mêmes services que l’évaluation de la chaîne.
+     */
+    public function previewAdequacySettings(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            return Response::json(['ok' => false, 'message' => 'Session expirée. Rechargez la page.'], 419);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $raw = $request->input('org_adequacy', []);
+        $proposed = \App\Services\Organization\OrgAdequacySettings::sanitize(is_array($raw) ? $raw : []);
+        $proposed['enabled'] = true;
+        $saved = \App\Services\Organization\OrgAdequacySettings::forTenant($tenantId);
+        $saved['enabled'] = true;
+        $service = new \App\Services\Organization\OrgAdequacyService(
+            $this->unitRepository,
+            $this->userRepository,
+            $this->personnelAssignmentRepository
+        );
+        try {
+            $evaluate = static function (array $settings) use ($service, $tenantId): array {
+                $profile = \App\Services\Organization\OrgAdequacySettings::profileForTenant($tenantId, $settings);
+
+                return \App\Services\Organization\OrgAdequacyEngine::evaluate($service->loadInput($tenantId, $settings, $profile));
+            };
+            $before = $evaluate($saved);
+            $after = $evaluate($proposed);
+        } catch (\Throwable) {
+            return Response::json(['ok' => false, 'message' => 'Aperçu indisponible pour le moment.'], 500);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'current' => \App\Services\Organization\OrgAdequacyImpact::byEchelon($before),
+            'proposed' => \App\Services\Organization\OrgAdequacyImpact::byEchelon($after),
+            'total' => ['current' => count($before['issues']), 'proposed' => count($after['issues'])],
+        ]);
+    }
+
+    /** Adresse de retour de la page d’adéquation : onglet et fenêtre d’échelon d’où vient l’enregistrement. */
+    private static function adequacyReturnUrl(Request $request, bool $reopen): string
+    {
+        $query = [];
+        $tab = (string) $request->input('adqp_tab', '');
+        if (in_array($tab, ['regles', 'echelons'], true)) {
+            $query['onglet'] = $tab;
+        }
+        $echelon = (string) $request->input('adqp_echelon', '');
+        if ($reopen && in_array($echelon, \App\Services\Organization\EchelonStandards::keys(), true)) {
+            $query['onglet'] = 'echelons';
+            $query['echelon'] = $echelon;
+        }
+
+        return effectifs_workspace_url('chaine/adequation') . ($query !== [] ? '?' . http_build_query($query) : '');
     }
 
     public function saveAdequacySettings(Request $request, array $params = []): Response
@@ -5048,16 +5127,18 @@ class EffectifsWorkspaceController
         if ($denied !== null) {
             return $denied;
         }
-        $back = effectifs_workspace_url('chaine/adequation');
+        // Erreur : retour dans la fenêtre de l’échelon en cours ; succès : retour à l’onglet.
+        $errorBack = self::adequacyReturnUrl($request, true);
+        $back = self::adequacyReturnUrl($request, false);
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Rechargez la page, puis enregistrez de nouveau.');
 
-            return Response::redirect($back);
+            return Response::redirect($errorBack);
         }
         if (!$this->canEditAdequacy()) {
             Session::flash('error', 'Vous n’êtes pas habilité à modifier les attentes de l’organisation.');
 
-            return Response::redirect($back);
+            return Response::redirect($errorBack);
         }
         $tenantId = (int) Session::get('tenant_id');
         $raw = $request->input('org_adequacy', []);
