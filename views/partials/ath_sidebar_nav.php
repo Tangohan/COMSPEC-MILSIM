@@ -113,6 +113,7 @@ $navAt = static function (string ...$prefixes) use ($p): bool {
     return false;
 };
 $effPath = effectifs_workspace_path();
+$navChainOnglet = (string) ($_GET['onglet'] ?? '');
 
 $isFullTenant = ($tenantType ?? \App\Services\Community\TenantTypeConfig::TYPE_FULL) === \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 
@@ -126,7 +127,17 @@ $isFullTenant = ($tenantType ?? \App\Services\Community\TenantTypeConfig::TYPE_F
 $membersChildren = array_values(array_filter([
     ['label' => 'Liste des membres', 'href' => effectifs_workspace_url(), 'active' => $p === $effPath || $boNavUsers],
     ['label' => 'Affectations', 'href' => effectifs_workspace_url('affectations'), 'active' => $navAt($effPath . '/affectations')],
-    ['label' => 'Chaîne de commandement', 'href' => effectifs_workspace_url('chaine'), 'active' => $navAt($effPath . '/chaine')],
+    // Chaîne de commandement : la chaîne, l’adéquation de l’organisation, ses échelons attendus et la doctrine des
+    // fonctions (mêmes pages que la sous-navigation de l’espace, App\Support\CommandChainNav).
+    [
+        'label' => 'Chaîne de commandement',
+        'children' => [
+            ['label' => 'Vue de la chaîne', 'href' => effectifs_workspace_url('chaine'), 'active' => $p === $effPath . '/chaine'],
+            ['label' => 'Adéquation de l’organisation', 'href' => effectifs_workspace_url('chaine/adequation'), 'active' => $navAt($effPath . '/chaine/adequation') && $navChainOnglet !== 'echelons'],
+            ['label' => 'Échelons attendus', 'href' => effectifs_workspace_url('chaine/adequation') . '?onglet=echelons', 'active' => $navAt($effPath . '/chaine/adequation') && $navChainOnglet === 'echelons'],
+            ['label' => 'Doctrine des fonctions', 'href' => url('back-office/roles-functions'), 'active' => $navDoctrineActive],
+        ],
+    ],
     ['label' => 'Qualifications des membres', 'href' => effectifs_workspace_url('qualifications'), 'active' => $navAt($effPath . '/qualifications')],
     $canManageMemberStatus
         ? ['label' => 'Anciens membres', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')]
