@@ -16,8 +16,8 @@ if (!_ignoreEssential && {["hides", _id] call comspec_atak_native_fnc_essentialM
 if (_id isEqualTo "Store") exitWith { true };
 // App pas encore proposée (config hidden=1, OSINT) : aucune tuile nulle part ; sa classe et sa page restent déclarées.
 if (_app getOrDefault ["hidden", false]) exitWith { false };
-// Dossier SSE (fn_sseHub) : affiché seulement s'il regroupe au moins deux apps visibles ; sinon l'app qui reste garde sa tuile.
-if (_id isEqualTo "SseHub" && {(["count"] call comspec_atak_native_fnc_sseHub) < 2}) exitWith { false };
+// App SSE (fn_sseHub) : une seule tuile, affichée dès qu'une de ses fonctions est visible (droits, installation, interdiction).
+if (_id isEqualTo "SseHub" && {(["count"] call comspec_atak_native_fnc_sseHub) < 1}) exitWith { false };
 // Mode pilote : tuile seulement s'il est activé (réglage du serveur ou du joueur).
 if (_id isEqualTo "Pilot" && {!(["on"] call comspec_atak_native_fnc_pilotMode)}) exitWith { false };
 // App Admin : Zeus, admin du serveur, gestionnaire désigné ou gestion de la communauté sur Athena (fn_adminClient).

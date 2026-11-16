@@ -71500,4 +71500,6 @@ return [
     'Les remarques libres des membres, visibles de ceux qui lisent les fichiers.' => 'Free remarks from members, visible to those who read the files.',
     'Les éléments rattachés au sujet dans les fichiers.' => 'The items attached to the subject in the files.',
     'Mandats, recherches et signalements en cours sur le sujet.' => 'Warrants, searches and alerts currently on the subject.',
+    'Urgence : prévenez le service sans attendre' => 'Urgent: tell the service without delay',
+    'Avant de signaler' => 'Before you report',
 ];

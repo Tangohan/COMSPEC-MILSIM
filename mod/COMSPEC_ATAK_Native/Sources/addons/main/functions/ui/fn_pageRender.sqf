@@ -25,6 +25,11 @@ private _titleDo = {
         _short = if ((count _app) > 0) then { toUpper ((_app select 0) getOrDefault ["short", ""]) } else { "" };
         _tIcon = if ((count _app) > 0) then { (_app select 0) get "icon" } else { "" };
     };
+    // App SSE : une fonction ouverte s'intitule « SSE · fonction » (nom court de la table de fn_sseHub), la barre de la coque est dessinée plus bas.
+    if (["hosted", _page] call comspec_atak_native_fnc_sseHub) then {
+        private _fn = (["apps"] call comspec_atak_native_fnc_sseHub) select { ((_x select 0) get "page") isEqualTo _page };
+        if ((count _fn) > 0) then { _title = format ["SSE · %1", toUpper ((_fn select 0) select 1)]; _short = "SSE"; };
+    };
     if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; _short = "RÉCENTES"; };
     if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; _short = "NOTIFS"; };
     if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; _short = "PATCH"; };
@@ -121,6 +126,8 @@ call _titleDo;
 private _trN0 = missionNamespace getVariable ["COMSPEC_ATAK_TrMiss", 0];
 private _trT0 = missionNamespace getVariable ["COMSPEC_ATAK_TrMissT", 0];
 private _perfC0 = diag_tickTime;
+// Coque de l'app SSE : barre SOMMAIRE + fonctions de la section au-dessus de la page (place réservée par fn_layoutGet).
+if (["hosted", _page] call comspec_atak_native_fnc_sseHub) then { ["drawStrip", _page] call comspec_atak_native_fnc_sseHub; };
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };
     case "FOLDER": { [] call comspec_atak_native_fnc_pageFolder; };
