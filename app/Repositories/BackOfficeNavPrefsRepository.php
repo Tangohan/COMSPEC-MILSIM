@@ -25,6 +25,8 @@ class BackOfficeNavPrefsRepository
     /** @var array<string, array<string, mixed>> */
     private array $cache = [];
 
+    private ?bool $ready = null;
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo;
@@ -68,6 +70,21 @@ class BackOfficeNavPrefsRepository
         return $this->cache[$tenantId . ':' . $userId] = $out;
     }
 
+    /** Table présente (migration passée) : sans elle, l'accueil garde la disposition par défaut, non modifiable. */
+    public function ready(): bool
+    {
+        if ($this->ready === null) {
+            try {
+                $this->pdo()->query('SELECT 1 FROM bo_user_nav_prefs WHERE 1 = 0');
+                $this->ready = true;
+            } catch (\Throwable) {
+                $this->ready = false;
+            }
+        }
+
+        return $this->ready;
+    }
+
     /** Écrit une colonne (JSON). Faux si la table n'existe pas encore. */
     public function put(int $tenantId, int $userId, string $column, mixed $value): bool
     {
@@ -79,11 +96,14 @@ class BackOfficeNavPrefsRepository
             return false;
         }
         try {
+            // Même écriture en MySQL et en SQLite (tests) : une ligne par (communauté, compte).
+            $upsert = $this->pdo()->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+                ? "ON CONFLICT (tenant_id, user_id) DO UPDATE SET {$column} = excluded.{$column}, updated_at = excluded.updated_at"
+                : "ON DUPLICATE KEY UPDATE {$column} = VALUES({$column}), updated_at = VALUES(updated_at)";
             $st = $this->pdo()->prepare(
-                "INSERT INTO bo_user_nav_prefs (tenant_id, user_id, {$column}, updated_at) VALUES (?, ?, ?, NOW())
-                 ON DUPLICATE KEY UPDATE {$column} = VALUES({$column}), updated_at = NOW()"
+                "INSERT INTO bo_user_nav_prefs (tenant_id, user_id, {$column}, updated_at) VALUES (?, ?, ?, ?) {$upsert}"
             );
-            $st->execute([$tenantId, $userId, $json]);
+            $st->execute([$tenantId, $userId, $value === null ? null : $json, date('Y-m-d H:i:s')]);
         } catch (\Throwable $e) {
             error_log('[bo-nav-prefs] ' . $e->getMessage());
 

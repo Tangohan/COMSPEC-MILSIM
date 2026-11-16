@@ -314,6 +314,112 @@ class PlayerSessionRepository
         return $out;
     }
 
+    /**
+     * Widget « Disponibilité à vérifier » de l'accueil du back-office : membres actifs sans session qui compte depuis
+     * $sinceTs (ou sans Steam relié) et sans vérification de disponibilité enregistrée depuis. Deux requêtes (total,
+     * premiers membres) quel que soit l'effectif. Sans la table des sessions : null (suivi indisponible).
+     *
+     * @return array{total: int, rows: list<array{id: int, name: string, linked: bool, last_at: ?int}>}|null
+     */
+    public function membersToVerify(int $tenantId, int $sinceTs, int $minSeconds, int $limit = 5): ?array
+    {
+        if ($tenantId < 1 || !$this->schemaReady()) {
+            return null;
+        }
+        $since = self::fmt($sinceTs);
+        $min = max(60, $minSeconds);
+        $where = "u.tenant_id = ? AND u.status = 'active' AND (u.display_name IS NULL OR u.display_name <> 'Compte supprimé')
+            AND NOT EXISTS (SELECT 1 FROM player_sessions ps WHERE ps.tenant_id = u.tenant_id AND ps.steam_uid = u.steam_id AND ps.last_seen_at >= ? AND ps.duration_s >= ?)";
+        $params = [$tenantId, $since, $min];
+        if ($this->tableReady('member_availability_checks')) {
+            $where .= ' AND NOT EXISTS (SELECT 1 FROM member_availability_checks c WHERE c.tenant_id = u.tenant_id AND c.user_id = u.id AND c.created_at >= ?)';
+            $params[] = $since;
+        }
+        try {
+            $st = $this->pdo()->prepare("SELECT COUNT(*) FROM users u WHERE {$where}");
+            $st->execute($params);
+            $total = (int) $st->fetchColumn();
+            $rows = [];
+            if ($total > 0) {
+                $st = $this->pdo()->prepare(
+                    "SELECT t.* FROM (
+                        SELECT u.id, u.display_name, u.steam_id,
+                               (SELECT MAX(ps2.last_seen_at) FROM player_sessions ps2 WHERE ps2.tenant_id = u.tenant_id AND ps2.steam_uid = u.steam_id AND ps2.duration_s >= ?) AS last_at
+                        FROM users u WHERE {$where}
+                     ) t ORDER BY (t.last_at IS NULL) DESC, t.last_at ASC, t.id ASC LIMIT " . max(1, min(20, $limit))
+                );
+                $st->execute(array_merge([$min], $params));
+                foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                    $rows[] = [
+                        'id' => (int) $r['id'],
+                        'name' => trim((string) ($r['display_name'] ?? '')),
+                        'linked' => SteamId::normalize((string) ($r['steam_id'] ?? '')) !== null,
+                        'last_at' => trim((string) ($r['last_at'] ?? '')) !== '' ? self::ts((string) $r['last_at']) : null,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[player-sessions] à vérifier : ' . $e->getMessage());
+
+            return null;
+        }
+
+        return ['total' => $total, 'rows' => $rows];
+    }
+
+    /**
+     * Widget « Sessions de jeu récentes » : dernières sessions de la communauté, avec le membre rattaché par Steam.
+     * Une requête. Sans la table des sessions : null.
+     *
+     * @return list<array{user_id: int, name: string, started_at: int, last_seen_at: int, duration_s: int, aberrant: bool}>|null
+     */
+    public function recentForTenant(int $tenantId, int $sinceTs, int $limit = 8): ?array
+    {
+        if ($tenantId < 1 || !$this->schemaReady()) {
+            return null;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT ps.started_at, ps.last_seen_at, ps.duration_s, ps.aberrant, u.id AS user_id, u.display_name
+                 FROM player_sessions ps
+                 LEFT JOIN users u ON u.tenant_id = ps.tenant_id AND u.steam_id = ps.steam_uid
+                 WHERE ps.tenant_id = ? AND ps.last_seen_at >= ?
+                 ORDER BY ps.last_seen_at DESC LIMIT ' . max(1, min(30, $limit))
+            );
+            $st->execute([$tenantId, self::fmt($sinceTs)]);
+            $out = [];
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                $start = self::ts((string) $r['started_at']);
+                $seen = self::ts((string) $r['last_seen_at']);
+                $out[] = [
+                    'user_id' => (int) ($r['user_id'] ?? 0),
+                    'name' => trim((string) ($r['display_name'] ?? '')),
+                    'started_at' => $start,
+                    'last_seen_at' => $seen,
+                    'duration_s' => (int) ($r['duration_s'] ?? max(0, $seen - $start)),
+                    'aberrant' => (int) ($r['aberrant'] ?? 0) === 1,
+                ];
+            }
+
+            return $out;
+        } catch (\Throwable $e) {
+            error_log('[player-sessions] récentes : ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    private function tableReady(string $table): bool
+    {
+        try {
+            $this->pdo()->query('SELECT 1 FROM ' . $table . ' WHERE 1 = 0');
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /** Fuseau de la communauté (colonne tenants.timezone), Europe/Paris par défaut. */
     public function tenantTimezone(int $tenantId): string
     {

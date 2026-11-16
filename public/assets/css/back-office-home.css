@@ -1,33 +1,7 @@
 /*
- * Accueil personnalisable du back-office et tableaux. S'appuie sur les jetons de pilotage-dashboard.css (--pil-*),
+ * Accueil du back-office : tâches, raccourcis et tableaux (la grille des widgets est dans back-office-widgets.css). S'appuie sur les jetons de pilotage-dashboard.css (--pil-*),
  * redéfinis en mode nuit sous html[data-bo-theme="dark"] .pil : rien à doubler ici sauf les champs.
  */
-
-/* ——— Grille des blocs ——— */
-.home-bar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: -4px 0 4px; }
-.home-bar__state { font-size: 12px; font-weight: 700; color: var(--pil-primary-strong, #065f46); }
-.home-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--pil-gap, 20px);
-  align-items: start;
-  /* Un bloc étroit remonte combler la place laissée à côté d'un bloc large. */
-  grid-auto-flow: row dense;
-}
-.home-w { min-width: 0; }
-.home-w > .pil-card, .home-w > .pil-op, .home-w > details { height: 100%; }
-.home-w--normal { grid-column: span 1; }
-.home-w--wide { grid-column: span 2; }
-.home-w--full { grid-column: 1 / -1; }
-.home-w .pil-kpis { margin: 0; }
-@media (max-width: 1100px) {
-  .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .home-w--wide { grid-column: 1 / -1; }
-}
-@media (max-width: 720px) {
-  .home-grid { grid-template-columns: minmax(0, 1fr); }
-  .home-w--normal, .home-w--wide { grid-column: 1 / -1; }
-}
 
 /* ——— Tâches et raccourcis ——— */
 .home-tasks, .home-sc { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -61,40 +35,6 @@
 .home-task__more summary:focus-visible { outline: 2px solid var(--pil-primary, #059669); outline-offset: 2px; border-radius: 4px; }
 .home-task__more[open] summary { margin-bottom: 4px; }
 .home-task__more p { margin: 0 0 6px; font-size: 12.5px; line-height: 1.5; color: var(--pil-muted, #64748b); overflow-wrap: anywhere; }
-
-/* ——— Panneau Personnaliser ——— */
-.home-cust { margin-bottom: var(--pil-gap, 20px); }
-.home-cust__lead { margin: 0 0 12px; font-size: 13px; color: var(--pil-muted, #64748b); }
-.home-cust__list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
-.home-cust__it {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid var(--pil-line, #e2e8f0);
-  border-radius: 10px;
-  background: var(--pil-surface, #fff);
-}
-.home-cust__it.is-dragging { opacity: 0.45; }
-.home-cust__grip { cursor: grab; color: var(--pil-muted, #64748b); letter-spacing: -2px; user-select: none; }
-.home-cust__check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; min-width: 0; }
-.home-cust__check input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--pil-primary, #059669); }
-.home-cust__check b { display: block; font-size: 13px; }
-.home-cust__check small { display: block; font-size: 12px; color: var(--pil-muted, #64748b); }
-.home-cust__size select { font-size: 12px; padding: 4px 6px; border: 1px solid var(--pil-line, #e2e8f0); border-radius: 8px; background: var(--pil-surface, #fff); color: var(--pil-ink, #0f172a); }
-.home-cust__moves { display: inline-flex; gap: 4px; }
-.home-cust__moves .pil-btn:disabled { opacity: 0.35; }
-.home-cust__acts { display: flex; flex-wrap: wrap; gap: 8px; }
-.home-cust__new { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--pil-line, #e2e8f0); }
-.home-cust__new label { display: block; font-size: 13px; margin-bottom: 6px; }
-.home-cust__new small { color: var(--pil-muted, #64748b); }
-.home-cust__row { display: flex; gap: 8px; flex-wrap: wrap; }
-.home-cust__row input { flex: 1; min-width: 200px; padding: 8px 10px; border: 1px solid var(--pil-line, #e2e8f0); border-radius: 8px; background: var(--pil-surface, #fff); color: var(--pil-ink, #0f172a); }
-@media (max-width: 720px) {
-  .home-cust__it { grid-template-columns: auto minmax(0, 1fr); }
-  .home-cust__size, .home-cust__moves { grid-column: 2; }
-}
 
 /* ——— Tableau ——— */
 .bsh { display: grid; gap: 10px; min-width: 0; }
@@ -186,7 +126,7 @@ input.bsh__hname:focus { border-color: var(--pil-primary, #059669); background: 
 .bsh-page__back { margin: 0 0 12px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-cust__it, .bsh__ico { transition: none; }
+  .bsh__ico { transition: none; }
 }
 
 /* Tableur : barre d'outils, lignes alternées, repères de la case active, nombres à droite. */
@@ -208,11 +148,6 @@ input.bsh__hname:focus { border-color: var(--pil-primary, #059669); background: 
 
 .pil { --pil-gap: 16px; }
 .pil-btn--ghost { background: transparent; }
-
-/* Blocs d'une même rangée à la même hauteur, sans pourcentage (qui fait déborder un bloc sur la rangée suivante). */
-.home-grid { grid-auto-flow: row dense; align-items: stretch; }
-.home-w { display: flex; flex-direction: column; }
-.home-w > .pil-card, .home-w > .pil-op, .home-w > details, .home-w > section { flex: 1 1 auto; height: auto; }
 
 .pil-card { border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
 .pil-card__h { margin-bottom: 14px; align-items: center; }
@@ -294,11 +229,8 @@ html[data-bo-theme="dark"] .pil-card { box-shadow: none; }
 .home-task__more summary { display: inline-flex; align-items: center; min-height: 44px; padding: 0; font-size: 13px; color: var(--bo-band-paper); }
 .home-task__more p { font-size: 13px; color: var(--bo-band-paper-2); }
 .home-tasks__it, .home-sc__it { min-height: 44px; font-size: 14px; }
-.home-bar__state { font-size: 13px; }
 
-/* Blocs à leur hauteur : plus de carte étirée et vide à côté d'un bloc long (la bande d'opération s'étire seule). */
-.home-grid { align-items: start; }
-.home-w[data-widget="operation"] { align-self: stretch; }
+/* Bande d'opération : contenu centré dans la hauteur de son widget. */
 .pil .pil-op .bo-band__body { height: 100%; align-content: center; }
 .pil-pipe { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .pil-pipe small { overflow-wrap: normal; }

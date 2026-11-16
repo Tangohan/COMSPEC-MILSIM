@@ -322,7 +322,7 @@ class OrganizationDashboardController
             'boSkipPageHead' => true,
             'boPageAction' => 'Publier une annonce',
             'boPageActionUrl' => url('back-office/alerts'),
-            'backOfficePageCss' => array_merge(['back-office-bands.css', 'back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css', 'platform-messages.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
+            'backOfficePageCss' => array_merge(['back-office-bands.css', 'back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css', 'back-office-widgets.css', 'platform-messages.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
             'home' => $home,
             'platformMessages' => $platformMessages,
             'canAckPlatformMessages' => true,
@@ -342,24 +342,30 @@ class OrganizationDashboardController
     }
 
     /**
-     * Accueil personnalisable : disposition de la personne (ou celle de son rôle), tableaux affichés, compteurs du
-     * menu pour le bloc « Tâches en attente ». En cas d'erreur : disposition par défaut, jamais une page cassée.
+     * Accueil en widgets : disposition de la personne (ou celle de son rôle), widgets autorisés, tableaux affichés,
+     * compteurs du menu pour « Tâches en attente », disponibilité et sessions de jeu. Les données d'un widget ne sont
+     * lues que s'il est affiché (ou en mode « Personnaliser », pour pouvoir l'ajouter sans recharger) ; chaque lecture
+     * se fait en lot (pas de requête par membre). En cas d'erreur : disposition par défaut, jamais une page cassée.
      *
      * @return array<string, mixed>
      */
     private function homeData(int $tenantId, int $userId, bool $customize): array
     {
         $role = \App\Controllers\Admin\BackOfficeHomeController::role();
+        $allowed = \App\Controllers\Admin\BackOfficeHomeController::allowedIds();
         $home = [
-            'items' => \App\Services\BackOffice\Home\HomeLayout::defaults($role),
+            'items' => \App\Services\BackOffice\Home\HomeLayout::defaults($role, $allowed),
+            'allowed' => $allowed,
+            'role' => $role,
             'readable' => [],
             'sheets' => [],
             'tasks' => [],
             'customize' => $customize,
+            'can_save' => false,
             'can_share' => \App\Controllers\Admin\BackOfficeHomeController::canShare(),
-            'catalog' => \App\Services\BackOffice\Home\HomeLayout::catalog(),
         ];
         try {
+            $home['can_save'] = Container::get(\App\Repositories\BackOfficeNavPrefsRepository::class)->ready();
             $layout = Container::get(\App\Controllers\Admin\BackOfficeHomeController::class)->layoutFor($tenantId, $userId);
             $home['items'] = $layout['items'];
             $home['readable'] = $layout['readable'];
@@ -376,20 +382,53 @@ class OrganizationDashboardController
         } catch (\Throwable $e) {
             error_log('[bo-home] ' . $e->getMessage());
         }
+        $shown = [];
+        foreach ($home['items'] as $item) {
+            if ($customize || !$item['hidden']) {
+                $shown[$item['id']] = true;
+            }
+        }
         try {
-            foreach ($home['items'] as $item) {
-                if ($item['id'] === 'custom' && !$item['hidden']) {
-                    $store = Container::get(\App\Services\BackOffice\Home\HomeBlocksStore::class);
-                    $blocks = $store->load($tenantId);
-                    $home['custom'] = [
-                        'blocks' => array_values(array_filter($blocks['blocks'], static fn (array $b): bool => empty($b['hidden']))),
-                        'sheets' => $store->sheetsFor($blocks, $tenantId, $userId),
-                        'can_edit' => $home['can_share'],
-                    ];
-                }
+            if (isset($shown['custom'])) {
+                $store = Container::get(\App\Services\BackOffice\Home\HomeBlocksStore::class);
+                $blocks = $store->load($tenantId);
+                $home['custom'] = [
+                    'blocks' => array_values(array_filter($blocks['blocks'], static fn (array $b): bool => empty($b['hidden']))),
+                    'sheets' => $store->sheetsFor($blocks, $tenantId, $userId),
+                    'can_edit' => $home['can_share'],
+                ];
             }
         } catch (\Throwable $e) {
             error_log('[bo-home] bloc personnalisé : ' . $e->getMessage());
+        }
+        if (isset($shown['availability']) || isset($shown['sessions'])) {
+            try {
+                $sessions = Container::get(\App\Repositories\PlayerSessionRepository::class);
+                $rules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
+                $now = time();
+                if (isset($shown['availability'])) {
+                    $days = \App\Services\BackOffice\Home\HomeLayout::AVAILABILITY_DAYS;
+                    $res = $sessions->membersToVerify($tenantId, $now - $days * 86400, $rules['min_minutes'] * 60, 5);
+                    $home['availability'] = [
+                        'ready' => $res !== null,
+                        'days' => $days,
+                        'total' => (int) ($res['total'] ?? 0),
+                        'rows' => $res['rows'] ?? [],
+                        'href' => effectifs_workspace_url() . '?sessions=verifier' . $days,
+                    ];
+                }
+                if (isset($shown['sessions'])) {
+                    $rows = $sessions->recentForTenant($tenantId, $now - 14 * 86400, 8);
+                    $home['sessions'] = [
+                        'ready' => $rows !== null,
+                        'rows' => $rows ?? [],
+                        'min_minutes' => $rules['min_minutes'],
+                        'href' => effectifs_workspace_url(),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                error_log('[bo-home] sessions de jeu : ' . $e->getMessage());
+            }
         }
         try {
             $gate = Gate::getInstance();

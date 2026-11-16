@@ -33,68 +33,109 @@ final class BackOfficeHomeController
     ) {
     }
 
-    public static function role(): string
+    /** Droit d'accès à une page du back-office (chemin sans « / » initial), comme le menu latéral. */
+    public static function allowedPath(string $path): bool
+    {
+        return !function_exists('portal_nav_href_permission_allowed') || portal_nav_href_permission_allowed(url($path));
+    }
+
+    public static function isManager(): bool
     {
         $gate = Gate::getInstance();
 
-        return $gate->allows('admin.organization') || $gate->allows('admin.access') ? HomeLayout::ROLE_MANAGER : HomeLayout::ROLE_SUPPORT;
+        return $gate->allows('admin.organization') || $gate->allows('admin.access');
+    }
+
+    /** Rôle qui choisit la composition par défaut de l'accueil (gestionnaire, effectifs, recrutement, assistance). */
+    public static function role(): string
+    {
+        return HomeLayout::roleFor(self::isManager(), self::allowedPath(...));
     }
 
     public static function canShare(): bool
     {
-        return self::role() === HomeLayout::ROLE_MANAGER;
+        return self::isManager();
     }
 
     /**
-     * Disposition de la personne, nettoyée (tableaux encore lisibles uniquement).
+     * Widgets dont la personne peut voir la donnée.
      *
-     * @return array{items: list<array{id: string, hidden: bool, size: string}>, readable: list<array{id: int, title: string, shared: bool, mine: bool, updated_at: string}>}
+     * @return list<string>
+     */
+    public static function allowedIds(): array
+    {
+        return array_keys(HomeLayout::catalogFor(self::allowedPath(...)));
+    }
+
+    /**
+     * Disposition de la personne, nettoyée (widgets autorisés et tableaux encore lisibles uniquement).
+     *
+     * @return array{items: list<array{id: string, w: int, h: int, hidden: bool}>, readable: list<array{id: int, title: string, shared: bool, mine: bool, updated_at: string}>}
      */
     public function layoutFor(int $tenantId, int $userId): array
     {
-        $readable = $this->sheets->listReadable($tenantId, $userId);
+        $readable = $this->readableSheets($tenantId, $userId);
         $raw = $this->prefs->get($tenantId, $userId)[BackOfficeNavPrefsRepository::COL_HOME];
 
         return [
-            'items' => HomeLayout::normalize($raw, self::role(), array_column($readable, 'id')),
+            'items' => HomeLayout::normalize($raw, self::role(), array_column($readable, 'id'), self::allowedIds()),
             'readable' => $readable,
         ];
     }
 
-    /** POST /back-office/accueil/disposition */
+    /**
+     * POST /back-office/accueil/disposition — enregistre la disposition envoyée par le mode « Personnaliser »
+     * (champ « layout », JSON v2, validé strictement) ou rétablit celle du rôle (« reset »).
+     */
     public function saveLayout(Request $request, array $params = []): Response
     {
         [$tenantId, $userId] = self::ids();
-        if ($tenantId < 1 || !Csrf::verify($request)) {
-            return self::back(false, 'Session expirée. Rechargez la page.', 'back-office?personnaliser=1');
+        $json = self::wantsJson($request);
+        if ($tenantId < 1 || $userId < 1 || !Csrf::verify($request)) {
+            return $json
+                ? Response::json(['ok' => false, 'message' => 'Session expirée. Rechargez la page.'], 419)
+                : self::back(false, 'Session expirée. Rechargez la page.', 'back-office?personnaliser=1');
+        }
+        if (!$this->prefs->ready()) {
+            $msg = 'Personnalisation indisponible pour le moment (mise à jour de la base en attente) : la disposition par défaut reste affichée.';
+
+            return $json ? Response::json(['ok' => false, 'message' => $msg], 503) : self::back(false, $msg, 'back-office');
         }
         if ($request->inputString('reset') !== '') {
-            $this->prefs->put($tenantId, $userId, BackOfficeNavPrefsRepository::COL_HOME, null);
+            $ok = $this->prefs->put($tenantId, $userId, BackOfficeNavPrefsRepository::COL_HOME, null);
+            $msg = $ok ? 'Disposition par défaut rétablie.' : 'La disposition n’a pas pu être réinitialisée. Réessayez.';
 
-            return self::back(true, 'Disposition par défaut rétablie.', 'back-office?personnaliser=1');
+            return $json ? Response::json(['ok' => $ok, 'message' => $msg], $ok ? 200 : 500) : self::back($ok, $msg, 'back-office?personnaliser=1');
         }
-        $readable = array_column($this->sheets->listReadable($tenantId, $userId), 'id');
-        $stored = HomeLayout::fromForm(
-            self::list($request->input('order')),
-            self::list($request->input('visible')),
-            is_array($request->input('size')) ? $request->input('size') : [],
-            self::role(),
-            $readable
+        $raw = $request->input('layout');
+        $decoded = is_string($raw) && strlen($raw) <= 20000 ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
+        [$stored, $errors] = HomeLayout::validate(
+            $decoded,
+            self::allowedIds(),
+            array_column($this->readableSheets($tenantId, $userId), 'id')
         );
-        $move = explode('|', $request->inputString('move'), 2);
-        $stay = false;
-        if (count($move) === 2 && in_array($move[0], ['up', 'down'], true)) {
-            $stored = HomeLayout::stored(HomeLayout::move($stored['items'], $move[1], $move[0] === 'up' ? -1 : 1));
-            $stay = true;
+        if ($stored === null) {
+            $msg = 'Disposition refusée : ' . ($errors[0] ?? 'contenu illisible.');
+
+            return $json ? Response::json(['ok' => false, 'message' => $msg, 'errors' => $errors], 422) : self::back(false, $msg, 'back-office?personnaliser=1');
         }
         if (!$this->prefs->put($tenantId, $userId, BackOfficeNavPrefsRepository::COL_HOME, $stored)) {
-            return self::back(false, 'Disposition indisponible pour le moment (mise à jour de la base en attente).', 'back-office?personnaliser=1');
-        }
-        if (self::wantsJson($request)) {
-            return Response::json(['ok' => true, 'message' => 'Disposition enregistrée.']);
+            $msg = 'La disposition n’a pas pu être enregistrée. Réessayez.';
+
+            return $json ? Response::json(['ok' => false, 'message' => $msg], 500) : self::back(false, $msg, 'back-office?personnaliser=1');
         }
 
-        return self::back(true, 'Disposition enregistrée.', $stay || $request->inputString('stay') !== '' ? 'back-office?personnaliser=1' : 'back-office');
+        return $json ? Response::json(['ok' => true, 'message' => 'Disposition enregistrée.']) : self::back(true, 'Disposition enregistrée.', 'back-office');
+    }
+
+    /** @return list<array{id: int, title: string, shared: bool, mine: bool, updated_at: string}> */
+    private function readableSheets(int $tenantId, int $userId): array
+    {
+        try {
+            return $this->sheets->listReadable($tenantId, $userId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /** POST /back-office/tableaux — crée un tableau vide et l'ajoute en tête de l'accueil. */

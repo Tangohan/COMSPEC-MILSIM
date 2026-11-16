@@ -17,53 +17,51 @@ final class BackOfficeHomeTest extends TestCase
     {
         $manager = HomeLayout::defaults(HomeLayout::ROLE_MANAGER);
         $support = HomeLayout::defaults(HomeLayout::ROLE_SUPPORT);
-        self::assertSame('operation', $manager[0]['id']);
-        self::assertFalse($manager[0]['hidden']);
+        self::assertSame('kpi_members', $manager[0]['id']);
+        self::assertSame('operation', $manager[4]['id']);
+        self::assertFalse($manager[4]['hidden']);
         self::assertSame('tasks', $support[0]['id']);
         $hiddenForSupport = array_column(array_filter($support, static fn (array $i): bool => $i['hidden']), 'id');
         self::assertContains('operation', $hiddenForSupport);
-        self::assertSame(array_keys(HomeLayout::catalog()), array_values(array_unique(array_merge(array_column($manager, 'id'), array_keys(HomeLayout::catalog())))));
+        self::assertEqualsCanonicalizing(array_keys(HomeLayout::catalog()), array_column($manager, 'id'), 'Chaque widget du catalogue figure une fois.');
     }
 
-    public function testNormalizeDropsUnknownAndUnreadableAndAddsNewBlocks(): void
+    public function testNormalizeDropsUnknownAndUnreadableAndAddsNewWidgets(): void
     {
         $raw = [
+            'v' => 2,
             'items' => [
-                ['id' => 'kpis', 'hidden' => false, 'size' => 'énorme'],
-                ['id' => 'inconnu'],
-                ['id' => 'sheet:7', 'hidden' => false, 'size' => 'full'],
-                ['id' => 'sheet:9'],
-                ['id' => 'kpis', 'hidden' => true],
-                ['id' => 'feed', 'hidden' => true, 'size' => 'wide'],
+                ['id' => 'feed', 'w' => 99, 'h' => 0, 'hidden' => false],
+                ['id' => 'inconnu', 'w' => 4, 'h' => 2],
+                ['id' => 'sheet:7', 'w' => 12, 'h' => 4],
+                ['id' => 'sheet:9', 'w' => 12, 'h' => 4],
+                ['id' => 'feed', 'w' => 4, 'h' => 2, 'hidden' => true],
+                ['id' => 'agenda', 'w' => 5, 'h' => 4, 'hidden' => true],
             ],
-            'known' => ['kpis', 'feed', 'tasks'],
+            'known' => ['feed', 'agenda', 'tasks'],
         ];
         $out = HomeLayout::normalize($raw, HomeLayout::ROLE_MANAGER, [7]);
         $ids = array_column($out, 'id');
-        self::assertSame(['kpis', 'sheet:7', 'feed'], array_slice($ids, 0, 3));
+        self::assertSame(['feed', 'sheet:7', 'agenda'], array_slice($ids, 0, 3));
         self::assertNotContains('sheet:9', $ids, 'Un tableau qui n’est plus lisible disparaît.');
         self::assertNotContains('inconnu', $ids);
-        self::assertSame('full', $out[0]['size'], 'Largeur invalide : celle du bloc.');
+        self::assertSame([8, 2], [$out[0]['w'], $out[0]['h']], 'Taille ramenée dans les bornes du widget.');
+        self::assertSame([5, 4], [$out[2]['w'], $out[2]['h']]);
         $byId = array_column($out, null, 'id');
-        self::assertTrue($byId['tasks']['hidden'], 'Bloc connu mais absent : retiré par la personne, reste masqué.');
-        self::assertFalse($byId['shortcuts']['hidden'], 'Bloc apparu depuis : visible.');
+        self::assertTrue($byId['tasks']['hidden'], 'Widget connu mais absent : retiré par la personne, reste masqué.');
+        self::assertFalse($byId['shortcuts']['hidden'], 'Widget apparu depuis : visible.');
         self::assertSame(HomeLayout::defaults(HomeLayout::ROLE_MANAGER), HomeLayout::normalize(null, HomeLayout::ROLE_MANAGER, []));
     }
 
-    public function testFormMoveAndNewSheet(): void
+    public function testNewSheetGoesFirst(): void
     {
-        $stored = HomeLayout::fromForm(['feed', 'kpis', 'sheet:3'], ['kpis', 'sheet:3'], ['kpis' => 'wide'], HomeLayout::ROLE_MANAGER, [3]);
-        self::assertSame(1, $stored['v']);
-        self::assertSame(['feed', 'kpis', 'sheet:3'], array_slice(array_column($stored['items'], 'id'), 0, 3));
-        self::assertTrue($stored['items'][0]['hidden']);
-        self::assertSame('wide', $stored['items'][1]['size']);
-        $moved = HomeLayout::move($stored['items'], 'kpis', -1);
-        self::assertSame(['kpis', 'feed'], array_slice(array_column($moved, 'id'), 0, 2));
-        self::assertSame($moved, HomeLayout::move($moved, 'kpis', -1));
-        $with = HomeLayout::withSheet($moved, 12);
-        self::assertSame(['id' => 'sheet:12', 'hidden' => false, 'size' => 'full'], $with[0]);
+        $with = HomeLayout::withSheet(HomeLayout::defaults(HomeLayout::ROLE_MANAGER), 12);
+        self::assertSame(['id' => 'sheet:12', 'w' => 12, 'h' => 4, 'hidden' => false], $with[0]);
+        self::assertSame(1, \count(array_filter($with, static fn (array $i): bool => $i['id'] === 'sheet:12')));
         self::assertFalse(HomeLayout::isSheet('sheet:0'));
         self::assertFalse(HomeLayout::isSheet('sheet:1x'));
+        self::assertSame(['def' => [12, 4], 'min' => [6, 3], 'max' => [12, HomeLayout::MAX_ROWS]], HomeLayout::bounds('sheet:3'));
+        self::assertNull(HomeLayout::bounds('inconnu'));
     }
 
     public function testSheetLimitsAndSanitize(): void

@@ -10,7 +10,8 @@ declare(strict_types=1);
  */
 $hcuBlocks = is_array($home['custom']['blocks'] ?? null) ? $home['custom']['blocks'] : [];
 $hcuSheets = is_array($home['custom']['sheets'] ?? null) ? $home['custom']['sheets'] : [];
-$hcuCanEdit = !empty($home['custom']['can_edit']);
+// Dans un widget, le bouton « Modifier le contenu » est porté par l'en-tête du widget ($hcuNoBar).
+$hcuCanEdit = !empty($home['custom']['can_edit']) && empty($hcuNoBar);
 // Fermeture : les variables du gabarit de bloc ($b, $p, $h…) ne débordent pas sur le tableau de bord.
 $hcuRender = static function (array $pbBlock, array $pbSheets): void {
     $pbEditing = false;
