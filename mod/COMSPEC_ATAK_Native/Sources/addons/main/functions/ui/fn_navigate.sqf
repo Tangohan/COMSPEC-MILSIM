@@ -92,7 +92,8 @@ if (_prevPage isEqualTo "ROUTE" && {_page isNotEqualTo "ROUTE"}) then {
 if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER", "SPACE"])}) then {
     private _rec = profileNamespace getVariable ["COMSPEC_ATAK_AppRecent", []];
     if !(_rec isEqualType []) then { _rec = []; };
-    _rec = [_page] + (_rec - [_page]);
+    private _recPage = ["recent", _page] call comspec_atak_native_fnc_sseHub;
+    _rec = [_recPage] + (_rec - [_recPage]);
     profileNamespace setVariable ["COMSPEC_ATAK_AppRecent", _rec select [0, 12]];
     private _seen = profileNamespace getVariable ["COMSPEC_ATAK_AppSeen", []];
     if (_seen isEqualType [] && {!(_page in _seen)}) then { _seen pushBack _page; profileNamespace setVariable ["COMSPEC_ATAK_AppSeen", _seen]; };

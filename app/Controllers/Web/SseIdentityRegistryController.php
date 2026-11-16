@@ -1616,7 +1616,7 @@ final class SseIdentityRegistryController
         $data['canManage'] = $this->canManage();
         $data['canGrant'] = !$this->access->isGuest() && function_exists('can') && (can('atak.sse.grant') || can('admin.access'));
         $data['canSeeTruth'] = $this->canSeeTruth();
-        $data['activeNav'] = 'papiers';
+        $data['activeNav'] = (string) ($data['activeNav'] ?? 'papiers');
         try {
             $data['canMemberPapers'] = $this->memberPapersRights() !== null;
         } catch (\Throwable) {

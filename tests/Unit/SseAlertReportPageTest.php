@@ -916,4 +916,39 @@ final class SseAlertReportPageTest extends TestCase
         $c->index($this->get(['onglet' => 'tous']));
         self::assertStringNotContainsString('Dumembre', (string) json_encode($this->last[1]));
     }
+
+    /** Contrôleur branché sur la vraie coque du portail (aucune vue simulée). */
+    private function shellController(SseSheetAccess $access): SseAlertReportController
+    {
+        $alerts = $this->alertService();
+
+        return new SseAlertReportController(null, null, $access, $alerts, new SseAlertGameService(null, null, $alerts), $this->proposals($alerts), new SseAlertReportPhotos($this->privateDir), null, true);
+    }
+
+    public function testThePageUsesThePortalShellWithItsHeaderBannerAndTheSignalementsEntryActive(): void
+    {
+        $s = $this->seed();
+        $_SERVER['REQUEST_URI'] = '/atak/sse/signalement/' . $s['notice']['token'];
+        $html = $this->shellController($this->manager())->show($this->get(), ['token' => $s['notice']['token']])->body();
+
+        self::assertStringContainsString('class="iw-topbar sx-topbar"', $html, 'barre du haut du portail');
+        self::assertStringContainsString('sx-classbar', $html, 'bandeau de classification');
+        self::assertStringContainsString('aria-label="Navigation du bureau SSE"', $html, 'navigation du portail');
+        self::assertStringContainsString('class="sal" data-sal', $html, 'le contenu de la page est dans la coque');
+        self::assertSame(1, substr_count($html, 'role="banner"'), 'un seul en-tête de portail');
+        // L'entrée active et le fil d'Ariane sont ceux des signalements, pas ceux des papiers d'identité.
+        self::assertMatchesRegularExpression('#href="[^"]*/atak/sse/avis/signalements" class="iw-nav-link sx-nav__link is-active"#', $html);
+        self::assertStringNotContainsString('/atak/sse/papiers" class="iw-nav-link sx-nav__link is-active"', $html);
+    }
+
+    public function testTheUniformNotFoundPageAlsoCarriesThePortalShell(): void
+    {
+        $this->seed();
+        $_SERVER['REQUEST_URI'] = '/atak/sse/signalement/' . str_repeat('Z', 22);
+        $res = $this->shellController($this->reader())->show($this->get(), ['token' => str_repeat('Z', 22)]);
+
+        self::assertSame(404, $res->statusCode());
+        self::assertStringContainsString('sx-topbar', $res->body());
+        self::assertStringContainsString('Signalement introuvable', $res->body());
+    }
 }

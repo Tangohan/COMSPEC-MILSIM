@@ -44,6 +44,12 @@ body.sse-iw {
 }
 .sx-topbar .sx-search { flex: 1 1 320px; min-width: 0; max-width: 620px; }
 .sx-topbar .sx-actions { margin-left: auto; }
+.sx-topbar .sx-brand, .sx-topbar .sx-actions, .sx-topbar .sx-session { flex-shrink: 0; white-space: nowrap; }
+.sx-topbar .sx-actions { flex-wrap: nowrap; }
+/* Écran de 1024 px : le raccourci « Aller à une page » cède la place pour que la barre reste sur une ligne. */
+@media (min-width: 981px) and (max-width: 1240px) {
+    .sx-topbar .sx-cmd { display: none; }
+}
 .sx-burger {
     display: none;
     align-items: center;
