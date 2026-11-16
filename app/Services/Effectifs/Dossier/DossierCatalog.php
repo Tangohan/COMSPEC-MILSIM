@@ -54,6 +54,8 @@ final class DossierCatalog
     public const ACTION_REMIND = 'remind';
     public const ACTION_REMOVE = 'remove';
     public const ACTION_ADD = 'add';
+    /** Vérification de disponibilité enregistrée (fiche ou tableur des effectifs) : historique seulement, pas un geste d'étape. */
+    public const ACTION_CHECK = 'check';
 
     /** @return array<string, string> parcours dans l'ordre d'affichage */
     public static function trackLabels(): array

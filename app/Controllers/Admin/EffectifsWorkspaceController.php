@@ -276,7 +276,8 @@ class EffectifsWorkspaceController
         $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
         // Filtre « Actif : sessions de plus d'1 h » : au moins une session qui compte sur 30 jours (ou aucune).
         $sessionsRaw = $request->query('sessions', '');
-        $sessionsFilter = is_string($sessionsRaw) && in_array($sessionsRaw, ['actif', 'inactif'], true) ? $sessionsRaw : '';
+        // « À vérifier » (verifierN) : aucune session qui compte et aucune vérification enregistrée depuis N jours.
+        $sessionsFilter = is_string($sessionsRaw) && in_array($sessionsRaw, array_merge(['actif', 'inactif'], \App\Support\RosterAvailabilityFilter::values()), true) ? $sessionsRaw : '';
         $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $jobTagFilter > 0 || $unitFilter > 0 || $gradeCategoryFilter !== '' || $sessionsFilter !== '';
         if ($needsFullLoad) {
             $fetchLimit = min(2000, max($total, 1));
@@ -299,7 +300,11 @@ class EffectifsWorkspaceController
             if (in_array($sort, ['heures_vol', 'temps_mission'], true) || $sessionsFilter !== '') {
                 $allRows = $this->attachRosterFieldData($tenantId, $allRows, false);
             }
-            if ($sessionsFilter !== '') {
+            if (\App\Support\RosterAvailabilityFilter::days($sessionsFilter) > 0) {
+                $latest = (new \App\Repositories\MemberAvailabilityCheckRepository())->latestForUsers($tenantId, array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $allRows));
+                $allRows = \App\Support\RosterAvailabilityFilter::apply($allRows, $latest, \App\Support\RosterAvailabilityFilter::days($sessionsFilter), time());
+                $total = count($allRows);
+            } elseif ($sessionsFilter !== '') {
                 $wantActive = $sessionsFilter === 'actif';
                 $allRows = array_values(array_filter($allRows, static fn (array $r): bool => !empty($r['server_sessions']['active']) === $wantActive));
                 $total = count($allRows);
@@ -359,8 +364,25 @@ class EffectifsWorkspaceController
             $viewerId
         );
         $jobEdit = $this->rosterJobEditData($tenantId, $rowIds, EffectifsLmsAccess::canManageAssignments($gate));
+        // Vérification de disponibilité : bouton par ligne et groupé (gérer le suivi), dernière vérification (le consulter).
+        $canCheckAvailability = MemberAvailabilityCheckController::canCheck($gate);
+        $availabilityLatest = [];
+        $availabilityReady = false;
+        if ($canCheckAvailability || MemberAvailabilityCheckController::canView($gate)) {
+            try {
+                $checkRepo = new \App\Repositories\MemberAvailabilityCheckRepository();
+                $availabilityReady = $checkRepo->schemaReady();
+                $availabilityLatest = $checkRepo->latestForUsers($tenantId, $rowIds);
+            } catch (\Throwable $e) {
+                error_log('Effectifs roster: vérifications de disponibilité : ' . $e->getMessage());
+            }
+        }
 
         return $this->shell('admin.effectifs_workspace.roster', [
+            'canCheckAvailability' => $canCheckAvailability,
+            'rosterAvailabilityChecks' => $availabilityLatest,
+            'availabilityChecksReady' => $availabilityReady,
+            'availabilitySettingsUrl' => \App\Support\BackOfficeRightGuard::allows(\App\Support\BackOfficeRightGuard::MANAGERS) ? url('back-office/roleplay/sessions') . '#regles' : '',
             'title' => 'Tableur des effectifs',
             'effectifsNav' => 'roster',
             'rosterRows' => $rows,
@@ -1689,7 +1711,21 @@ class EffectifsWorkspaceController
         } catch (\Throwable $e) {
             error_log('Effectifs member: fiabilisation failed: ' . $e->getMessage());
         }
+        // Vérifications de disponibilité : lancer = gérer le suivi des dossiers ; lire l'historique = le consulter.
+        $canCheckAvailability = MemberAvailabilityCheckController::canCheck($gate);
+        $availabilityChecks = [];
+        $availabilityChecksReady = false;
+        if ($canCheckAvailability || MemberAvailabilityCheckController::canView($gate)) {
+            try {
+                $checkRepo = new \App\Repositories\MemberAvailabilityCheckRepository();
+                $availabilityChecksReady = $checkRepo->schemaReady();
+                $availabilityChecks = \App\Services\Effectifs\Availability\AvailabilityCheckHistory::present($tenantId, $checkRepo->listForUser($tenantId, $id, 5));
+            } catch (\Throwable $e) {
+                error_log('Effectifs member: vérifications de disponibilité : ' . $e->getMessage());
+            }
+        }
         $chronology = MemberChronology::build([
+            'availability_checks' => $availabilityChecks,
             'grades' => is_array($insights['grades']['entries'] ?? null) ? $insights['grades']['entries'] : [],
             'org_history' => $orgHistory,
             'service_history' => $serviceHistory,
@@ -1758,6 +1794,9 @@ class EffectifsWorkspaceController
             'ficheTab' => $ficheTab,
             'memberAvailability' => $memberAvailability,
             'availabilitySettingsUrl' => $availabilitySettingsUrl,
+            'canCheckAvailability' => $canCheckAvailability,
+            'availabilityChecks' => $availabilityChecks,
+            'availabilityChecksReady' => $availabilityChecksReady,
             'memberChronology' => $chronology,
             'dataReliability' => $dataReliability,
             'chronologyType' => $chronologyType,
@@ -1833,7 +1872,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css', 'qualification-display.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css', 'qualification-display.css', 'eff-availability-check.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
@@ -5397,7 +5436,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css', 'access-register.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css', 'access-register.css', 'eff-availability-check.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'effKpi' => $kpi,

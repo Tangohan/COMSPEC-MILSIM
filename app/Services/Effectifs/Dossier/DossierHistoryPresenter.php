@@ -25,6 +25,7 @@ final class DossierHistoryPresenter
             DossierCatalog::ACTION_REMIND => 'a relancé le membre pour l’étape',
             DossierCatalog::ACTION_REMOVE => 'a retiré l’étape',
             DossierCatalog::ACTION_ADD => 'a ajouté l’étape',
+            DossierCatalog::ACTION_CHECK => 'a enregistré l’étape',
         ];
     }
 
@@ -42,6 +43,7 @@ final class DossierHistoryPresenter
             DossierCatalog::ACTION_REMIND => 'a relancé le membre',
             DossierCatalog::ACTION_REMOVE => 'a retiré l’étape',
             DossierCatalog::ACTION_ADD => 'a ajouté l’étape',
+            DossierCatalog::ACTION_CHECK => 'a vérifié la disponibilité',
         ];
     }
 
@@ -89,6 +91,7 @@ final class DossierHistoryPresenter
                     => $state($before['state'] ?? null) . ' → ' . $state($after['state'] ?? null),
                 DossierCatalog::ACTION_NOTE => mb_strimwidth((string) ($after['note'] ?? ''), 0, 240, '…'),
                 DossierCatalog::ACTION_ADD => 'échéance : ' . $day($after['due_on'] ?? null) . ' · responsable : ' . $who((int) ($after['owner_user_id'] ?? 0)),
+                DossierCatalog::ACTION_CHECK => self::checkChange((string) ($before['conclusion'] ?? ''), (string) ($after['conclusion'] ?? '')),
                 default => '',
             };
             $out[] = [
@@ -106,6 +109,19 @@ final class DossierHistoryPresenter
         }
 
         return $out;
+    }
+
+    /** « Conclusion : Disponible » ou, si le responsable a corrigé, « Conclusion : Inactif (proposée : Peu disponible) ». */
+    private static function checkChange(string $proposed, string $kept): string
+    {
+        $label = static fn (string $k): string => \App\Services\Effectifs\Availability\AvailabilityCheck::conclusionLabel($k);
+        if ($kept === '') {
+            return '';
+        }
+
+        return $proposed !== '' && $proposed !== $kept
+            ? str_replace(['%1', '%2'], [$label($kept), $label($proposed)], 'Conclusion : %1 (proposée : %2)')
+            : str_replace('%1', $label($kept), 'Conclusion : %1');
     }
 
     /** @return array<string, mixed> */

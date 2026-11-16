@@ -43,12 +43,38 @@ $avWindows = [7 => '7 jours', 30 => '30 jours', 90 => '90 jours'];
 $avLast = is_array($avSum['last_qualifying'] ?? null) ? $avSum['last_qualifying'] : null;
 $avRecent = is_array($av['recent'] ?? null) ? $av['recent'] : [];
 $avExplain = $avTpl('Une session est une présence continue sur le serveur de la communauté : les reconnexions de moins de %1 minutes restent la même session. Elle compte quand elle dure %2 minutes ou plus.', [$avGap, $avMin]);
+// Vérification guidée : bouton (droit de gérer le suivi des dossiers) et dernières vérifications enregistrées.
+$avCanCheck = (bool) ($canCheckAvailability ?? false);
+$avChecks = is_array($availabilityChecks ?? null) ? $availabilityChecks : [];
+$avChecksReady = (bool) ($availabilityChecksReady ?? false);
+$avLastCheck = $avChecks[0] ?? null;
+$avMemberId = (int) ($id ?? 0);
+$avMemberName = (string) ($name ?? '');
 ?>
 <section class="eff-fm-sec eff-fm-av" id="disponibilite" aria-labelledby="disponibilite-titre">
     <header class="eff-fm-sec__head">
         <h2 id="disponibilite-titre">Disponibilité</h2>
         <p><?= $avh($avTpl('Sessions de jeu sur le serveur de la communauté : seules celles de %1 comptent.', [$avThreshold])) ?></p>
     </header>
+
+    <?php if ($avCanCheck || $avLastCheck !== null): ?>
+        <div class="eff-avc-last" id="disponibilite-verification">
+            <div class="eff-avc-last__txt">
+                <?php if ($avLastCheck !== null): ?>
+                    <p><?= $avh('Dernière vérification :') ?> <span class="eff-avc-pill is-<?= $avh($avLastCheck['conclusion']) ?>"><?= $avh($avLastCheck['conclusion_label']) ?></span></p>
+                    <p><?= $avh($avTpl('Le %1 par %2', [$avLastCheck['date_label'], $avLastCheck['by']])) ?><?= $avLastCheck['corrected'] ? ' · ' . $avh($avTpl('proposée : %1', [$avLastCheck['proposed_label']])) : '' ?></p>
+                <?php elseif ($avChecksReady || $avCanCheck): ?>
+                    <p>Aucune vérification enregistrée pour ce membre.</p>
+                    <p>La vérification relit les sessions, les connexions, les absences et le suivi RH, puis propose une conclusion.</p>
+                <?php endif; ?>
+            </div>
+            <?php if ($avCanCheck): ?>
+                <button type="button" class="eff-avc-open" data-avc-open data-avc-ids="<?= $avMemberId ?>" data-avc-name="<?= $avh($avMemberName) ?>">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3 7 4-14 3 7h4"/></svg>Vérifier la disponibilité
+                </button>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <?php if (!$avReady): ?>
         <div class="eff-fm-av__note" role="status">
@@ -141,6 +167,27 @@ $avExplain = $avTpl('Une session est une présence continue sur le serveur de la
                     <?php endforeach; ?>
                 </ol>
             <?php endif; ?>
+        </details>
+    <?php endif; ?>
+
+    <?php if ($avChecks !== []): ?>
+        <details class="eff-fm-av__drawer" id="disponibilite-historique">
+            <summary>
+                <span class="eff-fm-av__drawer-title">Vérifications enregistrées</span>
+                <span class="eff-fm-av__drawer-sub">Les cinq dernières, avec la conclusion retenue, la note et la suite.</span>
+            </summary>
+            <ol class="eff-avc-hist">
+                <?php foreach ($avChecks as $c): ?>
+                    <li>
+                        <time datetime="<?= $avh($c['created_at']) ?>"><?= $avh($c['date_label']) ?></time>
+                        <span class="eff-avc-pill is-<?= $avh($c['conclusion']) ?>"><?= $avh($c['conclusion_label']) ?></span>
+                        <span>
+                            <?= $avh($avTpl('Par %1', [$c['by']])) ?><?= $c['corrected'] ? ' · ' . $avh($avTpl('proposée : %1', [$c['proposed_label']])) : '' ?><?= $c['follow_up'] !== 'none' ? ' · ' . $avh($c['follow_up_label']) : '' ?>
+                            <?php if ($c['note'] !== ''): ?><br><span class="eff-avc-hist__note"><?= $avh($c['note']) ?></span><?php endif; ?>
+                        </span>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
         </details>
     <?php endif; ?>
 
