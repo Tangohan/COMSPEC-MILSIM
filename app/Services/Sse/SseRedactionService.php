@@ -92,6 +92,17 @@ final class SseRedactionService
         $this->db = $db ?? Database::getInstance();
     }
 
+    /** @param array<string, string>|null $required */
+    public static function requiredLevel(string $category, ?array $required = null): string
+    {
+        $level = $required[$category] ?? null;
+        if (is_string($level) && isset(self::LEVELS[$level])) {
+            return $level;
+        }
+
+        return self::CATEGORIES[$category]['level'] ?? SseCaseRepository::CLASS_COMMAND;
+    }
+
     public static function levelRank(string $level): int
     {
         return self::LEVELS[$level] ?? self::LEVELS[SseCaseRepository::CLASS_COMMAND];
@@ -108,10 +119,15 @@ final class SseRedactionService
         return self::CATEGORIES[$key]['label'] ?? 'Élément';
     }
 
-    /** Une catégorie est-elle lisible en clair pour une diffusion à ce niveau ? */
-    public static function visibleAt(string $category, string $releaseLevel): bool
+    /**
+     * Une catégorie est-elle lisible en clair pour une diffusion à ce niveau ? `$required` : niveaux requis réglés pour ce
+     * document (SseSheetVisibility), catégorie => niveau ; sans lui, ceux de CATEGORIES.
+     *
+     * @param array<string, string>|null $required
+     */
+    public static function visibleAt(string $category, string $releaseLevel, ?array $required = null): bool
     {
-        $required = self::CATEGORIES[$category]['level'] ?? SseCaseRepository::CLASS_COMMAND;
+        $required = self::requiredLevel($category, $required);
 
         return self::levelRank($releaseLevel) >= self::levelRank($required);
     }

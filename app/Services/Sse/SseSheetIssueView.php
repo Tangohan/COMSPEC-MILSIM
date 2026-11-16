@@ -29,12 +29,14 @@ final class SseSheetIssueView
             }
         }
         $ready = SseSheetRepository::ready();
+        $levels = new SseSheetLevelService();
         $out = [];
         foreach ($issues as $i) {
             $level = SseUsClassification::normalize((string) $i['classification']);
             $x = SseRedactionExplain::forIssue($i);
             $open = SseRedactionService::levelRank($level) <= SseRedactionService::levelRank($access->level());
-            $needed = SseSheetReissueService::levelNeeded($x['by']);
+            $req = is_array($i['snapshot']['data']['visibility'] ?? null) ? SseSheetVisibility::effective($i['snapshot']['data']['visibility']) : null;
+            $needed = SseSheetReissueService::levelNeeded($x['by'], $req);
             $above = SseSheetReissueService::levelsAbove($level, $access);
             $can = $ready && $x['total'] > 0 && $open && $i['model'] !== 'notice' && $access->canDraft() && $access->denial((string) $i['model']) === null && $above !== [];
             $rgb = SseUsClassification::rgb($level);
@@ -42,7 +44,8 @@ final class SseSheetIssueView
                 'x' => $x, 'level' => $level, 'abbr' => SseUsClassification::abbr($level), 'rgb' => $rgb,
                 'ink' => (0.299 * $rgb[0] + 0.587 * $rgb[1] + 0.114 * $rgb[2]) > 150 ? '#000000' : '#ffffff',
                 'open' => $open, 'can_reissue' => $can, 'levels_above' => $above, 'needed' => $needed,
-                'needed_abbr' => $needed !== null ? SseUsClassification::abbr($needed) : '',
+                'needed_abbr' => $needed !== null ? SseUsClassification::abbr($needed) : '', 'req' => $req,
+                'level_menu' => $ready && $open && $access->canDraft() ? $levels->options($i, $access) : [],
                 'replaced_by' => $replacedBy[(int) $i['id']] ?? '', 'reissue_of' => (string) ($i['snapshot']['reissue']['ref'] ?? ''),
             ];
         }

@@ -62,6 +62,25 @@
         select.addEventListener('change', function () { syncPreview(select); });
     });
 
+    // Télécharger à un niveau : le récapitulatif du niveau choisi seul est visible ; un niveau qui exige la réémission ne se télécharge pas.
+    Array.prototype.forEach.call(document.querySelectorAll('select[data-shx-dl-level]'), function (select) {
+        var form = select.form;
+        if (!form) { return; }
+        var show = function () {
+            Array.prototype.forEach.call(form.querySelectorAll('.shx-dl__lvl'), function (b) {
+                b.hidden = b.getAttribute('data-level') !== select.value;
+            });
+            var go = form.querySelector('[data-shx-dl-go]');
+            var opt = select.options[select.selectedIndex];
+            if (go) { go.disabled = !!(opt && opt.disabled); }
+        };
+        select.addEventListener('change', show);
+        form.addEventListener('submit', function () {
+            window.setTimeout(function () { closeDialog(form.closest('dialog')); }, 400);
+        });
+        show();
+    });
+
     var panel = document.querySelector('[data-shx-redact]');
     var level = document.getElementById('shx-class');
     if (panel && level) {

@@ -1,0 +1,70 @@
+/*
+ * SSE › Visibilité par niveau : tableau « rubriques × niveaux » (modale de l'éditeur et de « Gestion des fiches »). Reprend les
+ * variables du portail (thèmes clair et sombre) ; textes de 13 px au moins, cibles de 44 px au moins, aucun débordement de page.
+ */
+.svl { display: grid; gap: 0.75rem; min-width: 0; }
+.svl-scroll { overflow-x: auto; border: 1px solid var(--border); background: var(--surface-2, transparent); }
+.svl-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; table-layout: fixed; }
+.svl-table th, .svl-table td { padding: 0; border-top: 1px solid var(--border-soft, var(--border)); text-align: center; vertical-align: middle; }
+.svl-table thead th { border-top: 0; }
+.svl-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.svl-head { padding: 0.5rem 0.2rem !important; color: var(--text); font-weight: 700; }
+.svl-head--cat { text-align: left !important; padding-left: 0.8rem !important; color: var(--muted); font-weight: 600; width: 36%; }
+.svl-abbr { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1rem; }
+.svl-lvname { display: block; color: var(--muted); font-size: 0.82rem; font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; }
+.svl-cat { text-align: left !important; padding: 0.55rem 0.8rem !important; font-weight: 400; }
+.svl-cat__name { display: block; color: var(--text-strong, var(--text)); font-weight: 700; font-size: 0.92rem; }
+.svl-cat__covers { display: block; color: var(--muted); font-size: 0.85rem; line-height: 1.35; }
+.svl-cell { position: relative; min-width: 44px; height: 56px; }
+.svl-pick { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 56px; min-width: 44px; margin: 0 !important; cursor: pointer; position: relative; }
+.svl-pick input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.svl-pick input:disabled { cursor: not-allowed; }
+.svl-mark { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 6px; border: 2px solid transparent; }
+.svl-on, .svl-off, .svl-lock { display: none; line-height: 0; }
+.svl-cell.is-on .svl-on { display: inline-flex; }
+.svl-cell.is-off .svl-off { display: inline-flex; }
+.svl-cell.is-locked .svl-lock { display: inline-flex; }
+.svl-cell.is-on { background: rgba(60, 170, 90, 0.13); color: #2f8a4a; }
+.svl-cell.is-off { background: rgba(120, 120, 120, 0.12); color: var(--text); }
+.svl-cell.is-locked { background: repeating-linear-gradient(135deg, rgba(120, 120, 120, 0.1) 0 6px, transparent 6px 12px); color: var(--muted); }
+.svl-cell.is-picked .svl-mark { border-color: currentColor; background: rgba(255, 255, 255, 0.06); }
+.svl-pick:focus-within .svl-mark { outline: 2px solid var(--green-bright, #5fb06a); outline-offset: 2px; }
+.svl-total { height: 44px; color: var(--muted); font-size: 0.9rem; }
+.svl-total b { color: var(--text-strong, var(--text)); }
+.svl-table tfoot th { background: transparent; }
+.svl-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin: 0; padding: 0; color: var(--muted); font-size: 0.85rem; }
+.svl-legend li { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 28px; }
+.svl-key { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 5px; }
+.svl-key--on { background: rgba(60, 170, 90, 0.16); color: #2f8a4a; }
+.svl-key--off { background: rgba(120, 120, 120, 0.16); color: var(--text); }
+.svl-key--lock { background: rgba(120, 120, 120, 0.1); color: var(--muted); }
+.svl-reset { justify-self: start; min-height: 44px; padding: 0.4rem 0.9rem; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 0.9rem; cursor: pointer; }
+.svl-reset:hover, .svl-reset:focus-visible { border-color: var(--green-bright, #5fb06a); }
+html[data-theme="dark"] .svl-cell.is-on, body.sse-theme-bureau .svl-cell.is-on { color: #7bd88f; }
+html[data-theme="dark"] .svl-key--on, body.sse-theme-bureau .svl-key--on { color: #7bd88f; }
+@media (max-width: 640px) {
+    .svl-head--cat { width: 34%; }
+    .svl-cat { padding: 0.5rem 0.5rem !important; }
+    .svl-cat__covers { display: none; }
+    .svl-lvname { font-size: 0.8125rem; }
+}
+
+/* Bouton-icône « Visibilité par niveau » et ligne de résumé par modèle (Gestion des fiches). */
+.svl-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-width: 44px; min-height: 44px; padding: 0.35rem 0.8rem; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 0.9rem; cursor: pointer; }
+.svl-trigger:hover, .svl-trigger:focus-visible { border-color: var(--green-bright, #5fb06a); }
+.svl-trigger--icon { padding: 0.35rem; }
+.svl-summary { margin: 0; color: var(--muted); font-size: 0.85rem; }
+.svl-preview { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.svl-preview .svl-trigger { font-size: 0.85rem; }
+.svl-dialog { max-width: min(46rem, calc(100vw - 1.5rem)); width: 100%; padding: 0; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.svl-dialog::backdrop { background: rgba(0, 0, 0, 0.62); }
+.svl-dialog__box { display: grid; gap: 0.75rem; padding: 1.1rem 1.2rem; font-size: 0.95rem; line-height: 1.5; min-width: 0; }
+.svl-dialog__box p { margin: 0; }
+.svl-dialog__title { margin: 0; font-size: 1.15rem; color: var(--text-strong, var(--text)); }
+.svl-dialog__sub { color: var(--muted); font-size: 0.9rem; }
+.svl-dialog__foot { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.2rem; }
+.svl-dialog__foot .btn, .svl-dialog__foot button { min-height: 44px; }
+@media (max-width: 640px) {
+    .svl-dialog { max-width: 100vw; width: 100vw; margin: auto 0 0; max-height: 92vh; overflow-y: auto; }
+    .svl-dialog__foot .btn, .svl-dialog__foot button { flex: 1 1 100%; }
+}
