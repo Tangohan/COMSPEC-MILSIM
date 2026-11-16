@@ -62,6 +62,12 @@ final class ActionCenterController
         return Response::view('layout.main', [
             'title' => 'Mon service — Athena',
             'content' => 'portal.action_center',
+            // Page du menu du back-office : même coque (thèmes clair et sombre) ; l'en-tête est la bande de la vue.
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Tableau de bord et suivi',
+            'boPageTitle' => 'Mon service',
+            'boSkipPageHead' => true,
+            'backOfficePageCss' => ['back-office-bands.css'],
             'action_center_digest' => $digestPayload,
             'mon_service' => $serviceContext,
         ]);
