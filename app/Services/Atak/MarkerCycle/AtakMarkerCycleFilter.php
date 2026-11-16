@@ -16,10 +16,15 @@ use App\Support\ShortCache;
  */
 final class AtakMarkerCycleFilter
 {
-    /** Marqueur épinglé (« permanent » du poste) ou dans le cycle : fragment SQL, un paramètre (début du cycle). */
-    public const MARKER_SQL = " AND (COALESCE(updated_at, created_at, '9999-12-31 00:00:00') >= ? OR marker_data LIKE '%\"web_permanent\":true%')";
+    /**
+     * Marqueur épinglé (« permanent » du poste) ou dans le cycle : fragment SQL, un paramètre (début du cycle).
+     *
+     * Pas de COALESCE avec un littéral de date : MySQL en fait une chaîne dont la collation diffère de celle du paramètre
+     * lié (« Illegal mix of collations », erreur 1267). Une ligne sans aucune date reste visible, comme avant.
+     */
+    public const MARKER_SQL = " AND (COALESCE(updated_at, created_at) >= ? OR (updated_at IS NULL AND created_at IS NULL) OR marker_data LIKE '%\"web_permanent\":true%')";
 
-    public const SHAPE_SQL = " AND (COALESCE(updated_at, created_at, '9999-12-31 00:00:00') >= ? OR COALESCE(JSON_UNQUOTE(JSON_EXTRACT(meta, '\$.web_permanent')), '') = 'true')";
+    public const SHAPE_SQL = " AND (COALESCE(updated_at, created_at) >= ? OR (updated_at IS NULL AND created_at IS NULL) OR COALESCE(JSON_UNQUOTE(JSON_EXTRACT(meta, '\$.web_permanent')), '') = 'true')";
 
     private static ?AtakMarkerCycleService $service = null;
 
