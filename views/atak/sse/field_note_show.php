@@ -88,7 +88,8 @@ $author = trim((string) ($note['author_label'] ?? '')) !== '' ? (string) $note['
 $authorUnit = trim((string) ($note['author_unit'] ?? ''));
 $attCount = count($attachments);
 $canAttach = $canWrite && $attCount < $attachmentsMax;
-$canOpenIntake = !$canManage ? false : \App\Controllers\Admin\AdminIntelIntakeController::allowed();
+// Le traitement complet de la remontée (bureau SSE) : à qui gère les fiches.
+$canOpenIntake = $canManage;
 $base = 'atak/sse/fiches/' . $noteId;
 $ico = static fn (string $d): string => '<svg class="fnr-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="' . $d . '"/></svg>';
 $icons = [
@@ -161,7 +162,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                     <button type="button" data-fnr-copy="<?= $h($ref) ?>">Copier la référence</button>
                     <button type="button" data-fnr-copy="<?= $h(url($base)) ?>">Copier le lien de la fiche</button>
                     <?php if ($canOpenIntake): ?>
-                        <a href="<?= $h(url('back-office/remontees/fiche/' . $noteId)) ?>">Suivi dans Remontées</a>
+                        <a href="<?= $h(url('atak/sse/remontees/fiche/' . $noteId)) ?>">Traitement dans Remontées</a>
                     <?php endif; ?>
                     <?php if ($canTag): ?>
                         <button type="button" data-fnr-open="fnr-dlg-etiquettes" aria-haspopup="dialog">Modifier les étiquettes</button>

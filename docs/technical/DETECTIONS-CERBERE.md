@@ -26,7 +26,7 @@ exclusion, aucun poids, aucun identifiant de règle. L'urgence venait des mêmes
 `IntelIntakeDesk::perform`), journalisée dans le fil de la remontée. Pas de rejet possible.
 
 **Qui les voit.** Les traitants des remontées (droit `treat`) : back-office « Remontées » (`views/admin/intel/intake_show.php`,
-toutes propositions) et onglet « Suivi » d'une fiche au bureau SSE (`views/atak/sse/_intake_suivi.php`, sans l'urgence, qui
+toutes propositions ; page passée depuis au bureau SSE : `/atak/sse/remontees/{source}/{id}`) et onglet « Suivi » d'une fiche au bureau SSE (`views/atak/sse/_intake_suivi.php`, sans l'urgence, qui
 demande le droit « modifier les données »).
 
 **Autres traitements « Cerbère » sans lecture de texte libre.** Cerbère-Liaison, -Validation, -Corrélation, -Détection et
@@ -53,7 +53,8 @@ de fiche attendus). Textes lus : titre (résumé d'un compte rendu), corps, rema
 
 **Explication.** Carte « Détecté : « passage » (contexte) · règle R-14 · confiance 58 % » avec l'extrait surligné ; fenêtre
 « Pourquoi ? » : règle, termes trouvés, exclusions vérifiées, faux amis écartés, calcul, lien vers le réglage
-(`views/partials/cerbere_proposals.php`, back-office et onglet Suivi de la fiche au bureau SSE).
+(`views/partials/cerbere_proposals.php`, page d'une remontée `/atak/sse/remontees/{source}/{id}` et onglet Suivi de la
+fiche au bureau SSE).
 
 **Retour d'expérience.** Appliquer (action habituelle), Ignorer, Mauvaise détection (motif obligatoire) : action `cerbere` de
 `IntelIntakeDesk` (droit `treat`, jeton vérifié par les contrôleurs). Gardés dans `sse_detection_decisions` (une ligne par

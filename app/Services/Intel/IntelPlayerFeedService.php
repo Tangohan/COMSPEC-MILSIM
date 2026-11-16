@@ -417,14 +417,14 @@ class IntelPlayerFeedService
                 $item['summary'] = $clip($v('summary') !== '' ? $v('summary') : $v('details'));
                 $item['grid'] = $v('grid_reference');
                 $item['tags'] = array_filter([$v('priority') !== '' && $v('priority') !== 'ROUTINE' ? $v('priority') : '', (int) ($r['attachment_count'] ?? 0) > 0 ? (int) $r['attachment_count'] . ' pièce(s) jointe(s)' : '']);
-                $item['href'] = 'back-office/remontees/cr/' . $id;
+                $item['href'] = 'atak/sse/remontees/cr/' . $id;
                 break;
             case 'sse_field_notes':
                 $item['title'] = $join([$v('note_kind'), $v('reference_code')]);
                 $item['summary'] = $clip($v('title') !== '' ? $v('title') . ' — ' . $v('body') : $v('body'));
                 $item['grid'] = $join([$v('grid_reference'), $v('place_label')]);
                 $item['tags'] = array_filter([in_array($v('urgency'), ['urgent', 'critique'], true) ? ucfirst($v('urgency')) : '']);
-                $item['href'] = 'back-office/remontees/fiche/' . $id;
+                $item['href'] = 'atak/sse/remontees/fiche/' . $id;
                 break;
             case 'atak_nine_line':
                 $item['title'] = '9-line ' . strtoupper($v('mission_kind') !== '' ? $v('mission_kind') : 'CAS');

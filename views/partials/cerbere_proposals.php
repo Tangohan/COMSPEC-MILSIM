@@ -84,7 +84,7 @@ $cdxCard = static function (array $p) use ($cdh, $cdxExcerpt, $cdxBand, $cdxHidd
             <button type="button" class="<?= $cdh($cdxBtn) ?>" data-cdx-open="<?= $cdh($dom) ?>-bad" aria-haspopup="dialog">Mauvaise détection</button>
             <button type="button" class="<?= $cdh($cdxBtn) ?> cdx-why" data-cdx-open="<?= $cdh($dom) ?>-why" aria-haspopup="dialog">Pourquoi ?</button>
         </div>
-        <?php if (!$applicable): ?><p class="cdx-dim">L’urgence s’applique depuis le back-office « Remontées ».</p><?php endif; ?>
+        <?php if (!$applicable): ?><p class="cdx-dim">Appliquer l’urgence demande le droit « modifier les données » des remontées.</p><?php endif; ?>
     </article>
     <?php
 

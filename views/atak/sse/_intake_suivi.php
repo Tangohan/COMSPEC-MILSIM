@@ -12,7 +12,8 @@ use App\Services\Intel\IntelIntakeService;
  * @var array<string, mixed> $intakeDesk
  * @var list<array{id: int, label: string}> $intakeMembers
  * @var array<string, string> $intakeTypes
- * @var bool $intakeBackOffice accès au back-office « Remontées »
+ * Depuis la page d'une fiche, chaque formulaire porte retour=fiche : l'action revient sur la fiche (#suivi). Le
+ * traitement complet (données, caviardage, suppression, Steam, liens, historique) est sur la page de la remontée.
  * @var string $intakePart
  */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -24,7 +25,7 @@ $isState = (string) $isIt['state'];
 $isOpen = !empty($isd['open']);
 $isTreat = $isRights['treat'] && empty($isIt['deleted']);
 $isBase = url('atak/sse/remontees/' . $isSrc . '/' . (int) $isIt['id']);
-$isCsrf = '<input type="hidden" name="_csrf_token" value="' . $h(\App\Core\Csrf::token()) . '">';
+$isCsrf = '<input type="hidden" name="_csrf_token" value="' . $h(\App\Core\Csrf::token()) . '">' . ($isSrc === 'fiche' ? '<input type="hidden" name="retour" value="fiche">' : '');
 $isTone = ['a_traiter' => 'new', 'prise_en_compte' => 'busy', 'en_cours' => 'busy', 'transmise' => 'busy', 'exploitee' => 'done'][$isState] ?? 'idle';
 $isChipTone = ['danger' => 'critical', 'warn' => 'warning', 'caution' => 'caution'];
 $isUrl = static fn (string $s, int $i): string => $s === 'fiche' ? url('atak/sse/fiches/' . $i) : url('atak/sse/remontees/cr/' . $i);
@@ -121,8 +122,8 @@ $cdxManageUrl = \App\Controllers\Web\SseDetectionController::manageUrlForSession
             </li>
         </ol>
     <?php endif; ?>
-    <?php if (!empty($intakeBackOffice)): ?>
-        <a class="btn btn--ghost fnr-wide" href="<?= $h(url('back-office/remontees/' . $isSrc . '/' . (int) $isIt['id'])) ?>">Ouvrir dans le back-office Remontées</a>
+    <?php if ($isRights['treat']): ?>
+        <a class="btn btn--ghost fnr-wide" href="<?= $h($isBase) ?>">Traitement complet de la remontée</a>
     <?php endif; ?>
 <?php elseif ($isTreat): ?>
     <?php $cdxPart = 'dialogs'; require __DIR__ . '/../../partials/cerbere_proposals.php'; ?>

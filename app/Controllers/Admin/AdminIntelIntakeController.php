@@ -4,65 +4,41 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin;
 
-use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
-use App\Repositories\SseCaseRepository;
 use App\Services\Intel\IntelIntakeDesk;
 use App\Services\Intel\IntelIntakePresenter;
 use App\Services\Intel\IntelIntakeService;
-use App\Services\Intel\IntelPlayerFeedService;
-use App\Services\Intel\IntelPlayerIdentity;
-use App\Services\Intel\IntelRedaction;
-use App\Services\Sse\SseClearanceService;
+use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseAccessPolicy;
 use App\Support\SseAccessCatalog;
 
 /**
- * Back-office « Remontées » : tous les comptes rendus et toutes les fiches de renseignement dans un fil de suivi,
- * à la manière des pull requests (liste ouverte / close, fil de discussion, attribution, état d'exploitation).
- *   GET  /back-office/remontees                        liste (onglets, filtres)
- *   GET  /back-office/remontees/joueurs                tableau par joueur (un compteur par catégorie de remontée)
- *   GET  /back-office/remontees/joueurs/{key}          fil chronologique de tout ce qu'un joueur a remonté
- *   GET  /back-office/remontees/{source}/{id}          fil d'une remontée
- *   GET  /back-office/remontees/{source}/{id}/suggestions  listes des fenêtres (destinataires, doublons, éléments à relier)
- *   POST /back-office/remontees/{source}/{id}/{action} prise en compte, commentaire, état, attribution, type, thèmes, données,
- *                                                      caviardage, flou, suppression, restauration, conversion, lien,
- *                                                      notification Discord, lecture de l'identifiant Steam
- * Le traitement lui-même est dans IntelIntakeDesk, partagé avec le bureau SSE (SseIntakeController).
- * Accès : administrateurs de la communauté et responsables SSE (gestion des dossiers ou délivrance des accès).
+ * Anciennes adresses du back-office « Remontées » : toutes les pages vivent désormais dans le bureau SSE
+ * (App\Controllers\Web\SseIntakeController, /atak/sse/remontees/*). Chaque adresse renvoie vers son équivalent :
+ *   GET  /back-office/remontees                         → 302 /atak/sse/remontees (filtres conservés)
+ *   GET  /back-office/remontees/joueurs                 → 302 /atak/sse/remontees/joueurs
+ *   GET  /back-office/remontees/joueurs/{key}           → 302 /atak/sse/remontees/joueurs/{key}
+ *   GET  /back-office/remontees/{source}/{id}           → 302 /atak/sse/remontees/{source}/{id} (même identifiant)
+ *   GET  /back-office/remontees/{source}/{id}/suggestions → 302 même chemin au bureau
+ *   POST /back-office/remontees/{source}/{id}/{action}  → 307 même chemin au bureau (corps et noms de champs conservés)
+ * 302 et non 301 : la redirection dépend de la session (sans accès au bureau SSE, une page l'explique au lieu de
+ * renvoyer vers le sas) et ne doit pas rester en cache dans le navigateur.
+ *
+ * Restent ici les règles partagées : l'ancien droit d'accès (allowed), l'accès aux fiches des membres, le badge du
+ * tableau de bord et les listes des fenêtres (suggest), utilisés par le bureau.
  */
 final class AdminIntelIntakeController
 {
-    public function __construct(
-        private ?IntelIntakeService $intake = null,
-        private ?SseClearanceService $clearance = null,
-        private ?IntelPlayerFeedService $feed = null,
-        private ?IntelIntakeDesk $desk = null,
-    ) {
-        $this->intake ??= new IntelIntakeService();
-    }
-
-    private function desk(): IntelIntakeDesk
-    {
-        return $this->desk ??= new IntelIntakeDesk($this->intake);
-    }
+    public const SSE_BASE = 'atak/sse/remontees';
 
     /**
-     * Droits du back-office : qui entre traite et gère (règle d'origine de la page) ; caviarder demande la plus haute
-     * habilitation ; l'identifiant Steam et la fiche du membre sont réservés aux administrateurs de la communauté.
-     *
-     * @return array<string, bool>
+     * @param (\Closure(): bool)|null $sseReachable la session peut-elle entrer au bureau SSE ? (tests)
      */
-    private function rights(): array
+    public function __construct(private ?\Closure $sseReachable = null)
     {
-        return [
-            'treat' => true, 'manage' => true, 'convert' => true, 'link' => true, 'discord' => true,
-            'redact' => $this->redactAllowed(),
-            'steam' => self::canSeeMembers(),
-        ];
     }
 
     public static function allowed(): bool
@@ -82,135 +58,89 @@ final class AdminIntelIntakeController
         return SseAccessPolicy::sessionAllows('dossiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => false, 'legacy' => $legacy, 'door_mode' => SseAccessPolicy::DOOR_ENTRY]);
     }
 
+    /** Lien vers la fiche du membre et identifiant Steam : réservés aux administrateurs de la communauté. */
+    public static function canSeeMembers(): bool
+    {
+        return function_exists('can') && (can('admin.organization') || can('admin.access') || can('admin.system'));
+    }
+
     public function index(Request $request, array $params = []): Response
     {
-        $guard = $this->guard();
-        if ($guard instanceof Response) {
-            return $guard;
-        }
-        $tenantId = $guard;
-        $ready = $this->intake->schemaReady();
-        $tab = (string) ($request->query('etat') ?? 'open');
-        $tab = in_array($tab, ['open', 'closed', 'mine', 'deleted', 'all'], true) || isset(IntelIntakeService::STATES[$tab]) ? $tab : 'open';
-        $source = (string) ($request->query('source') ?? '');
-        $source = isset(IntelIntakeService::SOURCES[$source]) ? $source : '';
-        $filters = [
-            'source' => $source,
-            'type' => strtoupper(trim((string) ($request->query('type') ?? ''))),
-            'q' => mb_substr(trim((string) ($request->query('q') ?? '')), 0, 80),
-            'assignee' => (string) ($request->query('attribue') ?? ''),
-        ];
-        $me = (int) Session::get('user_id');
-        $listFilters = $filters + [
-            'state' => $tab === 'mine' ? 'open' : ($tab === 'deleted' ? 'all' : $tab),
-            'deleted' => $tab === 'deleted',
-        ];
-        if ($tab === 'mine') {
-            $listFilters['assignee'] = 'me';
-        }
-        $items = $ready ? $this->intake->listItems($tenantId, $listFilters, $me) : [];
-        $badge = (string) ($request->query('pastille') ?? '');
-        $badge = isset(IntelIntakeDesk::BADGE_FILTERS[$badge]) ? $badge : '';
-        $sort = (string) ($request->query('tri') ?? 'recu');
-        $sort = isset(IntelIntakeDesk::SORTS[$sort]) ? $sort : 'recu';
-        $dir = (string) ($request->query('ordre') ?? 'desc') === 'asc' ? 'asc' : 'desc';
-        $refined = IntelIntakeDesk::refine($items, $badge, $sort, $dir);
-        $items = $refined['items'];
-        // Les extraits de la liste respectent aussi les caviardages.
-        if ($items !== []) {
-            $level = $this->viewerLevel();
-            foreach (['cr', 'fiche'] as $src) {
-                $ids = array_column(array_filter($items, static fn (array $i): bool => $i['source'] === $src), 'id');
-                $red = $this->intake->redactions($tenantId, $src, $ids);
-                foreach ($items as &$it) {
-                    if ($it['source'] === $src && isset($red[$it['id']])) {
-                        $it['title'] = IntelRedaction::apply((string) $it['title'], $red[$it['id']], $level, $me);
-                        $it['redacted'] = true;
-                    }
-                }
-                unset($it);
-            }
-        }
+        return $this->guardAndRedirect($request, self::SSE_BASE);
+    }
 
-        return Response::view('layout.main', [
-            'content' => 'admin.intel.intake_index',
-            'title' => 'Remontées',
-            'pageTitle' => 'Remontées',
-            'intakeReady' => $ready,
-            'intakeItems' => $items,
-            'intakeCounts' => $ready ? $this->intake->counts($tenantId, $filters, $me) : ['open' => 0, 'closed' => 0, 'mine' => 0, 'deleted' => 0, 'states' => []],
-            'intakeTab' => $tab,
-            'intakeFilters' => $filters,
-            'intakeTypes' => $source !== '' ? IntelIntakeService::typeOptions($source) : IntelIntakeService::typeOptions('cr') + IntelIntakeService::typeOptions('fiche'),
-            'intakeMembers' => $ready ? $this->intake->members($tenantId) : [],
-            'intakeBadge' => $badge,
-            'intakeBadgeCounts' => $refined['counts'],
-            'intakeSort' => $sort,
-            'intakeDir' => $dir,
-        ]);
+    public function players(Request $request, array $params = []): Response
+    {
+        return $this->guardAndRedirect($request, self::SSE_BASE . '/joueurs');
+    }
+
+    public function player(Request $request, array $params = []): Response
+    {
+        return $this->guardAndRedirect($request, self::SSE_BASE . '/joueurs/' . rawurlencode((string) ($params['key'] ?? '')));
     }
 
     public function show(Request $request, array $params = []): Response
     {
-        $guard = $this->guard();
-        if ($guard instanceof Response) {
-            return $guard;
-        }
-        $tenantId = $guard;
-        if (!$this->intake->schemaReady()) {
-            return Response::redirect(url('back-office/remontees'));
-        }
-        $source = (string) ($params['source'] ?? '');
-        $item = $this->intake->find($tenantId, $source, (int) ($params['id'] ?? 0));
-        if ($item === null) {
-            Session::flash('error', 'Remontée introuvable.');
-
-            return Response::redirect(url('back-office/remontees'));
-        }
-        $me = (int) Session::get('user_id');
-        $this->intake->recordRead($tenantId, $source, (int) $item['id'], $me, 'bo');
-        $desk = $this->desk()->view($tenantId, $source, (int) $item['id'], ['id' => $me, 'level' => $this->viewerLevel()], $this->rights());
-        if ($desk === null) {
-            return Response::redirect(url('back-office/remontees'));
-        }
-        $senderKey = null;
-        try {
-            $senderKey = $this->feed()->keyFor($tenantId, $item['sender']['user_id'], $item['sender']['steam'], $item['sender']['callsign']);
-        } catch (\Throwable) {
-        }
-        $ssePortal = false;
-        try {
-            $ssePortal = SseAccessPolicy::sessionAllows('terrain', SseAccessCatalog::LEVEL_READ, ['guest' => false, 'tenant_id' => $tenantId]);
-        } catch (\Throwable) {
-        }
-
-        return Response::view('layout.main', [
-            'content' => 'admin.intel.intake_show',
-            'title' => $item['ref'] . ' · Remontées',
-            'pageTitle' => 'Remontées',
-            'intakeDesk' => $desk,
-            'intakeTypes' => IntelIntakeService::typeOptions($source),
-            'intakeMembers' => $this->intake->members($tenantId),
-            'intakeLevels' => SseCaseRepository::CLASSIFICATION_LABELS,
-            'intakeSenderKey' => $senderKey,
-            'intakeCanSeeMembers' => self::canSeeMembers(),
-            'intakeSsePortal' => $ssePortal,
-            'csrfToken' => Csrf::token(),
-        ]);
+        return $this->guardAndRedirect($request, self::itemPath($params));
     }
 
-    /**
-     * GET /back-office/remontees/{source}/{id}/suggestions?genre=transmettre|doublon|lien&q=…
-     * Listes des fenêtres « Transmettre », « Doublon » et « Relier » (JSON) : toujours dans la communauté du demandeur.
-     */
     public function suggestions(Request $request, array $params = []): Response
     {
-        $guard = $this->guard();
-        if ($guard instanceof Response) {
-            return Response::json(['items' => []], 403);
+        return $this->guardAndRedirect($request, self::itemPath($params) . '/suggestions');
+    }
+
+    /** Les formulaires restés ouverts sur l'ancienne page : 307, le navigateur renvoie le même corps au bureau. */
+    public function action(Request $request, array $params = []): Response
+    {
+        return $this->guardAndRedirect($request, self::itemPath($params) . '/' . rawurlencode((string) ($params['action'] ?? '')), 307);
+    }
+
+    /** @param array<string, mixed> $params */
+    private static function itemPath(array $params): string
+    {
+        return self::SSE_BASE . '/' . rawurlencode((string) ($params['source'] ?? '')) . '/' . (int) ($params['id'] ?? 0);
+    }
+
+    /** Équivalent au bureau, filtres de l'adresse conservés (valeurs simples seulement). */
+    public static function target(string $path, array $query = []): string
+    {
+        $query = array_filter($query, static fn ($v, $k): bool => is_string($k) && is_scalar($v) && (string) $v !== '', ARRAY_FILTER_USE_BOTH);
+
+        return url($path) . ($query !== [] ? '?' . http_build_query($query) : '');
+    }
+
+    private function guardAndRedirect(Request $request, string $path, int $status = 302): Response
+    {
+        if (!Session::get('user_id')) {
+            return Response::redirect(url('login'));
+        }
+        $target = self::target($path, $status === 307 ? [] : $request->queryParams());
+        if (!$this->reachable()) {
+            // Ancien droit du back-office sans entrée au bureau : une page claire plutôt que le sas ou une page vide.
+            return Response::view('layout.main', [
+                'content' => 'admin.intel.intake_moved',
+                'title' => 'Remontées',
+                'pageTitle' => 'Remontées',
+                'movedTarget' => $target,
+                'movedHadAccess' => self::allowed(),
+            ])->setStatusCode(403);
         }
 
-        return Response::json(['items' => self::suggest($this->desk(), $guard, (string) ($params['source'] ?? ''), (int) ($params['id'] ?? 0), (string) ($request->query('genre') ?? ''), (string) ($request->query('q') ?? ''), true)]);
+        return Response::redirect($target, $status);
+    }
+
+    private function reachable(): bool
+    {
+        if ($this->sseReachable !== null) {
+            return ($this->sseReachable)();
+        }
+        try {
+            $svc = new SseAccessCodeService();
+
+            return $svc->hasActiveClearance() || $svc->canEnterWithoutCode();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -242,90 +172,6 @@ final class AdminIntelIntakeController
         }
 
         return $out;
-    }
-
-    /**
-     * GET /back-office/remontees/joueurs : une ligne par joueur, un compteur par catégorie de remontée.
-     */
-    public function players(Request $request, array $params = []): Response
-    {
-        $guard = $this->guard();
-        if ($guard instanceof Response) {
-            return $guard;
-        }
-        $tenantId = $guard;
-        $period = IntelPlayerFeedService::normalizePeriod((string) ($request->query('periode') ?? '30j'));
-        $q = mb_substr(trim((string) ($request->query('q') ?? '')), 0, 80);
-        $sort = (string) ($request->query('tri') ?? 'total');
-        $sort = in_array($sort, ['total', 'last', 'name'], true) || isset(IntelPlayerFeedService::CATEGORIES[$sort]) ? $sort : 'total';
-        $data = ['players' => [], 'sources' => []];
-        try {
-            $data = $this->feed()->players($tenantId, $period);
-        } catch (\Throwable) {
-        }
-        $players = self::filterPlayers($data['players'], $q);
-        $players = self::sortPlayers($players, $sort);
-        $totals = array_fill_keys(array_keys(IntelPlayerFeedService::CATEGORIES), 0);
-        foreach ($players as $p) {
-            foreach ($p['counts'] as $cat => $n) {
-                $totals[$cat] += (int) $n;
-            }
-        }
-
-        return Response::view('layout.main', [
-            'content' => 'admin.intel.intake_players',
-            'title' => 'Remontées par joueur',
-            'pageTitle' => 'Remontées',
-            'playersRows' => $players,
-            'playersTotals' => $totals,
-            'playersSources' => $data['sources'],
-            'playersPeriod' => $period,
-            'playersQuery' => $q,
-            'playersSort' => $sort,
-            'intakeToTreat' => $this->intake->countToTreat($tenantId),
-            'backOfficePageCss' => ['remontees-joueurs.css'],
-        ]);
-    }
-
-    /**
-     * GET /back-office/remontees/joueurs/{key} : tout ce qu'un joueur a remonté, dans l'ordre chronologique.
-     */
-    public function player(Request $request, array $params = []): Response
-    {
-        $guard = $this->guard();
-        if ($guard instanceof Response) {
-            return $guard;
-        }
-        $tenantId = $guard;
-        $key = (string) ($params['key'] ?? '');
-        $period = IntelPlayerFeedService::normalizePeriod((string) ($request->query('periode') ?? 'tout'));
-        $cat = (string) ($request->query('categorie') ?? '');
-        $cat = isset(IntelPlayerFeedService::CATEGORIES[$cat]) ? $cat : '';
-        $data = ['player' => null, 'items' => [], 'truncated' => false];
-        if (IntelPlayerIdentity::validKey($key)) {
-            try {
-                $data = $this->feed()->timeline($tenantId, $key, $period);
-            } catch (\Throwable) {
-            }
-        }
-        if ($data['player'] === null) {
-            Session::flash('error', 'Joueur introuvable ou sans remontée.');
-
-            return Response::redirect(url('back-office/remontees/joueurs'));
-        }
-        $items = $cat !== '' ? array_values(array_filter($data['items'], static fn (array $i): bool => $i['cat'] === $cat)) : $data['items'];
-
-        return Response::view('layout.main', [
-            'content' => 'admin.intel.intake_player',
-            'title' => ($data['player']['callsign'] !== '' ? $data['player']['callsign'] : 'Joueur') . ' · Remontées',
-            'pageTitle' => 'Remontées',
-            'playerCard' => $data['player'],
-            'playerItems' => $items,
-            'playerTruncated' => $data['truncated'],
-            'playerPeriod' => $period,
-            'playerCategory' => $cat,
-            'playerCanSeeMembers' => self::canSeeMembers(),
-        ]);
     }
 
     /**
@@ -372,7 +218,7 @@ final class AdminIntelIntakeController
         return $players;
     }
 
-    /** Badge du menu latéral : nombre de remontées « À traiter » (null si zéro, inaccessible ou en erreur). */
+    /** Badge du tableau de bord : nombre de remontées « À traiter » (null si zéro, inaccessible ou en erreur). */
     public static function asideBadge(): ?string
     {
         try {
@@ -386,88 +232,6 @@ final class AdminIntelIntakeController
         } catch (\Throwable) {
             return null;
         }
-    }
-
-    /** Lien vers la fiche du membre : réservé aux administrateurs de la communauté. */
-    private static function canSeeMembers(): bool
-    {
-        return function_exists('can') && (can('admin.organization') || can('admin.access') || can('admin.system'));
-    }
-
-    private function feed(): IntelPlayerFeedService
-    {
-        return $this->feed ??= new IntelPlayerFeedService();
-    }
-
-    public function action(Request $request, array $params = []): Response
-    {
-        $guard = $this->guard();
-        if ($guard instanceof Response) {
-            return $guard;
-        }
-        $tenantId = $guard;
-        $source = (string) ($params['source'] ?? '');
-        $id = (int) ($params['id'] ?? 0);
-        $action = (string) ($params['action'] ?? '');
-        $back = url('back-office/remontees/' . rawurlencode($source) . '/' . $id);
-        $res = $this->desk()->perform($tenantId, $source, $id, $action, $request->all(), $this->actor(), $this->rights(), $this->viewerLevel());
-        if ($action === 'steam' && $request->header('X-Requested-With') === 'fetch') {
-            return Response::json(['ok' => $res['ok'], 'message' => $res['message'], 'steam' => (string) ($res['data']['steam'] ?? '')], $res['ok'] ? 200 : 403);
-        }
-        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
-        if (!isset(IntelIntakeService::SOURCES[$source]) || $id < 1 || $res['deleted']) {
-            return Response::redirect(url('back-office/remontees'));
-        }
-
-        return Response::redirect($back . ($action === 'comment' ? '#fil-fin' : ''));
-    }
-
-    /** Caviarder : réservé au plus haut niveau, sinon on pourrait cacher à soi-même… ou lever ce qu'on ne lit pas. */
-    private function redactAllowed(): bool
-    {
-        return $this->viewerLevel() === SseCaseRepository::CLASS_RESTRICTED;
-    }
-
-    private function viewerLevel(): string
-    {
-        try {
-            $this->clearance ??= new SseClearanceService();
-
-            return $this->clearance->maxLevel();
-        } catch (\Throwable) {
-            return function_exists('can') && (can('admin.access') || can('atak.sse.grant'))
-                ? SseCaseRepository::CLASS_RESTRICTED
-                : SseCaseRepository::CLASS_INTERNAL;
-        }
-    }
-
-    /** @return array{id: int, label: string} */
-    private function actor(): array
-    {
-        $label = '';
-        foreach (['callsign', 'display_name', 'username'] as $k) {
-            $label = trim((string) (Session::get($k) ?? ''));
-            if ($label !== '') {
-                break;
-            }
-        }
-
-        return ['id' => (int) Session::get('user_id'), 'label' => $label !== '' ? $label : 'Administrateur'];
-    }
-
-    private function guard(): int|Response
-    {
-        if (!Session::get('user_id')) {
-            return Response::redirect(url('login'));
-        }
-        $tenantId = (int) Session::get('tenant_id');
-        if ($tenantId < 1 || !self::allowed()) {
-            Session::flash('error', 'Accès réservé aux administrateurs et aux responsables du renseignement.');
-
-            return Response::redirect(url('dashboard'));
-        }
-
-        return $tenantId;
     }
 
     /** Libellé d'un niveau, pour les vues. */

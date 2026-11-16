@@ -14,8 +14,9 @@ use App\Support\SseFieldNoteCatalog;
 use App\Support\SseLinkCatalog;
 
 /**
- * Le traitement d'une remontée, une seule fois pour ses deux habillages : le back-office (/back-office/remontees) et le
- * bureau SSE (/atak/sse/remontees, onglet « Suivi » d'une fiche). Les contrôleurs décident QUI a quels droits
+ * Le traitement d'une remontée, une seule fois pour ses deux habillages du bureau SSE : la page de la remontée
+ * (/atak/sse/remontees/{source}/{id}, où renvoie l'ancienne adresse du back-office) et l'onglet « Suivi » d'une fiche.
+ * Les contrôleurs décident QUI a quels droits
  * (tableau $rights) ; ce service prépare ce que la page affiche et exécute les actions selon ces droits.
  *
  * Droits attendus :
@@ -383,7 +384,7 @@ class IntelIntakeDesk
         return match ($right) {
             'redact' => 'Caviarder est réservé aux habilités « Très secret (TS) ».',
             'steam' => 'L’identifiant Steam est réservé aux administrateurs de la communauté.',
-            'manage' => 'Modifier, flouter, supprimer et restaurer se font depuis le back-office « Remontées ».',
+            'manage' => 'Modifier, flouter, supprimer et restaurer sont réservés aux administrateurs et aux responsables du renseignement.',
             'convert' => 'Droit manquant : écrire dans les dossiers du bureau SSE.',
             'link' => 'Droit manquant : écrire dans les fiches du bureau SSE.',
             'discord' => 'Droit manquant : traiter les remontées.',

@@ -120,10 +120,11 @@ final class SseDetectionFeedbackTest extends TestCase
             return $out;
         };
 
-        return str_replace("\r\n", "\n", $render(base_path('views/admin/intel/intake_show.php'), [
-            'intakeDesk' => $desk, 'intakeTypes' => IntelIntakeService::typeOptions('fiche'), 'intakeMembers' => [],
+        // La page d'une remontée, au bureau SSE (/atak/sse/remontees/fiche/{id}).
+        return str_replace("\r\n", "\n", $render(base_path('views/atak/sse/intake_show.php'), [
+            'intakeDesk' => $desk, 'intakeRights' => IntelIntakeDesk::rights(self::ALL), 'intakeTypes' => IntelIntakeService::typeOptions('fiche'), 'intakeMembers' => [],
             'intakeLevels' => \App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS, 'intakeSenderKey' => null,
-            'intakeCanSeeMembers' => false, 'intakeSsePortal' => false, 'csrfToken' => str_repeat('a', 64),
+            'intakeCanSeeMembers' => false, 'csrfToken' => str_repeat('a', 64),
         ]));
     }
 
@@ -205,7 +206,7 @@ final class SseDetectionFeedbackTest extends TestCase
         self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_detection_decisions')->fetchColumn());
 
         // Bureau SSE : jeton absent ou faux → rien n'est écrit, retour à la fiche.
-        $_POST = $secur['feedback'] + ['decision' => 'ignore', '_csrf_token' => 'faux'];
+        $_POST = $secur['feedback'] + ['decision' => 'ignore', '_csrf_token' => 'faux', 'retour' => 'fiche'];
         $res = (new SseIntakeController($this->desk()))->action(new Request(), ['source' => 'fiche', 'id' => (string) $this->capture, 'action' => 'cerbere']);
         self::assertSame(302, $res->statusCode());
         self::assertStringContainsString('fiches/' . $this->capture, (string) $res->headerValue('Location'));

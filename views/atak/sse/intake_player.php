@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+ob_start();
 
 use App\Services\Intel\IntelPlayerFeedService;
 
@@ -17,7 +18,7 @@ $period = (string) ($playerPeriod ?? 'tout');
 $cat = (string) ($playerCategory ?? '');
 $cats = IntelPlayerFeedService::CATEGORIES;
 $name = (string) ($p['callsign'] !== '' ? $p['callsign'] : ($p['account'] !== '' ? $p['account'] : 'Joueur'));
-$base = 'back-office/remontees/joueurs/' . rawurlencode((string) $p['key']);
+$base = 'atak/sse/remontees/joueurs/' . rawurlencode((string) $p['key']);
 $link = static function (array $over) use ($base, $period, $cat): string {
     $params = array_filter(array_merge(['periode' => $period, 'categorie' => $cat], $over), static fn ($v): bool => $v !== '' && $v !== null);
 
@@ -37,10 +38,11 @@ $dayLabel = static function (string $ts): string {
 };
 $others = array_values(array_filter((array) ($p['callsigns_seen'] ?? []), static fn (string $c): bool => mb_strtolower($c) !== mb_strtolower((string) $p['callsign'])));
 $currentDay = null;
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/remontees.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-remontees.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/recon-viewer.js')) . '"></script>';
 ?>
-<div class="rmt">
+<div class="rmt rmt--sse">
     <div class="rmt__frame">
-        <nav class="rmt__crumbs" aria-label="Fil d’Ariane"><a href="<?= $h(url('back-office/remontees')) ?>">Remontées</a> <span aria-hidden="true">/</span> <a href="<?= $h(url('back-office/remontees/joueurs')) ?>">Par joueur</a> <span aria-hidden="true">/</span> <?= $h($name) ?></nav>
 
         <header class="rmt__pr-head rmt__player-head">
             <span class="rmt__avatar rmt__avatar--lg rmt__avatar--<?= $h($p['kind']) ?>" aria-hidden="true"><?= $h(mb_strtoupper(mb_substr($name, 0, 2))) ?></span>
@@ -125,4 +127,6 @@ $currentDay = null;
         </section>
     </div>
 </div>
-<script src="<?= $h(asset_url('assets/js/recon-viewer.js')) ?>" defer></script>
+<?php
+$sseContent = ob_get_clean();
+require __DIR__ . '/_layout.php';

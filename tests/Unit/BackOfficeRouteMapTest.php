@@ -44,7 +44,7 @@ final class BackOfficeRouteMapTest extends TestCase
         'BackOfficeMenuController' => 'pastilles et favoris : données du menu de l’utilisateur lui-même',
         'DashboardPinsAdminController' => 'denyUnlessManage() à chaque action',
         'DashboardWardrobePinsAdminController' => 'denyUnlessManage() à chaque action (create() passe par formView())',
-        'AdminIntelIntakeController' => 'guard() à chaque action (remontées de renseignement)',
+        'AdminIntelIntakeController' => 'guardAndRedirect() à chaque action : connexion et entrée au bureau SSE, puis renvoi vers /atak/sse/remontees',
         'AdminAarReportsController' => 'ModuleFeatureAccess::guardAtak() à chaque action (synthèses)',
         'SystemTenantInterventionController' => 'leave() : sortie de sa propre session d’intervention, jeton CSRF',
     ];
