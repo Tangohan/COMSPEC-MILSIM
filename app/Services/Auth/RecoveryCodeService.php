@@ -90,9 +90,9 @@ final class RecoveryCodeService
             foreach ($codes as $code) {
                 $ins->execute([$userId, self::hashCode($code)]);
             }
-            $pdo->commit();
+            \App\Core\Database::safeCommit($pdo);
         } catch (\Throwable $e) {
-            $pdo->rollBack();
+            \App\Core\Database::safeRollback($pdo);
             throw $e;
         }
 

@@ -218,13 +218,8 @@ final class TenantBootstrapService
             } catch (\Throwable) {
             }
 
-            if ($pdo->inTransaction()) {
-                $pdo->commit();
-            } else {
-                // Une DDL lancée en chemin a déjà validé les écritures : la communauté existe, ne pas annoncer un échec
-                // (un nouvel essai créerait un doublon).
-                error_log('[community.create] transaction validée implicitement avant la fin (DDL) pour le tenant ' . $tenantId);
-            }
+            // Un DDL passé pendant la création a pu valider la transaction implicitement : rien à valider alors.
+            Database::safeCommit($pdo);
 
             // Le compte technique « Modération automatique » est créé à la demande, plus à la création.
 

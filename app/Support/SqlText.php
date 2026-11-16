@@ -403,6 +403,25 @@ final class SqlText
         return 'LOWER(TRIM(' . $columnExpr . ')) COLLATE ' . self::COLLATION . ' IN (' . $coerced . ')';
     }
 
+    /**
+     * colonne = colonne d'une autre table (jointure texte) sans erreur 1267 quand les deux tables n'ont pas la même
+     * collation : en production, les tables historiques créées sans COLLATE suivent la collation par défaut du serveur
+     * (utf8mb4_uca1400_ai_ci sous MariaDB 11.4+), les tables récentes sont en utf8mb4_unicode_ci.
+     *
+     * $indexedColumn garde sa collation (son index reste utilisable si elle vaut utf8mb4_unicode_ci) ; $otherColumn est
+     * converti. Sous SQLite : simple égalité.
+     */
+    public static function columnEquals(PDO $pdo, string $indexedColumn, string $otherColumn): string
+    {
+        self::assertColumnExpr($indexedColumn);
+        self::assertColumnExpr($otherColumn);
+        if (!self::isMysqlFamily($pdo)) {
+            return $indexedColumn . ' = ' . $otherColumn;
+        }
+
+        return $indexedColumn . ' = (CONVERT(' . $otherColumn . ' USING utf8mb4) COLLATE ' . self::COLLATION . ')';
+    }
+
     private static function assertColumnExpr(string $columnExpr): void
     {
         if (!preg_match('/^[A-Za-z0-9_`.]+$/', $columnExpr)) {

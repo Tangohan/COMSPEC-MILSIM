@@ -50,12 +50,12 @@ jobs:
         run: composer install --no-interaction --prefer-dist
       - name: Attendre la base
         run: timeout 150 bash -c 'until mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; do sleep 2; done'
-      - name: PHPUnit (annuaire des comptes, cycle des marqueurs, seeds d’une communauté en mode strict)
+      - name: PHPUnit (annuaire des comptes, cycle des marqueurs, seeds d’une communauté en mode strict, collations des tables récentes)
         env:
           COMSPEC_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=comspec_test;charset=utf8mb4"
           COMSPEC_TEST_MYSQL_USER: root
           COMSPEC_TEST_MYSQL_PASS: root
-        run: vendor/bin/phpunit --filter 'PlatformUsersDirectoryMysqlTest|AtakMarkerCycleReadMysqlTest|CommunitySeedsStrictMysqlTest'
+        run: vendor/bin/phpunit --filter 'PlatformUsersDirectoryMysqlTest|AtakMarkerCycleReadMysqlTest|CommunitySeedsStrictMysqlTest|RecentTablesCollationMysqlTest'
       # Base complète installée de zéro (schema.sql, étapes historiques, file active) dans une base séparée.
       - name: Base de test complète
         env:

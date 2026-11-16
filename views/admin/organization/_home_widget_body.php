@@ -457,7 +457,9 @@ $hwKpiIndex = ['kpi_members' => 0, 'kpi_presence' => 1, 'kpi_month' => 2, 'kpi_f
     $hwAvTotal = (int) ($hwAvail['total'] ?? 0);
     $hwAvHref = (string) ($hwAvail['href'] ?? '');
     ?>
-    <?php if (empty($hwAvail['ready'])): ?>
+    <?php if (!empty($hwAvail['error'])): ?>
+    <?= $hwCompactCard('Disponibilité à vérifier', 'pil-av-title', 'Données indisponibles (erreur technique).') ?>
+    <?php elseif (empty($hwAvail['ready'])): ?>
     <?= $hwCompactCard('Disponibilité à vérifier', 'pil-av-title', 'Le suivi des sessions de jeu n’est pas encore actif sur le site.') ?>
     <?php elseif ($hwAvTotal === 0): ?>
     <?= $hwCompactCard('Disponibilité à vérifier', 'pil-av-title', 'Tous les membres actifs ont joué une session qui compte depuis ' . $hwAvDays . ' jours.') ?>
@@ -480,7 +482,9 @@ $hwKpiIndex = ['kpi_members' => 0, 'kpi_presence' => 1, 'kpi_month' => 2, 'kpi_f
 
 <?php elseif ($hwId === 'sessions'): ?>
     <?php $hwSesRows = is_array($hwSessions['rows'] ?? null) ? $hwSessions['rows'] : []; $hwSesMin = (int) ($hwSessions['min_minutes'] ?? 60); ?>
-    <?php if (empty($hwSessions['ready'])): ?>
+    <?php if (!empty($hwSessions['error'])): ?>
+    <?= $hwCompactCard('Sessions de jeu récentes', 'pil-ses-title', 'Données indisponibles (erreur technique).') ?>
+    <?php elseif (empty($hwSessions['ready'])): ?>
     <?= $hwCompactCard('Sessions de jeu récentes', 'pil-ses-title', 'Le suivi des sessions de jeu n’est pas encore actif sur le site.') ?>
     <?php elseif ($hwSesRows === []): ?>
     <?= $hwCompactCard('Sessions de jeu récentes', 'pil-ses-title', 'Aucune session de jeu sur les 14 derniers jours.') ?>

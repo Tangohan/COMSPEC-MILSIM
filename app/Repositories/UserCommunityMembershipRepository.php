@@ -91,36 +91,39 @@ final class UserCommunityMembershipRepository
         return $v === false || $v === null || $v === '' ? null : (string) $v;
     }
 
+    /** Table des séjours présente (null : pas encore vérifié pour ce dépôt). */
+    private ?bool $periodsReady = null;
+
     private function periodsReady(): bool
     {
-        static $ready = null;
-        if ($ready === null && $this->pdo()->inTransaction()) {
-            // Un CREATE TABLE validerait implicitement la transaction en cours (création d'une communauté,
-            // affectation…) : simple lecture, la table est créée par migrations/20261114000001_membership_periods.sql.
-            try {
-                $this->pdo()->query('SELECT 1 FROM user_community_membership_periods LIMIT 0');
-
-                return true;
-            } catch (\Throwable) {
-                return false;
-            }
+        if ($this->periodsReady !== null) {
+            return $this->periodsReady;
         }
-        if ($ready === null) {
-            try {
-                $this->pdo()->exec(
-                    'CREATE TABLE IF NOT EXISTS user_community_membership_periods (
-                      id bigint unsigned NOT NULL AUTO_INCREMENT, user_id int unsigned NOT NULL, tenant_id int unsigned NOT NULL,
-                      joined_at datetime NOT NULL, left_at datetime DEFAULT NULL, PRIMARY KEY (id),
-                      KEY idx_ucmp_user_tenant (user_id, tenant_id, joined_at)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-                );
-                $ready = true;
-            } catch (\Throwable) {
-                $ready = false;
-            }
-        }
+        // Lecture seule d'abord : un CREATE TABLE, même « IF NOT EXISTS » sur une table présente, valide implicitement
+        // la transaction en cours sous MySQL / MariaDB (inscription du 16/11 : « There is no active transaction » au
+        // commit). La table vient de l'étape 4900 ; on ne la crée ici qu'en dehors de toute transaction.
+        try {
+            $this->pdo()->query('SELECT 1 FROM user_community_membership_periods WHERE 1 = 0');
 
-        return $ready;
+            return $this->periodsReady = true;
+        } catch (\Throwable) {
+        }
+        if ($this->pdo()->inTransaction()) {
+            return false;
+        }
+        try {
+            $this->pdo()->exec(
+                'CREATE TABLE IF NOT EXISTS user_community_membership_periods (
+                  id bigint unsigned NOT NULL AUTO_INCREMENT, user_id int unsigned NOT NULL, tenant_id int unsigned NOT NULL,
+                  joined_at datetime NOT NULL, left_at datetime DEFAULT NULL, PRIMARY KEY (id),
+                  KEY idx_ucmp_user_tenant (user_id, tenant_id, joined_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
+
+            return $this->periodsReady = true;
+        } catch (\Throwable) {
+            return $this->periodsReady = false;
+        }
     }
 
     private function openPeriod(int $userId, int $tenantId): void
