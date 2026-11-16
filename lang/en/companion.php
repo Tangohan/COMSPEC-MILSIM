@@ -20,4 +20,13 @@ return [
     'invalid_code' => 'The pairing code is invalid or expired.',
     'already_bound' => 'The server or community is already connected. Unlink it before changing servers.',
     'channel_choice' => 'ATHENA Companion — :channel',
+    'client_id' => 'Bot application ID',
+    'client_id_help' => 'Discord Developer Portal, the bot application (Athena Companion): General Information, Application ID (17 to 20 digits). This is not the linked roles application.',
+    'client_secret' => 'Bot application client secret',
+    'secret_saved' => 'Secret saved. Leave blank to keep it.',
+    'secret_missing' => 'Secret not saved.',
+    'secret_help' => 'OAuth2 › Client Secret. It is never shown again.',
+    'redirect_help' => 'Register this in the portal (OAuth2 › Redirects) of the bot application:',
+    'invalid_client_id' => 'The application ID must be 17 to 20 digits.',
+    'invalid_client_secret' => 'The client secret does not look like a Discord secret (OAuth2 › Client Secret).',
 ];

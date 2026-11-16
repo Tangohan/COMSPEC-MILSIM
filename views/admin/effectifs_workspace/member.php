@@ -253,6 +253,7 @@ $ico = static function (string $name): string {
         'info' => '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/>',
         'link' => '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7L12 6.3"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
         'user' => '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+        'pulse' => '<path d="M3 12h4l3 7 4-14 3 7h4"/>',
     ];
 
     return '<svg class="eff-fm-i" viewBox="0 0 24 24" aria-hidden="true">' . ($paths[$name] ?? '') . '</svg>';
@@ -422,6 +423,9 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
                 <?php endif; ?>
                 <?php if ($canEditProfiles): ?>
                     <button type="button" class="eff-fm-btn" data-dialog-open="eff-dlg-civil"><?= $ico('user') ?>État civil</button>
+                <?php endif; ?>
+                <?php if (!empty($canCheckAvailability)): ?>
+                    <button type="button" class="eff-fm-btn" data-avc-open data-avc-ids="<?= (int) $id ?>" data-avc-name="<?= $h((string) $name) ?>"><?= $ico('pulse') ?>Vérifier la disponibilité</button>
                 <?php endif; ?>
                 <a class="eff-fm-btn" href="<?= htmlspecialchars(url('personnel/' . $id), ENT_QUOTES, 'UTF-8') ?>"><?= $ico('eye') ?>Voir la fiche</a>
                 <?php if ($canManageStatus): ?>
@@ -1845,6 +1849,15 @@ foreach ($jobRoles as $jr) {
 <?php $ssePart = 'dialog'; require __DIR__ . '/partials/member_sse_access.php'; ?>
 </dialog>
 <script src="<?= $h(asset_url('assets/js/eff-member-sse-access.js')) ?>" defer></script>
+<?php endif; ?>
+<?php if (!empty($canCheckAvailability)): ?>
+<?php
+$avcRules = is_array($memberAvailability ?? null) ? ['min_minutes' => (int) ($memberAvailability['min_minutes'] ?? 60), 'gap_minutes' => (int) ($memberAvailability['gap_minutes'] ?? 25)] : [];
+$avcCanSave = (bool) ($availabilityChecksReady ?? false);
+$avcSettingsUrl = (string) ($availabilitySettingsUrl ?? '');
+require __DIR__ . '/partials/availability_check_modal.php';
+?>
+<script src="<?= $h(asset_url('assets/js/eff-availability-check.js')) ?>" defer></script>
 <?php endif; ?>
 <script src="<?= $h(asset_url('assets/js/eff-member.js')) ?>" defer></script>
 <?php if (is_array($qualificationDisplay ?? null)): ?><script src="<?= $h(asset_url('assets/js/qualification-display.js')) ?>" defer></script><?php endif; ?>
