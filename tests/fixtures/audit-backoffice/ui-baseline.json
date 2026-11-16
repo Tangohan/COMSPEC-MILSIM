@@ -237,7 +237,6 @@
         "views/admin/recruitments/canned_messages.php": 1,
         "views/admin/recruitments/discord_questions.php": 1,
         "views/admin/recruitments/show.php": 2,
-        "views/admin/sse_access/index.php": 1,
         "views/admin/system/_user_atak_panel.php": 4,
         "views/admin/system/cooperation_catalog_index.php": 1,
         "views/admin/system/cron.php": 1,
