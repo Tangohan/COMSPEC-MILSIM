@@ -41,7 +41,7 @@ final class SseDetectionEngine
      *
      * @param array<string, string> $segments nom => texte (« title » compte comme titre)
      * @param array{kind?: string, themes?: list<string>} $context
-     * @return array{text_length: int, tokens: int, rules: array<string, array<string, mixed>>}
+     * @return array{text: string, text_length: int, tokens: int, rules: array<string, array<string, mixed>>}
      */
     public function analyze(array $segments, array $context = []): array
     {
@@ -59,7 +59,7 @@ final class SseDetectionEngine
             $text .= $part;
         }
         $tokens = SseTextNormalizer::tokens($text);
-        $out = ['text_length' => mb_strlen($text), 'tokens' => count($tokens), 'rules' => []];
+        $out = ['text' => $text, 'text_length' => mb_strlen($text), 'tokens' => count($tokens), 'rules' => []];
         if ($tokens === []) {
             return $out;
         }
@@ -111,6 +111,8 @@ final class SseDetectionEngine
                         's' => $span['s'],
                         'e' => $span['e'],
                         'snippet' => $this->snippet($text, $tokens, $span['s'], $span['e']),
+                        'at' => $tokens[$span['s']]['at'],
+                        'to' => $tokens[$span['e']]['at'] + $tokens[$span['e']]['len'],
                         'segment' => $this->segmentOf($ranges, $tokens[$span['s']]['at']),
                     ];
                     if ($by !== null) {
@@ -490,26 +492,51 @@ final class SseDetectionEngine
      */
     private function snippet(string $text, array $tokens, int $s, int $e): array
     {
-        $from = $tokens[$s]['at'];
-        $to = $tokens[$e]['at'] + $tokens[$e]['len'];
-        // Coupes en octets recalées sur un début de caractère UTF-8 (sans parcourir tout le texte).
-        $len = strlen($text);
-        $start = max(0, $from - self::SNIPPET_RADIUS);
-        while ($start > 0 && (ord($text[$start]) & 0xC0) === 0x80) {
-            $start--;
-        }
-        $end = min($len, $to + self::SNIPPET_RADIUS);
-        while ($end < $len && (ord($text[$end]) & 0xC0) === 0x80) {
-            $end++;
-        }
-        $before = substr($text, $start, $from - $start);
-        $after = substr($text, $to, $end - $to);
-        $clean = static fn (string $v): string => (string) preg_replace('/\s+/u', ' ', $v);
+        $parts = self::excerpt($text, [[$tokens[$s]['at'], $tokens[$e]['at'] + $tokens[$e]['len']]]);
 
-        return [
-            'before' => ($start > 0 ? '…' : '') . ltrim($clean($before)),
-            'match' => $clean(substr($text, $from, $to - $from)),
-            'after' => rtrim($clean($after)) . ($end < $len ? '…' : ''),
-        ];
+        return ['before' => $parts[0][0], 'match' => $parts[1][0], 'after' => $parts[2][0] ?? ''];
+    }
+
+    /**
+     * Extrait d'un texte autour de plusieurs passages (positions en octets, dans l'ordre) : morceaux « [texte, surligné] ».
+     * Coupé sur des mots entiers, « … » quand le texte continue ; les espaces et retours à la ligne sont ramenés à un espace.
+     *
+     * @param list<array{0: int, 1: int}> $ranges
+     * @return list<array{0: string, 1: bool}>
+     */
+    public static function excerpt(string $text, array $ranges, int $radius = self::SNIPPET_RADIUS): array
+    {
+        $len = strlen($text);
+        $from = $ranges[0][0];
+        $to = $ranges[count($ranges) - 1][1];
+        $start = max(0, $from - $radius);
+        if ($start > 0) {
+            $space = strpos($text, ' ', $start);
+            $start = $space !== false && $space < $from ? $space + 1 : $start;
+            while ($start > 0 && (ord($text[$start]) & 0xC0) === 0x80) {
+                $start--;
+            }
+        }
+        $end = min($len, $to + $radius);
+        if ($end < $len) {
+            $space = strrpos(substr($text, $to, $end - $to), ' ');
+            $end = $space !== false ? $to + $space : $end;
+            while ($end < $len && (ord($text[$end]) & 0xC0) === 0x80) {
+                $end++;
+            }
+        }
+        $clean = static fn (string $v): string => (string) preg_replace('/\s+/u', ' ', $v);
+        $parts = [[($start > 0 ? '…' : '') . ltrim($clean(substr($text, $start, $from - $start))), false]];
+        $cursor = $from;
+        foreach ($ranges as $i => [$a, $b]) {
+            if ($i > 0) {
+                $parts[] = [$clean(substr($text, $cursor, max(0, $a - $cursor))), false];
+            }
+            $parts[] = [$clean(substr($text, $a, $b - $a)), true];
+            $cursor = $b;
+        }
+        $parts[] = [rtrim($clean(substr($text, $to, $end - $to))) . ($end < $len ? '…' : ''), false];
+
+        return $parts;
     }
 }

@@ -111,6 +111,7 @@ class SseDetectionService
                 'target' => $d['target'], 'value' => $d['value'], 'confidence' => $d['confidence'], 'tier' => $d['tier'],
                 'rules' => $d['rules'], 'signals' => $d['signals'], 'version' => $version, 'critical' => false,
                 'evidence' => self::evidence($d['rules']),
+                'excerpts' => self::excerpts($result['analysis']['text'], $d['rules']),
                 'feedback' => [
                     'cerbere_target' => $d['target'], 'cerbere_value' => $d['value'],
                     'cerbere_rules' => implode(',', array_column($d['rules'], 'id')), 'cerbere_confidence' => (string) $d['confidence'],
@@ -181,6 +182,43 @@ class SseDetectionService
         }
 
         return $out;
+    }
+
+    /**
+     * Extraits du texte où les passages trouvés sont surlignés : les passages proches partagent un même extrait.
+     *
+     * @param list<array<string, mixed>> $rules
+     * @return list<list<array{0: string, 1: bool}>>
+     */
+    public static function excerpts(string $text, array $rules, int $max = 2): array
+    {
+        $ranges = [];
+        foreach ($rules as $r) {
+            foreach ($r['hits'] as $h) {
+                if (isset($h['at'], $h['to'])) {
+                    $ranges[] = [(int) $h['at'], (int) $h['to']];
+                }
+            }
+        }
+        if ($text === '' || $ranges === []) {
+            return [];
+        }
+        usort($ranges, static fn (array $a, array $b): int => $a <=> $b);
+        // Passages qui se chevauchent : réunis ; passages proches : même extrait.
+        $groups = [];
+        foreach ($ranges as [$a, $b]) {
+            $g = count($groups) - 1;
+            $last = $g >= 0 ? $groups[$g][count($groups[$g]) - 1] : null;
+            if ($last !== null && $a < $last[1]) {
+                $groups[$g][count($groups[$g]) - 1] = [$last[0], max($last[1], $b)];
+            } elseif ($last !== null && $a - $last[1] <= 90) {
+                $groups[$g][] = [$a, $b];
+            } else {
+                $groups[] = [[$a, $b]];
+            }
+        }
+
+        return array_map(static fn (array $g): array => SseDetectionEngine::excerpt($text, $g, 45), array_slice($groups, 0, $max));
     }
 
     /** « Détecté : « prise d’otages », « blessés » · règle U-02, U-04 · confiance 82 % » */

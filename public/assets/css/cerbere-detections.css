@@ -141,7 +141,7 @@
     .cdx-rule-row { grid-template-columns: minmax(0, 1fr); }
     .cdx-rule-row__acts { justify-content: flex-start; }
     .cdx-grid2 { grid-template-columns: minmax(0, 1fr); }
-    .cdx-dialog { width: 100vw; margin: auto 0 0; }
+    .cdx-dialog { width: 100%; margin: auto 0 0; }
     .cdx-dialog__card { max-height: 88vh; border-radius: 14px 14px 0 0; border-bottom: 0; }
     .cdx-dialog__foot { padding-bottom: max(14px, env(safe-area-inset-bottom)); }
     .cdx-dialog__foot button { flex: 1 1 0; }
@@ -149,3 +149,6 @@
 @media (prefers-reduced-motion: reduce) { .cdx-rule-row { scroll-behavior: auto; } }
 @media print { .cdx-dialog, .cdx-card__acts { display: none !important; } }
 .cdx-panel__sub { margin: 0; color: var(--cdx-ink); font-size: 1rem; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.cdx-term { color: var(--cdx-ink); font-weight: 700; }
+.cdx-card .cdx-excerpt { padding: 6px 10px; border-left: 3px solid var(--cdx-line-strong); background: var(--cdx-surface); color: var(--cdx-text); }
+.cdx-excerpt mark, .cdx-result mark { padding: 0 2px; border-radius: 3px; background: var(--cdx-mark-bg); color: var(--cdx-mark-ink); font-weight: 700; }

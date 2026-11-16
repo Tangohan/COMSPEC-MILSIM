@@ -27,6 +27,15 @@ $cdxManageUrl = $cdxManageUrl ?? null;
 $cdxQuote = static function (array $e) use ($cdh): string {
     return '<q class="cdx-q">' . $cdh($e['before']) . '<mark>' . $cdh($e['match']) . '</mark>' . $cdh($e['after']) . '</q>';
 };
+/** Un extrait du texte, passages trouvés surlignés. */
+$cdxExcerpt = static function (array $parts) use ($cdh): string {
+    $out = '';
+    foreach ($parts as [$text, $marked]) {
+        $out .= $marked ? '<mark>' . $cdh($text) . '</mark>' : $cdh($text);
+    }
+
+    return '<q class="cdx-q">' . $out . '</q>';
+};
 $cdxBand = static fn (int $c): string => $c >= 75 ? 'high' : ($c >= 55 ? 'mid' : 'low');
 $cdxClose = '<button type="button" class="cdx-dialog__close" data-cdx-close aria-label="Fermer la fenêtre"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
 $cdxHidden = static function (array $fields) use ($cdh): string {
@@ -38,11 +47,11 @@ $cdxHidden = static function (array $fields) use ($cdh): string {
     return $out;
 };
 
-$cdxCard = static function (array $p) use ($cdh, $cdxQuote, $cdxBand, $cdxHidden, $cdxBtn, $cdxBadge, $cdxBase, $cdxCsrf, $cdxCanEdit): string {
+$cdxCard = static function (array $p) use ($cdh, $cdxExcerpt, $cdxBand, $cdxHidden, $cdxBtn, $cdxBadge, $cdxBase, $cdxCsrf, $cdxCanEdit): string {
     $dom = (string) $p['dom'];
     $conf = (int) $p['confidence'];
     $rules = array_column($p['rules'], 'id');
-    $shown = array_slice($p['evidence'], 0, 3);
+    $shown = array_slice($p['evidence'], 0, 4);
     $more = count($p['evidence']) - count($shown);
     $applicable = $p['action'] !== 'edit' || $cdxCanEdit;
     ob_start(); ?>
@@ -53,9 +62,10 @@ $cdxCard = static function (array $p) use ($cdh, $cdxQuote, $cdxBand, $cdxHidden
         </div>
         <p class="cdx-card__line">
             <span class="cdx-k">Détecté :</span>
-            <?php foreach ($shown as $i => $e): ?><?= $i > 0 ? ' ' : '' ?><?= $cdxQuote($e) ?><?php if ($e['context'] !== 'normal'): ?> <span class="cdx-ctx">(<?= $cdh(SseDetectionEngine::contextLabel($e['context'])) ?>)</span><?php endif; ?><?php endforeach; ?>
+            <?php foreach ($shown as $i => $e): ?><?= $i > 0 ? ', ' : '' ?><strong class="cdx-term">« <?= $cdh($e['match']) ?> »</strong><?php if ($e['context'] !== 'normal'): ?> <span class="cdx-ctx">(<?= $cdh(SseDetectionEngine::contextLabel($e['context'])) ?>)</span><?php endif; ?><?php endforeach; ?>
             <?php if ($more > 0): ?> <span class="cdx-dim">et <?= $more ?> autre<?= $more > 1 ? 's' : '' ?></span><?php endif; ?>
         </p>
+        <?php foreach ($p['excerpts'] ?? [] as $parts): ?><p class="cdx-excerpt"><?= $cdxExcerpt($parts) ?></p><?php endforeach; ?>
         <p class="cdx-card__meta"><?= count($rules) > 1 ? 'Règles' : 'Règle' ?> <span class="cdx-mono" translate="no"><?= $cdh(implode(', ', $rules)) ?></span> · confiance <?= $conf ?> %<?= $p['tier'] === 'review' ? ' · à vérifier' : '' ?></p>
         <div class="cdx-card__acts">
             <?php if ($applicable): ?>

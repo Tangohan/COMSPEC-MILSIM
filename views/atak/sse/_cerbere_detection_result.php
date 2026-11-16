@@ -38,8 +38,11 @@ foreach ($cdxTest['analysis']['rules'] as $r) {
                 <span class="cdx-conf cdx-conf--<?= $band($c) ?>"><?= $c ?> %</span>
             </div>
             <p class="cdx-card__line"><span class="cdx-k">Détecté :</span>
-                <?php foreach ($ev as $i => $e): ?><?= $i > 0 ? ' ' : '' ?><?= $quote($e) ?><?php if ($e['context'] !== 'normal'): ?> <span class="cdx-ctx">(<?= $rh(SseDetectionEngine::contextLabel($e['context'])) ?>)</span><?php endif; ?><?php endforeach; ?>
+                <?php foreach ($ev as $i => $e): ?><?= $i > 0 ? ', ' : '' ?><strong class="cdx-term">« <?= $rh($e['match']) ?> »</strong><?php if ($e['context'] !== 'normal'): ?> <span class="cdx-ctx">(<?= $rh(SseDetectionEngine::contextLabel($e['context'])) ?>)</span><?php endif; ?><?php endforeach; ?>
             </p>
+            <?php foreach (D::excerpts((string) ($cdxTest['analysis']['text'] ?? ''), $d['rules']) as $parts): ?>
+                <p class="cdx-excerpt"><q class="cdx-q"><?php foreach ($parts as [$t, $m]): ?><?= $m ? '<mark>' . $rh($t) . '</mark>' : $rh($t) ?><?php endforeach; ?></q></p>
+            <?php endforeach; ?>
             <p class="cdx-card__meta"><?= count($d['rules']) > 1 ? 'Règles' : 'Règle' ?> <span class="cdx-mono" translate="no"><?= $rh(implode(', ', array_column($d['rules'], 'id'))) ?></span> · <?= $rh($tierLabel[$d['tier']] ?? '') ?></p>
             <ul class="cdx-signals">
                 <?php foreach ($d['signals'] as $s): ?><li><span><?= $rh($s['label']) ?></span><strong><?= (int) $s['points'] > 0 ? '+' . (int) $s['points'] : '—' ?></strong></li><?php endforeach; ?>
