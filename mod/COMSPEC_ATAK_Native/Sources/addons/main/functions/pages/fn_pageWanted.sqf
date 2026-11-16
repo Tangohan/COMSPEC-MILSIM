@@ -40,6 +40,10 @@ private _rows = [];
 private _sel = _list param [(_list findIf { format ["%1:%2", _x select 0, _x select 1] isEqualTo _open }), []];
 if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     _sel params ["_kind", "_id", "_ref", "_name", "_alias", "_level", "_details", ["_url", ""], ["_upd", ""], ["_orig", ""]];
+    // Valeurs caviardées du portail : « Identité protégée », alias retiré, passages en « [CAVIARDÉ] » (fn_sseHub).
+    _name = ["name", [_name, "Identité inconnue"]] call comspec_atak_native_fnc_sseHub;
+    _alias = ["alias", _alias] call comspec_atak_native_fnc_sseHub;
+    _details = ["text", _details] call comspec_atak_native_fnc_sseHub;
     private _img = _imgs getOrDefault [_open, ""];
     if !(_img isEqualType "") then { _img = ""; };
     _rows append [
@@ -97,6 +101,8 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     };
     {
         _x params ["_kind", "_id", "_ref", "_name", "_alias", "_level", "", "", "", ["_orig", ""]];
+        _name = ["name", [_name, "Identité inconnue"]] call comspec_atak_native_fnc_sseHub;
+        _alias = ["alias", _alias] call comspec_atak_native_fnc_sseHub;
         private _key = format ["%1:%2", _kind, _id];
         private _img = _imgs getOrDefault [_key, ""];
         if !(_img isEqualType "") then { _img = ""; };

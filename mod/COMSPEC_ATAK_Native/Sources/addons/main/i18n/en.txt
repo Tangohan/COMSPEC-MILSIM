@@ -25169,5 +25169,8 @@
 ["Afficher la réglette d'effectif sur la carte", "Show the squad strip on the map"],
 ["Les cases de votre groupe sous la boussole de la carte : une par équipier, la lettre est son équipe de feu, une pastille marque le chef. Décochez pour la masquer. L'onglet Groupe et l'ORBAT ne sont pas concernés.", "Your group's boxes under the map compass: one per teammate, the letter is their fire team, a dot marks the leader. Untick to hide it. The Group tab and the ORBAT are not affected."],
 ["Réglette d'effectif sous la boussole", "Squad strip under the compass"],
-["Une case par équipier. L'onglet Groupe et l'ORBAT la gardent", "One box per teammate. The Group tab and the ORBAT keep it"]
+["Une case par équipier. L'onglet Groupe et l'ORBAT la gardent", "One box per teammate. The Group tab and the ORBAT keep it"],
+["Identité protégée", "Protected identity"],
+["satellite", "satellite"],
+["[CAVIARDÉ]", "[REDACTED]"]
 ]
