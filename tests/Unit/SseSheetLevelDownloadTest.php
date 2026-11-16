@@ -476,7 +476,7 @@ final class SseSheetLevelDownloadTest extends TestCase
         [$html] = $this->editor('identification', self::access('confidentiel'), $p);
         foreach ([$c['id']] as $id) {
             self::assertStringContainsString('data-shx-open="shx-dl-' . $id . '"', $html);
-            preg_match('~<dialog class="shx-dialog" id="shx-dl-' . $id . '".*?</dialog>~s', $html, $m);
+            preg_match('~<dialog class="shx-dialog[^"]*" id="shx-dl-' . $id . '".*?</dialog>~s', $html, $m);
             self::assertNotEmpty($m);
             $dialog = $m[0];
             self::assertStringContainsString('method="get"', $dialog);

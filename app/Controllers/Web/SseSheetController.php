@@ -301,21 +301,38 @@ final class SseSheetController
     public function reissueHigher(Request $request, array $params = []): Response
     {
         $r = $this->r();
+        $json = str_contains(strtolower((string) $request->header('Accept')), 'application/json');
+        // Depuis la fenêtre de téléchargement (Accept : JSON) : même contrôle, réponse JSON ; sinon redirection avec message.
+        $fail = function (string $code, string $message, string $to, int $status) use ($json): Response {
+            return $json ? Response::json(['ok' => false, 'error' => $code, 'message' => $message], $status) : $this->flashBack('error', $message, $to);
+        };
         $id = (int) ($params['id'] ?? 0);
         $issue = $r->canDraft() && SseSheetRepository::ready() ? $this->repo->findIssue($r->tenantId(), $id) : null;
         if ($issue === null) {
-            return $this->flashBack('error', $r->canDraft() ? 'Document introuvable.' : 'Action non autorisée.', url('atak/sse/identites'));
+            return $r->canDraft() ? $fail('notfound', 'Document introuvable.', url('atak/sse/identites'), 404) : $fail('forbidden', 'Action non autorisée.', url('atak/sse/identites'), 403);
         }
         $back = SseSheetReissueService::backUrl($issue);
         if (!Csrf::verify($request)) {
-            return $this->flashBack('error', 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la page puis recommencez.', $back);
+            return $fail('csrf', 'Votre page est restée ouverte trop longtemps ou la session a changé : rechargez la page puis recommencez.', $back, 419);
         }
         $res = (new SseSheetReissueService($this->repo, $this->facts, $this->service))->reissue($r->tenantId(), $id, $request->inputString('classification'), $request->inputString('reason'), $r);
         if (!$res['ok']) {
-            return $this->flashBack('error', $res['message'], $back);
+            return $fail($res['error'], $res['message'], $back, match ($res['error']) {
+                'forbidden', 'ceiling' => 403,
+                'notfound' => 404,
+                default => 422,
+            });
+        }
+        $message = 'Document ' . $res['ref'] . ' émis à un niveau supérieur (réémission de ' . $res['old_ref'] . '). L’ancien document est conservé.';
+        if ($json) {
+            return Response::json([
+                'ok' => true, 'id' => $res['id'], 'ref' => $res['ref'], 'old_ref' => $res['old_ref'], 'message' => $message,
+                'level' => SseSheetService::clampLevel($request->inputString('classification'), $r),
+                'pdf_url' => url('atak/sse/identites/emissions/' . (int) $res['id'] . '/pdf'),
+            ]);
         }
 
-        return $this->flashBack('success', 'Document ' . $res['ref'] . ' émis à un niveau supérieur (réémission de ' . $res['old_ref'] . '). L’ancien document est conservé.', $back);
+        return $this->flashBack('success', $message, $back);
     }
 
     // ----------------------------------------------------------------- Phrases

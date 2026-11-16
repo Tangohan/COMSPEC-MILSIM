@@ -60,7 +60,7 @@ $idt = static function (string $v): string {
 };
 $lvlStyle = static fn (array $i): string => '--lv-bg:rgb(' . implode(',', array_map('intval', (array) ($i['rgb'] ?? [80, 40, 120]))) . ');--lv-ink:' . ($i['ink'] ?? '#ffffff');
 ?>
-<section class="panel shx-issues"<?= empty($issuesEmbedded) ? ' id="documents-emis"' : '' ?> style="margin-top:12px">
+<section class="panel shx-issues" data-shx-issues<?= empty($issuesEmbedded) ? ' id="documents-emis"' : '' ?> style="margin-top:12px">
     <div class="panel-header"><div class="panel-title">Documents émis</div><div class="panel-meta"><?= count($issuesList) + count($vigList) ?> document(s)</div></div>
     <div class="panel-body">
         <?php if ($vigList !== []): ?>
