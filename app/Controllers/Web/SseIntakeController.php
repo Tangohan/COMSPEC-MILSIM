@@ -28,7 +28,8 @@ use App\Support\SseAccessCatalog;
  *
  * Droits du portail (SseAccessPolicy) :
  *   - file et suivi : gérer les fiches de renseignement (section « terrain », niveau gérer), ou l'accès au back-office ;
- *   - traiter (prendre en compte, commenter, état, transmettre, doublon, attribuer, type, thèmes, Discord) : le même droit ;
+ *   - traiter (prendre en compte, commenter, état, transmettre, doublon, attribuer, type, thèmes, Discord, retour sur une
+ *     proposition de Cerbère : ignorer, mauvaise détection) : le même droit ;
  *   - convertir : en plus, écrire dans les dossiers ; relier : écrire dans les fiches (vérifié par le service de liens) ;
  *   - modifier les données, caviarder, flouter, supprimer, lire l'identifiant Steam : jamais d'ici, seulement depuis le
  *     back-office (lien proposé à qui y a accès).
@@ -36,7 +37,7 @@ use App\Support\SseAccessCatalog;
 final class SseIntakeController
 {
     /** Actions offertes depuis le portail. */
-    private const ACTIONS = ['take', 'comment', 'state', 'assign', 'type', 'themes', 'convert', 'link', 'discord'];
+    private const ACTIONS = ['take', 'comment', 'state', 'assign', 'type', 'themes', 'cerbere', 'convert', 'link', 'discord'];
 
     public function __construct(
         private ?IntelIntakeDesk $desk = null,

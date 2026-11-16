@@ -23,8 +23,10 @@ $me = (int) $d['viewer']['id'];
 $text = static fn (string $field): string => P::textHtml($row, $field, $it['redactions'], $level, $me, 'fnr-mark', 'fnr-barre');
 $grid = trim((string) ($row['grid_reference'] ?? ''));
 $classLabel = (string) $d['classification'];
-$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiche-rens.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-fiche-rens.js')) . '"></script>';
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiche-rens.css')) . '">'
+    . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/cerbere-detections.css')) . '">';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-fiche-rens.js')) . '"></script>'
+    . '<script defer src="' . $h(asset_url('assets/js/cerbere-detections.js')) . '"></script>';
 ?>
 <div class="fnr fnr-cr" data-fnr data-fnr-copied="Copié dans le presse-papiers." data-fnr-copy-failed="La copie a échoué : sélectionnez le texte et copiez-le à la main.">
     <header class="fnr-head">

@@ -19,7 +19,8 @@ use App\Support\SseLinkCatalog;
  * (tableau $rights) ; ce service prépare ce que la page affiche et exécute les actions selon ces droits.
  *
  * Droits attendus :
- *   treat   : prendre en compte, commenter, changer l'état, transmettre, doublon, attribuer, changer le type et les thèmes ;
+ *   treat   : prendre en compte, commenter, changer l'état, transmettre, doublon, attribuer, changer le type et les thèmes,
+ *             ignorer une proposition de Cerbère ou la signaler comme mauvaise détection (« cerbere ») ;
  *   manage  : modifier les données, flouter une pièce, supprimer, restaurer ;
  *   redact  : caviarder et lever un caviardage (plus haute habilitation) ;
  *   steam   : lire l'identifiant Steam de l'émetteur (journalisé) ;
@@ -33,7 +34,7 @@ class IntelIntakeDesk
 
     /** Droit exigé par action. */
     public const ACTION_RIGHT = [
-        'take' => 'treat', 'comment' => 'treat', 'state' => 'treat', 'assign' => 'treat', 'type' => 'treat', 'themes' => 'treat',
+        'take' => 'treat', 'comment' => 'treat', 'state' => 'treat', 'assign' => 'treat', 'type' => 'treat', 'themes' => 'treat', 'cerbere' => 'treat',
         'edit' => 'manage', 'blur' => 'manage', 'delete' => 'manage', 'restore' => 'manage',
         'redact' => 'redact', 'unredact' => 'redact',
         'steam' => 'steam', 'convert' => 'convert', 'link' => 'link', 'discord' => 'discord',
@@ -152,7 +153,7 @@ class IntelIntakeDesk
             'intel_source' => $source === 'fiche' && trim((string) ($row['intel_source'] ?? '')) !== ''
                 ? (string) $row['intel_source'] . ' — ' . SseFieldNoteCatalog::sourceLabel((string) $row['intel_source']) : '',
             'timeline' => $timeline,
-            'proposals' => $treat ? $this->advisor()->proposals($item) : [],
+            'proposals' => $treat ? $this->advisor()->proposals($item, $tenantId) : [],
             'assignee_proposal' => $treat && $open ? $this->advisor()->assignee($tenantId, $item) : null,
             'duplicates' => $treat ? $this->advisor()->duplicates($tenantId, $item) : [],
             'forward_targets' => $treat ? $this->advisor()->forwardTargets($tenantId, '', 40) : [],
@@ -247,6 +248,19 @@ class IntelIntakeDesk
     }
 
     /**
+     * Une proposition de Cerbère appliquée (champs cerbere_* du bouton Appliquer) : notée pour les statistiques de la règle.
+     *
+     * @param array<string, mixed> $input
+     * @param array{id: int, label: string} $actor
+     */
+    private function cerbereApplied(bool $ok, int $tenantId, string $source, int $id, array $input, array $actor): void
+    {
+        if ($ok && isset($input['cerbere_target'])) {
+            $this->advisor()->detection()->applied($tenantId, $source, $id, $input, $actor);
+        }
+    }
+
+    /**
      * Exécute une action. Ne lève jamais : renvoie le message à afficher.
      *
      * @param array<string, mixed> $input champs du formulaire
@@ -270,8 +284,16 @@ class IntelIntakeDesk
             return $res(false, self::denied($need));
         }
         $in = static fn (string $k, string $d = ''): string => trim((string) (is_scalar($input[$k] ?? null) ? $input[$k] : $d));
+        // Une urgence « Critique » proposée par Cerbère ne s'applique qu'après vérification explicite du texte.
+        if ($action === 'edit' && $in('cerbere_target') === 'urgency' && $in('cerbere_value') === 'critique' && $in('cerbere_checked') !== '1') {
+            return $res(false, 'Cochez « J’ai vérifié le texte » avant d’appliquer une urgence Critique.');
+        }
         try {
             switch ($action) {
+                case 'cerbere':
+                    $fb = $this->advisor()->detection()->feedback($tenantId, $source, $id, $input, $actor);
+
+                    return $res($fb['ok'], $fb['message']);
                 case 'take':
                     $ok = $this->intake->take($tenantId, $source, $id, $actor);
                     if ($ok) {
@@ -291,14 +313,17 @@ class IntelIntakeDesk
                     return $res($ok, $ok ? 'Attribution mise à jour.' : 'Membre introuvable.');
                 case 'type':
                     $ok = $this->intake->changeType($tenantId, $source, $id, $actor, $in('type'));
+                    $this->cerbereApplied($ok, $tenantId, $source, $id, $input, $actor);
 
                     return $res($ok, $ok ? 'Type changé.' : 'Type inchangé ou inconnu.');
                 case 'themes':
                     $ok = $source === 'fiche' && $this->intake->setThemes($tenantId, $id, $actor, $input['themes'] ?? '');
+                    $this->cerbereApplied($ok, $tenantId, $source, $id, $input, $actor);
 
                     return $res($ok, $ok ? 'Thèmes mis à jour.' : 'Thèmes inchangés.');
                 case 'edit':
                     $ok = $this->intake->updateData($tenantId, $source, $id, $actor, array_intersect_key($input, IntelIntakeService::EDITABLE[$source] ?? []), $level) !== [];
+                    $this->cerbereApplied($ok, $tenantId, $source, $id, $input, $actor);
 
                     return $res($ok, $ok ? 'Données enregistrées.' : 'Aucune modification.');
                 case 'redact':

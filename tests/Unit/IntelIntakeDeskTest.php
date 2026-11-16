@@ -340,9 +340,13 @@ final class IntelIntakeDeskTest extends TestCase
         self::assertSame('FRT', $byKey['type']['value']);
         self::assertArrayHasKey('themes', $byKey);
         foreach ($desk['proposals'] as $p) {
-            self::assertStringStartsWith('Le texte parle de : ', $p['reason']);
-            self::assertStringContainsString($p['reason'], html_entity_decode($html));
+            // Explication honnête : passage trouvé, règle, confiance (Cerbère-Lecture), affichée sur la carte et dans « Pourquoi ? ».
+            self::assertMatchesRegularExpression('/^Détecté : « .+ » · règles? [RUK]-\d{2}.* · confiance \d+ %$/u', $p['reason']);
+            self::assertStringContainsString('id="' . $p['dom'] . '"', $html);
+            self::assertStringContainsString('id="' . $p['dom'] . '-why"', $html);
+            self::assertStringContainsString('confiance ' . $p['confidence'] . ' %', html_entity_decode($html));
         }
+        self::assertStringNotContainsString('Le texte parle de', $html);
         self::assertGreaterThanOrEqual(3, substr_count($html, 'Proposé par Cerbère'));
         // Attribution : personne n'a encore traité ce joueur, la charge la plus faible l'emporte, avec sa raison.
         self::assertNotNull($desk['assignee_proposal']);

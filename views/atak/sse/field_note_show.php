@@ -133,9 +133,11 @@ $codes = static function (array $tags) use ($h): string {
     return '<span class="fnr-codes">' . $out . '</span>';
 };
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiche-rens.css')) . '">'
-    . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiches-etiquettes.css')) . '">';
+    . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiches-etiquettes.css')) . '">'
+    . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/cerbere-detections.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-fiche-rens.js')) . '"></script>'
-    . '<script defer src="' . $h(asset_url('assets/js/sse-fiches-etiquettes.js')) . '"></script>';
+    . '<script defer src="' . $h(asset_url('assets/js/sse-fiches-etiquettes.js')) . '"></script>'
+    . '<script defer src="' . $h(asset_url('assets/js/cerbere-detections.js')) . '"></script>';
 ?>
 <div class="fnr fnr--<?= $h($classCode) ?>" data-fnr data-fnr-copied="Copié dans le presse-papiers." data-fnr-copy-failed="La copie a échoué : sélectionnez le texte et copiez-le à la main.">
     <header class="fnr-head">

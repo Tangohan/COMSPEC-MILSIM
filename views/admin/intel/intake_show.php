@@ -70,6 +70,14 @@ $chips = static function (string $kind, string $target) use ($d, $h): string {
 $dialogHead = static fn (string $id, string $title, string $desc): string => '<header class="rmt-dialog__head"><div><h2 id="' . $h($id) . '-title">' . $h($title) . '</h2><p class="rmt-desc">' . $h($desc) . '</p></div>'
     . '<button type="button" class="rmt-iconbtn" data-rmt-close aria-label="Fermer la fenêtre" title="Fermer">' . $ico($icons['close']) . '</button></header>';
 $cerbere = '<span class="rmt-cerbere">' . $ico($icons['spark']) . 'Proposé par Cerbère</span>';
+// Propositions de Cerbère-Lecture (views/partials/cerbere_proposals.php) : cartes expliquées, « Pourquoi ? », retour d'expérience.
+$cdxProposals = $d['proposals'];
+$cdxBase = $base;
+$cdxCsrf = $csrf;
+$cdxCanEdit = !empty($rights['manage']);
+$cdxBadge = $cerbere;
+$cdxBtn = 'rmt-btn rmt-btn--mini';
+$cdxManageUrl = \App\Controllers\Web\SseDetectionController::manageUrlForSession();
 
 // Position et contenu.
 $grid = trim((string) ($row['grid_reference'] ?? ''));
@@ -368,19 +376,7 @@ $delay = $d['delay'];
                 <?php if ($d['proposals'] !== []): ?>
                     <div class="rmt-block">
                         <h3 class="rmt-h3">Propositions</h3>
-                        <ul class="rmt-proposals">
-                            <?php foreach ($d['proposals'] as $p): ?>
-                                <li>
-                                    <form method="post" action="<?= $h($base . '/' . $p['action']) ?>" class="rmt-proposal">
-                                        <?= $csrf ?>
-                                        <?php foreach ($p['fields'] as $name => $value): ?><input type="hidden" name="<?= $h($name) ?>" value="<?= $h($value) ?>"><?php endforeach; ?>
-                                        <p><?= $cerbere ?> <?= $h($p['label']) ?> : <strong><?= $h($p['value_label']) ?></strong></p>
-                                        <p class="rmt-dim"><?= $h($p['reason']) ?></p>
-                                        <button type="submit" class="rmt-btn rmt-btn--mini">Appliquer</button>
-                                    </form>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <?php $cdxPart = 'list'; require __DIR__ . '/../../partials/cerbere_proposals.php'; ?>
                     </div>
                 <?php endif; ?>
 
@@ -760,6 +756,9 @@ $delay = $d['delay'];
             </form>
         </dialog>
     <?php endif; ?>
+    <?php $cdxPart = 'dialogs'; require __DIR__ . '/../../partials/cerbere_proposals.php'; ?>
 </div>
 <script src="<?= $h(asset_url('assets/js/remontees.js')) ?>" defer></script>
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/cerbere-detections.css')) ?>">
+<script src="<?= $h(asset_url('assets/js/cerbere-detections.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/recon-viewer.js')) ?>" defer></script>
