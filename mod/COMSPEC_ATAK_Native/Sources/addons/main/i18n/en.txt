@@ -25168,5 +25168,7 @@
 ["%1 brief(s) en attente", "%1 brief(s) waiting"],
 ["liaison KO (%1)", "link KO (%1)"],
 ["pas de téléphone", "no phone"],
-["Athena non relié", "Athena not linked"]
+["Athena non relié", "Athena not linked"],
+["CHECK-IN reçu de %1", "CHECK-IN received from %1"],
+["CHECK-IN reçu de %1 — %2", "CHECK-IN received from %1 — %2"]
 ]

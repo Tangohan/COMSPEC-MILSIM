@@ -275,9 +275,11 @@ switch (_act) do {
         private _what = (switch (_fmt) do {
             case "5": { [_lines param [2, ""], _lines param [3, ""]] };
             case "M": { [_lines param [0, ""]] };
+            // Fiche de check-in CKIN (fn_jtacCkin) : appareil et position de la cible.
+            case "C": { [_lines param [0, ""], _lines param [16, ""]] };
             default { [_lines param [5, ""], format ["IP %1", _lines param [0, ""]]] };
         }) select { !((trim _x) in ["", "-", "IP", "IP -"]) };
-        private _head = (createHashMapFromArray [["5", "5 LIGNES reçues de %1"], ["M", "MEDEVAC reçu de %1"]]) getOrDefault [_fmt, "9 LIGNES reçues de %1"];
+        private _head = (createHashMapFromArray [["5", "5 LIGNES reçues de %1"], ["M", "MEDEVAC reçu de %1"], ["C", "CHECK-IN reçu de %1"]]) getOrDefault [_fmt, "9 LIGNES reçues de %1"];
         ["WARNING", [format [_head, _from], format [_head + " — %2", _from, _what joinString " · "]] select (_what isNotEqualTo []), 10, 85, ["JTAC", "PILOT"] select ((["on"] call comspec_atak_native_fnc_pilotMode) && {["crew"] call comspec_atak_native_fnc_pilotMode})] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_vibrate;
         // Téléphone rangé (en vol) : le vibreur ne joue pas, on entend quand même l'arrivée.
