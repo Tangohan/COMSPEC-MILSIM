@@ -25153,6 +25153,10 @@
 ["Les cases de votre groupe sous la boussole de la carte : une par équipier, la lettre est son équipe de feu, une pastille marque le chef. Décochez pour la masquer. L'onglet Groupe et l'ORBAT ne sont pas concernés.", "Your group's boxes under the map compass: one per teammate, the letter is their fire team, a dot marks the leader. Untick to hide it. The Group tab and the ORBAT are not affected."],
 ["Réglette d'effectif sous la boussole", "Squad strip under the compass"],
 ["Une case par équipier. L'onglet Groupe et l'ORBAT la gardent", "One box per teammate. The Group tab and the ORBAT keep it"],
+["Afficher ma grille sous l'indicatif (mode petit)", "Show my grid under the callsign (small mode)"],
+["En mode petit (téléphone porté ou miniature), votre position en grille s'affiche sous votre indicatif sur la carte, au format choisi pour le bandeau de la carte. Sans position (GPS éteint ou sans fix) : « ---- ---- ». Décochez pour n'afficher que l'indicatif.", "In small mode (carried or miniature phone), your grid position is shown under your callsign on the map, in the format chosen for the map banner. With no position (GPS off or no fix): ---- ----. Untick to show the callsign only."],
+["Grille sous l'indicatif (mode petit)", "Grid under the callsign (small mode)"],
+["Votre position en grille sous votre indicatif sur la carte, en petit format", "Your grid position under your callsign on the map, in small format"]
 ["Identité protégée", "Protected identity"],
 ["satellite", "satellite"],
 ["[CAVIARDÉ]", "[REDACTED]"]
