@@ -215,7 +215,8 @@ final class TenantBootstrapService
             } catch (\Throwable) {
             }
 
-            $pdo->commit();
+            // Un DDL passé pendant la création a pu valider la transaction implicitement : rien à valider alors.
+            Database::safeCommit($pdo);
 
             // Le compte technique « Modération automatique » est créé à la demande, plus à la création.
 

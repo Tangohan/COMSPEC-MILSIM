@@ -411,6 +411,8 @@ class OrganizationDashboardController
                     $res = $sessions->membersToVerify($tenantId, $now - $days * 86400, $rules['min_minutes'] * 60, 5);
                     $home['availability'] = [
                         'ready' => $res !== null,
+                        // Erreur SQL (collation, colonne) : le widget le dit au lieu d'afficher une liste vide.
+                        'error' => $res === null && $sessions->lastError() !== null,
                         'days' => $days,
                         'total' => (int) ($res['total'] ?? 0),
                         'rows' => $res['rows'] ?? [],
@@ -421,6 +423,7 @@ class OrganizationDashboardController
                     $rows = $sessions->recentForTenant($tenantId, $now - 14 * 86400, 8);
                     $home['sessions'] = [
                         'ready' => $rows !== null,
+                        'error' => $rows === null && $sessions->lastError() !== null,
                         'rows' => $rows ?? [],
                         'min_minutes' => $rules['min_minutes'],
                         'href' => effectifs_workspace_url(),

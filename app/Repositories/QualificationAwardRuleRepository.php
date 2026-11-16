@@ -394,8 +394,9 @@ final class QualificationAwardRuleRepository
                 if ($scope === '') {
                     return [];
                 }
+                // users (historique, collation du serveur) ↔ game_item_usage (utf8mb4_unicode_ci) : docs/dev/COLLATIONS-MYSQL.md.
                 $sql = 'SELECT u.id, COUNT(DISTINCT g.usage_day) FROM game_item_usage g
-                        JOIN users u ON u.steam_id = g.steam_id
+                        JOIN users u ON ' . \App\Support\SqlText::columnEquals($this->pdo(), 'g.steam_id', 'u.steam_id') . '
                         WHERE g.tenant_id = ?';
                 if (str_starts_with($scope, 'kind:')) {
                     $sql .= ' AND g.kind = ?';

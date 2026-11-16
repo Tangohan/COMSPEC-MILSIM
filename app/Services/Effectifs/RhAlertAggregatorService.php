@@ -190,7 +190,7 @@ final class RhAlertAggregatorService
                 return ['', []];
             }
             $rules = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId);
-            [$exists, $params] = \App\Repositories\PlayerSessionRepository::qualifyingExistsClause('u', time() - $days * 86400, $rules['min_minutes'] * 60);
+            [$exists, $params] = \App\Repositories\PlayerSessionRepository::qualifyingExistsClause('u', time() - $days * 86400, $rules['min_minutes'] * 60, $this->pdo);
 
             return [' AND NOT ' . $exists, $params];
         } catch (\Throwable) {

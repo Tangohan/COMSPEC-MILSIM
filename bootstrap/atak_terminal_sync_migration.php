@@ -38,6 +38,6 @@ function run_atak_terminal_sync_migration(PDO $pdo): void
             PRIMARY KEY (id),
             UNIQUE KEY uniq_atak_sync_terminal (tenant_id, terminal_uid),
             KEY idx_atak_sync_tenant_reported (tenant_id, reported_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 }

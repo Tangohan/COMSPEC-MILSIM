@@ -240,6 +240,40 @@ final class Database
         }
     }
 
+    /**
+     * Valide la transaction si elle est encore ouverte. Un DDL (CREATE / ALTER TABLE, même « IF NOT EXISTS ») passé
+     * entre beginTransaction() et commit() la valide implicitement sous MySQL / MariaDB ; PHP 8 lève alors
+     * « There is no active transaction » sur commit(). Retourne false quand il n'y avait plus rien à valider (les
+     * écritures sont déjà enregistrées).
+     */
+    public static function safeCommit(PDO $pdo): bool
+    {
+        if (!$pdo->inTransaction()) {
+            return false;
+        }
+
+        return $pdo->commit();
+    }
+
+    /**
+     * Annule la transaction si elle est encore ouverte, sans jamais lever : à appeler dans un catch, après avoir
+     * journalisé l'erreur d'origine. Retourne false quand rien n'a pu être annulé (transaction déjà close).
+     */
+    public static function safeRollback(PDO $pdo): bool
+    {
+        try {
+            if (!$pdo->inTransaction()) {
+                return false;
+            }
+
+            return $pdo->rollBack();
+        } catch (Throwable $e) {
+            error_log('[db] annulation de transaction impossible : ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
     public static function disconnect(): void
     {
         self::$pdo = null;

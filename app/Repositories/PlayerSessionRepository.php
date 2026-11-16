@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Services\Personnel\PlayerSessionService;
 use App\Support\LazyDatabaseConnection;
+use App\Support\SqlText;
 use App\Support\SteamId;
 use PDO;
 
@@ -22,6 +23,8 @@ class PlayerSessionRepository
     use LazyDatabaseConnection;
 
     private ?bool $ready = null;
+
+    private ?string $lastError = null;
 
     public function __construct(?PDO $pdo = null)
     {
@@ -272,12 +275,14 @@ class PlayerSessionRepository
      *
      * @return array{0: string, 1: list<int|string>}
      */
-    public static function qualifyingExistsClause(string $userAlias, int $sinceTs, int $minSeconds): array
+    public static function qualifyingExistsClause(string $userAlias, int $sinceTs, int $minSeconds, ?PDO $pdo = null): array
     {
         $a = preg_replace('/[^A-Za-z0-9_]/', '', $userAlias) ?: 'u';
+        // users (historique, collation du serveur) ↔ player_sessions (utf8mb4_unicode_ci) : voir docs/dev/COLLATIONS-MYSQL.md.
+        $steamJoin = $pdo instanceof PDO ? SqlText::columnEquals($pdo, 'ps.steam_uid', $a . '.steam_id') : "ps.steam_uid = {$a}.steam_id";
 
         return [
-            "EXISTS (SELECT 1 FROM player_sessions ps WHERE ps.tenant_id = {$a}.tenant_id AND ps.steam_uid = {$a}.steam_id AND ps.last_seen_at >= ? AND ps.duration_s >= ?)",
+            "EXISTS (SELECT 1 FROM player_sessions ps WHERE ps.tenant_id = {$a}.tenant_id AND {$steamJoin} AND ps.last_seen_at >= ? AND ps.duration_s >= ?)",
             [self::fmt($sinceTs), max(60, $minSeconds)],
         ];
     }
@@ -326,10 +331,13 @@ class PlayerSessionRepository
         if ($tenantId < 1 || !$this->schemaReady()) {
             return null;
         }
+        $this->lastError = null;
         $since = self::fmt($sinceTs);
         $min = max(60, $minSeconds);
+        $pdo = $this->pdo();
+        $steamJoin = SqlText::columnEquals($pdo, 'ps.steam_uid', 'u.steam_id');
         $where = "u.tenant_id = ? AND u.status = 'active' AND (u.display_name IS NULL OR u.display_name <> 'Compte supprimé')
-            AND NOT EXISTS (SELECT 1 FROM player_sessions ps WHERE ps.tenant_id = u.tenant_id AND ps.steam_uid = u.steam_id AND ps.last_seen_at >= ? AND ps.duration_s >= ?)";
+            AND NOT EXISTS (SELECT 1 FROM player_sessions ps WHERE ps.tenant_id = u.tenant_id AND {$steamJoin} AND ps.last_seen_at >= ? AND ps.duration_s >= ?)";
         $params = [$tenantId, $since, $min];
         if ($this->tableReady('member_availability_checks')) {
             $where .= ' AND NOT EXISTS (SELECT 1 FROM member_availability_checks c WHERE c.tenant_id = u.tenant_id AND c.user_id = u.id AND c.created_at >= ?)';
@@ -344,7 +352,7 @@ class PlayerSessionRepository
                 $st = $this->pdo()->prepare(
                     "SELECT t.* FROM (
                         SELECT u.id, u.display_name, u.steam_id,
-                               (SELECT MAX(ps2.last_seen_at) FROM player_sessions ps2 WHERE ps2.tenant_id = u.tenant_id AND ps2.steam_uid = u.steam_id AND ps2.duration_s >= ?) AS last_at
+                               (SELECT MAX(ps2.last_seen_at) FROM player_sessions ps2 WHERE ps2.tenant_id = u.tenant_id AND " . SqlText::columnEquals($pdo, 'ps2.steam_uid', 'u.steam_id') . " AND ps2.duration_s >= ?) AS last_at
                         FROM users u WHERE {$where}
                      ) t ORDER BY (t.last_at IS NULL) DESC, t.last_at ASC, t.id ASC LIMIT " . max(1, min(20, $limit))
                 );
@@ -359,7 +367,7 @@ class PlayerSessionRepository
                 }
             }
         } catch (\Throwable $e) {
-            error_log('[player-sessions] à vérifier : ' . $e->getMessage());
+            $this->fail('à vérifier', $e, ['player_sessions.steam_uid', 'users.steam_id', 'member_availability_checks.user_id']);
 
             return null;
         }
@@ -378,11 +386,13 @@ class PlayerSessionRepository
         if ($tenantId < 1 || !$this->schemaReady()) {
             return null;
         }
+        $this->lastError = null;
         try {
-            $st = $this->pdo()->prepare(
+            $pdo = $this->pdo();
+            $st = $pdo->prepare(
                 'SELECT ps.started_at, ps.last_seen_at, ps.duration_s, ps.aberrant, u.id AS user_id, u.display_name
                  FROM player_sessions ps
-                 LEFT JOIN users u ON u.tenant_id = ps.tenant_id AND u.steam_id = ps.steam_uid
+                 LEFT JOIN users u ON u.tenant_id = ps.tenant_id AND ' . SqlText::columnEquals($pdo, 'ps.steam_uid', 'u.steam_id') . '
                  WHERE ps.tenant_id = ? AND ps.last_seen_at >= ?
                  ORDER BY ps.last_seen_at DESC LIMIT ' . max(1, min(30, $limit))
             );
@@ -403,10 +413,45 @@ class PlayerSessionRepository
 
             return $out;
         } catch (\Throwable $e) {
-            error_log('[player-sessions] récentes : ' . $e->getMessage());
+            $this->fail('récentes', $e, ['player_sessions.steam_uid', 'users.steam_id']);
 
             return null;
         }
+    }
+
+    /**
+     * Dernière erreur technique d'une lecture des widgets (null si la lecture a abouti ou si la table manque) : le
+     * widget affiche alors « Données indisponibles (erreur technique) » au lieu d'une liste vide trompeuse.
+     */
+    public function lastError(): ?string
+    {
+        return $this->lastError;
+    }
+
+    /**
+     * Journalise l'échec avec les colonnes en jeu et leur collation réelle (MySQL / MariaDB), pour qu'une erreur 1267
+     * dise tout de suite quelle table diverge.
+     *
+     * @param list<string> $columns « table.colonne »
+     */
+    private function fail(string $what, \Throwable $e, array $columns): void
+    {
+        $this->lastError = $e->getMessage();
+        $detail = [];
+        try {
+            $pdo = $this->pdo();
+            if (SqlText::isMysqlFamily($pdo)) {
+                $st = $pdo->prepare('SELECT COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+                foreach ($columns as $ref) {
+                    [$table, $column] = explode('.', $ref, 2) + [1 => ''];
+                    $st->execute([$table, $column]);
+                    $detail[] = $ref . '=' . ((string) ($st->fetchColumn() ?: '?'));
+                }
+            }
+        } catch (\Throwable) {
+        }
+        error_log('[player-sessions] ' . $what . ' : ' . $e->getMessage()
+            . ' | colonnes : ' . implode(', ', $detail !== [] ? $detail : $columns));
     }
 
     private function tableReady(string $table): bool

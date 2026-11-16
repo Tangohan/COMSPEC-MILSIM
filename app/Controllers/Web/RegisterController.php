@@ -29,6 +29,7 @@ use App\Services\Steam\SteamWebApiService;
 use App\Repositories\InviteLinkRepository;
 use App\Services\Recruitment\InviteLinkService;
 use App\Support\PendingInviteLink;
+use App\Support\SafeTransaction;
 use App\Support\UserFacingExceptionMapper;
 use Throwable;
 
@@ -283,9 +284,9 @@ final class RegisterController
         $roleId = $this->roleRepository->getIdBySlug($tenantId, 'member');
         $hash = password_hash($password, PASSWORD_ARGON2ID);
 
-        $pdo = Database::getPdo();
-        $pdo->beginTransaction();
-        try {
+        // Un DDL passé par un dépôt pendant ces écritures valide la transaction implicitement (MySQL) : SafeTransaction
+        // journalise d'abord l'erreur d'origine et ne lève plus « There is no active transaction ».
+        $written = SafeTransaction::run(Database::getPdo(), function () use ($tenantId, $email, $hash, $displayName, $roleId, $firstName, $lastName, $discordHandle, $resolvedSteamId): int {
             $userId = $this->userRepository->create($tenantId, [
                 'email' => $email,
                 'password_hash' => $hash,
@@ -317,20 +318,22 @@ final class RegisterController
                 // Steam sert uniquement à l'identité de jeu : son avatar public n'est jamais importé.
                 $this->userRepository->update($userId, $tenantId, ['steam_id' => $resolvedSteamId]);
             }
-            $pdo->commit();
-        } catch (Throwable $e) {
-            $pdo->rollBack();
-            error_log('[auth.register] ' . $e->getMessage());
-            if (UserFacingExceptionMapper::isDuplicateEmail($e)) {
+
+            return $userId;
+        }, 'auth.register');
+        $writeError = $written['error'];
+        if ($writeError instanceof Throwable) {
+            if (UserFacingExceptionMapper::isDuplicateEmail($writeError)) {
                 Session::flash('error', __('auth.flash_email_already_exists'));
                 Session::flash('login_old_email', $email);
 
                 return Response::redirect(url('login'));
             }
-            $flashBack(UserFacingExceptionMapper::registrationMessage($e));
+            $flashBack(UserFacingExceptionMapper::registrationMessage($writeError));
 
             return Response::redirect(url('register'));
         }
+        $userId = (int) $written['value'];
 
         \App\Services\Personnel\NewMemberNumbers::assign($userId, $tenantId);
         $this->auditService->log(AuditAction::AUTH_REGISTER, $tenantId, $userId, 'user', $userId, null, $email);
