@@ -231,6 +231,7 @@ final class JnetMemberHub
                 ['Ma liaison ATAK', 'Contrôles, session et historique de liaison', $moi('liaison-atak')],
                 ['Première liaison', 'Relier un téléphone pas à pas', $moi('premiere-liaison')],
                 ['Mes appareils', 'Téléphones liés, à retirer si besoin', $moi('appareils')],
+                ['Mes comptes rendus', 'Ceux envoyés depuis votre ATAK et leur suivi', ['jnet/comptes-rendus', ''], $badge('reports_pending')],
                 ['Musique', 'Bibliothèque et playlists écoutées en jeu', $moi('musique')],
                 ['Mon carnet de vol', 'Vos vols relevés en jeu et ceux que vous notez', $moi('carnet-de-vol'), 0, 'pilot'],
             ]],

@@ -84,6 +84,7 @@ $rank = ['pending' => 0, 'missing' => 0, 'in_review' => 1, 'validated' => 2][$st
       </p>
     </div>
     <div class="ath-page-head__actions">
+      <a class="ath-btn" href="<?= $h(url('jnet/comptes-rendus/' . $id)) ?>">Ouvrir dans le JNET</a>
       <a class="ath-btn" href="<?= $h($base . '/' . $id . '/pdf') ?>">Exporter en PDF</a>
       <?php if ($canManage): ?><a class="ath-btn ath-btn--solid" href="<?= $h($base . '/' . $id . '/edit') ?>">Modifier</a><?php endif; ?>
     </div>

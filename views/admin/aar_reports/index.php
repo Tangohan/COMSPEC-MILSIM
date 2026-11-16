@@ -85,6 +85,7 @@ $filtersOn = ($f['q'] ?? '') !== '' || ($f['status'] ?? '') !== '' || ($f['autho
     <?php endforeach; ?>
     <a href="<?= $h($base . '/syntheses') ?>" class="bo-aar-tabs__tab">Synthèses</a>
     <span class="bo-aar-tabs__spacer"></span>
+    <a class="ath-btn" href="<?= $h(url('jnet/comptes-rendus') . ($tab === 'actions' || $tab === 'terrain' ? '?vue=' . $tab : '')) ?>">Ouvrir dans le JNET</a>
     <a class="ath-btn" href="<?= $h(url('back-office/atak/comptes-rendus?onglet=suivi')) ?>">CR des joueurs (fin d’op)</a>
     <?php if ($canManage): ?>
       <a class="ath-btn" href="<?= $h($base . '/modeles') ?>">Modèles<?= (int) ($aarTemplateCount ?? 0) > 0 ? ' · ' . (int) $aarTemplateCount : '' ?></a>
