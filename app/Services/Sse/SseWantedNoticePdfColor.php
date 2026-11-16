@@ -124,36 +124,12 @@ trait SseWantedNoticePdfColor
         $pdf->SetLineWidth(0.25);
     }
 
-    /** Titre de rubrique numéroté : « 3. FAITS ET MOTIFS » et son libellé dans l'autre langue. */
+    /** Titre de rubrique numéroté (même système que la fiche de vigilance), repère épais dans la couleur de la notice. */
     private function section(string $key, float $x, float $y, float $w, array $d): void
     {
-        $pdf = $this->pdf;
         $c = $this->color($d);
         ++$this->nSection;
-        $title = $this->n($key);
-        $pdf->SetFillColor(...$c['rgb']);
-        $pdf->Rect($x, $y, 6.4, 5.2, 'F');
-        $pdf->SetFont($this->sans, 'B', 9.4);
-        $pdf->SetTextColor(...$c['ink']);
-        $pdf->SetXY($x, $y + 0.5);
-        $pdf->Cell(6.4, 4.2, (string) $this->nSection, 0, 0, 'C');
-        $pdf->SetTextColor(...self::INK);
-        [$primary, $ps] = $this->artFit(mb_strtoupper($title[$this->lang], 'UTF-8'), $w - 8.0, 9.4, 7.0);
-        $pdf->SetFont($this->sans, 'B', $ps);
-        $pw = $pdf->GetStringWidth($primary);
-        $pdf->SetXY($x + 8.0, $y + 0.3);
-        $pdf->Cell($pw + 1.0, 4.6, $primary, 0, 0, 'L');
-        $room = $w - 8.0 - $pw - 4.0;
-        $pdf->SetFont($this->sans, '', 7.2);
-        if ($room > 12.0 && $pdf->GetStringWidth($title[1 - $this->lang]) <= $room) {
-            $pdf->SetTextColor(...self::MUTED);
-            $pdf->SetXY($x + 8.0 + $pw + 3.0, $y + 0.8);
-            $pdf->Cell($room, 4.0, $title[1 - $this->lang], 0, 0, 'L');
-        }
-        $pdf->SetDrawColor(...self::INK);
-        $pdf->SetLineWidth(0.3);
-        $pdf->Line($x, $y + 5.2, $x + $w, $y + 5.2);
-        $pdf->SetLineWidth(0.25);
+        $this->artSectionHead($this->nSection, $this->n($key), $x, $y, $w, '', $c['rgb']);
     }
 
     /** Champ « libellé / valeur » compact (libellé au-dessus), retourne le bas du champ. */
@@ -161,13 +137,12 @@ trait SseWantedNoticePdfColor
     {
         $pdf = $this->pdf;
         // Libellé dans les deux langues s'il tient dans la colonne, sinon dans la langue du document seule.
-        $pdf->SetFont($this->sans, '', 6.0);
-        $both = mb_strtoupper($label[$this->lang], 'UTF-8') . ' / ' . $label[1 - $this->lang];
-        [$caption, $cs] = $pdf->GetStringWidth($both) <= $w - 2.0 ? [$both, 6.0] : $this->artFit(mb_strtoupper($label[$this->lang], 'UTF-8'), $w - 2.0, 6.0, 4.8, '');
-        $pdf->SetFont($this->sans, '', $cs);
-        $pdf->SetTextColor(...self::MUTED);
-        $pdf->SetXY($x, $y);
-        $pdf->Cell($w, 2.6, $caption, 0, 0, 'L');
+        $pdf->SetFont($this->sans, '', 5.8);
+        $pdf->setFontSpacing(0.25);
+        $both = mb_strtoupper($label[$this->lang] . ' / ' . $label[1 - $this->lang], 'UTF-8');
+        $caption = $pdf->GetStringWidth($both) <= $w - 1.0 ? $both : mb_strtoupper($label[$this->lang], 'UTF-8');
+        $pdf->setFontSpacing(0);
+        $this->artCaption($caption, $x, $y, $w, 'L', 5.8);
         $value = trim($value) !== '' ? $value : '—';
         [$text, $s] = $this->fitOrCut($value, $w - 1.0, $maxH, $size, 6.8, 'B');
         $pdf->SetFont($this->sans, 'B', $s);
@@ -274,21 +249,19 @@ trait SseWantedNoticePdfColor
         $pdf->SetTextColor(...self::MUTED);
         $pdf->SetXY($l + 16.0, 24.2);
         $pdf->Cell(104.0, 4.0, $svc, 0, 0, 'L');
-        $bx = $l + $w - 54.0;
-        $pdf->SetDrawColor(...self::INK);
-        $pdf->SetLineWidth(0.3);
-        $pdf->Rect($bx, 17.0, 54.0, 14.0, 'D');
-        $pdf->SetFont($this->sans, '', 6.0);
-        $pdf->SetTextColor(...self::MUTED);
-        $pdf->SetXY($bx + 2.0, 17.7);
-        $pdf->Cell(50.0, 2.6, mb_strtoupper($this->n('control')[$this->lang] . ' / ' . $this->n('control')[1 - $this->lang], 'UTF-8'), 0, 0, 'L');
-        [$ref, $rs] = $this->artFit((string) $d['ref'], 50.0, 13.0, 8.0);
+        $bx = $l + $w - 50.0;
+        $pdf->SetDrawColor(...self::LINE);
+        $pdf->SetLineWidth(0.25);
+        $pdf->Line($bx - 3.6, 17.2, $bx - 3.6, 29.6);
+        $this->artCaption($this->n('control')[$this->lang] . ' / ' . $this->n('control')[1 - $this->lang], $bx, 17.2, 50.0, 'L', 5.8);
+        [$ref, $rs] = $this->artFit((string) $d['ref'], 50.0, 12.6, 8.0);
         $pdf->SetFont($this->sans, 'B', $rs);
         $pdf->SetTextColor(...self::INK);
-        $pdf->SetXY($bx + 2.0, 20.4);
-        $pdf->Cell(50.0, 5.6, $ref, 0, 0, 'L');
+        $pdf->SetXY($bx, 20.4);
+        $pdf->Cell(50.0, 5.4, $ref, 0, 0, 'L');
         $pdf->SetFont($this->sans, '', 7.0);
-        $pdf->SetXY($bx + 2.0, 26.6);
+        $pdf->SetTextColor(...self::MUTED);
+        $pdf->SetXY($bx, 26.4);
         $pdf->Cell(50.0, 3.4, $this->t('issued')[$this->lang] . ' ' . $this->date((string) $d['issued_at']), 0, 0, 'L');
 
         // Bandeau de titre dans la couleur de la notice.
@@ -351,31 +324,50 @@ trait SseWantedNoticePdfColor
         $pdf->SetXY($x, $y + 8.0);
         $pdf->Cell($cw, 5.6, $first, 0, 0, 'L');
         $y += 14.6;
-        $unknown = $this->t('unknown')[$this->lang];
         $col = $cw / 4;
-        $sex = self::SEX[$d['sex']][$this->lang] ?? self::SEX['X'][$this->lang];
-        $this->field($this->t('sex'), $sex, $x, $y, $col);
-        $this->field($this->t('dob'), $d['birth_date'] !== null ? $this->date((string) $d['birth_date']) : $unknown, $x + $col, $y, $col);
-        $this->field($this->t('pob'), (string) ($d['birth_place'] ?? '') !== '' ? (string) $d['birth_place'] : $unknown, $x + 2 * $col, $y, $col);
-        $y = $this->field($this->t('nat'), $d['nationality'] !== '' ? (string) $d['nationality'] : $unknown, $x + 3 * $col, $y, $col);
+        $sexKey = (string) $d['sex'];
+        $cells = array_values(array_filter([
+            [$this->t('sex'), $sexKey !== 'X' && $sexKey !== '' ? (self::SEX[$sexKey][$this->lang] ?? '') : ''],
+            [$this->t('dob'), $d['birth_date'] !== null ? $this->date((string) $d['birth_date']) : ''],
+            [$this->t('pob'), (string) ($d['birth_place'] ?? '')],
+            [$this->t('nat'), (string) $d['nationality']],
+        ], static fn (array $c): bool => trim((string) $c[1]) !== ''));
+        $yy = $y;
+        foreach ($cells as $i => [$label, $value]) {
+            $yy = max($yy, $this->field($label, (string) $value, $x + $i * $col, $y, $col));
+        }
+        $y = $cells !== [] ? $yy : $y;
         $aliases = (array) $d['aliases'];
-        $y = $this->field($this->t('alias'), $aliases !== [] ? implode(' ; ', array_slice($aliases, 0, 4)) : '—', $x, $y, $cw, 9.4, 4.6);
+        if ($aliases !== []) {
+            $y = $this->field($this->t('alias'), implode(' ; ', array_slice($aliases, 0, 4)), $x, $y, $cw, 9.4, 4.6);
+        }
 
         $this->section('description', $x, $y + 0.6, $cw, $d);
         $y += 7.4;
-        $this->field($this->t('height'), $d['height_cm'] !== null ? $d['height_cm'] . ' cm' : $unknown, $x, $y, $col);
-        $this->field($this->t('weight'), $d['weight_kg'] !== null ? $d['weight_kg'] . ' kg' : $unknown, $x + $col, $y, $col);
-        $this->field($this->t('hair'), $d['hair'] !== '' ? (string) $d['hair'] : $unknown, $x + 2 * $col, $y, $col);
-        $y = $this->field($this->t('eyes'), $d['eyes'] !== '' ? (string) $d['eyes'] : $unknown, $x + 3 * $col, $y, $col);
+        $cells = array_values(array_filter([
+            [$this->t('height'), $d['height_cm'] !== null ? $d['height_cm'] . ' cm' : ''],
+            [$this->t('weight'), $d['weight_kg'] !== null ? $d['weight_kg'] . ' kg' : ''],
+            [$this->t('hair'), (string) $d['hair']],
+            [$this->t('eyes'), (string) $d['eyes']],
+        ], static fn (array $c): bool => trim((string) $c[1]) !== ''));
+        $yy = $y;
+        foreach ($cells as $i => [$label, $value]) {
+            $yy = max($yy, $this->field($label, (string) $value, $x + $i * $col, $y, $col));
+        }
+        $y = $cells !== [] ? $yy : $y;
         $marksText = trim((string) $d['marks'] . ((string) ($d['physical_line'] ?? '') !== '' ? ((string) $d['marks'] !== '' ? ' — ' : '') . $d['physical_line'] : ''));
         $pdf->SetFont($this->sans, 'B', 8.6);
         $marksCut = $marksText !== '' && $pdf->getStringHeight($cw - 1.0, $marksText) > 10.4;
-        $y = $this->field($this->t('marks'), $marksText, $x, $y, $cw, 8.6, 8.4);
+        if ($marksText !== '') {
+            $y = $this->field($this->t('marks'), $marksText, $x, $y, $cw, 8.6, 8.4);
+        } elseif ($cells === [] && $aliases === []) {
+            $y = $this->field($this->t('physical'), $this->t('unknown')[$this->lang], $x, $y, $cw);
+        }
         $y = max($y, $top + $ph + 5.0) + 1.0;
 
         // Rubriques 6 à 8 ancrées par le bas (elles ne débordent jamais) ; les deux textes libres se partagent ce qui reste.
         $bottom = 266.0;
-        $reportH = 42.0;
+        $reportH = 45.0;
         $y8 = $bottom - $reportH;
         $y7Max = $y8 - 19.4;
         $y6Max = $y7Max - 18.8;
@@ -429,7 +421,8 @@ trait SseWantedNoticePdfColor
         $y += 6.8;
         $gap = 5.0;
         $colW = ($w - 2 * $gap) / 3;
-        $seen = array_values(array_filter([(string) $d['last_seen_place'], $d['last_seen_at'] !== null ? $this->date((string) $d['last_seen_at']) : '', $d['zone'] !== '' ? $this->t('zone')[$this->lang] . ' : ' . $d['zone'] : ''], static fn (string $v): bool => trim($v) !== ''));
+        $placeParts = array_map(fn (string $p): string => $this->gridPlace(trim($p)), explode(' · ', (string) $d['last_seen_place']));
+        $seen = array_values(array_filter([implode(' · ', array_filter($placeParts, static fn (string $p): bool => $p !== '')), $d['last_seen_at'] !== null ? $this->date((string) $d['last_seen_at']) : '', $d['zone'] !== '' ? $this->t('zone')[$this->lang] . ' : ' . $d['zone'] : ''], static fn (string $v): bool => trim($v) !== ''));
         $room = $y8 - 1.4 - $y;
         $ky = $y;
         foreach ([['last', $seen], ['vehicles', (array) ($d['vehicles'] ?? [])], ['assoc', (array) ($d['associates'] ?? [])]] as $k => [$key, $items]) {
@@ -459,6 +452,17 @@ trait SseWantedNoticePdfColor
         $this->reportBlock($d, $report, $l, $y8 + 6.8, $w, $reportH - 7.6);
 
         return ['reason' => $reasonCut, 'instructions' => $instrCut, 'marks' => $marksCut];
+    }
+
+    /** Un code de grille nu (« 151173 ») devient « Grille 151 173 » ; tout autre lieu reste tel quel. */
+    private function gridPlace(string $place): string
+    {
+        if (preg_match('/^\d{4,10}$/', $place) !== 1) {
+            return $place;
+        }
+        $half = (int) ceil(strlen($place) / 2);
+
+        return ($this->lang === 1 ? 'Grid ' : 'Grille ') . substr($place, 0, $half) . ' ' . substr($place, $half);
     }
 
     /** @param array<string, mixed> $d @return array<string, mixed> service à informer (instantané), avec l'emblème téléversé s'il existe */
@@ -585,8 +589,8 @@ trait SseWantedNoticePdfColor
         if ($addr !== '') {
             $contact = $contact !== '' ? $contact . ' · ' . $addr : $addr;
         }
-        $this->field($this->n('channel'), $contact, $sx, $y + 16.0, $sw, 8.4, 7.4);
-        $rowY = $y + $h - 8.6;
+        $this->field($this->n('channel'), $contact, $sx, $y + 15.2, $sw, 7.8, 8.4);
+        $rowY = $y + $h - 9.2;
         $this->field($this->n('delay'), mb_strtoupper(SseAlertReportTo::delayLabel((string) $r['delay'], $lang), 'UTF-8'), $sx, $rowY, $half, 9.0);
         $this->field($this->n('quote'), (string) $d['ref'], $sx + $half + 3.0, $rowY, $half, 9.0);
         if ($qr > 0) {
@@ -651,7 +655,7 @@ trait SseWantedNoticePdfColor
                 return;
             }
             $this->plainHeading($this->n($key), $l, $y, $w, $d);
-            [$y] = $this->para($text, $l, $y + 6.6, $w, $maxH, 9.2);
+            [$y] = $this->para($text, $l, $y + 8.0, $w, $maxH, 9.2);
             $y += 3.0;
         };
         $block('facts', self::factsText($d), 60.0);
@@ -672,7 +676,7 @@ trait SseWantedNoticePdfColor
         $thumbs = $d['attached']['thumbs'] ?? [];
         if (($d['extra_photos'] !== [] || $thumbs !== []) && $y + 50.0 <= $bottom) {
             $this->plainHeading($this->t('photos'), $l, $y, $w, $d);
-            $y += 7.2;
+            $y += 8.4;
             $x = $l;
             foreach (array_slice($d['extra_photos'], 0, 3) as $photo) {
                 $this->drawPhoto($photo, $x, $y, 28.0, 36.0);
@@ -690,7 +694,7 @@ trait SseWantedNoticePdfColor
         }
         if ($d['signature'] !== null && $y + 30.0 <= $bottom) {
             $this->plainHeading($this->t('signature'), $l, $y, 90.0, $d);
-            $y += 7.2;
+            $y += 8.4;
             $pdf->SetDrawColor(...self::LINE);
             $pdf->SetFillColor(...self::PAPER);
             $pdf->Rect($l, $y, 90.0, 22.0, 'DF');
@@ -699,7 +703,7 @@ trait SseWantedNoticePdfColor
         }
         if ($y + 26.0 <= $bottom) {
             $this->plainHeading($this->t('general'), $l, $y, $w, $d);
-            $y += 7.0;
+            $y += 8.2;
             foreach ([self::GENERAL[$this->lang], self::GENERAL[1 - $this->lang]] as $k => $para) {
                 $pdf->SetFont($this->sans, $k === 0 ? '' : 'I', 8.2);
                 $pdf->SetTextColor(...($k === 0 ? self::INK : self::MUTED));
@@ -713,23 +717,6 @@ trait SseWantedNoticePdfColor
     /** Titre de rubrique du verso (sans numéro : le recto porte la numérotation). @param array{0: string, 1: string} $title @param array<string, mixed> $d */
     private function plainHeading(array $title, float $x, float $y, float $w, array $d): void
     {
-        $pdf = $this->pdf;
-        $c = $this->color($d);
-        $pdf->SetFillColor(...$c['rgb']);
-        $pdf->Rect($x, $y + 0.2, 1.8, 4.6, 'F');
-        $pdf->SetFont($this->sans, 'B', 9.4);
-        $pdf->SetTextColor(...self::INK);
-        $primary = mb_strtoupper($title[$this->lang], 'UTF-8');
-        $pw = $pdf->GetStringWidth($primary);
-        $pdf->SetXY($x + 3.6, $y);
-        $pdf->Cell($pw + 1.0, 5.0, $primary, 0, 0, 'L');
-        $pdf->SetFont($this->sans, '', 7.2);
-        $pdf->SetTextColor(...self::MUTED);
-        $pdf->SetXY($x + 3.6 + $pw + 3.0, $y + 0.5);
-        $pdf->Cell(max(10.0, $w - $pw - 8.0), 4.2, $title[1 - $this->lang], 0, 0, 'L');
-        $pdf->SetDrawColor(...self::INK);
-        $pdf->SetLineWidth(0.3);
-        $pdf->Line($x, $y + 5.2, $x + $w, $y + 5.2);
-        $pdf->SetLineWidth(0.25);
+        $this->artSectionHead(0, $title, $x, $y, $w, '', $this->color($d)['rgb']);
     }
 }
