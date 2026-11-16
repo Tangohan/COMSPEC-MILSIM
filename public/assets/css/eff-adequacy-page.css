@@ -317,7 +317,7 @@ legend.adqp-card__title + * { clear: both; }
 .adqp-dlg__tools { display: flex; justify-content: flex-end; margin: -8px 0 -6px; }
 .adqp-dlg { max-height: min(92dvh, 52rem); overflow: hidden; }
 .adqp-dlg[open] { display: flex; flex-direction: column; }
-.adqp-dlg .bo-dialog__body { flex: 1 1 auto; min-height: 0; gap: 16px; }
+.adqp-dlg .bo-dialog__body { flex: 1 1 auto; min-height: 0; gap: 16px; align-content: start; }
 .adqp-dlg__body { overscroll-behavior: contain; }
 .adqp-dlg__foot { align-items: center; }
 .adqp-dlg__spacer { flex: 1 1 auto; }
@@ -515,7 +515,7 @@ html[data-bo-theme="dark"] .adqp-q:hover, html[data-bo-theme="dark"] .adqp-q[ari
 .adqp-sources ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; color: var(--ath-muted); }
 
 /* Écarts d’un type */
-.adqp-issues { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.adqp-issues { display: grid; align-content: start; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .adqp-issue { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--adqp-line); border-left: 4px solid var(--ath-muted); border-radius: 10px; }
 .adqp-issue.is-warn { border-left-color: var(--adqp-warn); }
 .adqp-issue.is-info { border-left-color: var(--adqp-info); }
