@@ -72838,4 +72838,7 @@ return [
     'Sessions de jeu : rappels en jeu et codes' => 'Game sessions: in-game reminders and codes',
     'Tables de l’app Session absentes : rien à faire.' => 'Session app tables missing: nothing to do.',
     'Session introuvable.' => 'Session not found.',
+    // Sessions de jeu : code de session, notifications en jeu, joueurs connectés (app Session).
+    'Enregistrement en cours : le temps des joueurs pointés et celui remonté par le mod ATAK comptent pour cette session. Terminez-le en fin de soirée.' => 'Recording in progress: the time of checked-in players and the time reported by the ATAK mod count for this session. Stop it at the end of the evening.',
+    'Session prévue : rien n’est encore compté. Pointez les joueurs connectés, puis démarrez l’enregistrement quand la partie commence.' => 'Session planned: nothing is counted yet. Check in the connected players, then start recording when the game begins.',
 ];

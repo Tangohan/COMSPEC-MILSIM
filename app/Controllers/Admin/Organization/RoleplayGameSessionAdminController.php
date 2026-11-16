@@ -452,6 +452,9 @@ final class RoleplayGameSessionAdminController
 
     public function regenerateCode(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $ctx = $this->appAction($request, $params, '#code');
         if ($ctx instanceof Response) {
             return $ctx;
@@ -472,6 +475,9 @@ final class RoleplayGameSessionAdminController
 
     public function revokeCode(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $ctx = $this->appAction($request, $params, '#code');
         if ($ctx instanceof Response) {
             return $ctx;
@@ -490,6 +496,9 @@ final class RoleplayGameSessionAdminController
 
     public function saveNotifications(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $ctx = $this->appAction($request, $params, '#notifications');
         if ($ctx instanceof Response) {
             return $ctx;
@@ -514,6 +523,9 @@ final class RoleplayGameSessionAdminController
 
     public function testNotification(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $ctx = $this->appAction($request, $params, '#notifications');
         if ($ctx instanceof Response) {
             return $ctx;
@@ -541,6 +553,9 @@ final class RoleplayGameSessionAdminController
 
     public function checkinCall(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $ctx = $this->appAction($request, $params, '#notifications');
         if ($ctx instanceof Response) {
             return $ctx;

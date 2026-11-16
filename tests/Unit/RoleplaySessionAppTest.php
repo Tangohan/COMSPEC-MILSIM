@@ -578,7 +578,8 @@ final class RoleplaySessionAppTest extends TestCase
         self::assertStringContainsString('Inscrit avec le code', $html . 'Inscrit avec le code');
         self::assertStringContainsString('Code refusé · code inconnu · LYNX', $html);
         self::assertStringContainsString('disabled aria-describedby="rpsx-test-help"', $html, 'pas de Steam : test désactivé, expliqué');
-        self::assertSame(1, substr_count($html, '<h1'));
+        self::assertSame(0, substr_count($html, '<h1'), 'titre de page : en-tête de la bande (role=heading), pas de second h1');
+        self::assertStringContainsString('role="heading" aria-level="1"', $html);
         self::assertDoesNotMatchRegularExpression('/sse-ds|class="sse-|Archivo/', $html, 'design system rejeté absent');
         self::assertDoesNotMatchRegularExpression('/fiction|simulation|usage RP/i', strip_tags($html));
         self::assertStringNotContainsString('76561198', $html, 'aucun Steam ID affiché');

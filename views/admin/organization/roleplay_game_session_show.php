@@ -118,7 +118,7 @@ $countLabel = static function (array $m) use ($kind): array {
     return ['Temps insuffisant', 'rps-pill--warn'];
 };
 $stateButton = static function (string $state, string $label, bool $solid = false, string $confirm = '') use ($h, $action): string {
-    return '<form method="post" action="' . $h($action('etat')) . '"' . ($confirm !== '' ? ' onsubmit="return confirm(this.dataset.confirm)" data-confirm="' . $h($confirm) . '"' : '') . '>'
+    return '<form method="post" action="' . $h($action('etat')) . '"' . ($confirm !== '' ? ' data-ui-confirm="1" data-ui-confirm-title="' . $h($label) . '" data-ui-confirm-body="' . $h($confirm) . '"' : '') . '>'
         . Csrf::field() . '<input type="hidden" name="state" value="' . $h($state) . '">'
         . '<button type="submit" class="bo-band__btn' . ($solid ? ' bo-band__btn--solid' : '') . '">' . $h($label) . '</button></form>';
 };
@@ -170,7 +170,7 @@ $remindText = $app === null ? '—' : (($app['remind_15'] && $app['remind_5']) ?
         <div class="bo-band__body">
             <div class="bo-band__who">
                 <a class="rpsx-back" href="<?= $h($base) ?>">← Toutes les sessions</a>
-                <h1 class="bo-band__title" id="ath-page-title"><?= $h($name) ?></h1>
+                <p class="bo-band__title" id="ath-page-title" role="heading" aria-level="1"><?= $h($name) ?></p>
                 <p class="bo-band__line"><?= $h($stateText) ?></p>
                 <p class="bo-band__meta"><span><?= $h($stateLabel) ?></span> <?= $h(($kinds[$kind] ?? $kinds['libre'])[0]) ?> · <?= $h((string) ($s['hour_category'] ?? '')) ?></p>
                 <div class="bo-band__actions">
@@ -314,7 +314,7 @@ $remindText = $app === null ? '—' : (($app['remind_15'] && $app['remind_5']) ?
                 <button type="submit" class="ath-btn rpsx-btn"<?= $canTest ? '' : ' disabled aria-describedby="rpsx-test-help"' ?>>Envoyer une notification de test</button>
             </form>
             <?php if ($phase === Board::LIVE): ?>
-            <form method="post" action="<?= $h($action('notifications/pointage')) ?>" onsubmit="return confirm(this.dataset.confirm)" data-confirm="Envoyer l’appel à pointer à tous les téléphones de la communauté ?">
+            <form method="post" action="<?= $h($action('notifications/pointage')) ?>" data-ui-confirm="1" data-ui-confirm-title="Appeler à pointer" data-ui-confirm-body="Envoyer l’appel à pointer à tous les téléphones de la communauté ?">
                 <?= Csrf::field() ?>
                 <button type="submit" class="ath-btn ath-btn--solid rpsx-btn"<?= $app['notify_enabled'] ? '' : ' disabled' ?>>Appeler à pointer</button>
             </form>
