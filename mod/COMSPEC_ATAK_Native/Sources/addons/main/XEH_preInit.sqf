@@ -277,6 +277,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
             [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
     }] call comspec_atak_native_fnc_addSetting;
+// Grille sous l'indicatif en petit format (fn_mapOnDraw, plaque de mon indicatif) : réglage du joueur, coché par défaut.
+["comspec_atak_native_mini_grid", "CHECKBOX",
+    ["Afficher ma grille sous l'indicatif (mode petit)", "En mode petit (téléphone porté ou miniature), votre position en grille s'affiche sous votre indicatif sur la carte, au format choisi pour le bandeau de la carte. Sans position (GPS éteint ou sans fix) : « ---- ---- ». Décochez pour n'afficher que l'indicatif."],
+    ["COMSPEC", "ATAK · Carte"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // App Routes (fn_routeAction) : partage, carte d'Arma et Athena, nombre d'étapes, rayon d'arrivée, vue 3D.
 ["comspec_atak_native_route_share", "CHECKBOX",
