@@ -478,6 +478,18 @@ final class AarReportRepository
         return $st->rowCount() > 0;
     }
 
+    /** Comptes rendus à relire (en attente ou en relecture) : pastille du menu JNET, sans charger les rapports. */
+    public function countToReview(int $tenantId): int
+    {
+        if (!$this->tablesReady() || $tenantId < 1) {
+            return 0;
+        }
+        $st = $this->pdo->prepare("SELECT COUNT(*) FROM aar_reports WHERE tenant_id = ? AND status IN ('pending', 'in_review')");
+        $st->execute([$tenantId]);
+
+        return (int) $st->fetchColumn();
+    }
+
     public function delete(int $tenantId, int $id): bool
     {
         if (!$this->tablesReady() || $tenantId < 1 || $id < 1) {
