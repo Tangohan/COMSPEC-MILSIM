@@ -38,6 +38,8 @@ final class CsrfPostMiddleware
         '/jnet/moi/',
         // Épingles de l'espace commun JNET : le contrôleur valide aussi son jeton.
         '/jnet/commun/',
+        // Comptes rendus post-op dans le JNET (statut, actions) : le contrôleur valide aussi son jeton.
+        '/jnet/comptes-rendus/',
     ];
 
     /**

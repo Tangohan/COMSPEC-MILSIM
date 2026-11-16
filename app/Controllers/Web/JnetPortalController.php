@@ -1210,6 +1210,13 @@ final class JnetPortalController
                 $context = 'reponse-' . $replyTo;
             }
         }
+        // Réponse à un compte rendu post-op (?cr=) : objet et renvoi vers sa fiche JNET, pour ceux qui peuvent le lire.
+        $reportRef = \App\Controllers\Web\JnetReportsController::mailReference($tenantId, (int) $request->queryString('cr', '0'));
+        if ($reportRef !== null && !$hasServerDraft && ($draft['subject'] ?? '') === '') {
+            $draft['subject'] = $reportRef['subject'];
+            $draft['body'] = ($draft['body'] ?? '') !== '' ? $draft['body'] : $reportRef['body'];
+            $context .= '-cr-' . $reportRef['id'];
+        }
 
         return $this->render('mail_compose', $title, [
             'mailBoxes' => $this->mailBoxes($tenantId, $userId),
@@ -1499,6 +1506,7 @@ final class JnetPortalController
             $badges['data_campaign_pending'] = \App\Core\Container::get(\App\Services\DataCampaign\DataCampaignService::class)->pendingBadge($tenantId, $userId);
         } catch (\Throwable) {
         }
+        $badges['reports_pending'] = JnetReportsController::badge($tenantId, $userId, true);
 
         return [
             'tenantType' => is_array($tenant) ? (string) ($tenant['tenant_type'] ?? 'full') : 'full',
@@ -1638,10 +1646,33 @@ final class JnetPortalController
             'jnetNodeId' => $nodeId,
             'jnetCanTba' => PortalAccessChoice::canAccessTba(),
             'jnetUnreadMail' => $unread,
+            // Rubrique « Comptes rendus » : absente du profil de communauté sans module ATAK ; pastille = ce qui attend le lecteur.
+            'jnetReportsTab' => \App\Services\Community\TenantTypeConfig::uriAllowed(is_array($tenant) ? (string) ($tenant['tenant_type'] ?? 'full') : 'full', JnetReportsController::PATH),
+            'jnetReportsBadge' => JnetReportsController::badge($ctx['tenant_id'], $ctx['user_id']),
             'jnetDtg' => strtoupper(gmdate('dHi') . 'Z ' . gmdate('M y')),
         ], $extra);
 
         return Response::view('jnet._page', $payload);
+    }
+
+    /**
+     * Pages JNET servies par un autre contrôleur (JnetReportsController) : même connexion, mêmes droits posés, même coque.
+     *
+     * @return array{tenant_id:int,user_id:int}|Response
+     */
+    public function context(): array|Response
+    {
+        return $this->ensureAuth();
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     * @param list<string> $moreCss
+     * @param list<string> $moreJs
+     */
+    public function page(string $view, string $title, array $extra, string $activeNav, array $moreCss = [], array $moreJs = []): Response
+    {
+        return $this->render($view, $title, $extra, $activeNav, $moreCss, $moreJs);
     }
 
     private function ensureAuth(): array|Response

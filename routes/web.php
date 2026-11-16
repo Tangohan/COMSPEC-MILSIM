@@ -517,6 +517,11 @@ return function (Router $router) {
     $router->post('/jnet/courrier/nouveau', [JnetPortalController::class, 'mailSend'], [AuthMiddleware::class]);
     $router->post('/jnet/courrier/lu', [JnetPortalController::class, 'mailMarkAllRead'], [AuthMiddleware::class]);
     $router->post('/jnet/courrier/{id}/reponse', [JnetPortalController::class, 'mailReply'], [AuthMiddleware::class]);
+    // Comptes rendus post-op dans le JNET : mêmes données et mêmes droits que /back-office/atak/comptes-rendus (AarReportAccess).
+    $router->get('/jnet/comptes-rendus', [\App\Controllers\Web\JnetReportsController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/jnet/comptes-rendus/{id}', [\App\Controllers\Web\JnetReportsController::class, 'show'], [AuthMiddleware::class]);
+    $router->post('/jnet/comptes-rendus/{id}/statut', [\App\Controllers\Web\JnetReportsController::class, 'status'], [AuthMiddleware::class]);
+    $router->post('/jnet/comptes-rendus/{id}/actions/basculer', [\App\Controllers\Web\JnetReportsController::class, 'toggleAction'], [AuthMiddleware::class]);
     $router->get('/jnet/systeme', [JnetPortalController::class, 'system'], [AuthMiddleware::class]);
     $router->post('/jnet/systeme/bascule', [JnetPortalController::class, 'switchPortal'], [AuthMiddleware::class]);
     // Espace commun : éléments épinglés (le droit de publier pour l'organisation et la visibilité sont revérifiés côté serveur).
