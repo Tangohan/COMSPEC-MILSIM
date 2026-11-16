@@ -160,7 +160,7 @@ final class JnetReportsTest extends TestCase
         self::assertStringContainsString('href="' . url('back-office/atak/comptes-rendus/1') . '"', $html, 'Ouvrir dans le back-office');
         self::assertStringContainsString(url('jnet/courrier/nouveau') . '?membre=35&amp;cr=1', $html, 'Répondre par message à l’auteur');
         // Pièce jointe du terrain : servie par la route contrôlée des remontées, jamais par un chemin de fichier.
-        self::assertStringContainsString('href="' . url('back-office/remontees/cr/10') . '"', $html);
+        self::assertStringContainsString('href="' . url('atak/sse/remontees/cr/10') . '"', $html);
         self::assertDoesNotMatchRegularExpression('~(storage|uploads)/~', $html);
         // Traitement dans une fenêtre, avec les transitions du back-office.
         self::assertMatchesRegularExpression('~<dialog class="jr-dlg" id="jr-status"~', $html);

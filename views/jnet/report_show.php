@@ -192,7 +192,7 @@ $num = 0;
                             </div>
                             <p class="jr-text"><?= $axText !== '' ? nl2br($h($axText)) : '<span class="jr-muted">Contenu indisponible (rapport supprimé).</span>' ?></p>
                             <div class="jr-dlg__foot">
-                                <?php if (!$isNote && (int) ($ax['source_id'] ?? 0) > 0): ?><a class="ja-b2 jr-btn" href="<?= $h(url('back-office/remontees/cr/' . (int) $ax['source_id'])) ?>">Ouvrir le rapport du terrain</a><?php endif; ?>
+                                <?php if (!$isNote && (int) ($ax['source_id'] ?? 0) > 0): ?><a class="ja-b2 jr-btn" href="<?= $h(url('atak/sse/remontees/cr/' . (int) $ax['source_id'])) ?>">Ouvrir le rapport du terrain</a><?php endif; ?>
                                 <button type="button" class="ja-b2 jr-btn" data-jr-close>Fermer</button>
                             </div>
                         </dialog>
