@@ -71544,4 +71544,11 @@ return [
     'Actifs récemment :' => 'Recently active:',
     'Urgence : prévenez le service sans attendre' => 'Urgent: tell the service without delay',
     'Avant de signaler' => 'Before you report',
+    'Adresse de redirection à enregistrer' => 'Redirect URL to register',
+    'Dans le portail des développeurs Discord, application du bot, onglet OAuth2 › Redirections, enregistrez exactement cette adresse.' => 'In the Discord Developer Portal, on the bot application, open OAuth2 › Redirects and register exactly this address.',
+    'Le secret de l’application du bot n’est pas enregistré : le retour de Discord ne pourra pas être vérifié.' => 'The bot application secret is not saved: Discord\'s return cannot be verified.',
+    'L’identifiant de l’application du bot n’est pas réglé : l’invitation utilise une autre application Discord et sera refusée.' => 'The bot application ID is not set: the invitation uses another Discord application and will be refused.',
+    'L’identifiant du bot est le même que celui des rôles liés : si le bot est une autre application, l’invitation sera refusée.' => 'The bot ID is the same as the linked roles one: if the bot is a different application, the invitation will be refused.',
+    'Réglage Discord' => 'Discord setup',
+    'Régler l’application du bot' => 'Set the bot application',
 ];
