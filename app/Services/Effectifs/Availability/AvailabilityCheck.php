@@ -19,7 +19,10 @@ use DateTimeZone;
  *  2. Avec les sessions de jeu (suivi actif et Steam relié) :
  *     Disponible si au moins 1 session qui compte sur 7 jours ou 2 sur 30 jours ; Peu disponible s'il en reste au moins
  *     une sur 90 jours ; Inactif sinon.
- *  3. Sans sessions de jeu : Disponible si présent à une convocation sur 30 jours ; Peu disponible si connecté au site
+ *  3. Sans session détaillée (aucune enregistrée sur 90 jours, ou suivi inactif) mais avec des heures de jeu remontées par
+ *     le mod (cumul, user_arma_playtime) : l'activité du cumul décide, voir PlaytimeAvailability. Une activité récente
+ *     remplace « Inactif » par « Disponible » ou « Peu disponible » ; un cumul ancien ou absent laisse les règles suivantes.
+ *  4. Sans sessions de jeu : Disponible si présent à une convocation sur 30 jours ; Peu disponible si connecté au site
  *     sur 30 jours ; Inactif sinon.
  */
 final class AvailabilityCheck
@@ -119,6 +122,11 @@ final class AvailabilityCheck
             }
         }
 
+        // 2 bis. Heures de jeu remontées par le mod (cumul), si la table existe.
+        if (is_array($facts['playtime'] ?? null)) {
+            self::playtimeStep($facts, $s, $add, $now, $tz, $today);
+        }
+
         // 3. Dernière connexion au site.
         $loginTs = self::ts($facts['last_login_at'] ?? null);
         $accountSource = 'Compte sur le site (dernière connexion)';
@@ -209,6 +217,55 @@ final class AvailabilityCheck
     }
 
     /**
+     * Étape « Heures de jeu remontées » : cumul du mod, date de la dernière mise à jour, écart depuis la dernière vérification
+     * et limite de la source.
+     *
+     * @param array<string, mixed> $facts
+     * @param array{state: string, has_data: bool} $s
+     */
+    private static function playtimeStep(array $facts, array $s, callable $add, int $now, DateTimeZone $tz, string $today): void
+    {
+        $pt = $facts['playtime'];
+        $source = 'Heures de jeu remontées par le mod (user_arma_playtime)';
+        $label = 'Heures de jeu remontées';
+        $total = (int) ($pt['total_seconds'] ?? 0);
+        if ($total <= 0) {
+            $add('playtime', $label, self::STATE_NONE, 'Aucune heure de jeu remontée par le mod pour ce membre.', $source, $today);
+
+            return;
+        }
+        $min = max(60, (int) ($facts['rules']['min_minutes'] ?? Sessions::DEFAULT_MIN_MINUTES) * 60);
+        $previous = is_array($pt['previous'] ?? null) ? $pt['previous'] : null;
+        $a = PlaytimeAvailability::activity($pt, $min, $now, (string) ($facts['tz'] ?? 'Europe/Paris'), $previous);
+        $detail = [self::tpl('Cumul : %1 de jeu remontées par le mod (serveur : %2, Zeus : %3, éditeur : %4).', [
+            Sessions::durationLabel($total),
+            Sessions::durationLabel((int) ($pt['server_seconds'] ?? 0)),
+            Sessions::durationLabel((int) ($pt['zeus_seconds'] ?? 0)),
+            Sessions::durationLabel((int) ($pt['editor_seconds'] ?? 0)),
+        ])];
+        if ($a['last_at'] !== null) {
+            $detail[] = self::tpl('Dernière mise à jour du cumul le %1 (%2).', [self::fmt($a['last_at'], $tz, 'd/m/Y'), self::agoLabel((int) $a['ago'])]);
+        } else {
+            $detail[] = 'Date de la dernière mise à jour du cumul inconnue.';
+        }
+        if ($a['gained'] !== null && $a['previous_at'] !== null) {
+            $detail[] = $a['gained'] > 0
+                ? self::tpl('Depuis la vérification du %1 : +%2 de jeu.', [self::fmt($a['previous_at'], $tz, 'd/m/Y'), Sessions::durationLabel($a['gained'])])
+                : self::tpl('Cumul inchangé depuis la vérification du %1.', [self::fmt($a['previous_at'], $tz, 'd/m/Y')]);
+        }
+        $detail[] = 'Limite de cette source : un cumul sans détail par session, il ne dit ni quand ni combien de temps d’affilée le membre a joué.';
+        $detail[] = !empty($s['has_data'])
+            ? 'Des sessions détaillées existent : elles restent prioritaires pour la conclusion.'
+            : 'Sans session détaillée, ce cumul sert à la conclusion proposée.';
+        $state = match ($a['key']) {
+            AvailabilityCheck::AVAILABLE => self::STATE_OK,
+            null => self::STATE_NONE,
+            default => self::STATE_WARN,
+        };
+        $add('playtime', $label, $state, $detail, $source, $a['last_at'] !== null ? self::fmt($a['last_at'], $tz, 'd/m/Y') : $today);
+    }
+
+    /**
      * Conclusion proposée et la règle qui l'explique.
      *
      * @param array<string, mixed> $facts
@@ -230,6 +287,19 @@ final class AvailabilityCheck
         }
 
         $s = self::sessions($facts);
+        // Sans session détaillée, les heures de jeu remontées (cumul) disent si le membre joue encore.
+        if (!($s['state'] === 'ready' && $s['has_data']) && is_array($facts['playtime'] ?? null)) {
+            $a = PlaytimeAvailability::activity(
+                $facts['playtime'],
+                max(60, (int) ($facts['rules']['min_minutes'] ?? Sessions::DEFAULT_MIN_MINUTES) * 60),
+                $now,
+                (string) ($facts['tz'] ?? 'Europe/Paris'),
+                is_array($facts['playtime']['previous'] ?? null) ? $facts['playtime']['previous'] : null
+            );
+            if ($a['key'] === self::AVAILABLE || $a['key'] === self::LOW) {
+                return $make($a['key'], $a['rule']);
+            }
+        }
         if ($s['state'] === 'ready') {
             if ($s['s7'] >= self::AVAILABLE_MIN_7 || $s['s30'] >= self::AVAILABLE_MIN_30) {
                 return $make(self::AVAILABLE, 'Règle : au moins 1 session qui compte sur 7 jours ou 2 sur 30 jours.');
@@ -276,7 +346,7 @@ final class AvailabilityCheck
 
     /**
      * @param array<string, mixed> $facts
-     * @return array{state: string, s7: int, s30: int, s90: int, last: ?array<string, mixed>}
+     * @return array{state: string, has_data: bool, s7: int, s30: int, s90: int, last: ?array<string, mixed>}
      */
     private static function sessions(array $facts): array
     {
@@ -291,6 +361,7 @@ final class AvailabilityCheck
 
         return [
             'state' => $state,
+            'has_data' => !empty($sum['has_data']),
             's7' => $w(7),
             's30' => $w(30),
             's90' => $w(90),
