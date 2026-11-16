@@ -322,7 +322,7 @@ class OrganizationDashboardController
             'boSkipPageHead' => true,
             'boPageAction' => 'Publier une annonce',
             'boPageActionUrl' => url('back-office/alerts'),
-            'backOfficePageCss' => array_merge(['back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css', 'platform-messages.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
+            'backOfficePageCss' => array_merge(['back-office-bands.css', 'back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css', 'platform-messages.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
             'home' => $home,
             'platformMessages' => $platformMessages,
             'canAckPlatformMessages' => true,
