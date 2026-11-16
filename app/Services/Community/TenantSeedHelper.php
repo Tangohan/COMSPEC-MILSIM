@@ -17,6 +17,52 @@ use PDOException;
  */
 final class TenantSeedHelper
 {
+    /**
+     * Longueur de permissions.name sur les bases les plus anciennes (VARCHAR(100), migrations/schema.sql). Un libellé plus
+     * long faisait échouer toute création de communauté en MySQL strict (erreur 1406, « Data too long for column 'name' ») ;
+     * le libellé détaillé d'un droit vit dans AccessRightsCatalog. Contrôlé par tools/check-seed-name-lengths.php.
+     */
+    public const PERMISSION_NAME_MAX = 100;
+
+    /** @var list<array{0: string, 1: string, 2: string}> slug, libellé, module */
+    public const DOCUMENT_PERMISSIONS = [
+        ['documents.view', 'Voir les documents', 'documents'],
+        ['documents.upload', 'Uploader des documents', 'documents'],
+        ['documents.update', 'Modifier les documents', 'documents'],
+        ['documents.archive', 'Archiver les documents', 'documents'],
+        ['documents.download_sensitive', 'Télécharger documents sensibles', 'documents'],
+    ];
+
+    /** @var list<array{0: string, 1: string, 2: string}> slug, libellé, module */
+    public const TRAINING_PERMISSIONS = [
+        ['training.view', 'Voir les formations', 'training'],
+        ['training.manage', 'Gérer les formations', 'training'],
+        ['training.assign', 'Assigner des formations', 'training'],
+        ['training.publications.manage', 'Gérer les publications de formation', 'training'],
+    ];
+
+    /** @var list<array{0: string, 1: string}> libellé, slug */
+    public const DOCUMENT_CATEGORIES = [
+        ['Doctrine / SOP', 'doctrine'], ['Manuel opérateur', 'manuel'], ['Fiche équipement', 'fiche-equipement'],
+        ['Rapport mission', 'rapport'], ['Média pédagogique', 'media'],
+    ];
+
+    /** @var list<array{0: string, 1: string, 2: string}> libellé, slug, catégorie */
+    public const EQUIPMENT_CLASSES = [
+        ['Radio', 'radio', 'radio'], ['Optique', 'optic', 'optic'], ['Armement', 'weapon', 'weapon'],
+        ['Véhicule', 'vehicle', 'vehicle'], ['Drone', 'drone', 'drone'], ['Médical', 'medical', 'medical'],
+    ];
+
+    /** @var list<array{0: string, 1: string, 2: string, 3: int}> libellé, slug, description, ordre */
+    public const PERSONNEL_PANELS = [
+        ['État civil', 'etat-civil', 'Identité et état civil', 10],
+        ['Affectation', 'affectation', 'Unité, poste, affectation', 20],
+        ['Formation', 'formation', 'Parcours et qualifications', 30],
+        ['Sécurité / Clearance', 'securite', 'Niveaux de sécurité et habilitations', 40],
+        ['Santé / Aptitude', 'sante', 'Aptitude médicale et restrictions', 50],
+        ['Références / Notes', 'references-notes', 'Références et notes administratives', 60],
+    ];
+
     public static function seedBaseRoles(PDO $pdo, int $tenantId): void
     {
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
@@ -71,14 +117,7 @@ final class TenantSeedHelper
                 }
             }
         } else {
-            $docPerms = [
-                ['documents.view', 'Voir les documents', 'documents'],
-                ['documents.upload', 'Uploader des documents', 'documents'],
-                ['documents.update', 'Modifier les documents', 'documents'],
-                ['documents.archive', 'Archiver les documents', 'documents'],
-                ['documents.download_sensitive', 'Télécharger documents sensibles', 'documents'],
-            ];
-            foreach ($docPerms as $p) {
+            foreach (self::DOCUMENT_PERMISSIONS as $p) {
                 $docPermIds[$p[0]] = self::insertPermission($pdo, $tenantId, $p[1], $p[0], $p[2]);
             }
         }
@@ -104,14 +143,14 @@ final class TenantSeedHelper
         $stmt = $pdo->prepare('SELECT 1 FROM document_categories WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         if (!$stmt->fetch()) {
-            foreach ([['Doctrine / SOP', 'doctrine'], ['Manuel opérateur', 'manuel'], ['Fiche équipement', 'fiche-equipement'], ['Rapport mission', 'rapport'], ['Média pédagogique', 'media']] as $i => $c) {
+            foreach (self::DOCUMENT_CATEGORIES as $i => $c) {
                 $pdo->prepare('INSERT INTO document_categories (tenant_id, name, slug, color, created_at) VALUES (?, ?, ?, ?, NOW())')->execute([$tenantId, $c[0], $c[1], ['emerald', 'blue', 'amber', 'slate', 'violet'][$i] ?? null]);
             }
         }
         $stmt = $pdo->prepare('SELECT 1 FROM equipment_classes WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         if (!$stmt->fetch()) {
-            foreach ([['Radio', 'radio', 'radio'], ['Optique', 'optic', 'optic'], ['Armement', 'weapon', 'weapon'], ['Véhicule', 'vehicle', 'vehicle'], ['Drone', 'drone', 'drone'], ['Médical', 'medical', 'medical']] as $c) {
+            foreach (self::EQUIPMENT_CLASSES as $c) {
                 $pdo->prepare('INSERT INTO equipment_classes (tenant_id, name, slug, category, description, created_at) VALUES (?, ?, ?, ?, NULL, NOW())')->execute([$tenantId, $c[0], $c[1], $c[2]]);
             }
         }
@@ -155,7 +194,7 @@ final class TenantSeedHelper
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND ' . SqlText::equals($pdo, 'slug') . ' LIMIT 1');
         $stmt->execute([$tenantId, 'training.view']);
         if (!$stmt->fetch()) {
-            foreach ([['training.view', 'Voir les formations', 'training'], ['training.manage', 'Gérer les formations', 'training'], ['training.assign', 'Assigner des formations', 'training'], ['training.publications.manage', 'Gérer les publications de formation', 'training']] as $p) {
+            foreach (self::TRAINING_PERMISSIONS as $p) {
                 self::insertPermission($pdo, $tenantId, $p[1], $p[0], $p[2]);
             }
             foreach (['community_owner'] as $roleSlug) {
@@ -214,7 +253,7 @@ final class TenantSeedHelper
             $existing = $selectId->fetch(PDO::FETCH_ASSOC);
             if ($existing) {
                 $sets = ['name = ?', 'module = ?'];
-                $params = [$row['name'], $row['module']];
+                $params = [self::permissionName($row['name']), $row['module']];
                 if ($hasAction) {
                     $sets[] = 'action = ?';
                     $params[] = $row['action'];
@@ -406,6 +445,7 @@ final class TenantSeedHelper
         $hasCode = self::permissionsTableHasCodeColumn($pdo);
         $hasLabel = self::permissionsTableHasLabelColumn($pdo);
         $hasAction = self::permissionsTableHasActionColumn($pdo) && $action !== null;
+        $name = self::permissionName($name);
 
         $cols = ['tenant_id', 'name', 'slug', 'module'];
         $vals = [$tenantId, $name, $slug, $module];
@@ -464,6 +504,14 @@ final class TenantSeedHelper
         }
 
         return $id;
+    }
+
+    /** Libellé ramené à la longueur de permissions.name : un droit trop bavard ne doit jamais bloquer une création. */
+    public static function permissionName(string $name): string
+    {
+        $name = trim($name);
+
+        return mb_strlen($name, 'UTF-8') > self::PERMISSION_NAME_MAX ? rtrim(mb_substr($name, 0, self::PERMISSION_NAME_MAX, 'UTF-8')) : $name;
     }
 
     private static function roleId(PDO $pdo, int $tenantId, string $slug): int
@@ -551,15 +599,7 @@ final class TenantSeedHelper
         if ($stmt && $stmt->fetch()) {
             return;
         }
-        $panels = [
-            ['État civil', 'etat-civil', 'Identité et état civil', 10],
-            ['Affectation', 'affectation', 'Unité, poste, affectation', 20],
-            ['Formation', 'formation', 'Parcours et qualifications', 30],
-            ['Sécurité / Clearance', 'securite', 'Niveaux de sécurité et habilitations', 40],
-            ['Santé / Aptitude', 'sante', 'Aptitude médicale et restrictions', 50],
-            ['Références / Notes', 'references-notes', 'Références et notes administratives', 60],
-        ];
-        foreach ($panels as $p) {
+        foreach (self::PERSONNEL_PANELS as $p) {
             $pdo->prepare('INSERT INTO personnel_admin_panels (tenant_id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)')
                 ->execute([$tenantId, $p[0], $p[1], $p[2], $p[3]]);
         }
