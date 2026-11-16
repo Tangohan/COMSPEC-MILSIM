@@ -18,7 +18,8 @@
       "mobile" avis : fiche remplie sur le vrai téléphone (« Sur mon téléphone », avis mobile_report), envoyée comme ici
       "prefill" code valeurs : ouvre la fiche de ce C.R. déjà remplie (HashMap clé du catalogue → valeur), les champs
                laissés vides reçoivent les propositions du jeu ; appelé à l'ouverture de l'app quand un autre mod a posé
-               uiNamespace COMSPEC_ATAK_SpotrepDraft (fn_pageReports)
+               uiNamespace COMSPEC_ATAK_SpotrepDraft (fn_pageReports) ; valeur « annex » (HashMap) : pièce jointe envoyée telle
+               quelle dans les données structurées (fiche de check-in CAS de l'app JTAC, fn_jtacCkin)
     État : uiNamespace COMSPEC_ATAK_RepUi (onglet, type, valeurs, propositions, lignes en défaut, C.R. déplié, photo)
            missionNamespace COMSPEC_ATAK_Reports (id → C.R., les miens et ceux reçus)
            missionNamespace COMSPEC_ATAK_RepDrafts (code → [valeurs, heure, propositions])
@@ -124,6 +125,9 @@ private _toWeb = {
     params ["_r"];
     private _sd = createHashMapFromArray [["kind", toLower (_r get "code")], ["grid", _r get "grid"], ["source", "COMSPEC ATAK · Comptes rendus"]];
     { _sd set [_x select 0, _x select 2]; } forEach (_r get "lines");
+    // Pièce jointe (fiche de check-in CAS de l'app JTAC : form = cas_ckin, ckin_<clé>) : le poste TOC en tire la fiche PDF.
+    private _annex = _r getOrDefault ["annex", createHashMap];
+    if (_annex isEqualType createHashMap) then { { _sd set [_x, _y]; } forEach _annex; };
     // Remontée JNET (relais du site vers les unités au-dessus de la mienne) et photo jointe.
     private _up = _r getOrDefault ["jnet", ""];
     if (_up isNotEqualTo "") then { _sd set ["jnet_escalate", switch (_up) do { case "+2 ÉCHELONS": { "2" }; case "SOMMET": { "top" }; default { "1" } }]; };
@@ -171,8 +175,9 @@ switch (_act) do {
         call _save;
         call _keepDraft;
         // Valeurs en texte (les champs de la fiche sont des chaînes) ; un brouillon déjà commencé de ce C.R. est remplacé.
+        // « annex » (HashMap) : pièce jointe en données structurées, gardée telle quelle (fiche CKIN de l'app JTAC).
         private _from = createHashMap;
-        { _from set [_x, [str _y, _y] select (_y isEqualType "")]; } forEach _val;
+        { _from set [_x, [[str _y, _y] select (_y isEqualType ""), _y] select (_x isEqualTo "annex" && {_y isEqualType createHashMap})]; } forEach _val;
         _drafts deleteAt _arg;
         [_arg, _from] call _openType;
         call _rerender;
@@ -328,7 +333,8 @@ switch (_act) do {
             ["summary", _summary], ["lines", _lines], ["grp", netId group player], ["web", ""],
             ["cid", format ["CR-%1-%2-%3", getPlayerUID player, floor serverTime, (missionNamespace getVariable ["COMSPEC_ATAK_RepSeq", 0]) + 1]],
             ["jnet", [_vals getOrDefault ["jnet", "ÉCHELON SUP."], ""] select !(_m getOrDefault ["jnet", false])],
-            ["photo", _ph param [1, ""]]
+            ["photo", _ph param [1, ""]],
+            ["annex", +(_vals getOrDefault ["annex", createHashMap])]
         ];
         _list set [_r get "id", _r];
         if (_dest isNotEqualTo "AUCUNE") then {
