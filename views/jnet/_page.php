@@ -14,6 +14,8 @@ declare(strict_types=1);
  * @var string $jnetCallsign
  * @var bool $jnetCanTba
  * @var int $jnetUnreadMail
+ * @var bool $jnetReportsTab rubrique « Comptes rendus » proposée au profil de la communauté (module ATAK)
+ * @var int $jnetReportsBadge comptes rendus qui attendent le lecteur (à relire, ou CR de fin d'opération à remettre)
  * @var string $jnetPageTitle
  * @var list<string> $jnetPageCss
  * @var list<string> $jnetPageJs scripts de la page (assets/js/), facultatifs
@@ -30,7 +32,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 // Les fiches et la messagerie allument la rubrique dont elles dépendent.
 $activeNav = (string) ($activeNav ?? 'home');
 $rawNav = $activeNav;
-$activeNav = ['mail' => 'inbox', 'mail_compose' => 'inbox', 'personnel_show' => 'personnel', 'operation_show' => 'operations', 'target_show' => 'targets'][$activeNav] ?? $activeNav;
+$activeNav = ['mail' => 'inbox', 'mail_compose' => 'inbox', 'personnel_show' => 'personnel', 'operation_show' => 'operations', 'target_show' => 'targets', 'report_show' => 'reports'][$activeNav] ?? $activeNav;
 $pageTitle = (string) ($jnetPageTitle ?? $title ?? 'JNET');
 $community = trim((string) ($jnetTenantName ?? ''));
 $who = trim((string) (($jnetCallsign ?? '') !== '' ? $jnetCallsign : ($jnetDisplayName ?? '')));
@@ -46,10 +48,15 @@ $tabs = [
     ['id' => 'intelligence', 'label' => 'Renseignement', 'path' => 'jnet/renseignement'],
     ['id' => 'targets', 'label' => 'Cibles', 'path' => 'jnet/cibles'],
     ['id' => 'exploitation', 'label' => 'Exploitation', 'path' => 'jnet/exploitation'],
+    ['id' => 'reports', 'label' => 'Comptes rendus', 'path' => 'jnet/comptes-rendus', 'count' => (int) ($jnetReportsBadge ?? 0)],
     ['id' => 'library', 'label' => 'Bibliothèque', 'path' => 'jnet/bibliotheque'],
     ['id' => 'inbox', 'label' => 'Messagerie', 'path' => 'jnet/courrier', 'count' => $unreadMail],
     ['id' => 'system', 'label' => 'Système', 'path' => 'jnet/systeme'],
 ];
+
+if (($jnetReportsTab ?? true) === false) {
+    $tabs = array_values(array_filter($tabs, static fn (array $tab): bool => $tab['id'] !== 'reports'));
+}
 
 $leads = [
     'home' => 'La situation de l’organisation : ses unités, ses échanges et ses opérations.',
@@ -59,6 +66,7 @@ $leads = [
     'intelligence' => 'Le flux de renseignement de la communauté.',
     'targets' => 'Les dossiers d’intérêt prioritaires.',
     'exploitation' => 'Les prises de terrain et leur exploitation.',
+    'reports' => 'Les comptes rendus envoyés depuis l’ATAK et ceux rédigés après chaque opération.',
     'library' => 'Consignes, doctrines et documents publiés.',
     'inbox' => 'Messages reçus et envoyés dans l’extranet.',
     'system' => 'Votre point d’entrée par défaut et la bascule entre espaces.',
@@ -77,7 +85,7 @@ foreach ($tabs as $tab) {
 }
 $crumbs = [['Mon extranet', url('jnet')]];
 if (isset($tabLabels[$activeNav]) && $activeNav !== 'hub') {
-    $isDetail = in_array($rawNav, ['personnel_show', 'operation_show', 'target_show', 'mail_compose'], true);
+    $isDetail = in_array($rawNav, ['personnel_show', 'operation_show', 'target_show', 'mail_compose', 'report_show'], true);
     $crumbs[] = $isDetail ? $tabLabels[$activeNav] : [$tabLabels[$activeNav][0], null];
     if ($isDetail) {
         $crumbs[] = [$pageTitle, null];
@@ -89,7 +97,7 @@ if ($memberShell) {
     $crumbs = [['Mon extranet', url('jnet')], ['Mon espace', url('jnet/espaces')], [$pageTitle, null]];
 }
 // Ces pages ouvrent sur leur propre titre (unité, personne, dossier, organisation, rédaction d'un message).
-$ownHead = in_array((string) ($jnetInnerView ?? ''), ['jnet.home', 'jnet.unit', 'jnet.personnel_show', 'jnet.target_show', 'jnet.mail_compose'], true);
+$ownHead = in_array((string) ($jnetInnerView ?? ''), ['jnet.home', 'jnet.unit', 'jnet.personnel_show', 'jnet.target_show', 'jnet.mail_compose', 'jnet.report_show'], true);
 $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet_spaces.css'];
 
 // Rail « Mon espace » (pages du membre) : les cinq rubriques du hub, puis les pages de la rubrique courante. Même source que le hub.
