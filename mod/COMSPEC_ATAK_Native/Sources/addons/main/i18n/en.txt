@@ -25255,5 +25255,8 @@
 ["déjà chargé, appuyez pour mettre à jour depuis le serveur", "already loaded, press to update from the server"],
 ["pour %1", "for %1"],
 ["Charger dans la fiche", "Load into the form"],
-["Mettre à jour depuis le serveur", "Update from the server"]
+["Mettre à jour depuis le serveur", "Update from the server"],
+["Identité protégée", "Protected identity"],
+["satellite", "satellite"],
+["[CAVIARDÉ]", "[REDACTED]"]
 ]
