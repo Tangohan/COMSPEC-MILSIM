@@ -103,6 +103,9 @@ final class AuditAction
     public const ACCESS_ROLE_CREATED = 'access_role.created';
     public const ACCESS_ROLE_REMOVED = 'access_role.removed';
     public const ACCESS_ROLE_MEMBERS = 'access_role.members_changed';
+    /** Fiche descriptive d’un niveau d’accès (abrégé, description, icône ou logo, étiquettes, qualifications, emplois, grades). */
+    public const ACCESS_ROLE_PROFILE = 'access_role.profile_updated';
+    public const ACCESS_ROLE_ARCHIVED = 'access_role.archived';
 
     public const SITE_ROLE_ASSIGNED = 'site_role.assigned';
     public const SITE_ROLE_REVOKED = 'site_role.revoked';
