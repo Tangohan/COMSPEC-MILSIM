@@ -182,7 +182,7 @@ final class AtakUnitCardAssetTest extends TestCase
         // La forme avant la couleur, plancher de 14 px, signature : rien de refait tant que rien ne change.
         self::assertStringContainsString('private _half = _code isEqualTo 1', $bar);
         self::assertStringContainsString('"✕"] select _hc', $bar);
-        self::assertStringContainsString('COMSPEC_ATAK_FontMin max (_h * 0.72)', $bar);
+        self::assertStringContainsString('COMSPEC_ATAK_FontMin max (_h * 0.6)', $bar);
         self::assertStringContainsString('COMSPEC_ATAK_SquadSig', $bar);
         self::assertStringContainsString('class squadBar {};', $this->read('config.cpp'));
         self::assertStringContainsString('case "squad": {', $this->read('functions/ui/fn_formRender.sqf'));

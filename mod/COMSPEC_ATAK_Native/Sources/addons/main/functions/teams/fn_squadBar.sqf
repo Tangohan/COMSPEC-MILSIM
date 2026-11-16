@@ -1,17 +1,21 @@
 /*
     Réglette d'effectif : le même dessin dans Groupe, dans l'ORBAT du BFT et sous la boussole de la carte.
     Une case par membre : chef, puis équipes de feu, puis sans équipe. Lettre de l'équipe (la même que les pions de la carte :
-    équipe, sinon groupe), et l'état par la forme avant la couleur : pleine = apte, demi-hauteur = blessé, vide + ✕ = hors de
-    combat, grise = hors ligne ou IA. « * » marque le chef, un cadre marque moi. État médical masqué (fn_medShow) : seules les
-    cases mort et hors ligne se distinguent.
+    équipe, sinon groupe) dans sa couleur, éclaircie sur fond sombre. L'état par la forme ET la couleur : teintée de l'équipe
+    avec un trait plein en bas = apte, moitié basse ambre = blessé, vide + filet et ✕ rouges = hors de combat, piste grise =
+    hors ligne ou IA. Une pastille en haut à droite marque le chef, un filet d'accent marque moi. Cases presque carrées,
+    écarts égaux, compteur « 6/6 » collé à la dernière case. État médical masqué (fn_medShow) : seules les cases mort et
+    hors ligne se distinguent.
     Modes :
       ["cells", groupe ou unités]  -> [[lettre, rgba de l'équipe, état, chef, moi, netId, IA]...]. État : celui de fn_unitCard.
       ["count", cases]             -> [aptes, total]
       ["text", cases]              -> réglette en une chaîne pour une ligne de liste (ORBAT) : A apte, a blessé, x hors de combat, · hors ligne
-      ["prims", [cases, x, y, w, h, renvoi à la ligne, carte, cliquable]] -> [hauteur, [[classe, pos, texte, fond, encre, police, netId]...]]
+      ["geom", [h, texte du compteur]]   -> [police, largeur d'une case, écart, largeur du compteur]
+      ["prims", [cases, x, y, w, h, renvoi à la ligne, carte, cliquable]] -> [hauteur, [[classe, pos, texte, fond, encre, police, netId]...], largeur prise]
                                       Primitives à créer par l'appelant (fn_formRender, ou la carte ci-dessous).
       ["mapTick"]                  -> réglette de la carte (rectangle posé par fn_pageMap), une fois par seconde par fn_statusUpdate :
                                       aucun contrôle touché tant que la signature (états, équipes) ne change pas.
+                                      Réglage joueur comspec_atak_native_map_squadbar décoché : rien n'est créé (absent = affichée).
     Aucun coût par image : rien dans fn_mapOnDraw.
 */
 params [["_mode", "cells"], ["_arg", []]];
@@ -45,31 +49,57 @@ switch (_mode) do {
             switch (true) do { case (_code >= 2): { "x" }; case (_code isEqualTo 1): { toLower _ltr }; case (_code isEqualTo -2): { "·" }; default { _ltr }; }
         }) joinString ""
     };
+    case "geom": {
+        // Mesures d'une réglette de hauteur _h : [police, largeur d'une case, écart, largeur du compteur]. Partagées par
+        // « prims » et fn_pageMap (place réservée aux étiquettes : les cases et le compteur, pas plus).
+        _arg params ["_h", ["_lbl", "9/9"]];
+        private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+        private _fh = COMSPEC_ATAK_FontMin max (_h * 0.6);
+        // Case presque carrée, assez large pour une lettre au plancher de police.
+        private _cw = (_h / _ratio * 0.92) max (_fh * 1.05 / _ratio);
+        [_fh, _cw, pixelW * 3, _fh * (0.52 * (count _lbl) + 0.7) / _ratio]
+    };
     case "prims": {
         _arg params ["_cells", "_x0", "_y0", "_w", "_h", ["_wrap", false], ["_forMap", false], ["_click", false]];
-        private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
         private _th = COMSPEC_ATAK_Th;
-        private _gap = pixelW * 2;
-        private _gapY = pixelH * 2;
-        private _fh = COMSPEC_ATAK_FontMin max (_h * 0.72);
-        // La largeur tient une lettre et l'étoile du chef à 14 px au moins.
-        private _cw = (_h / _ratio * 1.15) max (_fh * 1.4 / _ratio);
+        private _gapY = pixelH * 3;
         (["count", _cells] call comspec_atak_native_fnc_squadBar) params ["_apt", "_tot"];
-        // Compteur à droite : forme et nombre, jamais la couleur seule.
-        private _cntW = _fh * 3.2 / _ratio;
-        private _avail = _w - _cntW;
-        private _per = (floor (_avail / (_cw + _gap))) max 1;
+        // Compteur collé à la dernière case : forme et nombre, jamais la couleur seule. Mesuré sur son vrai texte.
+        private _lbl = format ["%1/%2", _apt, _tot];
+        (["geom", [_h, _lbl]] call comspec_atak_native_fnc_squadBar) params ["_fh", "_cw", "_gap", "_cntW"];
+        private _per = (floor ((_w - _cntW) / (_cw + _gap))) max 1;
         private _shown = _cells;
         private _rest = 0;
         if (!_wrap && {(count _cells) > _per}) then {
             _per = (_per - 1) max 1;
             _rest = (count _cells) - _per;
             _shown = _cells select [0, _per];
+            _lbl = format ["+%1 %2", _rest, _lbl];
+            _cntW = (["geom", [_h, _lbl]] call comspec_atak_native_fnc_squadBar) select 3;
+        };
+        // Fond sombre (carte, thèmes sombres) : encres éclaircies ; thème jour : encres assombries (contraste AA, 4,5).
+        private _dark = _forMap || {_th getOrDefault ["dark", true]};
+        private _tone = if (_dark) then {
+            { params ["_c", "_k"]; [(_c select 0) + (1 - (_c select 0)) * _k, (_c select 1) + (1 - (_c select 1)) * _k, (_c select 2) + (1 - (_c select 2)) * _k, 1] }
+        } else {
+            { params ["_c", "_k"]; private _m = 1 - _k; [(_c select 0) * _m, (_c select 1) * _m, (_c select 2) * _m, 1] }
         };
         private _ink = _th get (["text", "mapText"] select _forMap);
         private _muted = _th get (["textMuted", "mapDim"] select _forMap);
-        private _alert = _th get (["alert", "mapAlert"] select _forMap);
-        private _base = [_th get "surface", [0.035, 0.042, 0.038, 0.9]] select _forMap;
+        private _alert = [_th get (["alert", "mapAlert"] select _forMap), [0, 0.15] select !_dark] call _tone;
+        private _warn = _th get (["warn", "mapWarn"] select _forMap);
+        private _warnInk = [_warn, [0, 0.25] select !_dark] call _tone;
+        private _acc = _th get "accent";
+        private _track = [_th get "surface2", [1, 1, 1, 0.07]] select _forMap;
+        private _a = { params ["_c", "_al"]; [_c select 0, _c select 1, _c select 2, _al] };
+        // Filet d'un pixel autour d'une case (dedans, ou dehors de 1 px pour « moi »).
+        private _edge = {
+            params ["_ex", "_ey", "_ew", "_eh", "_col"];
+            _out pushBack ["COMSPEC_RscText", [_ex, _ey, _ew, pixelH], "", _col, [], 0, ""];
+            _out pushBack ["COMSPEC_RscText", [_ex, _ey + _eh - pixelH, _ew, pixelH], "", _col, [], 0, ""];
+            _out pushBack ["COMSPEC_RscText", [_ex, _ey, pixelW, _eh], "", _col, [], 0, ""];
+            _out pushBack ["COMSPEC_RscText", [_ex + _ew - pixelW, _ey, pixelW, _eh], "", _col, [], 0, ""];
+        };
         private _out = [];
         {
             _x params ["_ltr", "_rgba", "_code", "_lead", "_me", "_nid", "_ai"];
@@ -78,24 +108,40 @@ switch (_mode) do {
             private _hc = _code >= 2;
             private _grey = _code isEqualTo -2 || {_ai && {!_hc}};
             private _half = _code isEqualTo 1 && {!_ai};
-            private _full = !_hc && {!_half};
-            private _fill = [_rgba, _muted] select _grey;
-            // Cadre de « moi » : une case plus grande derrière la mienne.
-            if (_me) then { _out pushBack ["COMSPEC_RscText", [_cx - pixelW, _cy - pixelH, _cw + pixelW * 2, _h + pixelH * 2], "", _ink, [], 0, ""]; };
-            _out pushBack ["COMSPEC_RscText", [_cx, _cy, _cw, _h], "", _base, [], 0, ""];
-            if (_full) then { _out pushBack ["COMSPEC_RscText", [_cx, _cy, _cw, _h], "", _fill, [], 0, ""]; };
-            if (_half) then { _out pushBack ["COMSPEC_RscText", [_cx, _cy + _h / 2, _cw, _h / 2], "", _fill, [], 0, ""]; };
-            private _txt = [format ["%1%2", _ltr, ["", "*"] select _lead], "✕"] select _hc;
-            _out pushBack ["COMSPEC_RscTextCenter", [_cx, _cy, _cw, _h], _txt, [], [[_ink, _th get "onAccent"] select _full, _alert] select _hc, _fh, ""];
+            private _full = !_hc && {!_half} && {!_grey};
+            // Piste neutre, puis l'état : apte = case teintée de l'équipe et trait plein en bas ; blessé = moitié basse
+            // ambre ; hors de combat = vide, filet et ✕ rouges ; hors ligne ou IA = piste seule, lettre grisée.
+            _out pushBack ["COMSPEC_RscText", [_cx, _cy, _cw, _h], "", _track, [], 0, ""];
+            if (_full) then {
+                _out pushBack ["COMSPEC_RscText", [_cx, _cy, _cw, _h], "", [_rgba, 0.30] call _a, [], 0, ""];
+                _out pushBack ["COMSPEC_RscText", [_cx, _cy + _h - pixelH * 2, _cw, pixelH * 2], "", [_rgba, 1] call _a, [], 0, ""];
+            };
+            if (_half) then { _out pushBack ["COMSPEC_RscText", [_cx, _cy + _h / 2, _cw, _h / 2], "", [_warn, 0.30] call _a, [], 0, ""]; };
+            if (_hc) then { [_cx, _cy, _cw, _h, [_alert, 0.85] call _a] call _edge; };
+            // Moi : filet fin d'accent, un pixel autour de la case.
+            if (_me) then { [_cx - pixelW, _cy - pixelH, _cw + pixelW * 2, _h + pixelH * 2, _acc] call _edge; };
+            // Chef : pastille discrète dans le coin haut droit.
+            if (_lead) then { _out pushBack ["COMSPEC_RscText", [_cx + _cw - pixelW * 5, _cy + pixelH * 2, pixelW * 3, pixelH * 3], "", _ink, [], 0, ""]; };
+            private _txt = [_ltr, "✕"] select _hc;
+            private _col = switch (true) do {
+                case (_hc): { _alert };
+                case (_grey): { _muted };
+                case (_half): { _warnInk };
+                default { [_rgba, [0.45, 0.58] select !_dark] call _tone };
+            };
+            _out pushBack ["COMSPEC_RscTextCenter", [_cx, _cy, _cw, _h], _txt, [], _col, _fh, ""];
             if (_click) then { _out pushBack ["COMSPEC_RscButtonOverlay", [_cx, _cy, _cw, _h], "", [], [], 0, _nid]; };
         } forEach _shown;
         private _nRows = ceil (((count _shown) max 1) / _per);
-        private _lbl = format ["%1%2 / %3", ["", format ["+%1  ", _rest]] select (_rest > 0), _apt, _tot];
-        _out pushBack ["COMSPEC_RscTextRight", [_x0 + _w - _cntW, _y0, _cntW, _h], _lbl, [], _ink, _fh, ""];
-        [_nRows * (_h + _gapY), _out]
+        private _inRow = (count _shown) min _per;
+        private _cntX = _x0 + _inRow * (_cw + _gap);
+        _out pushBack ["COMSPEC_RscText", [_cntX, _y0, _cntW, _h], _lbl, [], _ink, _fh, ""];
+        // Troisième élément : largeur réellement prise (cases et compteur), pour que le fond n'aille pas plus loin.
+        [_nRows * (_h + _gapY), _out, (_cntX + _cntW) - _x0]
     };
     case "mapTick": {
-        private _rect = uiNamespace getVariable ["COMSPEC_ATAK_SquadRect", []];
+        // Réglage du joueur décoché : pas de rectangle, donc aucune case (les anciennes sont effacées une fois, puis plus rien).
+        private _rect = if ((missionNamespace getVariable ["comspec_atak_native_map_squadbar", true]) isEqualTo false) then { [] } else { uiNamespace getVariable ["COMSPEC_ATAK_SquadRect", []] };
         private _old = uiNamespace getVariable ["COMSPEC_ATAK_SquadCtrls", []];
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _units = units group player;
@@ -111,8 +157,9 @@ switch (_mode) do {
         if ((count _cells) > 0) then {
             _rect params ["_x0", "_y0", "_w", "_h"];
             private _click = _l get "interactive";
-            private _p = ["prims", [_cells, _x0 + pixelW * 2, _y0 + pixelH, _w - pixelW * 4, _h - pixelH * 2, false, true, _click]] call comspec_atak_native_fnc_squadBar;
-            private _bg = ["COMSPEC_RscText", [_x0, _y0, _w, _h], "", false] call comspec_atak_native_fnc_pageCtrl;
+            // Marges égales autour des cases ; le fond s'arrête au compteur (troisième élément de « prims »).
+            private _p = ["prims", [_cells, _x0 + pixelW * 3, _y0 + pixelH * 3, _w - pixelW * 6, _h - pixelH * 6, false, true, _click]] call comspec_atak_native_fnc_squadBar;
+            private _bg = ["COMSPEC_RscText", [_x0, _y0, ((_p select 2) + pixelW * 6) min _w, _h], "", false] call comspec_atak_native_fnc_pageCtrl;
             _bg ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapPanel");
             _made pushBack _bg;
             {

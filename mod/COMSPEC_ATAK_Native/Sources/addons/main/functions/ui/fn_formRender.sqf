@@ -252,7 +252,7 @@ private _renderRow = {
         };
         case "squad": {
             _row params ["", "_cells", ["_left", ""], ["_right", ""], ["_onCell", ""]];
-            private _sqH = _fs * 1.35;
+            private _sqH = _fs * 1.15;
             if (_left isNotEqualTo "" || {_right isNotEqualTo ""}) then {
                 private _st1 = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.25]] call _mk;
                 _st1 ctrlSetStructuredText parseText ((format ["%1<t align='right'>%2</t>", _left, _right]) call comspec_atak_native_fnc_tr);

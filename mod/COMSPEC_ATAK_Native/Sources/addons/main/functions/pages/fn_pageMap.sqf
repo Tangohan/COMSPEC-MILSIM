@@ -278,14 +278,21 @@ if (_bandH > 0) then { _hud pushBack [_px0 - _bx, _py0 - _by, _px0 + _stripW - _
 private _hdC = _ov getOrDefault ["heading", controlNull];
 if (!isNull _hdC) then { (ctrlPosition _hdC) params ["_hx", "_hy", "_hw", "_hh"]; _hud pushBack [_hx - _bx, _hy - _by, _hx + _hw - _bx, _hy + _hh - _by]; };
 // Réglette d'effectif sous la boussole (fn_squadBar, rafraîchie une fois par seconde). Le menu OUTILS, la recherche, les outils,
-// leurs palettes et la caméra d'un équipier prennent cette place : elle s'efface.
+// leurs palettes et la caméra d'un équipier prennent cette place : elle s'efface. Réglage du joueur (ATAK · Carte,
+// comspec_atak_native_map_squadbar, absent = affichée) décoché : pas de rectangle, rien de créé ni de réservé.
 private _sqRect = [];
-if (!(_interactive && {(_s getOrDefault ["mapToolsOpen", false]) || {_searchOpen} || {(_s getOrDefault ["mapMode", "SELECT"]) isNotEqualTo "SELECT"}}) && {(_s getOrDefault ["mapCam", ""]) isEqualTo ""}) then {
+if ((missionNamespace getVariable ["comspec_atak_native_map_squadbar", true]) isNotEqualTo false && {!(_interactive && {(_s getOrDefault ["mapToolsOpen", false]) || {_searchOpen} || {(_s getOrDefault ["mapMode", "SELECT"]) isNotEqualTo "SELECT"}})} && {(_s getOrDefault ["mapCam", ""]) isEqualTo ""}) then {
     private _sqY = if (!isNull _hdC) then { (ctrlPosition _hdC) params ["", "_hy", "", "_hh"]; _hy + _hh + pixelH * 3 } else { _by + _pad + ([0, _fs * 1.6] select (!isNull (_ov getOrDefault ["compassTape", controlNull]))) };
     // Bandeaux d'apps empilés en haut de la carte : la réglette passe sous la pile au lieu de la croiser.
     if (_pinTopEnd > 0) then { _sqY = _sqY max (_pinTopEnd + pixelH * 3); };
     _sqRect = [_bx + _pad, _sqY, ((_mw - _toolCol - 2 * _pad) min (_mw * 0.6)) max (_font * 6 / _ratio), _fs * 1.2];
-    if ((count units group player) > 1) then { _hud pushBack [(_sqRect select 0) - _bx, _sqY - _by, (_sqRect select 0) + (_sqRect select 2) - _bx, _sqY + (_sqRect select 3) - _by]; };
+    // Place réservée aux étiquettes : les cases et le compteur seulement (mêmes mesures que fn_squadBar), pas toute la largeur.
+    private _sqN = count units group player;
+    if (_sqN > 1) then {
+        (["geom", [(_sqRect select 3) - pixelH * 6, format ["%1/%1", _sqN]]] call comspec_atak_native_fnc_squadBar) params ["", "_sqCw", "_sqGap", "_sqCntW"];
+        private _sqW = ((_sqN * (_sqCw + _sqGap)) + _sqCntW + pixelW * 6) min (_sqRect select 2);
+        _hud pushBack [(_sqRect select 0) - _bx, _sqY - _by, (_sqRect select 0) + _sqW - _bx, _sqY + (_sqRect select 3) - _by];
+    };
 };
 // Rose ou bandeau du cap, barre d'outils de droite, bouton des calques en haut à droite et RECHERCHER : les étiquettes
 // (fn_mapLbl) ne passent jamais dessous (avant, « TOUR DE CONTRÔLE » était coupé par la rose).
