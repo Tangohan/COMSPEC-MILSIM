@@ -204,7 +204,11 @@ final class SseAlertReportPageTest extends TestCase
         $token = SseAlertRepository::newToken();
         $report = ['code' => 'SVC-COORD', 'fr' => 'Cellule de coordination', 'en' => 'Coordination Cell', 'ac' => 'CCR', 'auth_fr' => 'Bureau', 'auth_en' => 'Bureau', 'channel' => 'Canal SABRE 40.500', 'delay' => '15m', 'color' => '#1F3A5F', 'emblem' => 'hex'];
         $facts = ['display' => $o['display'] ?? 'DUPONT Marc', 'aliases' => ['Le Rouquin'], 'threat' => 'medium', 'armed' => 'no', 'zone' => 'Kavala', 'last_seen_place' => 'Marché', 'last_seen_at' => '2026-11-09 18:00'];
-        $alert = ['key' => 'reinforced', 'rank' => 2, 'order' => 'hold', 'measures' => [['code' => 'A-OBS', 'fr' => 'Observer et rendre compte', 'en' => 'Observe and report'], ['code' => 'A-NOI', 'fr' => 'Ne pas intervenir seul', 'en' => 'Do not engage alone']],
+        $measures = [['code' => 'A-OBS', 'fr' => 'Observer et rendre compte', 'en' => 'Observe and report'], ['code' => 'A-NOI', 'fr' => 'Ne pas intervenir seul', 'en' => 'Do not engage alone']];
+        if (isset($o['measures'])) {
+            $measures = array_map(static fn (string $c): array => ['code' => $c, 'fr' => $c, 'en' => $c], $o['measures']);
+        }
+        $alert = ['key' => 'reinforced', 'rank' => 2, 'order' => 'hold', 'measures' => $measures,
             'reasons' => [['code' => 'M-TER-01', 'fr' => 'Planification d’attaque', 'en' => 'Attack planning']], 'donts' => [['Ne pas intervenir seul.'], ['Do not engage alone.']], 'report' => $report, 'token' => $token];
         $until = $o['until'] ?? '2099-01-01';
         $snap = ['data' => ['facts' => $facts, 'alert' => $alert, 'valid_until' => $until, 'issued_at' => '2026-11-05', 'authority' => ['Bureau', 'Bureau']], 'params' => ['validity' => 30]];
@@ -508,7 +512,7 @@ final class SseAlertReportPageTest extends TestCase
         if (!function_exists('imagecreatetruecolor')) {
             self::markTestSkipped('GD requis');
         }
-        $s = $this->seed();
+        $s = ['notice' => $this->vigilance(1, $this->identity(1, 'Photo', 'Test'), 'interne', ['measures' => ['A-OBS', 'A-PHO']])];
         $original = self::jpegWithExif();
         self::assertStringContainsString('SECRET-DEVICE-ID-12345', $original);
         $this->upload($original);
@@ -528,7 +532,7 @@ final class SseAlertReportPageTest extends TestCase
 
     public function testAFakeImageOrAnOversizedPhotoRefusesTheWholeReport(): void
     {
-        $s = $this->seed();
+        $s = ['notice' => $this->vigilance(1, $this->identity(1, 'Photo', 'Test'), 'interne', ['measures' => ['A-OBS', 'A-PHO']])];
         $c = $this->controller($this->reader());
         $this->upload('<?php echo "pas une image"; ?>', 'photo.jpg');
         $res = $c->submit($this->post(self::form()), ['token' => $s['notice']['token']]);
@@ -549,7 +553,7 @@ final class SseAlertReportPageTest extends TestCase
         if (!function_exists('imagecreatetruecolor')) {
             self::markTestSkipped('GD requis');
         }
-        $s = $this->seed();
+        $s = ['notice' => $this->vigilance(1, $this->identity(1, 'Photo', 'Test'), 'interne', ['measures' => ['A-OBS', 'A-PHO']])];
         $this->upload(self::jpegWithExif());
         $res = $this->controller($this->reader())->submit($this->post(self::form(['text' => 'x'])), ['token' => $s['notice']['token']]);
 
@@ -562,7 +566,7 @@ final class SseAlertReportPageTest extends TestCase
         if (!function_exists('imagecreatetruecolor')) {
             self::markTestSkipped('GD requis');
         }
-        $s = $this->seed();
+        $s = ['notice' => $this->vigilance(1, $this->identity(1, 'Photo', 'Test'), 'interne', ['measures' => ['A-OBS', 'A-PHO']])];
         $this->upload(self::jpegWithExif());
         $report = $this->report($s['notice']['token']);
         $_FILES = [];
@@ -579,7 +583,7 @@ final class SseAlertReportPageTest extends TestCase
         }
         self::assertSame(404, $this->controller($this->manager())->photo($this->get(), ['id' => 999])->statusCode());
         // La route publique n'existe pas : le chemin n'est jamais rendu dans une page de lecteur.
-        $readerHtml = $this->panelHtml($this->controller($this->reader())->panelVars('avis', $s['notice']['id'], 'A-0001/2026'));
+        $readerHtml = $this->panelHtml($this->controller($this->reader())->panelVars('vigilance', $s['notice']['id'], $s['notice']['ref']));
         self::assertStringNotContainsString('sse-private', $readerHtml);
         self::assertStringNotContainsString('/photo', $readerHtml);
         self::assertStringContainsString('réservée aux gestionnaires', $readerHtml);
@@ -950,5 +954,95 @@ final class SseAlertReportPageTest extends TestCase
         self::assertSame(404, $res->statusCode());
         self::assertStringContainsString('sx-topbar', $res->body());
         self::assertStringContainsString('Signalement introuvable', $res->body());
+    }
+
+    // ------------------------------------------------------------------ Formulaire adapté à la conduite à tenir
+
+    /** Remplace les conduites à tenir d'un avis. @param list<string> $codes */
+    private function setMeasures(int $noticeId, array $codes): void
+    {
+        $measures = array_map(static fn (string $c): array => ['code' => $c, 'fr' => $c, 'en' => $c], $codes);
+        $this->pdo->prepare('UPDATE sse_wanted_notice_extras SET codes_json = ? WHERE notice_id = ?')->execute([json_encode(['reasons' => [], 'measures' => $measures], JSON_UNESCAPED_UNICODE), $noticeId]);
+    }
+
+    public function testThePageGivesEachAlertTheFormOfItsConduct(): void
+    {
+        $s = $this->seed();
+        $live = $this->notice(1, $this->identity(1, 'Vivant', 'Cible'), ['ref' => 'A-0050/2026']);
+        $this->setMeasures($live['id'], ['A-DNG', 'A-LIV', 'A-REP']);
+        $obs = $this->vigilance(1, $this->identity(1, 'Observe', 'Oscar'), 'interne', ['ref' => 'FV-2026-0050', 'measures' => ['A-OBS']]);
+
+        $this->controller($this->manager())->show($this->get(), ['token' => $live['token']]);
+        $f = $this->last[1]['form'];
+        self::assertNotContains('photo', $f['fields']);
+        self::assertSame(['dir'], $f['required']);
+        self::assertTrue($f['urgent']);
+
+        $this->controller($this->manager())->show($this->get(), ['token' => $obs['token']]);
+        $f = $this->last[1]['form'];
+        self::assertContains('duration', $f['fields']);
+        self::assertContains('photo', $f['fields']);
+        self::assertSame([], $f['required']);
+
+        $this->controller($this->manager())->show($this->get(), ['token' => $s['notice']['token']]);
+        self::assertContains('distance', $this->last[1]['form']['fields'], 'ne pas intervenir seul, niveau 4');
+    }
+
+    public function testARequiredFieldThatIsDisplayedIsRequiredByTheServerToo(): void
+    {
+        $live = $this->notice(1, $this->identity(1, 'Vivant', 'Cible'), ['ref' => 'A-0051/2026']);
+        $this->setMeasures($live['id'], ['A-LIV']);
+        $c = $this->controller($this->reader());
+
+        $res = $c->submit($this->post(self::form(['dir' => ''])), ['token' => $live['token']]);
+        self::assertSame(422, $res->statusCode());
+        self::assertSame(['Indiquez la direction prise.'], $this->last[1]['errors']);
+        self::assertSame(0, $this->rows('sse_alert_reports'));
+
+        $res = $c->submit($this->post(self::form(['dir' => 'vers le port', 'people' => '3', 'armed' => 'yes'])), ['token' => $live['token']]);
+        self::assertSame(200, $res->statusCode());
+        $report = (array) $this->last[1]['report'];
+        self::assertSame('vers le port', $report['direction']);
+        self::assertStringContainsString('Nombre de personnes : 3', (string) $report['body']);
+        self::assertStringContainsString('Armement vu : Arme vue', (string) $report['body']);
+    }
+
+    public function testAFieldThatIsNotDisplayedIsNeverRequiredReadOrStored(): void
+    {
+        $obs = $this->vigilance(1, $this->identity(1, 'Observe', 'Oscar'), 'interne', ['ref' => 'FV-2026-0051', 'measures' => ['A-OBS']]);
+        // « people » n'est pas affiché pour cette fiche : ni exigé, ni enregistré même s'il est envoyé.
+        $report = $this->report($obs['token'], ['people' => '7', 'armed' => 'yes', 'duration' => '10 minutes']);
+
+        self::assertStringContainsString('Durée de l’observation : 10 minutes', (string) $report['body']);
+        self::assertStringNotContainsString('Nombre de personnes', (string) $report['body']);
+        self::assertStringNotContainsString('Armement vu', (string) $report['body']);
+    }
+
+    public function testNoPhotoIsKeptWhenTheConductForbidsApproaching(): void
+    {
+        if (!function_exists('imagecreatetruecolor')) {
+            self::markTestSkipped('GD requis');
+        }
+        $s = $this->seed();
+        $this->upload(self::jpegWithExif());
+        $report = $this->report($s['notice']['token']);
+
+        self::assertNull($report['photo_path'], 'ne pas intervenir seul / niveau 4 : la photo envoyée est ignorée');
+        self::assertSame([], glob($this->privateDir . '/sse-alert-reports/*') ?: []);
+    }
+
+    public function testTheRenderedFormShowsTheBriefTheAdaptedFieldsAndNoPhotoBlock(): void
+    {
+        $s = $this->seed();
+        $_SERVER['REQUEST_URI'] = '/atak/sse/signalement/' . $s['notice']['token'];
+        $html = $this->shellController($this->manager())->show($this->get(), ['token' => $s['notice']['token']])->body();
+
+        self::assertStringContainsString('data-sal-form-brief', $html, 'consigne de la fiche en tête du formulaire');
+        self::assertStringContainsString('sal-brief--urgent', $html);
+        self::assertStringContainsString('name="people"', $html);
+        self::assertStringContainsString('name="armed"', $html);
+        self::assertStringNotContainsString('name="photo"', $html);
+        self::assertStringContainsString('name="duration"', $html, 'observer et rendre compte : durée demandée');
+        self::assertStringContainsString('Cellule de coordination des recherches', $html, 'service à informer rappelé');
     }
 }
