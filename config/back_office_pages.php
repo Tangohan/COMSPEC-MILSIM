@@ -242,7 +242,7 @@ return [
         ]],
         ['path' => 'back-office/atak/suivi-cr', 'group' => 'Opérations', 'title' => 'Suivi des CR de fin d’opération', 'subtitle' => 'Qui a reçu le CR imposé sur son ATAK, qui l’a remis, et quand son téléphone s’est synchronisé pour la dernière fois.', 'css' => ['back-office-aar.css', 'back-office-debrief.css'], 'quick' => [
             ['label' => 'Comptes rendus post-op', 'href' => 'back-office/atak/comptes-rendus'],
-            ['label' => 'Remontées', 'href' => 'back-office/remontees'],
+            ['label' => 'Remontées (bureau SSE)', 'href' => 'atak/sse/remontees'],
         ]],
         ['path' => 'back-office/atak/comptes-rendus/modeles', 'group' => 'Opérations', 'title' => 'Modèles de debriefing', 'subtitle' => 'Questionnaires de compte rendu : questions courtes, listes, cases à cocher et texte libre.', 'css' => ['back-office-aar.css'], 'quick' => [
             ['label' => 'Comptes rendus', 'href' => 'back-office/atak/comptes-rendus'],
@@ -255,7 +255,6 @@ return [
             ['label' => 'Configuration ATAK', 'href' => 'back-office/ressources/atak-config'],
         ]],
         ['path' => 'back-office/renseignement/fichiers', 'group' => 'Renseignement', 'title' => 'Fichiers SSE', 'subtitle' => 'Fiches, doublons et fusion, extractions de téléphones, journal des consultations, réglages.', 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/remontees', 'group' => 'Renseignement', 'title' => 'Remontées', 'subtitle' => 'Comptes rendus et fiches de renseignement : fil de suivi, attribution, exploitation, caviardage.', 'css' => ['remontees.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/escouades', 'group' => 'ATAK', 'title' => 'Escouades en jeu', 'subtitle' => 'Escouades et équipes de feu envoyées par les téléphones : couleurs, icônes, descriptions et rôles.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/partage', 'group' => 'Communauté', 'title' => 'Fichiers partagés', 'subtitle' => 'Dossiers et fichiers de la communauté, privés par défaut et ouverts seulement sur partage.', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/metriques-joueurs', 'group' => 'Personnel', 'title' => 'Métriques joueurs', 'subtitle' => 'Temps de jeu, temps d’écran, distances parcourues, heures de vol et montre Garmin, par membre et pour la communauté.', 'css' => ['back-office-atak-squads.css', 'back-office-atak-hours.css', 'back-office-player-metrics.css'], 'flags' => ['boSkipPageHead' => true]],

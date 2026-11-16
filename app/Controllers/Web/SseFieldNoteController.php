@@ -299,7 +299,7 @@ final class SseFieldNoteController
         $lang = self::lang();
         $note = $this->tagService->decorate($tenantId, $note, $lang);
 
-        // Suivi de la remontée (même service que le back-office Remontées) : états, délais, fil et actions selon les droits.
+        // Suivi de la remontée (même service que la page Remontées du bureau) : états, délais, fil et actions selon les droits.
         $intakeDesk = null;
         $intakeMembers = [];
         try {
@@ -309,7 +309,7 @@ final class SseFieldNoteController
                 } catch (\Throwable) {
                     $level = SseCaseRepository::CLASS_INTERNAL;
                 }
-                $rights = SseIntakeController::sessionRights($this->access->isGuest(), $tenantId);
+                $rights = SseIntakeController::sessionRights($this->access->isGuest(), $tenantId, $level);
                 $intakeDesk = (new \App\Services\Intel\IntelIntakeDesk($this->intake()))->view($tenantId, 'fiche', (int) $note['id'], ['id' => (int) Session::get('user_id'), 'level' => $level], $rights);
                 $intakeMembers = $rights['treat'] ? $this->intake()->members($tenantId) : [];
             }

@@ -178,7 +178,7 @@ $rulesJson = array_map(static fn ($r) => [
           <tr class="<?= $j['overdue'] ? 'is-overdue' : '' ?>">
             <td class="bo-rt-mono"><?= $h($fmt($j['routed_at'])) ?></td>
             <td>
-              <a href="<?= $h(url('back-office/remontees/cr/' . (int) $j['report_id'])) ?>"><b><?= $h(($typeLabels[$j['report_type']] ?? $j['report_type']) . ' ' . ($j['report_number'] ?: '#' . $j['report_id'])) ?></b></a>
+              <a href="<?= $h(url('atak/sse/remontees/cr/' . (int) $j['report_id'])) ?>"><b><?= $h(($typeLabels[$j['report_type']] ?? $j['report_type']) . ' ' . ($j['report_number'] ?: '#' . $j['report_id'])) ?></b></a>
               <span class="ath-tag ath-tag--<?= $prioTag((string) $j['priority']) ?>"><?= $h($prios[$j['priority']] ?? $j['priority']) ?></span>
               <small><?= $h(mb_strimwidth((string) ($j['summary'] ?? ''), 0, 90, '…')) ?><?= $j['submitter_callsign'] ? ' · ' . $h($j['submitter_callsign']) : '' ?></small>
             </td>

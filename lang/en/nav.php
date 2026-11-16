@@ -652,6 +652,8 @@ return [
     'envois_du_jeu_en_attente_ou_en_echec_et_charge_d_athena' => 'Game sends waiting or failed, and Athena load',
     'remontees' => 'Field reports',
     'comptes_rendus_et_fiches_frs_suivi_attribution_exploitation_caviardage' => 'Reports and FRS sheets: tracking, assignment, exploitation, redaction',
+    'remontees_ouvre_le_bureau_sse' => 'Field reports (opens the SSE office)',
+    'comptes_rendus_et_fiches_frs_suivi_attribution_exploitation_caviardage_au_bureau_sse' => 'Reports and FRS sheets: tracking, assignment, exploitation, redaction, in the SSE office',
     'escouades_en_jeu' => 'In-game squads',
     'escouades_equipes_de_feu_et_roles_envoyes_par_les_telephones_atak' => 'Squads, fireteams and roles sent by the ATAK phones',
     'metriques_joueurs' => 'Player metrics',

@@ -203,8 +203,45 @@ final class SseAccessCodeRepository
                 'event_label' => $labels[$type] ?? 'Action d’accès',
                 'detail' => trim((string) ($row['detail'] ?? '')),
                 'actor' => trim((string) ($row['actor_label'] ?? '')) ?: null,
+                'actor_user_id' => isset($row['actor_user_id']) && (int) $row['actor_user_id'] > 0 ? (int) $row['actor_user_id'] : null,
                 'created_at' => (string) ($row['created_at'] ?? ''),
                 'ts' => strtotime((string) ($row['created_at'] ?? '')) ?: 0,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Entrées des membres au portail (code utilisé, engagement de confidentialité), les plus récentes d'abord : sert à la
+     * dernière entrée et à l'accès par code de chaque membre dans le centre de gestion des accès.
+     *
+     * @return list<array{user_id: int, code_id: ?int, event_type: string, detail: string, created_at: string}>
+     */
+    public function listMemberEntries(int $tenantId, int $limit = 1000): array
+    {
+        $limit = max(1, min(5000, $limit));
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT access_code_id, actor_user_id, event_type, detail, created_at
+                 FROM sse_access_grants_log
+                 WHERE tenant_id = :t AND actor_user_id IS NOT NULL AND actor_user_id > 0
+                   AND event_type IN ('redeem', 'confidentiality_ack')
+                 ORDER BY id DESC
+                 LIMIT " . $limit,
+                ['t' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'user_id' => (int) $row['actor_user_id'],
+                'code_id' => isset($row['access_code_id']) && (int) $row['access_code_id'] > 0 ? (int) $row['access_code_id'] : null,
+                'event_type' => (string) ($row['event_type'] ?? ''),
+                'detail' => (string) ($row['detail'] ?? ''),
+                'created_at' => (string) ($row['created_at'] ?? ''),
             ];
         }
 
