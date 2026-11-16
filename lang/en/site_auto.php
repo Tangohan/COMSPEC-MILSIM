@@ -72650,4 +72650,5 @@ return [
     '[ERREUR] DB_NAME doit commencer par comspec_e2e (base de test jetable).' => '[ERROR] DB_NAME must start with comspec_e2e (disposable test database).',
     'identités :' => 'identities:',
     'tables créées.' => 'tables created.',
+    'À retenir — %1' => 'Key points — %1',
 ];

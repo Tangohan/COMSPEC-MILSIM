@@ -222,7 +222,7 @@ final class OrganizationUnitsStrictMysqlTest extends TestCase
             $tenantId = $this->createCommunity('Kit ' . $code . ' ' . self::sized('Ж', 20))['tenant_id'];
             $result = $catalog->apply($tenantId, $code, [], $this->userId);
             self::assertTrue($result['ok'], $code . ' : ' . ($result['error'] ?? ''));
-            self::assertGreaterThan(0, $this->count('units', $tenantId), $code);
+            self::assertGreaterThan(0, $this->rowsFor('units', $tenantId), $code);
         }
         // Le titre par défaut « Modèle de <nom> » dépasse 180 caractères avec un nom de 255.
         $snap = $catalog->snapshot($this->tenantId, $this->userId);
@@ -275,7 +275,7 @@ final class OrganizationUnitsStrictMysqlTest extends TestCase
         return is_array($row) ? $row : null;
     }
 
-    private function count(string $table, int $tenantId): int
+    private function rowsFor(string $table, int $tenantId): int
     {
         $st = $this->pdo->prepare('SELECT COUNT(*) FROM `' . $table . '` WHERE tenant_id = ?');
         $st->execute([$tenantId]);
