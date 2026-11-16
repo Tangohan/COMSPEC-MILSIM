@@ -375,4 +375,22 @@ Poste de commandement nord", 'city' => 'Georgetown', 'fr' => 'Cellule Horizon de
         self::assertSame(1, SseWantedNoticePdf::$framedPages);
         self::assertStringContainsString('NOTICE ROUGE', $again['text']);
     }
+
+    public function testAGridCodeIsFormattedAndFieldsWithoutDataDisappear(): void
+    {
+        $notice = $this->notice($this->identity(['photo' => true]), ['last_seen_place' => '151173']);
+        $fr = $this->build($notice, 'fr', '2');
+        self::assertStringContainsString('Grille 151 173', $fr['text']);
+        self::assertSame(0, preg_match('/151173/', $fr['text']), 'le code de grille brut n’est plus imprimé');
+        $en = $this->build($notice, 'en', '2');
+        self::assertStringContainsString('Grid 151 173', $en['text']);
+        // L'identité de synthèse n'a ni lieu de naissance ni signes particuliers : ni libellé vide ni « Non communiqué ».
+        foreach ([$fr, $en] as $doc) {
+            $upper = mb_strtoupper($doc['text'], 'UTF-8');
+            self::assertStringNotContainsString('LIEU DE NAISSANCE', $upper);
+            self::assertStringNotContainsString('PLACE OF BIRTH', $upper);
+            self::assertStringNotContainsString('NON COMMUNIQUÉ', $upper);
+            self::assertStringNotContainsString('NOT AVAILABLE', $upper);
+        }
+    }
 }
