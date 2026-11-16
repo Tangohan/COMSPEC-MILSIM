@@ -28,8 +28,9 @@ if !(_uid in _cache) then {
 // Chemin rendu aux pages seulement si Arma peut lire l'image (fn_texUsable) : sinon "" et la page montre l'initiale.
 private _show = [_path] call comspec_atak_native_fnc_texUsable;
 if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { _show };
-// Déjà vérifié auprès du site pendant cette session : rien à redemander.
-if (_path isNotEqualTo "" && {_uid in (uiNamespace getVariable ["COMSPEC_ATAK_AvatarChecked", []])}) exitWith { _show };
+// Déjà vérifié auprès du site il y a moins de 15 min : rien à redemander. Avant : une seule fois par session de jeu,
+// une qualification accordée sur le site en cours de partie n'apparaissait jamais au téléphone.
+if (_path isNotEqualTo "" && {_uid in (uiNamespace getVariable ["COMSPEC_ATAK_AvatarChecked", []])} && {diag_tickTime - _triedAt < 900}) exitWith { _show };
 if (diag_tickTime - _triedAt < 120) exitWith { _show };
 // Un seul téléchargement à la fois : les appels à la DLL bloquent le jeu le temps de la requête (même en spawn),
 // et une page de groupe lançait un appel par joueur à chaque rendu.
