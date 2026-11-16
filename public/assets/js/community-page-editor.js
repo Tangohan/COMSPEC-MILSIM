@@ -281,6 +281,9 @@
     }
     var blk = e.target.closest('.pb-block');
     if (blk && !e.target.closest('.pbe-bar,.pbe-insert')) { select(blk.getAttribute('data-pb-id')); }
+    /* Texte riche affiché en aperçu : un clic ouvre le panneau du bloc, où le texte se saisit. */
+    var open = e.target.closest('[data-pbe-open]');
+    if (open && blk && !e.target.closest('a')) { openBlockPanel(blk.getAttribute('data-pb-id')); }
   }, true);
 
   /* —— Barres de bloc et points d’insertion —— */
