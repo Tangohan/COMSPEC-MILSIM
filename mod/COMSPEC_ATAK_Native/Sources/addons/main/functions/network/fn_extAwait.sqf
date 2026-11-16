@@ -9,7 +9,10 @@
 */
 params [["_ext", "COMSPECExtension"], ["_cmd", ""], ["_args", []], ["_timeout", 20]];
 // Liaison désactivée ou plus de téléphone : rien ne part (fn_uplinkHold de connect, embarqué).
-if (_ext isEqualTo "COMSPECExtension" && {!isNil "comspec_overwatch_connect_fnc_uplinkHold"} && {[_cmd] call comspec_overwatch_connect_fnc_uplinkHold}) exitWith { ["ERR|uplink_hold", 0, 0] };
+if (_ext isEqualTo "COMSPECExtension" && {!isNil "comspec_overwatch_connect_fnc_uplinkHold"} && {[_cmd] call comspec_overwatch_connect_fnc_uplinkHold}) exitWith {
+    if (!isNil "comspec_overwatch_connect_fnc_syncMark") then { [_cmd, "HELD"] call comspec_overwatch_connect_fnc_syncMark; };
+    ["ERR|uplink_hold", 0, 0]
+};
 private _noAsync = missionNamespace getVariable ["COMSPEC_ATAK_ExtNoAsync", []];
 // Hors contexte suspendable, seule une commande rapide (fn_extFast de connect) part en direct. Une lente (HTTP, disque :
 // jusqu'à 8 s figé) repart en tâche de fond et l'appelant reçoit tout de suite ERR|unscheduled (signalé une fois).
@@ -65,4 +68,7 @@ private _t0 = diag_tickTime;
 waitUntil { sleep 0.05; (_pending getOrDefault [_ticket, false]) isNotEqualTo false || {diag_tickTime - _t0 > _timeout} };
 private _got = _pending getOrDefault [_ticket, false];
 _pending deleteAt _ticket;
-[if (_got isEqualTo false) then { "ERR|timeout" } else { _got select 0 }, 0, 0]
+private _res = [if (_got isEqualTo false) then { "ERR|timeout" } else { _got select 0 }, 0, 0];
+// Instrumentation (fn_syncMark de connect, page Debug > TRANSFERTS) : dernière réponse par commande COMSPEC Link.
+if (_ext isEqualTo "COMSPECExtension" && {!isNil "comspec_overwatch_connect_fnc_syncMark"}) then { [_cmd, _res] call comspec_overwatch_connect_fnc_syncMark; };
+_res

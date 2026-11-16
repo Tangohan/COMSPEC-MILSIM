@@ -47,13 +47,13 @@ $headerCurrentUser = isset($headerCurrentUser) && is_array($headerCurrentUser) ?
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <?= $css('design-system.css') ?><?= $css('styles.css') ?><?= $css('app-update-modal.css') ?><?= $css('dashboard-impact.css') ?><?= $css('dashboard-refresh.css') ?><?= $css('dashboard-rail.css') ?><?= $css('announce-tiles.css') ?><?= $css('athena-header.css') ?><?= $css('navbar-info-banners.css') ?><?= $css('portal-footer.css') ?><?= $css('operateur-hub.css') ?>
+    <?= $css('design-system.css') ?><?= $css('styles.css') ?><?= $css('app-update-modal.css') ?><?= $css('dashboard-impact.css') ?><?= $css('dashboard-refresh.css') ?><?= $css('dashboard-rail.css') ?><?= $css('announce-tiles.css') ?><?= $css('athena-header.css') ?><?= $css('navbar-info-banners.css') ?><?= $css('portal-footer.css') ?><?= $css('operateur-hub.css') ?><?= $css('game-sync-freshness.css') ?>
 </head>
 <body class="dashboard-shell layout-light text-slate-900 selection:bg-emerald-500/25 selection:text-slate-900 antialiased" style="background:#f8fafc;">
 <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
 <?php require base_path('views/partials/plan_preview_banner.php'); ?>
 <?php $baseUrl = $base; ?>
-<?= $js('portal-alerts.js') ?><?= $js('ui_confirm_modal.js') ?><?= $js('portal_command_palette.js') ?><?= $js('dashboard-rail.js') ?><?= $js('athena-header.js') ?><?= $js('operateur-hub.js') ?>
+<?= $js('portal-alerts.js') ?><?= $js('ui_confirm_modal.js') ?><?= $js('portal_command_palette.js') ?><?= $js('dashboard-rail.js') ?><?= $js('athena-header.js') ?><?= $js('operateur-hub.js') ?><?= $js('game-sync-freshness.js') ?>
 <?php require base_path('views/partials/alert_banners.php'); ?>
     <div class="min-h-screen bg-[#f8fafc]">
     <main class="min-h-screen bg-[#f8fafc] text-slate-900">
@@ -64,6 +64,9 @@ $headerCurrentUser = isset($headerCurrentUser) && is_array($headerCurrentUser) ?
                 $athena_header_skip_banners = true;
                 require base_path('views/partials/header_dashboard.php');
                 require base_path('views/partials/navbar_info_banners.php');
+                ?>
+                <div class="gsync" data-game-sync data-base="<?= htmlspecialchars(rtrim((string) $base, '/'), ENT_QUOTES, 'UTF-8') ?>" style="padding:0 16px" hidden></div>
+                <?php
                 if (is_file($contentPath)) {
                     require $contentPath;
                 }
