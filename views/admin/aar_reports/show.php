@@ -207,7 +207,7 @@ $rank = ['pending' => 0, 'missing' => 0, 'in_review' => 1, 'validated' => 2][$st
             <summary><span class="ath-tag"><?= $h($annexKinds[$ax['kind']] ?? 'Annexe') ?></span> <b><?= $h($axTitle) ?></b>
               <?php if (!$isNote && !empty($ax['src_at'])): ?><small class="bo-aar-muted"><?= $h($fmt($ax['src_at'], 'd/m/Y H:i')) ?></small><?php endif; ?></summary>
             <p class="bo-aar-text"><?= $axText !== '' ? nl2br($h($axText)) : '<span class="bo-aar-muted">Contenu indisponible (rapport supprimé).</span>' ?></p>
-            <?php if (!$isNote && (int) $ax['source_id'] > 0): ?><p><a href="<?= $h(url('back-office/remontees/cr/' . (int) $ax['source_id'])) ?>">Ouvrir le rapport du terrain</a></p><?php endif; ?>
+            <?php if (!$isNote && (int) $ax['source_id'] > 0): ?><p><a href="<?= $h(url('atak/sse/remontees/cr/' . (int) $ax['source_id'])) ?>">Ouvrir le rapport du terrain</a></p><?php endif; ?>
           </details>
         <?php endforeach; ?>
       </section>

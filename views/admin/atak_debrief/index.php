@@ -294,7 +294,7 @@ $opStart = static function (string $key) use ($fmt): string {
             <li><b>Aucune session dans la liste ?</b> Elles apparaissent dès qu’un joueur dont le mod Athena est lié à votre communauté joue sur le serveur (positions et remontées de l’ATAK).</li>
             <li><b>Des joueurs en jeu maintenant ?</b> <?php if ($canManage): ?><a href="#dbf-imposer" data-dbf-open="dbf-imposer">Imposez un CR</a> aux « ATAK synchronisés récemment ».<?php else: ?>Un gestionnaire peut leur imposer un CR.<?php endif; ?></li>
           </ul>
-          <p class="bo-dbf-sub"><a href="<?= $h(url('back-office/atak/comptes-rendus')) ?>">Comptes rendus post-op</a> · <a href="<?= $h(url('back-office/remontees')) ?>">Remontées</a> · <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Configuration ATAK</a></p>
+          <p class="bo-dbf-sub"><a href="<?= $h(url('back-office/atak/comptes-rendus')) ?>">Comptes rendus post-op</a> · <a href="<?= $h(url('atak/sse/remontees')) ?>">Remontées</a> · <a href="<?= $h(url('back-office/ressources/atak-config')) ?>">Configuration ATAK</a></p>
         <?php else: ?>
           <p><b>Aucun joueur pour l’instant.</b> Les joueurs apparaissent quand leur ATAK remonte des positions ou des comptes rendus pour cette session.</p>
         <?php endif; ?>
@@ -322,7 +322,7 @@ $opStart = static function (string $key) use ($fmt): string {
             <td class="bo-dbf-state"><?= $h($stateLabel($r['state'])) ?></td>
             <td class="bo-dbf-mono"><?= $h($fmt($r['seen_at'] !== '' ? $r['seen_at'] : null)) ?></td>
             <td class="bo-dbf-mono"><?= $h($fmt($r['done_at'] !== '' ? $r['done_at'] : null)) ?></td>
-            <td class="bo-dbf-c-num"><?= (int) $r['reports'] > 0 ? '<a href="' . $h(url('back-office/remontees')) . '">' . (int) $r['reports'] . '</a>' : '0' ?></td>
+            <td class="bo-dbf-c-num"><?= (int) $r['reports'] > 0 ? '<a href="' . $h(url('atak/sse/remontees')) . '">' . (int) $r['reports'] . '</a>' : '0' ?></td>
             <td class="bo-dbf-c-act"><?php if ($hasAnswers): ?><button type="button" class="bo-dbf-more" aria-expanded="false" aria-controls="dbf-ans-<?= $i ?>" title="Voir les réponses">⋮</button><?php endif; ?></td>
           </tr>
           <?php if ($hasAnswers): ?>
@@ -334,7 +334,7 @@ $opStart = static function (string $key) use ($fmt): string {
                   <div><dt><?= $h($qa['label']) ?></dt><dd><?= nl2br($h($qa['value'])) ?></dd></div>
                 <?php endforeach; ?>
               </dl>
-              <?php if ((int) $r['report_id'] > 0): ?><p class="bo-dbf-sub">Remonté aussi dans les <a href="<?= $h(url('back-office/remontees')) ?>">remontées</a> (type « Fin d’opération »).</p><?php endif; ?>
+              <?php if ((int) $r['report_id'] > 0): ?><p class="bo-dbf-sub">Remonté aussi dans les <a href="<?= $h(url('atak/sse/remontees')) ?>">remontées</a> (type « Fin d’opération »).</p><?php endif; ?>
             </td>
           </tr>
           <?php endif; ?>

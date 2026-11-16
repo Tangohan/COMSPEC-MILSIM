@@ -1,0 +1,145 @@
+/*
+ * Bureau SSE — pages des remontées (file, fil d'une remontée, par joueur, réglages), venues du back-office.
+ * Les feuilles d'origine (remontees.css .rmt-*, remontees-joueurs.css .rmj-*) n'écrivent aucune couleur hors de leurs
+ * jetons (--rm-*, --pg-*) : cette feuille les redéfinit sur le thème sombre « bureau » du portail (variables --surface,
+ * --border, --text-strong, --green-bright de sse_portal.css), ajoute les jetons --fx-* de la bande d'en-tête
+ * (sse-fiches-etiquettes.css) et les quelques blocs propres au bureau (bandeau de classification, réglages).
+ * Racines : .rmt.rmt--sse et .rmj.rmj--sse (posées par les vues views/atak/sse/intake_*.php). Texte 13 px au moins,
+ * cibles de 44 px, aucune animation.
+ */
+
+:root .rmt.rmt--sse,
+:root .rmj.rmj--sse {
+  --fx-surface: var(--surface, #0f1419);
+  --fx-surface-2: var(--surface-2, #141a21);
+  --fx-line: var(--border, rgba(242, 244, 243, 0.1));
+  --fx-line-strong: var(--border-hover, rgba(242, 244, 243, 0.18));
+  --fx-ink: var(--text-strong, #f2f4f3);
+  --fx-text: rgba(242, 244, 243, 0.8);
+  --fx-dim: rgba(242, 244, 243, 0.64);
+  --fx-accent: var(--green-bright, #34d399);
+}
+
+:root .rmt.rmt--sse {
+  --rm-ink: var(--text-strong, #f2f4f3);
+  --rm-ink-2: rgba(242, 244, 243, 0.82);
+  --rm-muted: rgba(242, 244, 243, 0.66);
+  --rm-line: var(--border-hover, rgba(242, 244, 243, 0.18));
+  --rm-soft: var(--border, rgba(242, 244, 243, 0.1));
+  --rm-surface: var(--surface, #0f1419);
+  --rm-raised: var(--surface-2, #141a21);
+  --rm-hover: rgba(52, 211, 153, 0.06);
+  --rm-field: #0b0f13;
+  --rm-field-line: rgba(242, 244, 243, 0.24);
+  --rm-accent: #2fd59a;
+  --rm-accent-hover: #55e0ae;
+  --rm-on-accent: #06231a;
+  --rm-focus: #2fd59a;
+  --rm-link: #8cc2f5;
+  --rm-backdrop: rgba(0, 0, 0, 0.7);
+  --rm-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+  --rm-bar: #e6ebe8;
+  --rm-mark-bg: #3a3112;
+  --rm-mark-line: #e0b83a;
+  --rm-new-fg: #7fe3b9; --rm-new-bg: #10271e; --rm-new-bd: #1f5a43;
+  --rm-info-fg: #9cc8f5; --rm-info-bg: #13202e; --rm-info-bd: #284a6e;
+  --rm-busy-fg: #f3c56b; --rm-busy-bg: #2a2212; --rm-busy-bd: #5a471b;
+  --rm-forward-fg: #b9b5fa; --rm-forward-bg: #1c1b33; --rm-forward-bd: #3d3a78;
+  --rm-done-fg: #d1b3f7; --rm-done-bg: #221a30; --rm-done-bd: #4a3570;
+  --rm-muted-fg: #c0cac6; --rm-muted-bg: #1b2320; --rm-muted-bd: #34403b;
+  --rm-danger-fg: #ffa3a8; --rm-danger-bg: #2c1616; --rm-danger-bd: #6a2a2f;
+  --rm-warn-fg: #ffb980; --rm-warn-bg: #2d1c10; --rm-warn-bd: #6a4222;
+  --rm-caution-fg: #ecd874; --rm-caution-bg: #28240f; --rm-caution-bd: #5c5220;
+  --rm-class-fg: #d5dedb; --rm-class-bg: #1d2623; --rm-class-bd: #45534d;
+  --rm-ink-fg: #0d1110; --rm-ink-bg: #d5dedb; --rm-ink-bd: #d5dedb;
+  --rm-danger-solid: #ff8d94; --rm-danger-solid-hover: #ffaab0; --rm-on-danger: #2a0b0e;
+  --rm-band-fg: #f2f4f3; --rm-band-bg: #3b2a5a; --rm-band-bd: #6b4fa0;
+  max-width: none;
+  padding: 0 0 3rem;
+}
+
+:root .rmj.rmj--sse {
+  --pg-ink: var(--text-strong, #f2f4f3);
+  --pg-muted: rgba(242, 244, 243, 0.66);
+  --pg-subtle: rgba(242, 244, 243, 0.6);
+  --pg-line: var(--border-hover, rgba(242, 244, 243, 0.18));
+  --pg-soft: var(--border, rgba(242, 244, 243, 0.1));
+  --pg-surface: var(--surface, #0f1419);
+  --pg-head: var(--surface-2, #141a21);
+  --pg-hover: rgba(52, 211, 153, 0.06);
+  --pg-accent: #2fd59a;
+  --pg-heat: #2fd59a;
+  --pg-warn: #f0bd5c;
+  --pg-warn-bg: #2a2212;
+  --pg-warn-bd: #4d3c17;
+  --pg-info: #84b9ee;
+  --pg-info-bg: #13202e;
+  --pg-steam: #f0bd5c;
+  --pg-steam-bg: #2a2212;
+}
+
+/* Bande d'en-tête (même dessin que « Gestion des fiches »), puis les onglets des vues. */
+:root .rmt.rmt--sse .rmt-strip { margin: 0 0 1.25rem; }
+:root .rmt.rmt--sse .rmt-strip .fng-figs a { color: inherit; text-decoration: none; }
+:root .rmt.rmt--sse .rmt-strip .fng-figs a:hover, :root .rmt.rmt--sse .rmt-strip .fng-figs a:focus-visible { text-decoration: underline; }
+:root .rmt.rmt--sse .rmt-fig--late dd { color: var(--rm-warn-fg); }
+:root .rmt.rmt--sse .rmt__views { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; margin: 0 0 1.25rem; border-bottom: 1px solid var(--rm-line); }
+:root .rmt.rmt--sse .rmt__view {
+  display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2.75rem; padding: 0 0.15rem;
+  border-bottom: 2px solid transparent; color: var(--rm-muted); font-size: 0.9375rem; font-weight: 700; text-decoration: none;
+}
+:root .rmt.rmt--sse .rmt__view svg { width: 1rem; height: 1rem; }
+:root .rmt.rmt--sse .rmt__view:hover { color: var(--rm-ink); }
+:root .rmt.rmt--sse .rmt__view.is-active { color: var(--rm-ink); border-bottom-color: var(--rm-accent); }
+
+/* Bandeau de classification de la remontée (marquage du bureau, au-dessus du contenu). */
+:root .rmt.rmt--sse .rmt-band {
+  margin: 0.85rem 0 0; padding: 0.45rem 0.75rem; border: 1px solid var(--rm-band-bd); border-radius: 0.3rem;
+  background: var(--rm-band-bg); color: var(--rm-band-fg); font-size: 0.875rem; font-weight: 800; letter-spacing: 0.02em; text-align: center;
+}
+:root .rmt.rmt--sse .rmt-band--encadrement { --rm-band-bg: #0f2350; --rm-band-bd: #2c56b8; }
+:root .rmt.rmt--sse .rmt-band--confidentiel { --rm-band-bg: #4a0d18; --rm-band-bd: #b3243d; }
+:root .rmt.rmt--sse .rmt-band--tres_restreint { --rm-band-bg: #4d2408; --rm-band-bd: #d9661f; }
+
+/* Réglages : trois sections côte à côte sur grand écran. */
+:root .rmt.rmt--sse .rmt-settings__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; align-items: start; }
+:root .rmt.rmt--sse .rmt-states li { display: grid; gap: 0.15rem; }
+:root .rmt.rmt--sse .rmt-checks { display: grid; gap: 0.4rem; margin: 0.9rem 0 0; padding: 0; border: 0; min-width: 0; }
+:root .rmt.rmt--sse .rmt-checks legend { padding: 0; }
+
+/* Titres de section en casse normale (pas de petites capitales espacées du portail), libellés sans majuscules forcées. */
+:root .rmt.rmt--sse h2, :root .rmt.rmt--sse h3 { text-transform: none; letter-spacing: 0; }
+:root .rmj.rmj--sse h2, :root .rmj.rmj--sse h3 { text-transform: none; letter-spacing: 0; }
+:root .rmj.rmj--sse .rmj__kpi-label,
+:root .rmj.rmj--sse .rmj__table thead th,
+:root .rmj.rmj--sse .rmj__legend dt { text-transform: none; letter-spacing: 0; font-size: 0.8125rem; }
+:root .rmt.rmt--sse .rmt-h2, :root .rmj.rmj--sse h2 { font-size: 1.125rem; }
+:root .rmt.rmt--sse .rmt-dialog__head h2 { font-size: 1.1rem; }
+
+/* Lisibilité dans le bureau : jamais sous 13 px, cibles de 44 px. */
+:root .rmt.rmt--sse .rmt-avatar,
+:root .rmt.rmt--sse .rmt__avatar { font-size: 0.8125rem; }
+:root .rmj.rmj--sse .rmj__badge,
+:root .rmj.rmj--sse .rmj__kpi-sub,
+:root .rmj.rmj--sse .rmj__clear,
+:root .rmj.rmj--sse .rmj__seg-btn,
+:root .rmj.rmj--sse .rmj__panel-sub,
+:root .rmj.rmj--sse .rmj__scale,
+:root .rmj.rmj--sse .rmj__last-col,
+:root .rmj.rmj--sse .rmj__who-sub,
+:root .rmj.rmj--sse .rmj__mono,
+:root .rmj.rmj--sse .rmj__tag,
+:root .rmj.rmj--sse .rmj__avatar,
+:root .rmj.rmj--sse .rmj__chip,
+:root .rmj.rmj--sse .rmj__legend dd span,
+:root .rmj.rmj--sse .rmj__note { font-size: 0.8125rem; }
+:root .rmj.rmj--sse .rmj__seg-btn,
+:root .rmj.rmj--sse .rmj__clear,
+:root .rmj.rmj--sse .rmj__btn { min-height: 2.75rem; }
+:root .rmj.rmj--sse .rmj__clear { display: inline-flex; align-items: center; }
+:root .rmt.rmt--sse .rmt-sort, :root .rmj.rmj--sse .rmj__sort { display: inline-flex; align-items: center; min-height: 2.75rem; }
+
+@media screen and (max-width: 760px) {
+  :root .rmt.rmt--sse .rmt__views { gap: 0 1rem; }
+  :root .rmt.rmt--sse .rmt__view { font-size: 0.875rem; }
+}

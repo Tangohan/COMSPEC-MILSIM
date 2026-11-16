@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+ob_start();
 
 use App\Services\Intel\IntelPlayerFeedService;
 
@@ -23,7 +24,7 @@ $labels = IntelPlayerFeedService::sourceLabels();
 $link = static function (array $over) use ($period, $q, $sort): string {
     $params = array_filter(array_merge(['periode' => $period, 'q' => $q, 'tri' => $sort], $over), static fn ($v): bool => $v !== '' && $v !== null);
 
-    return url('back-office/remontees/joueurs' . ($params !== [] ? '?' . http_build_query($params) : ''));
+    return url('atak/sse/remontees/joueurs' . ($params !== [] ? '?' . http_build_query($params) : ''));
 };
 $ago = static function (string $ts): string {
     $t = strtotime($ts);
@@ -89,24 +90,25 @@ if ($grand > 0) {
 }
 $playerName = static fn (array $p): string => (string) ($p['callsign'] !== '' ? $p['callsign'] : ($p['account'] !== '' ? $p['account'] : 'Sans indicatif'));
 $playerHref = static fn (array $p, array $extra = []): ?string => $p['key'] !== 'inconnu'
-    ? url('back-office/remontees/joueurs/' . rawurlencode((string) $p['key'])) . (($qs = http_build_query(array_filter(array_merge(['periode' => $period !== 'tout' ? $period : ''], $extra), static fn ($v): bool => $v !== ''))) !== '' ? '?' . $qs : '')
+    ? url('atak/sse/remontees/joueurs/' . rawurlencode((string) $p['key'])) . (($qs = http_build_query(array_filter(array_merge(['periode' => $period !== 'tout' ? $period : ''], $extra), static fn ($v): bool => $v !== ''))) !== '' ? '?' . $qs : '')
     : null;
 $kindLabel = ['user' => 'Compte rattaché', 'steam' => 'Identifié par Steam', 'callsign' => 'Indicatif seul', 'unknown' => 'Non identifié'];
 $periodLabel = IntelPlayerFeedService::PERIODS[$period] ?? $period;
+$sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/remontees-joueurs.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-remontees.css')) . '">';
 ?>
-<div class="rmj">
+<div class="rmj rmj--sse">
     <header class="rmj__head">
         <div class="rmj__head-txt">
             <h1 class="rmj__title">Remontées par joueur</h1>
             <p class="rmj__lead">Tout ce que chaque joueur a envoyé du jeu, compté par catégorie. Ouvrez un joueur pour son fil chronologique, ou cliquez un compteur pour ne voir que cette catégorie.</p>
         </div>
-        <a class="rmj__btn" href="<?= $h(url('back-office/remontees')) ?>">
+        <a class="rmj__btn" href="<?= $h(url('atak/sse/remontees')) ?>">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             Fil des remontées<?php if (!empty($intakeToTreat)): ?> <span class="rmj__badge"><?= (int) $intakeToTreat ?> à traiter</span><?php endif; ?>
         </a>
     </header>
 
-    <?php $rmtNav = 'players'; require base_path('views/admin/intel/_intake_nav.php'); ?>
+    <?php $rmtNav = 'players'; require __DIR__ . '/_intake_nav.php'; ?>
 
     <section class="rmj__kpis" aria-label="Synthèse · <?= $h($periodLabel) ?>">
         <div class="rmj__kpi">
@@ -136,7 +138,7 @@ $periodLabel = IntelPlayerFeedService::PERIODS[$period] ?? $period;
         </div>
     </section>
 
-    <form class="rmj__toolbar" method="get" action="<?= $h(url('back-office/remontees/joueurs')) ?>" role="search">
+    <form class="rmj__toolbar" method="get" action="<?= $h(url('atak/sse/remontees/joueurs')) ?>" role="search">
         <input type="hidden" name="tri" value="<?= $h($sort) ?>">
         <?php /* Entrée dans la recherche : garde la période (bouton par défaut sans nom, période en champ caché placé avant les boutons). */ ?>
         <button type="submit" class="rmj__sr" tabindex="-1">Rechercher</button>
@@ -268,3 +270,6 @@ $periodLabel = IntelPlayerFeedService::PERIODS[$period] ?? $period;
         </div>
     </details>
 </div>
+<?php
+$sseContent = ob_get_clean();
+require __DIR__ . '/_layout.php';

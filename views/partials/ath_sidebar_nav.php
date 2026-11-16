@@ -271,7 +271,7 @@ $eventsChildren = [
 
 $aarChildren = [
     ['label' => 'Comptes rendus post-op', 'href' => url('back-office/atak/comptes-rendus'), 'active' => $boNavAar],
-    ['label' => 'Remontées des joueurs', 'href' => url('back-office/remontees'), 'active' => $navAt('back-office/remontees')],
+    ['label' => 'Remontées (ouvre le bureau SSE)', 'href' => url('atak/sse/remontees'), 'active' => false],
     ['label' => 'Modèles de debriefing', 'href' => url('back-office/atak/comptes-rendus/modeles'), 'active' => $navAt('back-office/atak/comptes-rendus/modeles')],
 ];
 
