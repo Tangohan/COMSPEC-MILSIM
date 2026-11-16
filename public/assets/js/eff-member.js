@@ -39,7 +39,7 @@
                 return;
             }
             // Clic sur le fond de la fenêtre : on ferme.
-            if (event.target.tagName === 'DIALOG' && event.target.classList.contains('eff-dialog')) {
+            if (event.target.tagName === 'DIALOG' && (event.target.classList.contains('eff-dialog') || event.target.classList.contains('eff-civil'))) {
                 var rect = event.target.getBoundingClientRect();
                 var inside = event.clientX >= rect.left && event.clientX <= rect.right
                     && event.clientY >= rect.top && event.clientY <= rect.bottom;
@@ -174,6 +174,36 @@
                 preview.appendChild(img);
             });
         });
+    }
+
+    // Fenêtre « État civil du personnage » : ombre sous l'en-tête et au-dessus du pied selon le défilement du corps ;
+    // au retour d'une erreur d'enregistrement, le focus va au champ refusé (sinon au message).
+    function initCivilDialog() {
+        var dialog = document.getElementById('eff-dlg-civil');
+        var form = dialog ? dialog.querySelector('[data-civil-form]') : null;
+        var body = dialog ? dialog.querySelector('[data-civil-scroll]') : null;
+        if (!form || !body) {
+            return;
+        }
+        var shade = function () {
+            form.classList.toggle('is-scrolled', body.scrollTop > 2);
+            form.classList.toggle('has-more', body.scrollTop + body.clientHeight < body.scrollHeight - 2);
+        };
+        body.addEventListener('scroll', shade, { passive: true });
+        window.addEventListener('resize', shade);
+        dialog.addEventListener('close', shade);
+        new MutationObserver(function () {
+            if (!dialog.open) {
+                return;
+            }
+            shade();
+            if (dialog.hasAttribute('data-civil-has-error')) {
+                var target = dialog.querySelector('[aria-invalid="true"]') || dialog.querySelector('.eff-civil__alert');
+                if (target) {
+                    target.focus();
+                }
+            }
+        }).observe(dialog, { attributes: true, attributeFilter: ['open'] });
     }
 
     // Lien direct vers une fenêtre (ex. « À traiter » → fiche#eff-dlg-jobs) : on l'ouvre au chargement.
@@ -338,6 +368,7 @@
     function init() {
         initDialogs();
         initFicheTabs();
+        initCivilDialog();
         openDialogFromHash();
         initFilters();
         initElevationKind();

@@ -42,7 +42,9 @@ final class EffectifsMemberDeepLinkTest extends TestCase
         self::assertStringContainsString("'etat-civil': 'eff-dlg-civil'", $js);
         self::assertStringContainsString('hasOwnProperty.call(DIALOG_ALIASES', $js);
         // Chaque alias vise une fenêtre qui existe sur la fiche.
-        $member = (string) file_get_contents(base_path('views/admin/effectifs_workspace/member.php'));
+        // La fiche et ses fenêtres découpées en partiels (État civil du personnage).
+        $member = (string) file_get_contents(base_path('views/admin/effectifs_workspace/member.php'))
+            . (string) file_get_contents(base_path('views/admin/effectifs_workspace/partials/member_civil_dialog.php'));
         preg_match_all("/'[a-z-]+': '(eff-dlg-[a-z-]+)'/", $js, $m);
         self::assertNotEmpty($m[1]);
         foreach ($m[1] as $id) {

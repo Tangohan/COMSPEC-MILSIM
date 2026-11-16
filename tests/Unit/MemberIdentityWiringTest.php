@@ -99,7 +99,9 @@ final class MemberIdentityWiringTest extends TestCase
     public function testCivilStatusDialogHasFirstAndLastNameWritingToTheProfileTable(): void
     {
         $view = self::src('views/admin/effectifs_workspace/member.php');
-        $dialog = substr($view, (int) strpos($view, 'id="eff-dlg-civil"'));
+        $partial = self::src('views/admin/effectifs_workspace/partials/member_civil_dialog.php');
+        self::assertStringContainsString('partials/member_civil_dialog.php', $view);
+        $dialog = substr($partial, (int) strpos($partial, 'id="eff-dlg-civil"'));
         $dialog = substr($dialog, 0, (int) strpos($dialog, '</dialog>'));
         self::assertStringContainsString('name="first_name"', $dialog);
         self::assertStringContainsString('name="last_name"', $dialog);
@@ -141,7 +143,7 @@ final class MemberIdentityWiringTest extends TestCase
         self::assertStringContainsString('name="first_name"', $onboarding);
         self::assertStringContainsString('name="last_name"', $onboarding);
 
-        $member = self::src('views/admin/effectifs_workspace/member.php');
+        $member = self::src('views/admin/effectifs_workspace/partials/member_civil_dialog.php');
         self::assertStringContainsString('views/partials/member_name_preview.php', $member);
 
         $partial = self::src('views/partials/member_name_preview.php');

@@ -1,0 +1,252 @@
+/**
+ * Fiche membre › fenêtre « État civil du personnage » (views/admin/effectifs_workspace/partials/member_civil_dialog.php).
+ *
+ * Coque : .bo-dialog (back-office-bands.css). Ici : sections courtes, grille à deux colonnes à gouttière fixe où chaque
+ * champ a la même structure (libellé de 20 px sur une ligne, contrôle de 44 px) pour que les colonnes restent alignées au
+ * pixel ; en-tête et pied fixes avec une ombre dès que le corps défile ; plein écran sur téléphone.
+ * Couleurs : jetons du back-office uniquement (--ath-*), redéfinis par le mode nuit. Portée par l'identifiant de la
+ * fenêtre pour passer devant les règles globales des champs du back-office (clair et nuit).
+ */
+
+#eff-dlg-civil {
+  width: min(720px, calc(100% - 32px));
+  max-width: none;
+  max-height: min(92dvh, 960px);
+  overflow: hidden;
+}
+
+#eff-dlg-civil .eff-civil__form {
+  height: auto;
+  max-height: min(92dvh, 960px);
+}
+
+#eff-dlg-civil .eff-civil__head,
+#eff-dlg-civil .eff-civil__foot {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  background: var(--ath-surface);
+  transition: box-shadow 0.18s ease;
+}
+
+#eff-dlg-civil .eff-civil__head { padding: 20px 24px 16px; }
+#eff-dlg-civil .eff-civil__foot { padding: 14px 24px 18px; }
+
+/* Ombre de séparation : posée par eff-member.js selon la position de défilement du corps. */
+#eff-dlg-civil .eff-civil__form.is-scrolled .eff-civil__head { box-shadow: 0 8px 16px -10px rgba(0, 0, 0, 0.35); }
+#eff-dlg-civil .eff-civil__form.has-more .eff-civil__foot { box-shadow: 0 -8px 16px -10px rgba(0, 0, 0, 0.35); }
+
+#eff-dlg-civil .eff-civil__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  gap: 24px;
+  padding: 20px 24px 24px;
+  overscroll-behavior: contain;
+}
+
+/* ——— Sections ——— */
+#eff-dlg-civil .eff-civil__section { display: grid; gap: 14px; min-width: 0; margin: 0; }
+#eff-dlg-civil .eff-civil__section + .eff-civil__section { padding-top: 22px; border-top: 1px solid var(--ath-line); }
+#eff-dlg-civil .eff-civil__section-head { display: grid; gap: 2px; }
+#eff-dlg-civil .eff-civil__section-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ath-ink);
+}
+#eff-dlg-civil .eff-civil__section-head p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ath-muted); }
+
+/* ——— Grille : deux colonnes, gouttière fixe ——— */
+#eff-dlg-civil .eff-civil__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+  row-gap: 16px;
+  align-items: start;
+}
+#eff-dlg-civil .eff-civil__wide { grid-column: 1 / -1; }
+
+#eff-dlg-civil .eff-civil__field {
+  display: grid;
+  grid-template-rows: 20px 44px;
+  grid-auto-rows: auto;
+  row-gap: 6px;
+  min-width: 0;
+}
+
+#eff-dlg-civil .eff-civil__label {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0;
+  text-transform: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ath-ink);
+}
+
+#eff-dlg-civil .eff-civil__control,
+#eff-dlg-civil .identity-country-opener {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--ath-line);
+  border-radius: 10px;
+  background-color: var(--ath-bg);
+  box-shadow: none;
+  color: var(--ath-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 42px;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Le sélecteur de pays masque le menu natif (attribut hidden) et affiche son bouton à la place. */
+#eff-dlg-civil [hidden] { display: none !important; }
+
+#eff-dlg-civil .eff-civil__control::placeholder { color: var(--ath-muted); opacity: 0.85; }
+#eff-dlg-civil .eff-civil__control:hover,
+#eff-dlg-civil .identity-country-opener:hover { border-color: var(--ath-muted); }
+
+/* Listes et sélecteur de pays : flèche dessinée à la couleur du texte (lisible dans les deux thèmes). */
+#eff-dlg-civil select.eff-civil__control,
+#eff-dlg-civil .identity-country-opener {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ath-muted) 50%),
+    linear-gradient(135deg, var(--ath-muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 19px, calc(100% - 15px) 19px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+/* Nombres : sans les flèches natives ; l'unité est écrite dans le champ, à droite. */
+#eff-dlg-civil input[type="number"].eff-civil__control { -moz-appearance: textfield; appearance: textfield; padding-right: 48px; font-variant-numeric: tabular-nums; }
+#eff-dlg-civil input[type="number"].eff-civil__control::-webkit-outer-spin-button,
+#eff-dlg-civil input[type="number"].eff-civil__control::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+#eff-dlg-civil .eff-civil__unit { position: relative; display: block; height: 44px; }
+#eff-dlg-civil .eff-civil__suffix {
+  position: absolute;
+  top: 0;
+  right: 14px;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ath-muted);
+  pointer-events: none;
+}
+
+/* Focus visible au clavier comme à la souris. */
+#eff-dlg-civil .eff-civil__control:focus,
+#eff-dlg-civil .identity-country-opener:focus { outline: none; }
+#eff-dlg-civil .eff-civil__control:focus-visible,
+#eff-dlg-civil .eff-civil__control:focus,
+#eff-dlg-civil .identity-country-opener:focus-visible {
+  border-color: var(--ath-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ath-focus, var(--ath-accent)) 35%, transparent);
+}
+#eff-dlg-civil .bo-dialog__btn:focus-visible,
+#eff-dlg-civil .bo-dialog__close:focus-visible {
+  outline: 2px solid var(--ath-focus, var(--ath-accent));
+  outline-offset: 2px;
+}
+
+/* Erreurs : champ refusé par le serveur, ou valeur hors limites une fois saisie. */
+#eff-dlg-civil .eff-civil__control[aria-invalid="true"],
+#eff-dlg-civil .eff-civil__control:user-invalid {
+  border-color: var(--ath-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ath-danger) 18%, transparent);
+}
+
+#eff-dlg-civil .eff-civil__help { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ath-muted); }
+
+#eff-dlg-civil .eff-civil__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--ath-danger) 45%, var(--ath-line));
+  border-radius: 10px;
+  background: var(--ath-danger-bg);
+  color: var(--ath-ink);
+}
+#eff-dlg-civil .eff-civil__alert:focus { outline: 2px solid var(--ath-danger); outline-offset: 2px; }
+#eff-dlg-civil .eff-civil__alert svg { flex: none; width: 20px; height: 20px; margin-top: 1px; fill: none; stroke: var(--ath-danger); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#eff-dlg-civil .eff-civil__alert p { margin: 0; font-size: 14px; line-height: 1.5; }
+
+/* ——— Aperçu du nom ——— */
+#eff-dlg-civil .eff-civil__preview {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--ath-line);
+  border-radius: 10px;
+  background: var(--ath-line-soft);
+}
+#eff-dlg-civil .eff-civil__preview-title { margin: 0; font-size: 13px; font-weight: 600; line-height: 20px; color: var(--ath-muted); }
+#eff-dlg-civil .eff-civil__preview-rows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 20px;
+  margin: 0;
+}
+#eff-dlg-civil .eff-civil__preview-rows > div { display: grid; gap: 2px; min-width: 0; }
+#eff-dlg-civil .eff-civil__preview-rows dt { font-size: 12px; font-weight: 600; line-height: 18px; color: var(--ath-muted); }
+#eff-dlg-civil .eff-civil__preview-rows dd {
+  margin: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ath-ink);
+}
+
+/* ——— Téléphone : plein écran, une colonne ——— */
+@media (max-width: 640px) {
+  #eff-dlg-civil {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  #eff-dlg-civil .eff-civil__form { height: 100%; max-height: 100dvh; }
+  #eff-dlg-civil .eff-civil__head { padding: 16px 16px 12px; }
+  #eff-dlg-civil .eff-civil__head .bo-dialog__close { margin: -6px -6px 0 0; }
+  #eff-dlg-civil .eff-civil__body { padding: 16px 16px 24px; gap: 20px; }
+  #eff-dlg-civil .eff-civil__foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  #eff-dlg-civil .eff-civil__foot .bo-dialog__btn { flex: 1 1 0; }
+  #eff-dlg-civil .eff-civil__grid { grid-template-columns: minmax(0, 1fr); }
+  #eff-dlg-civil .eff-civil__preview-rows { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  #eff-dlg-civil .eff-civil__preview-rows > div { grid-template-columns: 120px minmax(0, 1fr); align-items: baseline; gap: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #eff-dlg-civil .eff-civil__head,
+  #eff-dlg-civil .eff-civil__foot,
+  #eff-dlg-civil .eff-civil__control { transition: none; }
+}
