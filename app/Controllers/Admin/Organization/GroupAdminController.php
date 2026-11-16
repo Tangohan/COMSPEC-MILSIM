@@ -84,7 +84,7 @@ class GroupAdminController
         }
         $name = trim((string) $request->input('name'));
         $slugInput = trim((string) $request->input('slug'));
-        $effectiveSlug = $slugInput !== '' ? $slugInput : $this->slugify($name);
+        $effectiveSlug = $slugInput !== '' ? $slugInput : UnitRepository::slugFromName($name, '');
         if ($effectiveSlug === '') {
             $effectiveSlug = 'groupe';
         }
@@ -108,6 +108,10 @@ class GroupAdminController
         ];
         if ($data['name'] === '') {
             Session::flash('error', 'Le nom est requis.');
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=groupe'));
+        }
+        if (($lengthError = UnitRepository::fieldLengthError($data)) !== null) {
+            Session::flash('error', $lengthError);
             return Response::redirect(url('back-office/organisation/structure?ouvrir=groupe'));
         }
         if ($this->unitRepository->slugExists($tenantId, $effectiveSlug)) {
@@ -198,9 +202,18 @@ class GroupAdminController
             Session::flash('error', 'Groupe introuvable.');
             return Response::redirect(url('back-office/groups'));
         }
-        $slug = trim((string) $request->input('slug')) ?: $this->slugify(trim((string) $request->input('name')));
+        $slug = trim((string) $request->input('slug')) ?: UnitRepository::slugFromName(trim((string) $request->input('name')), '');
         if ($slug && $this->unitRepository->slugExists($tenantId, $slug, $id)) {
             Session::flash('error', 'Cette adresse courte est déjà utilisée.');
+            return Response::redirect(url('back-office/groups/' . $id . '/edit'));
+        }
+        $lengthError = UnitRepository::fieldLengthError([
+            'name' => trim((string) $request->input('name')),
+            'slug' => $slug,
+            'code' => $request->input('code') ?: null,
+        ]);
+        if ($lengthError !== null) {
+            Session::flash('error', $lengthError);
             return Response::redirect(url('back-office/groups/' . $id . '/edit'));
         }
         $showPublic = $request->input('show_on_public_page') ? 1 : 0;
@@ -279,11 +292,5 @@ class GroupAdminController
         }
 
         return $raw !== '' ? $raw : $fallback;
-    }
-
-    private function slugify(string $name): string
-    {
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', trim($name));
-        return strtolower(trim($slug, '-') ?: 'groupe');
     }
 }

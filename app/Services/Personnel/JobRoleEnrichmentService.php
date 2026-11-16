@@ -165,6 +165,28 @@ final class JobRoleEnrichmentService
      *
      * @return list<string>
      */
+    /**
+     * Clé de comparaison d'une étiquette, alignée sur la collation utf8mb4_unicode_ci de personnel_job_role_tags.name
+     * (UNIQUE tenant_id + name) : casse et accents ignorés. Sans elle, « Médical » puis « medical » passaient le
+     * dédoublonnage PHP et l'INSERT échouait sur la clé unique (erreur 1062).
+     */
+    public static function tagKey(string $name): string
+    {
+        $name = mb_strtolower(trim($name), 'UTF-8');
+        if (class_exists(\Normalizer::class)) {
+            $decomposed = \Normalizer::normalize($name, \Normalizer::FORM_D);
+            if (is_string($decomposed)) {
+                return (string) preg_replace('/\p{Mn}+/u', '', $decomposed);
+            }
+        }
+
+        return strtr($name, [
+            'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a', 'ç' => 'c', 'è' => 'e', 'é' => 'e',
+            'ê' => 'e', 'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o',
+            'ô' => 'o', 'õ' => 'o', 'ö' => 'o', 'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'ÿ' => 'y',
+        ]);
+    }
+
     public static function normalizeTagNames(mixed $raw): array
     {
         if ($raw === null || $raw === '') {
@@ -185,7 +207,7 @@ final class JobRoleEnrichmentService
             if (mb_strlen($name, 'UTF-8') > self::TAG_MAX_LENGTH) {
                 throw new InvalidArgumentException('Une étiquette est limitée à 40 caractères.');
             }
-            $key = mb_strtolower($name, 'UTF-8');
+            $key = self::tagKey($name);
             if (isset($seen[$key])) {
                 continue;
             }
@@ -309,11 +331,11 @@ final class JobRoleEnrichmentService
     {
         $existing = [];
         foreach ($this->tags($tenantId) as $tag) {
-            $existing[mb_strtolower($tag['name'], 'UTF-8')] = $tag['id'];
+            $existing[self::tagKey((string) $tag['name'])] = $tag['id'];
         }
         $ids = [];
         foreach ($names as $name) {
-            $key = mb_strtolower($name, 'UTF-8');
+            $key = self::tagKey($name);
             if (!isset($existing[$key])) {
                 $this->pdo->prepare('INSERT INTO personnel_job_role_tags (tenant_id, name) VALUES (?, ?)')->execute([$tenantId, $name]);
                 $existing[$key] = (int) $this->pdo->lastInsertId();

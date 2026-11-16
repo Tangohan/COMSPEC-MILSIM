@@ -74,7 +74,7 @@ class TeamAdminController
         }
         $name = trim((string) $request->input('name'));
         $slugInput = trim((string) $request->input('slug'));
-        $effectiveSlug = $slugInput !== '' ? $slugInput : $this->slugify($name);
+        $effectiveSlug = $slugInput !== '' ? $slugInput : UnitRepository::slugFromName($name, '');
         if ($effectiveSlug === '') {
             $effectiveSlug = 'equipe';
         }
@@ -98,6 +98,10 @@ class TeamAdminController
         ];
         if ($data['name'] === '') {
             Session::flash('error', 'Le nom est requis.');
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=equipe'));
+        }
+        if (($lengthError = UnitRepository::fieldLengthError($data)) !== null) {
+            Session::flash('error', $lengthError);
             return Response::redirect(url('back-office/organisation/structure?ouvrir=equipe'));
         }
         if ($this->unitRepository->slugExists($tenantId, $effectiveSlug)) {
@@ -187,9 +191,18 @@ class TeamAdminController
             Session::flash('error', 'Équipe introuvable.');
             return Response::redirect(url('back-office/teams'));
         }
-        $slug = trim((string) $request->input('slug')) ?: $this->slugify(trim((string) $request->input('name')));
+        $slug = trim((string) $request->input('slug')) ?: UnitRepository::slugFromName(trim((string) $request->input('name')), '');
         if ($slug && $this->unitRepository->slugExists($tenantId, $slug, $id)) {
             Session::flash('error', 'Cette adresse courte est déjà utilisée.');
+            return Response::redirect(url('back-office/teams/' . $id . '/edit'));
+        }
+        $lengthError = UnitRepository::fieldLengthError([
+            'name' => trim((string) $request->input('name')),
+            'slug' => $slug,
+            'code' => $request->input('code') ?: null,
+        ]);
+        if ($lengthError !== null) {
+            Session::flash('error', $lengthError);
             return Response::redirect(url('back-office/teams/' . $id . '/edit'));
         }
         $showPublic = $request->input('show_on_public_page') ? 1 : 0;
@@ -236,11 +249,5 @@ class TeamAdminController
         $this->unitRepository->delete($id, $tenantId);
         Session::flash('success', 'Équipe supprimée.');
         return Response::redirect(url('back-office/teams'));
-    }
-
-    private function slugify(string $name): string
-    {
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', trim($name));
-        return strtolower(trim($slug, '-') ?: 'equipe');
     }
 }

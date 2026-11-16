@@ -1012,6 +1012,9 @@ class UnitRepository
     public function create(int $tenantId, array $data): array
     {
         $slug = $data['slug'] ?? $this->slugify($data['name'] ?? '');
+        if (($lengthError = self::fieldLengthError(array_merge($data, ['name' => $data['name'] ?? '', 'slug' => $slug]))) !== null) {
+            throw new \InvalidArgumentException($lengthError);
+        }
         $publicBlurb = isset($data['public_blurb']) ? (string) $data['public_blurb'] : null;
         $publicTagsJson = $this->encodePublicTags($data['public_tags'] ?? null);
         $showPublic = array_key_exists('show_on_public_page', $data)
@@ -1101,6 +1104,9 @@ class UnitRepository
 
     public function update(int $id, int $tenantId, array $data): bool
     {
+        if (($lengthError = self::fieldLengthError($data)) !== null) {
+            throw new \InvalidArgumentException($lengthError);
+        }
         $fields = [];
         $params = [];
         $allowed = ['parent_id', 'name', 'slug', 'type', 'code', 'commander_user_id', 'display_order'];
@@ -1345,10 +1351,53 @@ class UnitRepository
         return (bool) $stmt->fetch();
     }
 
+    /** units.slug VARCHAR(100) : la base dérivée du nom laisse la place du suffixe « -N » ou « -abcdef ». */
+    public const SLUG_BASE_MAX = 90;
+
+    /** Longueurs des colonnes texte de units saisies à la main (schema.sql et migrations). */
+    public const FIELD_MAX = ['name' => 255, 'slug' => 100, 'code' => 20, 'type' => 50, 'motto' => 255, 'short_label' => 40, 'org_callsign' => 80];
+
+    /** Adresse courte dérivée d'un nom : ASCII, tirets, au plus SLUG_BASE_MAX caractères. */
+    public static function slugFromName(string $name, string $fallback = 'unite'): string
+    {
+        $slug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', trim($name)), '-'));
+        $slug = rtrim(substr($slug, 0, self::SLUG_BASE_MAX), '-');
+
+        return $slug !== '' ? $slug : $fallback;
+    }
+
+    /**
+     * Contrôle des champs texte d'une unité avant écriture (clés présentes seulement). En MySQL strict, une valeur plus
+     * longue que sa colonne est refusée (erreur 1406) et un nom vide devient NULL (erreur 1048).
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function fieldLengthError(array $data): ?string
+    {
+        if (array_key_exists('name', $data) && trim((string) $data['name']) === '') {
+            return 'Le nom de l’unité est requis.';
+        }
+        $messages = [
+            'name' => 'Le nom de l’unité ne peut pas dépasser 255 caractères.',
+            'slug' => 'L’adresse courte de l’unité ne peut pas dépasser 100 caractères.',
+            'code' => 'Le code de l’unité ne peut pas dépasser 20 caractères.',
+            'type' => 'Le type de l’unité ne peut pas dépasser 50 caractères.',
+            'motto' => 'La devise de l’unité ne peut pas dépasser 255 caractères.',
+            'short_label' => 'L’abréviation de l’unité ne peut pas dépasser 40 caractères.',
+            'org_callsign' => 'L’indicatif de l’unité ne peut pas dépasser 80 caractères.',
+        ];
+        foreach (self::FIELD_MAX as $field => $max) {
+            if (isset($data[$field]) && is_scalar($data[$field]) && mb_strlen((string) $data[$field], 'UTF-8') > $max) {
+                return $messages[$field];
+            }
+        }
+
+        return null;
+    }
+
     private function slugify(string $name): string
     {
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', trim($name));
-        return strtolower(trim($slug, '-') ?: 'unite');
+        return self::slugFromName($name);
     }
 
     /**

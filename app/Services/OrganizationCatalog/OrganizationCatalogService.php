@@ -271,6 +271,9 @@ final class OrganizationCatalogService
     /**
      * @return array{ok: bool, error?: string, item?: array<string, mixed>}
      */
+    /** organization_catalog_items.title VARCHAR(180). */
+    public const TITLE_MAX = 180;
+
     public function snapshot(int $tenantId, ?int $userId, string $title = ''): array
     {
         if ($tenantId < 1) {
@@ -281,7 +284,10 @@ final class OrganizationCatalogService
         $communityName = trim((string) ($tenant['name'] ?? 'cette organisation'));
         $title = trim($title);
         if ($title === '') {
-            $title = 'Modèle de ' . $communityName;
+            // organization_catalog_items.title VARCHAR(180) : le nom d'une communauté va jusqu'à 255 caractères.
+            $title = rtrim(mb_substr('Modèle de ' . $communityName, 0, self::TITLE_MAX, 'UTF-8'));
+        } elseif (mb_strlen($title, 'UTF-8') > self::TITLE_MAX) {
+            return ['ok' => false, 'error' => 'Le nom du modèle ne peut pas dépasser 180 caractères.'];
         }
         $def = $this->buildSnapshotDefinition($tenantId, $title);
         $code = 'private.' . $tenantId . '.' . date('YmdHis');
@@ -329,6 +335,9 @@ final class OrganizationCatalogService
         $title = trim($title);
         if ($title === '') {
             return ['ok' => false, 'error' => 'Indiquez un nom pour ce modèle.'];
+        }
+        if (mb_strlen($title, 'UTF-8') > self::TITLE_MAX) {
+            return ['ok' => false, 'error' => 'Le nom du modèle ne peut pas dépasser 180 caractères.'];
         }
         if (!$this->catalog->renamePrivate($tenantId, $code, $title)) {
             return ['ok' => false, 'error' => 'Le modèle n’a pas pu être renommé.'];
