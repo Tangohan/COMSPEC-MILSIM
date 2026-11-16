@@ -61,6 +61,9 @@ final class OrganizationDiscordBotController
                 'with_roles' => $withRoles,
                 'service_ready' => (new DiscordCompanionSettings())->key() !== '',
                 'oauth_ready' => $invite->configured(),
+                'app_warning' => (new DiscordCompanionSettings())->inviteWarning(),
+                'redirect_uri' => DiscordBotInvite::redirectUri(),
+                'settings_url' => url('admin/system/integrations') . '#companion',
             ],
         ]);
     }

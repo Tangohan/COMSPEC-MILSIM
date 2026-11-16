@@ -42,6 +42,11 @@ final class SystemPlatformIntegrationsController
             'platform_env_mailer' => strtolower(trim((string) \env('MAIL_MAILER', 'file'))),
             'platform_discord' => (new PlatformIntegrationSettings())->state(),
             'companionConfigured' => (new \App\Services\Integrations\DiscordCompanionSettings())->key() !== '',
+            'companionApp' => [
+                'client_id' => (new \App\Services\Integrations\DiscordCompanionSettings())->clientId(),
+                'has_secret' => (new \App\Services\Integrations\DiscordCompanionSettings())->hasClientSecret(),
+                'redirect_uri' => \App\Services\Integrations\DiscordBotInvite::redirectUri(),
+            ],
             'platform_linked_roles' => (new DiscordLinkedRoles())->adminState(),
             'admin_email' => (string) ($user['email'] ?? ''),
             'isPlatformAdminShell' => true,
@@ -53,12 +58,27 @@ final class SystemPlatformIntegrationsController
     {
         if (($denied = $this->guard($request)) !== null) return $denied;
         $key = trim($request->inputString('companion_api_key'));
+        $clientId = trim($request->inputString('companion_client_id'));
+        $secret = trim($request->inputString('companion_client_secret'));
+        $error = '';
         if ($key !== '' && preg_match('/^[A-Za-z0-9_-]{32,128}$/D', $key) !== 1) {
-            Session::flash('error', __('companion.invalid_key'));
+            $error = 'companion.invalid_key';
+        } elseif ($clientId !== '' && !\App\Services\Integrations\DiscordCompanionSettings::validClientId($clientId)) {
+            $error = 'companion.invalid_client_id';
+        } elseif ($secret !== '' && preg_match('/^[A-Za-z0-9_\-]{16,64}$/D', $secret) !== 1) {
+            $error = 'companion.invalid_client_secret';
+        }
+        if ($error !== '') {
+            Session::flash('error', __($error));
         } else {
-            if ($key !== '') (new \App\Repositories\PlatformSettingsRepository())->setMany([
-                \App\Services\Integrations\DiscordCompanionSettings::API_KEY => \App\Support\SecretCipher::encrypt($key),
-            ]);
+            $pairs = [\App\Services\Integrations\DiscordCompanionSettings::CLIENT_ID => $clientId];
+            if ($key !== '') {
+                $pairs[\App\Services\Integrations\DiscordCompanionSettings::API_KEY] = \App\Support\SecretCipher::encrypt($key);
+            }
+            if ($secret !== '') {
+                $pairs[\App\Services\Integrations\DiscordCompanionSettings::CLIENT_SECRET] = \App\Support\SecretCipher::encrypt($secret);
+            }
+            (new \App\Repositories\PlatformSettingsRepository())->setMany($pairs);
             Session::flash('success', __('companion.saved'));
         }
         return Response::redirect(url(self::BASE) . '#companion');

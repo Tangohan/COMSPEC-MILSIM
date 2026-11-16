@@ -6,7 +6,8 @@ declare(strict_types=1);
  * test, retrait. Contrôleur : OrganizationDiscordBotController. Styles : back-office-discord-bot.css.
  *
  * @var array{ready:bool, status:string, guild:?array<string,mixed>, settings:array<string,mixed>, channels:array<string,string>,
- *            roles:array<string,string>, invite_url:string, with_roles:bool, service_ready:bool, oauth_ready:bool} $bot
+ *            roles:array<string,string>, invite_url:string, with_roles:bool, service_ready:bool, oauth_ready:bool,
+ *            app_warning:string, redirect_uri:string, settings_url:string} $bot
  */
 
 $h = $h ?? static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -55,6 +56,26 @@ $pill = '<span class="dbot-pill dbot-pill--' . $h($statusTone) . '">' . $h($stat
 <div class="dbot">
     <?php if (empty($bot['ready'])): ?>
         <div class="dbot-note dbot-note--bad" role="alert">Le bot Discord n’est pas encore installé sur le site : la mise à jour de la base doit être lancée par l’administrateur de la plateforme.</div>
+    <?php endif; ?>
+    <?php $appWarning = (string) ($bot['app_warning'] ?? '');
+    $appWarnings = [
+        'missing' => 'L’identifiant de l’application du bot n’est pas réglé : l’invitation utilise une autre application Discord et sera refusée.',
+        'same' => 'L’identifiant du bot est le même que celui des rôles liés : si le bot est une autre application, l’invitation sera refusée.',
+        'no_secret' => 'Le secret de l’application du bot n’est pas enregistré : le retour de Discord ne pourra pas être vérifié.',
+    ];
+    ?>
+    <?php if (isset($appWarnings[$appWarning])): ?>
+        <div class="dbot-note dbot-note--warn" role="status"><?= $h($appWarnings[$appWarning]) ?> <a class="dbot-link" href="<?= $h((string) ($bot['settings_url'] ?? url('admin/system/integrations') . '#companion')) ?>">Régler l’application du bot</a></div>
+    <?php endif; ?>
+    <?php if (!empty($bot['redirect_uri'])): ?>
+    <section class="ath-card dbot-card dbot-setup" aria-labelledby="dbot-setup-title">
+        <h2 id="dbot-setup-title" class="dbot-h2">Réglage Discord</h2>
+        <p class="dbot-fine">Dans le portail des développeurs Discord, application du bot, onglet OAuth2 › Redirections, enregistrez exactement cette adresse.</p>
+        <div class="dbot-copy">
+            <input class="dbot-copy__field" id="dbot-redirect-uri" type="text" readonly value="<?= $h((string) $bot['redirect_uri']) ?>" aria-label="Adresse de redirection à enregistrer">
+            <button class="ath-btn" type="button" data-dbot-copy="dbot-redirect-uri" data-copied="Copié">Copier</button>
+        </div>
+    </section>
     <?php endif; ?>
     <?php if (empty($bot['service_ready'])): ?>
         <div class="dbot-note dbot-note--warn" role="status">Le service du bot n’est pas encore activé sur la plateforme : vous pouvez préparer la connexion, il répondra dès que l’administrateur l’aura démarré.</div>
@@ -223,3 +244,4 @@ $pill = '<span class="dbot-pill dbot-pill--' . $h($statusTone) . '">' . $h($stat
     </section>
     <?php endif; ?>
 </div>
+<script src="<?= $h(asset_url('assets/js/back-office-discord-bot.js')) ?>" defer></script>

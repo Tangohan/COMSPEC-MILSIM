@@ -233,3 +233,36 @@
     padding: 2px 0;
   }
 }
+
+.dbot-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+}
+
+.dbot-copy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.dbot-copy__field {
+  flex: 1 1 280px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--ath-line);
+  border-radius: 8px;
+  background: var(--ath-bg);
+  color: inherit;
+  font: 13.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.dbot-copy .ath-btn {
+  min-height: 44px;
+  min-width: 44px;
+}
