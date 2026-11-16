@@ -53,15 +53,16 @@ final class SseSheetReissueService
      * Niveau minimal qui rend lisibles tous les passages masqués d'un document (null : rien à lever).
      *
      * @param array<string, int> $by
+     * @param array<string, string>|null $required niveaux requis réglés pour ce document (instantané), sinon ceux livrés
      */
-    public static function levelNeeded(array $by): ?string
+    public static function levelNeeded(array $by, ?array $required = null): ?string
     {
         $top = null;
         foreach (array_keys($by) as $cat) {
             if ($cat === '' || !isset(SseRedactionService::CATEGORIES[$cat])) {
                 continue;
             }
-            $need = SseRedactionExplain::needCode((string) $cat);
+            $need = SseRedactionExplain::needCode((string) $cat, $required);
             if ($top === null || SseRedactionService::levelRank($need) > SseRedactionService::levelRank($top)) {
                 $top = $need;
             }

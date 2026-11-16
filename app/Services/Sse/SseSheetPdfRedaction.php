@@ -109,7 +109,7 @@ trait SseSheetPdfRedaction
             if ($n < 1) {
                 continue;
             }
-            $need = $cat === '' ? $this->rxText('other') : sprintf($this->rxText('needs'), X::need($cat));
+            $need = $cat === '' ? $this->rxText('other') : sprintf($this->rxText('needs'), X::need($cat, is_array($d['visibility'] ?? null) ? $d['visibility'] : null));
             $items[] = '(' . $letter . ') ' . X::label($cat, $lang) . $colon . $need . ' (' . $n . ')';
         }
         $how = sprintf($this->rxText('how'), (string) $d['ref']);

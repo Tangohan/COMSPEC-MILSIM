@@ -252,6 +252,10 @@ final class SsePersonWorkService
                     'id' => (int) $n['id'],
                     'ref' => (string) $n['ref'],
                     'threat' => (string) $n['threat_level'],
+                    'armed' => (string) ($n['armed'] ?? 'unknown'),
+                    'type' => (string) ($n['notice_type'] ?? ''),
+                    'issued_at' => (string) ($n['issued_at'] ?? ''),
+                    'expires_at' => $n['expires_at'] ?? null,
                     'identity_id' => (int) $identity['id'],
                 ];
                 $threat = $wanted['threat'];
@@ -286,6 +290,8 @@ final class SsePersonWorkService
             'restricted' => false,
             'idn' => 'IDN-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT),
             'name' => $name,
+            'last_name' => $last,
+            'first_name' => $first,
             'alias' => trim((string) ($p['alias'] ?? '')),
             'initials' => $this->initials($first, $last, (string) ($p['alias'] ?? '')),
             'photo' => $x['photo'],

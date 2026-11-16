@@ -67,16 +67,24 @@ final class SseRedactionExplain
         return self::HELP[$category][$lang === 'en' ? 1 : 0] ?? '';
     }
 
-    /** Abréviation du niveau qui rend la catégorie lisible : « S ». */
-    public static function need(string $category): string
+    /**
+     * Abréviation du niveau qui rend la catégorie lisible : « S ».
+     *
+     * @param array<string, string>|null $required
+     */
+    public static function need(string $category, ?array $required = null): string
     {
-        return SseUsClassification::abbr((string) (SseRedactionService::CATEGORIES[$category]['level'] ?? 'encadrement'));
+        return SseUsClassification::abbr(self::needCode($category, $required));
     }
 
-    /** Code du niveau minimal d'une catégorie. */
-    public static function needCode(string $category): string
+    /**
+     * Code du niveau minimal d'une catégorie (réglé pour le document si `$required` est donné).
+     *
+     * @param array<string, string>|null $required
+     */
+    public static function needCode(string $category, ?array $required = null): string
     {
-        return (string) (SseRedactionService::CATEGORIES[$category]['level'] ?? 'encadrement');
+        return SseRedactionService::requiredLevel($category, $required);
     }
 
     /**
@@ -265,15 +273,16 @@ final class SseRedactionExplain
      *
      * @param array<string, mixed> $raw
      * @param list<string> $levels niveaux proposés à l'opérateur
+     * @param array<string, string>|null $required niveaux requis réglés pour le document (SseSheetVisibility), sinon ceux livrés
      * @return array{counts: array<string, int>, top: string, levels: array<string, array{hidden: list<string>, visible: list<string>, hidden_fields: int}>}
      */
-    public static function preview(array $raw, array $levels): array
+    public static function preview(array $raw, array $levels, ?array $required = null): array
     {
         $counts = self::fieldCounts($raw);
         $top = 'interne';
         foreach ($counts as $cat => $n) {
-            if ($n > 0 && SseRedactionService::levelRank(self::needCode($cat)) > SseRedactionService::levelRank($top)) {
-                $top = self::needCode($cat);
+            if ($n > 0 && SseRedactionService::levelRank(self::needCode($cat, $required)) > SseRedactionService::levelRank($top)) {
+                $top = self::needCode($cat, $required);
             }
         }
         $out = [];
@@ -282,7 +291,7 @@ final class SseRedactionExplain
             $visible = [];
             $fields = 0;
             foreach ($counts as $cat => $n) {
-                if (SseRedactionService::visibleAt($cat, $level)) {
+                if (SseRedactionService::visibleAt($cat, $level, $required)) {
                     $visible[] = $cat;
                 } else {
                     $hidden[] = $cat;

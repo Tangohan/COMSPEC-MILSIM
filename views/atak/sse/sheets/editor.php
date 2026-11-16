@@ -150,6 +150,7 @@ $subjectName = (string) ($subject['person']['display_name'] ?? $subject['identit
             <div class="panel-header"><div class="panel-title">Ce qui sera masqué à ce niveau</div></div>
             <div class="panel-body">
                 <p class="shx-issues__intro">Le niveau de diffusion décide des passages noircis dans le PDF ; il ne dépend pas de la classification de la personne. Chaque catégorie de donnée exige un niveau minimal.</p>
+                <?php require dirname(__DIR__) . '/_sheet_visibility_modal.php'; ?>
                 <p class="shx-redact__default">Votre habilitation : <strong><?= $h(SseUsClassification::abbr($rights->level())) ?></strong>. Les émissions en un clic utilisent le niveau par défaut de la communauté : <strong><?= $h(SseUsClassification::abbr((string) ($defaultLevel ?? $level))) ?></strong>.</p>
                 <?php foreach ($rp['levels'] as $lv => $info): ?>
                     <?php
@@ -171,7 +172,7 @@ $subjectName = (string) ($subject['person']['display_name'] ?? $subject['identit
                                     <span class="shx-cats__body"><strong><?= $h(X::label((string) $cat, $ulang)) ?></strong> <span class="muted"><?= $h(X::help((string) $cat, $ulang)) ?></span></span>
                                     <span class="shx-cats__need">
                                         <?php if ($n < 1): ?>Aucune donnée
-                                        <?php elseif ($hid): ?><strong>Masqué</strong> : requiert <?= $h(X::need((string) $cat)) ?> · <?= (int) $n ?> champ(s)
+                                        <?php elseif ($hid): ?><strong>Masqué</strong> : requiert <?= $h(X::need((string) $cat, $visReq ?? null)) ?> · <?= (int) $n ?> champ(s)
                                         <?php else: ?>Lisible · <?= (int) $n ?> champ(s)<?php endif; ?>
                                     </span>
                                 </li>

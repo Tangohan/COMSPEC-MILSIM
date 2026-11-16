@@ -42,11 +42,13 @@ final class SseSheetService
         private ?SseSheetRepository $repo = null,
         private ?SseWantedSettingsRepository $settings = null,
         private ?SseSheetPdf $template = null,
+        private ?SseSheetVisibility $visibility = null,
     ) {
         $this->facts ??= new SseSheetFactsService();
         $this->repo ??= new SseSheetRepository();
         $this->settings ??= new SseWantedSettingsRepository();
         $this->template ??= new SseSheetPdf();
+        $this->visibility ??= new SseSheetVisibility();
     }
 
     /** Niveaux de diffusion proposés au rédacteur : du plus large à son habilitation (jamais au-dessus). @return list<string> */
@@ -96,12 +98,18 @@ final class SseSheetService
      * @param array{person: ?array<string, mixed>, identity: ?array<string, mixed>, identities: list<array<string, mixed>>, person_id: ?int, identity_id: ?int, ref: string} $subject
      * @return array<string, string>
      */
-    public function defaults(int $tenantId, array $subject, string $model, string $lang, string $level, SseSheetAccess $access): array
+    public function defaults(int $tenantId, array $subject, string $model, string $lang, string $level, SseSheetAccess $access, array $override = []): array
     {
         $lang = D::lang($lang);
         $raw = $this->facts->raw($tenantId, $subject, $access, $lang);
 
-        return $this->defaultTexts($tenantId, $model, $lang, $raw, $level, 'APERCU');
+        return $this->defaultTexts($tenantId, $model, $lang, $raw, $level, 'APERCU', $this->visibility->resolve($tenantId, $model, $override));
+    }
+
+    /** Niveaux requis par catégorie pour un document (modèle de la communauté puis surcharge d'émission, jamais sous le plancher). @return array<string, string> */
+    public function visibilityFor(int $tenantId, string $model, array $input = []): array
+    {
+        return $this->visibility->resolve($tenantId, $model, is_array($input['visibility'] ?? null) ? $input['visibility'] : []);
     }
 
     /**
@@ -128,7 +136,8 @@ final class SseSheetService
             $wanted = array_map('strval', $input['checks']);
             $raw['checks'] = array_values(array_filter($raw['checks'], static fn (array $c): bool => in_array((string) $c['ref'], $wanted, true)));
         }
-        $masked = $this->facts->mask($raw, $level);
+        $required = $this->visibilityFor($tenantId, $model, $input);
+        $masked = $this->facts->mask($raw, $level, $required);
         $facts = $masked['facts'];
         $threat = (string) ($input['threat'] ?? $facts['threat']);
         $facts['threat'] = isset(C::THREATS[$threat]) ? $threat : (string) $facts['threat'];
@@ -168,7 +177,7 @@ final class SseSheetService
             }
             $texts[$key] = T::clean($clean, $max);
         }
-        foreach ($this->facts->leaks($raw, $texts, $level) as $secret) {
+        foreach ($this->facts->leaks($raw, $texts, $level, $required) as $secret) {
             $out['errors'][] = sprintf('Le texte reprend « %s », une donnée réservée à une diffusion plus restreinte : retirez-la ou relevez la classification.', $secret);
         }
 
@@ -200,7 +209,7 @@ final class SseSheetService
             'model' => $model, 'lang' => $lang, 'faces' => $faces, 'ref' => $ref,
             'title' => D::MODELS[$model]['label'], 'accent' => SseSheetPdf::ACCENTS[$model] ?? [55, 65, 81],
             'authority' => $authority, 'service' => $service,
-            'issued_at' => $issued, 'issued_dt' => gmdate('Y-m-d H:i:s'), 'valid_until' => $validUntil, 'expires_at' => $expiresAt, 'until_lifted' => $model === 'vigilance' && ($term['lifted'] ?? false), 'classification' => $labels, 'level' => $level,
+            'issued_at' => $issued, 'issued_dt' => gmdate('Y-m-d H:i:s'), 'valid_until' => $validUntil, 'expires_at' => $expiresAt, 'until_lifted' => $model === 'vigilance' && ($term['lifted'] ?? false), 'classification' => $labels, 'level' => $level, 'visibility' => $required,
             'facts' => $facts, 'texts' => $texts, 'text_labels' => $this->textLabels($model),
             'emblem' => (string) $config['emblem'],
             'generated_at' => gmdate($lang === 'en' ? 'Y-m-d H:i' : 'd/m/Y H:i') . ' UTC',
@@ -214,6 +223,10 @@ final class SseSheetService
         $out['texts'] = $texts;
         $out['sensitive'] = $sensitive;
         $out['params'] = ['lang' => $lang, 'classification' => $level, 'faces' => $faces, 'validity' => $validity, 'threat' => $facts['threat'], 'armed' => $facts['armed'], 'checks' => array_values(array_map(static fn (array $c): string => (string) $c['ref'], $facts['checks']))];
+        $override = SseSheetVisibility::clean($input['visibility'] ?? []);
+        if ($override !== []) {
+            $out['params']['visibility'] = $override;
+        }
         if ($alert !== null) {
             $out['params'] += [
                 'measures' => array_column($alert['measures'], 'code'), 'reasons' => array_column($alert['reasons'], 'code'), 'zone' => (string) $facts['zone'],
@@ -447,9 +460,11 @@ final class SseSheetService
      * Re-télécharge un document émis : mêmes textes, même niveau de diffusion. Il faut au moins l'habilitation de sa
      * classification et le droit de lire les fichiers.
      *
+     * Avec `$atLevel`, le PDF est rendu à ce niveau de diffusion (SseSheetLevelService) : même référence, même instantané, rien n'est émis.
+     *
      * @return array{ok: bool, error: string, bytes: ?string, filename: string, issue: ?array<string, mixed>}
      */
-    public function reissue(int $tenantId, int $issueId, SseSheetAccess $access): array
+    public function reissue(int $tenantId, int $issueId, SseSheetAccess $access, ?string $atLevel = null): array
     {
         $fail = static fn (string $e, ?array $issue = null): array => ['ok' => false, 'error' => $e, 'bytes' => null, 'filename' => '', 'issue' => $issue];
         $issue = $this->repo->findIssue($tenantId, $issueId);
@@ -460,6 +475,11 @@ final class SseSheetService
             return $fail('forbidden', $issue);
         }
         $snap = $issue['snapshot'];
+        $levels = $atLevel !== null ? new SseSheetLevelService($this->repo, $this->facts, $this) : null;
+        $plan = $levels?->plan($issue, (string) $atLevel);
+        if ($plan !== null && !in_array($plan['state'], ['origin', 'lower', 'higher'], true)) {
+            return $fail($plan['state'] === 'reissue' ? 'reissue' : 'level', $issue);
+        }
         if ($issue['model'] === 'notice') {
             $notice = (new SseWantedNoticeRepository())->find($tenantId, (int) ($snap['notice_id'] ?? 0));
             if ($notice === null) {
@@ -489,6 +509,9 @@ final class SseSheetService
             $data['facts']['photos'] = is_array($snap['photos'] ?? null) ? $snap['photos'] : [];
             // Documents émis avant l'étiquetage des barres par catégorie : la catégorie se déduit du champ (le PDF stocké ne change pas).
             $data['facts'] = SseRedactionExplain::retag($data['facts']);
+            if ($plan !== null && $plan['state'] !== 'origin') {
+                $data = SseSheetLevelService::apply($data, $plan, $data['level'], (string) $atLevel);
+            }
             $data['emblem'] = (string) $this->settings->get($tenantId)['emblem'];
             // Fiche de vigilance levée depuis : le PDF re-téléchargé le dit (mention et date), sans rien changer d'autre.
             if ($issue['model'] === 'vigilance' && is_array($data['alert'] ?? null)) {
@@ -560,7 +583,7 @@ final class SseSheetService
         $texts = [];
         $errors = [];
         $typed = is_array($input['texts'] ?? null) ? $input['texts'] : [];
-        $vars = $this->facts->variables($this->facts->mask($raw, $level)['facts'], $lang, ['ref' => (string) $notice['ref'], 'service' => (string) ($notice['contact_label'] ?? ''), 'date' => gmdate('Y-m-d')]);
+        $vars = $this->facts->variables($this->facts->mask($raw, $level, $this->visibilityFor($tenantId, 'notice', $input))['facts'], $lang, ['ref' => (string) $notice['ref'], 'service' => (string) ($notice['contact_label'] ?? ''), 'date' => gmdate('Y-m-d')]);
         foreach (D::texts('notice') as [$key, $max, $labels]) {
             $source = array_key_exists($key, $typed) ? T::clean($typed[$key], $max * 2) : T::clean((string) ($notice[$key] ?? ''), $max);
             $res = T::resolve($source, $vars);
@@ -599,9 +622,9 @@ final class SseSheetService
     // ---------------------------------------------------------------- Outils
 
     /** @param array<string, mixed> $raw @return array<string, string> */
-    private function defaultTexts(int $tenantId, string $model, string $lang, array $raw, string $level, string $ref): array
+    private function defaultTexts(int $tenantId, string $model, string $lang, array $raw, string $level, string $ref, ?array $required = null): array
     {
-        $masked = $this->facts->mask($raw, $level);
+        $masked = $this->facts->mask($raw, $level, $required);
         $config = $this->settings->get($tenantId);
         $vars = $this->facts->variables($masked['facts'], $lang, ['ref' => $ref, 'service' => (string) $config['contact_label'], 'date' => gmdate('Y-m-d')]);
         $out = [];

@@ -191,10 +191,11 @@ final class OperatorHubTest extends TestCase
         $root = dirname(__DIR__, 2);
         $header = (string) file_get_contents($root . '/views/partials/athena_caverne_header.php');
         self::assertStringContainsString('OperatorHubCatalog::spaceTiles(', $header);
-        self::assertSame(2, substr_count($header, "athena-header__espace-item--' . \$h(\$espaceTone)"), 'menu Espaces et menu mobile');
-        self::assertStringContainsString('aria-current="page"', $header);
+        $partial = (string) file_get_contents($root . '/views/partials/athena_espaces_menu.php');
+        self::assertSame(1, substr_count($partial, "esp-card--' . \$espH(\$tone)"), 'une seule carte, partagée par le menu Espaces et le menu mobile');
+        self::assertStringContainsString('aria-current="page"', $partial);
         $css = (string) file_get_contents($root . '/public/assets/css/athena-header.css');
-        self::assertStringContainsString('.athena-header__espace-item--blue', $css);
+        self::assertStringContainsString('.esp-card--blue', $css);
         self::assertStringContainsString('#60a5fa', $css, 'bleu des jetons du site, pas un bleu inventé');
         // Le menu déroulant « Opérateur » ouvre la page en premier lien ; la carte ATAK y mène aussi.
         $nav = (string) file_get_contents($root . '/config/navigation.php');

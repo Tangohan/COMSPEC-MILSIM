@@ -13,6 +13,8 @@ use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseSheetAccess;
 use App\Services\Sse\SseSheetFactsService;
+use App\Services\Sse\SseSheetLevelService;
+use App\Services\Sse\SseSheetVisibility;
 use App\Services\Sse\SseSheetReissueService;
 use App\Services\Sse\SseSheetService;
 use App\Services\Sse\SseVigilanceFollow;
@@ -86,7 +88,8 @@ final class SseSheetController
         $r = $this->r();
         $lang = D::lang($request->queryString('lang', 'fr'));
         $level = SseSheetService::clampLevel($request->queryString('classification'), $r);
-        $texts = $this->service->defaults($r->tenantId(), $subject, $model, $lang, $level, $r);
+        $override = SseSheetVisibility::clean($request->query('visibility'));
+        $texts = $this->service->defaults($r->tenantId(), $subject, $model, $lang, $level, $r, $override);
 
         return Response::json(['ok' => true, 'texts' => $texts, 'level' => $level]);
     }
@@ -235,6 +238,9 @@ final class SseSheetController
     public function download(Request $request, array $params = []): Response
     {
         $r = $this->r();
+        if ($request->queryString('niveau') !== '') {
+            return $this->downloadAtLevel($request, $params);
+        }
         if (!$r->canDraft()) {
             return $this->flashBack('error', 'Action non autorisée.', url('atak/sse/accueil'));
         }
@@ -250,6 +256,42 @@ final class SseSheetController
         }
 
         return $this->pdf($res['bytes'], $res['filename'], $request->queryString('mode') === 'impression');
+    }
+
+    /**
+     * Téléchargement à un niveau de diffusion choisi (?niveau=…) : copie rendue depuis l'instantané, sans rien émettre. Débit limité,
+     * journalisé. Document absent, autre communauté, droits ou habilitation insuffisants : la même réponse 404.
+     */
+    private function downloadAtLevel(Request $request, array $params): Response
+    {
+        $r = $this->r();
+        $notFound = static fn (): Response => (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->header('Cache-Control', 'no-store')->setBody('Not found');
+        if (!$r->canDraft()) {
+            return $notFound();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if (!SseSheetLevelService::allowed()) {
+            return (new Response())->setStatusCode(429)->header('Content-Type', 'text/plain; charset=utf-8')->header('Cache-Control', 'no-store')->header('Retry-After', '30')->setBody('Too many requests');
+        }
+        $res = (new SseSheetLevelService($this->repo, $this->facts, $this->service))->download($r->tenantId(), $id, $request->queryString('niveau'), $r);
+        if ($res['error'] === 'notfound') {
+            return $notFound();
+        }
+        $back = $res['issue'] !== null ? SseSheetReissueService::backUrl($res['issue']) : url('atak/sse/identites');
+        if (!$res['ok'] || $res['bytes'] === null) {
+            $msg = match ($res['error']) {
+                'ceiling' => 'Ce niveau dépasse votre habilitation.',
+                'reissue' => 'Ce niveau rendrait lisibles des passages que ce document ne contient pas : réémettez-le à un niveau supérieur.',
+                'level', 'format' => 'Ce niveau n’est pas disponible pour ce document.',
+                'engine' => 'Le PDF n’a pas pu être généré : le moteur PDF ou ses polices sont indisponibles.',
+                default => 'Document introuvable.',
+            };
+
+            return $this->flashBack('error', $msg, $back);
+        }
+        $level = \App\Support\SseUsClassification::abbr(SseSheetService::clampLevel($request->queryString('niveau'), $r));
+
+        return $this->pdf($res['bytes'], (string) preg_replace('/\.pdf$/', '-' . $level . '.pdf', $res['filename']), $request->queryString('mode') === 'impression');
     }
 
     /**
@@ -429,7 +471,13 @@ final class SseSheetController
             'armed' => $request->inputString('armed'),
             'checks' => $request->inputString('checks_sent') === '1' ? (is_array($checks) ? array_values(array_map(static fn ($c): string => mb_substr((string) $c, 0, 40), array_slice($checks, 0, 40))) : []) : null,
             'texts' => $texts,
+            // Surcharge d'émission des niveaux de visibilité (SseSheetVisibility : jamais sous le plancher de sécurité).
+            'visibility' => SseSheetVisibility::clean($request->input('visibility')),
         ];
+        if ($request->inputString('preview_level') !== '') {
+            // Aperçu à un niveau précis depuis la fenêtre « Visibilité par niveau » : seulement pour l'aperçu, jamais pour l'émission.
+            $base['classification'] = $request->inputString('preview_level');
+        }
         if ($model === 'vigilance') {
             // Fiche de vigilance : niveau, consignes, motifs, zone et service à informer (SseVigilanceFollow::readInput).
             $base = SseVigilanceFollow::readInput([
@@ -464,12 +512,14 @@ final class SseSheetController
         $lang = D::lang($old['lang'] ?? SseWantedNoticeController::readerLang());
         $level = SseSheetService::clampLevel($old['classification'] ?? '', $r);
         $texts = is_array($old['texts'] ?? null) ? $old['texts'] : [];
-        $defaults = $this->service->defaults($tenantId, $subject, $model, $lang, $level, $r);
+        $visOverride = SseSheetVisibility::clean($old['visibility'] ?? []);
+        $visReq = $this->service->visibilityFor($tenantId, $model, ['visibility' => $visOverride]);
+        $defaults = $this->service->defaults($tenantId, $subject, $model, $lang, $level, $r, $visOverride);
         foreach ($defaults as $k => $v) {
             $texts[$k] ??= $v;
         }
         $raw = $this->facts->raw($tenantId, $subject, $r, $lang);
-        $masked = $this->facts->mask($raw, $level)['facts'];
+        $masked = $this->facts->mask($raw, $level, $visReq)['facts'];
         $ready = SseSheetRepository::ready();
         $identityIds = array_map(static fn (array $i): int => (int) $i['id'], $subject['identities']);
         $variables = $this->facts->variables($masked, $lang, ['ref' => '', 'service' => '', 'date' => gmdate('Y-m-d')]);
@@ -500,7 +550,8 @@ final class SseSheetController
             'threat' => (string) ($old['threat'] ?? $raw['threat']), 'armed' => (string) ($old['armed'] ?? ($raw['armed'] !== '' ? $raw['armed'] : 'unknown')),
             'validity' => D::validity($old['validity'] ?? D::DEFAULT_VALIDITY), 'faces' => D::faces($old['faces'] ?? null),
             'variables' => $variables, 'variableDefs' => T::VARIABLES,
-            'redactionPreview' => SseRedactionExplain::preview($raw, SseSheetService::levelsFor($r)),
+            'redactionPreview' => SseRedactionExplain::preview($raw, SseSheetService::levelsFor($r), $visReq),
+            'visReq' => $visReq, 'visTable' => $model !== 'notice' ? SseSheetVisibility::table($visReq, $this->service->visibilityFor($tenantId, $model)) : null,
             'defaultLevel' => SseSheetService::clampLevel($this->settingsDefault($tenantId), $r),
             'rights' => $r, 'back' => $kind === 'identite' ? url('atak/sse/papiers/identites/' . (int) $subject['identity_id']) : url('atak/sse/identites/' . (int) $subject['person_id'] . '?fiche=personne'),
             'readerLang' => SseWantedNoticeController::readerLang(),

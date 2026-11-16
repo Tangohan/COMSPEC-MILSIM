@@ -53,7 +53,9 @@ $stateLabel = ['active' => 'En cours', 'expired' => 'Expirée', 'lifted' => 'Lev
                 </p>
             </div>
             <div class="vig-row__actions">
+                <?php if (isset($issuesById[(int) $v['id']])): $lmRow = $issuesById[(int) $v['id']]; $lmClass = 'vig-btn'; $lmLabel = 'Télécharger le PDF'; require __DIR__ . '/_sheet_level_menu.php'; else: ?>
                 <a class="vig-btn" href="<?= $h($v['pdf_url']) ?>">Télécharger le PDF</a>
+                <?php endif; ?>
                 <?php if ($v['state'] !== 'lifted'): ?>
                     <button type="button" class="vig-btn" data-vig-open="<?= $h($rid) ?>-renew"<?= $v['can_renew'] ? '' : ' disabled aria-disabled="true"' ?>>Renouveler</button>
                 <?php endif; ?>

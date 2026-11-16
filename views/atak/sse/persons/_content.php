@@ -58,25 +58,82 @@ $classBadge = static function (array $r) use ($h, $ico): string {
 
     return $out;
 };
-$wantedBadge = static function (array $r) use ($h): string {
+/** Barres de niveau (1 à 4) : le rang s'écrit aussi en forme, jamais par la seule couleur. */
+$bars = static function (int $rank): string {
+    $out = '<span class="pe-lv" aria-hidden="true">';
+    for ($i = 1; $i <= 4; $i++) {
+        $out .= '<i' . ($i <= $rank ? ' class="on"' : '') . '></i>';
+    }
+
+    return $out . '</span>';
+};
+$lvStyle = static fn (array $lv): string => '--lv-bg:' . $lv['bg'] . ';--lv-ink:' . $lv['ink'];
+/** Légende des quatre niveaux, écrite une fois et reprise dans chaque info-bulle de la liste. */
+$legend = static function () use ($h, $bars, $lvStyle): string {
+    $out = '<span class="pe-tip__legend"><span class="pe-tip__lt">Légende</span>';
+    // Rangs 1 à 4 de l'échelle d'alerte : vigilance, vigilance renforcée, approche avec précaution, danger (armé).
+    foreach ([['low', 'unknown'], ['medium', 'unknown'], ['high', 'unknown'], ['low', 'yes']] as [$t, $a]) {
+        $lv = Ui::alertLevel($t, $a);
+        $out .= '<span class="pe-tip__lg" style="' . $h($lvStyle($lv)) . '"><b>' . $h((string) $lv['rank']) . '</b>' . $bars($lv['rank']) . '<span>' . $h($lv['title']) . '</span></span>';
+    }
+
+    return $out . '<span class="pe-tip__ln">R = personne recherchée. Les barres et le chiffre donnent le niveau : la couleur ne fait que le souligner.</span></span>';
+};
+$tipBox = static fn (string $id, string $body): string => '<span class="pe-tip__box" role="tooltip" id="' . $id . '">' . $body . '</span>';
+$wantedBadge = static function (array $r, string $ctx = 't') use ($h, $now, $bars, $lvStyle, $legend, $tipBox): string {
     $w = $r['wanted'];
     if ($w === null) {
         return '<span class="pe-none" aria-label="Aucun avis de recherche">—</span>';
     }
+    $lv = Ui::alertLevel($w['threat'], $w['armed']);
+    $until = $w['expires_at'] !== null ? Ui::shortDate($w['expires_at'], $now) : '';
+    $endShort = $until !== '' ? 'fin ' . $until : 'jusqu’à levée';
+    $endFull = $until !== '' ? 'Fin de validité : ' . Ui::full($w['expires_at']) : 'Fin de validité : jusqu’à levée';
+    $id = 'pe-tip-w-' . $ctx . (int) $r['id'];
+    $armed = ['yes' => 'Armé et dangereux', 'no' => 'Non armé', 'unknown' => 'Armement inconnu'][$w['armed']] ?? 'Armement inconnu';
+    $body = '<strong>Recherché · ' . $h(Ui::threat($w['threat'])) . '</strong>'
+        . '<span class="pe-tip__ln">Niveau ' . $h((string) $lv['rank']) . ' sur 4 : ' . $h($lv['title']) . '</span>'
+        . '<span class="pe-tip__ln">Avis ' . $h($w['ref']) . ($w['type'] !== '' ? ' · ' . $h(\App\Support\SseWantedCatalog::typeLabel($w['type'], [], \function_exists('site_lang') && site_lang() !== 'fr' ? 'en' : 'fr')) : '') . '</span>'
+        . '<span class="pe-tip__ln">' . $h($armed) . '</span>'
+        . ($w['issued_at'] !== '' ? '<span class="pe-tip__ln">Émis le ' . $h(Ui::full($w['issued_at'])) . '</span>' : '')
+        . '<span class="pe-tip__ln">' . $h($endFull) . '</span>'
+        . $legend();
 
-    return '<a class="pe-badge pe-badge--' . $h(Ui::threatTone($w['threat'])) . '" href="' . $h(url('atak/sse/papiers/identites/' . $w['identity_id'])) . '" title="Avis ' . $h($w['ref']) . ' — ' . 'ouvrir l’avis' . '">'
-        . 'Recherché<small>' . $h(Ui::threat($w['threat'])) . '</small></a>';
+    return '<span class="pe-tip" data-pe-tip>'
+        . '<a class="pe-r" style="' . $h($lvStyle($lv)) . '" href="' . $h(url('atak/sse/papiers/identites/' . $w['identity_id'])) . '" aria-describedby="' . $h($id) . '" aria-label="' . $h('Recherché : ' . Ui::threat($w['threat']) . ', niveau ' . $lv['rank'] . ' sur 4, ' . $endShort . '. Ouvrir l’avis') . '">'
+        . '<span aria-hidden="true">R</span>' . $bars($lv['rank']) . '</a>' . $tipBox($id, $body) . '</span>'
+        . '<small class="pe-end">' . $h($endShort) . '</small>';
 };
-$signBadge = static function (array $r) use ($h, $now): string {
+/** Dangerosité : niveau de menace de l'avis actif, quatre crans croissants (texte + barres + couleur). */
+$dangerBadge = static function (array $r, string $ctx = 't') use ($h, $bars, $lvStyle, $legend, $tipBox): string {
+    $w = $r['wanted'];
+    if ($w === null) {
+        return '<span class="pe-none" aria-label="Aucune dangerosité indiquée">—</span>';
+    }
+    $lv = Ui::dangerLevel($w['threat']);
+    $id = 'pe-tip-d-' . $ctx . (int) $r['id'];
+    $body = '<strong>Dangerosité : ' . $h(Ui::threat($w['threat'])) . '</strong>'
+        . '<span class="pe-tip__ln">Niveau ' . $h((string) $lv['rank']) . ' sur 4, repris du niveau de menace de l’avis de recherche.</span>'
+        . $legend();
+
+    return '<span class="pe-tip" data-pe-tip><span class="pe-dg" tabindex="0" style="' . $h($lvStyle($lv)) . '" aria-describedby="' . $h($id) . '" aria-label="' . $h('Dangerosité : ' . Ui::threat($w['threat']) . ', niveau ' . $lv['rank'] . ' sur 4') . '">'
+        . '<span>' . $h(Ui::threat($w['threat'])) . '</span>' . $bars($lv['rank']) . '</span>' . $tipBox($id, $body) . '</span>';
+};
+$signBadge = static function (array $r, string $ctx = 't') use ($h, $now, $tipBox): string {
+    $id = 'pe-tip-s-' . $ctx . (int) $r['id'];
     if (!$r['signed']) {
-        return '<span class="pe-badge pe-badge--warn pe-badge--plain">Non signé</span>';
+        $body = '<strong>Non signé</strong><span class="pe-tip__ln">Aucune signature du terminal sur cette fiche.</span><span class="pe-tip__ln">S = signé, NS = non signé.</span>';
+
+        return '<span class="pe-tip" data-pe-tip><span class="pe-sg pe-sg--ns" tabindex="0" aria-describedby="' . $id . '" aria-label="' . $h('Non signé') . '"><span aria-hidden="true">NS</span></span>' . $tipBox($id, $body) . '</span>';
     }
     $s = $r['sig'];
-    $bits = array_filter([$s['callsign'], $s['terminal'] !== '' ? 'terminal ' . $s['terminal'] : '']);
-    $when = $s['at'] !== '' ? Ui::day($s['at'], $now) : '';
+    $body = '<strong>Signé</strong>'
+        . ($s['callsign'] !== '' ? '<span class="pe-tip__ln">Par : ' . $h($s['callsign']) . '</span>' : '')
+        . ($s['terminal'] !== '' ? '<span class="pe-tip__ln">Terminal ' . $h($s['terminal']) . '</span>' : '')
+        . ($s['at'] !== '' ? '<span class="pe-tip__ln">Le ' . $h(Ui::full($s['at'])) . ' (' . $h(Ui::day($s['at'], $now)) . ')</span>' : '')
+        . '<span class="pe-tip__ln">S = signé, NS = non signé.</span>';
 
-    return '<span class="pe-badge pe-badge--ok pe-badge--plain" title="' . $h(implode(' · ', $bits) . ($when !== '' ? ' · ' . Ui::full($s['at']) : '')) . '">' . 'Signé'
-        . '<small>' . $h(trim(($s['callsign'] !== '' ? $s['callsign'] : '') . ($when !== '' ? ($s['callsign'] !== '' ? ' · ' : '') . $when : ''))) . '</small></span>';
+    return '<span class="pe-tip" data-pe-tip><span class="pe-sg pe-sg--s" tabindex="0" aria-describedby="' . $id . '" aria-label="' . $h('Signé' . ($s['callsign'] !== '' ? ' par ' . $s['callsign'] : '')) . '"><span aria-hidden="true">S</span></span>' . $tipBox($id, $body) . '</span>';
 };
 $bioPills = static function (array $r) use ($h): string {
     $names = ['empreintes' => 'Empreintes', 'iris' => 'Iris', 'adn' => 'ADN'];
@@ -379,11 +436,15 @@ $levels = W::assignableLevels($viewer->level);
                 <thead>
                 <tr>
                     <th scope="col" class="pe-c-check"><label class="pe-check" title="Tout sélectionner"><input type="checkbox" data-pe-selall aria-label="Tout sélectionner"><span></span></label></th>
+                    <th scope="col" class="pe-c-img">Image</th>
                     <th scope="col" class="pe-c-person"><a href="<?= $h($link(['sort' => 'nom'])) ?>">Nom</a></th>
+                    <th scope="col" class="pe-c-first">Prénom</th>
+                    <th scope="col" class="pe-c-alias">Alias</th>
                     <th scope="col" class="pe-c-status">Statut</th>
                     <th scope="col" class="pe-c-class"><abbr title="Classification">Classif.</abbr></th>
-                    <th scope="col" class="pe-c-wanted"><a href="<?= $h($link(['sort' => 'priorite'])) ?>" >Avis de recherche</a></th>
-                    <th scope="col" class="pe-c-sign">Signature</th>
+                    <th scope="col" class="pe-c-wanted"><a href="<?= $h($link(['sort' => 'priorite'])) ?>" title="Avis de recherche">R<span class="pe-sr"> : avis de recherche</span></a></th>
+                    <th scope="col" class="pe-c-danger">Danger</th>
+                    <th scope="col" class="pe-c-sign"><abbr title="Signature">S</abbr><span class="pe-sr"> : signature</span></th>
                     <th scope="col" class="pe-c-bio">Biométrie</th>
                     <th scope="col" class="pe-c-origin">Origine</th>
                     <th scope="col" class="pe-c-mod"><a href="<?= $h($link(['sort' => 'modification'])) ?>">Modifiée</a></th>
@@ -397,25 +458,28 @@ $levels = W::assignableLevels($viewer->level);
                     <?php if ($r['restricted']): ?>
                         <tr class="pe-row pe-row--restricted">
                             <td class="pe-c-check"></td>
-                            <th scope="row" class="pe-c-person"><span class="pe-avatar pe-avatar--lock"><?= $ico('lock') ?></span><span class="pe-restricted"><strong>Élément restreint</strong><small>Verrouillé : habilitation supérieure requise</small></span></th>
-                            <?php foreach (['status', 'class', 'wanted', 'sign', 'bio', 'origin', 'mod', 'seen', 'links', 'act'] as $col): ?><td class="pe-c-<?= $col ?>"></td><?php endforeach; ?>
+                            <td class="pe-c-img"><span class="pe-avatar pe-avatar--lock"><?= $ico('lock') ?></span></td><th scope="row" class="pe-c-person"><span class="pe-restricted"><strong>Élément restreint</strong><small>Verrouillé : habilitation supérieure requise</small></span></th>
+                            <?php foreach (['first', 'alias', 'status', 'class', 'wanted', 'danger', 'sign', 'bio', 'origin', 'mod', 'seen', 'links', 'act'] as $col): ?><td class="pe-c-<?= $col ?>"></td><?php endforeach; ?>
                         </tr>
                         <?php continue; ?>
                     <?php endif; ?>
                     <?php $id = (int) $r['id']; ?>
                     <tr class="pe-row<?= $r['closed'] ? ' is-closed' : '' ?>" data-pe-item data-id="<?= $id ?>" data-name="<?= $h($r['name']) ?>" data-wanted="<?= $r['wanted'] !== null ? '1' : '0' ?>" data-class="<?= $h((string) $r['classification']) ?>" data-fiche="<?= $h($ficheUrl($id)) ?>" data-locked="<?= !empty($r['lock']['manual']) ? '1' : '0' ?>" data-closed="<?= $r['closed'] ? '1' : '0' ?>">
                         <td class="pe-c-check"><label class="pe-check"><input type="checkbox" data-pe-select value="<?= $id ?>" aria-label="Sélectionner <?= $h($r['name']) ?>"><span></span></label></td>
+                        <td class="pe-c-img"><?= $avatar($r) ?></td>
                         <th scope="row" class="pe-c-person">
-                            <?= $avatar($r) ?>
                             <span class="pe-who">
-                                <a class="pe-name" href="<?= $h($ficheUrl($id)) ?>" data-pe-open="<?= $id ?>"><?= $h($r['name']) ?></a>
-                                <small><?= $h(trim(($r['alias'] !== '' ? '« ' . $r['alias'] . ' » · ' : '') . $r['idn'])) ?></small>
+                                <a class="pe-name" href="<?= $h($ficheUrl($id)) ?>" data-pe-open="<?= $id ?>"><?= $h($r['last_name'] !== '' ? $r['last_name'] : ($r['first_name'] !== '' ? $r['first_name'] : $r['name'])) ?></a>
+                                <small><?= $h($r['idn']) ?></small>
                             </span>
                         </th>
+                        <td class="pe-c-first"><?= $r['last_name'] !== '' && $r['first_name'] !== '' ? $h($r['first_name']) : '<span class="pe-none" aria-label="Non renseigné">—</span>' ?></td>
+                        <td class="pe-c-alias"><?= $r['alias'] !== '' ? $h($r['alias']) : '<span class="pe-none" aria-label="Aucun alias">—</span>' ?></td>
                         <td class="pe-c-status"><?= $status($r) ?></td>
                         <td class="pe-c-class"><?= $classBadge($r) ?></td>
-                        <td class="pe-c-wanted"><?= $wantedBadge($r) ?></td>
-                        <td class="pe-c-sign"><?= $signBadge($r) ?></td>
+                        <td class="pe-c-wanted"><?= $wantedBadge($r, 't') ?></td>
+                        <td class="pe-c-danger"><?= $dangerBadge($r, 't') ?></td>
+                        <td class="pe-c-sign"><?= $signBadge($r, 't') ?></td>
                         <td class="pe-c-bio"><?= $bioPills($r) ?></td>
                         <td class="pe-c-origin"><span><?= $h($r['nationality'] !== '' ? $r['nationality'] : '—') ?></span><small><?= $h(trim($r['circumstances'] . ($r['quality'] !== null ? ' · qualité ' . (int) $r['quality'] . ' %' : ''), ' ·')) ?></small></td>
                         <td class="pe-c-mod" title="<?= $h(Ui::full($r['updated_at'])) ?>"><?= $h(Ui::day($r['updated_at'], $now)) ?></td>
@@ -448,8 +512,9 @@ $levels = W::assignableLevels($viewer->level);
                         <div class="pe-card__flags">
                             <span class="pe-status"><?= $status($r) ?></span>
                             <?= $classBadge($r) ?>
-                            <?= $wantedBadge($r) ?>
-                            <?= $signBadge($r) ?>
+                            <?= $wantedBadge($r, 'c') ?>
+                            <?= $dangerBadge($r, 'c') ?>
+                            <?= $signBadge($r, 'c') ?>
                         </div>
                         <div class="pe-card__meta">
                             <?= $bioPills($r) ?>
