@@ -61,10 +61,15 @@ $headBlock = static function () use ($txt): string {
 
     return $html !== '' ? '<header class="pb-head">' . $html . '</header>' : '';
 };
-$rich = static function (string $key) use ($p, $h, $ed, $pbEditing): string {
+$rich = static function (string $key) use ($p, $h, $pbEditing): string {
     $v = (string) ($p[$key] ?? '');
     if ($pbEditing) {
-        return '<div class="pb-rich pb-rich--src cl-prose" translate="no"' . $ed('data-cl-prop="' . $key . '" data-placeholder="Texte : ## titre, **gras**, - liste, [lien](https://…)"') . '>' . nl2br($h($v)) . '</div>';
+        // Aperçu fidèle (même rendu que la page publiée) ; la saisie se fait dans le panneau de réglages du bloc.
+        // Texte vide : le texte d'aide s'affiche en gris comme un champ vide (placeholder), jamais comme du contenu.
+        $html = trim($v) === '' ? '' : RichTextLite::render($v);
+
+        return '<div class="pb-rich cl-prose' . ($html === '' ? ' pb-rich--empty' : '') . '" translate="no" data-pbe-open="' . $h($key) . '"'
+            . ' data-placeholder="Cliquez pour écrire le texte (titres, listes, gras, liens)"' . '>' . $html . '</div>';
     }
 
     return $v === '' ? '' : '<div class="pb-rich cl-prose" translate="no">' . RichTextLite::render($v) . '</div>';

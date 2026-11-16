@@ -71736,4 +71736,8 @@ return [
     'La position de service n’a pas été changée. Réglez-la depuis l’onglet Position et statut de la fiche.' => 'The duty position was not changed. Set it from the Position and status tab of the file.',
     'Habilitation accordée à la création de la fiche' => 'Clearance granted when the file was created',
     'Sessions' => 'Sessions',
+    'Réglages du bloc' => 'Block settings',
+    'Contenu du bloc personnalisé' => 'Custom block content',
+    'Cliquez pour écrire le texte (titres, listes, gras, liens)' => 'Click to write the text (headings, lists, bold, links)',
+    'data-placeholder="Cliquez pour écrire le texte (titres, listes, gras, liens)"' => 'data-placeholder="Click to write the text (headings, lists, bold, links)"',
 ];
