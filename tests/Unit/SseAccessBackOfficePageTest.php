@@ -17,9 +17,10 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Back-office › Accès renseignement refait (bande, onglets, délivrance en fenêtre) : rendu réel de la vue avec et
- * sans données, plafond de niveau, code affiché une seule fois, droits ; puis les POST existants (délivrer, révoquer)
- * contre une base SQLite en mémoire : mêmes routes, même CSRF, même journal.
+ * Back-office › Accès renseignement (centre de gestion des accès) : non-régression des onglets de codes repris de la
+ * première refonte (bande, onglets, délivrance en fenêtre) : rendu réel de la vue avec et sans données, plafond de niveau,
+ * code affiché une seule fois, droits ; puis les POST existants (délivrer, révoquer) contre une base SQLite en mémoire :
+ * mêmes routes, même CSRF, même journal. Les onglets du centre (personnels, documents, SSE) : SseAccessHubTest.
  */
 final class SseAccessBackOfficePageTest extends TestCase
 {
@@ -127,19 +128,20 @@ final class SseAccessBackOfficePageTest extends TestCase
         self::assertStringContainsString('bo-band bo-band--hero', $html);
         self::assertMatchesRegularExpression('#<h1 class="bo-band__title" id="ath-page-title">Accès renseignement</h1>#', $html);
         self::assertSame(1, self::hits('/class="bo-band__line"/', $html), 'une seule phrase d’explication');
-        foreach (['Codes émis' => 3, 'Encore valides' => 1, 'Journal récent' => 2] as $label => $n) {
+        foreach (['Codes valides' => 1, 'Votre plafond' => 'S'] as $label => $n) {
             self::assertMatchesRegularExpression('#<dt>' . $label . '</dt><dd><strong>' . $n . '</strong></dd>#u', $html);
         }
+        self::assertStringNotContainsString('Membres avec accès', $html, 'sans le droit de gestion SSE, pas de chiffres de membres');
         self::assertMatchesRegularExpression('#bo-band__btn bo-band__btn--solid" href="[^"]*atak/sse">Ouvrir le portail#', $html);
         self::assertMatchesRegularExpression('#class="bo-band__btn" href="[^"]*atak/sse/commandement">Entrer comme commandement#', $html);
         self::assertMatchesRegularExpression('#class="sseacc-hero__link" href="[^"]*atak/sse/droits">Droits d’accès par section#u', $html);
 
         self::assertSame(1, self::hits('/role="tablist"/', $html));
-        self::assertSame(4, self::hits('/role="tab"/', $html));
-        self::assertSame(4, self::hits('/role="tabpanel"/', $html));
-        self::assertSame(3, self::hits('/role="tabpanel"[^>]*\shidden>/', $html), 'un seul onglet ouvert');
+        self::assertSame(7, self::hits('/role="tab"/', $html), 'sans le droit de gestion SSE, pas d’onglet Personnels');
+        self::assertSame(7, self::hits('/role="tabpanel"/', $html));
+        self::assertSame(6, self::hits('/role="tabpanel"[^>]*\shidden>/', $html), 'un seul onglet ouvert');
         self::assertMatchesRegularExpression('/id="sseacc-tab-codes"[^>]*aria-selected="true"/', $html);
-        foreach (['01' => 'Codes émis', '02' => 'Délivrer un code', '03' => 'Niveaux de diffusion', '04' => 'Journal'] as $i => $title) {
+        foreach (['04' => 'Codes émis', '05' => 'Délivrer un code', '06' => 'Niveaux de diffusion', '07' => 'Journal'] as $i => $title) {
             self::assertMatchesRegularExpression('#<span class="bo-section__index" aria-hidden="true">/ ' . $i . '</span>\s*<h2 class="bo-section__title">' . $title . '</h2>#u', $html);
         }
         // Onglet choisi par l'adresse (repli sans JavaScript).
@@ -220,12 +222,13 @@ final class SseAccessBackOfficePageTest extends TestCase
         self::assertStringContainsString('Aucun événement d’accès', $html);
         self::assertStringNotContainsString('<table class="sseacc-table">', $html);
         self::assertStringNotContainsString('data-sseacc-filter', $html);
-        self::assertMatchesRegularExpression('#<dt>Codes émis</dt><dd><strong>0</strong></dd>#u', $html);
+        self::assertMatchesRegularExpression('#<dt>Codes valides</dt><dd><strong>0</strong></dd>#u', $html);
         // L'état vide porte l'action ; l'en-tête de section ne la répète pas.
         preg_match('#id="sseacc-panel-codes".*?</section>#s', $html, $m);
         self::assertSame(1, substr_count($m[0] ?? '', 'data-bo-dialog-open="sseacc-issue"'));
         // Échelle des niveaux toujours expliquée, avec lien vers la fiche effectifs.
-        self::assertSame(4, self::hits('/<tr( class="is-cap")?>\s*<th scope="row">/', $html));
+        preg_match('#id="sseacc-panel-niveaux".*?</section>#s', $html, $lv);
+        self::assertSame(4, self::hits('/<tr( class="is-cap")?>\s*<th scope="row">/', $lv[0] ?? ''));
         self::assertStringContainsString('Ouvrir les effectifs', $html);
     }
 
@@ -342,7 +345,12 @@ final class SseAccessBackOfficePageTest extends TestCase
         self::assertStringContainsString("\$router->get('/back-office/renseignement/acces', [\\App\\Controllers\\Admin\\AdminSseAccessController::class, 'index']", $routes);
         self::assertStringContainsString("\$router->post('/back-office/renseignement/acces', [\\App\\Controllers\\Admin\\AdminSseAccessController::class, 'issue']", $routes);
         self::assertStringContainsString("\$router->post('/back-office/renseignement/acces/{id}/revoquer', [\\App\\Controllers\\Admin\\AdminSseAccessController::class, 'revoke']", $routes);
-        self::assertSame(['codes', 'delivrer', 'niveaux', 'journal'], AdminSseAccessController::TABS);
+        self::assertSame(['ensemble', 'personnels', 'documents', 'sse', 'codes', 'delivrer', 'niveaux', 'journal'], AdminSseAccessController::TABS);
+        foreach (["'/back-office/renseignement/acces/personnels/habilitation', [\App\Controllers\Admin\AdminSseAccessController::class, 'peopleClearance']",
+            "'/back-office/renseignement/acces/personnels/acces', [\App\Controllers\Admin\AdminSseAccessController::class, 'peopleAccess']",
+            "'/back-office/renseignement/acces/personnels/{id}/regles/{ruleId}/retirer', [\App\Controllers\Admin\AdminSseAccessController::class, 'peopleRuleRevoke']"] as $route) {
+            self::assertStringContainsString("\$router->post(" . $route, $routes);
+        }
         $css = (string) file_get_contents(self::ROOT . '/public/assets/css/back-office-sse-access.css');
         self::assertDoesNotMatchRegularExpression('/sse-ds|Archivo|\.sse-[a-z]/', $css, 'pas le design system SSE rejeté');
         self::assertDoesNotMatchRegularExpression('/font-size:\s*(?:[0-9]|1[0-2])px/', $css, 'textes de 13 px au moins');

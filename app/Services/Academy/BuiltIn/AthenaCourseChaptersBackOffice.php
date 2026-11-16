@@ -887,7 +887,7 @@ Les membres voient et répondent dans **Manœuvres** (`/evenements`).
 ## 02 — Missions, carte et comptes rendus
 - **Missions** : portail `/back-office/missions` (planification), cycle de mission, diapositives de briefing.
 - **Carte tactique** : `/back-office/operations/carte-tactique`.
-- **Comptes rendus** : post-op (`/back-office/atak/comptes-rendus`) et **Remontées des joueurs** (`/back-office/remontees`).
+- **Comptes rendus** : post-op (`/back-office/atak/comptes-rendus`) et **Remontées des joueurs**, traitées au bureau SSE (`/atak/sse/remontees`).
 - **Coopérations inter-unités** : `/back-office/cooperation/missions`.
 
 ## 03 — Roleplay et sessions Arma
@@ -927,7 +927,7 @@ Members see and reply in **Exercises** (`/evenements`).
 ## 02 — Missions, map and reports
 - **Missions**: portal `/back-office/missions` (planning), mission cycle, briefing slides.
 - **Tactical map**: `/back-office/operations/carte-tactique`.
-- **After-action reports**: post-op (`/back-office/atak/comptes-rendus`) and **Player reports** (`/back-office/remontees`).
+- **After-action reports**: post-op (`/back-office/atak/comptes-rendus`) and **Player reports**, handled in the SSE office (`/atak/sse/remontees`).
 - **Inter-unit cooperation**: `/back-office/cooperation/missions`.
 
 ## 03 — Roleplay and Arma sessions
@@ -1005,16 +1005,16 @@ EN;
                     'Les règles de comptage fixent quand un joueur est compté présent dans une session.', 'Counting rules set when a player counts as present in a session.'),
                 C::q('Qui peut souscrire une formule pour la communauté ?', 'Who can subscribe to a plan for the community?', [C::o('Tout membre.', 'Any member.'), C::o('Les responsables de la communauté.', 'The community’s leaders.'), C::o('Les candidats.', 'Applicants.')], 1,
                     '**Offres et formules** (`/platform/upgrade`) n’autorise la souscription qu’aux responsables de la communauté.', '**Offers and plans** (`/platform/upgrade`) only lets the community’s leaders subscribe.'),
-                C::q('Où lit-on les remontées des joueurs après une opération ?', 'Where do you read player reports after an operation?', [C::o('Dans /back-office/remontees.', 'In /back-office/remontees.'), C::o('Dans Mon coffre.', 'In My locker.'), C::o('Dans les Matricules.', 'In Service numbers.')], 0,
-                    '**Comptes rendus › Remontées des joueurs** (`/back-office/remontees`).', '**After-action reports › Player reports** (`/back-office/remontees`).'),
+                C::q('Où lit-on les remontées des joueurs après une opération ?', 'Where do you read player reports after an operation?', [C::o('Dans /atak/sse/remontees (bureau SSE).', 'In /atak/sse/remontees (SSE office).'), C::o('Dans Mon coffre.', 'In My locker.'), C::o('Dans les Matricules.', 'In Service numbers.')], 0,
+                    '**Bureau SSE › Remontées** (`/atak/sse/remontees`).', '**SSE office › Player reports** (`/atak/sse/remontees`).'),
             ],
             ['Décrivez la préparation d’une opération de votre unité, du créneau au compte rendu, et ce que la présence pointée alimente ensuite.',
              'Describe how your unit prepares an operation, from slot to report, and what recorded attendance feeds afterwards.'],
             [['Créneau et postes.', 'Slot and positions.'], ['Session et présence.', 'Session and attendance.'], ['Compte rendu et effets.', 'Report and effects.']],
             [self::PASS, ['Le stagiaire publie un créneau avec postes de mission.', 'The learner publishes a slot with mission positions.'], ['Il explique la différence entre événement et session Arma.', 'They explain the difference between an event and an Arma session.']],
             ['Fiche mémo — Opérations', 'Memo card — Operations',
-             "Événements : /back-office/events (Nouveau créneau, postes, Pointer présence)\nCôté membre : /evenements\nSessions Arma : /back-office/roleplay/sessions\nComptes rendus : /back-office/atak/comptes-rendus · Remontées : /back-office/remontees\nFormule : /platform/upgrade · Don : /soutenir-atak",
-             "Events: /back-office/events (New slot, positions, Check in attendance)\nMember side: /evenements\nArma sessions: /back-office/roleplay/sessions\nReports: /back-office/atak/comptes-rendus · Player reports: /back-office/remontees\nPlan: /platform/upgrade · Donation: /soutenir-atak"]
+             "Événements : /back-office/events (Nouveau créneau, postes, Pointer présence)\nCôté membre : /evenements\nSessions Arma : /back-office/roleplay/sessions\nComptes rendus : /back-office/atak/comptes-rendus · Remontées : /atak/sse/remontees\nFormule : /platform/upgrade · Don : /soutenir-atak",
+             "Events: /back-office/events (New slot, positions, Check in attendance)\nMember side: /evenements\nArma sessions: /back-office/roleplay/sessions\nReports: /back-office/atak/comptes-rendus · Player reports: /atak/sse/remontees\nPlan: /platform/upgrade · Donation: /soutenir-atak"]
         );
     }
 

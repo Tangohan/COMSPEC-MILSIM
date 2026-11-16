@@ -197,6 +197,7 @@ $pill = '<span class="dbot-pill dbot-pill--' . $h($statusTone) . '">' . $h($stat
         <?= \App\Core\Csrf::field() ?>
         <h2 class="dbot-h2">Remontées du renseignement</h2>
         <p class="dbot-fine">Le bot prévient un salon quand une remontée arrive, presse ou change de main. Le message donne la référence, le type, l’urgence et un lien vers la fiche : jamais le texte, jamais un passage caviardé, jamais un nom ni un identifiant Steam.</p>
+        <p class="dbot-fine">Le même réglage se trouve au bureau SSE, avec les délais et les états de la file : <a href="<?= $h(url('atak/sse/remontees/reglages')) ?>">Réglages des remontées</a>.</p>
         <div class="dbot-grid">
             <div class="dbot-field"><label for="dbot-intake-channel">Salon des remontées</label>
                 <?= $select('intake_channel_id', 'dbot-intake-channel', $channels, (string) ($intake['channel_id'] ?? ''), 'Aucun salon') ?>

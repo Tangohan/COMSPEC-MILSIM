@@ -104,7 +104,7 @@ $filtersOn = ($f['q'] ?? '') !== '' || ($f['status'] ?? '') !== '' || ($f['autho
         <tbody>
         <?php foreach ($aarFieldReports as $fr): ?>
           <tr>
-            <td><a href="<?= $h(url('back-office/remontees/cr/' . (int) $fr['id'])) ?>"><?= $h((string) ($fr['ref'] ?? '')) ?></a></td>
+            <td><a href="<?= $h(url('atak/sse/remontees/cr/' . (int) $fr['id'])) ?>"><?= $h((string) ($fr['ref'] ?? '')) ?></a></td>
             <td><?= $h((string) ($fr['title'] ?? '')) ?></td>
             <td><?= $h((string) ($fr['author'] ?? '')) ?></td>
             <td><?= $h($fmt($fr['at'] ?? null, 'd/m/Y H:i')) ?></td>

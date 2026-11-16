@@ -21,7 +21,7 @@ if ($canPlatform) {
 <div class="bo-di" id="athena-data-inspector"
      data-api="<?= $h(url('api/athena/inspector/metrics')) ?>"
      data-platform="<?= $canPlatform ? '1' : '0' ?>"
-     data-remontees="<?= $h(url('back-office/remontees/joueurs')) ?>">
+     data-remontees="<?= $h(url('atak/sse/remontees/joueurs')) ?>">
 
   <div class="bo-di__toolbar">
     <nav class="bo-di-tabs" role="tablist" aria-label="Vues du Data Inspector">

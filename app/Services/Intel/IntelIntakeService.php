@@ -275,6 +275,31 @@ class IntelIntakeService
         return $cache[$tenantId] = $n;
     }
 
+    /**
+     * Remontées traitées depuis $since (chiffre clé du bureau) : état actuel hors file et dernier changement d'état
+     * noté dans le fil après cette date. Ne lève jamais.
+     */
+    public function closedSince(int $tenantId, string $since): int
+    {
+        if ($tenantId < 1 || !$this->schemaReady()) {
+            return 0;
+        }
+        try {
+            $open = implode(', ', array_map(static fn (string $s): string => "'" . $s . "'", self::OPEN_STATES));
+            $st = $this->pdo()->prepare(
+                "SELECT COUNT(*) FROM intel_intake_state s
+                 WHERE s.tenant_id = ? AND s.deleted_at IS NULL AND s.state NOT IN ($open)
+                   AND EXISTS (SELECT 1 FROM intel_intake_events e WHERE e.tenant_id = s.tenant_id AND e.source = s.source
+                               AND e.source_id = s.source_id AND e.kind = 'state' AND e.created_at >= ?)"
+            );
+            $st->execute([$tenantId, $since]);
+
+            return (int) $st->fetchColumn();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
     /** Colonne présente ? (des colonnes viennent de migrations facultatives : mission_key, attachment_count…) */
     private function hasColumn(string $table, string $column): bool
     {

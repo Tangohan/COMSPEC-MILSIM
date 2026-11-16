@@ -383,9 +383,9 @@ if ($canIntelIntake) {
         'bo',
         $intelIntakeBadge,
         $links([
-            ['label' => 'À traiter', 'href' => url('back-office/remontees'), 'hint' => 'Comptes rendus et fiches ouverts'],
-            ['label' => 'Par joueur', 'href' => url('back-office/remontees/joueurs'), 'hint' => 'Tout ce que chaque joueur a remonté'],
-            ['label' => 'Traitées', 'href' => url('back-office/remontees') . '?etat=closed', 'hint' => 'Exploitées, transmises, doublons, closes'],
+            ['label' => 'À traiter', 'href' => url('atak/sse/remontees'), 'hint' => 'Comptes rendus et fiches ouverts, au bureau SSE'],
+            ['label' => 'Par joueur', 'href' => url('atak/sse/remontees/joueurs'), 'hint' => 'Tout ce que chaque joueur a remonté'],
+            ['label' => 'Traitées', 'href' => url('atak/sse/remontees') . '?etat=closed', 'hint' => 'Exploitées, transmises, doublons, closes'],
         ]),
         'documents'
     );

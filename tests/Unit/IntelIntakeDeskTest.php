@@ -118,16 +118,26 @@ final class IntelIntakeDeskTest extends TestCase
         $desk = $this->desk()->view(1, $source, $id, ['id' => 7, 'level' => $level], $rights, $this->now);
         self::assertNotNull($desk);
 
-        return $this->render('admin/intel/intake_show', [
+        return self::own($this->render('atak/sse/intake_show', [
             'intakeDesk' => $desk,
+            'intakeRights' => IntelIntakeDesk::rights($rights),
             'intakeTypes' => IntelIntakeService::typeOptions($source),
             'intakeMembers' => $this->intake()->members(1),
             'intakeLevels' => \App\Repositories\SseCaseRepository::CLASSIFICATION_LABELS,
             'intakeSenderKey' => null,
             'intakeCanSeeMembers' => false,
-            'intakeSsePortal' => false,
             'csrfToken' => str_repeat('a', 64),
-        ]);
+        ]), '<div class="rmt rmt--sse rmt-show"');
+    }
+
+    /** Le contenu propre à la page du bureau, sans la coque du portail ni la fenêtre « Rattacher » (rendue une fois par page). */
+    private static function own(string $html, string $root): string
+    {
+        $start = strpos($html, $root);
+        self::assertNotFalse($start, 'la page est rendue dans la coque du bureau');
+        $ends = array_filter([strpos($html, 'id="ra-window"', (int) $start), strpos($html, '</main>', (int) $start)], static fn ($p): bool => $p !== false);
+
+        return substr($html, (int) $start, ($ends === [] ? strlen($html) : min($ends)) - (int) $start);
     }
 
     private static function css(string $name): string
@@ -156,8 +166,15 @@ final class IntelIntakeDeskTest extends TestCase
         self::assertFalse(is_file(base_path('public/assets/css/back-office-intel-intake.css')));
         self::assertStringNotContainsString('.rmt', self::css('back-office-dark.generated.css'));
         self::assertStringNotContainsString('.rmt', self::css('back-office-dark.css'));
+        // Les pages vivent au bureau SSE : leurs vues chargent la feuille et les jetons du thème « bureau ».
+        foreach (['intake_index', 'intake_show', 'intake_player', 'intake_settings'] as $view) {
+            $src = (string) file_get_contents(base_path('views/atak/sse/' . $view . '.php'));
+            self::assertStringContainsString("asset_url('assets/css/remontees.css')", $src, $view);
+            self::assertStringContainsString("asset_url('assets/css/sse-remontees.css')", $src, $view);
+            self::assertStringContainsString("require __DIR__ . '/_layout.php'", $src, $view);
+        }
         $config = (string) file_get_contents(base_path('config/back_office_pages.php'));
-        self::assertStringContainsString("'css' => ['remontees.css']", $config);
+        self::assertStringNotContainsString("'css' => ['remontees.css']", $config, 'plus de page Remontées dans le back-office');
     }
 
     public function testEveryButtonOfThePageHasAnAccessibleLabel(): void
@@ -196,9 +213,12 @@ final class IntelIntakeDeskTest extends TestCase
         $html = $this->showPage('fiche', $this->ids['b']);
         self::assertStringNotContainsString('kicker', $html);
         self::assertSame(0, preg_match('/text-transform\s*:\s*uppercase/', self::css('remontees.css')));
-        foreach (['transmettre', 'doublon', 'clore', 'convertir', 'relier', 'discord', 'modifier', 'supprimer', 'caviarder'] as $dlg) {
+        foreach (['transmettre', 'doublon', 'clore', 'convertir', 'discord', 'modifier', 'supprimer', 'caviarder'] as $dlg) {
             self::assertSame(1, preg_match('~<dialog class="rmt-dialog[^"]*" id="rmt-dlg-' . $dlg . '"~', $html), $dlg);
         }
+        // Rattacher une fiche passe par la fenêtre « Rattacher » du bureau.
+        self::assertStringContainsString('data-ra-open data-ra-pieces="note:' . $this->ids['b'] . '"', $html);
+        self::assertStringNotContainsString('rmt-dlg-relier', $html);
         // Aucun formulaire de transmission, de doublon ou de suppression hors d'une fenêtre.
         $outside = (string) preg_replace('~<dialog\b.*?</dialog>~s', '', $html);
         self::assertStringNotContainsString('name="target"', $outside);
@@ -308,7 +328,8 @@ final class IntelIntakeDeskTest extends TestCase
     public function testListPageShowsBadgesSortableColumnsAndNoSteamIdentifier(): void
     {
         $refined = IntelIntakeDesk::refine($this->intake()->listItems(1, ['state' => 'all'], 7), '', 'recu', 'desc', $this->now);
-        $html = $this->render('admin/intel/intake_index', [
+        $html = $this->render('atak/sse/intake_index', [
+            'intakeRights' => self::ALL, 'intakeFigures' => ['todo' => 2, 'late' => 2, 'week' => 1, 'open' => 3, 'mine' => 0],
             'intakeReady' => true, 'intakeItems' => $refined['items'], 'intakeBadgeCounts' => $refined['counts'],
             'intakeCounts' => $this->intake()->counts(1, [], 7), 'intakeTab' => 'all',
             'intakeFilters' => ['source' => '', 'type' => '', 'q' => '', 'assignee' => ''],
@@ -513,7 +534,7 @@ final class IntelIntakeDeskTest extends TestCase
             if ($m['data']['ref'] === 'FR-2026-000041') {
                 // Diffusion « Confidentiel » et passage caviardé : ni émetteur ni titre.
                 self::assertSame(['', ''], [$m['data']['emitter'], $m['data']['title']]);
-                self::assertSame('https://athena.test/back-office/remontees/fiche/' . $this->ids['b'], $m['data']['link']);
+                self::assertSame('https://athena.test/atak/sse/remontees/fiche/' . $this->ids['b'], $m['data']['link'], 'le lien mène au bureau SSE');
             } else {
                 self::assertSame(['VIPER', 'Colis suspect au pont nord'], [$m['data']['emitter'], $m['data']['title']]);
             }
@@ -618,16 +639,17 @@ final class IntelIntakeDeskTest extends TestCase
             "get('/back-office/remontees/{source}/{id}'", "post('/back-office/remontees/{source}/{id}/{action}'",
             "get('/back-office/remontees/{source}/{id}/suggestions'", "get('/atak/sse/remontees'", "get('/atak/sse/remontees/{source}/{id}'",
             "post('/atak/sse/remontees/{source}/{id}/{action}'", "post('/back-office/discord-bot/remontees'",
+            "get('/atak/sse/remontees/joueurs'", "get('/atak/sse/remontees/joueurs/{key}'", "get('/atak/sse/remontees/reglages'", "post('/atak/sse/remontees/reglages'",
         ] as $route) {
             self::assertSame(1, substr_count($routes, '$router->' . $route), $route);
         }
         // Back-office : le jeton est exigé par l'intergiciel commun à tout /back-office/.
         $middleware = (string) file_get_contents(base_path('app/Middleware/CsrfPostMiddleware.php'));
         self::assertStringContainsString("'/back-office/',", $middleware);
-        // Portail SSE : le contrôleur valide lui-même le jeton avant toute action, et n'offre que le traitement.
+        // Portail SSE : le contrôleur valide lui-même le jeton avant toute action ; les droits de chaque action sont ceux du service.
         $sse = (string) file_get_contents(base_path('app/Controllers/Web/SseIntakeController.php'));
         self::assertLessThan(strpos($sse, '->perform('), strpos($sse, 'Csrf::validate($token)'));
-        self::assertSame(0, preg_match("/ACTIONS = \[[^\]]*'(delete|edit|redact|unredact|blur|steam|restore)'/", $sse));
+        self::assertStringContainsString('IntelIntakeDesk::ACTION_RIGHT[$action]', $sse);
         // Une session invitée n'a aucun droit sur les remontées.
         self::assertSame(IntelIntakeDesk::rights([]), SseIntakeController::sessionRights(true, 1));
         self::assertSame('terrain', \App\Support\SseAccessCatalog::sectionForPath('/atak/sse/remontees/cr/4'));
