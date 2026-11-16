@@ -2670,6 +2670,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'saveCommandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'adequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'saveAdequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/chaine/adequation/apercu', [EffectifsWorkspaceController::class, 'previewAdequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/qualifications', [EffectifsWorkspaceController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Fiche membre › Identité & papiers (COMSPEC IDENTITY) : identités, papiers, kit de mission.
     $router->post('/back-office/ressources/effectifs/membres/{id}/qualifications/affichage', [\App\Controllers\Admin\MemberQualificationDisplayController::class, 'toggle'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
