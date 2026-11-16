@@ -1324,6 +1324,11 @@ return function (Router $router) {
     $router->get('/atak/sse/pistes/{id}', [\App\Controllers\Web\SseAttachController::class, 'leadShow'], $mwSsePortal);
     $router->post('/atak/sse/pistes/{id}', [\App\Controllers\Web\SseAttachController::class, 'leadUpdate'], $mwSsePortal);
     $router->get('/atak/sse/cerberes', [\App\Controllers\Web\SseLinksController::class, 'cerberes'], $mwSsePortal);
+    // Cerbère-Lecture : règles qui proposent type, thèmes et urgence des remontées (droits de « Gestion des fiches »).
+    $router->get('/atak/sse/detections', [\App\Controllers\Web\SseDetectionController::class, 'index'], $mwSsePortal);
+    $router->post('/atak/sse/detections/tester', [\App\Controllers\Web\SseDetectionController::class, 'test'], $mwSsePortal);
+    $router->post('/atak/sse/detections/regle', [\App\Controllers\Web\SseDetectionController::class, 'saveRule'], $mwSsePortal);
+    $router->post('/atak/sse/detections/retablir', [\App\Controllers\Web\SseDetectionController::class, 'reset'], $mwSsePortal);
     // Widget Cerbère (bouton flottant du portail) : contenu du tiroir, lecture seule.
     $router->get('/atak/sse/cerbere/panneau', [\App\Controllers\Web\SseCerbereWidgetController::class, 'panel'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);

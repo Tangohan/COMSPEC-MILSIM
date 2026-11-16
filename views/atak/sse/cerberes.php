@@ -22,7 +22,10 @@ $detectionTypes = ['id_check' => 'Contrôle d’identité', 'seek' => 'Fiche SEE
         <h1>Cerbères</h1>
         <p>Tout ce que le système fait tout seul dans le bureau : relier, classer, corréler, détecter, ouvrir un dossier. Rien ici ne se règle : c’est la liste de ce qui tourne et de ce qu’il a fait.</p>
     </div>
-    <a class="btn btn--ghost" href="<?= $h(url('atak/sse/rapprochements')) ?>">Propositions de Cerbère</a>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/rapprochements')) ?>">Propositions de Cerbère</a>
+        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/detections')) ?>">Détections Cerbère</a>
+    </div>
 </div>
 
 <section class="panel" aria-labelledby="cb-widget">

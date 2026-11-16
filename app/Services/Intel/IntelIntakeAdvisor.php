@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Intel;
 
 use App\Support\LazyDatabaseConnection;
-use App\Support\SseFieldNoteCatalog;
+use App\Services\Sse\Detection\SseDetectionService;
 use PDO;
 
 /**
  * Propositions automatiques sur une remontée (« Proposé par Cerbère ») : type, thèmes, urgence, attribution,
  * doublons probables, destinataires d'une transmission.
  *
- * Règles simples, chacune donnée avec sa raison en une ligne. Rien n'est écrit ici : une proposition n'est appliquée
+ * Chaque proposition est donnée avec sa raison en une ligne. Rien n'est écrit ici : une proposition n'est appliquée
  * que par le clic d'un traitant, par les mêmes actions que la saisie à la main (type, données, attribution).
  */
 class IntelIntakeAdvisor
@@ -30,35 +30,12 @@ class IntelIntakeAdvisor
         'Échelon supérieur',
     ];
 
-    /** Mots qui orientent le type d'une fiche (sans accents, minuscules). */
-    private const KIND_WORDS = [
-        'FRT' => ['vehicule', 'pick-up', 'pickup', 'camion', 'arme', 'munition', 'lance-roquette', 'materiel', 'immatricul', 'plaque', 'marquage', 'antenne', 'engin', 'caisse', 'drone'],
-        'FRC' => ['entretien', 'discute', 'discussion', 'rencontre', 'chef de village', 'informateur', 'interlocuteur', 'nous a dit', 'a declare', 'temoin'],
-        'FRA' => ['population', 'ambiance', 'tension', 'hostile', 'accueil', 'habitants', 'rumeur', 'climat', 'manifestation'],
-    ];
+    private ?SseDetectionService $detection = null;
 
-    /** Mots qui orientent les thèmes d'une fiche. */
-    private const THEME_WORDS = [
-        'TERROR' => ['attentat', 'engin explosif', 'ied', 'piege', 'kamikaze', 'otage'],
-        'CBRNE' => ['chimique', 'radiolog', 'nrbc', 'gaz', 'biologique'],
-        'ARMEMENT' => ['arme', 'munition', 'lance-roquette', 'fusil', 'mortier', 'explosif', 'grenade'],
-        'PERSON' => ['individu', 'homme arme', 'hommes armes', 'chef', 'suspect', 'cible'],
-        'LOGIST' => ['depot', 'caisse', 'carburant', 'ravitaillement', 'stock', 'entrepos', 'hangar', 'convoi'],
-        'COMMS' => ['radio', 'antenne', 'frequence', 'telephone', 'relais'],
-        'INFRA' => ['pont', 'route', 'batiment', 'centrale', 'barrage', 'piste'],
-        'MOUV' => ['deplacement', 'convoi', 'colonne', 'se dirige', 'patrouille', 'franchi'],
-        'SECUR' => ['garde', 'surveill', 'sentinelle', 'checkpoint', 'barrage routier', 'poste de controle'],
-        'CIVIL' => ['population', 'habitants', 'civil', 'village', 'marche'],
-    ];
-
-    private const URGENT_WORDS = [
-        'critical' => ['imminent', 'en cours', 'tir nourri', 'embuscade', 'otage', 'attentat'],
-        'high' => ['engin explosif', 'ied', 'colis suspect', 'blesse', 'hommes armes', 'homme arme', 'arme', 'menace', 'explosif'],
-    ];
-
-    public function __construct(?PDO $pdo = null)
+    public function __construct(?PDO $pdo = null, ?SseDetectionService $detection = null)
     {
         $this->pdo = $pdo;
+        $this->detection = $detection;
     }
 
     /** Texte comparé sans accents ni casse. */
@@ -73,96 +50,27 @@ class IntelIntakeAdvisor
         return trim(preg_replace('/\s+/u', ' ', $text) ?? '');
     }
 
-    /** @param array<string, mixed> $item remontée lue par IntelIntakeService::find */
-    private static function haystack(array $item): string
-    {
-        $row = is_array($item['row'] ?? null) ? $item['row'] : [];
-        $parts = [];
-        foreach (['title', 'body', 'summary', 'details', 'remarks', 'place_label', 'location_description'] as $col) {
-            $parts[] = (string) ($row[$col] ?? '');
-        }
-
-        return self::fold(implode(' ', $parts));
-    }
-
     /**
-     * @param list<string> $words
-     * @return list<string> mots trouvés
-     */
-    private static function hits(string $haystack, array $words): array
-    {
-        return array_values(array_filter($words, static fn (string $w): bool => str_contains($haystack, $w)));
-    }
-
-    /**
-     * Propositions qui s'écrivent dans la remontée : type, thèmes, urgence. Liste vide si tout est déjà cohérent.
+     * Propositions qui s'écrivent dans la remontée : type, thèmes, urgence, lues par Cerbère-Lecture (mots entiers, exclusions,
+     * négations, confiance) et expliquées (passage trouvé, règle, confiance). Liste vide si rien n'est sûr ou si tout a déjà été
+     * décidé. Voir docs/technical/DETECTIONS-CERBERE.md.
      *
      * @param array<string, mixed> $item
-     * @return list<array{key: string, label: string, value: string, value_label: string, reason: string, action: string, fields: array<string, string>}>
+     * @return list<array<string, mixed>>
      */
-    public function proposals(array $item): array
+    public function proposals(array $item, ?int $tenantId = null): array
     {
-        $out = [];
-        $source = (string) ($item['source'] ?? '');
-        $row = is_array($item['row'] ?? null) ? $item['row'] : [];
-        $text = self::haystack($item);
-        if ($source === 'fiche') {
-            $best = '';
-            $bestHits = [];
-            foreach (self::KIND_WORDS as $kind => $words) {
-                $found = self::hits($text, $words);
-                if (count($found) > count($bestHits)) {
-                    $best = $kind;
-                    $bestHits = $found;
-                }
-            }
-            if ($best !== '' && count($bestHits) >= 2 && $best !== (string) $item['type']) {
-                $out[] = [
-                    'key' => 'type', 'label' => 'Type de fiche', 'value' => $best,
-                    'value_label' => $best . ' · ' . SseFieldNoteCatalog::kindLabel($best),
-                    'reason' => 'Le texte parle de : ' . implode(', ', array_slice($bestHits, 0, 3)) . '.',
-                    'action' => 'type', 'fields' => ['type' => $best],
-                ];
-            }
-            $current = SseFieldNoteCatalog::normalizeThemes($row['themes'] ?? '');
-            $themes = [];
-            $why = [];
-            foreach (self::THEME_WORDS as $code => $words) {
-                $found = self::hits($text, $words);
-                if ($found !== [] && !in_array($code, $current, true)) {
-                    $themes[] = $code;
-                    $why[] = $found[0];
-                }
-            }
-            $room = SseFieldNoteCatalog::THEMES_MAX - count($current);
-            $themes = array_slice($themes, 0, max(0, $room));
-            if ($themes !== []) {
-                $out[] = [
-                    'key' => 'themes', 'label' => 'Thèmes', 'value' => implode(',', array_merge($current, $themes)),
-                    'value_label' => implode(', ', array_map(static fn (string $c): string => SseFieldNoteCatalog::themeLabel($c), $themes)),
-                    'reason' => 'Le texte parle de : ' . implode(', ', array_slice($why, 0, count($themes))) . '.',
-                    'action' => 'themes', 'fields' => ['themes' => implode(',', array_merge($current, $themes))],
-                ];
-            }
+        $tenantId ??= (int) (is_array($item['row'] ?? null) ? ($item['row']['tenant_id'] ?? 0) : 0);
+        try {
+            return $this->detection()->proposals($tenantId, $item);
+        } catch (\Throwable) {
+            return [];
         }
-        $level = IntelIntakePresenter::urgencyLevel((string) ($item['priority'] ?? ''));
-        $rank = ['low' => 0, 'medium' => 1, 'high' => 2, 'critical' => 3];
-        foreach (self::URGENT_WORDS as $wanted => $words) {
-            $found = self::hits($text, $words);
-            if ($found !== [] && $rank[$wanted] > $rank[$level]) {
-                $code = IntelIntakePresenter::URGENCY_LEVELS[$wanted][$source === 'cr' ? 1 : 0];
-                $field = $source === 'cr' ? 'priority' : 'urgency';
-                $out[] = [
-                    'key' => 'urgence', 'label' => $source === 'cr' ? 'Priorité' : 'Urgence', 'value' => $code,
-                    'value_label' => IntelIntakePresenter::urgencyLabel($source, $code),
-                    'reason' => 'Le texte parle de : ' . implode(', ', array_slice($found, 0, 3)) . '.',
-                    'action' => 'edit', 'fields' => [$field => $code],
-                ];
-                break;
-            }
-        }
+    }
 
-        return $out;
+    public function detection(): SseDetectionService
+    {
+        return $this->detection ??= new SseDetectionService($this->pdo);
     }
 
     /**

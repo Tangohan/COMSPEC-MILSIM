@@ -58,6 +58,7 @@ final class SsePortalNav
                 ['id' => 'croisements', 'label' => 'Croisements Cerbère', 'hint' => 'Correspondances trouvées par Cerbère-Corrélation entre fiches terrain et listes de surveillance, à valider.', 'path' => 'atak/sse/croisements', 'icon' => 'cross', 'keywords' => 'surveillance watchlist'],
                 ['id' => 'rapprochements', 'label' => 'Propositions de Cerbère', 'hint' => 'Liens trouvés par Cerbère-Validation, à accepter ou rejeter.', 'path' => 'atak/sse/rapprochements', 'icon' => 'engine', 'keywords' => 'rapprochements moteur suggestions cerbere'],
                 ['id' => 'cerberes', 'label' => 'Cerbères', 'hint' => 'Ce que le système fait tout seul : traitements, état et derniers événements.', 'path' => 'atak/sse/cerberes', 'icon' => 'engine', 'keywords' => 'cerbere automatique liaison corrélation détection création validation'],
+                ['id' => 'cerbere-detections', 'label' => 'Détections Cerbère', 'hint' => 'Règles qui proposent thèmes, urgence et type des remontées : réglages, taux de rejet, test d’un texte.', 'path' => 'atak/sse/detections', 'icon' => 'engine', 'keywords' => 'detections lexique mots cles themes urgence faux positifs regles cerbere lecture'],
                 ['id' => 'anomalies', 'label' => 'Anomalies', 'hint' => 'Écarts et incohérences à examiner.', 'path' => 'atak/sse/anomalies', 'icon' => 'alert'],
                 ['id' => 'carte', 'label' => 'Carte ATAK', 'hint' => 'Projection géographique (ouvre l’ATAK).', 'path' => 'atak', 'icon' => 'map', 'external' => true],
             ]],
