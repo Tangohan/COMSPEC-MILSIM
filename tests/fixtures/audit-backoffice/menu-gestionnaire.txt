@@ -85,7 +85,7 @@ Missions | /back-office/missions
 Carte tactique | /back-office/operations/carte-tactique
 Comptes rendus | /back-office/atak/comptes-rendus
   Comptes rendus post-op | /back-office/atak/comptes-rendus
-  Remontées des joueurs | /back-office/remontees
+  Remontées (ouvre le bureau SSE) | /atak/sse/remontees
   Modèles de debriefing | /back-office/atak/comptes-rendus/modeles
 Fichiers SSE | /back-office/renseignement/fichiers
 Coopérations inter-unités | /back-office/cooperation/missions

@@ -196,7 +196,7 @@ final class SseIntakePagesTest extends TestCase
         $view = (string) file_get_contents(base_path('views/admin/intel/intake_moved.php'));
         self::assertStringContainsString('Accès au bureau SSE requis', $view);
         self::assertStringContainsString("url('atak/sse')", $view);
-        self::assertStringNotContainsString('<h1', $view, 'le titre vient de l’en-tête du back-office');
+        self::assertStringNotContainsString('<h1', $view, 'le titre vient du shell du back-office');
         // Sans session : la connexion d'abord.
         unset($_SESSION['user_id']);
         $res = $bo->index(self::get(), []);

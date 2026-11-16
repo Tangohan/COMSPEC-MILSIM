@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Back-office « Remontées » : les pages vivent désormais au bureau SSE. Affichée (403) à la place de la redirection
  * quand la session ne peut pas entrer au bureau : elle dit pourquoi et comment y entrer, au lieu d'une page vide.
- * Le titre de la page vient de l'en-tête du back-office (config/back_office_pages.php).
+ * Le titre de la page vient du shell du back-office (variable title).
  *
  * @var string $movedTarget adresse de la page au bureau SSE
  * @var bool $movedHadAccess la session avait le droit du back-office Remontées

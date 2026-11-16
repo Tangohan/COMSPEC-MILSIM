@@ -255,7 +255,6 @@ return [
             ['label' => 'Configuration ATAK', 'href' => 'back-office/ressources/atak-config'],
         ]],
         ['path' => 'back-office/renseignement/fichiers', 'group' => 'Renseignement', 'title' => 'Fichiers SSE', 'subtitle' => 'Fiches, doublons et fusion, extractions de téléphones, journal des consultations, réglages.', 'flags' => ['boSkipPageHead' => true]],
-        ['path' => 'back-office/remontees', 'group' => 'Renseignement', 'title' => 'Remontées', 'subtitle' => 'Les remontées du terrain se traitent désormais dans le bureau SSE (Renseignement et enquêtes › Remontées).'],
         ['path' => 'back-office/atak/escouades', 'group' => 'ATAK', 'title' => 'Escouades en jeu', 'subtitle' => 'Escouades et équipes de feu envoyées par les téléphones : couleurs, icônes, descriptions et rôles.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/partage', 'group' => 'Communauté', 'title' => 'Fichiers partagés', 'subtitle' => 'Dossiers et fichiers de la communauté, privés par défaut et ouverts seulement sur partage.', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/metriques-joueurs', 'group' => 'Personnel', 'title' => 'Métriques joueurs', 'subtitle' => 'Temps de jeu, temps d’écran, distances parcourues, heures de vol et montre Garmin, par membre et pour la communauté.', 'css' => ['back-office-atak-squads.css', 'back-office-atak-hours.css', 'back-office-player-metrics.css'], 'flags' => ['boSkipPageHead' => true]],
