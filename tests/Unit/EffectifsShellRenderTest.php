@@ -157,8 +157,9 @@ final class EffectifsShellRenderTest extends TestCase
             'csrfToken' => 'tok',
         ]);
 
-        self::assertStringContainsString('class="effk-slot is-cmd"', $html);
-        self::assertStringContainsString('data-chain-slot="2"', $html);
+        self::assertStringContainsString('class="chn-card is-top"', $html);
+        self::assertStringContainsString('data-chn-card="2"', $html);
+        self::assertStringContainsString('<template data-chn-detail="2"', $html);
         self::assertStringContainsString('Chef à désigner', $html);
         self::assertStringContainsString('Groupe &lt;1&gt;', $html);
         self::assertStringNotContainsString('Groupe <1>', $html);
