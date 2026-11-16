@@ -415,6 +415,45 @@ final class BackOfficeDashboardWidgetsTest extends TestCase
         self::assertNull($none->recentForTenant(1, $now));
     }
 
+    public function testSessionWidgetsShowATechnicalErrorInsteadOfAnEmptyList(): void
+    {
+        // Table présente mais requête en échec (en production : 1267 « Illegal mix of collations ») : null + erreur notée.
+        $pdo = new CountingSqlitePdo();
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, tenant_id INTEGER, status TEXT, steam_id TEXT, display_name TEXT)');
+        $pdo->exec('CREATE TABLE player_sessions (id INTEGER PRIMARY KEY, tenant_id INTEGER, steam_uid TEXT)');
+        $pdo->exec("INSERT INTO users VALUES (1, 1, 'active', '76561198000000001', 'Membre')");
+        $repo = new PlayerSessionRepository($pdo);
+        $log = (string) tempnam(sys_get_temp_dir(), 'pslog');
+        $previous = ini_get('error_log');
+        ini_set('error_log', $log);
+        try {
+            self::assertNull($repo->membersToVerify(1, time() - 30 * 86400, 3600));
+            self::assertNotNull($repo->lastError());
+            self::assertNull($repo->recentForTenant(1, time() - 14 * 86400));
+            self::assertNotNull($repo->lastError());
+            $written = (string) file_get_contents($log);
+        } finally {
+            ini_set('error_log', $previous === false ? '' : $previous);
+            @unlink($log);
+        }
+        self::assertStringContainsString('[player-sessions] à vérifier : ', $written);
+        self::assertStringContainsString('colonnes : player_sessions.steam_uid, users.steam_id', $written);
+        self::assertStringContainsString('[player-sessions] récentes : ', $written);
+
+        // Table absente : pas d'erreur, « pas encore actif » comme avant.
+        $none = new PlayerSessionRepository(new CountingSqlitePdo());
+        self::assertNull($none->membersToVerify(1, time(), 3600));
+        self::assertNull($none->lastError());
+
+        $html = $this->render(true, [
+            'availability' => ['ready' => false, 'error' => true, 'days' => 30, 'total' => 0, 'rows' => [], 'href' => '/x'],
+            'sessions' => ['ready' => false, 'error' => true, 'rows' => [], 'min_minutes' => 60, 'href' => '/e'],
+        ]);
+        self::assertMatchesRegularExpression('#data-widget="availability".*?Données indisponibles \(erreur technique\)\.#s', $html);
+        self::assertMatchesRegularExpression('#data-widget="sessions".*?Données indisponibles \(erreur technique\)\.#s', $html);
+        self::assertStringNotContainsString('Tous les membres actifs ont joué', $html);
+    }
+
     // ——— Outils ———
 
     /** @param list<array<string, mixed>> $plan */
