@@ -348,10 +348,11 @@ final class AtakAlertesAssetTest extends TestCase
             self::assertStringContainsString($needle, $page, $needle);
         }
         // Le QR code est calculé sur le téléphone à partir de l'adresse du site, et dessiné par la ligne « qr » de fn_formRender.
-        self::assertStringContainsString('_rows pushBack ["qr", _qr, [0.62, 0.3] select _land];', $page);
+        // Part de la largeur de sa colonne : fn_formRender le réduit pour qu'il tienne entier dans la zone visible.
+        self::assertStringContainsString('_rows pushBack ["qr", _qr, 0.62];', $page);
         self::assertStringContainsString('case "qr": {', self::read(self::MAIN . 'functions/ui/fn_formRender.sqf'));
         // Consignes numérotées, liseré à la couleur de la notice ou du niveau, gestion selon les droits du compte.
-        self::assertStringContainsString('_forEachIndex + 1, [_x] call _escBr', $page);
+        self::assertStringContainsString('_forEachIndex + 1, [["item", _x] call comspec_atak_native_fnc_sseHub] call _escBr', $page);
         self::assertStringContainsString('private _c = ["color", _f get "color"] call comspec_atak_native_fnc_alertesAction;', $page);
         self::assertStringContainsString('if (!_closed && {_canIssue}) then { _btns pushBack ["RENOUVELER"', $page);
         self::assertStringContainsString('if (!_closed && {(_rights param [2, false]) isEqualTo true}) then { _btns pushBack ["LEVER"', $page);
