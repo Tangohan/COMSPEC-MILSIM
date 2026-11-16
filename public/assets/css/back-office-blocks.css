@@ -4,7 +4,8 @@
  */
 
 /* ——— Jetons : la vitrine parle --cl-*, le back-office --ath-* ——— */
-.bo-blocks {
+.bo-blocks,
+.bo-blocks-page {
   --cl-accent: var(--ath-accent, #0b8a5c);
   --cl-on-accent: #fff;
   --cl-ink: var(--ath-ink, #0c1116);
@@ -15,13 +16,15 @@
   --cl-panel: var(--ath-surface, #fff);
   --cl-emerald-deep: var(--ath-accent, #0b8a5c);
   --cl-dark: #0c1116;
+}
+.bo-blocks {
   color: var(--cl-ink);
   font-family: var(--ath-font, system-ui, sans-serif);
   min-width: 0;
 }
 .bo-blocks__stack { display: grid; gap: 16px; min-width: 0; }
 .bo-blocks__bar { display: flex; justify-content: flex-end; margin: 0 0 8px; }
-.bo-blocks-page { padding-bottom: 96px; }
+.bo-blocks-page { padding-bottom: 96px; min-width: 0; max-width: 100%; }
 
 /* Couleur d'accent d'un bloc (data-pb-accent) = jetons de signal du back-office */
 .bo-blocks .pb-block[data-pb-accent="emerald"] { --cl-accent: var(--ath-accent-bright, #12d18e); --cl-on-accent: var(--ath-accent-dark, #04231a); }
@@ -173,7 +176,8 @@
 .bo-blocks .pb-custom[data-pb-theme="accent"] :is(.pb-links__a, .pb-table__wrap, .pb-table th, .pb-table td) { background: transparent; border-color: currentColor; }
 
 /* ——— Mode sombre du back-office ——— */
-html[data-bo-theme="dark"] .bo-blocks { --cl-on-accent: #04231a; --cl-accent: var(--ath-accent-bright, #12d18e); }
+html[data-bo-theme="dark"] .bo-blocks,
+html[data-bo-theme="dark"] .bo-blocks-page { --cl-on-accent: #04231a; --cl-accent: var(--ath-accent-bright, #12d18e); }
 html[data-bo-theme="dark"] .bo-blocks .pb-block[data-pb-accent="info"] { --cl-accent: #5aa6e8; --cl-on-accent: #07141f; }
 html[data-bo-theme="dark"] .bo-blocks .pb-block[data-pb-accent="warn"] { --cl-accent: #e0a73a; }
 html[data-bo-theme="dark"] .bo-blocks .pb-block[data-pb-accent="danger"] { --cl-accent: #ef6a6a; --cl-on-accent: #1f0707; }
@@ -195,3 +199,125 @@ html[data-bo-theme="dark"] .bo-blocks .pb-img--empty { filter: brightness(.9); }
 .bo-blocks__stack > *, .bo-blocks .pb-block, .bo-blocks .pb-panel { min-width: 0; max-width: 100%; }
 .bo-blocks .pb-hero .cl-btn--ghost { color: #fff; border-color: rgba(255, 255, 255, .5); }
 .bo-blocks .pb-custom[data-pb-theme="dark"] .cl-btn--ghost, .bo-blocks .pb-custom[data-pb-theme="dark"] .cl-btn--light { color: #fff; background: transparent; }
+
+/* ——— Mise en page de l'éditeur dans la coque du back-office ———
+   Cause du défaut : la barre flottante, le panneau et le voile étaient des enfants directs de .ath-main__body, dont
+   chaque enfant reçoit l'animation d'apparition (back-office-refresh.css, fill-mode « both », transform: none en fin
+   de course). Elle écrasait le translateX(104%) qui cachait le panneau et le translateX(-50%) qui centrait la barre :
+   le panneau s'affichait ouvert et vide par-dessus la page. Tout vit maintenant dans .bo-blocks-page (hors de portée
+   de cette animation), sans transform : la barre est fixée en bas de la zone d'édition (à droite du menu), le panneau
+   est une carte fixée qui n'existe (display: none) que lorsqu'il est ouvert. La page ne peut pas utiliser « sticky » :
+   .ath-main est un conteneur à défilement (overflow: auto) qui ne défile pas, c'est la fenêtre qui défile. */
+/* Cette page porte des éléments en position fixe (barre, panneau) : une animation de transform, même terminée avec
+   fill-mode « both », ferait de la page leur bloc conteneur (ils seraient alors placés dans la page, pas dans la fenêtre). */
+.ath-main__body > .bo-blocks-page { animation: none; }
+.bo-blocks-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; min-width: 0; max-width: 100%; }
+.bo-blocks-main { position: relative; min-width: 0; max-width: 100%; }
+@media (min-width: 1100px) {
+  .bo-blocks-layout:has(> .pbe-panel.is-open) { grid-template-columns: minmax(0, 1fr) 376px; }
+}
+body.pbe-panel-open { margin-right: 0; }
+.bo-blocks-page { --bo-blocks-left: 0px; --bo-blocks-right: 0px; }
+@media (min-width: 1024px) {
+  .bo-blocks-page { --bo-blocks-left: var(--ath-side-w, 248px); }
+  body:has(#back-office-sidebar.is-collapsed) .bo-blocks-page { --bo-blocks-left: var(--ath-side-w-collapsed, 62px); }
+}
+@media (min-width: 1100px) {
+  body.pbe-panel-open .bo-blocks-page { --bo-blocks-right: 392px; }
+}
+
+/* Barre flottante : ancrée en bas de la zone d'édition (jamais par-dessus le menu) */
+.bo-blocks-page .pbe-dock {
+  position: fixed; left: var(--bo-blocks-left); right: var(--bo-blocks-right); bottom: 16px; z-index: 40; transform: none;
+  width: max-content; max-width: calc(100vw - var(--bo-blocks-left) - var(--bo-blocks-right) - 24px); margin: 0 auto; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 6px;
+  border-radius: 12px; background: var(--ath-surface, #fff); color: var(--ath-ink, #0c1116);
+  box-shadow: 0 0 0 1px var(--ath-line, #e3e8ea), 0 14px 36px -14px rgba(0, 0, 0, .35);
+  font-family: var(--ath-font, system-ui, sans-serif);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.bo-blocks-page .pbe-dock__status { min-height: 44px; padding: 0 12px; font-size: 13px; color: var(--ath-muted, #5b6762); }
+.bo-blocks-page .pbe-sep { height: 28px; background: var(--ath-line, #e3e8ea); }
+.bo-blocks-page .pbe-btn {
+  min-height: 44px; height: auto; padding: 0 16px; border-radius: 8px; color: var(--ath-ink, #0c1116);
+  font: 700 13px/1.2 var(--ath-font, system-ui, sans-serif); letter-spacing: .02em; text-transform: none;
+}
+.bo-blocks-page .pbe-btn:hover { background: var(--ath-line-soft, #f1f4f5); }
+.bo-blocks-page .pbe-btn--primary { background: var(--cl-accent); color: var(--cl-on-accent); }
+.bo-blocks-page .pbe-btn--primary:hover { background: var(--cl-accent); filter: brightness(1.08); }
+.bo-blocks-page .pbe-btn--soft { background: var(--ath-line-soft, #f1f4f5); }
+.bo-blocks-page .pbe-btn:focus-visible, .bo-blocks-page .pbe-icon:focus-visible, .bo-blocks-page .pbe-seg button:focus-visible,
+.bo-blocks-page .pbe-card:focus-visible, .bo-blocks-page .pbe-insert button:focus-visible { outline: 2px solid var(--cl-accent); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .bo-blocks-page .pbe-dock { bottom: 10px; width: calc(100vw - 24px); max-width: none; padding: 6px; }
+  .bo-blocks-page .pbe-dock__status span:last-child, .bo-blocks-page .pbe-btn .pbe-btn__txt { display: inline; }
+  .bo-blocks-page .pbe-dock__status { flex: 1 1 100%; justify-content: center; }
+  .bo-blocks-page .pbe-sep { display: none; }
+  .bo-blocks-page .pbe-btn { flex: 1 1 auto; justify-content: center; padding: 0 12px; }
+}
+
+/* Panneau de réglages : fermé = absent ; ouvert = colonne à droite (bureau) ou tiroir (étroit) */
+.bo-blocks-page .pbe-panel {
+  display: none; position: fixed; top: 16px; right: 16px; bottom: 16px; z-index: 1300;
+  width: min(360px, calc(100vw - 32px)); transform: none; transition: none;
+  background: var(--ath-surface, #fff); color: var(--ath-ink, #0c1116);
+  border: 1px solid var(--ath-line, #e3e8ea); border-radius: 12px; box-shadow: 0 16px 40px -22px rgba(0, 0, 0, .35);
+  font-family: var(--ath-font, system-ui, sans-serif); overflow: hidden;
+}
+.bo-blocks-page .pbe-panel.is-open { display: flex; }
+.bo-blocks-page .pbe-panel__kicker { display: none; }
+.bo-blocks-page .pbe-panel__head { border-bottom-color: var(--ath-line, #e3e8ea); }
+.bo-blocks-page .pbe-panel__title { margin: 0; font-size: 18px; font-weight: 800; color: var(--ath-ink, #0c1116); }
+.bo-blocks-page .pbe-panel__body { padding: 8px 20px 96px; }
+.bo-blocks-page .pbe-group { border-bottom-color: var(--ath-line, #e3e8ea); }
+.bo-blocks-page .pbe-group__title { margin: 0 0 10px; font-size: 15px; font-weight: 800; letter-spacing: 0; text-transform: none; color: var(--ath-ink, #0c1116); }
+.bo-blocks-page .pbe-field > span, .bo-blocks-page .pbe-toggle { font-size: 13px; color: var(--ath-ink, #0c1116); }
+.bo-blocks-page .pbe-field small { font-size: 13px; color: var(--ath-muted, #5b6762); }
+.bo-blocks-page .pbe-input, .bo-blocks-page .pbe-panel select, .bo-blocks-page .pbe-panel textarea {
+  min-height: 44px; font: 500 14px/1.4 var(--ath-font, system-ui, sans-serif); color: var(--ath-ink, #0c1116);
+  background: var(--ath-bg, #f6f8f9); border: 1px solid var(--ath-line, #e3e8ea);
+}
+.bo-blocks-page .pbe-panel textarea { min-height: 160px; }
+.bo-blocks-page .pbe-seg { background: var(--ath-bg, #f6f8f9); border-color: var(--ath-line, #e3e8ea); }
+.bo-blocks-page .pbe-seg button { min-height: 44px; font: 700 13px/1.2 var(--ath-font, system-ui, sans-serif); color: var(--ath-muted, #5b6762); }
+.bo-blocks-page .pbe-seg button[aria-pressed="true"] { background: var(--ath-ink, #0c1116); color: var(--ath-surface, #fff); }
+.bo-blocks-page .pbe-swatches button { width: 44px; }
+.bo-blocks-page .pbe-swatch { border-color: var(--ath-line, #e3e8ea); }
+.bo-blocks-page .pbe-toggle input { width: 44px; height: 24px; }
+.bo-blocks-page .pbe-icon { width: 44px; height: 44px; color: var(--ath-ink, #0c1116); }
+.bo-blocks-page .pbe-icon:hover { background: var(--ath-line-soft, #f1f4f5); }
+.bo-blocks-page .pbe-icon--danger:hover { background: var(--ath-danger-bg, #fdecec); color: var(--ath-danger, #c72e2e); }
+.bo-blocks-page .pbe-rich__bar .pbe-icon { width: auto; min-width: 44px; padding: 0 10px; }
+.bo-blocks-page .pbe-item, .bo-blocks-page .pbe-card, .bo-blocks-page .pbe-outline__row { background: var(--ath-bg, #f6f8f9); border-color: var(--ath-line, #e3e8ea); }
+.bo-blocks-page .pbe-item__thumb, .bo-blocks-page .pbe-image__preview, .bo-blocks-page .pbe-card__art { background-color: var(--ath-line-soft, #f1f4f5); border-color: var(--ath-line, #e3e8ea); }
+.bo-blocks-page .pbe-item__tools .pbe-icon { width: 44px; height: 44px; }
+.bo-blocks-page .pbe-card strong { font-size: 14px; }
+.bo-blocks-page .pbe-card span, .bo-blocks-page .pbe-outline__row { font-size: 13px; color: var(--ath-muted, #5b6762); }
+.bo-blocks-page .pbe-image__actions .pbe-btn { height: auto; min-height: 44px; font-size: 13px; }
+.bo-blocks-page .pbe-toast { font: 700 14px/1.3 var(--ath-font, system-ui, sans-serif); }
+
+@media (max-width: 1099.98px) {
+  .bo-blocks-page .pbe-panel.is-open {
+    top: 0; right: 0; bottom: 0; width: min(400px, 100vw);
+    border-radius: 0; border-width: 0 0 0 1px; box-shadow: -24px 0 60px -20px rgba(0, 0, 0, .5);
+  }
+}
+/* Sous 1024 px la barre du haut est hors de la zone principale : le tiroir démarre en dessous pour garder sa croix visible */
+@media (max-width: 1023.98px) {
+  .bo-blocks-page .pbe-panel.is-open { top: var(--ath-topbar-h, 54px); }
+}
+
+/* Barre de bloc et point d'insertion : texte lisible, cibles de 44 px */
+.bo-blocks .pbe-bar { max-width: calc(100% - 20px); flex-wrap: wrap; justify-content: flex-end; font-family: var(--ath-font, system-ui, sans-serif); background: var(--ath-surface, #fff); box-shadow: 0 0 0 1px var(--ath-line, #e3e8ea), 0 10px 26px -12px rgba(0, 0, 0, .4); }
+.bo-blocks .pbe-bar__label { font-size: 13px; letter-spacing: .02em; text-transform: none; color: var(--ath-muted, #5b6762); }
+.bo-blocks .pbe-bar .pbe-icon { width: 44px; height: 44px; color: var(--ath-ink, #0c1116); }
+.bo-blocks .pbe-bar .pbe-icon:hover { background: var(--ath-line-soft, #f1f4f5); }
+.bo-blocks .pbe-insert button { top: -22px; height: 44px; padding: 0 18px 0 14px; font: 700 13px/1 var(--ath-font, system-ui, sans-serif); letter-spacing: .02em; text-transform: none; }
+.bo-blocks .pb-img__hint { font-size: 13px; }
+.bo-blocks [data-cl-prop]:focus-visible, .bo-blocks [contenteditable]:focus-visible { outline: 2px solid var(--cl-accent); outline-offset: 3px; }
+@media (max-width: 720px) { .bo-blocks .pbe-bar__label { display: none; } }
+
+/* Texte riche : aperçu rendu (le texte se saisit dans le panneau) ; vide = texte d'aide grisé, pas du contenu */
+.bo-blocks [data-pbe-open] { cursor: pointer; border-radius: 6px; transition: background-color .15s ease; }
+.bo-blocks [data-pbe-open]:hover { background: var(--ath-line-soft, #f1f4f5); }
+.bo-blocks .pb-rich--empty { min-height: 44px; }
+.bo-blocks .pb-rich--empty::before { content: attr(data-placeholder); font-style: italic; color: var(--ath-muted, #5b6762); }
