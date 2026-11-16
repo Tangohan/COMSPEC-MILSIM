@@ -12,15 +12,16 @@ final class PersonnelProfileGapDashboardAssetTest extends TestCase
     {
         $ctrl = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Admin/Organization/OrganizationDashboardController.php');
         $dash = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/dashboard.php');
-        $partial = (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/org_dashboard_profile_gaps.php');
+        // Widget « Dossiers à compléter » de l'accueil en widgets.
+        $partial = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/_home_widget_body.php');
         $service = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Personnel/PersonnelProfileGapScanService.php');
 
         self::assertStringContainsString('PersonnelProfileGapScanService', $ctrl);
         self::assertStringContainsString('orgProfileGaps', $ctrl);
         self::assertStringContainsString('listForTenant', $ctrl);
-        self::assertStringContainsString('org_dashboard_profile_gaps.php', $dash);
-        self::assertStringContainsString('Profils à compléter', $partial);
-        self::assertStringContainsString('Image opérateur', $partial);
+        self::assertStringContainsString('_home_widgets.php', $dash);
+        self::assertStringContainsString('Dossiers à compléter', $partial);
+        self::assertStringContainsString('image opérateur', $partial);
         self::assertStringContainsString('missing_function', $partial);
         self::assertStringContainsString('missing_rank', $partial);
         self::assertStringContainsString('missing_role', $partial);

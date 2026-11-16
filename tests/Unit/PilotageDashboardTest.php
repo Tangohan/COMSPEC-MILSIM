@@ -160,7 +160,7 @@ final class PilotageDashboardTest extends TestCase
         self::assertSame('Bonjour', $p['hello']['greeting']);
 
         $html = $this->render($p);
-        foreach (['Bonjour, Jake.', 'À planifier', 'Programmer une activité', 'Tout est à jour', 'Aucune activité terminée pour l’instant', 'Aucune unité avec des postes', 'Rien n’est prévu pour le moment.', 'Aucune action récente', 'Aucune conversation récente', 'id="dossiers-incomplets"', 'org-profile-gaps-heading'] as $needle) {
+        foreach (['Bonjour, Jake.', 'À planifier', 'Programmer une activité', 'Tout est à jour', 'Aucune activité terminée pour l’instant', 'Aucune unité avec des postes', 'Rien n’est prévu pour le moment.', 'Aucune action récente', 'Aucune conversation récente', 'id="dossiers-incomplets"', 'Aucun trou de dossier sur les membres actifs.', 'class="dw-card dw-card--compact"'] as $needle) {
             self::assertStringContainsString($needle, $html);
         }
         self::assertStringNotContainsString('role="timer"', $html);
