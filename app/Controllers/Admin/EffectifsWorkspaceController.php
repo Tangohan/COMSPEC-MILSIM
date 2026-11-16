@@ -4867,13 +4867,14 @@ class EffectifsWorkspaceController
                 $html = \App\Support\HtmlTranslator::translate($html);
             }
 
-            return Response::json(['ok' => true, 'html' => $html, 'missing' => (int) $vars['chainMissingCommanders']]);
+            return Response::json(['ok' => true, 'html' => $html, 'missing' => (int) $vars['chainMissingCommanders'], 'gaps' => self::adequacyIssueCount($vars['chainAdequacy'])]);
         }
 
         return $this->shell('admin.effectifs_workspace.chaine', $vars + [
             'title' => 'Chaîne de commandement',
             'effectifsNav' => 'chaine',
             'commandChainMissingCount' => $vars['chainMissingCommanders'],
+            'adequacyIssueCount' => self::adequacyIssueCount($vars['chainAdequacy']),
             'rosterCounts' => $this->rosterCounts($tenantId),
         ]);
     }
@@ -4906,6 +4907,8 @@ class EffectifsWorkspaceController
         return [
             'chainAdequacy' => $adequacy,
             'adequacyOnlyGaps' => $request->query('ecarts') === '1',
+            // Onglet de la page ouvert au chargement (?vue=organigramme|corriger|chefs|releve).
+            'chainView' => (string) $request->query('vue', ''),
             'chainUnits' => $data['units'],
             'chainMembers' => $data['members'],
             'chainMemberOptions' => $data['memberOptions'],
@@ -4988,6 +4991,16 @@ class EffectifsWorkspaceController
         return Response::redirect(effectifs_workspace_url('chaine'));
     }
 
+    /** Écarts d’adéquation de l’évaluation (0 si le contrôle est désactivé ou indisponible), pour les pastilles. */
+    private static function adequacyIssueCount(mixed $result): int
+    {
+        if (!is_array($result) || empty($result['enabled'])) {
+            return 0;
+        }
+
+        return is_array($result['issues'] ?? null) ? count($result['issues']) : 0;
+    }
+
     private static function chainWantsJson(Request $request): bool
     {
         return str_contains(strtolower((string) $request->header('Accept')), 'application/json')
@@ -5042,7 +5055,8 @@ class EffectifsWorkspaceController
 
         return $this->shell('admin.effectifs_workspace.adequation', [
             'title' => 'Adéquation de l’organisation',
-            'effectifsNav' => 'chaine',
+            'effectifsNav' => 'adequation',
+            'adequacyIssueCount' => !empty($settings['enabled']) ? self::adequacyIssueCount($result) : 0,
             'adequacySettings' => $settings,
             'adequacyProfile' => $profile,
             'adequacyStandards' => \App\Services\Organization\OrgAdequacySettings::effectiveStandards($settings, $profile),

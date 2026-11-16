@@ -27,6 +27,18 @@ final class OrgAdequacyImpact
         'info' => ['codes' => ['leader_grade_unknown', 'grade_not_comparable', 'echelon_unknown'], 'rules' => ['echelon_unknown', 'grade_below'], 'tone' => 'muted'],
     ];
 
+    /** Libellés courts des types (résumé de la chaîne de commandement) ; la page Adéquation a les libellés longs. */
+    public const LABELS = [
+        'under' => 'Sous-capacité',
+        'vacant' => 'Chef à désigner',
+        'deputy' => 'Adjoint attendu',
+        'placement' => 'Sans place',
+        'over' => 'Surqualification',
+        'strength' => 'Effectif hors plage',
+        'subunits' => 'Sous-unités attendues',
+        'info' => 'À compléter',
+    ];
+
     /** Écarts propres à une personne (sans place, sans chef) : ils ne sont pas comptés pour un échelon. */
     private const PERSON_CODES = ['without_place', 'without_chief'];
 
