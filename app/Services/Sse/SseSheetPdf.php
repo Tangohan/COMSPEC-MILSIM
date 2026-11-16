@@ -183,7 +183,10 @@ final class SseSheetPdf
         } else {
             $this->front();
         }
-        $this->rxBlock();
+        if ($d['model'] !== 'vigilance') {
+            // La fiche de vigilance porte sa propre mention compacte, sous le bandeau d'alerte.
+            $this->rxBlock();
+        }
         match ($d['model']) {
             'identification' => $this->identification(),
             'vigilance' => $this->vigilance(),
@@ -608,7 +611,7 @@ final class SseSheetPdf
         foreach ($lists as $k => $l) {
             $x = self::MARGIN + $k * ($colW + 6.0);
             $this->heading($this->t($l[0]), $x, $colW);
-            $y = $this->y + 6.4;
+            $y = $this->y + $this->headGap();
             $pdf->SetFont($this->face(implode(' ', $l[1])), '', 8.8);
             $pdf->SetTextColor(...self::INK);
             foreach (array_slice($l[1], 0, 8) as $item) {
@@ -731,7 +734,7 @@ final class SseSheetPdf
             return;
         }
         $this->heading([(string) $label[0], (string) $label[1]]);
-        $y = $this->y + 6.4;
+        $y = $this->y + $this->headGap();
         if ($h > $room) {
             // Réduit d'abord, puis coupe : la mise en page ne déborde jamais du pied de page.
             for ($s = $size; $s >= 7.4; $s -= 0.4) {
@@ -769,11 +772,22 @@ final class SseSheetPdf
         $this->y = $y + $boxH + 3.5;
     }
 
+    /** Distance entre le haut d'un titre de rubrique et son contenu (la fiche de vigilance a des titres plus aérés). */
+    private function headGap(): float
+    {
+        return ($this->d['model'] ?? '') === 'vigilance' ? 9.0 : 6.4;
+    }
+
     private function wrapHtml(string $html, float $size): string
     {
         // Caviardage : rectangle noir (fond noir sur espaces insécables), largeur fixe.
         $html = (string) preg_replace_callback('/' . self::BLOCK . '+/u', function (array $m): string {
             $letter = $this->rxMark($m[0]);
+
+            if (($this->d['model'] ?? '') === 'vigilance' && $letter !== '') {
+                // Fiche de vigilance : la lettre de repère est écrite en blanc dans la barre, comme dans les tableaux.
+                return '<span style="background-color:#000000;color:#ffffff;">' . str_repeat('&nbsp;', 7) . '<b>' . $letter . '</b>&nbsp;</span>';
+            }
 
             return '<span style="background-color:#000000;color:#000000;">' . str_repeat('&nbsp;', 9) . '</span>' . ($letter !== '' ? '<sup style="font-size:62%;"><b>' . $letter . '</b></sup>' : '');
         }, $html);
@@ -1017,9 +1031,14 @@ final class SseSheetPdf
     /** Titre de paragraphe numéroté, marquage de portion à droite : « 3. SIGNALEMENT (S//NF) ». @param array{0: string, 1: string} $title */
     private function heading(array $title, ?float $x = null, ?float $w = null): void
     {
-        $pdf = $this->pdf;
         $x ??= self::MARGIN;
         $w ??= self::CONTENT_W;
+        if (($this->d['model'] ?? '') === 'vigilance') {
+            $this->vHead($title, $x, $w, $this->y);
+
+            return;
+        }
+        $pdf = $this->pdf;
         $y = $this->y;
         ++$this->n;
         $pdf->SetFont($this->sans, 'B', 9.4);

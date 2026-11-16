@@ -132,27 +132,65 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
 
     <?php require base_path('views/partials/bo_atak_light_kit.php'); ?>
 
-    <header class="pil-hello">
-        <div class="pil-hello__copy">
-            <h1 class="pil-hello__title" id="ath-page-title"><?= $pilH((string) ($pilHello['greeting'] ?? 'Bonjour')) ?><?= ($pilHello['name'] ?? '') !== '' ? ', ' . $pilH((string) $pilHello['name']) : '' ?>.</h1>
-            <p class="pil-hello__lead">
-                <?php if (($pilHello['date_label'] ?? '') !== ''): ?><span class="pil-hello__date"><?php $pilDate = mb_strtolower((string) $pilHello['date_label']); ?><?= $pilH(mb_strtoupper(mb_substr($pilDate, 0, 1)) . mb_substr($pilDate, 1)) ?></span> · <?php endif; ?>
-                <?= $pilH((string) ($pilHello['tenant'] ?? 'Votre communauté')) ?> compte
-                <b><?= $pilH($pilPlural((int) ($pilHello['active'] ?? 0), 'membre actif', 'membres actifs')) ?></b><?php if (isset($pilHello['total']) && $pilHello['total'] !== null && (int) $pilHello['total'] > (int) ($pilHello['active'] ?? 0)): ?> sur <?= (int) $pilHello['total'] ?><?php endif; ?>.
-                <?php $pilNextIn = $pilHello['next_in'] ?? null; ?>
-                <?php if ($pilNextIn === null): ?>
-                    Aucune activité n’est programmée<?php elseif ($pilNextIn === 'en cours'): ?>
-                    <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est <b>en cours</b><?php else: ?>
-                    <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est dans <b><?= $pilH((string) $pilNextIn) ?></b><?php endif; ?><?php $pilDecN = (int) ($pilHello['decisions'] ?? 0); ?><?php if ($pilDecN > 0): ?>, et <b><?= $pilH($pilPlural($pilDecN, 'décision', 'décisions')) ?></b> <?= $pilDecN > 1 ? 'vous attendent.' : 'vous attend.' ?><?php else: ?>, et rien n’attend votre décision.<?php endif; ?>
-            </p>
-        </div>
-        <div class="pil-hello__actions">
-            <?php if (empty($home['customize'])): ?>
-            <a class="pil-btn pil-btn--ghost" href="<?= $pilH(url('back-office') . '?personnaliser=1#personnaliser') ?>">Personnaliser l’accueil</a>
-            <?php endif; ?>
-            <?php foreach (($pilHello['actions'] ?? []) as $pilAct): ?>
-            <a class="pil-btn<?= !empty($pilAct['accent']) ? ' pil-btn--accent' : '' ?>" href="<?= $pilH((string) $pilAct['href']) ?>"><?= $pilH((string) $pilAct['label']) ?></a>
-            <?php endforeach; ?>
+    <?php
+    // Vignettes dans la ligne du titre : les dernières personnes actives (fil « Ce qui a bougé »), sans doublon.
+    $pilFaces = [];
+    foreach ($pilFeed as $pilF) {
+        $pilFaceKey = (string) ($pilF['actor'] ?? '');
+        if ($pilFaceKey !== '' && !isset($pilFaces[$pilFaceKey]) && count($pilFaces) < 4) {
+            $pilFaces[$pilFaceKey] = (string) ($pilF['initials'] ?? '');
+        }
+    }
+    $pilFaceTones = ['', 'sky', 'amber', 'violet'];
+    $pilHelloActions = is_array($pilHello['actions'] ?? null) ? array_values($pilHello['actions']) : [];
+    $pilMainAction = $pilHelloActions[0] ?? null;
+    $pilDecN = (int) ($pilHello['decisions'] ?? 0);
+    ?>
+    <header class="bo-band bo-band--hero bo-band--emerald pil-hero">
+        <div class="bo-band__media bo-band__media--fallback" aria-hidden="true"></div>
+        <div class="bo-band__glow" aria-hidden="true"></div>
+        <div class="bo-band__veil" aria-hidden="true"></div>
+        <div class="bo-band__body">
+            <div class="bo-band__who">
+                <div class="bo-band__heading">
+                    <h1 class="bo-band__title" id="ath-page-title"><?= $pilH((string) ($pilHello['greeting'] ?? 'Bonjour')) ?><?= ($pilHello['name'] ?? '') !== '' ? ', ' . $pilH((string) $pilHello['name']) : '' ?>.</h1>
+                    <?php if ($pilFaces !== []): ?>
+                    <span class="bo-faces" role="img" aria-label="<?= $pilH('Actifs récemment : ' . implode(', ', array_keys($pilFaces))) ?>">
+                        <?php $pilFaceN = 0; foreach ($pilFaces as $pilFaceName => $pilFaceIni): ?>
+                        <span class="bo-faces__it<?= $pilFaceTones[$pilFaceN % 4] !== '' ? ' bo-faces__it--' . $pilFaceTones[$pilFaceN % 4] : '' ?>" title="<?= $pilH((string) $pilFaceName) ?>"><?= $pilH($pilFaceIni) ?></span>
+                        <?php $pilFaceN++; endforeach; ?>
+                    </span>
+                    <?php endif; ?>
+                </div>
+                <p class="bo-band__line">
+                    <?= $pilH((string) ($pilHello['tenant'] ?? 'Votre communauté')) ?> compte
+                    <b><?= $pilH($pilPlural((int) ($pilHello['active'] ?? 0), 'membre actif', 'membres actifs')) ?></b><?php if (isset($pilHello['total']) && $pilHello['total'] !== null && (int) $pilHello['total'] > (int) ($pilHello['active'] ?? 0)): ?> sur <?= (int) $pilHello['total'] ?><?php endif; ?>.
+                    <?php $pilNextIn = $pilHello['next_in'] ?? null; ?>
+                    <?php if ($pilNextIn === null): ?>
+                        Aucune activité n’est programmée<?php elseif ($pilNextIn === 'en cours'): ?>
+                        <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est <b>en cours</b><?php else: ?>
+                        <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est dans <b><?= $pilH((string) $pilNextIn) ?></b><?php endif; ?><?php if ($pilDecN > 0): ?>, et <b><?= $pilH($pilPlural($pilDecN, 'décision', 'décisions')) ?></b> <?= $pilDecN > 1 ? 'vous attendent.' : 'vous attend.' ?><?php else: ?>, et rien n’attend votre décision.<?php endif; ?>
+                </p>
+                <?php if ($pilMainAction !== null || empty($home['customize'])): ?>
+                <div class="bo-band__actions">
+                    <?php if ($pilMainAction !== null): ?>
+                    <a class="bo-band__btn bo-band__btn--solid" href="<?= $pilH((string) $pilMainAction['href']) ?>"><?= $pilH((string) $pilMainAction['label']) ?> <span class="bo-band__arrow" aria-hidden="true">→</span></a>
+                    <?php endif; ?>
+                    <?php foreach (array_slice($pilHelloActions, 1) as $pilAct): ?>
+                    <a class="bo-band__btn" href="<?= $pilH((string) $pilAct['href']) ?>"><?= $pilH((string) $pilAct['label']) ?></a>
+                    <?php endforeach; ?>
+                    <?php if (empty($home['customize'])): ?>
+                    <a class="bo-band__btn" href="<?= $pilH(url('back-office') . '?personnaliser=1#personnaliser') ?>">Personnaliser l’accueil</a>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+            <div class="bo-band__side">
+                <?php if (($pilHello['date_label'] ?? '') !== ''): ?>
+                <p class="bo-band__meta"><span><?php $pilDate = mb_strtolower((string) $pilHello['date_label']); ?><?= $pilH(mb_strtoupper(mb_substr($pilDate, 0, 1)) . mb_substr($pilDate, 1)) ?></span> <?= $pilH((string) ($pilHello['tenant'] ?? '')) ?></p>
+                <?php endif; ?>
+                <p class="bo-figure<?= $pilDecN > 0 ? ' is-hot' : '' ?>"><strong><?= $pilDecN ?></strong><span><?= $pilDecN > 1 ? 'décisions en attente' : 'décision en attente' ?></span></p>
+            </div>
         </div>
     </header>
 
@@ -195,35 +233,57 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
     <div class="home-w home-w--<?= $pilH((string) $homeItem['size']) ?>" data-widget="<?= $pilH($homeWid) ?>">
     <?php if ($homeWid === 'operation'): ?>
         <?php if ($pilHero !== null): ?>
-        <section class="pil-op<?= !empty($pilHero['cover_url']) ? ' pil-op--cover' : '' ?>" aria-labelledby="pil-op-title">
-            <?php if (!empty($pilHero['cover_url'])): ?>
-            <div class="pil-op__bg" style="background-image:url('<?= $pilH((string) $pilHero['cover_url']) ?>')" aria-hidden="true"></div>
+        <?php $pilR = $pilHero['rsvp']; $pilCover = (string) ($pilHero['cover_url'] ?? ''); ?>
+        <section class="bo-band bo-band--emerald pil-op" aria-labelledby="pil-op-title">
+            <?php if ($pilCover !== ''): ?>
+            <div class="bo-band__media" style="background-image:url('<?= $pilH($pilCover) ?>')" aria-hidden="true"></div>
+            <?php else: ?>
+            <div class="bo-band__media bo-band__media--fallback" aria-hidden="true"></div>
             <?php endif; ?>
-            <div class="pil-op__in">
-                <h2 class="pil-op__title" id="pil-op-title"><?= $pilH((string) $pilHero['title']) ?></h2>
-                <p class="pil-op__kicker"><i aria-hidden="true"></i><?= $pilH((string) $pilHero['kicker']) ?><?= $pilHero['campaign'] !== '' ? ' · ' . $pilH((string) $pilHero['campaign']) : '' ?></p>
-                <div class="pil-op__det">
-                    <?php if ($pilHero['date_label'] !== ''): ?>
-                    <span><?= $pilIcon('cal') ?><b><?= $pilH((string) $pilHero['date_label']) ?></b> <?= $pilH((string) $pilHero['time_label']) ?></span>
-                    <?php endif; ?>
-                    <?php if ($pilHero['location'] !== ''): ?>
-                    <span><?= $pilIcon('pin') ?><b><?= $pilH((string) $pilHero['location']) ?></b></span>
-                    <?php endif; ?>
+            <div class="bo-band__glow" aria-hidden="true"></div>
+            <div class="bo-band__veil" aria-hidden="true"></div>
+            <div class="bo-band__body">
+                <div class="bo-band__identity">
+                    <span class="bo-band__index" aria-hidden="true">/ 01</span>
+                    <div class="bo-band__who">
+                        <h2 class="bo-band__title" id="pil-op-title"><?= $pilH((string) $pilHero['title']) ?></h2>
+                        <?php if ($pilHero['date_label'] !== '' || $pilHero['location'] !== ''): ?>
+                        <p class="bo-band__line pil-op__det">
+                            <?php if ($pilHero['date_label'] !== ''): ?>
+                            <span><?= $pilIcon('cal') ?><b><?= $pilH((string) $pilHero['date_label']) ?></b> <?= $pilH((string) $pilHero['time_label']) ?></span>
+                            <?php endif; ?>
+                            <?php if ($pilHero['location'] !== ''): ?>
+                            <span><?= $pilIcon('pin') ?><b><?= $pilH((string) $pilHero['location']) ?></b></span>
+                            <?php endif; ?>
+                        </p>
+                        <?php endif; ?>
+                        <p class="bo-band__tag"><?= $pilH((string) $pilHero['kicker']) ?><?= $pilHero['campaign'] !== '' ? ' · ' . $pilH((string) $pilHero['campaign']) : '' ?></p>
+                    </div>
                 </div>
-                <?php if (!empty($pilHero['ongoing'])): ?>
-                <p class="pil-op__live"><i aria-hidden="true"></i>En cours</p>
-                <?php elseif (is_array($pilHero['countdown'] ?? null)): ?>
-                <div class="pil-cd" data-pil-countdown="<?= $pilH((string) $pilHero['starts_at_iso']) ?>" role="timer" aria-label="Temps restant avant le début">
-                    <div><b data-cd="d"><?= sprintf('%02d', (int) $pilHero['countdown']['days']) ?></b><small>jours</small></div>
-                    <div><b data-cd="h"><?= sprintf('%02d', (int) $pilHero['countdown']['hours']) ?></b><small>heures</small></div>
-                    <div><b data-cd="m"><?= sprintf('%02d', (int) $pilHero['countdown']['minutes']) ?></b><small>min</small></div>
+                <div class="bo-band__side">
+                    <?php if (!empty($pilHero['ongoing'])): ?>
+                    <p class="bo-band__meta"><span>En cours</span> depuis <?= $pilH((string) $pilHero['time_label']) ?></p>
+                    <?php elseif (is_array($pilHero['countdown'] ?? null)): ?>
+                    <p class="bo-band__meta pil-cd" data-pil-countdown="<?= $pilH((string) $pilHero['starts_at_iso']) ?>" role="timer" aria-label="Temps restant avant le début">
+                        <span>Début dans</span>
+                        <b data-cd="d"><?= sprintf('%02d', (int) $pilHero['countdown']['days']) ?></b> j
+                        <b data-cd="h"><?= sprintf('%02d', (int) $pilHero['countdown']['hours']) ?></b> h
+                        <b data-cd="m"><?= sprintf('%02d', (int) $pilHero['countdown']['minutes']) ?></b> min
+                    </p>
+                    <?php endif; ?>
+                    <div class="bo-band__row">
+                        <?php if ($pilHero['href'] !== null): ?>
+                        <div class="bo-band__actions">
+                            <?php if (!empty($pilHero['answers_href'])): ?>
+                            <a class="bo-band__btn" href="<?= $pilH((string) $pilHero['answers_href']) ?>">Voir les réponses</a>
+                            <?php endif; ?>
+                            <a class="bo-band__btn bo-band__btn--solid" href="<?= $pilH((string) $pilHero['href']) ?>">Ouvrir la fiche</a>
+                        </div>
+                        <?php endif; ?>
+                        <p class="bo-figure is-hot"><strong><?= (int) $pilR['yes'] ?><small> / <?= (int) $pilR['base'] ?></small></strong><span>présences confirmées</span></p>
+                    </div>
                 </div>
-                <?php endif; ?>
-            </div>
-            <?php $pilR = $pilHero['rsvp']; ?>
-            <div class="pil-op__rsvp">
-                <div>
-                    <p class="pil-op__rsvp-k">Présences confirmées · <?= (int) $pilR['yes'] ?> / <?= (int) $pilR['base'] ?></p>
+                <div class="bo-band__foot pil-op__rsvp">
                     <div class="pil-rb" role="img" aria-label="<?= (int) $pilR['yes'] ?> confirmés, <?= (int) $pilR['maybe'] ?> peut-être, <?= (int) $pilR['no'] ?> déclinés, <?= (int) $pilR['no_reply'] ?> sans réponse">
                         <i class="pil-rb__yes" style="width:<?= $pilH((string) $pilR['pct']['yes']) ?>%"></i><i class="pil-rb__maybe" style="width:<?= $pilH((string) $pilR['pct']['maybe']) ?>%"></i><i class="pil-rb__no" style="width:<?= $pilH((string) $pilR['pct']['no']) ?>%"></i>
                     </div>
@@ -234,28 +294,30 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
                         <span><em class="pil-rl__none"></em><b><?= (int) $pilR['no_reply'] ?></b> sans réponse</span>
                     </div>
                 </div>
-                <?php if ($pilHero['href'] !== null): ?>
-                <div class="pil-op__acts">
-                    <a class="pil-op__b2" href="<?= $pilH((string) $pilHero['answers_href']) ?>">Voir les réponses</a>
-                    <a class="pil-op__b1" href="<?= $pilH((string) $pilHero['href']) ?>">Ouvrir la fiche</a>
-                </div>
-                <?php endif; ?>
             </div>
         </section>
         <?php else: ?>
-        <section class="pil-op pil-op--empty" aria-labelledby="pil-op-title">
-            <div class="pil-op__in">
-                <p class="pil-op__kicker"><i aria-hidden="true"></i>Prochaine opération</p>
-                <h2 class="pil-op__title" id="pil-op-title">À planifier</h2>
-                <p class="pil-op__empty">Aucune activité n’est programmée. Créez le prochain créneau pour que les membres puissent répondre.</p>
-            </div>
-            <?php if (($pilLinks['events'] ?? null) !== null): ?>
-            <div class="pil-op__rsvp pil-op__rsvp--solo">
-                <div class="pil-op__acts">
-                    <a class="pil-op__b1" href="<?= $pilH((string) $pilLinks['events']) ?>">Programmer une activité</a>
+        <section class="bo-band bo-band--empty bo-band--sky pil-op pil-op--empty" aria-labelledby="pil-op-title">
+            <div class="bo-band__media bo-band__media--fallback" aria-hidden="true"></div>
+            <div class="bo-band__glow" aria-hidden="true"></div>
+            <div class="bo-band__veil" aria-hidden="true"></div>
+            <div class="bo-band__body">
+                <div class="bo-band__identity">
+                    <span class="bo-band__index" aria-hidden="true">/ 01</span>
+                    <div class="bo-band__who">
+                        <h2 class="bo-band__title" id="pil-op-title">À planifier</h2>
+                        <p class="bo-band__line">Aucune activité n’est programmée. Créez le prochain créneau pour que les membres puissent répondre.</p>
+                        <p class="bo-band__tag">Prochaine opération</p>
+                    </div>
                 </div>
+                <?php if (($pilLinks['events'] ?? null) !== null): ?>
+                <div class="bo-band__side">
+                    <div class="bo-band__actions">
+                        <a class="bo-band__btn bo-band__btn--solid" href="<?= $pilH((string) $pilLinks['events']) ?>">Programmer une activité <span class="bo-band__arrow" aria-hidden="true">→</span></a>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
-            <?php endif; ?>
         </section>
         <?php endif; ?>
     <?php elseif ($homeWid === 'decisions'): ?>
@@ -296,7 +358,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
     <div class="pil-kpis">
         <?php foreach ($pilKpis as $pilKpi): ?>
         <div class="pil-card pil-kpi">
-            <p class="pil-kicker"><?= $pilH((string) $pilKpi['label']) ?></p>
+            <p class="pil-kpi__label"><?= $pilH((string) $pilKpi['label']) ?></p>
             <div class="pil-kpi__v">
                 <b><?= $pilH((string) $pilKpi['value']) ?></b>
                 <?php if ((string) $pilKpi['unit'] !== ''): ?><span><?= $pilH((string) $pilKpi['unit']) ?></span><?php endif; ?>
@@ -549,43 +611,62 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </div>
             <?php else: ?>
             <ul class="home-tasks">
-                <?php foreach ($homeTasks as $homeTaskN => $homeTask): ?>
+                <?php $homeBandN = 0; foreach ($homeTasks as $homeTaskN => $homeTask): ?>
                 <?php $homeTd = ($homeTask['detail'] ?? null) instanceof \App\Services\BackOffice\Menu\PendingTaskDetail ? $homeTask['detail'] : null; ?>
                 <?php if ($homeTd !== null): ?>
                 <?php
                 // Textes déjà composés dans la langue de la personne (formule) : protégés de la traduction de la page.
                 $homeTdNo = $homeTd->localized ? ' translate="no" lang="' . $pilH($homeTd->lang) . '"' : '';
                 $homeTdHelpId = 'home-task-help-' . (int) $homeTaskN;
+                $homeTdAccent = !empty($homeTask['important']) ? 'rose' : ['amber', 'sky', 'violet', 'emerald'][$homeBandN % 4];
                 ?>
-                <li class="home-task<?= !empty($homeTask['important']) ? ' is-important' : '' ?>">
-                    <div class="home-task__head">
-                        <span class="ath-mbadge <?= !empty($homeTask['important']) ? 'ath-mbadge--important' : 'ath-mbadge--notif' ?>"><?= $pilH(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format((int) $homeTask['count'])) ?></span>
-                        <h3 class="home-task__title"<?= $homeTdNo ?>><?= $pilH($homeTd->title !== '' ? $homeTd->title : (string) $homeTask['title']) ?></h3>
-                    </div>
-                    <p class="home-task__why"<?= $homeTdNo ?>><?= $pilH($homeTd->explain) ?></p>
-                    <dl class="home-task__facts">
-                        <div>
-                            <dt>Si vous ne faites rien</dt>
-                            <dd<?= $homeTdNo ?>><?= $pilH($homeTd->consequence) ?></dd>
+                <li class="home-task">
+                    <article class="bo-band bo-band--compact bo-band--<?= $homeTdAccent ?>" style="--bo-band-i:<?= (int) $homeBandN ?>" aria-labelledby="home-task-title-<?= (int) $homeTaskN ?>">
+                        <div class="bo-band__media bo-band__media--fallback" aria-hidden="true"></div>
+                        <div class="bo-band__glow" aria-hidden="true"></div>
+                        <div class="bo-band__veil" aria-hidden="true"></div>
+                        <div class="bo-band__body">
+                            <div class="bo-band__identity">
+                                <span class="bo-band__index" aria-hidden="true">/ <?= sprintf('%02d', $homeBandN + 1) ?></span>
+                                <div class="bo-band__who">
+                                    <h3 class="bo-band__title home-task__title" id="home-task-title-<?= (int) $homeTaskN ?>"<?= $homeTdNo ?>><?= $pilH($homeTd->title !== '' ? $homeTd->title : (string) $homeTask['title']) ?></h3>
+                                    <p class="bo-band__line home-task__why"<?= $homeTdNo ?>><?= $pilH($homeTd->explain) ?></p>
+                                    <p class="bo-band__tag"><?= !empty($homeTask['important']) ? 'Important' : 'À traiter' ?></p>
+                                </div>
+                            </div>
+                            <div class="bo-band__side">
+                                <dl class="home-task__facts">
+                                    <div>
+                                        <dt>Si vous ne faites rien</dt>
+                                        <dd<?= $homeTdNo ?>><?= $pilH($homeTd->consequence) ?></dd>
+                                    </div>
+                                    <div>
+                                        <dt>Ce qu’il faut faire</dt>
+                                        <dd<?= $homeTdNo ?>><?= $pilH($homeTd->action) ?></dd>
+                                    </div>
+                                </dl>
+                                <div class="bo-band__row">
+                                    <div class="bo-band__actions">
+                                        <a class="bo-band__btn bo-band__btn--solid home-task__btn" href="<?= $pilH(url($homeTd->path)) ?>"><span<?= $homeTdNo ?>><?= $pilH($homeTd->button) ?></span> <span class="bo-band__arrow" aria-hidden="true">→</span></a>
+                                    </div>
+                                    <p class="bo-figure<?= !empty($homeTask['important']) ? ' is-hot' : '' ?>"><strong><?= $pilH(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format((int) $homeTask['count'])) ?></strong><span>en attente</span></p>
+                                </div>
+                                <?php if ($homeTd->help !== '' || $homeTd->who !== ''): ?>
+                                <details class="home-task__more" id="<?= $pilH($homeTdHelpId) ?>">
+                                    <summary><?= $homeTd->help !== '' ? 'Qu’est-ce que c’est ?' : 'Qui peut le faire ?' ?></summary>
+                                    <?php if ($homeTd->help !== ''): ?>
+                                    <p<?= $homeTdNo ?>><?= $pilH($homeTd->help) ?></p>
+                                    <?php endif; ?>
+                                    <?php if ($homeTd->who !== ''): ?>
+                                    <p><?php if ($homeTd->help !== ''): ?><b>Qui peut le faire ?</b> <?php endif; ?><span<?= $homeTdNo ?>><?= $pilH($homeTd->who) ?></span></p>
+                                    <?php endif; ?>
+                                </details>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                        <div>
-                            <dt>Ce qu’il faut faire</dt>
-                            <dd<?= $homeTdNo ?>><?= $pilH($homeTd->action) ?></dd>
-                        </div>
-                    </dl>
-                    <a class="pil-btn pil-btn--accent home-task__btn" href="<?= $pilH(url($homeTd->path)) ?>"><span<?= $homeTdNo ?>><?= $pilH($homeTd->button) ?></span></a>
-                    <?php if ($homeTd->help !== '' || $homeTd->who !== ''): ?>
-                    <details class="home-task__more" id="<?= $pilH($homeTdHelpId) ?>">
-                        <summary><?= $homeTd->help !== '' ? 'Qu’est-ce que c’est ?' : 'Qui peut le faire ?' ?></summary>
-                        <?php if ($homeTd->help !== ''): ?>
-                        <p<?= $homeTdNo ?>><?= $pilH($homeTd->help) ?></p>
-                        <?php endif; ?>
-                        <?php if ($homeTd->who !== ''): ?>
-                        <p><?php if ($homeTd->help !== ''): ?><b>Qui peut le faire ?</b> <?php endif; ?><span<?= $homeTdNo ?>><?= $pilH($homeTd->who) ?></span></p>
-                        <?php endif; ?>
-                    </details>
-                    <?php endif; ?>
+                    </article>
                 </li>
+                <?php $homeBandN++; ?>
                 <?php else: ?>
                 <li>
                     <a href="<?= $pilH(url($homeTask['path'])) ?>" class="home-tasks__it">
