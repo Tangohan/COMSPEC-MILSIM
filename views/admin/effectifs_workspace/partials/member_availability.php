@@ -7,6 +7,7 @@ declare(strict_types=1);
  * Inclus par member.php dans son onglet. Variables : $memberAvailability (PlayerSessionRepository::panelForUser, ou null),
  * $availabilitySettingsUrl (lien vers le réglage du seuil, vide si le lecteur ne le gère pas).
  * Seules les sessions d'au moins le seuil de la communauté comptent ; les plus courtes restent listées pour l'historique.
+ * $memberPlaytime (cumul d'heures remontées par le mod, ou null) prend le relais quand aucune session détaillée n'existe.
  */
 
 use App\Services\Personnel\PlayerSessionService as Sessions;
@@ -50,6 +51,17 @@ $avChecksReady = (bool) ($availabilityChecksReady ?? false);
 $avLastCheck = $avChecks[0] ?? null;
 $avMemberId = (int) ($id ?? 0);
 $avMemberName = (string) ($name ?? '');
+// Heures remontées par le mod : repli quand aucune session détaillée n'existe (sinon les sessions restent prioritaires).
+$avPt = is_array($memberPlaytime ?? null) && is_array($memberPlaytime['cell'] ?? null) ? $memberPlaytime : null;
+$avDetail = $avReady && $avLinked && $avHasData;
+$avPtCell = $avPt !== null ? $avPt['cell'] : null;
+$avPtSum = $avPt !== null ? $avPt['summary'] : [];
+$avPtLast = $avPtCell !== null && $avPtCell['last_at'] !== null ? $avWhen((int) $avPtCell['last_at']) : '';
+$avPtStateText = [
+    'available' => 'Disponible d’après les heures remontées',
+    'low' => 'Peu disponible d’après les heures remontées',
+    'inactive' => 'Inactif d’après les heures remontées',
+][(string) ($avPtCell['key'] ?? '')] ?? 'Heures remontées par le mod';
 ?>
 <section class="eff-fm-sec eff-fm-av" id="disponibilite" aria-labelledby="disponibilite-titre">
     <header class="eff-fm-sec__head">
@@ -76,6 +88,30 @@ $avMemberName = (string) ($name ?? '');
         </div>
     <?php endif; ?>
 
+    <?php if (!$avDetail && $avPtCell !== null): ?>
+        <div class="eff-fm-av__pt" id="disponibilite-heures">
+            <p class="eff-fm-av__state is-<?= $avh((string) ($avPtCell['key'] ?? 'none')) === 'available' ? 'on' : 'low' ?>">
+                <b><?= $avh($avTpl('Heures remontées : %1', [$avPtCell['hours_label']])) ?><?= $avPtCell['last_label'] !== '' ? $avh($avTpl(' (dernière activité %1)', [$avPtCell['last_label']])) : '' ?></b>
+                <span><?= $avh($avPtStateText) ?></span>
+            </p>
+            <dl class="eff-fm-av__pt-facts">
+                <div>
+                    <dt>Cumul total</dt>
+                    <dd><?= $avh(Sessions::durationLabel((int) $avPtSum['total_seconds'])) ?> <span class="eff-fm-hint"><?= $avh($avTpl('(serveur : %1, Zeus : %2, éditeur : %3)', [Sessions::durationLabel((int) $avPtSum['server_seconds']), Sessions::durationLabel((int) $avPtSum['zeus_seconds']), Sessions::durationLabel((int) $avPtSum['editor_seconds'])])) ?></span></dd>
+                </div>
+                <div>
+                    <dt>Dernière mise à jour du cumul</dt>
+                    <dd><?= $avPtLast !== '' ? $avh($avPtLast) : 'Date inconnue' ?></dd>
+                </div>
+                <div>
+                    <dt>Source</dt>
+                    <dd>Heures de jeu remontées par le mod (user_arma_playtime)</dd>
+                </div>
+            </dl>
+            <p class="eff-fm-av__pt-limit">Aucune session détaillée n’est enregistrée pour ce membre. Les heures remontées sont un cumul : elles ne disent ni quand ni combien de temps d’affilée il a joué.</p>
+        </div>
+    <?php endif; ?>
+
     <?php if (!$avReady): ?>
         <div class="eff-fm-av__note" role="status">
             <p class="eff-fm-lead">Le suivi des sessions de jeu n’est pas encore actif sur ce site : la disponibilité reste calculée sur la participation et la présence aux événements.</p>
@@ -85,7 +121,7 @@ $avMemberName = (string) ($name ?? '');
             <p class="eff-fm-lead">Ce membre n’a pas relié son compte Steam : aucune session de jeu ne peut lui être attribuée.</p>
             <p class="eff-fm-hint">Le compte Steam se relie depuis la fiche du membre, dans l’onglet Accès, ou par le membre lui-même.</p>
         </div>
-    <?php else: ?>
+    <?php elseif ($avDetail || $avPtCell === null): ?>
         <div class="eff-fm-av__top">
             <p class="eff-fm-av__state <?= !empty($avSum['active']) ? 'is-on' : 'is-off' ?>">
                 <?php if (!empty($avSum['ongoing_qualifying'])): ?>
@@ -192,6 +228,7 @@ $avMemberName = (string) ($name ?? '');
     <?php endif; ?>
 
     <p class="eff-fm-hint eff-fm-av__explain"><?= $avh($avExplain) ?></p>
+    <p class="eff-fm-hint eff-fm-av__explain">Les sessions détaillées viennent des signes de vie du mod et ne couvrent que la période depuis leur mise en service (hier, pour les premières). Les heures remontées sont un cumul de tout l’historique, sans détail par session : elles ne servent que lorsqu’aucune session détaillée n’existe.</p>
     <?php if ($avSettingsUrl !== ''): ?>
         <p class="eff-fm-av__cfg"><a href="<?= $avh($avSettingsUrl) ?>">Régler la durée qui compte</a></p>
     <?php endif; ?>

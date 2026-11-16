@@ -109,6 +109,24 @@ return [
                 'who' => 'Les personnes qui gèrent les affectations et les administrateurs de la communauté.',
             ],
         ],
+        // Même compte que la pastille de l’onglet « Chaîne de commandement » de l’espace Effectifs.
+        'chaine_chefs' => [
+            'path' => 'back-office/ressources/effectifs/chaine',
+            'provider' => \App\Services\BackOffice\Menu\Badges\CommandChainVacanciesBadge::class,
+            'any_permissions' => ['admin.organization', 'admin.access', 'personnel.assignments.manage'],
+            'tone' => 'notif',
+            'title' => '%d poste(s) de chef à pourvoir',
+            'task' => [
+                'explain' => [
+                    'one' => '1 unité n’a pas de chef désigné.',
+                    'other' => '%d unités n’ont pas de chef désigné.',
+                ],
+                'consequence' => 'Ses membres remontent au premier chef au-dessus d’elle, qui reçoit à la place du chef absent tout ce qui lui revient.',
+                'action' => 'Ouvrez la chaîne de commandement, puis désignez le chef de chaque poste à pourvoir.',
+                'button' => 'Désigner les chefs',
+                'who' => 'Les personnes qui gèrent les affectations et les administrateurs de la communauté.',
+            ],
+        ],
         'signalements' => [
             'path' => 'back-office/signalements',
             'provider' => \App\Services\BackOffice\Menu\Badges\ModerationBadge::class,
