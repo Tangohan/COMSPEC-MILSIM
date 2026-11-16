@@ -112,7 +112,7 @@ body.sse-theme-bureau .shx-done .shx__btn--primary { background: #35502f; border
 .shx-actions-cell { display: grid; gap: 0.35rem; justify-items: start; }
 .shx-need { display: block; max-width: 18rem; padding: 0.35rem 0.6rem; border: 1px dashed var(--border); color: var(--muted); font-size: 0.82rem; }
 
-.shx-dialog { max-width: min(40rem, calc(100vw - 1.5rem)); width: 100%; padding: 0; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.shx-dialog { white-space: normal; text-align: left; max-width: min(40rem, calc(100vw - 1.5rem)); width: 100%; padding: 0; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
 .shx-dialog::backdrop { background: rgba(0, 0, 0, 0.62); }
 .shx-dialog__box { display: grid; gap: 0.7rem; padding: 1.1rem 1.2rem; font-size: 0.9rem; line-height: 1.5; }
 .shx-dialog__box p { margin: 0; }
