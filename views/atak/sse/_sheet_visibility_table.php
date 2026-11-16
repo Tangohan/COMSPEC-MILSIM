@@ -28,7 +28,7 @@ $svgLock = '<svg class="svl-ico" width="16" height="16" viewBox="0 0 24 24" fill
                 <tr>
                     <th scope="col" class="svl-head svl-head--cat">Rubrique</th>
                     <?php foreach ($vtLevels as $lv): ?>
-                        <th scope="col" class="svl-head" title="<?= $h($vtEn ? $lv['label_en'] : $lv['label_fr']) ?>"><span class="svl-abbr" translate="no"><?= $h($lv['abbr']) ?></span><span class="svl-lvname"><?= $h($vtEn ? $lv['label_en'] : $lv['label_fr']) ?></span></th>
+                        <th scope="col" class="svl-head" title="<?= $h($vtEn ? $lv['label_en'] : $lv['label_fr']) ?>"><span class="svl-abbr" translate="no"><?= $h($lv['abbr']) ?></span></th>
                     <?php endforeach; ?>
                 </tr>
             </thead>
@@ -79,6 +79,7 @@ $svgLock = '<svg class="svl-ico" width="16" height="16" viewBox="0 0 24 24" fill
             </tfoot>
         </table>
     </div>
+    <p class="svl-levels"><?php foreach ($vtLevels as $i => $lv): ?><span><b translate="no"><?= $h($lv['abbr']) ?></b> <?= $h($vtEn ? $lv['label_en'] : $lv['label_fr']) ?></span><?php endforeach; ?></p>
     <ul class="svl-legend" aria-label="Légende">
         <li><span class="svl-key svl-key--on"><?= $svgCheck ?></span> Lisible en clair</li>
         <li><span class="svl-key svl-key--off"><?= $svgBar ?></span> Barre noire, avec la lettre de sa catégorie</li>
