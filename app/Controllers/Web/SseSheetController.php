@@ -88,7 +88,7 @@ final class SseSheetController
         $r = $this->r();
         $lang = D::lang($request->queryString('lang', 'fr'));
         $level = SseSheetService::clampLevel($request->queryString('classification'), $r);
-        $override = SseSheetVisibility::clean($request->query('visibility', $request->input('visibility')));
+        $override = SseSheetVisibility::clean($request->query('visibility'));
         $texts = $this->service->defaults($r->tenantId(), $subject, $model, $lang, $level, $r, $override);
 
         return Response::json(['ok' => true, 'texts' => $texts, 'level' => $level]);
