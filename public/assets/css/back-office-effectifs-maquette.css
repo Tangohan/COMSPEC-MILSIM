@@ -2620,6 +2620,37 @@ html[data-bo-theme="dark"] .eff-ut__unit {
   outline-offset: 2px;
 }
 
+/* Sans session détaillée : heures de jeu remontées par le mod (cumul) ou « Aucune session qui compte », à la ligne. */
+.eff-mq-sv--txt,
+.bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-sv.eff-mq-sv--txt {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  max-width: 12rem;
+  white-space: normal;
+  text-align: right;
+}
+
+.eff-mq-sv__pt {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.eff-mq-sv__st {
+  display: block;
+  font-size: 0.8125rem;
+  opacity: 0.85;
+}
+
+.eff-mq-sv.is-on .eff-mq-sv__st {
+  color: var(--eff-mq-good, #059669);
+  font-weight: 700;
+  opacity: 1;
+}
+
 .eff-mq .eff-das__table thead th.eff-das__col-sv,
 .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table thead th.eff-das__col-sv {
   min-width: 8.5rem;

@@ -268,7 +268,7 @@ final class PlayerSessionService
      * sur 30 jours, sessions plus courtes laissées de côté, actif ou non.
      *
      * @param array<string, mixed> $summary retour de summarize
-     * @return array{sessions: int, seconds: int, short: int, active: bool, linked: bool, min_minutes: int, last_at: ?int}
+     * @return array{sessions: int, seconds: int, short: int, active: bool, linked: bool, has_data: bool, min_minutes: int, last_at: ?int}
      */
     public static function rosterCell(array $summary): array
     {
@@ -280,6 +280,7 @@ final class PlayerSessionService
             'short' => (int) ($w['short'] ?? 0),
             'active' => !empty($summary['active']),
             'linked' => !empty($summary['linked']),
+            'has_data' => !empty($summary['has_data']),
             'min_minutes' => (int) ($summary['min_minutes'] ?? self::DEFAULT_MIN_MINUTES),
             'last_at' => isset($summary['last_qualifying']['started_at']) ? (int) $summary['last_qualifying']['started_at'] : null,
         ];
