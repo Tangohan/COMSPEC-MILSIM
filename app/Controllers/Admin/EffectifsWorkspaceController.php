@@ -309,7 +309,7 @@ class EffectifsWorkspaceController
                 $total = count($allRows);
             } elseif ($sessionsFilter !== '') {
                 $wantActive = $sessionsFilter === 'actif';
-                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => !empty($r['server_sessions']['active']) === $wantActive));
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => (!empty($r['server_sessions']['active']) || ($r['playtime_availability']['key'] ?? null) === \App\Services\Effectifs\Availability\AvailabilityCheck::AVAILABLE) === $wantActive));
                 $total = count($allRows);
             }
             $allRows = $this->sortRosterRows($allRows, $sort);
@@ -1765,6 +1765,22 @@ class EffectifsWorkspaceController
         } catch (\Throwable $e) {
             error_log('Effectifs member: disponibilité failed: ' . $e->getMessage());
         }
+        // Heures de jeu remontées par le mod (cumul) : repli de l'onglet quand aucune session détaillée n'existe.
+        $memberPlaytime = null;
+        try {
+            $ptSummary = \App\Core\Container::get(\App\Repositories\ArmaPlaytimeRepository::class)->getSummaryForUser($tenantId, $id);
+            if (is_array($ptSummary) && $ptSummary['total_seconds'] > 0) {
+                $ptMin = (int) ($memberAvailability['min_minutes'] ?? 60) * 60;
+                $ptTz = (string) ($memberAvailability['tz'] ?? 'Europe/Paris');
+                $memberPlaytime = [
+                    'summary' => $ptSummary,
+                    'cell' => \App\Services\Effectifs\Availability\PlaytimeAvailability::cell($ptSummary, $ptMin, time(), $ptTz),
+                    'tz' => $ptTz,
+                ];
+            }
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: heures remontées failed: ' . $e->getMessage());
+        }
         $availabilitySettingsUrl = \App\Support\BackOfficeRightGuard::allows(\App\Support\BackOfficeRightGuard::MANAGERS)
             ? url('back-office/roleplay/sessions') . '#regles'
             : '';
@@ -1797,6 +1813,7 @@ class EffectifsWorkspaceController
             'ficheTabs' => $ficheTabs,
             'ficheTab' => $ficheTab,
             'memberAvailability' => $memberAvailability,
+            'memberPlaytime' => $memberPlaytime,
             'availabilitySettingsUrl' => $availabilitySettingsUrl,
             'canCheckAvailability' => $canCheckAvailability,
             'availabilityChecks' => $availabilityChecks,
@@ -4927,13 +4944,14 @@ class EffectifsWorkspaceController
                 $html = \App\Support\HtmlTranslator::translate($html);
             }
 
-            return Response::json(['ok' => true, 'html' => $html, 'missing' => (int) $vars['chainMissingCommanders']]);
+            return Response::json(['ok' => true, 'html' => $html, 'missing' => (int) $vars['chainMissingCommanders'], 'gaps' => self::adequacyIssueCount($vars['chainAdequacy'])]);
         }
 
         return $this->shell('admin.effectifs_workspace.chaine', $vars + [
             'title' => 'Chaîne de commandement',
             'effectifsNav' => 'chaine',
             'commandChainMissingCount' => $vars['chainMissingCommanders'],
+            'adequacyIssueCount' => self::adequacyIssueCount($vars['chainAdequacy']),
             'rosterCounts' => $this->rosterCounts($tenantId),
         ]);
     }
@@ -4966,6 +4984,8 @@ class EffectifsWorkspaceController
         return [
             'chainAdequacy' => $adequacy,
             'adequacyOnlyGaps' => $request->query('ecarts') === '1',
+            // Onglet de la page ouvert au chargement (?vue=organigramme|corriger|chefs|releve).
+            'chainView' => (string) $request->query('vue', ''),
             'chainUnits' => $data['units'],
             'chainMembers' => $data['members'],
             'chainMemberOptions' => $data['memberOptions'],
@@ -5048,6 +5068,16 @@ class EffectifsWorkspaceController
         return Response::redirect(effectifs_workspace_url('chaine'));
     }
 
+    /** Écarts d’adéquation de l’évaluation (0 si le contrôle est désactivé ou indisponible), pour les pastilles. */
+    private static function adequacyIssueCount(mixed $result): int
+    {
+        if (!is_array($result) || empty($result['enabled'])) {
+            return 0;
+        }
+
+        return is_array($result['issues'] ?? null) ? count($result['issues']) : 0;
+    }
+
     private static function chainWantsJson(Request $request): bool
     {
         return str_contains(strtolower((string) $request->header('Accept')), 'application/json')
@@ -5102,7 +5132,8 @@ class EffectifsWorkspaceController
 
         return $this->shell('admin.effectifs_workspace.adequation', [
             'title' => 'Adéquation de l’organisation',
-            'effectifsNav' => 'chaine',
+            'effectifsNav' => 'adequation',
+            'adequacyIssueCount' => !empty($settings['enabled']) ? self::adequacyIssueCount($result) : 0,
             'adequacySettings' => $settings,
             'adequacyProfile' => $profile,
             'adequacyStandards' => \App\Services\Organization\OrgAdequacySettings::effectiveStandards($settings, $profile),
@@ -6037,6 +6068,15 @@ class EffectifsWorkspaceController
         } catch (\Throwable) {
             $serverSessions = [];
         }
+        // Heures remontées par le mod : repli de la colonne « Sessions » pour qui n'a aucune session détaillée (cumul déjà lu ci-dessus).
+        $playtimeMin = 3600;
+        $playtimeTz = 'Europe/Paris';
+        try {
+            $playtimeMin = \App\Services\Personnel\RoleplayGameSessionSettings::playerSessionRules($tenantId)['min_minutes'] * 60;
+            $playtimeTz = \App\Core\Container::get(\App\Repositories\PlayerSessionRepository::class)->tenantTimezone($tenantId);
+        } catch (\Throwable) {
+        }
+        $playtimeNow = time();
         foreach ($rows as &$row) {
             $uid = (int) ($row['id'] ?? 0);
             if (isset($serverSessions[$uid])) {
@@ -6044,6 +6084,9 @@ class EffectifsWorkspaceController
             }
             $sum = is_array($playtime[$uid] ?? null) ? $playtime[$uid] : [];
             $secs = (int) ($sum['total_seconds'] ?? 0);
+            if ($secs > 0 && empty($row['server_sessions']['has_data'])) {
+                $row['playtime_availability'] = \App\Services\Effectifs\Availability\PlaytimeAvailability::cell($sum, $playtimeMin, $playtimeNow, $playtimeTz);
+            }
             $row['arma_playtime_seconds'] = $secs;
             $row['arma_playtime_label'] = $secs > 0 && function_exists('format_arma_playtime_french') ? format_arma_playtime_french($secs) : null;
             $row['pilot_seconds'] = (int) ($pilot[$uid]['seconds'] ?? 0);

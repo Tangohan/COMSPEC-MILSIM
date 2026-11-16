@@ -20,6 +20,7 @@ $tabs = [
     ['chaine', 'Chaîne de commandement', 'chaine', (int) ($commandChainMissingCount ?? 0), ''],
     ['qualifications', 'Qualifications des membres', 'qualifications', (int) ($qualificationsExpiringCount ?? 0), ''],
     ['elevations', 'Élévations', 'elevations', (int) ($elevationOpenCount ?? 0), ''],
+    ['adequation', 'Adéquation de l’organisation', 'chaine/adequation', 0, 'Organisation'],
     ['roles', 'Rôles et accès', 'roles', 0, 'Organisation'],
     ['registre_droits', 'Registre des droits', 'registre-droits', (int) ($regCounts['expiring'] ?? 0), 'Organisation'],
     ['circuits', 'Circuits de validation', 'circuits', 0, 'Organisation'],
@@ -74,6 +75,7 @@ $lead = match ($active) {
     'circuits' => 'Qui donne son avis sur chaque type de demande, dans quel ordre, avant la décision des responsables.',
     'suivi' => 'Où en est chaque dossier : étapes terminées, prochaine action, retards et relances.',
     'positions' => 'La situation de chaque membre dans la communauté : en formation, en service actif… et les positions que vous créez.',
+    'chaine', 'adequation' => 'Qui commande qui, et au niveau que chaque échelon attend.',
     default => 'Dossiers des membres : tableur, accès, emplois et suivi.',
 };
 $showTools = empty($jobsReferenceWorkspace);
@@ -82,7 +84,7 @@ $heroCommunity = trim((string) ($communityName ?? ''));
 $statusFilterNow = is_array($rosterFilters ?? null) ? (string) ($rosterFilters['status'] ?? '') : '';
 // Raccourcis propres à la page ouverte.
 $pageActions = match ($active) {
-    'affectations', 'chaine' => [['Ouvrir l’ORBAT', orbat_page_url(), '']],
+    'affectations', 'chaine', 'adequation' => [['Ouvrir l’ORBAT', orbat_page_url(), '']],
     'rh_inbox' => [['Membres sans unité', effectifs_workspace_url() . '?sans_affectation=1', '']],
     default => $isMember ? [['Retour au tableur', effectifs_workspace_url(), '']] : [],
 };
@@ -254,9 +256,49 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
         <?php endif; ?>
     </div>
 
+    <?php if (!$isMember && in_array($active, \App\Support\CommandChainNav::SHELL_KEYS, true)): ?>
+        <?php
+        // Sous-navigation « Chaîne de commandement » : pages de l’espace, puis référentiels liés (chacun avec ses droits).
+        $chnCurrent = $active === 'adequation' ? ((string) ($adequacyTab ?? '') === 'echelons' ? 'echelons' : 'adequation') : 'chaine';
+        $chnLinks = \App\Support\CommandChainNav::links($chnCurrent, \App\Support\CommandChainNav::menuAllowed($effTenantType), [
+            'chaine' => (int) ($commandChainMissingCount ?? 0),
+            'adequation' => (int) ($adequacyIssueCount ?? 0),
+        ]);
+        $chnGroups = ['chain' => [], 'ref' => []];
+        foreach ($chnLinks as $chnLink) {
+            $chnGroups[$chnLink['group']][] = $chnLink;
+        }
+        ?>
+        <link rel="stylesheet" href="<?= $h(asset_url('assets/css/eff-chain-page.css')) ?>">
+        <nav class="chn-subnav" aria-label="Chaîne de commandement" data-chn-subnav>
+            <ul class="chn-subnav__list">
+                <?php foreach ($chnGroups['chain'] as $chnLink): ?>
+                <li>
+                    <a class="chn-subnav__a<?= $chnLink['current'] ? ' is-current' : '' ?>" href="<?= $h($chnLink['href']) ?>" data-chn-subnav="<?= $h($chnLink['key']) ?>"<?= $chnLink['current'] ? ' aria-current="page"' : '' ?> title="<?= $h($chnLink['desc']) ?>">
+                        <span><?= $h($chnLink['label']) ?></span>
+                        <?php if ($chnLink['badge'] > 0): ?><span class="chn-subnav__n" data-chn-subnav-n><span class="sr-only">, </span><?= $chnLink['badge'] > 99 ? '99+' : (int) $chnLink['badge'] ?><span class="sr-only"> à voir</span></span><?php endif; ?>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php if ($chnGroups['ref'] !== []): ?>
+            <ul class="chn-subnav__list chn-subnav__list--ref" aria-label="Référentiels liés">
+                <?php foreach ($chnGroups['ref'] as $chnLink): ?>
+                <li>
+                    <a class="chn-subnav__a chn-subnav__a--ref" href="<?= $h($chnLink['href']) ?>" title="<?= $h($chnLink['desc']) ?>">
+                        <span><?= $h($chnLink['label']) ?></span>
+                        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M6 3h7v7M13 3 4 12" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+        </nav>
+    <?php endif; ?>
+
     <?php
     // Sous-pages refondues le 2026-10-26 : mise en page commune (effectifs-pages.css).
-    $effRedesignedPages = ['roles', 'rh_integration', 'elevations', 'qualifications', 'chaine', 'affectations', 'fonctions', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
+    $effRedesignedPages = ['roles', 'rh_integration', 'elevations', 'qualifications', 'chaine', 'adequation', 'affectations', 'fonctions', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
     $effPageClass = !$isMember && in_array($active, $effRedesignedPages, true) ? ' bo-eff-page' : '';
     ?>
     <section class="bo-eff-content<?= $isMember ? ' bo-eff-content--member' : '' ?><?= $effPageClass ?>">

@@ -839,10 +839,18 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         </td>
                         <?php $srv = is_array($row['server_sessions'] ?? null) ? $row['server_sessions'] : null; ?>
                         <td class="eff-das__num" data-col="sessions" data-label="Sessions qui comptent">
-                            <?php if ($srv === null): ?>
+                            <?php $ptc = is_array($row['playtime_availability'] ?? null) ? $row['playtime_availability'] : null; ?>
+                            <?php if ($ptc !== null): ?>
+                                <a class="eff-mq-sv eff-mq-sv--txt<?= ($ptc['key'] ?? null) === 'available' ? ' is-on' : '' ?>" href="<?= htmlspecialchars($ficheUrl . '?onglet=disponibilite#onglet-disponibilite', ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars('Aucune session détaillée : la disponibilité vient du cumul d’heures remontées par le mod, qui ne donne pas le détail des sessions.', ENT_QUOTES, 'UTF-8') ?>">
+                                    <span class="eff-mq-sv__pt"><?= htmlspecialchars(str_replace('%1', (string) $ptc['hours_label'], 'Heures remontées : %1'), ENT_QUOTES, 'UTF-8') ?><?= $ptc['last_label'] !== '' ? ' ' . htmlspecialchars(str_replace('%1', (string) $ptc['last_label'], '(dernière activité %1)'), ENT_QUOTES, 'UTF-8') : '' ?></span>
+                                    <?php if ((string) $ptc['state_label'] !== ''): ?><span class="eff-mq-sv__st"><?= htmlspecialchars((string) $ptc['state_label'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                                </a>
+                            <?php elseif ($srv === null): ?>
                                 <span class="eff-das__muted" title="Le suivi des sessions de jeu n’est pas actif sur ce site.">—</span>
                             <?php elseif (empty($srv['linked'])): ?>
                                 <span class="eff-das__muted" title="Compte Steam non relié : aucune session ne peut être attribuée.">Steam non relié</span>
+                            <?php elseif (empty($srv['has_data'])): ?>
+                                <a class="eff-mq-sv eff-mq-sv--txt" href="<?= htmlspecialchars($ficheUrl . '?onglet=disponibilite#onglet-disponibilite', ENT_QUOTES, 'UTF-8') ?>" title="Aucune session enregistrée sur 90 jours et aucune heure de jeu remontée."><span class="eff-mq-sv__pt">Aucune session qui compte</span></a>
                             <?php else: ?>
                                 <a class="eff-mq-sv<?= !empty($srv['active']) ? ' is-on' : '' ?>" href="<?= htmlspecialchars($ficheUrl . '?onglet=disponibilite#onglet-disponibilite', ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars(str_replace(['%1', '%2'], [(string) (int) $srv['sessions'], (string) (int) $srv['short']], '%1 session(s) qui comptent sur 30 jours ; %2 plus courte(s) non comptée(s).'), ENT_QUOTES, 'UTF-8') ?>"><b><?= (int) $srv['sessions'] ?></b><span class="eff-das__sub"><?= !empty($srv['active']) ? 'Actif' : 'Inactif' ?></span></a>
                             <?php endif; ?>
