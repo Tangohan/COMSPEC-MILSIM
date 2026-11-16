@@ -47,6 +47,8 @@ class UserProfileRepository
         foreach (['first_name', 'last_name'] as $nameField) {
             if (array_key_exists($nameField, $data) && trim((string) $data[$nameField]) !== trim((string) ($existing[$nameField] ?? ''))) {
                 \App\Services\Sse\SseMemberCivilIdentityService::onProfileChanged($userId);
+                // L'avis « membres sans prénom ni nom » (Données anciennes à vérifier) est recompté tout de suite.
+                \App\Services\LegacyData\LegacyDataNotice::forgetCivilNames();
                 break;
             }
         }

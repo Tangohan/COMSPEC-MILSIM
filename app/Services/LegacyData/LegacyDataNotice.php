@@ -22,6 +22,9 @@ final class LegacyDataNotice
 {
     public const CACHE_SECONDS = 600;
 
+    /** Génération commune à toutes les communautés, avancée à chaque changement de prénom ou de nom d'état civil. */
+    public const NAMES_NS = 'legacy_data:civil_names';
+
     /** Page qui permet de corriger : Qualité des données, section « Données anciennes à vérifier ». */
     public const PATH = 'back-office/organisation/qualite-donnees';
 
@@ -40,7 +43,7 @@ final class LegacyDataNotice
         }
 
         return ShortCache::remember(
-            'legacy_data_notice:' . $tenantId . ':g' . ShortCache::gen('legacy_data:' . $tenantId),
+            'legacy_data_notice:' . $tenantId . ':g' . ShortCache::gen('legacy_data:' . $tenantId) . ':n' . ShortCache::gen(self::NAMES_NS),
             self::CACHE_SECONDS,
             static function () use ($tenantId, $counter): array {
                 try {
@@ -125,6 +128,15 @@ final class LegacyDataNotice
             true,
             $en ? 'en' : 'fr'
         );
+    }
+
+    /**
+     * Prénom ou nom d'état civil d'un membre modifié (UserProfileRepository::upsert) : l'avis de toutes les communautés est
+     * recompté à la lecture suivante. Un membre peut appartenir à plusieurs communautés, d'où un espace commun.
+     */
+    public static function forgetCivilNames(): void
+    {
+        ShortCache::bump(self::NAMES_NS);
     }
 
     /** Rend l'avis périmé tout de suite (après une reprise d'anciens noms, par exemple) au lieu d'attendre ses 10 minutes. */
