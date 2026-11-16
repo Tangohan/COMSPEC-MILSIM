@@ -313,7 +313,7 @@ if ($canRead && $tab !== 'mes') {
         <ul class="ja-rows jr-rows">
             <?php foreach ($field as $fr): ?>
                 <li>
-                    <a class="ja-row jr-row" href="<?= $h(url('back-office/remontees/cr/' . (int) $fr['id'])) ?>">
+                    <a class="ja-row jr-row" href="<?= $h(url('atak/sse/remontees/cr/' . (int) $fr['id'])) ?>">
                         <span class="n"><?= $h((string) ($fr['ref'] ?? '')) ?></span>
                         <span class="t"><b><?= $h((string) ($fr['title'] ?? '')) ?></b><small><?= $h((string) ($fr['author'] ?? '')) ?> · <?= $h($fmt($fr['at'] ?? null, 'd/m/Y H:i')) ?></small></span>
                         <span class="m"><span class="ja-pill jr-pill"><?= $h((string) ($fr['state_label'] ?? $fr['state'] ?? '')) ?></span></span>
