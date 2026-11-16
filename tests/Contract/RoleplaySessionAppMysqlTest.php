@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * App Session (code, rattachement, lecture, pointage, enregistrement, rappels, joueurs connectés) sur un vrai serveur MySQL
- * ou MariaDB en mode strict : vraies tables des sessions (bootstrap), vraie migration de l'étape 4910, colonnes ENUM et
+ * ou MariaDB en mode strict : vraies tables des sessions (bootstrap), vraie migration de l'étape 4920, colonnes ENUM et
  * NOT NULL, unicités, collations. Ignoré sans base de test ; la CI le lance sur MySQL 8 et MariaDB (COMSPEC_TEST_MYSQL_DSN,
  * COMSPEC_TEST_MYSQL_USER, COMSPEC_TEST_MYSQL_PASS). La base est vidée au début. Données fictives uniquement.
  */

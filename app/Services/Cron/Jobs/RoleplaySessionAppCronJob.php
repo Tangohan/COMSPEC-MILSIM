@@ -10,7 +10,7 @@ use App\Services\Personnel\RoleplaySessionNotifier;
 
 /**
  * Sessions de jeu, app Session du téléphone : rappels 15 et 5 minutes avant le début prévu (une seule fois par horaire)
- * et expiration des codes de session dont l'heure est passée. Sans les tables de l'étape 4910 : rien à faire.
+ * et expiration des codes de session dont l'heure est passée. Sans les tables de l'étape 4920 : rien à faire.
  */
 final class RoleplaySessionAppCronJob implements CronJobInterface
 {

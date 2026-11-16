@@ -615,11 +615,11 @@ final class RoleplaySessionAppTest extends TestCase
         $pdo = new MysqlDdlSqlitePdo();
         $root = self::ROOT;
         ob_start();
-        require self::ROOT . '/database/steps/4910_roleplay_session_app.php';
+        require self::ROOT . '/database/steps/4920_roleplay_session_app.php';
         self::assertStringContainsString('Tables créées', (string) ob_get_clean());
         $changes = $pdo->changes;
         ob_start();
-        require self::ROOT . '/database/steps/4910_roleplay_session_app.php';
+        require self::ROOT . '/database/steps/4920_roleplay_session_app.php';
         self::assertStringContainsString('déjà présentes', (string) ob_get_clean());
         self::assertSame($changes, $pdo->changes);
         $sql = self::read('migrations/2026_11_23_100_roleplay_session_app.sql');
@@ -633,7 +633,7 @@ final class RoleplaySessionAppTest extends TestCase
         $registry = require self::ROOT . '/database/steps/registry.php';
         $entry = array_values(array_filter($registry, static fn (array $s): bool => ($s['id'] ?? '') === 'roleplay_session_app'));
         self::assertCount(1, $entry);
-        self::assertSame('4910_roleplay_session_app.php', $entry[0]['file']);
+        self::assertSame('4920_roleplay_session_app.php', $entry[0]['file']);
     }
 
     public function testContractDocumentsEveryRouteErrorAndState(): void

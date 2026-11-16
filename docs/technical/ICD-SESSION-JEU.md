@@ -19,7 +19,7 @@ précis. La communauté est celle du jeton ; le compte est celui du jeton (ou, �
 | Clé de communauté seule, sans compte | `401 account_link_required` |
 | Pas de communauté | `403 tenant_context_required` |
 | Compte inconnu dans la communauté, suspendu, ou d'une autre communauté | `403 not_allowed` |
-| Tables absentes (serveur sans l'étape 4910) | `503 feature_unavailable` |
+| Tables absentes (serveur sans l'étape 4920) | `503 feature_unavailable` |
 
 En-têtes de réponse : `Content-Type: application/json`, `Cache-Control: private, no-store`, `Retry-After` sur un 429.
 

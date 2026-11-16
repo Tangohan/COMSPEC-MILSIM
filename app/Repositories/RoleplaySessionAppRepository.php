@@ -10,7 +10,7 @@ use PDO;
 use PDOException;
 
 /**
- * Codes de session, réglages de l'app Session et journal (étape 4910_roleplay_session_app).
+ * Codes de session, réglages de l'app Session et journal (étape 4920_roleplay_session_app).
  * SQL portable MySQL / SQLite : les dates sont fournies par l'appelant (horloge du service), jamais NOW().
  */
 class RoleplaySessionAppRepository

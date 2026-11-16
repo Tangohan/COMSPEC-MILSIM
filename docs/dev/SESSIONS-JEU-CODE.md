@@ -42,7 +42,7 @@ la fiche JTAC. `fn_serverPresence` envoie la présence serveur ; `fn_tocPhone` t
   pointage par sélection, de tous les connectés ou par ligne, retrait ; « Pourquoi je ne le vois pas ? ».
 - **Enregistrement** (`RoleplaySessionAttendance`) : « Démarrer l'enregistrement » / « Terminer l'enregistrement » avec
   récapitulatif ; le temps des joueurs pointés court dès le démarrage (ou dès leur pointage pendant l'enregistrement).
-- **Migration** `4910_roleplay_session_app` : `roleplay_game_session_codes`, `roleplay_game_session_app`,
+- **Migration** `4920_roleplay_session_app` : `roleplay_game_session_codes`, `roleplay_game_session_app`,
   `roleplay_game_session_journal` (unicités dans les CREATE TABLE, `utf8mb4_unicode_ci`, retour arrière
   `migrations/rollback/roleplay_session_app_down.sql`). Sans elles : page utilisable sans code ni notification, API
   `feature_unavailable`.
