@@ -46,9 +46,11 @@ final class EffectifsPersonnelConsolidationAssetTest extends TestCase
         self::assertStringContainsString('Personnage ·', $roster);
         // Depuis #1199 le matricule n'est plus préfixé « Mle » : pastille du numéro de communauté
         // (ou du matricule Athena), les deux matricules détaillés en infobulle.
-        self::assertStringContainsString('class="eff-mq-mle"', $roster);
-        self::assertStringContainsString("'Matricule communauté ' . \$orgNumber", $roster);
-        self::assertStringContainsString("' · Matricule Athena ' . \$athenaId", $roster);
+        // Depuis 2026-11-16, le matricule a sa propre colonne (RosterMemberColumns), les deux matricules en infobulle.
+        self::assertStringContainsString('class="eff-rl-mle" data-col="matricule"', $roster);
+        $columns = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/RosterMemberColumns.php');
+        self::assertStringContainsString("'Matricule communauté ' . \$orgNumber", $columns);
+        self::assertStringContainsString("'Matricule Athena ' . \$athenaId", $columns);
         self::assertStringContainsString("'Radio ' . \$radioAssigned", $roster);
         self::assertStringContainsString("' distinction'", $roster);
         self::assertStringContainsString('.eff-catalog--roster', $styles);

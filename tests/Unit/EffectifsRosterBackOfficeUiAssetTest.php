@@ -53,9 +53,11 @@ final class EffectifsRosterBackOfficeUiAssetTest extends TestCase
         self::assertStringNotContainsString('eff-catalog-checks', $roster);
         self::assertStringContainsString('name="access_role_id"', $roster);
         self::assertStringContainsString('data-img-fallback="portrait"', $roster);
-        self::assertStringContainsString('Matricule Athena', $roster);
-        self::assertStringContainsString('Matricule communauté', $roster);
-        self::assertStringContainsString('>Membre</th>', $roster);
+        // Identité en colonnes séparées : indicatif, matricule, prénom, nom.
+        self::assertStringContainsString('>Indicatif</th>', $roster);
+        self::assertStringContainsString('>Matricule</th>', $roster);
+        self::assertStringContainsString('>Prénom</th>', $roster);
+        self::assertStringContainsString('>Nom</th>', $roster);
         self::assertStringContainsString('eff-mq-cs', $roster);
         self::assertStringContainsString('eff-mq-av', $roster);
         self::assertStringContainsString('eff-sheets__qual-count', $roster);

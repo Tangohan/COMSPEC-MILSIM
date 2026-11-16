@@ -312,50 +312,83 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
             $aviationFamilies = array_slice($aviationFamilies, 0, 6, true);
         }
         ?>
-        <div class="eff-sheets eff-sheets--das" role="region" aria-label="Tableur des effectifs" tabindex="0">
+        <?php
+        // Colonnes masquables (menu « Colonnes », mémorisé par personne et par vue) : clé => libellé. L'indicatif et « Fiche » restent.
+        $hideableCols = ['matricule' => 'Matricule', 'prenom' => 'Prénom', 'nom' => 'Nom'];
+        if ($rosterView === 'medical') {
+            $hideableCols += ['emploi' => 'Emploi', 'qualifs' => 'Qualifs', 'sang' => 'Groupe sanguin', 'poids' => 'Poids', 'taille' => 'Taille', 'imc' => 'IMC', 'intolerances' => 'Intolérances médicamenteuses', 'allergies' => 'Allergies'];
+        } elseif ($rosterView === 'aviation') {
+            $hideableCols += ['emploi' => 'Emploi', 'qualifs' => 'Qualifs', 'affectation' => 'Affectation', 'vol' => 'Heures de vol', 'dernier_vol' => 'Dernier vol'];
+        } else {
+            $hideableCols += ['grade' => 'Grade', 'affectation' => 'Affectation', 'emploi' => 'Emploi', 'role' => 'Rôle', 'statut' => 'Statut', 'presence' => 'Présence', 'sessions' => 'Sessions', 'connexion' => 'Dernière connexion', 'qualifs' => 'Qualifs', 'acces' => 'Niveau d’accès', 'anciennete' => 'Ancienneté', 'mission' => 'Temps en mission', 'vol' => 'Heures de vol', 'dossier' => 'Dossier', 'traiter' => 'À traiter'];
+        }
+        $colsStoreKey = 'eff-roster-cols:' . (int) \App\Core\Session::get('user_id') . ':' . $rosterView;
+        ?>
+        <div class="eff-rl-tools">
+            <details class="eff-rl-cols" data-eff-cols data-eff-cols-key="<?= htmlspecialchars($colsStoreKey, ENT_QUOTES, 'UTF-8') ?>" data-eff-cols-hidden="colonne(s) masquée(s)" hidden>
+                <summary class="eff-rl-cols__btn">
+                    <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2.5 3h11M2.5 8h11M2.5 13h11M6 1.5v3M10 6.5v3M6 11.5v3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <span>Colonnes</span>
+                    <b class="eff-rl-cols__n" data-eff-cols-count hidden></b>
+                </summary>
+                <div class="eff-rl-cols__panel" role="group" aria-label="Colonnes affichées">
+                    <p class="eff-rl-cols__hint">Colonnes affichées dans cette vue. Le choix est gardé sur cet appareil.</p>
+                    <div class="eff-rl-cols__list">
+                        <?php foreach ($hideableCols as $colKey => $colLabel): ?>
+                            <label><input type="checkbox" value="<?= htmlspecialchars($colKey, ENT_QUOTES, 'UTF-8') ?>" checked data-eff-col-toggle> <span><?= htmlspecialchars($colLabel, ENT_QUOTES, 'UTF-8') ?></span></label>
+                        <?php endforeach; ?>
+                    </div>
+                    <button type="button" class="eff-rl-cols__reset" data-eff-cols-reset>Tout afficher</button>
+                </div>
+            </details>
+        </div>
+        <div class="eff-sheets eff-sheets--das eff-rl" role="region" aria-label="Tableur des effectifs" tabindex="0">
             <table class="eff-sheets__table eff-das__table eff-das__table--<?= htmlspecialchars($rosterView, ENT_QUOTES, 'UTF-8') ?>" id="eff-roster-table">
                 <thead>
                     <tr>
                         <?php if ($canBulkAny): ?>
-                        <th class="eff-das__check"><input type="checkbox" data-eff-bulk-all aria-label="Tout sélectionner"></th>
+                        <th class="eff-das__check" scope="col"><input type="checkbox" data-eff-bulk-all aria-label="Tout sélectionner"></th>
                         <?php endif; ?>
-                        <th class="eff-das__sticky eff-mq-col-member">Membre</th>
+                        <th class="eff-das__sticky eff-mq-col-member eff-rl-cs" scope="col" data-col="indicatif" title="Indicatif radio ; le lien ouvre la fiche">Indicatif</th>
+                        <th class="eff-rl-mle" scope="col" data-col="matricule">Matricule</th>
+                        <th scope="col" data-col="prenom">Prénom</th>
+                        <th scope="col" data-col="nom">Nom</th>
                         <?php if ($rosterView === 'medical'): ?>
-                            <th>Emploi</th>
-                            <th class="eff-das__num">Qualifs</th>
-                            <th>Groupe sanguin</th>
-                            <th class="eff-das__num">Poids</th>
-                            <th class="eff-das__num">Taille</th>
-                            <th class="eff-das__num" title="Indice de masse corporelle, calculé avec le poids et la taille">IMC</th>
-                            <th>Intolérances médicamenteuses</th>
-                            <th>Allergies</th>
+                            <th class="eff-rl-gs" scope="col" data-col="emploi">Emploi</th>
+                            <th class="eff-das__num" scope="col" data-col="qualifs">Qualifs</th>
+                            <th class="eff-rl-gs" scope="col" data-col="sang">Groupe sanguin</th>
+                            <th class="eff-das__num" scope="col" data-col="poids">Poids</th>
+                            <th class="eff-das__num" scope="col" data-col="taille">Taille</th>
+                            <th class="eff-das__num" scope="col" data-col="imc" title="Indice de masse corporelle, calculé avec le poids et la taille">IMC</th>
+                            <th class="eff-rl-gs" scope="col" data-col="intolerances">Intolérances médicamenteuses</th>
+                            <th scope="col" data-col="allergies">Allergies</th>
                         <?php elseif ($rosterView === 'aviation'): ?>
-                            <th>Emploi</th>
-                            <th class="eff-das__num">Qualifs</th>
-                            <th>Affectation</th>
-                            <th class="eff-das__num">Heures de vol</th>
+                            <th class="eff-rl-gs" scope="col" data-col="emploi">Emploi</th>
+                            <th class="eff-das__num" scope="col" data-col="qualifs">Qualifs</th>
+                            <th scope="col" data-col="affectation">Affectation</th>
+                            <th class="eff-das__num eff-rl-gs" scope="col" data-col="vol">Heures de vol</th>
                             <?php foreach ($aviationFamilies as $fam): ?>
-                                <th class="eff-das__num"><?= htmlspecialchars((string) $fam['label'], ENT_QUOTES, 'UTF-8') ?></th>
+                                <th class="eff-das__num" scope="col"><?= htmlspecialchars((string) $fam['label'], ENT_QUOTES, 'UTF-8') ?></th>
                             <?php endforeach; ?>
-                            <th>Dernier vol</th>
+                            <th class="eff-rl-gs" scope="col" data-col="dernier_vol">Dernier vol</th>
                         <?php else: ?>
-                            <th>Grade</th>
-                            <th>Affectation</th>
-                            <th title="Ce que fait la personne : radio, médecin, pilote…">Emploi</th>
-                            <th title="Le poste tenu dans son unité : chef de groupe, tireur, adjoint…">Rôle</th>
-                            <th>Statut</th>
-                            <th title="Présence aux activités ; la disponibilité est indiquée dessous">Présence</th>
-                            <th class="eff-das__num eff-das__col-sv" title="<?= htmlspecialchars(str_replace('%1', (string) (int) ($rosterSessionRules['min_minutes'] ?? 60), 'Sessions de jeu sur le serveur de la communauté qui ont duré %1 minutes ou plus, sur 30 jours. Les connexions plus courtes ne comptent pas.'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(str_replace('%1', \App\Services\Personnel\PlayerSessionService::thresholdLabel((int) ($rosterSessionRules['min_minutes'] ?? 60)), 'Sessions de %1'), ENT_QUOTES, 'UTF-8') ?></th>
-                            <th title="Dernière connexion au site">Dernière connexion</th>
-                            <th class="eff-das__num">Qualifs</th>
-                            <th title="Ce que la personne a le droit de faire sur le site">Niveau d’accès</th>
-                            <th>Ancienneté</th>
-                            <th class="eff-das__num">Temps en mission</th>
-                            <th class="eff-das__num" title="Heures aux commandes d'un aéronef, tous appareils confondus">Heures de vol</th>
-                            <th class="eff-das__col-dossier" title="Complétion du dossier ; l’icône ouvre le dossier">Dossier</th>
-                            <th>À traiter</th>
+                            <th class="eff-rl-gs" scope="col" data-col="grade">Grade</th>
+                            <th scope="col" data-col="affectation">Affectation</th>
+                            <th scope="col" data-col="emploi" title="Ce que fait la personne : radio, médecin, pilote…">Emploi</th>
+                            <th scope="col" data-col="role" title="Le poste tenu dans son unité : chef de groupe, tireur, adjoint… En gris : rôle lié à l’emploi, faute de rôle saisi">Rôle</th>
+                            <th scope="col" data-col="statut">Statut</th>
+                            <th class="eff-rl-gs eff-rl-num" scope="col" data-col="presence" title="Présence aux activités ; la disponibilité est indiquée dessous">Présence</th>
+                            <th class="eff-das__num eff-das__col-sv" scope="col" data-col="sessions" title="<?= htmlspecialchars(str_replace('%1', (string) (int) ($rosterSessionRules['min_minutes'] ?? 60), 'Sessions de jeu sur le serveur de la communauté qui ont duré %1 minutes ou plus, sur 30 jours. Les connexions plus courtes ne comptent pas.'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(str_replace('%1', \App\Services\Personnel\PlayerSessionService::thresholdLabel((int) ($rosterSessionRules['min_minutes'] ?? 60)), 'Sessions de %1'), ENT_QUOTES, 'UTF-8') ?></th>
+                            <th scope="col" data-col="connexion" title="Dernière connexion au site">Dernière connexion</th>
+                            <th class="eff-das__num eff-rl-gs" scope="col" data-col="qualifs">Qualifs</th>
+                            <th scope="col" data-col="acces" title="Ce que la personne a le droit de faire sur le site">Niveau d’accès</th>
+                            <th scope="col" data-col="anciennete">Ancienneté</th>
+                            <th class="eff-das__num" scope="col" data-col="mission">Temps en mission</th>
+                            <th class="eff-das__num" scope="col" data-col="vol" title="Heures aux commandes d'un aéronef, tous appareils confondus">Heures de vol</th>
+                            <th class="eff-das__col-dossier" scope="col" data-col="dossier" title="Complétion du dossier ; l’icône ouvre le dossier">Dossier</th>
+                            <th scope="col" data-col="traiter">À traiter</th>
                         <?php endif; ?>
-                        <th class="eff-das__actions-col">Fiche</th>
+                        <th class="eff-das__actions-col eff-rl-gs" scope="col" data-col="fiche">Fiche</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -384,7 +417,8 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         $groupStats[$gk]['presence'] += (int) ($gr['presence_score'] ?? 0);
                     }
                 }
-                $colCount = ($canBulkAny ? 1 : 0) + 2 + match ($rosterView) {
+                // Indicatif, matricule, prénom, nom et « Fiche », plus les colonnes de la vue.
+                $colCount = ($canBulkAny ? 1 : 0) + 5 + match ($rosterView) {
                     'medical' => 8,
                     'aviation' => 5 + count($aviationFamilies),
                     default => 15,
@@ -519,18 +553,22 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         ?>
                     <tr class="eff-mq-gh" data-eff-group="<?= $rowGroupId ?>">
                         <td colspan="<?= $colCount ?>">
+                            <div class="eff-rl-gh">
+                            <span class="eff-rl-gh__title">
                             <button type="button" class="eff-mq-gh__toggle" aria-expanded="true" data-eff-group-toggle="<?= $rowGroupId ?>">
                                 <svg class="eff-mq-gh__car" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
                                 <span class="eff-mq-gh__sq" style="background:<?= htmlspecialchars($groupMode === 'unite' ? $unitColor : '#475569', ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                                 <b><?= htmlspecialchars($gTitle, ENT_QUOTES, 'UTF-8') ?></b>
                             </button>
                             <?php if (is_array($gCode)): ?><?= eff_unit_code_html((string) $gCode['code'], (string) $gCode['admin_id'], 'sm') ?><?php endif; ?>
+                            </span>
                             <span class="eff-mq-gh__meta">
-                                <span><?= (int) $gStat['n'] ?> membre<?= $gStat['n'] > 1 ? 's' : '' ?><?= $totalPages > 1 ? ' sur cette page' : '' ?></span>
-                                <?php if ($gChief !== ''): ?><span>Chef : <b><?= htmlspecialchars($gChief, ENT_QUOTES, 'UTF-8') ?></b></span><?php endif; ?>
-                                <span>Présence moy. <b class="<?= $gAvgClass ?>"><?= $gAvg ?> %</b></span>
+                                <span class="eff-rl-gh__n"><b><?= (int) $gStat['n'] ?></b> membre<?= $gStat['n'] > 1 ? 's' : '' ?><?= $totalPages > 1 ? ' sur cette page' : '' ?></span>
+                                <?php if ($groupMode === 'unite'): ?><span class="eff-rl-gh__chief">Chef : <b><?= htmlspecialchars($gChief !== '' ? $gChief : '—', ENT_QUOTES, 'UTF-8') ?></b></span><?php endif; ?>
+                                <span class="eff-rl-gh__avg">Présence moy. <b class="<?= $gAvgClass ?>"><?= $gAvg ?> %</b></span>
                                 <?php if ($gPath !== ''): ?><span class="eff-mq-gh__path"><?= htmlspecialchars($gPath, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             </span>
+                            </div>
                         </td>
                     </tr>
                     <?php endif; ?>
@@ -538,7 +576,8 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <?php if ($canBulkAny): ?>
                         <td class="eff-das__check"><input type="checkbox" class="eff-bulk-check" name="user_ids[]" value="<?= $id ?>" form="eff-bulk-form" aria-label="Sélectionner <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"></td>
                         <?php endif; ?>
-                        <td class="eff-das__sticky eff-mq-col-member" data-label="Membre">
+                        <?php $idCols = \App\Support\RosterMemberColumns::split($nameRow, $orgNumber, $athenaId, $extraCallsigns); ?>
+                        <td class="eff-das__sticky eff-mq-col-member eff-rl-cs" data-col="indicatif" data-label="Indicatif">
                             <div class="eff-mq-mb">
                                 <span class="eff-sheets__avatar eff-mq-av" style="--av:<?= htmlspecialchars($unitColor, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">
                                     <?php if ($avatarUrl !== ''): ?>
@@ -548,14 +587,10 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                     <?php endif; ?>
                                 </span>
                                 <span class="eff-mq-mb__txt">
-                                    <a class="eff-sheets__name eff-mq-mb__name" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>"<?= $rowFullName !== $name ? ' title="' . htmlspecialchars($rowFullName, ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
-                                    <small class="eff-mq-mb__line">
-                                        <?php if ($rowTrigram !== ''): ?>
-                                            <span class="eff-mq-cs" title="Trigramme"><?= htmlspecialchars($rowTrigram, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                        <?php if ($callsign !== ''): ?>
-                                            <span class="eff-mq-cs" title="Indicatif<?= $extraCallsigns !== [] ? ' · aussi ' . htmlspecialchars(implode(', ', $extraCallsigns), ENT_QUOTES, 'UTF-8') : '' ?>"><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?= $extraCallsigns !== [] ? ' +' . count($extraCallsigns) : '' ?></span>
-                                        <?php endif; ?>
+                                    <span class="eff-rl-cs__top">
+                                        <?php /* L'indicatif ouvre la fiche ; sans indicatif, le pseudo du compte (en gris) garde le lien. */ ?>
+                                        <a class="eff-sheets__name eff-mq-mb__name eff-rl-cs__link<?= $idCols['callsign'] === '' ? ' is-fallback' : '' ?>" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars(($rosterEn ? 'Open the file of ' : 'Ouvrir la fiche de ') . ($rowFullName !== '' ? $rowFullName : $name) . ($idCols['extra_callsigns'] !== [] ? ($rosterEn ? ' · also ' : ' · aussi ') . implode(', ', $idCols['extra_callsigns']) : ''), ENT_QUOTES, 'UTF-8') ?>" translate="no"><?= htmlspecialchars($idCols['callsign'] !== '' ? $idCols['callsign'] : $idCols['fallback'], ENT_QUOTES, 'UTF-8') ?></a>
+                                        <?php if ($idCols['extra_callsigns'] !== []): ?><span class="eff-rl-cs__more" aria-hidden="true">+<?= count($idCols['extra_callsigns']) ?></span><?php endif; ?>
                                         <?php $rowLang = $rosterLanguages[$id] ?? null; ?>
                                         <?php if (is_array($rowLang)): ?>
                                             <?php
@@ -570,23 +605,20 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                             ?>
                                             <span class="eff-mq-lang<?= $rowLang['source'] !== 'member' ? ' is-guess' : '' ?>" title="<?= htmlspecialchars($rowLangTitle, ENT_QUOTES, 'UTF-8') ?>"><?= \App\Support\CommunityLanguages::flagsHtml($rowLangCodes, ['class' => 'eff-sheets__lang-flag', 'size' => '16x12']) ?><span class="eff-sheets__lang-codes"><?= htmlspecialchars(implode('·', array_map('strtoupper', $rowLangCodes)), ENT_QUOTES, 'UTF-8') ?></span></span>
                                         <?php endif; ?>
-                                        <?php if ($orgNumber !== '' || $athenaId !== ''): ?>
-                                            <span class="eff-mq-mle" title="<?= htmlspecialchars(trim(($orgNumber !== '' ? 'Matricule communauté ' . $orgNumber : '') . ($athenaId !== '' ? ' · Matricule Athena ' . $athenaId : ''), ' ·'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($orgNumber !== '' ? $orgNumber : $athenaId, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                        <?php if ($status !== 'active' && $rosterView !== 'general'): ?>
-                                            <span class="eff-sheets__badge <?= htmlspecialchars($statusClass($status), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                    </small>
+                                    </span>
                                     <?php
                                     $idMeta = array_values(array_filter([
                                         $character !== '' ? 'Personnage · ' . $character : '',
                                         $radioAssigned !== '' ? 'Radio ' . $radioAssigned : '',
                                         $memberBadges !== [] ? count($memberBadges) . ($rosterEn ? ' award' : ' distinction') . (count($memberBadges) > 1 ? 's' : '') : '',
-                                        $orgNumber !== '' && $athenaId !== '' ? 'Athena ' . $athenaId : '',
                                     ]));
+                                    $showStatusBadge = $status !== 'active' && $rosterView !== 'general';
                                     ?>
-                                    <?php if ($idMeta !== [] || (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== '')): ?>
+                                    <?php if ($idMeta !== [] || $showStatusBadge || (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== '')): ?>
                                     <small class="eff-mq-mb__extra">
+                                        <?php if ($showStatusBadge): ?>
+                                            <span class="eff-sheets__badge <?= htmlspecialchars($statusClass($status), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
                                         <?php if (is_array($phaseBadge) && ($phaseBadge['label'] ?? '') !== ''): ?>
                                             <?php
                                             $phaseClass = match ((string) ($phaseBadge['kind'] ?? 'progress')) {
@@ -603,6 +635,30 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 </span>
                             </div>
                         </td>
+                        <td class="eff-rl-mle" data-col="matricule" data-label="Matricule">
+                            <?php if ($idCols['matricule'] !== ''): ?>
+                                <span class="eff-rl-mono" title="<?= htmlspecialchars($idCols['matricule_title'], ENT_QUOTES, 'UTF-8') ?>" translate="no"><?= htmlspecialchars($idCols['matricule'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php else: ?>
+                                <span class="eff-das__muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="eff-rl-first" data-col="prenom" data-label="Prénom">
+                            <?php if ($idCols['first'] !== ''): ?>
+                                <span translate="no"><?= htmlspecialchars($idCols['first'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php else: ?>
+                                <span class="eff-das__muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="eff-rl-last" data-col="nom" data-label="Nom">
+                            <?php if ($idCols['last'] !== ''): ?>
+                                <span class="eff-rl-last__v" translate="no"><?= htmlspecialchars($idCols['last'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php else: ?>
+                                <span class="eff-das__muted">—</span>
+                            <?php endif; ?>
+                            <?php if ($rowTrigram !== '' && !$idCols['masked']): ?>
+                                <span class="eff-mq-cs eff-rl-tri" title="Trigramme" translate="no"><?= htmlspecialchars($rowTrigram, ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
+                        </td>
                         <?php if ($rosterView === 'medical'): ?>
                             <?php
                             $blood = trim((string) ($row['blood_type'] ?? ''));
@@ -612,26 +668,26 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             $intolerances = trim((string) ($row['drug_intolerances'] ?? ''));
                             $allergies = trim((string) ($row['allergies'] ?? ''));
                             ?>
-                            <td data-label="Emploi"><?= $fonction !== '' ? '<span class="eff-sheets__fonction">' . htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">—</span>' ?></td>
-                            <td class="eff-das__num" data-label="Qualifs">
+                            <td class="eff-rl-gs" data-col="emploi" data-label="Emploi"><?= $fonction !== '' ? '<span class="eff-sheets__fonction">' . htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td class="eff-das__num" data-col="qualifs" data-label="Qualifs">
                                 <?php if ($qualCount > 0): ?>
                                     <button type="button" class="eff-sheets__qual-count<?= $qualAlert !== '' ? ' is-alert' : '' ?>" data-eff-qual-open data-eff-qual-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-fiche="<?= htmlspecialchars($ficheUrl . '#qualifications', ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-items="<?= $qualJson ?>" title="<?= $qualAlert !== '' ? htmlspecialchars($qualAlert, ENT_QUOTES, 'UTF-8') : 'Voir les qualifications' ?>"><?= $qualCount ?></button>
                                 <?php else: ?>
                                     <span class="eff-das__muted">0</span>
                                 <?php endif; ?>
                             </td>
-                            <td data-label="Groupe sanguin">
+                            <td class="eff-rl-gs" data-col="sang" data-label="Groupe sanguin">
                                 <?php if ($blood !== ''): ?>
                                     <span class="eff-das__blood"><?= htmlspecialchars($blood, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php else: ?>
                                     <a class="eff-das__missing" href="<?= htmlspecialchars($ficheUrl . '#eff-dlg-civil', ENT_QUOTES, 'UTF-8') ?>">À renseigner</a>
                                 <?php endif; ?>
                             </td>
-                            <td data-label="Poids" class="eff-das__num"><?= $weightKg > 0 ? $weightKg . ' kg' : '<span class="eff-das__muted">—</span>' ?></td>
-                            <td data-label="Taille" class="eff-das__num"><?= $heightCm > 0 ? $heightCm . ' cm' : '<span class="eff-das__muted">—</span>' ?></td>
-                            <td data-label="IMC" class="eff-das__num"><?= $bmi !== null ? htmlspecialchars(number_format($bmi, 1, ',', ' '), ENT_QUOTES, 'UTF-8') : '<span class="eff-das__muted">—</span>' ?></td>
-                            <td data-label="Intolérances"><?= $intolerances !== '' ? '<span class="eff-das__alert">' . htmlspecialchars($intolerances, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">Aucune connue</span>' ?></td>
-                            <td data-label="Allergies"><?= $allergies !== '' ? '<span class="eff-das__alert">' . htmlspecialchars($allergies, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">Aucune connue</span>' ?></td>
+                            <td data-col="poids" data-label="Poids" class="eff-das__num"><?= $weightKg > 0 ? $weightKg . ' kg' : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td data-col="taille" data-label="Taille" class="eff-das__num"><?= $heightCm > 0 ? $heightCm . ' cm' : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td data-col="imc" data-label="IMC" class="eff-das__num"><?= $bmi !== null ? htmlspecialchars(number_format($bmi, 1, ',', ' '), ENT_QUOTES, 'UTF-8') : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td class="eff-rl-gs" data-col="intolerances" data-label="Intolérances"><?= $intolerances !== '' ? '<span class="eff-das__alert">' . htmlspecialchars($intolerances, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">Aucune connue</span>' ?></td>
+                            <td data-col="allergies" data-label="Allergies"><?= $allergies !== '' ? '<span class="eff-das__alert">' . htmlspecialchars($allergies, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">Aucune connue</span>' ?></td>
                         <?php elseif ($rosterView === 'aviation'): ?>
                             <?php
                             $famSeconds = [];
@@ -641,23 +697,23 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             $lastFlown = trim((string) ($row['pilot_last_flown_at'] ?? ''));
                             $lastFlownTs = $lastFlown !== '' ? strtotime($lastFlown) : false;
                             ?>
-                            <td data-label="Emploi"><?= $fonction !== '' ? '<span class="eff-sheets__fonction">' . htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">—</span>' ?></td>
-                            <td class="eff-das__num" data-label="Qualifs">
+                            <td class="eff-rl-gs" data-col="emploi" data-label="Emploi"><?= $fonction !== '' ? '<span class="eff-sheets__fonction">' . htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td class="eff-das__num" data-col="qualifs" data-label="Qualifs">
                                 <?php if ($qualCount > 0): ?>
                                     <button type="button" class="eff-sheets__qual-count<?= $qualAlert !== '' ? ' is-alert' : '' ?>" data-eff-qual-open data-eff-qual-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-fiche="<?= htmlspecialchars($ficheUrl . '#qualifications', ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-items="<?= $qualJson ?>" title="<?= $qualAlert !== '' ? htmlspecialchars($qualAlert, ENT_QUOTES, 'UTF-8') : 'Voir les qualifications' ?>"><?= $qualCount ?></button>
                                 <?php else: ?>
                                     <span class="eff-das__muted">0</span>
                                 <?php endif; ?>
                             </td>
-                            <td data-label="Affectation"><?= $assignmentPath !== '' ? '<span class="eff-das__unit" title="' . htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($assignmentLeaf, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">Non affecté</span>' ?></td>
-                            <td data-label="Heures de vol" class="eff-das__num"><?= $pilotSecs > 0 ? '<strong class="eff-das__hours">' . htmlspecialchars($hours($pilotSecs), ENT_QUOTES, 'UTF-8') . '</strong>' : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td data-col="affectation" data-label="Affectation"><?= $assignmentPath !== '' ? '<span class="eff-das__unit" title="' . htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($assignmentLeaf, ENT_QUOTES, 'UTF-8') . '</span>' : '<span class="eff-das__muted">Non affecté</span>' ?></td>
+                            <td class="eff-rl-gs" data-col="vol" data-label="Heures de vol" class="eff-das__num"><?= $pilotSecs > 0 ? '<strong class="eff-das__hours">' . htmlspecialchars($hours($pilotSecs), ENT_QUOTES, 'UTF-8') . '</strong>' : '<span class="eff-das__muted">—</span>' ?></td>
                             <?php foreach (array_keys($aviationFamilies) as $famKey): ?>
                                 <?php $fs = (int) ($famSeconds[$famKey] ?? 0); ?>
                                 <td class="eff-das__num" data-label="<?= htmlspecialchars((string) $aviationFamilies[$famKey]['label'], ENT_QUOTES, 'UTF-8') ?>"><?= $fs > 0 ? htmlspecialchars($hours($fs), ENT_QUOTES, 'UTF-8') : '<span class="eff-das__muted">—</span>' ?></td>
                             <?php endforeach; ?>
-                            <td data-label="Dernier vol"><?= $lastFlownTs !== false ? htmlspecialchars(date('d/m/Y', $lastFlownTs), ENT_QUOTES, 'UTF-8') : '<span class="eff-das__muted">—</span>' ?></td>
+                            <td class="eff-rl-gs" data-col="dernier_vol" data-label="Dernier vol"><?= $lastFlownTs !== false ? htmlspecialchars(date('d/m/Y', $lastFlownTs), ENT_QUOTES, 'UTF-8') : '<span class="eff-das__muted">—</span>' ?></td>
                         <?php else: ?>
-                        <td data-label="Grade">
+                        <td class="eff-rl-gs" data-col="grade" data-label="Grade">
                             <?php if ($grade !== ''): ?>
                                 <?php
                                 $gradeShort = trim((string) ($row['grade_short'] ?? ''));
@@ -671,7 +727,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <span class="eff-das__muted">Sans grade</span>
                             <?php endif; ?>
                         </td>
-                        <td data-label="Affectation">
+                        <td data-col="affectation" data-label="Affectation">
                             <div class="eff-sheets__assign">
                                 <?php if ($assignmentPath !== '' && $groupMode === 'unite'): ?>
                                     <?php /* Rangé par unité : nom, code et unités mères sont dans l'en-tête du groupe, pas répétés à chaque ligne. */ ?>
@@ -729,26 +785,15 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         $rowJobLabel = $rowJobs !== [] ? (string) ($rowJobs[0]['label'] ?? '') : $fonction;
                         $rowJobTitle = implode(' · ', array_map(static fn (array $rj): string => (string) ($rj['label'] ?? ''), $rowJobs));
                         $assignmentRole = trim((string) ($row['assignment_role_name'] ?? ''));
-                        // Rôle qui répète l'unité ou l'emploi (« 24th STS Gold Team SOF TACP », « PJ (Pararescue Jumper) ») : affiché en retrait,
-                        // la valeur reste modifiable et lisible au survol.
-                        $effNorm = static fn (string $v): string => trim((string) preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower($v)));
-                        $roleNorm = $effNorm($assignmentRole);
-                        $roleEcho = false;
-                        if ($roleNorm !== '') {
-                            foreach ([$assignmentLeaf, $unit, $rowJobLabel] as $other) {
-                                $o = $effNorm((string) $other);
-                                if ($o === '') {
-                                    continue;
-                                }
-                                if ($o === $roleNorm || (min(strlen($o), strlen($roleNorm)) >= 6 && (str_contains($roleNorm, $o) || str_contains($o, $roleNorm)))) {
-                                    $roleEcho = true;
-                                    break;
-                                }
-                            }
-                        }
+                        // Rôle effectif : celui saisi sur le membre, sinon celui lié à son emploi principal (« hérité »), sinon « — ».
+                        $effRole = \App\Support\RosterEffectiveRole::resolve(
+                            $assignmentRole,
+                            [$assignmentLeaf, $unit],
+                            $rowJobs !== [] ? $rowJobs : ($fonction !== '' ? [['label' => trim(explode(',', $fonction)[0]), 'primary' => true]] : [])
+                        );
                         $memberData = 'data-eff-member-id="' . $id . '" data-eff-member-name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '"';
                         ?>
-                        <td data-label="Emploi">
+                        <td data-col="emploi" data-label="Emploi">
                             <div class="eff-sheets__assign">
                                 <?php if ($rowJobLabel !== ''): ?>
                                     <?php $rowJobDecor = is_array($rowJobs[0]['decoration'] ?? null) ? $rowJobs[0]['decoration'] : null; $rowJobDesc = trim((string) ($rowJobDecor['description'] ?? '')); ?>
@@ -762,25 +807,30 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td data-label="Rôle">
+                        <td data-col="role" data-label="Rôle">
                             <div class="eff-sheets__assign">
-                                <?php if ($assignmentRole !== '' && $roleEcho): ?>
-                                    <span class="eff-das__muted" title="<?= htmlspecialchars('Rôle : ' . $assignmentRole . ' (déjà indiqué par l’unité ou l’emploi)', ENT_QUOTES, 'UTF-8') ?>">—</span>
-                                <?php elseif ($assignmentRole !== ''): ?>
-                                    <span class="eff-sheets__fonction"><?= htmlspecialchars($assignmentRole, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if ($effRole['source'] === \App\Support\RosterEffectiveRole::SOURCE_MEMBER): ?>
+                                    <span class="eff-rl-role"><?= htmlspecialchars($effRole['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php elseif ($effRole['source'] === \App\Support\RosterEffectiveRole::SOURCE_JOB): ?>
+                                    <?php
+                                    // Phrases composées : écrites dans la langue de la page (la traduction automatique ne les reconnaît pas).
+                                    $inheritedHint = $rosterEn ? 'Role linked to the job' : 'Rôle lié à l’emploi';
+                                    $inheritedTitle = $effRole['hint'] === '' ? $inheritedHint : str_replace('%1', $effRole['hint'], $rosterEn ? 'Role linked to the job (role entered: %1, same as the unit)' : 'Rôle lié à l’emploi (rôle inscrit : %1, identique à l’unité)');
+                                    ?>
+                                    <span class="eff-rl-role is-inherited" title="<?= htmlspecialchars($inheritedTitle, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($effRole['label'], ENT_QUOTES, 'UTF-8') ?><span class="sr-only"> (<?= htmlspecialchars($inheritedHint, ENT_QUOTES, 'UTF-8') ?>)</span></span>
                                 <?php else: ?>
-                                    <span class="eff-das__muted">—</span>
+                                    <span class="eff-das__muted"<?= $effRole['hint'] !== '' ? ' title="' . htmlspecialchars(str_replace('%1', $effRole['hint'], $rosterEn ? 'Role entered: %1' : 'Rôle inscrit : %1'), ENT_QUOTES, 'UTF-8') . '"' : '' ?>>—</span>
                                 <?php endif; ?>
                                 <?php if ($canManageAssignments): ?>
                                     <button type="button" class="eff-das__edit" data-eff-edit="role" <?= $memberData ?> data-eff-role="<?= htmlspecialchars($assignmentRole, ENT_QUOTES, 'UTF-8') ?>" title="Modifier le rôle dans l’unité"><?= $editIcon ?><span class="sr-only">Modifier le rôle</span></button>
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td data-label="Statut">
+                        <td data-col="statut" data-label="Statut">
                             <span class="eff-mq-st eff-mq-st--<?= htmlspecialchars($status !== '' ? $status : 'unknown', ENT_QUOTES, 'UTF-8') ?>"><i aria-hidden="true"></i><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
                         </td>
                         <?php $presClass = $presenceScore >= 80 ? 'is-good' : ($presenceScore >= 50 ? 'is-mid' : 'is-low'); ?>
-                        <td data-label="Présence">
+                        <td class="eff-rl-gs" data-col="presence" data-label="Présence">
                             <span class="eff-mq-pr <?= $presClass ?>" title="Présence <?= $presenceScore ?> % · <?= $rosterEn ? 'Availability' : 'Disponibilité' ?> <?= $availabilityScore ?> %">
                                 <span class="eff-mq-pr__b" aria-hidden="true"><i style="width:<?= max(0, min(100, $presenceScore)) ?>%"></i></span>
                                 <span class="eff-mq-pr__v"><?= $presenceScore ?> %</span>
@@ -788,7 +838,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <span class="eff-das__sub">Dispo. <?= $availabilityScore ?> %</span>
                         </td>
                         <?php $srv = is_array($row['server_sessions'] ?? null) ? $row['server_sessions'] : null; ?>
-                        <td class="eff-das__num" data-label="Sessions qui comptent">
+                        <td class="eff-das__num" data-col="sessions" data-label="Sessions qui comptent">
                             <?php if ($srv === null): ?>
                                 <span class="eff-das__muted" title="Le suivi des sessions de jeu n’est pas actif sur ce site.">—</span>
                             <?php elseif (empty($srv['linked'])): ?>
@@ -816,10 +866,10 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             default => 'Il y a ' . $lastDays . ' j',
                         };
                         ?>
-                        <td data-label="Dernière connexion">
+                        <td data-col="connexion" data-label="Dernière connexion">
                             <span class="eff-mq-ls<?= $lastDays !== null && $lastDays > 30 ? ' is-old' : '' ?>"<?= $lastLoginTs !== false ? ' title="' . htmlspecialchars(date('d/m/Y H:i', $lastLoginTs), ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= htmlspecialchars($lastLabel, ENT_QUOTES, 'UTF-8') ?></span>
                         </td>
-                        <td class="eff-das__num" data-label="Qualifs">
+                        <td class="eff-das__num eff-rl-gs" data-col="qualifs" data-label="Qualifs">
                             <?php if ($qualCount > 0): ?>
                                 <button type="button" class="eff-sheets__qual-count<?= $qualAlert !== '' ? ' is-alert' : '' ?>" data-eff-qual-open data-eff-qual-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-fiche="<?= htmlspecialchars($ficheUrl . '#qualifications', ENT_QUOTES, 'UTF-8') ?>" data-eff-qual-items="<?= $qualJson ?>" title="<?= $qualAlert !== '' ? htmlspecialchars($qualAlert, ENT_QUOTES, 'UTF-8') : 'Voir les qualifications' ?>"><?= $qualCount ?></button>
                             <?php else: ?>
@@ -835,7 +885,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             }
                         }
                         ?>
-                        <td data-label="Niveau d’accès">
+                        <td data-col="acces" data-label="Niveau d’accès">
                             <div class="eff-sheets__assign">
                                 <?php if ($currentAccessName !== ''): ?>
                                     <span class="eff-sheets__badge eff-sheets__badge--muted" title="<?= htmlspecialchars($rosterEn ? implode(', ', array_map([\App\Support\HtmlTranslator::class, 'translateText'], $roleParts)) : $rolesDisplay, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($currentAccessName, ENT_QUOTES, 'UTF-8') ?></span>
@@ -847,7 +897,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td data-label="Ancienneté">
+                        <td data-col="anciennete" data-label="Ancienneté">
                             <?php
                             $seniorityTitle = ($rosterEn ? 'Actual seniority: ' : 'Ancienneté réelle : ') . $seniorityLabel
                                 . ($prePlatformLabel !== '' ? ($rosterEn ? ' (before the site: ' : ' (avant le site : ') . $prePlatformLabel . ')' : '');
@@ -873,14 +923,14 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td data-label="Temps en mission" class="eff-das__num">
+                        <td data-col="mission" data-label="Temps en mission" class="eff-das__num">
                             <?php if ($playtimeSecs > 0): ?>
                                 <span class="eff-das__time" title="Temps de mission transmis par la liaison terrain"><?= htmlspecialchars($hours($playtimeSecs), ENT_QUOTES, 'UTF-8') ?></span>
                             <?php else: ?>
                                 <span class="eff-das__muted">—</span>
                             <?php endif; ?>
                         </td>
-                        <td data-label="Heures de vol" class="eff-das__num">
+                        <td data-col="vol" data-label="Heures de vol" class="eff-das__num">
                             <?php if ($pilotSecs > 0): ?>
                                 <a class="eff-das__hours" href="<?= htmlspecialchars($queryUrlView('aviation'), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($pilotTitle, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($hours($pilotSecs), ENT_QUOTES, 'UTF-8') ?></a>
                                 <?php if ($pilotFamilies !== []): ?>
@@ -891,7 +941,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <?php endif; ?>
                         </td>
                         <?php $ringColor = $completionScore >= 90 ? 'var(--eff-mq-good, #059669)' : ($completionScore >= 60 ? 'var(--eff-mq-mid-ring, #64748b)' : 'var(--eff-mq-warn, #d97706)'); ?>
-                        <td data-label="Dossier" class="eff-das__col-dossier">
+                        <td data-col="dossier" data-label="Dossier" class="eff-das__col-dossier">
                             <span class="eff-mq-ds">
                                 <span class="eff-mq-ring" style="--pct:<?= max(0, min(100, $completionScore)) ?>%;--ring:<?= $ringColor ?>" role="img" aria-label="Dossier complété à <?= $completionScore ?> %"></span>
                                 <span class="eff-mq-ds__v"><?= $completionScore ?> %</span>
@@ -922,7 +972,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             $todo[] = ['n', 'Étape', (string) ($phaseBadge['label'] ?? 'Étape à valider')];
                         }
                         ?>
-                        <td data-label="À traiter">
+                        <td data-col="traiter" data-label="À traiter">
                             <?php if ($todo === []): ?>
                                 <span class="eff-das__muted" aria-label="Rien à traiter">—</span>
                             <?php else: ?>
@@ -934,7 +984,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <?php endif; ?>
                         </td>
                         <?php endif; ?>
-                        <td class="eff-das__actions-col">
+                        <td class="eff-das__actions-col eff-rl-gs" data-col="fiche">
                             <div class="eff-sheets__actions">
                                 <a class="is-primary" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir</a>
                                 <?php if ($canCheckAvailability): ?>
@@ -1256,3 +1306,4 @@ require __DIR__ . '/partials/availability_check_modal.php';
 <?php endif; ?>
 <?php endif; ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-workspace.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-roster-columns.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
