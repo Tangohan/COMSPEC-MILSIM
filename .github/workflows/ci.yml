@@ -56,6 +56,24 @@ jobs:
           COMSPEC_TEST_MYSQL_USER: root
           COMSPEC_TEST_MYSQL_PASS: root
         run: vendor/bin/phpunit --filter 'PlatformUsersDirectoryMysqlTest|AtakMarkerCycleReadMysqlTest|CommunitySeedsStrictMysqlTest'
+      # Base complète installée de zéro (schema.sql, étapes historiques, file active) dans une base séparée.
+      - name: Base de test complète
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: "3306"
+          DB_NAME: comspec_e2e
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tools/ci/install-test-database.php
+      - name: PHPUnit (création de communauté et d’unités de bout en bout, mode strict)
+        env:
+          COMSPEC_TEST_E2E: "1"
+          DB_HOST: 127.0.0.1
+          DB_PORT: "3306"
+          DB_NAME: comspec_e2e
+          DB_USER: root
+          DB_PASSWORD: root
+        run: vendor/bin/phpunit --fail-on-skipped --testdox --filter 'CommunityCreationStrictMysqlTest|OrganizationUnitsStrictMysqlTest'
 
   assets:
     runs-on: ubuntu-latest
