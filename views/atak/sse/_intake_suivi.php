@@ -34,6 +34,13 @@ $isCerbere = '<span class="fnr-cerbere">Proposé par Cerbère</span>';
 $isDelay = $isd['delay'];
 $isMembers = is_array($intakeMembers ?? null) ? $intakeMembers : [];
 $isInfo = is_array($isIt['state_info'] ?? null) ? $isIt['state_info'] : [];
+$cdxProposals = $isd['proposals'];
+$cdxBase = $isBase;
+$cdxCsrf = $isCsrf;
+$cdxCanEdit = !empty($isRights['manage']);
+$cdxBadge = $isCerbere;
+$cdxBtn = 'btn btn--ghost fnr-mini';
+$cdxManageUrl = \App\Controllers\Web\SseDetectionController::manageUrlForSession();
 ?>
 <?php if (($intakePart ?? 'panel') === 'panel'): ?>
     <div class="fnr-state fnr-state--<?= $h($isTone) ?>">
@@ -83,16 +90,8 @@ $isInfo = is_array($isIt['state_info'] ?? null) ? $isIt['state_info'] : [];
             <?php if ($isRights['discord']): ?><button type="button" class="btn btn--ghost" data-fnr-open="fnr-dlg-rm-discord" aria-haspopup="dialog">Notifier sur Discord</button><?php endif; ?>
         </div>
 
-        <?php // Une proposition qui corrige les données (urgence) s'applique depuis le back-office : elle n'est pas offerte ici. ?>
-        <?php foreach ($isd['proposals'] as $p): if ($p['action'] === 'edit') { continue; } ?>
-            <form method="post" action="<?= $h($isBase . '/' . $p['action']) ?>" class="fnr-proposal">
-                <?= $isCsrf ?>
-                <?php foreach ($p['fields'] as $name => $value): ?><input type="hidden" name="<?= $h($name) ?>" value="<?= $h($value) ?>"><?php endforeach; ?>
-                <p><?= $isCerbere ?> <?= $h($p['label']) ?> : <strong><?= $h($p['value_label']) ?></strong></p>
-                <p class="fnr-dim"><?= $h($p['reason']) ?></p>
-                <button type="submit" class="btn btn--ghost fnr-mini">Appliquer</button>
-            </form>
-        <?php endforeach; ?>
+        <?php // Propositions de Cerbère-Lecture : l'urgence s'applique depuis le back-office (droit « modifier les données »). ?>
+        <?php $cdxPart = 'list'; require __DIR__ . '/../../partials/cerbere_proposals.php'; ?>
 
         <form method="post" action="<?= $h($isBase . '/comment') ?>" class="fnr-comment">
             <?= $isCsrf ?>
@@ -127,6 +126,7 @@ $isInfo = is_array($isIt['state_info'] ?? null) ? $isIt['state_info'] : [];
         <a class="btn btn--ghost fnr-wide" href="<?= $h($isBase) ?>">Traitement complet de la remontée</a>
     <?php endif; ?>
 <?php elseif ($isTreat): ?>
+    <?php $cdxPart = 'dialogs'; require __DIR__ . '/../../partials/cerbere_proposals.php'; ?>
     <dialog class="fnr-dialog" id="fnr-dlg-rm-transmettre" aria-labelledby="fnr-dlg-rm-transmettre-title">
         <form method="post" action="<?= $h($isBase . '/state') ?>" class="fnr-dialog__card">
             <?= $isCsrf ?><input type="hidden" name="state" value="transmise">

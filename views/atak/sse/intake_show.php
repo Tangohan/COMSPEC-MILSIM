@@ -103,6 +103,16 @@ $classBand = $classCode !== '' ? \App\Support\SseUsClassification::banner($class
 $canAttach = $rights['link'] && !$deleted && $src === 'fiche';
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/remontees.css')) . '"><link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-remontees.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/remontees.js')) . '"></script><script defer src="' . $h(asset_url('assets/js/recon-viewer.js')) . '"></script>';
+// Propositions de Cerbère-Lecture (views/partials/cerbere_proposals.php) : cartes expliquées, « Pourquoi ? », retour d'expérience.
+$sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/cerbere-detections.css')) . '">';
+$sseExtraScripts .= '<script defer src="' . $h(asset_url('assets/js/cerbere-detections.js')) . '"></script>';
+$cdxProposals = $d['proposals'];
+$cdxBase = $base;
+$cdxCsrf = $csrf;
+$cdxCanEdit = !empty($rights['manage']);
+$cdxBadge = $cerbere;
+$cdxBtn = 'rmt-btn rmt-btn--mini';
+$cdxManageUrl = \App\Controllers\Web\SseDetectionController::manageUrlForSession();
 ?>
 <div class="rmt rmt--sse rmt-show" data-rmt data-rmt-copied="Copié dans le presse-papiers." data-rmt-copy-failed="La copie a échoué : sélectionnez le texte et copiez-le à la main." data-rmt-empty="Aucun résultat.">
     <header class="rmt-head">
@@ -378,19 +388,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                 <?php if ($d['proposals'] !== []): ?>
                     <div class="rmt-block">
                         <h3 class="rmt-h3">Propositions</h3>
-                        <ul class="rmt-proposals">
-                            <?php foreach ($d['proposals'] as $p): ?>
-                                <li>
-                                    <form method="post" action="<?= $h($base . '/' . $p['action']) ?>" class="rmt-proposal">
-                                        <?= $csrf ?>
-                                        <?php foreach ($p['fields'] as $name => $value): ?><input type="hidden" name="<?= $h($name) ?>" value="<?= $h($value) ?>"><?php endforeach; ?>
-                                        <p><?= $cerbere ?> <?= $h($p['label']) ?> : <strong><?= $h($p['value_label']) ?></strong></p>
-                                        <p class="rmt-dim"><?= $h($p['reason']) ?></p>
-                                        <button type="submit" class="rmt-btn rmt-btn--mini">Appliquer</button>
-                                    </form>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <?php $cdxPart = 'list'; require __DIR__ . '/../../partials/cerbere_proposals.php'; ?>
                     </div>
                 <?php endif; ?>
 
@@ -743,6 +741,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
             </form>
         </dialog>
     <?php endif; ?>
+    <?php $cdxPart = 'dialogs'; require __DIR__ . '/../../partials/cerbere_proposals.php'; ?>
 </div>
 <?php if ($canAttach) { \App\Services\Sse\Attach\SseAttachWindow::render(); } ?>
 <?php
