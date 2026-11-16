@@ -112,6 +112,42 @@ foreach ($steps as $migrationStep) {
     }
 }
 $migrationRunner->printReport();
+
+// MySQL ne connaît pas « ADD COLUMN IF NOT EXISTS » (syntaxe MariaDB) : ces fichiers échouent en entier ci-dessus.
+// Pour que la base MySQL ait les mêmes colonnes que la base MariaDB, leurs ALTER sont rejoués clause par clause sans
+// « IF NOT EXISTS », une colonne ou un index déjà présent (1060, 1061) étant ignoré.
+$isMariaDb = stripos((string) $pdo->query('SELECT VERSION()')->fetchColumn(), 'mariadb') !== false;
+if (!$isMariaDb) {
+    $replayed = 0;
+    foreach (glob($root . '/migrations/*.sql') ?: [] as $sqlFile) {
+        $sql = (string) file_get_contents($sqlFile);
+        if (!preg_match('/ADD\s+(?:COLUMN|INDEX|KEY|UNIQUE\s+(?:INDEX|KEY))\s+IF\s+NOT\s+EXISTS/i', $sql)) {
+            continue;
+        }
+        foreach (ComspecMigrationRunner::splitStatements($sql) as $statement) {
+            if (!preg_match('/^\s*ALTER\s+TABLE\s+(`?\w+`?)\s+(.*)$/is', $statement, $alter)) {
+                continue;
+            }
+            $clauses = preg_split('/,\s*(?=(?:ADD|MODIFY|CHANGE|DROP)\s)/i', rtrim(trim($alter[2]), ';')) ?: [];
+            foreach ($clauses as $clause) {
+                $clause = (string) preg_replace('/\b(ADD\s+(?:COLUMN|INDEX|KEY|UNIQUE\s+(?:INDEX|KEY)))\s+IF\s+NOT\s+EXISTS\b/i', '$1', $clause);
+                $clause = (string) preg_replace('/\b(DROP\s+(?:COLUMN|INDEX|KEY))\s+IF\s+EXISTS\b/i', '$1', $clause);
+                try {
+                    $pdo->exec('ALTER TABLE ' . $alter[1] . ' ' . $clause);
+                    $replayed++;
+                } catch (PDOException $e) {
+                    if (!in_array((int) ($e->errorInfo[1] ?? 0), [1060, 1061, 1091, 1146], true)) {
+                        echo '  [MySQL] ' . basename($sqlFile) . ' : ' . preg_replace('/\s+/', ' ', mb_substr($e->getMessage(), 0, 200)) . "\n";
+                    }
+                }
+            }
+        }
+    }
+    echo "MySQL : {$replayed} clause(s) « IF NOT EXISTS » rejouée(s) sans cette syntaxe.\n";
+}
+// Journal général en table : le test de contrat y relève les DDL exécutées pendant une création (validation implicite).
+$pdo->exec("SET GLOBAL log_output = 'TABLE'");
+$pdo->exec('SET GLOBAL general_log = 1');
 printf("%d étapes exécutées en %.0f s, %d en échec.\n", count($steps), microtime(true) - $started, count($failed));
 foreach ($failed as $id => $message) {
     echo "[ÉCHEC] {$id} : " . preg_replace('/\s+/', ' ', mb_substr($message, 0, 300)) . "\n";

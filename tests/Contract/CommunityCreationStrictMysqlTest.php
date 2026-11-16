@@ -10,6 +10,7 @@ use App\Repositories\ReferralRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Community\CommunityOnboardingValidationService;
+use App\Services\Community\RealUnitAffiliationCatalog;
 use App\Services\Community\TenantBootstrapService;
 use App\Services\Community\TenantTypeConfig;
 use App\Services\Community\WizardOrbatPresets;
@@ -66,6 +67,20 @@ final class CommunityCreationStrictMysqlTest extends TestCase
         $wizard['wizard_game_label'] = self::sized('Arma 3 ', 200);
         $result = $this->create($name, $wizard);
         $this->assertCommunity($result, $name, TenantTypeConfig::TYPE_FULL, count($wizard['units']));
+    }
+
+    public function testRealUnitAffiliation(): void
+    {
+        $countries = RealUnitAffiliationCatalog::allowedCountryCodes();
+        self::assertNotSame([], $countries);
+        $units = RealUnitAffiliationCatalog::unitsForCountry($countries[0]);
+        self::assertNotSame([], $units, 'référentiel des unités réelles');
+        $wizard = $this->wizard('FR_CLASSIC', 'standard', WizardOrbatPresets::unitsFor('minimal'));
+        $wizard['wizard_represents_real_unit'] = '1';
+        $wizard['wizard_real_unit_country'] = $countries[0];
+        $wizard['wizard_real_unit_ids'] = array_slice(array_column($units, 'id'), 0, 3);
+        $name = 'Unité réelle ' . $countries[0];
+        $this->assertCommunity($this->create($name, $wizard), $name, TenantTypeConfig::TYPE_FULL, 3);
     }
 
     public function testEveryGradeSystemAndRolesTemplate(): void
@@ -203,6 +218,8 @@ final class CommunityCreationStrictMysqlTest extends TestCase
             'units' => $units,
             'grade_overrides' => [],
             'custom_roles' => [],
+            'wizard_represents_real_unit' => '0',
+            'wizard_fictional_unit_label' => self::sized('Bataillon fictif Ωmega 🪖 ', 200),
         ];
     }
 
@@ -215,11 +232,35 @@ final class CommunityCreationStrictMysqlTest extends TestCase
             self::assertTrue($v['ok'], implode(' ', $v['errors'] ?? []));
             $options['wizard_normalized'] = $v['normalized'];
         }
+        $creator = $this->creator();
         StrictWriteRecorder::reset();
-        $result = $this->service()->createCommunity($this->creator(), $name, '', $options);
+        $this->pdo->exec('TRUNCATE TABLE mysql.general_log');
+        try {
+            $result = $this->service()->createCommunity($creator, $name, '', $options);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException($e->getMessage() . "\nDDL exécutées pendant la création :\n" . implode("\n", $this->ddlStatements()), 0, $e);
+        }
         $this->assertNoStrictErrors($name);
 
         return $result;
+    }
+
+    /**
+     * Instructions DDL vues par le serveur pendant la création (journal général activé par tools/ci/install-test-database.php).
+     * Une DDL valide implicitement la transaction MySQL : la suite de createCommunity n'est alors plus annulable.
+     *
+     * @return list<string>
+     */
+    private function ddlStatements(): array
+    {
+        $rows = $this->pdo->query(
+            "SELECT CAST(argument AS CHAR) FROM mysql.general_log WHERE command_type IN ('Query', 'Execute')"
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        return array_values(array_unique(array_map(
+            static fn (string $q): string => mb_substr(preg_replace('/\s+/', ' ', trim($q)) ?? '', 0, 200),
+            array_filter($rows, static fn ($q): bool => is_string($q) && preg_match('/^\s*(CREATE|ALTER|DROP|RENAME|TRUNCATE)\b/i', $q) === 1 && !str_contains($q, 'general_log'))
+        )));
     }
 
     private function assertNoStrictErrors(string $context = ''): void
