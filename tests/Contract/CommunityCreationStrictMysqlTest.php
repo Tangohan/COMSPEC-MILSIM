@@ -129,7 +129,10 @@ final class CommunityCreationStrictMysqlTest extends TestCase
         $this->assertCommunity($result, $name, TenantTypeConfig::TYPE_FULL, 4);
         $st = $this->pdo->prepare('SELECT name FROM units WHERE tenant_id = ? ORDER BY id');
         $st->execute([$result['tenant_id']]);
-        self::assertSame(array_column($units, 'name'), $st->fetchAll(PDO::FETCH_COLUMN));
+        $stored = $st->fetchAll(PDO::FETCH_COLUMN);
+        foreach (array_column($units, 'name') as $unitName) {
+            self::assertContains($unitName, $stored, 'nom d’unité enregistré sans perte');
+        }
 
         $units[0]['name'] = self::sized('Trop long ', 121);
         $v = (new CommunityOnboardingValidationService())->validate($this->wizard('FR_CLASSIC', 'quick', $units));
@@ -329,7 +332,8 @@ final class CommunityCreationStrictMysqlTest extends TestCase
             self::assertGreaterThan(0, $this->countFor('document_categories', $tenantId), 'documents');
         }
         if ($units !== null) {
-            self::assertSame($units, $this->countFor('units', $tenantId), 'unités');
+            // Unités de l'assistant, plus les sections obligatoires de la formation (TenantPedagogyStructureService).
+            self::assertGreaterThanOrEqual($units, $this->countFor('units', $tenantId), 'unités');
         }
     }
 
