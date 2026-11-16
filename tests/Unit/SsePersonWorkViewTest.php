@@ -102,7 +102,7 @@ final class SsePersonWorkViewTest extends TestCase
         $html = $this->page();
         self::assertStringContainsString('Signé', $html);
         self::assertStringContainsString('TA1', $html);
-        self::assertStringContainsString('terminal T-9', $html);
+        self::assertStringContainsString('Terminal T-9', $html);
         self::assertStringContainsString('Non signé', $html);
         self::assertStringContainsString('Recherché', $html);
         self::assertStringContainsString('Critique', $html);
@@ -119,6 +119,80 @@ final class SsePersonWorkViewTest extends TestCase
         self::assertStringContainsString('Ouvrir l’avis', $drawer);
         self::assertStringContainsString('Non signé', $drawer);
         self::assertStringContainsString('Aucune signature du terminal', $drawer);
+    }
+
+    private function wantedPerson(string $last, string $threat, ?string $expires, string $armed = 'unknown'): int
+    {
+        $p = $this->person($last, ['alias' => 'Corbeau']);
+        $identity = (new \App\Repositories\SseIdentityRepository())->create(1, ['last_name' => $last, 'first_name' => 'Y', 'kind' => 'civil', 'person_id' => $p]);
+        $this->pdo->prepare("INSERT INTO sse_wanted_notices (tenant_id, identity_id, ref, ref_year, ref_seq, notice_type, threat_level, armed, status, active_key, issued_at, expires_at, created_at) VALUES (1, ?, ?, 2026, ?, 'arrest', ?, ?, 'active', 1, '2026-11-10', ?, '2026-11-10')")->execute([$identity, 'A-00' . $p . '/2026', $p, $threat, $armed, $expires]);
+
+        return $p;
+    }
+
+    public function testListShowsSeparateImageNameFirstNameAndAliasColumns(): void
+    {
+        $this->person('Dupont', ['first_name' => 'Marie', 'alias' => 'Faucon']);
+        $html = $this->page();
+        foreach (['pe-c-img">Image', 'pe-c-person"><a', 'pe-c-first">Prénom', 'pe-c-alias">Alias'] as $needle) {
+            self::assertStringContainsString($needle, $html);
+        }
+        self::assertMatchesRegularExpression('/<td class="pe-c-first">Marie<\/td>/', $html);
+        self::assertMatchesRegularExpression('/<td class="pe-c-alias">Faucon<\/td>/', $html);
+        self::assertMatchesRegularExpression('/class="pe-name"[^>]*>Dupont<\/a>/', $html, 'La colonne Nom ne porte que le nom de famille');
+        self::assertStringContainsString('sort=nom', $html, 'Le tri par nom reste');
+    }
+
+    public function testWantedIsALetterRWithColourLevelEndDateAndTooltip(): void
+    {
+        $this->wantedPerson('Alpha', 'medium', '2026-11-20 12:00:00');
+        $this->wantedPerson('Bravo', 'critical', null, 'yes');
+        $html = $this->page();
+        self::assertMatchesRegularExpression('/class="pe-r"[^>]*>\s*<span aria-hidden="true">R<\/span>/', $html);
+        self::assertStringContainsString('fin 20/11', $html, 'Fin de validité en mention courte');
+        self::assertStringContainsString('jusqu’à levée', $html);
+        self::assertStringContainsString('role="tooltip"', $html);
+        self::assertStringContainsString('aria-describedby="pe-tip-w-t', $html);
+        self::assertStringContainsString('Fin de validité : 20/11/2026', $html);
+        self::assertStringContainsString('Légende', $html);
+        self::assertStringContainsString('R = personne recherchée', $html);
+        self::assertStringContainsString('Niveau 2 sur 4', $html, 'Moyen : vigilance renforcée');
+        self::assertStringContainsString('Niveau 4 sur 4', $html, 'Armé : danger');
+        self::assertStringContainsString('--lv-bg:#F08C00', $html, 'Couleur de l’échelle SseAlertLevel');
+        self::assertStringNotContainsString('Recherché<small>', $html, 'Plus de badge long');
+    }
+
+    public function testDangerColumnClimbsInFourStepsAndWritesItsLevel(): void
+    {
+        $this->wantedPerson('Alpha', 'low', null);
+        $this->wantedPerson('Bravo', 'critical', null);
+        $html = $this->page();
+        self::assertStringContainsString('pe-c-danger">Danger', $html);
+        self::assertStringContainsString('aria-label="Dangerosité : Faible, niveau 1 sur 4"', $html);
+        self::assertStringContainsString('aria-label="Dangerosité : Critique, niveau 4 sur 4"', $html);
+        self::assertGreaterThanOrEqual(4, preg_match_all('/<span class="pe-lv" aria-hidden="true">(<i( class="on")?><\/i>){4}<\/span>/', $html), 'Quatre barres par indicateur');
+    }
+
+    public function testSignatureIsSOrNsWithTooltipDetail(): void
+    {
+        $this->person('Signee', ['signed_by_callsign' => 'TA1', 'signed_terminal_uid' => 'T-9', 'signed_at' => '2026-11-01 10:00:00']);
+        $this->person('Libre');
+        $html = $this->page();
+        self::assertMatchesRegularExpression('/class="pe-sg pe-sg--s"[^>]*aria-label="Signé par TA1"><span aria-hidden="true">S<\/span>/', $html);
+        self::assertMatchesRegularExpression('/class="pe-sg pe-sg--ns"[^>]*aria-label="Non signé"><span aria-hidden="true">NS<\/span>/', $html);
+        self::assertStringContainsString('Par : TA1', $html);
+        self::assertStringContainsString('S = signé, NS = non signé.', $html);
+        self::assertStringNotContainsString('pe-badge--ok', $html);
+    }
+
+    public function testNewColumnsKeepAccessibleSizesAndNoDesignSystemDependency(): void
+    {
+        $css = (string) file_get_contents(self::ROOT . '/public/assets/css/sse-persons.css');
+        self::assertMatchesRegularExpression('/\.pe-tip \{[^}]*min-width: 44px; min-height: 44px/', $css, 'Cible tactile de 44 px');
+        self::assertStringContainsString('.pe-tip.is-open > .pe-tip__box', $css);
+        $js = (string) file_get_contents(self::ROOT . '/public/assets/js/sse-persons.js');
+        self::assertStringContainsString('focusin', $js, 'Info-bulle au focus clavier');
+        self::assertStringContainsString("'touch'", $js, 'Info-bulle au toucher');
     }
 
     public function testBiometryIsThreePillsNeverBars(): void
