@@ -772,6 +772,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AtakMarkerCycleCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AthenaHeritageSnapshotCronJob::class),
+                    new \App\Services\Cron\Jobs\RoleplaySessionAppCronJob(),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
