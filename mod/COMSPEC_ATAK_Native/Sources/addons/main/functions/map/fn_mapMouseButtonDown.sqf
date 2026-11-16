@@ -3,7 +3,9 @@
    MARQUEUR, choisit le point de pose de la palette.
    Le clic gauche n'agit qu'au relâchement et sans glisser (fn_mapMouseButtonUp rappelle cette fonction avec _click) :
    déplacer la carte au clic gauche ne pose plus de point, ne consomme plus un pointage et ne ferme plus l'outil ni
-   la fiche ouverte. Seuls TRAIT et DESSIN démarrent à l'appui. */
+   la fiche ouverte. Seul DESSIN démarre à l'appui (le tracé suit le glisser) ; TRAIT pose ses points au clic.
+   Clic ou glisser : décidé par fn_mapMouseMoving / fn_mapMouseButtonUp (6 px, ou 150 ms de maintien et 3 px).
+   Le clic droit n'agit lui aussi qu'au relâchement sans glisser : le glisser droit déplace la carte sans quitter l'outil. */
 params ["_map","_button","_mx","_my",["_shift",false],["_ctrl",false],["_alt",false],["_click",false]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _world = _map ctrlMapScreenToWorld [_mx,_my];
@@ -11,7 +13,9 @@ if (_button isEqualTo 0 && {!_click}) exitWith {
     private _picking = ((["medevacPick", "reportPick", "dronePick", "logiPick", "jtacPick", "firePick"] findIf { (_s getOrDefault [_x, ""]) isNotEqualTo "" }) >= 0)
         || {_s getOrDefault ["recoPick", false]} || {(_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "DRONE"} || {(_s getOrDefault ["quickView", ""]) isNotEqualTo ""};
     _s set ["mapLc", []];
-    if (!_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {["DOWN", [_world select 0, _world select 1, 0], _ctrl] call comspec_atak_native_fnc_markerStroke}) exitWith { true };
+    _s set ["mapDrag", false];
+    if (!_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {(_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "DRAW"}
+        && {!(_s getOrDefault ["mapToolsOpen", false])} && {["DOWN", [_world select 0, _world select 1, 0], _ctrl] call comspec_atak_native_fnc_markerStroke}) exitWith { true };
     _s set ["mapLc", [_mx, _my, _shift, _ctrl, _alt]];
     // Appui long (fn_mapOnDraw) : pointage partagé comme sur la carte du jeu, seulement en sélection, sans outil de pose
     // ni menu ouvert, sans touche modificatrice.
@@ -53,6 +57,8 @@ if (_button isEqualTo 0) exitWith {
     };
     // Outil DRONE : le clic devient un ordre au drone appairé (aller ici, point de route, zone).
     if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "DRONE") exitWith { ["mapClick", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_droneAction; true };
+    // Outil TRAIT : point A, étape (Ctrl) ou point B, au clic seulement (un glisser déplace la carte sans rien poser).
+    if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "LINE") exitWith { ["DOWN", [_world select 0, _world select 1, 0], _ctrl] call comspec_atak_native_fnc_markerStroke; true };
     // Étape de l'itinéraire sous le curseur (sélection ou mode étapes) : sa fiche s'ouvre (renommer, type, déplacer).
     private _wi = if ((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","WP"] && {!_shift && !_ctrl && !_alt}) then { [_map, [_mx, _my]] call comspec_atak_native_fnc_wpAt } else { -1 };
     if (_wi >= 0) exitWith { ["edit", _wi] call comspec_atak_native_fnc_wpAction; true };
@@ -82,17 +88,10 @@ if (_button isEqualTo 0) exitWith {
     true
 };
 if (_button isEqualTo 1) exitWith {
-    // Modes MARQUEUR et POINTS DE PASSAGE : le clic droit choisit le point de pose (au relâchement, fn_markerPlace /
-    // fn_wpAction "anchor"), il ne quitte plus.
-    if (!((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER","WP"]) || {(count (_s getOrDefault ["drawStroke",[]])) > 0}) then {
-        _s set ["drawStroke",[]];
-        ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
-        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
-        _s set ["mapRc", []];
-    } else {
-        // Sélection : clic droit armé, le menu contextuel s'ouvre au relâchement s'il n'y a pas eu de glisser (fn_mapMouseButtonUp).
-        _s set ["mapRc", [_mx, _my, diag_tickTime]];
-    };
+    // Clic droit armé : il n'agit qu'au relâchement sans glisser (fn_mapMouseButtonUp) : quitter l'outil, point de pose
+    // (MARQUEUR, POINTS DE PASSAGE) ou menu contextuel (sélection). Avant, l'appui quittait l'outil tout de suite : le
+    // glisser droit, qui déplace la carte, fermait l'outil.
+    _s set ["mapRc", [_mx, _my, diag_tickTime]];
     true
 };
 false
