@@ -965,7 +965,9 @@ if ((count _measure) >= 2) then {
 // Zones plates
 {
     _map drawEllipse [_x,12,12,0,[0.36,0.78,0.42,0.9],""];
-    _map drawIcon [_dot,[0.36,0.78,0.42,1],_x,10 * _tk,10 * _tk,0,format ["LZ %1",_forEachIndex + 1],2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+    _map drawIcon [_dot,[0.36,0.78,0.42,1],_x,10 * _tk,10 * _tk,0,"",2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+    // Étiquette « Z1 grille » (texte calculé au clic, fn_mapToolRun), masquée en vue éloignée.
+    if (_lod > 0) then { _curLbls pushBack [_x, format ["Z%1 %2", _forEachIndex + 1, (_state getOrDefault ["mapFlatTxt", []]) param [_forEachIndex, ""]], [0.36, 0.78, 0.42, 1], 5]; };
 } forEach (_state getOrDefault ["mapFlat",[]]);
 
 // Ligne de vue
