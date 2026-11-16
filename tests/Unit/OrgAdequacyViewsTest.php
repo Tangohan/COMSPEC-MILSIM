@@ -91,9 +91,11 @@ final class OrgAdequacyViewsTest extends TestCase
         self::assertStringContainsString('data-adq-status="sous_capacite"', $html, 'chef de groupe caporal : sous-capacité');
         self::assertStringContainsString('data-adq-code="leader_grade_below"', $html);
         self::assertStringContainsString('Squad leader : poste tenu par Hale (OR-4)', $html);
-        self::assertStringContainsString('data-adq-code="without_place"', $html);
-        self::assertStringContainsString('Adjoint à nommer', $html, 'compagnie sans first sergeant ni XO');
+        // Détail des écarts d’un poste : dans sa fenêtre (modèle), le reste sur la page Adéquation.
+        self::assertStringContainsString('data-adq-code="deputy_missing"', $html, 'compagnie sans first sergeant ni XO');
         self::assertStringContainsString('Proposer à l’avancement', $html);
+        self::assertStringNotContainsString('data-adq-code="without_place"', $html, 'écarts de personnes : page Adéquation');
+        self::assertStringNotContainsString('class="adq-groups"', $html, 'plus de liste d’écarts intégrée');
         self::assertStringContainsString('chaine/adequation', $html);
         self::assertStringContainsString('<th scope="col">Adéquation</th>', $html);
         self::assertStringContainsString('Sans Place', $html, 'personne sans affectation listée');
@@ -104,14 +106,17 @@ final class OrgAdequacyViewsTest extends TestCase
 
         $filtered = $this->render('admin/effectifs_workspace/shell.php', $vars + ['adequacyOnlyGaps' => true]);
         self::assertStringContainsString('Filtré : personnes avec un écart d’adéquation', $filtered);
-        self::assertStringContainsString('id="eff-chain-people-panel" open', $filtered);
+        self::assertStringContainsString('id="eff-chain-people-panel" data-filtered', $filtered);
+        self::assertMatchesRegularExpression('~id="chn-panel-releve"[^>]*data-chn-panel="releve">~', $filtered, 'onglet « Qui relève de qui » ouvert');
         // Mercer (capitaine, commandant de compagnie) sans écart propre : retiré du tableau filtré.
         self::assertSame(0, preg_match('~<tr>\s*<td[^>]*>\s*<a href="[^"]*membres/7">Mercer</a>~', $filtered));
         self::assertSame(1, preg_match('~<tr>\s*<td[^>]*>\s*<a href="[^"]*membres/8">Hale</a>~', $filtered));
 
-        // Contrôle désactivé ou indisponible : la page reste celle d’avant.
+        // Contrôle désactivé ou indisponible : l’ancre reste, le résumé renvoie vers les règles.
         $plain = $this->render('admin/effectifs_workspace/shell.php', array_replace($vars, ['chainAdequacy' => null]));
-        self::assertStringNotContainsString('id="eff-adequacy"', $plain);
+        self::assertStringContainsString('id="eff-adequacy"', $plain);
+        self::assertStringContainsString('Le contrôle n’est pas actif', $plain);
+        self::assertStringNotContainsString('<th scope="col">Adéquation</th>', $plain);
         self::assertStringContainsString('Qui relève de qui', $plain);
     }
 
