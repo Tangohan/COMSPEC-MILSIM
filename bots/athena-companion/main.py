@@ -38,7 +38,7 @@ class Companion(discord.Client):
         self.poll_ok_at = 0.0
         self.health = None
         self.group = app_commands.Group(name='athena', description='ATHENA Companion · événements / events')
-        self.group.add_command(app_commands.Command(name='connect', description='Relier Athena avec un code temporaire / Connect with a temporary code', callback=self.connect))
+        self.group.add_command(app_commands.Command(name='connect', description='Relier Athena avec un code temporaire / Connect with a temporary code', callback=self.cmd_connect))
         self.group.add_command(app_commands.Command(name='help', description='Aide ATHENA Companion / ATHENA Companion help', callback=self.help_command))
         self.tree.add_command(self.group)
         for name, description, callback in (
@@ -90,7 +90,7 @@ class Companion(discord.Client):
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)
-    async def connect(self, interaction: discord.Interaction, code: str, channel: discord.TextChannel):
+    async def cmd_connect(self, interaction: discord.Interaction, code: str, channel: discord.TextChannel):
         await interaction.response.defer(ephemeral=True)
         if interaction.guild is None or channel.guild.id != interaction.guild.id:
             return await interaction.followup.send(tr('guild_only', interaction.locale), ephemeral=True)
