@@ -27,7 +27,12 @@
             if (select.dataset.countryPickerReady || !window.HTMLDialogElement) return;
             select.dataset.countryPickerReady = '1';
             var opener = document.createElement('button');
-            opener.type = 'button'; opener.className = 'eff-fm-btn';
+            opener.type = 'button'; opener.className = 'eff-fm-btn identity-country-opener';
+            // Le libellé du champ désigne désormais le bouton (le menu natif est masqué).
+            if (select.id) {
+                opener.id = select.id + '-picker';
+                document.querySelectorAll('label[for="' + select.id + '"]').forEach(function (l) { l.htmlFor = opener.id; });
+            }
             opener.setAttribute('aria-haspopup', 'dialog');
             var dialog = document.createElement('dialog');
             dialog.className = 'eff-dialog identity-country-dialog';

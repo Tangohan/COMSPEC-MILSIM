@@ -57,10 +57,17 @@ final class LegacyDataCounter
         return $out;
     }
 
-    /** Table qui porte le prénom et le nom d'état civil, ou null si la base n'en a aucune. */
+    /**
+     * Table qui porte le prénom et le nom d'état civil du personnage, ou null si la base n'en a aucune.
+     *
+     * user_profiles d'abord : c'est là qu'écrivent la fiche membre (« État civil du personnage »), Ma fiche et l'enrôlement,
+     * et c'est le nom affiché partout (docs/identites-membres.md). L'identité légale (user_legal_identities) n'est lue que
+     * sur une base très ancienne sans user_profiles : la lire en premier laissait signalé « sans prénom ni nom » un membre
+     * dont l'état civil venait d'être saisi.
+     */
     public function civilNameTable(): ?string
     {
-        foreach (['user_legal_identities', 'user_profiles'] as $table) {
+        foreach (['user_profiles', 'user_legal_identities'] as $table) {
             if ($this->schema->tableExists($table) && $this->schema->columnExists($table, 'first_name') && $this->schema->columnExists($table, 'last_name')) {
                 return $table;
             }
@@ -156,14 +163,18 @@ final class LegacyDataCounter
     private function importableNames(int $tenantId): int
     {
         $table = $this->civilNameTable();
-        if ($table !== 'user_legal_identities' || !$this->schema->tableExists('personnel_profiles') || !$this->schema->columnExists('personnel_profiles', 'character_name')) {
+        $legal = 'user_legal_identities';
+        if ($table === null || !$this->schema->tableExists($legal) || !$this->schema->columnExists($legal, 'first_name')
+            || !$this->schema->tableExists('personnel_profiles') || !$this->schema->columnExists('personnel_profiles', 'character_name')) {
             return 0;
         }
+        // Sans prénom ni nom affichés, et repris par LegacyIdentityImport (qui ne remplit qu'une identité légale vide).
+        $unnamed = static fn (string $t): string => "NOT EXISTS (SELECT 1 FROM {$t} x WHERE x.user_id = u.id AND (TRIM(COALESCE(x.first_name, '')) <> '' OR TRIM(COALESCE(x.last_name, '')) <> ''))";
 
         return $this->members(
             $tenantId,
             "EXISTS (SELECT 1 FROM personnel_profiles p WHERE p.user_id = u.id AND TRIM(COALESCE(p.character_name, '')) <> '')
-             AND NOT EXISTS (SELECT 1 FROM {$table} x WHERE x.user_id = u.id AND (TRIM(COALESCE(x.first_name, '')) <> '' OR TRIM(COALESCE(x.last_name, '')) <> ''))"
+             AND " . $unnamed($table) . ($table !== $legal ? ' AND ' . $unnamed($legal) : '')
         );
     }
 

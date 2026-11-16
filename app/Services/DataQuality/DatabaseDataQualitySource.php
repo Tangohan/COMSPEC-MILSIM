@@ -74,9 +74,19 @@ final class DatabaseDataQualitySource implements DataQualitySource
             $joins[] = 'LEFT JOIN personnel_extras pe ON pe.user_id = u.id';
             $select[] = 'pe.service_number';
         }
+        // Prénom et nom : ceux du personnage (user_profiles), saisis dans « État civil du personnage » et affichés partout.
+        // L'identité légale ne garde que ses propres usages (téléphone, date de naissance, doublons de personne réelle).
+        $profileNames = $this->hasTable('user_profiles');
+        if ($profileNames) {
+            $joins[] = 'LEFT JOIN user_profiles up ON up.user_id = u.id';
+            array_push($select, 'up.first_name', 'up.last_name');
+        }
         if ($this->hasTable('user_legal_identities')) {
             $joins[] = 'LEFT JOIN user_legal_identities uli ON uli.user_id = u.id';
-            array_push($select, 'uli.first_name', 'uli.last_name', 'uli.phone', 'uli.birth_date', 'uli.updated_at AS uli_updated');
+            array_push($select, 'uli.phone', 'uli.birth_date', 'uli.updated_at AS uli_updated', 'uli.first_name AS legal_first_name', 'uli.last_name AS legal_last_name');
+            if (!$profileNames) {
+                array_push($select, 'uli.first_name', 'uli.last_name');
+            }
         }
         if ($this->hasTable('grades')) {
             $joins[] = 'LEFT JOIN grades g ON g.id = u.grade_id';

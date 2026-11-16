@@ -1872,7 +1872,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css', 'qualification-display.css', 'eff-availability-check.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css', 'qualification-display.css', 'eff-availability-check.css', 'back-office-bands.css', 'eff-civil-dialog.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
@@ -3096,10 +3096,12 @@ class EffectifsWorkspaceController
 
             return Response::redirect($redirect);
         }
+        // Erreur de saisie : affichée dans la fenêtre « État civil du personnage », rouverte au retour sur la fiche.
+        $dialogUrl = effectifs_member_url($id, 'etat-civil');
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
+            Session::flash('eff_civil_error', ['message' => 'Session expirée : rien n’a été enregistré. Saisissez de nouveau puis enregistrez.', 'fields' => []]);
 
-            return Response::redirect($redirect);
+            return Response::redirect($dialogUrl);
         }
         $tenantId = (int) Session::get('tenant_id');
         $user = $id > 0 ? $this->userRepository->findById($id, $tenantId) : null;
@@ -3157,11 +3159,11 @@ class EffectifsWorkspaceController
         $profiles = \App\Core\Container::get(\App\Repositories\UserProfileRepository::class);
         $currentIdentity = $profiles->getByUserId($id) ?? [];
         $nameUpsert = [];
-        $nameRejected = false;
+        $nameRejected = [];
         foreach (['first_name', 'last_name'] as $nameKey) {
             $clean = \App\Support\MemberIdentity::cleanNamePart($request->input($nameKey, ''));
             if ($clean === null) {
-                $nameRejected = true;
+                $nameRejected[] = $nameKey;
             } elseif ($clean !== '' && $clean !== trim((string) ($currentIdentity[$nameKey] ?? ''))) {
                 $nameUpsert[$nameKey] = $clean;
             }
@@ -3196,10 +3198,13 @@ class EffectifsWorkspaceController
                 $nameAfter
             );
         }
-        if ($nameRejected) {
-            Session::flash('error', 'Le prénom et le nom ne peuvent pas contenir de HTML ni de caractères spéciaux de contrôle ; ils n’ont pas été modifiés. Le reste de l’état civil est enregistré.');
+        if ($nameRejected !== []) {
+            Session::flash('eff_civil_error', [
+                'message' => 'Le prénom et le nom ne peuvent pas contenir de HTML ni de caractères spéciaux de contrôle ; ils n’ont pas été modifiés. Le reste de l’état civil est enregistré.',
+                'fields' => $nameRejected,
+            ]);
 
-            return Response::redirect($redirect);
+            return Response::redirect($dialogUrl);
         }
         Session::flash('success', 'État civil mis à jour.');
 

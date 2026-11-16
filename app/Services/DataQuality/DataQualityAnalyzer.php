@@ -142,10 +142,13 @@ final class DataQualityAnalyzer
     {
         $hit = [];
         $callsign = self::norm($row['callsign'] ?? '');
-        $first = self::norm($row['first_name'] ?? '');
-        $last = self::norm($row['last_name'] ?? '');
-        if (mb_strlen($callsign) >= 2 && ($callsign === $first || $callsign === $last || ($first !== '' && $last !== '' && ($callsign === $first . ' ' . $last || $callsign === $last . ' ' . $first)))) {
-            $hit['callsign_is_real_name'] = true;
+        // Prénom et nom du personnage, et ceux de l'identité légale quand la source les fournit à part.
+        foreach ([['first_name', 'last_name'], ['legal_first_name', 'legal_last_name']] as [$fk, $lk]) {
+            $first = self::norm($row[$fk] ?? '');
+            $last = self::norm($row[$lk] ?? '');
+            if (mb_strlen($callsign) >= 2 && ($callsign === $first || $callsign === $last || ($first !== '' && $last !== '' && ($callsign === $first . ' ' . $last || $callsign === $last . ' ' . $first)))) {
+                $hit['callsign_is_real_name'] = true;
+            }
         }
         if (str_contains((string) ($row['display_name'] ?? ''), '@')) {
             $hit['display_name_is_email'] = true;
@@ -226,8 +229,10 @@ final class DataQualityAnalyzer
             'duplicate_callsign' => static fn (array $r): string => self::norm($r['callsign'] ?? ''),
             'duplicate_display_name' => static fn (array $r): string => self::norm($r['display_name'] ?? ''),
             'duplicate_identity' => static function (array $r): string {
-                $first = self::norm($r['first_name'] ?? '');
-                $last = self::norm($r['last_name'] ?? '');
+                // Même personne réelle : prénom et nom légaux (avec la date de naissance légale) quand la source les fournit.
+                $legal = array_key_exists('legal_first_name', $r) || array_key_exists('legal_last_name', $r);
+                $first = self::norm($r[$legal ? 'legal_first_name' : 'first_name'] ?? '');
+                $last = self::norm($r[$legal ? 'legal_last_name' : 'last_name'] ?? '');
                 $birth = self::isFilled($r['birth_date'] ?? null) ? substr((string) $r['birth_date'], 0, 10) : '';
 
                 return $first !== '' && $last !== '' && $birth !== '' ? $first . '|' . $last . '|' . $birth : '';

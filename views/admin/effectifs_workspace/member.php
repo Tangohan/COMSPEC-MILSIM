@@ -1676,69 +1676,18 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
     </form>
 </dialog>
 
-<dialog class="eff-dialog" id="eff-dlg-civil" aria-labelledby="eff-dlg-civil-title">
-    <form method="post" action="<?= $h(effectifs_workspace_url('membres/' . $id . '/etat-civil')) ?>" class="eff-dialog__body">
-        <header class="eff-dialog__head">
-            <h2 id="eff-dlg-civil-title">État civil du personnage</h2>
-            <button type="button" class="eff-dialog__close" data-dialog-close aria-label="Fermer">×</button>
-        </header>
-        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-        <div class="eff-dialog__grid">
-            <p class="eff-dialog__wide eff-dialog__hint">C’est le nom que tout le monde voit : fiche, annuaire, JNET, messages. Laissez vide pour ne rien changer.</p>
-            <label>Prénom<input type="text" name="first_name" id="eff-dlg-civil-first-name" maxlength="100" autocomplete="off" value="<?= $h($memberFirstName) ?>"></label>
-            <label>Nom<input type="text" name="last_name" id="eff-dlg-civil-last-name" maxlength="100" autocomplete="off" value="<?= $h($memberLastName) ?>"></label>
-            <div class="eff-dialog__wide eff-dialog__hint"><?php
-                $mnpFirst = '#eff-dlg-civil-first-name';
-                $mnpLast = '#eff-dlg-civil-last-name';
-                $mnpCallsignInput = '';
-                $mnpCallsign = $callsign;
-                $mnpAccount = $display;
-                $mnpTrigram = (string) ($identityRow['trigram'] ?? '');
-                $mnpClass = '';
-                require base_path('views/partials/member_name_preview.php');
-            ?></div>
-            <label>Surnom<input type="text" name="nickname_primary" maxlength="100" value="<?= $h($profile['nickname_primary'] ?? '') ?>"></label>
-            <label>Lieu de naissance<input type="text" name="birth_place" maxlength="150" value="<?= $h($profile['birth_place'] ?? '') ?>" placeholder="Ex. Lyon, France"></label>
-            <?php foreach (['family_situation' => 'Situation familiale', 'sex' => 'Sexe', 'blood_type' => 'Groupe sanguin'] as $optKey => $optLabel): ?>
-                <?php
-                $current = trim((string) ($profile[$optKey] ?? ''));
-                $opts = is_array($civilStatusOptions[$optKey] ?? null) ? $civilStatusOptions[$optKey] : [];
-                if ($current !== '' && !isset($opts[$current])) {
-                    $opts = [$current => $current] + $opts;
-                }
-                ?>
-                <label><?= $h($optLabel) ?>
-                    <select name="<?= $h($optKey) ?>">
-                        <option value="">Non renseigné</option>
-                        <?php foreach ($opts as $optValue => $optText): ?>
-                            <option value="<?= $h($optValue) ?>" <?= $current === (string) $optValue ? 'selected' : '' ?>><?= $h($optText) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-            <?php endforeach; ?>
-            <label>Nationalité
-                <select name="nationality">
-                    <option value="">Non précisée</option>
-                    <?php $nationalityValue = trim((string) ($profile['nationality'] ?? '')); ?>
-                    <?php if ($nationalityValue !== ''): ?><option value="<?= $h($nationalityValue) ?>" selected><?= $h($nationalityValue) ?></option><?php endif; ?>
-                    <?php foreach ((new \App\Repositories\SseIdCountryRepository())->listForTenant((int) \App\Core\Session::get('tenant_id')) as $nationalityCountry): ?>
-                        <?php if ($nationalityCountry['code'] !== $nationalityValue): ?><option value="<?= $h($nationalityCountry['code']) ?>"><?= $h($nationalityCountry['name'] . ' (' . $nationalityCountry['code'] . ')') ?></option><?php endif; ?>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label>Poids (kg)<input type="number" name="weight_kg" min="20" max="300" step="1" value="<?= $h((int) ($profile['weight_kg'] ?? 0) > 0 ? (int) $profile['weight_kg'] : '') ?>"></label>
-            <label>Taille (cm)<input type="number" name="height_cm" min="100" max="250" step="1" value="<?= $h((int) ($profile['height_cm'] ?? 0) > 0 ? (int) $profile['height_cm'] : '') ?>"></label>
-            <label class="eff-dialog__wide">Intolérances médicamenteuses<input type="text" name="drug_intolerances" maxlength="500" value="<?= $h($profile['drug_intolerances'] ?? '') ?>" placeholder="Ex. Pénicilline, AINS"></label>
-            <label class="eff-dialog__wide">Allergies<input type="text" name="allergies" maxlength="500" value="<?= $h($profile['allergies'] ?? '') ?>" placeholder="Ex. Latex, arachide"></label>
-            <label class="eff-dialog__wide">Langues parlées<input type="text" name="languages" maxlength="255" value="<?= $h($profile['languages'] ?? '') ?>" placeholder="Ex. Français, anglais, arabe"></label>
-            <label class="eff-dialog__wide">Devise<input type="text" name="motto" maxlength="255" value="<?= $h($profile['motto'] ?? '') ?>"></label>
-        </div>
-        <footer class="eff-dialog__foot">
-            <button type="button" class="eff-btn eff-btn--ghost" data-dialog-close>Annuler</button>
-            <button type="submit" class="eff-btn eff-btn--primary">Enregistrer</button>
-        </footer>
-    </form>
-</dialog>
+<?php
+$civilCountries = [];
+try {
+    foreach ((new \App\Repositories\SseIdCountryRepository())->listForTenant((int) \App\Core\Session::get('tenant_id')) as $civilCountryRow) {
+        $civilCountries[] = ['code' => (string) $civilCountryRow['code'], 'name' => (string) $civilCountryRow['name']];
+    }
+} catch (\Throwable) {
+    // Liste des pays illisible : la nationalité actuelle reste proposée, la fenêtre s'affiche.
+}
+$civilError = \App\Core\Session::getFlash('eff_civil_error');
+require __DIR__ . '/partials/member_civil_dialog.php';
+?>
 <?php endif; ?>
 
 <?php if ($canEditProfiles): ?>
