@@ -46,6 +46,9 @@ use App\Support\UserFacingExceptionMapper;
 
 class CommunityController
 {
+    /** tenants.name est en VARCHAR(255) (migrations/schema.sql), comme le maxlength du champ de l'assistant. */
+    public const COMMUNITY_NAME_MAX = 255;
+
     public function __construct(
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
@@ -1334,6 +1337,9 @@ class CommunityController
         if ($name === '') {
             return $this->flashCommunityCreateErrorAndRedirect($request, 'Le nom de la communauté est requis.', 'identity');
         }
+        if (mb_strlen($name, 'UTF-8') > self::COMMUNITY_NAME_MAX) {
+            return $this->flashCommunityCreateErrorAndRedirect($request, 'Le nom de la communauté ne peut pas dépasser ' . self::COMMUNITY_NAME_MAX . ' caractères.', 'identity');
+        }
         $user = $this->authService->user();
         if (!$user) {
             Session::flash('error', 'Connexion requise pour créer une communauté.');
@@ -1399,7 +1405,8 @@ class CommunityController
         } catch (\InvalidArgumentException $e) {
             return $this->flashCommunityCreateErrorAndRedirect($request, $e->getMessage());
         } catch (\Throwable $e) {
-            error_log('[community.create] ' . $e->getMessage());
+            error_log('[community.create] ' . $e->getMessage()
+                . (\App\Support\SqlDataTooLong::matches($e) ? ' | ' . \App\Support\SqlDataTooLong::logLine($e) : ''));
 
             return $this->flashCommunityCreateErrorAndRedirect(
                 $request,
@@ -1513,6 +1520,8 @@ class CommunityController
         try {
             $result = $this->bootstrapService->createCommunity((int) $pending['user_id'], $name, $slug, $options);
         } catch (\Throwable $e) {
+            error_log('[community.create] ' . $e->getMessage()
+                . (\App\Support\SqlDataTooLong::matches($e) ? ' | ' . \App\Support\SqlDataTooLong::logLine($e) : ''));
             $this->pendingCommunityRepository->setCreationError($token, UserFacingExceptionMapper::communityCreationMessage($e));
 
             return;

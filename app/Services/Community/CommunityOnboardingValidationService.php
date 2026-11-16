@@ -32,6 +32,12 @@ final class CommunityOnboardingValidationService
 
     public const MAX_CUSTOM_WIZARD_ROLES = 15;
 
+    /** Nom d'un rôle supplémentaire de l'assistant. */
+    public const CUSTOM_ROLE_NAME_MAX = 80;
+
+    /** Nom d'une unité : sa fonction du même nom va dans personnel_job_roles.name, VARCHAR(120). */
+    public const UNIT_NAME_MAX = 120;
+
     /**
      * Libellés pour cases à cocher (assistant création communauté).
      *
@@ -214,8 +220,10 @@ final class CommunityOnboardingValidationService
             if ($name === '' && $slug === '') {
                 continue;
             }
-            if ($name === '' || mb_strlen($name) > 80) {
-                $errors[] = 'Rôle supplémentaire #' . ($i + 1) . ' : nom requis (80 caractères max).';
+            if ($name === '') {
+                $errors[] = 'Rôle supplémentaire #' . ($i + 1) . ' : nom requis.';
+            } elseif (mb_strlen($name, 'UTF-8') > self::CUSTOM_ROLE_NAME_MAX) {
+                $errors[] = 'Le nom d’un rôle ne peut pas dépasser ' . self::CUSTOM_ROLE_NAME_MAX . ' caractères (rôle supplémentaire #' . ($i + 1) . ').';
             }
             if ($slug === '' || !preg_match('/^[a-z][a-z0-9_]{1,48}$/', $slug)) {
                 $errors[] = 'Rôle supplémentaire « ' . $name . ' » : identifiant technique invalide (lettres minuscules, chiffres, tirets bas).';
@@ -505,6 +513,8 @@ final class CommunityOnboardingValidationService
             $name = trim((string) ($u['name'] ?? ''));
             if ($name === '') {
                 $errors[] = 'Nom d’unité requis pour « ' . $key . ' ».';
+            } elseif (mb_strlen($name, 'UTF-8') > self::UNIT_NAME_MAX) {
+                $errors[] = 'Le nom d’une unité ne peut pas dépasser ' . self::UNIT_NAME_MAX . ' caractères (« ' . mb_substr($name, 0, 40, 'UTF-8') . '… »).';
             }
             $slug = trim((string) ($u['slug'] ?? ''));
             if ($slug === '' || !preg_match('/^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/', $slug)) {

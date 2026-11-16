@@ -19,6 +19,9 @@ final class UnitJobRoleSyncService
 
     public const CATEGORY_NAME = 'Organisation';
 
+    /** personnel_job_roles.name est en VARCHAR(120) alors qu'un nom d'unité peut aller jusqu'à 255 caractères. */
+    public const JOB_ROLE_NAME_MAX = 120;
+
     private PDO $pdo;
 
     private PersonnelJobRoleRepository $jobRoles;
@@ -86,7 +89,7 @@ final class UnitJobRoleSyncService
         $id = $this->jobRoles->createRole(
             $tenantId,
             $categoryId,
-            $unitName,
+            rtrim(mb_substr($unitName, 0, self::JOB_ROLE_NAME_MAX, 'UTF-8')),
             $slug,
             'Emploi lié à l’unité « ' . $unitName . ' » de l’organigramme.',
             0,

@@ -34,6 +34,9 @@ final class UserFacingExceptionMapper
         if (self::isDuplicateSlug($e)) {
             return 'Une communauté utilise déjà cette adresse courte. Choisissez-en une autre.';
         }
+        if (SqlDataTooLong::matches($e)) {
+            return 'Un texte dépasse la longueur enregistrable (' . SqlDataTooLong::reference($e) . '). Raccourcissez le nom de la communauté, des unités et des rôles puis réessayez ; si vos noms sont déjà courts, transmettez ce message au support.';
+        }
 
         return 'Impossible de créer la communauté pour le moment. Réessayez plus tard ou contactez le support.';
     }
