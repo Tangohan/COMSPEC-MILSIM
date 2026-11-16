@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\SseAccessCodeRepository;
 use App\Repositories\SseCaseRepository;
 use App\Services\Sse\SseAccessCodeService;
+use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseRedactionService;
 
 /**
@@ -21,10 +22,15 @@ final class AdminSseAccessController
     public function __construct(
         private ?SseAccessCodeService $access = null,
         private ?SseAccessCodeRepository $codes = null,
+        private ?SseClearanceService $clearance = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
+        $this->clearance ??= new SseClearanceService($this->access);
     }
+
+    /** Onglets de la page, dans l'ordre : le premier s'ouvre par défaut (?onglet=… sans JavaScript). */
+    public const TABS = ['codes', 'delivrer', 'niveaux', 'journal'];
 
     public function index(Request $request, array $params = []): Response
     {
@@ -37,9 +43,18 @@ final class AdminSseAccessController
         $cases = $casesRepo->listForTenant($tenantId, null);
         $log = $this->codes->listLogForTenant($tenantId, 40);
 
+        $tab = (string) $request->queryString('onglet', '');
+
         return Response::view('layout.main', [
             'content' => 'admin.sse_access.index',
             'title' => 'Accès renseignement',
+            // Le titre vit dans la bande d'en-tête de la vue : pas de second en-tête de shell.
+            'boSkipPageHead' => true,
+            'backOfficePageCss' => ['back-office-bands.css', 'back-office-sse-access.css'],
+            'canManage' => true,
+            'activeTab' => in_array($tab, self::TABS, true) ? $tab : self::TABS[0],
+            'maxLevel' => $this->clearance->maxLevel(),
+            'clearanceOrigin' => $this->clearance->origin(),
             'codes' => $this->codes->listActiveForTenant($tenantId),
             'cases' => $cases,
             'actionLog' => is_array($log) ? $log : [],
@@ -61,6 +76,13 @@ final class AdminSseAccessController
             return Response::redirect(url('back-office/renseignement/acces'));
         }
         $tenantId = (int) Session::get('tenant_id');
+        // Plafond : un niveau de lecture au-dessus de sa propre habilitation ne se délivre pas.
+        $level = (string) $request->input('clearance_level', SseCaseRepository::CLASS_INTERNAL);
+        if (isset(SseRedactionService::LEVELS[$level]) && !$this->clearance->allows($level)) {
+            Session::flash('error', 'Vous ne pouvez pas accorder une habilitation plus haute que la vôtre.');
+
+            return Response::redirect(url('back-office/renseignement/acces'));
+        }
         $result = $this->access->issue(
             $tenantId,
             (int) Session::get('user_id'),
@@ -70,7 +92,7 @@ final class AdminSseAccessController
             (int) $request->input('session_ttl_minutes', 240),
             (int) $request->input('max_uses', 1),
             ((int) $request->input('case_id', 0)) ?: null,
-            (string) $request->input('clearance_level', SseCaseRepository::CLASS_INTERNAL)
+            $level
         );
         if ($result['ok']) {
             Session::flash('sse_issued_code', $result['plain']);
