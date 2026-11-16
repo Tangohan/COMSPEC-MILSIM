@@ -147,6 +147,8 @@ private _click = {
 };
 // Contrôles créés par la ligne en cours de dessin : décalés ensuite vers leur colonne (mise en page en colonnes, plus bas).
 private _flMade = [];
+// Vrai pendant le dessin d'une case de grille (mise en page en colonnes, plus bas) : « info » s'y empile.
+private _flInGrid = false;
 private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1, _grp];
@@ -298,6 +300,13 @@ private _renderRow = {
         case "banner": {
             // Bandeau d'état : la situation de la mission en gros, centrée, sur la couleur de l'état.
             _row params ["", "_txt", ["_bbg", (_th get "surface")]];
+            // Bandeau sans texte visible (filet de couleur d'une notice) : un trait fin, jamais une bande pleine vide qu'on
+            // prendrait pour un bandeau de classification sans libellé (retour de jeu : barre bleue vide au-dessus de « CUI »).
+            if ((trim (_txt regexReplace ["<[^>]*>", ""])) isEqualTo "") exitWith {
+                private _rule = ["COMSPEC_RscText", [_pad, _y, _w, _pad * 0.3]] call _mk;
+                _rule ctrlSetBackgroundColor _bbg;
+                _y = _y + _pad * 0.3 + _pad / 2;
+            };
             private _bb = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
             _bb ctrlSetBackgroundColor _bbg;
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 3, _w - _pad, _rowH]] call _mk;
@@ -320,11 +329,14 @@ private _renderRow = {
             { _bigLon = _bigLon max (count (((_x select 0) call comspec_atak_native_fnc_tr) splitString "")); } forEach _btns;
             private _bigNeed = _bigLon * _bigF * 0.62 * pixelW / pixelH;
             private _bigPer = _n max 1;
-            while { _bigPer > 1 && {_bigNeed > ((_w - (_bigPer - 1) * _pad / 2) / _bigPer)} } do { _bigPer = _bigPer - 1; };
-            private _bw2 = (_w - (_bigPer - 1) * _pad / 2) / _bigPer;
+            // Écart entre deux gros boutons : sp2 (avant sp1, deux boutons pleins côte à côte se lisaient comme un seul : JE L'AI VU
+            // contre LECTURE ACCUSÉE grisé).
+            private _bigGap = _pad * 0.75;
+            while { _bigPer > 1 && {_bigNeed > ((_w - (_bigPer - 1) * _bigGap) / _bigPer)} } do { _bigPer = _bigPer - 1; };
+            private _bw2 = (_w - (_bigPer - 1) * _bigGap) / _bigPer;
             {
                 _x params ["_label", "_code", ["_col", ""], ["_enabled", true], ["_tip", ""]];
-                private _b = ["COMSPEC_RscButton", [_pad + (_forEachIndex mod _bigPer) * (_bw2 + _pad / 2), _y + (floor (_forEachIndex / _bigPer)) * (_bh2 + _pad / 2), _bw2, _bh2], _label] call _mk;
+                private _b = ["COMSPEC_RscButton", [_pad + (_forEachIndex mod _bigPer) * (_bw2 + _bigGap), _y + (floor (_forEachIndex / _bigPer)) * (_bh2 + _bigGap), _bw2, _bh2], _label] call _mk;
                 _b ctrlSetFont "EtelkaMonospaceProBold";
                 _b ctrlSetFontHeight _bigF;
                 private _bgc = switch (_col) do {
@@ -340,7 +352,7 @@ private _renderRow = {
                 _b ctrlEnable _enabled;
                 [_b, _code] call _click;
             } forEach _btns;
-            _y = _y + (ceil (_n / _bigPer)) * (_bh2 + _pad / 2);
+            _y = _y + (ceil (_n / _bigPer)) * (_bh2 + _bigGap) - _bigGap + _pad / 2;
         };
         case "edit";
         case "memo": {
@@ -866,6 +878,24 @@ private _renderRow = {
         case "info": {
             // 4e élément (facultatif, 4.2.1) : id, pour réécrire la valeur sur place (fn_formSet « info » : distance, « il y a X s »).
             _row params ["", "_label", "_value", ["_iid", ""]];
+            // Case étroite d'une grille (mise en page en colonnes, plus bas) : libellé au-dessus, valeur dessous sur toute la
+            // largeur de la case. À 38 % d'une case, « 2026-11-15 20:40 » ou « Sans échéance » passaient sur deux lignes et
+            // les filets des cases voisines ne s'alignaient plus (retour de jeu, bloc Validité de l'app Avis et vigilance).
+            if (_flInGrid && {_w < (_l get "colChar") * 34}) exitWith {
+                private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.1]] call _mk;
+                _a ctrlSetStructuredText parseText ((format ["<t size='0.8' color='" + _hTD + "'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
+                private _ah = (ctrlTextHeight _a) max (_fs * 1.1);
+                _a ctrlSetPositionH _ah; _a ctrlCommit 0;
+                private _b = ["COMSPEC_RscStructuredText", [_pad, _y + _ah, _w, _fs * 1.3]] call _mk;
+                _b ctrlSetStructuredText parseText ((format ["<t size='0.85'>%1</t>", _value]) call comspec_atak_native_fnc_tr);
+                if (_iid isEqualType "" && {_iid isNotEqualTo ""}) then { _ids set [_iid, createHashMapFromArray [["kind", "info"], ["value", _b]]]; };
+                private _bh3 = (ctrlTextHeight _b) max (_fs * 1.3);
+                _b ctrlSetPositionH _bh3; _b ctrlCommit 0;
+                private _ln = ["COMSPEC_RscText", [_pad, _y + _ah + _bh3 + pixelH, _w, pixelH]] call _mk;
+                _ln ctrlSetBackgroundColor (_th get "border");
+                _ln setVariable ["cs_rule", true];
+                _y = _y + _ah + _bh3 + pixelH * 3;
+            };
             // Libellé à gauche (62 %, retour à la ligne), valeur à droite (38 %) : les deux colonnes ne se recouvrent plus.
             private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.62 - _pad * 0.5, _fs * 1.3]] call _mk;
             _a ctrlSetStructuredText parseText ((format ["<t size='0.85' color='" + _hTD + "'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
@@ -880,6 +910,7 @@ private _renderRow = {
             // Filet discret sous chaque ligne : les fiches denses (Profil, Réseau, Debug) se lisent ligne par ligne.
             private _ln = ["COMSPEC_RscText", [_pad, _y + _ih2 - pixelH, _w, pixelH]] call _mk;
             _ln ctrlSetBackgroundColor (_th get "border");
+            _ln setVariable ["cs_rule", true];
             _y = _y + _ih2;
         };
         case "line": {
@@ -1304,6 +1335,11 @@ private _renderRow = {
             if (_rowIh > _ih) then {
                 _t ctrlSetPosition [_pad * 2 + _iw, _y + _pad / 4, _tw, _rowIh]; _t ctrlCommit 0;
                 _bg ctrlSetPosition [_pad, _y, _w, _rowIh + _pad / 2]; _bg ctrlCommit 0;
+            } else {
+                // Texte plus court que la vignette : centré sur sa hauteur (avant, collé en haut avec un vide sous le nom,
+                // bloc sujet de l'app Avis et vigilance). Ligne réécrite sur place (_pid) : laissée en haut, son texte peut grandir.
+                private _tH = ctrlTextHeight _t;
+                if (_pid isEqualTo "" && {_tH > 0}) then { _t ctrlSetPosition [_pad * 2 + _iw, _y + _pad / 4 + (_ih - _tH) / 2, _tw, _tH]; _t ctrlCommit 0; };
             };
             if ((count _edge) isEqualTo 4) then {
                 private _rim = ["COMSPEC_RscText", [_pad, _y, pixelW * 4, _rowIh + _pad / 2]] call _mk;
@@ -1424,9 +1460,15 @@ private _renderRow = {
             if (_n >= 21) then {
                 private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
                 private _side = _w * ((_frac max 0.2) min 1);
+                // QR entier dans la zone visible : sa hauteur ne dépasse jamais celle du formulaire moins les marges et la
+                // ligne d'explication qui le suit (retour de jeu : QR coupé par le haut de la zone de défilement en plein
+                // écran paysage, petit format et texte agrandi). Un QR plus petit mais entier se scanne ; au moins 2 px par
+                // module pour rester lisible.
+                _side = (_side min ((_rh - _pad * 3 - _fs * 2.6) / _ratio)) max ((_n + 8) * pixelW * 2);
                 private _m = _side / (_n + 8);
                 private _mh = _m * _ratio;
                 private _x0 = _pad + (_w - _side) / 2;
+                _y = _y + _pad / 2;
                 private _y0 = _y;
                 private _q = ["COMSPEC_RscText", [_x0, _y0, _side, _side * _ratio]] call _mk;
                 _q ctrlSetBackgroundColor [1, 1, 1, 1];
@@ -1448,7 +1490,7 @@ private _renderRow = {
                         };
                     };
                 } forEach _qrRows;
-                _y = _y0 + _side * _ratio + _pad;
+                _y = _y0 + _side * _ratio + _pad * 0.75;
             };
         };
         case "qrcard": {
@@ -1671,11 +1713,20 @@ private _flW0 = _w;
 // Carte : volets et menus déjà pensés pour le paysage (functions/map), laissés tels quels.
 private _flOn = (_rows findIf { (_x param [0, ""]) isEqualTo "flow" && {!(_x param [1, true])} }) < 0
     && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MAP"};
-private _flBarrier = ["header", "tabs", "strip", "banner", "steps", "squad", "empty", "skeleton", "image", "qr", "qrcard", "bar", "big", "title", "break", "hero"];
+// « qr » n'est plus une barrière : il reste dans la colonne de sa section, sous l'adresse qu'il code (Service à informer).
+private _flBarrier = ["header", "tabs", "strip", "banner", "steps", "squad", "empty", "skeleton", "image", "qrcard", "bar", "big", "title", "break", "hero"];
 private _flTiles = ["info", "switch", "toggle", "row", "person", "notif", "check", "status", "slider"];
+// Lignes qui finissent au ras de leur filet, sans marge dessous (fiches, listes) : la ligne d'un autre genre qui les suit
+// (boutons, texte, bandeau, QR) reçoit une marge haute. Retour de jeu : RETOUR / PARTAGER / RENOUVELER / LEVER collés au
+// dernier filet du bloc Validité de l'app Avis et vigilance. Les sections et sections repliables ont déjà la leur.
+private _flFlushK = ["info", "line", "lineseg", "linecombo", "row", "check"];
+private _flPrevK = "";
 // Une ligne dessinée en (_flX, _flY), largeur _flW ; renvoie le bas de la ligne.
 private _flPut = {
     params ["_flR", "_flX", "_flW", "_flY"];
+    private _flK0 = _flR param [0, ""];
+    if (_flPrevK in _flFlushK && {!(_flK0 in _flFlushK)} && {!(_flK0 in ["section", "fold", "gap"])}) then { _flY = _flY + _pad / 2; };
+    _flPrevK = _flK0;
     _w = _flW;
     _y = _flY;
     _flMade = [];
@@ -1697,14 +1748,32 @@ private _flSeq = {
         if (_flOn && {_flK in _flTiles}) then { while { _flJ < _flN && {((_flList select _flJ) select 0) isEqualTo _flK} } do { _flJ = _flJ + 1; }; };
         private _flRun = _flJ - _flI;
         private _flNc = if (_flRun >= 3) then { ([_flW, _flK] call comspec_atak_native_fnc_layoutCols) min _flRun } else { 1 };
+        // Grille équilibrée : le moins de colonnes pour le même nombre de rangées (4 cases sur 3 colonnes laissaient une case
+        // seule sur la seconde rangée, « Signalements reçus » à part : 2 x 2).
+        while { _flNc > 2 && {(ceil (_flRun / (_flNc - 1))) isEqualTo (ceil (_flRun / _flNc))} } do { _flNc = _flNc - 1; };
         if (_flNc >= 2) then {
             private _flCw = (_flW - (_flNc - 1) * _pad) / _flNc;
+            // Marge haute après des lignes au ras (voir _flPut) posée une fois pour toute la rangée : toutes les cases partent
+            // de la même hauteur.
+            if (_flPrevK in _flFlushK && {!(_flK in _flFlushK)}) then { _flY = _flY + _pad / 2; };
+            _flPrevK = _flK;
             private _flRowY = _flY;
             private _flEnd = _flY;
-            for "_flQ" from 0 to (_flRun - 1) do {
-                if (_flQ > 0 && {(_flQ mod _flNc) isEqualTo 0}) then { _flRowY = _flEnd; };
-                _flEnd = _flEnd max ([_flList select (_flI + _flQ), _flX + (_flQ mod _flNc) * (_flCw + _pad), _flCw, _flRowY] call _flPut);
+            // Filets d'une rangée de la grille posés à la même hauteur (celle de la case la plus haute) : une valeur sur
+            // deux lignes ne décale plus le filet de sa case par rapport à ses voisines.
+            private _flRowMade = [];
+            private _flAlign = {
+                params ["_cs", "_yb"];
+                { if (_x getVariable ["cs_rule", false]) then { _x ctrlSetPositionY (_yb - pixelH); _x ctrlCommit 0; }; } forEach _cs;
             };
+            _flInGrid = true;
+            for "_flQ" from 0 to (_flRun - 1) do {
+                if (_flQ > 0 && {(_flQ mod _flNc) isEqualTo 0}) then { [_flRowMade, _flEnd] call _flAlign; _flRowMade = []; _flRowY = _flEnd; };
+                _flEnd = _flEnd max ([_flList select (_flI + _flQ), _flX + (_flQ mod _flNc) * (_flCw + _pad), _flCw, _flRowY] call _flPut);
+                _flRowMade append _flMade;
+            };
+            _flInGrid = false;
+            [_flRowMade, _flEnd] call _flAlign;
             _flY = _flEnd;
         } else {
             for "_flQ" from 0 to (_flRun - 1) do { _flY = [_flList select (_flI + _flQ), _flX, _flW, _flY] call _flPut; };
@@ -1736,6 +1805,8 @@ if (!_flOn) then {
                 _flCols set [_flC, [_x, _flC * (_flCw + _pad), _flCw, _flCols select _flC] call _flSeq];
             } forEach _flBlocks;
             { _flYY = _flYY max _x; } forEach _flCols;
+            // La ligne pleine largeur qui suit part sous la colonne la plus longue, quelle qu'en soit la dernière ligne.
+            _flPrevK = "info";
         } else {
             { _flYY = [_x, 0, _flW0, _flYY] call _flSeq; } forEach _flBlocks;
         };
@@ -1764,6 +1835,15 @@ if (!_flOn) then {
     call _flFlush;
 };
 _w = _flW0;
+// Marge basse dans la zone de défilement : le groupe défile jusqu'au bas de son dernier contrôle, donc la dernière ligne
+// (pied de page « Les alertes viennent du portail… ») finissait au ras du bord bas, coupée par l'arrondi de l'écran.
+// Un contrôle vide d'un rembourrage sous la dernière ligne réserve cette marge, comme la console d'analyse (fn_pageSse).
+// Seulement quand le contenu défile déjà : un formulaire qui tient dans sa zone (barre d'onglets de la coque SSE) ne
+// gagne pas une barre de défilement pour quelques pixels.
+if (_y > _rh) then {
+    private _flEndPad = ["COMSPEC_RscText", [0, _y, pixelW, _pad]] call _mk;
+    _flEndPad ctrlSetBackgroundColor [0, 0, 0, 0];
+};
 uiNamespace setVariable ["COMSPEC_ATAK_Form", _fields];
 uiNamespace setVariable ["COMSPEC_ATAK_FormH", _y + _pad];
 // Défilement gardé quand la même page se redessine (retour de jeu 2.9.27 : un clic sur un réglage ramenait la liste en
