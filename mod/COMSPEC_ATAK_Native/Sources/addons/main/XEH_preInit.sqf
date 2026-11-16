@@ -268,6 +268,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["comspec_atak_native_map_show_locals", "Noms des lieux-dits", "Affiche les lieux-dits et les noms en mer sur la carte du téléphone, en zoom rapproché. Aussi réglable dans CALQUES."],
     ["comspec_atak_native_map_show_sites", "Noms des sites militaires", "Affiche les aéroports et les sites militaires (bases, camps, casernes...) sur la carte du téléphone, en zoom rapproché. Aussi réglable dans CALQUES."]
 ];
+// Réglette d'effectif sous la boussole (fn_squadBar) : réglage du joueur. Basculé en cours de partie, la carte affichée est
+// reposée tout de suite (cases et place laissée aux étiquettes) ; sinon le prochain passage de mapTick (1 s) suffit.
+["comspec_atak_native_map_squadbar", "CHECKBOX",
+    ["Afficher la réglette d'effectif sur la carte", "Les cases de votre groupe sous la boussole de la carte : une par équipier, la lettre est son équipe de feu, une pastille marque le chef. Décochez pour la masquer. L'onglet Groupe et l'ORBAT ne sont pas concernés."],
+    ["COMSPEC", "ATAK · Carte"], true, 0, {
+        if (hasInterface && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP"}) then {
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+        };
+    }] call comspec_atak_native_fnc_addSetting;
 
 // App Routes (fn_routeAction) : partage, carte d'Arma et Athena, nombre d'étapes, rayon d'arrivée, vue 3D.
 ["comspec_atak_native_route_share", "CHECKBOX",

@@ -325,6 +325,7 @@ private _map = [
     ["comspec_atak_native_map_show_locals", "", "Afficher les lieux-dits", "", true] call _cbaSwitch,
     ["comspec_atak_native_map_show_sites", "", "Afficher les sites militaires", "Aéroports, bases et camps militaires", true] call _cbaSwitch,
     ["COMSPEC_ATAK_Compass", true, "native_compass", "Boussole", "Boussole et direction en haut à gauche"] call _profSwitch,
+    ["comspec_atak_native_map_squadbar", "", "Réglette d'effectif sous la boussole", "Une case par équipier. L'onglet Groupe et l'ORBAT la gardent", true] call _cbaSwitch,
     ["COMSPEC_ATAK_CompassStyle", "CLASSIC", "Style de la boussole", [["CLASSIQUE", "CLASSIC"], ["CADRAN", "CARD"], ["FLÈCHE", "ARROW"], ["BANDEAU", "TAPE"]], "CLASSIQUE : boussole fixe, l'aiguille indique votre direction. CADRAN : le cadran tourne, le haut est toujours devant vous. FLÈCHE : l'aiguille seule. BANDEAU : réglette graduée en haut à gauche"] call _profSegment,
     ["COMSPEC_ATAK_AllyFilter", "ALL", "Alliés affichés", [["TOUS", "ALL"], ["MON GROUPE", "GROUP"], ["MON ORBAT", "ORBAT"]], ["", format ["ORBAT : %1", missionNamespace getVariable ["comspec_profile_unit", ""]]] select ((missionNamespace getVariable ["comspec_profile_unit", ""]) isNotEqualTo "")] call _profSegment,
     ["COMSPEC_ATAK_HideAllyAi", false, "", "Masquer les IA alliées", "Seuls les joueurs alliés restent sur la carte et le BFT, pas les IA"] call _profSwitch,
