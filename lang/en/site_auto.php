@@ -71710,4 +71710,8 @@ return [
     'L’identifiant du bot est le même que celui des rôles liés : si le bot est une autre application, l’invitation sera refusée.' => 'The bot ID is the same as the linked roles one: if the bot is a different application, the invitation will be refused.',
     'Réglage Discord' => 'Discord setup',
     'Régler l’application du bot' => 'Set the bot application',
+    'Réglages du bloc' => 'Block settings',
+    'Contenu du bloc personnalisé' => 'Custom block content',
+    'Cliquez pour écrire le texte (titres, listes, gras, liens)' => 'Click to write the text (headings, lists, bold, links)',
+    'data-placeholder="Cliquez pour écrire le texte (titres, listes, gras, liens)"' => 'data-placeholder="Click to write the text (headings, lists, bold, links)"',
 ];
