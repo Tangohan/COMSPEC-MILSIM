@@ -120,6 +120,15 @@ texte est long, jamais tronqué sous deux lignes), bulle en bas (`fn_toast`, deu
   trouvée dans la recherche du lanceur, Échap efface la recherche puis rend la main.
 - **Mini et plein écran, portrait et paysage** : les composants se replient (boutons et onglets passent à la ligne
   quand leur libellé ne tient pas, `_fit` rétrécit un libellé jusqu'au plancher et jamais en dessous).
+- **Marges et zone de défilement** (`fn_formRender`) : une ligne qui suit des lignes au ras de leur filet (`info`,
+  `line`, `row`, `check`) reçoit une marge haute ; un contenu qui défile garde une marge basse sous sa dernière ligne ;
+  un `qr` ne dépasse jamais la hauteur visible et reste dans la colonne de sa section ; un `banner` sans texte visible
+  est un trait fin (jamais une bande vide qu'on prendrait pour un bandeau de classification sans libellé).
+- **Grilles** : le moins de colonnes pour le même nombre de rangées, filets d'une rangée alignés, `info` étroit en
+  libellé au-dessus de la valeur.
+- **Valeurs caviardées du portail** (`fn_sseHub` `text` / `name` / `alias` / `item`) : barre en « [CAVIARDÉ] » comme
+  le PDF, nom caviardé en « Identité protégée », jamais de guillemets ni de parenthèses vides, pas de puce ou de numéro
+  doublé devant une consigne numérotée.
 
 ## 5. Avant / après (captures mentales)
 

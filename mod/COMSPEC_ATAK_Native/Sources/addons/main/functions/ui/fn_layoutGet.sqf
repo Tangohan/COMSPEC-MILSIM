@@ -208,7 +208,18 @@ private _bodyY = _sy + _statusH + _appH;
 private _bodyH = _sh - _statusH - _appH - _dockH;
 // Coque de l'app SSE (fn_sseHub) : une page SSE ouverte laisse en haut de la zone de contenu la place de la barre SOMMAIRE + fonctions,
 // que fn_pageRender dessine. Les pages mesurent leur zone avec « body » : elles se placent sous la barre sans rien changer.
-private _sseH = [0, (_font * 1.55 * 1.05) + _pad * 3.6] select ((_s getOrDefault ["activePage", ""]) in ["SSE", "WANTED", "FICHES", "SSEALERT", "SSEFIELD", "IDCHECK", "FICHIERS", "IDCOVER", "DATALINK"]);
+// Hauteur de la barre = rangées d'onglets réellement dessinées : en petit format portrait (ou texte agrandi), quatre onglets
+// (SOMMAIRE + trois fonctions) ne tiennent pas sur une rangée et le composant « tabs » de fn_formRender passe à la ligne ;
+// une seule rangée réservée cachait la seconde. Même règle que ce composant : libellé le plus long (11 caractères,
+// « CONTRÔLE ID ») à la taille plancher, largeur du formulaire (marges de fn_formRender et barre de défilement déduites).
+private _sseTabH = _font * 1.55 * 1.05;
+private _sseMinF = ([_fontCaption, 0] select _texture) max (_fontSmall * 0.6);
+private _sseNeed = 11 * _sseMinF * 0.55 * pixelW / pixelH;
+private _sseW = (_sw - _railW) - 0.014 - _pad * 4;
+private _ssePer = 4;
+while { _ssePer > 1 && {_sseNeed > (_sseW / _ssePer) * 0.86} } do { _ssePer = _ssePer - 1; };
+private _sseRows = ceil (4 / _ssePer);
+private _sseH = [0, _sseRows * (_sseTabH + pixelH * 2) - pixelH * 2 + _pad * 3.6] select ((_s getOrDefault ["activePage", ""]) in ["SSE", "WANTED", "FICHES", "SSEALERT", "SSEFIELD", "IDCHECK", "FICHIERS", "IDCOVER", "DATALINK"]);
 
 // Coque : texture de nuit (silhouette sombre) ou de jour à la couleur choisie (coyote, vert OD, noir).
 private _night = switch (profileNamespace getVariable ["COMSPEC_ATAK_Shell", "auto"]) do { case "day": { false }; case "night": { true }; default { sunOrMoon < 0.5 }; };
