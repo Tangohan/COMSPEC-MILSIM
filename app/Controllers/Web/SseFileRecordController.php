@@ -158,7 +158,8 @@ final class SseFileRecordController
         $ok = $this->records()->addAlias($tenantId, $id, mb_substr($request->inputString('alias'), 0, 160), $request->inputString('kind', 'aka'), 'known', 0, $this->ctx->userId());
         Session::flash($ok !== null ? 'success' : 'error', $ok !== null ? 'Alias ajouté.' : 'Alias vide : rien n’a été ajouté.');
 
-        return Response::redirect(url(self::BASE . '/sujet/' . $id) . '#identite');
+        // En cas d'erreur, la fiche rouvre la modale du formulaire (ancre #fx-m-…).
+        return Response::redirect(url(self::BASE . '/sujet/' . $id) . ($ok !== null ? '#identite' : '#fx-m-alias'));
     }
 
     public function aliasDelete(Request $request, array $params = []): Response
@@ -203,7 +204,7 @@ final class SseFileRecordController
         ], $this->ctx->userId());
         Session::flash($ok !== null ? 'success' : 'error', $ok !== null ? 'Ajouté à la fiche.' : 'Valeur manquante : rien n’a été ajouté.');
 
-        return Response::redirect(url(self::BASE . '/sujet/' . $id) . '#liens');
+        return Response::redirect(url(self::BASE . '/sujet/' . $id) . ($ok !== null ? '#liens' : '#fx-m-liens'));
     }
 
     public function linkDelete(Request $request, array $params = []): Response
@@ -267,7 +268,7 @@ final class SseFileRecordController
         }
         Session::flash($noteId !== null ? 'success' : 'error', $noteId !== null ? 'Annotation ajoutée au dossier.' : 'Annotation vide.');
 
-        return Response::redirect(url(self::BASE . '/sujet/' . $id) . '#annotations');
+        return Response::redirect(url(self::BASE . '/sujet/' . $id) . ($noteId !== null ? '#annotations' : '#fx-m-note'));
     }
 
     public function noteDelete(Request $request, array $params = []): Response
