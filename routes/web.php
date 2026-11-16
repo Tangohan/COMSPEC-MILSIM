@@ -1201,6 +1201,10 @@ return function (Router $router) {
     $router->get('/back-office/renseignement/acces', [\App\Controllers\Admin\AdminSseAccessController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/back-office/renseignement/acces', [\App\Controllers\Admin\AdminSseAccessController::class, 'issue'], [AuthMiddleware::class]);
     $router->post('/back-office/renseignement/acces/{id}/revoquer', [\App\Controllers\Admin\AdminSseAccessController::class, 'revoke'], [AuthMiddleware::class]);
+    // Centre de gestion des accès : habilitation et dérogations des membres (mêmes garde-fous que le bloc « Accès SSE » de la fiche effectifs).
+    $router->post('/back-office/renseignement/acces/personnels/habilitation', [\App\Controllers\Admin\AdminSseAccessController::class, 'peopleClearance'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/acces/personnels/acces', [\App\Controllers\Admin\AdminSseAccessController::class, 'peopleAccess'], [AuthMiddleware::class]);
+    $router->post('/back-office/renseignement/acces/personnels/{id}/regles/{ruleId}/retirer', [\App\Controllers\Admin\AdminSseAccessController::class, 'peopleRuleRevoke'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement/codes', [SsePortalController::class, 'staffEnter'], [AuthMiddleware::class]);
     // Back-office › Renseignement › Fichiers SSE (atak.sse.files.admin) : fiches, fusion, extractions, journal, réglages.
     $boSseFiles = \App\Controllers\Admin\AdminSseFilesController::class;
