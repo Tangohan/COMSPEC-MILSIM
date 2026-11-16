@@ -241,6 +241,10 @@ final class TenantTypeConfig
         if ($legacy !== null) {
             $uri = $legacy;
         }
+        // Les comptes rendus du JNET sont ceux du back-office ATAK : même module que /back-office/atak/comptes-rendus.
+        if ($uri === 'jnet/comptes-rendus' || str_starts_with($uri, 'jnet/comptes-rendus/')) {
+            return 'atak';
+        }
 
         // Préfixes toujours ouverts (compte, auth, navigation transversale).
         foreach ([

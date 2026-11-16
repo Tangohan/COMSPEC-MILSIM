@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Csrf;
-use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -749,13 +748,10 @@ final class AdminAarReportsController
         return $tenantId;
     }
 
-    /** Mêmes conditions que les routes des comptes rendus (TenantResourceAdminMiddleware, puis module ATAK). */
+    /** Mêmes conditions que les routes des comptes rendus (TenantResourceAdminMiddleware, puis module ATAK) : AarReportAccess, règle partagée avec le JNET. */
     private static function canOpenReports(): bool
     {
-        $gate = Gate::getInstance();
-
-        return ($gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access'))
-            && ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'view');
+        return \App\Services\Aar\AarReportAccess::canRead();
     }
 
     public function synthesisIndex(Request $request, array $params = []): Response

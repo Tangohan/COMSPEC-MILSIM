@@ -85,12 +85,21 @@ final class AarReportAdminService
         $author = trim((string) ($filters['author'] ?? ''));
         $period = (int) ($filters['period'] ?? 0);
         $openOnly = !empty($filters['open_actions']);
+        $type = trim((string) ($filters['type'] ?? ''));
+        $unit = trim((string) ($filters['unit'] ?? ''));
 
-        return array_values(array_filter($reports, static function (array $r) use ($q, $status, $author, $period, $openOnly, $now): bool {
+        return array_values(array_filter($reports, static function (array $r) use ($q, $status, $author, $period, $openOnly, $type, $unit, $now): bool {
             if ($status !== '' && (string) ($r['status'] ?? 'pending') !== $status) {
                 return false;
             }
             if ($author !== '' && trim((string) ($r['author_name'] ?? '')) !== $author) {
+                return false;
+            }
+            if ($type !== '' && self::typeOf($r) !== $type) {
+                return false;
+            }
+            // Unité de l'auteur, posée par l'appelant (author_unit) : le compte rendu n'a pas d'unité à lui.
+            if ($unit !== '' && trim((string) ($r['author_unit'] ?? '')) !== $unit) {
                 return false;
             }
             if ($openOnly && (int) ($r['totals']['open_actions'] ?? 0) < 1) {
@@ -114,6 +123,50 @@ final class AarReportAdminService
 
             return true;
         }));
+    }
+
+    /** Formulaire du compte rendu : standard, ou questionnaire d'un modèle de debriefing. */
+    public const TYPES = ['standard' => 'Formulaire standard', 'questionnaire' => 'Questionnaire'];
+
+    /** Tris de la liste (clé d'adresse => libellé). */
+    public const SORTS = [
+        'recent' => 'Plus récents',
+        'ancien' => 'Plus anciens',
+        'statut' => 'À traiter d’abord',
+        'operation' => 'Opération (A → Z)',
+        'auteur' => 'Auteur (A → Z)',
+    ];
+
+    /** @param array<string, mixed> $r */
+    public static function typeOf(array $r): string
+    {
+        return !empty($r['is_custom']) ? 'questionnaire' : 'standard';
+    }
+
+    /**
+     * Tri de la liste ; à égalité, le plus récent d'abord. Clé inconnue : plus récents.
+     *
+     * @param list<array<string, mixed>> $reports
+     * @return list<array<string, mixed>>
+     */
+    public static function sort(array $reports, string $key): array
+    {
+        $when = static fn (array $r): int => self::ts($r['reported_at'] ?? null) ?? (self::ts($r['created_at'] ?? null) ?? 0);
+        $rank = ['pending' => 0, 'missing' => 1, 'in_review' => 2, 'validated' => 3];
+        $label = static fn (array $r): string => self::lower(trim((string) ($r['operation_label'] ?? '')) !== '' ? (string) $r['operation_label'] : (string) ($r['title'] ?? ''));
+        usort($reports, static function (array $a, array $b) use ($key, $when, $rank, $label): int {
+            $recent = [$when($b), (int) ($b['id'] ?? 0)] <=> [$when($a), (int) ($a['id'] ?? 0)];
+
+            return match ($key) {
+                'ancien' => -$recent,
+                'statut' => (($rank[(string) ($a['status'] ?? 'pending')] ?? 0) <=> ($rank[(string) ($b['status'] ?? 'pending')] ?? 0)) ?: $recent,
+                'operation' => strnatcmp($label($a), $label($b)) ?: $recent,
+                'auteur' => strnatcmp(self::lower((string) ($a['author_name'] ?? '')), self::lower((string) ($b['author_name'] ?? ''))) ?: $recent,
+                default => $recent,
+            };
+        });
+
+        return $reports;
     }
 
     /**

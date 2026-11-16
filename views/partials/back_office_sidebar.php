@@ -152,6 +152,7 @@ $boNavJnetOps = $p === 'jnet/operations' || str_starts_with($p, 'jnet/operations
 $boNavJnetIntel = $p === 'jnet/renseignement' || str_starts_with($p, 'jnet/renseignement/');
 $boNavJnetTargets = $p === 'jnet/cibles' || str_starts_with($p, 'jnet/cibles/');
 $boNavJnetExploit = $p === 'jnet/exploitation' || str_starts_with($p, 'jnet/exploitation/');
+$boNavJnetReports = $p === 'jnet/comptes-rendus' || str_starts_with($p, 'jnet/comptes-rendus/');
 $boNavJnetLibrary = $p === 'jnet/bibliotheque' || str_starts_with($p, 'jnet/bibliotheque/');
 $boNavJnetMail = $p === 'jnet/courrier' || str_starts_with($p, 'jnet/courrier/');
 $boNavJnetSystem = $p === 'jnet/systeme' || str_starts_with($p, 'jnet/systeme/');

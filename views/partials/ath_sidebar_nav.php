@@ -317,6 +317,7 @@ $jnetChildren = [
             ['label' => 'Renseignement', 'href' => url('jnet/renseignement'), 'active' => $boNavJnetIntel],
             ['label' => 'Cibles', 'href' => url('jnet/cibles'), 'active' => $boNavJnetTargets],
             ['label' => 'Exploitation', 'href' => url('jnet/exploitation'), 'active' => $boNavJnetExploit],
+            ['label' => 'Comptes rendus', 'href' => url('jnet/comptes-rendus'), 'active' => $boNavJnetReports ?? false],
         ],
     ],
     [
