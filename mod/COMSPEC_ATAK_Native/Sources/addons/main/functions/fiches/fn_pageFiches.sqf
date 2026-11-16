@@ -43,6 +43,10 @@ private _esc = {
     _t
 };
 private _escBr = { params ["_t"]; ([_t] call _esc) regexReplace [toString [10], "<br/>"] };
+// Texte du portail : passages caviardés en « [CAVIARDÉ] », sans guillemets ni parenthèses vides (fn_sseHub « text »).
+private _clean = { params ["_t"]; ["text", _t] call comspec_atak_native_fnc_sseHub };
+// Nom d'un sujet : « Identité protégée » s'il est caviardé, « Identité inconnue » s'il est vide (fn_sseHub « name »).
+private _who = { params ["_f"]; ["name", [_f get "name", "Identité inconnue"]] call comspec_atak_native_fnc_sseHub };
 // Marquage de classification : couleurs des bandeaux américains (vert, bleu, rouge, orange). [fond RGBA, texte, accent].
 private _markCol = {
     params ["_m"];
@@ -167,7 +171,7 @@ if (_open isNotEqualTo "") exitWith {
             _s set ["backSub", ["FICHES", { ["shareClose"] call comspec_atak_native_fnc_fichesAction; }]];
             _rows pushBack ([_mark] call _banner);
             _rows pushBack ([[_f get "ref"] call _esc] call _statusRow);
-            private _title = ["title", _open] call comspec_atak_native_fnc_fichesAction;
+            private _title = [["title", _open] call comspec_atak_native_fnc_fichesAction] call _clean;
             _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t><br/><t size='0.85' color='%2'>%3 · %4</t><br/><t size='0.75' color='%2'>Seule la référence part. Le destinataire lit la fiche selon SON habilitation : le site refuse ce qui la dépasse.</t>",
                 [[_title, ["kindLabel", _f get "kind"] call comspec_atak_native_fnc_fichesAction] select (_title isEqualTo "")] call _esc, _muted, [_f get "ref"] call _esc, [_f get "mark"] call _esc]];
             private _btOn = ["on"] call comspec_atak_native_fnc_btAction;
@@ -214,12 +218,13 @@ if (_open isNotEqualTo "") exitWith {
             _rows pushBack ["strip", format ["<t font='COMSPEC_BarlowBold' size='0.85'>%1</t>", toUpper ([[_f get "auth", _authority] select ((_f get "auth") isEqualTo "")] call _esc)],
                 format ["<t font='EtelkaMonospacePro' size='0.85'>%1</t>", [_f get "ref"] call _esc], [0.071, 0.09, 0.114, 1]];
             _rows pushBack ([""] call _statusRow);
-            private _alias = _f get "alias";
-            private _who = format ["<t font='COMSPEC_BarlowBold' size='%1'>%2</t>%3<br/><t size='0.85' color='%4'>%5</t>",
-                1.35 * _z, [[_f get "name", "Identité inconnue"] select ((_f get "name") isEqualTo "")] call _esc,
+            // Alias vide ou caviardé : pas de « dit « » » orphelin.
+            private _alias = ["alias", _f get "alias"] call comspec_atak_native_fnc_sseHub;
+            private _whoTxt = format ["<t font='COMSPEC_BarlowBold' size='%1'>%2</t>%3<br/><t size='0.85' color='%4'>%5</t>",
+                1.35 * _z, [[_f] call _who] call _esc,
                 ["", format ["<br/><t color='%1' size='0.9'>dit « %2 »</t>", _dim, [_alias] call _esc]] select (_alias isNotEqualTo ""),
                 _muted, [[_f] call _typeLabel] call _esc];
-            _rows pushBack ["person", _d + "app_wanted.paa", _who, [], _rgb];
+            _rows pushBack ["person", _d + "app_wanted.paa", _whoTxt, [], _rgb];
             private _tName = [_f get "threat"] call _threatName;
             if (_tName isNotEqualTo "") then {
                 _rows pushBack ["text", format ["<t font='EtelkaMonospaceProBold' size='0.95'>%1</t> <t font='COMSPEC_BarlowBold' color='%2'>%3</t>",
@@ -230,6 +235,7 @@ if (_open isNotEqualTo "") exitWith {
             };
             private _sec = {
                 params ["_title", "_text", ["_hot", false]];
+                _text = [_text] call _clean;
                 if (_text isEqualTo "") exitWith {};
                 _rows pushBack ["section", _title, ""];
                 _rows pushBack ["text", [format ["<t color='%1'>%2</t>", ["#e3ebe7", "#ffd2cc"] select _hot, [_text] call _escBr]] call _sz,
@@ -241,6 +247,7 @@ if (_open isNotEqualTo "") exitWith {
             ["Observations", _f get "remarks"] call _sec;
             private _fact = {
                 params ["_label", "_v"];
+                _v = [_v] call _clean;
                 if (_v isEqualTo "") exitWith {};
                 _rows pushBack ["info", _label, [_v] call _esc];
             };
@@ -256,7 +263,7 @@ if (_open isNotEqualTo "") exitWith {
             private _links = [["Véhicules", _f get "vehicles"], ["Adresses", _f get "addresses"], ["Personnes liées", _f get "people"]] select { (count (_x select 1)) > 0 };
             if (_links isNotEqualTo []) then {
                 _rows pushBack ["section", "Liens", ""];
-                { _x params ["_label", "_items"]; _rows pushBack ["info", _label, (_items apply { [_x] call _esc }) joinString "<br/>"]; } forEach _links;
+                { _x params ["_label", "_items"]; _rows pushBack ["info", _label, (_items apply { [[_x] call _clean] call _esc }) joinString "<br/>"]; } forEach _links;
             };
             _rows pushBack ["section", "Validité", ""];
             ["Émise le", _f get "issued"] call _fact;
@@ -379,7 +386,7 @@ if ((count _all) isEqualTo 0 && {_age >= 0} && {(_store getOrDefault ["err", ""]
 {
     private _f = _x;
     private _rgb = [_f get "threat"] call _threatRgb;
-    private _alias = _f get "alias";
+    private _alias = ["alias", _f get "alias"] call comspec_atak_native_fnc_sseHub;
     private _tName = [_f get "threat"] call _threatName;
     private _line2 = format ["<t size='0.8' color='%1'>%2%3 · %4</t>", _muted,
         ["", format ["<t color='%1'>« %2 »</t> · ", _dim, [_alias] call _esc]] select (_alias isNotEqualTo ""), [[_f] call _typeLabel] call _esc, [_f get "ref"] call _esc];
@@ -387,7 +394,7 @@ if ((count _all) isEqualTo 0 && {_age >= 0} && {(_store getOrDefault ["err", ""]
     private _tCol = (_threat getOrDefault [_f get "threat", ["", 0, _dim]]) select 2;
     _rows pushBack ["person", _d + "app_wanted.paa",
         format ["<t font='COMSPEC_BarlowBold' size='%1'>%2</t><br/><t font='EtelkaMonospaceProBold' size='0.75'>%3</t> <t font='COMSPEC_BarlowBold' size='0.85' color='%4'>%5</t>%6%7<br/><t size='0.72' color='%8'>%9</t>",
-            1.05 * _z, [[_f get "name", "Identité inconnue"] select ((_f get "name") isEqualTo "")] call _esc,
+            1.05 * _z, [[_f] call _who] call _esc,
             [_f get "threat"] call _bar, _tCol, toUpper _tName,
             ["", format [" <t font='COMSPEC_BarlowBold' size='0.8' color='%1'>· ARMÉ</t>", _alert]] select ((_f get "armed") isEqualTo "yes"),
             ["", "<br/>" + _line2] select !_compact,
