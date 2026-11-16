@@ -29,8 +29,14 @@
   var K = window.EffKit;
   var canManage = root.hasAttribute('data-can-manage');
   var live = root.querySelector('[data-chain-live]');
-  var path = root.querySelector('[data-chain-path]');
-  var q = root.querySelector('[data-chain-q]');
+  // Le champ « Remonter la chaîne » et le fil vivent dans l’onglet Organigramme, remplacé à chaque actualisation.
+  var path = null;
+  var q = null;
+  function bindTools() {
+    path = root.querySelector('[data-chain-path]');
+    q = root.querySelector('[data-chain-q]');
+  }
+  bindTools();
   var menu = root.querySelector('[data-chain-menu]');
   var pageUrl = root.getAttribute('data-chain-url') || '';
   var assignUrl = root.getAttribute('data-chain-assign-url') || '';
@@ -121,9 +127,9 @@
     var part = ids.filter(function (id) { return norm(members[id].label).indexOf(v) !== -1; });
     return part.length ? parseInt(part[0], 10) : 0;
   }
-  if (q) {
-    q.addEventListener('input', function () { follow(findMember(q.value)); });
-  }
+  root.addEventListener('input', function (e) {
+    if (q && e.target === q) follow(findMember(q.value));
+  });
 
   // ——— Échanges avec le serveur ———
   function failure(message, extra) {
@@ -178,6 +184,23 @@
     badge.textContent = count > 99 ? '99+' : String(count);
     badge.title = fill('%1 à voir', count);
   }
+  /** Pastille d’un lien de la sous-navigation « Chaîne de commandement » (shell.php). */
+  function updateSubnavBadge(key, count) {
+    var link = document.querySelector('[data-chn-subnav="' + key + '"]');
+    if (!link || typeof count !== 'number') return;
+    var badge = link.querySelector('[data-chn-subnav-n]');
+    if (count < 1) {
+      if (badge) badge.remove();
+      return;
+    }
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'chn-subnav__n';
+      badge.setAttribute('data-chn-subnav-n', '');
+      link.appendChild(badge);
+    }
+    badge.textContent = count > 99 ? '99+' : String(count);
+  }
 
   /** Remplace la zone vivante en gardant les sections ouvertes et, sauf demande, les choix non enregistrés du tableau. */
   function swap(json, keepChoices) {
@@ -189,6 +212,7 @@
         if (sel.value !== sel.getAttribute('data-chain-initial')) choices[sel.id] = sel.value;
       });
     }
+    var typed = q ? q.value : '';
     live.innerHTML = json.html;
     live.querySelectorAll('details[id]').forEach(function (d) {
       if (Object.prototype.hasOwnProperty.call(openState, d.id)) d.open = openState[d.id];
@@ -197,10 +221,16 @@
       var sel = document.getElementById(id);
       if (sel && sel.querySelector('option[value="' + choices[id] + '"]')) sel.value = choices[id];
     });
+    bindTools();
+    if (q) q.value = typed;
     loadData();
     follow(followed);
     updateBulk();
     updateTabBadge(json.missing);
+    updateSubnavBadge('chaine', json.missing);
+    updateSubnavBadge('adequation', json.gaps);
+    // Onglet ouvert et filtres de l’organigramme : réappliqués par eff-chain-page.js.
+    root.dispatchEvent(new CustomEvent('chain:swapped'));
   }
   function refresh(keepChoices) {
     return request(refreshUrl()).then(function (json) { swap(json, keepChoices !== false); });
@@ -208,7 +238,8 @@
 
   function highlight(unitId) {
     if (!unitId) return;
-    var el = live.querySelector('.effk-slot[data-chain-slot="' + unitId + '"]');
+    var el = live.querySelector('[data-chn-card="' + unitId + '"]');
+    if (el && el.offsetParent === null) el = null;
     if (!el) return;
     el.classList.add('is-saved');
     setTimeout(function () { el.classList.remove('is-saved'); }, 2400);
@@ -250,11 +281,17 @@
       dlgConfirm.removeAttribute('data-label');
     }
   }
-  /** o : kicker, title, body (HTML déjà échappé), confirm (libellé, absent = pas de bouton), danger, onConfirm, onBack. */
+  /**
+   * o : kicker (ligne sous le titre), title, body (HTML déjà échappé), confirm (libellé, absent = pas de bouton),
+   * danger, onConfirm, onBack, dismiss (libellé du bouton de fermeture, « Annuler » par défaut).
+   */
   function showDialog(o) {
     if (!dlg) return false;
     K.closePop(false);
     if (!dlg.open) opener = document.activeElement;
+    var dismiss = dlg.querySelector('[data-chain-dlg-dismiss]');
+    if (dismiss) dismiss.textContent = o.dismiss || 'Annuler';
+    dlgBody.onclick = null;
     dlg.querySelector('[data-chain-dlg-kicker]').textContent = o.kicker || '';
     dlg.querySelector('[data-chain-dlg-title]').textContent = o.title || '';
     dlgBody.innerHTML = o.body || '';
@@ -492,6 +529,45 @@
     if (ok) dlgBody.querySelector('[data-chain-assign-unit]').focus();
   }
 
+  // ——— Fenêtre de détail d’un poste (modèle <template data-chn-detail> rendu par le serveur) ———
+  function openDetail(unitId) {
+    var tpl = live.querySelector('template[data-chn-detail="' + unitId + '"]');
+    if (!tpl) return false;
+    var ok = showDialog({
+      kicker: tpl.getAttribute('data-chn-sub') || '',
+      title: tpl.getAttribute('data-chn-title') || '',
+      body: tpl.innerHTML,
+      dismiss: 'Fermer'
+    });
+    if (!ok) return false;
+    dlgBody.onclick = function (e) {
+      var act = e.target.closest('[data-chn-act]');
+      var pick = act && act.getAttribute('data-chn-act') === 'pick';
+      var setup = e.target.closest('.adq-act[href*="#eff-chain-setup"]');
+      if ((pick || setup) && canManage && units[unitId]) {
+        e.preventDefault();
+        openPicker(unitId);
+        return;
+      }
+      if (!act) return;
+      var mid = parseInt(act.getAttribute('data-member') || '0', 10);
+      if (act.getAttribute('data-chn-act') === 'follow' && members[mid]) {
+        opener = null;
+        closeDialog();
+        root.dispatchEvent(new CustomEvent('chain:reveal', { detail: { panel: 'organigramme' } }));
+        if (q) q.value = members[mid].label;
+        follow(mid);
+        if (path) path.scrollIntoView({ block: 'nearest' });
+        if (q) q.focus({ preventScroll: true });
+      } else if (act.getAttribute('data-chn-act') === 'move' && canManage) {
+        openAssign(mid);
+      }
+    };
+    var first = dlgBody.querySelector('button, a[href]');
+    if (first) first.focus();
+    return true;
+  }
+
   // ——— Tableau des chefs ———
   function bulkForm() {
     return live.querySelector('[data-chain-bulk]');
@@ -549,9 +625,10 @@
     window.history.replaceState(null, '', u.toString());
     live.setAttribute('aria-busy', 'true');
     refresh(true).then(function () {
+      root.dispatchEvent(new CustomEvent('chain:reveal', { detail: { panel: 'releve' } }));
       var panel = document.getElementById('eff-chain-people-panel');
       if (panel) {
-        panel.open = true;
+        if (panel.tagName === 'DETAILS') panel.open = true;
         panel.scrollIntoView({ block: 'start' });
       }
     }).catch(function (err) {
@@ -610,6 +687,11 @@
       return;
     }
     if (!plainClick(e)) return;
+    var cardEl = e.target.closest('[data-chn-card]');
+    if (cardEl) {
+      if (openDetail(parseInt(cardEl.getAttribute('data-chn-card'), 10))) e.preventDefault();
+      return;
+    }
     var slot = e.target.closest('[data-chain-slot]');
     if (slot && canManage) {
       e.preventDefault();

@@ -34,7 +34,6 @@ final class BackOfficeMenuCoverageTest extends TestCase
         'back-office/roles' => 'liste ouverte depuis Rôles et droits',
         'back-office/roles-functions/referentiel' => 'ouverte depuis Fonctions et emplois',
         'back-office/roles-functions/catalogue' => 'ouverte depuis Fonctions et emplois',
-        'back-office/roles-functions' => 'ouverte depuis Fonctions et emplois',
         'back-office/personnel-job-roles/kits' => 'ouverte depuis Fonctions et emplois',
         'back-office/personnel-job-roles/assignments' => 'ouverte depuis Fonctions et emplois',
         'back-office/personnel-job-roles' => 'ouverte depuis Fonctions et emplois',

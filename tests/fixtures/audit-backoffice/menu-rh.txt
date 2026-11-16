@@ -5,7 +5,10 @@ Mon service | /mon-service
 Effectifs | /back-office/ressources/effectifs
   Liste des membres | /back-office/ressources/effectifs
   Affectations | /back-office/ressources/effectifs/affectations
-  Chaîne de commandement | /back-office/ressources/effectifs/chaine
+  Chaîne de commandement
+    Vue de la chaîne | /back-office/ressources/effectifs/chaine
+    Adéquation de l’organisation | /back-office/ressources/effectifs/chaine/adequation
+    Échelons attendus | /back-office/ressources/effectifs/chaine/adequation?onglet=echelons
   Qualifications des membres | /back-office/ressources/effectifs/qualifications
   Anciens membres | /back-office/ressources/effectifs/departs
   Sans compte | /back-office/ressources/effectifs/sans-comptes

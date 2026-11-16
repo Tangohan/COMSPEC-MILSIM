@@ -109,9 +109,14 @@ final class PersonnelCommandChainService
         });
 
         $roleByUser = [];
+        $callsignByUser = [];
         foreach ($membersByUnit as $unitKey => $list) {
             foreach ($list as $m) {
                 $muid = (int) ($m['user_id'] ?? 0);
+                $cs = trim((string) ($m['callsign'] ?? ''));
+                if ($muid > 0 && $cs !== '') {
+                    $callsignByUser[$muid] ??= $cs;
+                }
                 if ($muid > 0 && (int) ($primaryByUser[$muid] ?? 0) === (int) $unitKey) {
                     $roleByUser[$muid] ??= trim((string) ($m['role_name'] ?? ''));
                 }
@@ -135,6 +140,8 @@ final class PersonnelCommandChainService
                 'unit_id' => $unitId,
                 'unit_name' => $unitId > 0 ? trim((string) ($unitsById[$unitId]['name'] ?? '')) : '',
                 'role_name' => (string) ($roleByUser[$userId] ?? ''),
+                // Indicatif radio, seulement s’il ne sert pas déjà de nom affiché.
+                'callsign' => ($callsignByUser[$userId] ?? '') !== $label ? (string) ($callsignByUser[$userId] ?? '') : '',
                 'reports_to_id' => $reportsTo,
                 'reports_to_label' => $reportsTo > 0 ? ($labels[$reportsTo] ?? '—') : '',
                 'chain_labels' => array_values(array_filter(array_map(
