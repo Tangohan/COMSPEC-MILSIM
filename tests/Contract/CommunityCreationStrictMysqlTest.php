@@ -306,14 +306,16 @@ final class CommunityCreationStrictMysqlTest extends TestCase
         self::assertIsArray($tenant);
         self::assertSame($name, $tenant['name'], 'nom enregistré sans perte');
         self::assertSame($type, $tenant['tenant_type']);
-        if (array_key_exists('owner_user_id', $tenant)) {
-            self::assertSame($result['user_id'], (int) $tenant['owner_user_id']);
-        }
-        $u = $this->pdo->prepare('SELECT u.tenant_id, r.slug FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id = ?');
-        $u->execute([$result['user_id']]);
-        $founder = $u->fetch(PDO::FETCH_ASSOC);
-        self::assertSame($tenantId, (int) $founder['tenant_id']);
-        self::assertSame('community_owner', $founder['slug'], 'fondateur propriétaire');
+        self::assertSame($result['user_id'], (int) $tenant['owner_user_id'], 'propriétaire de la communauté');
+        // Un compte, des appartenances : le fondateur garde son compte et reçoit le rôle community_owner de la communauté.
+        $users = new UserRepository();
+        $memberships = array_map(static fn (array $m): int => (int) ($m['tenant_id'] ?? 0), $users->communityMemberships()->listActiveForUser($result['user_id']));
+        self::assertContains($tenantId, $memberships, 'appartenance du fondateur');
+        $owner = $this->pdo->prepare("SELECT id FROM roles WHERE tenant_id = ? AND slug = 'community_owner'");
+        $owner->execute([$tenantId]);
+        $ownerRoleId = (int) $owner->fetchColumn();
+        self::assertGreaterThan(0, $ownerRoleId, 'rôle community_owner');
+        self::assertTrue($users->userHasTenantRole($result['user_id'], $ownerRoleId), 'fondateur propriétaire');
 
         foreach (['roles', 'permissions'] as $table) {
             self::assertGreaterThan(0, $this->countFor($table, $tenantId), $table);

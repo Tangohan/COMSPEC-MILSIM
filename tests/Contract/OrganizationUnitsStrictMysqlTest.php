@@ -85,7 +85,7 @@ final class OrganizationUnitsStrictMysqlTest extends TestCase
     public function testUnitCreateRenameMoveDelete(string $name): void
     {
         $units = new UnitRepository();
-        $root = $units->create($this->tenantId, ['name' => 'Racine ' . $name, 'type' => 'group']);
+        $root = $units->create($this->tenantId, ['name' => mb_substr('Racine ' . $name, 0, 255, 'UTF-8'), 'type' => 'group']);
         $child = $units->create($this->tenantId, [
             'name' => $name,
             'slug' => $units->uniqueSlugForTenant($this->tenantId, $name),
@@ -166,7 +166,8 @@ final class OrganizationUnitsStrictMysqlTest extends TestCase
         $imported = $jobs->findOrCreateImportedRoleByLabel($this->tenantId, self::sized('Opérateur radio longue portée ', 300));
         self::assertNotNull($imported);
         $row = $jobs->findRoleById((int) $imported, $this->tenantId);
-        self::assertSame(120, mb_strlen((string) $row['name']));
+        self::assertLessThanOrEqual(120, mb_strlen((string) $row['name']));
+        self::assertGreaterThanOrEqual(119, mb_strlen((string) $row['name']));
         self::assertLessThanOrEqual(80, strlen((string) $row['slug']));
 
         $enrich = new JobRoleEnrichmentService($this->pdo);

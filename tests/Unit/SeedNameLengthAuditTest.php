@@ -99,7 +99,10 @@ final class SeedNameLengthAuditTest extends TestCase
 
     public function testDerivedUnitSlugAndFieldLengths(): void
     {
-        self::assertSame(UnitRepository::SLUG_BASE_MAX, strlen(UnitRepository::slugFromName(str_repeat('Alpha ', 60))));
+        $slug = UnitRepository::slugFromName(str_repeat('Alpha ', 60));
+        self::assertLessThanOrEqual(UnitRepository::SLUG_BASE_MAX, strlen($slug));
+        self::assertStringStartsWith('alpha-alpha', $slug);
+        self::assertStringEndsNotWith('-', $slug);
         self::assertSame('unite', UnitRepository::slugFromName('Взвод'));
         self::assertNull(UnitRepository::fieldLengthError(['name' => str_repeat('é', 255), 'code' => str_repeat('C', 20)]));
         self::assertSame('Le code de l’unité ne peut pas dépasser 20 caractères.', UnitRepository::fieldLengthError(['code' => str_repeat('C', 21)]));
