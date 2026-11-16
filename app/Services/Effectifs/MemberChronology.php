@@ -29,6 +29,7 @@ final class MemberChronology
         'document' => 'Documents RH',
         'depart' => 'Départs',
         'fiabilisation' => 'Fiabilisation',
+        'disponibilite' => 'Disponibilité',
     ];
 
     /** Carte de la fiche qui détaille chaque type (ancre conservée de la fiche d'origine). */
@@ -46,6 +47,7 @@ final class MemberChronology
         'document' => 'documents-rh',
         'depart' => 'depart',
         'fiabilisation' => 'fiabilisation',
+        'disponibilite' => 'disponibilite',
     ];
 
     /**
@@ -175,6 +177,13 @@ final class MemberChronology
         // Campagnes de fiabilisation des données : une ligne par confirmation de la fiche par le membre.
         foreach ($rows('data_campaigns') as $d) {
             $add('fiabilisation', (string) ($d['confirmed_at'] ?? ''), 'Fiche fiabilisée — campagne ' . (int) ($d['campaign_year'] ?? 0), trim((string) ($d['title'] ?? '')));
+        }
+        // Vérifications de disponibilité (AvailabilityCheckHistory::present) : conclusion retenue, auteur.
+        foreach ($rows('availability_checks') as $c) {
+            $title = str_replace('%1', (string) ($c['conclusion_label'] ?? ''), 'Disponibilité vérifiée : %1');
+            $detail = str_replace('%1', (string) ($c['by'] ?? ''), 'Par %1')
+                . (!empty($c['corrected']) ? ' · ' . str_replace('%1', (string) ($c['proposed_label'] ?? ''), 'proposée : %1') : '');
+            $add('disponibilite', (string) ($c['created_at'] ?? ''), $title, $detail);
         }
         if (is_array($sources['departure'] ?? null)) {
             $dep = $sources['departure'];

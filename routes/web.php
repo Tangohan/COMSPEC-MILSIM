@@ -2721,6 +2721,10 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/suivi/relancer', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'bulkRemind'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/suivi/export', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'exportMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/suivi/{action}', [\App\Controllers\Admin\MemberDossierSuiviController::class, 'act'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Vérification de disponibilité guidée (fiche et tableur) : étapes en JSON, enregistrement unitaire ou groupé.
+    $router->get('/back-office/ressources/effectifs/membres/{id}/disponibilite/verification', [\App\Controllers\Admin\MemberAvailabilityCheckController::class, 'run'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/disponibilite/verification', [\App\Controllers\Admin\MemberAvailabilityCheckController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/disponibilite/verifications', [\App\Controllers\Admin\MemberAvailabilityCheckController::class, 'saveMany'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/departs/{id}/archiver', [EffectifsWorkspaceController::class, 'archiveDepartureDossier'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/departs/{id}/reintegrer', [EffectifsWorkspaceController::class, 'reinstateDeparture'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // GET .../effectifs/elevations : onglet « Élévations » de Demandes RH (BackOfficeTabs), l'ancienne adresse répond 301.
