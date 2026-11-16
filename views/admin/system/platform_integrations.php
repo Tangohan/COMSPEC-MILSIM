@@ -147,6 +147,15 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                 <label class="bo-int-field"><span class="bo-int-field__label"><?= $h(__('companion.api_key')) ?></span>
                     <input type="password" name="companion_api_key" class="bo-int-input" autocomplete="new-password" minlength="32" maxlength="128" placeholder="<?= $h(__('companion.key_keep')) ?>">
                 </label>
+                <label class="bo-int-field"><span class="bo-int-field__label"><?= $h(__('companion.client_id')) ?></span>
+                    <input type="text" name="companion_client_id" class="bo-int-input bo-int-mono" inputmode="numeric" pattern="[0-9]{17,20}" maxlength="20" autocomplete="off" value="<?= $h((string) ($companionApp['client_id'] ?? '')) ?>">
+                    <small><?= $h(__('companion.client_id_help')) ?></small>
+                </label>
+                <label class="bo-int-field"><span class="bo-int-field__label"><?= $h(__('companion.client_secret')) ?></span>
+                    <input type="password" name="companion_client_secret" class="bo-int-input" autocomplete="new-password" maxlength="64">
+                    <small><?= $h(__(!empty($companionApp['has_secret']) ? 'companion.secret_saved' : 'companion.secret_missing')) ?> <?= $h(__('companion.secret_help')) ?></small>
+                </label>
+                <p class="bo-int-card__desc"><?= $h(__('companion.redirect_help')) ?> <code><?= $h((string) ($companionApp['redirect_uri'] ?? '')) ?></code></p>
                 <button type="submit" class="bo-int-btn bo-int-btn--solid"><?= $h(__('events.save')) ?></button>
             </form>
         </div>

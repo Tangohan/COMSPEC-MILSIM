@@ -35,6 +35,7 @@ final class DiscordBotInvite
         private ?DiscordLinkedRoles $discord = null,
         private ?DiscordBotRepository $repo = null,
         private ?string $key = null,
+        private ?DiscordCompanionSettings $companion = null,
     ) {
     }
 
@@ -55,7 +56,17 @@ final class DiscordBotInvite
 
     public function configured(): bool
     {
-        return $this->discord()->configured();
+        $own = $this->companion()->clientId();
+
+        return $own !== '' ? $this->companion()->hasClientSecret() : $this->discord()->configured();
+    }
+
+    /** Application Discord qui invite et échange le code : celle du bot si elle est réglée, sinon celle des rôles liés. */
+    private function inviteApp(): DiscordLinkedRoles
+    {
+        $own = $this->companion()->clientId();
+
+        return $own === '' ? $this->discord() : $this->discord()->withApplication($own, $this->companion()->clientSecret());
     }
 
     /** Nonce à garder en session et state signé qui l'embarque. */
@@ -92,7 +103,7 @@ final class DiscordBotInvite
 
     public function inviteUrl(string $state, bool $withRoles = false): string
     {
-        $id = $this->discord()->clientId();
+        $id = $this->inviteApp()->clientId();
         if ($id === '') {
             return '';
         }
@@ -126,7 +137,7 @@ final class DiscordBotInvite
         if (!$this->repo()->schemaReady()) {
             return ['ok' => false, 'error' => 'schema'];
         }
-        $guilds = $this->discord()->guildsOfInviter($code, self::redirectUri());
+        $guilds = $this->inviteApp()->guildsOfInviter($code, self::redirectUri());
         if ($guilds === null) {
             return ['ok' => false, 'error' => 'oauth'];
         }
@@ -161,6 +172,11 @@ final class DiscordBotInvite
     private function discord(): DiscordLinkedRoles
     {
         return $this->discord ??= new DiscordLinkedRoles();
+    }
+
+    private function companion(): DiscordCompanionSettings
+    {
+        return $this->companion ??= new DiscordCompanionSettings(null, $this->discord);
     }
 
     private function repo(): DiscordBotRepository

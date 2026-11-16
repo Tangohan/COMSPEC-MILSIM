@@ -63,6 +63,22 @@ final class DiscordLinkedRoles
 
     // ---- Réglages -----------------------------------------------------------------------------------------------
 
+    /**
+     * Même service avec les identifiants d'une autre application Discord (celle du bot), pour l'échange du code d'invitation.
+     */
+    public function withApplication(string $clientId, string $clientSecret): self
+    {
+        $copy = clone $this;
+        $encrypted = SecretCipher::encrypt($clientSecret);
+        $copy->read = static fn (string $k): string => match ($k) {
+            self::SETTING_CLIENT_ID => $clientId,
+            self::SETTING_SECRET => $encrypted,
+            default => '',
+        };
+
+        return $copy;
+    }
+
     public function clientId(): string
     {
         return trim($this->setting(self::SETTING_CLIENT_ID));
