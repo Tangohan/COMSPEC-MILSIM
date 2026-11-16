@@ -650,10 +650,18 @@ final class SseWantedNoticePdf
         $pdf->Rect($x + 0.4, $y + 0.4, $w - 0.8, $h - $strip - 0.4, 'CNZ');
         $pdf->Ellipse($x + $w / 2, $y + $h * 0.86, $w * 0.36, $h * 0.26, 0, 0, 360, 'F');
         $pdf->StopTransform();
-        $pdf->SetFillColor(...self::INK);
-        $pdf->Rect($x, $y + $h - $strip, $w, $strip, 'F');
+        $soft = ($d['notice_color'] ?? null) !== null;
+        if ($soft) {
+            // Notice de couleur : bandeau clair et discret (même silhouette que la fiche de vigilance), le cadre garde un filet fin.
+            $pdf->SetFillColor(228, 231, 235);
+            $pdf->Rect($x + 0.4, $y + $h - $strip, $w - 0.8, $strip - 0.4, 'F');
+            $pdf->SetTextColor(...self::MUTED);
+        } else {
+            $pdf->SetFillColor(...self::INK);
+            $pdf->Rect($x, $y + $h - $strip, $w, $strip, 'F');
+            $pdf->SetTextColor(255, 255, 255);
+        }
         $pdf->SetFont($this->sans, 'B', 6.8);
-        $pdf->SetTextColor(255, 255, 255);
         $pdf->SetXY($x, $y + $h - $strip + 1.0);
         $pdf->Cell($w, 3.2, mb_strtoupper($this->t('photo_none')[$this->lang], 'UTF-8'), 0, 0, 'C');
         $pdf->SetFont($this->sans, '', 5.8);

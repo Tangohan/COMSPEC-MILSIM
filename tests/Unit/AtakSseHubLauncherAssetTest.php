@@ -153,7 +153,9 @@ final class AtakSseHubLauncherAssetTest extends TestCase
         // fn_navigate accepte toujours toute page déclarée ; rien de propre au dossier n'y a été ajouté.
         $nav = $this->main('functions/ui/fn_navigate.sqf');
         self::assertStringContainsString('+(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });', $nav);
-        self::assertStringNotContainsString('sseHub', $nav);
+        // Seule la mémoire des apps récentes connaît l'app SSE (une fonction ouverte y compte pour l'app).
+        self::assertSame(1, substr_count($nav, 'comspec_atak_native_fnc_sseHub'));
+        self::assertStringContainsString('["recent", _page] call comspec_atak_native_fnc_sseHub', $nav);
         self::assertStringNotContainsString('SSEHUB', $nav);
         // Le pack SSE ouvre toujours ses pages par leur identifiant.
         self::assertStringContainsString('["SSE", "SSEFIELD"] select', $this->read(self::PACK . 'biometrics/functions/fn_openSeekKeybind.sqf'));
@@ -190,10 +192,10 @@ final class AtakSseHubLauncherAssetTest extends TestCase
         self::assertStringContainsString('private _hubIds = ["rootHidden", _apps] call comspec_atak_native_fnc_sseHub;', $spaces);
     }
 
-    public function testHubShowsOnlyWhatExistsAndNeedsTwoApps(): void
+    public function testHubShowsOnlyWhatExistsAndNeedsOneApp(): void
     {
         $vis = $this->main('functions/ui/fn_appVisible.sqf');
-        self::assertStringContainsString('if (_id isEqualTo "SseHub" && {(["count"] call comspec_atak_native_fnc_sseHub) < 2}) exitWith { false };', $vis);
+        self::assertStringContainsString('if (_id isEqualTo "SseHub" && {(["count"] call comspec_atak_native_fnc_sseHub) < 1}) exitWith { false };', $vis);
         // Mode Essentiel inchangé : le filtre passe avant, et le dossier n'est pas une app du mode.
         self::assertLessThan((int) strpos($vis, '"SseHub"'), (int) strpos($vis, '["hides", _id]'));
         self::assertSame(1, preg_match('~private _essential = \[(.*?)\n\];~s', $this->main('functions/ui/fn_essentialMode.sqf'), $m));
@@ -229,18 +231,19 @@ final class AtakSseHubLauncherAssetTest extends TestCase
         self::assertNotContains('SSE', $names);
 
         $page = $this->main('functions/pages/fn_pageSseHub.sqf');
-        self::assertStringContainsString('private _apps = ["apps"] call comspec_atak_native_fnc_sseHub;', $page);
-        self::assertStringContainsString('_rows pushBack ["person", _app get "icon",', $page);
+        self::assertStringContainsString('["sections"] call comspec_atak_native_fnc_sseHub', $page);
+        self::assertStringContainsString('"row", _app get "icon"', $page);
         self::assertStringContainsString('_name call comspec_atak_native_fnc_tr', $page);
         self::assertStringContainsString('_desc call comspec_atak_native_fnc_tr', $page);
         // Ouverture par la page habituelle de l'app, pastille par app, retour à l'accueil.
-        self::assertStringContainsString('["Ouvrir", compile format ["[%1] call comspec_atak_native_fnc_navigate;", str _target], true]', $page);
+        self::assertStringContainsString('compile format ["[%1, true, true] call comspec_atak_native_fnc_navigate;", str _target]', $page);
         self::assertStringContainsString('[_target] call comspec_atak_native_fnc_appBadge', $page);
         self::assertStringContainsString('["Accueil", { ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }, false]', $page);
         self::assertStringContainsString('call comspec_atak_native_fnc_formRender;', $page);
         // Pas de petit libellé au-dessus d'un titre, pas de bloc d'en-tête : la barre d'app dit déjà « SSE ».
         self::assertStringNotContainsString('"hero"', $page);
         self::assertStringNotContainsString('"section"', $page);
+        self::assertStringNotContainsString('"title"', $page);
     }
 
     public function testEveryTileHasItsOwnExistingIcon(): void

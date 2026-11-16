@@ -22,6 +22,7 @@ use App\Services\Sse\SseRedactionService;
 use App\Services\Sse\SseSheetAccess;
 use App\Support\SseAccessCatalog as Rights;
 use App\Support\SseAlertLevel;
+use App\Support\SseAlertReportForm;
 use App\Support\SseAlertReportTo;
 use App\Support\SseWantedCatalog as C;
 use App\Support\SseWantedCodes;
@@ -129,7 +130,9 @@ final class SseAlertReportController
         $r = $this->rights();
         $tenantId = $r->tenantId();
         $photoPath = null;
-        $file = $this->uploadedPhoto();
+        $form = $this->formOf($alert);
+        // Une photo n'est reçue que si la conduite à tenir de la fiche la permet.
+        $file = in_array('photo', $form['fields'], true) ? $this->uploadedPhoto() : null;
         if ($file !== null) {
             $stored = $this->photos->store($tenantId, $file);
             if (!$stored['ok']) {
@@ -141,6 +144,7 @@ final class SseAlertReportController
         $res = $this->alerts->report($tenantId, $link, [
             'what' => $old['what'], 'when' => SseWantedNoticeController::localToUtc($old['when'], $tz), 'place' => $old['place'], 'grid' => $old['grid'],
             'text' => $old['text'], 'dir' => $old['dir'], 'vehicle' => $old['vehicle'], 'sure' => $old['sure'], 'photo_path' => $photoPath, 'cid' => $old['cid'],
+            'form' => $form, 'extras' => $old['extras'] ?? [], 'lang' => self::readerLang(),
         ], ['user' => $r->userId(), 'label' => $r->actorLabel(), 'source' => 'web'], ['ref' => (string) $alert['ref'], 'closed' => false, 'label' => '']);
         if (!$res['ok'] || $res['report'] === null) {
             $this->dropPhoto($photoPath);
@@ -599,10 +603,21 @@ final class SseAlertReportController
             'errors' => $extra['errors'] ?? [], 'old' => $extra['old'] ?? $this->emptyInput($tz), 'report' => $extra['report'] ?? null, 'replay' => (bool) ($extra['replay'] ?? false),
             'action' => url(SseAlertReportTo::path((string) $link['token'])), 'qrUrl' => url(SseAlertReportTo::path((string) $link['token']) . '/qr.svg'),
             'lang' => $lang, 'tz' => $tz, 'nowLocal' => $this->nowLocal($tz), 'csrfToken' => Csrf::token(), 'cid' => bin2hex(random_bytes(12)), 'activeNav' => 'avis-signalements',
-            'maxBody' => SseAlertService::BODY_MAX, 'minBody' => SseAlertService::BODY_MIN, 'maxPhotoMb' => (int) (SseAlertReportPhotos::MAX_BYTES / 1048576),
+            'form' => $this->formOf($alert), 'maxBody' => SseAlertService::BODY_MAX, 'minBody' => SseAlertService::BODY_MIN, 'maxPhotoMb' => (int) (SseAlertReportPhotos::MAX_BYTES / 1048576),
         ]);
 
         return $status === 200 ? $response : $response->setStatusCode($status);
+    }
+
+    /**
+     * Contrat du formulaire de cette alerte : champs montrés et exigés selon ses conduites à tenir et son niveau.
+     *
+     * @param array<string, mixed> $alert
+     * @return array{fields: list<string>, required: list<string>, urgent: bool, notes: list<array{0: string, 1: string}>, codes: list<string>}
+     */
+    private function formOf(array $alert): array
+    {
+        return SseAlertReportForm::resolve(array_map('strval', (array) ($alert['_measures'] ?? [])), (int) ($alert['rank'] ?? 1), (string) ($alert['armed'] ?? ''));
     }
 
     /** @param array{0: int, 1: string, 2: string} $denial */
@@ -680,6 +695,8 @@ final class SseAlertReportController
             'what' => $request->inputString('what') === 'info' ? 'info' : 'seen', 'when' => $line('when', 32), 'place' => $line('place', 160), 'grid' => $line('grid', 24),
             'text' => C::text($request->inputString('text'), SseAlertService::BODY_MAX + 100), 'dir' => $line('dir', 120), 'vehicle' => $line('vehicle', 160),
             'sure' => isset(SseAlertLevel::CERTAINTY[$sure]) ? $sure : 'medium', 'cid' => SseAlertRepository::validClientId($cid) ? $cid : '',
+            // Champs d'observation adaptables : le service ne garde que ceux que la fiche affiche.
+            'extras' => array_filter(array_map(fn (string $k): string => $request->inputString($k), array_combine(SseAlertReportForm::FOLDED, SseAlertReportForm::FOLDED))),
         ];
     }
 

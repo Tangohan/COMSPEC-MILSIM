@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Une seule app SSE dans le téléphone (ATAK natif 4.30.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : Une seule app SSE regroupe toutes les fonctions SSE
+- Le téléphone n'a plus qu'une tuile « SSE » : Contrôle ID, Fichiers, Ma couverture, Sur le terrain, Console d'analyse, Extraction, Avis et vigilance, Recherchés et Fiches sont dedans, rangés en trois sections.
+- Une barre en haut de chaque écran SSE ramène au sommaire et passe d'une fonction à l'autre ; une recherche trouve une fonction par son nom, et deux compteurs montrent les avis en vigueur et les envois en échec.
+- Tes épingles et tes raccourcis vers les anciennes apps SSE ouvrent maintenant la bonne page de l'app SSE, sans rien à refaire.
+EN : One SSE app now groups every SSE feature
+- The phone now has a single "SSE" tile: ID Check, Files, My cover, In the field, Analysis console, Extraction, Alerts and vigilance, Wanted and Records are inside, sorted into three sections.
+- A bar at the top of every SSE screen takes you back to the summary and switches between features; a search finds a feature by name, and two counters show active notices and failed sendings.
+- Your pins and shortcuts to the old SSE apps now open the right page of the SSE app, with nothing to redo.
+
+### Détail technique
+- `SseHub` (page SSEHUB) devient l'app SSE complète : sections repliables, recherche, compteurs lus en mémoire (sans requête) ; ancienne classe `Sse` renommée « Console d'analyse ».
+- Coque de navigation : `fn_layoutGet` réserve une barre, `fn_pageRender` la dessine au-dessus des écrans SSE existants, non modifiés ; droits via `fn_appVisible`.
+- Migration unique par partie des épingles et récentes ; inventaire dans `docs/dev/ATAK-APPS-SSE-REGROUPEMENT.md` ; test `AtakSseAppAssetTest`.
+
 ## Pack 4.29.0 Washington : Avis et vigilance, liaison satellite ou relais, téléphone plus fluide, photo du papier au contrôle (ATAK natif 4.29.0.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.4.0)
 
 ### Résumé joueur

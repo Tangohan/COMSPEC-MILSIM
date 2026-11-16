@@ -168,7 +168,7 @@ class CfgFunctions {
 //   section : regroupement dans le lanceur ; order : tri croissant ; dock=1 : raccourci du dock
 //   wip=1   : app en chantier (W.I.P) : tuile grisée avec bandeau, ne s'ouvre pas, code gardé
 //   hidden=1: app pas encore proposée (OSINT) : ni tuile, ni dock, ni App Store ; classe, page et code gardés
-// Dossier SSE (class SseHub, fn_sseHub) : une seule tuile « SSE » à l'accueil, qui liste les apps SSE de l'ATAK et du pack
+// App SSE (class SseHub, fn_sseHub) : une seule tuile « SSE » à l'accueil, qui regroupe les apps SSE de l'ATAK et du pack
 // SSE. Leurs classes et leurs pages ne changent pas : raccourcis, épingles, notifications et liens les ouvrent comme avant.
 // Sections (dans l'ordre) : Navigation 10+, Communication 30+, Appui et feux 50+, Spécialités 70+,
 // Renseignement 110+, Mission 200+, Système 300+, Civil 395+.
@@ -207,8 +207,8 @@ class COMSPEC_ATAK_Apps {
     class Livecam     { name="Vidéo live"; short="Live"; page="LIVECAM"; section="Renseignement"; order=116; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_livecam.paa"; desc="Vidéo en direct partagée"; };
     class Tracking    { name="Marquer tracking"; short="Tracking"; page="TRACKING"; function="comspec_atak_native_fnc_pageTracking"; section="Renseignement"; order=117; dock=0; icon="\z\comspec_atak_native\addons\main\data\ui_pin.paa"; desc="Marquer et suivre une cible à l'image"; };
     class DataLink    { name="Extraction"; short="Extract."; page="DATALINK"; function="comspec_atak_native_fnc_pageDataLink"; section="Renseignement"; order=119; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_datalink.paa"; desc="Extraction de données au câble DL-7"; };
-    class Sse         { name="SSE"; page="SSE"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\ui_link.paa"; desc="Exploitation de site (SSE) : indices et saisies"; };
-    class SseHub      { name="SSE"; page="SSEHUB"; new=1; function="comspec_atak_native_fnc_pageSseHub"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; desc="Dossier des apps SSE, toutes au même endroit. Désinstallé, elles reviennent une à une sur l'accueil."; };
+    class Sse         { name="Console d'analyse"; short="Analyse"; page="SSE"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\ui_link.paa"; desc="Exploitation de site (SSE) : indices et saisies"; };
+    class SseHub      { name="SSE"; page="SSEHUB"; new=1; function="comspec_atak_native_fnc_pageSseHub"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; desc="Application SSE : contrôle et identités, terrain et analyse, avis et recherches, toutes au même endroit. Une fonction désinstallée ou interdite disparaît de l'app."; };
     class Osint       { name="OSINT"; page="OSINT"; section="Renseignement"; order=120; dock=0; wip=1; hidden=1; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; desc="Renseignement en sources ouvertes"; };
     class LinkAlly    { name="Liaison allié"; short="Liaison"; page="LINKALLY"; function="comspec_atak_native_fnc_pageLinkAlly"; section="Spécialités"; order=82; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_linkally.paa"; desc="Liaison avec une unité alliée"; };
     class Fiches      { name="Fiches SSE"; short="Fiches"; page="FICHES"; new=1; function="comspec_atak_native_fnc_pageFiches"; section="Renseignement"; order=123; dock=0; icon="\z\comspec_atak_native\addons\main\data\ui_clip.paa"; desc="Fiches du portail SSE : avis de recherche, vigilance, renseignement, avec motifs et mesures à prendre"; };

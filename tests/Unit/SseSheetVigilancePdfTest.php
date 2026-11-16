@@ -111,7 +111,7 @@ final class SseSheetVigilancePdfTest extends TestCase
     /**
      * Une personne et son identité du registre avec profil, liens et, au choix, un portrait.
      *
-     * @param array<string, mixed> $o last, first, alias, photo (bool), member (int), links
+     * @param array<string, mixed> $o last, first, alias, photo (bool), member (int), links, place, grid, marks
      * @return array<string, mixed> sujet de fiche
      */
     private function subject(array $o = []): array
@@ -120,7 +120,7 @@ final class SseSheetVigilancePdfTest extends TestCase
         $first = (string) ($o['first'] ?? 'Dariush');
         $cols = ['tenant_id' => 1, 'last_name' => $last, 'first_name' => $first, 'alias' => (string) ($o['alias'] ?? 'Le Chauffeur'), 'sex_apparent' => 'M', 'age_estimated' => 41,
             'birth_date' => '1984-03-12', 'birth_place' => 'Kavala', 'nationality' => 'TAK', 'affiliation' => 'Réseau du Nord-Est',
-            'distinguishing_marks' => (string) ($o['marks'] ?? 'Cicatrice à la lèvre supérieure'), 'grid_reference' => '045 123',
+            'distinguishing_marks' => (string) ($o['marks'] ?? 'Cicatrice à la lèvre supérieure'), 'grid_reference' => (string) ($o['grid'] ?? '045 123'),
             'location_description' => (string) ($o['place'] ?? 'Marché de Georgetown, côté nord'), 'created_at' => '2026-11-01 10:00:00', 'updated_at' => '2026-11-12 18:40:00'];
         $this->pdo->prepare('INSERT INTO sse_persons (' . implode(', ', array_keys($cols)) . ') VALUES (' . implode(', ', array_fill(0, count($cols), '?')) . ')')->execute(array_values($cols));
         $pid = (int) $this->pdo->lastInsertId();
@@ -342,6 +342,87 @@ final class SseSheetVigilancePdfTest extends TestCase
                 self::assertNull(PdfText::fictionMention((string) $res['bytes']), "$model $lang");
                 self::assertGreaterThanOrEqual(1, (int) preg_match_all('~/Type\s*/Page\b(?!s)~', (string) $res['bytes']));
             }
+        }
+    }
+
+    /** @return list<string> valeurs de la personne qui ne doivent jamais figurer dans un document masqué à C */
+    private static function secrets(): array
+    {
+        return ['Karimzadeh', 'KARIMZADEH', 'Dariush', 'Le Chauffeur', 'Kavala', '1984'];
+    }
+
+    public function testTheRedactionMentionIsCompactAndNeverCarriesAMaskedValue(): void
+    {
+        $subject = $this->subject(['photo' => true]);
+        foreach (['fr', 'en'] as $lang) {
+            $doc = $this->issue($subject, ['lang' => $lang, 'classification' => 'encadrement', 'threat' => 'critical', 'armed' => 'yes']);
+            $text = $doc['text'];
+            self::assertSame(1, $doc['pages'], $lang . ' : la mention compacte laisse la fiche sur une page');
+            self::assertStringContainsString('PORTIONS WITHHELD', $text);
+            self::assertStringContainsString('CERTAINS PASSAGES ONT ÉTÉ MASQUÉS', $text);
+            self::assertLessThanOrEqual(2, substr_count($text, 'PORTIONS WITHHELD'), $lang . ' : la mention compacte et la légende du pied, rien de plus');
+            self::assertStringContainsString($lang === 'en' ? '(a) Identity: requires S' : '(a) Identité : requiert S', $text);
+            self::assertStringContainsString($lang === 'en' ? 'request release at a higher level' : 'demander la communication à un niveau supérieur', $text);
+            self::assertStringNotContainsString($lang === 'en' ? 'Withholding depends on' : 'Le masquage dépend', $text, $lang . ' : l’explication longue a disparu');
+            self::assertStringNotContainsString('Autres données', $text);
+            self::assertStringNotContainsString('non conservée', $text);
+            foreach (self::secrets() as $secret) {
+                self::assertStringNotContainsString($secret, $text, $lang . ' ' . $secret . ' : texte');
+                self::assertStringNotContainsString($secret, $doc['bytes'], $lang . ' ' . $secret . ' : octets');
+            }
+            // La légende discrète du pied de page garde la lettre de la catégorie.
+            self::assertStringContainsString($lang === 'en' ? 'PORTIONS WITHHELD : (a) Identity' : 'PASSAGES MASQUÉS : (a) Identité', preg_replace('/\s+/', ' ', str_replace(' :', ' :', $text)) ?? $text);
+        }
+        // Rien n'est masqué à S : ni mention ni légende.
+        $open = $this->issue($subject, ['classification' => 'confidentiel']);
+        self::assertStringNotContainsString('PASSAGES', $open['text']);
+        self::assertStringNotContainsString('requiert', $open['text']);
+    }
+
+    public function testTheStoredRedactionCountDoesNotChangeWithTheLayout(): void
+    {
+        $subject = $this->subject(['photo' => true]);
+        $doc = $this->issue($subject, ['classification' => 'encadrement']);
+        $snap = (array) json_decode((string) $this->pdo->query('SELECT snapshot_json FROM sse_doc_issues WHERE id = ' . $doc['id'])->fetchColumn(), true);
+        // Nom, alias, naissance (date, lieu, nationalité), personnes liées et texte du motif : neuf barres, toutes de la catégorie identité.
+        self::assertSame(9, $snap['redaction']['total']);
+        self::assertSame(['identite' => 9], $snap['redaction']['by']);
+    }
+
+    public function testAGridCodeIsPresentedWithItsDateAndFillerTextIsNeverPrinted(): void
+    {
+        $subject = $this->subject(['place' => '151173', 'grid' => '', 'links' => []]);
+        foreach (['fr' => ['Grille 151 173', 'GRILLE 151173'], 'en' => ['Grid 151 173', 'GRID 151173']] as $lang => [$wanted, $raw]) {
+            $doc = $this->issue($subject, ['lang' => $lang, 'texts' => ['reason' => 'Dernier lieu connu : 151173. Comportement observé : à compléter.', 'behaviour' => 'Comportement observé : à compléter.']]);
+            self::assertStringContainsString($wanted, $doc['text'], $lang);
+            self::assertStringContainsString($lang === 'en' ? 'November 12, 2026' : '12 novembre 2026', $doc['text'], $lang . ' : la date suit le lieu');
+            self::assertStringNotContainsString('à compléter', $doc['text']);
+            self::assertStringNotContainsString($lang === 'en' ? 'OBSERVED BEHAVIOUR' : 'COMPORTEMENT OBSERVÉ', mb_strtoupper($doc['text'], 'UTF-8'), $lang . ' : une rubrique sans donnée disparaît');
+            self::assertSame(1, preg_match_all('/151\s?173/', $doc['text']), $lang . ' : le code n’est écrit qu’une fois, formaté');
+        }
+    }
+
+    public function testRubricsWithoutDataDisappearInsteadOfPrintingFiller(): void
+    {
+        $doc = $this->issue($this->subject(['links' => [], 'marks' => '', 'place' => '', 'grid' => '']));
+        $upper = mb_strtoupper($doc['text'], 'UTF-8');
+        foreach (['VÉHICULES', 'PERSONNES ASSOCIÉES', 'ADRESSES', 'AUCUN CONNU', 'NON COMMUNIQUÉ', 'À COMPLÉTER'] as $needle) {
+            self::assertStringNotContainsString($needle, $upper, $needle);
+        }
+        self::assertStringContainsString('CONDUITE À TENIR', $upper);
+        self::assertStringContainsString('SERVICE À INFORMER', $upper);
+    }
+
+    public function testRubricsAreNumberedInReadingOrder(): void
+    {
+        $doc = $this->issue($this->subject(['photo' => true]), ['threat' => 'critical', 'armed' => 'yes']);
+        $flat = mb_strtoupper(preg_replace('/\s+/', ' ', $doc['text']) ?? '', 'UTF-8');
+        $last = -1;
+        foreach (['1 SUJET', '2 CONDUITE À TENIR', '3 SERVICE À INFORMER', '4 MOTIF DE LA VIGILANCE'] as $title) {
+            $pos = strpos($flat, $title);
+            self::assertNotFalse($pos, $title);
+            self::assertGreaterThan($last, $pos, $title . ' : ordre de lecture');
+            $last = (int) $pos;
         }
     }
 }

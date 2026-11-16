@@ -42,7 +42,8 @@ trait SseSheetPdfRedaction
         'why' => ['Le masquage dépend du niveau de diffusion du document et de la catégorie de chaque donnée, pas de la classification de la personne.', 'Withholding depends on the distribution level of the document and on the category of each item, not on the classification of the person.'],
         'how' => ['Pour obtenir ces passages : demander la communication à un niveau supérieur auprès du service émetteur, réf. %s.', 'To obtain these portions: request release at a higher level from the issuing service, ref. %s.'],
         'legend' => ['Passages masqués', 'Portions withheld'],
-        'other' => ['catégorie non conservée', 'category not kept'],
+        'other' => ['catégorie non indiquée', 'category not indicated'],
+        'unspecified' => ['Catégorie non indiquée', 'Category not indicated'],
     ];
 
     /** @return array{total: int, by: array<string, int>} */
@@ -161,7 +162,7 @@ trait SseSheetPdfRedaction
         $parts = [];
         foreach ($this->rxLetters as $cat => $letter) {
             if (($res['by'][$cat] ?? 0) > 0) {
-                $parts[] = '(' . $letter . ') ' . X::label($cat, $this->lang === 1 ? 'en' : 'fr');
+                $parts[] = '(' . $letter . ') ' . ($cat === '' ? self::RX['unspecified'][$this->lang] : X::label($cat, $this->lang === 1 ? 'en' : 'fr'));
             }
         }
         if ($parts === []) {
@@ -176,7 +177,7 @@ trait SseSheetPdfRedaction
             $size -= 0.2;
             $pdf->SetFont($this->sans, 'B', $size);
         }
-        $pdf->SetTextColor(...self::INK);
+        $pdf->SetTextColor(...self::MUTED);
         $pdf->SetXY(58.0, 282.6);
         $pdf->Cell(92.0, 3.0, $text, 0, 0, 'C');
     }

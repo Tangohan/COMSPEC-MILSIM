@@ -1,3 +1,21 @@
+[h1]COMSPEC ATAK 4.30.0 Washington — une seule app SSE / one SSE app[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Une seule app « SSE »[/b] : Contrôle ID, Fichiers, Ma couverture, Sur le terrain, Console d'analyse, Extraction, Avis et vigilance, Recherchés et Fiches sont regroupés dans une tuile, en trois sections (Contrôle et identités, Terrain et analyse, Avis et recherches).
+[*] Une barre en haut de chaque écran SSE ramène au sommaire et passe d'une fonction à l'autre. Une recherche trouve une fonction par son nom ; deux compteurs montrent les avis en vigueur et les envois en échec.
+[*] Tes épingles et raccourcis vers les anciennes apps SSE ouvrent la bonne page de l'app SSE, sans rien à refaire.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]One "SSE" app[/b]: ID Check, Files, My cover, In the field, Analysis console, Extraction, Alerts and vigilance, Wanted and Records are grouped in one tile, in three sections (Checks and identities, Field and analysis, Notices and searches).
+[*] A bar at the top of every SSE screen takes you back to the summary and switches between features. A search finds a feature by name; two counters show active notices and failed sendings.
+[*] Your pins and shortcuts to the old SSE apps open the right page of the SSE app, with nothing to redo.
+[/list]
+
 [h1]COMSPEC ATAK 4.29.0 Washington — Avis et vigilance, liaison satellite, téléphone plus fluide / Alerts and vigilance, satellite link, smoother phone[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

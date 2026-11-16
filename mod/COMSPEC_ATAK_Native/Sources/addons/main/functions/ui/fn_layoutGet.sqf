@@ -35,6 +35,7 @@ if (isNil "_this" || {_this isNotEqualTo ["#calcul"]}) exitWith {
     private _key = [
         _inv select 2,
         _s0 getOrDefault ["interactive", false], _s0 getOrDefault ["quickView", ""], (_s0 getOrDefault ["activePage", ""]) isEqualTo "MAP", _s0 getOrDefault ["texture", false],
+        (_s0 getOrDefault ["activePage", ""]) in ["SSE", "WANTED", "FICHES", "SSEALERT", "SSEFIELD", "IDCHECK", "FICHIERS", "IDCOVER", "DATALINK"],
         profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"], profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"],
         profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true], profileNamespace getVariable ["COMSPEC_ATAK_MiniScale", 1],
         profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"], profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1],
@@ -205,6 +206,9 @@ private _inspW = [0, _sw * ([0.34, 0.74] select (missionNamespace getVariable ["
 private _pad = _sw * 0.012;
 private _bodyY = _sy + _statusH + _appH;
 private _bodyH = _sh - _statusH - _appH - _dockH;
+// Coque de l'app SSE (fn_sseHub) : une page SSE ouverte laisse en haut de la zone de contenu la place de la barre SOMMAIRE + fonctions,
+// que fn_pageRender dessine. Les pages mesurent leur zone avec « body » : elles se placent sous la barre sans rien changer.
+private _sseH = [0, (_font * 1.55 * 1.05) + _pad * 3.6] select ((_s getOrDefault ["activePage", ""]) in ["SSE", "WANTED", "FICHES", "SSEALERT", "SSEFIELD", "IDCHECK", "FICHIERS", "IDCOVER", "DATALINK"]);
 
 // Coque : texture de nuit (silhouette sombre) ou de jour à la couleur choisie (coyote, vert OD, noir).
 private _night = switch (profileNamespace getVariable ["COMSPEC_ATAK_Shell", "auto"]) do { case "day": { false }; case "night": { true }; default { sunOrMoon < 0.5 }; };
@@ -221,7 +225,8 @@ createHashMapFromArray [
     ["appbar", [_sx, _sy + _statusH, _sw, _appH]],
     ["dockRect", [_sx, _sy + _sh - _dockH, _sw, _dockH]],
     ["rail", [_sx, _bodyY, _railW, _bodyH]],
-    ["body", [_sx + _railW, _bodyY, _sw - _railW, _bodyH]],
+    ["body", [_sx + _railW, _bodyY + _sseH, _sw - _railW, _bodyH - _sseH]],
+    ["sseStrip", [_sx + _railW, _bodyY, _sw - _railW, _sseH]],
     ["inspW", _inspW],
     ["font", _font],
     ["fontSmall", _fontSmall],
