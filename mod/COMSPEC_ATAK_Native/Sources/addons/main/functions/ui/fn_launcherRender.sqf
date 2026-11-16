@@ -39,8 +39,9 @@ private _th = _tw * _ratio * ([0.92, 0.8] select (_l get "mini")); // mode PETIT
 private _secH = _font * 1.6;
 private _gw = _bw - 0.012 - 2 * _pad;
 private _apps = ["filter", ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible }] call comspec_atak_native_fnc_appSpaces;
-// Dossier SSE (fn_sseHub) : les apps qu'il regroupe ne sont plus à la racine des sections, une seule tuile « SSE » les
-// ouvre. Elles restent dans ÉPINGLÉES, RÉCENTES, mes groupes et la recherche, et leurs pages s'ouvrent comme avant.
+// App SSE (fn_sseHub) : les apps qu'elle regroupe ne sont plus à la racine des sections, une seule tuile « SSE » les
+// ouvre. Leurs épingles et récentes passent à l'app SSE (« migrate ») ; mes groupes et la recherche les gardent, pages comme avant.
+["migrate"] call comspec_atak_native_fnc_sseHub;
 private _hubIds = ["rootHidden", _apps] call comspec_atak_native_fnc_sseHub;
 private _rootApps = _apps select { !((_x get "id") in _hubIds) };
 private _hubApps = _apps select { (_x get "id") in _hubIds };
