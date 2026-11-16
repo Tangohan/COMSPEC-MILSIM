@@ -1266,6 +1266,7 @@ class EffectifsWorkspaceController
             'nmCanAssign' => EffectifsLmsAccess::canManageAssignments($gate),
             'nmCanRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'nmCanProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
+            'nmAccessStatus' => (new \App\Services\Effectifs\NewMemberAccessStatus())->form($tenantId, (int) Session::get('user_id'), EffectifsLmsAccess::canManageStatus($gate)),
             'nmInvitesReady' => $invites->available(),
             'nmDestinations' => $destinations,
             'nmOld' => is_array($old) ? $old : [],

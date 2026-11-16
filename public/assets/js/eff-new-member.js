@@ -290,6 +290,26 @@
     return parts.join(', ') + '.';
   }
 
+  // Habilitation et position : le libellé choisi, ou celui du champ verrouillé (droit manquant).
+  function clearanceText() {
+    var sel = form.querySelector('[data-nm-clearance]');
+    if (sel) {
+      var o = sel.options[sel.selectedIndex];
+      return o ? (o.getAttribute('data-short') || o.textContent.trim()) : '';
+    }
+    var locked = root.querySelector('[data-nm-clearance-locked]');
+    return locked ? (locked.getAttribute('data-label') || '') : '';
+  }
+  function positionText() {
+    var sel = form.querySelector('[data-nm-position]');
+    if (sel) {
+      var o = sel.options[sel.selectedIndex];
+      return o ? o.textContent.trim() : '';
+    }
+    var locked = root.querySelector('[data-nm-position-locked]');
+    return locked ? (locked.getAttribute('data-label') || '') : '';
+  }
+
   function preview() {
     var call = val('callsign');
     var name = (val('first_name') + ' ' + val('last_name')).trim();
@@ -311,6 +331,14 @@
     pv('jobs', jobOrder.length ? jobOrder.map(function (b) { return b.getAttribute('data-label'); }).join(', ') : 'Aucun');
     var acc = form.querySelector('input[name="access_role_id"]:checked');
     pv('access', acc ? acc.getAttribute('data-label') : 'Membre');
+    pv('clearance', clearanceText());
+    pv('position', positionText());
+    var posSel = form.querySelector('[data-nm-position]');
+    var posHint = root.querySelector('[data-nm-position-summary]');
+    if (posSel && posHint) {
+      var po = posSel.options[posSel.selectedIndex];
+      posHint.textContent = po ? (po.getAttribute('data-summary') || '') : '';
+    }
     pv('langs', langs() || '—');
     pv('discord', val('discord_handle') !== '' ? val('discord_handle') : 'À relier par la personne');
     pv('steam', val('steam_id') !== '' ? 'Renseigné' : 'À relier par la personne');
@@ -329,6 +357,8 @@
       ['Unité', (root.querySelector('[data-pv="unit"]') || {}).textContent + (val('unit_role') ? ' — ' + val('unit_role') : '')],
       ['Emplois', (root.querySelector('[data-pv="jobs"]') || {}).textContent],
       ['Accès', (root.querySelector('[data-pv="access"]') || {}).textContent],
+      ['Habilitation', clearanceText() || '—'],
+      ['Position', positionText() || '—'],
       ['Engagement', val('enlistment_date') ? val('enlistment_date').split('-').reverse().join('/') : '—'],
       ['Langues', langs() || '—'],
       ['Invitation', inviteLine()]

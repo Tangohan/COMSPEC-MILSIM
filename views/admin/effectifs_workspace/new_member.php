@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 /**
  * Effectifs › Ajouter un membre (EffectifsWorkspaceController::newMember → UserAdminController::store).
- * Cinq étapes ; sans JavaScript elles s'affichent toutes, à la suite. Comportements : eff-new-member.js.
+ * Six étapes ; sans JavaScript elles s'affichent toutes, à la suite. Comportements : eff-new-member.js.
  */
 require_once __DIR__ . '/partials/unit_code.php';
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+// Libellés repris par le script d'aperçu (attributs data-*) : écrits dans la langue de la page.
+$tx = static fn (string $s): string => locale() === 'en' ? \App\Support\HtmlTranslator::translateText($s) : $s;
 $old = is_array($nmOld ?? null) ? $nmOld : [];
 $o = static fn (string $k, string $d = ''): string => isset($old[$k]) && is_string($old[$k]) ? $old[$k] : $d;
 $oList = static fn (string $k): array => isset($old[$k]) && is_array($old[$k]) ? array_map('strval', $old[$k]) : [];
@@ -38,9 +40,25 @@ if ($selectedAccess < 1) {
     }
 }
 $accountDefault = $o('roster_only', $rosterOnly ? '1' : '0');
+// Étape « Accès et statut » : habilitation et position de service (NewMemberAccessStatus::form, mêmes règles que la fiche).
+$accessStatus = is_array($nmAccessStatus ?? null) ? $nmAccessStatus : [];
+$clearance = is_array($accessStatus['clearance'] ?? null) ? $accessStatus['clearance'] : ['can' => false, 'options' => [], 'default' => ''];
+$dutyPosition = is_array($accessStatus['position'] ?? null) ? $accessStatus['position'] : ['can' => false, 'options' => [], 'default' => '', 'training_days' => 0];
+$selectedClearance = $o('clearance_level', (string) ($clearance['default'] ?? ''));
+if (!isset($clearance['options'][$selectedClearance])) {
+    $selectedClearance = (string) ($clearance['default'] ?? '');
+}
+$selectedPosition = $o('duty_position', (string) ($dutyPosition['default'] ?? ''));
+$defaultPositionLabel = '';
+foreach ($dutyPosition['options'] as $pos) {
+    if ($pos['slug'] === ($dutyPosition['default'] ?? '')) {
+        $defaultPositionLabel = (string) $pos['label'];
+    }
+}
 $steps = [
     ['identite', 'Identité de jeu'],
     ['poste', 'Place dans l’unité'],
+    ['acces', 'Accès et statut'],
     ['dossier', 'Dossier'],
     ['invitation', 'Lien d’invitation'],
     ['apercu', 'Aperçu'],
@@ -135,7 +153,7 @@ $unitRoleSuggestions = ['Chef de groupe', 'Adjoint', 'Chef d’équipe', 'Tireur
                 <span class="eff-nm-step__n" aria-hidden="true">2</span>
                 <div>
                     <h2 id="nm-poste-t">Place dans l’unité</h2>
-                    <p>Unité, rôle tenu, emplois, grade et ce qu’il pourra faire sur le site.</p>
+                    <p>Unité, rôle tenu, emplois, grade et date d’engagement.</p>
                 </div>
             </header>
             <?php if ($canAssign): ?>
@@ -207,6 +225,17 @@ $unitRoleSuggestions = ['Chef de groupe', 'Adjoint', 'Chef d’équipe', 'Tireur
                 </label>
                 <?php endif; ?>
             </div>
+        </section>
+
+        <!-- 3. Accès et statut -->
+        <section class="eff-nm-step" id="nm-acces" data-nm-step="acces" aria-labelledby="nm-acces-t">
+            <header class="eff-nm-step__head">
+                <span class="eff-nm-step__n" aria-hidden="true">3</span>
+                <div>
+                    <h2 id="nm-acces-t">Accès et statut</h2>
+                    <p>Ce qu’il pourra faire sur le site, son habilitation et sa position de service. Tout se change ensuite depuis sa fiche.</p>
+                </div>
+            </header>
 
             <?php if ($canRoles && $accessRoles !== []): ?>
             <fieldset class="eff-nm-choice eff-nm-choice--cards" data-nm-access>
@@ -221,12 +250,48 @@ $unitRoleSuggestions = ['Chef de groupe', 'Adjoint', 'Chef d’équipe', 'Tireur
             <?php else: ?>
             <p class="eff-nm-locked">Niveau d’accès : Membre. Seul qui gère les niveaux d’accès peut en donner un autre.</p>
             <?php endif; ?>
+
+            <div class="eff-nm-grid">
+                <?php if (!empty($clearance['can'])): ?>
+                <label class="eff-nm-field">
+                    <span>Habilitation</span>
+                    <select name="clearance_level" data-nm-clearance>
+                        <?php foreach ($clearance['options'] as $code => $label): ?>
+                            <option value="<?= $h((string) $code) ?>"<?= (string) $code === '' ? ' data-short="' . $h($tx('Aucune')) . '"' : '' ?> <?= (string) $code === $selectedClearance ? 'selected' : '' ?>><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small>Niveau de classification qu’il peut lire au bureau SSE. Vous ne pouvez pas accorder plus que votre propre habilitation.</small>
+                </label>
+                <?php else: ?>
+                <div class="eff-nm-field eff-nm-field--locked">
+                    <span>Habilitation</span>
+                    <p class="eff-nm-locked" data-nm-clearance-locked data-label="<?= $h($tx('Aucune')) ?>"><b>Aucune.</b> <span>Seul qui gère les droits SSE peut accorder une habilitation, depuis la fiche du membre.</span></p>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($dutyPosition['can'])): ?>
+                <label class="eff-nm-field">
+                    <span>Position de service</span>
+                    <select name="duty_position" data-nm-position>
+                        <?php foreach ($dutyPosition['options'] as $pos): ?>
+                            <option value="<?= $h($pos['slug']) ?>" data-summary="<?= $h($pos['summary']) ?>" <?= $pos['slug'] === $selectedPosition ? 'selected' : '' ?><?= $pos['disabled'] ? ' disabled' : '' ?>><?= $h($pos['label']) ?><?= $pos['slug'] === ($dutyPosition['default'] ?? '') ? ' (à l’arrivée)' : '' ?><?= $pos['disabled'] ? ' — ' . $h($pos['note']) : '' ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small data-nm-position-summary aria-live="polite"></small>
+                </label>
+                <?php else: ?>
+                <div class="eff-nm-field eff-nm-field--locked">
+                    <span>Position de service</span>
+                    <p class="eff-nm-locked" data-nm-position-locked data-label="<?= $h($tx($defaultPositionLabel)) ?>"><b><?= $h(($defaultPositionLabel !== '' ? $defaultPositionLabel : 'Position d’arrivée') . '.') ?></b> <span>Seul qui gère le statut des comptes peut en choisir une autre.</span></p>
+                </div>
+                <?php endif; ?>
+            </div>
         </section>
 
-        <!-- 3. Dossier -->
+        <!-- 4. Dossier -->
         <section class="eff-nm-step" id="nm-dossier" data-nm-step="dossier" aria-labelledby="nm-dossier-t">
             <header class="eff-nm-step__head">
-                <span class="eff-nm-step__n" aria-hidden="true">3</span>
+                <span class="eff-nm-step__n" aria-hidden="true">4</span>
                 <div>
                     <h2 id="nm-dossier-t">Dossier</h2>
                     <p>Langues parlées en opération et notes pour l’encadrement.</p>
@@ -259,10 +324,10 @@ $unitRoleSuggestions = ['Chef de groupe', 'Adjoint', 'Chef d’équipe', 'Tireur
             <?php endif; ?>
         </section>
 
-        <!-- 4. Lien d'invitation -->
+        <!-- 5. Lien d'invitation -->
         <section class="eff-nm-step" id="nm-invitation" data-nm-step="invitation" aria-labelledby="nm-invitation-t" data-nm-invite-step>
             <header class="eff-nm-step__head">
-                <span class="eff-nm-step__n" aria-hidden="true">4</span>
+                <span class="eff-nm-step__n" aria-hidden="true">5</span>
                 <div>
                     <h2 id="nm-invitation-t">Lien d’invitation</h2>
                     <p>Un lien personnel pour que la personne crée son mot de passe, puis relie Discord et Steam, ajoute son portrait et protège son compte.</p>
@@ -315,10 +380,10 @@ $unitRoleSuggestions = ['Chef de groupe', 'Adjoint', 'Chef d’équipe', 'Tireur
             <?php endif; ?>
         </section>
 
-        <!-- 5. Aperçu -->
+        <!-- 6. Aperçu -->
         <section class="eff-nm-step" id="nm-apercu" data-nm-step="apercu" aria-labelledby="nm-apercu-t">
             <header class="eff-nm-step__head">
-                <span class="eff-nm-step__n" aria-hidden="true">5</span>
+                <span class="eff-nm-step__n" aria-hidden="true">6</span>
                 <div>
                     <h2 id="nm-apercu-t">Aperçu avant création</h2>
                     <p>Relisez la fiche : tout reste modifiable ensuite depuis le tableur ou la fiche.</p>
@@ -347,6 +412,8 @@ $unitRoleSuggestions = ['Chef de groupe', 'Adjoint', 'Chef d’équipe', 'Tireur
             <div><dt>Rôle</dt><dd data-pv="unit_role">Membre</dd></div>
             <div><dt>Emplois</dt><dd data-pv="jobs">Aucun</dd></div>
             <div><dt>Accès</dt><dd data-pv="access">Membre</dd></div>
+            <div><dt>Habilitation</dt><dd data-pv="clearance">Aucune</dd></div>
+            <div><dt>Position</dt><dd data-pv="position"><?= $h($defaultPositionLabel !== '' ? $defaultPositionLabel : '—') ?></dd></div>
             <div><dt>Langues</dt><dd data-pv="langs">—</dd></div>
             <div><dt>Discord</dt><dd data-pv="discord">À relier par la personne</dd></div>
             <div><dt>Steam</dt><dd data-pv="steam">À relier par la personne</dd></div>
