@@ -1266,6 +1266,7 @@ class EffectifsWorkspaceController
             'nmCanAssign' => EffectifsLmsAccess::canManageAssignments($gate),
             'nmCanRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'nmCanProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
+            'nmAccessStatus' => (new \App\Services\Effectifs\NewMemberAccessStatus())->form($tenantId, (int) Session::get('user_id'), EffectifsLmsAccess::canManageStatus($gate)),
             'nmInvitesReady' => $invites->available(),
             'nmDestinations' => $destinations,
             'nmOld' => is_array($old) ? $old : [],
@@ -5441,7 +5442,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css', 'access-register.css', 'eff-availability-check.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css', 'access-register.css', 'eff-availability-check.css', 'eff-roster-lisible.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'effKpi' => $kpi,

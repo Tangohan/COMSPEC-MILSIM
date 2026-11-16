@@ -1,0 +1,654 @@
+/**
+ * Tableur des effectifs, mise en forme lisible (2026-11-16) : colonnes d'identité séparées (indicatif, matricule,
+ * prénom, nom), lignes compactes, filets nets entre lignes, séparation discrète entre groupes de colonnes,
+ * en-têtes collants, valeurs clés en gras et secondaires en gris, chiffres tabulaires alignés à droite.
+ * Vaut pour les trois vues (générale, médicale, heures de vol). Sous 761 px, chaque membre reste une fiche
+ * (back-office-effectifs-roster.css) : seuls les réglages communs s'appliquent.
+ *
+ * Couleurs : jetons --ath-* du back-office (clair et sombre). Les couleurs littérales ne sont posées que dans les
+ * propriétés personnalisées ci-dessous.
+ */
+
+.eff-rl,
+.eff-rl-tools {
+  --rl-ink: var(--ath-ink, #0c1116);
+  --rl-muted: #56636a;
+  --rl-line: var(--ath-line, #e3e8ea);
+  --rl-line-strong: #c9d2d6;
+  --rl-head: var(--ath-table-head, #fafcfc);
+  --rl-surface: var(--ath-surface, #ffffff);
+  --rl-group: #eef2f3;
+  --rl-hover: var(--ath-row-hover, #f2fbf7);
+  --rl-accent: var(--ath-accent, #0b8a5c);
+  --rl-focus: #0b6b48;
+  --rl-check-w: 2.5rem;
+}
+
+html[data-bo-theme="dark"] .eff-rl,
+html[data-bo-theme="dark"] .eff-rl-tools {
+  --rl-muted: var(--ath-muted, #9aa6a1);
+  --rl-line-strong: #34403b;
+  --rl-group: #1a2220;
+  --rl-focus: #5fd3a4;
+}
+
+/* Colonne masquée par le menu « Colonnes ». */
+#eff-roster-table .is-col-off {
+  display: none !important;
+}
+
+/* ——— Menu « Colonnes » ——— */
+.eff-rl-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.5rem;
+}
+
+.eff-rl-cols {
+  position: relative;
+}
+
+.eff-rl-cols__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.25rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--rl-line);
+  border-radius: 0.5rem;
+  background: var(--rl-surface);
+  color: var(--rl-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.eff-rl-cols__btn::-webkit-details-marker {
+  display: none;
+}
+
+.eff-rl-cols__btn:hover {
+  border-color: var(--rl-accent);
+}
+
+.eff-rl-cols__btn:focus-visible,
+.eff-rl-cols__panel input:focus-visible,
+.eff-rl-cols__reset:focus-visible {
+  outline: 2px solid var(--rl-focus);
+  outline-offset: 2px;
+}
+
+.eff-rl-cols__n {
+  min-width: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--rl-accent);
+  color: #fff;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.eff-rl-cols__panel {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 30;
+  width: min(26rem, calc(100vw - 2rem));
+  padding: 0.75rem;
+  border: 1px solid var(--rl-line);
+  border-radius: 0.6rem;
+  background: var(--rl-surface);
+  box-shadow: 0 12px 32px -12px rgba(12, 17, 22, 0.35);
+}
+
+.eff-rl-cols__hint {
+  margin: 0 0 0.5rem;
+  color: var(--rl-muted);
+  font-size: 0.8125rem;
+}
+
+.eff-rl-cols__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 0.75rem;
+}
+
+.eff-rl-cols__list label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+  color: var(--rl-ink);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.eff-rl-cols__list input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--rl-accent);
+}
+
+.eff-rl-cols__reset {
+  min-height: 2rem;
+  margin-top: 0.5rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--rl-line);
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--rl-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (hover: none) {
+  .eff-rl-cols__btn,
+  .eff-rl-cols__list label,
+  .eff-rl-cols__reset {
+    min-height: 2.75rem;
+  }
+}
+
+/* ——— Cellules communes (toutes largeurs) ——— */
+#eff-roster-table .eff-rl-mono {
+  font-family: var(--ath-mono, ui-monospace, 'JetBrains Mono', monospace);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+#eff-roster-table .eff-rl-last__v {
+  font-weight: 600;
+}
+
+#eff-roster-table .eff-rl-tri {
+  margin-left: 0.35rem;
+  font-size: 0.8125rem;
+}
+
+#eff-roster-table .eff-rl-role {
+  display: inline-block;
+  max-width: 14rem;
+  overflow: hidden;
+  color: var(--rl-ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Rôle repris de l'emploi faute de rôle saisi : discret, avec son explication au survol. */
+#eff-roster-table .eff-rl-role.is-inherited {
+  color: var(--rl-muted);
+  font-style: italic;
+  font-weight: 400;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--rl-line-strong);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+
+#eff-roster-table .eff-rl-cs__top {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+#eff-roster-table .eff-rl-cs__top > * {
+  flex: none;
+}
+
+.bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-cs__link {
+  color: var(--rl-ink);
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+.bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-cs__link:hover {
+  color: var(--rl-accent);
+  text-decoration: underline;
+}
+
+.bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-cs__link.is-fallback {
+  color: var(--rl-muted);
+  font-weight: 600;
+}
+
+#eff-roster-table .eff-rl-cs__more {
+  color: var(--rl-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+#eff-roster-table a:focus-visible,
+#eff-roster-table button:focus-visible,
+#eff-roster-table summary:focus-visible,
+#eff-roster-table input:focus-visible {
+  outline: 2px solid var(--rl-focus);
+  outline-offset: 2px;
+}
+
+#eff-roster-table .eff-das__muted {
+  color: var(--rl-muted);
+}
+
+/* ——— Grand écran : tableau dense et aligné ——— */
+@media (min-width: 761px) {
+  /* Le cadre défile dans les deux sens : en-têtes collés en haut, indicatif collé à gauche. */
+  .bo-eff-workspace .eff-catalog--roster .eff-sheets--das.eff-rl {
+    max-height: calc(100vh - 11rem);
+    max-height: calc(100dvh - 11rem);
+    min-height: 16rem;
+    overflow: auto;
+    border: 1px solid var(--rl-line);
+    border-radius: 0.6rem;
+    overscroll-behavior-x: contain;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table {
+    min-width: 0;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    padding: 0.55rem 0.65rem;
+    border: 0;
+    border-bottom: 2px solid var(--rl-line-strong);
+    border-radius: 0;
+    background: var(--rl-head);
+    box-shadow: none;
+    color: var(--rl-ink);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.25;
+    text-align: left;
+    text-transform: none;
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table thead th.eff-das__num,
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table thead th.eff-rl-num {
+    min-width: 0;
+    max-width: none;
+    text-align: right;
+    white-space: normal;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table tbody td {
+    height: 2.5rem;
+    padding: 0.3rem 0.65rem;
+    border: 0;
+    border-bottom: 1px solid var(--rl-line);
+    background: var(--rl-surface);
+    color: var(--rl-ink);
+    font-size: 0.8125rem;
+    vertical-align: middle;
+  }
+
+  .bo-eff-workspace .eff-mq.is-dense #eff-roster-table.eff-das__table tbody td {
+    height: 2.125rem;
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table tbody tr:nth-child(even) td {
+    background: var(--rl-surface);
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table tbody tr.eff-mq-row:hover td {
+    background: var(--rl-hover);
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table tbody tr.eff-mq-row:has(.eff-bulk-check:checked) td {
+    background: color-mix(in srgb, var(--rl-accent) 10%, var(--rl-surface));
+  }
+
+  /* Séparation discrète entre groupes de colonnes (identité | service | activité | dossier | fiche). */
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table th.eff-rl-gs,
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table td.eff-rl-gs {
+    border-left: 1px solid var(--rl-line-strong);
+  }
+
+  /* Chiffres : alignés à droite, chiffres de même largeur. */
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table td.eff-das__num,
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table td[data-col="presence"] {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-pr {
+    justify-content: flex-end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-das__sub {
+    display: block;
+    margin-left: 0;
+    color: var(--rl-muted);
+    font-size: 0.8125rem;
+    line-height: 1.2;
+  }
+
+  /* Case à cocher et indicatif collés à gauche pendant le défilement horizontal. */
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table .eff-das__check {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    width: var(--rl-check-w);
+    min-width: var(--rl-check-w);
+    padding-right: 0;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table thead th.eff-das__check {
+    z-index: 6;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table .eff-das__sticky.eff-rl-cs {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    width: auto;
+    min-width: 9.5rem;
+    box-shadow: inset -1px 0 0 var(--rl-line-strong);
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table:has(.eff-das__check) .eff-das__sticky.eff-rl-cs {
+    left: var(--rl-check-w);
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table thead th.eff-das__sticky.eff-rl-cs {
+    z-index: 6;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-mb {
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .bo-eff-workspace .eff-mq .eff-sheets--das #eff-roster-table .eff-sheets__avatar.eff-mq-av,
+  .bo-eff-workspace .eff-mq.is-dense .eff-sheets--das #eff-roster-table .eff-sheets__avatar.eff-mq-av {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 5px;
+    font-size: 0.625rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-mb__txt {
+    gap: 0.1rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-mb__extra {
+    font-size: 0.8125rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-sheets__lang-codes {
+    color: var(--rl-muted);
+    font-size: 0.8125rem;
+  }
+
+  /* Matricule, prénom, nom : une ligne, alignés à gauche. */
+  .bo-eff-workspace .eff-mq #eff-roster-table td.eff-rl-mle,
+  .bo-eff-workspace .eff-mq #eff-roster-table td.eff-rl-first,
+  .bo-eff-workspace .eff-mq #eff-roster-table td.eff-rl-last {
+    white-space: nowrap;
+  }
+
+  /* Valeurs clés en gras : grade et emploi ; le reste en poids normal. */
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-grade {
+    gap: 0.4rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-grade__long {
+    color: var(--rl-ink);
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-grade__ab {
+    font-size: 0.8125rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table .eff-sheets__fonction {
+    max-width: 14rem;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--rl-ink);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-sheets__assign {
+    gap: 0.35rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-st,
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-ls,
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-das__seniority {
+    font-size: 0.8125rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-ls.is-old {
+    color: var(--rl-muted);
+  }
+
+  /* Boutons crayon : 32 px dans les lignes denses (44 px sur écran tactile, back-office-effectifs-roster.css). */
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-das__edit {
+    min-width: 2rem;
+    min-height: 2rem;
+  }
+
+  /* En-tête d'unité : filet au-dessus, titre fort, compte / chef / présence alignés ; il reste visible en défilant. */
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table tbody tr.eff-mq-gh td {
+    height: auto;
+    padding: 0.5rem 0.65rem;
+    border-top: 2px solid var(--rl-line-strong);
+    border-bottom: 1px solid var(--rl-line-strong);
+    border-left: 0;
+    background: var(--rl-group);
+    color: var(--rl-ink);
+  }
+
+  /* Deux lignes, toujours au même endroit : unité et code, puis compte | chef | présence | unités mères.
+     Le bloc reste collé à gauche ; sa largeur est bornée à la zone visible (largeur de l'écran moins le menu latéral). */
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-gh {
+    position: sticky;
+    left: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    width: max-content;
+    max-width: min(64rem, calc(100vw - var(--ath-side-w, 0px) - 6rem));
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-gh__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.6rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-gh .eff-ucode {
+    margin: 0;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-gh__toggle {
+    min-height: 2rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-gh__toggle b {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-gh__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0;
+    padding-left: 1.6rem;
+    color: var(--rl-muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-gh__meta > span {
+    padding: 0 0.75rem;
+    border-left: 1px solid var(--rl-line-strong);
+    white-space: nowrap;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-gh__meta > span:first-child {
+    border-left: 0;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-gh__n {
+    min-width: 6.5rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-gh__meta b {
+    color: var(--rl-ink);
+    font-weight: 700;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-gh__path {
+    display: inline;
+    color: var(--rl-muted);
+    white-space: normal;
+  }
+
+  /* Actions par ligne : boutons sur une ligne, sans élargir la colonne. */
+  .bo-eff-workspace .eff-mq .eff-sheets--das #eff-roster-table .eff-sheets__actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .bo-eff-workspace .eff-mq .eff-sheets--das #eff-roster-table .eff-sheets__actions a.is-primary {
+    height: 2rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Sessions : le nombre et l'état sur une ligne ; la dernière vérification de disponibilité juste dessous, sur une ligne. */
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-sv {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.4rem;
+    min-height: 2rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-sv .eff-das__sub {
+    display: inline;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-avc-cell {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    margin-top: 0.1rem;
+    white-space: nowrap;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-avc-cell small {
+    color: var(--rl-muted);
+    font-size: 0.8125rem;
+  }
+
+  /* Présence : barre et pourcentage sur une ligne, disponibilité dessous en gris. */
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-pr__v {
+    min-width: 3.2rem;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-sheets__actions > a,
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-sheets__actions > button,
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-sheets__actions > span {
+    min-height: 2rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* ——— Mobile : fiches lisibles (l'indicatif en titre, les autres données en lignes libellées) ——— */
+@media (max-width: 760px) {
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-cs__link {
+    font-size: 1rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table tbody td.eff-rl-mle,
+  .bo-eff-workspace .eff-mq #eff-roster-table tbody td.eff-rl-first,
+  .bo-eff-workspace .eff-mq #eff-roster-table tbody td.eff-rl-last {
+    font-size: 0.875rem;
+  }
+
+  .eff-rl-tools {
+    justify-content: stretch;
+  }
+
+  .eff-rl-cols,
+  .eff-rl-cols__btn {
+    width: 100%;
+  }
+
+  .eff-rl-cols__btn {
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  .eff-rl-cols__panel {
+    left: 0;
+    width: auto;
+  }
+}
+
+/* ——— Ajustements grand écran : en-têtes chiffrés sur deux lignes au plus, alertes sur une ligne ——— */
+@media (min-width: 761px) {
+  .bo-eff-workspace .eff-mq #eff-roster-table.eff-das__table thead th.eff-das__num {
+    min-width: 5.75rem;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-mq-al {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .bo-eff-workspace .eff-mq #eff-roster-table .eff-rl-cs .eff-mq-mb {
+    width: max-content;
+  }
+}
+
+/* ——— Ajouter un membre : aides et messages lisibles (13 px au moins) ——— */
+.eff-nm-field small,
+.eff-nm-msg,
+.eff-nm-locked {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 760px) {
+  .bo-eff-workspace .eff-mq #eff-roster-table tbody td.eff-rl-last .eff-rl-last__v {
+    margin-left: auto;
+  }
+}

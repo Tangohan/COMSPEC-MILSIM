@@ -258,6 +258,15 @@ class UserAdminController
         $displayName = trim($firstName . ' ' . $lastName);
         $callsign = trim((string) $request->input('callsign'));
         $this->rememberCreateInput($request);
+        // Étape « Accès et statut » : habilitation et position, bornées par les droits de la personne (mêmes règles que la fiche).
+        $accessStatus = new \App\Services\Effectifs\NewMemberAccessStatus();
+        $accessStatusForm = $accessStatus->form($tenantId, $actorUserId, \App\Support\EffectifsLmsAccess::canManageStatus($gateNow));
+        $accessStatusError = $accessStatus->validate($accessStatusForm, (string) $request->input('clearance_level', ''), (string) $request->input('duty_position', ''));
+        if ($accessStatusError !== null) {
+            Session::flash('error', $accessStatusError);
+
+            return Response::redirect($createUrl);
+        }
 
         $roleIds = [];
         if ($canRoles) {
@@ -293,7 +302,7 @@ class UserAdminController
         $tenantTypeRow = $this->tenantRepository->findById($tenantId);
         $rosterWithoutAccounts = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenantTypeRow['tenant_type'] ?? 'full'));
         if ($rosterWithoutAccounts && ($request->input('roster_only') === '1' || $email === '')) {
-            return $this->storeRosterOnlyMember($request, $tenantId, $actorUserId, $createUrl, $gradeId, $rights);
+            return $this->storeRosterOnlyMember($request, $tenantId, $actorUserId, $createUrl, $gradeId, $rights, $accessStatusForm);
         }
 
         if ($emailUnknown) {
@@ -404,6 +413,8 @@ class UserAdminController
             \App\Support\MemberIntegrationCatalog::SOURCE_MANUAL,
             ['role_ids' => $roleIds]
         );
+        // Après l'arrivée (position « En formation » posée par MemberIntegrationEntryHook) : habilitation et position choisies.
+        $warnings = array_merge($warnings, $accessStatus->apply($tenantId, $actorUserId, $this->actorLabel(), $userId, (string) $request->input('clearance_level', ''), (string) $request->input('duty_position', ''), $accessStatusForm));
         Session::forget('effectifs_new_member_old');
 
         $messages = ['Membre ajouté.'];
@@ -484,7 +495,7 @@ class UserAdminController
     {
         $keep = [];
         foreach (['callsign', 'nickname', 'first_name', 'last_name', 'email', 'email_unknown', 'discord_handle', 'steam_id', 'grade_id',
-            'unit_id', 'unit_role', 'access_role_id', 'enlistment_date', 'primary_lang', 'notes', 'duration_hours', 'single_use', 'invite', 'roster_only'] as $k) {
+            'unit_id', 'unit_role', 'access_role_id', 'clearance_level', 'duty_position', 'enlistment_date', 'primary_lang', 'notes', 'duration_hours', 'single_use', 'invite', 'roster_only'] as $k) {
             $keep[$k] = mb_substr((string) $request->input($k, ''), 0, 4000);
         }
         foreach (['other_langs', 'job_role_ids'] as $k) {
@@ -498,8 +509,9 @@ class UserAdminController
      * Profil « Bureau des effectifs » : fiche tenue par l’état-major, sans compte ni e-mail pour le membre.
      *
      * @param array{profiles:bool, assignments:bool} $rights
+     * @param array<string, mixed> $accessStatusForm étape « Accès et statut » (NewMemberAccessStatus::form)
      */
-    private function storeRosterOnlyMember(Request $request, int $tenantId, int $actorUserId, string $createUrl, ?int $gradeId, array $rights): Response
+    private function storeRosterOnlyMember(Request $request, int $tenantId, int $actorUserId, string $createUrl, ?int $gradeId, array $rights, array $accessStatusForm = []): Response
     {
         $firstName = trim((string) $request->input('first_name'));
         $lastName = trim((string) $request->input('last_name'));
@@ -536,11 +548,27 @@ class UserAdminController
             return Response::redirect($createUrl);
         }
         $warnings = (new \App\Services\Effectifs\NewMemberDossierService())->apply($tenantId, $userId, $this->dossierInput($request), $rights);
+        if ($accessStatusForm !== []) {
+            $warnings = array_merge($warnings, (new \App\Services\Effectifs\NewMemberAccessStatus())->apply($tenantId, $actorUserId, $this->actorLabel(), $userId, (string) $request->input('clearance_level', ''), (string) $request->input('duty_position', ''), $accessStatusForm));
+        }
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, \App\Support\RosterOnlyMember::label());
         Session::forget('effectifs_new_member_old');
         Session::flash($warnings === [] ? 'success' : 'error', trim('Fiche créée. Ce membre n’a pas de compte : il n’a rien à faire, vous tenez sa fiche ici. ' . implode(' ', $warnings)));
 
         return Response::redirect(effectifs_workspace_url('membres/' . $userId));
+    }
+
+    /** Nom de la personne qui agit, pour le journal d'audit SSE (comme l'onglet Accès de la fiche). */
+    private function actorLabel(): string
+    {
+        foreach (['callsign', 'display_name'] as $k) {
+            $v = trim((string) (Session::get($k) ?? ''));
+            if ($v !== '') {
+                return mb_substr($v, 0, 120);
+            }
+        }
+
+        return 'Membre #' . (int) Session::get('user_id');
     }
 
     private function rosterOnlyMembers(): \App\Services\Effectifs\RosterOnlyMemberService
