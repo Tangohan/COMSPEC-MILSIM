@@ -241,6 +241,7 @@ final class CommunityCreationStrictMysqlTest extends TestCase
             throw new \RuntimeException($e->getMessage() . "\nDDL exécutées pendant la création :\n" . implode("\n", $this->ddlStatements()), 0, $e);
         }
         $this->assertNoStrictErrors($name);
+        $this->assertNoDdlInsideTransaction($name);
 
         return $result;
     }
@@ -261,6 +262,28 @@ final class CommunityCreationStrictMysqlTest extends TestCase
             static fn (string $q): string => mb_substr(preg_replace('/\s+/', ' ', trim($q)) ?? '', 0, 200),
             array_filter($rows, static fn ($q): bool => is_string($q) && preg_match('/^\s*(CREATE|ALTER|DROP|RENAME|TRUNCATE)\b/i', $q) === 1 && !str_contains($q, 'general_log'))
         )));
+    }
+
+    /** Aucune DDL entre START TRANSACTION et COMMIT sur la connexion de l'application (validation implicite). */
+    private function assertNoDdlInsideTransaction(string $context): void
+    {
+        $st = $this->pdo->prepare("SELECT CAST(argument AS CHAR) FROM mysql.general_log WHERE thread_id = ? AND command_type IN ('Query', 'Execute')");
+        $st->execute([(int) $this->pdo->query('SELECT CONNECTION_ID()')->fetchColumn()]);
+        $inside = false;
+        $seenBegin = false;
+        $ddl = [];
+        foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $q) {
+            $q = trim((string) $q);
+            if (preg_match('/^(START TRANSACTION|BEGIN)\b/i', $q) === 1) {
+                $inside = $seenBegin = true;
+            } elseif (preg_match('/^(COMMIT|ROLLBACK)\b/i', $q) === 1) {
+                $inside = false;
+            } elseif ($inside && preg_match('/^(CREATE|ALTER|DROP|RENAME|TRUNCATE)\b/i', $q) === 1) {
+                $ddl[] = mb_substr((string) preg_replace('/\s+/', ' ', $q), 0, 200);
+            }
+        }
+        self::assertTrue($seenBegin, 'START TRANSACTION absent du journal général (' . $context . ')');
+        self::assertSame([], $ddl, 'DDL pendant la transaction de création (' . $context . ')');
     }
 
     private function assertNoStrictErrors(string $context = ''): void

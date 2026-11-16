@@ -112,6 +112,11 @@ foreach ($steps as $migrationStep) {
     }
 }
 $migrationRunner->printReport();
+// L'étape 0390 (identités) passe avant l'ajout de users.is_service_account (1370) : en production, la migration repasse
+// à la connexion suivante (UserRepository). Même état ici, sinon chaque connexion retenterait son ALTER.
+run_user_community_identity_migration($pdo, static function (string $m): void {
+    echo '  identités : ' . $m . "\n";
+});
 
 // MySQL ne connaît pas « ADD COLUMN IF NOT EXISTS » (syntaxe MariaDB) : ces fichiers échouent en entier ci-dessus.
 // Pour que la base MySQL ait les mêmes colonnes que la base MariaDB, leurs ALTER sont rejoués clause par clause sans
