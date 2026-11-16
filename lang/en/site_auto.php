@@ -71414,4 +71414,13 @@ return [
     'États' => 'Statuses',
     'États, commentaires, transmissions et lectures, du plus ancien au plus récent.' => 'Statuses, comments, forwards and reads, oldest first.',
     '— doublon de %1' => '— duplicate of %1',
+
+    // Menu Espaces de la barre Athena : cartes rangées par groupe, entrée Bureau SSE.
+    'Renseignement et outils' => 'Intelligence and tools',
+    'Le site' => 'The site',
+    'Nous rejoindre' => 'Join us',
+    'Autres espaces' => 'Other spaces',
+    'Dossiers, personnes et lieux' => 'Cases, people and places',
+    'Habilité' => 'Cleared',
+    'Ici' => 'Here',
 ];

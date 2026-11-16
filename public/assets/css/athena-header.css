@@ -504,20 +504,6 @@ body.layout-light .athena-header,
   display: none !important;
 }
 
-.athena-header__panel--espaces {
-  width: min(28rem, calc(100vw - 1.5rem));
-  padding: 1.1rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(12, 12, 15, 0.98), rgba(8, 8, 11, 0.96));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 
-    0 0 0 1px rgba(5, 150, 105, 0.08),
-    0 24px 64px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
 .athena-header__panel-head {
   margin: 0 0 0.85rem;
 }
@@ -536,120 +522,6 @@ body.layout-light .athena-header,
   font-size: 15px;
   font-weight: 800;
   color: #fff;
-}
-
-.athena-header__espaces-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-
-.athena-header__espace-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-  text-decoration: none;
-  box-shadow: var(--athena-shadow-sm);
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.athena-header__espace-item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.athena-header__espace-item:hover,
-.athena-header__espace-item:focus-visible {
-  outline: none;
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(5, 150, 105, 0.08));
-  border-color: rgba(5, 150, 105, 0.45);
-  box-shadow: 
-    0 0 12px rgba(5, 150, 105, 0.15),
-    var(--athena-shadow);
-  transform: translateY(-1px);
-}
-
-.athena-header__espace-item:hover::before {
-  opacity: 1;
-}
-
-.athena-header__espace-abbr {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.6rem;
-  height: 1.8rem;
-  padding: 0 0.5rem;
-  border: 1px solid rgba(52, 211, 153, 0.5);
-  border-radius: 6px;
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.15), rgba(52, 211, 153, 0.08));
-  color: var(--athena-header-mint-bright);
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 0 8px rgba(52, 211, 153, 0.2);
-}
-
-/* Tuile « Outils opérateur » : bleu du portail (#60a5fa sur sombre), pour la distinguer des espaces en vert. */
-.athena-header__espace-item--blue {
-  border-color: rgba(96, 165, 250, 0.32);
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(96, 165, 250, 0.03));
-}
-.athena-header__espace-item--blue:hover,
-.athena-header__espace-item--blue:focus-visible,
-.athena-header__espace-item--blue.is-active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(59, 130, 246, 0.1));
-  border-color: rgba(96, 165, 250, 0.7);
-  box-shadow:
-    0 0 12px rgba(96, 165, 250, 0.2),
-    var(--athena-shadow);
-}
-.athena-header__espace-item--blue.is-active { box-shadow: inset 3px 0 0 #60a5fa, var(--athena-shadow); }
-.athena-header__espace-item--blue .athena-header__espace-abbr {
-  border-color: rgba(96, 165, 250, 0.6);
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.08));
-  color: #93c5fd;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 0 8px rgba(96, 165, 250, 0.25);
-}
-.athena-header__espace-item--blue:focus-visible { outline-color: #60a5fa; }
-
-.athena-header__espace-meta {
-  min-width: 0;
-}
-
-.athena-header__espace-meta strong {
-  display: block;
-  font-size: 12px;
-  font-weight: 800;
-  color: #f5f5f5;
-  line-height: 1.25;
-}
-
-.athena-header__espace-meta em {
-  display: block;
-  margin-top: 0.15rem;
-  font-size: 10px;
-  font-style: normal;
-  line-height: 1.35;
-  color: #737373;
 }
 
 .athena-header__panel--quick {
@@ -1232,11 +1104,6 @@ body.layout-light .athena-header,
   display: none;
 }
 
-@media (max-width: 767px) {
-  .athena-header__espaces-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .athena-header__cta,
@@ -1502,19 +1369,6 @@ body.layout-light .athena-header,
   font-style: italic;
 }
 
-.athena-header__drawer-kicker {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-/* Espaces déjà accessibles dans la barre à partir de 768px */
-@media (min-width: 768px) {
-  .athena-header__panel--drawer .athena-header__drawer-kicker,
-  .athena-header__panel--drawer .athena-header__espaces-grid {
-    display: none;
-  }
-}
-
 .athena-header__drawer-lang {
   display: flex;
   align-items: center;
@@ -1639,14 +1493,6 @@ body.layout-light .athena-header,
 
 @media (prefers-reduced-motion: reduce) {
   .athena-header__panel:not(.hidden) { animation: none; }
-}
-
-.athena-header__panel--espaces {
-  border-radius: 14px;
-}
-
-.athena-header__espace-item {
-  border-radius: 10px;
 }
 
 /* Menu profil */
@@ -1851,7 +1697,6 @@ body.layout-light .athena-header,
 }
 
 /* Panneaux opaques : la barre d’identité ne transparaît plus derrière les menus. */
-.athena-header__panel--espaces,
 .athena-header__profile-card,
 .athena-header__notif-card {
   background: linear-gradient(135deg, #0c0d10, #08090b);
@@ -2045,13 +1890,9 @@ body.layout-light .athena-header,
 .athena-header__notif-cta,
 .athena-header__profile-menu a,
 .athena-header__profile-menu button,
-.athena-header__espace-item,
-.athena-header__espace-abbr,
 .athena-header__drawer-link,
 .athena-header__profile-status { border-radius: var(--ah-radius) !important; }
 .athena-header__panel-title { text-transform: none; letter-spacing: 0; font-style: normal; }
-.athena-header__espace-item:focus-visible { outline: 2px solid var(--ah-focus); outline-offset: -2px; }
-.athena-header__espace-abbr { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.04em; }
 
 /* Mobile et tablette : barre réduite à l'essentiel, le reste dans le menu */
 @media (max-width: 900px) {
@@ -2186,4 +2027,214 @@ body.layout-light .athena-header,
 @media (min-width: 1600px) {
   .athena-header--portal .athena-header__cta-label { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; }
   .athena-header--portal .athena-header__cta { width: auto; min-width: 0; padding: 0 0.95rem 0 0.8rem; }
+}
+
+/* ==========================================================================
+   Menu « Espaces » : une carte par espace, rangées par groupe
+   (views/partials/athena_espaces_menu.php, App\Support\EspacesMenu).
+   Sombre par défaut (barre Athena) ; clair sur les pages claires du site.
+   ========================================================================== */
+.esp {
+  --esp-bg: #0c0d10;
+  --esp-card: rgba(255, 255, 255, 0.035);
+  --esp-card-hover: rgba(255, 255, 255, 0.075);
+  --esp-line: rgba(255, 255, 255, 0.12);
+  --esp-ink: #f4f4f5;
+  --esp-muted: #a1a1aa;
+  --esp-accent: var(--athena-header-mint, #34d399);
+  --esp-accent-bg: rgba(52, 211, 153, 0.13);
+  --esp-accent-line: rgba(52, 211, 153, 0.55);
+  --esp-blue: #60a5fa;
+  --esp-blue-bg: rgba(96, 165, 250, 0.14);
+  --esp-icon-bg: rgba(255, 255, 255, 0.07);
+}
+body.layout-light .esp,
+body.atak-theme-light .esp,
+html[data-bo-theme="light"] .esp {
+  --esp-bg: #ffffff;
+  --esp-card: #f8fafc;
+  --esp-card-hover: #eef2f6;
+  --esp-line: rgba(15, 23, 42, 0.14);
+  --esp-ink: #0f172a;
+  --esp-muted: #475569;
+  --esp-accent: #047857;
+  --esp-accent-bg: rgba(5, 150, 105, 0.11);
+  --esp-accent-line: rgba(4, 120, 87, 0.55);
+  --esp-blue: #1d4ed8;
+  --esp-blue-bg: rgba(29, 78, 216, 0.1);
+  --esp-icon-bg: rgba(15, 23, 42, 0.06);
+}
+html[data-bo-theme="dark"] .esp {
+  --esp-bg: #0c0d10;
+  --esp-card: rgba(255, 255, 255, 0.035);
+  --esp-card-hover: rgba(255, 255, 255, 0.075);
+  --esp-line: rgba(255, 255, 255, 0.12);
+  --esp-ink: #f4f4f5;
+  --esp-muted: #a1a1aa;
+  --esp-accent: var(--athena-header-mint, #34d399);
+  --esp-accent-bg: rgba(52, 211, 153, 0.13);
+  --esp-accent-line: rgba(52, 211, 153, 0.55);
+  --esp-blue: #60a5fa;
+  --esp-blue-bg: rgba(96, 165, 250, 0.14);
+  --esp-icon-bg: rgba(255, 255, 255, 0.07);
+}
+/* Le menu mobile fait partie de la barre : il reste sombre. */
+.athena-header__panel--drawer .esp.esp--drawer {
+  --esp-card: rgba(255, 255, 255, 0.035);
+  --esp-card-hover: rgba(255, 255, 255, 0.075);
+  --esp-line: rgba(255, 255, 255, 0.12);
+  --esp-ink: #f4f4f5;
+  --esp-muted: #a1a1aa;
+  --esp-accent: var(--athena-header-mint, #34d399);
+  --esp-accent-bg: rgba(52, 211, 153, 0.13);
+  --esp-accent-line: rgba(52, 211, 153, 0.55);
+  --esp-blue: #60a5fa;
+  --esp-blue-bg: rgba(96, 165, 250, 0.14);
+  --esp-icon-bg: rgba(255, 255, 255, 0.07);
+}
+
+.athena-header__panel--espaces.esp {
+  width: min(44rem, calc(100vw - 2rem));
+  max-height: min(calc(100vh - var(--athena-header-h, 4rem) - 1.5rem), 38rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  border: 1px solid var(--esp-line);
+  background: var(--esp-bg);
+  color: var(--esp-ink);
+  box-shadow: 0 20px 48px -14px rgba(0, 0, 0, 0.55) !important;
+  border-radius: 12px !important;
+}
+.athena-header__panel--espaces.is-closing {
+  animation: athena-panel-out 0.12s ease-in both;
+}
+@keyframes athena-panel-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-6px) scale(0.985); }
+}
+
+.esp-groups {
+  column-count: 2;
+  column-gap: 1.1rem;
+}
+.esp-group {
+  break-inside: avoid;
+  margin: 0 0 1rem;
+}
+.esp-group:last-child { margin-bottom: 0; }
+.esp-group__title {
+  margin: 0 0 0.45rem;
+  padding: 0 0.25rem;
+  font-size: 13px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--esp-muted);
+}
+.esp-group__cards { display: grid; gap: 0.4rem; }
+
+.esp-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 3.5rem;
+  padding: 0.5rem 0.7rem 0.5rem 0.6rem;
+  border: 1px solid var(--esp-line);
+  border-radius: 10px;
+  background: var(--esp-card);
+  color: var(--esp-ink);
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.esp-card:hover { background: var(--esp-card-hover); border-color: var(--esp-accent-line); }
+.esp-card:focus-visible { outline: 2px solid var(--esp-accent); outline-offset: 2px; background: var(--esp-card-hover); }
+.esp-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9px;
+  background: var(--esp-icon-bg);
+  color: var(--esp-accent);
+}
+.esp-card__body { display: grid; gap: 0.1rem; min-width: 0; }
+.esp-card__row { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.esp-card__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--esp-ink);
+}
+.esp-card__desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--esp-muted);
+}
+.esp-pill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.45rem;
+  min-height: 1.3rem;
+  border: 1px solid var(--esp-line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--esp-muted);
+}
+.esp-pill--here { border-color: var(--esp-accent-line); background: var(--esp-accent-bg); color: var(--esp-accent); }
+
+.esp-card.is-active {
+  border-color: var(--esp-accent-line);
+  background: var(--esp-accent-bg);
+  box-shadow: inset 3px 0 0 var(--esp-accent);
+}
+.esp-card.is-active .esp-card__icon { background: var(--esp-accent); color: var(--esp-bg); }
+
+/* Outils opérateur : bleu du portail, pour le distinguer des espaces en vert. */
+.esp-card--blue .esp-card__icon { background: var(--esp-blue-bg); color: var(--esp-blue); }
+.esp-card--blue:hover { border-color: var(--esp-blue); }
+.esp-card--blue:focus-visible { outline-color: var(--esp-blue); }
+.esp-card--blue.is-active { border-color: var(--esp-blue); background: var(--esp-blue-bg); box-shadow: inset 3px 0 0 var(--esp-blue); }
+.esp-card--blue.is-active .esp-card__icon { background: var(--esp-blue); color: var(--esp-bg); }
+.esp-card--blue.is-active .esp-pill--here { border-color: var(--esp-blue); background: transparent; color: var(--esp-blue); }
+
+/* Menu mobile : une colonne, déjà dans la feuille du menu */
+.esp--drawer { margin-top: 1rem; }
+.esp--drawer .esp-groups { column-count: 1; }
+.esp--drawer .esp-group__title { color: var(--esp-muted); }
+@media (min-width: 768px) {
+  .athena-header__panel--drawer .esp--drawer { display: none; }
+}
+
+/* Tablette et mobile : feuille pleine largeur sous la barre, sans débordement */
+@media (max-width: 899px) {
+  .athena-header__panel--espaces.esp {
+    position: fixed;
+    top: calc(var(--athena-header-h, 4rem) + 0.5rem);
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+  }
+}
+@media (max-width: 640px) {
+  .esp-groups { column-count: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esp-card { transition: none; }
+  .athena-header__panel--espaces.is-closing { animation: none; }
 }
