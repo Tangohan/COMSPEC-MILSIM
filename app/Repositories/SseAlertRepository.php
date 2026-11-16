@@ -264,7 +264,7 @@ final class SseAlertRepository
                         'what' => ($r['what'] ?? '') === 'info' ? 'info' : 'seen', 'seen' => (string) ($r['seen_at'] ?? gmdate('Y-m-d H:i:s')),
                         'place' => self::orNull($r['place'] ?? null, 160), 'grid' => self::orNull($r['grid'] ?? null, 24),
                         'x' => is_numeric($r['pos_x'] ?? null) ? (float) $r['pos_x'] : null, 'py' => is_numeric($r['pos_y'] ?? null) ? (float) $r['pos_y'] : null,
-                        'body' => mb_substr((string) ($r['body'] ?? ''), 0, 600), 'dir' => self::orNull($r['direction'] ?? null, 120), 'veh' => self::orNull($r['vehicle'] ?? null, 160),
+                        'body' => mb_substr((string) ($r['body'] ?? ''), 0, 1200), 'dir' => self::orNull($r['direction'] ?? null, 120), 'veh' => self::orNull($r['vehicle'] ?? null, 160),
                         'sure' => isset(SseAlertLevel::CERTAINTY[(string) ($r['certainty'] ?? '')]) ? (string) $r['certainty'] : 'medium',
                         'photo' => self::orNull($r['photo_path'] ?? null, 255), 'st' => 'new', 'src' => ($r['source'] ?? '') === 'game' ? 'game' : 'web', 'cid' => $cid,
                         'u' => $r['user_id'] ?? null, 'lbl' => self::orNull($r['label'] ?? null, 80), 'now' => gmdate('Y-m-d H:i:s'),

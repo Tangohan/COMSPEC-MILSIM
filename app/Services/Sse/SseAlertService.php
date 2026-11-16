@@ -13,6 +13,7 @@ use App\Repositories\SseWantedNoticeRepository;
 use App\Repositories\SseWantedSettingsRepository;
 use App\Support\SseAccessCatalog as Rights;
 use App\Support\SseAlertLevel;
+use App\Support\SseAlertReportForm;
 use App\Support\SseAlertReportTo;
 use App\Support\SseSheetCatalog as D;
 use App\Support\SseWantedCatalog as C;
@@ -418,9 +419,17 @@ final class SseAlertService
             $errors[] = 'La date de l’observation est dans le futur.';
         }
         $place = C::line($input['place'] ?? '', 160);
-        $dir = C::line($input['dir'] ?? '', 120);
-        $vehicle = C::line($input['vehicle'] ?? '', 160);
-        foreach ([$body, $place, $dir, $vehicle] as $text) {
+        // Contrat du formulaire (SseAlertReportForm::resolve) : seuls les champs affichés sont lus, exigés et enregistrés.
+        $form = is_array($input['form'] ?? null) ? $input['form'] : SseAlertReportForm::resolve([], 1);
+        $extras = SseAlertReportForm::sanitize($form, ['dir' => $input['dir'] ?? '', 'vehicle' => $input['vehicle'] ?? ''] + (is_array($input['extras'] ?? null) ? $input['extras'] : []));
+        $lang = ($input['lang'] ?? 'fr') === 'en' ? 'en' : 'fr';
+        foreach (SseAlertReportForm::missing($form, $extras + ['place' => $place], $lang) as $missing) {
+            $errors[] = $missing;
+        }
+        $dir = $extras['dir'] ?? '';
+        $vehicle = $extras['vehicle'] ?? '';
+        $observed = SseAlertReportForm::foldedLines($extras, $lang);
+        foreach ([$body, $place, $dir, $vehicle, ...$observed] as $text) {
             $hit = SseWantedRealNames::find($text);
             if ($hit !== null) {
                 $errors[] = 'Un signalement ne cite pas d’organisation réelle (« ' . $hit . ' »).';
@@ -434,7 +443,9 @@ final class SseAlertService
         $report = $this->alerts->createReport($tenantId, (int) $link['id'], [
             'what' => ($input['what'] ?? '') === 'info' ? 'info' : 'seen', 'seen_at' => $when, 'place' => $place, 'grid' => C::line($input['grid'] ?? '', 24),
             'pos_x' => is_numeric($pos[0] ?? null) ? (float) $pos[0] : null, 'pos_y' => is_numeric($pos[1] ?? null) ? (float) $pos[1] : null,
-            'body' => $body, 'direction' => $dir, 'vehicle' => $vehicle, 'certainty' => (string) ($input['sure'] ?? 'medium'),
+            'body' => $observed === [] ? $body : $body . "
+" . implode("
+", $observed), 'direction' => $dir, 'vehicle' => $vehicle, 'certainty' => (string) ($input['sure'] ?? 'medium'),
             'photo_path' => is_string($input['photo_path'] ?? null) ? $input['photo_path'] : null,
             'source' => $actor['source'] === 'game' ? 'game' : 'web', 'client_id' => $cid, 'user_id' => $userId, 'label' => $actor['label'],
         ]);
