@@ -1051,6 +1051,8 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line_recipients` (
   `read_at` datetime DEFAULT NULL,
   `ack_at` datetime DEFAULT NULL,
   `ack_by` varchar(64) DEFAULT NULL,
+  `polled_as` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `last_polled_at` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),

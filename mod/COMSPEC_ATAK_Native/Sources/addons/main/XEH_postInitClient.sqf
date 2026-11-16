@@ -283,12 +283,14 @@ if (!isNil "zen_custom_modules_fnc_register") then {
 // Ordres : réponses des joueurs du camp (app Tâches, qui a vu / reçu / exécute).
 ["comspec_atak_native_orderAck", { if (["hold", ["comspec_atak_native_orderAck", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_orderAck; }] call CBA_fnc_addEventHandler;
 // App JTAC : brief, appels du JTAC et réponses de l'équipage (CAS), envoyés aux seuls intéressés.
-["comspec_atak_native_cas", { if (["hold", ["comspec_atak_native_cas", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_cas", { if (!(["airLink"] call comspec_atak_native_fnc_airBrief) && {["hold", ["comspec_atak_native_cas", _this]] call comspec_atak_native_fnc_offline}) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
 // App JTAC ouverte en contrôle (ou vue équipage) : position et géométrie de l'appareil rafraîchies.
 [{ ["tick"] call comspec_atak_native_fnc_jtacAction; }, 3] call COMSPEC_ATAK_PfhSpread;
-// Briefs air (9-LINE, 5-LINE) envoyés aux pilotes et leurs accusés (WILCO, UNABLE) ; boîte Athena relevée à bord d'un aéronef.
-["comspec_atak_native_airBrief", { if (["hold", ["comspec_atak_native_airBrief", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_airBrief; }] call CBA_fnc_addEventHandler;
-[{ ["poll"] call comspec_atak_native_fnc_airBrief; }, 12] call COMSPEC_ATAK_PfhSpread;
+// Briefs air (9-LINE, 5-LINE) envoyés aux pilotes et leurs accusés (WILCO, UNABLE). À un poste d'équipage d'aéronef, le brief
+// passe par la liaison de bord (fn_airBrief "airLink") : jamais retenu faute de relais. Boîte Athena : "tick" toutes les 4 s
+// (relevé toutes les 15 s à bord, 45 s pour un pilote à pied, tout de suite au réveil du téléphone ou au retour de la liaison).
+["comspec_atak_native_airBrief", { if (!(["airLink"] call comspec_atak_native_fnc_airBrief) && {["hold", ["comspec_atak_native_airBrief", _this]] call comspec_atak_native_fnc_offline}) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_airBrief; }] call CBA_fnc_addEventHandler;
+[{ ["tick"] call comspec_atak_native_fnc_airBrief; }, 4] call COMSPEC_ATAK_PfhSpread;
 // Mode pilote : proposition à l'entrée dans un aéronef, HUD discret arrêté hors de l'appareil (une lecture par seconde sinon).
 [{ ["tick"] call comspec_atak_native_fnc_pilotMode; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Profil de rôle choisi : public pour les autres téléphones (FIRES court : pilotes et JTAC du camp) ; rien si aucun profil.

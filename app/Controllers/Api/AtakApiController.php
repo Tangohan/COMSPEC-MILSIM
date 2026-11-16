@@ -12975,14 +12975,9 @@ class AtakApiController
         $assignedTo = $request->query('assignedTo') ?? $request->query('assigned_to');
         $status = $request->query('status');
         // Boîte du pilote (espace BRIEFS AIR du téléphone) : assignedTo=~air|nom1|nom2 (GetCASForCallsign de la DLL).
+        // Réponse en tableau SQF ; chaque brief renvoyé passe « livré » (AirBriefService::inboxResponse).
         if (is_string($assignedTo) && str_starts_with($assignedTo, \App\Services\Tactical\AirBriefService::INBOX_PREFIX)) {
-            $names = array_slice(explode('|', substr($assignedTo, strlen(\App\Services\Tactical\AirBriefService::INBOX_PREFIX))), 0, 8);
-            try {
-                $briefs = new \App\Services\Tactical\AirBriefService();
-                $body = \App\Services\Tactical\AirBriefService::inboxSqf($briefs->inbox($tenantId, $names));
-            } catch (\Throwable) {
-                $body = '[]';
-            }
+            $body = (new \App\Services\Tactical\AirBriefService())->inboxResponse($tenantId, $assignedTo);
 
             return (new Response())
                 ->setStatusCode(200)
@@ -13099,6 +13094,58 @@ class AtakApiController
             return Response::json(['error' => 'Not found'], 404);
         }
         return Response::json($row);
+    }
+
+    /**
+     * Accusé de lecture d'un brief air (POST /api/cas/{id}/read {"callsign":"HOG 21"}) : idempotent, jamais en arrière
+     * (un brief déjà WILCO reste WILCO). {id} = mission_id du jeu ou identifiant Athena. Le téléphone passe aujourd'hui
+     * par POST /api/cas/{id}/status {"status":"READ:HOG 21"} (SendCASState de la DLL) : même effet.
+     */
+    public function casRead(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $ref = \App\Services\Tactical\AirBriefService::normalizeRef((string) ($params['id'] ?? ''));
+        if ($ref === null) {
+            return Response::json(['error' => 'cas_not_found'], 404);
+        }
+        $body = $this->jsonBody($request);
+        $by = (string) ($body['callsign'] ?? $body['by'] ?? '');
+        try {
+            $res = (new \App\Services\Tactical\AirBriefService())->acknowledge($r, $ref, 'read', $by);
+        } catch (\Throwable) {
+            $res = ['result' => 'unavailable', 'recipient' => null];
+        }
+        if ($res['result'] === 'not_found') {
+            return Response::json(['error' => 'cas_not_found'], 404);
+        }
+        if ($res['result'] === 'unavailable') {
+            return Response::json(['error' => 'unavailable'], 503);
+        }
+
+        return Response::json(['ok' => true, 'recipient' => $res['recipient']]);
+    }
+
+    /** Livraison d'un brief air (GET /api/cas/{id}/delivery) : état de la demande et de chaque destinataire. */
+    public function casDelivery(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $ref = \App\Services\Tactical\AirBriefService::normalizeRef((string) ($params['id'] ?? ''));
+        try {
+            $out = $ref === null ? null : (new \App\Services\Tactical\AirBriefService())->lineDelivery($r, $ref);
+        } catch (\Throwable) {
+            return Response::json(['error' => 'unavailable'], 503);
+        }
+        if ($out === null) {
+            return Response::json(['error' => 'cas_not_found'], 404);
+        }
+
+        return Response::json($out);
     }
 
     public function casStatus(Request $request, array $params = []): Response
