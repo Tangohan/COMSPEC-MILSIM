@@ -25256,6 +25256,10 @@
 ["pour %1", "for %1"],
 ["Charger dans la fiche", "Load into the form"],
 ["Mettre à jour depuis le serveur", "Update from the server"],
+["Afficher ma grille sous l'indicatif (mode petit)", "Show my grid under the callsign (small mode)"],
+["En mode petit (téléphone porté ou miniature), votre position en grille s'affiche sous votre indicatif sur la carte, au format choisi pour le bandeau de la carte. Sans position (GPS éteint ou sans fix) : « ---- ---- ». Décochez pour n'afficher que l'indicatif.", "In small mode (carried or miniature phone), your grid position is shown under your callsign on the map, in the format chosen for the map banner. With no position (GPS off or no fix): ---- ----. Untick to show the callsign only."],
+["Grille sous l'indicatif (mode petit)", "Grid under the callsign (small mode)"],
+["Votre position en grille sous votre indicatif sur la carte, en petit format", "Your grid position under your callsign on the map, in small format"]
 ["Identité protégée", "Protected identity"],
 ["satellite", "satellite"],
 ["[CAVIARDÉ]", "[REDACTED]"]
