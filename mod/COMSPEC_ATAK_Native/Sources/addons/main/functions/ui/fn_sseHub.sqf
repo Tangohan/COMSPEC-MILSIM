@@ -33,6 +33,10 @@
       ["recent", page]        -> page retenue dans les apps récentes (l'app SSE pour une de ses fonctions)
       ["icon", [classe, icône déclarée]] -> icône de l'app : celle déclarée, sauf pour les apps du pack SSE qui déclarent une
                                  icône déjà portée par une app de l'ATAK (fn_appList)
+      ["text", texte]         -> texte du portail à l'écran : barres caviardées en « [CAVIARDÉ] », sans guillemets ni parenthèses vides
+      ["name", [nom, repli]]  -> nom d'un sujet : repli si vide, « Identité protégée » s'il est entièrement caviardé
+      ["alias", alias]        -> alias (texte ou liste) sans les vides ni les caviardés, "" s'il n'en reste aucun
+      ["item", texte]         -> consigne d'une liste numérotée sans la puce ou le numéro déjà écrit par le portail
 */
 params [["_act", "apps"], ["_arg", ""]];
 private _dir = "\z\comspec_atak_native\addons\main\data\";
@@ -43,6 +47,46 @@ if (_act isEqualTo "icon") exitWith {
         case "Fichiers": { _dir + "ui_folder.paa" };
         case "SseField": { _dir + "ui_hand.paa" };
         default { _icon };
+    }
+};
+// Textes du portail à l'écran (pages Avis et vigilance, Fiches, Recherchés) : sortie avant la table de l'app, sans coût.
+if (_act in ["text", "name", "alias", "item"]) exitWith {
+    switch (_act) do {
+        // Valeurs caviardées du portail (SseRedactionService : barres de « █ », glyphe absent des polices du téléphone, qui
+        // s'affichait en blanc : « dit «   » », « Personne à surveiller :  (alias ) »). Même règle que le PDF du portail
+        // (TocReportPdf) : chaque barre devient « [CAVIARDÉ] » ; plus aucun guillemet ni parenthèse vide.
+        case "text": {
+            if !(_arg isEqualType "") exitWith { "" };
+            private _en = ("Oui" call comspec_atak_native_fnc_tr) isNotEqualTo "Oui";
+            private _t = _arg regexReplace ["(█)+", ["[CAVIARDÉ]", "[REDACTED]"] select _en];
+            // Valeur vide entre guillemets ou parenthèses (« (alias ) », « «  » ») : le morceau entier part.
+            private _nb = toString [160]; // espace insécable, écrite par code (le préprocesseur la refuse dans le source)
+            _t = _t regexReplace [format [" ?\((alias)?( |%1)*\)", _nb], ""];
+            _t = _t regexReplace [format [" ?«( |%1)*»", _nb], ""];
+            trim _t
+        };
+        // Nom affiché d'un sujet : [nom, repli si vide] -> le nom, le repli, ou « Identité protégée » s'il est entièrement caviardé.
+        case "name": {
+            _arg params [["_n", ""], ["_fallback", ""]];
+            if !(_n isEqualType "") then { _n = ""; };
+            if ((trim _n) isEqualTo "") exitWith { _fallback };
+            if ((trim (_n regexReplace ["(█)+", ""])) isEqualTo "") exitWith { "Identité protégée" };
+            ["text", _n] call comspec_atak_native_fnc_sseHub
+        };
+        // Alias (texte ou liste) : les alias vides ou entièrement caviardés sont retirés ; "" s'il n'en reste aucun (pas de « dit « » »).
+        case "alias": {
+            private _list = [[_arg], _arg] select (_arg isEqualType []);
+            private _out = [];
+            {
+                if (_x isEqualType "" && {(trim (_x regexReplace ["(█)+", ""])) isNotEqualTo ""}) then { _out pushBack (["text", _x] call comspec_atak_native_fnc_sseHub); };
+            } forEach _list;
+            _out joinString ", "
+        };
+        // Consigne d'une liste numérotée : puce ou numéro déjà écrit en tête par le portail retiré (« 1 • Ne pas… »).
+        case "item": {
+            if !(_arg isEqualType "") exitWith { "" };
+            ["text", _arg regexReplace ["^\s*(•|·|-|–|—|\*|[0-9]+[.)])\s+", ""]] call comspec_atak_native_fnc_sseHub
+        };
     }
 };
 // Table unique de l'app : [classe, nom affiché dans l'app, une ligne qui dit à quoi sert la fonction].

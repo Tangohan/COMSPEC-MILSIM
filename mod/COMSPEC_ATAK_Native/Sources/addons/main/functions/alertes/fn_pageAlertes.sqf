@@ -50,6 +50,8 @@ private _esc = {
     _t
 };
 private _escBr = { params ["_t"]; ([_t] call _esc) regexReplace [toString [10], "<br/>"] };
+// Texte du portail : passages caviardés en « [CAVIARDÉ] », sans guillemets ni parenthèses vides (fn_sseHub « text »).
+private _clean = { params ["_t"]; ["text", _t] call comspec_atak_native_fnc_sseHub };
 // Marquage de classification : couleurs des bandeaux de l'échelle américaine du portail. [fond RGBA, texte].
 private _markCol = {
     params ["_m"];
@@ -132,7 +134,8 @@ private _statusRow = {
     private _left = "";
     private _bg = [0.071, 0.09, 0.114, 1];
     if ((_msg select 0) isNotEqualTo "" && {(diag_tickTime - (_msg select 1)) < 30 || {_busy}}) then {
-        _left = [_msg select 0] call _esc;
+        // Retour d'une action (« Lecture accusée. ») : en couleur d'état, pour ne pas se lire comme un nom de service.
+        _left = format ["<t color='%1'>%2</t>", _okHex, [_msg select 0] call _esc];
     } else {
         private _clock = _store getOrDefault ["clock", ""];
         switch (true) do {
@@ -151,7 +154,9 @@ private _statusRow = {
             };
         };
     };
-    if (_right isEqualTo "") then { _right = ["LIAISON SATELLITE", "LIAISON PAR RELAIS"] select ((["get"] call comspec_atak_native_fnc_linkMode) isEqualTo "relay"); };
+    // Liaison à droite, libellée et atténuée : avant, « Lecture accusée. … LIAISON SATELLITE » se lisait comme une seule
+    // phrase (statut et nom de service mêlés). Libellé et valeur sont deux morceaux traduits à part (fn_tr).
+    if (_right isEqualTo "") then { _right = format ["<t color='%1'>Liaison</t> %2", _muted, ["satellite", "relais"] select ((["get"] call comspec_atak_native_fnc_linkMode) isEqualTo "relay")]; };
     ["strip", format ["<t font='EtelkaMonospacePro' size='0.85'>%1</t>", _left], format ["<t font='EtelkaMonospacePro' size='0.85'>%1</t>", _right], _bg]
 };
 private _footer = {
@@ -225,7 +230,8 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
     private _lv = [_f get "level"] call _level;
     _lv params ["_lvTitle", "_lvRank", "_lvHex", "_lvRgb", "_lvShape"];
     if (_lvRank isEqualTo 0) then { _lvRank = _f get "rank"; };
-    private _name = [_f get "name", "Sujet non identifié"] select ((_f get "name") isEqualTo "");
+    // Nom caviardé : « Identité protégée » ; vide : « Sujet non identifié » (fn_sseHub « name »).
+    private _name = ["name", [_f get "name", "Sujet non identifié"]] call comspec_atak_native_fnc_sseHub;
     private _closed = (_f get "state") in ["lifted", "expired"];
     private _more = ["more", _open] call comspec_atak_native_fnc_alertesAction;
 
@@ -338,8 +344,9 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
     _rows pushBack ["strip", format ["<t font='COMSPEC_BarlowBold' size='0.9' color='%1'>%2</t>", _edgeHex, [[_f] call _docTitle] call _esc],
         format ["<t font='EtelkaMonospacePro' size='0.85'>%1</t>", [_f get "ref"] call _esc], [0.071, 0.09, 0.114, 1]];
     _rows pushBack ([""] call _statusRow);
-    // Notice de couleur : filet plein de la couleur de la notice, en tête et en pied du document.
-    if ((count (_notice select 2)) isEqualTo 4) then { _rows pushBack ["banner", "<t size='0.3'> </t>", _notice select 2]; };
+    // Notice de couleur : filet de la couleur de la notice sous l'en-tête (fn_formRender dessine un bandeau sans texte en
+    // trait fin). Plus de filet en pied : collé au bandeau de classification du bas, il se lisait comme un second bandeau vide.
+    if ((count (_notice select 2)) isEqualTo 4) then { _rows pushBack ["banner", "", _notice select 2]; };
     if (_closed) then {
         private _when = _more getOrDefault ["liftedAt", ""];
         _rows pushBack ["banner", format ["<t font='COMSPEC_BarlowBold' color='#ffffff'>%1%2</t>%3", ["ALERTE LEVÉE", "ALERTE EXPIRÉE"] select ((_f get "state") isEqualTo "expired"),
@@ -355,7 +362,8 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
     if ((_f get "armed") isEqualTo "yes" && {(_f get "level") isNotEqualTo "danger"}) then {
         _rows pushBack ["banner", "<t font='COMSPEC_BarlowBold' size='1.05' color='#ffffff'>ARMÉ ET DANGEREUX</t>", [0.55, 0.05, 0.05, 1]];
     };
-    private _alias = (_f get "alias") joinString ", ";
+    // Alias vides ou caviardés retirés : plus de « dit « » » orphelin.
+    private _alias = ["alias", _f get "alias"] call comspec_atak_native_fnc_sseHub;
     _rows pushBack ["person", _d + "app_wanted.paa", format ["<t font='COMSPEC_BarlowBold' size='1.35'>%1</t>%2<br/><t size='0.85' color='%3'>%4%5</t>",
         [_name] call _esc, ["", format ["<br/><t color='%1' size='0.9'>dit « %2 »</t>", _dim, [_alias] call _esc]] select (_alias isNotEqualTo ""),
         _muted, [[_f] call _typeLabel] call _esc,
@@ -373,11 +381,12 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
     _rows pushBack ["section", "Conduite à tenir", ""];
     if (_conduct isEqualTo []) then { _rows pushBack ["text", format ["<t color='%1'>Aucune consigne particulière.</t>", _muted]]; };
     {
-        _rows pushBack ["text", format ["<t font='EtelkaMonospaceProBold' color='%1'>%2</t>  <t color='#ffe9e2'>%3</t>", _lvHex, _forEachIndex + 1, [_x] call _escBr], [0.2, 0.07, 0.06, 1]];
+        // Puce ou numéro déjà écrit par le portail retiré : un seul numéro par consigne (avant « 1 • Ne pas… »).
+        _rows pushBack ["text", format ["<t font='EtelkaMonospaceProBold' color='%1'>%2</t>  <t color='#ffe9e2'>%3</t>", _lvHex, _forEachIndex + 1, [["item", _x] call comspec_atak_native_fnc_sseHub] call _escBr], [0.2, 0.07, 0.06, 1]];
     } forEach _conduct;
     private _donts = _more getOrDefault ["donts", []];
     if (_donts isNotEqualTo []) then {
-        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>À NE PAS FAIRE</t><br/><t color='#ffd2cc'>%2</t>", _alert, (_donts apply { "· " + ([_x] call _esc) }) joinString "<br/>"], [0.2, 0.07, 0.06, 1]];
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>À NE PAS FAIRE</t><br/><t color='#ffd2cc'>%2</t>", _alert, (_donts apply { "· " + ([["item", _x] call comspec_atak_native_fnc_sseHub] call _esc) }) joinString "<br/>"], [0.2, 0.07, 0.06, 1]];
     };
     // Motifs codifiés (détail), sinon le motif court de la liste.
     private _reasons = _more getOrDefault ["reasons", []];
@@ -386,17 +395,18 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
         if (_reasons isNotEqualTo []) then {
             _rows pushBack ["text", (_reasons apply {
                 private _sp = _x find " ";
-                if (_sp > 0) then { format ["<t font='EtelkaMonospaceProBold' color='%1'>%2</t> %3", _dim, [_x select [0, _sp]] call _esc, [_x select [_sp + 1]] call _esc] } else { [_x] call _esc }
+                if (_sp > 0) then { format ["<t font='EtelkaMonospaceProBold' color='%1'>%2</t> %3", _dim, [_x select [0, _sp]] call _esc, [[_x select [_sp + 1]] call _clean] call _esc] } else { [[_x] call _clean] call _esc }
             }) joinString "<br/>", [0.085, 0.102, 0.093, 1]];
         };
-        if ((_f get "reason") isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e3ebe7'>%1</t>", [_f get "reason"] call _escBr], [0.085, 0.102, 0.093, 1]]; };
+        if ((_f get "reason") isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e3ebe7'>%1</t>", [[_f get "reason"] call _clean] call _escBr], [0.085, 0.102, 0.093, 1]]; };
     };
     if ((_more getOrDefault ["desc", ""]) isNotEqualTo "") then {
         _rows pushBack ["section", "Signalement", ""];
-        _rows pushBack ["text", format ["<t color='#e3ebe7'>%1</t>", [_more get "desc"] call _escBr], [0.085, 0.102, 0.093, 1]];
+        _rows pushBack ["text", format ["<t color='#e3ebe7'>%1</t>", [[_more get "desc"] call _clean] call _escBr], [0.085, 0.102, 0.093, 1]];
     };
     private _fact = {
         params ["_label", "_v"];
+        _v = [_v] call _clean;
         if (_v isEqualTo "") exitWith {};
         _rows pushBack ["info", _label, [_v] call _esc];
     };
@@ -411,7 +421,7 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
     private _links = [["Véhicules", _more getOrDefault ["vehicles", []]], ["Personnes liées", _more getOrDefault ["people", []]]] select { (count (_x select 1)) > 0 };
     if (_links isNotEqualTo []) then {
         _rows pushBack ["section", "Liens", ""];
-        { _x params ["_label", "_items"]; _rows pushBack ["info", _label, (_items apply { [_x] call _esc }) joinString "<br/>"]; } forEach _links;
+        { _x params ["_label", "_items"]; _rows pushBack ["info", _label, (_items apply { [[_x] call _clean] call _esc }) joinString "<br/>"]; } forEach _links;
     };
     // Service à informer : nom, canal, délai ; adresse de signalement et son QR code à scanner avec un vrai téléphone.
     _rows pushBack ["section", "Service à informer", ""];
@@ -420,7 +430,7 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
         _rows pushBack ["text", format ["<t color='%1'>Aucun service désigné : signalez au bureau par JE L'AI VU.</t>", _muted]];
     } else {
         _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' size='1.15'>%1</t>%2%3",
-            [[_f get "service", "Service non précisé"] select ((_f get "service") isEqualTo "")] call _esc,
+            [["name", [_f get "service", "Service non précisé"]] call comspec_atak_native_fnc_sseHub] call _esc,
             ["", format ["<br/><t font='EtelkaMonospaceProBold' color='%1'>%2</t>", _warn, [_f get "channel"] call _esc]] select ((_f get "channel") isNotEqualTo ""),
             ["", format ["<br/><t size='0.85' color='%1'>Compte rendu : %2</t>", _dim, [_delay] call _esc]] select ((_f get "delay") isNotEqualTo "")], [0.05, 0.08, 0.11, 1]];
     };
@@ -429,7 +439,9 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
         _rows pushBack ["text", format ["<t size='0.8' color='%1'>Adresse de signalement</t><br/><t font='EtelkaMonospacePro' size='0.82'>%2</t>", _muted, [_url] call _esc], [0.05, 0.08, 0.11, 1]];
         private _qr = (_store getOrDefault ["qr", createHashMap]) getOrDefault [_url, []];
         if ((count _qr) >= 21) then {
-            _rows pushBack ["qr", _qr, [0.62, 0.3] select _land];
+            // Part de la largeur de sa colonne (le QR reste dans la section Service à informer) ; fn_formRender le réduit
+            // pour qu'il tienne entier dans la zone visible.
+            _rows pushBack ["qr", _qr, 0.62];
             _rows pushBack ["text", format ["<t align='center' size='0.8' color='%1'>Scannez ce code avec votre téléphone pour signaler depuis le portail.</t>", _muted]];
         };
     } else {
@@ -455,7 +467,6 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
     };
     _cross pushBack ["ACTUALISER", { ["load", true] call comspec_atak_native_fnc_alertesAction; }];
     _rows pushBack ["buttons", _cross];
-    if ((count (_notice select 2)) isEqualTo 4) then { _rows pushBack ["banner", "<t size='0.3'> </t>", _notice select 2]; };
     _rows pushBack ([_mark] call _banner);
     _rows pushBack ([] call _footer);
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
@@ -555,7 +566,7 @@ private _inbox = (["inbox"] call comspec_atak_native_fnc_fichesAction) apply { [
         ["", " · périssable"] select ((_f get "soon") isEqualTo true),
         ["", format [" · reçue de %1", _from param [1, ""]]] select (_from isNotEqualTo [])];
     _rows pushBack ["notif", _d + (["ui_eye.paa", "app_wanted.paa"] select ((_f get "doc") isEqualTo "avis")), _rgb,
-        [_f get "name", "Sujet non identifié"] select ((_f get "name") isEqualTo ""), _metaTxt, _body, ["open", _f get "ref"] call _act, {}, "Ouvrir l'alerte", !_read];
+        ["name", [_f get "name", "Sujet non identifié"]] call comspec_atak_native_fnc_sseHub, _metaTxt, _body, ["open", _f get "ref"] call _act, {}, "Ouvrir l'alerte", !_read];
 } forEach _shown;
 _rows pushBack ["buttons", [
     [format ["ACTUALISER%1", ["", format [" (%1)", _store getOrDefault ["clock", ""]]] select ((_store getOrDefault ["clock", ""]) isNotEqualTo "")], { ["load", true] call comspec_atak_native_fnc_alertesAction; }, true],
