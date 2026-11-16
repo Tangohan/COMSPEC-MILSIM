@@ -429,8 +429,9 @@ if (_open isNotEqualTo "" && {_view in ["detail", "share", "report", "renew", "l
     if ((_f get "service") isEqualTo "" && {(_f get "channel") isEqualTo ""}) then {
         _rows pushBack ["text", format ["<t color='%1'>Aucun service désigné : signalez au bureau par JE L'AI VU.</t>", _muted]];
     } else {
+        private _svc = [_f get "service"] call _clean;
         _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' size='1.15'>%1</t>%2%3",
-            [["name", [_f get "service", "Service non précisé"]] call comspec_atak_native_fnc_sseHub] call _esc,
+            [[_svc, "Service non précisé"] select (_svc isEqualTo "")] call _esc,
             ["", format ["<br/><t font='EtelkaMonospaceProBold' color='%1'>%2</t>", _warn, [_f get "channel"] call _esc]] select ((_f get "channel") isNotEqualTo ""),
             ["", format ["<br/><t size='0.85' color='%1'>Compte rendu : %2</t>", _dim, [_delay] call _esc]] select ((_f get "delay") isNotEqualTo "")], [0.05, 0.08, 0.11, 1]];
     };
