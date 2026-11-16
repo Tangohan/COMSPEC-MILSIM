@@ -118,7 +118,7 @@ final class SseAccessMemberRights
         return [
             'member' => $member,
             'ready' => $this->policy()->rules()->ready(),
-            'clearance' => $this->clearanceOverview($tenantId, $memberId),
+            'clearance' => $this->clearanceOverview($tenantId, $memberId, $actorId),
             'entry' => $effective['entry'],
             'rows' => $rows,
             'own' => $own,
@@ -130,13 +130,14 @@ final class SseAccessMemberRights
     }
 
     /** @return array<string, mixed> niveau d'habilitation du membre, niveaux que la personne peut inscrire, et si elle peut modifier */
-    private function clearanceOverview(int $tenantId, int $memberId): array
+    private function clearanceOverview(int $tenantId, int $memberId, int $actorId): array
     {
         $ceiling = $this->actorCeiling();
 
         return $this->clearance()->view($tenantId, $memberId) + [
             'options' => $this->clearance()->grantable($ceiling),
-            'may_change' => $this->clearance()->mayChange($memberId, $ceiling),
+            // Sa propre habilitation ne se modifie pas (pas d'auto-élévation).
+            'may_change' => $actorId !== $memberId && $this->clearance()->mayChange($memberId, $ceiling),
         ];
     }
 
@@ -147,6 +148,9 @@ final class SseAccessMemberRights
      */
     public function changeClearance(int $tenantId, int $actorId, string $actorLabel, int $memberId, ?string $level, string $reason): array
     {
+        if ($actorId === $memberId) {
+            return ['ok' => false, 'message' => 'Vous ne pouvez pas modifier votre propre habilitation.'];
+        }
         if (!$this->visibleTo($tenantId, $actorId)) {
             return ['ok' => false, 'message' => 'Seul le droit de gestion SSE permet de modifier les droits d’accès.'];
         }

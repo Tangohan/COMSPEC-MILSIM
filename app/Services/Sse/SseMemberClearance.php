@@ -14,8 +14,8 @@ use App\Services\Rbac\EffectivePermissionsService;
  * unique SseClearanceService::resolve), d'où il vient, qui l'a inscrit et quand, et la modification du niveau inscrit sur
  * sa fiche opérateur (personnel_profiles.clearance_level, la voie que l'encadrement utilise déjà).
  *
- * Garde-fous : on n'accorde pas plus haut que son propre plafond, on ne modifie pas la fiche d'un membre dont le niveau
- * dépasse le sien, un motif est obligatoire, chaque changement est inscrit au journal d'audit SSE (objet member_clearance).
+ * Garde-fous : on n'accorde pas plus haut que son propre plafond, on ne modifie ni sa propre fiche ni celle d'un membre dont le
+ * niveau dépasse le sien, un motif est obligatoire, chaque changement est inscrit au journal d'audit SSE (objet member_clearance).
  * Les habilitations qui viennent des niveaux d'accès (permissions atak.sse.clearance.*) ou des droits SSE existants ne se
  * changent pas d'ici : elles se règlent sur le niveau d'accès du membre. Le niveau de la fiche n'a pas d'échéance propre.
  */
@@ -119,6 +119,10 @@ final class SseMemberClearance
     {
         if ($tenantId < 1 || $actorId < 1 || $memberId < 1) {
             return ['ok' => false, 'message' => 'Membre introuvable.'];
+        }
+        // Pas d'auto-élévation : sa propre habilitation se fait inscrire par quelqu'un d'autre.
+        if ($actorId === $memberId) {
+            return ['ok' => false, 'message' => 'Vous ne pouvez pas modifier votre propre habilitation.'];
         }
         $level = $level !== null ? strtolower(trim($level)) : null;
         if ($level === '') {
