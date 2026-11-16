@@ -263,7 +263,7 @@ final class SseAlertReportController
             'tab' => $tab, 'reports' => $tab === self::TAB_PROPOSALS ? [] : $reports, 'alerts' => $alerts, 'counts' => $counts,
             'proposals' => $proposals, 'proposalCount' => count($proposals),
             'canManage' => $canManage, 'ready' => $ready, 'lang' => self::readerLang(), 'tz' => $this->timezone($tenantId),
-            'csrfToken' => Csrf::token(), 'activeNav' => 'avis-recherche',
+            'csrfToken' => Csrf::token(), 'activeNav' => 'avis-signalements',
         ]);
     }
 
@@ -598,7 +598,7 @@ final class SseAlertReportController
             'title' => 'Signalement', 'mode' => $mode, 'view' => $this->heroOf($alert, $lang), 'link' => $link,
             'errors' => $extra['errors'] ?? [], 'old' => $extra['old'] ?? $this->emptyInput($tz), 'report' => $extra['report'] ?? null, 'replay' => (bool) ($extra['replay'] ?? false),
             'action' => url(SseAlertReportTo::path((string) $link['token'])), 'qrUrl' => url(SseAlertReportTo::path((string) $link['token']) . '/qr.svg'),
-            'lang' => $lang, 'tz' => $tz, 'nowLocal' => $this->nowLocal($tz), 'csrfToken' => Csrf::token(), 'cid' => bin2hex(random_bytes(12)), 'activeNav' => 'avis-recherche',
+            'lang' => $lang, 'tz' => $tz, 'nowLocal' => $this->nowLocal($tz), 'csrfToken' => Csrf::token(), 'cid' => bin2hex(random_bytes(12)), 'activeNav' => 'avis-signalements',
             'maxBody' => SseAlertService::BODY_MAX, 'minBody' => SseAlertService::BODY_MIN, 'maxPhotoMb' => (int) (SseAlertReportPhotos::MAX_BYTES / 1048576),
         ]);
 
@@ -608,13 +608,13 @@ final class SseAlertReportController
     /** @param array{0: int, 1: string, 2: string} $denial */
     private function denialPage(array $denial): Response
     {
-        return $this->page('atak.sse.alerts.report', ['title' => 'Signalement', 'mode' => $denial[1], 'message' => $denial[2], 'lang' => self::readerLang(), 'csrfToken' => Csrf::token(), 'activeNav' => 'avis-recherche'])->setStatusCode($denial[0]);
+        return $this->page('atak.sse.alerts.report', ['title' => 'Signalement', 'mode' => $denial[1], 'message' => $denial[2], 'lang' => self::readerLang(), 'csrfToken' => Csrf::token(), 'activeNav' => 'avis-signalements'])->setStatusCode($denial[0]);
     }
 
     /** « Introuvable » : la même page pour un jeton inconnu, d'une autre communauté, révoqué ou au-dessus de l'habilitation. */
     private function notFound(): Response
     {
-        return $this->page('atak.sse.alerts.report', ['title' => 'Signalement introuvable', 'mode' => 'notfound', 'lang' => self::readerLang(), 'csrfToken' => Csrf::token(), 'activeNav' => 'avis-recherche'])->setStatusCode(404);
+        return $this->page('atak.sse.alerts.report', ['title' => 'Signalement introuvable', 'mode' => 'notfound', 'lang' => self::readerLang(), 'csrfToken' => Csrf::token(), 'activeNav' => 'avis-signalements'])->setStatusCode(404);
     }
 
     private function plainNotFound(): Response
