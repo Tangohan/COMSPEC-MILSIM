@@ -71510,4 +71510,6 @@ return [
     'Réémis sous la référence' => 'Reissued under reference',
     'Réémission en cours…' => 'Reissuing…',
     'Deviendra lisible' => 'Will become readable',
+    'Urgence : prévenez le service sans attendre' => 'Urgent: tell the service without delay',
+    'Avant de signaler' => 'Before you report',
 ];
