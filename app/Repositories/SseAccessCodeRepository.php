@@ -127,6 +127,7 @@ final class SseAccessCodeRepository
                 'uses_count' => (int) ($row['uses_count'] ?? 0),
                 'created_at' => $row['created_at'] ?? null,
                 'active' => !$revoked && !$expired && !$exhausted,
+                'status' => $revoked ? 'revoked' : ($expired ? 'expired' : ($exhausted ? 'exhausted' : 'active')),
                 'status_label' => $revoked ? 'Révoqué' : ($expired ? 'Expiré' : ($exhausted ? 'Épuisé' : 'Actif')),
             ];
         }
@@ -198,6 +199,7 @@ final class SseAccessCodeRepository
             $out[] = [
                 'source' => 'access',
                 'event_type' => $type,
+                'code_id' => isset($row['access_code_id']) ? (int) $row['access_code_id'] : null,
                 'event_label' => $labels[$type] ?? 'Action d’accès',
                 'detail' => trim((string) ($row['detail'] ?? '')),
                 'actor' => trim((string) ($row['actor_label'] ?? '')) ?: null,
