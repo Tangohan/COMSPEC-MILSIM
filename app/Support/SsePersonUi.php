@@ -91,7 +91,7 @@ final class SsePersonUi
     /** Libellé français d'un niveau de menace (clé de SseWantedCatalog::THREATS). */
     public static function threat(string $code): string
     {
-        return SseWantedCatalog::THREATS[$code][0] ?? $code;
+        return SseWantedCatalog::THREATS[$code][self::lang() === 'en' ? 1 : 0] ?? $code;
     }
 
     /** Ton visuel d'un niveau de menace. */
@@ -104,7 +104,66 @@ final class SsePersonUi
         };
     }
 
-    /** Ton d'une classification (CUI neutre, puis du plus doux au plus fort). */
+    /** Date courte « 20/11 » (année ajoutée si elle diffère de celle de $now), vide si la date est absente. */
+    public static function shortDate(?string $utc, int $now): string
+    {
+        $ts = self::ts($utc);
+        if ($ts === null) {
+            return '';
+        }
+
+        return date('d/m', $ts) . (date('Y', $ts) !== date('Y', $now) ? '/' . date('y', $ts) : '');
+    }
+
+    /**
+     * Niveau d'alerte d'un avis pour la pastille « R » : échelle de SseAlertLevel (rang 1 à 4, couleur, encre lisible).
+     *
+     * @return array{key: string, rank: int, title: string, bg: string, ink: string, hint: string}
+     */
+    public static function alertLevel(string $threat, string $armed): array
+    {
+        return self::levelView(SseAlertLevel::of($threat, $armed));
+    }
+
+    /**
+     * Dangerosité (niveau de menace de l'avis, 4 crans) : rang 1 à 4 pris sur la même échelle de couleurs.
+     *
+     * @return array{key: string, rank: int, title: string, bg: string, ink: string, hint: string}
+     */
+    public static function dangerLevel(string $threat): array
+    {
+        $rank = match ($threat) {
+            'critical' => 4,
+            'high' => 3,
+            'medium' => 2,
+            default => 1,
+        };
+        foreach (SseAlertLevel::LEVELS as $key => $l) {
+            if ($l['rank'] === $rank) {
+                return self::levelView(['key' => $key] + $l);
+            }
+        }
+
+        return self::levelView(SseAlertLevel::of('low', null));
+    }
+
+    /** @param array<string, mixed> $l @return array{key: string, rank: int, title: string, bg: string, ink: string, hint: string} */
+    private static function levelView(array $l): array
+    {
+        $i = self::lang() === 'en' ? 1 : 0;
+        $hex = static fn (array $c): string => sprintf('#%02X%02X%02X', $c[0], $c[1], $c[2]);
+
+        return [
+            'key' => (string) $l['key'],
+            'rank' => (int) $l['rank'],
+            'title' => (string) $l['title'][$i],
+            'bg' => $hex($l['rgb']),
+            'ink' => $hex($l['ink']),
+            'hint' => (string) $l['hint'][$i],
+        ];
+    }
+
+    /** Ton d'une classification(CUI neutre, puis du plus doux au plus fort). */
     public static function classTone(?string $code): string
     {
         return match (SsePersonWork::rank($code)) {

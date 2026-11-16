@@ -379,7 +379,7 @@
     }
     // Clic sur une ligne ou une carte (hors liens, boutons et cases) : aperçu.
     var item = e.target.closest ? e.target.closest('[data-pe-item]') : null;
-    if (item && !e.target.closest('a, button, label, input, summary, select, textarea, details')) {
+    if (item && !e.target.closest('a, button, label, input, summary, select, textarea, details, [data-pe-tip]')) {
       openDrawer(item.getAttribute('data-id'), false);
     }
     $$('details.pe-more[open]').forEach(function (d) { if (!d.contains(e.target)) { d.open = false; } });
@@ -469,4 +469,56 @@
       default: break;
     }
   });
+
+  /* ------------------------------------------------------------------ Info-bulles (R, danger, S / NS) : survol, focus clavier, toucher */
+  var tipOpen = null;
+  var lastPointer = 'mouse';
+  function tipPlace(tip) {
+    var box = tip.querySelector('.pe-tip__box');
+    if (!box) { return; }
+    var r = tip.getBoundingClientRect();
+    var w = box.offsetWidth;
+    var h = box.offsetHeight;
+    var left = Math.max(12, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 12));
+    var top = r.bottom + 8;
+    if (top + h > window.innerHeight - 12 && r.top - h - 8 > 12) { top = r.top - h - 8; }
+    box.style.left = Math.round(left) + 'px';
+    box.style.top = Math.round(top) + 'px';
+  }
+  function tipShow(tip) {
+    if (tipOpen && tipOpen !== tip) { tipOpen.classList.remove('is-open'); }
+    tip.classList.add('is-open');
+    tipOpen = tip;
+    tipPlace(tip);
+  }
+  function tipHide(tip) {
+    tip.classList.remove('is-open');
+    if (tipOpen === tip) { tipOpen = null; }
+  }
+  document.addEventListener('pointerdown', function (e) { lastPointer = e.pointerType || 'mouse'; }, true);
+  document.addEventListener('mouseover', function (e) {
+    var tip = e.target.closest ? e.target.closest('[data-pe-tip]') : null;
+    if (tip && lastPointer !== 'touch') { tipShow(tip); }
+  });
+  document.addEventListener('mouseout', function (e) {
+    var tip = e.target.closest ? e.target.closest('[data-pe-tip]') : null;
+    if (tip && !tip.contains(e.relatedTarget) && document.activeElement && !tip.contains(document.activeElement)) { tipHide(tip); }
+  });
+  document.addEventListener('focusin', function (e) {
+    var tip = e.target.closest ? e.target.closest('[data-pe-tip]') : null;
+    if (tip) { tipShow(tip); }
+  });
+  document.addEventListener('focusout', function (e) {
+    var tip = e.target.closest ? e.target.closest('[data-pe-tip]') : null;
+    if (tip) { tipHide(tip); }
+  });
+  document.addEventListener('click', function (e) {
+    var tip = e.target.closest ? e.target.closest('[data-pe-tip]') : null;
+    if (!tip) { if (tipOpen) { tipHide(tipOpen); } return; }
+    if (lastPointer !== 'touch') { return; }
+    // Toucher : un premier appui montre l'info-bulle (sans suivre le lien de l'avis), le second l'ouvre.
+    if (!tip.classList.contains('is-open')) { e.preventDefault(); tipShow(tip); }
+  }, true);
+  window.addEventListener('scroll', function () { if (tipOpen) { tipHide(tipOpen); } }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && tipOpen) { tipHide(tipOpen); } });
 })();
