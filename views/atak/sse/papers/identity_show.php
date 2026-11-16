@@ -172,9 +172,9 @@ require __DIR__ . '/_subnav.php';
             <details class="dos-menu">
                 <summary>Autres actions</summary>
                 <div class="dos-menu__list">
-                    <a href="<?= $h(url($filesSubject . '#signalement')) ?>">Modifier le signalement</a>
-                    <a href="<?= $h(url($filesSubject . '#photos')) ?>">Verser une photo</a>
-                    <a href="<?= $h(url($filesSubject . '#mentions')) ?>">Mentionner aux fichiers</a>
+                    <a href="<?= $h(url($filesSubject . '#fx-m-signalement')) ?>">Modifier le signalement</a>
+                    <a href="<?= $h(url($filesSubject . '#fx-m-photo')) ?>">Verser une photo</a>
+                    <a href="<?= $h(url($filesSubject . '#fx-m-mention')) ?>">Mentionner aux fichiers</a>
                     <a href="<?= $h(url($self . '#photos')) ?>" data-dos-go>Photo et signature du titulaire</a>
                     <a href="<?= $h(SseFileController::replayUrl('QW', ['last' => $identity['last_name'], 'first' => $identity['first_name'], 'dob' => $identity['birth_date'] ?? ''])) ?>">Passer aux fichiers</a>
                     <a href="<?= $h(url($filesSubject)) ?>">Fiche des fichiers</a>
@@ -265,7 +265,7 @@ require __DIR__ . '/_subnav.php';
                     }
                     ?>
                     <?php if ($sig === []): ?>
-                        <div class="dos-empty"><strong>Signalement non renseigné</strong>Taille, corpulence, cheveux, yeux et signes particuliers s’affichent ici une fois saisis.<?php if (!empty($canManage)): ?> <a href="<?= $h(url($filesSubject . '#signalement')) ?>">Renseigner le signalement</a><?php endif; ?></div>
+                        <div class="dos-empty"><strong>Signalement non renseigné</strong>Taille, corpulence, cheveux, yeux et signes particuliers s’affichent ici une fois saisis.<?php if (!empty($canManage)): ?> <a href="<?= $h(url($filesSubject . '#fx-m-signalement')) ?>">Renseigner le signalement</a><?php endif; ?></div>
                     <?php else: ?>
                         <dl class="dos-kv"><?php foreach ($sig as [$k, $v]): ?><dt><?= $h($k) ?></dt><dd translate="no"><?= $h($v) ?></dd><?php endforeach; ?></dl>
                     <?php endif; ?>
