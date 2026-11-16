@@ -531,4 +531,166 @@ final class SseSheetRedactionExplainTest extends TestCase
         ], ['ref' => 'AVIS-1', 'year' => 2026, 'seq' => 1]);
         self::assertSame('notfound', $svc->reissue(1, $id, 'confidentiel', 'Motif valable.', self::access('confidentiel'))['error']);
     }
+
+    // ------------------------------------------------ Réémettre depuis le menu de téléchargement
+
+    /** Le menu de téléchargement (fenêtre) d'un document, tel que la page le rend pour cet opérateur. */
+    private function menu(int $issueId, SseSheetAccess $access): string
+    {
+        $issue = (new SseSheetRepository())->findIssue(1, $issueId);
+        self::assertNotNull($issue);
+        $lmRow = \App\Services\Sse\SseSheetIssueView::rows([$issue], $access)[0];
+        $lmClass = 'btn';
+        $lmLabel = 'Télécharger';
+        ob_start();
+        require dirname(__DIR__, 2) . '/views/atak/sse/_sheet_level_menu.php';
+
+        return (string) ob_get_clean();
+    }
+
+    public function testTheDownloadMenuOffersTheReissuePanelWhenALevelNeedsIt(): void
+    {
+        self::requirePdfEngine();
+        $p = $this->person();
+        $c = $this->issue($p, 'identification', 'encadrement');
+        $html = $this->menu($c['id'], self::access('confidentiel'));
+        preg_match('~<dialog class="shx-dialog[^"]*" id="shx-dl-' . $c['id'] . '".*?</dialog>~s', $html, $m);
+        self::assertNotEmpty($m);
+        $dialog = $m[0];
+        // Le niveau qui demande la réémission est choisissable (plus désactivé) et ouvre le panneau.
+        self::assertMatchesRegularExpression('~<option value="confidentiel" data-state="reissue" data-reissue="1">[^<]*réémission requise~u', $dialog);
+        self::assertStringContainsString('data-shx-rei-open', $dialog);
+        // Le panneau poste vers la route existante, avec le jeton, le niveau, le motif obligatoire et l'aperçu du niveau.
+        preg_match('~<form[^>]*data-shx-rei.*?</form>~s', $dialog, $f);
+        self::assertNotEmpty($f);
+        $panel = $f[0];
+        self::assertStringContainsString('method="post"', $panel);
+        self::assertStringContainsString('action="' . url('atak/sse/identites/emissions/' . $c['id'] . '/reemettre') . '"', $panel);
+        self::assertStringContainsString('name="_csrf_token"', $panel);
+        self::assertStringContainsString('name="classification"', $panel);
+        self::assertMatchesRegularExpression('~<textarea[^>]*name="reason"[^>]*required[^>]*minlength="5"~', $panel);
+        self::assertStringContainsString('Réémettre à ce niveau', $panel);
+        self::assertStringContainsString('Ce qui deviendra lisible', $panel);
+        self::assertStringContainsString('Réémettre et télécharger', $panel);
+        self::assertStringContainsString('data-shx-rei-cancel', $panel);
+        self::assertStringContainsString('aria-live="polite"', $panel);
+        self::assertStringContainsString('data-level="confidentiel"', $panel);
+        self::assertStringNotContainsString('data-level="tres_restreint"', $panel, 'jamais au-dessus de l’habilitation');
+        self::assertStringContainsString('class="is-on"', $panel, 'des catégories deviennent lisibles à ce niveau');
+        self::assertStringNotContainsString('sse-ds', $dialog);
+        self::assertStringNotContainsString('█', $dialog);
+        foreach (self::SECRETS as $secret) {
+            self::assertStringNotContainsString($secret, $dialog, $secret);
+        }
+        self::assertDoesNotMatchRegularExpression('~fiction|simulation|usage RP~iu', strip_tags($dialog));
+    }
+
+    public function testTheDownloadMenuHasNoPanelWithoutTheRightToReissue(): void
+    {
+        self::requirePdfEngine();
+        $p = $this->person();
+        $c = $this->issue($p, 'identification', 'encadrement');
+        // Droit d'émettre ce modèle retiré : le niveau reste signalé, sans bouton ni panneau, avec le niveau requis.
+        $noRight = new SseSheetAccess(new SseWantedAccess(false, true, true, true, 1, 7, 'ANALYSTE'), static fn (): bool => false, true, 'confidentiel');
+        $html = $this->menu($c['id'], $noRight);
+        self::assertStringNotContainsString('data-shx-rei', $html);
+        self::assertStringNotContainsString('/reemettre', $html);
+        self::assertMatchesRegularExpression('~<option value="confidentiel" data-state="reissue" disabled>~', $html);
+        self::assertStringContainsString('Niveau requis : S — demander à un responsable habilité', $html);
+        // Un avis de recherche n'a pas de niveaux : pas de menu, donc pas de panneau.
+        $notice = (new SseSheetRepository())->createIssue(1, [
+            'person_id' => null, 'identity_id' => 3, 'model' => 'notice', 'lang' => 'fr', 'classification' => 'encadrement', 'faces' => 'auto', 'texts' => [], 'snapshot' => [],
+            'sensitive' => [], 'user_id' => 7, 'label' => 'X',
+        ], ['ref' => 'AVIS-9', 'year' => 2026, 'seq' => 9]);
+        self::assertStringNotContainsString('data-shx-rei', $this->menu($notice, self::access('confidentiel')));
+    }
+
+    /** @return array<string, mixed> */
+    private function postReissue(SseSheetController $controller, int $id, array $post, bool $json = true): array
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        if ($json) {
+            $_SERVER['HTTP_ACCEPT'] = 'application/json';
+        } else {
+            unset($_SERVER['HTTP_ACCEPT']);
+        }
+        $_POST = $post;
+        $r = $controller->reissueHigher(new Request(), ['id' => $id]);
+        unset($_SERVER['HTTP_ACCEPT']);
+
+        return ['status' => $r->statusCode(), 'json' => json_decode((string) $r->body(), true), 'location' => $r->headerValue('Location')];
+    }
+
+    public function testThePanelPostsToTheExistingRouteAndAnswersInJsonOrByRedirection(): void
+    {
+        self::requirePdfEngine();
+        $p = $this->person();
+        $c = $this->issue($p, 'identification', 'encadrement');
+        $controller = new SseSheetController(null, null, null, null, null, self::access('confidentiel'));
+        $ok = ['_csrf_token' => 'jeton', 'classification' => 'confidentiel', 'reason' => 'Remise au partenaire habilité.'];
+        $count = static fn (PDO $pdo): int => (int) $pdo->query('SELECT COUNT(*) FROM sse_doc_issues')->fetchColumn();
+
+        // Réponse JSON : la nouvelle référence, liée à l'ancienne, et l'adresse de son PDF au niveau choisi.
+        $res = $this->postReissue($controller, $c['id'], $ok);
+        self::assertSame(200, $res['status']);
+        self::assertTrue($res['json']['ok']);
+        self::assertSame($c['ref'], $res['json']['old_ref']);
+        self::assertNotSame($c['ref'], $res['json']['ref']);
+        self::assertSame('confidentiel', $res['json']['level']);
+        self::assertSame(url('atak/sse/identites/emissions/' . $res['json']['id'] . '/pdf'), $res['json']['pdf_url']);
+        self::assertSame(2, $count($this->pdo));
+        $new = (new SseSheetRepository())->findIssue(1, (int) $res['json']['id']);
+        self::assertSame('confidentiel', $new['classification']);
+        self::assertSame($c['id'], (int) $new['snapshot']['reissue']['of']);
+        self::assertNotNull((new SseSheetRepository())->findIssue(1, $c['id']), 'l’ancien document est conservé');
+        // Le PDF de la nouvelle référence se télécharge directement, à son niveau.
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_GET = [];
+        $pdf = $controller->download(new Request(), ['id' => (int) $res['json']['id']]);
+        self::assertSame(200, $pdf->statusCode());
+        self::assertSame('application/pdf', $pdf->headerValue('Content-Type'));
+        self::assertStringStartsWith('%PDF', (string) $pdf->body());
+
+        // Sans l'en-tête JSON : la même route répond par une redirection (repli sans JavaScript), et réémet bel et bien.
+        $res = $this->postReissue($controller, $c['id'], $ok, false);
+        self::assertSame(302, $res['status']);
+        self::assertStringContainsString('#documents-emis', (string) $res['location']);
+        self::assertSame(3, $count($this->pdo));
+    }
+
+    public function testThePanelReasonIsRequiredAndErrorsComeBackAsJsonForTheModal(): void
+    {
+        self::requirePdfEngine();
+        $p = $this->person();
+        $c = $this->issue($p, 'identification', 'encadrement');
+        $controller = new SseSheetController(null, null, null, null, null, self::access('confidentiel'));
+        $base = ['_csrf_token' => 'jeton', 'classification' => 'confidentiel', 'reason' => 'Remise au partenaire habilité.'];
+        $count = static fn (PDO $pdo): int => (int) $pdo->query('SELECT COUNT(*) FROM sse_doc_issues')->fetchColumn();
+
+        // Motif trop court ou absent : 422, message pour la fenêtre, rien d'émis.
+        foreach (['', '   ', 'ok'] as $why) {
+            $res = $this->postReissue($controller, $c['id'], ['reason' => $why] + $base);
+            self::assertSame(422, $res['status'], $why);
+            self::assertFalse($res['json']['ok']);
+            self::assertSame('reason', $res['json']['error']);
+            self::assertStringContainsString('motif', $res['json']['message']);
+        }
+        // Jeton absent ou faux : refusé avant tout, rien d'émis.
+        $res = $this->postReissue($controller, $c['id'], ['_csrf_token' => 'mauvais'] + $base);
+        self::assertSame(419, $res['status']);
+        self::assertSame('csrf', $res['json']['error']);
+        $res = $this->postReissue($controller, $c['id'], array_diff_key($base, ['_csrf_token' => 1]));
+        self::assertSame(419, $res['status']);
+        // Niveau au-dessus de l'habilitation : 403.
+        $res = $this->postReissue($controller, $c['id'], ['classification' => 'tres_restreint'] + $base);
+        self::assertSame(403, $res['status']);
+        self::assertSame('ceiling', $res['json']['error']);
+        // Niveau qui n'est pas supérieur : 422. Document inconnu : 404.
+        self::assertSame(422, $this->postReissue($controller, $c['id'], ['classification' => 'encadrement'] + $base)['status']);
+        self::assertSame(404, $this->postReissue($controller, 99999, $base)['status']);
+        // Habilitation insuffisante de l'opérateur : 403, rien d'émis.
+        $low = new SseSheetController(null, null, null, null, null, self::access('encadrement'));
+        self::assertSame(403, $this->postReissue($low, $c['id'], $base)['status']);
+        self::assertSame(1, $count($this->pdo));
+    }
 }
