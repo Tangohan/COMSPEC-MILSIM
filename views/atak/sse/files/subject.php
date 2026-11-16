@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * Fiche sujet (vue opérateur) : mise en garde, contacts antérieurs (« déjà contrôlé »), identité et alias, signalement,
- * photos, papiers, adresses / véhicules / téléphones / personnes liées, mentions, recoupements, fiches proches,
+ * photos (édition en modales : _subject_modals.php), papiers, adresses / véhicules / téléphones / personnes liées, mentions, recoupements, fiches proches,
  * extractions de téléphones, annotations du dossier et message brut du terminal. Imprimable.
  *
  * @var array<string,mixed> $record
@@ -16,6 +16,9 @@ use App\Support\SseRecordsCountryPacks as Packs;
 ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/_nav.php';
+$sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-files-modal.js')) . '"></script>';
+// Erreur de validation du serveur : elle s'affiche dans la modale du formulaire envoyé (sinon, en haut de la page).
+$fxFlashError = \App\Core\Session::getFlash('error');
 $r = $record;
 $i = $r['identity'];
 $p = $r['profile'] ?? [];
@@ -55,6 +58,10 @@ $val = static fn (mixed $v): string => $v === null || $v === '' ? '—' : (strin
 $canManage = !empty($filesCanManage);
 $canWrite = !empty($filesCanWrite);
 $xref = $r['xref'];
+// Icône « Modifier » (crayon) d'une section : ouvre sa modale ; sans JavaScript, le lien mène à la modale par son ancre.
+$edit = static fn (string $modal, string $label, bool $allowed): string => $allowed
+    ? '<a class="fx-edit" href="#' . $h($modal) . '" data-fx-modal-open="' . $h($modal) . '" aria-haspopup="dialog" aria-label="' . $h($label) . '" title="' . $h($label) . '"><svg class="i" aria-hidden="true"><use href="#fx-pen"></use></svg></a>'
+    : '';
 $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
 ?>
 <div class="fx">
@@ -71,6 +78,10 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
             <?php endif; ?>
         </div>
     </div>
+
+    <?php if (is_string($fxFlashError) && $fxFlashError !== ''): ?>
+        <p class="fx-flasherr" role="alert" data-fx-flash-error><?= $h($fxFlashError) ?></p>
+    <?php endif; ?>
 
     <div class="fx-twocol">
         <article class="fx-card" aria-label="Fiche du sujet">
@@ -115,7 +126,8 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
             </div>
 
             <section class="fx-ds" id="identite">
-                <h3>Alias et variantes <small><?= count($r['aliases']) ?></small></h3>
+                <h3><span>Alias et variantes <small><?= count($r['aliases']) ?></small></span><?= $edit('fx-m-alias', 'Ajouter un alias', $canManage) ?></h3>
+                <p class="fx-sd">Les autres noms sous lesquels le sujet est connu.</p>
                 <div class="fx-akl">
                     <?php foreach ($r['aliases'] as $a): ?>
                         <span translate="no"><?= $h($a['alias']) ?> <small><?= $h($a['kind_label']) ?></small>
@@ -126,48 +138,20 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
                     <?php endforeach; ?>
                     <?php if ($r['aliases'] === [] && !$canManage): ?><span>Aucun alias connu.</span><?php endif; ?>
                 </div>
-                <?php if ($canManage): ?>
-                    <details class="fx-more"<?= $r['aliases'] === [] ? '' : '' ?>><summary>Ajouter un alias</summary>
-                        <form class="fx-inline" method="post" action="<?= $h(url($self . '/alias')) ?>"><?= $csrf ?>
-                            <label class="fx-f"><span>Alias, surnom ou variante</span><input class="fx-in" name="alias" maxlength="160" required placeholder="ex. « Doc », « D. WOLF »"></label>
-                            <label class="fx-f" style="flex:0 1 200px"><span>Type</span><select class="fx-in" name="kind"><option value="aka">Alias</option><option value="nickname">Surnom</option><option value="spelling">Variante d’orthographe</option></select></label>
-                            <button class="btn" type="submit">Ajouter</button>
-                        </form>
-                    </details>
-                <?php endif; ?>
             </section>
 
             <section class="fx-ds" id="signalement">
-                <h3>Signes particuliers</h3>
+                <h3><span>Signes particuliers</span><?= $edit('fx-m-signalement', 'Modifier le signalement', $canManage) ?></h3>
+                <p class="fx-sd">Ce qui permet de reconnaître le sujet, et les codes de prudence.</p>
                 <p translate="no"><?= $h($p['marks'] ?? 'Aucun signe particulier noté.') ?></p>
                 <?php if (($p['caution_codes'] ?? []) !== []): ?>
                     <div class="fx-flgs"><?php foreach ($p['caution_codes'] as $cc): ?><span class="fx-flg a"><?= $h(S::label(S::CAUTIONS, (string) $cc)) ?></span><?php endforeach; ?></div>
                 <?php endif; ?>
-                <?php if ($canManage): ?>
-                    <details class="fx-more"><summary>Modifier le signalement</summary>
-                        <form method="post" action="<?= $h(url($self . '/signalement')) ?>" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"><?= $csrf ?>
-                            <div class="fx-g3">
-                                <label class="fx-f"><span>Taille</span><input class="fx-in mono" name="height" value="<?= $h($p['height_cm'] ?? '') ?>" placeholder="178 ou 5'10&quot;"></label>
-                                <label class="fx-f"><span>Poids</span><input class="fx-in mono" name="weight" value="<?= $h($p['weight_kg'] ?? '') ?>" placeholder="78 ou 172 lb"></label>
-                                <label class="fx-f"><span>Pays du sujet</span><select class="fx-in" name="country"><option value="">Selon la nationalité</option><?php foreach (Packs::codes() as $code): ?><option value="<?= $h($code) ?>"<?= ($p['country'] ?? '') === $code ? ' selected' : '' ?>><?= $h(Packs::label($code)) ?></option><?php endforeach; ?></select></label>
-                            </div>
-                            <small class="fx-help">Le pays du sujet règle l’affichage : dates, taille en pieds-pouces ou en cm, formats de numéros. Ex. États-Unis : 03/14/1991 et 5'11".</small>
-                            <div class="fx-g3">
-                                <label class="fx-f"><span>Corpulence</span><select class="fx-in" name="build"><option value="">—</option><?php foreach (S::BUILDS as $k => $l): ?><option value="<?= $h($k) ?>"<?= ($p['build'] ?? '') === $k ? ' selected' : '' ?>><?= $h($l) ?></option><?php endforeach; ?></select></label>
-                                <label class="fx-f"><span>Cheveux</span><select class="fx-in" name="hair"><option value="">—</option><?php foreach (S::HAIR as $k => $l): ?><option value="<?= $h($k) ?>"<?= ($p['hair'] ?? '') === $k ? ' selected' : '' ?>><?= $h($l) ?></option><?php endforeach; ?></select></label>
-                                <label class="fx-f"><span>Yeux</span><select class="fx-in" name="eyes"><option value="">—</option><?php foreach (S::EYES as $k => $l): ?><option value="<?= $h($k) ?>"<?= ($p['eyes'] ?? '') === $k ? ' selected' : '' ?>><?= $h($l) ?></option><?php endforeach; ?></select></label>
-                            </div>
-                            <label class="fx-f"><span>Teint</span><input class="fx-in" name="complexion" maxlength="24" value="<?= $h($p['complexion'] ?? '') ?>" placeholder="ex. mat, clair"></label>
-                            <label class="fx-f"><span>Signes particuliers</span><textarea class="fx-in" name="marks" maxlength="1000" placeholder="ex. tatouage aigle avant-bras droit, cicatrice arcade gauche"><?= $h($p['marks'] ?? '') ?></textarea></label>
-                            <div class="fx-f"><span>Codes de prudence</span><div class="fx-tg"><?php foreach (S::CAUTIONS as $k => $l): ?><label class="fx-sw"><input type="checkbox" name="cautions[]" value="<?= $h($k) ?>"<?= in_array($k, $p['caution_codes'] ?? [], true) ? ' checked' : '' ?>><i></i><?= $h($l) ?></label><?php endforeach; ?></div><small>Affichés en tête de fiche pour la sécurité des intervenants. Ex. « Armé » si la personne porte habituellement une arme.</small></div>
-                            <div><button class="btn pri" type="submit">Enregistrer le signalement</button></div>
-                        </form>
-                    </details>
-                <?php endif; ?>
             </section>
 
             <section class="fx-ds" id="photos">
-                <h3>Photos <small><?= $imageLock !== null ? 0 : count($photos) ?></small></h3>
+                <h3><span>Photos <small><?= $imageLock !== null ? 0 : count($photos) ?></small></span><?= $edit('fx-m-photo', 'Ajouter une photo', $canWrite) ?></h3>
+                <p class="fx-sd">Les clichés rangés sur la fiche, sans reconnaissance faciale.</p>
                 <?php if (!empty($r['image_banner'])): ?><span class="fx-cband"><svg class="i" aria-hidden="true"><use href="#fx-lock"></use></svg>Très secret (TS)</span><?php endif; ?>
                 <?php if ($imageLock !== null): ?>
                     <p><strong>TRÈS SECRET (TS)</strong> : les images de ce membre sont réservées à lui-même et à sa hiérarchie.</p>
@@ -185,20 +169,6 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
                     </div>
                 <?php else: ?>
                     <p>Aucune photo aux fichiers.</p>
-                <?php endif; ?>
-                <?php if ($canWrite): ?>
-                    <details class="fx-more"><summary>Ajouter une photo</summary>
-                        <form method="post" action="<?= $h(url('atak/sse/fichiers/photos')) ?>" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"><?= $csrf ?>
-                            <input type="hidden" name="identity_id" value="<?= $iid ?>"><input type="hidden" name="back" value="<?= $h($self) ?>#photos">
-                            <label class="fx-drop"><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required><b>Déposez une photo</b><span>JPEG, PNG ou WebP, <?= (int) \App\Services\Sse\SseIdImageService::maxMb('photo') ?> Mo au plus · capture en jeu, photo de papiers</span></label>
-                            <div class="fx-g2">
-                                <label class="fx-f"><span>Vue</span><select class="fx-in" name="kind"><option value="front">Face</option><option value="profile">Profil</option><option value="field">Terrain</option><option value="document">Papier</option></select></label>
-                                <label class="fx-f"><span>Légende</span><input class="fx-in" name="caption" maxlength="255" placeholder="ex. checkpoint nord, 09:12Z"></label>
-                            </div>
-                            <small class="fx-help">La photo est seulement rangée sur la fiche : aucune reconnaissance faciale n’est faite.</small>
-                            <div><button class="btn" type="submit"><svg class="i"><use href="#fx-up"></use></svg>Envoyer</button></div>
-                        </form>
-                    </details>
                 <?php endif; ?>
             </section>
 
@@ -220,7 +190,8 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
             </section>
 
             <section class="fx-ds" id="liens">
-                <h3>Adresses, véhicules, téléphones, personnes liées</h3>
+                <h3><span>Adresses, véhicules, téléphones, personnes liées</span><?= $edit('fx-m-liens', 'Ajouter à la fiche', $canManage) ?></h3>
+                <p class="fx-sd">Les éléments rattachés au sujet dans les fichiers.</p>
                 <?php $hasLinks = false; ?>
                 <div class="fx-lk">
                     <?php foreach (['address', 'vehicle', 'phone', 'email', 'associate'] as $kind): ?>
@@ -236,32 +207,11 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
                     <?php endforeach; ?>
                 </div>
                 <?php if (!$hasLinks): ?><p>Aucune adresse, aucun véhicule, aucun téléphone ni personne liée aux fichiers.</p><?php endif; ?>
-                <?php if ($canManage): ?>
-                    <details class="fx-more"><summary>Ajouter une adresse, un véhicule, un téléphone ou une personne liée</summary>
-                        <form method="post" action="<?= $h(url($self . '/liens')) ?>" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"><?= $csrf ?>
-                            <div class="fx-g2">
-                                <label class="fx-f"><span>Type</span><select class="fx-in" name="kind"><?php foreach (S::LINK_KINDS as $k => $l): ?><option value="<?= $h($k) ?>"><?= $h($l) ?></option><?php endforeach; ?></select></label>
-                                <label class="fx-f"><span>Valeur</span><input class="fx-in" name="value" maxlength="255" required placeholder="Adresse, plaque, numéro, courriel ou IDT-…"></label>
-                            </div>
-                            <small class="fx-help">Ex. adresse « <?= $h(Packs::get($c)['address_format'] ?? '') ?> », plaque « <?= $h(Packs::get($c)['plate']['example'] ?? '') ?> », téléphone « <?= $h(Packs::get($c)['phone']['example'] ?? '') ?> », personne liée « IDT-42 ».</small>
-                            <div class="fx-g3">
-                                <label class="fx-f"><span>Marque (véhicule)</span><input class="fx-in" name="make" maxlength="60"></label>
-                                <label class="fx-f"><span>Modèle</span><input class="fx-in" name="model" maxlength="60"></label>
-                                <label class="fx-f"><span>Couleur</span><input class="fx-in" name="color" maxlength="40"></label>
-                            </div>
-                            <div class="fx-g2">
-                                <label class="fx-f"><span>Lien (personne liée)</span><select class="fx-in" name="relation"><option value="">—</option><?php foreach (S::RELATIONS as $k => $l): ?><option value="<?= $h($k) ?>"><?= $h($l) ?></option><?php endforeach; ?></select></label>
-                                <label class="fx-f"><span>Mention (véhicule)</span><select class="fx-in" name="flag"><option value="">Aucune</option><?php foreach (S::VEHICLE_FLAGS as $k => $l): ?><option value="<?= $h($k) ?>"><?= $h($l) ?></option><?php endforeach; ?></select></label>
-                            </div>
-                            <label class="fx-f"><span>Note</span><input class="fx-in" name="note" maxlength="160" placeholder="ex. vu au checkpoint nord le 09/11, 4 occupants"></label>
-                            <div><button class="btn" type="submit">Ajouter à la fiche</button></div>
-                        </form>
-                    </details>
-                <?php endif; ?>
             </section>
 
             <section class="fx-ds" id="mentions">
-                <h3>Mentions aux fichiers <small><?= count($r['mentions']) ?> active<?= count($r['mentions']) > 1 ? 's' : '' ?></small></h3>
+                <h3><span>Mentions aux fichiers <small><?= count($r['mentions']) ?> active<?= count($r['mentions']) > 1 ? 's' : '' ?></small></span><?= $edit('fx-m-mention', 'Poser une mention', $canManage) ?></h3>
+                <p class="fx-sd">Mandats, recherches et signalements en cours sur le sujet.</p>
                 <div class="fx-mn">
                     <?php foreach ($r['mentions'] as $m): ?>
                         <div class="fx-mi"><div class="fx-row"><b><?= $h($m['mention_label']) ?></b>
@@ -271,17 +221,6 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
                     <?php endforeach; ?>
                     <?php if ($r['mentions'] === []): ?><p>Aucune mention active : ni mandat, ni recherche, ni signalement.</p><?php endif; ?>
                 </div>
-                <?php if ($canManage): ?>
-                    <details class="fx-more"><summary>Poser une mention</summary>
-                        <form class="fx-inline" method="post" action="<?= $h(url('atak/sse/fichiers/mentions')) ?>"><?= $csrf ?>
-                            <input type="hidden" name="target_type" value="identity"><input type="hidden" name="target_id" value="<?= $iid ?>"><input type="hidden" name="back" value="<?= $h($self) ?>">
-                            <label class="fx-f" style="flex:0 1 200px"><span>Mention</span><select class="fx-in" name="mention"><?php foreach ($mentionLabels as $k => $l): ?><option value="<?= $h($k) ?>"><?= $h($l) ?></option><?php endforeach; ?></select></label>
-                            <label class="fx-f"><span>Référence</span><input class="fx-in" name="reference" maxlength="64" placeholder="ex. MANDAT N° 26-1187"></label>
-                            <label class="fx-f"><span>Note</span><input class="fx-in" name="note" maxlength="1000" placeholder="ex. porteur habituel d’une arme de poing"></label>
-                            <button class="btn" type="submit">Poser</button>
-                        </form>
-                    </details>
-                <?php endif; ?>
             </section>
 
             <?php if ($r['extractions'] !== []): ?>
@@ -296,7 +235,8 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
             <?php endif; ?>
 
             <section class="fx-ds" id="annotations">
-                <h3>Annotations du dossier <small><?= count($r['notes']) ?></small></h3>
+                <h3><span>Annotations du dossier <small><?= count($r['notes']) ?></small></span><?= $edit('fx-m-note', 'Annoter le dossier', $canWrite) ?></h3>
+                <p class="fx-sd">Les remarques libres des membres, visibles de ceux qui lisent les fichiers.</p>
                 <div class="fx-mn">
                     <?php foreach ($r['notes'] as $n): ?>
                         <div class="fx-mi"><div class="fx-row"><b translate="no"><?= $h($n['author_label'] ?? 'Membre') ?></b>
@@ -304,12 +244,6 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
                             <p translate="no"><?= nl2br($h($n['body'])) ?></p><small><?= $h(substr((string) $n['created_at'], 0, 16)) ?>Z</small></div>
                     <?php endforeach; ?>
                 </div>
-                <?php if ($canWrite): ?>
-                    <form method="post" action="<?= $h(url($self . '/notes')) ?>" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"><?= $csrf ?>
-                        <label class="fx-f"><span>Nouvelle annotation</span><textarea class="fx-in" name="body" maxlength="2000" required placeholder="ex. Vu avec le Ford beige au marché de l’ouest, semble nerveux."></textarea><small>Visible par les membres qui lisent les fichiers. Les noms et numéros cités sont recoupés.</small></label>
-                        <div><button class="btn" type="submit">Annoter</button></div>
-                    </form>
-                <?php endif; ?>
             </section>
 
             <section class="fx-ds">
@@ -377,6 +311,7 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
             <?php endif; ?>
         </aside>
     </div>
+    <?php require __DIR__ . '/_subject_modals.php'; ?>
 </div>
 <?php
 $sseContent = ob_get_clean();
