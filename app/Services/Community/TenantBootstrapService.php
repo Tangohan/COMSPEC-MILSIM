@@ -50,6 +50,9 @@ final class TenantBootstrapService
         }
 
         $pdo = Database::getPdo();
+        // Hors transaction : la première lecture des comptes peut compléter leur schéma (ALTER), ce qui validerait
+        // implicitement la transaction de création.
+        $this->userRepository->findById($creatorUserId);
         $pdo->beginTransaction();
         try {
             $planSlug = $this->normalizePlanSlug((string) ($options['plan_slug'] ?? 'free'));
@@ -215,7 +218,13 @@ final class TenantBootstrapService
             } catch (\Throwable) {
             }
 
-            $pdo->commit();
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            } else {
+                // Une DDL lancée en chemin a déjà validé les écritures : la communauté existe, ne pas annoncer un échec
+                // (un nouvel essai créerait un doublon).
+                error_log('[community.create] transaction validée implicitement avant la fin (DDL) pour le tenant ' . $tenantId);
+            }
 
             // Le compte technique « Modération automatique » est créé à la demande, plus à la création.
 
