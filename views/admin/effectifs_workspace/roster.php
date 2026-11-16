@@ -15,7 +15,10 @@ $canEditProfiles = (bool) ($canEditProfiles ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
 $canManageRoles = (bool) ($canManageRoles ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
-$canBulkAny = $canManageStatus || $canManageAssignments;
+// Vérification de disponibilité : action par ligne et action groupée sur les cases cochées.
+$canCheckAvailability = (bool) ($canCheckAvailability ?? false);
+$rosterAvailabilityChecks = is_array($rosterAvailabilityChecks ?? null) ? $rosterAvailabilityChecks : [];
+$canBulkAny = $canManageStatus || $canManageAssignments || $canCheckAvailability;
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $elevationNoRecipients = (bool) ($elevationNoRecipients ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
@@ -285,6 +288,9 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
             </select>
             <input type="text" name="reason" maxlength="255" placeholder="Motif du changement">
             <button type="submit" formaction="<?= htmlspecialchars(effectifs_workspace_url('bulk/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary" data-eff-bulk-submit disabled>Affecter l’unité</button>
+            <?php endif; ?>
+            <?php if ($canCheckAvailability): ?>
+            <button type="button" class="eff-catalog__btn eff-catalog__btn--primary" data-avc-open data-avc-from-selection data-eff-bulk-submit disabled>Vérifier la disponibilité</button>
             <?php endif; ?>
         </form>
         <?php endif; ?>
@@ -790,6 +796,14 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             <?php else: ?>
                                 <a class="eff-mq-sv<?= !empty($srv['active']) ? ' is-on' : '' ?>" href="<?= htmlspecialchars($ficheUrl . '?onglet=disponibilite#onglet-disponibilite', ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars(str_replace(['%1', '%2'], [(string) (int) $srv['sessions'], (string) (int) $srv['short']], '%1 session(s) qui comptent sur 30 jours ; %2 plus courte(s) non comptée(s).'), ENT_QUOTES, 'UTF-8') ?>"><b><?= (int) $srv['sessions'] ?></b><span class="eff-das__sub"><?= !empty($srv['active']) ? 'Actif' : 'Inactif' ?></span></a>
                             <?php endif; ?>
+                            <?php $rowCheck = $rosterAvailabilityChecks[$id] ?? null; ?>
+                            <?php if (is_array($rowCheck)): ?>
+                                <?php $rowCheckTs = strtotime((string) $rowCheck['created_at']); ?>
+                                <span class="eff-avc-cell" title="<?= htmlspecialchars(str_replace('%1', $rowCheckTs !== false ? date('d/m/Y H:i', $rowCheckTs) : '', 'Dernière vérification de disponibilité, le %1'), ENT_QUOTES, 'UTF-8') ?>">
+                                    <span class="eff-avc-pill is-<?= htmlspecialchars((string) $rowCheck['conclusion'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(\App\Services\Effectifs\Availability\AvailabilityCheck::conclusionLabel((string) $rowCheck['conclusion']), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <small><?= htmlspecialchars(str_replace('%1', $rowCheckTs !== false ? date('d/m/Y', $rowCheckTs) : '—', 'Vérifié le %1'), ENT_QUOTES, 'UTF-8') ?></small>
+                                </span>
+                            <?php endif; ?>
                         </td>
                         <?php
                         $lastLogin = trim((string) ($row['last_login_at'] ?? ''));
@@ -923,6 +937,9 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <td class="eff-das__actions-col">
                             <div class="eff-sheets__actions">
                                 <a class="is-primary" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir</a>
+                                <?php if ($canCheckAvailability): ?>
+                                    <button type="button" class="eff-sheets__chip" data-avc-open data-avc-ids="<?= $id ?>" data-avc-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" title="Vérifier la disponibilité de <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">Vérifier</button>
+                                <?php endif; ?>
                                 <?php if ($canRequestElevation): ?>
                                     <?php $cooldownSec = (int) ($elevationCooldownByUserId[$id] ?? 0); ?>
                                     <?php if ($cooldownSec > 0): ?>
@@ -1228,5 +1245,14 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
         </script>
         <?php if ($canBulkAny && $rows !== []): ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-bulk-actions.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php if ($canCheckAvailability): ?>
+<?php
+$avcRules = is_array($rosterSessionRules ?? null) ? $rosterSessionRules : [];
+$avcCanSave = (bool) ($availabilityChecksReady ?? false);
+$avcSettingsUrl = (string) ($availabilitySettingsUrl ?? '');
+require __DIR__ . '/partials/availability_check_modal.php';
+?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-availability-check.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>
 <?php endif; ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-workspace.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

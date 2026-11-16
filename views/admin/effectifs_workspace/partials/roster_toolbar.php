@@ -72,6 +72,9 @@ $shown = count($rows);
                     <option value="">Tous les membres</option>
                     <option value="actif" <?= (($filters['sessions'] ?? '') === 'actif') ? 'selected' : '' ?>><?= $hq(str_replace('%1', $sessionThreshold, 'Actifs : sessions %1 (30 j)')) ?></option>
                     <option value="inactif" <?= (($filters['sessions'] ?? '') === 'inactif') ? 'selected' : '' ?>><?= $hq(str_replace('%1', $sessionThreshold, 'Aucune session %1 (30 j)')) ?></option>
+                    <?php foreach (\App\Support\RosterAvailabilityFilter::DAYS as $verifDays): ?>
+                        <option value="verifier<?= (int) $verifDays ?>" title="<?= $hq(str_replace('%1', (string) $verifDays, 'Aucune session qui compte ni vérification de disponibilité enregistrée depuis %1 jours')) ?>" <?= (($filters['sessions'] ?? '') === 'verifier' . $verifDays) ? 'selected' : '' ?>><?= $hq(str_replace('%1', (string) $verifDays, 'À vérifier : %1 j sans session')) ?></option>
+                    <?php endforeach; ?>
                 </select>
             </label>
             <label>Niveau d’accès
