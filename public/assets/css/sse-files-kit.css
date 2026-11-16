@@ -333,3 +333,40 @@ body.sse-iw .fx .btn:focus-visible, .fx a:focus-visible { outline: 2px solid var
 .fx-lkq form { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 .fx-cband { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12px; color: #e9b8a8; border: 1px solid rgba(233, 184, 168, .35); border-radius: 3px; padding: 2px 6px; margin-bottom: 6px; }
 .fx-cband .i { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+/* Fiche sujet en lecture : l'édition de chaque section tient dans une modale (dialog natif), ouverte par une icône crayon.
+   Sans JavaScript, le lien « #fx-m-… » affiche la modale par :target. Plein écran sous 640 px. */
+.fx-ds > h3 > span { min-width: 0; }
+.fx-ds > p.fx-sd { margin: -2px 0 10px; }
+.fx a.fx-edit { flex: none; width: 44px; height: 44px; margin: -10px -8px -10px 0; display: inline-grid; place-items: center; border-radius: 6px; border: 1px solid transparent; background: none; color: var(--fx-mu); cursor: pointer; text-transform: none; letter-spacing: 0; }
+.fx a.fx-edit:hover { color: var(--fx-ac2); background: var(--fx-acd); border-color: rgba(16, 185, 129, .35); }
+.fx a.fx-edit:focus-visible { outline: 2px solid var(--fx-ac); outline-offset: 1px; }
+.fx a.fx-edit svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.fx-flasherr { margin: 0 0 12px; padding: 10px 14px; border: 1px solid rgba(248, 113, 113, .45); border-radius: 5px; background: var(--fx-redd); color: var(--fx-red); font-size: 14px; font-weight: 600; }
+dialog.fx-modal { padding: 0; border: 1px solid var(--fx-ln2); border-radius: 8px; background: var(--fx-s1); color: var(--fx-tx); width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: hidden; margin: auto; box-shadow: 0 24px 60px rgba(0, 0, 0, .5); }
+dialog.fx-modal::backdrop { background: rgba(2, 6, 10, .72); }
+dialog.fx-modal:target:not([open]) { display: block; position: fixed; inset: 0; z-index: 60; }
+dialog.fx-modal[open], dialog.fx-modal:target { display: block; }
+.fx-modal__card { display: flex; flex-direction: column; max-height: inherit; min-height: 0; }
+dialog.fx-modal:target:not([open]) .fx-modal__card { width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); margin: 16px auto; background: var(--fx-s1); border: 1px solid var(--fx-ln2); border-radius: 8px; }
+.fx-modal__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 8px 6px 18px; border-bottom: 1px solid var(--fx-ln); }
+.fx-modal__head h2 { margin: 0; font-size: 17px; font-weight: 800; color: var(--fx-tx); text-transform: none; letter-spacing: 0; }
+.fx a.fx-modal__x, a.fx-modal__x { width: 44px; height: 44px; display: inline-grid; place-items: center; border-radius: 6px; color: var(--fx-mu); font-size: 26px; line-height: 1; text-decoration: none; }
+a.fx-modal__x:hover { color: var(--fx-red); background: var(--fx-redd); }
+a.fx-modal__x:focus-visible { outline: 2px solid var(--fx-ac); }
+.fx-modal__form { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; margin: 0; }
+.fx-modal__body { display: flex; flex-direction: column; gap: 12px; padding: 14px 18px; overflow-y: auto; min-height: 0; }
+.fx-modal__desc { margin: 0; color: var(--fx-mu); font-size: 14px; line-height: 1.5; }
+.fx-modal__err { margin: 0; padding: 10px 12px; border: 1px solid rgba(248, 113, 113, .45); border-radius: 5px; background: var(--fx-redd); color: var(--fx-red); font-size: 14px; font-weight: 600; }
+.fx-modal__err[hidden] { display: none; }
+.fx-modal__foot { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--fx-ln); background: var(--fx-s1); }
+body.sse-iw .fx .fx-modal__foot .btn { min-height: 44px; }
+@media (max-width: 640px) {
+    dialog.fx-modal { width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
+    dialog.fx-modal:target:not([open]) .fx-modal__card { width: 100vw; max-height: none; height: 100dvh; margin: 0; border-radius: 0; border: 0; }
+    .fx-modal__card, .fx-modal__form { height: 100%; }
+    .fx-modal__body { flex: 1 1 auto; }
+    .fx-modal__foot { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    .fx-modal__foot .btn { flex: 1 1 0; }
+    .fx-modal .fx-g2, .fx-modal .fx-g3 { grid-template-columns: minmax(0, 1fr); }
+}
