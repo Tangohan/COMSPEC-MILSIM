@@ -71532,4 +71532,6 @@ return [
     'rapports' => 'reports',
     'depuis' => 'since',
     'Actifs récemment :' => 'Recently active:',
+    'Urgence : prévenez le service sans attendre' => 'Urgent: tell the service without delay',
+    'Avant de signaler' => 'Before you report',
 ];

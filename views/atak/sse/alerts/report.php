@@ -81,6 +81,32 @@ $notice = is_array($view['notice'] ?? null) ? $view['notice'] : null;
 $isNotice = ($view['doc'] ?? '') === 'avis';
 $docLabel = $isNotice ? 'Avis de recherche' : 'Fiche de vigilance';
 $state = (string) ($view['state'] ?? 'active');
+// Contrat du formulaire (config/sse_alert_report_form.php) : champs montrés et obligatoires selon la fiche et sa conduite à tenir.
+$form = is_array($form ?? null) ? $form : \App\Support\SseAlertReportForm::resolve([], 1);
+$fi = $lang === 'en' ? 1 : 0;
+$shows = static fn (string $f): bool => in_array($f, $form['fields'], true);
+$needs = static fn (string $f): bool => in_array($f, $form['required'], true);
+$oldExtra = static fn (string $k): string => (string) (is_array($old['extras'] ?? null) ? ($old['extras'][$k] ?? '') : '');
+$fieldHtml = static function (string $id) use ($form, $fi, $h, $old, $oldExtra, $needs): string {
+    $def = \App\Support\SseAlertReportForm::field($id);
+    if ($def === null || $def['type'] === 'photo') {
+        return '';
+    }
+    $label = $h($def['label'][$fi]) . ($needs($id) ? ' <em class="sal-req">' . $h($fi === 1 ? 'Required' : 'Obligatoire') . '</em>' : '');
+    $val = in_array($id, ['dir', 'vehicle'], true) ? (string) ($old[$id] ?? '') : $oldExtra($id);
+    $req = $needs($id) ? ' required' : '';
+    if ($def['type'] === 'choice') {
+        $out = '<div class="sal-choice" role="radiogroup" aria-labelledby="sal-c-' . $h($id) . '"><p class="sal-choice__t" id="sal-c-' . $h($id) . '">' . $label . '</p><div class="sal-pick sal-pick--' . count($def['options']) . '">';
+        foreach ($def['options'] as $key => $text) {
+            $out .= '<label class="sal-opt sal-opt--sure"><input type="radio" name="' . $h($id) . '" value="' . $h($key) . '"' . ($val === (string) $key ? ' checked' : '') . $req . '><span class="sal-opt__body"><b>' . $h($text[$fi]) . '</b></span></label>';
+        }
+
+        return $out . '</div></div>';
+    }
+    $attrs = $def['type'] === 'count' ? ' type="number" inputmode="numeric" min="1" max="' . (int) $def['max'] . '"' : ' type="text" maxlength="' . (int) $def['max'] . '"';
+
+    return '<label class="sal-field" for="sal-' . $h($id) . '"><span>' . $label . '</span><input id="sal-' . $h($id) . '" name="' . $h($id) . '"' . $attrs . ' value="' . $h($val) . '" placeholder="' . $h($def['hint'][$fi] ?? '') . '" autocomplete="off"' . $req . '></label>';
+};
 ?>
 <div class="sal" data-sal>
 <span hidden data-sal-msg="copied">Copié dans le presse-papiers.</span>
@@ -189,6 +215,13 @@ $state = (string) ($view['state'] ?? 'active');
                     </div>
                 <?php endif; ?>
 
+                <section class="sal-brief<?= $form['urgent'] ? ' sal-brief--urgent' : '' ?>" aria-labelledby="sal-brief-title" data-sal-form-brief>
+                    <h2 id="sal-brief-title" class="sal-brief__t"><?= $form['urgent'] ? 'Urgence : prévenez le service sans attendre' : 'Avant de signaler' ?></h2>
+                    <?php if ((string) ($view['order'] ?? '') !== ''): ?><p class="sal-brief__order"><?= $h($view['order']) ?></p><?php endif; ?>
+                    <?php foreach ($form['notes'] as $note): ?><p class="sal-brief__note"><?= $h($note[$fi]) ?></p><?php endforeach; ?>
+                    <p class="sal-brief__svc" translate="no"><b><?= $h($view['service'] ?? '') ?></b><?php if ((string) ($view['channel'] ?? '') !== ''): ?><span><?= $h($view['channel']) ?></span><?php endif; ?><span><?= $h($view['delay'] ?? '') ?></span></p>
+                </section>
+
                 <fieldset class="sal-sec">
                     <legend>Ce que vous signalez</legend>
                     <p class="sal-desc">Vous avez vu la personne, ou vous avez une information utile.</p>
@@ -206,7 +239,7 @@ $state = (string) ($view['state'] ?? 'active');
                             <input id="sal-when" type="datetime-local" name="when" value="<?= $h($old['when'] ?? $nowLocal) ?>" max="<?= $h($nowLocal ?? '') ?>" required>
                         </label>
                         <label class="sal-field" for="sal-grid"><span>Repère de grille</span><input id="sal-grid" type="text" name="grid" maxlength="24" value="<?= $h($old['grid'] ?? '') ?>" placeholder="Ex. 045 123" autocomplete="off" inputmode="numeric"></label>
-                        <label class="sal-field sal-field--wide" for="sal-place"><span>Lieu</span><input id="sal-place" type="text" name="place" maxlength="160" value="<?= $h($old['place'] ?? '') ?>" placeholder="Village, carrefour, bâtiment…" autocomplete="off"></label>
+                        <label class="sal-field sal-field--wide" for="sal-place"><span>Lieu<?= $needs('place') ? ' <em class="sal-req">Obligatoire</em>' : '' ?></span><input id="sal-place" type="text" name="place" maxlength="160" value="<?= $h($old['place'] ?? '') ?>" placeholder="Village, carrefour, bâtiment…" autocomplete="off"<?= $needs('place') ? ' required' : '' ?>></label>
                     </div>
                 </fieldset>
 
@@ -217,10 +250,12 @@ $state = (string) ($view['state'] ?? 'active');
                         <textarea id="sal-text" name="text" rows="4" maxlength="<?= (int) ($maxBody ?? 600) ?>" required placeholder="Ce que vous avez vu ou appris" data-sal-text><?= $h($old['text'] ?? '') ?></textarea>
                         <span class="sal-count" data-sal-count aria-live="polite"><?= mb_strlen((string) ($old['text'] ?? '')) ?> / <?= (int) ($maxBody ?? 600) ?></span>
                     </label>
-                    <div class="sal-grid sal-grid--2">
-                        <label class="sal-field" for="sal-dir"><span>Direction</span><input id="sal-dir" type="text" name="dir" maxlength="120" value="<?= $h($old['dir'] ?? '') ?>" placeholder="Vers le nord, sur la route de…" autocomplete="off"></label>
-                        <label class="sal-field" for="sal-vehicle"><span>Véhicule</span><input id="sal-vehicle" type="text" name="vehicle" maxlength="160" value="<?= $h($old['vehicle'] ?? '') ?>" placeholder="Type, couleur, plaque" autocomplete="off"></label>
+                    <?php $details = array_values(array_filter($form['fields'], static fn (string $f): bool => $f !== 'photo')); ?>
+                    <?php if ($details !== []): ?>
+                    <div class="sal-grid sal-grid--2" data-sal-details>
+                        <?php foreach ($details as $f): ?><?= $fieldHtml($f) ?><?php endforeach; ?>
                     </div>
+                    <?php endif; ?>
                 </fieldset>
 
                 <fieldset class="sal-sec">
@@ -233,6 +268,7 @@ $state = (string) ($view['state'] ?? 'active');
                     </div>
                 </fieldset>
 
+<?php if ($shows('photo')): ?>
                 <fieldset class="sal-sec">
                     <legend>Photo</legend>
                     <p class="sal-desc">Facultative : JPEG, PNG ou WebP, <?= (int) ($maxPhotoMb ?? 4) ?> Mo au plus, sans position ni données de l’appareil.</p>
@@ -243,6 +279,7 @@ $state = (string) ($view['state'] ?? 'active');
                     </label>
                     <p class="sal-alert sal-alert--inline" role="alert" hidden data-sal-photo-error>La photo dépasse la taille permise.</p>
                 </fieldset>
+<?php endif; ?>
 
                 <div class="sal-actions sal-actions--submit">
                     <button type="submit" class="btn sal-btn sal-btn--solid sal-btn--big" data-sal-submit><?= $ico($icons['arrow']) ?><span>Envoyer le signalement</span></button>
