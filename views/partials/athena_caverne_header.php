@@ -209,6 +209,8 @@ $espaceLinks = [
     ['abbr' => 'OPS', 'label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],
     ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat'), 'path' => 'orbat'],
     ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak'), 'path' => 'atak'],
+    // Bureau SSE : même porte que le portail (commandement ou membre habilité) ; jamais pour un invité.
+    ...(\App\Support\EspacesMenu::canEnterSse() ? [\App\Support\EspacesMenu::sseEntry()] : []),
     // Outils de chaque membre (identités, papiers, fichiers, matériel) : tuile bleue pour la distinguer des
     // espaces ; seulement pour un membre connecté d'une communauté.
     ...\App\Services\Operator\OperatorHubCatalog::spaceTiles((int) (\App\Core\Session::get('user_id') ?? 0) > 0 && (int) (\App\Core\Session::get('tenant_id') ?? 0) > 0),
@@ -242,13 +244,8 @@ $espaceLinks = array_values(array_filter(
     $espaceLinks,
     static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
 ));
-if (function_exists('i18n_phrase')) {
-    foreach ($espaceLinks as &$espaceLink) {
-        $espaceLink['label'] = i18n_phrase('nav', (string) ($espaceLink['label'] ?? ''));
-        $espaceLink['desc'] = i18n_phrase('nav', (string) ($espaceLink['desc'] ?? ''));
-    }
-    unset($espaceLink);
-}
+// Cartes rangées par groupe, espace courant repéré ; libellés traduits à l'affichage par le partial.
+$espacesGroups = \App\Support\EspacesMenu::groups($espaceLinks, $currentPath);
 
 $cu = $headerCurrentUser ?? $currentUser ?? null;
 if (!is_array($cu)) {
@@ -560,42 +557,7 @@ if (function_exists('i18n_phrase')) {
                 <?php $localeSwitcherVariant = 'dark'; require base_path('views/partials/language_switcher.php'); ?>
             </div>
 
-            <?php if ($espaceLinks !== []): ?>
-            <div class="athena-header__menu relative hidden md:block">
-                <button
-                    type="button"
-                    class="athena-header__menu-trigger"
-                    data-athena-toggle="espaces"
-                    aria-expanded="false"
-                    aria-haspopup="true"
-                    aria-controls="athena-header-espaces"
-                >
-                    <svg class="athena-header__btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linejoin="round" stroke-width="1.8" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
-                    <span><?= $n('Espaces') ?></span>
-                    <svg class="athena-header__chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="m6 9 6 6 6-6"/>
-                    </svg>
-                </button>
-                <div class="athena-header__panel athena-header__panel--espaces hidden" id="athena-header-espaces" data-athena-panel="espaces" role="region" aria-label="<?= $n('Espaces Athena') ?>">
-                    <div class="athena-header__panel-head">
-                        <p class="athena-header__kicker"><?= $n('Commandement') ?></p>
-                        <h3 class="athena-header__panel-title"><?= $n('Espaces') ?></h3>
-                    </div>
-                    <div class="athena-header__espaces-grid">
-                        <?php foreach ($espaceLinks as $link): ?>
-                            <?php $espaceTone = (string) ($link['tone'] ?? ''); $espaceOn = $espaceTone !== '' && ($currentPath === $link['path'] || str_starts_with($currentPath, $link['path'] . '/')); ?>
-                            <a href="<?= $h((string) $link['href']) ?>" class="athena-header__espace-item<?= $espaceTone !== '' ? ' athena-header__espace-item--' . $h($espaceTone) : '' ?><?= $espaceOn ? ' is-active' : '' ?>"<?= $espaceOn ? ' aria-current="page"' : '' ?>>
-                                <span class="athena-header__espace-abbr"><?= $h((string) $link['abbr']) ?></span>
-                                <span class="athena-header__espace-meta">
-                                    <strong><?= $h((string) $link['label']) ?></strong>
-                                    <em><?= $h((string) $link['desc']) ?></em>
-                                </span>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-            <?php endif; ?>
+            <?php $espacesMode = 'bar'; $espacesLabel = function_exists('i18n_phrase') ? i18n_phrase('nav', 'Espaces') : 'Espaces'; $espacesAria = function_exists('i18n_phrase') ? i18n_phrase('nav', 'Espaces Athena') : 'Espaces Athena'; require base_path('views/partials/athena_espaces_menu.php'); ?>
 
             <div class="relative">
                 <button
@@ -806,21 +768,7 @@ if (function_exists('i18n_phrase')) {
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                    <?php if ($espaceLinks !== []): ?>
-                        <p class="athena-header__kicker athena-header__drawer-kicker"><?= $n('Espaces') ?></p>
-                        <div class="athena-header__espaces-grid">
-                            <?php foreach ($espaceLinks as $link): ?>
-                                <?php $espaceTone = (string) ($link['tone'] ?? ''); $espaceOn = $espaceTone !== '' && ($currentPath === $link['path'] || str_starts_with($currentPath, $link['path'] . '/')); ?>
-                            <a href="<?= $h((string) $link['href']) ?>" class="athena-header__espace-item<?= $espaceTone !== '' ? ' athena-header__espace-item--' . $h($espaceTone) : '' ?><?= $espaceOn ? ' is-active' : '' ?>"<?= $espaceOn ? ' aria-current="page"' : '' ?>>
-                                    <span class="athena-header__espace-abbr"><?= $h((string) $link['abbr']) ?></span>
-                                    <span class="athena-header__espace-meta">
-                                        <strong><?= $h((string) $link['label']) ?></strong>
-                                        <em><?= $h((string) $link['desc']) ?></em>
-                                    </span>
-                                </a>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
+                    <?php $espacesMode = 'drawer'; require base_path('views/partials/athena_espaces_menu.php'); ?>
                     <div class="athena-header__drawer-lang">
                         <span><?= $n('Langue') ?></span>
                         <?php $localeSwitcherVariant = 'dark'; require base_path('views/partials/language_switcher.php'); ?>

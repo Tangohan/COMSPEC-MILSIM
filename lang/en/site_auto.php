@@ -71450,6 +71450,15 @@ return [
     'Ce niveau dépasse votre habilitation.' => 'This level is above your clearance.',
     'Ce niveau rendrait lisibles des passages que ce document ne contient pas : réémettez-le à un niveau supérieur.' => 'This level would make readable passages this document does not hold: reissue it at a higher level.',
     'Ce niveau n’est pas disponible pour ce document.' => 'This level is not available for this document.',
+
+    // Menu Espaces de la barre Athena : cartes rangées par groupe, entrée Bureau SSE.
+    'Renseignement et outils' => 'Intelligence and tools',
+    'Le site' => 'The site',
+    'Nous rejoindre' => 'Join us',
+    'Autres espaces' => 'Other spaces',
+    'Dossiers, personnes et lieux' => 'Cases, people and places',
+    'Habilité' => 'Cleared',
+    'Ici' => 'Here',
     'Annoter le dossier' => 'Annotate the file',
     'Mandat, recherche ou signalement : la mention sort en jeu à la prochaine consultation de la fiche.' => 'Warrant, search or alert: the flag comes up in game the next time the record is consulted.',
     'Taille, corpulence, signes particuliers et codes de prudence affichés en tête de fiche.' => 'Height, build, distinguishing marks and caution codes shown at the top of the record.',

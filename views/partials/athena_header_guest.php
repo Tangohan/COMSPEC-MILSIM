@@ -36,6 +36,8 @@ $espaceLinks = [
     ['abbr' => 'INV', 'label' => __('auth.join_community'), 'desc' => __('auth.header_espace_join'), 'href' => $joinHref],
 ];
 
+$espacesGroups = \App\Support\EspacesMenu::groups($espaceLinks, '');
+
 $quickLinks = [
     ['label' => __('common.home'), 'href' => $homeHref],
     ['label' => __('site.about'), 'href' => $aboutHref],
@@ -85,38 +87,7 @@ $quickLinks = [
                 <span class="athena-header__cta-label"><?= $h(__('auth.header_cta')) ?></span>
             </a>
 
-            <div class="athena-header__menu relative hidden md:block">
-                <button
-                    type="button"
-                    class="athena-header__menu-trigger"
-                    data-athena-toggle="espaces"
-                    aria-expanded="false"
-                    aria-haspopup="true"
-                    aria-controls="athena-header-espaces"
-                >
-                    <?= $h(__('auth.header_espaces')) ?>
-                    <svg class="athena-header__chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="m6 9 6 6 6-6"></path>
-                    </svg>
-                </button>
-                <div class="athena-header__panel athena-header__panel--espaces hidden" id="athena-header-espaces" data-athena-panel="espaces" role="region" aria-label="<?= $h(__('auth.header_espaces_aria')) ?>">
-                    <div class="athena-header__panel-head">
-                        <p class="athena-header__kicker"><?= $h(__('auth.header_espaces_kicker')) ?></p>
-                        <h3 class="athena-header__panel-title"><?= $h(__('auth.header_espaces')) ?></h3>
-                    </div>
-                    <div class="athena-header__espaces-grid">
-                        <?php foreach ($espaceLinks as $link): ?>
-                            <a href="<?= $h((string) $link['href']) ?>" class="athena-header__espace-item">
-                                <span class="athena-header__espace-abbr"><?= $h((string) $link['abbr']) ?></span>
-                                <span class="athena-header__espace-meta">
-                                    <strong><?= $h((string) $link['label']) ?></strong>
-                                    <em><?= $h((string) $link['desc']) ?></em>
-                                </span>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
+            <?php $espacesMode = 'bar'; $espacesLabel = __('auth.header_espaces'); $espacesAria = __('auth.header_espaces_aria'); require base_path('views/partials/athena_espaces_menu.php'); ?>
 
             <div class="relative hidden md:block">
                 <button
