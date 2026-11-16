@@ -77,6 +77,8 @@ final class NineLineBoardService
         foreach ($rows as $row) {
             $item = $this->present($row, $userId, $manager);
             $item['recipients'] = $recipients[(int) $row['id']] ?? [];
+            // Pastille de la demande : état le plus avancé de ses destinataires (AirBriefService::deliverySummary).
+            $item['delivery'] = AirBriefService::deliverySummary($item['recipients']);
             $item['author_check'] = $authors[(int) $row['id']] ?? null;
             $out[] = $item;
         }

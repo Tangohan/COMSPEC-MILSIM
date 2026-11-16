@@ -20,7 +20,14 @@ use PDO;
  * - Indicatifs (atak_brief_callsigns) : indicatif JTAC d'un membre (scope jtac), indicatif affiché d'un appareil remonté
  *   (scope aircraft, clé = indicatif remonté par le jeu, qui reste celui qui sert à joindre l'appareil).
  *
- * Tables absentes (migration 3720 pas encore passée) : tout se replie sans erreur (aucun destinataire, aucun indicatif).
+ * - Indicatifs comparés par leur clé (callsignKey) : casse, accents, espaces, tirets, points et soulignés ignorés
+ *   (« TIGER 6 », « tiger-6 » et « Tiger6 » désignent le même appareil), à l'enregistrement comme à la lecture.
+ * - Boîte relevée par le téléphone du pilote : le brief passe « livré » (received_at, indicatif interrogé polled_as,
+ *   dernier relevé last_polled_at : migration 4910), puis « lu » et « acquitté » par ses accusés (delivery()).
+ * - Demande affectée à un appareil par assigned_aircraft seulement (sans destinataire) : trouvée aussi par la boîte.
+ *
+ * Tables absentes (migration 3720 pas encore passée) : tout se replie sans erreur (aucun destinataire, aucun indicatif) ;
+ * colonnes de livraison absentes (4910) : statut et horodatages tenus quand même, sans indicatif interrogé ni dernier relevé.
  */
 final class AirBriefService
 {
@@ -50,7 +57,16 @@ final class AirBriefService
 
     private ?bool $hasCallsigns = null;
 
-    public function __construct(private ?PDO $pdo = null)
+    private ?bool $hasDelivery = null;
+
+    /** États de livraison exposés au web (delivery.status), du moins au plus avancé (expired : plus proposé). */
+    public const DELIVERY_STATUSES = ['expired', 'sent', 'delivered', 'read', 'acknowledged'];
+
+    /** Noms jamais pris pour un indicatif (rôles génériques du jeu). */
+    private const GENERIC_NAMES = ['operateur', 'pilote', 'pilot', 'unknown', 'inconnu', 'any', 'null', 'jtac'];
+
+    /** @param (\Closure(string): void)|null $log journal discret (error_log par défaut) */
+    public function __construct(private ?PDO $pdo = null, private ?\Closure $log = null)
     {
     }
 
@@ -62,6 +78,44 @@ final class AirBriefService
         $s = trim((string) preg_replace('/\s+/u', ' ', $s));
 
         return mb_substr(mb_strtoupper($s), 0, 32);
+    }
+
+    /**
+     * Clé de comparaison d'un indicatif ou d'un nom : minuscules, accents retirés, lettres et chiffres seulement.
+     * « TIGER 6 », « Tiger-6 », « tiger_6 » et « TIGER6 » donnent « tiger6 ». Même règle côté jeu (fn_airBrief "key").
+     */
+    public static function callsignKey(mixed $raw): string
+    {
+        $s = mb_strtolower(trim(is_scalar($raw) ? (string) $raw : ''));
+        if ($s === '') {
+            return '';
+        }
+        $s = strtr($s, [
+            'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'ì' => 'i', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ò' => 'o', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ñ' => 'n',
+        ]);
+
+        return mb_substr((string) preg_replace('/[^\p{L}\p{N}]+/u', '', $s), 0, 64);
+    }
+
+    /**
+     * Noms interrogés par la boîte du pilote (assignedTo=~air|nom1|nom2) : clé => nom tel que reçu, génériques retirés.
+     *
+     * @param list<mixed> $names
+     * @return array<string, string>
+     */
+    public static function inboxKeys(array $names): array
+    {
+        $keys = [];
+        foreach ($names as $n) {
+            $raw = trim(is_scalar($n) ? (string) $n : '');
+            $k = self::callsignKey($raw);
+            if ($k !== '' && !in_array($k, self::GENERIC_NAMES, true) && !isset($keys[$k])) {
+                $keys[$k] = mb_substr($raw, 0, 64);
+            }
+        }
+
+        return $keys;
     }
 
     /** « WILCO:HOG 21 » → ['wilco', 'HOG 21'] ; null si ce n'est pas un accusé de brief. */
@@ -85,12 +139,15 @@ final class AirBriefService
     public static function normalizeRecipients(array $recipients): array
     {
         $out = [];
+        $seen = [];
         foreach ($recipients as $r) {
             $r = is_array($r) ? $r : ['callsign' => $r];
             $cs = self::cleanCallsign($r['callsign'] ?? '');
-            if ($cs === '' || isset($out[$cs])) {
+            $k = self::callsignKey($cs);
+            if ($k === '' || isset($seen[$k])) {
                 continue;
             }
+            $seen[$k] = true;
             $label = self::cleanCallsign($r['label'] ?? '');
             $crew = [];
             foreach (is_array($r['crew'] ?? null) ? $r['crew'] : [] as $n) {
@@ -130,13 +187,23 @@ final class AirBriefService
             'INSERT INTO atak_nine_line_recipients (tenant_id, nine_line_id, callsign, label, crew_names, status, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
+        $overrideKeys = [];
+        foreach ($overrides as $reported => $shown) {
+            $overrideKeys[self::callsignKey($reported)] = $shown;
+        }
         foreach ($list as $r) {
             $exists->execute([$lineId, $r['callsign']]);
             if ($exists->fetchColumn() !== false) {
                 continue;
             }
-            $crew = array_values(array_unique(array_merge($r['crew'], $known[$r['callsign']] ?? [])));
-            $label = $overrides[$r['callsign']] ?? $r['label'];
+            $k = self::callsignKey($r['callsign']);
+            $crew = array_values(array_unique(array_merge($r['crew'], $known[$k] ?? [])));
+            $label = $overrides[$r['callsign']] ?? $overrideKeys[$k] ?? $r['label'];
+            // Journal discret : aucun appareil remonté récemment sous cet indicatif (faute de frappe, pilote non relié) ;
+            // le pilote ne le recevra que si son téléphone interroge ce nom-là (diagnostic de sa page BRIEFS AIR).
+            if (!isset($known[$k]) && $r['crew'] === []) {
+                ($this->log ?? static fn (string $m): bool => error_log($m))(sprintf('[air-brief] communauté %d, demande %d : destinataire « %s » sans appareil connu (aucun pilote relié sous cet indicatif)', $tenantId, $lineId, $r['callsign']));
+            }
             $ins->execute([$tenantId, $lineId, $r['callsign'], $label, $crew === [] ? null : mb_substr('|' . implode('|', $crew) . '|', 0, 500), 'sent', $date, $date]);
         }
 
@@ -186,7 +253,93 @@ final class AirBriefService
             'read_at' => (string) ($r['read_at'] ?? ''),
             'ack_at' => (string) ($r['ack_at'] ?? ''),
             'updated_at' => (string) ($r['updated_at'] ?? $r['created_at'] ?? ''),
+            'delivery' => self::delivery($r),
         ];
+    }
+
+    /**
+     * État de livraison d'un destinataire (web : pastille, liste repliable) :
+     * {status: sent|delivered|read|acknowledged|expired, answer: ""|wilco|unable|done, delivered_at, read_at,
+     *  acknowledged_at, pilot_callsign, last_polled_at}, dates « Y-m-d H:i:s » (heure du serveur) ou "".
+     * - sent : enregistré pour l'indicatif, pas encore relevé par le téléphone du pilote ;
+     * - delivered : la boîte du pilote l'a renvoyé à son téléphone (ou le téléphone a accusé REÇU) ;
+     * - read : ouvert dans l'espace BRIEFS AIR (accusé READ du téléphone) ;
+     * - acknowledged : WILCO, UNABLE ou mission clôturée (answer) ;
+     * - expired : jamais relevé dans la fenêtre de la boîte (3 h), le pilote ne le recevra plus.
+     * pilot_callsign : indicatif de l'accusé, sinon nom sous lequel la boîte a été interrogée.
+     *
+     * @param array<string, mixed> $r ligne de atak_nine_line_recipients
+     * @return array<string, string>
+     */
+    public static function delivery(array $r, ?int $now = null): array
+    {
+        $st = in_array((string) ($r['status'] ?? ''), self::STATUSES, true) ? (string) $r['status'] : 'sent';
+        $status = match ($st) {
+            'received' => 'delivered',
+            'read' => 'read',
+            'wilco', 'unable', 'done' => 'acknowledged',
+            default => 'sent',
+        };
+        $created = strtotime((string) ($r['created_at'] ?? '')) ?: null;
+        if ($status === 'sent' && $created !== null && (($now ?? time()) - $created) > self::INBOX_WINDOW_SECONDS) {
+            $status = 'expired';
+        }
+        $by = (string) ($r['ack_by'] ?? '');
+
+        return [
+            'status' => $status,
+            'answer' => in_array($st, ['wilco', 'unable', 'done'], true) ? $st : '',
+            'delivered_at' => (string) ($r['received_at'] ?? ''),
+            'read_at' => (string) ($r['read_at'] ?? ''),
+            'acknowledged_at' => (string) ($r['ack_at'] ?? ''),
+            'pilot_callsign' => $by !== '' ? $by : (string) ($r['polled_as'] ?? ''),
+            'last_polled_at' => (string) ($r['last_polled_at'] ?? ''),
+        ];
+    }
+
+    /**
+     * État d'une demande entière (pastille) : l'état le plus avancé de ses destinataires et le décompte par état.
+     *
+     * @param list<array<string, mixed>> $recipients destinataires présentés (presentRecipient)
+     * @return array{status: string, counts: array<string, int>, total: int, last_polled_at: string}
+     */
+    public static function deliverySummary(array $recipients): array
+    {
+        $order = array_flip(self::DELIVERY_STATUSES);
+        $counts = array_fill_keys(self::DELIVERY_STATUSES, 0);
+        $best = '';
+        $polled = '';
+        foreach ($recipients as $r) {
+            $d = is_array($r['delivery'] ?? null) ? $r['delivery'] : self::delivery($r);
+            $s = isset($order[$d['status'] ?? '']) ? (string) $d['status'] : 'sent';
+            $counts[$s]++;
+            if ($best === '' || $order[$s] > $order[$best]) {
+                $best = $s;
+            }
+            if ((string) ($d['last_polled_at'] ?? '') > $polled) {
+                $polled = (string) $d['last_polled_at'];
+            }
+        }
+
+        return ['status' => $best !== '' ? $best : 'sent', 'counts' => $counts, 'total' => count($recipients), 'last_polled_at' => $polled];
+    }
+
+    /**
+     * Livraison d'une demande (GET /api/cas/{id}/delivery) : null si elle n'existe pas dans cette communauté.
+     *
+     * @return array{id: int, ref: string, delivery: array<string, mixed>, recipients: list<array<string, mixed>>}|null
+     */
+    public function lineDelivery(int $tenantId, string $ref): ?array
+    {
+        $line = $this->resolveLine($tenantId, $ref);
+        if ($line === null) {
+            return null;
+        }
+        $id = (int) $line['id'];
+        $rec = $this->forLines($tenantId, [$id])[$id] ?? [];
+        $mission = trim((string) ($line['mission_id'] ?? ''));
+
+        return ['id' => $id, 'ref' => $mission !== '' ? $mission : (string) $id, 'delivery' => self::deliverySummary($rec), 'recipients' => $rec];
     }
 
     /**
@@ -324,64 +477,181 @@ final class AirBriefService
      */
     public function inbox(int $tenantId, array $names, ?int $now = null): array
     {
-        $keys = [];
-        foreach ($names as $n) {
-            $k = self::key((string) $n);
-            if ($k !== '' && !in_array($k, ['operateur', 'pilote', 'unknown', 'inconnu'], true)) {
-                $keys[$k] = true;
-            }
-        }
-        if ($keys === [] || !$this->hasRecipientsTable()) {
+        $keys = self::inboxKeys($names);
+        if ($keys === []) {
             return [];
         }
         $now ??= time();
-        $st = $this->db()->prepare(
-            'SELECT r.callsign AS r_callsign, r.label AS r_label, r.crew_names AS r_crew, r.status AS r_status, n.*
-             FROM atak_nine_line_recipients r JOIN atak_nine_line n ON n.id = r.nine_line_id
-             WHERE r.tenant_id = ? AND n.tenant_id = ? AND r.created_at >= ? ORDER BY n.id DESC, r.id LIMIT 200'
-        );
-        $st->execute([$tenantId, $tenantId, date('Y-m-d H:i:s', $now - self::INBOX_WINDOW_SECONDS)]);
+        $since = date('Y-m-d H:i:s', $now - self::INBOX_WINDOW_SECONDS);
+        // Premier nom interrogé qui correspond (indicatif de l'appareil, du joueur, nom de jeu), pour la livraison.
+        $match = static function (array $candidates) use ($keys): ?string {
+            foreach ($candidates as $n) {
+                $k = self::callsignKey($n);
+                if ($k !== '' && isset($keys[$k])) {
+                    return $keys[$k];
+                }
+            }
+
+            return null;
+        };
         $out = [];
-        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+        if ($this->hasRecipientsTable()) {
+            $st = $this->db()->prepare(
+                'SELECT r.id AS r_id, r.callsign AS r_callsign, r.label AS r_label, r.crew_names AS r_crew, r.status AS r_status, n.*
+                 FROM atak_nine_line_recipients r JOIN atak_nine_line n ON n.id = r.nine_line_id
+                 WHERE r.tenant_id = ? AND n.tenant_id = ? AND r.created_at >= ? ORDER BY n.id DESC, r.id LIMIT 200'
+            );
+            $st->execute([$tenantId, $tenantId, $since]);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                $id = (int) $r['id'];
+                if (isset($out[$id])) {
+                    continue;
+                }
+                $hit = $match(array_merge([(string) $r['r_callsign'], (string) ($r['r_label'] ?? '')], explode('|', (string) ($r['r_crew'] ?? ''))));
+                if ($hit === null) {
+                    continue;
+                }
+                $out[$id] = self::inboxItem($r, $now, in_array((string) $r['r_status'], self::STATUSES, true) ? (string) $r['r_status'] : 'sent', (string) $r['r_callsign'])
+                    + ['recipient_id' => (int) $r['r_id'], 'matched' => $hit];
+            }
+        }
+        // Demande affectée à un appareil sans destinataire enregistré (assigned_aircraft : page CAS, PATCH /api/cas/{id}).
+        try {
+            $st = $this->db()->prepare(
+                'SELECT * FROM atak_nine_line WHERE tenant_id = ? AND created_at >= ? AND assigned_aircraft IS NOT NULL AND assigned_aircraft <> ? ORDER BY id DESC LIMIT 60'
+            );
+            $st->execute([$tenantId, $since, '']);
+            $assigned = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            $assigned = [];
+        }
+        foreach ($assigned as $r) {
             $id = (int) $r['id'];
             if (isset($out[$id])) {
                 continue;
             }
-            $names = array_merge([(string) $r['r_callsign'], (string) ($r['r_label'] ?? '')], explode('|', (string) ($r['r_crew'] ?? '')));
-            $hit = false;
-            foreach ($names as $n) {
-                if (isset($keys[self::key($n)])) {
-                    $hit = true;
+            $tokens = preg_split('/\s*[,;|]\s*/u', (string) $r['assigned_aircraft']) ?: [];
+            $hit = $match($tokens);
+            if ($hit === null) {
+                continue;
+            }
+            $cs = '';
+            foreach ($tokens as $t) {
+                if (self::callsignKey($t) === self::callsignKey($hit)) {
+                    $cs = self::cleanCallsign($t);
                     break;
                 }
             }
-            if (!$hit) {
-                continue;
-            }
-            $kind = CasNineLineRepository::normalizeKind($r['mission_kind'] ?? 'cas');
-            $count = $kind === CasNineLineRepository::KIND_FIVE ? 5 : 9;
-            $lines = [];
-            for ($i = 1; $i <= $count; $i++) {
-                $lines[] = (string) ($r['line' . $i] ?? '');
-            }
-            $mission = trim((string) ($r['mission_id'] ?? ''));
-            $out[$id] = [
-                'ref' => $mission !== '' ? $mission : (string) $id,
-                'id' => $id,
-                'format' => self::format($kind),
-                'from' => (string) ($r['author'] ?? 'JTAC'),
-                'time' => date('H:i', strtotime((string) ($r['created_at'] ?? '')) ?: $now),
-                'lines' => $lines,
-                'remarks' => self::remarks($r),
-                'status' => in_array((string) $r['r_status'], self::STATUSES, true) ? (string) $r['r_status'] : 'sent',
-                'recipient' => (string) $r['r_callsign'],
-            ];
-            if (count($out) >= self::INBOX_MAX) {
-                break;
-            }
+            $out[$id] = self::inboxItem($r, $now, 'sent', $cs) + ['recipient_id' => 0, 'matched' => $hit];
+        }
+        krsort($out);
+
+        return array_values(array_slice($out, 0, self::INBOX_MAX, true));
+    }
+
+    /**
+     * Réponse de GET /api/cas?assignedTo=~air|nom1|nom2 (8 noms au plus) : tableau SQF de la boîte, puis livraison notée
+     * (la réponse garde l'état d'avant le relevé). Aucune erreur ne remonte : « [] » au pire.
+     */
+    public function inboxResponse(int $tenantId, string $assignedTo, ?int $now = null): string
+    {
+        $raw = str_starts_with($assignedTo, self::INBOX_PREFIX) ? substr($assignedTo, strlen(self::INBOX_PREFIX)) : $assignedTo;
+        try {
+            $items = $this->inbox($tenantId, array_slice(explode('|', $raw), 0, 8), $now);
+            $body = self::inboxSqf($items);
+        } catch (\Throwable) {
+            return '[]';
+        }
+        try {
+            $this->markDelivered($tenantId, $items, $now);
+        } catch (\Throwable $e) {
+            error_log('[air-brief] livraison : ' . $e->getMessage());
         }
 
-        return array_values($out);
+        return $body;
+    }
+
+    /**
+     * Brief de la boîte du pilote (forme lue par inboxSqf).
+     *
+     * @param array<string, mixed> $r ligne de atak_nine_line
+     * @return array<string, mixed>
+     */
+    private static function inboxItem(array $r, int $now, string $status, string $recipient): array
+    {
+        $id = (int) $r['id'];
+        $kind = CasNineLineRepository::normalizeKind($r['mission_kind'] ?? 'cas');
+        $count = $kind === CasNineLineRepository::KIND_FIVE ? 5 : 9;
+        $lines = [];
+        for ($i = 1; $i <= $count; $i++) {
+            $lines[] = (string) ($r['line' . $i] ?? '');
+        }
+        $mission = trim((string) ($r['mission_id'] ?? ''));
+
+        return [
+            'ref' => $mission !== '' ? $mission : (string) $id,
+            'id' => $id,
+            'format' => self::format($kind),
+            'from' => (string) ($r['author'] ?? 'JTAC'),
+            'time' => date('H:i', strtotime((string) ($r['created_at'] ?? '')) ?: $now),
+            'lines' => $lines,
+            'remarks' => self::remarks($r),
+            'status' => $status,
+            'recipient' => $recipient,
+        ];
+    }
+
+    /**
+     * La boîte vient d'être renvoyée au téléphone du pilote : chaque brief passe « livré » (reçu, jamais en arrière),
+     * avec le nom interrogé et l'heure du relevé. Demande affectée sans destinataire : destinataire ajouté, déjà livré.
+     *
+     * @param list<array<string, mixed>> $items résultat de inbox()
+     */
+    public function markDelivered(int $tenantId, array $items, ?int $now = null): int
+    {
+        if ($items === [] || !$this->hasRecipientsTable()) {
+            return 0;
+        }
+        $date = date('Y-m-d H:i:s', $now ?? time());
+        $extra = $this->hasDeliveryColumns();
+        $upd = $this->db()->prepare(
+            'UPDATE atak_nine_line_recipients SET status = CASE WHEN status = ? THEN ? ELSE status END, received_at = COALESCE(received_at, ?)'
+            . ($extra ? ', polled_as = ?, last_polled_at = ?' : '') . ' WHERE id = ? AND tenant_id = ?'
+        );
+        $n = 0;
+        foreach ($items as $it) {
+            $rid = (int) ($it['recipient_id'] ?? 0);
+            $as = mb_substr((string) ($it['matched'] ?? ''), 0, 64);
+            if ($rid < 1) {
+                $cs = self::cleanCallsign($it['recipient'] ?? '');
+                $line = (int) ($it['id'] ?? 0);
+                if ($cs === '' || $line < 1) {
+                    continue;
+                }
+                $exists = $this->db()->prepare('SELECT id FROM atak_nine_line_recipients WHERE nine_line_id = ? AND callsign = ?');
+                $exists->execute([$line, $cs]);
+                $rid = (int) $exists->fetchColumn();
+                if ($rid < 1) {
+                    $this->db()->prepare(
+                        'INSERT INTO atak_nine_line_recipients (tenant_id, nine_line_id, callsign, label, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+                    )->execute([$tenantId, $line, $cs, $cs, 'sent', $date, $date]);
+                    $exists->execute([$line, $cs]);
+                    $rid = (int) $exists->fetchColumn();
+                }
+                if ($rid < 1) {
+                    continue;
+                }
+            }
+            $params = ['sent', 'received', $date];
+            if ($extra) {
+                array_push($params, $as !== '' ? $as : null, $date);
+            }
+            array_push($params, $rid, $tenantId);
+            $upd->execute($params);
+            $n++;
+        }
+
+        return $n;
     }
 
     /** 9line, 5line ou medevac (format lu par le jeu). */
@@ -534,11 +804,11 @@ final class AirBriefService
         } catch (\Throwable) {
             return [];
         }
-        $wanted = array_flip($callsigns);
+        $wanted = array_flip(array_map(static fn (string $c): string => self::callsignKey($c), $callsigns));
         $out = [];
         foreach ($rows as $r) {
-            $cs = self::cleanCallsign($r['callsign'] ?? '');
-            if (!isset($wanted[$cs]) || isset($out[$cs])) {
+            $cs = self::callsignKey($r['callsign'] ?? '');
+            if ($cs === '' || !isset($wanted[$cs]) || isset($out[$cs])) {
                 continue;
             }
             $names = [];
@@ -562,12 +832,18 @@ final class AirBriefService
 
     private static function key(string $name): string
     {
-        return mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $name)));
+        return self::callsignKey($name);
     }
 
     private function hasRecipientsTable(): bool
     {
         return $this->hasRecipients ??= $this->probe('SELECT id FROM atak_nine_line_recipients LIMIT 1');
+    }
+
+    /** Colonnes de livraison (migration 4910) : nom interrogé et dernier relevé. */
+    private function hasDeliveryColumns(): bool
+    {
+        return $this->hasDelivery ??= $this->probe('SELECT polled_as, last_polled_at FROM atak_nine_line_recipients LIMIT 1');
     }
 
     private function hasCallsignsTable(): bool
