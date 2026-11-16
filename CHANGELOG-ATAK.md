@@ -38,6 +38,21 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Réglette d'effectif plus sobre et masquable (ATAK natif 4.31.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : Réglette d'effectif plus sobre, et tu peux la masquer
+- La réglette de ton groupe, sous la boussole de la carte, est plus sobre : des cases plus petites sur fond sombre, la lettre de l'équipe dans sa couleur, une petite pastille pour le chef, un fin cadre pour toi et le compteur collé à la dernière case.
+- Nouveau réglage « Afficher la réglette d'effectif sur la carte » (réglages du mod, catégorie COMSPEC, et téléphone > Réglages > Carte) : décoche-le pour la masquer. L'onglet Groupe et l'ORBAT ne changent pas.
+EN : Cleaner squad strip, and you can hide it
+- Your group strip under the map compass is cleaner: smaller cells on a dark background, the team letter in its colour, a small dot for the leader, a thin frame for you and the counter right next to the last cell.
+- New setting "Show the squad strip on the map" (mod settings, COMSPEC category, and phone > Settings > Map): untick it to hide the strip. The Group tab and the ORBAT do not change.
+
+### Détail technique
+- `fn_squadBar` : nouveau mode `geom` partagé avec `fn_pageMap`, `prims` renvoie aussi la largeur prise, états par forme et couleur ; les modes `cells`, `count`, `text`, `mapTick` gardent leurs signatures.
+- Réglage client `comspec_atak_native_map_squadbar` (défaut vrai) : rectangle et place dans `_hud` non posés si décoché, `mapTick` efface une fois puis ne touche plus rien. Test `AtakSquadBarSettingAssetTest`.
+
 ## Une seule app SSE dans le téléphone (ATAK natif 4.30.0.AG - Washington)
 
 ### Résumé joueur

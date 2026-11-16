@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.31.0 Washington — réglette d'effectif plus sobre et masquable / cleaner, hideable squad strip[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Réglette d'effectif plus sobre[/b] : sous la boussole de la carte, des cases plus petites sur fond sombre, la lettre de l'équipe dans sa couleur, une petite pastille pour le chef, un fin cadre pour toi et le compteur collé à la dernière case.
+[*] [b]Nouveau réglage[/b] « Afficher la réglette d'effectif sur la carte » (réglages du mod, catégorie COMSPEC, et téléphone > Réglages > Carte) : décoche-le pour la masquer. L'onglet Groupe et l'ORBAT ne changent pas.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Cleaner squad strip[/b]: under the map compass, smaller cells on a dark background, the team letter in its colour, a small dot for the leader, a thin frame for you and the counter right next to the last cell.
+[*] [b]New setting[/b] "Show the squad strip on the map" (mod settings, COMSPEC category, and phone > Settings > Map): untick it to hide the strip. The Group tab and the ORBAT do not change.
+[/list]
+
 [h1]COMSPEC ATAK 4.30.0 Washington — une seule app SSE / one SSE app[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
