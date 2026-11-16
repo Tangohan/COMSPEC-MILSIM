@@ -10,6 +10,7 @@ use Throwable;
 
 /**
  * Exécute une migration bootstrap sans polluer la sortie HTTP (echo des logs).
+ * Jamais pendant une transaction ouverte : la DDL la validerait implicitement.
  */
 final class SilentSchemaMigration
 {
@@ -38,6 +39,12 @@ final class SilentSchemaMigration
             }
             $pdo ??= Database::getPdo();
             if (!$pdo instanceof PDO) {
+                return;
+            }
+            // Un ALTER / CREATE valide implicitement la transaction MySQL en cours : la suite de l'appelant (création
+            // d'une communauté…) ne serait plus annulable et son commit échouerait (« There is no active transaction »).
+            // La migration repassera à la prochaine connexion hors transaction.
+            if ($pdo->inTransaction()) {
                 return;
             }
             $silent = static function (string $_message): void {

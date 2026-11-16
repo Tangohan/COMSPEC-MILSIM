@@ -85,6 +85,11 @@ class PersonnelJobRoleAdminController
 
             return Response::redirect(effectifs_workspace_url('fonctions'));
         }
+        if (($lengthError = PersonnelJobRoleRepository::fieldLengthError($name, $slug, $description)) !== null) {
+            Session::flash('error', $lengthError);
+
+            return Response::redirect($id > 0 ? effectifs_workspace_url('fonctions') . '?emploi=' . $id : effectifs_workspace_url('fonctions') . '?nouveau=1');
+        }
         if (!$this->jobRoleRepository->findCategoryById($categoryId, $tenantId)) {
             Session::flash('error', 'Catégorie invalide.');
 
@@ -186,6 +191,11 @@ class PersonnelJobRoleAdminController
         }
         if ($slug === '') {
             $slug = $this->slugifyCategory($name);
+        }
+        if (($lengthError = PersonnelJobRoleRepository::fieldLengthError($name, $slug)) !== null) {
+            Session::flash('error', $lengthError);
+
+            return Response::redirect(effectifs_workspace_url('fonctions'));
         }
         if ($id > 0) {
             $existing = $this->jobRoleRepository->findCategoryById($id, $tenantId);
@@ -800,7 +810,7 @@ class PersonnelJobRoleAdminController
             $s = $name;
         }
         $s = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $s) ?? '');
-        $s = trim($s, '-');
+        $s = rtrim(substr(trim($s, '-'), 0, PersonnelJobRoleRepository::SLUG_BASE_MAX), '-');
 
         return $s !== '' ? $s : 'categorie';
     }

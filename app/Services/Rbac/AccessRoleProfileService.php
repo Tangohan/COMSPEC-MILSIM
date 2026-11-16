@@ -565,11 +565,11 @@ final class AccessRoleProfileService
         $st = $this->pdo->prepare('SELECT id, name FROM personnel_job_role_tags WHERE tenant_id = ?');
         $st->execute([$tenantId]);
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $t) {
-            $existing[mb_strtolower((string) $t['name'], 'UTF-8')] = (int) $t['id'];
+            $existing[JobRoleEnrichmentService::tagKey((string) $t['name'])] = (int) $t['id'];
         }
         $ids = [];
         foreach ($names as $name) {
-            $key = mb_strtolower($name, 'UTF-8');
+            $key = JobRoleEnrichmentService::tagKey($name);
             if (!isset($existing[$key])) {
                 $this->pdo->prepare('INSERT INTO personnel_job_role_tags (tenant_id, name) VALUES (?, ?)')->execute([$tenantId, $name]);
                 $existing[$key] = (int) $this->pdo->lastInsertId();

@@ -6,12 +6,16 @@ namespace App\Support\Schema;
 
 use App\Authorization\TenantPermissionCatalog;
 use App\Controllers\Web\CommunityController;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\SseTagRepository;
+use App\Repositories\UnitRepository;
+use App\Services\Advancement\GradeScaleTemplateService;
 use App\Services\Community\CommunityOnboardingValidationService;
 use App\Services\Community\TenantDefaultRoleDefinitions;
 use App\Services\Community\TenantSeedHelper;
 use App\Services\Community\TenantTypeConfig;
 use App\Services\Community\WizardOrbatPresets;
+use App\Services\OrganizationCatalog\OrganizationCatalogService;
 use App\Services\OrganizationCatalog\OrganizationKitDefinitions;
 use App\Services\Personnel\JobRoleEnrichmentService;
 use App\Services\Personnel\UnitJobRoleSyncService;
@@ -20,8 +24,9 @@ use App\Support\SseAttachCatalog;
 use App\Support\SseFieldNoteTagCatalog;
 
 /**
- * Contrôle sans base MySQL des libellés semés à la création d'une communauté : chaque valeur écrite dans une colonne
- * « name » (et name_fr / name_en des étiquettes SSE) doit tenir dans la colonne la plus étroite déclarée par les migrations
+ * Contrôle sans base MySQL des valeurs écrites à la création d'une communauté et de sa structure : chaque valeur semée
+ * (noms, adresses courtes, codes, types, descriptions, grades, formations, étiquettes) et chaque borne imposée par le code
+ * aux saisies ou valeurs dérivées doit tenir dans la colonne VARCHAR la plus étroite déclarée par les migrations
  * (migrations/*.sql, database/steps, bootstrap/*migration*.php). Une valeur plus longue fait échouer la création en MySQL
  * strict (SQLSTATE 22001, erreur 1406) et annule toute la transaction.
  *
@@ -31,8 +36,6 @@ use App\Support\SseFieldNoteTagCatalog;
  */
 final class SeedNameLengthAudit
 {
-    private const COLUMNS = ['name', 'name_fr', 'name_en'];
-
     /**
      * Longueur la plus étroite de chaque colonne suivie, toutes migrations confondues.
      *
@@ -52,7 +55,7 @@ final class SeedNameLengthAudit
                 $limits[$key] = $len;
             }
         };
-        $cols = implode('|', self::COLUMNS);
+        $cols = '\w+';
         foreach ($files as $file) {
             $sql = (string) file_get_contents($file);
             // CREATE TABLE … ( … ) : colonnes jusqu'à la parenthèse fermante de premier niveau.
@@ -151,7 +154,106 @@ final class SeedNameLengthAudit
             ['column' => 'personnel_job_role_categories.name', 'origin' => 'UnitJobRoleSyncService + OrganizationKitDefinitions', 'values' => array_merge([UnitJobRoleSyncService::CATEGORY_NAME], $kitCats)],
             ['column' => 'sse_attach_tags.name_fr', 'origin' => 'SseFieldNoteTagCatalog::TAGS (libellés FR)', 'values' => $sseFr],
             ['column' => 'sse_attach_tags.name_en', 'origin' => 'SseFieldNoteTagCatalog::TAGS (libellés EN)', 'values' => $sseEn],
+            ...self::structureSources(),
         ];
+    }
+
+    /**
+     * Autres colonnes VARCHAR écrites par la création de la structure (adresses courtes, codes, types, descriptions,
+     * libellés de grades, formations, étiquettes) : mêmes listes semées que ci-dessus, champ par champ.
+     *
+     * @return list<array{column: string, origin: string, values: list<string>}>
+     */
+    public static function structureSources(): array
+    {
+        $field = static fn (array $rows, string|int $key): array => array_values(array_filter(array_map(
+            static fn ($r): string => is_array($r) && is_scalar($r[$key] ?? null) ? (string) $r[$key] : '',
+            $rows
+        ), static fn (string $v): bool => $v !== ''));
+        $kit = static function (string $part, string $key) use ($field): array {
+            $out = [];
+            foreach (array_merge(OrganizationKitDefinitions::officialKits(), OrganizationKitDefinitions::genericKits()) as $def) {
+                $out = array_merge($out, $field(is_array($def[$part] ?? null) ? $def[$part] : [], $key));
+            }
+
+            return $out;
+        };
+        $preset = static function (string $key) use ($field): array {
+            $out = [];
+            foreach (WizardOrbatPresets::all() as $p) {
+                $out = array_merge($out, $field($p['units'], $key));
+            }
+
+            return $out;
+        };
+        $grades = $filieres = [];
+        foreach ((new \ReflectionClass(GradeScaleTemplateService::class))->newInstanceWithoutConstructor()->templates() as $template) {
+            $grades = array_merge($grades, is_array($template['grades'] ?? null) ? $template['grades'] : []);
+            $filieres = array_merge($filieres, is_array($template['filieres'] ?? null) ? $template['filieres'] : []);
+        }
+        $courses = self::courseSeedLiterals(dirname(__DIR__, 3));
+        $roleDefs = array_merge(
+            CommunityAccessProfiles::definitions(),
+            TenantDefaultRoleDefinitions::governanceRoles(),
+            TenantDefaultRoleDefinitions::operationalRoles(),
+            TenantDefaultRoleDefinitions::organicStaffRoles()
+        );
+
+        return [
+            ['column' => 'permissions.slug', 'origin' => 'TenantPermissionCatalog::definitions()', 'values' => $field(TenantPermissionCatalog::definitions(), 'slug')],
+            ['column' => 'permissions.module', 'origin' => 'TenantPermissionCatalog::definitions()', 'values' => $field(TenantPermissionCatalog::definitions(), 'module')],
+            ['column' => 'roles.slug', 'origin' => 'Niveaux d’accès et rôles système', 'values' => array_merge($field($roleDefs, 'slug'), $kit('roles', 'slug'))],
+            ['column' => 'roles.description', 'origin' => 'Niveaux d’accès, rôles système et modèles', 'values' => array_merge($field($roleDefs, 'description'), $kit('roles', 'description'))],
+            ['column' => 'personnel_admin_panels.slug', 'origin' => 'TenantSeedHelper::PERSONNEL_PANELS', 'values' => $field(TenantSeedHelper::PERSONNEL_PANELS, 1)],
+            ['column' => 'personnel_admin_panels.description', 'origin' => 'TenantSeedHelper::PERSONNEL_PANELS', 'values' => $field(TenantSeedHelper::PERSONNEL_PANELS, 2)],
+            ['column' => 'document_categories.slug', 'origin' => 'TenantSeedHelper::DOCUMENT_CATEGORIES', 'values' => $field(TenantSeedHelper::DOCUMENT_CATEGORIES, 1)],
+            ['column' => 'equipment_classes.slug', 'origin' => 'TenantSeedHelper::EQUIPMENT_CLASSES', 'values' => $field(TenantSeedHelper::EQUIPMENT_CLASSES, 1)],
+            ['column' => 'equipment_classes.category', 'origin' => 'TenantSeedHelper::EQUIPMENT_CLASSES', 'values' => $field(TenantSeedHelper::EQUIPMENT_CLASSES, 2)],
+            ['column' => 'units.slug', 'origin' => 'WizardOrbatPresets + OrganizationKitDefinitions', 'values' => array_merge($preset('slug'), $kit('units', 'slug'))],
+            ['column' => 'units.type', 'origin' => 'WizardOrbatPresets + OrganizationKitDefinitions', 'values' => array_merge($preset('type'), $kit('units', 'type'))],
+            ['column' => 'units.code', 'origin' => 'OrganizationKitDefinitions (unités)', 'values' => $kit('units', 'code')],
+            ['column' => 'personnel_job_roles.slug', 'origin' => 'OrganizationKitDefinitions (fonctions)', 'values' => $kit('job_roles', 'slug')],
+            ['column' => 'personnel_job_roles.description', 'origin' => 'OrganizationKitDefinitions (fonctions)', 'values' => $kit('job_roles', 'description')],
+            ['column' => 'personnel_job_role_categories.slug', 'origin' => 'UnitJobRoleSyncService + OrganizationKitDefinitions', 'values' => array_merge([UnitJobRoleSyncService::CATEGORY_SLUG], $kit('job_role_categories', 'slug'))],
+            ['column' => 'grade_definitions.code', 'origin' => 'GradeScaleTemplateService::templates()', 'values' => $field($grades, 'code')],
+            ['column' => 'grade_definitions.label', 'origin' => 'GradeScaleTemplateService::templates()', 'values' => $field($grades, 'label')],
+            ['column' => 'grade_definitions.short_label', 'origin' => 'GradeScaleTemplateService::templates()', 'values' => $field($grades, 'short_label')],
+            ['column' => 'grade_filiere_definitions.code', 'origin' => 'GradeScaleTemplateService::templates()', 'values' => $field($filieres, 'code')],
+            ['column' => 'grade_filiere_definitions.label', 'origin' => 'GradeScaleTemplateService::templates()', 'values' => $field($filieres, 'label')],
+            ['column' => 'unit_type_definitions.code', 'origin' => 'UnitTypeDefinitionRepository::ensureSystemDefaults', 'values' => ['commandement', 'operationnel', 'soutien', 'formation']],
+            ['column' => 'training_courses.slug', 'origin' => 'Formations semées (ensure*Course)', 'values' => $courses['slug']],
+            ['column' => 'training_lessons.title', 'origin' => 'Formations semées (ensure*Course : cours, modules, leçons, questionnaires)', 'values' => $courses['title']],
+            ['column' => 'training_modules.title', 'origin' => 'Formations semées (ensure*Course : cours, modules, leçons, questionnaires)', 'values' => $courses['title']],
+            ['column' => 'sse_attach_tags.code', 'origin' => 'SseFieldNoteTagCatalog::TAGS (codes)', 'values' => $field(SseFieldNoteTagCatalog::TAGS, 0)],
+            ['column' => 'sse_attach_tags.family', 'origin' => 'SseFieldNoteTagCatalog::TAGS (familles)', 'values' => $field(SseFieldNoteTagCatalog::TAGS, 1)],
+            ['column' => 'sse_attach_tags.description', 'origin' => 'SseFieldNoteTagCatalog::TAGS (descriptions)', 'values' => array_merge($field(SseFieldNoteTagCatalog::TAGS, 4), $field(SseFieldNoteTagCatalog::TAGS, 5))],
+        ];
+    }
+
+    /**
+     * Titres et adresses écrits en dur dans les formations semées à la création (bootstrap/training_*_course_seed.php),
+     * y compris le titre dérivé « À retenir — <titre> ».
+     *
+     * @return array{title: list<string>, slug: list<string>}
+     */
+    public static function courseSeedLiterals(string $root): array
+    {
+        $out = ['title' => [], 'slug' => []];
+        foreach (glob($root . '/bootstrap/training_*_course_seed.php') ?: [] as $file) {
+            $php = (string) file_get_contents($file);
+            foreach (['title', 'slug'] as $kind) {
+                if (preg_match_all('/(?:[\'"]' . $kind . '[\'"]\s*=>|\$' . $kind . '\s*=)\s*\'((?:[^\'\\\\]|\\\\.)*)\'/u', $php, $m) > 0) {
+                    foreach ($m[1] as $v) {
+                        $out[$kind][] = stripslashes($v);
+                    }
+                }
+            }
+        }
+        foreach ($out['title'] as $t) {
+            $out['title'][] = 'À retenir — ' . $t;
+        }
+
+        return $out;
     }
 
     /**
@@ -172,6 +274,20 @@ final class SeedNameLengthAudit
             ['column' => 'sse_attach_tags.name', 'origin' => 'SseTagRepository::NAME_MAX (troncature)', 'max' => SseTagRepository::NAME_MAX],
             ['column' => 'sse_attach_tags.name', 'origin' => 'SseAttachCatalog::TAG_MAX (fenêtre Rattacher)', 'max' => SseAttachCatalog::TAG_MAX],
             ['column' => 'sse_attach_tags.name_fr', 'origin' => 'SseFieldNoteTagCatalog::LABEL_MAX', 'max' => SseFieldNoteTagCatalog::LABEL_MAX],
+            // Unités et fonctions saisies ou dérivées (formulaires, ORBAT, affectations).
+            ['column' => 'units.slug', 'origin' => 'UnitRepository::SLUG_BASE_MAX + suffixe « -abcdef »', 'max' => UnitRepository::SLUG_BASE_MAX + 7],
+            ...array_map(
+                static fn (string $col, int $max): array => ['column' => 'units.' . $col, 'origin' => 'UnitRepository::FIELD_MAX[' . $col . ']', 'max' => $max],
+                array_keys(UnitRepository::FIELD_MAX),
+                UnitRepository::FIELD_MAX
+            ),
+            ['column' => 'personnel_job_roles.slug', 'origin' => 'PersonnelJobRoleRepository::SLUG_BASE_MAX + suffixe « -abcdef »', 'max' => PersonnelJobRoleRepository::SLUG_BASE_MAX + 7],
+            ['column' => 'personnel_job_role_categories.slug', 'origin' => 'PersonnelJobRoleRepository::SLUG_BASE_MAX + suffixe « -abcdef »', 'max' => PersonnelJobRoleRepository::SLUG_BASE_MAX + 7],
+            ['column' => 'personnel_job_roles.name', 'origin' => 'PersonnelJobRoleRepository::NAME_MAX', 'max' => PersonnelJobRoleRepository::NAME_MAX],
+            ['column' => 'personnel_job_role_categories.name', 'origin' => 'PersonnelJobRoleRepository::NAME_MAX', 'max' => PersonnelJobRoleRepository::NAME_MAX],
+            ['column' => 'organization_catalog_items.title', 'origin' => 'OrganizationCatalogService::TITLE_MAX', 'max' => OrganizationCatalogService::TITLE_MAX],
+            ['column' => 'units.name', 'origin' => 'CommunityOnboardingValidationService::UNIT_NAME_MAX', 'max' => CommunityOnboardingValidationService::UNIT_NAME_MAX],
+            ['column' => 'roles.name', 'origin' => 'CommunityOnboardingValidationService::CUSTOM_ROLE_NAME_MAX', 'max' => CommunityOnboardingValidationService::CUSTOM_ROLE_NAME_MAX],
         ];
     }
 

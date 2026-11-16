@@ -258,6 +258,17 @@ class UserAdminController
         $displayName = trim($firstName . ' ' . $lastName);
         $callsign = trim((string) $request->input('callsign'));
         $this->rememberCreateInput($request);
+        // users.display_name VARCHAR(100), users.callsign VARCHAR(50) : refusés en MySQL strict au-delà.
+        if (mb_strlen($displayName, 'UTF-8') > 100) {
+            Session::flash('error', 'Le prénom et le nom ne peuvent pas dépasser 100 caractères à eux deux.');
+
+            return Response::redirect($createUrl);
+        }
+        if (mb_strlen($callsign, 'UTF-8') > 50) {
+            Session::flash('error', 'L’indicatif ne peut pas dépasser 50 caractères.');
+
+            return Response::redirect($createUrl);
+        }
         // Étape « Accès et statut » : habilitation et position, bornées par les droits de la personne (mêmes règles que la fiche).
         $accessStatus = new \App\Services\Effectifs\NewMemberAccessStatus();
         $accessStatusForm = $accessStatus->form($tenantId, $actorUserId, \App\Support\EffectifsLmsAccess::canManageStatus($gateNow));

@@ -50,6 +50,9 @@ final class TenantBootstrapService
         }
 
         $pdo = Database::getPdo();
+        // Hors transaction : la première lecture des comptes peut compléter leur schéma (ALTER), ce qui validerait
+        // implicitement la transaction de création.
+        $this->userRepository->findById($creatorUserId);
         $pdo->beginTransaction();
         try {
             $planSlug = $this->normalizePlanSlug((string) ($options['plan_slug'] ?? 'free'));

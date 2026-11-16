@@ -31,7 +31,7 @@ class AdminUnitsController
         }
         $name = trim((string) $request->input('name'));
         $slugInput = trim((string) $request->input('slug'));
-        $effectiveSlug = $slugInput !== '' ? $slugInput : $this->slugify($name);
+        $effectiveSlug = $slugInput !== '' ? $slugInput : UnitRepository::slugFromName($name, '');
         if ($effectiveSlug === '') {
             $effectiveSlug = 'unite';
         }
@@ -46,6 +46,10 @@ class AdminUnitsController
         ];
         if ($data['name'] === '') {
             Session::set('error', 'Le nom est requis.');
+            return Response::redirect(url('back-office/units/create'));
+        }
+        if (($lengthError = UnitRepository::fieldLengthError($data)) !== null) {
+            Session::set('error', $lengthError);
             return Response::redirect(url('back-office/units/create'));
         }
         if ($this->unitRepository->slugExists((int) $tenantId, $effectiveSlug)) {
@@ -85,6 +89,10 @@ class AdminUnitsController
             'commander_user_id' => $request->input('commander_user_id') ?: null,
             'display_order' => $request->input('display_order') ?: 0,
         ];
+        if (($lengthError = UnitRepository::fieldLengthError($data)) !== null) {
+            Session::set('error', $lengthError);
+            return Response::redirect(url('back-office/units/' . $id . '/edit'));
+        }
         if ($data['slug'] && $this->unitRepository->slugExists((int) $tenantId, $data['slug'], $id)) {
             Session::set('error', 'Ce slug existe déjà.');
             return Response::redirect(url('back-office/units/' . $id . '/edit'));
@@ -111,11 +119,5 @@ class AdminUnitsController
         $this->unitRepository->delete($id, (int) $tenantId);
         Session::set('success', 'Unité supprimée.');
         return Response::redirect(url('back-office/units'));
-    }
-
-    private function slugify(string $name): string
-    {
-        $slug = preg_replace('/[^a-z0-9]+/i', '-', trim($name));
-        return strtolower(trim($slug, '-'));
     }
 }

@@ -192,6 +192,11 @@ final class UnitSheetController
                 $data[$k] = $v === '' ? null : $v;
             }
         }
+        if (($lengthError = \App\Repositories\UnitRepository::fieldLengthError($data)) !== null) {
+            Session::flash('error', $lengthError);
+
+            return Response::redirect(url('back-office/organisation/unites/' . $unitId));
+        }
         if ($request->input('short_label') !== null) {
             // Colonne ajoutée ici si run-migrations.php n'est pas encore passé.
             if (!$this->units->hasTableColumn('units', 'short_label')) {

@@ -33,6 +33,11 @@ final class NameFilterRepository
             return;
         }
         $pdo = $this->pdo();
+        // CREATE TABLE (même IF NOT EXISTS) valide implicitement la transaction MySQL en cours, par exemple celle de la
+        // création d'une communauté ou d'une unité : on suppose alors les tables présentes, sans marquer le schéma prêt.
+        if ($pdo->inTransaction()) {
+            return;
+        }
         $pdo->exec('CREATE TABLE IF NOT EXISTS name_filter_words (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             word VARCHAR(120) NOT NULL,

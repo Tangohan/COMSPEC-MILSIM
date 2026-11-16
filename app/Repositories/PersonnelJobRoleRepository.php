@@ -564,6 +564,36 @@ class PersonnelJobRoleRepository
         return $id ? (int) $id : null;
     }
 
+    /** personnel_job_roles.name / personnel_job_role_categories.name : VARCHAR(120). */
+    public const NAME_MAX = 120;
+
+    /** personnel_job_roles.slug / personnel_job_role_categories.slug : VARCHAR(80), base dérivée laissant la place de « -abcdef ». */
+    public const SLUG_BASE_MAX = 72;
+
+    /**
+     * Contrôle d'un emploi ou d'une catégorie saisi à la main (name 120, slug 80, description 500), avant écriture :
+     * en MySQL strict, une valeur plus longue est refusée (erreur 1406).
+     */
+    public static function fieldLengthError(string $name, string $slug, ?string $description = null): ?string
+    {
+        if (mb_strlen($name, 'UTF-8') > self::NAME_MAX) {
+            return 'Le nom ne peut pas dépasser 120 caractères.';
+        }
+        if (mb_strlen($slug, 'UTF-8') > 80) {
+            return 'L’identifiant ne peut pas dépasser 80 caractères.';
+        }
+        if ($description !== null && mb_strlen($description, 'UTF-8') > 500) {
+            return 'La description ne peut pas dépasser 500 caractères.';
+        }
+
+        return null;
+    }
+
+    private static function capSlugBase(string $base): string
+    {
+        return rtrim(substr($base, 0, self::SLUG_BASE_MAX), '-');
+    }
+
     public function uniqueSlugFromName(int $tenantId, string $name, int $exceptId = 0): string
     {
         $s = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
@@ -571,7 +601,7 @@ class PersonnelJobRoleRepository
             $s = $name;
         }
         $base = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $s) ?? '');
-        $base = trim($base, '-');
+        $base = self::capSlugBase(trim($base, '-'));
         if ($base === '') {
             $base = 'emploi';
         }
@@ -596,7 +626,7 @@ class PersonnelJobRoleRepository
             $s = $name;
         }
         $base = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $s) ?? '');
-        $base = trim($base, '-');
+        $base = self::capSlugBase(trim($base, '-'));
         if ($base === '') {
             $base = 'categorie';
         }
@@ -1110,7 +1140,9 @@ class PersonnelJobRoleRepository
             return null;
         }
 
-        $baseSlug = trim(preg_replace('/[^a-z0-9]+/', '-', mb_strtolower($label, 'UTF-8')) ?? '', '-');
+        // personnel_job_roles.name VARCHAR(120), slug VARCHAR(80) : libellé d'affectation ou d'enrôlement sans borne.
+        $label = rtrim(mb_substr($label, 0, self::NAME_MAX, 'UTF-8'));
+        $baseSlug = self::capSlugBase(trim(preg_replace('/[^a-z0-9]+/', '-', mb_strtolower($label, 'UTF-8')) ?? '', '-'));
         if ($baseSlug === '') {
             $baseSlug = 'role';
         }
