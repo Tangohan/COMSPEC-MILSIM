@@ -72662,4 +72662,6 @@ return [
     'déjà en utf8mb4_unicode_ci,' => 'already in utf8mb4_unicode_ci,',
     'laissée(s) telle(s) quelle(s).' => 'left unchanged.',
     'table(s) historique(s) en' => 'historical table(s) in',
+    'Fiche CAS 9 lignes (PDF)' => 'CAS 9-line form (PDF)',
+    'Fiche CAS vierge' => 'Blank CAS form',
 ];

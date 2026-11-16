@@ -283,7 +283,8 @@ window.TocReports = (function () {
       var un = !isRead(r);
       return '<div class="rp-actions">' +
         '<button type="button" class="toc-btn is-primary" data-rp-ack' + (r.acked ? ' disabled' : '') + '>' + (r.acked ? 'Réception accusée' : 'Accuser réception') + '</button>' +
-        '<a class="toc-btn" href="' + esc(ctx.base + '/atak/toc/reports/' + r.key + '/export.pdf') + '" data-rp-pdf>' + lbl('Exporter en PDF') + '</a>' +
+        '<a class="toc-btn" href="' + esc(ctx.base + '/atak/toc/reports/' + r.key + '/export.pdf') + '" data-rp-pdf>' + lbl(r.cas_ckin ? 'Fiche CAS 9 lignes (PDF)' : 'Exporter en PDF') + '</a>' +
+        (r.cas_ckin ? '<a class="toc-btn" href="' + esc(ctx.base + '/atak/toc/cas-checkin.pdf') + '" data-rp-pdf-blank>' + lbl('Fiche CAS vierge') + '</a>' : '') +
         '<button type="button" class="toc-btn" data-rp-link>Copier le lien</button>' +
         '<button type="button" class="toc-btn" data-rp-toggle-read>' + (un ? 'Marquer comme lu' : 'Marquer comme non lu') + '</button></div><p class="toc-drawer-msg" role="status"></p>';
     }

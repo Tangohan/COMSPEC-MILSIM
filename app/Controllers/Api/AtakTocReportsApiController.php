@@ -22,7 +22,8 @@ use App\Services\AtakToc\TocReportService;
  *   POST /atak/toc/api/reports/read-all                     tout marquer lu (carte et période demandées)
  *   POST /atak/toc/api/reports/{clé}/ack                    accusé de réception
  *   POST /atak/toc/api/reports/{clé}/attach  {planId, phase}  joindre à un plan (et à une phase)
- *   GET  /atak/toc/reports/{clé}/export.pdf                 fiche PDF
+ *   GET  /atak/toc/reports/{clé}/export.pdf                 fiche PDF (check-in CAS de l'app JTAC : fiche 9 lignes remplie)
+ *   GET  /atak/toc/cas-checkin.pdf                          fiche de check-in CAS vierge (« 9 LINE CLOSE AIR SUPPORT BRIEF »)
  * Droit : atak.toc.use (comme tout le poste). Communauté : celle de la session, jamais lue dans la requête. Habilitation :
  * un rapport au-dessus de celle de l'opérateur répond « introuvable ». Écritures : jeton CSRF et limite de débit.
  */
@@ -288,6 +289,29 @@ final class AtakTocReportsApiController extends AtakTocBaseController
         return Response::json(['ok' => true, 'uid' => $res['uid'] ?? '', 'plans' => $this->reports->attachedPlans($this->tenantId(), $key)]);
     }
 
+    /** Fiche de check-in CAS vierge, à imprimer (même grille que celle remplie depuis le téléphone). */
+    public function casCheckinBlank(Request $request, array $params = []): Response
+    {
+        if (!$this->access->canUse()) {
+            return Response::json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+        try {
+            $bytes = (new \App\Services\AtakToc\CasCheckinSheetPdf())->render([], ['lang' => function_exists('locale') && locale() === 'en' ? 'en' : 'fr']);
+        } catch (\Throwable) {
+            $bytes = null;
+        }
+        if ($bytes === null) {
+            return Response::json(['ok' => false, 'error' => 'pdf_unavailable'], 503);
+        }
+
+        return (new Response())->setStatusCode(200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="fiche-cas-check-in.pdf"')
+            ->header('Cache-Control', 'private, no-store')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->setBody($bytes);
+    }
+
     public function pdf(Request $request, array $params = []): Response
     {
         if (!$this->access->canUse()) {
@@ -310,7 +334,8 @@ final class AtakTocReportsApiController extends AtakTocBaseController
             return Response::json(['ok' => false, 'error' => 'pdf_unavailable'], 503);
         }
         $this->audit('atak_toc.report.pdf', (int) $item['id'], ['key' => $key]);
-        $name = 'rapport-' . strtolower((string) preg_replace('/[^A-Za-z0-9]+/', '-', (string) $item['type'])) . '-' . $key . '.pdf';
+        $name = is_array($item['cas_ckin'] ?? null) ? 'cas-check-in-' . $key . '.pdf'
+            : 'rapport-' . strtolower((string) preg_replace('/[^A-Za-z0-9]+/', '-', (string) $item['type'])) . '-' . $key . '.pdf';
 
         return (new Response())->setStatusCode(200)
             ->header('Content-Type', 'application/pdf')
