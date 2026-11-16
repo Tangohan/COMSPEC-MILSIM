@@ -2628,6 +2628,9 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/roles/retablir', [EffectifsWorkspaceController::class, 'restoreAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/supprimer', [EffectifsWorkspaceController::class, 'deleteAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles/reafficher', [EffectifsWorkspaceController::class, 'showAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/fiche', [\App\Controllers\Admin\AccessRoleProfileController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/roles/archiver', [\App\Controllers\Admin\AccessRoleProfileController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/roles/{id}/logo', [\App\Controllers\Admin\AccessRoleProfileController::class, 'logo'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/registre-droits', [EffectifsWorkspaceController::class, 'registreDroits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/registre-droits/export.csv', [\App\Controllers\Admin\AccessRegisterController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

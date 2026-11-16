@@ -50,6 +50,9 @@ use App\Authorization\SystemReservedPermissions;
 use App\Services\Admin\RolePermissionService;
 use App\Services\Rbac\AccessRightsCatalog;
 use App\Services\Rbac\AccessRoleColor;
+use App\Services\Rbac\AccessRoleProfileForm;
+use App\Services\Rbac\AccessRoleProfileService;
+use App\Services\Rbac\AccessRoleProfileView;
 use App\Services\Rbac\AccessRoleRules;
 use App\Services\Audit\AuditAction;
 use App\Services\Rbac\CommunityAccessProfiles;
@@ -3515,7 +3518,29 @@ class EffectifsWorkspaceController
             $spaces = [];
         }
 
-        return $this->shell('admin.effectifs_workspace.roles', [
+        // Fiches des niveaux (abrégé, icône ou logo, étiquettes, qualifications…) : vide sans l'étape 4870, la page reste utilisable.
+        $profileSvc = new AccessRoleProfileService();
+        $profilesReady = $profileSvc->ready();
+        $gradeLabels = [];
+        try {
+            [, $gradeLabels] = (new \App\Services\Organization\OrgAdequacyService())->gradeCatalog($tenantId);
+        } catch (\Throwable) {
+            $gradeLabels = [];
+        }
+        $membersByRole = [];
+        foreach ($roles as $row) {
+            $membersByRole[(int) ($row['id'] ?? 0)] = $snapshot['members'][(int) ($row['id'] ?? 0)] ?? [];
+        }
+
+        return $this->shell('admin.effectifs_workspace.roles', AccessRoleProfileView::data($request, $roles, $profilesReady ? $profileSvc->profiles($tenantId) : [], $membersByRole, [
+            'ready' => $profilesReady,
+            'tags_ready' => $profileSvc->tagsReady(),
+            'qualifications' => $profilesReady ? $profileSvc->qualificationCatalog($tenantId) : [],
+            'jobs' => $profilesReady ? $profileSvc->jobCatalog($tenantId) : [],
+            'tags' => $profileSvc->tagCatalog($tenantId),
+            'grade_labels' => $gradeLabels,
+            'old' => Session::getFlash('rol_old'),
+        ]) + [
             'title' => 'Accès',
             'effectifsNav' => 'roles',
             'orgRoles' => $roles,
@@ -3539,7 +3564,7 @@ class EffectifsWorkspaceController
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'rosterCounts' => $this->rosterCounts($tenantId),
             'csrfToken' => Csrf::token(),
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'effectifs-roles.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'effectifs-roles.css', 'back-office-bands.css', 'effectifs-roles-profile.css'],
         ]);
     }
 
@@ -3739,13 +3764,15 @@ class EffectifsWorkspaceController
         }
         if ($name === '') {
             Session::flash('error', 'Indiquez un nom pour le nouveau niveau d’accès.');
+            Session::flash('rol_old', ['name' => $name, 'description' => $description, 'template' => $template, 'copy_from' => $copyId] + AccessRoleProfileView::oldInput($request));
 
-            return Response::redirect(effectifs_workspace_url('roles'));
+            return Response::redirect(effectifs_workspace_url('roles') . '?nouveau=1#rol-new');
         }
         if ($this->accessNameTaken($roles, $name)) {
             Session::flash('error', 'Un niveau d’accès porte déjà ce nom. Choisissez-en un autre pour ne pas les confondre.');
+            Session::flash('rol_old', ['name' => $name, 'description' => $description, 'template' => $template, 'copy_from' => $copyId] + AccessRoleProfileView::oldInput($request));
 
-            return Response::redirect(effectifs_workspace_url('roles'));
+            return Response::redirect(effectifs_workspace_url('roles') . '?nouveau=1#rol-new');
         }
         // Source des droits : un modèle prêt à l’emploi, sinon un niveau de CETTE communauté (jamais un identifiant libre), sinon Membre.
         $newSlugs = null;
@@ -3762,6 +3789,17 @@ class EffectifsWorkspaceController
             Session::flash('error', 'Vous ne pouvez pas créer ce niveau : il donnerait des droits que vous n’avez pas vous-même (' . $this->accessRightNames($blocked, $index['nameBySlug']) . ').');
 
             return Response::redirect(effectifs_workspace_url('roles'));
+        }
+        // Fiche saisie dans la fenêtre de création : validée AVANT de créer le niveau (rien n'est créé si elle est refusée).
+        $profileForm = new AccessRoleProfileForm();
+        $profileInput = AccessRoleProfileView::oldInput($request);
+        $profileCheck = $profileForm->check($tenantId, 0, $profileInput);
+        $createColor = AccessRoleColor::normalize((string) ($profileInput['role_color'] ?? ''));
+        if ($profileCheck['error'] !== null || $createColor === null) {
+            Session::flash('error', ($profileCheck['error'] ?? 'Cette couleur n’est pas valide (choisissez une pastille ou un code #RRGGBB).') . ' Le niveau n’a pas été créé.');
+            Session::flash('rol_old', $profileInput + ['name' => $name, 'description' => $description, 'template' => $template, 'copy_from' => $copyId]);
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?nouveau=1#rol-new');
         }
         $newId = $this->roleRepository->createCustomAccessRole($tenantId, $name, $description);
         if ($newId < 1) {
@@ -3784,6 +3822,20 @@ class EffectifsWorkspaceController
             return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $newId);
         }
         $this->logAccessRoleChange($tenantId, $newId, AuditAction::ACCESS_ROLE_CREATED, $newSlugs, [], ['name' => $name, 'from' => isset($templates[$template]) ? 'template:' . $template : 'role:' . $copyId]);
+        if ($createColor !== []) {
+            $this->roleRepository->updateOrganizationRoleBadgeStyle($tenantId, $newId, $createColor);
+        }
+        $actorId = (int) Session::get('user_id');
+        if ($profileCheck['data'] === null && (string) $request->input('copy_profile', '') === '1' && isset($snapshot['perms'][$copyId])) {
+            // « Dupliquer » : la fiche du niveau copié suit (sans l'abrégé, unique, ni le logo).
+            $profileForm->profiles()->copy($tenantId, $copyId, $newId, $actorId);
+        }
+        $profileApplied = $profileForm->apply($tenantId, $newId, $profileCheck['data'], $profileInput, is_array($_FILES['logo_file'] ?? null) ? $_FILES['logo_file'] : null, $actorId);
+        if (!$profileApplied['ok']) {
+            Session::flash('error', 'Niveau d’accès créé, mais le logo n’a pas été pris : ' . (string) $profileApplied['error']);
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $newId . '&fiche=1#rol-edit');
+        }
         Session::flash('success', 'Niveau d’accès créé. Vérifiez ses droits ci-dessous, puis enregistrez si vous les modifiez.');
 
         return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $newId);
@@ -4182,6 +4234,13 @@ class EffectifsWorkspaceController
 
             return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId);
         }
+        $holderCount = count($snapshot['members'][$roleId] ?? []);
+        if ($isCustom && $holderCount > 0) {
+            // Suppression réservée à un niveau sans titulaire : sinon on déplace d'abord les membres, ou on l'archive.
+            Session::flash('error', 'Ce niveau a encore des titulaires (' . $holderCount . ') : il ne peut pas être supprimé. Déplacez-les vers un autre niveau (bloc « Membres de ce niveau ») ou archivez-le pour le ranger sans rien changer.');
+
+            return Response::redirect(effectifs_workspace_url('roles') . '?role=' . $roleId . '#rl-members');
+        }
         $memberId = (int) ($this->roleRepository->getIdBySlug($tenantId, CommunityAccessProfiles::SLUG_MEMBER) ?? 0);
         $actorId = (int) Session::get('user_id');
         if ($memberId > 0) {
@@ -4210,6 +4269,7 @@ class EffectifsWorkspaceController
             return Response::redirect(effectifs_workspace_url('roles'));
         }
         $this->roleRepository->deleteCustomAccessRole($tenantId, $roleId);
+        (new AccessRoleProfileForm())->forget($tenantId, $roleId);
         $this->logAccessRoleChange($tenantId, $roleId, AuditAction::ACCESS_ROLE_REMOVED, [], $snapshot['perms'][$roleId] ?? [], ['event' => 'delete', 'name' => (string) ($role['name'] ?? ''), 'members_moved' => $moved]);
         Session::flash('success', 'Niveau d’accès retiré. Personnes revenues au niveau Membre : ' . $moved . '.');
 
