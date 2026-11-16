@@ -259,6 +259,7 @@ $shapeSvg = static fn (string $shape, int $size): string => SseVigilanceFollow::
                             <?php endforeach; ?>
                         </select>
                         <p class="vig-hint">Les données au-dessus de ce niveau sont remplacées par une barre dans le PDF.</p>
+                        <?php require dirname(__DIR__) . '/_sheet_visibility_modal.php'; ?>
                     </div>
                 </div>
             </section>

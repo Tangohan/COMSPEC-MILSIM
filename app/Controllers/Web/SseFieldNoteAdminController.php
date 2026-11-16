@@ -12,6 +12,9 @@ use App\Services\Security\FileRateLimiter;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseAccessPolicy;
 use App\Services\Sse\SseFieldNoteTagService;
+use App\Services\Sse\SseRedactionService;
+use App\Services\Sse\SseSheetVisibility;
+use App\Support\SseSheetCatalog;
 use App\Support\SseAccessCatalog;
 use App\Support\SseFieldNoteTagCatalog;
 
@@ -102,6 +105,8 @@ final class SseFieldNoteAdminController
             'title' => 'Gestion des fiches',
             'activeNav' => 'fiches-gestion',
             'tabs' => self::TABS,
+            'sheetVis' => self::visibilityRows($tenant, $lang),
+            'canStoreVis' => SseSheetVisibility::canStore(),
             'tags' => $tags,
             'stats' => $this->tags->stats($tenant),
             'kinds' => $this->tags->kinds($tenant),
@@ -127,7 +132,7 @@ final class SseFieldNoteAdminController
         $rights = ($this->rights)();
         $tab = [
             'etiquette' => 'etiquettes', 'etat' => 'etiquettes', 'fusion' => 'etiquettes', 'supprimer' => 'etiquettes', 'retablir' => 'etiquettes',
-            'type' => 'types', 'modele' => 'modeles', 'regles' => 'regles', 'requis' => 'regles', 'import' => 'echanges',
+            'type' => 'types', 'modele' => 'modeles', 'visibilite' => 'modeles', 'regles' => 'regles', 'requis' => 'regles', 'import' => 'echanges',
         ][$action] ?? 'etiquettes';
         if ($tab === 'etiquettes' && (string) $request->input('tab', '') === 'categories') {
             $tab = 'categories';
@@ -200,6 +205,19 @@ final class SseFieldNoteAdminController
                 ], $actor);
                 $done = 'Étiquettes obligatoires enregistrées.';
                 break;
+            case 'visibilite':
+                $scope = (string) $request->input('scope', '');
+                $sent = $request->input('visibility', []);
+                $clamped = false;
+                foreach (is_array($sent) ? $sent : [] as $cat => $level) {
+                    if (is_string($level) && isset(SseSheetVisibility::FLOORS[(string) $cat], SseRedactionService::LEVELS[$level]) && SseRedactionService::levelRank($level) < SseRedactionService::levelRank(SseSheetVisibility::floor((string) $cat))) {
+                        $clamped = true;
+                    }
+                }
+                $saved = SseSheetVisibility::canStore() && (new SseSheetVisibility())->save($tenant, $scope, is_array($sent) ? $sent : [], $actor['user_id'], $actor['label']);
+                $result = $saved ? ['ok' => true, 'errors' => []] : ['ok' => false, 'errors' => [SseSheetVisibility::canStore() ? 'Modèle inconnu : rien n’a été enregistré.' : 'Les réglages seront disponibles dès que l’étape « étiquettes partagées du bureau » aura été passée.']];
+                $done = 'Visibilité par niveau enregistrée.' . ($clamped ? ' Les rubriques réglées sous leur plancher de sécurité ont été ramenées à ce plancher.' : '');
+                break;
             case 'regles':
                 $precedence = $request->input('precedence', []);
                 $result = $this->tags->saveRules($tenant, [
@@ -251,6 +269,41 @@ final class SseFieldNoteAdminController
             ->header('Content-Disposition', 'attachment; filename="referentiel-fiches-' . date('Ymd') . '.json"')
             ->header('X-Content-Type-Options', 'nosniff')
             ->setBody($json);
+    }
+
+    /**
+     * Lignes de la visibilité par niveau des fiches PDF : la communauté, puis chaque modèle (hors avis de recherche).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function visibilityRows(int $tenant, string $lang): array
+    {
+        $vis = new SseSheetVisibility();
+        $stored = $vis->stored($tenant);
+        $en = $lang === 'en' ? 1 : 0;
+        $scopes = [SseSheetVisibility::ALL => [['Tous les modèles', 'All models'], ['Réglage par défaut de la communauté', 'Community default']]];
+        foreach (SseSheetCatalog::MODELS as $model => $def) {
+            if ($model !== 'notice') {
+                $scopes[$model] = [$def['label'], $def['hint']];
+            }
+        }
+        $rows = [];
+        foreach ($scopes as $scope => [$label, $sub]) {
+            $community = SseSheetVisibility::effective($stored[SseSheetVisibility::ALL] ?? []);
+            $effective = $scope === SseSheetVisibility::ALL ? $community : SseSheetVisibility::effective($stored[SseSheetVisibility::ALL] ?? [], $stored[$scope] ?? []);
+            $own = $stored[$scope] ?? [];
+            $custom = [];
+            foreach ($own as $cat => $level) {
+                $custom[] = SseRedactionService::categoryLabel((string) $cat) . ' : ' . \App\Support\SseUsClassification::abbr((string) $level);
+            }
+            $rows[] = [
+                'scope' => $scope, 'dom' => $scope === SseSheetVisibility::ALL ? 'all' : $scope, 'label' => $label[$en], 'sub' => $sub[$en],
+                'table' => SseSheetVisibility::table($effective, $scope === SseSheetVisibility::ALL ? null : $community),
+                'custom' => count($own), 'custom_rows' => $custom,
+            ];
+        }
+
+        return $rows;
     }
 
     /** Familles proposées dans la page (les deux familles déduites de la fiche sont décrites à part). @return list<string> */

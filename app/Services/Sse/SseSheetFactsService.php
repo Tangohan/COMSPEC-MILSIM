@@ -206,14 +206,15 @@ final class SseSheetFactsService
      * Copie caviardée au niveau de diffusion : toute donnée dont la catégorie dépasse ce niveau devient la barre de caviardage.
      *
      * @param array<string, mixed> $raw
+     * @param array<string, string>|null $required niveaux requis réglés pour ce document (SseSheetVisibility), sinon ceux livrés
      * @return array{facts: array<string, mixed>, hidden: list<string>, shown: list<string>}
      */
-    public function mask(array $raw, string $level): array
+    public function mask(array $raw, string $level, ?array $required = null): array
     {
         $hidden = [];
         $shown = [];
-        $see = static function (string $category) use ($level, &$hidden, &$shown): bool {
-            $ok = SseRedactionService::visibleAt($category, $level);
+        $see = static function (string $category) use ($level, $required, &$hidden, &$shown): bool {
+            $ok = SseRedactionService::visibleAt($category, $level, $required);
             if ($ok) {
                 $shown[$category] = true;
             } else {
@@ -261,17 +262,65 @@ final class SseSheetFactsService
      *
      * @param array<string, mixed> $raw
      * @param array<string, string> $texts
+     * @param array<string, string>|null $required
      * @return list<string>
      */
-    public function leaks(array $raw, array $texts, string $level): array
+    public function leaks(array $raw, array $texts, string $level, ?array $required = null): array
+    {
+        $found = [];
+        $haystack = mb_strtolower(implode("\n", array_map(static fn (string $t): string => SseSheetText::plain($t), $texts)), 'UTF-8');
+        foreach ($this->secrets($raw, $level, $required, false) as $needle => [$original]) {
+            if (str_contains($haystack, $needle)) {
+                $found[] = $original;
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * Texte d'un document à un niveau de diffusion plus BAS que celui de son émission : chaque valeur devenue masquée (celles des
+     * données du document, ou d'un morceau d'elles) est remplacée par la barre de sa catégorie, sans tenir compte de la casse.
+     * Les valeurs sont celles du document tel qu'il a été émis (`$raw`), jamais une base de données lue à nouveau.
+     *
+     * @param array<string, mixed> $raw
+     * @param array<string, string> $texts
+     * @param array<string, string>|null $required
+     * @return array<string, string>
+     */
+    public function scrub(array $raw, array $texts, string $level, ?array $required = null): array
+    {
+        $secrets = $this->secrets($raw, $level, $required, true);
+        // Les plus longues d'abord : « Zoë-Élodie » avant « Zoë ».
+        uasort($secrets, static fn (array $a, array $b): int => mb_strlen($b[0], 'UTF-8') <=> mb_strlen($a[0], 'UTF-8'));
+        $out = [];
+        foreach ($texts as $key => $text) {
+            $value = (string) $text;
+            foreach ($secrets as [$original, $category]) {
+                $value = (string) preg_replace('/' . preg_quote($original, '/') . '/iu', SseRedactionExplain::bar($category), $value);
+            }
+            $out[$key] = $value;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Valeurs sensibles du document pour ce niveau : minuscule => [valeur, catégorie]. Valeur entière puis ses morceaux
+     * (« Zoë-Élodie » : Zoë, Élodie ; « Pyrgos, marché » : Pyrgos, marché). `$strict` ajoute les dates de recueil.
+     *
+     * @param array<string, mixed> $raw
+     * @param array<string, string>|null $required
+     * @return array<string, array{0: string, 1: string}>
+     */
+    private function secrets(array $raw, string $level, ?array $required, bool $strict): array
     {
         $secret = [];
-        $add = static function (string $category, mixed $value) use (&$secret, $level): void {
-            if (!SseRedactionService::visibleAt($category, $level) && is_string($value) && mb_strlen(trim($value), 'UTF-8') >= 3) {
-                $secret[mb_strtolower(trim($value), 'UTF-8')] = trim($value);
+        $add = static function (string $category, mixed $value) use (&$secret, $level, $required): void {
+            if (!SseRedactionService::visibleAt($category, $level, $required) && is_string($value) && mb_strlen(trim($value), 'UTF-8') >= 3 && !str_contains($value, SseRedactionExplain::RUN)) {
+                $secret[mb_strtolower(trim($value), 'UTF-8')] = [trim($value), $category];
             }
         };
-        // Valeur entière puis ses morceaux (« Zoë-Élodie » : Zoë, Élodie ; « Pyrgos, marché » : Pyrgos, marché).
         $addParts = static function (string $category, mixed $value, string $split) use ($add): void {
             $add($category, $value);
             if (is_string($value)) {
@@ -300,15 +349,22 @@ final class SseSheetFactsService
         foreach (explode(' · ', (string) ($raw['last_seen_place'] ?? '')) as $p) {
             $addParts('lieu', $p, '/[,;]+/u');
         }
-        $found = [];
-        $haystack = mb_strtolower(implode("\n", array_map(static fn (string $t): string => SseSheetText::plain($t), $texts)), 'UTF-8');
-        foreach ($secret as $needle => $original) {
-            if (str_contains($haystack, $needle)) {
-                $found[] = $original;
+        if ($strict) {
+            $add('lieu', $raw['zone'] ?? '');
+            $seen = trim((string) ($raw['last_seen_at'] ?? ''));
+            $add('horodatage', $seen);
+            $add('horodatage', substr($seen, 0, 10));
+            foreach ((array) ($raw['checks'] ?? []) as $c) {
+                if (is_array($c)) {
+                    $addParts('lieu', $c['place'] ?? '', '/[,;]+/u');
+                    $add('horodatage', $c['at'] ?? '');
+                    $add('source', $c['controller'] ?? '');
+                    $addParts('identite', $c['presented'] ?? '', "/[\s\-'’]+/u");
+                }
             }
         }
 
-        return $found;
+        return $secret;
     }
 
     /**

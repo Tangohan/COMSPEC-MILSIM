@@ -939,6 +939,12 @@ final class SseSheetPdf
         $pdf->SetTextColor(...self::INK);
         $pdf->SetXY(60.0, 278.4);
         $pdf->Cell(90.0, 3.4, implode(' · ', SseUsClassification::dissemination($this->level())), 0, 0, 'C');
+        if (!empty($d['copy_level'])) {
+            // Copie rendue à un autre niveau de diffusion que celui de l'émission : même référence, aucun nouveau document.
+            $pdf->SetFont($this->sans, 'B', 6.4);
+            $pdf->SetXY(60.0, 274.9);
+            $pdf->Cell(90.0, 3.0, $this->lang === 1 ? 'COPY AT A DISTRIBUTION LEVEL · ISSUED AT ' . SseUsClassification::abbr((string) $d['copy_level']) : 'COPIE À UN NIVEAU DE DIFFUSION · ÉMISE À ' . SseUsClassification::abbr((string) $d['copy_level']), 0, 0, 'C');
+        }
         $pdf->SetFont($this->sans, 'B', 7.6);
         $pdf->SetXY(150.0, 275.0);
         $pdf->Cell(48.0, 3.6, $this->t('page')[$this->lang] . ' ' . $page . ' ' . ($this->lang === 1 ? 'of' : 'sur') . ' ' . $this->pages, 0, 1, 'R');

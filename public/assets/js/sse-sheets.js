@@ -168,7 +168,11 @@
     function reloadDefaults() {
         var lang = form.elements.lang.value;
         var level = form.elements.classification.value;
-        fetch(base + '/defauts?lang=' + encodeURIComponent(lang) + '&classification=' + encodeURIComponent(level), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+        var vis = '';
+        Array.prototype.forEach.call(form.querySelectorAll('input[type="radio"][name^="visibility["]:checked'), function (r) {
+            vis += '&' + encodeURIComponent(r.name) + '=' + encodeURIComponent(r.value);
+        });
+        fetch(base + '/defauts?lang=' + encodeURIComponent(lang) + '&classification=' + encodeURIComponent(level) + vis, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (j) {
                 if (!j.ok) { return; }
@@ -190,6 +194,9 @@
     ['lang', 'classification'].forEach(function (n) {
         var el = form.elements[n];
         if (el) { el.addEventListener('change', reloadDefaults); }
+    });
+    Array.prototype.forEach.call(form.querySelectorAll('input[type="radio"][name^="visibility["]'), function (r) {
+        r.addEventListener('change', reloadDefaults);
     });
     ['faces', 'threat', 'armed', 'validity'].forEach(function (n) {
         var el = form.elements[n];

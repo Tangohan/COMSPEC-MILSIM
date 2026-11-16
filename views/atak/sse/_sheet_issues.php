@@ -30,7 +30,13 @@ try {
     $iaccess = null;
 }
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-sheets.css')) . '">';
-$sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-sheet-redaction.js')) . '" defer></script>';
+$issuesById = [];
+foreach ($issuesList as $row) {
+    $issuesById[(int) $row['id']] = $row;
+}
+if (!str_contains((string) ($sseExtraScripts ?? ''), 'sse-sheet-redaction.js')) {
+    $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-sheet-redaction.js')) . '" defer></script>';
+}
 $ilabels = static function (string $model) use ($ilang): array {
     $out = [];
     foreach (D::texts($model) as [$key, , $labels]) {
@@ -108,7 +114,7 @@ $lvlStyle = static fn (array $i): string => '--lv-bg:rgb(' . implode(',', array_
                         <td class="shx-c-nowrap" data-label="Émis le"><?= $h($idt((string) $i['issued_at'])) ?><span class="shx-link muted" translate="no"><?= $h($i['issued_by_label'] !== '' ? $i['issued_by_label'] : '—') ?></span></td>
                         <td class="shx-actions-cell">
                             <?php if ($open): ?>
-                                <a class="btn shx__btn shx__btn--small" href="<?= $h(url('atak/sse/identites/emissions/' . (int) $i['id'] . '/pdf')) ?>">Télécharger</a>
+                                <?php $lmRow = $i; $lmClass = 'btn shx__btn shx__btn--small'; $lmLabel = 'Télécharger'; require __DIR__ . '/_sheet_level_menu.php'; ?>
                                 <?php if ($total > 0 && !empty($i['can_reissue'])): ?>
                                     <button type="button" class="btn shx__btn shx__btn--small" data-shx-open="<?= $h($dlgReissue) ?>" aria-haspopup="dialog">Réémettre à un niveau supérieur</button>
                                 <?php elseif ($total > 0 && ($i['needed_abbr'] ?? '') !== ''): ?>

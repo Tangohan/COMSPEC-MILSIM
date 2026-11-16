@@ -74,8 +74,10 @@ $fill = static function (array $tag) use ($cat, $lang): array {
 $ico = static fn (string $d): string => '<svg class="fnr-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="' . $d . '"/></svg>';
 $close = $ico('M6 6l12 12M18 6L6 18');
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiche-rens.css')) . '">'
+    . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-visibility.css')) . '">'
     . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-fiches-etiquettes.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_url('assets/js/sse-fiche-rens.js')) . '"></script>'
+    . '<script defer src="' . $h(asset_url('assets/js/sse-visibility.js')) . '"></script>'
     . '<script defer src="' . $h(asset_url('assets/js/sse-fiches-etiquettes.js')) . '"></script>';
 
 /** Lignes d'un tableau d'étiquettes (onglets Étiquettes et Catégories). */
@@ -335,6 +337,7 @@ $renderRows = static function (array $rows, bool $withFamily) use ($h, $json, $l
                     </tbody>
                 </table>
             </div>
+            <?php require __DIR__ . '/_sheet_visibility_admin.php'; ?>
         </section>
 
         <section class="fng-panel" role="tabpanel" id="fng-panel-regles" aria-labelledby="fng-tab-regles" data-fnr-panel="regles" hidden>
