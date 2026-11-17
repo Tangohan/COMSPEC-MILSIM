@@ -443,6 +443,99 @@ final class SseWantedService
         return ['ok' => true, 'id' => $id, 'ref' => $ref, 'warnings' => $warnings];
     }
 
+    /** Modification datée : l'état précédent est conservé dans la chronologie, dans la même transaction. */
+    public function amend(int $tenantId, int $noticeId, array $input, SseWantedAccess $access): array
+    {
+        $fail = static fn (string $error, string $text): array => ['ok' => false, 'error' => $error, 'errors' => [$text]];
+        if (!$access->canManage() || $access->tenantId() !== $tenantId) {
+            return $fail('forbidden', 'Action non autorisée.');
+        }
+        if (!SseWantedNoticeRepository::ready() || !SseIdentityEventRepository::ready()) {
+            return $fail('unavailable', 'La modification exige la chronologie des avis pour conserver les anciennes données.');
+        }
+        $changeReason = C::text($input['change_reason'] ?? '', 500);
+        if (mb_strlen($changeReason) < self::MIN_TEXT) {
+            return $fail('reason', 'Indiquez le motif de la mise à jour.');
+        }
+        $pdo = \App\Core\Database::getPdo();
+        try {
+            $pdo->beginTransaction();
+            // Verrou de la ligne avant lecture : pas de perte d'une modification concurrente.
+            $lock = $pdo->prepare('SELECT id FROM sse_wanted_notices WHERE tenant_id = :t AND id = :id'
+                . ($pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'mysql' ? ' FOR UPDATE' : ''));
+            $lock->execute(['t' => $tenantId, 'id' => $noticeId]);
+            $old = $this->notices->find($tenantId, $noticeId);
+            if ($old === null || $old['status'] !== 'active' || ($old['expires_at'] !== null && $old['expires_at'] <= gmdate('Y-m-d H:i:s'))) {
+                $pdo->rollBack();
+                return $fail('closed', 'Seul un avis actif se modifie. Renouvelez un avis expiré ou clos.');
+            }
+            if (!hash_equals(self::amendToken($old), (string) ($input['version'] ?? ''))) {
+                $pdo->rollBack();
+                return $fail('conflict', 'Cet avis a changé depuis son ouverture. Rechargez-le avant de modifier.');
+            }
+            $config = $this->settings->get($tenantId);
+            $meta = ($this->meta ??= new SseWantedMetaRepository())->forNotice($tenantId, $noticeId);
+            $editable = array_intersect_key($input, array_flip(['notice_type', 'threat_level', 'armed', 'reason', 'instructions', 'zone', 'last_seen_place', 'last_seen_at', 'contact_label', 'contact_detail', 'expires_at']));
+            $checked = self::validate(array_merge($old, $editable, [
+                'service_code' => $meta['service_code'] ?? '',
+                'classification' => $meta['classification'] ?? 'interne',
+                'no_expiry' => empty($editable['expires_at'] ?? $old['expires_at']) ? '1' : '',
+            ]), $config);
+            if ($checked['errors'] !== []) {
+                $pdo->rollBack();
+                return ['ok' => false, 'error' => 'invalid', 'errors' => $checked['errors']];
+            }
+            $data = $checked['data'];
+            if ($data['expires_at'] !== null && $data['expires_at'] <= gmdate('Y-m-d H:i:s')) {
+                $pdo->rollBack();
+                return $fail('invalid', 'La date de fin doit être future.');
+            }
+            $beforeExtras = ($this->extras ??= new SseWantedExtrasRepository())->forNotice($tenantId, $noticeId);
+            $newPhysical = array_key_exists('physical', $input) && is_array($input['physical'])
+                ? SseWantedPhysical::normalize($input['physical']) : null;
+            $this->notices->amend($tenantId, $noticeId, $data);
+            if ($newPhysical !== null && !$this->extras->save($tenantId, $noticeId, $beforeExtras['codes'], $newPhysical)) {
+                throw new \RuntimeException('Signalement non enregistré.');
+            }
+            // Une modification d'un avis diffusé suit de nouveau le circuit de validation configuré.
+            $pending = (!empty($config['process']['validation']) && !$access->canAdmin()) || ($meta['state'] ?? '') === SseWantedMetaRepository::PENDING;
+            if ($pending) {
+                if (!$this->saveMeta($tenantId, $noticeId, ['validation_state' => SseWantedMetaRepository::PENDING, 'submitted_by_user_id' => $access->userId(), 'validated_by_user_id' => null, 'validated_at' => null, 'validation_reason' => null])) {
+                    throw new \RuntimeException('Validation non enregistrée.');
+                }
+            }
+            $after = $this->notices->find($tenantId, $noticeId);
+            $details = ['ref' => $old['ref'], 'reason' => $changeReason, 'before' => $old, 'after' => $after,
+                'physical_before' => $beforeExtras['physical'], 'physical_after' => $newPhysical ?? $beforeExtras['physical']];
+            if (strlen((string) json_encode($details, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) > 20000) {
+                throw new \RuntimeException('Historique trop volumineux.');
+            }
+            $this->events->add($tenantId, (int) $old['identity_id'], 'notice.updated', 'Avis ' . $old['ref'] . ' mis à jour : ' . $changeReason,
+                $details, $access->userId(), $access->actorLabel(), 'base', 'web', $noticeId);
+            $this->meta->addHistory($tenantId, $noticeId, ['kind' => 'updated', 'at' => gmdate('Y-m-d H:i:s'), 'by' => $access->actorLabel(), 'reason' => $changeReason]);
+            $pdo->commit();
+
+            if ($pending || !empty($config['process']['notify'])) {
+                $this->tell($tenantId, (int) $old['identity_id'], $pending ? 'validate' : 'updated', [
+                    'ref' => $old['ref'], 'label' => $old['identity_name'] ?? '', 'path' => 'atak/sse/avis',
+                ], $access->userId(), $pending);
+            }
+
+            return ['ok' => true, 'state' => $pending ? 'pending' : 'live'];
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log('Avis de recherche : modification annulée : ' . $e->getMessage());
+            return $fail('failed', 'La mise à jour n’a pas été enregistrée. Réessayez après rechargement.');
+        }
+    }
+
+    public static function amendToken(array $notice): string
+    {
+        return hash('sha256', (string) json_encode($notice));
+    }
+
     /**
      * Prolonge un avis actif : nouvelle date d'expiration (postérieure à l'actuelle), motif obligatoire, version ajoutée à
      * l'historique de l'avis et à la chronologie de l'identité.

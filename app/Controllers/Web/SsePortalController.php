@@ -3768,7 +3768,20 @@ final class SsePortalController
             $detail = mb_substr($detail, 0, 247) . '…';
         }
 
+        $pdo = null;
         try {
+            $pdo = \App\Core\Database::getPdo();
+            $pdo->beginTransaction();
+            $personId = null;
+            if ($kind === 'person') {
+                $personId = $this->persons->create(
+                    \App\Support\SseObjectPerson::fields($this->tenantId(), $label, $meta)
+                    + ['submitter_user_id' => (int) Session::get('user_id') ?: null]
+                );
+                if (!empty($meta['image_path'])) {
+                    $this->persons->addPhoto($personId, $this->tenantId(), ['image_path' => $meta['image_path']]);
+                }
+            }
             $meshId = $this->meshes->create([
                 'tenant_id' => $this->tenantId(),
                 'title' => 'Investigation — ' . $label,
@@ -3781,10 +3794,16 @@ final class SsePortalController
                 'label' => $label,
                 'detail' => $detail,
                 'meta_json' => SseMeshRepository::encodeMetaJson($meta),
+                'ref_type' => $personId !== null ? 'person' : null,
+                'ref_id' => $personId,
                 'pos_x' => 420,
                 'pos_y' => 260,
             ]);
+            $pdo->commit();
         } catch (\Throwable $e) {
+            if ($pdo !== null && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             error_log('SSE objectStore: ' . $e->getMessage());
             Session::flash('error', 'Impossible de créer l’objet pour le moment. Réessayez dans un instant.');
 
@@ -3792,6 +3811,9 @@ final class SsePortalController
         }
 
         $okMsg = 'Objet créé avec ses caractéristiques, placé dans une nouvelle investigation.';
+        if ($kind === 'person') {
+            $okMsg .= ' Sa fiche est disponible au registre des personnes et peut être rattachée à un dossier.';
+        }
         if (!empty($imageUpload['compressed'])) {
             $okMsg .= ' L’image a été compressée automatiquement pour rester sous 5 Mo.';
         }

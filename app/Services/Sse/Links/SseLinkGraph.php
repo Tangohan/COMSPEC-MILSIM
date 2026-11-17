@@ -297,6 +297,7 @@ final class SseLinkGraph
             'key' => C::ref($type, $id), 'type' => $type, 'type_label' => C::typeLabel($type), 'icon' => C::TYPES[$type]['icon'] ?? 'tag', 'id' => $id,
             'ref' => (string) ($desc['ref'] ?? ''), 'title' => (string) ($desc['title'] ?? ''), 'summary' => (string) ($desc['summary'] ?? ''),
             'href' => $href === '' ? '' : $this->url($href), 'date' => (string) ($desc['date'] ?? ''), 'depth' => $depth, 'restricted' => false,
+            'classification' => $desc['classification'] ?? null,
         ];
     }
 

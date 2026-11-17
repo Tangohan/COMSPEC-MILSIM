@@ -1294,6 +1294,8 @@ return function (Router $router) {
     $router->get('/atak/sse/avis/detections', [\App\Controllers\Web\SseWantedNoticeController::class, 'detections'], $mwSsePortal);
     $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
     $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
+    $router->get('/atak/sse/avis/{id}/modifier', [\App\Controllers\Web\SseWantedNoticeController::class, 'editForm'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/modifier', [\App\Controllers\Web\SseWantedNoticeController::class, 'updateNotice'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/renouveler', [\App\Controllers\Web\SseWantedNoticeController::class, 'renew'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/prolonger', [\App\Controllers\Web\SseWantedNoticeController::class, 'extend'], $mwSsePortal);

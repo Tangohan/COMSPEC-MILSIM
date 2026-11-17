@@ -224,6 +224,26 @@ final class SseInterestCaseService
         ];
     }
 
+    /** Export complet de l'historique et de la discussion, par lots, après les mêmes contrôles que la fiche. */
+    public function exportDetail(SseInterestActor $actor, int $id): array
+    {
+        $detail = $this->detail($actor, $id);
+        $detail['history'] = [];
+        for ($offset = 0; ; $offset += 500) {
+            $batch = $this->history->listForCase($actor->tenantId, $id, 500, $offset);
+            array_push($detail['history'], ...$this->presentHistory($actor->tenantId, $batch));
+            if (count($batch) < 500) { break; }
+        }
+        $detail['updates'] = [];
+        for ($offset = 0; ; $offset += 100) {
+            $batch = $this->cases->listUpdates($actor->tenantId, $id, 100, $offset);
+            array_push($detail['updates'], ...$batch);
+            if (count($batch) < 100) { break; }
+        }
+
+        return $detail;
+    }
+
     /**
      * États que l'acteur peut proposer depuis l'état courant (transitions valides, droits compris).
      *

@@ -71,12 +71,12 @@ final class SseLoreRepository
 
         return $this->db->insert(
             'INSERT INTO sse_lore_sessions (tenant_id, op_key, context_id, title, summary, country, phase, created_by_user_id, created_at, updated_at, content_updated_at)
-             VALUES (:t, :o, :c, :ti, :s, :co, 1, :u, :now, :now, :now)',
+             VALUES (:t, :o, :c, :ti, :s, :co, 1, :u, :created_at, :updated_at, :content_updated_at)',
             [
                 't' => $tenantId, 'o' => $data['op_key'], 'c' => ($data['context_id'] ?? 0) > 0 ? (int) $data['context_id'] : null,
                 'ti' => mb_substr(trim($data['title']), 0, 160), 's' => isset($data['summary']) && trim((string) $data['summary']) !== '' ? mb_substr(trim((string) $data['summary']), 0, 2000) : null,
                 'co' => isset($data['country']) && preg_match('/^[A-Z]{3}$/', (string) $data['country']) === 1 ? $data['country'] : null,
-                'u' => $userId, 'now' => $now,
+                'u' => $userId, 'created_at' => $now, 'updated_at' => $now, 'content_updated_at' => $now,
             ]
         );
     }
@@ -111,7 +111,9 @@ final class SseLoreRepository
             return false;
         }
 
-        return $this->db->execute('UPDATE sse_lore_sessions SET ' . implode(', ', $set) . ', updated_at = :now, content_updated_at = :now WHERE id = :id AND tenant_id = :t', $params) > 0;
+        $params['content_updated_at'] = $params['now'];
+
+        return $this->db->execute('UPDATE sse_lore_sessions SET ' . implode(', ', $set) . ', updated_at = :now, content_updated_at = :content_updated_at WHERE id = :id AND tenant_id = :t', $params) > 0;
     }
 
     public function setLocked(int $tenantId, int $id, bool $locked, ?int $userId): bool
@@ -126,7 +128,7 @@ final class SseLoreRepository
     public function touch(int $tenantId, int $id): void
     {
         $now = gmdate('Y-m-d H:i:s');
-        $this->db->execute('UPDATE sse_lore_sessions SET content_updated_at = :now, updated_at = :now WHERE id = :id AND tenant_id = :t', ['now' => $now, 'id' => $id, 't' => $tenantId]);
+        $this->db->execute('UPDATE sse_lore_sessions SET content_updated_at = :content_updated_at, updated_at = :now WHERE id = :id AND tenant_id = :t', ['content_updated_at' => $now, 'now' => $now, 'id' => $id, 't' => $tenantId]);
     }
 
     public function markPush(int $tenantId, int $id, int $count): void

@@ -102,6 +102,79 @@ final class SseWantedProcessTest extends TestCase
         ];
     }
 
+    public function testAmendmentKeepsBeforeAfterAndEndDateAndRejectsStaleChanges(): void
+    {
+        $identity = $this->identity();
+        $svc = $this->service();
+        $placed = $svc->place(1, $identity, self::input(), self::admin());
+        self::assertTrue($placed['ok'], json_encode($placed));
+        $repo = new SseWantedNoticeRepository();
+        $before = $repo->find(1, $placed['id']);
+        $version = SseWantedService::amendToken($before);
+        $end = gmdate('Y-m-d H:i:s', time() + 86400 * 20);
+        $updated = $svc->amend(1, $placed['id'], ['version' => $version, 'change_reason' => 'Nouvelle observation confirmée',
+            'last_seen_place' => 'Marché nord', 'expires_at' => $end], self::admin());
+        self::assertTrue($updated['ok'], json_encode($updated));
+        $after = $repo->find(1, $placed['id']);
+        self::assertSame($before['ref'], $after['ref']);
+        self::assertSame('Marché nord', $after['last_seen_place']);
+        self::assertSame($end, $after['expires_at']);
+        $events = (new \App\Repositories\SseIdentityEventRepository())->listForIdentity(1, $identity, ['notice.updated']);
+        self::assertCount(1, $events);
+        self::assertSame($before, $events[0]['details']['before']);
+        self::assertSame($after, $events[0]['details']['after']);
+        self::assertSame('conflict', $svc->amend(1, $placed['id'], ['version' => $version, 'change_reason' => 'Autre observation'], self::admin())['error']);
+        self::assertSame('forbidden', $svc->amend(1, $placed['id'], ['version' => $version, 'change_reason' => 'Autre observation'], self::admin(2))['error']);
+        self::assertSame('invalid', $svc->amend(1, $placed['id'], ['version' => SseWantedService::amendToken($after), 'change_reason' => 'Date incorrecte', 'expires_at' => 'hier'], self::admin())['error']);
+        self::assertSame($after, $repo->find(1, $placed['id']));
+    }
+
+    public function testAmendmentRollsBackWhenHistoryCannotBeWritten(): void
+    {
+        $identity = $this->identity();
+        $svc = $this->service();
+        $placed = $svc->place(1, $identity, self::input(), self::admin());
+        $repo = new SseWantedNoticeRepository();
+        $before = $repo->find(1, $placed['id']);
+        \App\Repositories\SseIdentityEventRepository::ready();
+        $this->pdo->exec('DROP TABLE sse_identity_events');
+        $result = $svc->amend(1, $placed['id'], ['version' => SseWantedService::amendToken($before), 'change_reason' => 'Nouvelle donnée', 'zone' => 'Autre zone'], self::admin());
+        self::assertFalse($result['ok']);
+        self::assertSame($before, $repo->find(1, $placed['id']));
+    }
+
+    public function testEditPageShowsTheStoredVersionAndReadableHistory(): void
+    {
+        Gate::getInstance()->setPermissions(['admin.access', 'atak.sse.case.manage', 'atak.sse.grant', 'atak.sse.files.admin', 'atak.sse.clearance.confidentiel', 'atak.sse.clearance.encadrement']);
+        $identity = $this->identity();
+        $service = $this->service();
+        $placed = $service->place(1, $identity, self::input(), self::admin());
+        $repo = new SseWantedNoticeRepository();
+        $before = $repo->find(1, $placed['id']);
+        $updated = $service->amend(1, $placed['id'], [
+            'version' => SseWantedService::amendToken($before), 'change_reason' => 'Nouveau signalement reçu',
+            'expires_at' => '2040-01-01 12:00:00', 'physical' => ['marks' => 'Cicatrice sur la joue'],
+        ], self::admin());
+        self::assertTrue($updated['ok']);
+        $controller = new SseWantedNoticeController(null, null, null, null, null, null, null, self::admin());
+        $response = $controller->editForm(new Request(), ['id' => $placed['id']]);
+        self::assertStringContainsString('name="expires_at"', $response->body());
+        self::assertStringContainsString('Nouveau signalement reçu', $response->body());
+        self::assertStringContainsString('Cicatrice sur la joue', $response->body());
+        self::assertStringContainsString('RESPONSABLE', $response->body());
+        $current = $repo->find(1, $placed['id']);
+        self::assertTrue($service->amend(1, $placed['id'], [
+            'version' => SseWantedService::amendToken($current), 'change_reason' => 'Recherche sans échéance', 'expires_at' => '',
+        ], self::admin())['ok']);
+        self::assertNull($repo->find(1, $placed['id'])['expires_at']);
+        $this->enableValidation();
+        $current = $repo->find(1, $placed['id']);
+        self::assertTrue($service->amend(1, $placed['id'], [
+            'version' => SseWantedService::amendToken($current), 'change_reason' => 'Nouvelle piste à valider', 'zone' => 'Dépôt nord',
+        ], self::analyst())['ok']);
+        self::assertSame('pending', $this->meta($placed['id'])['state']);
+    }
+
     private function enableValidation(bool $on = true): void
     {
         $repo = new SseWantedSettingsRepository();
