@@ -16,7 +16,7 @@ final class MaintenanceThemes
     public const THEMES = [
         'military' => [
             'label' => 'Photo de terrain',
-            'hint' => 'Photo d’équipe assombrie, message en blanc en bas de l’écran. Le style par défaut.',
+            'hint' => 'Photos de terrain en fondu, message en blanc en bas de l’écran. Le style par défaut.',
         ],
         'minimal' => [
             'label' => 'Clair et sobre',
