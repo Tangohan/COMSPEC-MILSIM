@@ -273,6 +273,48 @@ require __DIR__ . '/_subnav.php';
             </article>
 
             <article class="dos-card">
+                <h3>Informations transmises sur la personne et dossiers liés</h3>
+                <div class="dos-card__body">
+                    <?php if ($showPerson): ?>
+                        <p class="muted">Données actualisées depuis la fiche personne liée.</p>
+                        <dl class="dos-kv">
+                            <?php foreach (\App\Support\SsePersonObservations::rows($person) as [$label, $value]): ?>
+                                <dt><?= $h($label) ?></dt><dd translate="no"><?= nl2br($h($value)) ?></dd>
+                            <?php endforeach; ?>
+                        </dl>
+                        <a class="link" href="<?= $h(url('atak/sse/identites/' . (int) $person['id'] . '?fiche=personne')) ?>">Ouvrir la fiche personne complète</a>
+                    <?php endif; ?>
+                    <?php if (!empty($relatedDossiers)): ?><ul>
+                        <?php foreach ($relatedDossiers as $linkedDossier): ?>
+                            <li><a class="link" href="<?= $h($linkedDossier['href']) ?>"><?= $h(trim($linkedDossier['ref'] . ' — ' . $linkedDossier['title'])) ?></a></li>
+                        <?php endforeach; ?>
+                    </ul><?php endif; ?>
+                    <?php if (!$showPerson && empty($relatedDossiers)): ?><p class="muted">Aucune fiche personne ou dossier lié accessible.</p><?php endif; ?>
+                </div>
+            </article>
+
+            <?php if (!empty($seekRecords)): ?>
+            <article class="dos-card">
+                <h3>Contrôles transmis par le SEEK II</h3>
+                <div class="dos-card__body">
+                    <?php foreach ($seekRecords as $seekRecord): ?>
+                        <h4 translate="no"><?= $h($seekRecord['rec']) ?></h4>
+                        <dl class="dos-kv">
+                            <?php foreach (['display_name' => 'Identité relevée', 'birth_date' => 'Naissance déclarée', 'doc_type' => 'Type de papier', 'doc_number' => 'Numéro du papier', 'verdict_label' => 'Résultat du contrôle', 'reason' => 'Motif du contrôle', 'unit' => 'Unité', 'grid' => 'Position', 'controller_callsign' => 'Contrôleur', 'created_at' => 'Transmis le'] as $field => $label): ?>
+                                <?php if (($seekRecord[$field] ?? '') !== '' && ($seekRecord[$field] ?? null) !== null): ?>
+                                    <dt><?= $h($label) ?></dt><dd translate="no"><?= nl2br($h($seekRecord[$field])) ?></dd>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                            <?php foreach (($seekRecord['capture'] ?? []) as $modality => $capture): ?>
+                                <?php if (!empty($capture['notes'])): ?><dt><?= $h($modality) ?></dt><dd><?= $h(implode(' · ', $capture['notes'])) ?></dd><?php endif; ?>
+                            <?php endforeach; ?>
+                        </dl>
+                    <?php endforeach; ?>
+                </div>
+            </article>
+            <?php endif; ?>
+
+            <article class="dos-card">
                 <h3>Alias, affiliations et mentions</h3>
                 <div class="dos-card__body">
                     <?php $factionLine = trim((string) ($identity['faction'] ?? '') . ' ' . (string) ($identity['side'] ?? '')); ?>

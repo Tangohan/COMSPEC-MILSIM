@@ -110,6 +110,7 @@ $counts['a_valider'] = $pendingCount;
                         <td data-label="Auteur" translate="no"><?= $h($authors[(int) $n['id']] ?? '—') ?><?php $svcAc = (string) ($noticeMeta[(int) $n['id']]['service']['ac'] ?? ''); if ($svcAc !== ''): ?><div class="wc-mini" title="<?= $h($noticeMeta[(int) $n['id']]['service']['fr'] ?? '') ?>"><?= $h($svcAc) ?></div><?php endif; ?></td>
                         <td>
                             <a class="btn-open" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $n['identity_id'] . '#avis')) ?>">Ouvrir</a>
+                            <?php if ($canManage): ?><a class="btn-open" href="<?= $h(url('atak/sse/avis/' . (int) $n['id'] . '/modifier')) ?>">Modifier / historique</a><?php endif; ?>
                             <button type="button" class="btn-open" data-ra-open data-ra-pieces="notice:<?= (int) $n['id'] ?>" aria-haspopup="dialog">Rattacher</button>
                             <?php if ($canPdf): ?>
                                 <a class="btn-open" href="<?= $h(url('atak/sse/avis/' . (int) $n['id'] . '/pdf')) ?>">PDF</a>
