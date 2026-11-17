@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Controllers\Api\Game\GameSseFichesApiController;
+use App\Controllers\Api\SseIdentityApiController;
 use App\Core\Request;
 use App\Repositories\SseFileRecordRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Services\Sse\SseFichesGameService;
+use App\Services\Sse\SseClearanceService;
 use App\Support\ComspecApiKeyAuth;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -30,6 +32,24 @@ final class SseFichesGameTest extends TestCase
     private array $audited = [];
 
     private int $seq = 0;
+
+    public function testSharedChecksEndpointUsesFichesClearanceWithoutBypassingAuthentication(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $body = static fn (): string => '{"kind":"sse_fiches","op":"list"}';
+        $clearance = $this->createMock(SseClearanceService::class);
+        $clearance->method('allows')->willReturn(false);
+
+        $_SESSION = ['user_id' => 7, 'tenant_id' => 1];
+        $response = (new SseIdentityApiController(clearance: $clearance, bodyReader: $body, gameFiches: $this->controller()))->checksStore(new Request());
+        self::assertSame(200, $response->statusCode());
+        self::assertArrayHasKey('ref', json_decode($response->body(), true));
+
+        $_SESSION = [];
+        ComspecApiKeyAuth::resetForTests();
+        $response = (new SseIdentityApiController(clearance: $clearance, bodyReader: $body, gameFiches: $this->controller()))->checksStore(new Request());
+        self::assertSame(401, $response->statusCode());
+    }
 
     protected function setUp(): void
     {
