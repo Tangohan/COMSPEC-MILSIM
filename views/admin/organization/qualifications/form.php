@@ -285,7 +285,7 @@ $examplePreview = \App\Support\QualificationExamples::numberPreview($v('certific
                 </div>
             </section>
 
-            <?php require __DIR__ . '/_obtention.php'; ?>
+            <?php (static function ($obtention): void { require __DIR__ . '/_obtention.php'; })($obtention ?? null); ?>
 
             <div class="rq-submit">
                 <p data-rq-dirty-note><?= $isEdit ? 'Les attributions existantes gardent leurs dates ; les nouvelles règles s’appliquent aux prochaines.' : 'Après la création : insigne, niveaux, prérequis et droits associés.' ?></p>
