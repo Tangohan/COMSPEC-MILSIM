@@ -441,6 +441,7 @@ final class AccountDeletionService
         } catch (\Throwable) {
         }
         $this->deleteOptionalRowsByUserId($userId, [
+            'personnel_profile_specialty_codes',
             // Anciens profils de candidature (fonction retirée) : les lignes restantes sont effacées.
             'recruitment_presets',
             'personnel_media',

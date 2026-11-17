@@ -58,6 +58,7 @@ $dossierHref = (string) ($p['dossierHref'] ?? '');
                 <?php if ($callsign !== ''): ?><div><dt>Indicatif</dt><dd class="ja-mono"><?= $h($callsign) ?></dd></div><?php endif; ?>
                 <?php if ($grade !== ''): ?><div><dt>Grade</dt><dd><?= $h($grade) ?></dd></div><?php endif; ?>
                 <?php if ($fn !== ''): ?><div><dt>Fonction</dt><dd><?= $h($fn) ?></dd></div><?php endif; ?>
+                <?php if (trim((string) ($p['specialties'] ?? '')) !== ''): ?><div><dt>Spécialités confirmées</dt><dd><?= $h($p['specialties']) ?><small>Le niveau indique la maîtrise du métier ; il se distingue du grade, du poste et des qualifications.</small></dd></div><?php endif; ?>
                 <?php if ($unit !== ''): ?>
                     <div><dt>Unité</dt><dd>
                         <?php if ($fil !== null): ?><a href="<?= $h((string) $fil['href']) ?>"><?= $h($unit) ?></a><?php else: ?><?= $h($unit) ?><?php endif; ?>

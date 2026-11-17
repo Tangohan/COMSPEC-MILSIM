@@ -44,7 +44,19 @@ Les **administrateurs de la plateforme** peuvent en outre définir qu’un parco
 
 Pour les habilitations correspondantes, un **journal d’audit** recense les actions sensibles sur les parcours (création, publication, assignation, etc.). Chaque entrée est présentée avec une **date**, l’**auteur** de l’action, un **libellé clair** du type d’opération, l’**objet** concerné, le **référent pédagogique** du parcours le cas échéant, et un **résumé** du détail utile au contrôle interne. Si cet écran n’apparaît pas pour vous, votre rôle ne couvre pas cette supervision.
 
-## Voir aussi
+## Objectifs de spécialité militaire
+
+Un responsable peut associer une qualification à une spécialité nationale et à un niveau
+visé depuis **Qualifications → fiche de la qualification → Objectifs de spécialité militaire**.
+La fiche de référence explique le code, son pays, son armée et la signification des niveaux.
+Par exemple, un BAT FUSIL peut être lié à la spécialité Marine FUSIL, avec un niveau métier vide.
+
+L’objectif décrit la contribution de la formation. Les règles de réussite et les certificats
+restent ceux du parcours ; l’obtention de la qualification ne confirme pas automatiquement
+un MOS ou un AFSC au dossier. Les RH valident cette étape séparément. Un niveau de
+qualification local et un niveau de compétence AFSC sont deux informations distinctes.
+
+## Références complémentaires
 
 - [Documents](documents.md) — supports liés aux parcours.
 - [Back-office organisation](back-office-organisation.md) — politique de publication interne.
