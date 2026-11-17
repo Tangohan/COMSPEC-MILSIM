@@ -91,6 +91,12 @@ final class MigrationActiveQueueTest extends TestCase
             'CREATE TABLE arsenal_wardrobes (id INTEGER PRIMARY KEY, tenant_id INTEGER, user_id INTEGER, collection_id INTEGER)',
             'CREATE TABLE atak_pings (id INTEGER PRIMARY KEY, tenant_id INTEGER, map_id INTEGER, created_at TEXT)',
             'CREATE TABLE atak_units (id INTEGER PRIMARY KEY, tenant_id INTEGER, map_id INTEGER, call_sign TEXT)',
+            'CREATE TABLE countries (id INTEGER PRIMARY KEY, iso2 TEXT UNIQUE, iso3 TEXT, name_fr TEXT, name_en TEXT)',
+            'CREATE TABLE military_services (id INTEGER PRIMARY KEY, country_id INTEGER, code TEXT UNIQUE, name TEXT)',
+            'CREATE TABLE military_sources (id INTEGER PRIMARY KEY, name TEXT, publisher TEXT, url TEXT, source_type TEXT, published_at TEXT, checked_at TEXT)',
+            'CREATE TABLE personnel_job_roles (id INTEGER PRIMARY KEY, tenant_id INTEGER)',
+            'CREATE TABLE personnel_qualification_definitions (id INTEGER PRIMARY KEY, tenant_id INTEGER)',
+            'CREATE TABLE personnel_qualifications (id INTEGER PRIMARY KEY)',
             "INSERT INTO tenants (id, name, slug) VALUES (1, 'Special Operations Aviation', 'soar'), (2, 'Task Force Phantom', 'tf-phantom')",
         ] as $sql) {
             $pdo->exec($sql);
@@ -105,6 +111,7 @@ final class MigrationActiveQueueTest extends TestCase
     private static function runStep(string $path, PDO $pdo): string
     {
         $root = self::root();
+        $migrationRunner = null;
         $migrationFlush = static function (): void {
         };
         $migrationEnsurePdo = static function (): void {

@@ -1817,6 +1817,7 @@ return function (Router $router) {
     $router->post('/admin/system/cooperation/catalog/{id}/update', [SystemCooperationCatalogController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cooperation/catalog/{id}/delete', [SystemCooperationCatalogController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/military-referential', [SystemMilitaryReferentialController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/military-referential/specialties', [SystemMilitaryReferentialController::class, 'specialties'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/military-referential/create', [SystemMilitaryReferentialController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/military-referential', [SystemMilitaryReferentialController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/military-referential/{id}/edit', [SystemMilitaryReferentialController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -2637,6 +2638,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/importer', [EffectifsWorkspaceController::class, 'importRoster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/modele-tableur', [EffectifsWorkspaceController::class, 'rosterTemplate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'duplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/specialites', [EffectifsWorkspaceController::class, 'specialties'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/specialites', [\App\Controllers\Admin\MilitarySpecialtyController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'saveDuplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'saveAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

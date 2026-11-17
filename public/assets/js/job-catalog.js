@@ -1110,7 +1110,23 @@
         if (!confirmed && target.value.trim() !== '' && target.value.trim() !== value && !window.confirm('Remplacer le champ « ' + rowLabel(key) + ' » déjà rempli ?')) return null;
         if (key === 'code') target.closest('details')?.setAttribute('open', '');
         write(target, key === 'abbreviation' ? value.toUpperCase() : value, LIMITS[key] || 500);
+        if (key === 'code') linkSpecialties();
         return true;
+    }
+
+    /** Références de nomenclature de l’emploi uniquement ; aucun titulaire n’est modifié. */
+    function linkSpecialties() {
+        const target = form();
+        if (!target) return;
+        target.querySelectorAll('[data-catalog-specialty]').forEach(node => node.remove());
+        (current.specialty_refs || []).forEach(ref => {
+            const input = el('input');
+            input.type = 'hidden';
+            input.name = 'catalog_specialty_refs[]';
+            input.value = ref;
+            input.dataset.catalogSpecialty = '';
+            target.appendChild(input);
+        });
     }
 
     /**
@@ -1190,6 +1206,7 @@
         if (!plan.length || !(await confirmCopy(plan))) return;
         const keys = plan.map(item => item.key).filter(key => key !== 'icon' && key !== 'tags');
         keys.forEach(key => copyOne(key, true));
+        linkSpecialties();
         linkQualifications();
         if (current.icon) setIcon(current.icon);
         if ((current.tags || []).length) mergeTags(current.tags);
