@@ -54,6 +54,11 @@
         event.preventDefault();
         if (button.disabled) return;
 
+        const version = form.elements.version;
+        const notes = form.elements.notes;
+        version.value = version.value.trim();
+        if (!form.reportValidity()) return;
+
         const file = archive.files[0];
         if (!file || !/\.rar$/i.test(file.name) || file.size < 7 || file.size > Number(form.dataset.maxSize)) {
             status.textContent = 'Sélectionnez une archive .RAR de 20 Gio maximum.';
@@ -62,6 +67,8 @@
 
         button.disabled = true;
         archive.disabled = true;
+        version.readOnly = true;
+        notes.readOnly = true;
         progress.hidden = false;
         progress.value = 0;
         status.textContent = 'Envoi de l’archive…';
@@ -83,6 +90,8 @@
         } catch (error) {
             status.textContent = error.message || 'L’envoi a échoué.';
             archive.disabled = false;
+            version.readOnly = false;
+            notes.readOnly = false;
             button.disabled = false;
         }
     });

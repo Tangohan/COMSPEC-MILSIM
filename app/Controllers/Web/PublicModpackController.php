@@ -12,11 +12,10 @@ use App\Core\Session;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\PublicModpackRepository;
 use App\Services\Modpack\ModpackUpload;
+use App\Services\Modpack\ModpackVersion;
 
 final class PublicModpackController
 {
-    private const VERSION = '/\A[0-9][a-zA-Z0-9._+-]{0,47}\z/';
-
     public function __construct(private PublicModpackRepository $packs = new PublicModpackRepository())
     {
     }
@@ -95,8 +94,11 @@ final class PublicModpackController
         $notes = trim($request->inputString('notes'));
         $token = $request->inputString('upload_token');
         $size = filter_var($request->input('archive_size'), FILTER_VALIDATE_INT);
-        if (!preg_match(self::VERSION, $version) || mb_strlen($notes) > 3000) {
-            return $this->notice('Vérifiez la version et les notes de publication.', true);
+        if (!ModpackVersion::isValid($version)) {
+            return $this->notice('La version doit commencer par un numéro, par exemple « ' . ModpackVersion::EXAMPLE . ' ».', true);
+        }
+        if (mb_strlen($notes, 'UTF-8') > 3000) {
+            return $this->notice('Les notes de publication sont limitées à 3 000 caractères.', true);
         }
         if (!ModpackUpload::validToken($token) || $size === false || $size < 1 || $size > ModpackUpload::MAX_ARCHIVE_BYTES) {
             return $this->notice('L’archive doit être envoyée avant la publication.', true);
@@ -164,12 +166,14 @@ final class PublicModpackController
         $threshold = filter_var($request->input('throttle_at'), FILTER_VALIDATE_INT);
         $speed = filter_var($request->input('throttle_mib'), FILTER_VALIDATE_INT);
 
-        if (($expected !== '' && !preg_match(self::VERSION, $expected))
-            || $max === false || $max < 0 || $max > 16
+        if ($expected !== '' && !ModpackVersion::isValid($expected)) {
+            return $this->notice('La version de référence doit commencer par un numéro, par exemple « ' . ModpackVersion::EXAMPLE . ' ».', true);
+        }
+        if ($max === false || $max < 0 || $max > 16
             || $threshold === false || $threshold < 1 || $threshold > 16
             || $speed === false || $speed < 1 || $speed > 64
             || ($max > 0 && $threshold > $max)) {
-            return $this->notice('Vérifiez la version cible, le seuil de bridage et le nombre de places.', true);
+            return $this->notice('Vérifiez le seuil de bridage, le débit et le nombre de places.', true);
         }
 
         $this->packs->configure($expected !== '' ? $expected : null, $max, $threshold, $speed, $request->input('published') === '1');
@@ -237,7 +241,7 @@ final class PublicModpackController
         $length = $end - $start + 1;
         $response = (new Response())->setStatusCode($partial ? 206 : 200)
             ->header('Content-Type', 'application/vnd.rar')
-            ->header('Content-Disposition', 'attachment; filename="COMSPEC-Modpack-' . $pack['version'] . '.rar"')
+            ->header('Content-Disposition', ModpackVersion::downloadDisposition($pack['version']))
             ->header('Content-Length', (string) $length)
             ->header('Accept-Ranges', 'bytes')
             ->header('ETag', '"' . $pack['sha256'] . '"')
