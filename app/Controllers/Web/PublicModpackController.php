@@ -54,22 +54,22 @@ final class PublicModpackController
     public function uploadBlock(Request $request): Response
     {
         if (!Gate::getInstance()->isPlatformAdmin() || !Csrf::verify($request)) {
-            return Response::json(['message' => 'Session expirée ou accès refusé.'], 403);
+            return Response::json(['message' => __('modpack.session_denied')], 403);
         }
         $token = $request->inputString('upload_token');
         $offset = filter_var($request->input('offset'), FILTER_VALIDATE_INT);
         $block = $_FILES['block'] ?? [];
         $size = $block['size'] ?? 0;
         if (!ModpackUpload::validToken($token) || $offset === false || $offset < 0) {
-            return Response::json(['message' => 'Position ou identifiant d’envoi invalide.'], 400);
+            return Response::json(['message' => __('modpack.block_position')], 400);
         }
         if (($block['error'] ?? null) !== UPLOAD_ERR_OK || !is_int($size) || $size < 1
             || $size > ModpackUpload::MAX_BLOCK_BYTES || !is_uploaded_file($block['tmp_name'])) {
-            return Response::json(['message' => 'Bloc manquant ou trop volumineux.'], 400);
+            return Response::json(['message' => __('modpack.block_missing')], 400);
         }
         $bytes = @file_get_contents($block['tmp_name'], false, null, 0, ModpackUpload::MAX_BLOCK_BYTES);
         if ($bytes === false || strlen($bytes) !== $size) {
-            return Response::json(['message' => 'Bloc incomplet.'], 400);
+            return Response::json(['message' => __('modpack.block_incomplete')], 400);
         }
 
         try {
@@ -87,7 +87,7 @@ final class PublicModpackController
     public function publish(Request $request): Response
     {
         if (!Gate::getInstance()->isPlatformAdmin() || !Csrf::verify($request)) {
-            return $this->error(403, 'Session expirée ou accès refusé.');
+            return $this->error(403, __('modpack.session_denied'));
         }
 
         $version = trim($request->inputString('version'));
@@ -95,13 +95,13 @@ final class PublicModpackController
         $token = $request->inputString('upload_token');
         $size = filter_var($request->input('archive_size'), FILTER_VALIDATE_INT);
         if (!ModpackVersion::isValid($version)) {
-            return $this->notice('La version doit commencer par un numéro, par exemple « ' . ModpackVersion::EXAMPLE . ' ».', true);
+            return $this->notice(__('modpack.invalid_version', ['version' => ModpackVersion::EXAMPLE]), true);
         }
         if (mb_strlen($notes, 'UTF-8') > 3000) {
-            return $this->notice('Les notes de publication sont limitées à 3 000 caractères.', true);
+            return $this->notice(__('modpack.notes_limit'), true);
         }
         if (!ModpackUpload::validToken($token) || $size === false || $size < 1 || $size > ModpackUpload::MAX_ARCHIVE_BYTES) {
-            return $this->notice('L’archive doit être envoyée avant la publication.', true);
+            return $this->notice(__('modpack.upload_first'), true);
         }
         $upload = $this->upload();
         try {
@@ -114,32 +114,32 @@ final class PublicModpackController
             return $this->notice($e->getMessage(), true);
         }
 
-        return $this->notice('La version ' . $version . ' est publiée.');
+        return $this->notice(__('modpack.published', ['version' => $version]));
     }
 
     private function publishArchive(string $tmp, string $version, string $notes, int $size): void
     {
         if (@filesize($tmp) !== $size) {
-            throw new \DomainException('L’archive est incomplète. Relancez son envoi.');
+            throw new \DomainException(__('modpack.archive_incomplete'));
         }
         set_time_limit(0);
         $hash = @hash_file('sha256', $tmp);
         if ($hash === false) {
-            throw new \RuntimeException('Impossible de calculer l’empreinte de l’archive.');
+            throw new \RuntimeException(__('modpack.hash_error'));
         }
 
         $lock = @fopen($this->directory() . '/publish.lock', 'c');
         if (!$lock) {
-            throw new \RuntimeException('Impossible de préparer la publication.');
+            throw new \RuntimeException(__('modpack.publish_error'));
         }
         try {
             if (!flock($lock, LOCK_EX | LOCK_NB)) {
-                throw new \RuntimeException('Une publication est déjà en cours. Réessayez dans un instant.');
+                throw new \RuntimeException(__('modpack.publish_busy'));
             }
             $previous = $this->packs->current()['archive_key'] ?? null;
             $key = bin2hex(random_bytes(16));
             if (!@rename($tmp, $this->archivePath($key))) {
-                throw new \RuntimeException('Impossible de stocker cette archive.');
+                throw new \RuntimeException(__('modpack.archive_store'));
             }
             // Conserver le fichier en cas d’erreur SQL ambiguë après validation.
             $this->packs->publish($key, $version, $notes, $size, $hash);
@@ -159,7 +159,7 @@ final class PublicModpackController
     public function configure(Request $request): Response
     {
         if (!Gate::getInstance()->isPlatformAdmin() || !Csrf::verify($request)) {
-            return $this->error(403, 'Accès refusé.');
+            return $this->error(403, __('modpack.access_denied'));
         }
         $expected = trim($request->inputString('expected_version'));
         $max = filter_var($request->input('max_downloads'), FILTER_VALIDATE_INT);
@@ -167,37 +167,37 @@ final class PublicModpackController
         $speed = filter_var($request->input('throttle_mib'), FILTER_VALIDATE_INT);
 
         if ($expected !== '' && !ModpackVersion::isValid($expected)) {
-            return $this->notice('La version de référence doit commencer par un numéro, par exemple « ' . ModpackVersion::EXAMPLE . ' ».', true);
+            return $this->notice(__('modpack.invalid_reference', ['version' => ModpackVersion::EXAMPLE]), true);
         }
         if ($max === false || $max < 0 || $max > 16
             || $threshold === false || $threshold < 1 || $threshold > 16
             || $speed === false || $speed < 1 || $speed > 64
             || ($max > 0 && $threshold > $max)) {
-            return $this->notice('Vérifiez le seuil de bridage, le débit et le nombre de places.', true);
+            return $this->notice(__('modpack.invalid_settings'), true);
         }
 
         $this->packs->configure($expected !== '' ? $expected : null, $max, $threshold, $speed, $request->input('published') === '1');
-        return $this->notice('Les réglages de diffusion sont enregistrés.');
+        return $this->notice(__('modpack.settings_saved'));
     }
 
     public function download(Request $request): Response
     {
         $pack = $this->packs->current();
         if (empty($pack['published']) || !preg_match('/\A[a-f0-9]{32}\z/', $pack['archive_key'] ?? '')) {
-            return $this->error(404, 'Aucune archive disponible.');
+            return $this->error(404, __('modpack.no_archive'));
         }
         $versionKey = $request->queryString('archive');
         if ($versionKey !== '' && $versionKey !== $pack['archive_key']) {
-            return $this->error(410, 'Cette archive a été remplacée. Ouvrez la page du pack pour obtenir la version actuelle.');
+            return $this->error(410, __('modpack.archive_replaced'));
         }
         $max = (int) $pack['max_downloads'];
         if ($max === 0) {
-            return $this->error(503, 'Les téléchargements sont en pause. Réessayez dans un instant.')
+            return $this->error(503, __('modpack.download_paused'))
                 ->header('Retry-After', '60');
         }
         $file = @fopen($this->archivePath($pack['archive_key']), 'rb');
         if (!$file) {
-            return $this->error(503, 'Archive momentanément indisponible. Actualisez la page.');
+            return $this->error(503, __('modpack.archive_unavailable'));
         }
 
         $size = (int) $pack['bytes'];
@@ -210,7 +210,7 @@ final class PublicModpackController
             if (!preg_match('/\Abytes=(\d*)-(\d*)\z/', $range, $parts)
                 || ($parts[1] === '' && ($parts[2] === '' || (int) $parts[2] === 0))) {
                 fclose($file);
-                return $this->error(416, 'Plage de téléchargement invalide.')->header('Content-Range', 'bytes */' . $size);
+                return $this->error(416, __('modpack.range_invalid'))->header('Content-Range', 'bytes */' . $size);
             }
             if ($parts[1] === '') {
                 $start = max(0, $size - (int) $parts[2]);
@@ -220,14 +220,14 @@ final class PublicModpackController
             }
             if ($start > $end || fseek($file, $start) !== 0) {
                 fclose($file);
-                return $this->error(416, 'Plage de téléchargement invalide.')->header('Content-Range', 'bytes */' . $size);
+                return $this->error(416, __('modpack.range_invalid'))->header('Content-Range', 'bytes */' . $size);
             }
         }
 
         [$slot, $active] = $this->reserveDownload($max);
         if ($slot === null) {
             fclose($file);
-            return $this->error(429, 'Toutes les places sont prises. Réessayez dans quelques secondes.')
+            return $this->error(429, __('modpack.download_busy'))
                 ->header('Retry-After', '20');
         }
         if ($start === 0) {
@@ -331,7 +331,7 @@ final class PublicModpackController
     private function prepareStorage(): void
     {
         if (!is_dir($this->directory()) && !@mkdir($this->directory(), 0750, true) && !is_dir($this->directory())) {
-            throw new \RuntimeException('Le stockage privé des archives est indisponible.');
+            throw new \RuntimeException(__('modpack.storage_unavailable'));
         }
     }
 
@@ -354,7 +354,7 @@ final class PublicModpackController
         return [
             'content' => $content,
             'title' => 'Modpack Arma 3 · COMSPEC',
-            'meta_description' => 'Téléchargez le modpack COMSPEC pour Arma 3 au format RAR et consultez sa version.',
+            'meta_description' => __('modpack.meta_description'),
             'og_image' => asset_url('assets/images/home/hero-2-1920.webp'),
             'marketingActive' => 'modpacks',
             'marketingStyles' => [asset_url('assets/css/public-modpack.css')],

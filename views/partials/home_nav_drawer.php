@@ -18,7 +18,7 @@ $createCommunityHref = $loggedIn ? url('communities/create') : url('register');
 </div>
 <nav class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 py-3" aria-label="<?= htmlspecialchars(__('home.nav_aria'), ENT_QUOTES, 'UTF-8') ?>">
     <a href="<?= htmlspecialchars(url('academy'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>">Academy</a>
-    <a href="<?= htmlspecialchars(url('modpacks'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"<?= navigation_current_path() === '/modpacks' ? ' aria-current="page"' : '' ?>>Modpack Arma 3</a>
+    <a href="<?= htmlspecialchars(url('modpacks'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"<?= navigation_current_path() === '/modpacks' ? ' aria-current="page"' : '' ?>><?= htmlspecialchars(__('modpack.nav')) ?></a>
     <?php if ($loggedIn): ?>
         <?php
         $scopeEntries = navigation_scope_drawer_entries();

@@ -29,11 +29,11 @@ final class ModpackUpload
     {
         $lock = @fopen($this->directory . '/upload-' . $this->userId . '.lock', 'c');
         if ($lock === false) {
-            throw new \RuntimeException('Impossible de préparer le stockage de l’archive.');
+            throw new \RuntimeException(__('modpack.upload_storage'));
         }
         try {
             if (!flock($lock, LOCK_EX | LOCK_NB)) {
-                throw new \RuntimeException('Un autre bloc est en cours de traitement.');
+                throw new \RuntimeException(__('modpack.upload_busy'));
             }
             return $operation();
         } finally {
@@ -44,7 +44,7 @@ final class ModpackUpload
     public function path(string $token): string
     {
         if (!self::validToken($token)) {
-            throw new \InvalidArgumentException('Identifiant d’envoi invalide.');
+            throw new \InvalidArgumentException(__('modpack.upload_id'));
         }
         return $this->directory . '/upload-' . $this->userId . '-' . $token . '.part';
     }
@@ -53,17 +53,17 @@ final class ModpackUpload
     {
         $length = strlen($bytes);
         if ($length < 1 || $length > self::MAX_BLOCK_BYTES || $offset < 0 || $offset > self::MAX_ARCHIVE_BYTES - $length) {
-            throw new \DomainException('Taille ou position du bloc invalide.');
+            throw new \DomainException(__('modpack.upload_size'));
         }
         if ($offset === 0 && !self::hasRarSignature($bytes)) {
-            throw new \DomainException('Le fichier sélectionné doit être une archive RAR.');
+            throw new \DomainException(__('modpack.upload_signature'));
         }
 
         return $this->locked(function () use ($token, $offset, $bytes, $length): int {
             $path = $this->path($token);
             $file = @fopen($path, $offset === 0 ? 'c+b' : 'r+b');
             if ($file === false) {
-                throw new \DomainException('Envoi introuvable. Relancez la publication.');
+                throw new \DomainException(__('modpack.upload_missing'));
             }
 
             try {
@@ -72,11 +72,11 @@ final class ModpackUpload
                     return $size;
                 }
                 if ($size !== $offset) {
-                    throw new \DomainException('Position de reprise incorrecte. Relancez la publication.');
+                    throw new \DomainException(__('modpack.upload_offset'));
                 }
                 if (fseek($file, $offset) !== 0 || @fwrite($file, $bytes) !== $length || !fflush($file)) {
                     @ftruncate($file, $offset);
-                    throw new \RuntimeException('Impossible d’écrire le bloc. Vérifiez l’espace disque.');
+                    throw new \RuntimeException(__('modpack.upload_disk'));
                 }
                 if ($offset === 0) {
                     foreach (glob($this->directory . '/upload-' . $this->userId . '-*.part') ?: [] as $old) {
