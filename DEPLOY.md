@@ -50,6 +50,23 @@ les minutes — plus simple, un peu moins propre. Ne pas cumuler cron **et** Act
 Les migrations SQL ne sont **pas** lancées par l’Action (décision humaine) :
 `php8.4 run-migrations.php` en SSH après un commit qui change le schéma.
 
+### Téléchargement public du modpack
+
+Appliquer la migration `php8.4 run-migrations.php --step=public_modpack` avant d’ouvrir
+`/modpacks`. Un administrateur de la plateforme peut ensuite publier la première archive
+RAR et définir la version de référence depuis cette page.
+
+Le processus PHP doit pouvoir écrire dans `storage/private/public-modpack`, avec
+assez d’espace pour l’archive en service, sa remplaçante et le fichier temporaire
+d’envoi. Le document root nginx doit pointer vers `public/`. Pour les gros packs,
+aligner les limites de taille et de durée du proxy, de PHP-FPM et de son dossier
+temporaire sur l’archive retenue. Le serveur PHP de développement ignore `.user.ini`
+et exige `-d upload_max_filesize=… -d post_max_size=…` au démarrage.
+
+Le bridage repose sur des verrous de fichier locaux. Il limite les transferts d’un
+même serveur et laisse les transferts en cours se terminer quand la diffusion est
+mise en pause.
+
 ### Config locale (PC)
 
 `.deploy.env` (gitignoré) en `DEPLOY_MODE=git` — le hook Cursor rappelle seulement

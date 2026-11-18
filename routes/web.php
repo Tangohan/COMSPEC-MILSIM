@@ -1138,9 +1138,13 @@ return function (Router $router) {
     $router->post('/equipment/configurateur/pre-kits', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'savePrekit'], [AuthMiddleware::class]);
     $router->post('/equipment/configurateur/pre-kits/{id}/supprimer', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'deletePrekit'], [AuthMiddleware::class]);
     $router->get('/equipment/{slug}', [EquipmentController::class, 'show'], [AuthMiddleware::class]);
-    // Modpacks retirés : les mods sont servis par le Steam Workshop, les anciennes adresses mènent au guide d'installation.
-    foreach (['/modpacks', '/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
-        $router->get($legacyModpack, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/mod')), [AuthMiddleware::class]);
+    $modpack = \App\Controllers\Web\PublicModpackController::class;
+    $router->get('/modpacks', [$modpack, 'index']);
+    $router->get('/modpacks/telecharger', [$modpack, 'download']);
+    $router->post('/modpacks/publier', [$modpack, 'publish'], [AuthMiddleware::class]);
+    $router->post('/modpacks/reglages', [$modpack, 'configure'], [AuthMiddleware::class]);
+    foreach (['/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
+        $router->get($legacyModpack, fn () => \App\Core\Response::redirect(url('modpacks')));
     }
     /*
      * Ancien LMS « Formations » : ses pages sont servies par l'Academy (mêmes contrôleurs, mêmes droits, mêmes données).
