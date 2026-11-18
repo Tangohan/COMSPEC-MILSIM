@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Csrf;
+use App\Services\Modpack\ModpackVersion;
 
 $e = static fn ($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $number = static fn ($value): string => number_format((int) $value, 0, ',', ' ');
@@ -8,7 +9,7 @@ $hasArchive = !empty($pack['archive_key']);
 $published = $hasArchive && !empty($pack['published']);
 $paused = (int) ($pack['max_downloads'] ?? 0) === 0;
 $expected = $pack['expected_version'] ?? null;
-$outdated = $published && $expected !== null && version_compare($pack['version'], $expected, '<');
+$outdated = $published && $expected !== null && ModpackVersion::isOlder($pack['version'], $expected);
 $status = !$published ? 'Non publié' : ($outdated ? 'Out of date' : ($expected === null ? 'Compatibilité à confirmer' : 'À jour'));
 $recent = (int) ($activity['recent'] ?? 0);
 $previous = (int) ($activity['previous'] ?? 0);
@@ -86,7 +87,8 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
                 <input type="hidden" name="archive_size">
                 <?= Csrf::field() ?>
                 <h3>Publier une version</h3>
-                <label>Version<input name="version" placeholder="1.2.0" maxlength="48" required></label>
+                <label>Version<input name="version" placeholder="<?= $e(ModpackVersion::EXAMPLE) ?>" pattern="<?= $e(ModpackVersion::PATTERN) ?>"
+                    maxlength="<?= ModpackVersion::MAX_LENGTH ?>" title="Exemple : <?= $e(ModpackVersion::EXAMPLE) ?>" required></label>
                 <label>Archive .RAR<input type="file" data-archive accept=".rar,application/vnd.rar" required></label>
                 <label>Notes de version<textarea name="notes" rows="4" maxlength="3000"></textarea></label>
                 <?php if ($hasArchive): ?><p>La nouvelle archive remplace la précédente.</p><?php endif; ?>
@@ -98,7 +100,8 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
             <form method="post" action="<?= $e(url('modpacks/reglages')) ?>">
                 <?= Csrf::field() ?>
                 <h3>Régler la diffusion</h3>
-                <label>Version de référence<input name="expected_version" value="<?= $e($expected ?? '') ?>" placeholder="1.2.0" maxlength="48"></label>
+                <label>Version de référence<input name="expected_version" value="<?= $e($expected ?? '') ?>" placeholder="<?= $e(ModpackVersion::EXAMPLE) ?>" pattern="<?= $e(ModpackVersion::PATTERN) ?>"
+                    maxlength="<?= ModpackVersion::MAX_LENGTH ?>" title="Exemple : <?= $e(ModpackVersion::EXAMPLE) ?>"></label>
                 <p>Une archive plus ancienne que la version de référence est signalée « Out of date ».</p>
                 <label>Transferts simultanés (0 pour mettre en pause)<input type="number" name="max_downloads" min="0" max="16" value="<?= $e($pack['max_downloads']) ?>" required></label>
                 <label>Brider à partir de ce nombre de transferts<input type="number" name="throttle_at" min="1" max="16" value="<?= $e($pack['throttle_at']) ?>" required></label>
