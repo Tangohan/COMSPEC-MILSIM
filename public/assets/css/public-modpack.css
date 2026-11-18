@@ -107,3 +107,42 @@
 .mp-progress { width: 100%; accent-color: var(--accent); }
 .mp .mp-primary:disabled { opacity: .55; cursor: wait; }
 .mp-admin [data-upload-status]:empty { display: none; }
+
+.mp .mp-workshop-trigger {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--accent);
+    cursor: pointer;
+    text-align: left;
+}
+.mp-workshop-trigger[hidden] { display: none; }
+.mp-workshop {
+    position: fixed;
+    inset: 0;
+    width: min(100% - 32px, 540px);
+    max-height: min(100% - 32px, 620px);
+    margin: auto;
+    overflow: auto;
+    padding: 0;
+    color: var(--text);
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+.mp-workshop::backdrop { background: rgba(0, 0, 0, .76); }
+.mp-workshop form { position: relative; padding: 28px; }
+.mp-workshop h2 { margin-right: 28px; }
+.mp-workshop p { margin-bottom: 16px; color: var(--muted); }
+.mp-workshop .mp-primary { margin-top: 8px; }
+.mp-workshop-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+}

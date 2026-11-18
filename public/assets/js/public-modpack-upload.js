@@ -2,6 +2,7 @@
     const form = document.querySelector('[data-modpack-upload]');
     if (!form) return;
 
+    const messages = JSON.parse(form.dataset.uploadMessages);
     const archive = form.querySelector('[data-archive]');
     const button = form.querySelector('button[type="submit"]');
     const progress = form.querySelector('progress');
@@ -26,7 +27,7 @@
                     signal: AbortSignal.timeout(60_000),
                 });
             } catch {
-                if (attempt === 2) throw new Error('Connexion interrompue. Réessayez l’envoi.');
+                if (attempt === 2) throw new Error(messages.network);
                 await wait(500 * (attempt + 1));
                 continue;
             }
@@ -34,7 +35,7 @@
                 return {offset, blockSize: Math.floor(blockSize / 2)};
             }
             if (response.type === 'opaqueredirect' || response.status === 403) {
-                throw new Error('Session expirée ou accès refusé. Rechargez la page.');
+                throw new Error(messages.session);
             }
             if (response.status >= 500 && attempt < 2) {
                 await wait(500 * (attempt + 1));
@@ -42,7 +43,7 @@
             }
             const result = await response.json().catch(() => ({}));
             if (!response.ok || result.offset !== end) {
-                const detail = response.status === 413 ? 'La limite d’envoi du serveur est trop basse.' : 'Le bloc n’a pas été reçu.';
+                const detail = response.status === 413 ? messages.server_limit : messages.chunk_failed;
                 throw new Error(result.message || detail);
             }
             return {offset: end, blockSize};
@@ -61,7 +62,7 @@
 
         const file = archive.files[0];
         if (!file || !/\.rar$/i.test(file.name) || file.size < 7 || file.size > Number(form.dataset.maxSize)) {
-            status.textContent = 'Sélectionnez une archive .RAR de 20 Gio maximum.';
+            status.textContent = messages.invalid_file;
             return;
         }
 
@@ -71,7 +72,7 @@
         notes.readOnly = true;
         progress.hidden = false;
         progress.value = 0;
-        status.textContent = 'Envoi de l’archive…';
+        status.textContent = messages.sending;
 
         try {
             const token = Array.from(crypto.getRandomValues(new Uint8Array(16)),
@@ -85,10 +86,10 @@
 
             form.elements.upload_token.value = token;
             form.elements.archive_size.value = String(file.size);
-            status.textContent = 'Archive reçue. Vérification et publication en cours…';
+            status.textContent = messages.finalizing;
             form.submit();
         } catch (error) {
-            status.textContent = error.message || 'L’envoi a échoué.';
+            status.textContent = error.message || messages.failed;
             archive.disabled = false;
             version.readOnly = false;
             notes.readOnly = false;

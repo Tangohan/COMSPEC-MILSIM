@@ -4,116 +4,140 @@ use App\Core\Csrf;
 use App\Services\Modpack\ModpackVersion;
 
 $e = static fn ($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-$number = static fn ($value): string => number_format((int) $value, 0, ',', ' ');
+$english = locale() === 'en';
+$number = static fn ($value, int $decimals = 0): string => number_format((float) $value, $decimals, $english ? '.' : ',', $english ? ',' : ' ');
 $hasArchive = !empty($pack['archive_key']);
 $published = $hasArchive && !empty($pack['published']);
 $paused = (int) ($pack['max_downloads'] ?? 0) === 0;
 $expected = $pack['expected_version'] ?? null;
 $outdated = $published && $expected !== null && ModpackVersion::isOlder($pack['version'], $expected);
-$status = !$published ? 'Non publié' : ($outdated ? 'Out of date' : ($expected === null ? 'Compatibilité à confirmer' : 'À jour'));
+$status = !$published ? 'unpublished' : ($outdated ? 'outdated' : ($expected === null ? 'unconfirmed' : 'current'));
 $recent = (int) ($activity['recent'] ?? 0);
 $previous = (int) ($activity['previous'] ?? 0);
 $delta = $recent - $previous;
 $size = (int) ($pack['bytes'] ?? 0);
 $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZone('UTC')) : null;
 ?>
-<div class="mp" lang="fr" translate="no">
+<div class="mp" lang="<?= $e(locale()) ?>" translate="no">
 <div id="contenu" class="mp-wrap">
     <section class="mp-hero" aria-labelledby="pack-title">
         <img class="mp-cover" src="<?= $e(asset_url('assets/images/home/hero-2-1920.webp')) ?>" srcset="<?= $e(asset_url('assets/images/home/hero-2-960.webp')) ?> 960w, <?= $e(asset_url('assets/images/home/hero-2-1920.webp')) ?> 1817w" sizes="(max-width: 610px) 100vw, 1200px" alt="" fetchpriority="high">
         <div class="mp-hero-content">
-            <p class="mp-kicker hi-kicker"><span></span> ARMA 3 / TÉLÉCHARGEMENT DIRECT</p>
+            <p class="mp-kicker hi-kicker"><span></span> <?= $e(__('modpack.kicker')) ?></p>
             <h1 id="pack-title" class="hi-display">Modpack<br><em>COMSPEC</em></h1>
-            <p>Le pack de mods COMSPEC pour Arma 3, en une seule archive à installer manuellement.</p>
+            <p><?= $e(__('modpack.intro')) ?></p>
             <div class="mp-actions">
                 <?php if ($published && !$paused): ?>
                     <a class="mp-primary" href="<?= $e(url('modpacks/telecharger?archive=' . $pack['archive_key'])) ?>">
-                        Télécharger le .RAR <span class="mp-arrow mp-arrow-down" aria-hidden="true"></span>
+                        <?= $e(__('modpack.download')) ?> <span class="mp-arrow mp-arrow-down" aria-hidden="true"></span>
                     </a>
                 <?php else: ?>
-                    <span class="mp-disabled"><?= !$ready ? 'Service temporairement indisponible' : ($published ? 'Téléchargements en pause' : 'Archive à venir') ?></span>
+                    <span class="mp-disabled"><?= $e(__('modpack.' . (!$ready ? 'unavailable' : ($published ? 'paused' : 'coming')))) ?></span>
                 <?php endif; ?>
-                <a class="mp-guide" href="#installation">Guide d’installation <span class="mp-arrow" aria-hidden="true"></span></a>
-                <?php if ($admin && $ready): ?><a class="mp-guide" href="#administration">Administration <span class="mp-arrow" aria-hidden="true"></span></a><?php endif; ?>
+                <button class="mp-guide mp-workshop-trigger" type="button" data-workshop-notice hidden><?= $e(__('modpack.workshop_link')) ?></button>
+                <a class="mp-guide" href="#installation"><?= $e(__('modpack.guide')) ?> <span class="mp-arrow" aria-hidden="true"></span></a>
+                <?php if ($admin && $ready): ?><a class="mp-guide" href="#administration"><?= $e(__('modpack.admin')) ?> <span class="mp-arrow" aria-hidden="true"></span></a><?php endif; ?>
             </div>
         </div>
     </section>
 
-    <section class="mp-release" aria-label="Version et statistiques">
+    <dialog class="mp-workshop" id="mp-workshop" aria-labelledby="mp-workshop-title">
+        <form method="dialog">
+            <button class="mp-workshop-close" aria-label="<?= $e(__('modpack.workshop_close')) ?>">×</button>
+            <h2 id="mp-workshop-title"><?= $e(__('modpack.workshop_title')) ?></h2>
+            <p><?= $e(__('modpack.workshop_intro')) ?></p>
+            <p><?= $e(__('modpack.workshop_cause')) ?></p>
+            <p><?= $e(__('modpack.workshop_updates')) ?></p>
+            <button class="mp-primary"><?= $e(__('modpack.workshop_continue')) ?></button>
+        </form>
+    </dialog>
+
+    <section class="mp-release" aria-label="<?= $e(__('modpack.statistics')) ?>">
         <div class="mp-release-info">
-            <p class="mp-label">Version distribuée</p>
+            <p class="mp-label"><?= $e(__('modpack.version_distributed')) ?></p>
             <p class="mp-version"><?= $published ? 'v' . $e($pack['version']) : '—' ?></p>
-            <p class="mp-status<?= $outdated ? ' mp-warning' : ($published && $expected !== null ? ' mp-current' : '') ?>"><span aria-hidden="true"></span><?= $e($status) ?></p>
+            <p class="mp-status<?= $outdated ? ' mp-warning' : ($published && $expected !== null ? ' mp-current' : '') ?>"><span aria-hidden="true"></span><?= $e(__('modpack.' . $status)) ?></p>
         </div>
-        <div class="mp-stat"><p class="mp-label">Vues</p><strong><?= $ready ? $number($activity['views']) : '—' ?></strong><small>Total de la page</small></div>
-        <div class="mp-stat"><p class="mp-label">Téléchargements</p><strong><?= $ready ? $number($activity['downloads']) : '—' ?></strong><small>Transferts lancés</small></div>
-        <div class="mp-stat"><p class="mp-label">Tendance</p><strong><?= $ready ? $number($recent) : '—' ?></strong><small><?= !$ready || $delta === 0 ? 'Sur les 7 derniers jours' : ($delta > 0 ? '+' : '−') . $number(abs($delta)) . ' / 7 jours précédents' ?></small></div>
+        <div class="mp-stat"><p class="mp-label"><?= $e(__('modpack.views')) ?></p><strong><?= $ready ? $number($activity['views']) : '—' ?></strong><small><?= $e(__('modpack.views_total')) ?></small></div>
+        <div class="mp-stat"><p class="mp-label"><?= $e(__('modpack.downloads')) ?></p><strong><?= $ready ? $number($activity['downloads']) : '—' ?></strong><small><?= $e(__('modpack.started')) ?></small></div>
+        <div class="mp-stat"><p class="mp-label"><?= $e(__('modpack.trend')) ?></p><strong><?= $ready ? $number($recent) : '—' ?></strong><small><?= $e(!$ready || $delta === 0 ? __('modpack.last_week') : __('modpack.previous_week', ['delta' => ($delta > 0 ? '+' : '−') . $number(abs($delta))])) ?></small></div>
     </section>
 
-    <?php if ($outdated): ?><p class="mp-alert">Cette archive fournit la version <?= $e($pack['version']) ?>. La version de référence est la <?= $e($expected) ?>.</p><?php endif; ?>
+    <?php if ($outdated): ?><p class="mp-alert"><?= $e(__('modpack.outdated_detail', ['version' => $pack['version'], 'reference' => $expected])) ?></p><?php endif; ?>
 
     <div class="mp-details">
         <section id="installation" class="mp-install">
-            <h2>Installer le pack</h2>
+            <h2><?= $e(__('modpack.install')) ?></h2>
             <ol>
-                <li><div><strong>Extraire l’archive</strong><p>Décompressez le .RAR avec 7-Zip ou WinRAR dans un dossier dédié.</p></div></li>
-                <li><div><strong>Ajouter les mods locaux</strong><p>Dans le lanceur Arma 3, ouvrez <b>Mods, puis Mod local</b> et sélectionnez chaque dossier de mod extrait.</p></div></li>
-                <li><div><strong>Activer le pack</strong><p>Cochez les mods ajoutés et vérifiez la version demandée par votre serveur avant de rejoindre une partie.</p></div></li>
+                <li><div><strong><?= $e(__('modpack.extract')) ?></strong><p><?= $e(__('modpack.extract_detail')) ?></p></div></li>
+                <li><div><strong><?= $e(__('modpack.local_mods')) ?></strong><p><?= $e(__('modpack.local_mods_detail')) ?></p></div></li>
+                <li><div><strong><?= $e(__('modpack.activate')) ?></strong><p><?= $e(__('modpack.activate_detail')) ?></p></div></li>
             </ol>
         </section>
         <section class="mp-file">
-            <h2>Détails du fichier</h2>
+            <h2><?= $e(__('modpack.file_details')) ?></h2>
             <dl>
-                <div><dt>Format</dt><dd>RAR</dd></div>
-                <div><dt>Taille</dt><dd><?= $published ? ($size >= 1073741824 ? number_format($size / 1073741824, 2, ',', ' ') . ' Gio' : ($size >= 1048576 ? number_format($size / 1048576, 1, ',', ' ') . ' Mio' : $number($size) . ' octets')) : '—' ?></dd></div>
-                <div><dt>Publication</dt><dd><?= $date ? $e($date->setTimezone(new DateTimeZone('Europe/Paris'))->format('d/m/Y')) : '—' ?></dd></div>
-                <div><dt>Version de référence</dt><dd><?= $e($expected ?? '—') ?></dd></div>
+                <div><dt><?= $e(__('modpack.format')) ?></dt><dd>RAR</dd></div>
+                <div><dt><?= $e(__('modpack.size')) ?></dt><dd><?= $published ? $e($size >= 1073741824 ? $number($size / 1073741824, 2) . ' ' . __('modpack.gib') : ($size >= 1048576 ? $number($size / 1048576, 1) . ' ' . __('modpack.mib') : $number($size) . ' ' . __('modpack.bytes'))) : '—' ?></dd></div>
+                <div><dt><?= $e(__('modpack.published_on')) ?></dt><dd><?= $date ? $e($date->setTimezone(new DateTimeZone('Europe/Paris'))->format($english ? 'j M Y' : 'd/m/Y')) : '—' ?></dd></div>
+                <div><dt><?= $e(__('modpack.reference')) ?></dt><dd><?= $e($expected ?? '—') ?></dd></div>
             </dl>
-            <?php if ($published): ?><details><summary>Empreinte SHA-256</summary><code><?= $e($pack['sha256']) ?></code></details><?php endif; ?>
-            <?php if ($published && !empty($pack['release_notes'])): ?><details open><summary>Notes de version</summary><p><?= nl2br($e($pack['release_notes'])) ?></p></details><?php endif; ?>
+            <?php if ($published): ?><details><summary><?= $e(__('modpack.checksum')) ?></summary><code><?= $e($pack['sha256']) ?></code></details><?php endif; ?>
+            <?php if ($published && !empty($pack['release_notes'])): ?><details open><summary><?= $e(__('modpack.notes')) ?></summary><p><?= nl2br($e($pack['release_notes'])) ?></p></details><?php endif; ?>
         </section>
     </div>
 
     <?php if ($admin && $ready): ?>
     <section id="administration" class="mp-admin">
-        <h2>Administration</h2>
+        <h2><?= $e(__('modpack.admin')) ?></h2>
         <?php if (is_array($notice)): ?><p class="mp-alert" role="<?= $notice['error'] ? 'alert' : 'status' ?>"><?= $e($notice['text']) ?></p><?php endif; ?>
         <div class="mp-admin-grid">
             <form method="post" action="<?= $e(url('modpacks/publier')) ?>" data-modpack-upload
+                  data-upload-messages="<?= $e(json_encode([
+                      'network' => __('modpack.js_network'),
+                      'session' => __('modpack.js_session'),
+                      'server_limit' => __('modpack.js_server_limit'),
+                      'chunk_failed' => __('modpack.js_chunk_failed'),
+                      'invalid_file' => __('modpack.js_invalid_file'),
+                      'sending' => __('modpack.js_sending'),
+                      'finalizing' => __('modpack.js_finalizing'),
+                      'failed' => __('modpack.js_failed'),
+                  ], JSON_THROW_ON_ERROR)) ?>"
                   data-block-url="<?= $e(url('modpacks/bloc')) ?>"
                   data-block-size="<?= \App\Services\Modpack\ModpackUpload::MAX_BLOCK_BYTES ?>"
                   data-max-size="<?= \App\Services\Modpack\ModpackUpload::MAX_ARCHIVE_BYTES ?>">
                 <input type="hidden" name="upload_token">
                 <input type="hidden" name="archive_size">
                 <?= Csrf::field() ?>
-                <h3>Publier une version</h3>
-                <label>Version<input name="version" placeholder="<?= $e(ModpackVersion::EXAMPLE) ?>" pattern="<?= $e(ModpackVersion::PATTERN) ?>"
-                    maxlength="<?= ModpackVersion::MAX_LENGTH ?>" title="Exemple : <?= $e(ModpackVersion::EXAMPLE) ?>" required></label>
-                <label>Archive .RAR<input type="file" data-archive accept=".rar,application/vnd.rar" required></label>
-                <label>Notes de version<textarea name="notes" rows="4" maxlength="3000"></textarea></label>
-                <?php if ($hasArchive): ?><p>La nouvelle archive remplace la précédente.</p><?php endif; ?>
-                <progress class="mp-progress" max="100" value="0" aria-label="Progression de l’envoi" hidden></progress>
+                <h3><?= $e(__('modpack.publish_version')) ?></h3>
+                <label><?= $e(__('modpack.version')) ?><input name="version" placeholder="<?= $e(ModpackVersion::EXAMPLE) ?>" pattern="<?= $e(ModpackVersion::PATTERN) ?>"
+                    maxlength="<?= ModpackVersion::MAX_LENGTH ?>" title="<?= $e(__('modpack.example', ['version' => ModpackVersion::EXAMPLE])) ?>" required></label>
+                <label><?= $e(__('modpack.rar')) ?><input type="file" data-archive accept=".rar,application/vnd.rar" required></label>
+                <label><?= $e(__('modpack.notes')) ?><textarea name="notes" rows="4" maxlength="3000"></textarea></label>
+                <?php if ($hasArchive): ?><p><?= $e(__('modpack.replacement')) ?></p><?php endif; ?>
+                <progress class="mp-progress" max="100" value="0" aria-label="<?= $e(__('modpack.progress')) ?>" hidden></progress>
                 <p data-upload-status role="status"></p>
-                <noscript><p>Activez JavaScript pour envoyer l’archive par blocs.</p></noscript>
-                <button class="mp-primary" type="submit" disabled>Publier le pack <span class="mp-arrow" aria-hidden="true"></span></button>
+                <noscript><p><?= $e(__('modpack.js_required')) ?></p></noscript>
+                <button class="mp-primary" type="submit" disabled><?= $e(__('modpack.publish')) ?> <span class="mp-arrow" aria-hidden="true"></span></button>
             </form>
             <form method="post" action="<?= $e(url('modpacks/reglages')) ?>">
                 <?= Csrf::field() ?>
-                <h3>Régler la diffusion</h3>
-                <label>Version de référence<input name="expected_version" value="<?= $e($expected ?? '') ?>" placeholder="<?= $e(ModpackVersion::EXAMPLE) ?>" pattern="<?= $e(ModpackVersion::PATTERN) ?>"
-                    maxlength="<?= ModpackVersion::MAX_LENGTH ?>" title="Exemple : <?= $e(ModpackVersion::EXAMPLE) ?>"></label>
-                <p>Une archive plus ancienne que la version de référence est signalée « Out of date ».</p>
-                <label>Transferts simultanés (0 pour mettre en pause)<input type="number" name="max_downloads" min="0" max="16" value="<?= $e($pack['max_downloads']) ?>" required></label>
-                <label>Brider à partir de ce nombre de transferts<input type="number" name="throttle_at" min="1" max="16" value="<?= $e($pack['throttle_at']) ?>" required></label>
-                <label>Débit maximal des nouveaux transferts bridés (Mio/s)<input type="number" name="throttle_mib" min="1" max="64" value="<?= $e($pack['throttle_mib']) ?>" required></label>
-                <label class="mp-check"><input type="checkbox" name="published" value="1" <?= $published ? 'checked' : '' ?> <?= $hasArchive ? '' : 'disabled' ?>> Archive visible et téléchargeable</label>
-                <button class="mp-primary" type="submit">Enregistrer les réglages</button>
+                <h3><?= $e(__('modpack.settings')) ?></h3>
+                <label><?= $e(__('modpack.reference')) ?><input name="expected_version" value="<?= $e($expected ?? '') ?>" placeholder="<?= $e(ModpackVersion::EXAMPLE) ?>" pattern="<?= $e(ModpackVersion::PATTERN) ?>"
+                    maxlength="<?= ModpackVersion::MAX_LENGTH ?>" title="<?= $e(__('modpack.example', ['version' => ModpackVersion::EXAMPLE])) ?>"></label>
+                <p><?= $e(__('modpack.reference_detail')) ?></p>
+                <label><?= $e(__('modpack.concurrent')) ?><input type="number" name="max_downloads" min="0" max="16" value="<?= $e($pack['max_downloads']) ?>" required></label>
+                <label><?= $e(__('modpack.threshold')) ?><input type="number" name="throttle_at" min="1" max="16" value="<?= $e($pack['throttle_at']) ?>" required></label>
+                <label><?= $e(__('modpack.speed')) ?><input type="number" name="throttle_mib" min="1" max="64" value="<?= $e($pack['throttle_mib']) ?>" required></label>
+                <label class="mp-check"><input type="checkbox" name="published" value="1" <?= $published ? 'checked' : '' ?> <?= $hasArchive ? '' : 'disabled' ?>> <?= $e(__('modpack.visibility')) ?></label>
+                <button class="mp-primary" type="submit"><?= $e(__('modpack.save')) ?></button>
             </form>
         </div>
     </section>
     <?php endif; ?>
 </div>
 </div>
+<script src="<?= $e(asset_url('assets/js/public-modpack-workshop.js')) ?>" defer></script>
 <?php if ($admin && $ready): ?>
 <script src="<?= $e(asset_url('assets/js/public-modpack-upload.js')) ?>" defer></script>
 <?php endif; ?>
