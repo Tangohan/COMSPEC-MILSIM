@@ -78,14 +78,22 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
         <h2>Administration</h2>
         <?php if (is_array($notice)): ?><p class="mp-alert" role="<?= $notice['error'] ? 'alert' : 'status' ?>"><?= $e($notice['text']) ?></p><?php endif; ?>
         <div class="mp-admin-grid">
-            <form method="post" enctype="multipart/form-data" action="<?= $e(url('modpacks/publier')) ?>">
+            <form method="post" action="<?= $e(url('modpacks/publier')) ?>" data-modpack-upload
+                  data-block-url="<?= $e(url('modpacks/bloc')) ?>"
+                  data-block-size="<?= \App\Services\Modpack\ModpackUpload::MAX_BLOCK_BYTES ?>"
+                  data-max-size="<?= \App\Services\Modpack\ModpackUpload::MAX_ARCHIVE_BYTES ?>">
+                <input type="hidden" name="upload_token">
+                <input type="hidden" name="archive_size">
                 <?= Csrf::field() ?>
                 <h3>Publier une version</h3>
                 <label>Version<input name="version" placeholder="1.2.0" maxlength="48" required></label>
-                <label>Archive .RAR<input type="file" name="archive" accept=".rar,application/vnd.rar" required></label>
+                <label>Archive .RAR<input type="file" data-archive accept=".rar,application/vnd.rar" required></label>
                 <label>Notes de version<textarea name="notes" rows="4" maxlength="3000"></textarea></label>
                 <?php if ($hasArchive): ?><p>La nouvelle archive remplace la précédente.</p><?php endif; ?>
-                <button class="mp-primary" type="submit">Publier le pack <span class="mp-arrow" aria-hidden="true"></span></button>
+                <progress class="mp-progress" max="100" value="0" aria-label="Progression de l’envoi" hidden></progress>
+                <p data-upload-status role="status"></p>
+                <noscript><p>Activez JavaScript pour envoyer l’archive par blocs.</p></noscript>
+                <button class="mp-primary" type="submit" disabled>Publier le pack <span class="mp-arrow" aria-hidden="true"></span></button>
             </form>
             <form method="post" action="<?= $e(url('modpacks/reglages')) ?>">
                 <?= Csrf::field() ?>
@@ -103,3 +111,6 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
     <?php endif; ?>
 </div>
 </div>
+<?php if ($admin && $ready): ?>
+<script src="<?= $e(asset_url('assets/js/public-modpack-upload.js')) ?>" defer></script>
+<?php endif; ?>

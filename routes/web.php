@@ -1141,6 +1141,7 @@ return function (Router $router) {
     $modpack = \App\Controllers\Web\PublicModpackController::class;
     $router->get('/modpacks', [$modpack, 'index']);
     $router->get('/modpacks/telecharger', [$modpack, 'download']);
+    $router->post('/modpacks/bloc', [$modpack, 'uploadBlock'], [AuthMiddleware::class]);
     $router->post('/modpacks/publier', [$modpack, 'publish'], [AuthMiddleware::class]);
     $router->post('/modpacks/reglages', [$modpack, 'configure'], [AuthMiddleware::class]);
     foreach (['/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
