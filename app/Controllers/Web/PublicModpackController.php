@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\PublicModpackRepository;
+use App\Services\Modpack\ModpackUpload;
 
 final class PublicModpackController
 {
@@ -51,48 +52,94 @@ final class PublicModpackController
         ])->header('Cache-Control', 'private, no-store')->setStatusCode($ready ? 200 : 503);
     }
 
+    public function uploadBlock(Request $request): Response
+    {
+        if (!Gate::getInstance()->isPlatformAdmin() || !Csrf::verify($request)) {
+            return Response::json(['message' => 'Session expirée ou accès refusé.'], 403);
+        }
+        $token = $request->inputString('upload_token');
+        $offset = filter_var($request->input('offset'), FILTER_VALIDATE_INT);
+        $block = $_FILES['block'] ?? [];
+        $size = $block['size'] ?? 0;
+        if (!ModpackUpload::validToken($token) || $offset === false || $offset < 0) {
+            return Response::json(['message' => 'Position ou identifiant d’envoi invalide.'], 400);
+        }
+        if (($block['error'] ?? null) !== UPLOAD_ERR_OK || !is_int($size) || $size < 1
+            || $size > ModpackUpload::MAX_BLOCK_BYTES || !is_uploaded_file($block['tmp_name'])) {
+            return Response::json(['message' => 'Bloc manquant ou trop volumineux.'], 400);
+        }
+        $bytes = @file_get_contents($block['tmp_name'], false, null, 0, ModpackUpload::MAX_BLOCK_BYTES);
+        if ($bytes === false || strlen($bytes) !== $size) {
+            return Response::json(['message' => 'Bloc incomplet.'], 400);
+        }
+
+        try {
+            $this->prepareStorage();
+            $nextOffset = $this->upload()->append($token, $offset, $bytes);
+        } catch (\DomainException $e) {
+            return Response::json(['message' => $e->getMessage()], 422);
+        } catch (\RuntimeException $e) {
+            return Response::json(['message' => $e->getMessage()], 503);
+        }
+
+        return Response::json(['offset' => $nextOffset]);
+    }
+
     public function publish(Request $request): Response
     {
-        if (!Gate::getInstance()->isPlatformAdmin()) {
-            return $this->error(403, 'Accès réservé aux administrateurs de la plateforme.');
-        }
-        if (!Csrf::verify($request)) {
-            return $this->error(403, 'Session expirée ou formulaire trop volumineux.');
+        if (!Gate::getInstance()->isPlatformAdmin() || !Csrf::verify($request)) {
+            return $this->error(403, 'Session expirée ou accès refusé.');
         }
 
         $version = trim($request->inputString('version'));
         $notes = trim($request->inputString('notes'));
-        $upload = $_FILES['archive'] ?? [];
+        $token = $request->inputString('upload_token');
+        $size = filter_var($request->input('archive_size'), FILTER_VALIDATE_INT);
         if (!preg_match(self::VERSION, $version) || mb_strlen($notes) > 3000) {
             return $this->notice('Vérifiez la version et les notes de publication.', true);
         }
-        if (($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            return $this->notice('Archive manquante ou envoi incomplet. Vérifiez la limite de taille du serveur.', true);
+        if (!ModpackUpload::validToken($token) || $size === false || $size < 1 || $size > ModpackUpload::MAX_ARCHIVE_BYTES) {
+            return $this->notice('L’archive doit être envoyée avant la publication.', true);
+        }
+        $upload = $this->upload();
+        try {
+            $this->prepareStorage();
+            $upload->locked(fn () => $this->publishArchive($upload->path($token), $version, $notes, $size));
+        } catch (\DomainException | \RuntimeException $e) {
+            if ($e instanceof \PDOException) {
+                throw $e;
+            }
+            return $this->notice($e->getMessage(), true);
         }
 
-        $tmp = $upload['tmp_name'];
-        $signature = is_uploaded_file($tmp) ? file_get_contents($tmp, false, null, 0, 8) : false;
-        if (strtolower(pathinfo($upload['name'], PATHINFO_EXTENSION)) !== 'rar'
-            || !is_string($signature)
-            || (!str_starts_with($signature, "Rar!\x1a\x07\x00") && $signature !== "Rar!\x1a\x07\x01\x00")) {
-            return $this->notice('Sélectionnez une archive RAR valide.', true);
+        return $this->notice('La version ' . $version . ' est publiée.');
+    }
+
+    private function publishArchive(string $tmp, string $version, string $notes, int $size): void
+    {
+        if (@filesize($tmp) !== $size) {
+            throw new \DomainException('L’archive est incomplète. Relancez son envoi.');
+        }
+        set_time_limit(0);
+        $hash = @hash_file('sha256', $tmp);
+        if ($hash === false) {
+            throw new \RuntimeException('Impossible de calculer l’empreinte de l’archive.');
         }
 
-        $this->prepareStorage();
-        $lock = fopen($this->directory() . '/publish.lock', 'c');
-        if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
-            return $this->notice('Une publication est déjà en cours. Réessayez dans un instant.', true);
+        $lock = @fopen($this->directory() . '/publish.lock', 'c');
+        if (!$lock) {
+            throw new \RuntimeException('Impossible de préparer la publication.');
         }
         try {
+            if (!flock($lock, LOCK_EX | LOCK_NB)) {
+                throw new \RuntimeException('Une publication est déjà en cours. Réessayez dans un instant.');
+            }
             $previous = $this->packs->current()['archive_key'] ?? null;
             $key = bin2hex(random_bytes(16));
-            $path = $this->archivePath($key);
-            $size = filesize($tmp);
-            $hash = hash_file('sha256', $tmp);
-            if (!$size || !$hash || !move_uploaded_file($tmp, $path)) {
-                return $this->notice('Impossible de stocker cette archive.', true);
+            if (!@rename($tmp, $this->archivePath($key))) {
+                throw new \RuntimeException('Impossible de stocker cette archive.');
             }
-            // Conserver le nouveau fichier en cas d'erreur SQL ambiguë après validation.
+            // Conserver le fichier en cas d’erreur SQL ambiguë après validation.
             $this->packs->publish($key, $version, $notes, $size, $hash);
             if (is_string($previous) && preg_match('/\A[a-f0-9]{32}\z/', $previous)) {
                 @unlink($this->archivePath($previous));
@@ -100,8 +147,11 @@ final class PublicModpackController
         } finally {
             fclose($lock);
         }
+    }
 
-        return $this->notice('La version ' . $version . ' est publiée.');
+    private function upload(): ModpackUpload
+    {
+        return new ModpackUpload($this->directory(), (int) Session::get('user_id'));
     }
 
     public function configure(Request $request): Response

@@ -103,3 +103,7 @@
 }
 
 .site-marketing--modpacks .site-marketing__main { background: var(--hi-void); }
+
+.mp-progress { width: 100%; accent-color: var(--accent); }
+.mp .mp-primary:disabled { opacity: .55; cursor: wait; }
+.mp-admin [data-upload-status]:empty { display: none; }
