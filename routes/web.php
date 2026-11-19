@@ -1774,6 +1774,7 @@ return function (Router $router) {
     $router->post('/admin/system/donnees/action', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Charge de l'application (requêtes par route et par communauté, erreurs, tendance), seuils d'alerte et priorité sous charge.
+    $router->get('/admin/system/securite', [\App\Controllers\Admin\System\SystemSecurityController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/surcharge', [\App\Controllers\Admin\System\SystemLoadController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/surcharge/reglages', [\App\Controllers\Admin\System\SystemLoadController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Activités anormales détectées dans les envois du mod : alertes à décider par un humain, jamais de blocage automatique.

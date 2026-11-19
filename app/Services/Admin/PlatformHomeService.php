@@ -161,6 +161,7 @@ final class PlatformHomeService
     public static function quickLinks(): array
     {
         return [
+            ['key' => 'security', 'href' => 'admin/system/securite'],
             ['key' => 'users', 'href' => 'admin/users'],
             ['key' => 'tenants', 'href' => 'admin/tenants'],
             ['key' => 'plans', 'href' => 'admin/system/subscription-plans'],
