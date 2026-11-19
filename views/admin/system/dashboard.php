@@ -104,13 +104,13 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
     <?php
 };
 ?>
-<div class="pa">
+<div class="pa"<?= $homeTab === 'vue' ? ' data-platform-dashboard' : '' ?>>
     <div class="pa__frame">
         <header class="pa-hero pa-hero--compact">
             <div class="pa-hero__row">
                 <div>
-                    <p class="pa-hero__kicker">Administration du site</p>
-                    <h1 class="pa-hero__title">Pilotage du site</h1>
+                    <?php if ($homeTab !== 'vue'): ?><p class="pa-hero__kicker">Administration du site</p><?php endif; ?>
+                    <h1 class="pa-hero__title"><?= $homeTab === 'vue' ? 'Administration du site' : 'Pilotage du site' ?></h1>
                     <form class="pa-search" method="get" action="<?= $h(url('admin/recherche')) ?>" role="search">
                         <label for="pa-dash-search" class="ath-sr-only">Rechercher un compte ou une communauté</label>
                         <input id="pa-dash-search" name="q" type="search" autocomplete="off" spellcheck="false"
@@ -140,6 +140,7 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
 
         <div class="pa-panel">
 <?php if ($homeTab === 'vue'): ?>
+            <?php if (isset($dashboardActivity)) { require base_path('views/admin/partials/dashboard_activity.php'); } ?>
             <section id="hub-moderation" class="ph-block" aria-labelledby="ph-actions-title">
                 <h2 id="ph-actions-title" class="ph-block__title">À traiter</h2>
                 <ul class="ph-grid ph-grid--actions">
