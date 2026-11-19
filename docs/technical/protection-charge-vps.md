@@ -17,6 +17,13 @@ La page `Administration > Exploitation > Charge et surcharge` ne mesure que les 
 Elle ne dit rien de l'état du réseau, de ce que nginx ou le pare-feu ont refusé, ni de l'attente dans la file de PHP-FPM.
 Un site saturé en amont peut donc y sembler calme : recoupez avec les journaux nginx et l'état de PHP-FPM (section 3).
 
+## Vérifications de production
+
+- Vérifier dans la configuration effective (`nginx -T`) que la zone `athena_auth` est définie et appliquée au bloc PHP du vhost. Vérifier sur les journaux agrégés que les requêtes sont attribuées aux IP des clients, sans journaliser les en-têtes d’authentification.
+- Surveiller le message PHP `Authentication rate limit storage unavailable` et le taux de 503 sur les POST de connexion et de récupération. Vérifier l’espace, les inodes et les droits du répertoire `storage/cache/ratelimit` avec l’identité du pool PHP-FPM.
+- Recouper les 429 de l’application, les refus nginx et les métriques du CDN ou de l’hébergeur avec les échecs du panneau Athena. Les refus en amont n’apparaissent pas dans le journal des tentatives.
+- Vérifier l’inventaire des images SSE déjà déplacées et la règle de refus des anciens chemins dans le vhost actif. Le modèle se trouve dans `docs/nginx.example.conf`.
+
 ## 2. nginx : limites par IP et par route
 
 ### Joueurs derrière une même adresse
@@ -44,7 +51,7 @@ map $athena_is_api $athena_k_api  { 1 $binary_remote_addr; default ""; }
 # Connexion, inscription, récupération de mot de passe, ouverture de session du jeu.
 map $request_uri $athena_k_auth {
     default "";
-    ~^/(public/)?(login|register|forgot-password|reset-password|resend-verification|connect/code|atak/connect/code)(\?|/|$) $binary_remote_addr;
+    ~^/(public/)*(login|register|forgot-password|reset-password|resend-verification|connect/code|atak/connect/code)(\?|/|$) $binary_remote_addr;
     ~^/(public/)?api/(game/v1/auth|atak/game-link|atak/pair|atak/recovery)                                                     $binary_remote_addr;
 }
 

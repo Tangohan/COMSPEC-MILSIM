@@ -37,6 +37,29 @@ class LoginAttemptRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /** Temporisation calculée à partir du dernier échec pour cette adresse et cette IP. */
+    public function retryDelay(string $email, string $ip): int
+    {
+        $emailEq = SqlText::equals($this->pdo, 'email');
+        $ipEq = SqlText::equals($this->pdo, 'ip');
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) AS failures, TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()) AS elapsed
+             FROM login_attempts
+             WHERE ' . $emailEq . ' AND ' . $ipEq . ' AND success = 0
+               AND created_at >= NOW() - INTERVAL 15 MINUTE'
+        );
+        $stmt->execute([$email, $ip]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $failures = (int) ($row['failures'] ?? 0);
+        if ($failures < 5) {
+            return 0;
+        }
+
+        $cooldown = min(120, 15 * ($failures - 4));
+
+        return max(0, $cooldown - max(0, (int) $row['elapsed']));
+    }
+
     /** @return array{sources: list<array<string, mixed>>, targets: list<array<string, mixed>>, successful: list<array<string, mixed>>} */
     public function securitySignals(): array
     {
