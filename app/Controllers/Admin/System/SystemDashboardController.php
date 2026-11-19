@@ -13,14 +13,14 @@ use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\PlatformAlertRepository;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
+use App\Services\Admin\PlatformDashboardActivity;
 use App\Services\Admin\PlatformAccountsOverviewService;
 use App\Services\Admin\PlatformHealthDigest;
 use App\Services\Admin\PlatformHomeService;
 use App\Services\Audit\AuditAction;
 
 /**
- * Accueil de l'administration du site. La vue d'ensemble ne charge que quatre blocs courts (à traiter, santé,
- * chiffres clés, accès rapides) ; le détail est réparti en onglets à adresse propre, calculés seulement à l'ouverture.
+ * Accueil de l'administration du site. La vue d'ensemble ne charge que les indicateurs d’activité et les accès principaux ; le détail est réparti en onglets à adresse propre, calculés seulement à l'ouverture.
  */
 class SystemDashboardController
 {
@@ -66,22 +66,26 @@ class SystemDashboardController
             'adminHealthCheckUrl' => url('api/health'),
             'backOfficePageCss' => ['platform-admin.css', 'ops-console.css', 'platform-admin-users.css'],
         ];
+        if ($tab === 'vue') {
+            $data['backOfficePageCss'][] = 'platform-admin-dashboard.css';
+        }
         $data += match ($tab) {
             'sante' => $this->santeData(),
             'chiffres' => $this->chiffresData(),
             'activite' => $this->activiteData(),
-            default => $this->vueData(),
+            default => $this->vueData((int) $request->query('days', 14)),
         };
 
         return Response::view('layout.main', $data);
     }
 
     /** @return array<string, mixed> */
-    private function vueData(): array
+    private function vueData(int $days): array
     {
         $home = new PlatformHomeService();
 
         return [
+            'dashboardActivity' => (new PlatformDashboardActivity())->overview($days),
             'homeActions' => $home->actions(),
             'homeHealth' => $home->health(),
             'homeFigures' => $home->figures(),

@@ -28,6 +28,18 @@ final class PublicModpackRepository
             VALUES (UTC_DATE(), 1) ON DUPLICATE KEY UPDATE downloads = downloads + 1');
     }
 
+    /** @return list<array{day: string, total: int}> */
+    public function dailyDownloads(string $start, string $end): array
+    {
+        $statement = $this->pdo()->prepare(
+            'SELECT activity_date AS day, downloads AS total FROM public_modpack_daily
+             WHERE activity_date >= ? AND activity_date < ?'
+        );
+        $statement->execute([$start, $end]);
+
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function activity(): array
     {
         return $this->pdo()->query('SELECT COALESCE(SUM(views), 0) AS views,
