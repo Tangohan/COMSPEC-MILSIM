@@ -50,7 +50,9 @@ La colonne récente garde sa collation : son index reste utilisé. Sous SQLite, 
 - Pour chaque table de `TableCollationAligner::RECENT_TABLES` (tables des étapes 4000 et suivantes, plus les deux tables créées à la volée), lance `ALTER TABLE … CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`, avec ces conditions :
   - la table ou l'une de ses colonnes texte n'est pas en `utf8mb4_unicode_ci` ;
   - elle compte au plus 200 000 lignes et 256 Mo (estimation `information_schema`) ;
-  - aucune de ses colonnes n'est en `…_bin` ni dans un autre jeu de caractères ;
+  - aucune de ses colonnes texte n'est en `…_bin` ni dans un autre jeu de caractères ; les colonnes JSON natives
+    sont ignorées, car MySQL leur impose `utf8mb4_bin` et MariaDB les expose comme `LONGTEXT utf8mb4_bin` avec un
+    contrôle `json_valid()` ;
   - le verrou est obtenu en moins de 10 s (`lock_wait_timeout`).
 
   Dans tous les autres cas, la table est laissée telle quelle avec un message `[ATTENTION]`.

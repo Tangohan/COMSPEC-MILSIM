@@ -212,6 +212,45 @@ final class RecentTablesCollationMysqlTest extends TestCase
         self::assertStringContainsString('Table user_community_membership_periods déjà présente', $second);
     }
 
+    public function testNativeJsonBinaryCollationIsIgnoredButBinaryTextStillBlocksConversion(): void
+    {
+        self::assertContains(
+            $this->collation('atak_certificates', 'metadata_json'),
+            ['', 'utf8mb4_bin'],
+            'MySQL expose JSON sans collation ; MariaDB expose son alias LONGTEXT en utf8mb4_bin.'
+        );
+
+        $this->pdo->exec(
+            'CREATE TABLE binary_collation_probe (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                payload LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
+                PRIMARY KEY (id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+        $messages = '';
+        $aligner = new TableCollationAligner($this->pdo, static function (string $message) use (&$messages): void {
+            $messages .= $message;
+        });
+
+        self::assertSame([], $aligner->divergingColumns('atak_certificates'), 'Le JSON natif en utf8mb4_bin est attendu.');
+        self::assertSame(
+            ['payload' => 'utf8mb4_bin'],
+            $aligner->divergingColumns('binary_collation_probe'),
+            'Un vrai texte binaire reste divergent.'
+        );
+        self::assertSame(
+            [
+                'converted' => [],
+                'already' => ['atak_certificates'],
+                'missing' => [],
+                'skipped' => ['binary_collation_probe'],
+            ],
+            $aligner->align(['atak_certificates', 'binary_collation_probe'])
+        );
+        self::assertStringNotContainsString('atak_certificates laissée telle quelle', $messages);
+        self::assertStringContainsString('binary_collation_probe laissée telle quelle : colonne payload en utf8mb4_bin', $messages);
+    }
+
     private function runStep(): string
     {
         $pdo = $this->pdo;
