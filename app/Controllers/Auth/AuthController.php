@@ -421,11 +421,19 @@ class AuthController
         }
         Session::forget('pending_community_selection');
 
-        $email = strtolower(trim((string) $request->input('email')));
-        $password = (string) $request->input('password');
+        $email = strtolower(trim($request->inputString('email')));
+        $password = $request->inputString('password');
         if ($email === '' || $password === '') {
             Session::flash('error', __('auth.flash_email_password_required'));
             return Response::redirect(url('login'));
+        }
+
+        $retryDelay = $this->loginSecurityNotifications->retryDelay($request, $email);
+        if ($retryDelay > 0) {
+            return Response::view('errors.429', ['title' => 'Trop de requêtes'])
+                ->setStatusCode(429)
+                ->header('Retry-After', (string) $retryDelay)
+                ->header('Cache-Control', 'no-store');
         }
 
         // Délai de rétractation dépassé : le compte est supprimé, pas rouvert par la connexion.

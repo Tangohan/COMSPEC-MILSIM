@@ -1485,16 +1485,20 @@ class UserRepository
      *
      * @return list<int>
      */
-    public function listIdsByEmailNormalized(string $email): array
+    public function listIdsByEmailNormalized(string $email, bool $verifiedOnly = false): array
     {
         $email = strtolower(trim($email));
         if ($email === '') {
+            return [];
+        }
+        if ($verifiedOnly && !$this->hasEmailVerifiedColumn()) {
             return [];
         }
         $freed = $this->sqlEmailStillClaimedPredicate('users');
         $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
         $stmt = $this->pdo()->prepare(
             'SELECT id FROM users WHERE ' . $emailEq . ' AND ' . $freed['sql']
+                . ($verifiedOnly ? ' AND email_verified_at IS NOT NULL' : '')
         );
         $stmt->execute(array_merge([$email], $freed['params']));
         $out = [];
