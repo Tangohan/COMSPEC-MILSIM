@@ -46,7 +46,7 @@ $tileLabels = [
     'subscriptions' => 'Abonnements actifs',
 ];
 $loadLevels = [0 => 'Normal', 1 => 'Charge élevée', 2 => 'Charge forte', 3 => 'Saturation'];
-$quickLabels = ['users' => 'Comptes', 'tenants' => 'Communautés', 'plans' => 'Formules', 'payments' => 'Paiements'];
+$quickLabels = ['security' => 'Surveillance de la sécurité', 'users' => 'Comptes', 'tenants' => 'Communautés', 'plans' => 'Formules', 'payments' => 'Paiements'];
 /** Une carte : lien vers la page où agir. */
 $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loadLevels): void {
     $key = (string) $c['key'];

@@ -86,6 +86,7 @@ final class MigrationActiveQueueTest extends TestCase
         $pdo = new MysqlDdlSqlitePdo();
         foreach ([
             'CREATE TABLE tenants (id INTEGER PRIMARY KEY, name TEXT, slug TEXT)',
+            'CREATE TABLE login_attempts (id INTEGER PRIMARY KEY, success INTEGER, created_at TEXT)',
             'CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT, callsign TEXT, steam_id TEXT, deleted_at TEXT)',
             'CREATE TABLE units (id INTEGER PRIMARY KEY, tenant_id INTEGER, name TEXT)',
             'CREATE TABLE arsenal_wardrobes (id INTEGER PRIMARY KEY, tenant_id INTEGER, user_id INTEGER, collection_id INTEGER)',
