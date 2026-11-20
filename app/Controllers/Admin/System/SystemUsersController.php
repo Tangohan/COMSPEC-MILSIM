@@ -29,8 +29,10 @@ use App\Support\PlatformUserColumns;
 use App\Support\PlatformUsersDirectoryQuery;
 use App\Support\PortalAccessChoice;
 use App\Repositories\AccountPurgeRequestRepository;
+use App\Repositories\AuditLogRepository;
 use App\Repositories\LoginAttemptRepository;
 use App\Repositories\PlatformAccountBanRepository;
+use App\Repositories\PlatformBanAppealRepository;
 use App\Services\Account\PlatformAccountBanService;
 use App\Services\Account\PlatformBanNotice;
 
@@ -896,6 +898,29 @@ final class SystemUsersController
             $survivorPreviewId > 0 ? $survivorPreviewId : null
         );
 
+        $liveIds = $this->users->listIdsByEmailNormalized($email);
+        $ban = $this->bans()->findActiveForEmail($email);
+        $history = $this->bans()->historyForEmail($email);
+        $lastBanId = (int) ($ban['id'] ?? $history[0]['id'] ?? 0);
+        $appeal = null;
+        $activity = null;
+        try {
+            $activity = (new AuditLogRepository())->recentActionsByUsers($liveIds);
+        } catch (\PDOException) {
+        }
+        if ($lastBanId > 0) {
+            try {
+                $appeals = new PlatformBanAppealRepository();
+                if ($appeals->ready()) {
+                    $row = $appeals->find($lastBanId);
+                    if ($row !== null) {
+                        $appeal = ['ban_id' => $lastBanId, 'reviewed' => !empty($row['reviewed_at'])];
+                    }
+                }
+            } catch (\PDOException) {
+            }
+        }
+
         return Response::view('layout.main', [
             'title' => 'Dossier personne',
             'content' => 'admin.system.user_person',
@@ -908,17 +933,22 @@ final class SystemUsersController
             'personCivil' => $civil,
             'personHasLiveOrg' => $hasLiveOrg,
             'personMemberships' => $dossierMemberships,
+            'personAllMemberships' => $memberships,
+            'personActivity' => $activity,
+            'personAppeal' => $appeal,
             'personMergePreview' => $mergePreview,
             'personIsPlatformAdmin' => $this->users->emailHasPlatformAdmin($email),
-            'personBan' => $this->bans()->findActiveForEmail($email),
-            'personBanHistory' => $this->bans()->historyForEmail($email),
+            'personBan' => $ban,
+            'personBanHistory' => $history,
             'personBanSupportsEnd' => $this->bans()->supportsEndDate(),
             'personBanSupportsNotice' => $this->bans()->supportsNotices(),
-            'personLiveFiches' => count($this->users->listIdsByEmailNormalized($email)),
+            'personLiveFiches' => count($liveIds),
+            'personIsSelf' => in_array((int) Session::get('user_id'), $liveIds, true),
+            'personSupportsMemberships' => $this->users->hasCommunityMembershipTable(),
             'personKnownIps' => $this->knownIpsWithBlockState($email),
             'isPlatformAdminShell' => true,
-            'backOfficePageCss' => ['platform-admin-users.css'],
-        ]);
+            'backOfficePageCss' => ['platform-admin-users.css', 'platform-admin-person.css', 'platform-admin-picker.css'],
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function platformAdmins(Request $request, array $params = []): Response
@@ -1212,6 +1242,11 @@ final class SystemUsersController
             return Response::redirect($this->backUrl($request));
         }
 
+        if ($status === 'active' && $this->bans()->findActiveForEmail((string) ($target['email'] ?? '')) !== null) {
+            Session::flash('error', 'Levez le bannissement du site avant de réactiver ce compte.');
+
+            return Response::redirect($this->backUrl($request));
+        }
         $ok = $this->users->update($userId, $tenantId, ['status' => $status]);
         if (!$ok) {
             Session::flash('error', 'Impossible de mettre à jour ce compte.');

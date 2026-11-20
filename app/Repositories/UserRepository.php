@@ -4357,6 +4357,8 @@ class UserRepository
         }
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $hasAthena = $this->hasAthenaIdentifierColumn();
+        $lastLoginSelect = $this->hasLastLoginColumn() ? 'u.last_login_at' : 'NULL AS last_login_at';
+        $verifiedSelect = $this->hasEmailVerifiedColumn() ? 'u.email_verified_at' : 'NULL AS email_verified_at';
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
         $athenaSelect = $hasAthena ? 'COALESCE(p.athena_identifier, u.athena_identifier)' : "''";
         $pdo = $this->pdo();
@@ -4378,7 +4380,7 @@ class UserRepository
                         COALESCE(p.grade_id, u.grade_id) AS grade_id,
                         COALESCE(p.role_id, u.role_id) AS role_id,
                         COALESCE(p.created_at, u.created_at) AS created_at,
-                        u.updated_at,
+                        u.updated_at, u.status AS account_status, u.created_at AS account_created_at, {$lastLoginSelect}, {$verifiedSelect},
                         COALESCE(p.profile_slug, u.profile_slug) AS profile_slug,
                         {$deletedSelect}, {$athenaSelect} AS athena_identifier,
                         t.name AS tenant_name, t.slug AS tenant_slug,
@@ -4417,6 +4419,7 @@ class UserRepository
         $stmt = $this->pdo()->prepare(
             "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.steam_id,
                     u.avatar_url, u.grade_id, u.role_id, u.created_at, u.updated_at, u.profile_slug,
+                    u.status AS account_status, u.created_at AS account_created_at, {$lastLoginSelect}, {$verifiedSelect},
                     {$deletedSelect}, {$athenaSelect},
                     t.name AS tenant_name, t.slug AS tenant_slug,
                     r.name AS role_name,

@@ -25,25 +25,16 @@ $knownIps = is_array($personKnownIps ?? null) ? $personKnownIps : [];
 $isPlatformAdmin = !empty($personIsPlatformAdmin);
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
-$fmtDate = static function (string $v): string {
-    $ts = strtotime($v);
+$fmtDate = static function (string $value): string {
+    $timestamp = \App\Support\UtcDateTime::timestamp($value);
 
-    return $ts ? date('d/m/Y H:i', $ts) : '—';
+    return $timestamp === null ? '—' : (new \DateTimeImmutable('@' . $timestamp))
+        ->setTimezone(new \DateTimeZone('Europe/Paris'))->format('d/m/Y à H:i');
 };
-/** Date de fin d une sanction, a l heure de Paris. */
-$fmtParis = static function (string $v): string {
-    if ($v === "") {
-        return "—";
-    }
-    try {
-        return (new \DateTimeImmutable($v, new \DateTimeZone("UTC")))->setTimezone(new \DateTimeZone("Europe/Paris"))->format("d/m/Y à H:i");
-    } catch (\Throwable) {
-        return "—";
-    }
-};
+$fmtParis = $fmtDate;
 $empty = static function (?string $v) use ($h): string {
     $t = trim((string) $v);
-    return $t !== '' ? $h($t) : '<span class="text-slate-400">—</span>';
+    return $t !== '' ? $h($t) : '<span class="pu-muted">—</span>';
 };
 $statusLabel = static function (string $status): string {
     return match ($status) {
@@ -54,108 +45,247 @@ $statusLabel = static function (string $status): string {
     };
 };
 $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : $email);
+$allMemberships = $personAllMemberships ?? [];
+$firstSeen = [];
+$lastSeen = [];
+$verified = [];
+$liveOrganizations = [];
+$departed = [];
+foreach ($allMemberships as $row) {
+    if (!empty($row['deleted_at']) || ($row['status'] ?? '') === 'merged') {
+        continue;
+    }
+    $firstSeen[] = (string) ($row['account_created_at'] ?? '');
+    $lastSeen[] = (string) ($row['last_login_at'] ?? '');
+    $verified[] = (string) ($row['email_verified_at'] ?? '');
+    $membershipStatus = $row['membership_status'] ?? '';
+    if (!\App\Support\PortalAccessChoice::membershipIsPlaceholder($row)) {
+        if ($membershipStatus === 'active') {
+            $liveOrganizations[(int) $row['tenant_id']] = true;
+        } elseif ($membershipStatus === 'left') {
+            $departed[] = $row;
+        }
+    }
+}
+$firstSeen = array_filter($firstSeen);
+$lastSeen = array_filter($lastSeen);
+$verified = array_filter($verified);
+$appeal = $personAppeal ?? null;
+$activity = $personActivity ?? null;
+$canManage = empty($personIsSelf) && !$isPlatformAdmin;
+$membershipAction = static function (string $path, array $fields, string $label, string $title, string $message) use ($h, $email, $csrf): void {
+    ?>
+    <form method="post" action="<?= $h(url($path)) ?>" data-pu-confirm="1" data-confirm-title="<?= $h($title) ?>" data-confirm-body="<?= $h($message) ?>" data-confirm-ok="<?= $h($label) ?>">
+        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+        <input type="hidden" name="return_person" value="<?= $h($email) ?>">
+        <?php foreach ($fields as $key => $value): ?><input type="hidden" name="<?= $h($key) ?>" value="<?= $h((string) $value) ?>"><?php endforeach; ?>
+        <button type="submit" class="pa-btn pa-btn--line pa-btn--sm" hidden data-person-enhanced><?= $h($label) ?></button>
+    </form>
+    <?php
+};
 ?>
-<div class="min-h-0 flex-1 bg-slate-50">
-    <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
-        <nav class="text-sm text-slate-500">
-            <a href="<?= $h(url('admin')) ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Administration plateforme</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <a href="<?= $h(url('admin/users')) ?>" class="font-semibold text-emerald-800 hover:text-emerald-950">Comptes utilisateurs</a>
-            <span class="mx-2" aria-hidden="true">/</span>
-            <span class="text-slate-800">Dossier personne</span>
-        </nav>
-
-        <header class="pa-head rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-            <div class="flex flex-wrap items-start justify-between gap-3">
+<div class="pa pu person" data-person>
+    <div class="pa__frame">
+        <header class="pa-hero">
+            <div class="pa-hero__row">
                 <div>
-                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Identité plateforme</p>
-                    <h1 class="text-2xl font-black text-slate-900"><?= $h($primary) ?></h1>
-                    <?php if ($displayName !== '' && strcasecmp($displayName, $primary) !== 0): ?>
-                        <p class="text-sm text-slate-600"><?= $h($displayName) ?></p>
-                    <?php endif; ?>
-                    <p class="mt-1 font-mono text-xs text-slate-500"><?= $h($email) ?></p>
+                    <p class="pa-hero__kicker">Dossier personne</p>
+                    <h1 class="pa-hero__title"><?= $h($primary) ?></h1>
+                    <p class="pa-hero__lead"><?= $h($email) ?><?= $displayName !== '' && strcasecmp($displayName, $primary) !== 0 ? ' · ' . $h($displayName) : '' ?></p>
+                    <div class="pa-hero__actions">
+                        <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/users')) ?>">Annuaire</a>
+                        <button class="pa-btn pa-btn--ghost" type="button" data-pu-open="person-picker-dialog" aria-haspopup="dialog" hidden data-person-enhanced>Rechercher un compte ou une organisation</button>
+                        <button class="pa-btn pa-btn--ghost" type="button" data-person-copy="<?= $h($email) ?>" hidden>Copier l’e-mail</button>
+                        <?php if ($steamId !== ''): ?><a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/parc-atak') . '?q=' . rawurlencode($steamId)) ?>">Terminaux ATAK</a><?php endif; ?>
+                        <?php if ($ban !== null): ?>
+                            <a class="pa-btn pa-btn--solid" href="#bannissement">Examiner le bannissement</a>
+                        <?php elseif ($canManage): ?>
+                            <button class="pa-btn pa-btn--danger" type="button" data-pu-open="person-ban-dialog" aria-haspopup="dialog" hidden data-person-enhanced>Bannir du site</button>
+                            <noscript><a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/sanctions')) ?>">Ouvrir les sanctions</a></noscript>
+                        <?php endif; ?>
+                    </div>
+                    <span class="pa-hero__lead" role="status" data-person-copy-status></span>
                 </div>
-                <div class="text-right space-y-1">
-                    <?php if ($hasLiveOrg): ?>
-                        <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-900">Appartenance active</span>
-                    <?php else: ?>
-                        <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Sans communauté</span>
-                    <?php endif; ?>
-                    <?php if ($ban !== null): ?>
-                        <span class="inline-flex rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-900">Banni du site</span>
-                    <?php endif; ?>
-                    <p class="text-xs text-slate-500"><?= count($memberships) ?> communauté(s) — le dossier métier reste propre à chacune</p>
-                    <?php if (!empty($personIsPlatformAdmin)): ?>
-                        <p class="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-900">Administrateur du site</p>
-                    <?php endif; ?>
+                <div class="person-badges">
+                    <?php if ($ban !== null): ?><span class="pa-pill pa-pill--rose">Banni du site</span><?php endif; ?>
+                    <span class="pa-pill <?= $hasLiveOrg ? 'pa-pill--mint' : 'pa-pill--slate' ?>"><?= $hasLiveOrg ? 'Accès actif en communauté' : 'Aucun accès actif en communauté' ?></span>
+                    <?php if ($isPlatformAdmin): ?><a class="pa-pill pa-pill--mint" href="<?= $h(url('admin/system/administrateurs-site')) ?>">Administrateur du site</a><?php endif; ?>
                 </div>
             </div>
-
-            <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-                <div>
-                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Identifiant plateforme</dt>
-                    <dd class="mt-0.5 font-mono font-semibold text-slate-900"><?= $empty($athenaId) ?></dd>
-                </div>
-                <div>
-                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Steam ID</dt>
-                    <dd class="mt-0.5 font-mono text-slate-900"><?= $empty($steamId) ?></dd>
-                    <?php $steamState = (string) ($personSteamState ?? 'none'); ?>
-                    <?php if ($steamState !== 'none' && $steamId !== ''): ?>
-                    <dd class="mt-1 text-xs">
-                        <span class="inline-flex rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-900"><?= $steamState === 'reported' ? 'Steam en double : signalé, à examiner' : 'Steam en double : en attente du choix du joueur' ?></span>
-                        <a class="ml-1 font-semibold text-emerald-800 hover:text-emerald-950" href="<?= $h(url('admin/steam-doublons') . '?steam=' . rawurlencode($steamId)) ?>">Résoudre</a>
-                    </dd>
-                    <?php endif; ?>
-                </div>
-                <div>
-                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Prénom / Nom</dt>
-                    <dd class="mt-0.5 text-slate-900"><?= $empty(trim(($civil['first_name'] ?? '') . ' ' . ($civil['last_name'] ?? ''))) ?></dd>
-                </div>
-                <div>
-                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Téléphone</dt>
-                    <dd class="mt-0.5 text-slate-900"><?= $empty($civil['phone'] ?? null) ?></dd>
-                </div>
-            </dl>
         </header>
+        <nav class="pa-tabs" aria-label="Sections du dossier">
+            <a class="pa-tab" href="#identite">Vue d’ensemble</a><a class="pa-tab" href="#communautes">Communautés</a>
+            <a class="pa-tab" href="#activite">Activité</a><a class="pa-tab" href="#bannissement">Sanctions</a><a class="pa-tab" href="#reseau">Réseau</a>
+            <?php if ($mergeable): ?><a class="pa-tab" href="#fusion-comptes">Fusion</a><?php endif; ?>
+        </nav>
+        <?php if (is_string($flashOk) && trim($flashOk) !== ''): ?><p class="pa-flash pa-flash--ok" role="status"><?= $h($flashOk) ?></p><?php endif; ?>
+        <?php if (is_string($flashErr) && trim($flashErr) !== ''): ?><p class="pa-flash pa-flash--err" role="alert"><?= $h($flashErr) ?></p><?php endif; ?>
 
-        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 class="text-base font-bold text-slate-900">Administration du site</h2>
-            <p class="mt-1 text-sm text-slate-600">
-                Ce n’est pas un niveau d’accès de communauté, et ce n’est pas un choix sur chaque dossier.
-                Les personnes habilitées sont nommées dans une liste fermée.
-            </p>
-            <p class="mt-3">
-                <a href="<?= $h(url('admin/system/administrateurs-site')) ?>" class="text-sm font-semibold text-emerald-800 hover:text-emerald-950">
-                    Ouvrir la liste des administrateurs du site
-                </a>
-            </p>
+        <dl class="person-metrics">
+            <div class="pa-kpi"><dt class="pa-kpi__label">Dernière connexion</dt><dd><?= $lastSeen === [] ? 'Aucune date connue' : $h($fmtDate(max($lastSeen))) ?></dd></div>
+            <div class="pa-kpi"><dt class="pa-kpi__label">Premier compte créé</dt><dd><?= $firstSeen === [] ? 'Date inconnue' : $h($fmtDate(min($firstSeen))) ?></dd></div>
+            <div class="pa-kpi"><dt class="pa-kpi__label">Rattachements actifs</dt><dd><?= count($liveOrganizations) ?></dd></div>
+            <div class="pa-kpi"><dt class="pa-kpi__label">Comptes associés</dt><dd><?= (int) ($personLiveFiches ?? 0) ?></dd></div>
+        </dl>
+
+        <div class="person-columns">
+            <section id="identite" class="pa-card" aria-labelledby="person-identity">
+                <h2 class="pa-card__title" id="person-identity">Identité et accès</h2>
+                <dl class="person-facts">
+                    <div><dt>Identifiant Athena</dt><dd><?= $empty($athenaId) ?></dd></div>
+                    <div><dt>Steam ID</dt><dd><?= $empty($steamId) ?></dd></div>
+                    <div><dt>Nom civil</dt><dd><?= $empty(trim(($civil['first_name'] ?? '') . ' ' . ($civil['last_name'] ?? ''))) ?></dd></div>
+                    <div><dt>Téléphone</dt><dd><?= $empty($civil['phone'] ?? null) ?></dd></div>
+                    <div><dt>Vérification de l’e-mail</dt><dd><?= $verified === [] ? 'Aucune vérification enregistrée' : $h($fmtDate(min($verified))) ?></dd></div>
+                </dl>
+                <?php if ($steamId !== '' && in_array($personSteamState ?? '', ['reported', 'pending'], true)): ?>
+                    <p><a class="pu-link" href="<?= $h(url('admin/steam-doublons') . '?steam=' . rawurlencode($steamId)) ?>">Examiner le doublon Steam</a></p>
+                <?php endif; ?>
+            </section>
+            <section id="activite" class="pa-card" aria-labelledby="person-activity">
+                <div class="pa-card__head"><h2 class="pa-card__title" id="person-activity">Actions récentes des comptes</h2>
+                    <a class="pa-btn pa-btn--line pa-btn--sm" href="<?= $h(url('admin/audit') . '?actor_email=' . rawurlencode($email)) ?>">Journal filtré</a>
+                </div>
+                <?php if ($activity === null || $activity === []): ?>
+                    <p class="pa-card__help"><?= $activity === null ? 'Journal momentanément indisponible.' : 'Aucune action journalisée pour ces comptes.' ?></p>
+                <?php else: ?>
+                    <ol class="person-activity">
+                    <?php foreach ($activity as $event): ?>
+                        <li><a class="pu-link" href="<?= $h(url('admin/audit/' . (int) $event['id'])) ?>"><?= $h(audit_action_label_fr((string) $event['action'])) ?></a>
+                        <span class="pu-muted"><?= $h($fmtDate((string) $event['created_at'])) ?> · Compte n° <?= (int) $event['user_id'] ?></span></li>
+                    <?php endforeach; ?>
+                    </ol>
+                <?php endif; ?>
+            </section>
+        </div>
+
+        <section id="communautes" class="person-section" aria-labelledby="person-communities">
+            <h2 class="person-heading" id="person-communities">Communautés et fiches</h2>
+            <?php if ($memberships === [] && $departed === []): ?><p class="pa-card">Aucune fiche de communauté à afficher.</p><?php endif; ?>
+            <?php foreach ($memberships as $pack): ?>
+                <?php
+                $m = is_array($pack['user'] ?? null) ? $pack['user'] : [];
+                $pp = is_array($pack['personnel_profile'] ?? null) ? $pack['personnel_profile'] : [];
+                $ex = is_array($pack['personnel_extras'] ?? null) ? $pack['personnel_extras'] : [];
+                $grade = is_array($pack['grade'] ?? null) ? $pack['grade'] : null;
+                $assign = is_array($pack['primary_assignment'] ?? null) ? $pack['primary_assignment'] : null;
+                $uid = (int) ($m['id'] ?? 0);
+                $tid = (int) ($m['tenant_id'] ?? 0);
+                $tenantName = (string) ($m['tenant_name'] ?? '');
+                $st = (string) ($m['status'] ?? '');
+                $accountStatus = (string) ($m['account_status'] ?? $st);
+                $isDeleted = !empty($m['deleted_at']);
+                $isDefault = \App\Support\PortalAccessChoice::membershipIsPlaceholder($m);
+                $matricule = trim((string) ($pp['matricule_internal'] ?? '')) ?: trim((string) ($ex['service_number'] ?? ''));
+                $character = trim((string) ($pp['character_name'] ?? ''));
+                $gradeLabel = '';
+                if ($grade) {
+                    $gradeLabel = trim((string) ($grade['short_name'] ?? $grade['name'] ?? $grade['label_long'] ?? ''));
+                }
+                $unitName = trim((string) ($assign['unit_name'] ?? ''));
+                $roleNames = is_array($pack['role_names'] ?? null) ? $pack['role_names'] : [];
+                ?>
+                <article class="pa-card">
+                    <div class="pa-card__head">
+                        <div>
+                            <h3 class="pa-card__title"><?= $isDefault ? 'Compte sans communauté' : 'Dossier — ' . $h($tenantName !== '' ? $tenantName : 'Communauté') ?></h3>
+                            <p class="pa-card__help">Compte n° <?= $uid ?></p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <?php if ($isDeleted): ?>
+                                <?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?>
+                            <?php else: ?>
+                                <span class="pa-pill pa-pill--slate"><?= $h($statusLabel($st)) ?></span>
+                            <?php endif; ?>
+                            <?php if ($isDefault): ?>
+                                <span class="pa-pill pa-pill--amber">Sans communauté</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="person-facts">
+                        <div>
+                            <p class="person-label">Nom affiché</p>
+                            <p><?= $empty($m['display_name'] ?? null) ?></p>
+                        </div>
+                        <div>
+                            <p class="person-label">Indicatif</p>
+                            <p><?= $empty($m['callsign'] ?? null) ?></p>
+                        </div>
+                        <div>
+                            <p class="person-label">Rôle</p>
+                            <p><?= $roleNames !== [] ? $h(implode(', ', $roleNames)) : $empty($m['role_name'] ?? null) ?></p>
+                        </div>
+                        <div>
+                            <p class="person-label">Grade</p>
+                            <p><?= $empty($gradeLabel) ?></p>
+                        </div>
+                        <div>
+                            <p class="person-label">Matricule dossier</p>
+                            <p class="pu-mono"><?= $empty($matricule) ?></p>
+                        </div>
+                        <div>
+                            <p class="person-label">Affectation</p>
+                            <p><?= $empty($unitName) ?></p>
+                        </div>
+                        <div>
+                            <p class="person-label">Personnage</p>
+                            <p><?= $empty($character) ?></p>
+                        </div>
+                        <div>
+                            <p class="person-label">Indicatif Athena de la communauté</p>
+                            <p class="pu-mono"><?= $empty($m['athena_identifier'] ?? null) ?></p>
+                        </div>
+                        <div>
+                            <p class="person-label">Créé / MAJ</p>
+                            <p class="pu-muted"><?= $h($fmtDate((string) ($m['created_at'] ?? ''))) ?> · <?= $h($fmtDate((string) ($m['updated_at'] ?? ''))) ?></p>
+                        </div>
+                        <?php if (!$isDeleted && $uid > 0): ?>
+                        <div class="person-row-actions">
+                            <a href="<?= $h(url('admin/users/' . $uid . '/edit')) ?>" class="pa-btn pa-btn--solid pa-btn--sm">Modifier le compte</a>
+                            <?php if (!$isDefault): ?>
+                            <a href="<?= $h(url('personnel/' . $uid)) ?>" class="pa-btn pa-btn--line pa-btn--sm">Fiche personnel</a>
+                            <a href="<?= $h(url('back-office/users/' . $uid)) ?>" class="pa-btn pa-btn--line pa-btn--sm">Fiche communauté</a>
+                            <?php endif; ?>
+                            <?php if ($canManage && $ban === null && in_array($accountStatus, ['active', 'inactive'], true)): ?>
+                                <?php $enable = $accountStatus === 'inactive'; $actionLabel = $enable ? 'Réactiver ce compte' : 'Désactiver ce compte';
+                                $membershipAction('admin/users/set-status', ['user_id' => $uid, 'tenant_id' => $tid, 'status' => $enable ? 'active' : 'inactive'], $actionLabel,
+                                    $actionLabel . ' ?', 'Le statut de connexion de ce compte change pour toutes les communautés qui l’utilisent.'); ?>
+                            <?php endif; ?>
+                            <?php if ($canManage && !$isDefault && !empty($personSupportsMemberships) && ($m['membership_status'] ?? '') === 'active'): ?>
+                                <?php $membershipAction('admin/users/retirer-communaute', ['user_id' => $uid, 'tenant_id' => $tid], 'Retirer de la communauté',
+                                    'Retirer de « ' . $tenantName . ' » ?', 'Le rattachement est retiré et les traces de jeu de cette communauté sont effacées. La réintégration est possible depuis ce dossier.'); ?>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+            <?php if ($departed !== []): ?>
+                <section class="pa-card">
+                    <h3 class="pa-card__title">Rattachements retirés</h3>
+                    <ul class="person-list">
+                        <?php foreach ($departed as $row): ?>
+                            <li><span><?= $h((string) $row['tenant_name']) ?> · Compte n° <?= (int) $row['id'] ?></span>
+                            <?php if ($canManage && $ban === null && !empty($personSupportsMemberships)): ?>
+                                <?php $membershipAction('admin/users/reintegrer-communaute', ['user_id' => (int) $row['id'], 'tenant_id' => (int) $row['tenant_id']],
+                                    'Réintégrer', 'Réintégrer dans « ' . (string) $row['tenant_name'] . ' » ?', 'Le rattachement et la fiche sont réactivés.'); ?>
+                            <?php endif; ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+            <?php endif; ?>
         </section>
 
-        <?php if (!$hasLiveOrg): ?>
-            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                Cette personne n’est membre d’aucune communauté pour le moment. Son compte reste valable :
-                elle peut se connecter, rejoindre une communauté, et elle reste visible dans l’annuaire
-                (filtre « Sans communauté »).
-            </div>
-        <?php endif; ?>
-
-        <?php if (is_string($flashOk) && trim($flashOk) !== ''): ?>
-            <p class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><?= $h($flashOk) ?></p>
-        <?php endif; ?>
-        <?php if (is_string($flashErr) && trim($flashErr) !== ''): ?>
-            <p class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900"><?= $h($flashErr) ?></p>
-        <?php endif; ?>
-
-        <section id="bannissement" class="rounded-xl border <?= $ban !== null ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white' ?> p-5 shadow-sm space-y-3">
-            <h2 class="text-base font-bold text-slate-900">Bannissement du site</h2>
+        <section id="bannissement" class="pa-card person-section">
+            <h2 class="pa-card__title">Bannissement du site</h2>
             <?php if ($ban !== null): ?>
                 <?php $banEndsRaw = trim((string) ($ban['ends_at'] ?? '')); ?>
-                <p class="text-sm text-rose-900">
+                <p class="person-alert">
                     Bannie le <?= $h($fmtDate((string) ($ban['created_at'] ?? ''))) ?>,
                     <?= $banEndsRaw !== '' ? 'jusqu’au ' . $h($fmtParis($banEndsRaw)) . ' (heure de Paris)' : 'sans date de fin' ?>.
                     Motif : <strong><?= $h((string) ($ban['reason'] ?? '')) ?></strong>
                 </p>
-                <p class="text-sm text-slate-600">
+                <p class="pa-card__help">
                     Ses fiches sont inactives, son adresse e-mail est refusée à la connexion et à l’inscription.
                     Lever le bannissement remet chaque fiche dans l’état d’avant et retire les blocages créés à ce moment.
                     <?= $banEndsRaw !== '' ? 'Sans action de votre part, la sanction se termine toute seule à la date indiquée.' : '' ?>
@@ -169,16 +299,26 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                         <span>Note de levée (facultatif, gardée dans l’historique)</span>
                         <input type="text" name="note" maxlength="500" placeholder="Ex. excuses reçues, erreur de modération">
                     </label>
-                    <button type="submit" class="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900">Lever le bannissement</button>
+                    <button type="submit" class="pa-btn pa-btn--solid">Lever le bannissement</button>
                 </form>
-            <?php elseif ($isPlatformAdmin): ?>
-                <p class="text-sm text-slate-600">Un administrateur du site ne peut pas être banni : retirez-lui d’abord ce rôle.</p>
             <?php else: ?>
-                <p class="text-sm text-slate-600">
-                    Bannir ferme ses sessions, rend toutes ses fiches inactives et refuse son adresse e-mail sur tout le site.
-                    Rien n’est effacé : le bannissement peut être levé plus tard.
-                </p>
-                <form method="post" action="<?= $h(url('admin/users/bannir')) ?>" class="pu-dialog__form" style="padding:0">
+                <p class="pa-card__help">Aucun bannissement du site en cours.</p>
+            <?php endif; ?>
+            <div class="person-row-actions">
+                <?php if ($ban === null && $canManage): ?><button class="pa-btn pa-btn--danger pa-btn--sm" type="button" data-pu-open="person-ban-dialog" aria-haspopup="dialog" hidden data-person-enhanced>Bannir du site</button><?php endif; ?>
+                <a class="pa-btn pa-btn--line pa-btn--sm" href="#historique-sanctions">Historique des sanctions (<?= count($banHistory) ?>)</a>
+                <?php if ($appeal !== null): ?>
+                    <?php $appealId = (int) $appeal['ban_id']; ?>
+                    <a class="pa-btn pa-btn--solid pa-btn--sm" href="<?= $h(url('admin/sanctions') . '?contestation=' . $appealId . ($appeal['reviewed'] ? '&recours=traites' : '') . '#contestation-' . $appealId) ?>"><?= $appeal['reviewed'] ? 'Contestation traitée' : 'Examiner la contestation' ?></a>
+                <?php endif; ?>
+                <a class="pa-btn pa-btn--line pa-btn--sm" href="<?= $h(url('admin/sanctions')) ?>">Console des sanctions</a>
+            </div>
+        </section>
+
+        <?php if ($ban === null && $canManage): ?>
+            <dialog class="pu-dialog pu-dialog--wide" id="person-ban-dialog" aria-labelledby="person-ban-title">
+                <form method="post" action="<?= $h(url('admin/users/bannir')) ?>" class="pu-dialog__form">
+                    <h2 class="pu-dialog__title" id="person-ban-title">Bannir du site</h2>
                     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                     <input type="hidden" name="email" value="<?= $h($email) ?>">
                     <input type="hidden" name="return_person" value="<?= $h($email) ?>">
@@ -196,24 +336,22 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                         'known_ips' => $knownIps,
                         'shared' => false,
                     ];
-                    echo '<div class="pa pu pu-embed">';
                     require base_path('views/admin/system/partials/platform_ban_form.php');
-                    echo '</div>';
                     ?>
-                    <div class="pu-dialog__buttons" style="justify-content:flex-start">
-                        <button type="submit" class="rounded-lg bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800">Bannir du site</button>
+                    <div class="pu-dialog__buttons">
+                        <button class="pa-btn pa-btn--line" type="button" data-pu-close>Annuler</button>
+                        <button type="submit" class="pa-btn pa-btn--danger">Bannir du site</button>
                     </div>
                 </form>
-            <?php endif; ?>
-        </section>
+            </dialog>
+        <?php endif; ?>
 
-        <section id="historique-sanctions" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-            <h2 class="text-base font-bold text-slate-900">Historique des sanctions du site</h2>
+        <section id="historique-sanctions" class="pa-card person-section">
+            <h2 class="pa-card__title">Historique des sanctions du site</h2>
             <?php if ($banHistory === []): ?>
-                <p class="text-sm text-slate-600">Aucune sanction du site n’a jamais été prise contre cette personne.</p>
+                <p class="pa-card__help">Aucune sanction du site n’a jamais été prise contre cette personne.</p>
             <?php else: ?>
-                <p class="text-sm text-slate-600">Du plus récent au plus ancien : qui a décidé, quand, pour quel motif, et comment la sanction s’est terminée.</p>
-                <div class="pa pu pu-embed">
+                <p class="pa-card__help">Du plus récent au plus ancien : qui a décidé, quand, pour quel motif, et comment la sanction s’est terminée.</p>
                 <ol class="pu-history">
                     <?php foreach ($banHistory as $item): ?>
                         <?php
@@ -258,37 +396,36 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                         </li>
                     <?php endforeach; ?>
                 </ol>
-                </div>
             <?php endif; ?>
         </section>
 
-        <section id="reseau" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-            <h2 class="text-base font-bold text-slate-900">Adresses réseau (IP) utilisées</h2>
-            <p class="text-sm text-slate-600">
+        <section id="reseau" class="pa-card person-section">
+            <h2 class="pa-card__title">Adresses réseau (IP) utilisées</h2>
+            <p class="pa-card__help">
                 Connexions réussies des 6 derniers mois. Bloquer une adresse refuse la connexion et l’inscription depuis
                 cette adresse pour tout le monde : attention aux connexions partagées (box familiale, université, VPN).
-                Pour débloquer : <a href="<?= $h(url('admin/system/blocklist')) ?>" class="font-semibold text-emerald-800 hover:underline">liste des adresses et e-mails bloqués</a>.
+                Pour débloquer : <a href="<?= $h(url('admin/system/blocklist')) ?>" class="pu-link">liste des adresses et e-mails bloqués</a>.
             </p>
             <?php if ($knownIps === []): ?>
-                <p class="text-sm text-slate-500">Aucune connexion enregistrée pour cette adresse e-mail.</p>
+                <p class="pa-card__help">Aucune adresse réseau disponible.</p>
             <?php else: ?>
-                <ul class="divide-y divide-slate-100">
+                <ul class="person-list">
                     <?php foreach ($knownIps as $row): ?>
-                        <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                        <li>
                             <div>
-                                <span class="font-mono text-sm font-semibold text-slate-900"><?= $h((string) $row['ip']) ?></span>
-                                <span class="text-xs text-slate-500">· <?= (int) $row['logins'] ?> connexion(s), dernière le <?= $h($fmtDate((string) $row['last_seen'])) ?></span>
+                                <span class="pu-mono"><?= $h((string) $row['ip']) ?></span>
+                                <span class="pu-muted">· <?= (int) $row['logins'] ?> connexion(s), dernière le <?= $h($fmtDate((string) $row['last_seen'])) ?></span>
                             </div>
                             <?php if (!empty($row['blocked'])): ?>
-                                <span class="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-900">Bloquée</span>
+                                <span class="pa-pill pa-pill--rose">Bloquée</span>
                             <?php else: ?>
                                 <form method="post" action="<?= $h(url('admin/users/bloquer-ip')) ?>" class="flex flex-wrap items-center gap-2"
                                       onsubmit="return confirm('Bloquer cette adresse réseau sur tout le site ?');">
                                     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                                     <input type="hidden" name="email" value="<?= $h($email) ?>">
                                     <input type="hidden" name="ip" value="<?= $h((string) $row['ip']) ?>">
-                                    <input type="text" name="reason" maxlength="200" placeholder="Motif (facultatif)" class="rounded-lg border border-slate-300 px-2 py-1 text-xs">
-                                    <button type="submit" class="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">Bloquer cette IP</button>
+                                    <input type="text" name="reason" maxlength="200" aria-label="Motif du blocage" placeholder="Motif (facultatif)" class="person-input">
+                                    <button type="submit" class="pa-btn pa-btn--danger pa-btn--sm">Bloquer cette IP</button>
                                 </form>
                             <?php endif; ?>
                         </li>
@@ -298,22 +435,22 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
         </section>
 
         <?php if ($mergeable): ?>
-            <section id="fusion-comptes" class="rounded-xl border border-amber-300 bg-amber-50/70 shadow-sm overflow-hidden">
-                <div class="border-b border-amber-200 px-4 py-3">
-                    <h2 class="text-base font-bold text-amber-950">Fusionner les comptes</h2>
-                    <p class="mt-1 text-sm text-amber-900/90">
+            <section id="fusion-comptes" class="pa-card person-section person-merge">
+                <div class="pa-card__head">
+                    <h2 class="pa-card__title">Fusionner les comptes</h2>
+                    <p class="pa-card__help">
                         Plusieurs fiches <code class="font-mono text-xs">users</code> partagent cette adresse.
                         La fusion regroupe identité plateforme, profils et références sous un compte survivant.
                         Les champs déjà renseignés ne sont pas écrasés ; les zones vides sont complétées.
                     </p>
                 </div>
-                <form method="post" action="<?= $h(url('admin/users/merge')) ?>" class="space-y-4 p-4"
+                <form method="post" action="<?= $h(url('admin/users/merge')) ?>" class="space-y-4"
                       onsubmit="return confirm('Confirmer la fusion définitive de ces comptes ?\n\nLes fiches absorbées seront marquées « fusionnées » et leurs données rattachées au survivant.');">
                     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                     <input type="hidden" name="email" value="<?= $h($email) ?>">
 
                     <fieldset class="space-y-2">
-                        <legend class="text-xs font-bold uppercase tracking-wider text-amber-950">Compte survivant</legend>
+                        <legend class="person-label">Compte survivant</legend>
                         <?php foreach ($mergeRows as $row): ?>
                             <?php
                             $rid = (int) ($row['id'] ?? 0);
@@ -327,14 +464,14 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                             }
                             $checked = $rid === $selectedSurvivorId || ($selectedSurvivorId < 1 && $rid === $suggestedSurvivorId);
                             ?>
-                            <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-amber-200 bg-white px-3 py-2.5 hover:border-amber-400">
+                            <label class="person-merge-option">
                                 <input type="radio" name="survivor_user_id" value="<?= $rid ?>" class="mt-1" <?= $checked ? 'checked' : '' ?>
                                        onchange="window.location.href='<?= $h(url('admin/users/person') . '?email=' . rawurlencode($email) . '&survivor_id=') ?>' + this.value + '#fusion-comptes';">
                                 <span class="text-sm">
-                                    <span class="font-semibold text-slate-900"><?= $h($rlabel) ?></span>
-                                    <span class="block font-mono text-xs text-slate-500">#<?= $rid ?> · tenant #<?= $rtid ?> · <?= $h((string) ($row['status'] ?? '')) ?></span>
+                                    <span><?= $h($rlabel) ?></span>
+                                    <span class="pu-mono block">#<?= $rid ?> · tenant #<?= $rtid ?> · <?= $h((string) ($row['status'] ?? '')) ?></span>
                                     <?php if ($rid === $suggestedSurvivorId): ?>
-                                        <span class="mt-1 inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-900">Recommandé</span>
+                                        <span class="pa-pill pa-pill--mint">Recommandé</span>
                                     <?php endif; ?>
                                 </span>
                             </label>
@@ -342,7 +479,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                     </fieldset>
 
                     <?php if ($identityFills !== [] || $identityTableFills !== []): ?>
-                        <div class="rounded-lg border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-sm text-emerald-950">
+                        <div class="pa-flash pa-flash--ok">
                             <p class="font-semibold">Données à compléter sur le survivant</p>
                             <ul class="mt-1 list-disc pl-5 text-xs">
                                 <?php foreach ($identityFills as $key => $value): ?>
@@ -360,7 +497,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                     <?php endif; ?>
 
                     <?php if ($steamCollisions !== []): ?>
-                        <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-950">
+                        <div class="pa-flash pa-flash--err">
                             <p class="font-semibold"><?= count($steamCollisions) ?> conflit(s) Steam détecté(s)</p>
                             <p class="mt-1 text-xs">Le Steam du survivant sera conservé ; les autres identifiants seront journalisés.</p>
                         </div>
@@ -372,10 +509,10 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                                 Confirmer l’adresse e-mail
                             </label>
                             <input type="email" name="confirm_email" id="confirm_email" required autocomplete="off"
-                                   class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm"
+                                   class="person-input"
                                    placeholder="<?= $h($email) ?>">
                         </div>
-                        <button type="submit" class="rounded-lg bg-amber-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-amber-800">
+                        <button type="submit" class="pa-btn pa-btn--danger">
                             Fusionner les comptes
                         </button>
                     </div>
@@ -383,101 +520,26 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
             </section>
         <?php endif; ?>
 
-        <div class="space-y-4">
-            <?php foreach ($memberships as $pack): ?>
-                <?php
-                $m = is_array($pack['user'] ?? null) ? $pack['user'] : [];
-                $pp = is_array($pack['personnel_profile'] ?? null) ? $pack['personnel_profile'] : [];
-                $ex = is_array($pack['personnel_extras'] ?? null) ? $pack['personnel_extras'] : [];
-                $grade = is_array($pack['grade'] ?? null) ? $pack['grade'] : null;
-                $assign = is_array($pack['primary_assignment'] ?? null) ? $pack['primary_assignment'] : null;
-                $uid = (int) ($m['id'] ?? 0);
-                $tenantName = (string) ($m['tenant_name'] ?? '');
-                $tenantSlug = (string) ($m['tenant_slug'] ?? '');
-                $st = (string) ($m['status'] ?? '');
-                $isDeleted = !empty($m['deleted_at']);
-                $isDefault = $tenantSlug === 'default';
-                $matricule = trim((string) ($pp['matricule_internal'] ?? '')) ?: trim((string) ($ex['service_number'] ?? ''));
-                $character = trim((string) ($pp['character_name'] ?? ''));
-                $gradeLabel = '';
-                if ($grade) {
-                    $gradeLabel = trim((string) ($grade['short_name'] ?? $grade['name'] ?? $grade['label_long'] ?? ''));
-                }
-                $unitName = trim((string) ($assign['unit_name'] ?? ''));
-                $roleNames = is_array($pack['role_names'] ?? null) ? $pack['role_names'] : [];
-                ?>
-                <article class="rounded-xl border <?= $isDeleted ? 'border-rose-200 bg-rose-50/40' : ($isDefault ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white') ?> shadow-sm overflow-hidden">
-                    <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900"><?= $isDefault ? 'Compte sans communauté' : 'Dossier — ' . $h($tenantName !== '' ? $tenantName : 'Communauté') ?></h2>
-                            <p class="text-xs text-slate-500">Vous éditez le dossier de cette communauté uniquement. Grade, matricule et fiche RH des autres communautés ne sont pas concernés.</p>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <?php if ($isDeleted): ?>
-                                <?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?>
-                            <?php else: ?>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-800"><?= $h($statusLabel($st)) ?></span>
-                            <?php endif; ?>
-                            <?php if ($isDefault): ?>
-                                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">Sans communauté</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 text-sm">
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Nom affiché</p>
-                            <p class="font-semibold text-slate-900"><?= $empty($m['display_name'] ?? null) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Indicatif</p>
-                            <p class="font-semibold text-slate-900"><?= $empty($m['callsign'] ?? null) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Rôle</p>
-                            <p class="text-slate-900"><?= $roleNames !== [] ? $h(implode(', ', $roleNames)) : $empty($m['role_name'] ?? null) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Grade</p>
-                            <p class="text-slate-900"><?= $empty($gradeLabel) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Matricule dossier</p>
-                            <p class="font-mono text-slate-900"><?= $empty($matricule) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Affectation</p>
-                            <p class="text-slate-900"><?= $empty($unitName) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Personnage</p>
-                            <p class="text-slate-900"><?= $empty($character) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Indicatif Athena de la communauté</p>
-                            <p class="font-mono text-slate-900"><?= $empty($m['athena_identifier'] ?? null) ?></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Créé / MAJ</p>
-                            <p class="text-xs text-slate-600"><?= $h((string) ($m['created_at'] ?? '—')) ?> · <?= $h((string) ($m['updated_at'] ?? '—')) ?></p>
-                        </div>
-                        <?php if (!$isDeleted && $uid > 0): ?>
-                        <div class="sm:col-span-2 lg:col-span-3 flex flex-wrap gap-2 pt-1">
-                            <a href="<?= $h(url('admin/users/' . $uid . '/edit')) ?>" class="inline-flex rounded-lg bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-900">Modifier la fiche</a>
-                            <?php if (!$isDefault): ?>
-                            <a href="<?= $h(url('personnel/' . $uid)) ?>" class="text-xs font-semibold text-emerald-800 hover:underline">Fiche personnel</a>
-                            <a href="<?= $h(url('back-office/users/' . $uid)) ?>" class="text-xs font-semibold text-slate-600 hover:underline">Fiche communauté</a>
-                            <?php endif; ?>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </div>
-
-        <p class="text-sm">
-            <a href="<?= $h(url('admin/users')) ?>" class="font-semibold text-emerald-800 hover:underline">← Retour à l’annuaire</a>
-        </p>
     </div>
+    <dialog class="pu-dialog pu-dialog--wide" id="person-picker-dialog" aria-labelledby="person-picker-title">
+        <div class="pu-dialog__form">
+            <h2 class="pu-dialog__title" id="person-picker-title">Ouvrir un autre dossier</h2>
+            <?php
+            $pickerType = 'account';
+            $pickerId = 'person-picker-account';
+            $pickerDestination = url('admin/users/person');
+            require base_path('views/admin/system/partials/platform_entity_picker.php');
+            $pickerType = 'organization';
+            $pickerId = 'person-picker-org';
+            $pickerDestination = url('admin/tenants');
+            require base_path('views/admin/system/partials/platform_entity_picker.php');
+            ?>
+            <button type="button" class="pa-btn pa-btn--line" data-pu-close>Fermer</button>
+        </div>
+    </dialog>
+    <?php require base_path('views/admin/system/partials/platform_user_confirm.php'); ?>
 </div>
 <script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-ban-notice.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/platform-person.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/platform-entity-picker.js')) ?>" defer></script>

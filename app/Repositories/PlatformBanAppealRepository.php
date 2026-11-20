@@ -83,10 +83,13 @@ final class PlatformBanAppealRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listForReview(bool $reviewed = false, int $limit = 50): array
+    public function listForReview(bool $reviewed = false, int $limit = 50, int $focus = 0): array
     {
         $condition = $reviewed ? 'IS NOT NULL' : 'IS NULL';
         $order = $reviewed ? 'a.reviewed_at DESC, a.ban_id DESC' : 'a.created_at ASC, a.ban_id ASC';
+        if ($focus > 0) {
+            $order = '(a.ban_id = ' . $focus . ') DESC, ' . $order;
+        }
         $limit = max(1, min(100, $limit));
         $stmt = $this->db()->query(
             "SELECT a.*, b.email_norm, b.display_label, b.reason, b.rule_reference, b.public_reason, b.ends_at, b.lifted_at

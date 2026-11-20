@@ -33,12 +33,12 @@ final class PlatformUsersMultiTenantAssetTest extends TestCase
 
         self::assertFileExists($root . '/views/admin/system/user_person.php');
         $view = (string) file_get_contents($root . '/views/admin/system/user_person.php');
-        self::assertStringContainsString('Identifiant plateforme', $view);
-        self::assertStringContainsString('Appartenance active', $view);
+        self::assertStringContainsString('Identifiant Athena', $view);
+        self::assertStringContainsString('Rattachements actifs', $view);
         self::assertStringContainsString('Sans communauté', $view);
         self::assertStringNotContainsString('Orphelin', $view);
-        self::assertStringContainsString('reste visible dans l’annuaire', $view);
-        self::assertStringContainsString('le dossier métier reste propre à chacune', $view);
+        self::assertStringContainsString('Compte sans communauté', $view);
+        self::assertStringContainsString('Communautés et fiches', $view);
         self::assertStringNotContainsString('masquée de l’annuaire', $view);
         self::assertStringNotContainsString('Steam (fiche)', $view);
 

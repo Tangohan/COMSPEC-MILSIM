@@ -148,6 +148,31 @@ final class AdminPlatformToolsTest extends TestCase
         self::assertStringNotContainsString('SQLSTATE', (string) $r['error']);
     }
 
+    public function testPickerSearchesOnlyTheRequestedDirectoryAndDoesNotCacheResults(): void
+    {
+        $users = $this->createMock(UserRepository::class);
+        $users->expects(self::once())->method('searchAccountsForPlatformOperator')->with('stef', 12)
+            ->willReturn([['id' => 7, 'email' => 'stef@example.test', 'display_name' => 'Stef']]);
+        $tenants = $this->createMock(TenantRepository::class);
+        $tenants->expects(self::once())->method('searchForPlatformAdmin')->with('Aigles', 12)
+            ->willReturn([['id' => 2, 'name' => 'Les Aigles']]);
+        $controller = new SystemAdminSearchController($users, $tenants);
+
+        $savedQuery = $_GET;
+        try {
+            $_GET = ['fragment' => 'choix', 'type' => 'account', 'q' => 'stef'];
+            $accounts = $controller->index(new Request());
+            $_GET = ['fragment' => 'choix', 'type' => 'organization', 'q' => 'Aigles'];
+            $organizations = $controller->index(new Request());
+        } finally {
+            $_GET = $savedQuery;
+        }
+
+        self::assertSame('private, no-store', $accounts->headerValue('Cache-Control'));
+        self::assertSame([7], array_column(json_decode($accounts->body(), true)['items'], 'id'));
+        self::assertSame([2], array_column(json_decode($organizations->body(), true)['items'], 'id'));
+    }
+
     public function testSearchPageRendersResultsWithQuickActions(): void
     {
         Gate::getInstance()->setPlatformAdmin(true); // l’administrateur du site voit les e-mails en clair
