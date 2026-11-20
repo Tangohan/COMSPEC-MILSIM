@@ -40,6 +40,7 @@ final class SystemPlatformBansController
         $this->service->expireDue();
         $ready = $this->featureReady();
         $reviewed = $request->query('recours') === 'traites';
+        $focusedAppeal = (int) $request->query('contestation');
         $tenant = $ready ? $this->tenant((int) $request->query('organisation')) : null;
         $targets = $tenant !== null ? $this->targets((int) $tenant['id']) : [];
         $active = $this->bans->listActive(50);
@@ -47,7 +48,7 @@ final class SystemPlatformBansController
         return Response::view('layout.main', [
             'title' => 'Bannissements et contestations',
             'content' => 'admin.system.platform_bans',
-            'backOfficePageCss' => ['platform-admin.css', 'platform-admin-users.css', 'platform-admin-sanctions.css'],
+            'backOfficePageCss' => ['platform-admin.css', 'platform-admin-users.css', 'platform-admin-sanctions.css', 'platform-admin-picker.css'],
             'workflowReady' => $ready,
             'supportsEnd' => $this->bans->supportsEndDate(),
             'activeBans' => $active,
@@ -59,9 +60,9 @@ final class SystemPlatformBansController
             'alreadyBanned' => count($this->bans->activeByEmails($targets)),
             'batchNonce' => bin2hex(random_bytes(16)),
             'batches' => $ready ? $this->bans->recentBatches() : [],
-            'appeals' => $ready ? $this->appeals->listForReview($reviewed) : [],
+            'appeals' => $ready ? $this->appeals->listForReview($reviewed, 50, $focusedAppeal) : [],
             'showReviewed' => $reviewed,
-            'focusedAppeal' => (int) $request->query('contestation'),
+            'focusedAppeal' => $focusedAppeal,
             'autoRule' => (new PlatformAutomaticBanService())->settings(),
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),

@@ -71,13 +71,14 @@ $bSupportsEnd = $supportsEnd;
                     <form method="get" action="<?= $h($base . '#organisation') ?>" class="ps-inline">
                         <label class="pu-dialog__field">
                             <span>Organisation</span>
-                            <select name="organisation" required>
+                            <select id="ps-org-value" name="organisation" required>
                                 <option value="">Choisir une organisation</option>
                                 <?php foreach ($tenants as $tenant): ?>
                                     <option value="<?= (int) $tenant['id'] ?>"<?= (int) ($selectedTenant['id'] ?? 0) === (int) $tenant['id'] ? ' selected' : '' ?>><?= $h($tenant['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </label>
+                        <button type="button" class="pa-btn pa-btn--line" data-pu-open="ps-org-picker" aria-haspopup="dialog">Rechercher une organisation</button>
                         <button type="submit" class="pa-btn pa-btn--solid">Prévisualiser les comptes</button>
                     </form>
                     <?php if ($selectedTenant !== null): ?>
@@ -200,16 +201,34 @@ $bSupportsEnd = $supportsEnd;
         </div>
     </div>
 
+    <?php if ($workflowReady): ?>
+    <dialog class="pu-dialog" id="ps-org-picker" aria-labelledby="ps-org-picker-title">
+        <div class="pu-dialog__form">
+            <h2 class="pu-dialog__title" id="ps-org-picker-title">Choisir une organisation</h2>
+            <?php
+            $pickerType = 'organization';
+            $pickerId = 'ps-org-query';
+            $pickerTarget = 'ps-org-value';
+            require base_path('views/admin/system/partials/platform_entity_picker.php');
+            ?>
+            <button type="button" class="pa-btn pa-btn--line" data-pu-close>Fermer</button>
+        </div>
+    </dialog>
+    <?php endif; ?>
     <dialog class="pu-dialog pu-dialog--wide" id="ps-ban-account" aria-labelledby="ps-ban-account-title">
         <form class="pu-dialog__form ps-form" method="post" action="<?= $h(url('admin/users/bannir')) ?>">
             <?= Csrf::field() ?>
             <input type="hidden" name="return_sanctions" value="1">
             <h2 class="pu-dialog__title" id="ps-ban-account-title">Bannir un compte sur tout Athena</h2>
-            <label class="pu-dialog__field">
+            <label class="pu-dialog__field" data-entity-fallback>
                 <span>Adresse du compte</span>
-                <input type="email" name="email" maxlength="255" required autofocus>
+                <input id="ps-account-value" type="email" name="email" maxlength="255" required autofocus>
             </label>
             <?php
+            $pickerType = 'account';
+            $pickerId = 'ps-account-query';
+            $pickerTarget = 'ps-account-value';
+            require base_path('views/admin/system/partials/platform_entity_picker.php');
             $banForm = [
                 'id' => 'ps-ban-account', 'label' => 'cette personne', 'email' => 'du compte ciblé',
                 'supports_end' => $supportsEnd, 'supports_notice' => $workflowReady, 'shared' => true,
@@ -225,3 +244,4 @@ $bSupportsEnd = $supportsEnd;
 </div>
 <script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-ban-notice.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/platform-entity-picker.js')) ?>" defer></script>
