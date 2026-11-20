@@ -165,6 +165,7 @@ final class AuditActionLabel
         'admin.steam_conflict_restored' => 'Steam en double : Steam rendu au déclarant par l’administration',
         'admin.steam_conflict_closed' => 'Steam en double : signalement classé par l’administration',
         'user.status_updated' => 'Statut du compte modifié',
+        'user.verification_resent' => 'E-mail de vérification renvoyé',
         'user.profile_updated' => 'Fiche complète mise à jour',
         'user.deleted' => 'Compte supprimé (anonymisé)',
         'user.purged' => 'Compte supprimé définitivement',

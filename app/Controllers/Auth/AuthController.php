@@ -15,6 +15,8 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\EmailTokenRepository;
 use App\Repositories\PasswordResetRepository;
+use App\Repositories\PlatformAccountBanRepository;
+use App\Services\Account\PlatformBanNotice;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\LoginSecurityNotificationService;
@@ -38,6 +40,8 @@ class AuthController
     /** Tenants techniques non proposés à l’utilisateur (ex. tenant « par défaut » plateforme). */
     private const HIDDEN_COMMUNITY_SLUGS = ['default'];
 
+    private const LOGIN_DUMMY_HASH = '$2y$10$xCw.W8xGjxASy9iMi/J5Mu71ySwhEE9cBCPaxD6f02AY0mS9gPxge';
+
     public function __construct(
         private AuthService $authService,
         private RbacService $rbacService,
@@ -54,6 +58,7 @@ class AuthController
         private PasswordResetService $passwordResetService,
         private LoginAccueilBackgroundService $loginAccueilBackgroundService,
         private CommunityMembershipConsolidationService $communityMembershipConsolidationService,
+        private ?PlatformAccountBanRepository $platformBans = null,
     ) {}
 
     /**
@@ -84,6 +89,45 @@ class AuthController
         return true;
     }
 
+    private function platformBanForLogin(string $email): ?array
+    {
+        $ban = ($this->platformBans ??= new PlatformAccountBanRepository())->findActiveForEmail($email);
+
+        return $ban !== null && ($ban['email_norm'] ?? '') === $email ? $ban : null;
+    }
+
+    private function restrictedLogin(?array $ban = null): Response
+    {
+        Session::forget('pending_community_selection');
+        Session::forget('pending_login_security_otp');
+        Session::forget('pending_verification_email');
+        Session::flash('login_access_restriction', $ban === null ? [] : PlatformBanNotice::publicDetails($ban));
+
+        return Response::redirect(url('login'), 303)->header('Cache-Control', 'private, no-store');
+    }
+
+    private function bannedCredentialsMatch(string $email, string $password): bool
+    {
+        $checked = false;
+        foreach ($this->userRepository->listIdsByEmailNormalized($email) as $id) {
+            $account = $this->userRepository->findById($id);
+            if ($account === null || !empty($account['deleted_at']) || !empty($account['is_service_account'])
+                || ($account['status'] ?? '') === 'merged' || strtolower(trim((string) $account['email'])) !== $email) {
+                continue;
+            }
+            $checked = true;
+            $hash = (string) ($account['password_hash'] ?? '');
+            if (password_verify($password, $hash !== '' ? $hash : self::LOGIN_DUMMY_HASH) && $hash !== '') {
+                return true;
+            }
+        }
+        if (!$checked) {
+            password_verify($password, self::LOGIN_DUMMY_HASH);
+        }
+
+        return false;
+    }
+
     /**
      * Fin de connexion pour une identité déjà prouvée par ailleurs (compte Discord relié) : mêmes garde-fous que le mot
      * de passe (compte actif, liste de blocage, double vérification), puis la même sortie (session neuve, accueil).
@@ -97,9 +141,10 @@ class AuthController
             Session::flash('error', __('auth.flash_account_not_found'));
             return Response::redirect(url('login'));
         }
-        if (!$this->loginAllowedForTenantAndClient((int) $row['tenant_id'], strtolower(trim((string) ($row['email'] ?? ''))), $request)) {
-            Session::flash('error', __('auth.flash_access_restricted'));
-            return Response::redirect(url('login'));
+        $email = strtolower(trim((string) ($row['email'] ?? '')));
+        $ban = $this->platformBanForLogin($email);
+        if ($ban !== null || !$this->loginAllowedForTenantAndClient((int) $row['tenant_id'], $email, $request)) {
+            return $this->restrictedLogin($ban);
         }
         if (($row['status'] ?? '') === 'pending_verification') {
             Session::set('pending_verification_email', strtolower(trim((string) ($row['email'] ?? ''))));
@@ -404,10 +449,13 @@ class AuthController
         }
         $oldEmail = Session::getFlash('login_old_email');
 
+        $restriction = Session::getFlash('login_access_restriction');
+
         return Response::view('auth.login', [
             'title' => __('auth.title_login'),
             'oldEmail' => is_string($oldEmail) ? $oldEmail : '',
-        ]);
+            'loginRestriction' => is_array($restriction) ? $restriction : null,
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function login(Request $request, array $params = []): Response
@@ -452,7 +500,21 @@ class AuthController
             $matches[] = $row;
         }
 
+        $ban = $this->platformBanForLogin($email);
+        if ($ban !== null) {
+            foreach ($matches as $match) {
+                if (strtolower(trim((string) ($match['email'] ?? ''))) === $email) {
+                    return $this->restrictedLogin($ban);
+                }
+            }
+            if ($this->bannedCredentialsMatch($email, $password)) {
+                return $this->restrictedLogin($ban);
+            }
+        }
         if ($matches === []) {
+            if ($ban === null && $candidates === []) {
+                password_verify($password, self::LOGIN_DUMMY_HASH);
+            }
             Session::forget('pending_verification_email');
             $auditTenantId = null;
             if ($candidates !== []) {
@@ -482,9 +544,7 @@ class AuthController
             fn (array $row): bool => $this->loginAllowedForTenantAndClient((int) ($row['tenant_id'] ?? 0), $emailNorm, $request)
         ));
         if ($matchesAfterBlocklist === []) {
-            Session::forget('pending_verification_email');
-            Session::flash('error', __('auth.flash_access_restricted'));
-            return Response::redirect(url('login'));
+            return $this->restrictedLogin();
         }
         $matches = $matchesAfterBlocklist;
 
@@ -630,6 +690,11 @@ class AuthController
             Session::flash('error', __('auth.flash_invalid_choice'));
             return Response::redirect(url('login/select-community'));
         }
+        $emailNorm = strtolower(trim((string) ($pending['email'] ?? '')));
+        $ban = $this->platformBanForLogin($emailNorm);
+        if ($ban !== null) {
+            return $this->restrictedLogin($ban);
+        }
         $user = $this->userRepository->findById((int) $chosen['user_id'], $tenantId);
         if (!$user || !in_array(($user['status'] ?? ''), ['active', 'pending_verification'], true)) {
             Session::forget('pending_community_selection');
@@ -643,11 +708,8 @@ class AuthController
             return Response::redirect(url('login'));
         }
 
-        $emailNorm = strtolower(trim((string) ($pending['email'] ?? '')));
         if (!$this->loginAllowedForTenantAndClient($tenantId, $emailNorm, $request)) {
-            Session::flash('error', __('auth.flash_community_inaccessible'));
-
-            return Response::redirect(url('login/select-community'));
+            return $this->restrictedLogin();
         }
 
         $temporaryAccess = (string) $request->input('temporary_access') === '1';

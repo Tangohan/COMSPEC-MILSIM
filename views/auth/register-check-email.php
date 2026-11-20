@@ -63,6 +63,9 @@ $athena_header_current = 'register';
         <?php if (!empty($warning)): ?>
             <?php $flash_variant = 'warning'; $flash_message = (string) $warning; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
+        <?php if (!empty($info)): ?>
+            <?php $flash_variant = 'info'; $flash_message = (string) $info; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
     </div>
 
     <div class="ds-callout" style="margin-top:1.75rem">

@@ -26,7 +26,7 @@ use App\Repositories\RoleSetRepository;
 use App\Services\Admin\ProfileCompletenessService;
 use App\Services\Admin\AdminAuditService;
 use App\Services\Email\EmailEvents;
-use App\Services\Email\EmailTokenPurpose;
+use App\Services\Email\RegistrationVerificationResend;
 use App\Services\EmailService;
 use App\Services\GradeValidationService;
 use App\Services\Personnel\PersonnelCompletenessService;
@@ -42,8 +42,6 @@ use App\Repositories\AccountPurgeRequestRepository;
 
 class UserAdminController
 {
-    private const RESEND_VERIFICATION_COOLDOWN_SEC = 90;
-
     private function gradeIsAvailableForDoctrinePicker(int $tenantId, int $gradeId): bool
     {
         foreach ($this->gradeRepository->listActiveForDoctrinePicker($tenantId) as $g) {
@@ -1450,56 +1448,16 @@ class UserAdminController
 
             return Response::redirect($returnList ? $backUsers : $backUser);
         }
-        $last = $this->emailTokenRepository->getLatestTokenCreatedAtForUserPurpose($id, EmailTokenPurpose::REGISTER_CONFIRM);
-        if ($last !== null && (time() - $last->getTimestamp()) < self::RESEND_VERIFICATION_COOLDOWN_SEC) {
-            $wait = self::RESEND_VERIFICATION_COOLDOWN_SEC - (time() - $last->getTimestamp());
-            Session::flash(
-                'error',
-                'Un e-mail a déjà été envoyé récemment. Veuillez patienter encore environ ' . max(1, $wait) . ' seconde(s) avant de renvoyer.'
-            );
-
-            return Response::redirect($returnList ? $backUsers : $backUser);
-        }
         $tenantRow = $this->tenantRepository->findById($tenantId);
-        $tenantName = (string) ($tenantRow['name'] ?? 'Communauté');
-        $email = trim((string) ($user['email'] ?? ''));
-        if ($email === '') {
-            Session::flash('error', 'Ce compte n’a pas d’adresse e-mail : impossible d’envoyer le lien.');
+        $resend = new RegistrationVerificationResend($this->emailTokenRepository, $this->emailService);
+        $result = $resend->send($user, $tenantId, (string) ($tenantRow['name'] ?? 'Communauté'));
+        if (!$result['sent']) {
+            Session::flash('error', $result['wait'] > 0
+                ? 'Un e-mail a déjà été envoyé récemment. Réessayez dans ' . $result['wait'] . ' seconde(s).'
+                : 'L’e-mail n’a pas pu être envoyé. Vérifiez la configuration d’envoi des courriels ou réessayez plus tard.');
 
             return Response::redirect($returnList ? $backUsers : $backUser);
         }
-        $rawToken = bin2hex(random_bytes(32));
-        $tokenHash = hash('sha256', $rawToken);
-        $expires = new \DateTimeImmutable('+' . EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES . ' minutes');
-        $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
-        // Le jeton doit exister avant l'envoi : un clic immédiat sur le lien ne doit pas tomber sur « lien invalide ».
-        $tokenId = $this->emailTokenRepository->create(
-            $tenantId,
-            $id,
-            EmailTokenPurpose::REGISTER_CONFIRM,
-            $tokenHash,
-            bin2hex(random_bytes(16)),
-            $expires
-        );
-        $ok = $this->emailService->sendUserRegisterConfirmation(
-            $email,
-            (string) ($user['display_name'] ?? 'Membre'),
-            $tenantName,
-            $verifyUrl,
-            EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES,
-            $tenantId
-        );
-        if (!$ok) {
-            // L'ancien lien reste utilisable si le nouveau message n'est jamais parti.
-            $this->emailTokenRepository->deleteById($tokenId);
-            Session::flash(
-                'error',
-                'L’e-mail n’a pas pu être envoyé. Vérifiez la configuration d’envoi des courriels ou réessayez plus tard.'
-            );
-
-            return Response::redirect($returnList ? $backUsers : $backUser);
-        }
-        $this->emailTokenRepository->deleteOtherPendingForUserPurpose($id, EmailTokenPurpose::REGISTER_CONFIRM, $tokenId);
         $notice = \email_file_mailer_notice();
         if ($notice !== '') {
             Session::flash('warning', $notice);

@@ -542,3 +542,6 @@ html[data-bo-theme="dark"] .rg-submit__btn:hover {
 .ds-page--auth .ds-alert-stack:not(:has(*)) {
   display: none;
 }
+.rg-discord { margin-block: .75rem; }
+.rg-discord .rg-check { margin-block: .5rem .25rem; }
+.rg-discord .rg-hint { margin: 0; }

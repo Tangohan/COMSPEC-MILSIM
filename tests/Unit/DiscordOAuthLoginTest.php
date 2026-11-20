@@ -78,6 +78,8 @@ final class DiscordOAuthLoginTest extends TestCase
         self::assertStringContainsString("'/discord/connexion', [\\App\\Controllers\\Web\\DiscordLoginController::class, 'start']", $r);
         self::assertStringContainsString("'/discord/connexion/retour', [\\App\\Controllers\\Web\\DiscordLoginController::class, 'callback']", $r);
         self::assertStringContainsString('discord_button.php', $this->src('views/auth/login.php'));
+        self::assertStringContainsString('discord_button.php', $this->src('views/auth/register.php'));
+        self::assertStringContainsString('replace: false', $this->src('app/Controllers/Web/RegisterController.php'));
         self::assertStringContainsString('discord_button.php', $this->src('views/enlistment/_account_gate.php'));
         self::assertStringContainsString('configured()', $this->src('views/partials/auth/discord_button.php'));
     }

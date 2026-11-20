@@ -1,0 +1,20 @@
+.pa-network-dialog__header, .pa-network-pages, .pa-network-search > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem;
+}
+.pa-network-dialog__header { justify-content: space-between; }
+.pa-network-dialog [data-network-status]:empty { display: none; }
+.pa-network-search { margin-block: .65rem; display: grid; gap: .4rem; }
+.pa-network-search label { font-weight: 700; }
+.pa-network-search input {
+  min-width: 0; flex: 1 1 14rem; padding: .45rem .65rem; border-radius: 7px;
+  border: 1px solid var(--pa-line); background: var(--pa-surface-2); color: var(--pa-ink);
+}
+.pa-network-search input::placeholder { color: var(--pa-muted); }
+.pa-network-list { list-style: none; margin-block: .5rem; padding: 0; }
+.pa-network-list li {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: .25rem .55rem; padding: .55rem 0; border-top: 1px solid var(--pa-line); overflow-wrap: anywhere;
+}
