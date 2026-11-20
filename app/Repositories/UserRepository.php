@@ -2521,6 +2521,28 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /** @return list<string> Adresses de personnes rattachées à la communauté, hors fiches supprimées ou techniques. */
+    public function listBanTargetEmailsForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $human = $this->technicalAccountExclusionPredicate('u');
+        $claimed = $this->sqlEmailStillClaimedPredicate('u');
+        $stmt = $this->pdo()->prepare(
+            "SELECT DISTINCT LOWER(TRIM(u.email)) AS email FROM users u
+             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND {$human['sql']} AND {$claimed['sql']}
+               AND (u.status IS NULL OR u.status NOT IN ('merged', 'deleted'))
+             ORDER BY email"
+        );
+        $stmt->execute([...$human['params'], ...$claimed['params']]);
+
+        return array_values(array_filter($stmt->fetchAll(PDO::FETCH_COLUMN), static fn (string $email): bool =>
+            (bool) filter_var($email, FILTER_VALIDATE_EMAIL) && !str_ends_with($email, '@internal.local')
+                && !str_ends_with($email, '@merged.invalid')
+        ));
+    }
+
     /**
      * Identifiants des comptes actifs de la communauté (hors comptes de service si la colonne existe).
      *

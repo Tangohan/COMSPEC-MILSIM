@@ -31,6 +31,7 @@ $homeQuickLinks = is_array($homeQuickLinks ?? null) ? $homeQuickLinks : [];
 $tileLabels = [
     'mod_reports' => 'Rapports d’erreurs du mod',
     'purge' => 'Demandes de purge de compte',
+    'appeals' => 'Contestations de bannissement',
     'payments' => 'Paiements à vérifier',
     'migrations' => 'Migrations en attente',
     'abuse' => 'Alertes de détection',
@@ -55,7 +56,7 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
     $x = is_array($c['extra'] ?? null) ? $c['extra'] : [];
     ?>
     <li class="ph-cell">
-        <a class="ph-tile ph-tile--<?= $h($state) ?>" href="<?= $h(url((string) $c['href'])) ?>">
+        <a class="ph-tile ph-tile--<?= $h($state) ?>" href="<?= $h(url((string) $c['href'])) ?>"<?= $key === 'appeals' ? ' data-dashboard-open="ph-appeals-dialog" aria-haspopup="dialog"' : '' ?>>
             <span class="ph-tile__label"><?= $h($tileLabels[$key] ?? $key) ?></span>
             <?php if ($state === 'na'): ?>
                 <span class="ph-tile__text">Indisponible</span>
@@ -81,6 +82,8 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                     <span class="ph-tile__note">nouveau(x) · <?= $h((int) ($x['wip'] ?? 0)) ?> en cours</span>
                 <?php elseif ($key === 'purge'): ?>
                     <span class="ph-tile__note">en attente de décision</span>
+                <?php elseif ($key === 'appeals'): ?>
+                    <span class="ph-tile__note">en attente de réexamen</span>
                 <?php elseif ($key === 'payments'): ?>
                     <span class="ph-tile__note">déclarés · le plus ancien attend depuis <?= $h((int) ($x['days'] ?? 0)) ?> jour(s)</span>
                 <?php elseif ($key === 'migrations'): ?>
@@ -111,9 +114,9 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                 <div>
                     <?php if ($homeTab !== 'vue'): ?><p class="pa-hero__kicker">Administration du site</p><?php endif; ?>
                     <h1 class="pa-hero__title"><?= $homeTab === 'vue' ? 'Console d’exploitation' : 'Pilotage du site' ?></h1>
-                    <form class="pa-search" method="get" action="<?= $h(url('admin/recherche')) ?>" role="search">
+                    <form class="pa-search" method="get" action="<?= $h(url('admin/recherche')) ?>" role="search"<?= $homeTab === 'vue' ? ' data-dashboard-search' : '' ?>>
                         <label for="pa-dash-search" class="ath-sr-only">Rechercher un compte ou une communauté</label>
-                        <input id="pa-dash-search" name="q" type="search" autocomplete="off" spellcheck="false"
+                        <input id="pa-dash-search" name="q" type="search" maxlength="120" autocomplete="off" spellcheck="false"
                                placeholder="Compte ou communauté : e-mail, pseudo, Steam, indicatif, code…">
                         <button type="submit" class="pa-btn pa-btn--solid">Rechercher</button>
                     </form>
@@ -147,8 +150,11 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
             <section id="hub-moderation" class="ph-block" aria-labelledby="ph-actions-title">
                 <div class="ph-block__head">
                     <h2 id="ph-actions-title" class="ph-block__title">À traiter</h2>
-                    <button type="button" class="pa-btn pa-btn--ghost pa-btn--sm" data-dashboard-open="ph-journal-dialog" aria-haspopup="dialog">Journal récent</button>
-                    <noscript><a href="<?= $h(url('admin/audit')) ?>">Journal d’audit</a></noscript>
+                    <div class="ph-console-actions">
+                        <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h(url('admin/sanctions')) ?>">Bannissements</a>
+                        <button type="button" class="pa-btn pa-btn--ghost pa-btn--sm" data-dashboard-open="ph-journal-dialog" aria-haspopup="dialog">Journal récent</button>
+                        <noscript><a href="<?= $h(url('admin/audit')) ?>">Journal d’audit</a></noscript>
+                    </div>
                 </div>
                 <ul class="ph-grid ph-grid--actions">
                     <?php foreach ($homeActions as $c) { $tile($c, 'action'); } ?>
@@ -183,6 +189,27 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                 </div>
                 <div data-dashboard-journal="<?= $h(url('admin') . '?fragment=journal') ?>" aria-live="polite"></div>
                 <a class="pa-btn pa-btn--ghost" data-dashboard-journal-fallback href="<?= $h(url('admin/audit')) ?>">Ouvrir le journal complet</a>
+            </dialog>
+            <dialog class="ph-dialog" id="ph-appeals-dialog" aria-labelledby="ph-appeals-title">
+                <div class="ph-dialog__head">
+                    <h2 id="ph-appeals-title">Contestations en attente</h2>
+                    <form method="dialog"><button class="pa-btn pa-btn--ghost">Fermer</button></form>
+                </div>
+                <div class="ph-dialog__result" data-dashboard-appeals="<?= $h(url('admin') . '?fragment=contestations') ?>" aria-live="polite"></div>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/sanctions') . '#contestations') ?>">Voir toutes les contestations</a>
+            </dialog>
+            <dialog class="ph-dialog ph-dialog--wide" id="ph-search-dialog" aria-labelledby="ph-search-title">
+                <div class="ph-dialog__head">
+                    <h2 id="ph-search-title">Comptes et communautés</h2>
+                    <form method="dialog"><button class="pa-btn pa-btn--ghost">Fermer</button></form>
+                </div>
+                <form class="ph-quick-search" method="get" action="<?= $h(url('admin/recherche')) ?>" data-dashboard-search role="search">
+                    <label class="ath-sr-only" for="ph-search-q">Affiner la recherche</label>
+                    <input type="search" id="ph-search-q" name="q" maxlength="120" autocomplete="off" required autofocus>
+                    <button class="pa-btn pa-btn--solid">Rechercher</button>
+                </form>
+                <div class="ph-dialog__result" data-dashboard-search-output aria-live="polite"></div>
+                <a class="pa-btn pa-btn--ghost" data-dashboard-search-fallback href="<?= $h(url('admin/recherche')) ?>">Ouvrir la recherche complète</a>
             </dialog>
             <p class="ath-sr-only" data-dashboard-status role="status"></p>
             <script src="<?= $h(asset_url('assets/js/platform-dashboard.js')) ?>" defer></script>

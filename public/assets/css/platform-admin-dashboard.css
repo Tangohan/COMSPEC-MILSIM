@@ -288,3 +288,18 @@
 .ph-dialog__links a:hover { background: var(--pa-surface-2); }
 .ph-dialog__links a > span { display: block; margin-top: .15rem; color: var(--pa-muted); font-size: .875rem; }
 .ph-dialog [hidden] { display: none; }
+
+.ph-console-actions, .ph-quick-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+.ph-dialog--wide { width: min(50rem, calc(100% - 2rem)); }
+.ph-quick-search > input { flex: 1 1 14rem; min-width: 0; }
+.ph-dialog__result { margin-block: .8rem; }
+.ph-search-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: .75rem;
+}
+.ph-search-results a { overflow-wrap: anywhere; }
