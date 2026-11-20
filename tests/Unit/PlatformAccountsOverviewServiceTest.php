@@ -85,4 +85,29 @@ final class PlatformAccountsOverviewServiceTest extends TestCase
         $f = UserRepository::platformInactivityHaving('90', true, strtotime('2026-11-01 00:00:00'));
         self::assertStringStartsWith('2026-08-03', (string) ($f['params'][0] ?? ''));
     }
+
+    public function testConnectionFrequencyCountsDistinctDaysAndPeople(): void
+    {
+        $pdo = $this->pdo();
+        $this->addUser($pdo, 1, 2, 'alice@x.fr', null);
+        $this->addUser($pdo, 2, 3, ' ALICE@x.fr ', null);
+        $this->addUser($pdo, 3, 2, 'bob@x.fr', null);
+        $this->addUser($pdo, 4, 2, 'anonyme@deleted.invalid', null);
+        $pdo->exec('CREATE TABLE audit_logs (user_id INTEGER, action TEXT, created_at TEXT)');
+        $pdo->exec("INSERT INTO audit_logs VALUES
+            (1, 'auth.login_success', '2026-11-01 00:00:00'),
+            (2, 'auth.login_success', '2026-11-02 08:00:00'),
+            (2, 'auth.login_success', '2026-11-02 12:00:00'),
+            (3, 'auth.login_success', '2026-11-03 08:00:00'),
+            (3, 'auth.login_success', '2026-11-08 00:00:00'),
+            (3, 'auth.login_failure', '2026-11-04 08:00:00'),
+            (4, 'auth.login_success', '2026-11-03 08:00:00')");
+
+        $summary = (new PlatformAccountsOverviewService($pdo))->observedReturns('2026-11-01', '2026-11-08');
+
+        self::assertSame([
+            'signed_in' => 2, 'returned' => 1, 'one_day' => 1, 'two_to_three' => 1,
+            'four_to_six' => 0, 'seven_plus' => 0, 'average_days' => 1.5,
+        ], $summary);
+    }
 }
