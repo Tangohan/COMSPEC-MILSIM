@@ -101,7 +101,7 @@ class AuthController
         Session::forget('pending_community_selection');
         Session::forget('pending_login_security_otp');
         Session::forget('pending_verification_email');
-        Session::flash('login_access_restriction', $ban === null ? [] : PlatformBanNotice::publicDetails($ban));
+        Session::flash('login_access_restriction', $ban === null ? [] : PlatformBanNotice::publicDetails($ban, locale()));
 
         return Response::redirect(url('login'), 303)->header('Cache-Control', 'private, no-store');
     }

@@ -35,64 +35,6 @@ html[data-bo-theme="dark"] .ds-page--auth {
   max-width: 30rem;
 }
 
-.au-restriction {
-  box-sizing: border-box;
-  inline-size: 100%;
-  max-inline-size: 34rem;
-  margin: 0 auto 1rem;
-  padding: 0;
-  border: 1px solid var(--rg-surface-border);
-  border-radius: 1.1rem;
-  color: var(--ds-text);
-  background: var(--rg-surface);
-  box-shadow: var(--au-card-shadow);
-}
-.au-restriction:modal {
-  inline-size: min(calc(100% - 1.5rem), 34rem);
-  max-block-size: calc(100dvh - 1.5rem);
-  margin: auto;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
-}
-.au-restriction::backdrop { background: rgba(4, 19, 17, .68); }
-.au-restriction__heading {
-  padding: 1.15rem clamp(1rem, 4vw, 1.65rem);
-  border-block-end: 1px solid var(--rg-surface-border);
-  background: var(--au-accent-soft);
-}
-.au-restriction__heading .ds-kicker { margin: 0 0 .35rem; }
-.au-restriction h2 { margin: 0; font-size: clamp(1.35rem, 4vw, 1.8rem); line-height: 1.22; font-weight: 800; }
-.au-restriction h2:focus { outline: none; }
-.au-restriction__body { padding: 1rem clamp(1rem, 4vw, 1.65rem); overflow-wrap: anywhere; }
-#login-restriction-message { margin: 0; white-space: pre-line; }
-.au-restriction__facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
-  gap: .6rem;
-  margin: .9rem 0 0;
-}
-.au-restriction__facts div { border: 1px solid var(--rg-surface-border); border-radius: .55rem; padding: .5rem; }
-.au-restriction__facts dt { font-size: .82rem; color: var(--ds-text-alt); }
-.au-restriction__facts dd { margin: .2rem 0 0; font-weight: 650; }
-.au-restriction__appeal { margin-block: 1rem; }
-.au-restriction__appeal h3 { margin: 0; font-size: 1.05rem; font-weight: 750; }
-.au-restriction__appeal p { margin: .3rem 0 .75rem; }
-.au-restriction__appeal .au-link { display: inline-block; margin: .4rem; }
-.au-restriction__request { display: flex; flex-wrap: wrap; gap: .55rem; }
-.au-restriction__request input { flex: 1 1 13rem; min-width: 0; }
-.au-restriction__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: .65rem;
-  border-block-start: 1px solid var(--rg-surface-border);
-  padding-block-start: .75rem;
-}
-@media (max-width: 420px) {
-  .au-restriction__facts { grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); }
-  .au-restriction__facts div:nth-child(3) { grid-column: 1 / -1; }
-}
-
 /* --- Carte du formulaire -------------------------------------------------- */
 .au-card {
   border-radius: 0.875rem;

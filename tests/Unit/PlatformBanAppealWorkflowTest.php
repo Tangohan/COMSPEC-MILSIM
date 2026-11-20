@@ -55,6 +55,32 @@ final class PlatformBanAppealWorkflowTest extends TestCase
         self::assertSame('Sans date de fin', PlatformBanNotice::endLabel(null));
     }
 
+    public function testEnglishNoticesTranslatePresetsAndKeepCustomReasons(): void
+    {
+        $preset = PlatformBanNotice::MODELS['contenus'];
+        $notice = PlatformBanNotice::publicDetails([
+            'id' => 40,
+            'rule_reference' => $preset['rule'],
+            'public_reason' => $preset['text'],
+            'ends_at' => '2026-11-20 12:00:00',
+        ], 'en');
+
+        self::assertSame('Athena Terms of Use · User content and moderation', $notice['rule']);
+        self::assertStringContainsString('the moderation team restricted your access.', $notice['message']);
+        self::assertSame('20 Nov 2026 at 13:00 (Paris time)', $notice['end']);
+        self::assertSame('No end date', PlatformBanNotice::endLabel(null, 'en'));
+        self::assertSame('Motif personnalisé', PlatformBanNotice::publicDetails(['id' => 40, 'public_reason' => 'Motif personnalisé'], 'en')['message']);
+        self::assertStringStartsWith('The Athena team', PlatformBanNotice::publicDetails(['id' => 40], 'en')['message']);
+
+        $mail = (new EmailTemplateEngine())->render('platform_ban_appeal_link', [
+            'appealUrl' => 'https://example.test/contester-sanction?token=fixture',
+            'appealLanguage' => 'en',
+        ]);
+        self::assertStringContainsString('<html lang="en">', $mail['html']);
+        self::assertStringContainsString('View decision', $mail['html']);
+        self::assertStringContainsString('This link is private and expires in one hour.', $mail['text']);
+    }
+
     private function database(): PDO
     {
         $pdo = new PDO('sqlite::memory:');
