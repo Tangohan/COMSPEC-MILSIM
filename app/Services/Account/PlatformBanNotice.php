@@ -41,23 +41,44 @@ final class PlatformBanNotice
     }
 
     /** @return array{id:int, rule:string, message:string, end:string} */
-    public static function publicDetails(array $ban): array
+    public static function publicDetails(array $ban, string $locale = 'fr'): array
     {
+        $rule = trim((string) ($ban['rule_reference'] ?? ''));
+        $message = trim((string) ($ban['public_reason'] ?? '')) ?: self::DEFAULT_TEXT;
+        if ($locale === 'en') {
+            if ($message === self::DEFAULT_TEXT) {
+                $message = \__('moderation.default_reason', [], $locale);
+            }
+            foreach (self::MODELS as $key => $model) {
+                if ($rule === $model['rule']) {
+                    $rule = \__('moderation.preset_' . $key . '_rule', [], $locale);
+                }
+                if ($message === $model['text']) {
+                    $message = \__('moderation.preset_' . $key . '_reason', [], $locale);
+                }
+            }
+        }
+
         return [
             'id' => (int) $ban['id'],
-            'rule' => trim((string) ($ban['rule_reference'] ?? '')),
-            'message' => trim((string) ($ban['public_reason'] ?? '')) ?: self::DEFAULT_TEXT,
-            'end' => self::endLabel($ban['ends_at'] ?? null),
+            'rule' => $rule,
+            'message' => $message,
+            'end' => self::endLabel($ban['ends_at'] ?? null, $locale),
         ];
     }
 
-    public static function endLabel(?string $endsAt): string
+    public static function endLabel(?string $endsAt, string $locale = 'fr'): string
     {
         if ($endsAt === null || $endsAt === '') {
-            return 'Sans date de fin';
+            return \__('moderation.no_end', [], $locale);
         }
 
-        return (new DateTimeImmutable($endsAt, new DateTimeZone('UTC')))
-            ->setTimezone(new DateTimeZone('Europe/Paris'))->format('d/m/Y à H:i') . ' (heure de Paris)';
+        $date = (new DateTimeImmutable($endsAt, new DateTimeZone('UTC')))
+            ->setTimezone(new DateTimeZone('Europe/Paris'));
+
+        return \__('moderation.end_date', [
+            'date' => $date->format($locale === 'en' ? 'j M Y' : 'd/m/Y'),
+            'time' => $date->format('H:i'),
+        ], $locale);
     }
 }

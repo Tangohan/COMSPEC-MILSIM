@@ -11,6 +11,9 @@ $athena_header_current = 'login';
 <html lang="<?= htmlspecialchars(html_lang(), ENT_QUOTES, 'UTF-8') ?>">
 <head>
 <?php $authTitle = $title ?? __('auth.title_login'); require base_path('views/partials/auth/head.php'); ?>
+<?php if (is_array($loginRestriction ?? null)): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/login-restriction.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<?php endif; ?>
 </head>
 <body class="ds-page ds-page--split ds-page--auth">
 <a class="ds-skip" href="#contenu"><?= $t('common.skip_to_content') ?></a>

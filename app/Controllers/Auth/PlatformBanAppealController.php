@@ -47,7 +47,7 @@ final class PlatformBanAppealController
                 }
             }
             if (!Session::get(self::SESSION_LINK)) {
-                Session::flash('error', 'Ce lien a expiré ou est invalide. Vous pouvez en demander un nouveau.');
+                Session::flash('error', __('moderation.invalid_link'));
             }
 
             return $this->back();
@@ -57,7 +57,7 @@ final class PlatformBanAppealController
         $notice = null;
         $appeal = null;
         if ($ban !== null) {
-            $notice = PlatformBanNotice::publicDetails($ban) + [
+            $notice = PlatformBanNotice::publicDetails($ban, locale()) + [
                 'active' => empty($ban['lifted_at']) && (empty($ban['ends_at']) || $ban['ends_at'] > gmdate('Y-m-d H:i:s')),
             ];
             $saved = $this->appeals->find((int) $ban['id']);
@@ -81,14 +81,13 @@ final class PlatformBanAppealController
     public function requestLink(Request $request, array $params = []): Response
     {
         if (!Csrf::verify($request)) {
-            Session::flash('error', 'Le formulaire a expiré. Réessayez.');
+            Session::flash('error', __('moderation.expired_form'));
 
             return $this->back();
         }
 
         $address = PlatformAccountBanRepository::normalizeEmail($request->inputString('email'));
-        $generic = 'Si une décision correspond à cette adresse, un lien confidentiel vous sera envoyé.';
-        Session::flash('success', $generic);
+        Session::flash('success', __('moderation.request_received'));
         if (strlen($address) > 255 || !filter_var($address, FILTER_VALIDATE_EMAIL)) {
             return $this->back();
         }
@@ -107,13 +106,15 @@ final class PlatformBanAppealController
 
             $token = bin2hex(random_bytes(32));
             $this->appeals->storeLink((int) $ban['id'], hash('sha256', $token), time() + self::LINK_TTL);
+            $language = locale();
             ($this->email ??= Container::get(EmailService::class))->sendTemplated(
                 EmailEvents::PLATFORM_BAN_APPEAL_LINK,
                 'platform_ban_appeal_link',
                 $address,
-                'Consultez votre décision de modération · Athena',
-                ['appealUrl' => url(self::PATH) . '?token=' . $token],
+                __('moderation.mail_subject', [], $language),
+                ['appealUrl' => url(self::PATH) . '?token=' . $token, 'appealLanguage' => $language],
                 forceImmediate: true,
+                locale: $language,
             );
         } catch (\Throwable) {
             // Même réponse lorsque l’adresse n’est pas reconnue ou l’envoi est indisponible.
@@ -127,13 +128,13 @@ final class PlatformBanAppealController
     {
         $ban = Csrf::verify($request) ? $this->authorizedBan() : null;
         if ($ban === null) {
-            Session::flash('error', 'Votre accès au formulaire a expiré. Demandez un nouveau lien.');
+            Session::flash('error', __('moderation.expired_appeal'));
 
             return $this->back();
         }
         $statement = trim($request->inputString('statement'));
         if (mb_strlen($statement) < 10 || mb_strlen($statement) > 4000) {
-            Session::flash('error', 'Votre contestation doit contenir entre 10 et 4 000 caractères.');
+            Session::flash('error', __('moderation.invalid_statement'));
 
             return $this->back();
         }
@@ -144,9 +145,9 @@ final class PlatformBanAppealController
             } catch (\Throwable $error) {
                 error_log('[ban_appeal.audit] ' . $error->getMessage());
             }
-            Session::flash('success', 'Votre contestation a été transmise. Vous pourrez consulter la réponse ici.');
+            Session::flash('success', __('moderation.appeal_received'));
         } else {
-            Session::flash('success', 'Votre contestation a déjà été enregistrée.');
+            Session::flash('success', __('moderation.appeal_already_received'));
         }
 
         return $this->back();
