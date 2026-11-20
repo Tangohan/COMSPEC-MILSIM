@@ -102,6 +102,15 @@ final class PlatformDashboardActivity
             // Le journal des connexions est indépendant du registre des comptes.
         }
 
+        $followup = null;
+        $cohortStart = $start->modify('-7 days');
+        $cohortEnd = $end->modify('-7 days');
+        try {
+            $followup = $overview->signupFollowup($cohortStart->format('Y-m-d'), $cohortEnd->format('Y-m-d'));
+        } catch (RuntimeException) {
+            // Le suivi des inscriptions reste facultatif pour le tableau de bord.
+        }
+
         return [
             'days' => $days,
             'periodLabel' => $start->format('d/m') . ' – ' . $end->modify('-1 day')->format('d/m'),
@@ -110,6 +119,8 @@ final class PlatformDashboardActivity
             'pages' => $pages,
             'engagement' => $engagement,
             'returns' => $returns,
+            'followup' => $followup,
+            'cohortLabel' => $cohortStart->format('d/m/Y') . ' – ' . $cohortEnd->modify('-1 day')->format('d/m/Y'),
         ];
     }
 
