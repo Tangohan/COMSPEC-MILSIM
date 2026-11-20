@@ -19,6 +19,7 @@ use WeakMap;
 final class PlatformAccountBanRepository
 {
     private ?PDO $pdo;
+    private ?bool $noticesReady = null;
 
     /** @var callable(): int */
     private $clock;
@@ -90,6 +91,21 @@ final class PlatformAccountBanRepository
         return $this->ready() && self::$state !== null && (self::$state[$this->pdo()]['ends'] ?? false);
     }
 
+    public function supportsNotices(): bool
+    {
+        if ($this->noticesReady === null) {
+            try {
+                $this->noticesReady = $this->pdo()->query(
+                    'SELECT rule_reference, public_reason, source_tenant_id, batch_ref FROM platform_account_bans WHERE 1 = 0'
+                ) !== false;
+            } catch (\PDOException) {
+                $this->noticesReady = false;
+            }
+        }
+
+        return $this->noticesReady;
+    }
+
     /** Prédicat « décision pas encore arrivée à échéance » (sans effet tant que la colonne manque). */
     private function notExpiredSql(string $alias = ''): string
     {
@@ -119,6 +135,7 @@ final class PlatformAccountBanRepository
      * @param list<int> $indicatorIds
      * @param array<int, string> $statusSnapshot user_id => statut avant bannissement
      * @param string|null $endsAt date de fin (UTC, « Y-m-d H:i:s ») ; null = sans fin
+     * @param array{rule_reference: ?string, public_reason: ?string, source_tenant_id: ?int, batch_ref: ?string}|null $notice
      */
     public function create(
         string $email,
@@ -128,7 +145,8 @@ final class PlatformAccountBanRepository
         array $indicatorIds,
         array $statusSnapshot,
         ?int $actorId,
-        ?string $endsAt = null
+        ?string $endsAt = null,
+        ?array $notice = null
     ): int {
         if (!$this->ready()) {
             return 0;
@@ -149,6 +167,11 @@ final class PlatformAccountBanRepository
             $fields .= ', ends_at';
             $marks .= ', ?';
             $values[] = $endsAt;
+        }
+        if ($notice !== null) {
+            $fields .= ', rule_reference, public_reason, source_tenant_id, batch_ref';
+            $marks .= ', ?, ?, ?, ?';
+            array_push($values, $notice['rule_reference'], $notice['public_reason'], $notice['source_tenant_id'], $notice['batch_ref']);
         }
         $st = $this->pdo()->prepare('INSERT INTO platform_account_bans (' . $fields . ') VALUES (' . $marks . ')');
         $st->execute($values);
@@ -171,6 +194,51 @@ final class PlatformAccountBanRepository
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function latestForEmail(string $email): ?array
+    {
+        $stmt = $this->pdo()->prepare('SELECT * FROM platform_account_bans WHERE email_norm = ? ORDER BY id DESC LIMIT 1');
+        $stmt->execute([self::normalizeEmail($email)]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->pdo()->prepare('SELECT * FROM platform_account_bans WHERE id = ?');
+        $stmt->execute([$id]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /** @return list<array{batch_ref: string, tenant_name: ?string, source_tenant_id: int, total: int, remaining: int, created_at: string}> */
+    public function recentBatches(): array
+    {
+        $stmt = $this->pdo()->query(
+            'SELECT b.batch_ref, b.source_tenant_id, MAX(t.name) AS tenant_name, COUNT(*) AS total,
+                    SUM(CASE WHEN b.lifted_at IS NULL AND ' . $this->notExpiredSql('b') . ' THEN 1 ELSE 0 END) AS remaining,
+                    MIN(b.created_at) AS created_at
+             FROM platform_account_bans b LEFT JOIN tenants t ON t.id = b.source_tenant_id
+             WHERE b.batch_ref IS NOT NULL GROUP BY b.batch_ref, b.source_tenant_id
+             ORDER BY created_at DESC LIMIT 25'
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return list<array{id: int, email_norm: string}> */
+    public function activeBatch(string $batch): array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT id, email_norm FROM platform_account_bans WHERE batch_ref = ? AND lifted_at IS NULL AND ' . $this->notExpiredSql()
+            . ' ORDER BY id'
+        );
+        $stmt->execute([$batch]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

@@ -191,6 +191,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                         'prior' => count($banHistory),
                         'history_url' => '#historique-sanctions',
                         'supports_end' => !empty($personBanSupportsEnd),
+                        'supports_notice' => !empty($personBanSupportsNotice),
                         'steam_id' => $steamId,
                         'known_ips' => $knownIps,
                         'shared' => false,
@@ -479,3 +480,4 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
     </div>
 </div>
 <script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/platform-ban-notice.js')) ?>" defer></script>

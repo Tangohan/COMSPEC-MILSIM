@@ -12,6 +12,7 @@ use App\Repositories\UserRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Moderation\IndicatorBlocklistService;
+use App\Support\SqlText;
 use DateTimeImmutable;
 use DateTimeZone;
 use PDO;
@@ -55,7 +56,7 @@ final class PlatformAccountBanService
 
     private function users(): UserRepository
     {
-        return $this->users ??= Container::get(UserRepository::class);
+        return $this->users ??= new UserRepository($this->pdo());
     }
 
     private function bans(): PlatformAccountBanRepository
@@ -81,6 +82,13 @@ final class PlatformAccountBanService
     private function audit(): AuditService
     {
         return $this->audit ??= new AuditService();
+    }
+
+    /** Initialise les anciens schémas avant une transaction de bannissement ou de levée. */
+    public function prepareWrites(): void
+    {
+        $this->bans()->ready();
+        $this->blocklist();
     }
 
     /**
@@ -123,11 +131,21 @@ final class PlatformAccountBanService
      * @param list<string> $ips
      * @return array{ok: bool, error?: string, ban_id?: int, blocked_ips?: int, steam_blocked?: bool, accounts?: int, ends_at?: string|null}
      */
-    public function ban(string $email, string $reason, array $ips, bool $blockSteam, int $actorId, ?DateTimeImmutable $endsAt = null): array
-    {
+    public function ban(
+        string $email,
+        string $reason,
+        array $ips,
+        bool $blockSteam,
+        int $actorId,
+        ?DateTimeImmutable $endsAt = null,
+        ?PlatformBanNotice $notice = null,
+        ?int $sourceTenantId = null,
+        ?string $batch = null,
+    ): array {
         $email = PlatformAccountBanRepository::normalizeEmail($email);
         $reason = trim($reason);
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || str_ends_with($email, '@deleted.invalid')) {
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || str_ends_with($email, '@deleted.invalid')
+            || str_ends_with($email, '@merged.invalid') || str_ends_with($email, '@internal.local')) {
             return ['ok' => false, 'error' => 'Adresse du compte introuvable.'];
         }
         if (mb_strlen($reason) < self::MIN_REASON_LENGTH) {
@@ -140,14 +158,12 @@ final class PlatformAccountBanService
         if ($endsAt !== null && !$this->bans()->supportsEndDate()) {
             return ['ok' => false, 'error' => 'Les sanctions temporaires demandent la dernière mise à jour de la base : lancez les migrations puis réessayez.'];
         }
-        // Une sanction échue la veille doit être soldée avant d’en décider une nouvelle.
+        $notice = $notice?->isEmpty() === false ? $notice : null;
+        if (($notice !== null || $batch !== null) && !$this->bans()->supportsNotices()) {
+            return ['ok' => false, 'error' => 'La mise à jour des sanctions et contestations est nécessaire.'];
+        }
+        // Une sanction échue doit être soldée avant d’en décider une nouvelle.
         $this->expireDue($email);
-        if ($this->bans()->findActiveForEmail($email) !== null) {
-            return ['ok' => false, 'error' => 'Cette personne est déjà bannie.'];
-        }
-        if ($this->users()->emailHasPlatformAdmin($email)) {
-            return ['ok' => false, 'error' => 'Un administrateur du site ne peut pas être banni : retirez-lui d’abord ce rôle.'];
-        }
 
         $ids = array_values(array_filter(
             array_map('intval', $this->users()->listIdsByEmailNormalized($email)),
@@ -160,86 +176,139 @@ final class PlatformAccountBanService
             return ['ok' => false, 'error' => 'Vous ne pouvez pas vous bannir vous-même.'];
         }
 
-        $snapshot = [];
-        $label = '';
-        $steam = '';
-        foreach ($ids as $id) {
-            $row = $this->users()->findById($id, null);
-            if ($row === null) {
-                continue;
+        $this->prepareWrites();
+        sort($ids, SORT_NUMERIC);
+        return $this->inTransaction(function () use ($ids, $email, $reason, $ips, $blockSteam, $actorId, $endsAt, $notice, $sourceTenantId, $batch): array {
+            // Les deux demandes visant une même personne prennent les verrous dans le même ordre.
+            $in = implode(',', array_fill(0, count($ids), '?'));
+            $lock = SqlText::isMysqlFamily($this->pdo()) ? ' FOR UPDATE' : '';
+            $stmt = $this->pdo()->prepare('SELECT * FROM users WHERE id IN (' . $in . ') ORDER BY id' . $lock);
+            $stmt->execute($ids);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if ($this->bans()->findActiveForEmail($email) !== null) {
+                return ['ok' => false, 'error' => 'Cette personne est déjà bannie.'];
             }
-            $snapshot[$id] = (string) ($row['status'] ?? '');
-            if ($label === '') {
-                $label = trim((string) ($row['callsign'] ?? '')) ?: trim((string) ($row['display_name'] ?? ''));
+            if ($this->users()->emailHasPlatformAdmin($email)) {
+                return ['ok' => false, 'error' => 'Un administrateur du site ne peut pas être banni : retirez-lui d’abord ce rôle.'];
             }
-            if ($steam === '') {
-                $steam = trim((string) ($row['steam_id'] ?? ''));
-            }
-        }
 
-        $indicatorIds = [];
-        $note = 'Bannissement site : ' . mb_substr($reason, 0, 200);
-        // Les blocages portent la date de fin : ils s’éteignent seuls, même si personne ne rouvre l’annuaire.
-        $indicatorIds[] = $this->blocklist()->addEmailBlock($actorId, 'global', null, $email, $note, $endsAt);
-        $steamBlocked = false;
-        if ($blockSteam && $steam !== '') {
-            try {
-                $indicatorIds[] = $this->blocklist()->addSteamBlock($actorId, 'global', null, $steam, $note, $endsAt);
-                $steamBlocked = true;
-            } catch (\InvalidArgumentException) {
-                $steamBlocked = false;
+            $snapshot = [];
+            $label = '';
+            $steamIds = [];
+            foreach ($rows as $row) {
+                if (PlatformAccountBanRepository::normalizeEmail((string) $row['email']) !== $email
+                    || !empty($row['is_service_account']) || !empty($row['deleted_at'])
+                    || in_array($row['status'] ?? '', ['merged', 'deleted'], true)) {
+                    continue;
+                }
+                $snapshot[(int) $row['id']] = (string) $row['status'];
+                $label = $label ?: (trim((string) ($row['callsign'] ?? '')) ?: trim((string) ($row['display_name'] ?? '')));
+                $steam = \App\Support\SteamId::normalize((string) ($row['steam_id'] ?? ''));
+                if ($steam !== null) {
+                    $steamIds[$steam] = $steam;
+                }
             }
-        }
-        $blockedIps = 0;
-        foreach (self::cleanIps($ips) as $ip) {
-            if ($this->indicators()->isIpBlockedGlobally($ip)) {
-                continue;
+            if ($snapshot === []) {
+                return ['ok' => false, 'error' => 'Aucun compte utilisateur à bannir pour cette adresse.'];
             }
-            $indicatorIds[] = $this->blocklist()->addIpBlock($actorId, 'global', null, $ip, $note, $endsAt);
-            $blockedIps++;
-        }
 
-        $this->setStatuses(array_fill_keys(array_keys($snapshot), 'inactive'));
+            $note = 'Bannissement site : ' . mb_substr($reason, 0, 200);
+            $indicatorIds = [$this->blocklist()->addEmailBlock($actorId, 'global', null, $email, $note, $endsAt)];
+            if ($blockSteam) {
+                foreach ($steamIds as $steam) {
+                    $indicatorIds[] = $this->blocklist()->addSteamBlock($actorId, 'global', null, $steam, $note, $endsAt);
+                }
+            }
+            $blockedIps = 0;
+            foreach (self::cleanIps($ips) as $ip) {
+                if ($this->indicators()->isIpBlockedGlobally($ip)) {
+                    continue;
+                }
+                $indicatorIds[] = $this->blocklist()->addIpBlock($actorId, 'global', null, $ip, $note, $endsAt);
+                $blockedIps++;
+            }
 
-        $banId = $this->bans()->create(
-            $email,
-            $ids[0] ?? null,
-            $label !== '' ? $label : $email,
-            $reason,
-            $indicatorIds,
-            $snapshot,
-            $actorId > 0 ? $actorId : null,
-            $endsAt?->format('Y-m-d H:i:s')
-        );
+            $this->setStatuses(array_fill_keys(array_keys($snapshot), 'inactive'), true);
+            $metadata = $notice !== null || $batch !== null ? [
+                'rule_reference' => $notice?->rule ?: null,
+                'public_reason' => $notice?->message ?: null,
+                'source_tenant_id' => $sourceTenantId,
+                'batch_ref' => $batch,
+            ] : null;
+            $banId = $this->bans()->create(
+                $email,
+                array_key_first($snapshot),
+                $label !== '' ? $label : $email,
+                $reason,
+                $indicatorIds,
+                $snapshot,
+                $actorId > 0 ? $actorId : null,
+                $endsAt?->format('Y-m-d H:i:s'),
+                $metadata,
+            );
+            if ($banId < 1) {
+                throw new \RuntimeException('La décision de bannissement n’a pas été enregistrée.');
+            }
 
-        return [
-            'ok' => true,
-            'ban_id' => $banId,
-            'blocked_ips' => $blockedIps,
-            'steam_blocked' => $steamBlocked,
-            'accounts' => count($snapshot),
-            'ends_at' => $endsAt?->format('Y-m-d H:i:s'),
-        ];
+            return [
+                'ok' => true,
+                'ban_id' => $banId,
+                'blocked_ips' => $blockedIps,
+                'steam_blocked' => $blockSteam && $steamIds !== [],
+                'accounts' => count($snapshot),
+                'ends_at' => $endsAt?->format('Y-m-d H:i:s'),
+            ];
+        });
     }
 
     /**
      * @return array{ok: bool, error?: string, restored?: int}
      */
-    public function lift(string $email, int $actorId, ?string $note = null): array
+    public function lift(string $email, int $actorId, ?string $note = null, ?int $expectedBanId = null): array
     {
-        $ban = $this->bans()->findActiveForEmail($email);
-        if ($ban === null) {
-            return ['ok' => false, 'error' => 'Aucun bannissement en cours pour cette adresse.'];
-        }
-        foreach (json_decode((string) ($ban['indicator_ids'] ?? '[]'), true) ?: [] as $indicatorId) {
-            if ((int) $indicatorId > 0) {
-                $this->blocklist()->revokeIndicator($actorId, (int) $indicatorId, null);
+        $this->prepareWrites();
+        return $this->inTransaction(function () use ($email, $actorId, $note, $expectedBanId): array {
+            $ban = $this->bans()->findActiveForEmail($email);
+            if ($ban === null || ($expectedBanId !== null && (int) $ban['id'] !== $expectedBanId)
+                || !$this->bans()->lift((int) $ban['id'], $actorId > 0 ? $actorId : null, $note)) {
+                return ['ok' => false, 'error' => 'Le bannissement visé n’est plus en cours.'];
             }
-        }
-        $restored = $this->restoreSnapshot($ban);
-        $this->bans()->lift((int) $ban['id'], $actorId > 0 ? $actorId : null, $note);
+            foreach (json_decode((string) ($ban['indicator_ids'] ?? '[]'), true) ?: [] as $indicatorId) {
+                if ((int) $indicatorId > 0) {
+                    $this->blocklist()->revokeIndicator($actorId, (int) $indicatorId, null);
+                }
+            }
 
-        return ['ok' => true, 'restored' => $restored];
+            return ['ok' => true, 'restored' => $this->restoreSnapshot($ban)];
+        });
+    }
+
+    /**
+     * @template T
+     * @param callable(): T $change
+     * @return T
+     */
+    private function inTransaction(callable $change): mixed
+    {
+        $pdo = $this->pdo();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $result = $change();
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+
+            return $result;
+        } catch (\Throwable $error) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $error;
+        }
     }
 
     /**
@@ -339,12 +408,18 @@ final class PlatformAccountBanService
     }
 
     /** @param array<int, string> $statuses */
-    private function setStatuses(array $statuses): void
+    private function setStatuses(array $statuses, bool $closeSessions = false): void
     {
-        $st = $this->pdo()->prepare('UPDATE users SET status = ?, updated_at = ? WHERE id = ?');
-        $now = gmdate('Y-m-d H:i:s');
+        $hasEpoch = $closeSessions && SqlText::isMysqlFamily($this->pdo()) && $this->users()->hasSessionEpochColumn();
+        $epochSql = $hasEpoch ? ', session_epoch = GREATEST(COALESCE(session_epoch, 0), ?)' : '';
+        $st = $this->pdo()->prepare('UPDATE users SET status = ?, updated_at = ?' . $epochSql . ' WHERE id = ?');
+        $epoch = time();
+        $params = [gmdate('Y-m-d H:i:s', $epoch)];
+        if ($hasEpoch) {
+            $params[] = $epoch;
+        }
         foreach ($statuses as $id => $status) {
-            $st->execute([$status, $now, (int) $id]);
+            $st->execute([$status, ...$params, (int) $id]);
         }
     }
 }

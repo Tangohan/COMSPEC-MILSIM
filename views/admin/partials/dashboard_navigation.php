@@ -8,6 +8,7 @@ $tools = [
         'admin?onglet=chiffres' => 'Comptes et communautés',
         'admin?onglet=activite' => 'Activité et modération',
         'admin/analytics' => 'Analyses d’usage',
+        'admin/sanctions' => 'Bannissements et contestations',
     ],
     'Exploitation protégée' => [
         'admin?onglet=etat' => 'État technique',

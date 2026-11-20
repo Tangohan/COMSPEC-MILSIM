@@ -32,6 +32,7 @@ use App\Repositories\AccountPurgeRequestRepository;
 use App\Repositories\LoginAttemptRepository;
 use App\Repositories\PlatformAccountBanRepository;
 use App\Services\Account\PlatformAccountBanService;
+use App\Services\Account\PlatformBanNotice;
 
 /**
  * Annuaire global des comptes (toutes communautés) — administration plateforme.
@@ -124,6 +125,7 @@ final class SystemUsersController
             'platformBansCount' => $this->bans()->countActive(),
             'platformInactiveCount' => $inactiveCount,
             'platformBanSupportsEnd' => $this->bans()->supportsEndDate(),
+            'platformBanSupportsNotice' => $this->bans()->supportsNotices(),
         ]);
     }
 
@@ -577,14 +579,22 @@ final class SystemUsersController
             $ips[] = $extra;
         }
         $reason = trim($request->inputString('reason'));
-        $result = $this->banService()->ban(
-            $email,
-            $reason,
-            $ips,
-            $request->inputString('block_steam') === '1',
-            $actorId,
-            $endsAt
-        );
+        try {
+            $result = $this->banService()->ban(
+                $email,
+                $reason,
+                $ips,
+                $request->inputString('block_steam') === '1',
+                $actorId,
+                $endsAt,
+                new PlatformBanNotice($request->inputString('rule_reference'), $request->inputString('public_reason')),
+            );
+        } catch (\Throwable $error) {
+            error_log('[ban.account] ' . $error->getMessage());
+            Session::flash('error', 'Le bannissement n’a pas pu être enregistré. Réessayez.');
+
+            return Response::redirect($this->backUrl($request));
+        }
         if (!$result['ok']) {
             Session::flash('error', (string) ($result['error'] ?? 'Bannissement impossible.'));
 
@@ -610,7 +620,7 @@ final class SystemUsersController
 
         $bits = ['connexion et inscription refusées pour ' . $email];
         if (!empty($result['steam_blocked'])) {
-            $bits[] = 'Steam ID refusé par le mod';
+            $bits[] = 'identifiants Steam liés refusés par le mod';
         }
         if ((int) ($result['blocked_ips'] ?? 0) > 0) {
             $bits[] = (int) $result['blocked_ips'] . ' adresse(s) réseau bloquée(s)';
@@ -903,6 +913,7 @@ final class SystemUsersController
             'personBan' => $this->bans()->findActiveForEmail($email),
             'personBanHistory' => $this->bans()->historyForEmail($email),
             'personBanSupportsEnd' => $this->bans()->supportsEndDate(),
+            'personBanSupportsNotice' => $this->bans()->supportsNotices(),
             'personLiveFiches' => count($this->users->listIdsByEmailNormalized($email)),
             'personKnownIps' => $this->knownIpsWithBlockState($email),
             'isPlatformAdminShell' => true,
@@ -1626,6 +1637,9 @@ final class SystemUsersController
 
     private function backUrl(Request $request): string
     {
+        if ($request->inputString('return_sanctions') === '1') {
+            return url('admin/sanctions') . '#compte';
+        }
         $person = strtolower(trim((string) $request->input('return_person', '')));
         if ($person !== '' && filter_var($person, FILTER_VALIDATE_EMAIL)) {
             return url('admin/users/person') . '?email=' . rawurlencode($person);

@@ -12,6 +12,7 @@ use App\Repositories\ModerationRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Account\PlatformAutomaticBanService;
 use App\Services\Moderation\ModerationRestrictionsCatalog;
 use App\Services\Moderation\ModerationService;
 use App\Services\Admin\AdminActionService;
@@ -162,7 +163,18 @@ final class SystemMemberSanctionsController
                 'expires_at' => $expires?->format(\DateTimeInterface::ATOM),
             ]);
 
-            Session::flash('success', 'Mesure enregistrée.');
+            $autoBanned = false;
+            if (in_array($type, ['suspend', 'ban'], true)) {
+                try {
+                    $autoBanned = (new PlatformAutomaticBanService())->afterConfirmedRestriction(
+                        $this->moderationRepository, (string) ($targetUser['email'] ?? ''), $moderationActionId, (int) $actor['id']
+                    );
+                } catch (\Throwable $error) {
+                    error_log('[ban.automatic] ' . $error->getMessage());
+                    Session::flash('error', 'La règle automatique n’a pas pu être évaluée.');
+                }
+            }
+            Session::flash('success', $autoBanned ? 'Mesure enregistrée et bannissement du site appliqué par la règle automatique.' : 'Mesure enregistrée.');
         } catch (\Throwable $e) {
             Session::flash('error', $e->getMessage());
         }

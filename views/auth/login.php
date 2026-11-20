@@ -83,6 +83,9 @@ $athena_header_current = 'login';
     </form>
 
     <?php $discordNext = null; $discordHrefOverride = null; require base_path('views/partials/auth/discord_button.php'); ?>
+    <div class="ds-alt au-alt">
+        <a class="au-link" href="<?= htmlspecialchars(url('contester-sanction'), ENT_QUOTES, 'UTF-8') ?>">Consulter ou contester un bannissement</a>
+    </div>
 
     <div class="au-divider"><span><?= $t('auth.login_new_here') ?></span></div>
     <div class="au-alt-actions">

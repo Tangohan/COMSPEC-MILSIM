@@ -11,6 +11,7 @@ use App\Repositories\ContentReportRepository;
 use App\Repositories\MaintenanceRepository;
 use App\Repositories\ModerationArtifactRepository;
 use App\Repositories\PlatformAlertRepository;
+use App\Repositories\PlatformBanAppealRepository;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
 use App\Services\Admin\PlatformDashboardActivity;
@@ -54,6 +55,7 @@ class SystemDashboardController
                     'dashboardActivity' => (new PlatformDashboardActivity($this->tenantAnalytics))->overview((int) $request->query('days', 14)),
                 ]),
                 'journal' => Response::view('admin.partials.recent_activity', $this->recentActivityData()),
+                'contestations' => Response::view('admin.partials.dashboard_pending_appeals', $this->pendingAppeals()),
                 default => null,
             };
             if ($fragment !== null) {
@@ -196,6 +198,21 @@ class SystemDashboardController
             'adminPlatformUsagePreview' => $usage,
             'adminAccountsOverview' => $accountsOverview,
         ] + $this->moderationCounts();
+    }
+
+    /** @return array<string, mixed> */
+    private function pendingAppeals(): array
+    {
+        try {
+            $repo = new PlatformBanAppealRepository();
+            if ($repo->ready()) {
+                return ['pendingAppeals' => $repo->listForReview(false, 8)];
+            }
+        } catch (\Throwable $error) {
+            error_log('[dashboard.appeals] ' . $error->getMessage());
+        }
+
+        return ['pendingAppeals' => null];
     }
 
     /** @return array<string, mixed> */

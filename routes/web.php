@@ -456,6 +456,9 @@ return function (Router $router) {
     $router->post('/logout', [AuthController::class, 'logout']);
     $router->get('/forgot-password', [AuthController::class, 'showForgotPassword'], [GuestMiddleware::class]);
     $router->post('/forgot-password', [AuthController::class, 'sendResetLink'], [GuestMiddleware::class]);
+    $router->get('/contester-sanction', [\App\Controllers\Auth\PlatformBanAppealController::class, 'show']);
+    $router->post('/contester-sanction/lien', [\App\Controllers\Auth\PlatformBanAppealController::class, 'requestLink']);
+    $router->post('/contester-sanction/deposer', [\App\Controllers\Auth\PlatformBanAppealController::class, 'submit']);
     $router->get('/reset-password', [AuthController::class, 'showResetPassword'], [GuestMiddleware::class]);
     $router->post('/reset-password', [AuthController::class, 'processResetPassword'], [GuestMiddleware::class]);
     $router->get('/evenements', [CommunityEventsController::class, 'index'], [AuthMiddleware::class]);
@@ -1989,6 +1992,11 @@ return function (Router $router) {
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin', [SystemDashboardController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/statistiques/pdf', [SystemDashboardController::class, 'statisticsPdf'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/sanctions', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/organisation', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'banOrganization'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/lots/lever', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'liftBatch'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/contestations/{id}', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'review'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/automatique', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'saveAutomation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Recherche globale (comptes et communautés), réservée aux administrateurs du site.
     $router->get('/admin/recherche', [\App\Controllers\Admin\System\SystemAdminSearchController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/analytics', [SystemAnalyticsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
