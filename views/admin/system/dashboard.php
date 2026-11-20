@@ -110,7 +110,7 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
             <div class="pa-hero__row">
                 <div>
                     <?php if ($homeTab !== 'vue'): ?><p class="pa-hero__kicker">Administration du site</p><?php endif; ?>
-                    <h1 class="pa-hero__title"><?= $homeTab === 'vue' ? 'Administration du site' : 'Pilotage du site' ?></h1>
+                    <h1 class="pa-hero__title"><?= $homeTab === 'vue' ? 'Console d’exploitation' : 'Pilotage du site' ?></h1>
                     <form class="pa-search" method="get" action="<?= $h(url('admin/recherche')) ?>" role="search">
                         <label for="pa-dash-search" class="ath-sr-only">Rechercher un compte ou une communauté</label>
                         <input id="pa-dash-search" name="q" type="search" autocomplete="off" spellcheck="false"
@@ -136,13 +136,20 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
             </div>
         </header>
 
-        <?php require base_path('views/admin/partials/pilotage_tabs.php'); ?>
+        <?php if ($homeTab === 'vue'): ?>
+            <?php require base_path('views/admin/partials/dashboard_navigation.php'); ?>
+        <?php else: ?>
+            <?php require base_path('views/admin/partials/pilotage_tabs.php'); ?>
+        <?php endif; ?>
 
         <div class="pa-panel">
 <?php if ($homeTab === 'vue'): ?>
-            <?php if (isset($dashboardActivity)) { require base_path('views/admin/partials/dashboard_activity.php'); } ?>
             <section id="hub-moderation" class="ph-block" aria-labelledby="ph-actions-title">
-                <h2 id="ph-actions-title" class="ph-block__title">À traiter</h2>
+                <div class="ph-block__head">
+                    <h2 id="ph-actions-title" class="ph-block__title">À traiter</h2>
+                    <button type="button" class="pa-btn pa-btn--ghost pa-btn--sm" data-dashboard-open="ph-journal-dialog" aria-haspopup="dialog">Journal récent</button>
+                    <noscript><a href="<?= $h(url('admin/audit')) ?>">Journal d’audit</a></noscript>
+                </div>
                 <ul class="ph-grid ph-grid--actions">
                     <?php foreach ($homeActions as $c) { $tile($c, 'action'); } ?>
                 </ul>
@@ -168,14 +175,17 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                 </ul>
             </section>
 
-            <section class="ph-block" aria-labelledby="ph-quick-title">
-                <h2 id="ph-quick-title" class="ph-block__title">Accès rapides</h2>
-                <ul class="ph-quick">
-                    <?php foreach ($homeQuickLinks as $q): ?>
-                    <li><a class="pa-btn pa-btn--ghost" href="<?= $h(url((string) $q['href'])) ?>"><?= $h($quickLabels[(string) $q['key']] ?? (string) $q['key']) ?></a></li>
-                    <?php endforeach; ?>
-                </ul>
-            </section>
+            <?php if (isset($dashboardActivity)) { require base_path('views/admin/partials/dashboard_activity.php'); } ?>
+            <dialog class="ph-dialog" id="ph-journal-dialog" aria-labelledby="ph-journal-title">
+                <div class="ph-dialog__head">
+                    <h2 id="ph-journal-title">Journal d’exploitation</h2>
+                    <form method="dialog"><button class="pa-btn pa-btn--ghost">Fermer</button></form>
+                </div>
+                <div data-dashboard-journal="<?= $h(url('admin') . '?fragment=journal') ?>" aria-live="polite"></div>
+                <a class="pa-btn pa-btn--ghost" data-dashboard-journal-fallback href="<?= $h(url('admin/audit')) ?>">Ouvrir le journal complet</a>
+            </dialog>
+            <p class="ath-sr-only" data-dashboard-status role="status"></p>
+            <script src="<?= $h(asset_url('assets/js/platform-dashboard.js')) ?>" defer></script>
 <?php elseif ($homeTab === 'sante'): ?>
             <?php if (!empty($adminHealthRows)): ?>
                 <?php require base_path('views/admin/partials/platform_health.php'); ?>

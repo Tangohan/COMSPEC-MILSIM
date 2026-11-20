@@ -17,6 +17,7 @@ use App\Services\Admin\PlatformDashboardActivity;
 use App\Services\Admin\PlatformAccountsOverviewService;
 use App\Services\Admin\PlatformHealthDigest;
 use App\Services\Admin\PlatformHomeService;
+use App\Services\Admin\PlatformStatisticsPdf;
 use App\Services\Audit\AuditAction;
 
 /**
@@ -47,6 +48,18 @@ class SystemDashboardController
 
     public function index(Request $request, array $params = []): Response
     {
+        if ($request->query('onglet', '') === '') {
+            $fragment = match ($request->query('fragment')) {
+                'activity' => Response::view('admin.partials.dashboard_activity', [
+                    'dashboardActivity' => (new PlatformDashboardActivity($this->tenantAnalytics))->overview((int) $request->query('days', 14)),
+                ]),
+                'journal' => Response::view('admin.partials.recent_activity', $this->recentActivityData()),
+                default => null,
+            };
+            if ($fragment !== null) {
+                return $fragment->header('Cache-Control', 'private, no-store');
+            }
+        }
         // Onglets d'exploitation : la console garde sa propre double vérification.
         if (in_array((string) $request->query('onglet', ''), SystemOpsConsoleController::TABS, true)) {
             return (new SystemOpsConsoleController())->index($request, $params);
@@ -79,14 +92,40 @@ class SystemDashboardController
         return Response::view('layout.main', $data);
     }
 
+    public function statisticsPdf(Request $request, array $params = []): Response
+    {
+        $format = $request->query('format', 'interne');
+        if (!in_array($format, ['interne', 'b2b'], true)) {
+            return (new Response())->setStatusCode(400)->setBody('Format de rapport inconnu.');
+        }
+        try {
+            $report = (new PlatformStatisticsPdf($this->tenantAnalytics))->export((int) $request->query('days', 14), $format === 'b2b');
+        } catch (\Throwable $exception) {
+            error_log('[platform_statistics_pdf] ' . $exception->getMessage());
+
+            return (new Response())->setStatusCode(503)->setBody('Le rapport PDF est momentanément indisponible.');
+        }
+
+        return (new Response())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $report['filename'] . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->setBody($report['binary']);
+    }
+
     /** @return array<string, mixed> */
     private function vueData(int $days): array
     {
         $home = new PlatformHomeService();
+        $actions = $home->actions();
+        $priority = ['bad' => 0, 'warn' => 1, 'na' => 2, 'info' => 3, 'ok' => 4];
+        usort($actions, static fn (array $a, array $b): int =>
+            ($priority[$a['state']] <=> $priority[$b['state']]) ?: ($b['n'] <=> $a['n'])
+        );
 
         return [
-            'dashboardActivity' => (new PlatformDashboardActivity())->overview($days),
-            'homeActions' => $home->actions(),
+            'dashboardActivity' => (new PlatformDashboardActivity($this->tenantAnalytics))->overview($days),
+            'homeActions' => $actions,
             'homeHealth' => $home->health(),
             'homeFigures' => $home->figures(),
             'homeQuickLinks' => PlatformHomeService::quickLinks(),
@@ -160,7 +199,7 @@ class SystemDashboardController
     }
 
     /** @return array<string, mixed> */
-    private function activiteData(): array
+    private function recentActivityData(): array
     {
         $recent = [];
         $recentError = null;
@@ -169,6 +208,16 @@ class SystemDashboardController
         } catch (\Throwable) {
             $recentError = 'Activité récente indisponible.';
         }
+        return [
+            'adminRecentActivity' => $recent,
+            'adminRecentActivityError' => $recentError,
+            'adminRecentActivityMoreUrl' => url('admin/audit'),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function activiteData(): array
+    {
         $content = [];
         $tenant = [];
         $auditError = null;
@@ -183,10 +232,7 @@ class SystemDashboardController
             $auditError = 'Extrait du journal indisponible pour le moment.';
         }
 
-        return [
-            'adminRecentActivity' => $recent,
-            'adminRecentActivityError' => $recentError,
-            'adminRecentActivityMoreUrl' => url('admin/audit'),
+        return $this->recentActivityData() + [
             'adminAuditRecentContent' => $content,
             'adminAuditRecentTenant' => $tenant,
             'adminAuditModerationError' => $auditError,

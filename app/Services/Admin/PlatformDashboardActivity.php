@@ -6,6 +6,9 @@ namespace App\Services\Admin;
 
 use App\Repositories\PlatformDashboardActivityRepository;
 use App\Repositories\PublicModpackRepository;
+use App\Repositories\TenantAnalyticsRepository;
+use App\Support\PortalAccessChoice;
+use App\Support\ShortCache;
 use DateTimeImmutable;
 use DateTimeZone;
 use RuntimeException;
@@ -27,7 +30,11 @@ final class PlatformDashboardActivity
         '/wiki/atak' => 'Wiki ATAK',
     ];
 
-    public function overview(int $days): array
+    public function __construct(private ?TenantAnalyticsRepository $analytics = null)
+    {
+    }
+
+    public function overview(int $days, bool $includeCommunityRanking = false): array
     {
         $days = in_array($days, self::PERIODS, true) ? $days : 14;
         $end = new DateTimeImmutable('today', new DateTimeZone('UTC'));
@@ -111,8 +118,32 @@ final class PlatformDashboardActivity
             // Le suivi des inscriptions reste facultatif pour le tableau de bord.
         }
 
+        $communities = null;
+        $communityRanking = [];
+        try {
+            $rows = ShortCache::remember("admin:community-usage:v1:{$from}:{$until}", 300, fn (): ?array =>
+                ($this->analytics ??= new TenantAnalyticsRepository())->getCommunityUsageForReport($from, $until)
+            );
+            if ($rows !== null) {
+                $rows = array_filter($rows, static fn (array $row): bool => !PortalAccessChoice::isPlaceholderTenant($row));
+                $active = array_values(array_filter($rows, static fn (array $row): bool => (int) $row['events'] > 0));
+                $communities = [
+                    'total' => count($rows),
+                    'active' => count($active),
+                    'events' => array_sum(array_column($active, 'events')),
+                ];
+                if ($includeCommunityRanking) {
+                    $communityRanking = array_slice($active, 0, 15);
+                }
+            }
+        } catch (RuntimeException) {
+            // L’absence de télémétrie communautaire n’empêche pas les autres mesures.
+        }
+
         return [
             'days' => $days,
+            'from' => $from,
+            'until' => $until,
             'periodLabel' => $start->format('d/m') . ' – ' . $end->modify('-1 day')->format('d/m'),
             'downloads' => $downloads,
             'accounts' => $accounts,
@@ -121,6 +152,8 @@ final class PlatformDashboardActivity
             'returns' => $returns,
             'followup' => $followup,
             'cohortLabel' => $cohortStart->format('d/m/Y') . ' – ' . $cohortEnd->modify('-1 day')->format('d/m/Y'),
+            'communities' => $communities,
+            'communityRanking' => $communityRanking,
         ];
     }
 
