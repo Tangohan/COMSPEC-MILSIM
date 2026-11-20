@@ -7,6 +7,14 @@ use App\Services\Admin\PlatformDashboardActivity;
 $activity = $dashboardActivity;
 $series = [
     [
+        'key' => 'signups',
+        'title' => 'Nouveaux comptes',
+        'help' => 'Premières inscriptions par jour, une par adresse e-mail.',
+        'unit' => 'Sur la période',
+        'link' => 'admin/users',
+        'linkLabel' => 'Voir les comptes',
+    ],
+    [
         'key' => 'accounts',
         'title' => 'Flux utilisateurs',
         'help' => 'Comptes connectés distincts observés par jour dans l’échantillon web.',
@@ -42,7 +50,7 @@ $shortDate = static fn (string $date): string => substr($date, 8, 2) . '/' . sub
         <?php foreach ($series as $chart): ?>
             <?php
             $key = $chart['key'];
-            $rows = $activity[$key];
+            $rows = $key === 'signups' ? ($activity['engagement']['signups'] ?? null) : $activity[$key];
             $values = $rows === null ? [] : array_column($rows, 'total');
             $peak = $values === [] ? 0 : max($values);
             $headline = $key === 'accounts' ? $peak : array_sum($values);
@@ -62,7 +70,7 @@ $shortDate = static fn (string $date): string => substr($date, 8, 2) . '/' . sub
                             <?php foreach ($rows as $point): ?>
                                 <?php $percentage = $peak > 0 ? (int) round(100 * $point['total'] / $peak) : 0; ?>
                                 <span class="ph-chart__slot" title="<?= $h($shortDate($point['date'])) ?> · <?= $nf($point['total']) ?>">
-                                    <span class="ph-chart__bar" style="--ph-bar:<?= $percentage ?>%"></span>
+                                    <span class="<?= $key === 'signups' ? 'ph-chart__point' : 'ph-chart__bar' ?>" style="--ph-bar:<?= $percentage ?>%"></span>
                                 </span>
                             <?php endforeach; ?>
                         </div>
@@ -90,6 +98,7 @@ $shortDate = static fn (string $date): string => substr($date, 8, 2) . '/' . sub
                     <a href="<?= $h(url($chart['link'])) ?>"><?= $h($chart['linkLabel']) ?></a>
                 </div>
             </article>
+            <?php if ($key === 'signups') { require base_path('views/admin/partials/dashboard_account_engagement.php'); } ?>
         <?php endforeach; ?>
         <article class="ph-chart ph-chart--pages" aria-labelledby="ph-chart-pages">
             <div class="ph-chart__head">

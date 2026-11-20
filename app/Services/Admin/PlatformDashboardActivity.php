@@ -65,12 +65,51 @@ final class PlatformDashboardActivity
             // La page reste utilisable si la télémétrie est indisponible.
         }
 
+        $engagement = null;
+        $returns = null;
+        $overview = new PlatformAccountsOverviewService();
+        try {
+            $signups = [];
+            $ages = [];
+            $lastLogins = [];
+            foreach ($overview->engagement($start, $end) as $row) {
+                $total = (int) $row['total'];
+                if ($row['signup_day'] !== null) {
+                    $day = $row['signup_day'];
+                    $signups[$day] = ($signups[$day] ?? 0) + $total;
+                }
+                $age = $row['age_band'];
+                $login = $row['login_band'];
+                $ages[$age]['total'] = ($ages[$age]['total'] ?? 0) + $total;
+                $ages[$age]['recent'] = ($ages[$age]['recent'] ?? 0) + ($login === 'recent' ? $total : 0);
+                $lastLogins[$login] = ($lastLogins[$login] ?? 0) + $total;
+            }
+            $signupRows = [];
+            foreach ($signups as $day => $total) {
+                $signupRows[] = ['day' => $day, 'total' => $total];
+            }
+            $engagement = [
+                'signups' => $this->fillDays($signupRows, $start, $days),
+                'ages' => $ages,
+                'lastLogins' => $lastLogins,
+            ];
+        } catch (RuntimeException) {
+            // Le registre des comptes peut être momentanément indisponible.
+        }
+        try {
+            $returns = $overview->observedReturns($from, $until);
+        } catch (RuntimeException) {
+            // Le journal des connexions est indépendant du registre des comptes.
+        }
+
         return [
             'days' => $days,
             'periodLabel' => $start->format('d/m') . ' – ' . $end->modify('-1 day')->format('d/m'),
             'downloads' => $downloads,
             'accounts' => $accounts,
             'pages' => $pages,
+            'engagement' => $engagement,
+            'returns' => $returns,
         ];
     }
 
