@@ -1,5 +1,12 @@
 .pa[data-platform-dashboard] .pa__frame { max-width: 1480px; }
-.pa[data-platform-dashboard] .pa-hero--compact { padding: clamp(1rem, 2.8vw, 2rem); }
+.pa[data-platform-dashboard] .pa-hero--compact {
+  padding: clamp(1rem, 2.8vw, 2rem);
+  border-left: 4px solid var(--pa-mint);
+}
+.pa[data-platform-dashboard] .pa-search input::placeholder {
+  color: var(--pa-muted);
+  opacity: 1;
+}
 .pa[data-platform-dashboard] .pa-panel { gap: 28px; }
 .pa[data-platform-dashboard] .ph-block__title {
   font-size: 1rem;
@@ -215,10 +222,6 @@
   .ph-chart { min-height: 0; }
 }
 
-.pa[data-platform-dashboard] .pa-hero--compact {
-  background: var(--pa-surface);
-  border-left: 4px solid var(--pa-mint);
-}
 .pa[data-platform-dashboard] .pa-panel > [id] { scroll-margin-block-start: 5rem; }
 .ph-console-nav {
   display: flex;
