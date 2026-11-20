@@ -3555,7 +3555,12 @@ class UserRepository
             if ($hasDeletedAt) {
                 $parts[] = 'u.deleted_at IS NULL';
             }
-            if ($status !== null && $status !== '' && in_array($status, ['active', 'inactive', 'pending_verification'], true)) {
+            if ($status === 'pending_verification') {
+                $parts[] = SqlText::equalsLiteral($pdo, 'u.status', 'pending_verification');
+                if ($this->hasEmailVerifiedColumn()) {
+                    $parts[] = 'u.email_verified_at IS NULL';
+                }
+            } elseif (in_array($status, ['active', 'inactive'], true)) {
                 if ($hasMemberships) {
                     $parts[] = '((' . SqlText::equals($pdo, 'u.status') . ') OR EXISTS (
                         SELECT 1 FROM user_community_memberships m
@@ -3816,6 +3821,60 @@ class UserRepository
         return $out;
     }
 
+    public const SHARED_LOGIN_IP_DAYS = 180;
+    public const SHARED_LOGIN_IP_PAGE_SIZE = 50;
+
+    /**
+     * Résume les adresses partagées ou liste les personnes encore présentes pour une adresse.
+     * @return list<array<string, mixed>>
+     */
+    public function sharedLoginIpRows(?string $ip, int $page): array
+    {
+        $pdo = $this->pdo();
+        $mysql = SqlText::isMysqlFamily($pdo);
+        $address = $mysql ? 'INET6_NTOA(INET6_ATON(la.ip))' : 'LOWER(la.ip)';
+        $accounts = $this->technicalAccountExclusionPredicate('u');
+        $deleted = $this->hasDeletedAtColumn() ? 'AND u.deleted_at IS NULL' : '';
+        $emailKey = 'LOWER(TRIM(u.email))' . ($mysql ? ' COLLATE utf8mb4_bin' : '');
+        $loginEmail = 'la.email' . ($mysql ? ' COLLATE utf8mb4_bin' : '');
+        $accountQuery = "SELECT {$emailKey} AS email,
+                                MIN(u.created_at) AS created_at,
+                                MAX(COALESCE(NULLIF(u.callsign, ''), NULLIF(u.display_name, ''), u.email)) AS label
+                         FROM users u
+                         WHERE {$accounts['sql']} {$deleted}
+                           AND u.status <> 'merged'
+                           AND {$emailKey} NOT LIKE '%@deleted.invalid' AND {$emailKey} NOT LIKE '%@merged.invalid'
+                         GROUP BY {$emailKey}";
+        $where = "la.success = 1 AND la.created_at >= ? AND {$address} IS NOT NULL
+                  AND la.email <> '' AND {$address} NOT IN ('', '::', '::1', '0.0.0.0')
+                  AND {$address} NOT LIKE '127.%'";
+        $params = [...$accounts['params'], gmdate('Y-m-d H:i:s', time() - self::SHARED_LOGIN_IP_DAYS * 86400)];
+        if ($ip === null) {
+            $select = "{$address} AS ip, COUNT(DISTINCT people.email) AS people_count, MAX(la.created_at) AS last_seen";
+            $grouping = "GROUP BY {$address}
+                         HAVING COUNT(DISTINCT people.email) >= 2
+                         ORDER BY last_seen DESC, ip";
+        } else {
+            $select = 'people.email, MAX(people.label) AS label, COUNT(*) AS logins, MAX(la.created_at) AS last_seen';
+            $where .= " AND {$address} = ?";
+            $params[] = $mysql ? inet_ntop(inet_pton($ip)) : strtolower($ip);
+            $grouping = 'GROUP BY people.email ORDER BY last_seen DESC, people.email';
+        }
+        $limit = self::SHARED_LOGIN_IP_PAGE_SIZE + 1;
+        $offset = (max(1, min($page, 200)) - 1) * self::SHARED_LOGIN_IP_PAGE_SIZE;
+        $stmt = $pdo->prepare(
+            "SELECT {$select}
+             FROM login_attempts la
+             INNER JOIN ({$accountQuery}) people ON people.email = {$loginEmail} AND la.created_at >= people.created_at
+             WHERE {$where}
+             {$grouping}
+             LIMIT {$limit} OFFSET {$offset}"
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     /**
      * Fiches de personnes précises (sélection de l’annuaire), dans l’ordre donné, au même format que la liste.
      *
@@ -3960,6 +4019,7 @@ class UserRepository
         $pdo = $this->pdo();
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
+        $verificationSelect = $this->hasEmailVerifiedColumn() ? 'u.email_verified_at' : 'NULL AS email_verified_at';
         $lastLoginSelect = $this->hasLastLoginColumn() ? 'u.last_login_at' : 'NULL AS last_login_at';
         $emailIn = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($emailKeys));
         $params = array_merge($emailKeys, $pack['params']);
@@ -3968,7 +4028,7 @@ class UserRepository
                        COALESCE(p.display_name, u.display_name) AS display_name,
                        COALESCE(p.callsign, u.callsign) AS callsign,
                        COALESCE(p.status, u.status) AS status,
-                       u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect}, {$deletedSelect},
+                       u.created_at, u.updated_at, u.steam_id, u.status AS account_status, {$verificationSelect}, {$lastLoginSelect}, {$deletedSelect},
                        t.name AS tenant_name, t.slug AS tenant_slug,
                        r.name AS role_name,
                        m.status AS membership_status, m.left_at AS membership_left_at
@@ -3996,7 +4056,7 @@ class UserRepository
         $fallbackIn = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($missing));
         $fallbackParams = array_merge($missing, $pack['params']);
         $fallbackSql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status,
-                               u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect}, {$deletedSelect},
+                               u.created_at, u.updated_at, u.steam_id, u.status AS account_status, {$verificationSelect}, {$lastLoginSelect}, {$deletedSelect},
                                t.name AS tenant_name, t.slug AS tenant_slug,
                                r.name AS role_name
                         FROM users u
@@ -4037,8 +4097,9 @@ class UserRepository
         }
         $memberWhereSql = implode(' AND ', $memberParts);
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
+        $verificationSelect = $this->hasEmailVerifiedColumn() ? 'u.email_verified_at' : 'NULL AS email_verified_at';
         $lastLoginSelect = $this->hasLastLoginColumn() ? 'u.last_login_at' : 'NULL AS last_login_at';
-        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect},
+        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at, u.steam_id, u.status AS account_status, {$verificationSelect}, {$lastLoginSelect},
                        {$deletedSelect},
                        t.name AS tenant_name, t.slug AS tenant_slug,
                        r.name AS role_name

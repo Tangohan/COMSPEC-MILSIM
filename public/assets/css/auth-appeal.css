@@ -1,0 +1,48 @@
+.athena-appeal { background: var(--ds-bg); color: var(--ds-text); }
+.appeal-shell { width: min(100% - 2rem, 65rem); margin: clamp(1rem, 4vw, 3.5rem) auto; }
+.appeal-hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: clamp(1.2rem, 4vw, 2.35rem);
+  border-radius: 1.05rem;
+  background: linear-gradient(115deg, #102e2a, #1c4e45);
+  color: #f5fbf9;
+  margin-bottom: 1.15rem;
+}
+.appeal-hero .ds-kicker { color: #addecf; margin: 0 0 .45rem; }
+.appeal-hero h1 { margin: 0; font: 800 clamp(1.75rem, 4vw, 2.65rem)/1.15 "Inter", var(--ds-font); }
+.appeal-hero p:last-child { margin: .65rem 0 0; color: #dcece6; }
+.appeal-state { padding: .4rem .75rem; border: 1px solid #7cb4a5; border-radius: 999px; font-weight: 700; }
+.appeal-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .84fr); align-items: start; gap: 1rem; }
+.appeal-card {
+  background: var(--rg-surface);
+  border: 1px solid var(--rg-surface-border);
+  border-radius: .95rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  box-shadow: var(--au-card-shadow);
+  overflow-wrap: anywhere;
+}
+.appeal-card h2 { margin: 0 0 .85rem; font-size: 1.2rem; font-weight: 800; }
+.appeal-card h3 { margin-block: .9rem .35rem; font-size: 1rem; font-weight: 750; }
+.appeal-card .rg-field { min-width: 0; }
+.appeal-card .rg-input { width: 100%; }
+.appeal-card textarea.rg-input { min-height: 8rem; resize: vertical; }
+.appeal-card .rg-form { display: grid; justify-items: start; gap: .7rem; }
+.appeal-card .rg-form .rg-field { width: 100%; }
+.appeal-card--guide { background: var(--au-accent-soft); }
+.appeal-message { white-space: pre-line; }
+.appeal-facts { margin: .85rem 0 0; }
+.appeal-facts div { padding: .55rem 0; border-top: 1px solid var(--rg-surface-border); }
+.appeal-facts dt { color: var(--ds-text-alt); }
+.appeal-facts dd { margin: .15rem 0 0; font-weight: 650; }
+.appeal-steps { display: grid; gap: .8rem; margin: 0; padding-inline-start: 1.55rem; }
+.appeal-steps li::marker { font-weight: 800; }
+.appeal-steps span { display: block; margin-block-start: .15rem; color: var(--ds-text-alt); }
+.appeal-review { border-radius: .55rem; background: var(--au-accent-soft); font-weight: 750; padding: .65rem .8rem; }
+.appeal-statement { margin-block-start: 1rem; border-block-start: 1px solid var(--rg-surface-border); padding-block-start: .7rem; }
+.appeal-statement summary { cursor: pointer; font-weight: 700; }
+.appeal-footer { display: flex; gap: .5rem 1.25rem; flex-wrap: wrap; margin-block: 1.15rem; }
+@media (max-width: 760px) { .appeal-grid { grid-template-columns: minmax(0, 1fr); } }

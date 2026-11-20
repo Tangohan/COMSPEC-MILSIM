@@ -57,11 +57,7 @@ final class PlatformBanAppealController
         $notice = null;
         $appeal = null;
         if ($ban !== null) {
-            $notice = [
-                'id' => (int) $ban['id'],
-                'rule' => (string) ($ban['rule_reference'] ?? ''),
-                'message' => (string) (($ban['public_reason'] ?? '') ?: PlatformBanNotice::DEFAULT_TEXT),
-                'end' => PlatformBanNotice::endLabel($ban['ends_at'] ?? null),
+            $notice = PlatformBanNotice::publicDetails($ban) + [
                 'active' => empty($ban['lifted_at']) && (empty($ban['ends_at']) || $ban['ends_at'] > gmdate('Y-m-d H:i:s')),
             ];
             $saved = $this->appeals->find((int) $ban['id']);

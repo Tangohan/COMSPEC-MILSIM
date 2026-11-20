@@ -43,6 +43,10 @@ $athena_header_current = 'login';
         <?php endif; ?>
     </div>
 
+    <?php if (is_array($loginRestriction ?? null)): ?>
+        <?php require base_path('views/partials/auth/login_restriction.php'); ?>
+    <?php endif; ?>
+
     <?php if ($pendingVerificationEmail !== null && $pendingVerificationEmail !== ''): ?>
     <div class="ds-callout au-callout">
         <form method="post" action="<?= url('resend-verification') ?>" data-busy-form>
@@ -99,5 +103,8 @@ $athena_header_current = 'login';
 <?php require base_path('views/partials/cookie_banner.php'); ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/auth_forms.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php if (is_array($loginRestriction ?? null)): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/login-restriction.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>
 </body>
 </html>

@@ -35,6 +35,9 @@ use App\Repositories\PlatformAccountBanRepository;
 use App\Repositories\PlatformBanAppealRepository;
 use App\Services\Account\PlatformAccountBanService;
 use App\Services\Account\PlatformBanNotice;
+use App\Repositories\EmailTokenRepository;
+use App\Services\Email\RegistrationVerificationResend;
+use App\Services\EmailService;
 
 /**
  * Annuaire global des comptes (toutes communautés) — administration plateforme.
@@ -114,7 +117,7 @@ final class SystemUsersController
             'title' => 'Comptes utilisateurs',
             'content' => 'admin.system.users',
             'isPlatformAdminShell' => true,
-            'backOfficePageCss' => ['platform-admin-users.css'],
+            'backOfficePageCss' => ['platform-admin-users.css', 'platform-admin-network.css'],
             'platformUserGroups' => $groups,
             'platformUsersTotal' => $total,
             'platformUsersPage' => $page,
@@ -369,7 +372,11 @@ final class SystemUsersController
             $created = '';
             $steamSeen = [];
             $volume = 0;
+            $verificationUserId = 0;
             foreach ($memberships as $m) {
+                if ($verificationUserId === 0 && self::canRemindVerification($m)) {
+                    $verificationUserId = (int) $m['id'];
+                }
                 $game = (string) ($games[(int) ($m['id'] ?? 0)] ?? '');
                 if ($game !== '' && $game > $lastGame) {
                     $lastGame = $game;
@@ -393,6 +400,7 @@ final class SystemUsersController
             $group['no_org'] = !$hasLive;
             $key = strtolower(trim((string) ($group['email'] ?? '')));
             $group['ban'] = $bans[$key] ?? null;
+            $group['verification_user_id'] = $group['ban'] === null ? $verificationUserId : 0;
             $group['sanctions_count'] = (int) ($counts[$key] ?? 0);
             $group['community_names'] = array_map('strval', array_keys($names));
             $group['last_login'] = $lastLogin;
@@ -405,6 +413,92 @@ final class SystemUsersController
         unset($group);
 
         return $groups;
+    }
+
+    private static function canRemindVerification(array $account): bool
+    {
+        return ($account['account_status'] ?? $account['status'] ?? '') === 'pending_verification'
+            && empty($account['email_verified_at'])
+            && empty($account['deleted_at'])
+            && empty($account['is_service_account']);
+    }
+
+    public function resendVerification(Request $request, array $params = []): Response
+    {
+        $back = $this->backUrl($request);
+        if (!Csrf::verify($request)) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back, 303);
+        }
+
+        $id = (int) $request->inputString('user_id');
+        $account = $id > 0 ? $this->users->findById($id) : null;
+        $email = strtolower(trim((string) ($account['email'] ?? '')));
+        if ($account === null || !self::canRemindVerification($account) || !filter_var($email, FILTER_VALIDATE_EMAIL)
+            || $this->bans()->findActiveForEmail($email) !== null) {
+            Session::flash('error', 'La relance est disponible pour un compte en attente de confirmation dont l’accès est autorisé.');
+
+            return Response::redirect($back, 303);
+        }
+
+        $tenantId = (int) $account['tenant_id'];
+        $tenant = $this->tenants->findById($tenantId);
+        $resend = new RegistrationVerificationResend(Container::get(EmailTokenRepository::class), Container::get(EmailService::class));
+        $result = $resend->send($account, $tenantId, email_community_label($tenant), requirePendingAccount: true);
+        if (!$result['sent']) {
+            Session::flash('error', $result['wait'] > 0
+                ? 'Un lien a déjà été envoyé. Réessayez dans ' . $result['wait'] . ' seconde(s).'
+                : 'Le lien de vérification n’a pas pu être envoyé. Réessayez dans quelques minutes.');
+
+            return Response::redirect($back, 303);
+        }
+
+        try {
+            $this->audit->log(AuditAction::USER_VERIFICATION_RESENT, $tenantId, (int) Session::get('user_id'), 'user', $id);
+        } catch (\Throwable) {
+            error_log('[admin.users] La relance de vérification n’a pas pu être journalisée.');
+        }
+        $mailNotice = \email_file_mailer_notice();
+        Session::flash('success', $mailNotice !== '' ? $mailNotice : 'Un nouveau lien de vérification a été envoyé à l’adresse du compte.');
+
+        return Response::redirect($back, 303);
+    }
+
+    public function sharedIps(Request $request, array $params = []): Response
+    {
+        $ip = trim($request->queryString('ip'));
+        $page = max(1, min(200, (int) $request->query('page', 1)));
+        $rows = [];
+        $error = null;
+        if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            $error = 'Saisissez une adresse IPv4 ou IPv6 valide.';
+        } else {
+            try {
+                $rows = $this->users->sharedLoginIpRows($ip !== '' ? $ip : null, $page);
+            } catch (\PDOException) {
+                error_log('[admin.users] Le rapprochement par adresse IP a échoué.');
+                $error = 'Le journal de connexion est momentanément indisponible.';
+            }
+        }
+
+        $data = [
+            'title' => 'Adresses IP partagées',
+            'content' => 'admin.system.users_shared_ips',
+            'isPlatformAdminShell' => true,
+            'backOfficePageCss' => ['platform-admin-users.css', 'platform-admin-network.css'],
+            'networkIp' => $ip,
+            'networkPage' => $page,
+            'networkHasNext' => $page < 200 && count($rows) > UserRepository::SHARED_LOGIN_IP_PAGE_SIZE,
+            'networkRows' => array_slice($rows, 0, UserRepository::SHARED_LOGIN_IP_PAGE_SIZE),
+            'networkDays' => UserRepository::SHARED_LOGIN_IP_DAYS,
+            'networkError' => $error,
+        ];
+        $view = $request->query('fragment') === 'resultats' ? 'admin.system.partials.platform_shared_ips' : 'layout.main';
+
+        return Response::view($view, $data)
+            ->header('Cache-Control', 'private, no-store')
+            ->header('Referrer-Policy', 'same-origin');
     }
 
     private function bans(): PlatformAccountBanRepository
@@ -947,7 +1041,7 @@ final class SystemUsersController
             'personSupportsMemberships' => $this->users->hasCommunityMembershipTable(),
             'personKnownIps' => $this->knownIpsWithBlockState($email),
             'isPlatformAdminShell' => true,
-            'backOfficePageCss' => ['platform-admin-users.css', 'platform-admin-person.css', 'platform-admin-picker.css'],
+            'backOfficePageCss' => ['platform-admin-users.css', 'platform-admin-person.css', 'platform-admin-picker.css', 'platform-admin-network.css'],
         ])->header('Cache-Control', 'private, no-store');
     }
 

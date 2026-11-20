@@ -17,6 +17,8 @@ $t = static fn (string $key): string => htmlspecialchars(__($key), ENT_QUOTES, '
 $error = \App\Core\Session::getFlash('error');
 $success = \App\Core\Session::getFlash('success');
 $warning = \App\Core\Session::getFlash('warning');
+$info = \App\Core\Session::getFlash('info');
+$discordSignupName = is_string($register_discord ?? null) ? $register_discord : null;
 $athena_header_current = 'register';
 
 // Erreur serveur rattachée à un champ : affichée sous le champ (et non en haut de page).
@@ -39,7 +41,7 @@ $describe = static function (string $name, bool $hint = true) use ($fieldError):
     return $out;
 };
 $optionalOpen = $prefillCc !== '' || $prefillSlug !== ''
-    || trim((string) ($old['discord_handle'] ?? '')) !== ''
+    || ($discordSignupName === null && trim((string) ($old['discord_handle'] ?? '')) !== '')
     || trim((string) ($old['steam_profile'] ?? '')) !== ''
     || in_array($errorField, ['community_code', 'discord_handle', 'steam_profile'], true);
 $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'
@@ -133,7 +135,20 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
         <?php if ($warning): ?>
             <?php $flash_variant = 'warning'; $flash_message = $warning; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
+        <?php if ($info): ?>
+            <?php $flash_variant = 'info'; $flash_message = $info; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
     </div>
+
+    <?php if ($discordSignupName === null): ?>
+        <?php
+        $discordLabel = __('auth.register_discord_connect');
+        $discordHrefOverride = url('discord/connexion') . '?' . http_build_query(
+            ['from' => 'register'] + array_filter(['community_code' => $prefillCc, 'tenant_slug' => $prefillSlug])
+        );
+        require base_path('views/partials/auth/discord_button.php');
+        ?>
+    <?php endif; ?>
 
     <form method="post" action="<?= $e(url('register')) ?>" class="ds-form rg-form" novalidate data-register-form data-inline-validation
           data-msg-email-required="<?= $t('auth.register_err_email_required') ?>"
@@ -145,6 +160,16 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
           data-msg-terms="<?= $t('auth.register_err_terms') ?>"
           data-msg-summary="<?= $t('auth.register_err_summary') ?>">
         <?= \App\Core\Csrf::field() ?>
+        <?php if ($discordSignupName !== null): ?>
+            <section class="rg-section rg-discord" aria-labelledby="register-discord-ready">
+                <h2 class="rg-section__title" id="register-discord-ready"><?= $t('auth.register_discord_ready') ?> <strong translate="no"><?= $e($discordSignupName) ?></strong></h2>
+                <label class="ds-check rg-check">
+                    <input type="checkbox" name="attach_discord" value="1"<?= !empty($register_keep_discord) ? ' checked' : '' ?>>
+                    <span><?= $t('auth.register_discord_attach') ?></span>
+                </label>
+                <p class="rg-hint"><?= $t('auth.register_discord_sync_hint') ?></p>
+            </section>
+        <?php endif; ?>
         <?php if ($inviteLinkCode !== ''): ?>
         <input type="hidden" name="invite" value="<?= $e($inviteLinkCode) ?>">
         <?php endif; ?>
@@ -263,6 +288,7 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
                 </div>
 
                 <div class="rg-grid">
+                    <?php if ($discordSignupName === null): ?>
                     <div class="rg-field">
                         <label class="rg-label" for="discord_handle"><?= $t('auth.register_discord') ?></label>
                         <input id="discord_handle" type="text" name="discord_handle" maxlength="120" autocomplete="off"
@@ -273,6 +299,7 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
                         <p class="rg-hint" id="discord_handle-hint"><?= $t('auth.register_discord_hint') ?></p>
                         <p class="rg-error" id="discord_handle-error" data-error-for="discord_handle"><?= $e($fieldError('discord_handle')) ?></p>
                     </div>
+                    <?php endif; ?>
                     <div class="rg-field">
                         <label class="rg-label" for="steam_profile"><?= $t('auth.register_steam') ?></label>
                         <input id="steam_profile" type="text" name="steam_profile" maxlength="512" autocomplete="off"

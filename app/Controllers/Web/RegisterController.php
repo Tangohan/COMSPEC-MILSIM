@@ -15,6 +15,7 @@ use App\Repositories\EmailTokenRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
+use App\Repositories\UserDiscordLinkRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Audit\AuditAction;
@@ -98,6 +99,7 @@ final class RegisterController
         if ($inviteLink !== null) {
             PendingInviteLink::remember((string) $inviteLink['public_code']);
         }
+        $discordLink = $this->pendingDiscordLink();
 
         return Response::view('auth.register', [
             'invite_link_code' => $inviteLink !== null ? (string) $inviteLink['public_code'] : '',
@@ -109,7 +111,21 @@ final class RegisterController
             'prefill_tenant_slug' => trim((string) $request->query('tenant_slug')),
             'register_old' => is_array($registerOld) ? $registerOld : [],
             'register_error_field' => is_string($errorField) ? $errorField : '',
-        ]);
+            'register_discord' => $discordLink !== null ? (string) $discordLink['discord_username'] : null,
+            'register_keep_discord' => !is_array($registerOld) || ($registerOld['attach_discord'] ?? '1') === '1',
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
+    private function pendingDiscordLink(): ?array
+    {
+        $pending = Session::get(DiscordLoginController::REGISTRATION_LINK);
+        if (!is_array($pending) || !is_array($pending['link'] ?? null) || (int) ($pending['expires_at'] ?? 0) < time()) {
+            Session::forget(DiscordLoginController::REGISTRATION_LINK);
+
+            return null;
+        }
+
+        return $pending['link'];
     }
 
     public function store(Request $request, array $params = []): Response
@@ -143,6 +159,11 @@ final class RegisterController
             $discordHandle = substr($discordHandle, 0, 120);
         }
         $acceptTerms = (string) $request->input('accept_terms') === '1';
+        $attachDiscord = $request->inputString('attach_discord') === '1';
+        $discordLink = $attachDiscord ? $this->pendingDiscordLink() : null;
+        if ($discordLink !== null) {
+            $discordHandle = (string) $discordLink['discord_username'];
+        }
         $communityCodeInput = trim((string) $request->input('community_code'));
 
         $oldPayload = [
@@ -153,6 +174,7 @@ final class RegisterController
             'discord_handle' => $discordHandle,
             'community_code' => $communityCodeInput,
             'accept_terms' => $acceptTerms ? '1' : '',
+            'attach_discord' => $attachDiscord ? '1' : '',
         ];
         // $field : champ concerné, pour afficher l’erreur sous ce champ (vide = erreur générale en haut).
         $flashBack = static function (string $message, string $field = '') use ($oldPayload): void {
@@ -334,6 +356,20 @@ final class RegisterController
             return Response::redirect(url('register'));
         }
         $userId = (int) $written['value'];
+        Session::forget(DiscordLoginController::REGISTRATION_LINK);
+        if ($attachDiscord) {
+            $linked = false;
+            if ($discordLink !== null) {
+                try {
+                    $linked = (new UserDiscordLinkRepository())->save($userId, $discordLink, replace: false);
+                } catch (\Throwable) {
+                    error_log('[auth.register] Impossible de rattacher le compte Discord.');
+                }
+            }
+            if (!$linked) {
+                Session::flash('info', 'La liaison Discord n’a pas pu être enregistrée. Vous pourrez relier votre compte dans Mon compte après confirmation de votre e-mail.');
+            }
+        }
 
         \App\Services\Personnel\NewMemberNumbers::assign($userId, $tenantId);
         $this->auditService->log(AuditAction::AUTH_REGISTER, $tenantId, $userId, 'user', $userId, null, $email);

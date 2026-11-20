@@ -173,6 +173,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                     <div class="pa-hero__actions">
                         <button type="button" class="pa-btn pa-btn--solid" data-pu-open="pu-guide">Quelle action choisir ?</button>
                         <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/users/donnees')) ?>">Données par jour</a>
+                        <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/users/ip-partagees')) ?>" data-network-open aria-haspopup="dialog">IP partagées</a>
                         <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/blocklist')) ?>">Adresses IP et e-mails bloqués</a>
                         <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/tenants')) ?>">Communautés</a>
                     </div>
@@ -256,9 +257,10 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
         <?php endif; ?>
 
         <nav class="pu-tabs" aria-label="Catégories de comptes">
-            <a class="pu-tab<?= $statusFilter !== 'inactifs' && $statusFilter !== 'banned' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => '', 'page' => 1])) ?>"<?= $statusFilter !== 'inactifs' && $statusFilter !== 'banned' ? ' aria-current="page"' : '' ?>>Tous les comptes</a>
+            <a class="pu-tab<?= $statusFilter === '' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => '', 'page' => 1])) ?>"<?= $statusFilter === '' ? ' aria-current="page"' : '' ?>>Tous les comptes</a>
             <a class="pu-tab<?= $statusFilter === 'inactifs' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'inactifs', 'page' => 1])) ?>"<?= $statusFilter === 'inactifs' ? ' aria-current="page"' : '' ?> title="Ni connexion au site ni session de jeu depuis le seuil choisi (90 jours par défaut, personnes jamais connectées comprises)">Inactifs<?php if ($inactiveCount !== null): ?> <span class="pu-count-pill"><?= $h($inactiveCount) ?></span><?php endif; ?></a>
             <a class="pu-tab<?= $statusFilter === 'banned' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'banned', 'page' => 1])) ?>"<?= $statusFilter === 'banned' ? ' aria-current="page"' : '' ?>>Bannis <span class="pu-count-pill"><?= $h($bansCount) ?></span></a>
+            <a class="pu-tab<?= $statusFilter === 'pending_verification' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'pending_verification', 'inactif' => '', 'page' => 1])) ?>"<?= $statusFilter === 'pending_verification' ? ' aria-current="page"' : '' ?>>E-mails à vérifier</a>
         </nav>
         <?php if ($statusFilter === 'inactifs'): ?>
             <p class="pu-muted pu-tabs__note">Personnes sans connexion au site ni session de jeu depuis <?= $inactivityFilter === 'jamais' ? 'toujours (jamais connectées)' : $h($inactivityFilter !== '' ? $inactivityFilter : '90') . ' jours' ?>. Le seuil se règle avec « Sans connexion depuis ».</p>
@@ -507,6 +509,10 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                             <?php endif; ?>
                         <?php endforeach; ?>
                         <td class="pu-td pu-td--actions" data-label="Dossier">
+                            <?php $verificationUserId = (int) ($group['verification_user_id'] ?? 0); ?>
+                            <?php if ($verificationUserId > 0): ?>
+                                <?= $actionForm('admin/users/relancer-verification', ['user_id' => $verificationUserId], 'Renvoyer le lien', 'pa-btn pa-btn--sm pa-btn--solid') ?>
+                            <?php endif; ?>
                             <a class="pa-btn pa-btn--sm pa-btn--line" href="<?= $h($personUrl) ?>">Dossier complet</a>
                             <button type="button" class="pa-btn pa-btn--sm pa-btn--ghost" data-pu-toggle="<?= $h($detailId) ?>" aria-expanded="false" aria-controls="<?= $h($detailId) ?>">Détails</button>
                         </td>
@@ -776,5 +782,6 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
 
     <?php require base_path('views/admin/system/partials/platform_user_confirm.php'); ?>
 </div>
+<?php require base_path('views/admin/system/partials/platform_shared_ips_dialog.php'); ?>
 <script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-ban-notice.js')) ?>" defer></script>

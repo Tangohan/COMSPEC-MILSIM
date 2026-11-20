@@ -40,6 +40,17 @@ final class PlatformBanNotice
         return $this->rule === '' && $this->message === '';
     }
 
+    /** @return array{id:int, rule:string, message:string, end:string} */
+    public static function publicDetails(array $ban): array
+    {
+        return [
+            'id' => (int) $ban['id'],
+            'rule' => trim((string) ($ban['rule_reference'] ?? '')),
+            'message' => trim((string) ($ban['public_reason'] ?? '')) ?: self::DEFAULT_TEXT,
+            'end' => self::endLabel($ban['ends_at'] ?? null),
+        ];
+    }
+
     public static function endLabel(?string $endsAt): string
     {
         if ($endsAt === null || $endsAt === '') {

@@ -415,6 +415,7 @@ $membershipAction = static function (string $path, array $fields, string $label,
                             <div>
                                 <span class="pu-mono"><?= $h((string) $row['ip']) ?></span>
                                 <span class="pu-muted">· <?= (int) $row['logins'] ?> connexion(s), dernière le <?= $h($fmtDate((string) $row['last_seen'])) ?></span>
+                                <a class="pu-link" href="<?= $h(url('admin/users/ip-partagees') . '?ip=' . rawurlencode((string) $row['ip'])) ?>" data-network-open aria-haspopup="dialog">Voir les comptes sur cette IP</a>
                             </div>
                             <?php if (!empty($row['blocked'])): ?>
                                 <span class="pa-pill pa-pill--rose">Bloquée</span>
@@ -541,5 +542,6 @@ $membershipAction = static function (string $path, array $fields, string $label,
 </div>
 <script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-ban-notice.js')) ?>" defer></script>
+<?php require base_path('views/admin/system/partials/platform_shared_ips_dialog.php'); ?>
 <script src="<?= $h(asset_url('assets/js/platform-person.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-entity-picker.js')) ?>" defer></script>

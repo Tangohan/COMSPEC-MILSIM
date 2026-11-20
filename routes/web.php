@@ -1969,6 +1969,8 @@ return function (Router $router) {
     $router->get('/admin/system/administrateurs-site', [SystemUsersController::class, 'platformAdmins'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/platform-admin', [SystemUsersController::class, 'setPlatformAdmin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/person', [SystemUsersController::class, 'showPerson'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/users/ip-partagees', [SystemUsersController::class, 'sharedIps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/relancer-verification', [SystemUsersController::class, 'resendVerification'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/donnees', [SystemUsersDataController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/export', [SystemUsersController::class, 'exportCsv'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/export', [SystemUsersController::class, 'exportCsv'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

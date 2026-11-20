@@ -112,6 +112,7 @@ final class AuditAction
 
     /** Changement de statut compte depuis l’annuaire plateforme. */
     public const USER_STATUS_UPDATED = 'user.status_updated';
+    public const USER_VERIFICATION_RESENT = 'user.verification_resent';
 
     /** Édition complète de fiche depuis l’annuaire plateforme. */
     public const USER_PROFILE_UPDATED = 'user.profile_updated';
