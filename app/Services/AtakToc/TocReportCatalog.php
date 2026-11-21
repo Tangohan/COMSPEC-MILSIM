@@ -353,7 +353,7 @@ final class TocReportCatalog
         $extra = [];
         foreach ($sd as $key => $value) {
             $key = (string) $key;
-            if (isset($used[$key]) || in_array($key, self::HIDDEN_KEYS, true)) {
+            if (isset($used[$key]) || in_array($key, self::HIDDEN_KEYS, true) || CasCheckinSheet::isSheetKey($key)) {
                 continue;
             }
             $v = self::scalar($value);

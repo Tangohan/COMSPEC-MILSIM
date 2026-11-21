@@ -632,6 +632,8 @@ final class TocReportService
                 'facts' => $doc['facts'], 'blocks' => $doc['blocks'], 'extra' => $doc['extra'],
                 'acked_at' => (string) ($row['acknowledged_at'] ?? ''), 'event_at' => (string) ($row['event_timestamp'] ?? ''),
                 'mission_key' => (string) ($row['mission_key'] ?? ''), 'photo_ref' => trim((string) ($sd['photo'] ?? '')),
+                // Fiche de check-in CAS jointe par l'app JTAC du téléphone (CKIN) : export PDF sur la grille de la fiche blanche.
+                'cas_ckin' => CasCheckinSheet::fromStructured($sd),
             ];
         }
 

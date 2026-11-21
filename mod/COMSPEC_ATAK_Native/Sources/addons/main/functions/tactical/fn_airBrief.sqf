@@ -11,7 +11,7 @@
     COMSPEC_ATAK_AirSent. Rien n'est calculé par image : la boîte Athena est relevée toutes les 12 s (XEH_postInitClient),
     seulement à bord d'un aéronef.
     Params : [action, argument]
-      "send", [format ("9" | "5"), lignes, remarques, destinataires [[indicatif, véhicule ou unité]...], ref, libre]  (JTAC)
+      "send", [format ("9" | "5" | "C" fiche de check-in CKIN, fn_jtacCkin), lignes, remarques, destinataires [[indicatif, véhicule ou unité]...], ref, libre]  (JTAC)
       "track", [ref, format, résumé, [indicatifs]]   suivi d'un envoi fait ailleurs (mission CAS de l'app JTAC)
       "recv", [genre, ref, données, indicatif, unité]   réception de l'événement CBA
       "store", [ref, id Athena, format, émetteur, unité, heure, lignes, remarques, destinataire, source, statut]
@@ -46,7 +46,7 @@ private _myLabel = {
     [player] call comspec_atak_native_fnc_unitCallsign
 };
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "JTAC") then { ["JTAC"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
-private _fmtName = { params ["_f"]; (createHashMapFromArray [["5", "5-LINE"], ["M", "MEDEVAC"]]) getOrDefault [_f, "9-LINE"] };
+private _fmtName = { params ["_f"]; (createHashMapFromArray [["5", "5-LINE"], ["M", "MEDEVAC"], ["C", "CHECK-IN"]]) getOrDefault [_f, "9-LINE"] };
 // Accusé du pilote : à l'émetteur en jeu (s'il est encore là) et à Athena, par la liaison du téléphone.
 private _ackOut = {
     params ["_b", "_status"];
@@ -138,14 +138,18 @@ switch (_act) do {
             };
         } forEach _dest;
         if ((count _labels) isEqualTo 0) exitWith { ["WARNING", "Choisissez au moins un destinataire (appareil ou indicatif)", 3, 30] call comspec_atak_native_fnc_notify; "" };
-        private _sum = format ["%1 | %2", _lines param [[5, 2] select (_fmt isEqualTo "5"), "-"], _lines param [[4, 3] select (_fmt isEqualTo "5"), "-"]];
+        // Résumé : cible et description (9-LINE, 5-LINE) ; appareil et position de la cible (check-in CKIN).
+        private _sum = if (_fmt isEqualTo "C") then { format ["%1 | %2", _lines param [0, "-"], _lines param [16, "-"]] } else {
+            format ["%1 | %2", _lines param [[5, 2] select (_fmt isEqualTo "5"), "-"], _lines param [[4, 3] select (_fmt isEqualTo "5"), "-"]]
+        };
         ["track", [_ref, _fmt, _sum, _labels]] call comspec_atak_native_fnc_airBrief;
         {
             _x params ["_u", "_lbl"];
             [{ params ["_u", "_p"]; ["comspec_atak_native_airBrief", _p, _u] call CBA_fnc_targetEvent; }, [_u, ["brief", _ref, [_fmt, _lines, _rem, _lbl], _from, player]], format ["JTAC %1 pour %2", [_fmt] call _fmtName, _lbl], 1] call comspec_atak_native_fnc_netSend;
         } forEach _units;
-        // Athena (page /9-line, pilotes reliés hors de portée du jeu) : même ref, destinataires par indicatif.
-        if ([] call comspec_atak_native_fnc_bridge) then {
+        // Athena (page /9-line, pilotes reliés hors de portée du jeu) : même ref, destinataires par indicatif. La fiche de
+        // check-in (CKIN) reste en jeu : la page /9-line ne connaît que les 9-LINE et 5-LINE.
+        if (_fmt in ["9", "5"] && {[] call comspec_atak_native_fnc_bridge}) then {
             private _esc = { params ["_t"]; [[[_t, "\", "\\"] call CBA_fnc_replace, """", "\"""] call CBA_fnc_replace, toString [10], " "] call CBA_fnc_replace };
             private _mapId = missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]];
             private _lj = [];
