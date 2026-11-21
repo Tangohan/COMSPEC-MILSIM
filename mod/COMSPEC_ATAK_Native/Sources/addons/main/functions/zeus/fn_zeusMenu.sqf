@@ -182,6 +182,17 @@ switch (_act) do {
             if ((count (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMap])) isEqualTo 0) then { ["toggle"] call comspec_atak_native_fnc_zeusCentre; } else { ["card"] call comspec_atak_native_fnc_zeusCentre; };
         }, { true }] call comspec_atak_native_fnc_zenAction;
         [_centre, [], 7] call zen_context_menu_fnc_addAction;
+        // « ATAK · Contrôle Zeus » > « Forcer le relevé » : le Centre s'ouvre sur le joueur visé et lui demande son relevé tout de
+        // suite (fn_zeusCentre « force ») ; la réponse s'écrit dans sa fiche.
+        private _force = ["comspec_atak_zeus_force", "Forcer le relevé", _icon, {
+            private _u = _this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusTargets");
+            if (_u isEqualTo []) exitWith {};
+            missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreSel", getPlayerUID (_u select 0)];
+            if ((count (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMap])) isEqualTo 0) then { ["toggle"] call comspec_atak_native_fnc_zeusCentre; };
+            ["tab", ["players"]] call comspec_atak_native_fnc_zeusCentre;
+            ["force", [_u]] call comspec_atak_native_fnc_zeusCentre;
+        }, { true }] call comspec_atak_native_fnc_zenAction;
+        [_force, ["comspec_atak_zeus"], 101] call zen_context_menu_fnc_addAction;
         // Écran, preuve ou caisse : fenêtre de configuration (fn_zeusObject).
         private _objOf = {
             params ["", ["_objs", []], "", "", "", ["_hover", objNull]];

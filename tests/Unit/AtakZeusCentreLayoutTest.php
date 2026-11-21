@@ -230,7 +230,7 @@ final class AtakZeusCentreLayoutTest extends TestCase
         $cells = [
             '_tblTabs' => [($iw - 3 * $gap) / 4, 1, 2, ''],
             '_tblFilters' => [($iw - 2 * $gap) / 3, 1, 2, ' (12)'],
-            '_tblActions' => [($iw - 4 * $gap) / 5, 0, 1, ''],
+            '_tblActions' => [($iw - 5 * $gap) / 6, 0, 1, ''],
             '_tblModes' => [($iw - $sb - $gap) / 2, 1, 2, ''],
             '_tblTools' => [($iw - $sb - $gap) * $g['tool'], 0, 1, ''],
         ];
@@ -263,12 +263,12 @@ final class AtakZeusCentreLayoutTest extends TestCase
     public function testRowsAreLaidOutByTheGridOnly(): void
     {
         $c = $this->centre();
-        // Colonnes déclarées : onglets 4, filtres 2 × 3, actions 5, action du catalogue 5 / 3 / 2, serveur 2, modes 2.
+        // Colonnes déclarées : onglets 4, filtres 2 × 3, actions 6, action du catalogue 5 / 3 / 2, serveur 2, modes 2.
         foreach ([
             '[_row, _row, [1, 1, 1, 1], _tabCells]',
             '[_row, _row, [1, 1, 1], _fCells select [0, 3]]',
             '[_row, _row, [1, 1, 1], _fCells select [3, 3]]',
-            '[_row, _row, [1, 1, 1, 1, 1], _aCells]',
+            '[_row, _row, [1, 1, 1, 1, 1, 1], _aCells]',
             '[_row, _row, [5, 3, 2], [[_cat, 0, 1], [_tgt, 1, 1], [_ap, 2, 1]]]',
             '[_row, _row, [1, 1], [[_sb1, 0, 1], [_sb2, 1, 1]]]',
             '_lRows pushBack [_row, _row, [1, 1], _mCells];',
