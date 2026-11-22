@@ -167,6 +167,7 @@
 .aero-qi__top small { display: block; color: var(--a-muted); font-size: 12px; }
 .aero-qi__kind { margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--a-muted); }
 .aero-qi__acts form { display: flex; gap: 6px; flex-wrap: wrap; }
+.aero-pval { margin-top: 8px; }
 .aero-req { display: flex; flex-wrap: wrap; gap: 6px; }
 .aero-req > span:not(.aero-tag) { font: 600 11px var(--a-mono); padding: 2px 7px; border-radius: 4px; background: var(--a-primary-soft); color: var(--a-primary-strong); }
 .aero-sign { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
