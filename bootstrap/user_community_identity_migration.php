@@ -340,12 +340,14 @@ function run_user_community_identity_migration(PDO $pdo, ?callable $log = null):
         $deletedFilter = $columnExists('users', 'deleted_at')
             ? ' AND (u.deleted_at IS NULL)'
             : '';
+        // Un retrait explicite de fiche est daté. Le compte technique reste actif pour conserver son dossier.
         $pdo->exec(
             "UPDATE user_community_memberships m
              INNER JOIN users u ON u.id = m.user_id AND u.tenant_id = m.tenant_id
              SET m.status = 'active', m.left_at = NULL, m.updated_at = NOW()
              WHERE m.status = 'left'
                AND u.status = 'active'
+               AND (m.left_at IS NULL OR LOWER(TRIM(u.email)) NOT LIKE '%@sans-compte.invalid')
                {$deletedFilter}"
         );
         $say('user_community_memberships repaired (backfill + reactivate active users)');

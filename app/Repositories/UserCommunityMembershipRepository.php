@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Services\Identity\UserIdentityMergeRules;
 use App\Support\LazyDatabaseConnection;
 use App\Support\PortalAccessChoice;
+use App\Support\RosterOnlyMember;
 use App\Support\SilentSchemaMigration;
 use PDO;
 
@@ -299,6 +300,55 @@ final class UserCommunityMembershipRepository
         try {
             $this->pdo()->prepare('UPDATE user_community_profiles SET role_id = NULL, preferred_display_role_id = NULL, updated_at = NOW() WHERE user_id = ? AND tenant_id = ?')->execute([$userId, $tenantId]);
         } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * Retire uniquement les appartenances confirmées, si la fiche est toujours sans compte.
+     * @param list<array{user_id:int, tenant_id:int}> $memberships
+     */
+    public function leaveRosterMemberships(string $email, array $memberships): bool
+    {
+        if (!RosterOnlyMember::isRosterEmail($email) || $memberships === [] || !$this->tablesExist()) {
+            return false;
+        }
+
+        $pdo = $this->pdo();
+        $pdo->beginTransaction();
+        try {
+            $lock = $pdo->prepare(
+                "SELECT u.*, t.name AS tenant_name, t.slug AS tenant_slug
+                 FROM users u
+                 JOIN user_community_memberships m ON m.user_id = u.id
+                 JOIN tenants t ON t.id = m.tenant_id
+                 WHERE u.id = ? AND m.tenant_id = ? AND m.status = 'active' FOR UPDATE"
+            );
+            foreach ($memberships as $membership) {
+                $lock->execute([$membership['user_id'], $membership['tenant_id']]);
+                $user = $lock->fetch(PDO::FETCH_ASSOC);
+                $lock->closeCursor();
+                if ($user === false || strtolower(trim((string) $user['email'])) !== $email
+                    || !empty($user['is_platform_admin']) || !empty($user['is_service_account']) || !empty($user['deleted_at'])
+                    || in_array($user['status'] ?? '', ['merged', 'deleted'], true)
+                    || PortalAccessChoice::membershipIsPlaceholder($user)) {
+                    $pdo->rollBack();
+
+                    return false;
+                }
+            }
+
+            foreach ($memberships as $membership) {
+                $this->leave($membership['user_id'], $membership['tenant_id']);
+                $this->upsertProfile($membership['user_id'], $membership['tenant_id'], ['status' => 'inactive']);
+            }
+            $pdo->commit();
+
+            return true;
+        } catch (\Throwable $error) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $error;
         }
     }
 

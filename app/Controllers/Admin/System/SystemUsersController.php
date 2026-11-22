@@ -28,6 +28,7 @@ use App\Support\CsvSafe;
 use App\Support\PlatformUserColumns;
 use App\Support\PlatformUsersDirectoryQuery;
 use App\Support\PortalAccessChoice;
+use App\Support\RosterOnlyMember;
 use App\Repositories\AccountPurgeRequestRepository;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\LoginAttemptRepository;
@@ -486,11 +487,11 @@ final class SystemUsersController
         $action = $request->inputString('operation');
         $raw = $request->input('emails');
         $emails = self::bulkEmails(is_array($raw) ? $raw : []);
-        if (!in_array($action, ['ban', 'ban-inactive', 'verify'], true)
+        if (!in_array($action, ['ban', 'ban-inactive', 'verify', 'remove-roster'], true)
             || $emails === [] || count($emails) > max(PlatformUsersDirectoryQuery::PER_PAGE)) {
             return $this->bulkResponse(['error' => 'Sélectionnez les comptes d’une page et choisissez une action.'], 422);
         }
-        if ($action !== 'verify' && !$this->bans()->supportsNotices()) {
+        if (str_starts_with($action, 'ban') && !$this->bans()->supportsNotices()) {
             return $this->bulkResponse(['error' => 'Le bannissement groupé nécessite la migration « Sanctions du site ».'], 422);
         }
 
@@ -498,11 +499,16 @@ final class SystemUsersController
         if (!in_array($inactivity, UserRepository::PLATFORM_INACTIVITY_FILTERS, true)) {
             $inactivity = (string) UserRepository::PLATFORM_INACTIVE_DEFAULT_DAYS;
         }
-        $preview = $this->bulkTargets($emails, $action, $inactivity, $actor);
+        if ($action === 'remove-roster' && !$this->users->hasCommunityMembershipTable()) {
+            return $this->bulkResponse(['error' => __('roster_bulk.memberships_unavailable')], 422);
+        }
+
+        $tenantId = max(0, (int) $request->inputString('tenant_id'));
+        $preview = $this->bulkTargets($emails, $action, $inactivity, $actor, $tenantId);
         $nonce = bin2hex(random_bytes(16));
         Session::set('platform_users_bulk_preview', [
             'nonce' => $nonce, 'actor' => $actor, 'expires' => time() + 900,
-            'action' => $action, 'inactif' => $inactivity, 'targets' => $preview['targets'],
+            'action' => $action, 'inactif' => $inactivity, 'tenant_id' => $tenantId, 'targets' => $preview['targets'],
         ]);
 
         return $this->bulkResponse([
@@ -532,7 +538,7 @@ final class SystemUsersController
         $reason = '';
         $endDate = null;
         $notice = null;
-        if ($action !== 'verify') {
+        if (str_starts_with($action, 'ban')) {
             $reason = trim($request->inputString('reason'));
             if ($reason === '' && $action === 'ban-inactive') {
                 $reason = $preview['inactif'] === 'jamais'
@@ -558,15 +564,39 @@ final class SystemUsersController
             }
         }
 
-        $current = $this->bulkTargets(array_keys($preview['targets']), $action, $preview['inactif'], $actor)['targets'];
+        $current = $this->bulkTargets(array_keys($preview['targets']), $action, $preview['inactif'], $actor, $preview['tenant_id'] ?? 0);
         Session::forget('platform_users_bulk_preview');
         $outcomes = [];
+        $labels = array_column($current['rows'], 'label', 'email');
         foreach ($preview['targets'] as $email => $ids) {
-            if (($current[$email] ?? null) !== $ids) {
-                $outcomes[] = ['email' => $email, 'state' => 'skipped', 'message' => 'Le compte ou son admissibilité a changé depuis l’aperçu.'];
+            $identity = ['email' => $email, 'label' => $labels[$email] ?? $email];
+            if (($current['targets'][$email] ?? null) !== $ids) {
+                $outcomes[] = $identity + ['state' => 'skipped', 'message' => $action === 'remove-roster'
+                    ? __('roster_bulk.changed') : 'Le compte ou son admissibilité a changé depuis l’aperçu.'];
                 continue;
             }
             try {
+                if ($action === 'remove-roster') {
+                    $removed = $this->users->communityMemberships()->leaveRosterMemberships($email, $ids);
+                    if ($removed) {
+                        foreach ($ids as $membership) {
+                            try {
+                                $this->audit->logChange(
+                                    AuditAction::USER_MEMBERSHIP_REMOVED, $membership['tenant_id'], $actor, 'user', $membership['user_id'],
+                                    ['membership' => 'active'],
+                                    ['membership' => 'left', 'batch' => $preview['nonce'], 'roster_only' => true],
+                                );
+                            } catch (\Throwable $error) {
+                                error_log('[admin.users.bulk] Audit du retrait : ' . $error->getMessage());
+                            }
+                        }
+                    }
+                    $outcomes[] = $identity + [
+                        'state' => $removed ? 'applied' : 'skipped',
+                        'message' => __($removed ? 'roster_bulk.removed' : 'roster_bulk.changed'),
+                    ];
+                    continue;
+                }
                 if ($action === 'verify') {
                     $account = $this->users->findById($ids[0]);
                     if ($account === null || !self::canRemindVerification($account)
@@ -601,7 +631,8 @@ final class SystemUsersController
                 ];
             } catch (\Throwable $error) {
                 error_log('[admin.users.bulk] ' . $error->getMessage());
-                $outcomes[] = ['email' => $email, 'state' => 'failed', 'message' => 'L’action a échoué pour ce compte.'];
+                $outcomes[] = $identity + ['state' => 'failed', 'message' => $action === 'remove-roster'
+                    ? __('roster_bulk.failed') : 'L’action a échoué pour ce compte.'];
             }
         }
 
@@ -629,11 +660,14 @@ final class SystemUsersController
 
     /**
      * @param list<string> $emails
-     * @return array{targets: array<string, list<int>>, rows: list<array{email: string, label: string, eligible: bool, reason: string}>}
+     * @return array{targets: array<string, list<int>|list<array{user_id:int, tenant_id:int}>>, rows: list<array<string, mixed>>}
      */
-    private function bulkTargets(array $emails, string $action, string $inactivity, int $actor): array
+    private function bulkTargets(array $emails, string $action, string $inactivity, int $actor, int $tenantId): array
     {
         $groups = array_column($this->users->platformDirectoryGroupsByEmails($emails), null, 'email_key');
+        if ($action === 'remove-roster') {
+            return $this->bulkRosterTargets($emails, $groups, $actor, $tenantId);
+        }
         $banned = $this->bans()->activeByEmails($emails);
         $inactive = $action === 'ban-inactive'
             ? array_fill_keys($this->users->inactiveEmailsForPlatformSelection($emails, $inactivity), true)
@@ -644,8 +678,8 @@ final class SystemUsersController
             $group = $groups[$email] ?? null;
             $memberships = array_filter($group['memberships'] ?? [], static fn (array $row): bool => empty($row['deleted_at']));
             $ids = [];
-            if (\App\Support\RosterOnlyMember::isRosterEmail($email)) {
-                $reason = 'Fiche sans compte de connexion.';
+            if (RosterOnlyMember::isRosterEmail($email)) {
+                $reason = __('roster_bulk.no_login');
             } elseif ($memberships === []) {
                 $reason = 'Compte absent, supprimé ou technique.';
             } elseif (isset($banned[$email])) {
@@ -673,7 +707,51 @@ final class SystemUsersController
             if ($reason === '') {
                 $targets[$email] = $ids;
             }
-            $rows[] = ['email' => $email, 'label' => ($group['callsign'] ?? '') ?: (($group['display_name'] ?? '') ?: $email), 'eligible' => $reason === '', 'reason' => $reason];
+            $rows[] = ['email' => $email, 'label' => ($group['callsign'] ?? '') ?: (($group['display_name'] ?? '') ?: $email), 'eligible' => $reason === '', 'reason' => $reason, 'roster' => RosterOnlyMember::isRosterEmail($email)];
+        }
+
+        return ['targets' => $targets, 'rows' => $rows];
+    }
+
+    private function bulkRosterTargets(array $emails, array $groups, int $actor, int $tenantId): array
+    {
+        $targets = $rows = [];
+        foreach ($emails as $email) {
+            $group = $groups[$email] ?? [];
+            $roster = RosterOnlyMember::isRosterEmail($email);
+            $reason = __('roster_bulk.real_account');
+            $communities = $pairs = [];
+            if ($roster) {
+                $memberships = $group['memberships'] ?? [];
+                foreach ($memberships as $member) {
+                    $userId = (int) ($member['id'] ?? 0);
+                    $communityId = (int) ($member['tenant_id'] ?? 0);
+                    if ($userId < 1 || $communityId < 1 || !empty($member['deleted_at'])
+                        || in_array($member['account_status'] ?? '', ['merged', 'deleted'], true)
+                        || ($member['membership_status'] ?? '') !== 'active'
+                        || ($tenantId > 0 && $communityId !== $tenantId)
+                        || PortalAccessChoice::membershipIsPlaceholder($member)) {
+                        continue;
+                    }
+                    $pairs[$userId . '/' . $communityId] = ['user_id' => $userId, 'tenant_id' => $communityId];
+                    $communities[$communityId] = (string) $member['tenant_name'];
+                }
+                $reason = match (true) {
+                    $pairs === [] => __('roster_bulk.no_membership'),
+                    in_array($actor, array_map('intval', array_column($memberships, 'id')), true),
+                    $this->users->emailHasPlatformAdmin($email) => __('roster_bulk.protected'),
+                    default => '',
+                };
+            }
+            if ($reason === '') {
+                ksort($pairs, SORT_STRING);
+                $targets[$email] = array_values($pairs);
+            }
+            $rows[] = [
+                'email' => $email, 'label' => ($group['callsign'] ?? '') ?: (($group['display_name'] ?? '') ?: ($roster ? RosterOnlyMember::label() : $email)),
+                'roster' => $roster, 'eligible' => $reason === '', 'reason' => $reason,
+                'communities' => $reason === '' ? array_values($communities) : [],
+            ];
         }
 
         return ['targets' => $targets, 'rows' => $rows];

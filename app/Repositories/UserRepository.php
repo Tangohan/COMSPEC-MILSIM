@@ -166,10 +166,17 @@ class UserRepository
             return $a . '.tenant_id = ' . $tenantId;
         }
 
+        // Le tenant d’origine reste sur la fiche pour l’historique, y compris après un retrait.
+        $notRoster = SqlText::normalizedNotLikeLiteral($this->pdo(), $a . '.email', '%@' . \App\Support\RosterOnlyMember::EMAIL_DOMAIN);
+        $leftMembership = SqlText::equalsLiteral($this->pdo(), '__roster.status', 'left');
+
         return '(EXISTS (
             SELECT 1 FROM user_community_memberships __ucm
             WHERE __ucm.user_id = ' . $a . '.id AND __ucm.tenant_id = ' . $tenantId . ' AND ' . $activeMembership . '
-        ) OR ' . $a . '.tenant_id = ' . $tenantId . ')';
+        ) OR (' . $a . '.tenant_id = ' . $tenantId . ' AND (' . $notRoster . ' OR NOT EXISTS (
+            SELECT 1 FROM user_community_memberships __roster
+            WHERE __roster.user_id = ' . $a . '.id AND __roster.tenant_id = ' . $tenantId . ' AND ' . $leftMembership . '
+        ))))';
     }
 
     private function hasProfileSlugColumn(): bool

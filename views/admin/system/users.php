@@ -421,6 +421,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                 <?php foreach ($groups as $gi => $group): ?>
                     <?php
                     $email = (string) ($group['email'] ?? '');
+                    $rosterOnly = \App\Support\RosterOnlyMember::isRosterEmail($email);
                     $display = trim((string) ($group['display_name'] ?? ''));
                     $callsign = trim((string) ($group['callsign'] ?? ''));
                     $memberships = is_array($group['memberships'] ?? null) ? $group['memberships'] : [];
@@ -430,6 +431,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                     $banEnds = $ban !== null ? trim((string) ($ban['ends_at'] ?? '')) : '';
                     $state = (string) ($group['state'] ?? 'actif');
                     $communityNames = is_array($group['community_names'] ?? null) ? $group['community_names'] : [];
+                    $rosterRemoved = $rosterOnly && $communityNames === [] && in_array('left', array_column($memberships, 'membership_status'), true);
                     $sanctionsCount = (int) ($group['sanctions_count'] ?? 0);
                     $anchorId = (int) ($anchor['id'] ?? 0);
                     $anchorTid = (int) ($anchor['tenant_id'] ?? 0);
@@ -454,7 +456,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                         <?php foreach ($columns as $col): ?>
                             <?php if ($col === 'nom'): ?>
                                 <td data-col="nom" data-label="Nom" class="pu-td pu-td--nom">
-                                    <label class="pu-pick"><input type="checkbox" value="<?= $h($email) ?>" form="pu-select-form" name="emails[]" data-pu-pick aria-label="Sélectionner <?= $h($primary) ?>"></label>
+                                    <label class="pu-pick"><input type="checkbox" value="<?= $h($email) ?>" form="pu-select-form" name="emails[]" data-pu-pick<?= $rosterOnly ? ' data-pu-roster' : '' ?> aria-label="Sélectionner <?= $h($primary) ?>"></label>
                                     <span class="pu-avatar" aria-hidden="true"><?= $h($initial) ?></span>
                                     <span class="pu-name">
                                         <a class="pu-person__link<?= staff_name_class($anchorId) ?>" href="<?= $h($personUrl) ?>" data-staff-done><?= $h($display !== '' ? $display : $primary) ?></a><?= staff_mark($anchorId, true) ?>
@@ -466,10 +468,12 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                             <?php elseif ($col === 'indicatif'): ?>
                                 <td data-col="indicatif" data-label="Indicatif" class="pu-td"><?= $callsign !== '' ? $h($callsign) : '<span class="pu-muted">—</span>' ?></td>
                             <?php elseif ($col === 'email'): ?>
-                                <td data-col="email" data-label="E-mail" class="pu-td"><span class="pu-mono"><?= $h($email) ?></span></td>
+                                <td data-col="email" data-label="E-mail" class="pu-td"><span class="pu-mono"><?= $h($rosterOnly ? \App\Support\RosterOnlyMember::label() : $email) ?></span></td>
                             <?php elseif ($col === 'communautes'): ?>
                                 <td data-col="communautes" data-label="Communautés" class="pu-td">
-                                    <?php if ($communityNames === []): ?>
+                                    <?php if ($communityNames === [] && $rosterOnly): ?>
+                                        <span class="pa-pill pa-pill--slate"><?= $h(__('roster_bulk.no_active_community')) ?></span>
+                                    <?php elseif ($communityNames === []): ?>
                                         <span class="pa-pill pa-pill--slate" title="Aucune communauté active : la personne a un compte seul, elle peut rejoindre ou créer une communauté.">Sans communauté</span>
                                     <?php else: ?>
                                         <span class="pu-count-pill"><?= $h(count($communityNames)) ?></span>
@@ -478,14 +482,18 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                                 </td>
                             <?php elseif ($col === 'etat'): ?>
                                 <td data-col="etat" data-label="État" class="pu-td">
-                                    <span class="pa-pill <?= $h($statePill($state)) ?>"><?= $h(SystemUsersController::STATE_LABELS[$state] ?? $state) ?></span>
+                                    <?php if ($rosterOnly && $ban === null): ?>
+                                        <span class="pa-pill pa-pill--slate"><?= $h($rosterRemoved ? __('roster_bulk.removed_short') : \App\Support\RosterOnlyMember::label()) ?></span>
+                                    <?php else: ?>
+                                        <span class="pa-pill <?= $h($statePill($state)) ?>"><?= $h(SystemUsersController::STATE_LABELS[$state] ?? $state) ?></span>
+                                    <?php endif; ?>
                                     <?php if ($ban !== null): ?>
                                         <span class="pu-muted pu-block"><?= $banEnds !== '' ? 'jusqu’au ' . $h($fmtParis($banEnds)) : 'sans date de fin' ?></span>
                                     <?php endif; ?>
                                 </td>
                             <?php elseif ($col === 'connexion_site'): ?>
                                 <?php $login = (string) ($group['last_login'] ?? ''); ?>
-                                <td data-col="connexion_site" data-label="Connexion au site" class="pu-td"><?= $login !== '' ? $h($fmtDateTime($login)) : '<span class="pu-muted">Jamais</span>' ?></td>
+                                <td data-col="connexion_site" data-label="Connexion au site" class="pu-td"><?= $rosterOnly ? $h(__('roster_bulk.no_login_short')) : ($login !== '' ? $h($fmtDateTime($login)) : '<span class="pu-muted">Jamais</span>') ?></td>
                             <?php elseif ($col === 'connexion_jeu'): ?>
                                 <?php $gameSeen = (string) ($group['last_game'] ?? ''); ?>
                                 <td data-col="connexion_jeu" data-label="Connexion en jeu" class="pu-td"><?= $gameSeen !== '' ? $h($fmtDateTime($gameSeen)) : '<span class="pu-muted">Jamais</span>' ?></td>
@@ -513,6 +521,9 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                             <?php $verificationUserId = (int) ($group['verification_user_id'] ?? 0); ?>
                             <?php if ($verificationUserId > 0): ?>
                                 <?= $actionForm('admin/users/relancer-verification', ['user_id' => $verificationUserId], 'Renvoyer le lien', 'pa-btn pa-btn--sm pa-btn--solid') ?>
+                            <?php endif; ?>
+                            <?php if ($rosterOnly && $communityNames !== [] && !$isSelf && !$isAnonymized): ?>
+                                <button type="button" class="pa-btn pa-btn--sm pa-btn--line" data-pu-roster-open aria-haspopup="dialog"><?= $h(__('roster_bulk.remove_one')) ?></button>
                             <?php endif; ?>
                             <a class="pa-btn pa-btn--sm pa-btn--line" href="<?= $h($personUrl) ?>">Dossier complet</a>
                             <button type="button" class="pa-btn pa-btn--sm pa-btn--ghost" data-pu-toggle="<?= $h($detailId) ?>" aria-expanded="false" aria-controls="<?= $h($detailId) ?>">Détails</button>
@@ -553,7 +564,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                                                 'body' => "La personne peut de nouveau se connecter et s’inscrire.\nSes fiches retrouvent l’état qu’elles avaient avant le bannissement.\nLes blocages (e-mail, Steam, IP) créés par ce bannissement sont retirés.",
                                                 'ok' => 'Lever le bannissement',
                                             ]) ?>
-                                        <?php else: ?>
+                                        <?php elseif (!$rosterOnly): ?>
                                             <button type="button" class="pa-btn pa-btn--sm pu-btn-danger-soft"
                                                     data-pu-ban-open
                                                     data-ban-email="<?= $h($email) ?>"
@@ -650,7 +661,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                                                     <?php if ($ban === null): ?>
                                                         <?= $actionForm('admin/users/reintegrer-communaute', $fields, 'Réintégrer', 'pa-btn pa-btn--sm pa-btn--line', [
                                                             'title' => 'Réintégrer ' . $primary . ' dans « ' . $tenantName . ' » ?',
-                                                            'body' => "La personne redevient membre avec sa fiche, son rôle et son historique d’avant.",
+                                                            'body' => $rosterOnly ? __('roster_bulk.restore_note') : "La personne redevient membre avec sa fiche, son rôle et son historique d’avant.",
                                                             'ok' => 'Réintégrer',
                                                         ]) ?>
                                                     <?php endif; ?>
