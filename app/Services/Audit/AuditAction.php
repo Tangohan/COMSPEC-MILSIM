@@ -139,6 +139,7 @@ final class AuditAction
     public const USER_BAN_EXPIRED = 'user.ban_expired';
     public const USER_BAN_APPEAL_SUBMITTED = 'user.ban_appeal_submitted';
     public const USER_BAN_APPEAL_REVIEWED = 'user.ban_appeal_reviewed';
+    public const USER_BAN_APPEAL_ACCESS_CHANGED = 'user.ban_appeal_access_changed';
     public const USER_AUTO_BAN_RULE_CHANGED = 'user.auto_ban_rule_changed';
 
     /** Export CSV de l’annuaire des comptes (données personnelles) par l’administration du site. */

@@ -27,6 +27,13 @@ $hasDecision = isset($loginRestriction['id']);
                 <?php endif; ?>
             </dl>
         <?php endif; ?>
+        <?php if (!empty($loginRestriction['appeal_closed'])): ?>
+            <section class="au-restriction__appeal" aria-labelledby="login-restriction-appeal">
+                <h3 id="login-restriction-appeal"><?= $t('moderation.appeal_closed_title') ?></h3>
+                <p><?= $t('moderation.appeal_closed_message') ?></p>
+                <a class="au-link" href="<?= $restrictionEscape(url('contester-sanction')) ?>"><?= $t('moderation.view_decision_or_appeal') ?></a>
+            </section>
+        <?php else: ?>
         <section class="au-restriction__appeal" aria-labelledby="login-restriction-appeal">
             <h3 id="login-restriction-appeal"><?= $t($hasDecision ? 'auth.restriction_appeal' : 'auth.restriction_review') ?></h3>
             <p><?= $t($hasDecision ? 'auth.restriction_appeal_help' : 'auth.restriction_review_help') ?></p>
@@ -44,6 +51,7 @@ $hasDecision = isset($loginRestriction['id']);
                 <a class="au-link" href="<?= $restrictionEscape(url('contester-sanction')) ?>"><?= $t('auth.restriction_appeal') ?></a>
             <?php endif; ?>
         </section>
+        <?php endif; ?>
         <footer class="au-restriction__actions">
             <a class="au-link" href="<?= $restrictionEscape(url('legal/site') . '#cgu') ?>"><?= $t('auth.restriction_terms') ?></a>
             <a class="au-link au-restriction__back" href="<?= $restrictionEscape(url('login')) ?>" data-restriction-dismiss><?= $t('auth.restriction_back') ?></a>

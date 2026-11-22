@@ -29,6 +29,9 @@ return [
     'statement' => 'Votre version des faits',
     'statement_hint' => 'Entre 10 et 4 000 caractères. Indiquez les faits et les dates utiles, en préservant les informations privées des autres personnes.',
     'submit_appeal' => 'Envoyer la contestation',
+    'appeal_closed_title' => 'Contestations fermées',
+    'appeal_closed_message' => 'Cette décision n’est plus ouverte au dépôt d’une nouvelle contestation.',
+    'view_decision_or_appeal' => 'Consulter la décision ou suivre une demande existante',
     'follow_up' => 'Suivi de votre contestation',
     'appeal_accepted' => 'Contestation acceptée',
     'decision_upheld' => 'Décision maintenue',
@@ -48,6 +51,7 @@ return [
 
     'mail_subject' => 'Consultez votre décision de modération · Athena',
     'mail_intro' => 'Un lien a été demandé pour consulter votre décision de modération. Vous pourrez y lire le motif communiqué et déposer une contestation.',
+    'mail_intro_closed' => 'Un lien a été demandé pour consulter votre décision de modération. Vous pourrez y lire le motif communiqué et suivre une contestation déjà déposée.',
     'mail_action' => 'Consulter la décision',
     'mail_expiry' => 'Ce lien est personnel et expire dans une heure. Si vous n’êtes pas à l’origine de la demande, ignorez ce message.',
 ];

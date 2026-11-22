@@ -131,6 +131,7 @@ final class SystemUsersController
             'platformInactiveCount' => $inactiveCount,
             'platformBanSupportsEnd' => $this->bans()->supportsEndDate(),
             'platformBanSupportsNotice' => $this->bans()->supportsNotices(),
+            'platformBanSupportsAppealClosure' => $this->bans()->supportsAppealClosure(),
         ]);
     }
 
@@ -675,6 +676,7 @@ final class SystemUsersController
             $ips[] = $extra;
         }
         $reason = trim($request->inputString('reason'));
+        $appealClosed = $request->inputString('appeal_closed') === '1';
         try {
             $result = $this->banService()->ban(
                 $email,
@@ -683,7 +685,7 @@ final class SystemUsersController
                 $request->inputString('block_steam') === '1',
                 $actorId,
                 $endsAt,
-                new PlatformBanNotice($request->inputString('rule_reference'), $request->inputString('public_reason')),
+                new PlatformBanNotice($request->inputString('rule_reference'), $request->inputString('public_reason'), $appealClosed),
             );
         } catch (\Throwable $error) {
             error_log('[ban.account] ' . $error->getMessage());
@@ -709,6 +711,7 @@ final class SystemUsersController
                 'ban_id' => (int) ($result['ban_id'] ?? 0),
                 'reason' => mb_substr($reason, 0, 500),
                 'ends_at' => $endsAt?->format('Y-m-d H:i:s'),
+                'appeal_closed' => $appealClosed,
                 'blocked_ips' => (int) ($result['blocked_ips'] ?? 0),
                 'steam_blocked' => !empty($result['steam_blocked']),
             ],
@@ -1036,6 +1039,7 @@ final class SystemUsersController
             'personBanHistory' => $history,
             'personBanSupportsEnd' => $this->bans()->supportsEndDate(),
             'personBanSupportsNotice' => $this->bans()->supportsNotices(),
+            'personBanSupportsAppealClosure' => $this->bans()->supportsAppealClosure(),
             'personLiveFiches' => count($liveIds),
             'personIsSelf' => in_array((int) Session::get('user_id'), $liveIds, true),
             'personSupportsMemberships' => $this->users->hasCommunityMembershipTable(),

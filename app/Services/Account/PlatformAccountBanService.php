@@ -162,6 +162,9 @@ final class PlatformAccountBanService
         if (($notice !== null || $batch !== null) && !$this->bans()->supportsNotices()) {
             return ['ok' => false, 'error' => 'La mise à jour des sanctions et contestations est nécessaire.'];
         }
+        if ($notice?->appealClosed && !$this->bans()->supportsAppealClosure()) {
+            return ['ok' => false, 'error' => 'Appliquez la migration de fermeture des contestations avant de bannir avec cette option.'];
+        }
         // Une sanction échue doit être soldée avant d’en décider une nouvelle.
         $this->expireDue($email);
 
@@ -234,6 +237,7 @@ final class PlatformAccountBanService
                 'public_reason' => $notice?->message ?: null,
                 'source_tenant_id' => $sourceTenantId,
                 'batch_ref' => $batch,
+                'appeal_closed' => $notice?->appealClosed ?? false,
             ] : null;
             $banId = $this->bans()->create(
                 $email,

@@ -112,7 +112,11 @@ final class PlatformBanAppealController
                 'platform_ban_appeal_link',
                 $address,
                 __('moderation.mail_subject', [], $language),
-                ['appealUrl' => url(self::PATH) . '?token=' . $token, 'appealLanguage' => $language],
+                [
+                    'appealUrl' => url(self::PATH) . '?token=' . $token,
+                    'appealLanguage' => $language,
+                    'appealClosed' => !empty($ban['appeal_closed']),
+                ],
                 forceImmediate: true,
                 locale: $language,
             );
@@ -132,6 +136,11 @@ final class PlatformBanAppealController
 
             return $this->back();
         }
+        if (!empty($ban['appeal_closed'])) {
+            Session::flash('error', __('moderation.appeal_closed_message'));
+
+            return $this->back();
+        }
         $statement = trim($request->inputString('statement'));
         if (mb_strlen($statement) < 10 || mb_strlen($statement) > 4000) {
             Session::flash('error', __('moderation.invalid_statement'));
@@ -139,7 +148,10 @@ final class PlatformBanAppealController
             return $this->back();
         }
 
-        if ($this->appeals->submit((int) $ban['id'], $statement)) {
+        $submitted = $this->appeals->submit((int) $ban['id'], $statement);
+        if ($submitted === null) {
+            Session::flash('error', __('moderation.appeal_closed_message'));
+        } elseif ($submitted) {
             try {
                 (new AuditService())->log(AuditAction::USER_BAN_APPEAL_SUBMITTED, 0, null, 'platform_account_ban', (int) $ban['id']);
             } catch (\Throwable $error) {

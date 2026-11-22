@@ -36,6 +36,9 @@ return [
     'statement' => 'Your account of what happened',
     'statement_hint' => 'Enter 10 to 4,000 characters. Include relevant facts and dates and respect other people’s privacy.',
     'submit_appeal' => 'Submit appeal',
+    'appeal_closed_title' => 'Appeals closed',
+    'appeal_closed_message' => 'New appeals are closed for this decision.',
+    'view_decision_or_appeal' => 'View the decision or track an existing appeal',
     'follow_up' => 'Track your appeal',
     'appeal_accepted' => 'Appeal accepted',
     'decision_upheld' => 'Decision upheld',
@@ -55,6 +58,7 @@ return [
 
     'mail_subject' => 'View your moderation decision · Athena',
     'mail_intro' => 'A link was requested to view your moderation decision. You can read the reason for the restriction and submit an appeal.',
+    'mail_intro_closed' => 'A link was requested to view your moderation decision. You can read the reason for the restriction and track an appeal you have already submitted.',
     'mail_action' => 'View decision',
     'mail_expiry' => 'This link is private and expires in one hour. If you didn’t request it, you can ignore this email.',
 ];

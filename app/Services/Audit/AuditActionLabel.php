@@ -174,6 +174,7 @@ final class AuditActionLabel
         'user.ban_expired' => 'Sanction temporaire terminée (date de fin atteinte)',
         'user.ban_appeal_submitted' => 'Contestation de bannissement déposée',
         'user.ban_appeal_reviewed' => 'Contestation de bannissement traitée',
+        'user.ban_appeal_access_changed' => 'Ouverture des contestations modifiée',
         'user.auto_ban_rule_changed' => 'Règle de bannissement automatique modifiée',
         'platform.users_exported' => 'Export CSV des comptes (administration du site)',
         'user.membership_removed' => 'Retrait d’une communauté',

@@ -35,6 +35,8 @@ $bSupportsEnd = $supportsEnd;
 
         <?php if (!$workflowReady): ?>
             <p class="pa-flash pa-flash--warn">Les décisions groupées, les avis publics et les contestations nécessitent la migration « Sanctions du site ». Les bannissements individuels restent disponibles.</p>
+        <?php elseif (empty($supportsAppealClosure)): ?>
+            <p class="pa-flash pa-flash--warn">La fermeture des contestations est disponible après la migration « Sanctions du site : fermeture et réouverture des contestations par décision ».</p>
         <?php endif; ?>
 
         <div class="pa-panel">
@@ -56,6 +58,11 @@ $bSupportsEnd = $supportsEnd;
                                     <strong><?= $h((string) ($activeBan['display_label'] ?: $activeBan['email_norm'])) ?></strong>
                                     <p class="pu-muted"><?= $h($activeBan['email_norm']) ?> · Décision n° <?= (int) $activeBan['id'] ?></p>
                                     <p><?= $h(PlatformBanNotice::endLabel($activeBan['ends_at'] ?? null)) ?></p>
+                                    <?php if (!empty($supportsAppealClosure)):
+                                        $appealDecision = $activeBan;
+                                        $fromPersonDossier = false;
+                                        require base_path('views/admin/system/partials/platform_appeal_access.php');
+                                    endif; ?>
                                 </div>
                                 <a class="pa-btn pa-btn--line pa-btn--sm" href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($activeBan['email_norm']) . '#bannissement') ?>">Ouvrir le dossier</a>
                             </li>
@@ -99,7 +106,10 @@ $bSupportsEnd = $supportsEnd;
                                     <span>Motif interne</span>
                                     <textarea name="reason" rows="3" minlength="5" maxlength="500" required></textarea>
                                 </label>
-                                <?php require base_path('views/admin/system/partials/platform_ban_notice_fields.php'); ?>
+                                <?php
+                                $banNoticeSupportsClosure = !empty($supportsAppealClosure);
+                                require base_path('views/admin/system/partials/platform_ban_notice_fields.php');
+                                ?>
                                 <label class="pu-check"><input type="checkbox" name="block_steam" value="1" checked> Bloquer aussi les identifiants Steam liés</label>
                                 <label class="pu-check pu-confirm-check"><input type="checkbox" name="confirm_ban" value="1" required> Je confirme le bannissement sur tout Athena des comptes admissibles de cette liste.</label>
                                 <button type="submit" class="pa-btn pa-btn--danger">Bannir les comptes de cette organisation</button>
@@ -231,7 +241,8 @@ $bSupportsEnd = $supportsEnd;
             require base_path('views/admin/system/partials/platform_entity_picker.php');
             $banForm = [
                 'id' => 'ps-ban-account', 'label' => 'cette personne', 'email' => 'du compte ciblé',
-                'supports_end' => $supportsEnd, 'supports_notice' => $workflowReady, 'shared' => true,
+                'supports_end' => $supportsEnd, 'supports_notice' => $workflowReady,
+                'supports_appeal_closure' => !empty($supportsAppealClosure), 'shared' => true,
             ];
             require base_path('views/admin/system/partials/platform_ban_form.php');
             ?>

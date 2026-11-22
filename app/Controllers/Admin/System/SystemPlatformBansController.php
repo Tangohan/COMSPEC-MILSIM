@@ -51,6 +51,7 @@ final class SystemPlatformBansController
             'backOfficePageCss' => ['platform-admin.css', 'platform-admin-users.css', 'platform-admin-sanctions.css', 'platform-admin-picker.css'],
             'workflowReady' => $ready,
             'supportsEnd' => $this->bans->supportsEndDate(),
+            'supportsAppealClosure' => $this->bans->supportsAppealClosure(),
             'activeBans' => $active,
             'activeCount' => $this->bans->countActive(),
             'tenants' => $ready ? Container::get(TenantRepository::class)->listBasicAll() : [],
@@ -99,7 +100,16 @@ final class SystemPlatformBansController
         }
 
         $batch = substr(hash_hmac('sha256', $tenantId . ':' . $signature . ':' . $nonce, Csrf::token()), 0, 32);
-        $notice = new PlatformBanNotice($request->inputString('rule_reference'), $request->inputString('public_reason'));
+        $notice = new PlatformBanNotice(
+            $request->inputString('rule_reference'),
+            $request->inputString('public_reason'),
+            $request->inputString('appeal_closed') === '1',
+        );
+        if ($notice->appealClosed && !$this->bans->supportsAppealClosure()) {
+            Session::flash('error', 'Appliquez la migration de fermeture des contestations avant de bannir avec cette option.');
+
+            return $back;
+        }
         $endDate = $end['endsAt'] ?? null;
         $steam = $request->inputString('block_steam') === '1';
         $applied = $accounts = $skipped = $failed = 0;
@@ -117,6 +127,7 @@ final class SystemPlatformBansController
                     'organisation' => $tenantId,
                     'batch' => $batch,
                     'ends_at' => $result['ends_at'],
+                    'appeal_closed' => $notice->appealClosed,
                 ], $tenantId);
             } catch (\Throwable $e) {
                 $failed++;
@@ -127,6 +138,45 @@ final class SystemPlatformBansController
         if ($failed > 0) {
             Session::flash('error', sprintf('%d dossier(s) n’ont pas abouti. Relancez après vérification de la liste ; les décisions déjà appliquées sont conservées.', $failed));
         }
+
+        return $back;
+    }
+
+    public function updateAppealAccess(Request $request, array $params = []): Response
+    {
+        $back = $this->back(0, 'compte');
+        $mode = $request->inputString('appeal_access');
+        $banId = (int) ($params['id'] ?? 0);
+        if ($this->verifiedActor($request) === 0 || !$this->bans->supportsAppealClosure()
+            || $banId < 1 || !in_array($mode, ['open', 'closed'], true)) {
+            Session::flash('error', 'La modification est indisponible. Vérifiez votre session et l’état des migrations.');
+
+            return $back;
+        }
+        $ban = $this->bans->findById($banId);
+        if ($ban === null) {
+            Session::flash('error', 'Cette décision est introuvable.');
+
+            return $back;
+        }
+        if ($request->inputString('return_person') === '1') {
+            $back = Response::redirect(url('admin/users/person') . '?email=' . rawurlencode((string) $ban['email_norm']) . '#bannissement', 303);
+        }
+        $closed = $mode === 'closed';
+        try {
+            if ($this->bans->setAppealClosed($banId, $closed)) {
+                AuditService::logPlatformAction(AuditAction::USER_BAN_APPEAL_ACCESS_CHANGED, [
+                    'ban_id' => $banId,
+                    'appeal_closed' => $closed,
+                ]);
+            }
+        } catch (\Throwable $error) {
+            error_log('[ban.appeal.access] ' . $error->getMessage());
+            Session::flash('error', 'La modification des contestations a échoué. Réessayez.');
+
+            return $back;
+        }
+        Session::flash('success', $closed ? 'Nouvelles contestations fermées pour cette décision.' : 'Contestations réouvertes pour cette décision.');
 
         return $back;
     }
