@@ -34,7 +34,7 @@ private _pose = {
 };
 private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DateCam", objNull];
-    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _cam; };
+    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; };
     missionNamespace setVariable ["COMSPEC_ATAK_DateCam", objNull];
     ["stop"] call comspec_atak_native_fnc_blackStage;
     private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_DateCamPfh", -1];
@@ -52,7 +52,7 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_DateCamN", _n];
             private _name = format ["comspec_datecam%1", _n];
             _cam = "camera" camCreate (ASLToAGL (eyePos _u));
-            _cam cameraEffect ["Internal", "Back", _name];
+            _cam cameraEffect ["Internal", "Back", _name]; ["keep"] call comspec_atak_native_fnc_tocRtt;
             _name setPiPEffect [0];
             [_cam, "r2t", _name, true] call comspec_atak_native_fnc_camVar;
             missionNamespace setVariable ["COMSPEC_ATAK_DateCam", _cam];
