@@ -101,7 +101,12 @@ class AuthController
         Session::forget('pending_community_selection');
         Session::forget('pending_login_security_otp');
         Session::forget('pending_verification_email');
-        Session::flash('login_access_restriction', $ban === null ? [] : PlatformBanNotice::publicDetails($ban, locale()));
+        $notice = [];
+        if ($ban !== null) {
+            $language = $this->emailService->recipientLocale((string) $ban['email_norm']) === 'en' ? 'en' : 'fr';
+            $notice = PlatformBanNotice::publicDetails($ban, $language);
+        }
+        Session::flash('login_access_restriction', $notice);
 
         return Response::redirect(url('login'), 303)->header('Cache-Control', 'private, no-store');
     }

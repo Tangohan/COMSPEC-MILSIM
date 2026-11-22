@@ -99,7 +99,11 @@ final class PlatformBanAppealWorkflowTest extends TestCase
             'ends_at' => '2026-11-20 12:00:00',
         ], 'en');
 
-        self::assertSame('Athena Terms of Use · User content and moderation', $notice['rule']);
+        self::assertSame('Athena Code of Conduct · Article 2', $notice['rule']);
+        self::assertStringEndsWith('/code-de-conduite?lang=en#article-2', $notice['rule_url']);
+        $historical = PlatformBanNotice::publicDetails(['id' => 41, 'rule_reference' => 'CGU Athena · Contenus utilisateurs et modération'], 'en');
+        self::assertSame('Athena Terms of Use · User content and moderation', $historical['rule']);
+        self::assertSame('', $historical['rule_url']);
         self::assertStringContainsString('the moderation team restricted your access.', $notice['message']);
         self::assertSame('20 Nov 2026 at 13:00 (Paris time)', $notice['end']);
         self::assertSame('No end date', PlatformBanNotice::endLabel(null, 'en'));
@@ -129,6 +133,19 @@ final class PlatformBanAppealWorkflowTest extends TestCase
         ]);
         self::assertStringContainsString('track an appeal you have already submitted', $mail['text']);
         self::assertStringNotContainsString('submit an appeal', $mail['text']);
+    }
+
+    public function testInactivityMessagesDescribeTheCorrectTriggerAndRespectAppealClosure(): void
+    {
+        $first = PlatformBanNotice::MODELS['inactivite_initiale'];
+        $notice = PlatformBanNotice::publicDetails(['id' => 1, 'public_reason' => $first['text'], 'rule_reference' => $first['rule']], 'en');
+        self::assertStringContainsString('since it was created', $notice['message']);
+        self::assertStringContainsString('review this decision', $notice['message']);
+        self::assertStringEndsWith('/code-de-conduite?lang=en#article-7', $notice['rule_url']);
+        $closed = PlatformBanNotice::displayMessage($first['text'], true, 'en');
+        self::assertStringContainsString('since it was created', $closed);
+        self::assertStringNotContainsString('review', $closed);
+        self::assertStringContainsString('depuis une période prolongée', PlatformBanNotice::displayMessage(PlatformBanNotice::MODELS['inactivite']['text'], false));
     }
 
     private function database(): PDO

@@ -4,12 +4,13 @@ declare(strict_types=1);
 use App\Core\Csrf;
 
 $e = static fn (string|int|null $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-$t = static fn (string $key, array $replace = []): string => $e(__($key, $replace));
-$authTitle = __($notice === null ? 'moderation.appeal_title' : 'moderation.decision_title');
+$noticeLanguage = $notice['locale'] ?? null;
+$t = static fn (string $key, array $replace = []): string => $e(__($key, $replace, $noticeLanguage));
+$authTitle = __($notice === null ? 'moderation.appeal_title' : 'moderation.decision_title', [], $noticeLanguage);
 $athena_header_current = 'login';
 ?>
 <!DOCTYPE html>
-<html lang="<?= $e(html_lang()) ?>">
+<html lang="<?= $e($noticeLanguage ?? html_lang()) ?>">
 <head>
     <?php require base_path('views/partials/auth/head.php'); ?>
     <link rel="stylesheet" href="<?= $e(asset_url('assets/css/auth-appeal.css')) ?>">
@@ -69,7 +70,16 @@ $athena_header_current = 'login';
                         <div><dt><?= $t('moderation.restriction_end') ?></dt><dd><?= $e($notice['end']) ?></dd></div>
                     <?php endif; ?>
                     <?php if ($notice['rule'] !== ''): ?>
-                        <div><dt><?= $t('auth.restriction_rule') ?></dt><dd><?= $e($notice['rule']) ?></dd></div>
+                        <div>
+                            <dt><?= $t('auth.restriction_rule') ?></dt>
+                            <dd>
+                                <?php if (!empty($notice['rule_url'])): ?>
+                                    <a class="au-link" href="<?= $e($notice['rule_url']) ?>" target="_blank" rel="noopener"><?= $e($notice['rule']) ?></a>
+                                <?php else: ?>
+                                    <?= $e($notice['rule']) ?>
+                                <?php endif; ?>
+                            </dd>
+                        </div>
                     <?php endif; ?>
                 </dl>
             </section>

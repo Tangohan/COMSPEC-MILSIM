@@ -783,9 +783,9 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
     </dialog>
 
     <?php require base_path('views/admin/system/partials/platform_user_confirm.php'); ?>
+    <?php require base_path('views/admin/system/partials/platform_bulk_user_dialog.php'); ?>
 </div>
 <?php require base_path('views/admin/system/partials/platform_shared_ips_dialog.php'); ?>
-<?php require base_path('views/admin/system/partials/platform_bulk_user_dialog.php'); ?>
 <script src="<?= $h(asset_url('assets/js/platform-users-bulk.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-ban-notice.js')) ?>" defer></script>

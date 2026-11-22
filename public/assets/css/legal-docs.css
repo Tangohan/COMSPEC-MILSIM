@@ -376,3 +376,16 @@
     margin-left: 0;
   }
 }
+
+.legal-conduct-index {
+  margin-block: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--legal-line);
+  border-radius: 12px;
+  background: var(--legal-wash);
+}
+.legal-main .legal-conduct-index ul { margin: 0; }
+.legal-main section[id^="article-"]:target {
+  padding-inline-start: 1rem;
+  border-inline-start: 3px solid var(--legal-accent);
+}

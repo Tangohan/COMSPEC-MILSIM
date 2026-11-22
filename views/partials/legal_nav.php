@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * Navigation latérale du hub juridique.
- * Variables : $legalActivePage (site|droits), $legalActiveSection (optionnel)
+ * Variables : $legalActivePage (site|conduite|droits), $legalActiveSection (optionnel)
  */
 $legalActivePage = $legalActivePage ?? 'site';
 $legalActiveSection = $legalActiveSection ?? '';
@@ -24,6 +24,7 @@ $legalSectionHref = static function (string $section) use ($onSitePage, $siteUrl
     <div class="legal-nav-label"><?= htmlspecialchars(__('legal.docs_label'), ENT_QUOTES, 'UTF-8') ?></div>
     <nav class="legal-nav" aria-label="<?= htmlspecialchars(__('legal.pages_aria'), ENT_QUOTES, 'UTF-8') ?>">
         <a href="<?= htmlspecialchars($onSitePage ? '#' : $siteUrl, ENT_QUOTES, 'UTF-8') ?>" class="<?= $onSitePage ? 'active' : '' ?>"><?= htmlspecialchars(__('legal.policy_conditions'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a href="<?= htmlspecialchars(url('code-de-conduite'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $legalActivePage === 'conduite' ? 'active' : '' ?>"><?= htmlspecialchars(__('conduct.nav'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('demande-donnees'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $legalActivePage === 'droits' ? 'active' : '' ?>"><?= htmlspecialchars(__('legal.exercise_rights'), ENT_QUOTES, 'UTF-8') ?></a>
     </nav>
 

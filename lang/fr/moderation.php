@@ -6,6 +6,8 @@ return [
     'no_end' => 'Sans date de fin',
     'end_date' => ':date à :time (heure de Paris)',
 
+    'preset_inactivite_reason_closed' => 'Nous avons suspendu l’accès à votre compte car aucune connexion à Athena ni session de jeu n’a été enregistrée depuis une période prolongée.',
+    'preset_inactivite_initiale_reason_closed' => 'Nous avons suspendu l’accès à votre compte car aucune connexion à Athena ni session de jeu n’a été enregistrée depuis sa création.',
     'appeal_title' => 'Contester une sanction',
     'decision_title' => 'Décision de modération',
     'appeal_intro' => 'Consultez la décision concernant votre compte et demandez son réexamen.',

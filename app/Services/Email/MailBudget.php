@@ -70,6 +70,7 @@ final class MailBudget
 
     /** Alertes destinées à l'exploitation de la plateforme : regroupées dans le récapitulatif. */
     public const OPS_EVENTS = [
+        EmailEvents::PLATFORM_BAN_APPEAL_SUBMITTED,
         'error_alert',
         EmailEvents::PLATFORM_ACCOUNT_CREATED,
         EmailEvents::PLATFORM_ACCOUNT_EMAIL_VERIFIED,
@@ -137,6 +138,7 @@ final class MailBudget
         EmailEvents::REGISTER_SECURITY_COMPANION => 'Sécurité et démarrage rapide (après inscription)',
         EmailEvents::PASSWORD_RESET => 'Mot de passe oublié',
         EmailEvents::PLATFORM_BAN_APPEAL_LINK => 'Lien de contestation d’un bannissement',
+        EmailEvents::PLATFORM_BAN_APPEAL_SUBMITTED => 'Nouvelle contestation de bannissement (exploitation)',
         EmailEvents::LOGIN_SECURITY_OTP => 'Code de connexion',
         EmailEvents::LOGIN_OTP_MAILBOX_SELF_TEST => 'Code de test (préférences)',
         EmailEvents::INTERTEAM_COOPERATION_OTP => 'Code de coopération',
