@@ -1998,6 +1998,7 @@ return function (Router $router) {
     $router->post('/admin/sanctions/organisation', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'banOrganization'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/sanctions/lots/lever', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'liftBatch'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/sanctions/contestations/{id}', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'review'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/contestations/{id}/acces', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'updateAppealAccess'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/sanctions/automatique', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'saveAutomation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Recherche globale (comptes et communautés), réservée aux administrateurs du site.
     $router->get('/admin/recherche', [\App\Controllers\Admin\System\SystemAdminSearchController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

@@ -29,7 +29,7 @@ final class PlatformBanNotice
     public readonly string $rule;
     public readonly string $message;
 
-    public function __construct(string $rule, string $message)
+    public function __construct(string $rule, string $message, public readonly bool $appealClosed = false)
     {
         $this->rule = mb_substr(trim($rule), 0, 160);
         $this->message = mb_substr(trim($message), 0, 2000);
@@ -37,24 +37,19 @@ final class PlatformBanNotice
 
     public function isEmpty(): bool
     {
-        return $this->rule === '' && $this->message === '';
+        return $this->rule === '' && $this->message === '' && !$this->appealClosed;
     }
 
-    /** @return array{id:int, rule:string, message:string, end:string} */
+    /** @return array{id:int, rule:string, message:string, end:string, appeal_closed:bool} */
     public static function publicDetails(array $ban, string $locale = 'fr'): array
     {
         $rule = trim((string) ($ban['rule_reference'] ?? ''));
-        $message = trim((string) ($ban['public_reason'] ?? '')) ?: self::DEFAULT_TEXT;
+        $appealClosed = !empty($ban['appeal_closed']);
         if ($locale === 'en') {
-            if ($message === self::DEFAULT_TEXT) {
-                $message = \__('moderation.default_reason', [], $locale);
-            }
             foreach (self::MODELS as $key => $model) {
                 if ($rule === $model['rule']) {
                     $rule = \__('moderation.preset_' . $key . '_rule', [], $locale);
-                }
-                if ($message === $model['text']) {
-                    $message = \__('moderation.preset_' . $key . '_reason', [], $locale);
+                    break;
                 }
             }
         }
@@ -62,9 +57,36 @@ final class PlatformBanNotice
         return [
             'id' => (int) $ban['id'],
             'rule' => $rule,
-            'message' => $message,
+            'message' => self::displayMessage((string) ($ban['public_reason'] ?? ''), $appealClosed, $locale),
             'end' => self::endLabel($ban['ends_at'] ?? null, $locale),
+            'appeal_closed' => $appealClosed,
         ];
+    }
+
+    public static function displayMessage(string $message, bool $appealClosed, string $locale = 'fr'): string
+    {
+        $message = trim($message) ?: self::DEFAULT_TEXT;
+        $key = $message === self::DEFAULT_TEXT ? 'moderation.default_reason' : null;
+        foreach (self::MODELS as $modelKey => $model) {
+            if ($message === $model['text']) {
+                $key = 'moderation.preset_' . $modelKey . '_reason';
+                break;
+            }
+        }
+        if ($key === null) {
+            return $message;
+        }
+        if ($locale === 'en') {
+            $message = \__($key, [], $locale);
+        }
+        if ($appealClosed) {
+            // Les modèles commencent par le motif. Les phrases suivantes invitent à contester.
+            [$message] = explode('. ', $message, 2);
+
+            return rtrim($message, '.') . '.';
+        }
+
+        return $message;
     }
 
     public static function endLabel(?string $endsAt, string $locale = 'fr'): string

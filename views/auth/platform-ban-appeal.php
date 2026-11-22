@@ -73,7 +73,12 @@ $athena_header_current = 'login';
                     <?php endif; ?>
                 </dl>
             </section>
-            <?php if ($appeal === null): ?>
+            <?php if ($appeal === null && !empty($notice['appeal_closed'])): ?>
+                <section class="appeal-card" aria-labelledby="ban-appeal-closed-title">
+                    <h2 id="ban-appeal-closed-title"><?= $t('moderation.appeal_closed_title') ?></h2>
+                    <p><?= $t('moderation.appeal_closed_message') ?></p>
+                </section>
+            <?php elseif ($appeal === null): ?>
                 <section class="appeal-card" aria-labelledby="ban-appeal-title">
                     <h2 id="ban-appeal-title"><?= $t('moderation.request_review') ?></h2>
                     <form class="ds-form rg-form" method="post" action="<?= $e(url('contester-sanction/deposer')) ?>" data-busy-form>

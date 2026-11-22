@@ -736,6 +736,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
             <h3 id="pu-ban-dialog-title" class="pu-dialog__title">Bannir une personne</h3>
             <?php
             $banForm = ['id' => 'pu-ban-shared', 'label' => '', 'email' => '', 'fiches' => 0, 'prior' => 0, 'history_url' => '', 'supports_end' => $banSupportsEnd, 'supports_notice' => !empty($platformBanSupportsNotice), 'steam_id' => '', 'known_ips' => [], 'shared' => true];
+            $banForm['supports_appeal_closure'] = !empty($platformBanSupportsAppealClosure);
             require base_path('views/admin/system/partials/platform_ban_form.php');
             ?>
             <div class="pu-dialog__buttons">

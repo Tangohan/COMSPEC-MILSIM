@@ -8,6 +8,7 @@
         const previewRule = fields.querySelector('[data-ban-preview-rule]');
         const previewBody = fields.querySelector('[data-ban-preview-body]');
         const status = fields.querySelector('[data-ban-copy-status]');
+        const appealClosed = fields.querySelector('[name="appeal_closed"]');
 
         function render() {
             const selection = form.querySelector('[name="duree"]:checked');
@@ -18,7 +19,11 @@
                 : label;
             previewRule.textContent = rule.value.trim();
             previewRule.hidden = previewRule.textContent === '';
-            previewBody.textContent = message.value.trim() || previewBody.dataset.defaultMessage;
+            const text = message.value.trim() || previewBody.dataset.defaultMessage;
+            const preset = Array.from(templates.options).find(option => option.dataset.message === text);
+            previewBody.textContent = appealClosed?.checked
+                ? (text === previewBody.dataset.defaultMessage ? previewBody.dataset.closedMessage : preset?.dataset.closedMessage ?? text)
+                : text;
             status.textContent = '';
         }
 
@@ -35,8 +40,11 @@
         });
 
         fields.querySelector('[data-ban-copy]').addEventListener('click', async () => {
+            const appealLine = appealClosed?.checked
+                ? 'Cette décision n’est plus ouverte au dépôt d’une nouvelle contestation.'
+                : 'Pour demander un réexamen, utilisez le lien « Consulter ou contester un bannissement » sur la page de connexion.';
             const text = ['Décision de modération · Athena', duration.textContent, previewRule.textContent,
-                previewBody.textContent, 'Pour demander un réexamen, utilisez le lien « Consulter ou contester un bannissement » sur la page de connexion.']
+                previewBody.textContent, appealLine]
                 .filter(Boolean).join('\n\n');
             try {
                 await navigator.clipboard.writeText(text);

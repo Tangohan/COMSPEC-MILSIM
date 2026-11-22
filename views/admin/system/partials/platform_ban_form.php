@@ -54,7 +54,10 @@ $bShared = !empty($banForm['shared']);
         <textarea name="reason" rows="2" required minlength="5" maxlength="500" placeholder="Ex. insultes répétées, triche"></textarea>
     </label>
 
-    <?php if (!empty($banForm['supports_notice'])) { require base_path('views/admin/system/partials/platform_ban_notice_fields.php'); } ?>
+    <?php if (!empty($banForm['supports_notice'])) {
+        $banNoticeSupportsClosure = !empty($banForm['supports_appeal_closure']);
+        require base_path('views/admin/system/partials/platform_ban_notice_fields.php');
+    } ?>
 
     <fieldset class="pu-dialog__field">
         <legend>Bloquer aussi</legend>

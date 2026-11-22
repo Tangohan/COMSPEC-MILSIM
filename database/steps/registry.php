@@ -163,4 +163,5 @@ return [
     ['id' => 'public_modpack', 'label' => 'Modpack public : archive active, réglages de diffusion et compteurs journaliers', 'group' => 'schema', 'file' => '4920_public_modpack.php', 'rerun' => true],
     ['id' => 'login_attempt_security_index', 'label' => 'Surveillance de la sécurité : index des tentatives de connexion par résultat et date', 'group' => 'schema', 'file' => '4930_login_attempt_security_index.php', 'rerun' => true],
     ['id' => 'platform_ban_appeals', 'label' => 'Sanctions du site : avis, décisions par organisation et contestations', 'group' => 'schema', 'file' => '4940_platform_ban_appeals.php', 'rerun' => true],
+    ['id' => 'platform_ban_appeal_closure', 'label' => 'Sanctions du site : fermeture et réouverture des contestations par décision', 'group' => 'schema', 'file' => '4950_platform_ban_appeal_closure.php', 'rerun' => true],
 ];

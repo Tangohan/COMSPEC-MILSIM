@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Repositories\PlatformAccountBanRepository;
 use App\Repositories\PlatformBanAppealRepository;
 use App\Services\Account\PlatformBanNotice;
 use App\Services\EmailTemplateEngine;
@@ -44,6 +45,39 @@ final class PlatformBanAppealWorkflowTest extends TestCase
         self::assertSame('Réponse de la modération.', $appeals->find(40)['public_reply']);
     }
 
+    public function testClosingAppealsBlocksNewSubmissionsAndPreservesExistingCases(): void
+    {
+        $pdo = $this->database();
+        $pdo->exec('CREATE TABLE platform_account_bans (id INTEGER PRIMARY KEY)');
+        $pdo->exec('INSERT INTO platform_account_bans (id) VALUES (40), (41)');
+        $migration = dirname(__DIR__, 2) . '/database/steps/4950_platform_ban_appeal_closure.php';
+        require $migration;
+        require $migration;
+
+        $bans = new PlatformAccountBanRepository($pdo);
+        $appeals = new PlatformBanAppealRepository($pdo);
+        $linkHash = hash('sha256', 'issued-before-closure');
+        $appeals->storeLink(40, $linkHash, time() + 3600);
+
+        self::assertTrue($bans->supportsAppealClosure());
+        self::assertFalse((bool) $bans->findById(40)['appeal_closed']);
+        self::assertTrue($appeals->submit(41, 'Contestation déjà reçue.'));
+        self::assertTrue($bans->setAppealClosed(40, true));
+        self::assertFalse($bans->setAppealClosed(40, true));
+        self::assertNull($appeals->submit(40, 'Tentative avec un ancien lien.'));
+        self::assertNull($appeals->find(40));
+        self::assertFalse($pdo->inTransaction());
+        self::assertSame(40, (int) $appeals->findValidLink($linkHash)['ban_id']);
+
+        self::assertTrue($bans->setAppealClosed(41, true));
+        self::assertSame('Contestation déjà reçue.', $appeals->find(41)['statement']);
+        self::assertTrue($appeals->decide(41, 1, 'uphold', 'Réponse enregistrée.'));
+        self::assertTrue($bans->setAppealClosed(40, false));
+        self::assertTrue($appeals->submit(40, 'Contestation après réouverture.'));
+        self::assertFalse($appeals->submit(40, 'Tentative de doublon.'));
+        self::assertFalse($pdo->inTransaction());
+    }
+
     public function testNoticeTemplatesCanBeSentAndDatesAreDisplayedInParisTime(): void
     {
         $url = 'https://example.test/contester-sanction?token=fixture';
@@ -79,6 +113,22 @@ final class PlatformBanAppealWorkflowTest extends TestCase
         self::assertStringContainsString('<html lang="en">', $mail['html']);
         self::assertStringContainsString('View decision', $mail['html']);
         self::assertStringContainsString('This link is private and expires in one hour.', $mail['text']);
+    }
+
+    public function testClosedNoticesRemoveTheInvitationFromBuiltInMessages(): void
+    {
+        $notice = PlatformBanNotice::publicDetails(['id' => 40, 'appeal_closed' => 1], 'en');
+        self::assertTrue($notice['appeal_closed']);
+        self::assertSame('The Athena team has restricted access to your account.', $notice['message']);
+        self::assertSame('Motif personnalisé.', PlatformBanNotice::displayMessage('Motif personnalisé.', true));
+
+        $mail = (new EmailTemplateEngine())->render('platform_ban_appeal_link', [
+            'appealUrl' => 'https://example.test/contester-sanction?token=fixture',
+            'appealLanguage' => 'en',
+            'appealClosed' => true,
+        ]);
+        self::assertStringContainsString('track an appeal you have already submitted', $mail['text']);
+        self::assertStringNotContainsString('submit an appeal', $mail['text']);
     }
 
     private function database(): PDO

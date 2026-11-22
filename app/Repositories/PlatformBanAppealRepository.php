@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 final class PlatformBanAppealRepository
@@ -51,11 +52,33 @@ final class PlatformBanAppealRepository
         return $row ?: null;
     }
 
-    public function submit(int $banId, string $statement): bool
+    /** true : enregistré, false : déjà déposé, null : nouvelles contestations fermées. */
+    public function submit(int $banId, string $statement): ?bool
     {
+        $pdo = $this->db();
+        $checkClosure = (new PlatformAccountBanRepository($pdo))->supportsAppealClosure();
+        if ($checkClosure) {
+            $pdo->beginTransaction();
+        }
         try {
-            $stmt = $this->db()->prepare('INSERT INTO platform_ban_appeals (ban_id, statement, created_at) VALUES (?, ?, ?)');
+            if ($checkClosure) {
+                // Le dépôt et la fermeture se sérialisent sur la même décision.
+                $lock = SqlText::isMysqlFamily($pdo) ? ' FOR UPDATE' : '';
+                $policy = $pdo->prepare('SELECT appeal_closed FROM platform_account_bans WHERE id = ?' . $lock);
+                $policy->execute([$banId]);
+                $closed = $policy->fetchColumn();
+                if ($closed === false || (bool) $closed) {
+                    return null;
+                }
+                if ($this->find($banId) !== null) {
+                    return false;
+                }
+            }
+            $stmt = $pdo->prepare('INSERT INTO platform_ban_appeals (ban_id, statement, created_at) VALUES (?, ?, ?)');
             $stmt->execute([$banId, $statement, gmdate('Y-m-d H:i:s')]);
+            if ($checkClosure) {
+                $pdo->commit();
+            }
 
             return true;
         } catch (\PDOException $e) {
@@ -65,6 +88,10 @@ final class PlatformBanAppealRepository
             }
 
             throw $e;
+        } finally {
+            if ($checkClosure && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
         }
     }
 

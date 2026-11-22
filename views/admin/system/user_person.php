@@ -290,6 +290,11 @@ $membershipAction = static function (string $path, array $fields, string $label,
                     Lever le bannissement remet chaque fiche dans l’état d’avant et retire les blocages créés à ce moment.
                     <?= $banEndsRaw !== '' ? 'Sans action de votre part, la sanction se termine toute seule à la date indiquée.' : '' ?>
                 </p>
+                <?php if (!empty($personBanSupportsAppealClosure)):
+                    $appealDecision = $ban;
+                    $fromPersonDossier = true;
+                    require base_path('views/admin/system/partials/platform_appeal_access.php');
+                endif; ?>
                 <form method="post" action="<?= $h(url('admin/users/lever-bannissement')) ?>" class="space-y-2"
                       onsubmit="return confirm('Lever le bannissement de cette personne ?');">
                     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
@@ -332,6 +337,7 @@ $membershipAction = static function (string $path, array $fields, string $label,
                         'history_url' => '#historique-sanctions',
                         'supports_end' => !empty($personBanSupportsEnd),
                         'supports_notice' => !empty($personBanSupportsNotice),
+                        'supports_appeal_closure' => !empty($personBanSupportsAppealClosure),
                         'steam_id' => $steamId,
                         'known_ips' => $knownIps,
                         'shared' => false,
@@ -382,6 +388,11 @@ $membershipAction = static function (string $path, array $fields, string $label,
                                 <span class="pu-muted"><?= $itemEnds !== '' ? 'Temporaire, jusqu’au ' . $h($fmtParis($itemEnds)) : 'Sans date de fin' ?></span>
                             </div>
                             <p>Motif : <strong><?= $h((string) ($item['reason'] ?? '')) ?></strong></p>
+                            <?php if (!$itemCurrent && !empty($personBanSupportsAppealClosure)):
+                                $appealDecision = $item;
+                                $fromPersonDossier = true;
+                                require base_path('views/admin/system/partials/platform_appeal_access.php');
+                            endif; ?>
                             <p class="pu-muted">
                                 Décidée par <?= $h($who($item['banned_by_name'] ?? null, $item['banned_by_callsign'] ?? null, 'un administrateur')) ?>.
                                 <?php if ($itemLifted !== '' && $itemLiftedBy !== ''): ?>
