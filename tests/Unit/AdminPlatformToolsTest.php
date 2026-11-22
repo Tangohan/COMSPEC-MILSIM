@@ -24,6 +24,8 @@ final class AdminPlatformToolsTest extends TestCase
     private const TOUCHED_ROUTES = [
         'get /admin',
         'get /admin/recherche',
+        'post /admin/users/selection/apercu',
+        'post /admin/users/selection/appliquer',
         'get /admin/analytics',
         'get /admin/audit',
         'get /admin/maintenance',

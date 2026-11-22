@@ -121,12 +121,12 @@ $bSupportsEnd = $supportsEnd;
                 </section>
 
                 <section id="lots" class="pa-card" aria-labelledby="ps-batches-title">
-                    <h2 class="pa-card__title" id="ps-batches-title">Dernières décisions par organisation</h2>
+                    <h2 class="pa-card__title" id="ps-batches-title">Derniers bannissements groupés</h2>
                     <?php if ($batches === []): ?><p class="pa-empty-state">Aucune décision groupée.</p><?php endif; ?>
                     <?php foreach ($batches as $batch): ?>
                         <details class="ps-preview">
                             <summary>
-                                <strong><?= $h($batch['tenant_name'] ?? ('Organisation n° ' . $batch['source_tenant_id'])) ?></strong>
+                                <strong><?= $h($batch['tenant_name'] ?? ($batch['source_tenant_id'] ? 'Organisation n° ' . $batch['source_tenant_id'] : 'Sélection dans l’annuaire')) ?></strong>
                                 · <?= (int) $batch['remaining'] ?> actif(s) sur <?= (int) $batch['total'] ?> · <?= $h($batch['created_at']) ?> UTC
                             </summary>
                             <?php if ((int) $batch['remaining'] > 0): ?>

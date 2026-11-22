@@ -443,10 +443,7 @@ final class SystemUsersController
             return Response::redirect($back, 303);
         }
 
-        $tenantId = (int) $account['tenant_id'];
-        $tenant = $this->tenants->findById($tenantId);
-        $resend = new RegistrationVerificationResend(Container::get(EmailTokenRepository::class), Container::get(EmailService::class));
-        $result = $resend->send($account, $tenantId, email_community_label($tenant), requirePendingAccount: true);
+        $result = $this->sendVerificationReminder($account, (int) Session::get('user_id'));
         if (!$result['sent']) {
             Session::flash('error', $result['wait'] > 0
                 ? 'Un lien a déjà été envoyé. Réessayez dans ' . $result['wait'] . ' seconde(s).'
@@ -455,15 +452,233 @@ final class SystemUsersController
             return Response::redirect($back, 303);
         }
 
-        try {
-            $this->audit->log(AuditAction::USER_VERIFICATION_RESENT, $tenantId, (int) Session::get('user_id'), 'user', $id);
-        } catch (\Throwable) {
-            error_log('[admin.users] La relance de vérification n’a pas pu être journalisée.');
-        }
         $mailNotice = \email_file_mailer_notice();
         Session::flash('success', $mailNotice !== '' ? $mailNotice : 'Un nouveau lien de vérification a été envoyé à l’adresse du compte.');
 
         return Response::redirect($back, 303);
+    }
+
+    /** @return array{sent: bool, wait: int} */
+    private function sendVerificationReminder(array $account, int $actor): array
+    {
+        $tenantId = (int) $account['tenant_id'];
+        $tenant = $this->tenants->findById($tenantId);
+        $resend = new RegistrationVerificationResend(Container::get(EmailTokenRepository::class), Container::get(EmailService::class));
+        $result = $resend->send($account, $tenantId, email_community_label($tenant), requirePendingAccount: true);
+        if (!$result['sent']) {
+            return $result;
+        }
+        try {
+            $this->audit->log(AuditAction::USER_VERIFICATION_RESENT, $tenantId, $actor, 'user', (int) $account['id']);
+        } catch (\Throwable) {
+            error_log('[admin.users] La relance de vérification n’a pas pu être journalisée.');
+        }
+
+        return $result;
+    }
+
+    public function previewBulkAction(Request $request, array $params = []): Response
+    {
+        $actor = (int) Session::get('user_id');
+        if ($actor < 1 || !Csrf::verify($request)) {
+            return $this->bulkResponse(['error' => 'Session expirée. Rechargez l’annuaire.'], 403);
+        }
+        $action = $request->inputString('operation');
+        $raw = $request->input('emails');
+        $emails = self::bulkEmails(is_array($raw) ? $raw : []);
+        if (!in_array($action, ['ban', 'ban-inactive', 'verify'], true)
+            || $emails === [] || count($emails) > max(PlatformUsersDirectoryQuery::PER_PAGE)) {
+            return $this->bulkResponse(['error' => 'Sélectionnez les comptes d’une page et choisissez une action.'], 422);
+        }
+        if ($action !== 'verify' && !$this->bans()->supportsNotices()) {
+            return $this->bulkResponse(['error' => 'Le bannissement groupé nécessite la migration « Sanctions du site ».'], 422);
+        }
+
+        $inactivity = $request->inputString('inactif');
+        if (!in_array($inactivity, UserRepository::PLATFORM_INACTIVITY_FILTERS, true)) {
+            $inactivity = (string) UserRepository::PLATFORM_INACTIVE_DEFAULT_DAYS;
+        }
+        $preview = $this->bulkTargets($emails, $action, $inactivity, $actor);
+        $nonce = bin2hex(random_bytes(16));
+        Session::set('platform_users_bulk_preview', [
+            'nonce' => $nonce, 'actor' => $actor, 'expires' => time() + 900,
+            'action' => $action, 'inactif' => $inactivity, 'targets' => $preview['targets'],
+        ]);
+
+        return $this->bulkResponse([
+            'nonce' => $nonce, 'rows' => $preview['rows'], 'eligible' => count($preview['targets']),
+            'threshold' => $action === 'ban-inactive'
+                ? ($inactivity === 'jamais' ? 'Jamais de connexion au site ni de session de jeu enregistrée.' : 'Aucune connexion au site ni session de jeu enregistrée depuis au moins ' . $inactivity . ' jours.')
+                : '',
+        ]);
+    }
+
+    public function applyBulkAction(Request $request, array $params = []): Response
+    {
+        $actor = (int) Session::get('user_id');
+        $preview = Session::get('platform_users_bulk_preview');
+        if ($actor < 1 || !Csrf::verify($request)) {
+            return $this->bulkResponse(['error' => 'Session expirée. Rechargez l’annuaire.'], 403);
+        }
+        if (!is_array($preview) || $preview['actor'] !== $actor || $preview['expires'] < time()
+            || !hash_equals($preview['nonce'], $request->inputString('preview_nonce')) || $preview['targets'] === []) {
+            return $this->bulkResponse(['error' => 'L’aperçu a expiré ou a déjà été utilisé. Rouvrez les actions groupées.'], 409);
+        }
+        if ($request->inputString('confirm_bulk') !== '1') {
+            return $this->bulkResponse(['error' => 'Confirmez l’action sur les comptes de l’aperçu.'], 422);
+        }
+
+        $action = $preview['action'];
+        $reason = '';
+        $endDate = null;
+        $notice = null;
+        if ($action !== 'verify') {
+            $reason = trim($request->inputString('reason'));
+            if ($reason === '' && $action === 'ban-inactive') {
+                $reason = $preview['inactif'] === 'jamais'
+                    ? 'Inactivité du compte : aucune connexion au site ni session de jeu enregistrée.'
+                    : 'Inactivité du compte : aucune connexion au site ni session de jeu depuis au moins ' . $preview['inactif'] . ' jours.';
+            }
+            $end = PlatformAccountBanService::resolveEnd($request->inputString('duree'), $request->inputString('fin'));
+            if (mb_strlen($reason) < PlatformAccountBanService::MIN_REASON_LENGTH || !$end['ok']) {
+                return $this->bulkResponse(['error' => $end['error'] ?? 'Renseignez le motif interne du bannissement.'], 422);
+            }
+            $endDate = $end['endsAt'] ?? null;
+            $rule = $request->inputString('rule_reference');
+            $message = $request->inputString('public_reason');
+            if ($action === 'ban-inactive') {
+                $model = PlatformBanNotice::MODELS['inactivite'];
+                $rule = trim($rule) !== '' ? $rule : $model['rule'];
+                $message = trim($message) !== '' ? $message : $model['text'];
+            }
+            $notice = new PlatformBanNotice($rule, $message, $request->inputString('appeal_closed') === '1');
+            if (!$this->bans()->supportsNotices() || ($endDate !== null && !$this->bans()->supportsEndDate())
+                || ($notice->appealClosed && !$this->bans()->supportsAppealClosure())) {
+                return $this->bulkResponse(['error' => 'Les migrations de sanctions sont nécessaires pour les options retenues.'], 422);
+            }
+        }
+
+        $current = $this->bulkTargets(array_keys($preview['targets']), $action, $preview['inactif'], $actor)['targets'];
+        Session::forget('platform_users_bulk_preview');
+        $outcomes = [];
+        foreach ($preview['targets'] as $email => $ids) {
+            if (($current[$email] ?? null) !== $ids) {
+                $outcomes[] = ['email' => $email, 'state' => 'skipped', 'message' => 'Le compte ou son admissibilité a changé depuis l’aperçu.'];
+                continue;
+            }
+            try {
+                if ($action === 'verify') {
+                    $account = $this->users->findById($ids[0]);
+                    if ($account === null || !self::canRemindVerification($account)
+                        || PlatformAccountBanRepository::normalizeEmail((string) $account['email']) !== $email
+                        || $this->bans()->findActiveForEmail($email) !== null) {
+                        $outcomes[] = ['email' => $email, 'state' => 'skipped', 'message' => 'Le compte n’est plus en attente de vérification.'];
+                        continue;
+                    }
+                    $result = $this->sendVerificationReminder($account, $actor);
+                    $outcomes[] = [
+                        'email' => $email,
+                        'state' => $result['sent'] ? 'applied' : ($result['wait'] > 0 ? 'skipped' : 'failed'),
+                        'message' => $result['sent'] ? 'Relance traitée.' : ($result['wait'] > 0 ? 'Lien envoyé récemment.' : 'L’envoi a échoué.'),
+                    ];
+                    continue;
+                }
+
+                $result = $this->banService()->ban(
+                    $email, $reason, [], $request->inputString('block_steam') === '1', $actor,
+                    $endDate, $notice, batch: $preview['nonce'], expectedUserIds: $ids,
+                    requiredInactivity: $action === 'ban-inactive' ? $preview['inactif'] : null,
+                );
+                if ($result['ok']) {
+                    AuditService::logPlatformAction(AuditAction::USER_BANNED, [
+                        'ban_id' => $result['ban_id'], 'batch' => $preview['nonce'],
+                        'ends_at' => $result['ends_at'], 'appeal_closed' => $notice->appealClosed,
+                    ]);
+                }
+                $outcomes[] = [
+                    'email' => $email, 'state' => $result['ok'] ? 'applied' : 'skipped',
+                    'message' => $result['ok'] ? 'Bannissement appliqué.' : ($result['error'] ?? 'Bannissement ignoré.'),
+                ];
+            } catch (\Throwable $error) {
+                error_log('[admin.users.bulk] ' . $error->getMessage());
+                $outcomes[] = ['email' => $email, 'state' => 'failed', 'message' => 'L’action a échoué pour ce compte.'];
+            }
+        }
+
+        return $this->bulkResponse([
+            'outcomes' => $outcomes, 'mail_notice' => $action === 'verify' ? email_file_mailer_notice() : '',
+        ]);
+    }
+
+    /** @return list<string> */
+    private static function bulkEmails(array $raw): array
+    {
+        $emails = [];
+        foreach ($raw as $value) {
+            if (!is_string($value)) {
+                continue;
+            }
+            $email = PlatformAccountBanRepository::normalizeEmail($value);
+            if (strlen($email) <= 255 && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $emails[$email] = true;
+            }
+        }
+
+        return array_keys($emails);
+    }
+
+    /**
+     * @param list<string> $emails
+     * @return array{targets: array<string, list<int>>, rows: list<array{email: string, label: string, eligible: bool, reason: string}>}
+     */
+    private function bulkTargets(array $emails, string $action, string $inactivity, int $actor): array
+    {
+        $groups = array_column($this->users->platformDirectoryGroupsByEmails($emails), null, 'email_key');
+        $banned = $this->bans()->activeByEmails($emails);
+        $inactive = $action === 'ban-inactive'
+            ? array_fill_keys($this->users->inactiveEmailsForPlatformSelection($emails, $inactivity), true)
+            : [];
+
+        $rows = $targets = [];
+        foreach ($emails as $email) {
+            $group = $groups[$email] ?? null;
+            $memberships = array_filter($group['memberships'] ?? [], static fn (array $row): bool => empty($row['deleted_at']));
+            $ids = [];
+            if ($memberships === [] || \App\Support\RosterOnlyMember::isRosterEmail($email)) {
+                $reason = 'Compte absent, supprimé ou technique.';
+            } elseif (isset($banned[$email])) {
+                $reason = 'Bannissement déjà en cours.';
+            } elseif ($action === 'verify') {
+                foreach ($memberships as $member) {
+                    if (self::canRemindVerification($member)) {
+                        $ids = [(int) $member['id']];
+                        break;
+                    }
+                }
+                $reason = $ids === [] ? 'Aucun compte en attente de vérification.' : '';
+            } elseif ($action === 'ban-inactive' && (!isset($inactive[$email]) || !in_array('active', array_column($memberships, 'account_status'), true))) {
+                $reason = 'Compte sans accès actif, trop récent ou encore actif sur le site ou en jeu.';
+            } else {
+                $ids = $this->users->listIdsByEmailNormalized($email);
+                sort($ids, SORT_NUMERIC);
+                $reason = match (true) {
+                    $ids === [] => 'Aucun compte actif identifié pour cette adresse.',
+                    in_array($actor, $ids, true), $this->users->emailHasPlatformAdmin($email) => 'Compte administrateur protégé.',
+                    default => '',
+                };
+            }
+            if ($reason === '') {
+                $targets[$email] = $ids;
+            }
+            $rows[] = ['email' => $email, 'label' => ($group['callsign'] ?? '') ?: (($group['display_name'] ?? '') ?: $email), 'eligible' => $reason === '', 'reason' => $reason];
+        }
+
+        return ['targets' => $targets, 'rows' => $rows];
+    }
+
+    private function bulkResponse(array $payload, int $status = 200): Response
+    {
+        return Response::json($payload, $status)->header('Cache-Control', 'private, no-store');
     }
 
     public function sharedIps(Request $request, array $params = []): Response

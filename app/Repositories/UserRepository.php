@@ -3529,6 +3529,16 @@ class UserRepository
         $parts[] = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@deleted.invalid');
         $parts[] = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@merged.invalid');
 
+        $selectedEmails = $options['emails'] ?? null;
+        if ($selectedEmails !== null) {
+            $emails = $selectedEmails;
+            if ($emails === []) {
+                return ['groups' => [], 'total' => 0];
+            }
+            $parts[] = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($emails));
+            array_push($params, ...$emails);
+        }
+
         $search = $search !== null ? trim($search) : '';
         if ($search !== '') {
             $term = '%' . (function_exists('mb_substr') ? mb_substr($search, 0, 120) : substr($search, 0, 120)) . '%';
@@ -3578,7 +3588,7 @@ class UserRepository
         }
         if ($tenantId !== null && $tenantId > 0) {
             $parts[] = $this->sqlMemberOfTenantPredicate('u', $tenantId);
-        } elseif (!$hasMemberships) {
+        } elseif (!$hasMemberships && $selectedEmails === null) {
             $parts[] = $this->sqlLegacyPlatformDirectorySiblingFilter('u', $hasDeletedAt);
         }
         if ($status === 'no_org') {
@@ -3599,15 +3609,19 @@ class UserRepository
         // Catégorie « Inactifs » : ni connexion au site ni session de jeu depuis le seuil (le filtre « inactif »,
         // 90 jours par défaut). Elle remplace le filtre « inactif » qui, seul, ne regarde que le site.
         $inactiveTab = $status === 'inactifs';
+        $inactiveSelection = $inactiveTab && $selectedEmails !== null;
         if ($inactiveTab) {
             $inactivityFilter = null;
         }
         $hasGame = $this->tableExists('game_sessions');
         $hasLastLogin = $this->hasLastLoginColumn();
-        $gameJoinSql = 'LEFT JOIN (SELECT user_id, MAX(COALESCE(last_seen_at, created_at)) AS g FROM game_sessions GROUP BY user_id) __gs ON __gs.user_id = u.id';
+        $gameScope = $selectedEmails === null ? '' : ' WHERE user_id IN (SELECT id FROM users WHERE '
+            . SqlText::normalizedInPlaceholders($pdo, 'email', count($selectedEmails)) . ')';
+        $gameJoinSql = 'LEFT JOIN (SELECT user_id, MAX(COALESCE(last_seen_at, created_at)) AS g FROM game_sessions'
+            . $gameScope . ' GROUP BY user_id) __gs ON __gs.user_id = u.id';
 
         /** HAVING et paramètres, avec ou sans la date de connexion en jeu. */
-        $buildHaving = function (bool $withGame) use ($inactivityFilter, $createdDays, $inactiveTab, $inactivity, $hasLastLogin): array {
+        $buildHaving = function (bool $withGame) use ($inactivityFilter, $createdDays, $inactiveTab, $inactiveSelection, $inactivity, $hasLastLogin): array {
             $parts = $inactivityFilter !== null ? [$inactivityFilter['sql']] : [];
             $vals = $inactivityFilter['params'] ?? [];
             if ($createdDays !== '') {
@@ -3625,6 +3639,10 @@ class UserRepository
                 } else {
                     $days = in_array($inactivity, ['30', '90', '180'], true) ? (int) $inactivity : self::PLATFORM_INACTIVE_DEFAULT_DAYS;
                     $cut = gmdate('Y-m-d H:i:s', time() - $days * 86400);
+                    if ($inactiveSelection) {
+                        $parts[] = 'MIN(u.created_at) <= ?';
+                        $vals[] = $cut;
+                    }
                     $parts[] = '(' . $site . ' IS NULL OR ' . $site . ' < ?)';
                     $vals[] = $cut;
                     if ($withGame) {
@@ -3645,11 +3663,10 @@ class UserRepository
          */
         $run = function (bool $degraded, string $limit) use (
             $where, $fromUsers, $params, $buildHaving, $inactivityFilter, $inactiveTab, $hasGame, $gameJoinSql,
-            $sortKey, $sortDir, $hasMemberships, $hasDeletedAt
+            $sortKey, $sortDir, $hasMemberships, $hasDeletedAt, $selectedEmails
         ): array {
             $withGame = !$degraded && $hasGame;
             [$having, $havingParams] = $buildHaving($withGame);
-            $bound = array_merge($params, $havingParams);
             $sortSelect = $inactivityFilter !== null ? 'MAX(u.last_login_at) AS sort_at' : 'MAX(u.updated_at) AS sort_at';
             $sortOrder = $inactivityFilter !== null ? 'sort_at ASC, email_key ASC' : 'sort_at DESC';
             $joins = [];
@@ -3670,6 +3687,7 @@ class UserRepository
             if ($needGame) {
                 array_unshift($joins, $gameJoinSql);
             }
+            $bound = [...($needGame ? ($selectedEmails ?? []) : []), ...$params, ...$havingParams];
             $joinSql = implode("\n", $joins);
 
             $countStmt = $this->pdo()->prepare(
@@ -3704,10 +3722,13 @@ class UserRepository
 
             return [$total, $keys];
         };
-        $safe = function (string $limit) use ($run): array {
+        $safe = function (string $limit) use ($run, $inactiveSelection): array {
             try {
                 return $run(false, $limit);
             } catch (\Throwable $e) {
+                if ($inactiveSelection) {
+                    throw $e;
+                }
                 error_log('[annuaire comptes] requête complète refusée, repli sur le tri par défaut : ' . $e->getMessage());
 
                 return $run(true, $limit);
@@ -3739,6 +3760,19 @@ class UserRepository
             'groups' => $this->groupPlatformDirectoryRows($rows, $emailKeys),
             'total' => $total,
         ];
+    }
+
+    /**
+     * @param list<string> $emails
+     * @return list<string>
+     */
+    public function inactiveEmailsForPlatformSelection(array $emails, string $inactivity): array
+    {
+        $result = $this->listGroupedAccountsForPlatformDirectory(
+            null, 'inactifs', null, 1, count($emails), $inactivity, ['emails' => $emails]
+        );
+
+        return array_column($result['groups'], 'email_key');
     }
 
     /**

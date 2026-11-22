@@ -242,7 +242,7 @@ final class PlatformAccountBanRepository
         return $stmt->rowCount() === 1;
     }
 
-    /** @return list<array{batch_ref: string, tenant_name: ?string, source_tenant_id: int, total: int, remaining: int, created_at: string}> */
+    /** @return list<array{batch_ref: string, tenant_name: ?string, source_tenant_id: ?int, total: int, remaining: int, created_at: string}> */
     public function recentBatches(): array
     {
         $stmt = $this->pdo()->query(

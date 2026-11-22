@@ -129,6 +129,7 @@ final class PlatformAccountBanService
 
     /**
      * @param list<string> $ips
+     * @param list<int>|null $expectedUserIds
      * @return array{ok: bool, error?: string, ban_id?: int, blocked_ips?: int, steam_blocked?: bool, accounts?: int, ends_at?: string|null}
      */
     public function ban(
@@ -141,6 +142,8 @@ final class PlatformAccountBanService
         ?PlatformBanNotice $notice = null,
         ?int $sourceTenantId = null,
         ?string $batch = null,
+        ?array $expectedUserIds = null,
+        ?string $requiredInactivity = null,
     ): array {
         $email = PlatformAccountBanRepository::normalizeEmail($email);
         $reason = trim($reason);
@@ -181,7 +184,7 @@ final class PlatformAccountBanService
 
         $this->prepareWrites();
         sort($ids, SORT_NUMERIC);
-        return $this->inTransaction(function () use ($ids, $email, $reason, $ips, $blockSteam, $actorId, $endsAt, $notice, $sourceTenantId, $batch): array {
+        return $this->inTransaction(function () use ($ids, $email, $reason, $ips, $blockSteam, $actorId, $endsAt, $notice, $sourceTenantId, $batch, $expectedUserIds, $requiredInactivity): array {
             // Les deux demandes visant une même personne prennent les verrous dans le même ordre.
             $in = implode(',', array_fill(0, count($ids), '?'));
             $lock = SqlText::isMysqlFamily($this->pdo()) ? ' FOR UPDATE' : '';
@@ -213,6 +216,13 @@ final class PlatformAccountBanService
             }
             if ($snapshot === []) {
                 return ['ok' => false, 'error' => 'Aucun compte utilisateur à bannir pour cette adresse.'];
+            }
+            if ($expectedUserIds !== null && array_keys($snapshot) !== $expectedUserIds) {
+                return ['ok' => false, 'error' => 'Les comptes liés à cette adresse ont changé depuis l’aperçu.'];
+            }
+            if ($requiredInactivity !== null && (!in_array('active', $snapshot, true)
+                || !in_array($email, $this->users()->inactiveEmailsForPlatformSelection([$email], $requiredInactivity), true))) {
+                return ['ok' => false, 'error' => 'Le compte ne correspond plus aux critères d’inactivité.'];
             }
 
             $note = 'Bannissement site : ' . mb_substr($reason, 0, 200);
