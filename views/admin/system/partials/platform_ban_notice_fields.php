@@ -11,16 +11,24 @@ use App\Services\Account\PlatformBanNotice;
         <span>Modèle de rédaction</span>
         <select data-ban-notice-template>
             <option value="">Choisir un modèle</option>
-            <?php foreach (PlatformBanNotice::MODELS as $model => $copy): ?>
+            <?php foreach (PlatformBanNotice::MODELS as $model => $copy):
+                $label = match ($model) {
+                    'conduite' => 'Respect et comportement',
+                    'contenus' => 'Contenus et vie privée',
+                    'securite' => 'Sécurité des comptes',
+                    'inactivite' => 'Inactivité prolongée',
+                    'inactivite_initiale' => 'Aucune activité depuis l’inscription',
+                };
+                ?>
                 <option value="<?= $bh($model) ?>" data-rule="<?= $bh($copy['rule']) ?>" data-message="<?= $bh($copy['text']) ?>"
-                        data-closed-message="<?= $bh(PlatformBanNotice::displayMessage($copy['text'], true)) ?>"><?= $bh($copy['rule']) ?></option>
+                        data-closed-message="<?= $bh(PlatformBanNotice::displayMessage($copy['text'], true)) ?>"><?= $bh($label) ?></option>
             <?php endforeach; ?>
         </select>
     </label>
     <button type="button" class="pa-btn pa-btn--line pa-btn--sm" data-ban-use-template>Insérer le modèle</button>
     <label class="pu-dialog__sub">
-        <span>Règle ou article cité</span>
-        <input type="text" name="rule_reference" maxlength="160" placeholder="Ex. CGU Athena · Règles de conduite">
+        <span>Règle ou article cité · <a class="pu-link" href="<?= $bh(url('code-de-conduite')) ?>" target="_blank" rel="noopener">Code de conduite</a></span>
+        <input type="text" name="rule_reference" maxlength="160" placeholder="Ex. Code de conduite Athena · art. 1">
     </label>
     <label class="pu-dialog__sub">
         <span>Explication publique</span>

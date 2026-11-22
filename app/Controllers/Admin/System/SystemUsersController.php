@@ -547,7 +547,7 @@ final class SystemUsersController
             $rule = $request->inputString('rule_reference');
             $message = $request->inputString('public_reason');
             if ($action === 'ban-inactive') {
-                $model = PlatformBanNotice::MODELS['inactivite'];
+                $model = PlatformBanNotice::MODELS[$preview['inactif'] === 'jamais' ? 'inactivite_initiale' : 'inactivite'];
                 $rule = trim($rule) !== '' ? $rule : $model['rule'];
                 $message = trim($message) !== '' ? $message : $model['text'];
             }
@@ -644,7 +644,9 @@ final class SystemUsersController
             $group = $groups[$email] ?? null;
             $memberships = array_filter($group['memberships'] ?? [], static fn (array $row): bool => empty($row['deleted_at']));
             $ids = [];
-            if ($memberships === [] || \App\Support\RosterOnlyMember::isRosterEmail($email)) {
+            if (\App\Support\RosterOnlyMember::isRosterEmail($email)) {
+                $reason = 'Fiche sans compte de connexion.';
+            } elseif ($memberships === []) {
                 $reason = 'Compte absent, supprimé ou technique.';
             } elseif (isset($banned[$email])) {
                 $reason = 'Bannissement déjà en cours.';
@@ -656,8 +658,9 @@ final class SystemUsersController
                     }
                 }
                 $reason = $ids === [] ? 'Aucun compte en attente de vérification.' : '';
-            } elseif ($action === 'ban-inactive' && (!isset($inactive[$email]) || !in_array('active', array_column($memberships, 'account_status'), true))) {
-                $reason = 'Compte sans accès actif, trop récent ou encore actif sur le site ou en jeu.';
+            } elseif ($action === 'ban-inactive'
+                && (!isset($inactive[$email]) || array_intersect(PlatformAccountBanService::INACTIVITY_ACCOUNT_STATUSES, array_column($memberships, 'account_status')) === [])) {
+                $reason = 'Le compte est trop récent, attend une vérification ou a encore de l’activité sur le site ou en jeu.';
             } else {
                 $ids = $this->users->listIdsByEmailNormalized($email);
                 sort($ids, SORT_NUMERIC);

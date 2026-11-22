@@ -9,6 +9,7 @@
         const previewBody = fields.querySelector('[data-ban-preview-body]');
         const status = fields.querySelector('[data-ban-copy-status]');
         const appealClosed = fields.querySelector('[name="appeal_closed"]');
+        const bulkOperation = form.querySelector('[data-bulk-operation]');
 
         function render() {
             const selection = form.querySelector('[name="duree"]:checked');
@@ -17,9 +18,11 @@
             duration.textContent = selection?.value === 'date' && date
                 ? 'Fin de la restriction le ' + date.split('-').reverse().join('/') + ' (heure de Paris)'
                 : label;
-            previewRule.textContent = rule.value.trim();
+            const inactivityModel = form.dataset.inactivity === 'jamais' ? 'inactivite_initiale' : 'inactivite';
+            const defaultPreset = bulkOperation?.value === 'ban-inactive' ? templates.querySelector('[value="' + inactivityModel + '"]') : null;
+            previewRule.textContent = rule.value.trim() || defaultPreset?.dataset.rule || '';
             previewRule.hidden = previewRule.textContent === '';
-            const text = message.value.trim() || previewBody.dataset.defaultMessage;
+            const text = message.value.trim() || defaultPreset?.dataset.message || previewBody.dataset.defaultMessage;
             const preset = Array.from(templates.options).find(option => option.dataset.message === text);
             previewBody.textContent = appealClosed?.checked
                 ? (text === previewBody.dataset.defaultMessage ? previewBody.dataset.closedMessage : preset?.dataset.closedMessage ?? text)
@@ -55,6 +58,7 @@
         });
 
         form.addEventListener('input', render);
+        bulkOperation?.addEventListener('change', render);
         form.addEventListener('reset', () => requestAnimationFrame(render));
         render();
     }

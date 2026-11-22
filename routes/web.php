@@ -299,6 +299,7 @@ return function (Router $router) {
     $router->get('/cookies', [LegalController::class, 'cookies']);
     $router->get('/mentions-legales', [LegalController::class, 'legalNotice']);
     $router->get('/cgu', [LegalController::class, 'terms']);
+    $router->get('/code-de-conduite', [LegalController::class, 'conduct']);
     $router->get('/cgv', [LegalController::class, 'sales']);
     $router->get('/demande-donnees', [LegalController::class, 'gdprRequestForm']);
     $router->post('/demande-donnees', [LegalController::class, 'gdprRequestSubmit']);

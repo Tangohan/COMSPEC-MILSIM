@@ -15,6 +15,7 @@ use App\Services\Account\PlatformBanNotice;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Email\EmailEvents;
+use App\Services\Email\OpsMailDigestService;
 use App\Services\EmailService;
 use App\Services\Security\FileRateLimiter;
 
@@ -57,7 +58,8 @@ final class PlatformBanAppealController
         $notice = null;
         $appeal = null;
         if ($ban !== null) {
-            $notice = PlatformBanNotice::publicDetails($ban, locale()) + [
+            $language = $this->noticeLanguage((string) $ban['email_norm']);
+            $notice = PlatformBanNotice::publicDetails($ban, $language) + [
                 'active' => empty($ban['lifted_at']) && (empty($ban['ends_at']) || $ban['ends_at'] > gmdate('Y-m-d H:i:s')),
             ];
             $saved = $this->appeals->find((int) $ban['id']);
@@ -106,14 +108,14 @@ final class PlatformBanAppealController
 
             $token = bin2hex(random_bytes(32));
             $this->appeals->storeLink((int) $ban['id'], hash('sha256', $token), time() + self::LINK_TTL);
-            $language = locale();
-            ($this->email ??= Container::get(EmailService::class))->sendTemplated(
+            $language = $this->noticeLanguage($address);
+            $this->email->sendTemplated(
                 EmailEvents::PLATFORM_BAN_APPEAL_LINK,
                 'platform_ban_appeal_link',
                 $address,
                 __('moderation.mail_subject', [], $language),
                 [
-                    'appealUrl' => url(self::PATH) . '?token=' . $token,
+                    'appealUrl' => url(self::PATH) . '?token=' . $token . '&lang=' . $language,
                     'appealLanguage' => $language,
                     'appealClosed' => !empty($ban['appeal_closed']),
                 ],
@@ -157,12 +159,24 @@ final class PlatformBanAppealController
             } catch (\Throwable $error) {
                 error_log('[ban_appeal.audit] ' . $error->getMessage());
             }
+            try {
+                Container::get(OpsMailDigestService::class)->enqueueBanAppeal();
+            } catch (\Throwable) {
+                error_log('[ban_appeal] Impossible d’ajouter la contestation au récapitulatif.');
+            }
             Session::flash('success', __('moderation.appeal_received'));
         } else {
             Session::flash('success', __('moderation.appeal_already_received'));
         }
 
         return $this->back();
+    }
+
+    private function noticeLanguage(string $address): string
+    {
+        $email = $this->email ??= Container::get(EmailService::class);
+
+        return $email->recipientLocale($address) === 'en' ? 'en' : 'fr';
     }
 
     /** @return array<string, mixed>|null */

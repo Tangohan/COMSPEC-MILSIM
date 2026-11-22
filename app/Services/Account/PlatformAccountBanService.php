@@ -39,6 +39,8 @@ final class PlatformAccountBanService
         '90j' => 90 * 86400,
     ];
 
+    public const INACTIVITY_ACCOUNT_STATUSES = ['active', 'inactive'];
+
     public const MIN_REASON_LENGTH = 5;
     public const MAX_REASON_LENGTH = 500;
     /** Une sanction temporaire ne dépasse pas cinq ans : au-delà, c’est un bannissement sans fin. */
@@ -220,7 +222,7 @@ final class PlatformAccountBanService
             if ($expectedUserIds !== null && array_keys($snapshot) !== $expectedUserIds) {
                 return ['ok' => false, 'error' => 'Les comptes liés à cette adresse ont changé depuis l’aperçu.'];
             }
-            if ($requiredInactivity !== null && (!in_array('active', $snapshot, true)
+            if ($requiredInactivity !== null && (array_intersect(self::INACTIVITY_ACCOUNT_STATUSES, $snapshot) === []
                 || !in_array($email, $this->users()->inactiveEmailsForPlatformSelection([$email], $requiredInactivity), true))) {
                 return ['ok' => false, 'error' => 'Le compte ne correspond plus aux critères d’inactivité.'];
             }
