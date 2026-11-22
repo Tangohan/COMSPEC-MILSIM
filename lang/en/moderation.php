@@ -11,6 +11,8 @@ return [
     'preset_contenus_reason' => 'After reviewing content associated with your account, the moderation team restricted your access. In your appeal, you can provide details about the content or its context.',
     'preset_securite_rule' => 'Athena Terms of Use · User accounts and suspensions',
     'preset_securite_reason' => 'Your access was restricted following a security incident. If you think someone used your account without your knowledge, explain what you noticed when you request a review. Never share your password.',
+    'preset_inactivite_rule' => 'Athena · Account inactivity',
+    'preset_inactivite_reason' => 'Your access to Athena was suspended after a period without recorded sign-ins or game sessions. If you believe some activity was missed, you can request a review.',
     'default_reason' => 'The Athena team has restricted access to your account. You can request a review of the decision and share any relevant context.',
 
     'appeal_title' => 'Appeal a sanction',

@@ -373,6 +373,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                 <span class="pu-muted" data-pu-selected-count hidden></span>
             </p>
             <div class="pu-bar__actions">
+                <button type="button" class="pa-btn pa-btn--sm pa-btn--solid" data-pu-bulk-open aria-haspopup="dialog" disabled>Actions groupées</button>
                 <button type="submit" form="pu-select-form" class="pa-btn pa-btn--sm pa-btn--line" data-pu-export-selection disabled>Exporter la sélection (CSV)</button>
                 <a class="pa-btn pa-btn--sm pa-btn--line" href="<?= $h($exportAllUrl) ?>" title="Jusqu’à 5 000 personnes, avec les filtres et les colonnes affichés">Exporter tous les résultats (CSV)</a>
             </div>
@@ -784,5 +785,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
     <?php require base_path('views/admin/system/partials/platform_user_confirm.php'); ?>
 </div>
 <?php require base_path('views/admin/system/partials/platform_shared_ips_dialog.php'); ?>
+<?php require base_path('views/admin/system/partials/platform_bulk_user_dialog.php'); ?>
+<script src="<?= $h(asset_url('assets/js/platform-users-bulk.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-ban-notice.js')) ?>" defer></script>

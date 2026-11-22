@@ -22,6 +22,10 @@ final class PlatformBanNotice
             'rule' => 'CGU Athena · Compte utilisateur et suspension',
             'text' => 'Votre accès a été restreint à la suite d’un incident de sécurité. Si vous pensez que votre compte a été utilisé à votre insu, indiquez ce que vous avez constaté dans votre demande de réexamen. Ne communiquez jamais votre mot de passe.',
         ],
+        'inactivite' => [
+            'rule' => 'Athena · Inactivité du compte',
+            'text' => 'Votre accès à Athena a été suspendu après une période sans connexion au site ni session de jeu enregistrée. Si vous pensez qu’une activité n’a pas été prise en compte, vous pouvez demander un réexamen.',
+        ],
     ];
 
     public const DEFAULT_TEXT = 'L’administration d’Athena a restreint l’accès à votre compte. Vous pouvez demander un réexamen de la décision et fournir les éléments de contexte qui vous semblent utiles.';

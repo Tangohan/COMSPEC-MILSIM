@@ -1,0 +1,82 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use App\Controllers\Admin\System\SystemUsersController;
+use App\Core\Csrf;
+use App\Core\Request;
+use App\Core\Session;
+use App\Repositories\AccountPurgeRequestRepository;
+use App\Repositories\PlatformAccountBanRepository;
+use App\Repositories\TenantRepository;
+use App\Repositories\UserRepository;
+use App\Services\Account\PlatformAccountBanService;
+use App\Services\Audit\AuditService;
+use PHPUnit\Framework\TestCase;
+
+final class PlatformUsersBulkActionTest extends TestCase
+{
+    public function testBulkInactivityPreviewExcludesProtectedAccountsAndRechecksActivity(): void
+    {
+        $oldSession = $_SESSION ?? [];
+        $oldPost = $_POST;
+        $oldMethod = $_SERVER['REQUEST_METHOD'] ?? null;
+        Session::start();
+        $_SESSION = ['user_id' => 7];
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+
+        try {
+            $idle = 'repos@example.test';
+            $admin = 'admin@example.test';
+            $groups = [
+                ['email_key' => $idle, 'email' => 'Repos@example.test', 'memberships' => [['id' => 5, 'account_status' => 'active']]],
+                ['email_key' => $admin, 'email' => $admin, 'memberships' => [['id' => 7, 'account_status' => 'active']]],
+            ];
+            $users = $this->createStub(UserRepository::class);
+            $users->method('platformDirectoryGroupsByEmails')->willReturn($groups);
+            $users->method('inactiveEmailsForPlatformSelection')->willReturnOnConsecutiveCalls([$idle, $admin], []);
+            $users->method('listIdsByEmailNormalized')->willReturnMap([[$idle, false, [5]], [$admin, false, [7]]]);
+            $bans = $this->createStub(PlatformAccountBanRepository::class);
+            $bans->method('supportsNotices')->willReturn(true);
+            $service = $this->createMock(PlatformAccountBanService::class);
+            $service->expects(self::never())->method('ban');
+
+            $controller = new SystemUsersController(
+                $users,
+                $this->createStub(TenantRepository::class),
+                $this->createStub(AuditService::class),
+                purgeRequests: $this->createStub(AccountPurgeRequestRepository::class),
+                banRepository: $bans,
+                banService: $service,
+            );
+            $csrf = Csrf::token();
+            $_POST = ['_csrf_token' => $csrf, 'operation' => 'ban-inactive', 'inactif' => '30', 'emails' => [$idle, $admin, strtoupper($idle)]];
+            $preview = $controller->previewBulkAction(new Request());
+            self::assertSame(200, $preview->statusCode());
+            $data = json_decode($preview->body(), true, flags: JSON_THROW_ON_ERROR);
+            self::assertSame(1, $data['eligible']);
+            self::assertCount(2, $data['rows']);
+            self::assertStringContainsString('30 jours', $data['threshold']);
+            self::assertSame('Compte administrateur protégé.', $data['rows'][1]['reason']);
+
+            $_POST = ['_csrf_token' => $csrf, 'preview_nonce' => $data['nonce'], 'duree' => 'definitif'];
+            self::assertSame(422, $controller->applyBulkAction(new Request())->statusCode());
+            $_POST['confirm_bulk'] = '1';
+            $result = $controller->applyBulkAction(new Request());
+            self::assertSame(200, $result->statusCode());
+            $outcomes = json_decode($result->body(), true, flags: JSON_THROW_ON_ERROR)['outcomes'];
+            self::assertSame(['skipped'], array_column($outcomes, 'state'));
+            self::assertSame(409, $controller->applyBulkAction(new Request())->statusCode());
+        } finally {
+            $_SESSION = $oldSession;
+            $_POST = $oldPost;
+            if ($oldMethod === null) {
+                unset($_SERVER['REQUEST_METHOD']);
+            } else {
+                $_SERVER['REQUEST_METHOD'] = $oldMethod;
+            }
+        }
+    }
+}
