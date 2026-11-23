@@ -43,7 +43,7 @@ final class PlatformLoginRestrictionTest extends TestCase
             self::assertNull(Session::get('pending_verification_email'));
             $notice = Session::getFlash('login_access_restriction');
             self::assertSame([
-                'id' => 17, 'rule' => 'CGU Athena', 'message' => 'Explication publique', 'end' => 'Sans date de fin',
+                'id' => 17, 'rule' => 'CGU Athena', 'rule_url' => '', 'locale' => 'fr', 'message' => 'Explication publique', 'end' => 'Sans date de fin',
                 'appeal_closed' => false,
             ], $notice);
             self::assertNull(Session::getFlash('login_access_restriction'));
