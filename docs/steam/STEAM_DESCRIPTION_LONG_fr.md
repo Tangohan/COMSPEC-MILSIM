@@ -136,6 +136,6 @@ Les réglages de réalisme se règlent aussi dans Échap › Réalisme, chacun e
 
 ## Support, crédits, licence
 
-- Bug : poster vos deux derniers fichiers `.rpt` (`%LOCALAPPDATA%\Arma 3`, après avoir retiré tout mot de passe ou jeton) sur le Discord COMSPEC (https://discord.gg/CCpJA6Nks). Menu Échap › Dépannage liaison pour diagnostiquer la liaison.
+- Bug : poster vos deux derniers fichiers `.rpt` (`%LOCALAPPDATA%\Arma 3`, après avoir retiré tout mot de passe ou jeton) sur le Discord COMSPEC (https://discord.gg/KFB2TsJVXn). Menu Échap › Dépannage liaison pour diagnostiquer la liaison.
 - Crédits : idées inspirées de Better CAS Environment (BCE, Aaren) et des outils carte de Simple Map Tools (POLPOX), sans code repris ; traduction chinoise RickLeo et MOYA ; polices Barlow Condensed, B612, Rajdhani, Share Tech (SIL OFL 1.1).
 - Licence : © 2026 COMSPEC, licence COMSPEC (tous droits réservés) : usage personnel depuis la page officielle du Workshop ; copie, modification, ré-empaquetage et redistribution interdits sans autorisation écrite.
