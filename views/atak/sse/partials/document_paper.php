@@ -30,12 +30,10 @@ $dateSrc = (string) ($document['validated_at'] ?? $document['updated_at'] ?? $do
 $dateFr = $dateSrc !== '' ? date('d/m/Y', strtotime($dateSrc) ?: time()) : date('d/m/Y');
 $bodyHtml = $livePreview
     ? ''
-    : \App\Repositories\SseDocumentRepository::bodyToHtml((string) ($document['body'] ?? ''), [
-        'dossier' => (string) ($document['case_reference'] ?? ''),
-        'classification' => (string) ($document['classification_label'] ?? ''),
-        'reference' => $ref,
-        'titre' => $title,
-    ]);
+    : \App\Repositories\SseDocumentRepository::bodyToHtml((string) ($document['body'] ?? ''), \App\Services\Sse\SseDocumentFieldValues::for($document));
+$signatures = is_array($signatures ?? null) ? $signatures : [];
+$signatureChecks = is_array($signatureChecks ?? null) ? $signatureChecks : [];
+$bodyHtml = \App\Services\Sse\SseDocumentMedia::expand($bodyHtml, (int) ($document['tenant_id'] ?? 0), 'web');
 $isValidated = in_array((string) ($document['status'] ?? ''), ['valide', 'archive'], true);
 $isArchived = (string) ($document['status'] ?? '') === 'archive';
 $marks = \App\Support\SseDocumentMarkings::forDocument($document, $unitLabel);
@@ -51,7 +49,7 @@ $sealBottom = (string) ($chrome['seal_bottom'] ?? 'RENSEIGNEMENT');
 $footerDisclaimer = \App\Support\SseDocumentChromeCatalog::footerText($chrome['footer'] ?? '');
 ?>
 <div class="sse-doc-paper-chrome" data-sse-doc-paper data-classification="<?= $h($classCode) ?>" data-paper-style="<?= $h($paperStyle) ?>">
-    <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?> sse-doc-paper-style--<?= $h($paperStyle) ?>" aria-label="Aperçu du document" data-classification="<?= $h($classCode) ?>">
+    <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?> sse-doc-paper-style--<?= $h($paperStyle) ?> <?= $h(\App\Support\SseSheetThemes::cssClass((string) ($document['sheet_theme'] ?? ''))) ?>" aria-label="Aperçu du document" data-classification="<?= $h($classCode) ?>">
         <div class="sse-doc-paper__wear" aria-hidden="true"></div>
         <div class="sse-doc-paper__banner">
             <span><?= $h((string) ($chrome['banner'] ?? 'CUI — EXPLOITATION TERRAIN')) ?></span>
@@ -229,6 +227,22 @@ $footerDisclaimer = \App\Support\SseDocumentChromeCatalog::footerText($chrome['f
                 </div>
             </section>
 
+            <?php if ($signatures !== []): ?>
+                <section class="sse-doc-paper__signed" aria-label="Signatures du document">
+                    <h2 class="sse-doc-paper__section">Signatures</h2>
+                    <?php foreach ($signatures as $sg): ?>
+                        <?php $sgOk = !empty($signatureChecks[(int) $sg['id']]); ?>
+                        <figure class="sse-doc-paper__sig">
+                            <img src="<?= $h(url('atak/sse/documents/' . (int) ($document['id'] ?? 0) . '/signature/' . (int) $sg['id'])) ?>" alt="Signature de <?= $h($sg['signer_label']) ?>" loading="lazy">
+                            <figcaption>
+                                <strong>Signé par <?= $h($sg['signer_label']) ?> le <?= $h(date('d/m/Y à H:i', strtotime((string) $sg['signed_at']) ?: time())) ?></strong>
+                                <span class="sse-doc-paper__sig-hash">Empreinte SHA-256 : <?= $h(substr((string) $sg['doc_hash'], 0, 16)) ?>…</span>
+                                <span class="<?= $sgOk ? 'is-valid' : 'is-invalid' ?>"><?= $sgOk ? 'Empreinte concordante : le document n’a pas changé depuis la signature.' : 'Empreinte différente : le document a changé depuis la signature.' ?></span>
+                            </figcaption>
+                        </figure>
+                    <?php endforeach; ?>
+                </section>
+            <?php endif; ?>
             <footer class="sse-doc-paper__sign <?= $isValidated ? 'is-signed' : 'is-draft' ?>">
                 <p class="sse-doc-paper__sign-title">Signature</p>
                 <?php if ($isValidated): ?>

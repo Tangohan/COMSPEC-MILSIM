@@ -24,7 +24,7 @@ final class SseRichText
     public const HIGHLIGHT_COLORS = ['#fef08a', '#fed7aa', '#fecaca', '#bfdbfe', '#bbf7d0', '#e2e8f0'];
 
     /** Champs dynamiques du dossier. */
-    public const FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre'];
+    public const FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre', 'type', 'id_fiche', 'nom_code', 'dse'];
 
     private const MAX_DEPTH = 24;
 
@@ -45,12 +45,21 @@ final class SseRichText
         'caption' => '', 'colgroup' => '', 'col' => '',
     ];
 
+    /** Balises qui peuvent porter data-lock (texte verrouillé). */
+    private const LOCKABLE = ['p', 'div', 'span', 'h2', 'h3', 'h4', 'blockquote', 'ul', 'ol', 'table'];
+
     private const VOID_TAGS = ['br', 'hr'];
 
     private const ALIGN = ['left', 'right', 'center', 'justify'];
 
     /** sse-hint : texte d'aide grisé des modèles (span), à remplacer ; il n'apparaît ni sur le papier ni dans le PDF. */
-    private const CLASSES = ['sse-pagebreak', 'sse-field', 'sse-hint'];
+    private const CLASSES = ['sse-pagebreak', 'sse-field', 'sse-hint', 'sse-media', 'sse-data'];
+
+    /** Jeton d'une image jointe : « <communauté>_<16 hexadécimaux> » (fichier du stockage privé, servi par une route contrôlée). */
+    /** Source d'un bloc de données insérées (ORBAT, fiche membre, effectif) : « type:numéro ». */
+    public const DATA_SRC = '/^(unit|roster|member):[0-9]{1,10}$/';
+
+    public const MEDIA_TOKEN = '/^[0-9]{1,10}_[a-f0-9]{16}$/';
 
     public static function isRich(string $body): bool
     {
@@ -173,7 +182,7 @@ final class SseRichText
             if (!str_contains($attrs, 'sse-pagebreak')) {
                 $attrs = str_replace(' class="sse-field"', '', $attrs);
             }
-            if (str_contains($attrs, 'sse-pagebreak')) {
+            if (str_contains($attrs, 'sse-pagebreak') || str_contains($attrs, 'sse-media')) {
                 return '<div' . $attrs . '></div>';
             }
         }
@@ -200,6 +209,28 @@ final class SseRichText
         if (isset($classes['sse-pagebreak']) && $tag !== 'div') {
             unset($classes['sse-pagebreak']);
         }
+        // Image jointe : un bloc vide qui ne porte qu'un jeton valide ; l'image est ajoutée à l'affichage, jamais enregistrée ici.
+        $media = '';
+        if (isset($classes['sse-media'])) {
+            $tok = trim($el->getAttribute('data-media'));
+            if ($tag === 'div' && preg_match(self::MEDIA_TOKEN, $tok) === 1) {
+                $media = $tok;
+                unset($classes['sse-pagebreak'], $classes['sse-field'], $classes['sse-hint']);
+            } else {
+                unset($classes['sse-media']);
+            }
+        }
+        // Bloc de données insérées : un div qui garde sa source ; la classification minimale est recalculée par le serveur.
+        $dataSrc = '';
+        if (isset($classes['sse-data'])) {
+            $src = trim($el->getAttribute('data-src'));
+            if ($tag === 'div' && preg_match(self::DATA_SRC, $src) === 1) {
+                $dataSrc = $src;
+                unset($classes['sse-pagebreak'], $classes['sse-field'], $classes['sse-hint'], $classes['sse-media']);
+            } else {
+                unset($classes['sse-data']);
+            }
+        }
         if (isset($classes['sse-field']) && $tag !== 'span') {
             unset($classes['sse-field']);
         }
@@ -220,6 +251,16 @@ final class SseRichText
         }
         if ($field !== '') {
             $out .= ' data-field="' . $field . '"';
+        }
+        if ($media !== '') {
+            $out .= ' data-media="' . $media . '"';
+        }
+        if ($dataSrc !== '') {
+            $out .= ' data-src="' . $dataSrc . '"';
+        }
+        // Verrou : seule la valeur « 1 » survit, sur un bloc ou un texte en ligne ; aucun autre attribut data-*.
+        if (trim($el->getAttribute('data-lock')) === '1' && in_array($tag, self::LOCKABLE, true)) {
+            $out .= ' data-lock="1"';
         }
         if ($tag === 'td' || $tag === 'th') {
             foreach (['colspan', 'rowspan'] as $a) {
@@ -413,7 +454,7 @@ final class SseRichText
     {
         $html = self::htmlOf($body);
 
-        return str_starts_with($html, '<table>') && str_contains(substr($html, 0, 1500), 'data-field="reference"');
+        return preg_match('~^<table(?: data-lock="1")?>~', $html) === 1 && str_contains(substr($html, 0, 1500), 'data-field="reference"');
     }
 
     /** Nombre de textes d'aide encore en place dans un corps. */
@@ -430,7 +471,7 @@ final class SseRichText
         }
 
         return (string) preg_replace_callback(
-            '~<span class="sse-field" data-field="([a-z]+)"([^>]*)>(.*?)</span>~s',
+            '~<span class="sse-field" data-field="([a-z_]+)"([^>]*)>(.*?)</span>~s',
             static function (array $m) use ($fields): string {
                 $v = $fields[$m[1]] ?? null;
                 $text = $v !== null && trim($v) !== '' ? htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : $m[3];
@@ -484,11 +525,13 @@ final class SseRichText
             },
             $html
         );
+        $html = str_replace(' data-lock="1"', '', $html);
+        $html = (string) preg_replace('~ data-src="[^"]*"~', '', $html);
         $html = (string) preg_replace('~<div class="sse-pagebreak"></div>~', '<br pagebreak="true"/>', $html);
-        $html = (string) preg_replace('~<table>~', '<table border="1" cellpadding="4" cellspacing="0" style="border-color:#94a3b8">', $html);
+        $html = (string) preg_replace('~<table(?: data-lock="1")?>~', '<table border="1" cellpadding="4" cellspacing="0" style="border-color:#94a3b8">', $html);
         $html = (string) preg_replace('~<hr>~', '<hr style="height:1px;color:#94a3b8">', $html);
         $html = (string) preg_replace('~<blockquote>~', '<blockquote style="color:#475569;font-style:italic">', $html);
-        $html = (string) preg_replace('~<span class="sse-field" data-field="[a-z]+">~', '<span>', $html);
+        $html = (string) preg_replace('~<span class="sse-field" data-field="[a-z_]+">~', '<span>', $html);
 
         return $html;
     }

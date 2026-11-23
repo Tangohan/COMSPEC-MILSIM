@@ -162,7 +162,7 @@ final class SseDocumentTemplates
     {
         $shade = 'background-color:#e2e8f0;';
 
-        return '<table><tbody>'
+        return '<table data-lock="1"><tbody>'
             . '<tr><th colspan="2" style="text-align:left;' . $shade . '">ATHENA · Bureau de renseignement (SSE)</th>'
             . '<th colspan="2" style="text-align:right;' . $shade . '">' . self::e($kind) . '</th></tr>'
             . '<tr><td colspan="4" style="text-align:center;color:#b91c1c;"><strong>CLASSIFICATION : ' . self::field('classification', $c) . '</strong></td></tr>'
@@ -175,7 +175,7 @@ final class SseDocumentTemplates
 
     private static function footer(): string
     {
-        return '<hr><p style="text-align:center;color:#475569;">Document à usage restreint : ne le diffusez pas hors du canal prévu par sa classification.</p>';
+        return '<hr><p data-lock="1" style="text-align:center;color:#475569;">Document à usage restreint : ne le diffusez pas hors du canal prévu par sa classification.</p>';
     }
 
     private static function title(string $text): string

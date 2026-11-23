@@ -25,7 +25,7 @@ class AthenaTcpdf extends \TCPDF
      */
     public static function make(array $meta): self
     {
-        $pdf = new self('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf = new static('P', 'mm', 'A4', true, 'UTF-8', false);
         $pdf->athenaMeta = $meta;
         $pdf->tcpdflink = false;
         self::$lastStamp = ['headers' => 0, 'footers' => 0];

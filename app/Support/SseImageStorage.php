@@ -28,7 +28,7 @@ final class SseImageStorage
      * « sse-service-emblems » : emblème téléversé d'un service demandeur, servi par la route des services ;
      * « sse-alert-reports » : photo jointe à un signalement, servie aux gestionnaires par la route des signalements).
      */
-    public const FOLDERS = ['sse-id-photos', 'sse-id-signatures', 'sse-id-backgrounds', 'sse-wanted', 'sse-id-checks', 'sse-service-emblems', 'sse-alert-reports'];
+    public const FOLDERS = ['sse-id-photos', 'sse-id-signatures', 'sse-id-backgrounds', 'sse-wanted', 'sse-id-checks', 'sse-service-emblems', 'sse-alert-reports', 'sse-doc-signatures', 'sse-doc-media'];
 
     private const NAME = '[0-9]{1,10}_[a-f0-9]{16}\.(?:jpg|png|webp)';
 

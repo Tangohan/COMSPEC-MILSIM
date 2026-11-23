@@ -36,7 +36,7 @@ final class SignatureImageService
     public const MIN_INK_PIXELS = 12;
 
     /** Usage => type d'image de SseIdImageService. */
-    private const PURPOSES = ['sse_identity' => 'signature'];
+    private const PURPOSES = ['sse_identity' => 'signature', 'sse_document' => 'doc_signature'];
 
     /** Octets par pixel selon le type de couleur PNG (gris, RVB, gris + alpha, RVBA) à 8 bits. */
     private const BYTES_PER_PIXEL = [0 => 1, 2 => 3, 4 => 2, 6 => 4];

@@ -34,6 +34,9 @@ final class SseIdImageService
         // Photo du papier d'un contrôle d'identité, prise en jeu (1,5 Mo au plus) et sa miniature.
         'check_paper' => ['sse-id-checks', 1_572_864, 1600, 'jpg', true],
         'check_paper_thumb' => ['sse-id-checks', 1_572_864, 360, 'jpg', true],
+        // Éditeur de documents : signature dessinée au pad (PNG transparent) et image ou logo inséré (PNG, JPEG, WebP, 3 Mo au plus).
+        'doc_signature' => ['sse-doc-signatures', 1024 * 1024, 900, 'png', true],
+        'doc_media' => ['sse-doc-media', 3 * 1024 * 1024, 1600, 'png', true],
     ];
 
     /** Rapport largeur / hauteur de la photo d'identité (35 × 45 mm) ; le carré est aussi accepté. */

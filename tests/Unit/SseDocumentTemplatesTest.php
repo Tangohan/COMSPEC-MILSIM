@@ -71,7 +71,7 @@ final class SseDocumentTemplatesTest extends TestCase
     {
         foreach (self::codes() as $code) {
             $html = SseDocumentTemplates::body($code);
-            self::assertStringStartsWith('<table>', $html, $code);
+            self::assertStringStartsWith('<table data-lock="1">', $html, $code);
             self::assertStringContainsString('ATHENA · Bureau de renseignement (SSE)', $html, $code);
             self::assertStringContainsString('CLASSIFICATION :', $html, $code);
             foreach (['classification', 'reference', 'dossier', 'date', 'nom', 'grade'] as $field) {

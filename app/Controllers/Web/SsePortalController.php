@@ -57,7 +57,9 @@ use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\SseAnalyticalCatalog;
 use App\Support\SseCreationBrief;
+use App\Support\SseDocumentLocks;
 use App\Support\SseDocumentTemplates;
+use App\Support\SseSheetThemes;
 use App\Support\SseRichText;
 use App\Support\SseTextVariables;
 use App\Services\Sse\SseAccessPolicy;
@@ -4128,6 +4130,9 @@ final class SsePortalController
             'prefillClass' => $model['classification'],
             'prefillStatus' => 'brouillon',
             'modelLabel' => $model['label'],
+            'modelCode' => SseDocumentTemplates::exists((string) $model['code']) ? (string) $model['code'] : '',
+            'prefillTheme' => SseSheetThemes::defaultForTemplate((string) $model['code']),
+            'canUnlock' => $this->canUnlock(),
             'canManage' => true,
             'editorContext' => $this->editorContext(0, $case),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
@@ -4286,17 +4291,27 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/documents/nouveau'));
         }
+        // Texte verrouillé du modèle choisi : il doit arriver intact (le client ne fait que le rendre non modifiable).
+        $modelCode = (string) $request->input('model_code', '');
+        if (!$this->canUnlock() && SseDocumentTemplates::exists($modelCode)
+            && SseDocumentLocks::violations(SseDocumentTemplates::body($modelCode), SseRichText::htmlOf($body)) !== []) {
+            Session::flash('error', 'Le texte verrouillé du modèle (en-tête, mentions obligatoires) a été modifié : enregistrement refusé.');
+
+            return Response::redirect(url('atak/sse/documents/nouveau'));
+        }
 
         $userId = (int) Session::get('user_id') ?: null;
         $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur');
+        $classification = $this->raisedClassification($body, (string) $request->input('classification', 'confidentiel'));
         $docId = $this->documents->create([
             'tenant_id' => $this->tenantId(),
             'case_id' => $caseId > 0 ? $caseId : null,
             'document_type' => (string) $request->input('document_type', 'note_analyse'),
             'title' => $title,
             'body' => $body,
-            'classification' => (string) $request->input('classification', 'confidentiel'),
+            'classification' => $classification,
             'status' => (string) $request->input('status', 'brouillon'),
+            'sheet_theme' => (string) $request->input('sheet_theme', ''),
             'created_by' => $userId,
             'updated_by' => $userId,
             'author_label' => $author,
@@ -4305,9 +4320,9 @@ final class SsePortalController
         $mentions = $this->recordLibraryUses($request, (int) $docId, $caseId, $author, $userId);
         $this->drafts()->discard($this->tenantId(), (int) $userId, $this->draftGuestKey(), 0);
 
-        Session::flash('success', 'Document créé et placé en atelier.' . $mentions);
+        Session::flash('success', 'Document créé et placé en atelier.' . $mentions . $this->classWarning);
 
-        return Response::redirect(url('atak/sse/documents/' . $docId));
+        return Response::redirect(url('atak/sse/documents/' . $docId) . ((string) $request->input('after', '') === 'sign' ? '#sse-doc-sign-title' : ''));
     }
 
     public function documentShow(Request $request, array $params = []): Response
@@ -4325,9 +4340,21 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/documents'));
         }
 
+        $sigs = (new \App\Services\Sse\SseDocumentSignatureService())->forDocument($this->tenantId(), $id);
+        $userId = (int) (Session::get('user_id') ?: 0);
+        $already = false;
+        foreach ($sigs as $sg) {
+            $already = $already || (int) $sg['user_id'] === $userId;
+        }
+        $signer = $this->editorAuthor();
+
         return $this->portalView('atak.sse.document_show', [
             'title' => (string) ($doc['title'] ?? 'Document'),
             'document' => $doc,
+            'signatures' => $sigs,
+            'signatureChecks' => \App\Services\Sse\SseDocumentSignatureService::verify($doc, $sigs),
+            'canSign' => $this->canManage() && $userId > 0 && !$already,
+            'signerName' => trim(implode(' ', array_filter([$signer['grade'], $signer['nom']]))),
             'canManage' => $this->canManage(),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
@@ -4349,6 +4376,11 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/documents'));
         }
+        if ((new \App\Services\Sse\SseDocumentSignatureService())->isSigned($this->tenantId(), $id)) {
+            Session::flash('error', 'Ce document est signé : il est verrouillé en lecture seule.');
+
+            return Response::redirect(url('atak/sse/documents/' . $id));
+        }
         if (in_array((string) $doc['status'], ['valide', 'archive'], true)) {
             Session::flash('error', 'Ce document est figé. Ouvrez une nouvelle version si besoin.');
 
@@ -4369,6 +4401,7 @@ final class SsePortalController
             'libraryCategories' => SseTextTemplateRepository::categories(),
             'contextualSuggestions' => $this->contextualSuggestionsForCase($case),
             'canManage' => true,
+            'canUnlock' => $this->canUnlock(),
             'editorContext' => $this->editorContext($id, $case, (string) ($doc['reference_code'] ?? '')),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
@@ -4389,6 +4422,11 @@ final class SsePortalController
             Session::flash('error', 'Document introuvable.');
 
             return Response::redirect(url('atak/sse/documents'));
+        }
+        if ((new \App\Services\Sse\SseDocumentSignatureService())->isSigned($this->tenantId(), $id)) {
+            Session::flash('error', 'Ce document est signé : il est verrouillé en lecture seule.');
+
+            return Response::redirect(url('atak/sse/documents/' . $id));
         }
         if (in_array((string) $doc['status'], ['valide', 'archive'], true)) {
             Session::flash('error', 'Ce document est figé et ne peut plus être modifié.');
@@ -4411,12 +4449,18 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/documents/' . $id . '/modifier'));
         }
 
+        if (!$this->canUnlock() && SseDocumentLocks::violations(SseRichText::htmlOf((string) ($doc['body'] ?? '')), SseRichText::htmlOf($body)) !== []) {
+            Session::flash('error', 'Un texte verrouillé ne peut être modifié que par un administrateur SSE : enregistrement refusé.');
+
+            return Response::redirect(url('atak/sse/documents/' . $id . '/modifier'));
+        }
+
         $status = SseDocumentRepository::normalizeStatus((string) $request->input('status', $doc['status']));
         $payload = [
             'title' => $title,
             'body' => $body,
             'document_type' => (string) $request->input('document_type', $doc['document_type']),
-            'classification' => (string) $request->input('classification', $doc['classification']),
+            'classification' => $this->raisedClassification($body, (string) $request->input('classification', $doc['classification'])),
             'status' => $status,
             'case_id' => $caseId > 0 ? $caseId : null,
             'updated_by' => (int) Session::get('user_id') ?: null,
@@ -4427,12 +4471,15 @@ final class SsePortalController
         }
 
         $this->documents->update($id, $this->tenantId(), $payload);
+        if ($request->input('sheet_theme', null) !== null) {
+            $this->documents->setTheme($id, $this->tenantId(), (string) $request->input('sheet_theme', ''));
+        }
         $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur');
         $mentions = $this->recordLibraryUses($request, $id, $caseId, $author, (int) Session::get('user_id') ?: null);
         $this->drafts()->discard($this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey(), $id);
-        Session::flash('success', 'Document enregistré.' . $mentions);
+        Session::flash('success', 'Document enregistré.' . $mentions . $this->classWarning);
 
-        return Response::redirect(url('atak/sse/documents/' . $id));
+        return Response::redirect(url('atak/sse/documents/' . $id) . ((string) $request->input('after', '') === 'sign' ? '#sse-doc-sign-title' : ''));
     }
 
     /**
@@ -4623,6 +4670,178 @@ final class SsePortalController
         return (new \App\Services\Sse\SseDocumentPdfService())->export($doc, $this->tenantId(), (string) $request->query('lecture', '') === '1', \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
     }
 
+    /** Signature au pad de l'utilisateur connecté : toujours la sienne (identité prise dans la session, jamais dans le formulaire). */
+    public function documentSign(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = Response::redirect(url('atak/sse/documents/' . $id));
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return $back;
+        }
+        $doc = $this->documents->findById($id, $this->tenantId());
+        if ($doc === null || (!empty($doc['case_id']) && $this->requireCase((int) $doc['case_id']) === null)) {
+            Session::flash('error', 'Document introuvable.');
+
+            return Response::redirect(url('atak/sse/documents'));
+        }
+        $userId = (int) (Session::get('user_id') ?: 0);
+        $author = $this->editorAuthor();
+        $label = trim(implode(' ', array_filter([$author['grade'], $author['nom']])));
+        $r = (new \App\Services\Sse\SseDocumentSignatureService())->sign($doc, $this->tenantId(), $userId, $label, (string) $request->input('signature_data_url', ''));
+        Session::flash(!empty($r['ok']) ? 'success' : 'error', !empty($r['ok']) ? 'Document signé et verrouillé en lecture seule.' : (string) ($r['error'] ?? 'Signature refusée.'));
+
+        return $back;
+    }
+
+    /** Image d'une signature, servie aux seuls lecteurs du document (même communauté, même périmètre de dossier). */
+    public function documentSignatureImage(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())->setStatusCode(404)->header('Cache-Control', 'no-store')->setBody('Not found');
+        $id = (int) ($params['id'] ?? 0);
+        $doc = $this->documents->findById($id, $this->tenantId());
+        if ($doc === null || (!empty($doc['case_id']) && $this->requireCase((int) $doc['case_id']) === null)) {
+            return $notFound();
+        }
+        $svc = new \App\Services\Sse\SseDocumentSignatureService();
+        foreach ($svc->forDocument($this->tenantId(), $id) as $sig) {
+            if ((int) $sig['id'] !== (int) ($params['sig'] ?? 0)) {
+                continue;
+            }
+            $abs = $svc->imageFile($sig, $this->tenantId());
+            $mime = $abs !== null ? \App\Support\SseImageStorage::verifiedMime($abs) : null;
+            if ($abs === null || $mime === null) {
+                return $notFound();
+            }
+
+            return (new Response())->header('Content-Type', $mime)->header('Content-Length', (string) filesize($abs))
+                ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff')
+                ->setBody((string) file_get_contents($abs));
+        }
+
+        return $notFound();
+    }
+
+    /** Envoi d'une image ou d'un logo pour un document (JSON : jeton à poser dans le corps). */
+    public function documentMediaUpload(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $r = (new \App\Services\Sse\SseDocumentMedia())->storeUpload($_FILES['image'] ?? null, $this->tenantId());
+        if (empty($r['ok']) || !isset($r['token'])) {
+            return Response::json(['ok' => false, 'error' => !empty($r['none']) ? 'Choisissez une image.' : (string) ($r['error'] ?? 'Image refusée.')], 422);
+        }
+
+        return Response::json(['ok' => true, 'token' => $r['token'], 'url' => url('atak/sse/documents/medias/' . $r['token'])]);
+    }
+
+    /** Image jointe : réservée à la communauté qui l'a envoyée, derrière la connexion au portail SSE. */
+    public function documentMediaImage(Request $request, array $params = []): Response
+    {
+        $abs = \App\Services\Sse\SseDocumentMedia::fileFor((string) ($params['token'] ?? ''), $this->tenantId());
+        $mime = $abs !== null ? \App\Support\SseImageStorage::verifiedMime($abs) : null;
+        if ($abs === null || $mime === null) {
+            return (new Response())->setStatusCode(404)->header('Cache-Control', 'no-store')->setBody('Not found');
+        }
+
+        return (new Response())->header('Content-Type', $mime)->header('Content-Length', (string) filesize($abs))
+            ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff')->header('Referrer-Policy', 'no-referrer')
+            ->setBody((string) file_get_contents($abs));
+    }
+
+    /**
+     * Classification imposée par les données insérées : le serveur recalcule le minimum depuis data-src (jamais depuis le client)
+     * et relève la classification du document s'il le faut, avec un avertissement.
+     */
+    private string $classWarning = '';
+
+    private function raisedClassification(string $body, string $requested): string
+    {
+        $requested = SseCaseRepository::normalizeClassification($requested);
+        $html = SseRichText::htmlOf($body);
+        if (!str_contains($html, 'data-src="')) {
+            return $requested;
+        }
+        try {
+            $min = \App\Services\Sse\SseDocumentDataService::forSession($this->tenantId())->minimumFor($html);
+        } catch (\Throwable $e) {
+            error_log('[sse.donnees] classification non calculée : ' . $e->getMessage());
+
+            return $requested;
+        }
+        $final = \App\Services\Sse\SseDocumentDataService::maxClassification($requested, $min);
+        if ($final !== $requested) {
+            $this->classWarning = ' Classification relevée à « ' . SseCaseRepository::classificationLabel($final) . ' » : le document contient des données d’ORBAT ou de membres de ce niveau.';
+        }
+
+        return $final;
+    }
+
+    /** Menu « Insérer des données » : unités et membres que le rédacteur peut voir (règles de confidentialité de l'ORBAT). */
+    public function documentDataIndex(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || (int) (Session::get('user_id') ?: 0) < 1) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        try {
+            $svc = \App\Services\Sse\SseDocumentDataService::forSession($this->tenantId());
+
+            return Response::json(['ok' => true, 'units' => $svc->selectableUnits(), 'members' => $svc->selectableMembers()]);
+        } catch (\Throwable $e) {
+            error_log('[sse.donnees] ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'Données indisponibles.'], 500);
+        }
+    }
+
+    /** Bloc de données prêt à insérer : orbat, effectif (unité) ou membre. Refus si hors périmètre. */
+    public function documentDataInsert(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || (int) (Session::get('user_id') ?: 0) < 1) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $svc = \App\Services\Sse\SseDocumentDataService::forSession($this->tenantId());
+            $r = match ((string) ($params['type'] ?? '')) {
+                'orbat' => $svc->orbatExtract($id),
+                'effectif' => $svc->unitRosterTable($id),
+                'membre' => $svc->memberCard($id),
+                default => ['ok' => false, 'error' => 'Type de données inconnu.'],
+            };
+        } catch (\Throwable $e) {
+            error_log('[sse.donnees] ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'Données indisponibles.'], 500);
+        }
+        if (empty($r['ok'])) {
+            return Response::json(['ok' => false, 'error' => (string) ($r['error'] ?? 'Hors de votre périmètre.')], 403);
+        }
+
+        return Response::json(['ok' => true, 'html' => SseRichText::sanitize((string) $r['html']), 'classification' => $r['classification'], 'label' => $r['label']]);
+    }
+
+    /** Logo de la communauté, copié dans le stockage privé des images de documents (mêmes contrôles qu'un envoi). */
+    public function documentMediaLogo(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $file = \App\Support\Pdf\AthenaPdfTheme::meta(['tenant_id' => $this->tenantId()])['logo'] ?? null;
+        $bytes = is_string($file) && is_file($file) ? (string) @file_get_contents($file) : '';
+        if ($bytes === '') {
+            return Response::json(['ok' => false, 'error' => 'Aucun logo enregistré pour cette communauté : envoyez une image.'], 404);
+        }
+        $r = (new \App\Services\Sse\SseDocumentMedia())->storeBytes($bytes, $this->tenantId());
+        if (empty($r['ok']) || !isset($r['token'])) {
+            return Response::json(['ok' => false, 'error' => (string) ($r['error'] ?? 'Logo refusé.')], 422);
+        }
+
+        return Response::json(['ok' => true, 'token' => $r['token'], 'url' => url('atak/sse/documents/medias/' . $r['token'])]);
+    }
+
     private function drafts(): \App\Repositories\SseDocumentDraftRepository
     {
         return $this->documentDrafts ??= new \App\Repositories\SseDocumentDraftRepository();
@@ -4679,6 +4898,7 @@ final class SsePortalController
             $models[] = [
                 'code' => $code, 'label' => $meta['label'], 'description' => $meta['description'], 'own' => false,
                 'document_type' => $meta['document_type'], 'classification' => $meta['classification'],
+                'theme' => SseSheetThemes::defaultForTemplate($code),
                 'body' => SseDocumentTemplates::body($code, $this->modelContext($case, $meta['classification'], $reference)),
             ];
         }
@@ -4694,8 +4914,8 @@ final class SsePortalController
             'models' => $models,
             'fields' => [
                 'nom' => $author['nom'], 'grade' => $author['grade'], 'date' => date('d/m/Y'),
-                'reference' => $reference !== '' ? $reference : 'ATH-SSE-BROUILLON',
-            ],
+                'reference' => $reference !== '' ? $reference : 'Attribuée à l’enregistrement',
+            ] + \App\Services\Sse\SseDocumentFieldValues::identifiers($this->tenantId(), $docId),
             'serverDraft' => $draft,
             'draftUrl' => url('atak/sse/documents/brouillon'),
             'templateUrl' => url('atak/sse/documents/modeles'),
@@ -5388,6 +5608,12 @@ final class SsePortalController
     private function canManage(): bool
     {
         return SseAccessPolicy::sessionAllows('dossiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
+    }
+
+    /** Déverrouiller ou modifier un texte verrouillé : rédacteur habilité ET administrateur SSE (droit de délégation). */
+    private function canUnlock(): bool
+    {
+        return $this->canManage() && $this->canGrant();
     }
 
     private function canGrant(): bool
