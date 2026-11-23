@@ -52,4 +52,34 @@ final class PersonnelDuplicateDetectionServiceTest extends TestCase
         self::assertSame([1, 2], array_column($scan['groups'][0]['members'], 'id'));
         self::assertSame(['Alpha Seven', 'Bravo Seven'], array_column($scan['groups'][0]['members'], 'display_name'));
     }
+
+    public function testCallsignComparisonUsesTheDisplayedCallsignNotAStaleRhOne(): void
+    {
+        $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, settings TEXT)');
+        $pdo->exec("INSERT INTO tenants VALUES (7, '{\"admin_runtime\":{\"personnel_duplicates\":{\"enabled\":true,\"fields\":[\"callsign\"]}}}')");
+        $pdo->exec('CREATE TABLE users (
+            id INTEGER PRIMARY KEY, tenant_id INTEGER, display_name TEXT, callsign TEXT, email TEXT,
+            deleted_at TEXT, is_service_account INTEGER DEFAULT 0, status TEXT
+        )');
+        $pdo->exec("INSERT INTO users VALUES
+            (1, 7, 'Liam Kaiser', 'YA1', 'liam@example.test', NULL, 0, 'active'),
+            (2, 7, 'Damian Stones', 'YB1', 'damian@example.test', NULL, 0, 'active')");
+        $pdo->exec('CREATE TABLE user_community_memberships (user_id INTEGER, tenant_id INTEGER, status TEXT)');
+        $pdo->exec("INSERT INTO user_community_memberships VALUES (1, 7, 'active'), (2, 7, 'active')");
+        $pdo->exec('CREATE TABLE user_community_profiles (user_id INTEGER, tenant_id INTEGER, display_name TEXT, callsign TEXT)');
+        $pdo->exec("INSERT INTO user_community_profiles VALUES (1, 7, 'Liam Kaiser', 'YA1'), (2, 7, 'Damian Stones', 'YB1')");
+        $pdo->exec('CREATE TABLE user_profiles (user_id INTEGER, first_name TEXT, last_name TEXT)');
+        $pdo->exec("INSERT INTO user_profiles VALUES (1, 'Liam', 'Kaiser'), (2, 'Damian', 'Stones')");
+        // Le dossier RH de Damian garde un ancien indicatif « YA1 » : il ne doit pas le rapprocher de Liam.
+        $pdo->exec('CREATE TABLE personnel_profiles (user_id INTEGER, tenant_id INTEGER, matricule_internal TEXT, callsign TEXT)');
+        $pdo->exec("INSERT INTO personnel_profiles VALUES (1, 7, 'ATH-00007', 'YA1'), (2, 7, 'ATH-00004', 'YA1')");
+        $pdo->exec('CREATE TABLE personnel_extras (user_id INTEGER, tenant_id INTEGER, service_number TEXT)');
+
+        $settings = new TenantAdminSettingsRepository(new TenantRepository($pdo));
+        $scan = (new PersonnelDuplicateDetectionService($pdo, $settings))->scan(7);
+
+        self::assertSame(0, $scan['group_count']);
+        self::assertSame([], $scan['groups']);
+    }
 }
