@@ -41,6 +41,8 @@ final class MemberGradeScheduleTest extends TestCase
         foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
             $this->pdo->exec($statement);
         }
+        $this->pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, display_name TEXT, callsign TEXT)');
+        $this->pdo->exec("INSERT INTO users (id, display_name, callsign) VALUES (1, 'Sergent Faure', 'FAUCON'), (2, 'Caporal Diaz', 'LYNX')");
         $this->users = [
             1 => ['id' => 1, 'display_name' => 'Sergent Faure', 'callsign' => 'FAUCON', 'grade_id' => 10],
             2 => ['id' => 2, 'display_name' => 'Caporal Diaz', 'callsign' => 'LYNX', 'grade_id' => null],
