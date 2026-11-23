@@ -24,7 +24,7 @@ final class SseRichText
     public const HIGHLIGHT_COLORS = ['#fef08a', '#fed7aa', '#fecaca', '#bfdbfe', '#bbf7d0', '#e2e8f0'];
 
     /** Champs dynamiques du dossier. */
-    public const FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre'];
+    public const FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre', 'type', 'id_fiche', 'nom_code', 'dse'];
 
     private const MAX_DEPTH = 24;
 
@@ -44,6 +44,9 @@ final class SseRichText
         'table' => 'table', 'thead' => 'thead', 'tbody' => 'tbody', 'tfoot' => 'tbody', 'tr' => 'tr', 'td' => 'td', 'th' => 'th',
         'caption' => '', 'colgroup' => '', 'col' => '',
     ];
+
+    /** Balises qui peuvent porter data-lock (texte verrouillé). */
+    private const LOCKABLE = ['p', 'div', 'span', 'h2', 'h3', 'h4', 'blockquote', 'ul', 'ol', 'table'];
 
     private const VOID_TAGS = ['br', 'hr'];
 
@@ -220,6 +223,10 @@ final class SseRichText
         }
         if ($field !== '') {
             $out .= ' data-field="' . $field . '"';
+        }
+        // Verrou : seule la valeur « 1 » survit, sur un bloc ou un texte en ligne ; aucun autre attribut data-*.
+        if (trim($el->getAttribute('data-lock')) === '1' && in_array($tag, self::LOCKABLE, true)) {
+            $out .= ' data-lock="1"';
         }
         if ($tag === 'td' || $tag === 'th') {
             foreach (['colspan', 'rowspan'] as $a) {
@@ -413,7 +420,7 @@ final class SseRichText
     {
         $html = self::htmlOf($body);
 
-        return str_starts_with($html, '<table>') && str_contains(substr($html, 0, 1500), 'data-field="reference"');
+        return preg_match('~^<table(?: data-lock="1")?>~', $html) === 1 && str_contains(substr($html, 0, 1500), 'data-field="reference"');
     }
 
     /** Nombre de textes d'aide encore en place dans un corps. */
@@ -430,7 +437,7 @@ final class SseRichText
         }
 
         return (string) preg_replace_callback(
-            '~<span class="sse-field" data-field="([a-z]+)"([^>]*)>(.*?)</span>~s',
+            '~<span class="sse-field" data-field="([a-z_]+)"([^>]*)>(.*?)</span>~s',
             static function (array $m) use ($fields): string {
                 $v = $fields[$m[1]] ?? null;
                 $text = $v !== null && trim($v) !== '' ? htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : $m[3];
@@ -484,11 +491,12 @@ final class SseRichText
             },
             $html
         );
+        $html = str_replace(' data-lock="1"', '', $html);
         $html = (string) preg_replace('~<div class="sse-pagebreak"></div>~', '<br pagebreak="true"/>', $html);
-        $html = (string) preg_replace('~<table>~', '<table border="1" cellpadding="4" cellspacing="0" style="border-color:#94a3b8">', $html);
+        $html = (string) preg_replace('~<table(?: data-lock="1")?>~', '<table border="1" cellpadding="4" cellspacing="0" style="border-color:#94a3b8">', $html);
         $html = (string) preg_replace('~<hr>~', '<hr style="height:1px;color:#94a3b8">', $html);
         $html = (string) preg_replace('~<blockquote>~', '<blockquote style="color:#475569;font-style:italic">', $html);
-        $html = (string) preg_replace('~<span class="sse-field" data-field="[a-z]+">~', '<span>', $html);
+        $html = (string) preg_replace('~<span class="sse-field" data-field="[a-z_]+">~', '<span>', $html);
 
         return $html;
     }
