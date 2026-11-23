@@ -257,7 +257,7 @@ final class PortalSearchService
             ['title' => 'Équipement', 'subtitle' => 'Fiches matériel et tenues', 'href' => url('equipment'), 'keywords' => 'équipement matériel armes tenues arsenal'],
             ['title' => 'Overwatch', 'subtitle' => 'Mod et suivi en jeu (OVL)', 'href' => url('overwatch'), 'keywords' => 'overwatch ovl mod jeu arma suivi'],
             ['title' => 'Tacmap', 'subtitle' => 'Carte tactique en direct', 'href' => url('tacmap'), 'keywords' => 'tacmap carte tactique atak direct'],
-            ['title' => 'Installer le mod (Steam)', 'subtitle' => 'Mod Athena sur le Steam Workshop', 'href' => url('atak/mod'), 'keywords' => 'mod steam workshop installer overwatch ovl modpack arma'],
+            ['title' => 'Installer le mod', 'subtitle' => 'Pack Athena à télécharger sur la page des modpacks', 'href' => url('atak/mod'), 'keywords' => 'mod steam workshop installer overwatch ovl modpack arma'],
             ['title' => 'Liaison ATAK', 'subtitle' => 'Lier son téléphone ou sa tablette', 'href' => url('atak/liaison'), 'keywords' => 'liaison atak téléphone tablette appairer'],
             ['title' => 'Renseignement (SSE)', 'subtitle' => 'Fiches, dossiers et rapports', 'href' => url('atak/sse'), 'keywords' => 'renseignement sse fiches dossiers rapports cr intel'],
             ['title' => 'Pointage', 'subtitle' => 'Présence aux sessions', 'href' => url('pointage'), 'keywords' => 'pointage présence session heures'],

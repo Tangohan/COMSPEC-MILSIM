@@ -31,7 +31,7 @@
   background-size: 32px 32px; mask-image: linear-gradient(180deg, #000 30%, transparent); }
 .amw-hero__inner { position: relative; display: grid; gap: 2rem; align-items: end; }
 @media (min-width: 960px) { .amw-hero { padding: 4.5rem 0 3.5rem; } .amw-hero__inner { grid-template-columns: minmax(0, 1fr) 20rem; } }
-.amw-kicker { margin: 0 0 0.8rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--amw-accent); }
+.amw-context { margin: 0 0 0.8rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--amw-accent); }
 .amw-title { margin: 0; font-size: clamp(2rem, 6vw, 3.6rem); font-weight: 900; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .amw-lead { margin: 1.1rem 0 0; max-width: 44rem; font-size: 1.05rem; line-height: 1.6; color: var(--amw-ink-2); }
 .amw-cta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; }
@@ -107,3 +107,14 @@
 .amw-more__a small { font-size: 0.8rem; color: var(--amw-ink-3); }
 .amw-more__a:hover { border-color: rgba(52, 211, 153, 0.45); color: var(--amw-ink); }
 @media (prefers-reduced-motion: reduce) { .amw * { transition: none !important; } }
+
+/* Encadré « Télécharger le pack » : reprend les classes de public-modpack.css (.mp-box, .mp-primary, .mp-ghost…). */
+.amw-pack.mp { padding: 0; background: transparent; font: inherit; }
+.amw-pack .mp-box { border-color: rgba(52, 211, 153, 0.45); background: linear-gradient(180deg, rgba(52, 211, 153, 0.08), var(--amw-panel) 70%); }
+.amw-pack__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 1.5rem; }
+.amw-pack__head .amw-h2 { margin-bottom: 0.7rem; }
+.amw-pack__soon { margin: 0; color: var(--amw-ink-3); font-weight: 700; }
+.amw-pack .mp-primary { flex: 0 1 auto; }
+.amw-pack .mp-note.mp-warning { margin: 0; }
+.amw-small--spaced { margin: 0.8rem 0 0; }
+@media (max-width: 640px) { .amw-pack__head .mp-primary { width: 100%; } }

@@ -229,7 +229,7 @@ if ($linked && $continueUrl !== '') {
             <?php if ($required): ?>
                 <div class="ll-first" role="note">
                     <b>Pas encore le mod ?</b>
-                    <p>Abonnez-vous au mod COMSPEC ATAK sur le Steam Workshop, lancez Arma avec le mod, puis revenez sur cette page avec le code.</p>
+                    <p>Téléchargez le pack COMSPEC sur la page des modpacks, ajoutez-le dans le launcher d’Arma, lancez Arma avec le mod, puis revenez sur cette page avec le code.</p>
                     <p class="ll-first-links"><a href="<?= $h($modUrl) ?>">Installer le mod</a> · <a href="<?= $h($guideUrl) ?>">Guide de première liaison</a></p>
                 </div>
             <?php else: ?>

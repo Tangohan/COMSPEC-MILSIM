@@ -6,22 +6,23 @@
         <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>">Première liaison</a>.
     </p>
 
-    <h3>Abonnement Steam Workshop</h3>
+    <h3>Télécharger le pack</h3>
     <p>
-        Le mod est distribué uniquement par le Steam Workshop : ouvrez la page
-        <a href="<?= htmlspecialchars(url('atak/mod'), ENT_QUOTES, 'UTF-8') ?>"><strong>Installer le mod Athena</strong></a>
-        et cliquez « S’abonner sur Steam ». Steam télécharge le mod, sa dépendance CBA_A3 et les mises à jour automatiquement.
+        Le pack COMSPEC se télécharge sur la page publique
+        <a href="<?= htmlspecialchars(url('modpacks'), ENT_QUOTES, 'UTF-8') ?>"><strong>des modpacks</strong></a>
+        (empreinte SHA-256 et explication « signalé par l’antivirus » comprises). La page
+        <a href="<?= htmlspecialchars(url('atak/mod'), ENT_QUOTES, 'UTF-8') ?>">Installer le mod Athena</a>
+        résume les étapes. Steam ne met pas à jour un pack ajouté à la main : revenez sur la page à chaque nouvelle version.
         Votre communauté peut exiger une version minimale pour rejoindre le serveur.
     </p>
 
     <h3>Installation côté Arma</h3>
     <ol>
-        <li>Lancez Arma 3 depuis Steam et attendez la fin du téléchargement du mod.</li>
-        <li>Au lanceur, onglet Mods, activez <strong>CBA_A3</strong> et <strong>COMSPEC ATAK Native</strong>.</li>
+        <li>Décompressez l’archive .RAR (7-Zip ou WinRAR) dans un dossier dédié.</li>
+        <li>Au lanceur d’Arma 3, onglet Mods, ajoutez chaque dossier extrait avec « Mod local », puis activez-les ainsi que <strong>CBA_A3</strong> (à abonner sur le Steam Workshop).</li>
         <li>La bibliothèque de liaison (COMSPEC Link) est fournie avec le mod : rien à copier à la main.</li>
         <li>Quittez Arma complètement après toute mise à jour du pack, puis relancez.</li>
     </ol>
-
     <h3>Appairer votre compte Athena</h3>
     <p>Chemin recommandé :</p>
     <ol>

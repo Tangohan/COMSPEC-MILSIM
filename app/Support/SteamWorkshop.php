@@ -34,7 +34,7 @@ final class SteamWorkshop
             ['key' => 'atak', 'id' => $atak, 'name' => 'COMSPEC ATAK Native', 'role' => 'Le mod Athena', 'required' => true,
                 'description' => 'Téléphone ATAK en jeu, tablette Athena et liaison Overwatch avec la Tacmap : positions, marqueurs, messages, comptes rendus.'],
             ['key' => 'cba', 'id' => self::CBA_ID, 'name' => 'CBA_A3', 'role' => 'Dépendance', 'required' => true,
-                'description' => 'Bibliothèque commune aux mods Arma 3 : réglages, touches, événements. Steam la propose automatiquement avec le mod.'],
+                'description' => 'Bibliothèque commune aux mods Arma 3 : réglages, touches, événements. À abonner séparément sur le Steam Workshop : le pack COMSPEC ne l’ajoute pas tout seul.'],
             ['key' => 'ace', 'id' => self::ACE_ID, 'name' => 'ACE3', 'role' => 'Recommandé', 'required' => false,
                 'description' => 'Menus d’interaction utilisés par le téléphone et le renseignement (SSE).'],
             ['key' => 'acre', 'id' => self::ACRE_ID, 'name' => 'ACRE2', 'role' => 'Recommandé', 'required' => false,

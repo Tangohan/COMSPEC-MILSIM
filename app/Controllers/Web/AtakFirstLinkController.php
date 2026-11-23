@@ -55,7 +55,7 @@ final class AtakFirstLinkController
         $hasSteam = $steamId !== '';
         $hasIdentity = $callsign !== '' || $displayName !== '';
 
-        // Le mod est distribué par le Steam Workshop : toujours disponible.
+        // Le mod est téléchargeable sur la page publique /modpacks : toujours disponible.
         $hasMod = true;
 
         /** @var TenantAtakConfigRepository $atakConfigRepo */
@@ -99,7 +99,7 @@ final class AtakFirstLinkController
                 'has_mod' => $hasMod,
                 'has_access_key' => $hasAccessKey,
                 'mod_page_url' => url('atak/mod'),
-                'mod_download_url' => \App\Support\SteamWorkshop::clientUrl(\App\Support\SteamWorkshop::items()[0]['id']),
+                'mod_download_url' => url('modpacks'),
                 'tuto_url' => url('atak/tuto'),
                 'guide_url' => url('atak/mod/guide'),
                 'account_url' => url('account/preferences'),

@@ -32,8 +32,8 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
                 </li>
                 <li class="flex items-start gap-3">
                     <span class="text-slate-400 mt-0.5">□</span>
-                    <span><strong>S’abonner au mod sur Steam</strong>
-                            — <a href="<?= htmlspecialchars(url('atak/mod')) ?>" class="text-slate-900 underline font-medium">Installer le mod Athena (Steam Workshop)</a>
+                    <span><strong>Télécharger le pack du mod</strong>
+                            — <a href="<?= htmlspecialchars(url('modpacks')) ?>" class="text-slate-900 underline font-medium">Télécharger le pack et installer le mod Athena</a>
                     </span>
                 </li>
                 <li class="flex items-start gap-3">

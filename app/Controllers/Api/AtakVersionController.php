@@ -26,7 +26,7 @@ final class AtakVersionController
             'link' => $info['link'] ?? '',
             'summary_fr' => $summary['fr'],
             'summary_en' => $summary['en'],
-            'download' => rtrim(url(''), '/') . '/atak/mod',
+            'download' => rtrim(url(''), '/') . '/modpacks',
         ])->header('Cache-Control', 'public, max-age=300');
     }
 }
