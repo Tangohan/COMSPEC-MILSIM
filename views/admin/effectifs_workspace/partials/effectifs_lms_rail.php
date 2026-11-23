@@ -73,6 +73,7 @@ $navClass = static function (string $id) use ($active): string {
             </a>
         </nav>
 
+        <a href="<?= htmlspecialchars(effectifs_workspace_url('specialites'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('specialties'), ENT_QUOTES, 'UTF-8') ?>"><b>SP</b><span>Spécialités militaires<em>Codes nationaux, niveaux et explicatifs</em></span></a>
         <p class="eff-section-label">Dossier RH</p>
         <nav class="eff-rail-nav" aria-label="Dossier RH individuel">
             <a href="<?= htmlspecialchars(effectifs_workspace_url('documents-rh'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_documents'), ENT_QUOTES, 'UTF-8') ?>">

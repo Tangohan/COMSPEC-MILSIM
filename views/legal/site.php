@@ -188,6 +188,7 @@ $hostPhone = trim((string) env('APP_HOSTING_PHONE', ''));
     </p>
 
     <h3>Règles de conduite</h3>
+    <p><a href="<?= htmlspecialchars(url('code-de-conduite'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('conduct.read_rules'), ENT_QUOTES, 'UTF-8') ?></a></p>
     <p>
         Vous vous engagez à respecter les lois en vigueur et à ne pas publier de contenus illicites, diffamatoires,
         haineux, discriminatoires, violents, harcelants, frauduleux ou portant atteinte aux droits de tiers.

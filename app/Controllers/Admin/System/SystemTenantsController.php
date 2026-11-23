@@ -205,7 +205,7 @@ final class SystemTenantsController
             'platformTenantPlanFormAction' => url('admin/tenants/' . $tenantId . '/plan'),
             'platformTenantArchive' => TenantArchiveState::info($tenant),
             'platformTenantRemovalUrl' => url('admin/tenants/' . $tenantId . '/retrait'),
-            'backOfficePageCss' => ['platform-admin.css'],
+            'backOfficePageCss' => ['platform-admin.css', 'platform-admin-users.css'],
         ]);
     }
 

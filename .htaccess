@@ -7,6 +7,7 @@
 
     # Patch Studio : stockage privé, y compris quand DocumentRoot est la racine du dépôt.
     RewriteRule ^storage/patch-studio(?:/|$) - [F,L,NC]
+    RewriteRule ^storage/private/public-modpack(?:/|$) - [F,L,NC]
 
     # Connexion téléphone ATAK → /public/connect
     RewriteRule ^connect/?$ /public/connect [R=302,L,QSA]

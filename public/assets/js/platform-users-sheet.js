@@ -90,6 +90,7 @@
     var selectAll = document.querySelector('[data-pu-select-all]');
     var counter = document.querySelector('[data-pu-selected-count]');
     var exportBtn = document.querySelector('[data-pu-export-selection]');
+    var bulkBtn = document.querySelector('[data-pu-bulk-open]');
     function refreshSelection() {
         var n = picks.filter(function (p) { return p.checked; }).length;
         if (counter) {
@@ -97,6 +98,7 @@
             counter.textContent = '· ' + n + (n > 1 ? ' sélectionnées' : ' sélectionnée');
         }
         if (exportBtn) { exportBtn.disabled = n === 0; }
+        if (bulkBtn) { bulkBtn.disabled = n === 0; }
         if (selectAll) {
             selectAll.checked = n > 0 && n === picks.length;
             selectAll.indeterminate = n > 0 && n < picks.length;
@@ -129,7 +131,7 @@
     if (!dlg || typeof dlg.showModal !== 'function') { return; }
     var title = document.getElementById('pu-confirm-title');
     var body = document.getElementById('pu-confirm-body');
-    var kicker = document.getElementById('pu-confirm-kicker');
+    var kicker = document.getElementById('pu-confirm-tag');
     var typeWrap = document.getElementById('pu-confirm-type-wrap');
     var typeInput = document.getElementById('pu-confirm-type');
     var typeExpected = document.getElementById('pu-confirm-type-expected');

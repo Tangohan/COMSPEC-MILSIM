@@ -1807,6 +1807,7 @@ class EffectifsWorkspaceController
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
+            'memberSpecialties' => (new MilitarySpecialtyController())->memberPanel($tenantId, $id),
             // Prénom et nom du personnage (user_profiles), indicatif, trigramme : nom affiché par la règle unique.
             'memberIdentity' => $this->rosterIdentities($tenantId, [$id])[$id] ?? [],
             'memberSuivi' => $memberSuivi,
@@ -4319,6 +4320,13 @@ class EffectifsWorkspaceController
         return Response::redirect(effectifs_workspace_url('roles'));
     }
 
+    public function specialties(Request $request, array $params = []): Response
+    {
+        $data = (new MilitarySpecialtyController())->pageData($request);
+        return $data instanceof Response ? $data : $this->shell('admin.effectifs_workspace.specialties',
+            $data + ['backOfficePageCss' => ['military-specialties.css']]);
+    }
+
     public function fonctions(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -4636,6 +4644,7 @@ class EffectifsWorkspaceController
             $id=$this->personnelJobRoleRepository->createRole($tenantId,$categoryId,$name,$slug,$description?:null,0,false);
             if ($metadata!==null) (new PersonnelJobRoleStructureService())->save($tenantId,$id,$metadata);
             if ($enrichment!==null) (new JobRoleEnrichmentService())->save($tenantId,$id,$enrichment);
+            $this->applyCatalogSpecialties($request, $tenantId, $id);
             $this->recordJobChange('job_role', $id, 'created', [], ['name'=>$name,'slug'=>$slug,'description'=>$description,'category_id'=>$categoryId,'structure'=>$metadata ?? []]+($enrichment ?? []));
             $pdo->commit();
             $linked=$this->applyCatalogQualifications($request,$tenantId,$id);
@@ -4670,6 +4679,7 @@ class EffectifsWorkspaceController
             $this->personnelJobRoleRepository->updateRole($id,$tenantId,$categoryId,$name,(string)$existing['slug'],$description?:null,(int)($existing['sort_order']??0),$existing['mos_code']??null,$existing['mos_specialty_title']??null);
             if ($metadata!==null) (new PersonnelJobRoleStructureService())->save($tenantId,$id,$metadata);
             if ($enrichment!==null) (new JobRoleEnrichmentService())->save($tenantId,$id,$enrichment);
+            $this->applyCatalogSpecialties($request, $tenantId, $id);
             $this->recordJobChange('job_role', $id, 'updated', $existing, array_replace($existing, ['name'=>$name,'description'=>$description,'category_id'=>$categoryId,'structure'=>$metadata ?? $existing['structure']], $enrichment ?? []));
             $pdo->commit();
             $linked=$this->applyCatalogQualifications($request,$tenantId,$id);
@@ -4711,6 +4721,24 @@ class EffectifsWorkspaceController
             error_log('Effectifs jobs catalog qualifications: '.$e->getMessage());
             return 0;
         }
+    }
+
+    private function applyCatalogSpecialties(Request $request, int $tenantId, int $jobId): void
+    {
+        $refs = $request->input('catalog_specialty_refs', []);
+        if ($refs === []) return;
+        if (!is_array($refs) || count($refs) > 64 || count(array_filter($refs, 'is_string')) !== count($refs)) {
+            throw new \InvalidArgumentException('Les références de spécialité copiées sont invalides.');
+        }
+        $service = new \App\Services\Personnel\MilitarySpecialtyService(Database::getPdo());
+        if (!$service->ready()) return; // Compatibilité avant le passage de la migration additive.
+        $byRef = array_column($service->catalog(), 'id', 'reference_key');
+        $ids = $service->jobCodeIds($tenantId, $jobId);
+        foreach ($refs as $ref) {
+            if (!isset($byRef[$ref])) throw new \InvalidArgumentException('Une référence de spécialité copiée est indisponible. Choisissez-la à nouveau dans le catalogue.');
+            $ids[] = (int) $byRef[$ref];
+        }
+        $service->saveJobCodes($tenantId, $jobId, array_values(array_unique($ids)), (int) Session::get('user_id'));
     }
 
     private function recordJobChange(string $entity, int $id, string $operation, array $before, array $after): void

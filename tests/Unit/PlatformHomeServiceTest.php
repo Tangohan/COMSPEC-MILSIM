@@ -53,11 +53,12 @@ final class PlatformHomeServiceTest extends TestCase
         }
     }
 
-    public function testActionsAreTheFiveSignalsAskedForInOrder(): void
+    public function testActionsAreTheSignalsAskedForInOrder(): void
     {
         $keys = array_column((new PlatformHomeService($this->emptyDatabase()))->actions(), 'key');
 
-        self::assertSame(['mod_reports', 'purge', 'payments', 'migrations', 'abuse', 'reports'], $keys);
+        // « appeals » (contestations de bannissement) est venu après le plan initial, entre la purge et les paiements.
+        self::assertSame(['mod_reports', 'purge', 'appeals', 'payments', 'migrations', 'abuse', 'reports'], $keys);
     }
 
     public function testEveryCardLeadsToAnAdminPage(): void
@@ -83,14 +84,14 @@ final class PlatformHomeServiceTest extends TestCase
         ])->body();
 
         $positions = [];
-        foreach (['id="hub-moderation"', 'id="hub-sante"', 'id="hub-plateforme"', 'ph-quick-title'] as $needle) {
+        foreach (['id="hub-moderation"', 'id="hub-sante"', 'id="hub-plateforme"', 'id="ph-search-dialog"'] as $needle) {
             $pos = strpos($html, $needle);
             self::assertNotFalse($pos, $needle);
             $positions[] = $pos;
         }
         $sorted = $positions;
         sort($sorted);
-        self::assertSame($sorted, $positions, 'À traiter, santé, chiffres clés, accès rapides.');
+        self::assertSame($sorted, $positions, 'À traiter, santé, chiffres clés, recherche (accès rapides).');
         self::assertStringContainsString('Indisponible', $html);
         self::assertStringContainsString('onglet=sante', $html);
         self::assertStringContainsString('onglet=chiffres', $html);

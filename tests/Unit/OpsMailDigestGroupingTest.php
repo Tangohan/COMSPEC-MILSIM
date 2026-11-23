@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Repositories\EmailDigestRepository;
 use App\Repositories\OperatorGameProfileRepository;
+use App\Repositories\PlatformBanAppealRepository;
+use App\Services\Email\EmailEvents;
+use App\Services\Email\MailBudgetGate;
 use App\Services\Email\OpsMailDigestService;
 use App\Services\EmailService;
 use PHPUnit\Framework\TestCase;
@@ -68,6 +72,78 @@ final class OpsMailDigestGroupingTest extends TestCase
         self::assertStringContainsString('requête def', $txt);
         self::assertStringContainsString('#0 OperatorGameProfileRepository->upsertProfile()', $txt);
         self::assertMatchesRegularExpression('/^rapports-erreurs-\d{4}-\d{2}-\d{2}-\d{4}\.txt$/', OpsMailDigestService::attachmentName());
+    }
+
+    public function testNewAppealsReachTheOpsDigestWithoutAnIncidentOrPersonalDetails(): void
+    {
+        $ops = 'ops@example.test';
+        $member = 'member@example.test';
+        $items = $this->createMock(EmailDigestRepository::class);
+        $items->method('recipientsDue')->willReturnOnConsecutiveCalls([$member], [$ops]);
+        $items->method('pendingFor')->willReturnMap([
+            [$ops, 500, [
+                ['id' => 1, 'event_code' => EmailEvents::PLATFORM_BAN_APPEAL_SUBMITTED, 'body_text' => 'Contenu confidentiel'],
+                ['id' => 2, 'event_code' => EmailEvents::PLATFORM_BAN_APPEAL_SUBMITTED],
+            ]],
+            [$member, 500, [['id' => 3, 'event_code' => EmailEvents::NEW_COMMUNITY_MEMBER, 'subject' => 'Nouveau membre']]],
+        ]);
+        $items->expects(self::exactly(2))->method('markDigested');
+        $appeals = $this->createMock(PlatformBanAppealRepository::class);
+        $appeals->method('ready')->willReturn(true);
+        $appeals->expects(self::once())->method('countPending')->willReturn(1);
+
+        $gate = $this->createStub(MailBudgetGate::class);
+        $gate->method('config')->willReturn(['limit' => 0, 'reserve' => 0, 'digest_minutes' => 15, 'muted' => []]);
+        $email = $this->createMock(EmailService::class);
+        $email->expects(self::exactly(2))->method('send')->willReturnCallback(
+            static function ($event, $to, $subject, $html, $text, ...$options) use ($ops, $member): bool {
+                if ($to === $member) {
+                    self::assertSame(EmailEvents::MEMBER_DAILY_DIGEST, $event);
+                    self::assertStringNotContainsString('contestations', $text);
+
+                    return true;
+                }
+                self::assertSame($ops, $to);
+                self::assertSame(EmailEvents::OPS_DIGEST, $event);
+                foreach ([$html, $text] as $body) {
+                    self::assertStringContainsString('2 nouvelles demandes dans ce récapitulatif.', $body);
+                    self::assertStringContainsString('1 demande en attente de traitement.', $body);
+                    self::assertStringContainsString('/admin/sanctions#contestations', $body);
+                    self::assertStringNotContainsString('Contenu confidentiel', $body);
+                    self::assertStringNotContainsString('.txt', $body);
+                }
+                self::assertSame([], $options[6]);
+
+                return true;
+            }
+        );
+
+        $result = (new OpsMailDigestService($items, $email, $gate, $appeals))->sendDue();
+        self::assertSame(['recipients' => 2, 'emails' => 2, 'items' => 3], $result);
+    }
+
+    public function testAppealQueueSendsOnlyAnAnonymousMarkerToConfiguredInboxes(): void
+    {
+        $env = $_ENV;
+        try {
+            $_ENV['ERROR_ALERT_EMAIL'] = 'ops@example.test';
+            $_ENV['REGISTRATION_ALERT_EMAIL'] = 'OPS@example.test';
+            $_ENV['SECURITY_ALERT_EMAILS'] = '';
+            $items = $this->createMock(EmailDigestRepository::class);
+            $items->expects(self::once())->method('add')->with(
+                'ops@example.test', EmailEvents::PLATFORM_BAN_APPEAL_SUBMITTED, 'Nouvelle contestation de bannissement', '', null
+            );
+            $gate = $this->createStub(MailBudgetGate::class);
+            $gate->method('config')->willReturnOnConsecutiveCalls(
+                ['limit' => 0, 'reserve' => 0, 'digest_minutes' => 15, 'muted' => []],
+                ['limit' => 0, 'reserve' => 0, 'digest_minutes' => 15, 'muted' => [EmailEvents::PLATFORM_BAN_APPEAL_SUBMITTED]],
+            );
+            $service = new OpsMailDigestService($items, $this->createStub(EmailService::class), $gate);
+            $service->enqueueBanAppeal();
+            $service->enqueueBanAppeal();
+        } finally {
+            $_ENV = $env;
+        }
     }
 
     public function testQueuedAttachmentsSurviveJsonRoundTrip(): void

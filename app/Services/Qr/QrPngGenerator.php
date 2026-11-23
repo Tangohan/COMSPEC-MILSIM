@@ -34,7 +34,13 @@ final class QrPngGenerator
         $sizePixels = max(120, $sizePixels);
         $margin = max(0, $margin);
 
-        $viaEndroid = $this->viaEndroid($payload, $sizePixels, $margin, $pngOnly);
+        try {
+            $viaEndroid = $this->viaEndroid($payload, $sizePixels, $margin, $pngOnly);
+        } catch (\Throwable $e) {
+            // L’autochargement d’un fournisseur peut échouer avant la construction du QR.
+            $this->attempts[] = 'endroid:load_exception:' . $e->getMessage();
+            $viaEndroid = null;
+        }
         if ($viaEndroid !== null) {
             return $viaEndroid;
         }

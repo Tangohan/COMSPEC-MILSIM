@@ -15,6 +15,7 @@ use App\Services\Email\EmailEvents;
 use App\Services\Email\EmailTokenPurpose;
 use App\Services\Email\GeoIpLookupService;
 use App\Services\EmailService;
+use App\Services\Security\FileRateLimiter;
 
 /**
  * Tentatives de connexion, alerte brute-force, nouveau device (après login réussi).
@@ -31,6 +32,13 @@ final class LoginSecurityNotificationService
         private GeoIpLookupService $geoIp,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository
     ) {}
+
+    public function retryDelay(Request $request, string $email): int
+    {
+        $ip = $request->ip();
+
+        return $ip === '' ? 0 : $this->loginAttempts->retryDelay($email, $ip);
+    }
 
     public function onFailedLogin(Request $request, string $email): void
     {
@@ -50,10 +58,22 @@ final class LoginSecurityNotificationService
         ) > 0) {
             return;
         }
-        foreach ($this->userRepository->listIdsByEmailNormalized($email) as $uid) {
+        $userIds = $this->userRepository->listIdsByEmailNormalized($email, verifiedOnly: true);
+        if ($userIds === []) {
+            return;
+        }
+        foreach ($userIds as $uid) {
             if (!$this->notificationPreferencesRepository->isEmailEventEnabled($uid, EmailEvents::MULTIPLE_LOGIN_ATTEMPTS)) {
                 return;
             }
+        }
+        try {
+            if ((new FileRateLimiter())->tooManyAttempts('auth:failed-login-alert:' . $email, 1, 3600, true)) {
+                return;
+            }
+        } catch (\RuntimeException) {
+            error_log('Login alert deduplication storage unavailable');
+            return;
         }
         $forgotUrl = \url('forgot-password');
         $this->emailService->sendMultipleLoginAttempts(

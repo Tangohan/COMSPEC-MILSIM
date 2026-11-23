@@ -157,6 +157,24 @@ final class AuditLogRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /** @param list<int> $userIds
+     * @return list<array{id: int, user_id: int, action: string, created_at: string}>
+     */
+    public function recentActionsByUsers(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($userIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, user_id, action, created_at FROM audit_logs
+             WHERE user_id IN ({$in}) ORDER BY id DESC LIMIT 8"
+        );
+        $stmt->execute($userIds);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /**
      * Dernières entrées système filtrées par liste d’actions exactes (tableau de bord plateforme).
      *

@@ -26,6 +26,9 @@
       "hide" / "show" : replie / déplie   "tool" [code] : replie, exécute, revient à la fermeture de la fenêtre ouverte
       "refresh" lit les variables, recalcule la liste et les étiquettes (boucle de 2 s)   "server" : onglet SERVEUR
       "filter" [clé]   "select" [uid]   "act" [id de fn_zeusMenu]   "admin" fiche dans l'app Admin   "pin" retirer le code
+      "force" relevé forcé (fn_zeusState « force ») : [] la cible choisie, ["list"] les joueurs affichés, [[joueurs]] menu ZEN ;
+                plusieurs joueurs depuis le Centre : second clic dans les 5 s pour confirmer. Fiche et liste : « Relevé demandé… »,
+                puis la fiche reçue, ou « Pas de réponse » au bout de 8 s avec la raison probable.
       "camera"  caméra Zeus sur le joueur   "labels" étiquettes 3D oui / non   "labelCfg" [clé, valeur]   "draw" (Draw3D)
       "say" [texte] ligne d'état   "audit" défauts de l'onglet affiché (autotest)
       "tips" infobulles de la liste des modules   "edge" -> bord gauche de la liste de droite de Zeus
@@ -250,6 +253,7 @@ switch (_act) do {
             ["COUPER LE SON", "MUET", "Coupe les haut-parleurs de la cible", "['act', ['mute_on']] call comspec_atak_native_fnc_zeusCentre;", "tgt"],
             ["RÉTABLIR LE SON", "SON", "Rétablit les haut-parleurs de la cible", "['act', ['mute_off']] call comspec_atak_native_fnc_zeusCentre;", "tgt"],
             ["RETIRER LE CODE", "CODE", "Retire le code du téléphone de la cible et remet ses essais à zéro", "['pin'] call comspec_atak_native_fnc_zeusCentre;", "tgt"],
+            ["FORCER LE RELEVÉ", "FORCER", "Demande tout de suite son relevé au téléphone de la cible, sans attendre l'envoi habituel (une fois toutes les 5 s par joueur)", "['force'] call comspec_atak_native_fnc_zeusCentre;", "tgt"],
             ["FICHE ADMIN", "ADMIN", "Ouvre la fiche du joueur choisi dans l'app Admin du téléphone", "['tool', [{ ['admin'] call comspec_atak_native_fnc_zeusCentre; }]] call comspec_atak_native_fnc_zeusCentre;", "sel"]
         ];
         private _tblModes = [
@@ -316,6 +320,7 @@ switch (_act) do {
         _search ctrlSetFontHeight ((_grid get "font") * _h);
         _search ctrlSetTooltip (("Recherche : pseudo, indicatif ou groupe") call _tr);
         _search ctrlAddEventHandler ["KeyUp", { ["search"] call comspec_atak_native_fnc_zeusCentre; }];
+        private _forceAll = ["players", "FORCER TOUS LES RELEVÉS", "TOUT RELEVER", "Demande leur relevé à tous les joueurs affichés (filtre et recherche) ; second clic dans les 5 s pour confirmer", "['force', ['list']] call comspec_atak_native_fnc_zeusCentre;", "COMSPEC_RscButton", _pBody] call _btn;
         private _fb = createHashMap;
         private _fCells = [];
         {
@@ -345,7 +350,7 @@ switch (_act) do {
         private _card = ["players", "", _cardGrp] call _stx;
         _cardGrp setVariable ["inner", _card];
         private _pRows = [
-            [_row, _row, [1], [[_search, 0, 1]]],
+            [_row, _row, [2, 1], [[_search, 0, 1], [_forceAll, 1, 1]]],
             // Filtres sur deux rangées de trois : « HORS LIAISON (12) » tient en entier.
             [_row, _row, [1, 1, 1], _fCells select [0, 3]],
             [_row, _row, [1, 1, 1], _fCells select [3, 3]],
@@ -386,7 +391,7 @@ switch (_act) do {
         _needTgt pushBack _ap;
         private _keys = ["players", ("Clic droit (ZEN) : ATAK · Contrôle Zeus, ATAK · Relais, ATAK · Maillage") call _dim] call _stx;
         private _pFoot = [
-            [_row, _row, [1, 1, 1, 1, 1], _aCells],
+            [_row, _row, [1, 1, 1, 1, 1, 1], _aCells],
             [_row, _row, [5, 3, 2], [[_cat, 0, 1], [_tgt, 1, 1], [_ap, 2, 1]]],
             [0.018 * _h, 0.05 * _h, [1], [[_keys, 0, 1]]]
         ];
@@ -782,6 +787,10 @@ switch (_act) do {
             if (!isNull _x && {_o isEqualType ""}) then { _cams set [_o, (_cams getOrDefault [_o, 0]) + 1]; };
         } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]);
         private _model = [];
+        // Relevés forcés (fn_zeusState « force ») : [heure de la demande, réponse reçue]. Demandé : moins de 8 s sans réponse ;
+        // sans réponse : de 8 s à 2 min ; au-delà, oublié.
+        private _forced = missionNamespace getVariable ["COMSPEC_ATAK_ZeusForce", createHashMap];
+        { if (_now - (_y select 0) > 120) then { _forced deleteAt _x; }; } forEach (+_forced);
         {
             private _u = _x;
             if (_u isKindOf "HeadlessClient_F") then { continue; };
@@ -789,6 +798,13 @@ switch (_act) do {
             private _rec = _rows getOrDefault [_uid, []];
             private _row = _rec param [0, []];
             private _age = if (_rec isEqualTo []) then { -1 } else { round (_now - (_rec select 1)) };
+            private _ask = "";
+            private _fq = _forced getOrDefault [_uid, []];
+            if (_fq isNotEqualTo [] && {!(_fq select 1)}) then {
+                if (_rec isNotEqualTo [] && {(_rec select 1) >= (_fq select 0)}) then { _fq set [1, true]; } else {
+                    _ask = ["none", "wait"] select (_now - (_fq select 0) < 8);
+                };
+            };
             // Fiche reçue il y a moins de 90 s : fiable ; plus vieille : « relevé ancien » ; jamais reçue : « en attente ».
             private _fresh = _age >= 0 && {_age < 90};
             private _pub = _u getVariable ["COMSPEC_ATAK_Pub", []];
@@ -821,7 +837,7 @@ switch (_act) do {
                 ["u", _u], ["uid", _uid], ["name", name _u], ["cs", [_u, true] call comspec_atak_native_fnc_unitCallsign], ["row", _row], ["fresh", _fresh], ["age", _age],
                 ["pub", _pub], ["dev", _dev], ["spk", _spk], ["node", _node], ["mpu", _mpu],
                 ["gw", _gw], ["dropped", _dropped], ["relay", _isRelay], ["alerts", _alerts], ["logged", _logged], ["pin", _pin], ["panic", _panic],
-                ["ver", _ver], ["verCmp", 2],
+                ["ver", _ver], ["verCmp", 2], ["ask", _ask], ["askAt", _fq param [0, _now]],
                 ["pilot", _pilot getOrDefault [_uid, ""]], ["drones", _owned getOrDefault [_uid, 0]], ["cams", _cams getOrDefault [_uid, 0]]
             ]);
         } forEach allPlayers;
@@ -880,7 +896,12 @@ switch (_act) do {
             if ((_m get "pilot") isNotEqualTo "") then { _tok pushBack "UAV"; };
             if ((_m get "verCmp") isEqualTo -1) then { _tok pushBack "PAS À JOUR"; };
             if ((_m get "verCmp") isEqualTo 1) then { _tok pushBack "PLUS RÉCENT QUE LE SERVEUR"; };
-            if ((_m get "age") < 0) then { _tok pushBack "SANS RELEVÉ"; };
+            // Relevé : jamais reçu, ou trop ancien avec son âge (à la minute : la liste ne se remplit pas à chaque tour) ;
+            // demande en cours ou restée sans réponse.
+            if ((_m get "age") < 0) then { _tok pushBack "SANS RELEVÉ (jamais)"; };
+            if ((_m get "age") >= 90) then { _tok pushBack format [("RELEVÉ ANCIEN (%1 min)") call _tr, floor ((_m get "age") / 60)]; };
+            if ((_m get "ask") isEqualTo "wait") then { _tok pushBack "RELEVÉ DEMANDÉ…"; };
+            if ((_m get "ask") isEqualTo "none") then { _tok pushBack "SANS RÉPONSE"; };
             if ((_m get "alerts") isNotEqualTo []) then { _tok pushBack ((_m get "alerts") select 0); };
             private _col = switch (true) do {
                 case ((_m get "alerts") isNotEqualTo []): { [0.95, 0.35, 0.28, 1] };
@@ -1061,6 +1082,21 @@ switch (_act) do {
         private _line = { params ["_k", "_v"]; _L pushBack format ["<t size='0.82' color='#8a9a93'>%1 : </t><t size='0.82'>%2</t>", _k call _tr, _v]; };
         if ((_m get "alerts") isNotEqualTo []) then { _L pushBack format ["<t size='0.9' color='#f25a48'>%1</t>", ((_m get "alerts") apply { _x call _tr }) joinString " · "]; };
         private _age = _m get "age";
+        // Relevé forcé : demande en cours, ou restée sans réponse avec la raison probable tirée de ce qui est connu.
+        private _ask = _m get "ask";
+        if (_ask isEqualTo "wait") then {
+            _L pushBack format ["<t size='0.82' color='#73b8fa'>%1</t>", format [("Relevé demandé… (%1 s)") call _tr, round (diag_tickTime - (_m get "askAt"))]];
+        };
+        if (_ask isEqualTo "none") then {
+            private _mine = (missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]) call _verOf;
+            private _why = switch (true) do {
+                case ((_m get "ver") isEqualTo []): { ("joueur sans le mod, ou mod trop ancien pour répondre") call _tr };
+                case ((_mine isNotEqualTo []) && {([_m get "ver", _mine] call _verCmp) isEqualTo -1}): { format [("mod %1 trop ancien pour répondre : mettre à jour") call _tr, (_m get "ver") joinString "."] };
+                case (!alive _u): { ("joueur mort ou en réapparition") call _tr };
+                default { ("téléphone éteint, mod trop ancien ou liaison coupée") call _tr };
+            };
+            _L pushBack format ["<t size='0.82' color='#f2ab33'>%1</t>", format [("Pas de réponse (%1)") call _tr, _why call _esc]];
+        };
         _L pushBack format ["<t size='0.78' color='#8a9a93'>%1</t>", switch (true) do {
             case (_age < 0): { ("Relevé jamais reçu : joueur sans le mod, ou réponse en route.") call _tr };
             case (_fresh): { format [("Relevé reçu %1") call _tr, _age call _ago] };
@@ -1256,6 +1292,34 @@ switch (_act) do {
         private _units = ["targets"] call comspec_atak_native_fnc_zeusCentre;
         if (_units isEqualTo []) exitWith { ["feedback", ["ATAK : aucun joueur visé."]] call comspec_atak_native_fnc_zeusMenu; };
         ["apply", [_arg param [0, ""], _units]] call comspec_atak_native_fnc_zeusMenu;
+    };
+    case "force": {
+        // Relevé forcé. Plusieurs joueurs depuis le Centre : premier clic = question dans la ligne d'état, second clic dans les
+        // 5 s = envoi. Menu ZEN : joueurs visés, sans question. Aucune fenêtre ni message hors du Centre.
+        private _src = _arg param [0, ""];
+        private _units = switch (true) do {
+            case (_src isEqualType []): { _src };
+            case (_src isEqualTo "list"): {
+                private _ids = (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreLines", []]) apply { _x select 1 };
+                allPlayers select { (getPlayerUID _x) in _ids }
+            };
+            default { ["targets"] call comspec_atak_native_fnc_zeusCentre };
+        };
+        _units = _units select { _x isEqualType objNull && {isPlayer _x} && {!(_x isKindOf "HeadlessClient_F")} };
+        if (_units isEqualTo []) exitWith { ["feedback", ["ATAK : aucun joueur visé."]] call comspec_atak_native_fnc_zeusMenu; };
+        private _key = format ["%1:%2", _src, count _units];
+        (missionNamespace getVariable ["COMSPEC_ATAK_ZeusForceArm", ["", -100]]) params ["_armKey", "_armAt"];
+        private _ask = !(_src isEqualType []) && {(count _units) > 1} && {_armKey isNotEqualTo _key || {diag_tickTime - _armAt > 5}};
+        if (_ask) exitWith {
+            missionNamespace setVariable ["COMSPEC_ATAK_ZeusForceArm", [_key, diag_tickTime]];
+            ["feedback", [format [("Forcer le relevé de %1 joueur(s) ? Cliquez à nouveau dans les 5 s pour confirmer.") call _tr, count _units]]] call comspec_atak_native_fnc_zeusMenu;
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_ZeusForceArm", ["", -100]];
+        (["force", [_units]] call comspec_atak_native_fnc_zeusState) params ["_sent", "_skip"];
+        private _txt = format [("Relevé demandé à %1 joueur(s).") call _tr, _sent];
+        if (_skip > 0) then { _txt = _txt + " " + format [("%1 déjà demandé(s) il y a moins de 5 s.") call _tr, _skip]; };
+        ["feedback", [_txt]] call comspec_atak_native_fnc_zeusMenu;
+        ["refresh", [true]] call comspec_atak_native_fnc_zeusCentre;
     };
     case "pin": {
         private _units = ["targets"] call comspec_atak_native_fnc_zeusCentre;

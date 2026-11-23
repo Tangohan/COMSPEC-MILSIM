@@ -200,7 +200,10 @@ final class SseInterestCaseController
             return Response::redirect($back);
         }
         try {
-            $detail = $this->service->detail($actor, $id, 40);
+            $detail = $this->service->exportDetail($actor, $id);
+            $detail = (new \App\Services\Sse\SseInterestCaseExportContext())->enrich(
+                $detail, $actor, new \App\Services\Sse\Links\SseLinkSessionViewer($this->access)
+            );
             $this->service->recordExport($actor, $id);
         } catch (SseInterestCaseException $e) {
             Session::flash('error', $e->getMessage());

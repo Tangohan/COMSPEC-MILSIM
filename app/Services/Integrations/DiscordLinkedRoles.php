@@ -180,19 +180,19 @@ final class DiscordLinkedRoles
         return 'https://discord.com/oauth2/authorize?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
     }
 
-    /** Adresse d'autorisation de « Continuer avec Discord » : identité et e-mail, sans rôles liés. */
-    public function loginAuthorizeUrl(string $state, string $codeChallenge): string
+    /** L’inscription peut également demander l’autorisation de synchroniser les rôles liés. */
+    public function loginAuthorizeUrl(string $state, string $codeChallenge, bool $register = false): string
     {
-        return $this->authorizeUrl($state, self::loginRedirectUri(), 'identify email', $codeChallenge);
+        return $this->authorizeUrl($state, self::loginRedirectUri(), $register ? 'identify email role_connections.write' : 'identify email', $codeChallenge);
     }
 
     /**
      * Fin du parcours « Continuer avec Discord » : échange le code (PKCE) puis lit le compte Discord. Rien n'est
-     * enregistré : les jetons sont rendus à Discord (révocation) aussitôt.
+     * enregistré à la connexion. Pour l’inscription, les jetons chiffrés permettent une liaison à la création.
      *
-     * @return array{id:string, username:string, email:string, verified:bool}|null
+     * @return array{id:string, username:string, email:string, verified:bool, link?:array{discord_user_id:string,discord_username:string,access_token:string,refresh_token:string,expires_at:string}}|null
      */
-    public function loginIdentity(string $code, string $codeVerifier): ?array
+    public function loginIdentity(string $code, string $codeVerifier, bool $register = false): ?array
     {
         if (!$this->configured()) {
             return null;
@@ -205,21 +205,35 @@ final class DiscordLinkedRoles
             return null;
         }
         $me = $this->call('GET', '/users/@me', $tokens['access_token']);
-        $this->request('POST', self::API . '/oauth2/token/revoke', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query([
-            'token' => $tokens['access_token'], 'token_type_hint' => 'access_token',
-            'client_id' => $this->clientId(), 'client_secret' => $this->clientSecret(),
-        ]));
         $id = (string) ($me['id'] ?? '');
-        if (preg_match('/^\d{15,24}$/', $id) !== 1) {
+        $valid = preg_match('/^\d{15,24}$/', $id) === 1;
+        if (!$register || !$valid) {
+            $this->request('POST', self::API . '/oauth2/token/revoke', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query([
+                'token' => $tokens['access_token'], 'token_type_hint' => 'access_token',
+                'client_id' => $this->clientId(), 'client_secret' => $this->clientSecret(),
+            ]));
+        }
+        if (!$valid) {
             return null;
         }
 
-        return [
+        $identity = [
             'id' => $id,
             'username' => mb_substr((string) ($me['global_name'] ?? '') ?: (string) ($me['username'] ?? ''), 0, 64),
             'email' => strtolower(trim((string) ($me['email'] ?? ''))),
             'verified' => ($me['verified'] ?? false) === true,
         ];
+        if ($register) {
+            $identity['link'] = [
+                'discord_user_id' => $id,
+                'discord_username' => $identity['username'],
+                'access_token' => SecretCipher::encrypt($tokens['access_token']),
+                'refresh_token' => SecretCipher::encrypt($tokens['refresh_token']),
+                'expires_at' => $tokens['expires_at'],
+            ];
+        }
+
+        return $identity;
     }
 
     /**

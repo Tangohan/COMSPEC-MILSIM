@@ -340,9 +340,11 @@ final class Atak4170WaveAssetTest extends TestCase
     public function testMapTextsKeepTheFontFloor(): void
     {
         $map = $this->read('functions/pages/fn_pageMap.sqf');
-        foreach (['_hd ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);', '_h ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);', '_txt ctrlSetFontHeight ((_fs * 0.92) max COMSPEC_ATAK_FontMin);'] as $line) {
+        foreach (['_hd ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);', '_txt ctrlSetFontHeight ((_fs * 0.92) max COMSPEC_ATAK_FontMin);'] as $line) {
             self::assertStringContainsString($line, $map);
         }
+        // Rubriques du menu OUTILS : dessinées par fn_mapToolMenu, même plancher.
+        self::assertStringContainsString('_h ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);', $this->read('functions/map/fn_mapToolMenu.sqf'));
     }
 
     public function testTextsAreCutByTheSharedUnicodeHelper(): void

@@ -235,7 +235,7 @@ switch (_tab) do {
             ] getOrDefault [_vCode, ""]) call comspec_atak_native_fnc_tr] call _esc, "Prochain pas" call comspec_atak_native_fnc_tr]];
             if (_vHelp isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexTextMuted", [_vHelp] call _esc]]; };
             // Geste du joueur, comme l'action ACE : relie ou débranche le pont radio (fn_mpuVoice "bridge"), seulement si le serveur l'autorise.
-            if (_vCode in ["nobridge", "wait", "on"] && {["has", [player]] call comspec_atak_native_fnc_mpu5}) then {
+            if (_vCode in ["nobridge", "wait", "on"] && {["hasMpu"] call comspec_atak_native_fnc_mpu5}) then {
                 _rows pushBack ["buttons", [[["RELIER MA RADIO À LA MPU5 (VOIX)", "DÉBRANCHER MA RADIO (VOIX)"] select (_vCode isNotEqualTo "nobridge"), {
                     if (((missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isEqualTo [])) then { ["bridge"] call comspec_atak_native_fnc_mpuVoice; } else { ["unbridge"] call comspec_atak_native_fnc_mpuVoice; };
                     [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;

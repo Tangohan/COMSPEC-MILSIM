@@ -109,9 +109,13 @@ if (_interactive) then {
             [{ [] call comspec_atak_native_fnc_hudToggle; }] call comspec_atak_native_fnc_nextFrame;
             true
         };
-        // Carte en main : touches 1 à 9 = les outils numérotés du menu OUTILS (fn_mapToolMenu « key »), hors saisie.
-        if (_key >= 0x02 && {_key <= 0x0A} && {!_shift} && {!_ctrl} && {!_alt} && {(ctrlType (focusedCtrl (_this select 0))) isNotEqualTo 2}
+        // Carte en main : touches 1 à 9 puis 0 = les outils numérotés du menu OUTILS (fn_mapToolMenu « key »), Maj + chiffre
+        // = le second niveau (« key2 »), hors saisie. Échap ferme le menu OUTILS, sinon quitte l'outil actif (« esc »).
+        if (_key >= 0x02 && {_key <= 0x0B} && {!_shift} && {!_ctrl} && {!_alt} && {(ctrlType (focusedCtrl (_this select 0))) isNotEqualTo 2}
             && {["key", _key - 1] call comspec_atak_native_fnc_mapToolMenu}) exitWith { true };
+        if (_key >= 0x02 && {_key <= 0x0B} && {_shift} && {!_ctrl} && {!_alt} && {(ctrlType (focusedCtrl (_this select 0))) isNotEqualTo 2}
+            && {["key2", _key - 1] call comspec_atak_native_fnc_mapToolMenu}) exitWith { true };
+        if (_key isEqualTo 0x01 && {!_shift} && {!_ctrl} && {!_alt} && {["esc"] call comspec_atak_native_fnc_mapToolMenu}) exitWith { true };
         // Touches d'autres mods (alternat radio TFAR / ACRE2…) : leurs raccourcis CBA ne passent pas sans ce relais (fn_keyPass).
         if (["down", _this] call comspec_atak_native_fnc_keyPass) exitWith { true };
         // Saisie dans un champ du téléphone (« a », « e »… faisaient pencher le personnage) : touche gardée (fn_keyBlock).

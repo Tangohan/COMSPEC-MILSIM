@@ -13,6 +13,27 @@ use PHPUnit\Framework\TestCase;
 
 final class QualificationReferentielTest extends TestCase
 {
+    public function testQualificationFormRendersWithObtentionOptions(): void
+    {
+        $form = dirname(__DIR__, 2) . '/views/admin/organization/qualifications/form.php';
+        foreach ([null, ['id' => 42, 'code' => 'TEST', 'name' => 'Qualification test']] as $definition) {
+            $obtention = [
+                'ready' => true,
+                'aircraft' => [['kind:heli', 'Hélicoptères', '']],
+                'items' => [['kind:weapon', 'Armes', 'kind']],
+            ];
+            ob_start();
+            try {
+                require $form;
+                $html = (string) ob_get_contents();
+            } finally {
+                ob_end_clean();
+            }
+            self::assertStringContainsString('data-rq-s-name', $html);
+            self::assertStringContainsString('data-qr-scopes="item"', $html);
+        }
+    }
+
     public function testAdminStatusLabelsAndTransitions(): void
     {
         self::assertSame('Obtenue', QualificationAdminStatus::label('obtained'));

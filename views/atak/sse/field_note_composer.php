@@ -86,6 +86,10 @@ $draftTags = is_array($draft['tags'] ?? null) ? $draft['tags'] : [];
       data-attachments-max="<?= $attachmentsMax ?>"
       data-themes-max="<?= $themesMax ?>">
     <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
+    <?php if (is_array($noteOrigin ?? null)): ?>
+        <input type="hidden" name="origin_ref" value="<?= $h($noteOrigin['key']) ?>">
+        <p class="fn-context">Fiche pour <a href="<?= $h($noteOrigin['href']) ?>"><?= $h($noteOrigin['title']) ?></a> — rattachement à l’enregistrement.</p>
+    <?php endif; ?>
     <input type="hidden" name="lat" id="fn-lat" value="">
     <input type="hidden" name="lng" id="fn-lng" value="">
 

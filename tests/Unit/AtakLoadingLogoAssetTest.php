@@ -19,24 +19,15 @@ final class AtakLoadingLogoAssetTest extends TestCase
         return str_replace("\r\n", "\n", (string) file_get_contents(dirname(__DIR__, 2) . '/' . $p));
     }
 
-    public function testLoadingScreensUseTheLogoScriptAndNothingElse(): void
+    public function testLoadingScreensShowNoModLogo(): void
     {
+        // TTRD, 23/11 : plus aucun logo du mod sur les écrans de chargement de mission.
         $cfg = self::read(self::MAIN . 'config.cpp');
         foreach (['RscDisplayLoadMission', 'RscDisplayLoading'] as $display) {
-            self::assertMatchesRegularExpression('/class ' . $display . ' \{ comspec_atak_native_main="\[_this select 0, \'' . $display . '\'\] call [^"]*fn_loadingLogo\.sqf\'"; \};/', $cfg);
+            self::assertDoesNotMatchRegularExpression('/class ' . $display . ' \{/', $cfg);
         }
-        $s = self::read(self::MAIN . 'functions/ui/fn_loadingLogo.sqf');
-        self::assertStringContainsString('data\\loading_logo_ca.paa', $s);
-        // Le logo seul : ni son, ni vidéo, ni texte, ni fondu.
-        // L'écran de chargement d'un autre mod n'est jamais recouvert : la marque du coin seulement.
-        self::assertStringContainsString('configSourceAddonList (configFile >> _class)', $s);
-        self::assertStringContainsString('"Extended_DisplayLoad_EventHandlers" >> _class', $s);
-        self::assertStringContainsString('fn_loadingBadge.sqf', $s);
-        self::assertTrue(strpos($s, 'fn_loadingBadge.sqf') < strpos($s, 'ctrlShow false'), 'Le repli se décide avant de masquer quoi que ce soit.');
-        foreach (['playSound', 'playSoundUI', 'RscVideo', 'ctrlSetStructuredText', 'ctrlSetFade', 'spawn'] as $forbidden) {
-            self::assertStringNotContainsString($forbidden, $s, "fn_loadingLogo ne doit pas utiliser {$forbidden}");
-        }
-        self::assertTrue(is_file(dirname(__DIR__, 2) . '/' . self::MAIN . 'data/loading_logo_ca.paa'));
+        self::assertStringNotContainsString('fn_loadingLogo.sqf', $cfg);
+        self::assertStringNotContainsString('fn_loadingBadge.sqf', $cfg);
     }
 
     public function testOwnCardIsKeptInTheProfileForTheRoleScreen(): void

@@ -39,6 +39,7 @@ final class SeoController
         ['/soutenir-atak', 'monthly', '0.6', 'atak/support'],
         ['/contact', 'monthly', '0.7', 'site/contact'],
         ['/legal/site', 'yearly', '0.3', 'legal/site'],
+        ['/code-de-conduite', 'yearly', '0.3', 'legal/conduct'],
         ['/demande-donnees', 'yearly', '0.3', 'legal/gdpr_request'],
     ];
 

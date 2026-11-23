@@ -501,14 +501,14 @@ final class SseInterestCaseRepository
     /**
      * @return list<array<string,mixed>>
      */
-    public function listUpdates(int $tenantId, int $interestCaseId, int $limit = 40): array
+    public function listUpdates(int $tenantId, int $interestCaseId, int $limit = 40, int $offset = 0): array
     {
         try {
             return $this->db->fetchAll(
                 'SELECT * FROM sse_interest_case_updates
                  WHERE tenant_id = :t AND interest_case_id = :c
                  ORDER BY created_at DESC, id DESC
-                 LIMIT ' . max(1, min(100, $limit)),
+                 LIMIT ' . max(1, min(100, $limit)) . ' OFFSET ' . max(0, $offset),
                 ['t' => $tenantId, 'c' => $interestCaseId]
             );
         } catch (\Throwable) {

@@ -27,8 +27,7 @@ final class AuthVerificationFlowAssetTest extends TestCase
     {
         foreach ([
             'app/Controllers/Web/RegisterController.php',
-            'app/Controllers/Web/VerifyEmailController.php',
-            'app/Controllers/Admin/Organization/UserAdminController.php',
+            'app/Services/Email/RegistrationVerificationResend.php',
         ] as $path) {
             $src = self::read($path);
             self::assertStringNotContainsString("'+15 minutes'", $src, $path);
@@ -44,7 +43,10 @@ final class AuthVerificationFlowAssetTest extends TestCase
         self::assertNotFalse($start);
         $body = substr($admin, (int) $start);
 
-        self::assertLessThan(strpos($body, 'sendUserRegisterConfirmation'), strpos($body, '$tokenId = $this->emailTokenRepository->create'));
+        self::assertStringContainsString('->send($user, $tenantId', $body);
+        self::assertStringContainsString('new RegistrationVerificationResend(', $body);
+        $service = self::read('app/Services/Email/RegistrationVerificationResend.php');
+        self::assertMatchesRegularExpression('/reserveResend.*sendUserRegisterConfirmation/s', $service);
     }
 
     public function testUsedOrExpiredLinksAreExplained(): void
