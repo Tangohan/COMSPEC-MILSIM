@@ -19,7 +19,20 @@ $sel = is_array($ncSelected ?? null) ? $ncSelected : null;
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 $base = effectifs_workspace_url('sans-comptes');
-$eventLabels = ['created' => 'Fiche créée', 'edited' => 'Fiche corrigée', 'invited' => 'Invitation', 'merged' => 'Rattachée à un compte', 'imported' => 'Importée', 'note' => 'Note'];
+$day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? date('d/m/Y', strtotime($d)) : '—';
+$eventLabels = ['created' => 'Fiche créée', 'edited' => 'Fiche corrigée', 'invited' => 'Invitation', 'merged' => 'Rattachée à un compte', 'imported' => 'Importée', 'note' => 'Note', 'account_created' => 'Compte créé'];
+$resultLabels = ['created' => 'Créée', 'updated' => 'Mise à jour', 'unchanged' => 'Inchangée', 'refused' => 'Refusée'];
+$statusText = static function (array $r) use ($day): string {
+    if ($r['status'] === 'invitee') {
+        return 'Invitation envoyée le ' . $day((string) $r['invite_at']);
+    }
+    if ($r['status'] === 'fiche' && !empty($r['invite_expired'])) {
+        return 'Sans compte · invitation expirée';
+    }
+
+    return (string) $r['status_label'];
+};
+$exportQuery = http_build_query(array_filter(['q' => $f['q'] ?? '', 'statut' => $f['status'] ?? '', 'origine' => $f['source'] ?? '', 'tri' => $f['sort'] ?? ''], static fn ($v): bool => $v !== ''));
 $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? date('d/m/Y', strtotime($d)) : '—';
 ?>
 <section class="eff-nc" aria-labelledby="eff-nc-title">
@@ -74,17 +87,18 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
         <div class="eff-nc__tablewrap" data-grid>
             <table class="eff-nc__table" data-grid-table>
                 <thead>
-                    <tr><th scope="col">Nom<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Indicatif<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Statut<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Origine<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Dernière activité<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col" data-nosort><span class="eff-sr">Actions</span></th></tr>
+                    <tr><th scope="col">Nom<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Indicatif<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">E-mail<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Statut<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Origine<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Dernière activité<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col" data-nosort><span class="eff-sr">Actions</span></th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($ncRows as $r): ?>
                     <tr class="<?= $sel !== null && $sel['id'] === $r['id'] ? 'is-selected' : '' ?>">
                         <th scope="row"><a href="<?= $h(effectifs_workspace_url('membres/' . $r['id'])) ?>"><?= $h($r['name']) ?></a></th>
                         <td><?= $h($r['callsign'] !== '' ? $r['callsign'] : '—') ?></td>
-                        <td><span class="eff-nc__state eff-nc__state--<?= $h($r['status']) ?>"><?= $h($r['status_label']) ?></span></td>
+                        <td><?= $h($r['email'] !== '' ? $r['email'] : '—') ?></td>
+                        <td><span class="eff-nc__state eff-nc__state--<?= $h($r['status']) ?>"><?= $h($statusText($r)) ?></span></td>
                         <td><?= $h($r['source_label']) ?></td>
                         <td><?= $h($day((string) $r['last_activity'])) ?></td>
-                        <td><a class="eff-nc__link" href="<?= $h($base . '?fiche=' . $r['id']) ?>#fiche">Gérer</a></td>
+                        <td><a class="eff-nc__link" href="<?= $h($base . '?fiche=' . $r['id']) ?>#fiche"><?= $r['status'] === 'compte' ? 'Voir' : ($ncCanInvite && $r['status'] === 'fiche' ? ($r['invite_expired'] ? 'Relancer' : 'Inviter') : 'Gérer') ?></a></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -95,28 +109,39 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
 
     <?php if ($sel !== null): ?>
     <section class="eff-nc__panel" id="fiche" aria-labelledby="eff-nc-fiche">
-        <h3 id="eff-nc-fiche"><?= $h($sel['name']) ?> <small><?= $h($sel['status_label']) ?></small></h3>
-        <?php if ($ncCanEdit): ?>
+        <h3 id="eff-nc-fiche"><?= $h($sel['name']) ?> <small><?= $h($statusText($sel)) ?></small></h3>
+        <?php if ($sel['status'] === 'compte'): ?>
+            <p class="eff-nc__hint">Cette personne a créé son compte depuis sa fiche. <a href="<?= $h(effectifs_workspace_url('membres/' . $sel['id'])) ?>">Ouvrir sa fiche membre</a>.</p>
+        <?php endif; ?>
+        <?php if ($ncCanEdit && $sel['status'] !== 'compte'): ?>
         <form method="post" action="<?= $h(effectifs_workspace_url('sans-comptes/' . $sel['id'] . '/modifier')) ?>" class="eff-nc__form">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
             <label>Nom affiché <input type="text" name="display_name" value="<?= $h($sel['name']) ?>" maxlength="100"></label>
             <label>Indicatif <input type="text" name="callsign" value="<?= $h($sel['callsign']) ?>" maxlength="50"></label>
+            <?php if ($sel['status'] !== 'en_attente' && !empty($ncEmailReady)): ?>
+            <label>E-mail <input type="email" name="email" value="<?= $h($sel['email']) ?>" maxlength="190" placeholder="À rattacher plus tard" autocomplete="off"></label>
+            <?php endif; ?>
             <button type="submit" class="eff-nc__btn">Enregistrer la correction</button>
         </form>
         <?php endif; ?>
-        <?php if ($ncCanInvite): ?>
+        <?php if ($ncCanInvite && in_array($sel['status'], ['fiche', 'invitee'], true)): ?>
         <form method="post" action="<?= $h(effectifs_workspace_url('membres/' . $sel['id'] . '/invitations')) ?>" class="eff-nc__form">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
             <input type="hidden" name="return_to" value="sans-comptes">
             <input type="hidden" name="single_use" value="1">
+            <?php if (!empty($sel['invite_expired']) || $sel['status'] === 'invitee'): ?><input type="hidden" name="relance" value="1"><?php endif; ?>
+            <?php if (!empty($ncEmailReady)): ?>
+            <label>E-mail de la personne <input type="email" name="email" value="<?= $h($sel['email']) ?>" maxlength="190" required placeholder="prenom@exemple.fr"></label>
+            <label class="eff-nc__check"><input type="checkbox" name="send_email" value="1" checked> Envoyer le lien par e-mail</label>
+            <?php endif; ?>
             <label>Validité du lien
                 <select name="duration_hours"><option value="48">48 heures</option><option value="168">7 jours</option><option value="24">24 heures</option></select>
             </label>
-            <button type="submit" class="eff-nc__btn">Inviter à créer son compte</button>
+            <button type="submit" class="eff-nc__btn"><?= !empty($sel['invite_expired']) || $sel['status'] === 'invitee' ? 'Relancer l’invitation' : 'Inviter à créer son compte' ?></button>
             <span class="eff-nc__hint">Le lien apparaît ensuite dans <a href="<?= $h(effectifs_workspace_url('invitations')) ?>">Invitations</a> pour être copié ou envoyé.</span>
         </form>
         <?php endif; ?>
-        <?php if ($ncCanEdit && $sel['status'] !== \App\Services\Effectifs\NoAccountDirectory::STATUS_PENDING): ?>
+        <?php if ($ncCanEdit && in_array($sel['status'], ['fiche', 'invitee'], true)): ?>
         <form method="post" action="<?= $h(effectifs_workspace_url('sans-comptes/' . $sel['id'] . '/rattacher')) ?>" class="eff-nc__form">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
             <label>Rattacher à un compte existant
@@ -146,6 +171,31 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
     </section>
     <?php endif; ?>
 
+    <p class="eff-nc__actions">
+        <a class="eff-nc__btn" href="<?= $h($base . '/export.csv' . ($exportQuery !== '' ? '?' . $exportQuery : '')) ?>">Exporter le tableau (CSV pour Excel)</a>
+        <a class="eff-nc__link" href="<?= $h(effectifs_workspace_url('modele-tableur')) ?>">Télécharger le modèle</a>
+    </p>
+    <?php if ($ncCanInvite && (int) ($ncExpiredCount ?? 0) > 0): ?>
+    <form method="post" action="<?= $h($base . '/relancer') ?>" class="eff-nc__form">
+        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+        <button type="submit" class="eff-nc__btn"><?= (int) $ncExpiredCount ?> invitation(s) expirée(s) : relancer par e-mail</button>
+        <span class="eff-nc__hint">Un nouveau lien de 48 h est créé et envoyé à l’adresse rattachée. Rien ne part sans ce clic.</span>
+    </form>
+    <?php endif; ?>
+    <?php if (is_array($ncImportReport ?? null) && $ncImportReport !== []): ?>
+    <section class="eff-nc__panel" aria-label="Rapport de l’import">
+        <h3>Rapport de l’import</h3>
+        <table class="eff-nc__table">
+            <thead><tr><th scope="col">Ligne</th><th scope="col">Personne</th><th scope="col">Résultat</th><th scope="col">Détail</th></tr></thead>
+            <tbody>
+            <?php foreach ($ncImportReport as $l): ?>
+                <tr><td><?= (int) $l['line'] ?></td><td><?= $h($l['name']) ?></td><td><?= $h($resultLabels[$l['result']] ?? $l['result']) ?></td><td><?= $h($l['detail']) ?></td></tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </section>
+    <?php endif; ?>
+
     <div class="eff-nc__tools">
         <?php if ($ncCanCreate): ?>
         <form method="post" action="<?= $h(effectifs_workspace_url('sans-comptes/creer')) ?>" class="eff-nc__panel eff-nc__form">
@@ -154,6 +204,7 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
             <label>Prénom <input type="text" name="first_name" maxlength="60"></label>
             <label>Nom <input type="text" name="last_name" maxlength="60"></label>
             <label>Indicatif <input type="text" name="callsign" maxlength="50"></label>
+            <?php if (!empty($ncEmailReady)): ?><label>E-mail (facultatif) <input type="email" name="email" maxlength="190" autocomplete="off"></label><?php endif; ?>
             <button type="submit" class="eff-nc__btn">Créer la fiche</button>
             <span class="eff-nc__hint">Grade, unité et autres détails se complètent ensuite sur la fiche.</span>
         </form>
@@ -164,7 +215,7 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
             <label>Fichier CSV (500 lignes au plus) <input type="file" name="roster_file" accept=".csv,text/csv" required></label>
             <button type="submit" class="eff-nc__btn">Importer</button>
-            <span class="eff-nc__hint">Les doublons (même nom ou même indicatif) sont ignorés. <a href="<?= $h(effectifs_workspace_url('modele-tableur')) ?>">Télécharger le modèle</a>.</span>
+            <span class="eff-nc__hint">Une ligne qui correspond à une fiche sans compte (même indicatif, sinon même nom) la met à jour, cellules vides ignorées ; un compte existant n’est jamais modifié. <a href="<?= $h(effectifs_workspace_url('modele-tableur')) ?>">Télécharger le modèle</a>.</span>
         </form>
         <?php endif; ?>
     </div>
