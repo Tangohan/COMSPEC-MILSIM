@@ -69,6 +69,7 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
         <section id="installation" class="mp-install">
             <h2><?= $e(__('modpack.install')) ?></h2>
             <ol>
+                <li><div><strong><?= $e(__('modpack.check')) ?></strong><p><?= $e(__('modpack.check_detail')) ?></p></div></li>
                 <li><div><strong><?= $e(__('modpack.extract')) ?></strong><p><?= $e(__('modpack.extract_detail')) ?></p></div></li>
                 <li><div><strong><?= $e(__('modpack.local_mods')) ?></strong><p><?= $e(__('modpack.local_mods_detail')) ?></p></div></li>
                 <li><div><strong><?= $e(__('modpack.activate')) ?></strong><p><?= $e(__('modpack.activate_detail')) ?></p></div></li>
@@ -88,6 +89,38 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
             <?php if ($published && !empty($pack['release_notes'])): ?><details open><summary><?= $e(__('modpack.notes')) ?></summary><p><?= nl2br($e($pack['release_notes'])) ?></p></details><?php endif; ?>
         </section>
     </div>
+
+    <section id="securite" class="mp-trust" aria-labelledby="mp-trust-title">
+        <h2 id="mp-trust-title"><?= $e(__('modpack.trust')) ?></h2>
+        <p class="mp-lead"><?= $e(__('modpack.trust_lead')) ?></p>
+        <div class="mp-trust-grid">
+            <article>
+                <h3><?= $e(__('modpack.flag_q')) ?></h3>
+                <p><?= $e(__('modpack.flag_a1')) ?></p>
+                <p><?= $e(__('modpack.flag_a2')) ?></p>
+                <p><?= $e(__('modpack.flag_a3')) ?></p>
+            </article>
+            <article>
+                <h3><?= $e(__('modpack.vt_title')) ?></h3>
+                <p><?= $e(__('modpack.vt_lead')) ?></p>
+                <p class="mp-links">
+                    <?php if ($published && preg_match('/\A[a-f0-9]{64}\z/', (string) ($pack['sha256'] ?? '')) === 1): ?>
+                    <a class="mp-guide" href="https://www.virustotal.com/gui/file/<?= $e($pack['sha256']) ?>" target="_blank" rel="noopener noreferrer nofollow"><?= $e(__('modpack.vt_hash')) ?> <span class="mp-arrow" aria-hidden="true"></span></a>
+                    <?php endif; ?>
+                    <a class="mp-guide" href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener noreferrer nofollow"><?= $e(__('modpack.vt_upload')) ?> <span class="mp-arrow" aria-hidden="true"></span></a>
+                </p>
+                <p class="mp-note"><?= $e(__('modpack.vt_read')) ?></p>
+            </article>
+        </div>
+    </section>
+
+    <section class="mp-support" aria-labelledby="mp-support-title">
+        <div>
+            <h2 id="mp-support-title"><?= $e(__('modpack.donate_title')) ?></h2>
+            <p><?= $e(__('modpack.donate_text')) ?></p>
+        </div>
+        <a class="mp-primary" href="<?= $e(url('soutenir-atak')) ?>"><?= $e(__('modpack.donate_cta')) ?> <span class="mp-arrow" aria-hidden="true"></span></a>
+    </section>
 
     <?php if ($admin && $ready): ?>
     <section id="administration" class="mp-admin">
