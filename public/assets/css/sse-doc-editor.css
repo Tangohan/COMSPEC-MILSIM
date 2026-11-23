@@ -342,3 +342,43 @@
     .sse-ed__page { width: auto; }
     .sse-ed__sheet .sse-hint { display: none !important; }
 }
+
+/* ===== v3 : lisibilité des tableaux de modèles ===== */
+/* Le thème du portail donne aux th et td une couleur claire, des capitales et une police mono : sur la feuille blanche
+   (éditeur, lecture, miniatures) tout est remis à zéro avec un texte sombre explicite (contraste au moins 4,5 pour 1). */
+.sse-ed__sheet table, .sse-rich table {
+    min-width: 0;
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+}
+.sse-ed__sheet th, .sse-ed__sheet td, .sse-rich th, .sse-rich td {
+    padding: 0.3em 0.55em;
+    border: 1px solid #94a3b8;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.45;
+    letter-spacing: normal;
+    text-transform: none;
+    text-align: left;
+    vertical-align: top;
+}
+.sse-ed__sheet th, .sse-rich th { background-color: #e2e8f0; font-weight: 700; }
+.sse-ed__sheet td, .sse-rich td { background-color: transparent; font-weight: 400; }
+.sse-ed__sheet tr:hover, .sse-rich tr:hover { background: none; }
+.sse-ed__sheet strong, .sse-rich strong { color: inherit; }
+/* cellules de libellé (fond gris) : jamais coupées, la colonne se règle sur le libellé le plus long */
+.sse-ed__sheet td[style*="#e2e8f0"], .sse-rich td[style*="#e2e8f0"] { width: 1%; white-space: nowrap; }
+.sse-ed__sheet p, .sse-ed__sheet li, .sse-ed__sheet h3, .sse-rich p, .sse-rich li, .sse-rich h3 { color: #0f172a; }
+.sse-ed__sheet h2, .sse-rich h2 { color: #0b1220; }
+
+/* champs dynamiques : texte normal, repérés par un pointillé discret (plus de pastille colorée) */
+.sse-ed__sheet .sse-field, .sse-rich .sse-field, .sse-tpl-thumb .sse-field {
+    background: none;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    border-bottom: 1px dotted #475569;
+}
+.sse-ed__sheet .sse-hint, .sse-rich .sse-hint, .sse-tpl-thumb .sse-hint { color: #475569; background: #f1f5f9; font-style: italic; }
