@@ -167,7 +167,9 @@ final class RoleplayGameSessionsPageTest extends TestCase
         self::assertStringContainsString('Compte pour le suivi', $html);
         self::assertStringContainsString('Joueur non relié', $html);
         self::assertStringNotContainsString('7656119', $html, 'pas d’identifiant technique affiché');
-        self::assertStringContainsString('Clôturer la session', $html);
+        // Clôture : « Terminer l’enregistrement » (fenêtre de confirmation, même règle que l’ancien « Clôturer la session »).
+        self::assertStringContainsString('Terminer l’enregistrement', $html);
+        self::assertStringContainsString('name="action" value="stop"', $html);
         self::assertStringContainsString('<option value="8">Bravo</option>', $html);
         self::assertStringNotContainsString('numéro de dossier', $html);
     }

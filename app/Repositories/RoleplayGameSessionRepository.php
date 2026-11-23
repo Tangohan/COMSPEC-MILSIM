@@ -11,9 +11,9 @@ final class RoleplayGameSessionRepository
 {
     private PDO $pdo;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo ?? Database::getPdo();
     }
 
     public function schemaReady(): bool

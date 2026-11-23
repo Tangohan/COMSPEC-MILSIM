@@ -228,9 +228,12 @@ final class PersonnelDuplicateDetectionService
             self::FIELD_MATRICULE => trim((string) (($row['matricule_internal'] ?? '') !== ''
                 ? $row['matricule_internal']
                 : ($row['service_number'] ?? ''))),
-            self::FIELD_CALLSIGN => trim((string) (($row['profile_callsign'] ?? '') !== ''
-                ? $row['profile_callsign']
-                : ($row['callsign'] ?? ''))),
+            // L'indicatif comparé est celui que l'annuaire AFFICHE (profil de la communauté, sinon compte) : l'ancien
+            // indicatif du dossier RH, plus souvent périmé, ne sert que de repli. Sinon deux fiches aux indicatifs
+            // visibles différents (YA1 et YB1) étaient annoncées comme jumelles.
+            self::FIELD_CALLSIGN => trim((string) (($row['callsign'] ?? '') !== ''
+                ? $row['callsign']
+                : ($row['profile_callsign'] ?? ''))),
             self::FIELD_DISPLAY_NAME => trim((string) ($row['display_name'] ?? '')),
             self::FIELD_CHARACTER_NAME => trim(
                 trim((string) ($row['first_name'] ?? '')) . ' ' . trim((string) ($row['last_name'] ?? ''))

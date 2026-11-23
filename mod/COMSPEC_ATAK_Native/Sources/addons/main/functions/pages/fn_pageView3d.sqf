@@ -30,7 +30,7 @@ private _vh = _bh - 3 * _pad - 2 * _btnH;
 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
 if (isNull _cam) then {
     _cam = "camera" camCreate (ASLToATL _pt);
-    _cam cameraEffect ["Internal", "Back", "comspec_livecam"];
+    _cam cameraEffect ["Internal", "Back", "comspec_livecam"]; ["keep"] call comspec_atak_native_fnc_tocRtt;
     _cam camSetFov 0.7;
     missionNamespace setVariable ["COMSPEC_ATAK_LivecamCam", _cam];
 };

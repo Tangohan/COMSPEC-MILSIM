@@ -94,7 +94,7 @@ switch (_act) do {
                     private _jo = [0, (_b1 select 1) + 0.3, (_b0 select 2) - 0.3];
                     _pos = _dt modelToWorldVisualWorld _jo;
                     _cam setPosASL _pos;
-                    _cam cameraEffect ["Internal", "Back", _name];
+                    _cam cameraEffect ["Internal", "Back", _name]; ["keep"] call comspec_atak_native_fnc_tocRtt;
                     _cam camSetFov 0.75;
                     _cam camCommit 0;
                     _cam attachTo [_dt, _jo];
@@ -102,7 +102,7 @@ switch (_act) do {
                 } else {
                 if (_mode isEqualTo "attach") then {
                     _cam setPosASL _pos;
-                    _cam cameraEffect ["Internal", "Back", _name];
+                    _cam cameraEffect ["Internal", "Back", _name]; ["keep"] call comspec_atak_native_fnc_tocRtt;
                     _cam camSetFov 0.75;
                     _cam camCommit 0;
                     _cam attachTo [player, [0, 0.5, 1.7]];
@@ -110,7 +110,7 @@ switch (_act) do {
                 } else {
                     _cam setPosASL _pos;
                     _cam setVectorDirAndUp [_cd, _cu];
-                    _cam cameraEffect ["Internal", "Back", _name];
+                    _cam cameraEffect ["Internal", "Back", _name]; ["keep"] call comspec_atak_native_fnc_tocRtt;
                     _cam camSetFov 0.75;
                     _cam camCommit 0;
                 };
@@ -198,7 +198,7 @@ switch (_act) do {
         {
             if (!isNull _x) then {
                 private _k = (([_x, "pipTest", ["a"]] call comspec_atak_native_fnc_camVar)) select 0;
-                _x cameraEffect ["Terminate", "Back", "comspecpiptest" + toLower _k];
+                _x cameraEffect ["Terminate", "Back", "comspecpiptest" + toLower _k]; ["keep"] call comspec_atak_native_fnc_tocRtt;
                 camDestroy _x;
             };
         } forEach _cams;

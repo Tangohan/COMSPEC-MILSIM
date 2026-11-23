@@ -741,7 +741,7 @@ switch (_act) do {
             [] call comspec_atak_native_fnc_saveProfile;
             _layer cutText ["", "PLAIN", 0];
             missionNamespace setVariable ["COMSPEC_ATAK_MapCapLive", nil];
-            if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back"]; camDestroy _cam; };
+            if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back"]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; };
             if (!isNull _mapDisp) then { _mapDisp closeDisplay 1; };
             (findDisplay 46) displayRemoveEventHandler ["KeyDown", _eh];
             setViewDistance (_keep select 0);

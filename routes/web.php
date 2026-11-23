@@ -2615,6 +2615,14 @@ return function (Router $router) {
     $router->post('/back-office/roleplay/sessions/{id}', [RoleplayGameSessionAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/sessions/{id}/etat', [RoleplayGameSessionAdminController::class, 'changeState'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/sessions/{id}/membres/{memberId}', [RoleplayGameSessionAdminController::class, 'memberAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay/sessions/{id}/code/regenerer', [RoleplayGameSessionAdminController::class, 'regenerateCode'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay/sessions/{id}/code/revoquer', [RoleplayGameSessionAdminController::class, 'revokeCode'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay/sessions/{id}/notifications', [RoleplayGameSessionAdminController::class, 'saveNotifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay/sessions/{id}/notifications/test', [RoleplayGameSessionAdminController::class, 'testNotification'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay/sessions/{id}/notifications/pointage', [RoleplayGameSessionAdminController::class, 'checkinCall'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/roleplay/sessions/{id}/connectes', [RoleplayGameSessionAdminController::class, 'liveRoster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay/sessions/{id}/pointage', [RoleplayGameSessionAdminController::class, 'staffCheckin'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay/sessions/{id}/enregistrement', [RoleplayGameSessionAdminController::class, 'recording'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/member-role-display', [AdminConfigurationController::class, 'saveMemberRoleDisplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/roleplay-followup', [RoleplayFollowupAdminController::class, 'immersionSettingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/debug-recruit-sync', [AdminConfigurationController::class, 'debugRecruitSync'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -3716,6 +3724,11 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/game-session/check-in', [AtakApiController::class, 'gameSessionCheckIn']);
     $router->post('/api/atak/game-session/check-out', [AtakApiController::class, 'gameSessionCheckOut']);
     $router->post('/api/atak/game-session/leave', [AtakApiController::class, 'gameSessionLeave']);
+    // App Session du téléphone (docs/technical/ICD-SESSION-JEU.md) : code de session, session en cours, pointage, départ.
+    $router->get('/api/atak/session/current', [\App\Controllers\Api\RoleplaySessionGameApiController::class, 'current']);
+    $router->post('/api/atak/session/join', [\App\Controllers\Api\RoleplaySessionGameApiController::class, 'join']);
+    $router->post('/api/atak/session/checkin', [\App\Controllers\Api\RoleplaySessionGameApiController::class, 'checkin']);
+    $router->post('/api/atak/session/leave', [\App\Controllers\Api\RoleplaySessionGameApiController::class, 'leave']);
     $router->get('/api/chat', [AtakApiController::class, 'chatIndex']);
     $router->post('/api/chat', [AtakApiController::class, 'chatStore']);
     $router->get('/api/chat/channels', [AtakApiController::class, 'chatChannelsIndex']);

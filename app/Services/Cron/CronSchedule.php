@@ -93,6 +93,8 @@ final class CronSchedule
         // Le récapitulatif vérifie sa propre cadence (Administration > Envois d'e-mails).
         'mail_ops_digest' => 5,
         'athena_heritage_snapshot' => 1440,
+        // Sessions de jeu : rappels en jeu 15 et 5 minutes avant le début (l'app Session les déclenche aussi à la lecture).
+        'roleplay_session_app' => 5,
     ];
 
     public static function intervalMinutes(string $jobKey): int
