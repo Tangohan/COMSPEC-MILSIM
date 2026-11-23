@@ -27,6 +27,8 @@ $tocKeys = [
 <script src="<?= $h($a('assets/js/toc/toc-phones.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-reports.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-console.js')) ?>" defer></script>
+<link rel="stylesheet" href="<?= $h($a('assets/css/game-sync-freshness.css')) ?>">
+<script src="<?= $h($a('assets/js/game-sync-freshness.js')) ?>" defer></script>
 </head>
 <body class="toc-body">
 <div class="toc" id="toc-root">
@@ -41,6 +43,7 @@ $tocKeys = [
         <span><span id="toc-local">--:--:--</span><small>LOCAL</small></span>
       </div>
       <div class="toc-link" id="toc-link"><i class="toc-dot" id="toc-link-dot" aria-hidden="true"></i><span id="toc-link-txt">Liaison du jeu…</span><span id="toc-link-age" class="toc-link-age"></span></div>
+      <div class="gsync gsync--float" data-game-sync data-base="<?= $h(rtrim((string) url(''), '/')) ?>" hidden></div>
     </div>
     <div class="toc-actions">
       <label class="toc-sr" for="toc-terrain">Terrain</label>

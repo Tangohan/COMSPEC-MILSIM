@@ -9,7 +9,7 @@
 */
 params [["_ext", "COMSPECExtension"], ["_cmd", ""], ["_args", []], ["_timeout", 20]];
 // Liaison désactivée ou plus de téléphone : rien ne part (fn_uplinkHold).
-if (_ext isEqualTo "COMSPECExtension" && {[_cmd] call comspec_overwatch_connect_fnc_uplinkHold}) exitWith { ["ERR|uplink_hold", 0, 0] };
+if (_ext isEqualTo "COMSPECExtension" && {[_cmd] call comspec_overwatch_connect_fnc_uplinkHold}) exitWith { [_cmd, "HELD"] call comspec_overwatch_connect_fnc_syncMark; ["ERR|uplink_hold", 0, 0] };
 private _noAsync = missionNamespace getVariable ["COMSPEC_ExtNoAsync", []];
 // Hors contexte suspendable, seule une commande rapide (fn_extFast) part en direct. Une lente (HTTP, disque : jusqu'à
 // 8 s figé) repart en tâche de fond et l'appelant reçoit tout de suite ERR|unscheduled (signalé une fois au journal).
@@ -26,7 +26,7 @@ if (!canSuspend && {!(_ext in _noAsync)} && {!isNil "COMSPEC_ExtensionCallbackEH
 // Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
 // Commande rapide (liste fn_extFast : mémoire, cache, mise en file) : appel direct aussi, sans ticket ni attente du rappel.
 private _pt = diag_tickTime;
-if (!canSuspend || {_ext in _noAsync} || {isNil "COMSPEC_ExtensionCallbackEH"} || {[_cmd] call comspec_overwatch_connect_fnc_extFast}) exitWith { private _r = _ext callExtension [_cmd, _args]; if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; }; _r };
+if (!canSuspend || {_ext in _noAsync} || {isNil "COMSPEC_ExtensionCallbackEH"} || {[_cmd] call comspec_overwatch_connect_fnc_extFast}) exitWith { private _r = _ext callExtension [_cmd, _args]; if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; }; if (_ext isEqualTo "COMSPECExtension") then { [_cmd, _r] call comspec_overwatch_connect_fnc_syncMark; }; _r };
 // Bloc non ordonnancé (isNil {}) : lecture + écriture du compteur et création de la table sans suspension possible,
 // sinon deux scripts suspendus entre les deux obtenaient le même ticket.
 private _n = 0;
@@ -48,10 +48,14 @@ if ((_q select [0, 7]) isNotEqualTo "QUEUED|") exitWith {
     _pending deleteAt _ticket;
     // DLL sans « Async » (réponse vide) : retenu pour la partie, plus d'essai.
     if (_q isEqualTo "") then { _noAsync pushBackUnique _ext; missionNamespace setVariable ["COMSPEC_ExtNoAsync", _noAsync]; };
-    _ext callExtension [_cmd, _args]
+    private _d = _ext callExtension [_cmd, _args];
+    if (_ext isEqualTo "COMSPECExtension") then { [_cmd, _d] call comspec_overwatch_connect_fnc_syncMark; };
+    _d
 };
 private _t0 = diag_tickTime;
 waitUntil { sleep 0.05; (_pending getOrDefault [_ticket, false]) isNotEqualTo false || {diag_tickTime - _t0 > _timeout} };
 private _got = _pending getOrDefault [_ticket, false];
 _pending deleteAt _ticket;
-[if (_got isEqualTo false) then { "ERR|timeout" } else { _got select 0 }, 0, 0]
+private _res = [if (_got isEqualTo false) then { "ERR|timeout" } else { _got select 0 }, 0, 0];
+if (_ext isEqualTo "COMSPECExtension") then { [_cmd, _res] call comspec_overwatch_connect_fnc_syncMark; };
+_res
