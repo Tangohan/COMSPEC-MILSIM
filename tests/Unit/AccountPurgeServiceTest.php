@@ -145,6 +145,8 @@ final class AccountPurgeServiceTest extends TestCase
              (3, 1, 'vivant@example.com', 'Vivant', 'VIV', 'active', 0, '2026-01-01', '2026-01-01')"
         );
         $pdo->exec('INSERT INTO user_profiles (id, user_id, bio) VALUES (1, 1, "orphelin"), (2, 3, "vivant")');
+        $pdo->exec('CREATE TABLE personnel_profile_specialty_codes (tenant_id INT, user_id INT, specialty_code_id INT, UNIQUE (tenant_id, user_id, specialty_code_id))');
+        $pdo->exec('INSERT INTO personnel_profile_specialty_codes VALUES (1,1,7),(1,2,7),(1,3,7)');
         $pdo->exec(
             'INSERT INTO wall_posts (id, author_user_id, body) VALUES
              (1, 1, "post anonymisé"),
@@ -162,6 +164,8 @@ final class AccountPurgeServiceTest extends TestCase
         self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM users WHERE id = 3'));
         self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id = 3'));
         self::assertSame(0, $this->countRows($pdo, 'SELECT COUNT(*) FROM user_profiles WHERE user_id IN (1, 2)'));
+        self::assertSame(1, $this->countRows($pdo, 'SELECT COUNT(*) FROM personnel_profile_specialty_codes'));
+        self::assertSame(3, (int) $pdo->query('SELECT user_id FROM personnel_profile_specialty_codes')->fetchColumn(), 'Les spécialités personnelles ne sont pas transférées au compte historique.');
         self::assertSame(3, $this->countRows($pdo, 'SELECT COUNT(*) FROM wall_posts'));
 
         $ghostId = (int) $pdo->query("SELECT id FROM users WHERE email = 'history.1@internal.local'")->fetchColumn();

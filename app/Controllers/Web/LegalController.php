@@ -43,6 +43,17 @@ final class LegalController
         ]);
     }
 
+    public function conduct(Request $request, array $params = []): Response
+    {
+        return Response::view('layout.legal', [
+            'content' => 'legal.conduct',
+            'title' => __('conduct.title'),
+            'meta_description' => __('conduct.intro'),
+            'seo_canonical' => url('code-de-conduite'),
+            'legalActivePage' => 'conduite',
+        ]);
+    }
+
     public function privacy(Request $request, array $params = []): Response
     {
         return Response::redirect(url('legal/site') . '#rgpd', 301);

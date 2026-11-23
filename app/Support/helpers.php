@@ -736,11 +736,12 @@ if (!function_exists('email_html_layout')) {
     /**
      * Enveloppe HTML transactionnelle — Athena milsim / DSFR (épuré, tables, inline).
      *
-     * @param array{accent?: string, footer_note?: string, kicker?: string} $options
+     * @param array{accent?: string, footer_note?: string, kicker?: string, lang?: 'fr'|'en'} $options
      */
     function email_html_layout(string $preheader, string $heading, string $bodyHtml, array $options = []): string
     {
         $accent = (string) ($options['accent'] ?? 'emerald');
+        $language = ($options['lang'] ?? 'fr') === 'en' ? 'en' : 'fr';
         $accentHex = email_html_accent_hex($accent);
         $footerNote = isset($options['footer_note']) ? trim((string) $options['footer_note']) : '';
         $kicker = isset($options['kicker']) ? trim((string) $options['kicker']) : '';
@@ -758,7 +759,7 @@ if (!function_exists('email_html_layout')) {
 
         $wrappedBody = '<div style="font-family:' . $font . ';font-size:16px;line-height:1.65;color:#3a3a3a;">' . $bodyHtml . '</div>';
 
-        return '<!DOCTYPE html><html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
+        return '<!DOCTYPE html><html lang="' . $language . '"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
             . '<meta name="viewport" content="width=device-width,initial-scale=1.0">'
             . '<meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">'
             . '<title>' . $h . '</title>'

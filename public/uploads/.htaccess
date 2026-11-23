@@ -15,5 +15,6 @@ RemoveType .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .pht
 # Ceinture : refuser purement ces extensions (403).
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteRule ^sse-id-(photos|signatures|backgrounds)(/|$) - [R=404,NC,L]
     RewriteRule \.(php\d?|phtml|phar|pht|phps|cgi|pl|py|sh)$ - [F,NC,L]
 </IfModule>

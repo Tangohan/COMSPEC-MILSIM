@@ -253,8 +253,8 @@ final class AtakAirBriefDeliveryTest extends TestCase
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->exec('CREATE TABLE atak_nine_line_recipients (id INTEGER PRIMARY KEY AUTOINCREMENT, callsign TEXT NOT NULL)');
         ob_start();
-        require $root . '/database/steps/4910_atak_air_brief_delivery.php';
-        require $root . '/database/steps/4910_atak_air_brief_delivery.php';
+        require $root . '/database/steps/4970_atak_air_brief_delivery.php';
+        require $root . '/database/steps/4970_atak_air_brief_delivery.php';
         $out = (string) ob_get_clean();
         self::assertStringContainsString('polled_as, last_polled_at', $out);
         self::assertStringContainsString('déjà en place', $out);
@@ -265,7 +265,7 @@ final class AtakAirBriefDeliveryTest extends TestCase
         $registry = require $root . '/database/steps/registry.php';
         $mine = array_values(array_filter($registry, static fn (array $s): bool => $s['id'] === 'atak_air_brief_delivery'));
         self::assertCount(1, $mine);
-        self::assertSame('4910_atak_air_brief_delivery.php', $mine[0]['file']);
+        self::assertSame('4970_atak_air_brief_delivery.php', $mine[0]['file']);
         self::assertCount(1, array_filter($registry, static fn (array $s): bool => str_starts_with($s['file'], '4910_')), 'numéro unique');
         self::assertFileExists($root . '/migrations/rollback/atak_air_brief_delivery_down.sql');
         $schema = (string) file_get_contents($root . '/migrations/schema.sql');

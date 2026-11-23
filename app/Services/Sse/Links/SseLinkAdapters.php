@@ -209,14 +209,15 @@ final class SseLinkAdapters
 
         $r->register($a(
             'interest',
-            'c.id AS id, c.reference_code, c.temporary_designation, c.status, c.created_at',
+            'c.*',
             'FROM sse_interest_cases c', 'c.id', 'c.tenant_id',
             static function (array $row): array {
                 $t = trim((string) ($row['temporary_designation'] ?? ''));
 
                 return ['ref' => (string) $row['reference_code'], 'title' => $t !== '' ? $t : (string) $row['reference_code'],
                     'summary' => (string) (\App\Repositories\SseInterestCaseRepository::STATUSES[(string) ($row['status'] ?? '')] ?? ''), 'href' => 'atak/sse/interet/' . (int) $row['id'],
-                    'date' => (string) ($row['created_at'] ?? ''), 'interest' => true];
+                    'date' => (string) ($row['created_at'] ?? ''), 'interest' => true,
+                    'classification' => $row['classification'] ?? null];
             },
             ['c.reference_code', 'c.temporary_designation']
         ));

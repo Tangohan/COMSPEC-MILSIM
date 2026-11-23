@@ -189,14 +189,14 @@
   function leaders(n) {
     var chef = null;
     if (n.commander && n.commander.label) {
-      chef = { label: n.commander.label, grade: n.commander.grade || '', trigram: n.commander.trigram || '', userId: n.commander.userId || 0, billetId: n.commander.billetId || 0, confidential: n.commander.confidential || null };
+      chef = { label: n.commander.label, grade: n.commander.grade || '', trigram: n.commander.trigram || '', specialty: n.commander.specialty || '', userId: n.commander.userId || 0, billetId: n.commander.billetId || 0, confidential: n.commander.confidential || null };
     } else if ((n.commanderUserId || 0) > 0 && n.leader && n.leader !== '—') {
-      chef = { label: n.leader, grade: n.commanderGrade || '', trigram: n.commanderTrigram || '', userId: n.commanderUserId, billetId: 0 };
+      chef = { label: n.leader, grade: n.commanderGrade || '', trigram: n.commanderTrigram || '', specialty: n.commanderSpecialty || '', userId: n.commanderUserId, billetId: 0 };
     } else if (n.leaderConfidential && n.leader && n.leader !== '—') {
       chef = { label: n.leader, grade: '', userId: 0, billetId: 0, confidential: n.leaderConfidential };
     }
     var adj = n.deputy && n.deputy.label
-      ? { label: n.deputy.label, grade: n.deputy.grade || '', trigram: n.deputy.trigram || '', userId: n.deputy.userId || 0, billetId: n.deputy.billetId || 0, confidential: n.deputy.confidential || null }
+      ? { label: n.deputy.label, grade: n.deputy.grade || '', trigram: n.deputy.trigram || '', specialty: n.deputy.specialty || '', userId: n.deputy.userId || 0, billetId: n.deputy.billetId || 0, confidential: n.deputy.confidential || null }
       : null;
     return { chef: chef, adj: adj };
   }
@@ -206,8 +206,11 @@
     var label = String(p.label || '');
     if (g && label.toUpperCase().indexOf(g.toUpperCase() + ' ') === 0) g = '';
     var tri = /^[A-Z]{3}$/.test(String(p.trigram || '')) ? String(p.trigram) : '';
+    var specialty = (p.userId > 0 || p.user_id > 0) ? String(p.specialty || '').trim() : '';
+    var specialtyTitle = document.documentElement.lang.indexOf('en') === 0 ? 'Confirmed specialties; professional levels are separate from ranks and qualifications.' : 'Spécialités confirmées ; niveaux professionnels distincts du grade et des qualifications.';
     return (g ? '<em class="orb-grd">' + esc(g) + '</em>' : '') + '<span class="orb-pn">' + esc(label) + '</span>' +
-      (tri ? '<small class="orb-tri" title="' + esc(t('trigram')) + '">' + tri + '</small>' : '');
+      (tri ? '<small class="orb-tri" title="' + esc(t('trigram')) + '">' + tri + '</small>' : '') +
+      (specialty ? '<small class="orb-tri" title="' + esc(specialtyTitle) + '">' + esc(specialty) + '</small>' : '');
   }
   function cardPosts(n) {
     return (n.billets || []).filter(function (b) { return !LEADER_KINDS[String(b.key_post_kind || '').toLowerCase()]; });

@@ -86,10 +86,10 @@ final class SseFileRecordRepository
         $existing = $this->db->fetchOne('SELECT id FROM sse_file_profiles WHERE tenant_id = :t AND identity_id = :i', ['t' => $tenantId, 'i' => $identityId]);
         if ($existing === null) {
             $cols = array_keys($clean);
-            $params = $clean + ['t' => $tenantId, 'i' => $identityId, 'u' => $userId, 'now' => $now];
+            $params = $clean + ['t' => $tenantId, 'i' => $identityId, 'u' => $userId, 'created_at' => $now, 'updated_at' => $now];
             $this->db->insert(
                 'INSERT INTO sse_file_profiles (tenant_id, identity_id' . ($cols !== [] ? ', ' . implode(', ', $cols) : '') . ', updated_by_user_id, created_at, updated_at)
-                 VALUES (:t, :i' . ($cols !== [] ? ', :' . implode(', :', $cols) : '') . ', :u, :now, :now)',
+                 VALUES (:t, :i' . ($cols !== [] ? ', :' . implode(', :', $cols) : '') . ', :u, :created_at, :updated_at)',
                 $params
             );
 

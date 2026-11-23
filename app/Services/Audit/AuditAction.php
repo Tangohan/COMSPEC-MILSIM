@@ -112,6 +112,7 @@ final class AuditAction
 
     /** Changement de statut compte depuis l’annuaire plateforme. */
     public const USER_STATUS_UPDATED = 'user.status_updated';
+    public const USER_VERIFICATION_RESENT = 'user.verification_resent';
 
     /** Édition complète de fiche depuis l’annuaire plateforme. */
     public const USER_PROFILE_UPDATED = 'user.profile_updated';
@@ -136,6 +137,10 @@ final class AuditAction
 
     /** Fin d’une sanction temporaire : date d’échéance atteinte, fiches remises dans leur état d’avant. */
     public const USER_BAN_EXPIRED = 'user.ban_expired';
+    public const USER_BAN_APPEAL_SUBMITTED = 'user.ban_appeal_submitted';
+    public const USER_BAN_APPEAL_REVIEWED = 'user.ban_appeal_reviewed';
+    public const USER_BAN_APPEAL_ACCESS_CHANGED = 'user.ban_appeal_access_changed';
+    public const USER_AUTO_BAN_RULE_CHANGED = 'user.auto_ban_rule_changed';
 
     /** Export CSV de l’annuaire des comptes (données personnelles) par l’administration du site. */
     public const PLATFORM_USERS_EXPORTED = 'platform.users_exported';

@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS public_modpack (
+    id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    archive_key CHAR(32) NULL,
+    version VARCHAR(48) NULL,
+    expected_version VARCHAR(48) NULL,
+    release_notes TEXT NULL,
+    published_at DATETIME NULL,
+    bytes BIGINT UNSIGNED NULL,
+    sha256 CHAR(64) NULL,
+    published TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    max_downloads TINYINT UNSIGNED NOT NULL DEFAULT 4,
+    throttle_at TINYINT UNSIGNED NOT NULL DEFAULT 2,
+    throttle_mib TINYINT UNSIGNED NOT NULL DEFAULT 4
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO public_modpack (id) VALUES (1);
+
+CREATE TABLE IF NOT EXISTS public_modpack_daily (
+    activity_date DATE NOT NULL PRIMARY KEY,
+    views BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    downloads BIGINT UNSIGNED NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

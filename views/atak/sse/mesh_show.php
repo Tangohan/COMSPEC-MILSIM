@@ -66,6 +66,7 @@ $kindColors = [
         <?php endif; ?>
     </div>
     <div class="page-reference sse-mesh-kpis">
+        <?php if (!empty($canManage)): ?><a class="btn" href="<?= $h(url('atak/sse/fiches/nouvelle?from=mesh:' . (int) $mesh['id'])) ?>">Rédiger une fiche</a><?php endif; ?>
         <div class="sse-mesh-kpi">
             <span class="sse-mesh-kpi-label">Référence</span>
             <strong><?= $h($mesh['reference_code'] ?? '') ?></strong>

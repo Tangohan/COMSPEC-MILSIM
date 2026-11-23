@@ -28,15 +28,6 @@ $bSupportsEnd = !empty($banForm['supports_end']);
 $bSteam = (string) ($banForm['steam_id'] ?? '');
 $bIps = is_array($banForm['known_ips'] ?? null) ? $banForm['known_ips'] : [];
 $bShared = !empty($banForm['shared']);
-$bTomorrow = gmdate('Y-m-d', time() + 86400);
-$durations = [
-    'definitif' => 'Sans fin',
-    '1j' => '1 jour',
-    '7j' => '7 jours',
-    '30j' => '30 jours',
-    '90j' => '90 jours',
-    'date' => 'Jusqu’à une date',
-];
 ?>
 <div class="pu-ban" data-pu-ban>
     <div class="pu-warn" role="note">
@@ -56,35 +47,22 @@ $durations = [
         </ul>
     </div>
 
-    <fieldset class="pu-dialog__field pu-duration">
-        <legend>Durée de la sanction</legend>
-        <div class="pu-duration__choices">
-            <?php foreach ($durations as $value => $text): $value = (string) $value; ?>
-                <?php $disabled = !$bSupportsEnd && $value !== 'definitif'; ?>
-                <label class="pu-check<?= $disabled ? ' is-disabled' : '' ?>">
-                    <input type="radio" name="duree" value="<?= $bh($value) ?>"<?= $value === 'definitif' ? ' checked' : '' ?><?= $disabled ? ' disabled' : '' ?>>
-                    <?= $bh($text) ?>
-                </label>
-            <?php endforeach; ?>
-        </div>
-        <label class="pu-dialog__sub">
-            <span>Date de fin (la sanction court jusqu’à la fin de ce jour, heure de Paris)</span>
-            <input type="date" name="fin" min="<?= $bh($bTomorrow) ?>" data-ban-date<?= $bSupportsEnd ? '' : ' disabled' ?>>
-        </label>
-        <?php if (!$bSupportsEnd): ?>
-            <p class="pu-muted">Les sanctions avec date de fin arrivent avec la prochaine mise à jour de la base : pour l’instant, seul le bannissement sans fin est possible.</p>
-        <?php endif; ?>
-    </fieldset>
+    <?php $defaultBanDuration = 'definitif'; require base_path('views/admin/system/partials/platform_ban_duration_fields.php'); ?>
 
     <label class="pu-dialog__field">
-        <span>Motif (obligatoire, gardé dans l’historique et le journal)</span>
+        <span>Motif interne (obligatoire, gardé dans l’historique et le journal)</span>
         <textarea name="reason" rows="2" required minlength="5" maxlength="500" placeholder="Ex. insultes répétées, triche"></textarea>
     </label>
+
+    <?php if (!empty($banForm['supports_notice'])) {
+        $banNoticeSupportsClosure = !empty($banForm['supports_appeal_closure']);
+        require base_path('views/admin/system/partials/platform_ban_notice_fields.php');
+    } ?>
 
     <fieldset class="pu-dialog__field">
         <legend>Bloquer aussi</legend>
         <?php if ($bSteam !== '' || $bShared): ?>
-            <label class="pu-check"><input type="checkbox" name="block_steam" value="1" checked> Son Steam ID dans le mod (s’il est lié)<?= $bSteam !== '' ? ' : ' . '<span class="pu-mono">' . $bh($bSteam) . '</span>' : '' ?></label>
+            <label class="pu-check"><input type="checkbox" name="block_steam" value="1" checked> Les identifiants Steam liés dans le mod<?= $bSteam !== '' ? ' : ' . '<span class="pu-mono">' . $bh($bSteam) . '</span>' : '' ?></label>
         <?php endif; ?>
         <?php foreach ($bIps as $ipRow): ?>
             <?php if (!empty($ipRow['blocked'])) { continue; } ?>

@@ -108,7 +108,7 @@ final class SseWantedMetaRepository
             return false;
         }
         $cols = [];
-        foreach (['service_code', 'classification', 'parent_notice_id', 'validation_state', 'submitted_by_user_id', 'closing_service_code'] as $k) {
+        foreach (['service_code', 'classification', 'parent_notice_id', 'validation_state', 'submitted_by_user_id', 'closing_service_code', 'validated_by_user_id', 'validated_at', 'validation_reason'] as $k) {
             if (array_key_exists($k, $fields)) {
                 $cols[$k] = $fields[$k];
             }

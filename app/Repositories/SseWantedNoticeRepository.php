@@ -298,6 +298,19 @@ final class SseWantedNoticeRepository
     }
 
     /** Repousse la date d'expiration d'un avis actif. */
+    /** Champs validés d'un avis actif ; la référence et la date d'émission restent celles de l'avis. */
+    public function amend(int $tenantId, int $id, array $data): bool
+    {
+        $params = ['t' => $tenantId, 'id' => $id, 'now' => gmdate('Y-m-d H:i:s')];
+        $set = [];
+        foreach (['notice_type', 'threat_level', 'armed', 'reason', 'instructions', 'zone', 'last_seen_place', 'last_seen_at', 'contact_label', 'contact_detail', 'expires_at'] as $field) {
+            $set[] = $field . ' = :' . $field;
+            $params[$field] = $data[$field] ?? null;
+        }
+
+        return $this->db->execute("UPDATE sse_wanted_notices SET " . implode(', ', $set) . ", updated_at = :now WHERE tenant_id = :t AND id = :id AND status = 'active'", $params) > 0;
+    }
+
     public function extend(int $tenantId, int $id, string $expiresAt): bool
     {
         return $this->db->execute(

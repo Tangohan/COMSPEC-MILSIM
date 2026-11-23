@@ -54,7 +54,7 @@ final class AtakAirBriefDeliveryMysqlTest extends TestCase
         $pdo = $this->pdo;
         $root = dirname(__DIR__, 2);
         ob_start();
-        require $root . '/database/steps/4910_atak_air_brief_delivery.php';
+        require $root . '/database/steps/4970_atak_air_brief_delivery.php';
 
         return (string) ob_get_clean();
     }

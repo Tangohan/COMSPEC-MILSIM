@@ -242,6 +242,8 @@ final class PlatformAccountBanSanctionsTest extends TestCase
         self::assertStringContainsString('name="confirm_ban"', $form);
         self::assertStringContainsString('name="reason"', $form);
         self::assertStringContainsString('required', $form);
-        self::assertStringContainsString('name="duree"', $form);
+        self::assertStringContainsString('platform_ban_duration_fields.php', $form);
+        $duration = (string) file_get_contents($root . '/views/admin/system/partials/platform_ban_duration_fields.php');
+        self::assertStringContainsString('name="duree"', $duration);
     }
 }

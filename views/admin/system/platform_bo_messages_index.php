@@ -50,7 +50,7 @@ $err = \App\Core\Session::getFlash('error');
             $stats = $r['_stats'];
             $title = $r['title_fr'] !== '' ? (string) $r['title_fr'] : (string) $r['title_en'];
             ?>
-            <li class="pmad-row">
+            <li class="pmad-row" id="message-<?= $id ?>">
                 <div class="pmad-row__top">
                     <h2 class="pmad-row__title"><?= $h($title) ?></h2>
                     <span class="pmad-tag<?= $st === 'live' ? ' pmad-tag--live' : '' ?>"><?= $h($statusLabel[$st] ?? $st) ?></span>

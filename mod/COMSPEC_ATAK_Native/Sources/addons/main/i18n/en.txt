@@ -4095,6 +4095,7 @@
 ["Aucune zone interdite à moins de 500 m.", "No restricted zone within 500 m."],
 ["Aucune zone interdite.", "No no-fly zone."],
 ["Aucune zone plate trouvée à 200 m", "No flat area found within 200 m"],
+["%1 zone(s) plate(s) · cliquez l'une d'elles pour poser la LZ", "%1 flat area(s) · click one to place the LZ"],
 ["Aucune équipe de feu", "No fire team"],
 ["Aucune équipe de feu dans ce groupe. Créez la première : Alpha, Bravo…", "No fire team in this squad. Create the first one: Alpha, Bravo…"],
 ["Aucune équipe de feu dans le camp. Créez-en dans l'app Groupe, onglet ÉQUIPES.", "No fire team on the side. Create some in the Squad app, TEAMS tab."],

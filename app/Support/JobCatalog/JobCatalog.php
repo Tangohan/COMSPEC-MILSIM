@@ -319,6 +319,7 @@ final class JobCatalog
             'code' => (string) ($entry['code'] ?? ''),
             'code_system' => (string) ($entry['code_system'] ?? ''),
             'code_system_label' => self::label('code_system', (string) ($entry['code_system'] ?? ''), $lang),
+            'specialty_refs' => array_values(array_filter((array) ($entry['specialty_refs'] ?? []), static fn (mixed $ref): bool => is_string($ref) && preg_match('/^[a-z0-9][a-z0-9-]{2,119}$/', $ref) === 1)),
             'name' => self::pick($entry['name'] ?? '', $lang),
             'official_name' => self::pick($entry['name'] ?? '', (string) ($entry['official_lang'] ?? 'en')),
             'official_lang' => (string) ($entry['official_lang'] ?? 'en'),

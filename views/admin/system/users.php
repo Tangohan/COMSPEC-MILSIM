@@ -20,6 +20,7 @@ $filters = is_array($platformUsersFilters ?? null) ? $platformUsersFilters : Pla
 $columns = is_array($platformUserColumns ?? null) ? array_values(array_map('strval', $platformUserColumns)) : PlatformUserColumns::DEFAULT;
 $q = (string) ($filters['q'] ?? '');
 $statusFilter = (string) ($filters['status'] ?? '');
+$isRosterDirectory = $statusFilter === 'fiches';
 $tenantFilter = (int) ($filters['tenant_id'] ?? 0);
 $inactivityFilter = (string) ($filters['inactif'] ?? '');
 $createdFilter = (string) ($filters['cree'] ?? '');
@@ -51,6 +52,7 @@ $statusOptions = [
     'banned' => 'Bannis du site',
     'inactifs' => 'Inactifs (ni site ni jeu)',
     'deleted' => 'Comptes anonymisés',
+    'fiches' => __('admin_community_alert.roster'),
 ];
 $inactivityOptions = [
     '' => 'Peu importe',
@@ -78,7 +80,7 @@ $sortOptions = [
     'etat' => 'État',
     'connexion_site' => 'Dernière connexion au site',
     'connexion_jeu' => 'Dernière connexion en jeu',
-    'creation' => 'Création du compte',
+    'creation' => $isRosterDirectory ? __('admin_community_alert.profile_created') : 'Création du compte',
     'volume' => 'Données reçues (30 jours)',
     'sanctions' => 'Sanctions passées',
 ];
@@ -151,7 +153,15 @@ $statePill = static function (string $state): string {
     };
 };
 $filtersActive = $q !== '' || $statusFilter !== '' || $tenantFilter > 0 || $inactivityFilter !== '' || $createdFilter !== '' || $sanctionFilter !== '';
-$colCount = count($columns) + 1;
+$colCount = count($columns) + ($isRosterDirectory ? 0 : 1);
+$alertTenants = array_values(array_filter($tenants, static fn (array $tenant): bool => empty($tenant['archive'])));
+$alertTenantIds = array_fill_keys(array_column($alertTenants, 'id'), true);
+$alertDefaultTenant = $tenantFilter;
+$columnLabels = PlatformUserColumns::LABELS;
+if ($isRosterDirectory) {
+    $columnLabels['creation'] = __('admin_community_alert.profile_created');
+    $sortOptions = array_intersect_key($sortOptions, array_fill_keys(['', ...PlatformUserColumns::ROSTER], true));
+}
 $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::query($filters, ['page' => 1, 'cols' => $columns]);
 ?>
 <div class="pa pu pa--wide">
@@ -165,25 +175,36 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
             <div class="pa-hero__row">
                 <div>
                     <p class="pa-hero__kicker">Comptes &amp; accès</p>
-                    <h1 class="pa-hero__title">Comptes utilisateurs</h1>
+                    <h1 class="pa-hero__title"><?= $h($isRosterDirectory ? __('admin_community_alert.roster') : 'Comptes utilisateurs') ?></h1>
+                    <?php if ($isRosterDirectory): ?>
+                        <p class="pa-hero__lead"><?= $h(__('admin_community_alert.roster_hint')) ?></p>
+                    <?php else: ?>
                     <p class="pa-hero__lead">
                         Un tableau, une ligne par personne. Triez, filtrez, choisissez les colonnes, cochez des lignes pour les exporter.
                         Ouvrez « Détails » pour agir sur une communauté ou sur le compte entier : chaque action explique ce qu’elle fait avant de s’exécuter.
                     </p>
+                    <?php endif; ?>
                     <div class="pa-hero__actions">
+                        <?php if (!$isRosterDirectory): ?>
                         <button type="button" class="pa-btn pa-btn--solid" data-pu-open="pu-guide">Quelle action choisir ?</button>
                         <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/users/donnees')) ?>">Données par jour</a>
+                        <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/users/ip-partagees')) ?>" data-network-open aria-haspopup="dialog">IP partagées</a>
                         <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/system/blocklist')) ?>">Adresses IP et e-mails bloqués</a>
+                        <?php endif; ?>
                         <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/tenants')) ?>">Communautés</a>
+                        <?php if ($alertTenants !== []): ?>
+                            <button type="button" class="pa-btn pa-btn--ghost" data-community-alert-open aria-haspopup="dialog"><?= $h(__('admin_community_alert.open')) ?></button>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <aside class="pa-hero__meta">
                     <p class="pa-hero__meta-kicker">Aperçu</p>
                     <dl>
                         <div class="pa-hero__meta-row">
-                            <dt>Personnes trouvées</dt>
+                            <dt><?= $h($isRosterDirectory ? __('admin_community_alert.roster_found') : 'Personnes trouvées') ?></dt>
                             <dd><?= $h(number_format($total, 0, ',', ' ')) ?></dd>
                         </div>
+                        <?php if (!$isRosterDirectory): ?>
                         <div class="pa-hero__meta-row">
                             <dt>Bannies du site</dt>
                             <dd><a class="pu-meta-link" href="<?= $h($directoryUrl(['status' => 'banned', 'page' => 1])) ?>"><?= $h($bansCount) ?></a></dd>
@@ -192,6 +213,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                             <dt>Demandes de suppression</dt>
                             <dd><?= $h($pendingPurgeRequestsCount) ?></dd>
                         </div>
+                        <?php endif; ?>
                     </dl>
                 </aside>
             </div>
@@ -204,7 +226,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
             <p class="pa-flash pa-flash--err" role="alert"><?= $h($flashErr) ?></p>
         <?php endif; ?>
 
-        <?php if ($pendingPurgeRequests !== []): ?>
+        <?php if (!$isRosterDirectory && $pendingPurgeRequests !== []): ?>
             <section id="demandes-purge" class="pa-card pu-requests" aria-labelledby="purge-requests-title">
                 <p class="pa-card__kicker">À traiter</p>
                 <h2 id="purge-requests-title" class="pa-card__title">
@@ -256,9 +278,11 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
         <?php endif; ?>
 
         <nav class="pu-tabs" aria-label="Catégories de comptes">
-            <a class="pu-tab<?= $statusFilter !== 'inactifs' && $statusFilter !== 'banned' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => '', 'page' => 1])) ?>"<?= $statusFilter !== 'inactifs' && $statusFilter !== 'banned' ? ' aria-current="page"' : '' ?>>Tous les comptes</a>
+            <a class="pu-tab<?= $statusFilter === '' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => '', 'page' => 1])) ?>"<?= $statusFilter === '' ? ' aria-current="page"' : '' ?>>Tous les comptes</a>
             <a class="pu-tab<?= $statusFilter === 'inactifs' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'inactifs', 'page' => 1])) ?>"<?= $statusFilter === 'inactifs' ? ' aria-current="page"' : '' ?> title="Ni connexion au site ni session de jeu depuis le seuil choisi (90 jours par défaut, personnes jamais connectées comprises)">Inactifs<?php if ($inactiveCount !== null): ?> <span class="pu-count-pill"><?= $h($inactiveCount) ?></span><?php endif; ?></a>
             <a class="pu-tab<?= $statusFilter === 'banned' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'banned', 'page' => 1])) ?>"<?= $statusFilter === 'banned' ? ' aria-current="page"' : '' ?>>Bannis <span class="pu-count-pill"><?= $h($bansCount) ?></span></a>
+            <a class="pu-tab<?= $statusFilter === 'pending_verification' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'pending_verification', 'inactif' => '', 'page' => 1])) ?>"<?= $statusFilter === 'pending_verification' ? ' aria-current="page"' : '' ?>>E-mails à vérifier</a>
+            <a class="pu-tab<?= $isRosterDirectory ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'fiches', 'inactif' => '', 'sanction' => '', 'tri' => '', 'page' => 1])) ?>"<?= $isRosterDirectory ? ' aria-current="page"' : '' ?>><?= $h(__('admin_community_alert.roster')) ?></a>
         </nav>
         <?php if ($statusFilter === 'inactifs'): ?>
             <p class="pu-muted pu-tabs__note">Personnes sans connexion au site ni session de jeu depuis <?= $inactivityFilter === 'jamais' ? 'toujours (jamais connectées)' : $h($inactivityFilter !== '' ? $inactivityFilter : '90') . ' jours' ?>. Le seuil se règle avec « Sans connexion depuis ».</p>
@@ -268,7 +292,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
             <div class="pu-filters__grid">
                 <div class="pa-field pu-filters__q">
                     <label for="platform-users-q">Rechercher une personne</label>
-                    <input id="platform-users-q" type="search" name="q" value="<?= $h($q) ?>" placeholder="E-mail, nom ou indicatif" maxlength="120">
+                    <input id="platform-users-q" type="search" name="q" value="<?= $h($q) ?>" placeholder="<?= $h($isRosterDirectory ? __('admin_community_alert.roster_search') : 'E-mail, nom ou indicatif') ?>" maxlength="120">
                 </div>
                 <div class="pa-field">
                     <label for="platform-users-tenant">Communauté</label>
@@ -288,6 +312,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php if (!$isRosterDirectory): ?>
                 <div class="pa-field">
                     <label for="platform-users-inactif">Sans connexion depuis</label>
                     <select id="platform-users-inactif" name="inactif">
@@ -296,14 +321,16 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php endif; ?>
                 <div class="pa-field">
-                    <label for="platform-users-cree">Compte créé</label>
+                    <label for="platform-users-cree"><?= $h($isRosterDirectory ? __('admin_community_alert.profile_created') : 'Compte créé') ?></label>
                     <select id="platform-users-cree" name="cree">
                         <?php foreach ($createdOptions as $value => $label): $value = (string) $value; ?>
                             <option value="<?= $h($value) ?>" <?= $createdFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php if (!$isRosterDirectory): ?>
                 <div class="pa-field">
                     <label for="platform-users-sanction">Sanctions</label>
                     <select id="platform-users-sanction" name="sanction">
@@ -312,6 +339,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php endif; ?>
                 <div class="pa-field">
                     <label for="platform-users-tri">Trier par</label>
                     <select id="platform-users-tri" name="tri">
@@ -343,6 +371,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                 </div>
             </div>
 
+            <?php if (!$isRosterDirectory): ?>
             <details class="pu-cols">
                 <summary class="pa-btn pa-btn--sm pa-btn--line">Colonnes affichées (<?= $h(count($columns)) ?>)</summary>
                 <div class="pu-cols__menu">
@@ -357,24 +386,35 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                     <button type="submit" class="pa-btn pa-btn--sm pa-btn--solid">Appliquer</button>
                 </div>
             </details>
-            <?php if ($tenantFilter > 0): ?>
+            <?php endif; ?>
+            <?php if ($tenantFilter > 0 && !$isRosterDirectory): ?>
                 <p class="pu-filters__note">Le filtre par communauté montre ses membres actuels. Une personne retirée de cette communauté reste visible sans ce filtre, avec la mention « Retiré ».</p>
             <?php endif; ?>
         </form>
 
         <div class="pu-bar">
             <p class="pu-count">
-                <?= $total === 0 ? 'Aucune personne trouvée.' : ($total === 1 ? '1 personne' : $h(number_format($total, 0, ',', ' ')) . ' personnes') ?>
+                <?php if ($isRosterDirectory): ?>
+                    <?= $h(__($total === 1 ? 'admin_community_alert.roster_total_one' : 'admin_community_alert.roster_total', ['count' => $total])) ?>
+                <?php else: ?>
+                    <?= $total === 0 ? 'Aucune personne trouvée.' : ($total === 1 ? '1 personne' : $h(number_format($total, 0, ',', ' ')) . ' personnes') ?>
+                <?php endif; ?>
                 <?php if ($pages > 1): ?>
                     <span class="pu-muted">· page <?= $h($page) ?> sur <?= $h($pages) ?></span>
                 <?php endif; ?>
                 <span class="pu-muted" data-pu-selected-count hidden></span>
             </p>
             <div class="pu-bar__actions">
+                <?php if ($isRosterDirectory): ?>
+                    <a class="pa-btn pa-btn--sm pa-btn--line" href="<?= $h($exportAllUrl) ?>"><?= $h(__('admin_community_alert.roster_export')) ?></a>
+                <?php else: ?>
+                <button type="button" class="pa-btn pa-btn--sm pa-btn--solid" data-pu-bulk-open aria-haspopup="dialog" disabled>Actions groupées</button>
                 <button type="submit" form="pu-select-form" class="pa-btn pa-btn--sm pa-btn--line" data-pu-export-selection disabled>Exporter la sélection (CSV)</button>
                 <a class="pa-btn pa-btn--sm pa-btn--line" href="<?= $h($exportAllUrl) ?>" title="Jusqu’à 5 000 personnes, avec les filtres et les colonnes affichés">Exporter tous les résultats (CSV)</a>
+                <?php endif; ?>
             </div>
         </div>
+        <?php if (!$isRosterDirectory): ?>
         <p class="pu-muted pu-bar__note">L’export contient des e-mails : il est réservé à l’administration du site et chaque export est inscrit au journal.</p>
 
         <form method="post" action="<?= $h(url('admin/users/export')) ?>" id="pu-select-form" class="pu-inline">
@@ -386,9 +426,11 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
             <?php endforeach; ?>
         </form>
 
+        <?php endif; ?>
+
         <?php if ($groups === []): ?>
             <div class="pa-card pu-empty">
-                <p>Aucun compte ne correspond à ces critères.</p>
+                <p><?= $h($isRosterDirectory ? __('admin_community_alert.roster_empty') : 'Aucun compte ne correspond à ces critères.') ?></p>
             </div>
         <?php else: ?>
         <div class="pa-sheet__scroll pu-sheet" role="region" aria-label="Tableau des comptes" tabindex="0">
@@ -401,17 +443,17 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                             $ariaSort = $isSorted ? ($sortDir === 'desc' ? 'descending' : 'ascending') : null;
                             ?>
                             <th scope="col" data-col="<?= $h($col) ?>" class="pu-th pu-th--<?= $h($col) ?>"<?= $ariaSort !== null ? ' aria-sort="' . $h($ariaSort) . '"' : '' ?>>
-                                <?php if ($col === 'nom'): ?>
+                                <?php if ($col === 'nom' && !$isRosterDirectory): ?>
                                     <label class="pu-selall"><input type="checkbox" data-pu-select-all aria-label="Tout cocher sur cette page"></label>
                                 <?php endif; ?>
                                 <?php if (in_array($col, $sortable, true)): ?>
-                                    <a class="pa-sheet__sort" href="<?= $h($sortUrl($col)) ?>"><?= $h(PlatformUserColumns::LABELS[$col] ?? $col) ?></a>
+                                    <a class="pa-sheet__sort" href="<?= $h($sortUrl($col)) ?>"><?= $h($columnLabels[$col] ?? $col) ?></a>
                                 <?php else: ?>
-                                    <?= $h(PlatformUserColumns::LABELS[$col] ?? $col) ?>
+                                    <?= $h($columnLabels[$col] ?? $col) ?>
                                 <?php endif; ?>
                             </th>
                         <?php endforeach; ?>
-                        <th scope="col" class="pu-th pu-th--actions">Dossier</th>
+                        <?php if (!$isRosterDirectory): ?><th scope="col" class="pu-th pu-th--actions">Dossier</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -451,10 +493,16 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                         <?php foreach ($columns as $col): ?>
                             <?php if ($col === 'nom'): ?>
                                 <td data-col="nom" data-label="Nom" class="pu-td pu-td--nom">
+                                    <?php if (!$isRosterDirectory): ?>
                                     <label class="pu-pick"><input type="checkbox" value="<?= $h($email) ?>" form="pu-select-form" name="emails[]" data-pu-pick aria-label="Sélectionner <?= $h($primary) ?>"></label>
+                                    <?php endif; ?>
                                     <span class="pu-avatar" aria-hidden="true"><?= $h($initial) ?></span>
                                     <span class="pu-name">
-                                        <a class="pu-person__link<?= staff_name_class($anchorId) ?>" href="<?= $h($personUrl) ?>" data-staff-done><?= $h($display !== '' ? $display : $primary) ?></a><?= staff_mark($anchorId, true) ?>
+                                        <?php if ($isRosterDirectory): ?>
+                                            <strong><?= $h($display !== '' ? $display : $callsign) ?></strong>
+                                        <?php else: ?>
+                                            <a class="pu-person__link<?= staff_name_class($anchorId) ?>" href="<?= $h($personUrl) ?>" data-staff-done><?= $h($display !== '' ? $display : $primary) ?></a><?= staff_mark($anchorId, true) ?>
+                                        <?php endif; ?>
                                         <?php if ($isAnonymized): ?>
                                             <?= \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ACCOUNT_DELETED) ?>
                                         <?php endif; ?>
@@ -466,7 +514,27 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                                 <td data-col="email" data-label="E-mail" class="pu-td"><span class="pu-mono"><?= $h($email) ?></span></td>
                             <?php elseif ($col === 'communautes'): ?>
                                 <td data-col="communautes" data-label="Communautés" class="pu-td">
-                                    <?php if ($communityNames === []): ?>
+                                    <?php if ($isRosterDirectory): ?>
+                                        <?php if ($communityNames === []): ?><span class="pu-muted">—</span><?php endif; ?>
+                                        <?php $shownCommunities = []; ?>
+                                        <?php foreach ($memberships as $membership):
+                                            $communityId = (int) ($membership['tenant_id'] ?? 0);
+                                            if (isset($shownCommunities[$communityId]) || !empty($membership['deleted_at'])
+                                                || ($membership['membership_status'] ?? 'active') !== 'active') {
+                                                continue;
+                                            }
+                                            $shownCommunities[$communityId] = true;
+                                            $communityName = (string) ($membership['tenant_name'] ?? '');
+                                            ?>
+                                            <?php if (isset($alertTenantIds[$communityId])): ?>
+                                                <button type="button" class="pa-btn pa-btn--sm pa-btn--line" data-community-alert-open
+                                                        data-community-alert-tenant="<?= $communityId ?>" aria-haspopup="dialog"
+                                                        title="<?= $h(__('admin_community_alert.alert_tenant', ['community' => $communityName])) ?>"><?= $h($communityName) ?></button>
+                                            <?php else: ?>
+                                                <span class="pa-pill pa-pill--slate"><?= $h($communityName) ?></span>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    <?php elseif ($communityNames === []): ?>
                                         <span class="pa-pill pa-pill--slate" title="Aucune communauté active : la personne a un compte seul, elle peut rejoindre ou créer une communauté.">Sans communauté</span>
                                     <?php else: ?>
                                         <span class="pu-count-pill"><?= $h(count($communityNames)) ?></span>
@@ -487,7 +555,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                                 <?php $gameSeen = (string) ($group['last_game'] ?? ''); ?>
                                 <td data-col="connexion_jeu" data-label="Connexion en jeu" class="pu-td"><?= $gameSeen !== '' ? $h($fmtDateTime($gameSeen)) : '<span class="pu-muted">Jamais</span>' ?></td>
                             <?php elseif ($col === 'creation'): ?>
-                                <td data-col="creation" data-label="Création" class="pu-td"><?= $h($fmtDate((string) ($group['created'] ?? ''))) ?></td>
+                                <td data-col="creation" data-label="<?= $h($isRosterDirectory ? __('admin_community_alert.profile_created') : 'Création') ?>" class="pu-td"><?= $h($fmtDate((string) ($group['created'] ?? ''))) ?></td>
                             <?php elseif ($col === 'volume'): ?>
                                 <td data-col="volume" data-label="Données (30 j)" class="pu-td pu-td--num">
                                     <?php if (!empty($group['has_steam'])): ?>
@@ -506,7 +574,15 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                                 </td>
                             <?php endif; ?>
                         <?php endforeach; ?>
+                        <?php if ($isRosterDirectory): ?>
+                            </tr>
+                            <?php continue; ?>
+                        <?php endif; ?>
                         <td class="pu-td pu-td--actions" data-label="Dossier">
+                            <?php $verificationUserId = (int) ($group['verification_user_id'] ?? 0); ?>
+                            <?php if ($verificationUserId > 0): ?>
+                                <?= $actionForm('admin/users/relancer-verification', ['user_id' => $verificationUserId], 'Renvoyer le lien', 'pa-btn pa-btn--sm pa-btn--solid') ?>
+                            <?php endif; ?>
                             <a class="pa-btn pa-btn--sm pa-btn--line" href="<?= $h($personUrl) ?>">Dossier complet</a>
                             <button type="button" class="pa-btn pa-btn--sm pa-btn--ghost" data-pu-toggle="<?= $h($detailId) ?>" aria-expanded="false" aria-controls="<?= $h($detailId) ?>">Détails</button>
                         </td>
@@ -703,6 +779,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
             </nav>
         <?php endif; ?>
 
+        <?php if (!$isRosterDirectory): ?>
         <section class="pa-card pu-cleanup">
             <p class="pa-card__kicker">Entretien</p>
             <h2 class="pa-card__title">Nettoyer les comptes anonymisés</h2>
@@ -719,8 +796,10 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                 'ok' => 'Nettoyer',
             ]) ?>
         </section>
+        <?php endif; ?>
     </div>
 
+    <?php if (!$isRosterDirectory): ?>
     <dialog id="pu-ban-dialog" class="pu-dialog pu-dialog--wide" aria-labelledby="pu-ban-dialog-title">
         <form method="post" action="<?= $h(url('admin/users/bannir')) ?>" class="pu-dialog__form">
             <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
@@ -729,7 +808,8 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
             <p class="pu-dialog__kicker">Bannir du site</p>
             <h3 id="pu-ban-dialog-title" class="pu-dialog__title">Bannir une personne</h3>
             <?php
-            $banForm = ['id' => 'pu-ban-shared', 'label' => '', 'email' => '', 'fiches' => 0, 'prior' => 0, 'history_url' => '', 'supports_end' => $banSupportsEnd, 'steam_id' => '', 'known_ips' => [], 'shared' => true];
+            $banForm = ['id' => 'pu-ban-shared', 'label' => '', 'email' => '', 'fiches' => 0, 'prior' => 0, 'history_url' => '', 'supports_end' => $banSupportsEnd, 'supports_notice' => !empty($platformBanSupportsNotice), 'steam_id' => '', 'known_ips' => [], 'shared' => true];
+            $banForm['supports_appeal_closure'] = !empty($platformBanSupportsAppealClosure);
             require base_path('views/admin/system/partials/platform_ban_form.php');
             ?>
             <div class="pu-dialog__buttons">
@@ -774,20 +854,12 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
         </div>
     </dialog>
 
-    <dialog id="pu-confirm" class="pu-dialog" aria-labelledby="pu-confirm-title">
-        <form method="dialog" class="pu-dialog__form">
-            <p class="pu-dialog__kicker" id="pu-confirm-kicker">Confirmer</p>
-            <h3 id="pu-confirm-title" class="pu-dialog__title"></h3>
-            <ul class="pu-dialog__facts" id="pu-confirm-body"></ul>
-            <label class="pu-dialog__field" id="pu-confirm-type-wrap" hidden>
-                <span>Pour confirmer, tapez <strong class="pu-mono" id="pu-confirm-type-expected"></strong></span>
-                <input type="text" id="pu-confirm-type" autocomplete="off" spellcheck="false">
-            </label>
-            <div class="pu-dialog__buttons">
-                <button type="button" class="pa-btn pa-btn--line" data-pu-close>Annuler</button>
-                <button type="button" class="pa-btn pa-btn--solid" id="pu-confirm-ok">Confirmer</button>
-            </div>
-        </form>
-    </dialog>
+    <?php require base_path('views/admin/system/partials/platform_user_confirm.php'); ?>
+    <?php require base_path('views/admin/system/partials/platform_bulk_user_dialog.php'); ?>
+    <?php endif; ?>
+    <?php require base_path('views/admin/system/partials/platform_community_alert_dialog.php'); ?>
 </div>
+<?php require base_path('views/admin/system/partials/platform_shared_ips_dialog.php'); ?>
+<script src="<?= $h(asset_url('assets/js/platform-users-bulk.js')) ?>" defer></script>
 <script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/platform-ban-notice.js')) ?>" defer></script>

@@ -1485,16 +1485,20 @@ class UserRepository
      *
      * @return list<int>
      */
-    public function listIdsByEmailNormalized(string $email): array
+    public function listIdsByEmailNormalized(string $email, bool $verifiedOnly = false): array
     {
         $email = strtolower(trim($email));
         if ($email === '') {
+            return [];
+        }
+        if ($verifiedOnly && !$this->hasEmailVerifiedColumn()) {
             return [];
         }
         $freed = $this->sqlEmailStillClaimedPredicate('users');
         $emailEq = SqlText::normalizedEquals($this->pdo(), 'email');
         $stmt = $this->pdo()->prepare(
             'SELECT id FROM users WHERE ' . $emailEq . ' AND ' . $freed['sql']
+                . ($verifiedOnly ? ' AND email_verified_at IS NOT NULL' : '')
         );
         $stmt->execute(array_merge([$email], $freed['params']));
         $out = [];
@@ -2517,6 +2521,28 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /** @return list<string> Adresses de personnes rattachées à la communauté, hors fiches supprimées ou techniques. */
+    public function listBanTargetEmailsForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $human = $this->technicalAccountExclusionPredicate('u');
+        $claimed = $this->sqlEmailStillClaimedPredicate('u');
+        $stmt = $this->pdo()->prepare(
+            "SELECT DISTINCT LOWER(TRIM(u.email)) AS email FROM users u
+             WHERE " . $this->sqlMemberOfTenantPredicate('u', $tenantId) . " AND {$human['sql']} AND {$claimed['sql']}
+               AND (u.status IS NULL OR u.status NOT IN ('merged', 'deleted'))
+             ORDER BY email"
+        );
+        $stmt->execute([...$human['params'], ...$claimed['params']]);
+
+        return array_values(array_filter($stmt->fetchAll(PDO::FETCH_COLUMN), static fn (string $email): bool =>
+            (bool) filter_var($email, FILTER_VALIDATE_EMAIL) && !str_ends_with($email, '@internal.local')
+                && !str_ends_with($email, '@merged.invalid')
+        ));
+    }
+
     /**
      * Identifiants des comptes actifs de la communauté (hors comptes de service si la colonne existe).
      *
@@ -3503,6 +3529,19 @@ class UserRepository
         $parts[] = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@deleted.invalid');
         $parts[] = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@merged.invalid');
 
+        $hasLoginAccount = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@' . \App\Support\RosterOnlyMember::EMAIL_DOMAIN);
+        $parts[] = $status === 'fiches' ? 'NOT (' . $hasLoginAccount . ')' : $hasLoginAccount;
+
+        $selectedEmails = $options['emails'] ?? null;
+        if ($selectedEmails !== null) {
+            $emails = $selectedEmails;
+            if ($emails === []) {
+                return ['groups' => [], 'total' => 0];
+            }
+            $parts[] = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($emails));
+            array_push($params, ...$emails);
+        }
+
         $search = $search !== null ? trim($search) : '';
         if ($search !== '') {
             $term = '%' . (function_exists('mb_substr') ? mb_substr($search, 0, 120) : substr($search, 0, 120)) . '%';
@@ -3529,7 +3568,12 @@ class UserRepository
             if ($hasDeletedAt) {
                 $parts[] = 'u.deleted_at IS NULL';
             }
-            if ($status !== null && $status !== '' && in_array($status, ['active', 'inactive', 'pending_verification'], true)) {
+            if ($status === 'pending_verification') {
+                $parts[] = SqlText::equalsLiteral($pdo, 'u.status', 'pending_verification');
+                if ($this->hasEmailVerifiedColumn()) {
+                    $parts[] = 'u.email_verified_at IS NULL';
+                }
+            } elseif (in_array($status, ['active', 'inactive'], true)) {
                 if ($hasMemberships) {
                     $parts[] = '((' . SqlText::equals($pdo, 'u.status') . ') OR EXISTS (
                         SELECT 1 FROM user_community_memberships m
@@ -3547,7 +3591,7 @@ class UserRepository
         }
         if ($tenantId !== null && $tenantId > 0) {
             $parts[] = $this->sqlMemberOfTenantPredicate('u', $tenantId);
-        } elseif (!$hasMemberships) {
+        } elseif (!$hasMemberships && $selectedEmails === null) {
             $parts[] = $this->sqlLegacyPlatformDirectorySiblingFilter('u', $hasDeletedAt);
         }
         if ($status === 'no_org') {
@@ -3568,15 +3612,19 @@ class UserRepository
         // Catégorie « Inactifs » : ni connexion au site ni session de jeu depuis le seuil (le filtre « inactif »,
         // 90 jours par défaut). Elle remplace le filtre « inactif » qui, seul, ne regarde que le site.
         $inactiveTab = $status === 'inactifs';
+        $inactiveSelection = $inactiveTab && $selectedEmails !== null;
         if ($inactiveTab) {
             $inactivityFilter = null;
         }
         $hasGame = $this->tableExists('game_sessions');
         $hasLastLogin = $this->hasLastLoginColumn();
-        $gameJoinSql = 'LEFT JOIN (SELECT user_id, MAX(COALESCE(last_seen_at, created_at)) AS g FROM game_sessions GROUP BY user_id) __gs ON __gs.user_id = u.id';
+        $gameScope = $selectedEmails === null ? '' : ' WHERE user_id IN (SELECT id FROM users WHERE '
+            . SqlText::normalizedInPlaceholders($pdo, 'email', count($selectedEmails)) . ')';
+        $gameJoinSql = 'LEFT JOIN (SELECT user_id, MAX(COALESCE(last_seen_at, created_at)) AS g FROM game_sessions'
+            . $gameScope . ' GROUP BY user_id) __gs ON __gs.user_id = u.id';
 
         /** HAVING et paramètres, avec ou sans la date de connexion en jeu. */
-        $buildHaving = function (bool $withGame) use ($inactivityFilter, $createdDays, $inactiveTab, $inactivity, $hasLastLogin): array {
+        $buildHaving = function (bool $withGame) use ($inactivityFilter, $createdDays, $inactiveTab, $inactiveSelection, $inactivity, $hasLastLogin): array {
             $parts = $inactivityFilter !== null ? [$inactivityFilter['sql']] : [];
             $vals = $inactivityFilter['params'] ?? [];
             if ($createdDays !== '') {
@@ -3594,6 +3642,10 @@ class UserRepository
                 } else {
                     $days = in_array($inactivity, ['30', '90', '180'], true) ? (int) $inactivity : self::PLATFORM_INACTIVE_DEFAULT_DAYS;
                     $cut = gmdate('Y-m-d H:i:s', time() - $days * 86400);
+                    if ($inactiveSelection) {
+                        $parts[] = 'MIN(u.created_at) <= ?';
+                        $vals[] = $cut;
+                    }
                     $parts[] = '(' . $site . ' IS NULL OR ' . $site . ' < ?)';
                     $vals[] = $cut;
                     if ($withGame) {
@@ -3614,11 +3666,10 @@ class UserRepository
          */
         $run = function (bool $degraded, string $limit) use (
             $where, $fromUsers, $params, $buildHaving, $inactivityFilter, $inactiveTab, $hasGame, $gameJoinSql,
-            $sortKey, $sortDir, $hasMemberships, $hasDeletedAt
+            $sortKey, $sortDir, $hasMemberships, $hasDeletedAt, $selectedEmails
         ): array {
             $withGame = !$degraded && $hasGame;
             [$having, $havingParams] = $buildHaving($withGame);
-            $bound = array_merge($params, $havingParams);
             $sortSelect = $inactivityFilter !== null ? 'MAX(u.last_login_at) AS sort_at' : 'MAX(u.updated_at) AS sort_at';
             $sortOrder = $inactivityFilter !== null ? 'sort_at ASC, email_key ASC' : 'sort_at DESC';
             $joins = [];
@@ -3639,6 +3690,7 @@ class UserRepository
             if ($needGame) {
                 array_unshift($joins, $gameJoinSql);
             }
+            $bound = [...($needGame ? ($selectedEmails ?? []) : []), ...$params, ...$havingParams];
             $joinSql = implode("\n", $joins);
 
             $countStmt = $this->pdo()->prepare(
@@ -3673,10 +3725,13 @@ class UserRepository
 
             return [$total, $keys];
         };
-        $safe = function (string $limit) use ($run): array {
+        $safe = function (string $limit) use ($run, $inactiveSelection): array {
             try {
                 return $run(false, $limit);
             } catch (\Throwable $e) {
+                if ($inactiveSelection) {
+                    throw $e;
+                }
                 error_log('[annuaire comptes] requête complète refusée, repli sur le tri par défaut : ' . $e->getMessage());
 
                 return $run(true, $limit);
@@ -3708,6 +3763,19 @@ class UserRepository
             'groups' => $this->groupPlatformDirectoryRows($rows, $emailKeys),
             'total' => $total,
         ];
+    }
+
+    /**
+     * @param list<string> $emails
+     * @return list<string>
+     */
+    public function inactiveEmailsForPlatformSelection(array $emails, string $inactivity): array
+    {
+        $result = $this->listGroupedAccountsForPlatformDirectory(
+            null, 'inactifs', null, 1, count($emails), $inactivity, ['emails' => $emails]
+        );
+
+        return array_column($result['groups'], 'email_key');
     }
 
     /**
@@ -3788,6 +3856,60 @@ class UserRepository
         }
 
         return $out;
+    }
+
+    public const SHARED_LOGIN_IP_DAYS = 180;
+    public const SHARED_LOGIN_IP_PAGE_SIZE = 50;
+
+    /**
+     * Résume les adresses partagées ou liste les personnes encore présentes pour une adresse.
+     * @return list<array<string, mixed>>
+     */
+    public function sharedLoginIpRows(?string $ip, int $page): array
+    {
+        $pdo = $this->pdo();
+        $mysql = SqlText::isMysqlFamily($pdo);
+        $address = $mysql ? 'INET6_NTOA(INET6_ATON(la.ip))' : 'LOWER(la.ip)';
+        $accounts = $this->technicalAccountExclusionPredicate('u');
+        $deleted = $this->hasDeletedAtColumn() ? 'AND u.deleted_at IS NULL' : '';
+        $emailKey = 'LOWER(TRIM(u.email))' . ($mysql ? ' COLLATE utf8mb4_bin' : '');
+        $loginEmail = 'la.email' . ($mysql ? ' COLLATE utf8mb4_bin' : '');
+        $accountQuery = "SELECT {$emailKey} AS email,
+                                MIN(u.created_at) AS created_at,
+                                MAX(COALESCE(NULLIF(u.callsign, ''), NULLIF(u.display_name, ''), u.email)) AS label
+                         FROM users u
+                         WHERE {$accounts['sql']} {$deleted}
+                           AND u.status <> 'merged'
+                           AND {$emailKey} NOT LIKE '%@deleted.invalid' AND {$emailKey} NOT LIKE '%@merged.invalid'
+                         GROUP BY {$emailKey}";
+        $where = "la.success = 1 AND la.created_at >= ? AND {$address} IS NOT NULL
+                  AND la.email <> '' AND {$address} NOT IN ('', '::', '::1', '0.0.0.0')
+                  AND {$address} NOT LIKE '127.%'";
+        $params = [...$accounts['params'], gmdate('Y-m-d H:i:s', time() - self::SHARED_LOGIN_IP_DAYS * 86400)];
+        if ($ip === null) {
+            $select = "{$address} AS ip, COUNT(DISTINCT people.email) AS people_count, MAX(la.created_at) AS last_seen";
+            $grouping = "GROUP BY {$address}
+                         HAVING COUNT(DISTINCT people.email) >= 2
+                         ORDER BY last_seen DESC, ip";
+        } else {
+            $select = 'people.email, MAX(people.label) AS label, COUNT(*) AS logins, MAX(la.created_at) AS last_seen';
+            $where .= " AND {$address} = ?";
+            $params[] = $mysql ? inet_ntop(inet_pton($ip)) : strtolower($ip);
+            $grouping = 'GROUP BY people.email ORDER BY last_seen DESC, people.email';
+        }
+        $limit = self::SHARED_LOGIN_IP_PAGE_SIZE + 1;
+        $offset = (max(1, min($page, 200)) - 1) * self::SHARED_LOGIN_IP_PAGE_SIZE;
+        $stmt = $pdo->prepare(
+            "SELECT {$select}
+             FROM login_attempts la
+             INNER JOIN ({$accountQuery}) people ON people.email = {$loginEmail} AND la.created_at >= people.created_at
+             WHERE {$where}
+             {$grouping}
+             LIMIT {$limit} OFFSET {$offset}"
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**
@@ -3934,6 +4056,7 @@ class UserRepository
         $pdo = $this->pdo();
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
+        $verificationSelect = $this->hasEmailVerifiedColumn() ? 'u.email_verified_at' : 'NULL AS email_verified_at';
         $lastLoginSelect = $this->hasLastLoginColumn() ? 'u.last_login_at' : 'NULL AS last_login_at';
         $emailIn = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($emailKeys));
         $params = array_merge($emailKeys, $pack['params']);
@@ -3942,7 +4065,7 @@ class UserRepository
                        COALESCE(p.display_name, u.display_name) AS display_name,
                        COALESCE(p.callsign, u.callsign) AS callsign,
                        COALESCE(p.status, u.status) AS status,
-                       u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect}, {$deletedSelect},
+                       u.created_at, u.updated_at, u.steam_id, u.status AS account_status, {$verificationSelect}, {$lastLoginSelect}, {$deletedSelect},
                        t.name AS tenant_name, t.slug AS tenant_slug,
                        r.name AS role_name,
                        m.status AS membership_status, m.left_at AS membership_left_at
@@ -3970,7 +4093,7 @@ class UserRepository
         $fallbackIn = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($missing));
         $fallbackParams = array_merge($missing, $pack['params']);
         $fallbackSql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status,
-                               u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect}, {$deletedSelect},
+                               u.created_at, u.updated_at, u.steam_id, u.status AS account_status, {$verificationSelect}, {$lastLoginSelect}, {$deletedSelect},
                                t.name AS tenant_name, t.slug AS tenant_slug,
                                r.name AS role_name
                         FROM users u
@@ -4011,8 +4134,9 @@ class UserRepository
         }
         $memberWhereSql = implode(' AND ', $memberParts);
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
+        $verificationSelect = $this->hasEmailVerifiedColumn() ? 'u.email_verified_at' : 'NULL AS email_verified_at';
         $lastLoginSelect = $this->hasLastLoginColumn() ? 'u.last_login_at' : 'NULL AS last_login_at';
-        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect},
+        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at, u.steam_id, u.status AS account_status, {$verificationSelect}, {$lastLoginSelect},
                        {$deletedSelect},
                        t.name AS tenant_name, t.slug AS tenant_slug,
                        r.name AS role_name
@@ -4331,6 +4455,8 @@ class UserRepository
         }
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $hasAthena = $this->hasAthenaIdentifierColumn();
+        $lastLoginSelect = $this->hasLastLoginColumn() ? 'u.last_login_at' : 'NULL AS last_login_at';
+        $verifiedSelect = $this->hasEmailVerifiedColumn() ? 'u.email_verified_at' : 'NULL AS email_verified_at';
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
         $athenaSelect = $hasAthena ? 'COALESCE(p.athena_identifier, u.athena_identifier)' : "''";
         $pdo = $this->pdo();
@@ -4352,7 +4478,7 @@ class UserRepository
                         COALESCE(p.grade_id, u.grade_id) AS grade_id,
                         COALESCE(p.role_id, u.role_id) AS role_id,
                         COALESCE(p.created_at, u.created_at) AS created_at,
-                        u.updated_at,
+                        u.updated_at, u.status AS account_status, u.created_at AS account_created_at, {$lastLoginSelect}, {$verifiedSelect},
                         COALESCE(p.profile_slug, u.profile_slug) AS profile_slug,
                         {$deletedSelect}, {$athenaSelect} AS athena_identifier,
                         t.name AS tenant_name, t.slug AS tenant_slug,
@@ -4391,6 +4517,7 @@ class UserRepository
         $stmt = $this->pdo()->prepare(
             "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.steam_id,
                     u.avatar_url, u.grade_id, u.role_id, u.created_at, u.updated_at, u.profile_slug,
+                    u.status AS account_status, u.created_at AS account_created_at, {$lastLoginSelect}, {$verifiedSelect},
                     {$deletedSelect}, {$athenaSelect},
                     t.name AS tenant_name, t.slug AS tenant_slug,
                     r.name AS role_name,

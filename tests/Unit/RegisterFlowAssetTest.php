@@ -39,7 +39,7 @@ final class RegisterFlowAssetTest extends TestCase
         $resend = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/VerifyEmailController.php');
 
         self::assertLessThan(strpos($register, 'sendUserRegisterConfirmation'), strpos($register, '$tokenId = $this->emailTokens->create'));
-        self::assertLessThan(strpos($resend, 'sendUserRegisterConfirmation'), strpos($resend, '$tokenId = $this->emailTokens->create'));
+        self::assertStringContainsString('new RegistrationVerificationResend($this->emailTokens, $this->emailService)', $resend);
         self::assertLessThan(strpos($resend, 'markConsumed'), strpos($resend, 'markEmailVerified'));
     }
 
