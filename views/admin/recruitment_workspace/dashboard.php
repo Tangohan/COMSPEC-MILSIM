@@ -9,6 +9,10 @@ $via = is_array($submittedViaCounts ?? null) ? $submittedViaCounts : [];
 $weekly = is_array($weeklyCreated ?? null) ? $weeklyCreated : [];
 $topOpenings = is_array($topOpenings ?? null) ? $topOpenings : [];
 $automodDossiers = is_array($automodDossiers ?? null) ? $automodDossiers : [];
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$ds = is_array($deskSummary ?? null) ? $deskSummary : \App\Support\RecruitmentDeskSummary::compute([], new \DateTimeImmutable('now'));
+$queueUrl = url('back-office/recruitments');
+$funnelMax = max(1, ...array_values($ds['funnel']));
 $canOpenSystemRecruitmentTools = !empty($canOpenSystemRecruitmentTools);
 $nPortalBlocks = is_array($portalRecruitmentBlocks ?? null) ? count($portalRecruitmentBlocks) : 0;
 $maskEmail = static function (string $e): string {
@@ -47,33 +51,73 @@ $enlistmentStatusLabel = static function (string $st): string {
     };
 };
 ?>
-<div class="max-w-6xl w-full space-y-8">
-                <header class="lms-panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
-                    <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-sky-500/80 via-sky-500/20 to-transparent" aria-hidden="true"></div>
-                    <p class="text-[9px] font-black tracking-[0.45em] text-sky-600 uppercase mb-3">Pilotage recrutement</p>
-                    <h1 class="text-3xl md:text-4xl font-black tracking-tight uppercase text-slate-900 leading-tight">Candidatures &amp; dossiers</h1>
-                    <p class="text-sm text-stone-600 max-w-2xl leading-relaxed">
-                        Point d’entrée unique pour suivre la file, les délais internes (SLA) et les volumes. Les actions de traitement se font depuis la file ou la fiche dossier.
-                    </p>
-                    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mt-8">
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total dossiers</p>
-                            <p class="mt-2 text-2xl font-black text-slate-900 tabular-nums"><?= $nTotal ?></p>
+<div class="rd max-w-6xl w-full space-y-6">
+                <header class="rd-hero">
+                    <div class="rd-hero__top">
+                        <div class="rd-hero__copy">
+                            <h1 class="rd-hero__title">Bureau recrutement</h1>
+                            <p class="rd-hero__lead">Candidatures, entretiens et décisions de la communauté. Les actions de traitement se font depuis la file ou la fiche dossier.</p>
                         </div>
-                        <div class="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-900/70">À traiter</p>
-                            <p class="mt-2 text-2xl font-black text-amber-950 tabular-nums"><?= $nSubmitted ?></p>
-                        </div>
-                        <div class="rounded-2xl border <?= $submittedOlderThanSla > 0 ? 'border-rose-200 bg-rose-50/70' : 'border-sky-200 bg-sky-50/40' ?> p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider <?= $submittedOlderThanSla > 0 ? 'text-rose-800' : 'text-sky-800' ?>">Dépassement SLA</p>
-                            <p class="mt-2 text-2xl font-black <?= $submittedOlderThanSla > 0 ? 'text-rose-900' : 'text-sky-950' ?> tabular-nums"><?= $submittedOlderThanSla ?></p>
-                        </div>
-                        <div class="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-900/70">SLA (heures)</p>
-                            <p class="mt-2 text-2xl font-black text-emerald-900 tabular-nums"><?= $enlistmentSlaHours ?></p>
+                        <div class="rd-hero__actions">
+                            <a class="rd-btn rd-btn--primary" href="<?= $h(url('back-office/recruitments')) ?>">Ouvrir la file<?php if ($nSubmitted > 0): ?> (<?= $nSubmitted ?>)<?php endif; ?></a>
+                            <a class="rd-btn" href="<?= $h(url('back-office/recruitment/offers')) ?>">Offres</a>
+                            <a class="rd-btn" href="<?= $h(url('back-office/recruitments/liens-invitation')) ?>">Liens d’invitation</a>
+                            <button type="button" class="rd-btn rd-btn--ghost" data-lms-entry-replay="recrutement">Revoir le tutoriel</button>
                         </div>
                     </div>
+                    <dl class="rd-kpis">
+                        <div class="rd-kpi rd-kpi--todo"><dt>À traiter</dt><dd><?= (int) $ds['to_process'] ?></dd><dd class="rd-kpi__note"><?php if ($submittedOlderThanSla > 0): ?><?= $submittedOlderThanSla ?> au-delà du délai de <?= $enlistmentSlaHours ?> h<?php else: ?>Dans le délai de <?= $enlistmentSlaHours ?> h<?php endif; ?></dd></div>
+                        <div class="rd-kpi"><dt>En entretien</dt><dd><?= (int) $ds['in_interview'] ?></dd><dd class="rd-kpi__note">Entretien programmé</dd></div>
+                        <div class="rd-kpi rd-kpi--ok"><dt>Acceptées ce mois-ci</dt><dd><?= (int) $ds['accepted_this_month'] ?></dd><dd class="rd-kpi__note">Décisions du mois en cours</dd></div>
+                        <div class="rd-kpi"><dt>Délai moyen de décision</dt><dd><?php if ($ds['avg_delay_days'] === null): ?>—<?php else: ?><?= $h(str_replace('.', ',', (string) $ds['avg_delay_days'])) ?> j<?php endif; ?></dd><dd class="rd-kpi__note"><?php if ($ds['avg_delay_days'] === null): ?>Aucune décision sur 90 jours<?php else: ?>Dépôt à décision, 90 derniers jours<?php endif; ?></dd></div>
+                    </dl>
                 </header>
+
+                <?php if ((int) $ds['total'] === 0): ?>
+                <section class="rd-card rd-empty" aria-label="Aucune candidature">
+                    <h2 class="rd-card__title">Aucune candidature pour l’instant</h2>
+                    <p class="rd-empty__text">Publiez une offre ou partagez un lien d’invitation : les candidatures apparaîtront ici avec leur entonnoir et leurs délais.</p>
+                    <div class="rd-empty__actions">
+                        <a class="rd-btn rd-btn--primary" href="<?= $h(url('back-office/recruitment/offers')) ?>">Créer une offre</a>
+                        <a class="rd-btn" href="<?= $h(url('back-office/recruitments/liens-invitation')) ?>">Créer un lien d’invitation</a>
+                    </div>
+                </section>
+                <?php else: ?>
+                <section class="rd-card" aria-labelledby="rd-funnel-title">
+                    <div class="rd-card__head">
+                        <h2 id="rd-funnel-title" class="rd-card__title">Entonnoir des candidatures</h2>
+                        <form class="rd-search" method="get" action="<?= $h(url('back-office/recruitments')) ?>" role="search">
+                            <label class="rd-sr" for="rd-q">Rechercher un candidat</label>
+                            <input id="rd-q" class="rd-search__input" type="search" name="q" maxlength="80" placeholder="Nom, indicatif, e-mail ou n° de dossier">
+                            <button class="rd-btn rd-btn--primary" type="submit">Rechercher</button>
+                        </form>
+                    </div>
+                    <ol class="rd-funnel">
+                        <?php foreach (\App\Support\RecruitmentDeskSummary::FUNNEL_STAGES as $stageKey => $stageLabel): ?>
+                            <?php $n = (int) $ds['funnel'][$stageKey]; $pct = max($n > 0 ? 6 : 0, (int) round($n / $funnelMax * 100)); ?>
+                            <li class="rd-funnel__row">
+                                <a class="rd-funnel__link" href="<?= $h(url('back-office/recruitments') . '?stage=' . $stageKey) ?>">
+                                    <span class="rd-funnel__label"><?= $h($stageLabel) ?></span>
+                                    <span class="rd-funnel__bar"><span class="rd-funnel__fill rd-funnel__fill--<?= $h($stageKey) ?>" style="width: <?= $pct ?>%"></span></span>
+                                    <span class="rd-funnel__n"><?= $n ?></span>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                    <p class="rd-funnel__closed">
+                        Clôturées :
+                        <a href="<?= $h(url('back-office/recruitments') . '?stage=rejected') ?>"><?= (int) $ds['closed']['rejected'] ?> refusée(s)</a>,
+                        <a href="<?= $h(url('back-office/recruitments') . '?stage=blocked') ?>"><?= (int) $ds['closed']['blocked'] ?> non admise(s)</a>,
+                        <a href="<?= $h(url('back-office/recruitments') . '?stage=cancelled') ?>"><?= (int) $ds['closed']['cancelled'] ?> annulée(s)</a>.
+                    </p>
+                    <div class="rd-chips" aria-label="Filtres rapides">
+                        <a class="rd-chip" href="<?= $h(url('back-office/recruitments') . '?status=submitted') ?>">À traiter</a>
+                        <a class="rd-chip rd-chip--late" href="<?= $h(url('back-office/recruitments') . '?filtre=retard') ?>">En retard</a>
+                        <a class="rd-chip" href="<?= $h($queueUrl . '?filtre=libre') ?>">Sans recruteur</a>
+                        <a class="rd-chip" href="<?= $h(url('back-office/recruitments') . '?filtre=mine') ?>">Mes dossiers</a>
+                    </div>
+                </section>
+                <?php endif; ?>
 
                 <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-amber-200/90 bg-amber-50/30 space-y-4" aria-labelledby="automod-heading">
                     <div class="flex flex-wrap items-start justify-between gap-4">
@@ -148,22 +192,10 @@ $enlistmentStatusLabel = static function (string $st): string {
                     <?php endif; ?>
                 </section>
 
-                <section class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <a href="<?= htmlspecialchars(url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="lms-panel rounded-2xl p-5 border border-slate-200/80 block transition hover:border-sky-300/60 hover:shadow-md">
-                        <p class="text-[10px] font-black uppercase tracking-wider text-sky-600">File</p>
-                        <h2 class="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">Ouvrir la file des dossiers</h2>
-                        <p class="mt-2 text-xs text-slate-600 leading-relaxed">Filtrer par statut, consulter chaque dossier et enregistrer une décision.</p>
-                    </a>
-                    <a href="<?= htmlspecialchars(recruitment_workspace_url('analyses'), ENT_QUOTES, 'UTF-8') ?>" class="lms-panel rounded-2xl p-5 border border-slate-200/80 block transition hover:border-sky-300/60 hover:shadow-md">
-                        <p class="text-[10px] font-black uppercase tracking-wider text-sky-600">Indicateurs</p>
-                        <h2 class="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">Analyses détaillées</h2>
-                        <p class="mt-2 text-xs text-slate-600 leading-relaxed">Volumes par semaine, canaux de dépôt et offres les plus sollicitées.</p>
-                    </a>
-                    <a href="<?= htmlspecialchars(url('back-office/recruitments/settings'), ENT_QUOTES, 'UTF-8') ?>" class="lms-panel rounded-2xl p-5 border border-slate-200/80 block transition hover:border-sky-300/60 hover:shadow-md sm:col-span-2 xl:col-span-1">
-                        <p class="text-[10px] font-black uppercase tracking-wider text-sky-600">Paramètres</p>
-                        <h2 class="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">SLA &amp; messages</h2>
-                        <p class="mt-2 text-xs text-slate-600 leading-relaxed">Ajuster le délai d’alerte et préparer les modèles de texte pour le traitement.</p>
-                    </a>
+                <section class="rd-links" aria-label="Accès rapides">
+                    <a class="rd-link" href="<?= $h(recruitment_workspace_url('analyses')) ?>"><strong>Analyses détaillées</strong><span>Volumes par semaine, canaux de dépôt et offres les plus sollicitées.</span></a>
+                    <a class="rd-link" href="<?= $h(url('back-office/recruitments/settings')) ?>"><strong>Délais (SLA) et messages</strong><span>Ajuster le délai d’alerte et préparer les modèles de réponse.</span></a>
+                    <a class="rd-link" href="<?= $h(url('back-office/recruitments/paquets-integration')) ?>"><strong>Paquets d’intégration</strong><span>Ce que reçoit un nouveau membre une fois accepté.</span></a>
                 </section>
 
                 <?php if ($via !== []): ?>

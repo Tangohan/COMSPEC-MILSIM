@@ -229,21 +229,10 @@ body.lms-entry-modal-open {
   box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
 }
 
-.lms-entry-modal__skip {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
+.lms-entry-modal__replay-hint {
+  margin: 0;
   font-size: 0.75rem;
   color: #94a3b8;
-  cursor: pointer;
-  user-select: none;
-}
-
-.lms-entry-modal__skip input {
-  width: 0.95rem;
-  height: 0.95rem;
-  accent-color: #059669;
-  cursor: pointer;
 }
 
 .lms-entry-modal__foot {

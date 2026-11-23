@@ -809,6 +809,21 @@ class EnlistmentRepository
     }
 
     /**
+     * Lignes minimales pour les indicateurs du bureau recrutement (voir RecruitmentDeskSummary).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForDeskSummary(int $tenantId, int $limit = 5000): array
+    {
+        $limit = max(1, min(20000, $limit));
+        $cols = 'status, created_at, reviewed_at' . ($this->hasPipelineStageColumn() ? ', pipeline_stage' : '');
+        $stmt = $this->pdo->prepare("SELECT {$cols} FROM enlistments WHERE tenant_id = ? ORDER BY id DESC LIMIT {$limit}");
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
      * Dossiers « soumis » dont l’âge (heures) dépasse le SLA interne.
      */
     public function countSubmittedExceedingSlaHours(int $tenantId, int $slaHours): int

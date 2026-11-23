@@ -17,12 +17,18 @@ final class LmsModuleEntry
     public const MODULE_EFFECTIFS = 'effectifs';
 
     /**
+     * Version majeure du tutoriel d’entrée. L’incrémenter rejoue le tutoriel une fois chez tout le monde ;
+     * sans changement de version, un tutoriel fermé ou terminé ne se rejoue jamais tout seul.
+     */
+    public const TUTORIAL_VERSION = 1;
+
+    /**
      * Payload JSON pour le script client (profil + modules).
      *
      * @return array{
      *   autoOpen: ?string,
      *   profile: array{display_name: string, callsign: string, community: string, role: string},
-     *   modules: array<string, array{key: string, title: string, kicker: string, lead: string, cta: string, accent: string, rights: list<string>}>
+     *   modules: array<string, array{key: string, version: int, title: string, kicker: string, lead: string, cta: string, accent: string, rights: list<string>}>
      * }
      */
     public static function clientConfig(?string $autoOpenModule = null): array
@@ -86,6 +92,7 @@ final class LmsModuleEntry
         foreach (self::moduleBlueprints() as $key => $meta) {
             $out[$key] = [
                 'key' => $key,
+                'version' => self::TUTORIAL_VERSION,
                 'title' => $meta['title'],
                 'kicker' => $meta['kicker'],
                 'lead' => $meta['lead'],
