@@ -55,6 +55,7 @@ use App\Services\Media\ImageCompressionService;
 use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\SseAnalyticalCatalog;
+use App\Support\SseRichText;
 use App\Support\SseTextVariables;
 use App\Services\Sse\SseAccessPolicy;
 use App\Support\SseAccessCatalog;
@@ -86,6 +87,7 @@ final class SsePortalController
         private ?SseCrossDecisionRepository $crossDecisions = null,
         private ?SseTextTemplateRepository $textLibrary = null,
         private ?SseDocumentPrefabRepository $documentPrefabs = null,
+        private ?\App\Repositories\SseDocumentDraftRepository $documentDrafts = null,
         private ?SseCaseMapRepository $caseMaps = null,
         private ?SseAnalyticalRepository $analytical = null,
         private ?SseContextualMentionService $contextualMentions = null,
@@ -4005,6 +4007,7 @@ final class SsePortalController
             'prefillClass' => 'confidentiel',
             'prefillStatus' => 'brouillon',
             'canManage' => true,
+            'editorContext' => $this->editorContext(0),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
         ]);
@@ -4019,9 +4022,14 @@ final class SsePortalController
         }
 
         $title = trim((string) $request->input('title', ''));
-        $body = trim((string) $request->input('body', ''));
-        if ($title === '' || $body === '') {
+        $body = $this->normalizeBodyInput((string) $request->input('body', ''));
+        if ($title === '' || SseRichText::plainText($body) === '') {
             Session::flash('error', 'Indiquez un intitulé et un corps de document.');
+
+            return Response::redirect(url('atak/sse/documents/nouveau'));
+        }
+        if (strlen($body) > SseRichText::MAX_BYTES) {
+            Session::flash('error', 'Le document est trop volumineux.');
 
             return Response::redirect(url('atak/sse/documents/nouveau'));
         }
@@ -4049,6 +4057,7 @@ final class SsePortalController
         ]);
 
         $mentions = $this->recordLibraryUses($request, (int) $docId, $caseId, $author, $userId);
+        $this->drafts()->discard($this->tenantId(), (int) $userId, $this->draftGuestKey(), 0);
 
         Session::flash('success', 'Document créé et placé en atelier.' . $mentions);
 
@@ -4114,6 +4123,7 @@ final class SsePortalController
             'libraryCategories' => SseTextTemplateRepository::categories(),
             'contextualSuggestions' => $this->contextualSuggestionsForCase($case),
             'canManage' => true,
+            'editorContext' => $this->editorContext($id),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
         ]);
@@ -4141,9 +4151,9 @@ final class SsePortalController
         }
 
         $title = trim((string) $request->input('title', ''));
-        $body = trim((string) $request->input('body', ''));
-        if ($title === '' || $body === '') {
-            Session::flash('error', 'Indiquez un intitulé et un corps de document.');
+        $body = $this->normalizeBodyInput((string) $request->input('body', ''));
+        if ($title === '' || SseRichText::plainText($body) === '' || strlen($body) > SseRichText::MAX_BYTES) {
+            Session::flash('error', 'Indiquez un intitulé et un corps de document (taille raisonnable).');
 
             return Response::redirect(url('atak/sse/documents/' . $id . '/modifier'));
         }
@@ -4173,6 +4183,7 @@ final class SsePortalController
         $this->documents->update($id, $this->tenantId(), $payload);
         $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur');
         $mentions = $this->recordLibraryUses($request, $id, $caseId, $author, (int) Session::get('user_id') ?: null);
+        $this->drafts()->discard($this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey(), $id);
         Session::flash('success', 'Document enregistré.' . $mentions);
 
         return Response::redirect(url('atak/sse/documents/' . $id));
@@ -4309,6 +4320,135 @@ final class SsePortalController
         return $saved > 0
             ? sprintf(' %d mention%s de la bibliothèque tracée%s.', $saved, $saved > 1 ? 's' : '', $saved > 1 ? 's' : '')
             : '';
+    }
+
+    /** Brouillon automatique de l'éditeur (JSON) : lecture du brouillon du rédacteur pour un document (0 : nouveau). */
+    public function documentDraftShow(Request $request, array $params = []): Response
+    {
+        $docId = (int) $request->query('doc_id', 0);
+        if (!$this->canManage() || !$this->draftTargetAllowed($docId)) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $row = $this->drafts()->find($this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey(), $docId);
+
+        return Response::json(['ok' => true, 'draft' => $row]);
+    }
+
+    /** Brouillon automatique de l'éditeur (JSON) : enregistrement ; refusé pour un document figé ou hors périmètre. */
+    public function documentDraftSave(Request $request, array $params = []): Response
+    {
+        $docId = (int) $request->input('doc_id', 0);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', '')) || !$this->draftTargetAllowed($docId)) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $caseId = (int) $request->input('case_id', 0);
+        if ($caseId > 0 && $this->requireCase($caseId) === null) {
+            $caseId = 0;
+        }
+        $savedAt = $this->drafts()->save($this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey(), $docId, [
+            'title' => (string) $request->input('title', ''),
+            'body' => (string) $request->input('body', ''),
+            'document_type' => (string) $request->input('document_type', 'note_analyse'),
+            'classification' => (string) $request->input('classification', 'confidentiel'),
+            'case_id' => $caseId,
+        ]);
+
+        return Response::json(['ok' => $savedAt !== null, 'saved_at' => $savedAt]);
+    }
+
+    public function documentPdf(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $doc = $this->documents->findById($id, $this->tenantId());
+        if ($doc === null || (!empty($doc['case_id']) && $this->requireCase((int) $doc['case_id']) === null)) {
+            Session::flash('error', 'Document introuvable.');
+
+            return Response::redirect(url('atak/sse/documents'));
+        }
+        // Un PDF circule ensuite tout seul : l'export est tracé comme celui d'un dossier.
+        $this->activityLog->record(
+            $this->tenantId(),
+            1,
+            'SSE_CLEARANCE',
+            sprintf('Export PDF du document %s (%s).', (string) $doc['reference_code'], (string) $doc['classification_label']),
+            (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
+        );
+
+        return (new \App\Services\Sse\SseDocumentPdfService())->export($doc, $this->tenantId(), (string) $request->query('lecture', '') === '1');
+    }
+
+    private function drafts(): \App\Repositories\SseDocumentDraftRepository
+    {
+        return $this->documentDrafts ??= new \App\Repositories\SseDocumentDraftRepository();
+    }
+
+    private function draftGuestKey(): string
+    {
+        $label = (string) (Session::get('sse_guest_label') ?? '');
+
+        return (int) (Session::get('user_id') ?: 0) > 0 || $label === '' ? '' : substr(sha1($label), 0, 32);
+    }
+
+    /** Un brouillon ne s'écrit que pour un nouveau document, ou un document modifiable et dans le périmètre du rédacteur. */
+    private function draftTargetAllowed(int $docId): bool
+    {
+        if ($docId <= 0) {
+            return true;
+        }
+        $doc = $this->documents->findById($docId, $this->tenantId());
+        if ($doc === null || in_array((string) $doc['status'], ['valide', 'archive'], true)) {
+            return false;
+        }
+
+        return empty($doc['case_id']) || $this->requireCase((int) $doc['case_id']) !== null;
+    }
+
+    /** Corps reçu du formulaire : HTML riche assaini, ou texte brut (secours sans JavaScript) laissé tel quel. */
+    private function normalizeBodyInput(string $raw): string
+    {
+        $raw = trim($raw);
+        if (SseRichText::isRich($raw)) {
+            return SseRichText::wrap(substr(ltrim($raw), strlen(SseRichText::MARK)));
+        }
+
+        return $raw;
+    }
+
+    /**
+     * Données de l'éditeur : modèles convertis, valeurs des champs dynamiques, brouillon serveur du rédacteur.
+     *
+     * @return array<string,mixed>
+     */
+    private function editorContext(int $docId): array
+    {
+        $templates = [];
+        foreach (SseDocumentRepository::bodyTemplatesByType() as $type => $text) {
+            $templates[$type] = SseRichText::fromLegacyText((string) $text);
+        }
+        $userId = (int) (Session::get('user_id') ?: 0);
+        $name = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? '');
+        $grade = '';
+        if ($userId > 0) {
+            try {
+                $row = (new UserRepository())->findById($userId, $this->tenantId());
+                $gid = (int) ($row['grade_id'] ?? 0);
+                $g = $gid > 0 ? (new \App\Repositories\GradeRepository())->findById($gid, $this->tenantId()) : null;
+                $grade = is_array($g) ? (string) \App\Support\GradeSelectOptions::label($g) : '';
+            } catch (\Throwable) {
+                $grade = '';
+            }
+        }
+        $draft = $this->drafts()->find($this->tenantId(), $userId, $this->draftGuestKey(), $docId);
+        if (is_array($draft)) {
+            $draft['body'] = SseRichText::htmlOf((string) ($draft['body'] ?? ''));
+        }
+
+        return [
+            'templates' => $templates,
+            'fields' => ['nom' => $name, 'grade' => $grade, 'date' => date('d/m/Y')],
+            'serverDraft' => $draft,
+            'draftUrl' => url('atak/sse/documents/brouillon'),
+        ];
     }
 
     public function documentStatus(Request $request, array $params = []): Response
