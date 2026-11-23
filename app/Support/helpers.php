@@ -2073,6 +2073,28 @@ if (!function_exists('effectifs_workspace_url')) {
     }
 }
 
+if (!function_exists('effectifs_desk_path')) {
+    /**
+     * Chemin URL de la vue « logiciel » du Bureau des effectifs (page dédiée plein écran), sans slash initial.
+     */
+    function effectifs_desk_path(): string
+    {
+        return 'back-office/bureau-effectifs';
+    }
+}
+
+if (!function_exists('effectifs_desk_url')) {
+    /**
+     * Lien vers le Bureau des effectifs plein écran ; $suffix : 'donnees' (lecture JSON de la vue).
+     */
+    function effectifs_desk_url(string $suffix = ''): string
+    {
+        $suffix = trim($suffix, '/');
+
+        return $suffix === '' ? url(effectifs_desk_path()) : url(effectifs_desk_path() . '/' . $suffix);
+    }
+}
+
 if (!function_exists('effectifs_member_url')) {
     /**
      * Fiche d'un membre, avec en option une fenêtre ouverte d'emblée (?ouvrir=etat-civil, fonctions, langues,
