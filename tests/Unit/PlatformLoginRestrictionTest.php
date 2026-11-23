@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Repositories\PlatformAccountBanRepository;
 use App\Repositories\UserRepository;
+use App\Services\EmailService;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Tests\Support\MysqlDdlSqlitePdo;
@@ -28,6 +29,10 @@ final class PlatformLoginRestrictionTest extends TestCase
         $controller = $reflection->newInstanceWithoutConstructor();
         $reflection->getProperty('platformBans')->setValue($controller, new PlatformAccountBanRepository($pdo));
         $reflection->getProperty('userRepository')->setValue($controller, $users);
+        // restrictedLogin() choisit la langue de l'avis public d'après le destinataire.
+        $mail = $this->createStub(EmailService::class);
+        $mail->method('recipientLocale')->willReturn('fr');
+        $reflection->getProperty('emailService')->setValue($controller, $mail);
 
         $previous = $_SESSION ?? [];
         $_SESSION = ['pending_verification_email' => 'banni@example.test'];
@@ -38,7 +43,7 @@ final class PlatformLoginRestrictionTest extends TestCase
             self::assertNull(Session::get('pending_verification_email'));
             $notice = Session::getFlash('login_access_restriction');
             self::assertSame([
-                'id' => 17, 'rule' => 'CGU Athena', 'message' => 'Explication publique', 'end' => 'Sans date de fin',
+                'id' => 17, 'rule' => 'CGU Athena', 'rule_url' => '', 'locale' => 'fr', 'message' => 'Explication publique', 'end' => 'Sans date de fin',
                 'appeal_closed' => false,
             ], $notice);
             self::assertNull(Session::getFlash('login_access_restriction'));

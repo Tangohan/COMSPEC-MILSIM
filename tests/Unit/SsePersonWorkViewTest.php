@@ -145,15 +145,17 @@ final class SsePersonWorkViewTest extends TestCase
 
     public function testWantedIsALetterRWithColourLevelEndDateAndTooltip(): void
     {
-        $this->wantedPerson('Alpha', 'medium', '2026-11-20 12:00:00');
+        // Échéance relative à aujourd'hui : une date fixe finit par être passée et l'avis n'est alors plus actif.
+        $end = new \DateTimeImmutable('+30 days 12:00:00');
+        $this->wantedPerson('Alpha', 'medium', $end->format('Y-m-d H:i:s'));
         $this->wantedPerson('Bravo', 'critical', null, 'yes');
         $html = $this->page();
         self::assertMatchesRegularExpression('/class="pe-r"[^>]*>\s*<span aria-hidden="true">R<\/span>/', $html);
-        self::assertStringContainsString('fin 20/11', $html, 'Fin de validité en mention courte');
+        self::assertStringContainsString('fin ' . $end->format('d/m'), $html, 'Fin de validité en mention courte');
         self::assertStringContainsString('jusqu’à levée', $html);
         self::assertStringContainsString('role="tooltip"', $html);
         self::assertStringContainsString('aria-describedby="pe-tip-w-t', $html);
-        self::assertStringContainsString('Fin de validité : 20/11/2026', $html);
+        self::assertStringContainsString('Fin de validité : ' . $end->format('d/m/Y'), $html);
         self::assertStringContainsString('Légende', $html);
         self::assertStringContainsString('R = personne recherchée', $html);
         self::assertStringContainsString('Niveau 2 sur 4', $html, 'Moyen : vigilance renforcée');

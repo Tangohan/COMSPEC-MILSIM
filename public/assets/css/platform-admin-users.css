@@ -247,8 +247,8 @@ html[data-bo-theme="dark"] .pu {
 .pu-dialog--wide { width: min(860px, calc(100vw - 32px)); }
 .pu-dialog::backdrop { background: rgba(8, 12, 11, 0.55); backdrop-filter: blur(2px); }
 .pu-dialog__form { display: grid; gap: 0.85rem; padding: 1.25rem 1.35rem 1.15rem; margin: 0; }
-.pu-dialog__kicker { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pa-mint); }
-.pu-dialog__kicker.is-danger { color: var(--pu-danger); }
+.pu-dialog__kicker, .pu-dialog__tag { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pa-mint); }
+.pu-dialog__kicker.is-danger, .pu-dialog__tag.is-danger { color: var(--pu-danger); }
 .pu-dialog__title { margin: -0.4rem 0 0; font-family: var(--pa-display); font-size: 1.2rem; font-weight: 850; }
 .pu-dialog__facts { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; color: var(--pa-ink-2); line-height: 1.45; }
 .pu-dialog__field { display: grid; gap: 0.4rem; margin: 0; padding: 0; border: 0; font-weight: 700; font-size: 13px; }
