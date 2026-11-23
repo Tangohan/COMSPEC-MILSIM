@@ -389,3 +389,68 @@
   padding-inline-start: 1rem;
   border-inline-start: 3px solid var(--legal-accent);
 }
+
+/* Code de conduite : sommaire collant, recherche, exemples, impression, mode nuit. */
+.legal-main .legal-conduct-index {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  max-height: 34vh;
+  overflow-y: auto;
+}
+.legal-conduct-index ol { margin: 0; padding-inline-start: 0; list-style: none; columns: 2 18rem; column-gap: 1.5rem; }
+.legal-conduct-index li { break-inside: avoid; padding-block: 0.1rem; }
+.legal-conduct-tools { margin-block: 1rem; }
+.legal-conduct-tools label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+.legal-conduct-tools input[type="search"] {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--legal-line);
+  border-radius: 8px;
+  font: inherit;
+  color: var(--legal-ink);
+  background: #fff;
+}
+.legal-conduct-tools input:focus-visible,
+.legal-print:focus-visible,
+.legal-permalink:focus-visible { outline: 3px solid var(--legal-accent); outline-offset: 2px; }
+.legal-conduct-status { margin: 0.35rem 0 0; min-height: 1.2em; font-size: 0.875rem; color: var(--legal-body); }
+.legal-print {
+  margin-inline-start: 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--legal-line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--legal-ink);
+  background: var(--legal-wash);
+  cursor: pointer;
+}
+.legal-article { scroll-margin-top: 36vh; }
+.legal-article[hidden], .legal-conduct-index li[hidden] { display: none; }
+.legal-summary { padding: 0.6rem 0.9rem; border-inline-start: 3px solid var(--legal-accent); background: var(--legal-wash); border-radius: 0 8px 8px 0; }
+.legal-example { margin-block: 0.9rem; padding: 0.7rem 0.9rem; border: 1px dashed var(--legal-line); border-radius: 8px; background: var(--legal-wash); }
+.legal-permalink { margin-inline-start: 0.4rem; font-weight: 400; opacity: 0.45; text-decoration: none; }
+.legal-article h2:hover .legal-permalink, .legal-permalink:focus { opacity: 1; }
+.legal-backtop { font-size: 0.875rem; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --legal-ink: #e6edf3;
+    --legal-body: #b6c2cf;
+    --legal-muted: #8b98a5;
+    --legal-line: #2b3947;
+    --legal-wash: #14202b;
+    --legal-accent: #34d399;
+  }
+  :root:not([data-theme="light"]) .legal-body,
+  :root:not([data-theme="light"]) .legal-side { background: #0a1218; }
+  :root:not([data-theme="light"]) .legal-conduct-tools input[type="search"] { background: #0f1a23; }
+}
+
+@media print {
+  .legal-side, .legal-footer, .legal-conduct-tools, .legal-print, .legal-permalink, .legal-backtop { display: none !important; }
+  .legal-main .legal-conduct-index { position: static; max-height: none; }
+  .legal-article { break-inside: avoid; }
+}
