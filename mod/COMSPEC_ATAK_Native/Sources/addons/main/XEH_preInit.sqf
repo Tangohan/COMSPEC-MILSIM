@@ -660,10 +660,10 @@ private _cap = ["COMSPEC", "ATAK · Capture par l'ennemi"];
     ["COMSPEC", "ATAK · Admin"], "", 1] call comspec_atak_native_fnc_addSetting;
 // Centre Zeus (fn_zeusCentre) : préférences de chaque Zeus.
 ["comspec_atak_native_zeus_centre_btn", "CHECKBOX",
-    ["Centre Zeus : bouton", "Bouton CENTRE ZEUS en haut de l'écran Zeus. Décoché : seule la touche l'ouvre (Contrôles > Configurer les addons)."],
+    ["LiveConf : bouton", "Bouton LiveConf en haut de l'écran Zeus. Décoché : seule la touche l'ouvre (Contrôles > Configurer les addons)."],
     ["COMSPEC", "ATAK · Admin"], true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zeus_centre_3d", "CHECKBOX",
-    ["Centre Zeus : étiquettes 3D", "Étiquettes au-dessus des joueurs à l'ouverture du Centre Zeus, panneau ouvert seulement. Un bouton du Centre les coupe aussi."],
+    ["LiveConf : étiquettes 3D", "Étiquettes au-dessus des joueurs à l'ouverture de LiveConf, panneau ouvert seulement. Un bouton du Centre les coupe aussi."],
     ["COMSPEC", "ATAK · Admin"], true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zeus_centre_dbl", "CHECKBOX",
     ["Double-clic : configurer l'objet", "Écran Zeus : un double-clic sur un écran, une preuve ou une caisse ouvre sa fenêtre de configuration à la place de la fenêtre d'attributs."],

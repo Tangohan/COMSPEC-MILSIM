@@ -571,14 +571,14 @@ class AtakController
         return null;
     }
 
-    /** Ancienne adresse de téléchargement de l'archive : le mod est désormais servi par le Steam Workshop. */
+    /** Ancienne adresse de téléchargement de l'archive : renvoie vers la page d'installation. */
     public function downloadMod(Request $request, array $params = []): Response
     {
         return Response::redirect(url('atak/mod'));
     }
 
     /**
-     * Page membre : installer le mod Athena depuis le Steam Workshop (plus d'archive hébergée par le site),
+     * Page membre : installer le mod Athena (pack à télécharger sur /modpacks, dépendances Steam),
      * collection Steam de la communauté, version publiée, prérequis, dépannage.
      */
     public function modPage(Request $request, array $params = []): Response
@@ -606,16 +606,23 @@ class AtakController
             $maintenance = $this->atakConfigRepository->isMaintenanceEnabled($tenantId);
         } catch (\Throwable) {
         }
+        $modPack = [];
+        try {
+            $modPack = (new \App\Repositories\PublicModpackRepository())->current();
+        } catch (\Throwable) {
+        }
         $user = $this->authService->user();
 
         return Response::view('layout.main', [
             'content' => 'atak.mod',
             'title' => 'Installer le mod Athena',
             'meta_description' => $en
-                ? 'Install the Athena mod for Arma 3 from the Steam Workshop: subscribe, enable it in the launcher, link your account.'
-                : 'Installer le mod Athena pour Arma 3 depuis le Steam Workshop : s’abonner, l’activer dans le launcher, lier son compte.',
+                ? 'Install the Athena mod for Arma 3: download the pack, add it as local mods in the launcher, link your account.'
+                : 'Installer le mod Athena pour Arma 3 : télécharger le pack, l’ajouter comme mods locaux dans le launcher, lier son compte.',
             'modItems' => \App\Support\SteamWorkshop::items(),
             'modSet' => \App\Support\SteamWorkshop::modset($tenantId),
+            'modPack' => $modPack,
+            'modPackItems' => \App\Services\Modpack\ModpackItems::default()->all(),
             'modVersion' => $version,
             'modVersionName' => (string) (\App\Support\AtakReleaseInfo::versionName() ?? ''),
             'modLinkVersion' => (string) ($release['link'] ?? ''),

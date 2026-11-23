@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.32.1 Washington — le bouton LiveConf se cache avec l'interface Zeus / the LiveConf button hides with the Zeus interface[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Bouton LiveConf[/b] : en Zeus, il se masque et se réaffiche avec l'interface (touche Retour arrière), pour faire des captures d'écran propres.
+[*] [b]Nouvel aspect[/b] : le bouton « CENTRE ZEUS » devient « LiveConf », avec le logo du mod ; le Centre Zeus s'appelle désormais LiveConf partout (titre, touche, menu Zeus, réglages). Le clic ouvre toujours le même écran.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]LiveConf button[/b]: in Zeus, it hides and shows again with the interface (Backspace key), for clean screenshots.
+[*] [b]New look[/b]: the "ZEUS CENTRE" button becomes "LiveConf", with the mod logo; the Zeus Centre is now called LiveConf everywhere (title, key, Zeus menu, settings). Clicking it still opens the same screen.
+[/list]
+
 [h1]COMSPEC ATAK 4.32.0 Washington — JTAC, carte, Zeus, radio et fiches SSE / JTAC, map, Zeus, radio and SSE records[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

@@ -176,7 +176,7 @@ switch (_act) do {
         [["comspec_atak_wizard", "ATAK · Assistant de configuration", _icon, { [{ ["open"] call comspec_atak_native_fnc_setupWizard; }] call comspec_atak_native_fnc_nextFrame; }, { true }] call comspec_atak_native_fnc_zenAction, [], 6] call zen_context_menu_fnc_addAction;
         [["comspec_atak_radiocut", "ATAK · Couper ou rétablir le lien radio", _icon, { ["cut", [["read"] call comspec_atak_native_fnc_radioGuard]] call comspec_atak_native_fnc_radioGuard; }, { true }] call comspec_atak_native_fnc_zenAction, [], 5] call zen_context_menu_fnc_addAction;
         // Entrée unique : le Centre Zeus (fn_zeusCentre), avec la fiche du joueur sous la souris ou sélectionné.
-        private _centre = ["comspec_atak_zeus_centre", "Ouvrir le Centre Zeus", _icon, {
+        private _centre = ["comspec_atak_zeus_centre", "Ouvrir LiveConf", _icon, {
             private _u = (_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusTargets")) param [0, objNull];
             if (!isNull _u) then { missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreSel", getPlayerUID _u]; };
             if ((count (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMap])) isEqualTo 0) then { ["toggle"] call comspec_atak_native_fnc_zeusCentre; } else { ["card"] call comspec_atak_native_fnc_zeusCentre; };

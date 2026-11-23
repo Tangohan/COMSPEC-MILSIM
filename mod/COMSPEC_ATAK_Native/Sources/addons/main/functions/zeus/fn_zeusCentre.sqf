@@ -164,15 +164,50 @@ switch (_act) do {
         private _h = safeZoneH;
         private _kw = pixelW / pixelH;
         private _right = ["edge"] call comspec_atak_native_fnc_zeusCentre;
-        private _bw = 0.13 * _h * _kw;
+        // Bouton : emblème du mod (PBO) + « LiveConf », sans libellé « CENTRE ZEUS ». L'emblème est posé sur la gauche du bouton.
+        private _bw = 0.115 * _h * _kw;
+        private _bh = 0.034 * _h;
+        private _bx = _right - _bw - 0.004 * _h * _kw;
+        private _by = safeZoneY + 0.008 * _h;
         private _b = _d ctrlCreate ["COMSPEC_RscButton", -1];
-        _b ctrlSetPosition [_right - _bw - 0.004 * _h * _kw, safeZoneY + 0.008 * _h, _bw, 0.034 * _h];
+        _b ctrlSetPosition [_bx, _by, _bw, _bh];
         _b ctrlSetFontHeight (0.021 * _h);
-        _b ctrlSetText (("CENTRE ZEUS") call _tr);
-        _b ctrlSetTooltip (("État des ATAK, actions, état du serveur et outils Zeus") call _tr);
+        _b ctrlSetText "LiveConf";
+        _b ctrlSetTooltip "LiveConf";
         _b ctrlCommit 0;
         _b ctrlAddEventHandler ["ButtonClick", { ["toggle"] call comspec_atak_native_fnc_zeusCentre; }];
+        private _lg = _d ctrlCreate ["COMSPEC_RscPicture", -1];
+        _lg ctrlSetPosition [_bx + 0.004 * _h * _kw, _by + 0.003 * _h, _bh * 0.9 * _kw, _bh * 0.9];
+        _lg ctrlSetText "\z\comspec_atak_native\addons\main\data\logo_athena.paa";
+        _lg ctrlSetTextColor [1, 1, 1, 1];
+        _lg ctrlEnable false;
+        _lg ctrlCommit 0;
+        uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreBtnLogo", _lg];
+        // Bouton masqué et réaffiché avec l'ATH Zeus (Retour arrière ou menu) : suivi léger tant que l'écran Zeus existe.
+        _d displayAddEventHandler ["KeyDown", { if ((_this select 1) isEqualTo 14) then { [{ ["ath"] call comspec_atak_native_fnc_zeusCentre; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec; [{ ["ath"] call comspec_atak_native_fnc_zeusCentre; }, [], 0.5] call comspec_atak_native_fnc_waitAndExec; }; false }];
+        [{ if (isNull (findDisplay 312)) then { [_this select 1] call CBA_fnc_removePerFrameHandler; } else { ["ath"] call comspec_atak_native_fnc_zeusCentre; }; }, 0.25] call CBA_fnc_addPerFrameHandler;
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreBtn", _b];
+    };
+    case "ath": {
+        // ATH Zeus (interface native) visible ? Un contrôle natif (idc >= 0, arbre ou liste) affiché, lui et ses groupes, non fondu :
+        // rien de tel = interface masquée (Retour arrière ou menu). Aucun contrôle natif trouvé : on considère l'ATH visible.
+        private _d = DISP;
+        private _b = uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreBtn", controlNull];
+        if (isNull _d || {isNull _b}) exitWith { true };
+        private _seen = false;
+        private _vis = false;
+        {
+            if ((ctrlType _x) in [5, 12, 102] && {(ctrlIDC _x) >= 0}) then {
+                _seen = true;
+                private _ok = ctrlShown _x && {(ctrlFade _x) < 0.9};
+                private _g = ctrlParentControlsGroup _x;
+                while { _ok && {!isNull _g} } do { _ok = ctrlShown _g && {(ctrlFade _g) < 0.9}; _g = ctrlParentControlsGroup _g; };
+                if (_ok) exitWith { _vis = true; };
+            };
+        } forEach (allControls _d);
+        if (!_seen) then { _vis = true; };
+        { if (!isNull _x) then { _x ctrlShow _vis; }; } forEach [_b, uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreBtnLogo", controlNull]];
+        _vis
     };
     case "fit": {
         // Texte d'un bouton qui tient dans sa largeur : police réduite jusqu'au plancher de la grille, puis libellé court et
@@ -293,8 +328,8 @@ switch (_act) do {
         _logo ctrlSetText "\z\comspec_atak_native\addons\main\data\logo_athena.paa";
         _logo ctrlSetTextColor [1, 1, 1, 1];
         // Titre posé dès l'ouverture (même hauteur que le titre complet) : le cadre ne bouge plus ensuite.
-        private _head = ["frame", format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/>%2", ("CENTRE ZEUS") call _tr, ("Relevé demandé…") call _dim]] call _stx;
-        private _close = ["frame", "X", "X", "Fermer le Centre Zeus (Ctrl+Z, selon vos touches)", "['close'] call comspec_atak_native_fnc_zeusCentre;"] call _btn;
+        private _head = ["frame", format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/>%2", ("LiveConf") call _tr, ("Relevé demandé…") call _dim]] call _stx;
+        private _close = ["frame", "X", "X", "Fermer LiveConf (Ctrl+Z, selon vos touches)", "['close'] call comspec_atak_native_fnc_zeusCentre;"] call _btn;
         private _tb = createHashMap;
         private _tabCells = [];
         {
@@ -564,7 +599,7 @@ switch (_act) do {
         // Contrôle de l'onglet affiché (autotest) : bouton visible sans texte, texte coupé, deux contrôles du même parent qui se
         // chevauchent, contrôle hors du fond. Les contrôles posés dessus exprès (« overlay ») sont ignorés. Vide : tout va bien.
         private _st = call _ui;
-        if ((count _st) isEqualTo 0) exitWith { ["Centre Zeus fermé"] };
+        if ((count _st) isEqualTo 0) exitWith { ["LiveConf fermé"] };
         private _k = uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"];
         private _bg = _st get "bg";
         private _out = [];
@@ -867,7 +902,7 @@ switch (_act) do {
             format ["%1 · %2", format [("%1 joueur(s)") call _tr, count _model], format [("%1 lié(s)") call _tr, _n get "link"]] + ([format [" · %1", format [("%1 en attente") call _tr, _pending]], ""] select (_pending isEqualTo 0))
         };
         // Même gabarit que le titre posé à l'ouverture (« toggle ») : le cadre garde sa hauteur.
-        (_st get "head") ctrlSetStructuredText parseText (format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='#8a9a93'>%2</t>", ("CENTRE ZEUS") call _tr, _sub]);
+        (_st get "head") ctrlSetStructuredText parseText (format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='#8a9a93'>%2</t>", ("LiveConf") call _tr, _sub]);
         // Joueur choisi dans Zeus : sa fiche s'ouvre ici (le clic sur l'unité vaut clic dans la liste).
         private _picked = ((curatorSelected param [0, []]) select { isPlayer _x }) param [0, objNull];
         if (!isNull _picked) then {

@@ -151,7 +151,7 @@ $icon = static function (string $name): string {
                 <ul class="fl-checks">
                     <li class="<?= $hasMod ? 'is-ok' : 'is-warn' ?>">
                         <span class="fl-checks__mark" aria-hidden="true"><?= $hasMod ? '✓' : '!' ?></span>
-                        <span>Mod disponible sur le Steam Workshop</span>
+                        <span>Mod disponible en téléchargement</span>
                     </li>
                     <li class="<?= $hasIdentity ? 'is-ok' : 'is-warn' ?>">
                         <span class="fl-checks__mark" aria-hidden="true"><?= $hasIdentity ? '✓' : '!' ?></span>
@@ -194,7 +194,7 @@ $icon = static function (string $name): string {
                     </div>
                     <div class="fl-actions">
                         <?php if ($modDownloadUrl): ?>
-                        <a class="fl-btn fl-btn--primary" href="<?= $e((string) $modDownloadUrl) ?>"><?= $icon('download') ?> S’abonner sur Steam</a>
+                        <a class="fl-btn fl-btn--primary" href="<?= $e((string) $modDownloadUrl) ?>"><?= $icon('download') ?> Télécharger le pack</a>
                         <?php endif; ?>
                         <a class="fl-btn fl-btn--ghost" href="<?= $e($modPageUrl) ?>">Guide d’installation</a>
                     </div>
