@@ -38,10 +38,10 @@ private _applyLink = {
     if (_res <= 0) exitWith { false };
     if (_res isNotEqualTo (_view getOrDefault ["res", 0])) then {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
-        if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", "comspec_livecam"]; };
+        if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", "comspec_livecam"]; ["keep"] call comspec_atak_native_fnc_tocRtt; };
         _pic ctrlSetText format ["#(argb,%1,%1,1)r2t(comspec_livecam,1.0)", _res]; // i18n:brut
         if (!isNull _cam) then {
-            _cam cameraEffect ["Internal", "Back", "comspec_livecam"];
+            _cam cameraEffect ["Internal", "Back", "comspec_livecam"]; ["keep"] call comspec_atak_native_fnc_tocRtt;
             "comspec_livecam" setPiPEffect [_s getOrDefault ["livecamMode", 0]];
         };
         _view set ["res", _res];
