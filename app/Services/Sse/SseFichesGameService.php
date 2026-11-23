@@ -38,6 +38,8 @@ final class SseFichesGameService
     public const VERSION = 1;
     public const KIND = 'sse_fiches';
     public const KIND_SHARE = 'sse_fiche_share';
+    /** Résolution d'un numéro DSE par le canal du téléphone (même résultat que GET /api/sse/v1/dse/{dse}). */
+    public const KIND_DSE = 'sse_dse';
     /** Une page, avec la marge pour « OK|id|ref » (8 000 octets au plus côté DLL). */
     public const PAGE_BYTES = 7400;
     /** Durée de validité conseillée au client, en secondes. */
