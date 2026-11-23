@@ -131,7 +131,8 @@ class SystemDashboardController
             'homeHealth' => $home->health(),
             'homeFigures' => $home->figures(),
             'homeQuickLinks' => PlatformHomeService::quickLinks(),
-        ];
+            'homeModules' => PlatformHomeService::modules(),
+        ] + $this->recentActivityData();
     }
 
     /** @return array<string, mixed> */

@@ -11,6 +11,7 @@ use App\Repositories\ContentReportRepository;
 use App\Repositories\PlanPaymentRequestRepository;
 use App\Repositories\PlatformBanAppealRepository;
 use App\Repositories\UserRepository;
+use App\Services\ContactMail\ContactMailRepository;
 use App\Services\Watch\LoadLevel;
 use App\Services\Watch\WatchState;
 use App\Support\PlatformProductionStatus;
@@ -87,6 +88,15 @@ final class PlatformHomeService
 
                 return [$n > 0 ? 'warn' : 'ok', $n, []];
             }),
+            $this->card('contact', 'admin/system/boite-contact', function (): array {
+                $repo = new ContactMailRepository($this->pdo());
+                if (!$repo->ready()) {
+                    throw new \RuntimeException('table absente');
+                }
+                $c = $repo->counts();
+
+                return [$c['unread'] > 0 ? 'warn' : 'ok', $c['unread'], ['todo' => $c['todo']]];
+            }),
         ]);
     }
 
@@ -99,14 +109,20 @@ final class PlatformHomeService
             $cards = [];
             $rows = [];
             try {
-                $rows = ($this->digest ??= new PlatformHealthDigest($this->pdo))->rows(['send_queue', 'mod_version', 'site_errors']);
+                $rows = ($this->digest ??= new PlatformHealthDigest($this->pdo))->rows(['send_queue', 'mod_version', 'cron', 'disk', 'backup', 'site_errors']);
             } catch (\Throwable) {
             }
             $byKey = [];
             foreach ($rows as $r) {
                 $byKey[$r['key']] = $r;
             }
-            foreach (['send_queue' => 'admin/parc-atak', 'mod_version' => 'admin/parc-atak'] as $key => $href) {
+            foreach ([
+                'send_queue' => 'admin/parc-atak',
+                'mod_version' => 'admin/parc-atak',
+                'cron' => 'admin/system/cron',
+                'disk' => 'admin/system/storage',
+                'backup' => 'admin?onglet=sauvegardes',
+            ] as $key => $href) {
                 $cards[] = self::fromDigestRow($key, $href, $byKey[$key] ?? null);
             }
             $cards[] = $this->card('load', 'admin/system/surcharge', function (): array {
@@ -176,6 +192,33 @@ final class PlatformHomeService
             ['key' => 'tenants', 'href' => 'admin/tenants'],
             ['key' => 'plans', 'href' => 'admin/system/subscription-plans'],
             ['key' => 'payments', 'href' => 'admin/paiements'],
+        ];
+    }
+
+    /**
+     * Modules d'administration de la plateforme, pour la grille de l'accueil (libellés et descriptions dans la vue).
+     *
+     * @return list<array{key: string, href: string}>
+     */
+    public static function modules(): array
+    {
+        return [
+            ['key' => 'tenants', 'href' => 'admin/tenants'],
+            ['key' => 'users', 'href' => 'admin/users'],
+            ['key' => 'security', 'href' => 'admin/system/securite'],
+            ['key' => 'audit', 'href' => 'admin/audit'],
+            ['key' => 'alerts', 'href' => 'admin/system/alerts'],
+            ['key' => 'mod_alerts', 'href' => 'admin/system/alertes-mod'],
+            ['key' => 'fleet', 'href' => 'admin/parc-atak'],
+            ['key' => 'sanctions', 'href' => 'admin/sanctions'],
+            ['key' => 'contact', 'href' => 'admin/system/boite-contact'],
+            ['key' => 'maintenance', 'href' => 'admin/maintenance'],
+            ['key' => 'cron', 'href' => 'admin/system/cron'],
+            ['key' => 'storage', 'href' => 'admin/system/storage'],
+            ['key' => 'updates', 'href' => 'admin/system/updates'],
+            ['key' => 'analytics', 'href' => 'admin/analytics'],
+            ['key' => 'payments', 'href' => 'admin/paiements'],
+            ['key' => 'plans', 'href' => 'admin/system/subscription-plans'],
         ];
     }
 

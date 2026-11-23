@@ -36,6 +36,10 @@ $tileLabels = [
     'migrations' => 'Migrations en attente',
     'abuse' => 'Alertes de détection',
     'reports' => 'Signalements de membres',
+    'contact' => 'Messages non lus de la boîte de contact',
+    'cron' => 'Tâches automatiques',
+    'disk' => 'Espace disque',
+    'backup' => 'Dernière sauvegarde',
     'send_queue' => 'Files d’envoi du mod',
     'load' => 'Charge du site',
     'mod_version' => 'Version du mod en jeu',
@@ -49,6 +53,35 @@ $tileLabels = [
 $loadLevels = [0 => 'Normal', 1 => 'Charge élevée', 2 => 'Charge forte', 3 => 'Saturation'];
 $quickLabels = ['security' => 'Surveillance de la sécurité', 'users' => 'Comptes', 'tenants' => 'Communautés', 'plans' => 'Formules', 'payments' => 'Paiements'];
 /** Une carte : lien vers la page où agir. */
+$modulesCatalog = [
+    'tenants' => ['Communautés', 'Création, plan, intervention, récupération et suppression.'],
+    'users' => ['Comptes', 'Recherche, fiches, sanctions et demandes de purge.'],
+    'security' => ['Sécurité', 'Surveillance, connexions suspectes et protections actives.'],
+    'audit' => ['Journal d’audit', 'Toutes les actions sensibles, avec annulation possible.'],
+    'alerts' => ['Annonces de la plateforme', 'Bandeaux affichés aux membres, planifiables.'],
+    'mod_alerts' => ['Alertes de détection', 'Abus du mod et de la charge à examiner.'],
+    'fleet' => ['Parc ATAK', 'Appareils, versions du mod et files d’envoi.'],
+    'sanctions' => ['Bannissements', 'Sanctions de la plateforme et contestations.'],
+    'contact' => ['Boîte de contact', 'Courrier reçu par la plateforme et réponses.'],
+    'maintenance' => ['Maintenance', 'Planifier et annoncer une fenêtre de maintenance.'],
+    'cron' => ['Tâches automatiques', 'Dernières exécutions et retards.'],
+    'storage' => ['Stockage', 'Espace disque et inspection des données.'],
+    'updates' => ['Mises à jour', 'Versions déployées et notes de version.'],
+    'analytics' => ['Analyses d’usage', 'Activité des communautés sur la période choisie.'],
+    'payments' => ['Paiements', 'Virements déclarés à vérifier.'],
+    'plans' => ['Formules', 'Offres, tarifs et cadeaux.'],
+];
+$homeModules = is_array($homeModules ?? null) ? $homeModules : [];
+$toDo = 0;
+foreach ($homeActions as $c) {
+    if (in_array($c['state'], ['warn', 'bad'], true) && (int) ($c['n'] ?? 0) > 0) { $toDo++; }
+}
+$healthBad = 0;
+$healthWarn = 0;
+$healthNa = 0;
+foreach ($homeHealth as $c) {
+    if ($c['state'] === 'bad') { $healthBad++; } elseif ($c['state'] === 'warn') { $healthWarn++; } elseif ($c['state'] === 'na') { $healthNa++; }
+}
 $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loadLevels): void {
     $key = (string) $c['key'];
     $state = (string) $c['state'];
@@ -92,6 +125,8 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                     <span class="ph-tile__note">ouvertes · <?= $h((int) ($x['mod'] ?? 0)) ?> du mod, <?= $h((int) ($x['load'] ?? 0)) ?> de charge</span>
                 <?php elseif ($key === 'reports'): ?>
                     <span class="ph-tile__note">à modérer</span>
+                <?php elseif ($key === 'contact'): ?>
+                    <span class="ph-tile__note">fil(s) non lu(s) · <?= $h((int) ($x['todo'] ?? 0)) ?> à faire</span>
                 <?php elseif ($key === 'communities'): ?>
                     <span class="ph-tile__note">+<?= $h((int) ($x['new'] ?? 0)) ?> sur 30 jours (30 jours d’avant : +<?= $h((int) ($x['before'] ?? 0)) ?>)</span>
                 <?php elseif ($key === 'active'): ?>
@@ -134,6 +169,13 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                         </div>
                         <?php endif; ?>
                     </dl>
+                    <?php if ($homeTab === 'vue'): ?>
+                    <p class="ph-summary" role="status">
+                        <span class="ph-summary__item ph-summary__item--<?= $toDo > 0 ? 'warn' : 'ok' ?>"><?= $toDo > 0 ? $h($toDo) . ' file(s) à traiter' : 'Rien à traiter' ?></span>
+                        <span class="ph-summary__item ph-summary__item--<?= $healthBad > 0 ? 'bad' : ($healthWarn > 0 ? 'warn' : 'ok') ?>"><?= $healthBad > 0 ? $h($healthBad) . ' signal(aux) en alerte' : ($healthWarn > 0 ? $h($healthWarn) . ' signal(aux) à surveiller' : 'Santé normale') ?></span>
+                        <?php if ($healthNa > 0): ?><span class="ph-summary__item ph-summary__item--na"><?= $h($healthNa) ?> mesure(s) indisponible(s)</span><?php endif; ?>
+                    </p>
+                    <?php endif; ?>
                     <a class="pa-btn pa-btn--ghost pa-btn--sm pa-btn--block" style="margin-top:8px;" href="<?= $h((string) $healthUrl) ?>" target="_blank" rel="noopener">Vérifier l’état des services</a>
                 </aside>
             </div>
@@ -167,7 +209,7 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                     <a class="pa-card__link" href="<?= $h(url('admin') . '?onglet=sante') ?>">Tout le détail →</a>
                 </div>
                 <ul class="ph-grid ph-grid--health">
-                    <?php foreach ($homeHealth as $c) { $tile($c, in_array($c['key'], ['send_queue', 'mod_version', 'site_errors'], true) ? 'digest' : 'plain'); } ?>
+                    <?php foreach ($homeHealth as $c) { $tile($c, in_array($c['key'], ['send_queue', 'mod_version', 'cron', 'disk', 'backup', 'site_errors'], true) ? 'digest' : 'plain'); } ?>
                 </ul>
             </section>
 
@@ -180,6 +222,60 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                     <?php foreach ($homeFigures as $c) { $tile($c, 'plain'); } ?>
                 </ul>
             </section>
+
+            <section id="hub-modules" class="ph-block" aria-labelledby="ph-modules-title">
+                <div class="ph-block__head">
+                    <h2 id="ph-modules-title" class="ph-block__title">Modules</h2>
+                    <button type="button" class="pa-btn pa-btn--ghost pa-btn--sm" data-dashboard-open="ph-tools-dialog" aria-haspopup="dialog">Chercher un outil <kbd aria-hidden="true">Ctrl K</kbd></button>
+                </div>
+                <?php if ($homeModules === []): ?>
+                    <p class="pa-empty-state">Aucun module disponible.</p>
+                <?php else: ?>
+                <ul class="ph-grid ph-grid--modules">
+                    <?php foreach ($homeModules as $m): $meta = $modulesCatalog[$m['key']] ?? [(string) $m['key'], '']; ?>
+                    <li class="ph-cell">
+                        <a class="ph-module" href="<?= $h(url((string) $m['href'])) ?>">
+                            <span class="ph-module__name"><?= $h($meta[0]) ?></span>
+                            <?php if ($meta[1] !== ''): ?><span class="ph-module__desc"><?= $h($meta[1]) ?></span><?php endif; ?>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+            </section>
+
+            <section id="hub-journal" class="ph-block" aria-labelledby="ph-recent-title">
+                <div class="ph-block__head">
+                    <h2 id="ph-recent-title" class="ph-block__title">Dernières actions du journal d’audit</h2>
+                    <a class="pa-card__link" href="<?= $h(url('admin/audit')) ?>">Journal complet →</a>
+                </div>
+                <?php $recentRows = is_array($adminRecentActivity ?? null) ? $adminRecentActivity : []; ?>
+                <?php if (!empty($adminRecentActivityError)): ?>
+                    <p class="pa-flash pa-flash--warn"><?= $h((string) $adminRecentActivityError) ?></p>
+                <?php elseif ($recentRows === []): ?>
+                    <p class="pa-empty-state">Aucune action enregistrée pour le moment.</p>
+                <?php else: ?>
+                    <ul class="ph-recent">
+                        <?php foreach ($recentRows as $row): ?>
+                        <li>
+                            <span class="ph-recent__what"><?= $h(audit_action_label_fr((string) ($row['action'] ?? ''))) ?></span>
+                            <span class="ph-recent__who"><?= $h((string) (($row['actor_email'] ?? '') !== '' ? $row['actor_email'] : ('#' . (string) ($row['user_id'] ?? '')))) ?></span>
+                            <time class="ph-recent__when"><?= $h((string) ($row['created_at'] ?? '')) ?></time>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </section>
+
+            <details class="ph-help">
+                <summary>Comment lire cette page</summary>
+                <ul>
+                    <li>À traiter : chaque carte compte ce qui attend une décision ; une carte grise signale une source illisible, jamais un zéro inventé.</li>
+                    <li>Santé : l’état mesuré des services (tâches, disque, sauvegarde, charge, erreurs). Les cartes en alerte remontent en premier.</li>
+                    <li>Ctrl K ouvre la recherche d’outils ; la barre du haut cherche un compte ou une communauté.</li>
+                    <li>Les chiffres sont mis en cache quelques secondes à quelques minutes : rechargez la page pour les rafraîchir.</li>
+                </ul>
+            </details>
 
             <?php if (isset($dashboardActivity)) { require base_path('views/admin/partials/dashboard_activity.php'); } ?>
             <dialog class="ph-dialog" id="ph-journal-dialog" aria-labelledby="ph-journal-title">
