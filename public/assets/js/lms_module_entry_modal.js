@@ -1,6 +1,8 @@
 /**
  * Modale d’entrée module LMS — intercept liens data-lms-module-entry + accueil à l’arrivée.
  * Clés localStorage / sessionStorage : athena.lms.moduleEntry.*
+ * Fermer ou continuer mémorise durablement la version vue (localStorage) ; seul un bouton
+ * « Revoir le tutoriel » ou une nouvelle version (LmsModuleEntry::TUTORIAL_VERSION) le rejoue.
  */
 (function () {
   'use strict';
@@ -58,8 +60,21 @@
     }
   }
 
+  // Version courante du tutoriel de chaque module (cfg.modules[x].version, définie côté PHP).
+  // L’état « vu » mémorise la version vue : l’ancien format `true` vaut version 1.
+  function currentVersion(moduleKey) {
+    var cfg = window.__lmsModuleEntry || {};
+    var mod = cfg.modules && cfg.modules[moduleKey];
+    var v = mod ? parseInt(mod.version, 10) : 1;
+    return v > 0 ? v : 1;
+  }
+
   function isDismissed(moduleKey) {
-    return !!readMap(DISMISS_KEY)[moduleKey];
+    var seen = readMap(DISMISS_KEY)[moduleKey];
+    if (seen === true) {
+      seen = 1;
+    }
+    return typeof seen === 'number' && seen >= currentVersion(moduleKey);
   }
 
   function isWelcomed(moduleKey) {
@@ -74,7 +89,7 @@
 
   function markDismissed(moduleKey) {
     var map = readMap(DISMISS_KEY);
-    map[moduleKey] = true;
+    map[moduleKey] = currentVersion(moduleKey);
     writeMap(DISMISS_KEY, map);
   }
 
@@ -103,7 +118,6 @@
     var rightsEl = root.querySelector('[data-lms-entry-rights]');
     var continueBtn = root.querySelector('[data-lms-entry-continue]');
     var secondaryBtn = root.querySelector('[data-lms-entry-secondary]');
-    var skipInput = root.querySelector('[data-lms-entry-skip]');
     var accentEl = root.querySelector('[data-lms-entry-accent]');
     var panelEl = root.querySelector('[data-lms-entry-panel]');
 
@@ -165,9 +179,6 @@
           });
         }
       }
-      if (skipInput) {
-        skipInput.checked = false;
-      }
       fillProfile();
       return true;
     }
@@ -201,9 +212,7 @@
       opts = opts || {};
       if (opts.markSeen && pendingModule) {
         markWelcomed(pendingModule);
-        if (skipInput && skipInput.checked) {
-          markDismissed(pendingModule);
-        }
+        markDismissed(pendingModule);
       }
       root.classList.add('hidden');
       root.setAttribute('aria-hidden', 'true');
@@ -225,9 +234,7 @@
       var href = pendingHref;
       if (moduleKey) {
         markWelcomed(moduleKey);
-        if (skipInput && skipInput.checked) {
-          markDismissed(moduleKey);
-        }
+        markDismissed(moduleKey);
       }
       closeModal();
       if (href) {
@@ -283,6 +290,17 @@
       ev.preventDefault();
       openModal(moduleKey, href);
     }, true);
+
+    // « Revoir le tutoriel » : rouvre la modale à la demande, sans tenir compte de l’état « vu ».
+    document.addEventListener('click', function (ev) {
+      var t = ev.target;
+      var btn = t && typeof t.closest === 'function' ? t.closest('[data-lms-entry-replay]') : null;
+      if (!btn) {
+        return;
+      }
+      ev.preventDefault();
+      openModal(btn.getAttribute('data-lms-entry-replay'), null);
+    });
 
     var autoOpen = cfg.autoOpen;
     if (autoOpen && modules[autoOpen] && !isDismissed(autoOpen) && !isWelcomed(autoOpen)) {

@@ -48,6 +48,11 @@ class RecruitmentWorkspaceController
             ? $this->enlistmentRepository->topLinkedOpeningsByVolume($tenantId, 8)
             : [];
 
+        $deskSummary = \App\Support\RecruitmentDeskSummary::compute(
+            $this->enlistmentRepository->listForDeskSummary($tenantId),
+            new \DateTimeImmutable('now', new \DateTimeZone('UTC'))
+        );
+
         $portalRecruitmentBlocks = $this->blockedIndicatorRepository->listActiveTenantPortalRecruitmentRelated($tenantId, 200);
         $automodDossiers = $this->buildAutomodDossierSummaries($tenantId);
 
@@ -57,6 +62,7 @@ class RecruitmentWorkspaceController
             'recruitmentLmsTitle' => 'Vue d’ensemble recrutement',
             'recruitmentAdminNav' => 'dashboard',
             'enlistmentCounts' => $counts,
+            'deskSummary' => $deskSummary,
             'recruitmentSidebarCounts' => $counts,
             'enlistmentSlaHours' => $slaHours,
             'submittedOlderThanSla' => $submittedOlderThanSla,

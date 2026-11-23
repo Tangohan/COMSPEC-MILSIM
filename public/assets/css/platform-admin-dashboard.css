@@ -303,3 +303,68 @@
   gap: .75rem;
 }
 .ph-search-results a { overflow-wrap: anywhere; }
+
+/* Résumé de l'état dans l'en-tête */
+.ph-summary { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; padding: 0; }
+.ph-summary__item {
+  padding: 3px 10px;
+  border: 1px solid var(--pa-line);
+  border-left-width: 4px;
+  border-radius: 999px;
+  background: var(--pa-surface);
+  color: var(--pa-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ph-summary__item--ok { border-left-color: var(--pa-mint-bright); }
+.ph-summary__item--warn { border-left-color: #f2b33d; background: var(--pa-tone-amber-bg); }
+.ph-summary__item--bad { border-left-color: var(--pa-tone-rose-fg); background: var(--pa-tone-rose-bg); }
+.ph-summary__item--na { border-left-style: dashed; color: var(--pa-muted); }
+.ph-summary__item--warn, .ph-summary__item--bad { color: var(--pa-ink); }
+
+/* Grille des modules */
+.ph-grid--modules { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.ph-module {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--pa-line);
+  border-radius: 12px;
+  background: var(--pa-surface);
+  color: var(--pa-ink);
+  text-decoration: none;
+}
+.ph-module:hover { border-color: var(--pa-mint); box-shadow: var(--pa-shadow); }
+.ph-module:focus-visible { outline: 2px solid var(--pa-mint); outline-offset: 2px; }
+.ph-module__name { font-size: 14px; font-weight: 750; }
+.ph-module__desc { font-size: 12px; line-height: 1.4; color: var(--pa-muted); }
+
+/* Dernières actions d'audit */
+.ph-recent { margin: 0; padding: 0; list-style: none; border: 1px solid var(--pa-line); border-radius: 12px; background: var(--pa-surface); }
+.ph-recent li {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto;
+  gap: 12px;
+  padding: 9px 14px;
+  font-size: 13px;
+}
+.ph-recent li + li { border-top: 1px solid var(--pa-line); }
+.ph-recent__what { font-weight: 700; overflow-wrap: anywhere; }
+.ph-recent__who { color: var(--pa-muted); overflow-wrap: anywhere; }
+.ph-recent__when { color: var(--pa-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 640px) {
+  .ph-recent li { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* Aide repliable */
+.ph-help {
+  padding: 10px 14px;
+  border: 1px solid var(--pa-line);
+  border-radius: 12px;
+  background: var(--pa-surface-2);
+  font-size: 13px;
+}
+.ph-help summary { cursor: pointer; font-weight: 750; }
+.ph-help ul { margin: 8px 0 0; padding-left: 18px; color: var(--pa-ink-2); line-height: 1.5; }

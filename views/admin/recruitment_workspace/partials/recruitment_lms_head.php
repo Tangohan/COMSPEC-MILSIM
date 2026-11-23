@@ -32,6 +32,9 @@ $recruitmentAthUi = !empty($recruitmentAthUi);
 <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <link href="<?= htmlspecialchars(asset_url('assets/css/recruitment_offers_ath.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <?php endif; ?>
+<?php if (is_file(base_path('public/assets/css/recruitment_desk.css'))): ?>
+<link href="<?= htmlspecialchars(asset_url('assets/css/recruitment_desk.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<?php endif; ?>
 <?php if ($lmsThemeVars !== ''): ?>
 <style>:root { <?= $lmsThemeVars ?> }</style>
 <?php endif; ?>
