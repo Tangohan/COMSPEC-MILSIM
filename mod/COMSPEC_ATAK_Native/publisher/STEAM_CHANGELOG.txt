@@ -1,15 +1,31 @@
-[h1]COMSPEC ATAK 4.32.0 Washington — retrouver une fiche par son numéro DSE / find a record by its DSE number[/h1]
+[h1]COMSPEC ATAK 4.32.0 Washington — JTAC, carte, Zeus, radio et fiches SSE / JTAC, map, Zeus, radio and SSE records[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
 
 [h2]Français[/h2]
 [list]
+[*] [b]JTAC et CAS[/b] : nouvelle fiche de check-in CAS à 9 lignes (onglet CKIN de l'app JTAC) à envoyer au pilote, copier ou verser au compte rendu.
+[*] [b]Nom et référence du 9-LINE[/b] : tu peux nommer un 9-LINE, il reçoit une référence automatique (CAS-23-04) que le pilote et toi pouvez vous annoncer.
+[*] [b]Alerte du pilote[/b] : le pilote reçoit enfin l'alerte « 9 LIGNES reçues », même à pied, et l'indicatif qu'il choisit est respecté.
+[*] [b]Carte[/b] : menu OUTILS rangé par rubriques (Aller, Mesurer, Planifier, Dessiner, Afficher), déplacement de la carte sans fermer l'outil actif ; la zone plate ne pose qu'une LZ à la fois et affiche sa grille ; en petit format, ta grille s'affiche sous ton indicatif (réglable dans Réglages).
+[*] [b]Zeus[/b] : le Centre Zeus peut forcer le relevé d'un joueur ou de toute la sélection ; la caméra du Zeus ne repasse plus en première personne à cause des caméras du téléphone ; les supports invisibles et les sphères du mod n'encombrent plus la liste d'objets du Zeus.
 [*] [b]Numéro DSE[/b] : dans l'app SSE, onglet Fiches, le nouvel onglet « DSE » te laisse saisir ou coller un numéro DSE du portail Athena. Le téléphone affiche le numéro d'identification, le nom de code, le nom de la fiche et l'IA reliée, ou explique pourquoi la recherche échoue (hors ligne, numéro inconnu, trop de recherches).
+[*] [b]App SSE corrigée[/b] : QR code entier, blocs et grilles alignés, valeurs caviardées lisibles, un seul bandeau de classification.
+[*] [b]Radio[/b] : une radio ACRE2 ordinaire n'est plus prise pour une MPU-5 ; le pont voix n'est proposé qu'avec une vraie MPU-5.
+[*] [b]Chargement et journaux[/b] : le logo du mod disparaît de l'écran de chargement ; le lanceur d'envoi des journaux est retiré (antivirus), envoie les deux derniers journaux à la main après avoir retiré mots de passe et jetons.
 [/list]
 
 [h2]English[/h2]
 [list]
+[*] [b]JTAC and CAS[/b]: new 9-line CAS check-in sheet (CKIN tab of the JTAC app) to send to the pilot, copy or file into the report.
+[*] [b]9-LINE name and reference[/b]: you can name a 9-LINE and it gets an automatic reference (CAS-23-04) the pilot and you can call out.
+[*] [b]Pilot alert[/b]: the pilot finally receives the "9 LINES received" alert, even on foot, and the callsign they choose is respected.
+[*] [b]Map[/b]: TOOLS menu sorted by topic (Go, Measure, Plan, Draw, Show), map panning without closing the active tool; the flat zone tool places one LZ at a time and shows its grid; in small format, your grid shows under your callsign (optional in Settings).
+[*] [b]Zeus[/b]: the Zeus Centre can force a report from one player or the whole selection; the Zeus camera no longer jumps back to first person because of the phone cameras; the mod's invisible supports and spheres no longer clutter the Zeus object list.
 [*] [b]DSE number[/b]: in the SSE app, Records tab, the new "DSE" tab lets you type or paste a DSE number from the Athena portal. The phone shows the identification number, code name, record name and linked AI, or explains why the lookup failed (offline, unknown number, too many lookups).
+[*] [b]SSE app fixed[/b]: full QR code, aligned blocks and grids, readable redacted values, a single classification banner.
+[*] [b]Radio[/b]: an ordinary ACRE2 radio is no longer taken for an MPU-5; the voice bridge is offered only with a real MPU-5.
+[*] [b]Loading and logs[/b]: the mod logo is gone from the loading screen; the log-sending launcher is removed (antivirus), send your last two logs by hand after removing passwords and tokens.
 [/list]
 
 [h1]COMSPEC ATAK 4.31.0 Washington — réglette d'effectif plus sobre et masquable / cleaner, hideable squad strip[/h1]
