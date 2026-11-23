@@ -48,6 +48,36 @@ final class TenantTypeBureauDiscordOnlyTest extends TestCase
         self::assertFalse(TenantTypeConfig::rosterWithoutAccounts('atak'));
     }
 
+    public function testFullProfileOpensTheBureauModeWithoutLosingItsModules(): void
+    {
+        self::assertTrue(TenantTypeConfig::rosterBureauMode('effectifs'));
+        self::assertTrue(TenantTypeConfig::rosterBureauMode('full'));
+        self::assertTrue(TenantTypeConfig::rosterBureauMode('Complet-inconnu'), 'un type inconnu retombe sur Complet');
+        self::assertFalse(TenantTypeConfig::rosterBureauMode('atak'));
+        // Le profil Complet garde le recrutement sur le site et toutes les pages des effectifs.
+        self::assertFalse(TenantTypeConfig::recruitsOnDiscordOnly('full'));
+        self::assertTrue(TenantTypeConfig::moduleAllowed('full', 'personnel'));
+        self::assertTrue(TenantTypeConfig::uriAllowed('full', 'back-office/ressources/effectifs/sans-comptes'));
+        self::assertFalse(TenantTypeConfig::uriAllowed('atak', 'back-office/ressources/effectifs/sans-comptes'));
+    }
+
+    public function testBureauDesignIsScopedToBureauModeAndUsesNoForbiddenClass(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $css = (string) file_get_contents($root . '/public/assets/css/back-office-effectifs-bureau.css');
+        $shell = (string) file_get_contents($root . '/views/admin/effectifs_workspace/shell.php');
+        self::assertStringContainsString('bo-eff-workspace--bureau', $shell);
+        self::assertStringContainsString('rosterBureauMode', $shell);
+        preg_match_all('/^[^\s\/@}*][^{]*\{/m', $css, $m);
+        foreach ($m[0] as $selector) {
+            if (str_starts_with($selector, 'html[') || str_contains($selector, 'bo-eff-workspace--bureau')) {
+                continue;
+            }
+            self::fail('Sélecteur hors du mode bureau : ' . $selector);
+        }
+        self::assertDoesNotMatchRegularExpression('/kicker|eyebrow|overline|surtitre/i', $css);
+    }
+
     public function testRosterOnlyEmailIsReservedAndMasked(): void
     {
         $email = RosterOnlyMember::syntheticEmail();

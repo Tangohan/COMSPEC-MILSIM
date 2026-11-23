@@ -125,7 +125,7 @@ final class RhDossierWorkspaceController
         return $this->shell('admin.effectifs_workspace.rh_documents', [
             'title' => 'Documents RH',
             'effectifsNav' => 'rh_documents',
-            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'effectifs-documents-rh.css', 'rh-identity-papers.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css', 'effectifs-documents-rh.css', 'rh-identity-papers.css'],
             'hrDocuments' => $docs,
             'hrDocumentsCount' => $summary['total'],
             'hrDocumentsSummary' => $summary,
@@ -636,7 +636,7 @@ final class RhDossierWorkspaceController
         return $this->shell('admin.effectifs_workspace.rh_identity_papers', [
             'title' => 'Documents d’identité',
             'effectifsNav' => 'rh_documents',
-            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'rh-identity-papers.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css', 'rh-identity-papers.css'],
             'rhIdentityPapers' => $overview,
             'rhIdentityRights' => $rights,
             'rhIdentityQuery' => mb_substr(trim($request->queryString('q', '')), 0, 80),
@@ -698,7 +698,7 @@ final class RhDossierWorkspaceController
         return $this->shell('admin.effectifs_workspace.rh_inbox', [
             'title' => 'À traiter',
             'effectifsNav' => 'rh_inbox',
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'rh-a-traiter.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css', 'rh-a-traiter.css'],
             'rhActionInbox' => $inbox,
             'rhInboxActive' => $active,
             'rhInboxActionCount' => (int) ($inbox['total'] ?? 0),
@@ -932,7 +932,7 @@ final class RhDossierWorkspaceController
             'effectifsContent' => $content,
             'isBackOfficeShell' => true,
             'boSkipPageHead' => true,
-            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css'],
             'showPortalFooter' => false,
             'rosterCounts' => [
                 'total' => $this->userRepository->countListForTenant($tenantId, null, null, null, true),

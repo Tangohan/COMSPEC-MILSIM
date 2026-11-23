@@ -146,7 +146,7 @@ class EffectifsWorkspaceController
             'effectifsNav' => 'qualifications',
             'qualificationMatrix' => $matrix,
             'qualificationsExpiringCount' => (int) $matrix['counts']['soon'] + (int) $matrix['counts']['exp'],
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css'],
         ]);
     }
 
@@ -1113,8 +1113,8 @@ class EffectifsWorkspaceController
             return Response::redirect(effectifs_workspace_url());
         }
         $tenant = $this->tenantRepository->findById($tenantId);
-        if (!\App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenant['tenant_type'] ?? 'full'))) {
-            Session::flash('error', 'L’import de tableur est réservé au profil « Bureau des effectifs ».');
+        if (!\App\Services\Community\TenantTypeConfig::rosterBureauMode((string) ($tenant['tenant_type'] ?? 'full'))) {
+            Session::flash('error', 'L’import de tableur est réservé aux profils « Bureau des effectifs » et « Complet ».');
 
             return Response::redirect(effectifs_workspace_url());
         }
@@ -1253,7 +1253,8 @@ class EffectifsWorkspaceController
         return $this->shell('admin.effectifs_workspace.new_member', [
             'title' => 'Ajouter un membre',
             'effectifsNav' => 'nouveau',
-            'nmRosterOnly' => \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenant['tenant_type'] ?? 'full')),
+            'nmRosterDefault' => \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly((string) ($tenant['tenant_type'] ?? 'full')),
+            'nmRosterOnly' => \App\Services\Community\TenantTypeConfig::rosterBureauMode((string) ($tenant['tenant_type'] ?? 'full')),
             'nmGradeGroups' => GradeSelectOptions::groups($grades, CommunityLanguages::preferredGradeCountry($this->tenantRepository->getSettings($tenantId))),
             'nmUnits' => $units,
             'nmAccessRoles' => $this->roleRepository->forTenantAccessProfiles($tenantId),
@@ -1934,7 +1935,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css', 'qualification-display.css', 'eff-availability-check.css', 'back-office-bands.css', 'eff-civil-dialog.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css', 'effectifs-kit.css', 'sse-papers.css', 'back-office-member-papers.css', 'access-register.css', 'eff-member-sse-access.css', 'eff-suivi.css', 'qualification-display.css', 'eff-availability-check.css', 'back-office-bands.css', 'eff-civil-dialog.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
@@ -2246,7 +2247,7 @@ class EffectifsWorkspaceController
             'canManageSuivi' => EffectifsLmsAccess::canManageSuivi($gate),
             'bulkMax' => MemberDossierSuiviController::BULK_MAX,
             'csrfToken' => Csrf::token(),
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'eff-suivi.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css', 'eff-suivi.css'],
         ]);
     }
 
@@ -3702,7 +3703,7 @@ class EffectifsWorkspaceController
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'rosterCounts' => $this->rosterCounts($tenantId),
             'csrfToken' => Csrf::token(),
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'effectifs-roles.css', 'back-office-bands.css', 'effectifs-roles-profile.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css', 'effectifs-roles.css', 'back-office-bands.css', 'effectifs-roles-profile.css'],
         ]);
     }
 
@@ -5762,7 +5763,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css', 'access-register.css', 'eff-availability-check.css', 'eff-roster-lisible.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-bureau.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css', 'access-register.css', 'eff-availability-check.css', 'eff-roster-lisible.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'effKpi' => $kpi,
