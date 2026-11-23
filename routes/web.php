@@ -3806,6 +3806,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/cas/{id}/ack', [AtakApiController::class, 'casAck']);
     $router->post('/api/cas/{id}/check-line', [AtakApiController::class, 'casCheckLine']);
     $router->post('/api/cas/{id}/status', [AtakApiController::class, 'casStatus']);
+    // Brief air : accusé de lecture du pilote (idempotent) et état de livraison (envoyé, livré, lu, acquitté, expiré).
+    $router->post('/api/cas/{id}/read', [AtakApiController::class, 'casRead']);
+    $router->get('/api/cas/{id}/delivery', [AtakApiController::class, 'casDelivery']);
     // Notes de reconnaissance + photos (Cams)
     $router->get('/api/recon/notes', [AtakApiController::class, 'reconNotesIndex']);
     $router->post('/api/recon/notes', [AtakApiController::class, 'reconNotesStore']);

@@ -8,14 +8,25 @@
     Un brief est identifié par sa ref (choisie par le jeu, reprise par Athena en mission_id ; brief rédigé sur le web :
     son numéro Athena) : reçu deux fois (jeu puis Athena), il n'apparaît qu'une fois.
     Boîte du pilote : missionNamespace COMSPEC_ATAK_AirInbox (le plus récent d'abord) ; envois du JTAC (suivi) :
-    COMSPEC_ATAK_AirSent. Rien n'est calculé par image : la boîte Athena est relevée toutes les 12 s (XEH_postInitClient),
-    seulement à bord d'un aéronef.
+    COMSPEC_ATAK_AirSent. Rien n'est calculé par image : "tick" (toutes les 4 s, XEH_postInitClient) décide du relevé de la
+    boîte Athena : toutes les 15 s à bord d'un aéronef, toutes les 45 s pour un pilote à pied (rôle pilote, sorti d'un
+    aéronef depuis moins de 30 min, ou app JTAC ouverte), et tout de suite (5 s d'écart au moins) au réveil du téléphone,
+    à l'ouverture de BRIEFS AIR ou au retour de la liaison. Indicatifs comparés par leur clé ("key" : casse, accents,
+    espaces, tirets ignorés : « TIGER 6 » = « Tiger-6 » = « TIGER6 »), même règle qu'Athena (AirBriefService::callsignKey).
+    Liaison de bord ("airLink") : à un poste d'équipage d'un aéronef (tablette de vol, fn_vehicleTerminal "air"), le brief
+    air-sol passe par la liaison de données de l'appareil : ni retenu hors réseau (relais hors de portée en vol), ni la
+    boîte Athena suspendue.
     Params : [action, argument]
       "send", [format ("9" | "5" | "C" fiche de check-in CKIN, fn_jtacCkin), lignes, remarques, destinataires [[indicatif, véhicule ou unité]...], ref, libre]  (JTAC)
       "track", [ref, format, résumé, [indicatifs]]   suivi d'un envoi fait ailleurs (mission CAS de l'app JTAC)
       "recv", [genre, ref, données, indicatif, unité]   réception de l'événement CBA
       "store", [ref, id Athena, format, émetteur, unité, heure, lignes, remarques, destinataire, source, statut]
-      "poll"                     boîte Athena du pilote
+      "poll", forcé (bool)       boîte Athena du pilote (forcé : relance 3 s après, la DLL rend le relevé précédent)
+      "tick"                     toutes les 4 s : relève la boîte quand il le faut (voir plus haut)
+      "names" → noms interrogés (indicatif de l'appareil, dernier indicatif d'appareil, indicatif Athena, indicatif ATAK,
+                indicatif du groupe, nom du joueur ; 8 au plus, sans doublon de clé)
+      "key", texte → clé de comparaison d'un indicatif ; "airLink" → liaison de bord disponible
+      "why" → "" si la boîte peut être relevée, sinon la raison ; "diag" → ligne de diagnostic de BRIEFS AIR
       "ack", [ref, statut]       (pilote) WILCO | UNABLE | READ ; "del", ref ; "readAll" ; "delAll"
       "jtacCs" → indicatif JTAC (profil, sinon indicatif ATAK) ; "setJtacCs", texte
       "airCs", véhicule → indicatif de l'aéronef ; "setAirCs", texte (aéronef du joueur, partagé et remonté à Athena)
@@ -44,6 +55,30 @@ private _myLabel = {
     private _v = vehicle player;
     if (_v isNotEqualTo player && {_v isKindOf "Air"}) exitWith { [_v] call _airCs };
     [player] call comspec_atak_native_fnc_unitCallsign
+};
+// Clé d'un indicatif : minuscules, accents ramenés, lettres et chiffres seulement (AirBriefService::callsignKey d'Athena).
+private _key = {
+    params [["_t", ""]];
+    if !(_t isEqualType "") then { _t = str _t; };
+    private _acc = missionNamespace getVariable "COMSPEC_ATAK_CsKeyAcc";
+    if (isNil "_acc") then {
+        _acc = createHashMapFromArray [[224, 97], [225, 97], [226, 97], [228, 97], [231, 99], [232, 101], [233, 101], [234, 101], [235, 101],
+            [236, 105], [237, 105], [238, 105], [239, 105], [241, 110], [242, 111], [243, 111], [244, 111], [246, 111], [249, 117], [250, 117], [251, 117], [252, 117]];
+        missionNamespace setVariable ["COMSPEC_ATAK_CsKeyAcc", _acc];
+    };
+    toString (((toArray (toLower _t)) apply { _acc getOrDefault [_x, _x] }) select { (_x >= 48 && {_x <= 57}) || {_x >= 97 && {_x <= 122}} })
+};
+// Rôles génériques du jeu : jamais interrogés comme indicatif.
+private _generic = ["operateur", "pilote", "pilot", "unknown", "inconnu", "any", "null", "jtac"];
+// Liaison de bord : poste d'équipage d'un aéronef (tablette de vol).
+private _airLink = { ((vehicle player) isKindOf "Air") && {([player] call comspec_atak_native_fnc_vehicleTerminal) isEqualTo "air"} };
+// Raison pour laquelle la boîte Athena ne peut pas être relevée ("" : elle peut l'être).
+private _whyNot = {
+    if (!([player] call comspec_atak_native_fnc_hasDevice) && {!(call _airLink)}) exitWith { "pas de téléphone" };
+    if !([] call comspec_atak_native_fnc_bridge) exitWith { "COMSPEC Overwatch absent" };
+    if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { "Athena non relié" };
+    if (!(call _airLink) && {!(["online"] call comspec_atak_native_fnc_offline)}) exitWith { "hors réseau" };
+    ""
 };
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "JTAC") then { ["JTAC"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _fmtName = { params ["_f"]; (createHashMapFromArray [["5", "5-LINE"], ["M", "MEDEVAC"], ["C", "CHECK-IN"]]) getOrDefault [_f, "9-LINE"] };
@@ -240,7 +275,16 @@ switch (_act) do {
         private _onJtac = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "JTAC";
         if (!_onJtac || {(_s getOrDefault ["view", ""]) isEqualTo "AIR"}) then { _s set ["view", "AIR"]; _s set ["airOpen", _ref]; };
         // Mode pilote actif à bord : l'alerte ouvre l'écran pilote, où la mission s'accepte sans menu.
-        ["WARNING", format ["%1 reçu de %2", [_fmt] call _fmtName, _from], 10, 85, ["JTAC", "PILOT"] select ((["on"] call comspec_atak_native_fnc_pilotMode) && {["crew"] call comspec_atak_native_fnc_pilotMode})] call comspec_atak_native_fnc_notify;
+        // Une seule alerte par brief nouveau (ref déjà rangée : rien, sauf correction) : format, émetteur, cible et IP.
+        private _what = (switch (_fmt) do {
+            case "5": { [_lines param [2, ""], _lines param [3, ""]] };
+            case "M": { [_lines param [0, ""]] };
+            // Fiche de check-in CKIN (fn_jtacCkin) : appareil et position de la cible.
+            case "C": { [_lines param [0, ""], _lines param [16, ""]] };
+            default { [_lines param [5, ""], format ["IP %1", _lines param [0, ""]]] };
+        }) select { !((trim _x) in ["", "-", "IP", "IP -"]) };
+        private _head = (createHashMapFromArray [["5", "5 LIGNES reçues de %1"], ["M", "MEDEVAC reçu de %1"], ["C", "CHECK-IN reçu de %1"]]) getOrDefault [_fmt, "9 LIGNES reçues de %1"];
+        ["WARNING", [format [_head, _from], format [_head + " — %2", _from, _what joinString " · "]] select (_what isNotEqualTo []), 10, 85, ["JTAC", "PILOT"] select ((["on"] call comspec_atak_native_fnc_pilotMode) && {["crew"] call comspec_atak_native_fnc_pilotMode})] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_vibrate;
         // Téléphone rangé (en vol) : le vibreur ne joue pas, on entend quand même l'arrivée.
         if (isNull ([] call comspec_atak_native_fnc_display) && {!(profileNamespace getVariable ["COMSPEC_ATAK_Silent", false])}) then {
@@ -289,30 +333,94 @@ switch (_act) do {
         call _render;
     };
 
-    case "poll": {
-        if (!hasInterface || {!alive player}) exitWith {};
+    case "key": { [_arg] call _key };
+    case "airLink": { call _airLink };
+    case "why": { call _whyNot };
+    case "names": {
         private _v = vehicle player;
-        if (_v isEqualTo player || {!(_v isKindOf "Air")}) exitWith {};
-        if !([] call comspec_atak_native_fnc_bridge) exitWith {};
-        if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith {};
-        if !(["online"] call comspec_atak_native_fnc_offline) exitWith {};
-        // Un seul relevé en vol (réponse lente : on n'en relance pas un autre avant 45 s).
-        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_AirPollAt", -1e9])) < 45) exitWith {};
-        private _names = [];
+        private _inAir = _v isNotEqualTo player && {_v isKindOf "Air"};
+        private _l = [];
+        private _ks = [];
         {
             private _n = [_x, 40] call _clean;
-            if (_n isNotEqualTo "" && {!((toLower _n) in ["operateur", "pilote"])}) then { _names pushBackUnique _n; };
-        } forEach [[true] call comspec_overwatch_connect_fnc_getCallsign, [player] call comspec_atak_native_fnc_unitCallsign, name player, [_v] call _airCs];
-        if ((count _names) isEqualTo 0) exitWith {};
+            private _k = [_n] call _key;
+            if (_k isNotEqualTo "" && {!(_k in _generic)} && {!(_k in _ks)}) then { _ks pushBack _k; _l pushBack _n; };
+        } forEach [
+            ["", [_v] call _airCs] select _inAir,
+            profileNamespace getVariable ["COMSPEC_ATAK_AirCsLast", ""],
+            ["", [true] call comspec_overwatch_connect_fnc_getCallsign] select (!isNil "comspec_overwatch_connect_fnc_getCallsign"),
+            [player] call comspec_atak_native_fnc_unitCallsign,
+            groupId group player,
+            name player
+        ];
+        _l select [0, 8]
+    };
+    case "tick": {
+        if (!hasInterface || {isNull player} || {!alive player}) exitWith {};
+        private _v = vehicle player;
+        private _inAir = _v isNotEqualTo player && {_v isKindOf "Air"};
+        if (_inAir) then { missionNamespace setVariable ["COMSPEC_ATAK_AirSeenAt", diag_tickTime]; };
+        private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        private _open = !isNull ([] call comspec_atak_native_fnc_display);
+        private _onApp = _open && {(_st getOrDefault ["activePage", ""]) in ["JTAC", "PILOT"]};
+        // Pilote : à bord, rôle pilote, sorti d'un aéronef depuis moins de 30 min, ou app JTAC ouverte.
+        // Rôle relu au plus une fois par minute (détection du lanceur, fn_appSpaces).
+        private _role = missionNamespace getVariable ["COMSPEC_ATAK_AirRole", [-1e9, false]];
+        if ((diag_tickTime - (_role select 0)) > 60) then {
+            _role = [diag_tickTime, (["kindOf", player] call comspec_atak_native_fnc_appSpaces) isEqualTo "pilot"];
+            missionNamespace setVariable ["COMSPEC_ATAK_AirRole", _role];
+        };
+        private _want = _inAir || {_onApp} || {_role select 1} || {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_AirSeenAt", -1e9])) < 1800};
+        if (!_want) exitWith {};
+        private _ok = (call _whyNot) isEqualTo "";
+        (missionNamespace getVariable ["COMSPEC_ATAK_AirTickWas", [true, true, true]]) params ["_wasOpen", "_wasApp", "_wasOk"];
+        missionNamespace setVariable ["COMSPEC_ATAK_AirTickWas", [_open, _onApp, _ok]];
+        if (!_ok) exitWith {};
+        private _gap = diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_AirPollLast", -1e9]);
+        // Réveil du téléphone, ouverture de l'app ou retour de la liaison : relevé tout de suite.
+        if (((_open && {!_wasOpen}) || {_onApp && {!_wasApp}} || {!_wasOk}) && {_gap >= 5}) exitWith { ["poll", true] call comspec_atak_native_fnc_airBrief; };
+        if (_gap >= ([45, 15] select _inAir)) then { ["poll"] call comspec_atak_native_fnc_airBrief; };
+    };
+    case "diag": {
+        private _d = missionNamespace getVariable ["COMSPEC_ATAK_AirPollDiag", createHashMap];
+        private _names = _d getOrDefault ["names", []];
+        if (_names isEqualTo []) then { _names = ["names"] call comspec_atak_native_fnc_airBrief; };
+        private _at = _d getOrDefault ["at", -1];
+        private _why = call _whyNot;
+        private _err = _d getOrDefault ["err", ""];
+        private _pend = { !(_x getOrDefault ["read", false]) } count (missionNamespace getVariable [_inboxKey, []]);
+        [
+            format ["Boîte interrogée pour : %1", [_names joinString ", ", "aucun indicatif"] select (_names isEqualTo [])],
+            ["dernier relevé : jamais", format ["dernier relevé il y a %1 s", round (diag_tickTime - _at)]] select (_at >= 0),
+            format ["%1 brief(s) en attente", _pend],
+            ["liaison OK", format ["liaison KO (%1)", [_why, _err] select (_why isEqualTo "")]] select (_why isNotEqualTo "" || {_err isNotEqualTo ""})
+        ] joinString " · "
+    };
+    case "poll": {
+        if (!hasInterface || {isNull player} || {!alive player}) exitWith { false };
+        private _d = missionNamespace getVariable ["COMSPEC_ATAK_AirPollDiag", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_AirPollDiag", _d];
+        private _why = call _whyNot;
+        if (_why isNotEqualTo "") exitWith { false };
+        // Un seul relevé en vol (réponse lente : on n'en relance pas un autre avant 45 s).
+        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_AirPollAt", -1e9])) < 45) exitWith { false };
+        private _names = ["names"] call comspec_atak_native_fnc_airBrief;
+        _d set ["names", _names];
+        if ((count _names) isEqualTo 0) exitWith { false };
         private _mapId = str (missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]]);
         missionNamespace setVariable ["COMSPEC_ATAK_AirPollAt", diag_tickTime];
-        [format ["~air|%1", _names joinString "|"], _mapId] spawn {
-            params ["_q", "_mapId"];
+        missionNamespace setVariable ["COMSPEC_ATAK_AirPollLast", diag_tickTime];
+        [format ["~air|%1", _names joinString "|"], _mapId, _arg isEqualTo true, _d] spawn {
+            params ["_q", "_mapId", "_force", "_d"];
             private _r = ["COMSPECExtension", "GetCASForCallsign", [_q, _mapId]] call comspec_atak_native_fnc_extAwait;
             missionNamespace setVariable ["COMSPEC_ATAK_AirPollAt", -1e9];
+            // La DLL rend le relevé précédent et rafraîchit en tâche de fond : relevé forcé (réveil, ouverture) relancé 3 s après.
+            if (_force) then { [{ missionNamespace setVariable ["COMSPEC_ATAK_AirPollLast", -1e9]; ["poll"] call comspec_atak_native_fnc_airBrief; }, [], 3] call comspec_atak_native_fnc_waitAndExec; };
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
-            if !(_r isEqualType "") exitWith {};
-            if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith {};
+            if !(_r isEqualType "") then { _r = ""; };
+            _d set ["at", diag_tickTime];
+            if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith { _d set ["err", [(_r splitString "|") param [1, "sans réponse"], "sans réponse"] select (_r isEqualTo "")]; };
+            _d set ["err", ""];
             private _p = trim (_r select [3]);
             if ((_p select [0, 2]) isNotEqualTo "[[") exitWith {};
             private _arr = parseSimpleArray _p;

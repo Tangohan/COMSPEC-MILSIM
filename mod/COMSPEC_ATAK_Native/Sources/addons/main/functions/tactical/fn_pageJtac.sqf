@@ -193,6 +193,8 @@ if (_view isEqualTo "AIR") exitWith {
         // « Sur mon téléphone » (2.9.39) : les briefs de l'appareil sur le vrai téléphone du pilote (fn_mobileQr).
         _rows pushBack ["buttons", [["SUR MON TÉLÉPHONE", { [{ ["open", "briefs"] call comspec_atak_native_fnc_mobileQr; }] call comspec_atak_native_fnc_nextFrame; }, false, true, "QR code à scanner avec votre vrai téléphone : lisez les briefs en grand et répondez WILCO ou UNABLE dessus"]]];
         _rows pushBack ["section", "Briefs reçus", [format ["%1 brief(s), %2 non lu(s)", _n, _unread], "9-LINE et 5-LINE des JTAC (jeu ou Athena)"] select (_n isEqualTo 0)];
+        // Diagnostic (fn_airBrief "diag") : noms interrogés, dernier relevé, briefs en attente, état de la liaison.
+        _rows pushBack ["text", format ["<t size='0.7' color='%1'>%2</t>", _grey, ["diag"] call comspec_atak_native_fnc_airBrief], _cardBg];
         if (_n isEqualTo 0) then {
             _rows pushBack ["empty", _ico, "Aucun brief reçu", "Les 9-LINE et 5-LINE envoyés à votre appareil par un JTAC, en jeu ou depuis la page Athena 9-LINE, arrivent ici avec une alerte."];
         } else {
