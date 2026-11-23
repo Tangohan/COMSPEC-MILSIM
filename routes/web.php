@@ -1545,6 +1545,8 @@ return function (Router $router) {
     $router->get('/atak/sse/documents/nouveau', [SsePortalController::class, 'documentCreateForm'], $mwSsePortal);
     $router->get('/atak/sse/documents/brouillon', [SsePortalController::class, 'documentDraftShow'], $mwSsePortal);
     $router->post('/atak/sse/documents/brouillon', [SsePortalController::class, 'documentDraftSave'], $mwSsePortal);
+    $router->post('/atak/sse/documents/modeles', [SsePortalController::class, 'documentTemplateStore'], $mwSsePortal);
+    $router->post('/atak/sse/documents/modeles/{id}/supprimer', [SsePortalController::class, 'documentTemplateDelete'], $mwSsePortal);
     $router->post('/atak/sse/documents', [SsePortalController::class, 'documentStore'], $mwSsePortal);
     $router->get('/atak/sse/documents/{id}', [SsePortalController::class, 'documentShow'], $mwSsePortal);
     $router->get('/atak/sse/documents/{id}/modifier', [SsePortalController::class, 'documentEditForm'], $mwSsePortal);

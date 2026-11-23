@@ -24,7 +24,7 @@ final class SseRichText
     public const HIGHLIGHT_COLORS = ['#fef08a', '#fed7aa', '#fecaca', '#bfdbfe', '#bbf7d0', '#e2e8f0'];
 
     /** Champs dynamiques du dossier. */
-    public const FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification'];
+    public const FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre'];
 
     private const MAX_DEPTH = 24;
 
@@ -49,7 +49,8 @@ final class SseRichText
 
     private const ALIGN = ['left', 'right', 'center', 'justify'];
 
-    private const CLASSES = ['sse-pagebreak', 'sse-field'];
+    /** sse-hint : texte d'aide grisé des modèles (span), à remplacer ; il n'apparaît ni sur le papier ni dans le PDF. */
+    private const CLASSES = ['sse-pagebreak', 'sse-field', 'sse-hint'];
 
     public static function isRich(string $body): bool
     {
@@ -201,6 +202,9 @@ final class SseRichText
         }
         if (isset($classes['sse-field']) && $tag !== 'span') {
             unset($classes['sse-field']);
+        }
+        if (isset($classes['sse-hint']) && ($tag !== 'span' || isset($classes['sse-field']))) {
+            unset($classes['sse-hint']);
         }
         $field = '';
         if ($tag === 'span' && isset($classes['sse-field'])) {
@@ -380,10 +384,42 @@ final class SseRichText
         if ($html === '') {
             return '';
         }
-        $html = self::refreshFields($html, $fields);
+        $html = self::refreshFields(self::stripHints($html), $fields);
         $html = self::redactions($html);
 
         return '<div class="sse-rich">' . $html . '</div>';
+    }
+
+    /** Aperçu d'un modèle (galerie) : comme le papier, mais les textes d'aide grisés restent visibles. */
+    public static function toPreviewHtml(string $body, array $fields = []): string
+    {
+        $html = self::htmlOf($body);
+
+        return $html === '' ? '' : '<div class="sse-rich">' . self::redactions(self::refreshFields($html, $fields)) . '</div>';
+    }
+
+    /** Retire les textes d'aide des modèles restés en place (sse-hint) : ils guident la rédaction, ils ne s'impriment pas. */
+    public static function stripHints(string $html): string
+    {
+        if (!str_contains($html, 'sse-hint')) {
+            return $html;
+        }
+
+        return (string) preg_replace('~<span class="sse-hint">.*?</span>~s', '', $html);
+    }
+
+    /** Vrai si le corps s'ouvre sur l'en-tête officiel d'un modèle (tableau portant le champ « référence »). */
+    public static function hasTemplateHeader(string $body): bool
+    {
+        $html = self::htmlOf($body);
+
+        return str_starts_with($html, '<table>') && str_contains(substr($html, 0, 1500), 'data-field="reference"');
+    }
+
+    /** Nombre de textes d'aide encore en place dans un corps. */
+    public static function hintCount(string $body): int
+    {
+        return substr_count(self::htmlOf($body), '<span class="sse-hint">');
     }
 
     /** @param array<string,string> $fields */
@@ -437,7 +473,7 @@ final class SseRichText
      */
     public static function toPdfHtml(string $body, array $fields = []): string
     {
-        $html = self::refreshFields(self::htmlOf($body), $fields);
+        $html = self::refreshFields(self::stripHints(self::htmlOf($body)), $fields);
         $html = (string) preg_replace_callback(
             '~\[\[(.*?)\]\]~u',
             static function (array $m): string {
