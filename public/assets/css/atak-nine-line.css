@@ -315,3 +315,9 @@ html:has(> body.nl-page), body.nl-page { background: var(--void); color: var(--i
   .nl-page .cres { grid-template-columns: 1fr 1fr; }
   .nl-page .ac { grid-template-columns: 1fr; }
 }
+
+/* Nom libre et référence automatique du brief */
+.nl-page .namebar { display: grid; gap: 6px; margin-bottom: 14px; }
+.nl-page .namebar .inp { max-width: 360px; }
+.nl-page .hist .bref { font-family: var(--mono); color: var(--accent); margin-right: 6px; }
+.nl-page .hist .bname { font-style: normal; opacity: .85; margin-right: 6px; }

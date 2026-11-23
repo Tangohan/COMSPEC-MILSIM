@@ -143,6 +143,11 @@ $loggedIn = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
           </div>
           <label class="chk push" title="Aucune ligne obligatoire ni contrôle de grille : un avertissement seulement"><input type="checkbox" id="nl-free" name="free" value="1">Saisie libre</label>
         </div>
+        <div class="namebar">
+          <label class="lbl" for="nl-name">Nom du brief (facultatif)</label>
+          <input class="inp" id="nl-name" name="name" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="ex. Pont nord">
+          <span class="hint">Une référence (ex. CAS-23-04) est attribuée automatiquement à l’envoi : le pilote et vous pouvez vous annoncer le nom ou la référence.</span>
+        </div>
         <div class="lines" id="nl-lines"></div>
         <details class="calc" id="nl-calc" data-only="cas">
           <summary><svg class="i"><use href="#nl-s-chev"></use></svg>Aide au calcul · lignes 2 et 3 depuis les grilles des lignes 1 et 6</summary>

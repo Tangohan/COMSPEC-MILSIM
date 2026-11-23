@@ -73259,4 +73259,12 @@ return [
     'Valider %1 après vol d’évaluation' => 'Validate %1 after the evaluation flight',
     '(collez-le dans la barre d\'adresse de l\'Explorateur) et prenez les deux derniers fichiers' => '(paste it in the File Explorer address bar) and take the last two files',
     '. Retirez tout mot de passe ou jeton, puis glissez-les dans le salon bugs ou help du Discord.' => '. Remove any password or token, then drop them in the Discord bugs or help channel.',
+    'Brief nommé : %1' => 'Brief named: %1',
+    'Nom du brief (40 caractères, vide pour le retirer)' => 'Brief name (40 characters, leave empty to remove it)',
+    'Nom du brief (facultatif)' => 'Brief name (optional)',
+    'Une référence (ex. CAS-23-04) est attribuée automatiquement à l’envoi : le pilote et vous pouvez vous annoncer le nom ou la référence.' => 'A reference (e.g. CAS-23-04) is assigned automatically when you send: you and the pilot can call out either the name or the reference.',
+    'Référence %1.' => 'Reference %1.',
+    'Renommage impossible.' => 'Rename failed.',
+    'Nom retiré.' => 'Name removed.',
+    'ex. Pont nord' => 'e.g. North bridge',
 ];

@@ -12974,6 +12974,20 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $assignedTo = $request->query('assignedTo') ?? $request->query('assigned_to');
         $status = $request->query('status');
+        // Recherche par nom libre ou référence automatique (« Pont nord », « CAS-23-04 », « cas 23 4 ») : GET /api/cas?q=…
+        // Un seul brief de la communauté, en tableau (vide si inconnu) : c'est ce que le pilote et le JTAC s'annoncent à la radio.
+        $lookup = $request->query('q') ?? $request->query('ref') ?? $request->query('name');
+        if (is_string($lookup) && trim($lookup) !== '') {
+            try {
+                $found = (new \App\Services\Tactical\AirBriefService())->findByBriefLabel($tenantId, trim($lookup))
+                    ?? (new \App\Services\Tactical\AirBriefService())->resolveLine($tenantId, trim($lookup));
+                $one = $found !== null ? $this->casRepo->getCas($tenantId, (int) $found['id']) : null;
+
+                return Response::json($one !== null ? [$one] : []);
+            } catch (\Throwable) {
+                return Response::json([]);
+            }
+        }
         // Boîte du pilote (espace BRIEFS AIR du téléphone) : assignedTo=~air|nom1|nom2 (GetCASForCallsign de la DLL).
         // Réponse en tableau SQF ; chaque brief renvoyé passe « livré » (AirBriefService::inboxResponse).
         if (is_string($assignedTo) && str_starts_with($assignedTo, \App\Services\Tactical\AirBriefService::INBOX_PREFIX)) {
@@ -13050,12 +13064,28 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $id = (int) ($params['id'] ?? 0);
+        $id = $this->casIdOf($tenantId, (string) ($params['id'] ?? ''));
         $row = $this->casRepo->getCas($tenantId, $id);
         if ($row === null) {
             return Response::json(['error' => 'Not found'], 404);
         }
         return Response::json($row);
+    }
+
+    /** Identifiant Athena d'un brief désigné par son numéro, sa référence (CAS-23-04) ou son nom ; 0 si inconnu. */
+    private function casIdOf(int $tenantId, string $raw): int
+    {
+        $raw = trim(rawurldecode($raw));
+        if (ctype_digit($raw)) {
+            return (int) $raw;
+        }
+        try {
+            $line = $raw === '' ? null : (new \App\Services\Tactical\AirBriefService())->resolveLine($tenantId, $raw);
+        } catch (\Throwable) {
+            $line = null;
+        }
+
+        return (int) ($line['id'] ?? 0);
     }
 
     public function casUpdate(Request $request, array $params = []): Response
@@ -13065,8 +13095,29 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $id = (int) ($params['id'] ?? 0);
+        $id = $this->casIdOf($tenantId, (string) ($params['id'] ?? ''));
         $body = $this->jsonBody($request);
+        // Nom du brief (« name » ou « brief_name », vide pour le retirer) : par son auteur seulement, tant que le brief n'est pas clos.
+        if (array_key_exists('name', $body) || array_key_exists('brief_name', $body)) {
+            $cur = $this->casRepo->getCas($tenantId, $id);
+            if ($cur === null) {
+                return Response::json(['error' => 'Not found'], 404);
+            }
+            $by = \App\Services\Tactical\AirBriefService::callsignKey($body['by'] ?? $body['author'] ?? '');
+            if ($by === '' || $by !== \App\Services\Tactical\AirBriefService::callsignKey($cur['author'] ?? '')) {
+                return Response::json(['error' => 'author_only'], 403);
+            }
+            $res = $this->casRepo->renameCas($tenantId, $id, $body['name'] ?? $body['brief_name']);
+            if ($res['result'] !== 'ok') {
+                $code = ['closed' => 409, 'invalid' => 422, 'unavailable' => 503][$res['result']] ?? 404;
+
+                return Response::json(['error' => $res['result'], 'message' => $res['error'] ?? null], $code);
+            }
+            unset($body['name'], $body['brief_name']);
+            if ($body === []) {
+                return Response::json($res['row']);
+            }
+        }
         $row = $this->casRepo->patchCas($tenantId, $id, $body);
         if ($row === null) {
             return Response::json(['error' => 'Not found'], 404);
@@ -13122,7 +13173,7 @@ class AtakApiController
         if ($r instanceof Response) {
             return $r;
         }
-        $ref = \App\Services\Tactical\AirBriefService::normalizeRef((string) ($params['id'] ?? ''));
+        $ref = \App\Services\Tactical\AirBriefService::normalizeLookup((string) ($params['id'] ?? ''));
         if ($ref === null) {
             return Response::json(['error' => 'cas_not_found'], 404);
         }
@@ -13150,7 +13201,7 @@ class AtakApiController
         if ($r instanceof Response) {
             return $r;
         }
-        $ref = \App\Services\Tactical\AirBriefService::normalizeRef((string) ($params['id'] ?? ''));
+        $ref = \App\Services\Tactical\AirBriefService::normalizeLookup((string) ($params['id'] ?? ''));
         try {
             $out = $ref === null ? null : (new \App\Services\Tactical\AirBriefService())->lineDelivery($r, $ref);
         } catch (\Throwable) {
@@ -13180,7 +13231,7 @@ class AtakApiController
         if ($ack !== null) {
             // Le routeur ne décode pas le segment : « %2B » (le « + » d'un ancien id) est remis en clair ici ; un id
             // illisible (hors [A-Za-z0-9._+-]) donne un 404 propre, sans requête.
-            $ref = \App\Services\Tactical\AirBriefService::normalizeRef((string) ($params['id'] ?? ''));
+            $ref = \App\Services\Tactical\AirBriefService::normalizeLookup((string) ($params['id'] ?? ''));
             if ($ref === null) {
                 return Response::json(['error' => 'cas_not_found'], 404);
             }

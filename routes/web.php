@@ -915,6 +915,7 @@ return function (Router $router) {
     $router->post('/9-line/indicatif', [\App\Controllers\Web\AtakNineLineViewController::class, 'jtacCallsign'], [AuthMiddleware::class]);
     $router->post('/9-line/appareils/indicatif', [\App\Controllers\Web\AtakNineLineViewController::class, 'aircraftCallsign'], [AuthMiddleware::class]);
     $router->post('/9-line/{id}/supprimer', [\App\Controllers\Web\AtakNineLineViewController::class, 'delete'], [AuthMiddleware::class]);
+    $router->post('/9-line/{id}/nom', [\App\Controllers\Web\AtakNineLineViewController::class, 'rename'], [AuthMiddleware::class]);
     // Fraîcheur des données du jeu : bandeau des pages 9-LINE, TOC et fiche ; diagnostic par joueur (responsables).
     $router->get('/synchro-jeu', [\App\Controllers\Web\GameSyncFreshnessController::class, 'summary'], [AuthMiddleware::class]);
     $router->get('/synchro-jeu/joueurs', [\App\Controllers\Web\GameSyncFreshnessController::class, 'players'], [AuthMiddleware::class]);
