@@ -23,8 +23,11 @@ final class AccountPrivacyController
         private AuthService $authService,
         private AccountDataExportService $exportService,
         private AccountDeletionService $deletionService,
-        private FileRateLimiter $limiter = new FileRateLimiter()
-    ) {}
+        private FileRateLimiter $limiter = new FileRateLimiter(),
+        private ?\App\Repositories\UserRegionRepository $regions = null,
+    ) {
+        $this->regions ??= new \App\Repositories\UserRegionRepository();
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -37,6 +40,7 @@ final class AccountPrivacyController
             'content' => 'account.privacy',
             'title' => 'Mes données',
             'accountHubPage' => true,
+            'accountRegion' => $this->regions->get((int) $user['id']),
             'deletionRequestedAt' => $user['deletion_requested_at'] ?? null,
             'deletionScheduledAt' => $user['deletion_scheduled_at'] ?? null,
             'deletionHandover' => $this->deletionService->communityHandoverPlan((int) $user['id'], (int) ($user['tenant_id'] ?? 0)),
@@ -70,6 +74,42 @@ final class AccountPrivacyController
         Session::flash('success', 'Suppression programmée. Vous pouvez l’annuler en vous reconnectant dans les ' . AccountDeletionService::GRACE_PERIOD_DAYS . ' prochains jours.');
 
         return Response::redirect(url('account/donnees'));
+    }
+
+    /** POST /account/donnees/region : choisir (action « enregistrer ») ou effacer (action « effacer ») sa région. */
+    public function saveRegion(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $back = Response::redirect(url('account/donnees') . '#privacy-region-heading');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $back;
+        }
+        $userId = (int) $user['id'];
+        if ((string) $request->input('action', '') === 'effacer') {
+            $this->regions->clear($userId);
+            Session::flash('success', 'Votre région a été effacée.');
+
+            return $back;
+        }
+        if ((string) $request->input('consent', '') !== '1') {
+            Session::flash('error', 'Cochez la case pour confirmer que vous acceptez d’enregistrer votre région.');
+
+            return $back;
+        }
+        $code = trim((string) $request->input('region', ''));
+        if (!\App\Support\AccountRegions::isValid($code) || !$this->regions->save($userId, $code, date('Y-m-d H:i:s'))) {
+            Session::flash('error', 'Choisissez une région dans la liste.');
+
+            return $back;
+        }
+        Session::flash('success', 'Région enregistrée : ' . \App\Support\AccountRegions::label($code) . '.');
+
+        return $back;
     }
 
     public function cancelDeletion(Request $request, array $params = []): Response
