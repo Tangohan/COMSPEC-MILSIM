@@ -152,4 +152,34 @@ final class SseDocumentTemplatesLegibilityTest extends TestCase
         self::assertStringContainsString("'v=' . rawurlencode(", $helpers, 'asset_url ajoute ?v= avec l’identifiant du déploiement');
         self::assertStringContainsString('BuildVersion::id()', $helpers);
     }
+
+    public function testEverySheetThemeKeepsTextReadable(): void
+    {
+        foreach (\App\Support\SseSheetThemes::all() as $id => $t) {
+            self::assertGreaterThanOrEqual(4.5, self::contrast($t['ink'], $t['paper']), $id . ' : corps sur papier');
+            self::assertGreaterThanOrEqual(4.5, self::contrast(self::INK, $t['paper']), $id . ' : texte des modèles sur papier');
+            self::assertGreaterThanOrEqual(4.5, self::contrast(self::INK, '#e2e8f0'), $id . ' : libellés grisés');
+            self::assertGreaterThanOrEqual(4.5, self::contrast($t['muted'], $t['paper']), $id . ' : texte discret sur papier');
+            self::assertGreaterThanOrEqual(4.5, self::contrast($t['accent'], $t['paper']), $id . ' : titres sur papier');
+            self::assertGreaterThanOrEqual(4.5, self::contrast($t['stamp'], $t['paper']), $id . ' : tampon sur papier');
+            self::assertGreaterThanOrEqual(4.5, self::contrast($t['band_fg'], $t['band_bg']), $id . ' : bandeau de classification');
+            self::assertGreaterThanOrEqual(4.5, self::contrast($t['head_fg'], $t['head_bg']), $id . ' : bloc d’identification');
+            // Le filigrane reste très discret : pâle, jamais lisible comme du texte.
+            self::assertLessThan(2.0, self::contrast($t['mark'], $t['paper']), $id . ' : filigrane très discret');
+        }
+    }
+
+    public function testThemeStylesheetCarriesEveryThemeWithAndWithoutTheShellPrefix(): void
+    {
+        $css = (string) file_get_contents(__DIR__ . '/../../public/assets/css/sse-doc-themes.css');
+        foreach (\App\Support\SseSheetThemes::all() as $id => $t) {
+            self::assertStringContainsString('.sse-ed__page.sse-theme--' . $id . ' .sse-ed__sheet', $css, $id);
+            self::assertStringContainsString('body.sse-iw .sx-main .sse-ed__page.sse-theme--' . $id . ' .sse-ed__sheet', $css, $id . ' avec le préfixe de la coque');
+            self::assertStringContainsString('.sse-doc-paper.sse-theme--' . $id, $css, $id . ' lecture');
+            foreach (['paper', 'accent', 'mark', 'stamp'] as $k) {
+                self::assertStringContainsString($t[$k], $css, $id . ' ' . $k);
+            }
+        }
+        self::assertDoesNotMatchRegularExpression('~https?://|url\(~', $css, 'aucune fonte ni image externe');
+    }
 }

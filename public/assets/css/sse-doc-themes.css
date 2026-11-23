@@ -1,0 +1,530 @@
+/*
+ * Thèmes de feuille des documents SSE (éditeur, aperçu, lecture). Généré à partir de App\Support\SseSheetThemes : même jeu de
+ * couleurs que le PDF (App\Support\Pdf\SseThemedTcpdf). Aucun logo, sceau ni emblème : texte du portail uniquement ; polices
+ * déjà présentes sur les postes (aucune fonte externe).
+ * Chaque règle existe deux fois : seule, et avec le préfixe de la coque « body.sse-iw .sx-main », sinon la coque l'écrase.
+ * Le papier reste clair : le texte des modèles est sombre (#0f172a), contraste vérifié par SseDocumentTemplatesLegibilityTest.
+ */
+
+/* Sélecteur de thème (formulaire) */
+.sse-ed__themes { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; border: 0; }
+.sse-ed__theme { position: relative; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.3rem 0.6rem 0.3rem 0.35rem; border: 1px solid #5b6f65; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+.sse-ed__theme input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.sse-ed__theme:has(input:checked) { outline: 2px solid #34d399; }
+.sse-ed__theme:has(input:focus-visible) { outline: 3px solid #fde047; }
+.sse-ed__theme-sw { display: inline-block; width: 1.5rem; height: 1.1rem; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.45); }
+.sse-ed__theme-sw i { display: block; height: 40%; }
+
+/* Texte verrouillé */
+.sse-ed__sheet [data-lock="1"], .sse-rich [data-lock="1"] { position: relative; }
+.sse-ed__sheet [data-lock="1"] { cursor: not-allowed; box-shadow: inset 3px 0 0 #94a3b8; }
+.sse-ed__sheet [data-lock="1"]::after { content: "\1F512"; position: absolute; top: 2px; right: 4px; font-size: 10px; line-height: 1; opacity: 0.7; pointer-events: none; }
+.sse-ed__sheet span[data-lock="1"]::after { position: static; margin-left: 2px; }
+.sse-ed__sheet [data-lock="1"].is-selected { outline: 2px solid #1d4ed8; }
+
+/* ---- Classique ---- */
+
+.sse-ed__page.sse-theme--classique .sse-ed__sheet,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--classique .sse-ed__sheet {
+    background-color: #ffffff; font-family: "Segoe UI", "IBM Plex Sans", Inter, Arial, sans-serif;
+}
+
+.sse-doc-paper.sse-theme--classique,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--classique {
+    background: #ffffff; font-family: "Segoe UI", "IBM Plex Sans", Inter, Arial, sans-serif;
+}
+
+.sse-theme--classique .sse-rich,
+body.sse-iw .sx-main .sse-theme--classique .sse-rich {
+    font-family: "Segoe UI", "IBM Plex Sans", Inter, Arial, sans-serif;
+}
+
+.sse-theme--classique .sse-ed__sheet h2,
+.sse-theme--classique .sse-rich h2,
+body.sse-iw .sx-main .sse-theme--classique .sse-ed__sheet h2,
+body.sse-iw .sx-main .sse-theme--classique .sse-rich h2,
+.sse-theme--classique .sse-ed__sheet h3,
+.sse-theme--classique .sse-rich h3,
+body.sse-iw .sx-main .sse-theme--classique .sse-ed__sheet h3,
+body.sse-iw .sx-main .sse-theme--classique .sse-rich h3 {
+    color: #334155; border-bottom-color: #94a3b8; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+
+.sse-theme--classique .sse-ed__sheet td,
+.sse-theme--classique .sse-ed__sheet th,
+.sse-theme--classique .sse-rich td,
+.sse-theme--classique .sse-rich th,
+body.sse-iw .sx-main .sse-theme--classique .sse-ed__sheet td,
+body.sse-iw .sx-main .sse-theme--classique .sse-ed__sheet th,
+body.sse-iw .sx-main .sse-theme--classique .sse-rich td,
+body.sse-iw .sx-main .sse-theme--classique .sse-rich th {
+    border-color: #94a3b8;
+}
+
+.sse-theme--classique .sse-ed__sheet table[data-lock="1"],
+.sse-theme--classique .sse-rich table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--classique .sse-ed__sheet table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--classique .sse-rich table[data-lock="1"] {
+    border-top: 4px solid #334155;
+}
+
+.sse-ed__page.sse-theme--classique::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--classique::after {
+    content: attr(data-wm); position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; text-align: center; transform: rotate(-38deg); font: 800 56px/1.1 "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #e2e8f0; mix-blend-mode: multiply; opacity: 0.8; pointer-events: none; overflow: hidden;
+}
+
+.sse-doc-paper.sse-theme--classique .sse-doc-paper__watermark,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--classique .sse-doc-paper__watermark {
+    color: #e2e8f0;
+}
+
+.sse-ed__page.sse-theme--classique::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--classique::before {
+    content: ""; position: absolute; left: 6mm; top: 30mm; bottom: 24mm; width: 3mm; z-index: 1; pointer-events: none; border-left: 1px solid #94a3b8; background: repeating-linear-gradient(to bottom, #94a3b8 0, #94a3b8 1px, transparent 1px, transparent 5mm);
+}
+
+.sse-ed__page.sse-theme--classique .sse-ed__pband--top::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--classique .sse-ed__pband--top::after {
+    content: attr(data-stamp); position: absolute; right: 12mm; top: 11mm; line-height: 1.2; padding: 0.15em 0.7em; border: 2px solid #b91c1c; border-radius: 3px; color: #b91c1c; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-size: 9pt; letter-spacing: 0.2em; transform: rotate(-4deg);
+}
+
+.sse-ed__page.sse-theme--classique .sse-ed__pband--bottom::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--classique .sse-ed__pband--bottom::before {
+    content: attr(data-foot); position: absolute; left: 6mm; letter-spacing: 0.04em; font-weight: 500; font-size: 7pt; text-transform: none;
+}
+
+
+/* ---- Vert sombre et ivoire ---- */
+
+.sse-ed__page.sse-theme--vert_sombre .sse-ed__sheet,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--vert_sombre .sse-ed__sheet {
+    background-color: #fbf8ee; font-family: Georgia, "Times New Roman", serif;
+}
+
+.sse-doc-paper.sse-theme--vert_sombre,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--vert_sombre {
+    background: #fbf8ee; font-family: Georgia, "Times New Roman", serif;
+}
+
+.sse-theme--vert_sombre .sse-rich,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-rich {
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.sse-theme--vert_sombre .sse-ed__sheet h2,
+.sse-theme--vert_sombre .sse-rich h2,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-ed__sheet h2,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-rich h2,
+.sse-theme--vert_sombre .sse-ed__sheet h3,
+.sse-theme--vert_sombre .sse-rich h3,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-ed__sheet h3,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-rich h3 {
+    color: #1f4d3a; border-bottom-color: #8aa396; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+
+.sse-theme--vert_sombre .sse-ed__sheet td,
+.sse-theme--vert_sombre .sse-ed__sheet th,
+.sse-theme--vert_sombre .sse-rich td,
+.sse-theme--vert_sombre .sse-rich th,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-ed__sheet td,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-ed__sheet th,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-rich td,
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-rich th {
+    border-color: #8aa396;
+}
+
+.sse-theme--vert_sombre .sse-ed__sheet table[data-lock="1"],
+.sse-theme--vert_sombre .sse-rich table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-ed__sheet table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--vert_sombre .sse-rich table[data-lock="1"] {
+    border-top: 4px solid #1f4d3a;
+}
+
+.sse-ed__page.sse-theme--vert_sombre[data-level] .sse-ed__pband,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--vert_sombre[data-level] .sse-ed__pband {
+    background: #1f4d3a; color: #f5f1e0;
+}
+
+.sse-doc-paper.sse-theme--vert_sombre .sse-doc-paper__banner,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--vert_sombre .sse-doc-paper__banner {
+    background: #1f4d3a; color: #f5f1e0;
+}
+
+.sse-doc-paper.sse-theme--vert_sombre .sse-doc-paper__banner *,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--vert_sombre .sse-doc-paper__banner * {
+    color: #f5f1e0;
+}
+
+.sse-ed__page.sse-theme--vert_sombre::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--vert_sombre::after {
+    content: attr(data-wm); position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; text-align: center; transform: rotate(-38deg); font: 800 56px/1.1 "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #e8e4d2; mix-blend-mode: multiply; opacity: 0.8; pointer-events: none; overflow: hidden;
+}
+
+.sse-doc-paper.sse-theme--vert_sombre .sse-doc-paper__watermark,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--vert_sombre .sse-doc-paper__watermark {
+    color: #e8e4d2;
+}
+
+.sse-ed__page.sse-theme--vert_sombre::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--vert_sombre::before {
+    content: ""; position: absolute; left: 6mm; top: 30mm; bottom: 24mm; width: 3mm; z-index: 1; pointer-events: none; border-left: 1px solid #8aa396; background: repeating-linear-gradient(to bottom, #8aa396 0, #8aa396 1px, transparent 1px, transparent 5mm);
+}
+
+.sse-ed__page.sse-theme--vert_sombre .sse-ed__pband--top::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--vert_sombre .sse-ed__pband--top::after {
+    content: attr(data-stamp); position: absolute; right: 12mm; top: 11mm; line-height: 1.2; padding: 0.15em 0.7em; border: 2px solid #8a1c1c; border-radius: 3px; color: #8a1c1c; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-size: 9pt; letter-spacing: 0.2em; transform: rotate(-4deg);
+}
+
+.sse-ed__page.sse-theme--vert_sombre .sse-ed__pband--bottom::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--vert_sombre .sse-ed__pband--bottom::before {
+    content: attr(data-foot); position: absolute; left: 6mm; letter-spacing: 0.04em; font-weight: 500; font-size: 7pt; text-transform: none;
+}
+
+
+/* ---- Bleu nuit et gris acier ---- */
+
+.sse-ed__page.sse-theme--bleu_nuit .sse-ed__sheet,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--bleu_nuit .sse-ed__sheet {
+    background-color: #f4f6f9; font-family: "Segoe UI", "IBM Plex Sans", Inter, Arial, sans-serif;
+}
+
+.sse-doc-paper.sse-theme--bleu_nuit,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--bleu_nuit {
+    background: #f4f6f9; font-family: "Segoe UI", "IBM Plex Sans", Inter, Arial, sans-serif;
+}
+
+.sse-theme--bleu_nuit .sse-rich,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-rich {
+    font-family: "Segoe UI", "IBM Plex Sans", Inter, Arial, sans-serif;
+}
+
+.sse-theme--bleu_nuit .sse-ed__sheet h2,
+.sse-theme--bleu_nuit .sse-rich h2,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-ed__sheet h2,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-rich h2,
+.sse-theme--bleu_nuit .sse-ed__sheet h3,
+.sse-theme--bleu_nuit .sse-rich h3,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-ed__sheet h3,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-rich h3 {
+    color: #1b2a49; border-bottom-color: #8a97ab; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+
+.sse-theme--bleu_nuit .sse-ed__sheet td,
+.sse-theme--bleu_nuit .sse-ed__sheet th,
+.sse-theme--bleu_nuit .sse-rich td,
+.sse-theme--bleu_nuit .sse-rich th,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-ed__sheet td,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-ed__sheet th,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-rich td,
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-rich th {
+    border-color: #8a97ab;
+}
+
+.sse-theme--bleu_nuit .sse-ed__sheet table[data-lock="1"],
+.sse-theme--bleu_nuit .sse-rich table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-ed__sheet table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--bleu_nuit .sse-rich table[data-lock="1"] {
+    border-top: 4px solid #1b2a49;
+}
+
+.sse-ed__page.sse-theme--bleu_nuit[data-level] .sse-ed__pband,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--bleu_nuit[data-level] .sse-ed__pband {
+    background: #1b2a49; color: #e6ebf2;
+}
+
+.sse-doc-paper.sse-theme--bleu_nuit .sse-doc-paper__banner,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--bleu_nuit .sse-doc-paper__banner {
+    background: #1b2a49; color: #e6ebf2;
+}
+
+.sse-doc-paper.sse-theme--bleu_nuit .sse-doc-paper__banner *,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--bleu_nuit .sse-doc-paper__banner * {
+    color: #e6ebf2;
+}
+
+.sse-ed__page.sse-theme--bleu_nuit::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--bleu_nuit::after {
+    content: attr(data-wm); position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; text-align: center; transform: rotate(-38deg); font: 800 56px/1.1 "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #dfe4ec; mix-blend-mode: multiply; opacity: 0.8; pointer-events: none; overflow: hidden;
+}
+
+.sse-doc-paper.sse-theme--bleu_nuit .sse-doc-paper__watermark,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--bleu_nuit .sse-doc-paper__watermark {
+    color: #dfe4ec;
+}
+
+.sse-ed__page.sse-theme--bleu_nuit::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--bleu_nuit::before {
+    content: ""; position: absolute; left: 6mm; top: 30mm; bottom: 24mm; width: 3mm; z-index: 1; pointer-events: none; border-left: 1px solid #8a97ab; background: repeating-linear-gradient(to bottom, #8a97ab 0, #8a97ab 1px, transparent 1px, transparent 5mm);
+}
+
+.sse-ed__page.sse-theme--bleu_nuit .sse-ed__pband--top::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--bleu_nuit .sse-ed__pband--top::after {
+    content: attr(data-stamp); position: absolute; right: 12mm; top: 11mm; line-height: 1.2; padding: 0.15em 0.7em; border: 2px solid #1b2a49; border-radius: 3px; color: #1b2a49; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-size: 9pt; letter-spacing: 0.2em; transform: rotate(-4deg);
+}
+
+.sse-ed__page.sse-theme--bleu_nuit .sse-ed__pband--bottom::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--bleu_nuit .sse-ed__pband--bottom::before {
+    content: attr(data-foot); position: absolute; left: 6mm; letter-spacing: 0.04em; font-weight: 500; font-size: 7pt; text-transform: none;
+}
+
+
+/* ---- Noir tactique ---- */
+
+.sse-ed__page.sse-theme--noir_tactique .sse-ed__sheet,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--noir_tactique .sse-ed__sheet {
+    background-color: #f1f1ef; font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-doc-paper.sse-theme--noir_tactique,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--noir_tactique {
+    background: #f1f1ef; font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-theme--noir_tactique .sse-rich,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-rich {
+    font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-theme--noir_tactique .sse-ed__sheet h2,
+.sse-theme--noir_tactique .sse-rich h2,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-ed__sheet h2,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-rich h2,
+.sse-theme--noir_tactique .sse-ed__sheet h3,
+.sse-theme--noir_tactique .sse-rich h3,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-ed__sheet h3,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-rich h3 {
+    color: #111111; border-bottom-color: #6b6b6b; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+
+.sse-theme--noir_tactique .sse-ed__sheet td,
+.sse-theme--noir_tactique .sse-ed__sheet th,
+.sse-theme--noir_tactique .sse-rich td,
+.sse-theme--noir_tactique .sse-rich th,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-ed__sheet td,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-ed__sheet th,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-rich td,
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-rich th {
+    border-color: #6b6b6b;
+}
+
+.sse-theme--noir_tactique .sse-ed__sheet table[data-lock="1"],
+.sse-theme--noir_tactique .sse-rich table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-ed__sheet table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--noir_tactique .sse-rich table[data-lock="1"] {
+    border-top: 4px solid #111111;
+}
+
+.sse-ed__page.sse-theme--noir_tactique[data-level] .sse-ed__pband,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--noir_tactique[data-level] .sse-ed__pband {
+    background: #111111; color: #f2c744;
+}
+
+.sse-doc-paper.sse-theme--noir_tactique .sse-doc-paper__banner,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--noir_tactique .sse-doc-paper__banner {
+    background: #111111; color: #f2c744;
+}
+
+.sse-doc-paper.sse-theme--noir_tactique .sse-doc-paper__banner *,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--noir_tactique .sse-doc-paper__banner * {
+    color: #f2c744;
+}
+
+.sse-ed__page.sse-theme--noir_tactique::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--noir_tactique::after {
+    content: attr(data-wm); position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; text-align: center; transform: rotate(-38deg); font: 800 56px/1.1 "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #dededb; mix-blend-mode: multiply; opacity: 0.8; pointer-events: none; overflow: hidden;
+}
+
+.sse-doc-paper.sse-theme--noir_tactique .sse-doc-paper__watermark,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--noir_tactique .sse-doc-paper__watermark {
+    color: #dededb;
+}
+
+.sse-ed__page.sse-theme--noir_tactique::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--noir_tactique::before {
+    content: ""; position: absolute; left: 6mm; top: 30mm; bottom: 24mm; width: 3mm; z-index: 1; pointer-events: none; border-left: 1px solid #6b6b6b; background: repeating-linear-gradient(to bottom, #6b6b6b 0, #6b6b6b 1px, transparent 1px, transparent 5mm);
+}
+
+.sse-ed__page.sse-theme--noir_tactique .sse-ed__pband--top::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--noir_tactique .sse-ed__pband--top::after {
+    content: attr(data-stamp); position: absolute; right: 12mm; top: 11mm; line-height: 1.2; padding: 0.15em 0.7em; border: 2px solid #111111; border-radius: 3px; color: #111111; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-size: 9pt; letter-spacing: 0.2em; transform: rotate(-4deg);
+}
+
+.sse-ed__page.sse-theme--noir_tactique .sse-ed__pband--bottom::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--noir_tactique .sse-ed__pband--bottom::before {
+    content: attr(data-foot); position: absolute; left: 6mm; letter-spacing: 0.04em; font-weight: 500; font-size: 7pt; text-transform: none;
+}
+
+
+/* ---- Rouge très secret ---- */
+
+.sse-ed__page.sse-theme--rouge_secret .sse-ed__sheet,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--rouge_secret .sse-ed__sheet {
+    background-color: #fdf6f4; font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-doc-paper.sse-theme--rouge_secret,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--rouge_secret {
+    background: #fdf6f4; font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-theme--rouge_secret .sse-rich,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-rich {
+    font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-theme--rouge_secret .sse-ed__sheet h2,
+.sse-theme--rouge_secret .sse-rich h2,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-ed__sheet h2,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-rich h2,
+.sse-theme--rouge_secret .sse-ed__sheet h3,
+.sse-theme--rouge_secret .sse-rich h3,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-ed__sheet h3,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-rich h3 {
+    color: #8b1515; border-bottom-color: #c49a9a; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+
+.sse-theme--rouge_secret .sse-ed__sheet td,
+.sse-theme--rouge_secret .sse-ed__sheet th,
+.sse-theme--rouge_secret .sse-rich td,
+.sse-theme--rouge_secret .sse-rich th,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-ed__sheet td,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-ed__sheet th,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-rich td,
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-rich th {
+    border-color: #c49a9a;
+}
+
+.sse-theme--rouge_secret .sse-ed__sheet table[data-lock="1"],
+.sse-theme--rouge_secret .sse-rich table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-ed__sheet table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--rouge_secret .sse-rich table[data-lock="1"] {
+    border-top: 4px solid #8b1515;
+}
+
+.sse-ed__page.sse-theme--rouge_secret[data-level] .sse-ed__pband,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--rouge_secret[data-level] .sse-ed__pband {
+    background: #8b1515; color: #ffffff;
+}
+
+.sse-doc-paper.sse-theme--rouge_secret .sse-doc-paper__banner,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--rouge_secret .sse-doc-paper__banner {
+    background: #8b1515; color: #ffffff;
+}
+
+.sse-doc-paper.sse-theme--rouge_secret .sse-doc-paper__banner *,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--rouge_secret .sse-doc-paper__banner * {
+    color: #ffffff;
+}
+
+.sse-ed__page.sse-theme--rouge_secret::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--rouge_secret::after {
+    content: attr(data-wm); position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; text-align: center; transform: rotate(-38deg); font: 800 56px/1.1 "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #f2dcd8; mix-blend-mode: multiply; opacity: 0.8; pointer-events: none; overflow: hidden;
+}
+
+.sse-doc-paper.sse-theme--rouge_secret .sse-doc-paper__watermark,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--rouge_secret .sse-doc-paper__watermark {
+    color: #f2dcd8;
+}
+
+.sse-ed__page.sse-theme--rouge_secret::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--rouge_secret::before {
+    content: ""; position: absolute; left: 6mm; top: 30mm; bottom: 24mm; width: 3mm; z-index: 1; pointer-events: none; border-left: 1px solid #c49a9a; background: repeating-linear-gradient(to bottom, #c49a9a 0, #c49a9a 1px, transparent 1px, transparent 5mm);
+}
+
+.sse-ed__page.sse-theme--rouge_secret .sse-ed__pband--top::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--rouge_secret .sse-ed__pband--top::after {
+    content: attr(data-stamp); position: absolute; right: 12mm; top: 11mm; line-height: 1.2; padding: 0.15em 0.7em; border: 2px solid #8b1515; border-radius: 3px; color: #8b1515; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-size: 9pt; letter-spacing: 0.2em; transform: rotate(-4deg);
+}
+
+.sse-ed__page.sse-theme--rouge_secret .sse-ed__pband--bottom::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--rouge_secret .sse-ed__pband--bottom::before {
+    content: attr(data-foot); position: absolute; left: 6mm; letter-spacing: 0.04em; font-weight: 500; font-size: 7pt; text-transform: none;
+}
+
+
+/* ---- Archives papier jaunies ---- */
+
+.sse-ed__page.sse-theme--archives .sse-ed__sheet,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--archives .sse-ed__sheet {
+    background-color: #f0e4c1; font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-doc-paper.sse-theme--archives,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--archives {
+    background: #f0e4c1; font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-theme--archives .sse-rich,
+body.sse-iw .sx-main .sse-theme--archives .sse-rich {
+    font-family: "Courier New", Courier, "JetBrains Mono", monospace;
+}
+
+.sse-theme--archives .sse-ed__sheet h2,
+.sse-theme--archives .sse-rich h2,
+body.sse-iw .sx-main .sse-theme--archives .sse-ed__sheet h2,
+body.sse-iw .sx-main .sse-theme--archives .sse-rich h2,
+.sse-theme--archives .sse-ed__sheet h3,
+.sse-theme--archives .sse-rich h3,
+body.sse-iw .sx-main .sse-theme--archives .sse-ed__sheet h3,
+body.sse-iw .sx-main .sse-theme--archives .sse-rich h3 {
+    color: #5a4318; border-bottom-color: #a8946a; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif;
+}
+
+.sse-theme--archives .sse-ed__sheet td,
+.sse-theme--archives .sse-ed__sheet th,
+.sse-theme--archives .sse-rich td,
+.sse-theme--archives .sse-rich th,
+body.sse-iw .sx-main .sse-theme--archives .sse-ed__sheet td,
+body.sse-iw .sx-main .sse-theme--archives .sse-ed__sheet th,
+body.sse-iw .sx-main .sse-theme--archives .sse-rich td,
+body.sse-iw .sx-main .sse-theme--archives .sse-rich th {
+    border-color: #a8946a;
+}
+
+.sse-theme--archives .sse-ed__sheet table[data-lock="1"],
+.sse-theme--archives .sse-rich table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--archives .sse-ed__sheet table[data-lock="1"],
+body.sse-iw .sx-main .sse-theme--archives .sse-rich table[data-lock="1"] {
+    border-top: 4px solid #5a4318;
+}
+
+.sse-ed__page.sse-theme--archives[data-level] .sse-ed__pband,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--archives[data-level] .sse-ed__pband {
+    background: #5a4318; color: #f7ecce;
+}
+
+.sse-doc-paper.sse-theme--archives .sse-doc-paper__banner,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--archives .sse-doc-paper__banner {
+    background: #5a4318; color: #f7ecce;
+}
+
+.sse-doc-paper.sse-theme--archives .sse-doc-paper__banner *,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--archives .sse-doc-paper__banner * {
+    color: #f7ecce;
+}
+
+.sse-ed__page.sse-theme--archives::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--archives::after {
+    content: attr(data-wm); position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; text-align: center; transform: rotate(-38deg); font: 800 56px/1.1 "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #e2d4aa; mix-blend-mode: multiply; opacity: 0.8; pointer-events: none; overflow: hidden;
+}
+
+.sse-doc-paper.sse-theme--archives .sse-doc-paper__watermark,
+body.sse-iw .sx-main .sse-doc-paper.sse-theme--archives .sse-doc-paper__watermark {
+    color: #e2d4aa;
+}
+
+.sse-ed__page.sse-theme--archives::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--archives::before {
+    content: ""; position: absolute; left: 6mm; top: 30mm; bottom: 24mm; width: 3mm; z-index: 1; pointer-events: none; border-left: 1px solid #a8946a; background: repeating-linear-gradient(to bottom, #a8946a 0, #a8946a 1px, transparent 1px, transparent 5mm);
+}
+
+.sse-ed__page.sse-theme--archives .sse-ed__pband--top::after,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--archives .sse-ed__pband--top::after {
+    content: attr(data-stamp); position: absolute; right: 12mm; top: 11mm; line-height: 1.2; padding: 0.15em 0.7em; border: 2px solid #7a2a12; border-radius: 3px; color: #7a2a12; font-family: "Arial Narrow", "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-size: 9pt; letter-spacing: 0.2em; transform: rotate(-4deg);
+}
+
+.sse-ed__page.sse-theme--archives .sse-ed__pband--bottom::before,
+body.sse-iw .sx-main .sse-ed__page.sse-theme--archives .sse-ed__pband--bottom::before {
+    content: attr(data-foot); position: absolute; left: 6mm; letter-spacing: 0.04em; font-weight: 500; font-size: 7pt; text-transform: none;
+}
+
