@@ -1,6 +1,6 @@
 # Empreintes SHA-256 des fichiers du mod ATAK natif
 
-Relevé du dossier `mod/COMSPEC_ATAK_Native/@COMSPEC_ATAK_Native` (construction 4.32.0) au 23/11/2026 (commit `cb048217a` de main), **sans** le lanceur de collecte de journaux retiré dans #1881. Elles servent à :
+Relevé du dossier `mod/COMSPEC_ATAK_Native/@COMSPEC_ATAK_Native` (construction 4.32.1) au 23/11/2026 (commit `cb048217a` de main), **sans** le lanceur de collecte de journaux retiré dans #1881. Elles servent à :
 
 - rechercher chaque fichier sur [VirusTotal](https://www.virustotal.com/gui/home/search) sans l'envoyer ;
 - appuyer une demande de levée de faux positif auprès d'un éditeur d'antivirus ou de Steam ;
@@ -10,13 +10,13 @@ L'empreinte de l'archive RAR publiée n'est pas dans ce fichier : elle est calcu
 
 | Fichier | Taille (octets) | SHA-256 |
 | --- | ---: | --- |
-| `COMSPECATAKNativeExtension_x64.dll` | 10 423 296 | `5903849de95170c50beeaa5a20a8478d2492c63dc722831335535f17524a22bb` |
-| `COMSPECExtension_x64.dll` | 10 240 512 | `2bfa0726b5be44efc8111400bc3c8346c323b0417746bc4e38e12e491817934b` |
-| `addons/main.pbo` | 123 109 972 | `a3787fbdd5f147bdc23d547c046556242676412735d279be3896a534d6e5d3cc` |
-| `addons/towers.pbo` | 56 199 301 | `4267d7b3e3a9d5751d0ecac3838a6b3ec82a7bb940a1e7cb775f8133c3f841b7` |
-| `addons/comspec_overwatch_connect.pbo` | 25 460 297 | `d3ca4b80eb34a9ebb9f82c0201d7f2b407d3cfcf6f027417bd34e54316eda907` |
-| `addons/items.pbo` | 29 649 104 | `bcd42afbe51e5f6e1ec7e805e827a106fd391efce3e89bb7f628e109c1007e97` |
-| `addons/comspec_overwatch_main.pbo` | 178 077 | `7134aedc02fbed34152953ac3eb8edd5843a1983c6b28536809665d3ca8afdc0` |
+| `COMSPECATAKNativeExtension_x64.dll` | 10 423 296 | `5de862be128c19b2627926413e416638ee4bbfcf114592271b39bec1b256f45e` |
+| `COMSPECExtension_x64.dll` | 10 240 512 | `c9e852df69f72d7db257baf8e172db9a3ecbe17e4f87534aef7175bbe35e4b7e` |
+| `addons/main.pbo` | 123 112 328 | `3dd5cefee86259c1cf9bf7f370716f6ee3c553d12f6b435dc042bd121e886418` |
+| `addons/towers.pbo` | 56 199 301 | `d911087980d89e870877b9a61c19ad3e4d320cd00585fdcc448a25e294ef0b33` |
+| `addons/comspec_overwatch_connect.pbo` | 25 460 297 | `bbcc7a9b629f8d30ae2efa5eb6d518f5323cc64bba51a9781a2bb6564fdf25be` |
+| `addons/items.pbo` | 29 649 104 | `732615385d5a4a34d7f9fc3f0d7e6fc067fee3d1a806d3c867896fa08747fc31` |
+| `addons/comspec_overwatch_main.pbo` | 178 077 | `417ee9b6152f75b3c378610180b88d0d83cd81ccc29c26ce92186c370e6aa30a` |
 | `keys/comspec_atak_native.bikey` | 172 | `c8a0b9f9244b32c1f0fc6adfd6e464f84fa60dd7874619e30ec7594bbea36888` |
 | `mod.cpp` | 514 | `17c8df972a923656d44b98ba0cd9b380747eab1ce409803406f6304565a66de4` |
 | `logo.paa` | 11 061 | `f6cd849336486dbfa40ff067486dc2a4a42949b8967a1a1d99107a43627b6df9` |
