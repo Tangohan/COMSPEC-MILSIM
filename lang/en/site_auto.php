@@ -73259,4 +73259,7 @@ return [
     'Valider %1 après vol d’évaluation' => 'Validate %1 after the evaluation flight',
     '(collez-le dans la barre d\'adresse de l\'Explorateur) et prenez les deux derniers fichiers' => '(paste it in the File Explorer address bar) and take the last two files',
     '. Retirez tout mot de passe ou jeton, puis glissez-les dans le salon bugs ou help du Discord.' => '. Remove any password or token, then drop them in the Discord bugs or help channel.',
+    'Fond de l’aperçu' => 'Preview background',
+    'Aperçu réel des types d’alertes' => 'Real preview of alert types',
+    'Chaque type tel que le voit un visiteur, au format choisi. Texte d’exemple : rien n’est publié.' => 'Each type as a visitor sees it, in the chosen format. Sample text: nothing is published.',
 ];

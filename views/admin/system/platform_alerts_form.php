@@ -240,6 +240,7 @@ $dismissible = !$isEdit || !isset($row['dismissible']) || (int) $row['dismissibl
                 <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5">
                     <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">Aperçu avec votre texte</p>
                     <p class="mt-0.5 text-xs text-slate-500">Les emplacements cochés se mettent à jour au fil de la saisie.</p>
+                    <p class="mt-2 text-xs text-slate-600"><label for="pa-theme" class="font-semibold">Fond de l’aperçu</label> <select id="pa-theme" class="ml-1 rounded-lg border border-slate-300 px-2 py-1 text-xs"><option value="light">Clair</option><option value="dark">Sombre</option></select></p>
                     <div id="pa-live" class="pa-live mt-3" aria-live="polite"></div>
                 </div>
 
@@ -346,6 +347,9 @@ $dismissible = !$isEdit || !isset($row['dismissible']) || (int) $row['dismissibl
         </form>
     </div>
 </div>
+<link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/dsfr-service.css'), ENT_QUOTES, 'UTF-8') ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>">
+<script src="<?= htmlspecialchars(asset_url('assets/js/alert-preview.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <script>
 (function () {
   var form = document.getElementById('pa-alert-form');
@@ -399,6 +403,16 @@ $dismissible = !$isEdit || !isset($row['dismissible']) || (int) $row['dismissibl
     var styles = selectedStyles();
     if (!styles.length) {
       live.innerHTML = '<p class="text-sm text-amber-800">Cochez au moins un emplacement pour voir l’aperçu.</p>';
+      return;
+    }
+    if (window.AthenaAlertPreview) {
+      // Rendu réel : mêmes éléments et mêmes feuilles de style que le portail, à leur taille réelle.
+      window.AthenaAlertPreview.mount(live, {
+        kind: kind, styles: styles, scope: 'platform',
+        title: title.trim() || 'Titre de l’annonce', body: (body || '').trim(),
+        cta_label: (document.getElementById('pa-cta-label') || {}).value || '', cta_url: (document.getElementById('pa-cta-url') || {}).value || '',
+        theme: (document.getElementById('pa-theme') || {}).value || 'light'
+      });
       return;
     }
     live.innerHTML = styles.map(function (style) {
