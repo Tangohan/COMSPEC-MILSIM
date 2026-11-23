@@ -113,3 +113,8 @@ mod/COMSPEC_ATAK_Native/publisher/_backup_ws_*
 
 # Local Windows scripts in the mod tree
 /mod/**/*.[bB][aA][tT]
+
+# Certificats et clés de signature : jamais dans le dépôt (public).
+*.pfx
+*.p12
+*.pvk

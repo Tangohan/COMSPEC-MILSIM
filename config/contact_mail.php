@@ -7,7 +7,7 @@ declare(strict_types=1);
  * Toutes les adresses et tous les secrets viennent du .env du serveur : voir docs/boite-contact.md et .env.example.
  * Sans CONTACT_MAIL_PASSWORD, la boîte reste « non configurée » et aucune connexion n'est ouverte.
  */
-$address = trim((string) env('CONTACT_MAIL_ADDRESS', '')) ?: 'contact@athena.ttrd.fr';
+$address = trim((string) env('CONTACT_MAIL_ADDRESS', '')) ?: 'contact@athena-comspec.eu';
 
 return [
     'address' => $address,
