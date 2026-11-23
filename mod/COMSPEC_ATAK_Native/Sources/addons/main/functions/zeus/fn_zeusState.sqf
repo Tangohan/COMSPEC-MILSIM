@@ -6,11 +6,18 @@
     Coût : rien tant qu'aucun Centre n'est ouvert (aucune boucle, ni côté serveur ni côté joueur). Vue ouverte : une demande
     toutes les 5 s, un relevé toutes les 4 s au plus quel que soit le nombre de Zeus, un envoi groupé par Zeus ; un joueur
     ne répond que si sa fiche a changé, et au moins toutes les 30 s.
+    Relevé forcé (bouton FORCER LE RELEVÉ, menu ZEN) : le Zeus demande au serveur (comspec_atak_native_zeusStateForce,
+    droits vérifiés comme pour le relevé) ; le serveur envoie l'événement de relevé habituel avec [true] aux seuls joueurs
+    visés, qui répondent aussitôt même si leur fiche n'a pas changé. Une demande par joueur toutes les 5 s au plus, côté Zeus,
+    côté serveur et côté joueur ; journal du serveur (RPT). Un poste plus ancien traite la demande comme un relevé ordinaire
+    (il ne répond que si sa fiche a changé ou au bout de 30 s) : le Centre écrit alors « Pas de réponse », jamais d'erreur.
     Actions :
       Zeus    : "request" [toutes les fiches ?] | "data" [fiches] (événement comspec_atak_native_zeusStateData) | "denied"
                 "srvRequest" (onglet SERVEUR ouvert, toutes les 5 s) | "srvData" [état] (comspec_atak_native_zeusSrvData)
+                "force" [joueurs] -> [demandés, ignorés (déjà demandés il y a moins de 5 s)]
       Serveur : "init" (postInit) | "scan" [demandeur, toutes] | "row" [unité, fiche] | "flush" | "srvScan" [demandeur]
-      Joueur  : "poll" (événement comspec_atak_native_zeusStatePoll)
+                "forceScan" [demandeur, uid]
+      Joueur  : "poll" [forcé ?] (événement comspec_atak_native_zeusStatePoll)
     Fiche : [uid, ATAK porté, écran (0 rangé, 1 porté, 2 en main), dégâts %, batterie %, état Athena (fn_athenaStatus « key »),
              session ouverte, version du mod, version de COMSPEC Link, usage caméra ("" | "drone" | "livecam" | "photo"),
              en émission radio, secondes de blocage du code, secondes depuis la PANIQUE (-1 : aucune récente),
@@ -28,6 +35,23 @@ switch (_act) do {
     case "srvRequest": {
         ["comspec_atak_native_zeusSrv", [player]] call CBA_fnc_serverEvent;
     };
+    case "force": {
+        // Zeus : une demande par joueur toutes les 5 s au plus ; l'heure de la demande sert au Centre (demandé, reçu, sans réponse).
+        private _now = diag_tickTime;
+        private _f = missionNamespace getVariable ["COMSPEC_ATAK_ZeusForce", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZeusForce", _f];
+        private _uids = [];
+        private _skip = 0;
+        {
+            private _uid = getPlayerUID _x;
+            if (_uid isEqualTo "") then { continue; };
+            if (_now - ((_f getOrDefault [_uid, [-100]]) select 0) < 5) then { _skip = _skip + 1; continue; };
+            _f set [_uid, [_now, false]];
+            _uids pushBackUnique _uid;
+        } forEach (_args param [0, []]);
+        if (_uids isNotEqualTo []) then { ["comspec_atak_native_zeusStateForce", [player, _uids]] call CBA_fnc_serverEvent; };
+        [count _uids, _skip]
+    };
     case "denied": {
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusStateDenied", true];
     };
@@ -35,6 +59,11 @@ switch (_act) do {
         private _m = missionNamespace getVariable ["COMSPEC_ATAK_ZeusRows", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusRows", _m];
         { _m set [_x param [0, ""], [_x, diag_tickTime]]; } forEach _args;
+        // Réponse à un relevé forcé : le Centre se met à jour tout de suite (« Relevé reçu il y a 0 s »), sans attendre sa boucle.
+        private _f = missionNamespace getVariable ["COMSPEC_ATAK_ZeusForce", createHashMap];
+        if ((_args findIf { !(((_f getOrDefault [_x param [0, ""], [0, true]]) select 1)) }) >= 0 && {!isNil "comspec_atak_native_fnc_zeusCentre"}) then {
+            ["refresh"] call comspec_atak_native_fnc_zeusCentre;
+        };
     };
     case "srvData": {
         if !(_args isEqualType []) exitWith {};
@@ -46,6 +75,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusStateMap", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusStateWatch", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusStateDirty", []];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZeusForceAt", createHashMap];
         ["comspec_atak_native_zeusState", {
             params [["_caller", objNull], ["_full", false]];
             if !(_caller isEqualType objNull) exitWith {};
@@ -56,6 +86,16 @@ switch (_act) do {
             ["scan", [_caller, _full isEqualTo true]] call comspec_atak_native_fnc_zeusState;
         }] call CBA_fnc_addEventHandler;
         ["comspec_atak_native_zeusStateRow", { ["row", _this] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
+        // Relevé forcé : mêmes droits que le relevé (Zeus, hôte, admin connecté, gestionnaire désigné).
+        ["comspec_atak_native_zeusStateForce", {
+            params [["_caller", objNull], ["_uids", []]];
+            if (!(_caller isEqualType objNull) || {isNull _caller} || {!(_uids isEqualType [])}) exitWith {};
+            if !([_caller] call comspec_atak_native_fnc_adminAllowed) exitWith {
+                diag_log format ["[COMSPEC ATAK NATIVE][WARN][ZEUS] Relevé forcé refusé (ni Zeus ni admin) : %1", name _caller];
+                ["comspec_atak_native_zeusStateDenied", [], _caller] call CBA_fnc_targetEvent;
+            };
+            ["forceScan", [_caller, _uids]] call comspec_atak_native_fnc_zeusState;
+        }] call CBA_fnc_addEventHandler;
         ["comspec_atak_native_zeusSrv", {
             params [["_caller", objNull]];
             if (!(_caller isEqualType objNull) || {isNull _caller}) exitWith {};
@@ -78,6 +118,25 @@ switch (_act) do {
         private _to = allPlayers select { !(_x isKindOf "HeadlessClient_F") };
         if (_to isNotEqualTo []) then { ["comspec_atak_native_zeusStatePoll", [], _to] call CBA_fnc_targetEvent; };
         [{ ["flush"] call comspec_atak_native_fnc_zeusState; }, [], 1.5] call comspec_atak_native_fnc_waitAndExec;
+    };
+    case "forceScan": {
+        if (!isServer) exitWith {};
+        _args params [["_caller", objNull], ["_uids", []]];
+        private _now = diag_tickTime;
+        _uids = (_uids select { _x isEqualType "" }) select [0, 256];
+        // Une demande par joueur toutes les 5 s au plus, quel que soit le nombre de Zeus.
+        private _at = missionNamespace getVariable ["COMSPEC_ATAK_ZeusForceAt", createHashMap];
+        private _to = allPlayers select { private _u = getPlayerUID _x; !(_x isKindOf "HeadlessClient_F") && {_u in _uids} && {_now - (_at getOrDefault [_u, -100]) >= 5} };
+        if (_to isEqualTo []) exitWith {};
+        { _at set [getPlayerUID _x, _now]; } forEach _to;
+        // Le demandeur reçoit les réponses comme pour un relevé (Centre ouvert à l'instant depuis ZEN : toutes les fiches).
+        private _watch = missionNamespace getVariable ["COMSPEC_ATAK_ZeusStateWatch", createHashMap];
+        private _id = netId _caller;
+        _watch set [_id, [_caller, _now, !(_id in _watch) || {(_watch get _id) param [2, false]}]];
+        ["comspec_atak_native_zeusStatePoll", [true], _to] call CBA_fnc_targetEvent;
+        diag_log format ["[COMSPEC ATAK NATIVE][INFO][ZEUS] Relevé forcé par %1 : %2", name _caller, (_to apply { name _x }) joinString ", "];
+        // Réponses envoyées au Zeus en deux fois : la plupart arrivent en moins de 1,5 s, les plus lentes avant 4 s.
+        { [{ ["flush"] call comspec_atak_native_fnc_zeusState; }, [], _x] call comspec_atak_native_fnc_waitAndExec; } forEach [1.5, 4];
     };
     case "row": {
         if (!isServer) exitWith {};
@@ -191,6 +250,11 @@ switch (_act) do {
     };
     case "poll": {
         if (!hasInterface || {isNull player}) exitWith {};
+        // Relevé forcé : seulement s'il vient du serveur (quand l'événement passe par remoteExec), une fois toutes les 5 s au plus ;
+        // sinon, relevé ordinaire. Rien ne s'affiche chez le joueur.
+        private _force = ((_args param [0, false]) isEqualTo true) && {!isRemoteExecuted || {remoteExecutedOwner isEqualTo 2}}
+            && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_ZeusForceRx", -100]) >= 5};
+        if (_force) then { uiNamespace setVariable ["COMSPEC_ATAK_ZeusForceRx", diag_tickTime]; };
         private _st = [] call comspec_atak_native_fnc_athenaStatus;
         private _d = [] call comspec_atak_native_fnc_display;
         private _open = 0;
@@ -227,7 +291,7 @@ switch (_act) do {
         // Le temps depuis la PANIQUE et le blocage du code avancent seuls : hors comparaison.
         private _sig = str (_row select [0, 11]) + str (_row select 12 >= 0) + str (_row select 11 > 0) + _acct;
         (uiNamespace getVariable ["COMSPEC_ATAK_ZeusStateSent", ["", -100]]) params ["_old", "_at"];
-        if (_sig isEqualTo _old && {diag_tickTime - _at < 30}) exitWith {};
+        if (!_force && {_sig isEqualTo _old} && {diag_tickTime - _at < 30}) exitWith {};
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusStateSent", [_sig, diag_tickTime]];
         ["comspec_atak_native_zeusStateRow", [player, _row]] call CBA_fnc_serverEvent;
     };

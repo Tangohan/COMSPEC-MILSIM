@@ -30,7 +30,7 @@ final class PlatformAdminUiAssetTest extends TestCase
         self::assertStringContainsString('admin/users/platform-admin', $list);
         self::assertStringNotContainsString('name="is_platform_admin"', $list);
 
-        self::assertStringContainsString('Administration du site', $person);
+        // Le dossier personne (refonte de la console) n'a plus de bloc « Administration du site » : seul le badge, lié à la liste fermée.
         self::assertStringContainsString('admin/system/administrateurs-site', $person);
         self::assertStringContainsString('Administrateur du site', $person);
         self::assertStringNotContainsString('name="is_platform_admin"', $person);

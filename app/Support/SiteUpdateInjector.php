@@ -9,7 +9,9 @@ namespace App\Support;
  *  - reçoit l'identifiant du déploiement (<meta name="athena-build">) et la fenêtre « Mise à jour disponible »
  *    (assets/js/app-version-check.js) si sa vue ne l'inclut pas déjà ;
  *  - voit ses CSS / JS locaux sans ?v= suffixés par ce même identifiant : nginx les sert « immutable » 7 jours,
- *    sans ce suffixe un navigateur garde l'ancien fichier après une mise à jour.
+ *    sans ce suffixe un navigateur garde l'ancien fichier après une mise à jour ;
+ *  - reçoit la passerelle des liens externes (assets/js/athena-external-links.js) : un clic vers un autre site ouvre
+ *    une fenêtre avec 10 secondes pour valider la sortie, l'adresse décomposée et un guide de lecture des URL.
  */
 final class SiteUpdateInjector
 {
@@ -21,6 +23,7 @@ final class SiteUpdateInjector
         }
         $build = BuildVersion::id();
         $html = self::versionAssets($html, $build);
+        $html = self::externalLinkGate($html, $build);
         if (str_contains($html, 'name="athena-build"')) {
             return $html;
         }
@@ -41,6 +44,26 @@ final class SiteUpdateInjector
         $head = stripos($html, '</head>');
 
         return substr($html, 0, (int) $head) . $tags . substr($html, (int) $head);
+    }
+
+    /**
+     * Passerelle des liens externes : un <script> synchrone en fin de <head> (les annonces s'en servent dès le
+     * chargement de la page pour rendre leurs adresses cliquables). Une seule fois par page.
+     */
+    public static function externalLinkGate(string $html, string $build): string
+    {
+        $head = stripos($html, '</head>');
+        if ($head === false || str_contains($html, 'athena-external-links.js')) {
+            return $html;
+        }
+        if (!is_file(base_path('public/assets/js/athena-external-links.js'))) {
+            return $html;
+        }
+        $base = function_exists('url') ? rtrim((string) url(''), '/') : '';
+        $src = $base . '/assets/js/athena-external-links.js?v=' . rawurlencode($build);
+        $tag = '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '"></script>';
+
+        return substr($html, 0, $head) . $tag . substr($html, $head);
     }
 
     /** Ajoute ?v=<build> aux <script src> / <link href> locaux .css/.js qui n'ont aucun paramètre. */
