@@ -163,6 +163,9 @@ if (_view isEqualTo "AIR") exitWith {
         private _ack = _b getOrDefault ["ack", ""];
         _rows pushBack ["strip", format ["%1  %2", [[_fmt] call _fmtName, _amber, 1, true] call _mono, [format ["DE %1", _b getOrDefault ["from", "JTAC"]], "", 0.9, true] call _mono],
             format ["%1  %2", [_b getOrDefault ["at", ""], _grey, 0.85] call _mono, [["JEU", "ATHENA"] select ((_b getOrDefault ["src", "game"]) isEqualTo "athena"), _grey, 0.75] call _mono]];
+        // Référence automatique et nom libre : à s'annoncer avec le JTAC (« CAS-23-04, Pont nord »).
+        private _tagTxt = ([_b getOrDefault ["aref", ""], _b getOrDefault ["name", ""]] select { _x isNotEqualTo "" }) joinString " · ";
+        if (_tagTxt isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.75' color='%1'>RÉFÉRENCE · NOM</t><br/>%2", _grey, [_tagTxt, _amber, 1.3, true] call _mono], _cardBg]; };
         _rows pushBack (switch (_ack) do {
             case "WILCO": { ["WILCO TRANSMIS", "Le JTAC sait que vous exécutez", "green"] call _banner };
             case "UNABLE": { ["UNABLE TRANSMIS", "Le JTAC sait que vous ne pouvez pas exécuter", "red"] call _banner };
@@ -216,7 +219,7 @@ if (_view isEqualTo "AIR") exitWith {
                     case (!_rd): { [0.95, 0.67, 0.2, 1] };
                     default { [0.45, 0.5, 0.47, 1] };
                 };
-                _rows pushBack ["notif", _ico, _rgb, format ["%1%2 · %3", ["", "● "] select (!_rd), [_fmt] call _fmtName, _b getOrDefault ["from", "JTAC"]],
+                _rows pushBack ["notif", _ico, _rgb, format ["%1%2 · %3%4", ["", "● "] select (!_rd), [_fmt] call _fmtName, _b getOrDefault ["from", "JTAC"], (([_b getOrDefault ["aref", ""], _b getOrDefault ["name", ""]] select { _x isNotEqualTo "" }) apply { " · " + _x }) joinString ""],
                     format ["%1%2", _b getOrDefault ["at", ""], ["", " · " + _ack] select (_ack isNotEqualTo "")], _what,
                     ["airOpen", _r] call _act, ["airDel", _r] call _act, "Ouvrir le brief"];
             } forEach _inbox;
@@ -319,6 +322,7 @@ switch (_tab) do {
         // Reprise des 9-LINE et 5-LINE rédigés sur le TOC web ou la version mobile (fn_jtacTocImport).
         _rows append (["rows"] call comspec_atak_native_fnc_jtacTocImport);
         // Indicatif du JTAC : ligne Observateur, auteur sur Athena, alertes et accusés des pilotes.
+        _rows pushBack ["line", "", "Nom du brief (facultatif)", _s getOrDefault ["jName", ""], "edit", "jName", "ex. Pont nord : la référence CAS-JJ-NN est attribuée à l'envoi", "mono"];
         _rows pushBack ["field", "jCs", "Indicatif JTAC", _s getOrDefault ["jCs", ["jtacCs"] call _ab], "OK", ["setCs"] call _act, false];
         _rows pushBack ["segment", "", ["HAMMER", "WARHAWK", "SPARTAN", "JTAC"] apply { [_x, ["csPick", format ["%1 11", _x]] call _act, false, "Indicatif JTAC courant"] }];
         if (_fmt isEqualTo "9") then {

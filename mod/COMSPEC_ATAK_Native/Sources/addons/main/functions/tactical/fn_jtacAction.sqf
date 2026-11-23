@@ -116,7 +116,7 @@ private _save = {
             if ((trim _v) isEqualTo (_s getOrDefault ["auto_" + _x, ""])) then { _v = ""; };
             _s set [_x, _v];
         };
-    } forEach ["jIp", "j5", "j9", "jFah", "jThreat", "jDc", "jBda", "jCs", "jDest", "jRem", "aCs", "jL1", "jL2", "jL3", "jL4", "jL5", "jL6", "jL7", "jL8", "jL9", "jF1", "jF2", "jF3", "jF4", "jF5"];
+    } forEach ["jIp", "j5", "j9", "jFah", "jThreat", "jDc", "jBda", "jCs", "jDest", "jRem", "jName", "aCs", "jL1", "jL2", "jL3", "jL4", "jL5", "jL6", "jL7", "jL8", "jL9", "jF1", "jF2", "jF3", "jF4", "jF5"];
 };
 // Rafraîchissement (XEH_postInitClient, 3 s) : seulement les vues sans saisie, mission en cours.
 if (_act isEqualTo "tick") exitWith {
@@ -489,8 +489,10 @@ switch (_act) do {
                 _dest pushBack [_t, _who];
             };
         } forEach ((_s getOrDefault ["jDest", ""]) splitString ",;");
-        private _ref = ["send", [_fmt, _lines, _rem, _dest, "", _free]] call comspec_atak_native_fnc_airBrief;
+        private _ref = ["send", [_fmt, _lines, _rem, _dest, "", _free, trim (_s getOrDefault ["jName", ""])]] call comspec_atak_native_fnc_airBrief;
         if (_ref isEqualTo "") exitWith {};
+        _s deleteAt "jName";
+        _s set ["clearing", true];
         // Lignes conseillées vides : rappel, l'envoi est parti quand même.
         private _want = [[3, 4, 5], [1, 2, 3]] select (_fmt isEqualTo "5");
         private _empty = (_want select { (_lines param [_x, ""]) in ["", "-"] }) apply { _x + 1 };

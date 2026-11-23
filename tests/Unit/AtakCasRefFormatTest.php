@@ -85,7 +85,7 @@ final class AtakCasRefFormatTest extends TestCase
         $start = (int) strpos($src, 'public function casStatus');
         $end = (int) strpos($src, 'Notes de reconnaissance', $start);
         $body = substr($src, $start, $end - $start);
-        self::assertStringContainsString('AirBriefService::normalizeRef(', $body);
+        self::assertStringContainsString('AirBriefService::normalizeLookup(', $body);
         self::assertSame(3, substr_count($body, "'cas_not_found'"));
         self::assertStringNotContainsString("'Not found", $body);
     }
