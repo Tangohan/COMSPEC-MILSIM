@@ -1709,8 +1709,16 @@ class UserRepository
         $stmt = $this->pdo()->prepare('SELECT * FROM users WHERE tenant_id = ? AND steam_id = ? LIMIT 1');
         $stmt->execute([$tenantId, $sid]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+        // « Compte obligatoire » avec restriction (réglage de la communauté, désactivé par défaut) : une fiche sans
+        // compte en retard n'est plus résolue par son Steam. La fiche et ses données restent intactes.
+        if (\App\Services\Effectifs\AccountRequirementService::restrictsUser($row)) {
+            return null;
+        }
 
-        return $row ?: null;
+        return $row;
     }
 
     /**

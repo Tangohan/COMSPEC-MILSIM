@@ -32,6 +32,38 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
     <?php if ($flashErr): ?><p class="eff-nc__flash is-bad" role="alert"><?= $h($flashErr) ?></p><?php endif; ?>
     <?php if ($flashOk): ?><p class="eff-nc__flash" role="status"><?= $h($flashOk) ?></p><?php endif; ?>
 
+    <?php $req = is_array($ncReq ?? null) ? $ncReq : ['enabled' => false, 'days' => 14, 'restrict' => false]; ?>
+    <section class="eff-nc__panel" aria-labelledby="eff-nc-req">
+        <h3 id="eff-nc-req">Compte obligatoire <small><?= $req['enabled'] ? 'Activé : ' . (int) $req['days'] . ' jours' : 'Désactivé' ?></small></h3>
+        <p class="eff-nc__hint">Fixe une échéance aux personnes sans compte. Rien n’est supprimé ni bloqué automatiquement : passée l’échéance, la fiche est signalée « En retard » et vous décidez de la suite.</p>
+        <?php if ($ncCanEdit): ?>
+        <form method="post" action="<?= $h(effectifs_workspace_url('sans-comptes/obligation')) ?>" class="eff-nc__form">
+            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+            <label class="eff-nc__check"><input type="checkbox" name="enabled" value="1"<?= $req['enabled'] ? ' checked' : '' ?>> Exiger que chaque personne crée son compte</label>
+            <label>Délai (en jours, de 1 à 90)
+                <input type="number" name="days" value="<?= (int) $req['days'] ?>" min="1" max="90" step="1">
+            </label>
+            <label class="eff-nc__check"><input type="checkbox" name="restrict" value="1"<?= $req['restrict'] ? ' checked' : '' ?>> Option séparée : tant qu’une fiche est en retard, ne plus la reconnaître par son Steam dans les outils de jeu (ATAK, liaison du jeu). La fiche et ses données sont conservées ; l’accès revient dès que le compte est créé ou l’option retirée.</label>
+            <button type="submit" class="eff-nc__btn">Enregistrer</button>
+            <span class="eff-nc__hint">Le délai court depuis la création de la fiche, ou depuis aujourd’hui pour les fiches déjà là : activer l’obligation ne met personne en retard le jour même.</span>
+        </form>
+        <?php endif; ?>
+        <?php if ($req['enabled'] && $ncCanInvite): ?>
+        <form method="post" action="<?= $h(effectifs_workspace_url('sans-comptes/relancer')) ?>" class="eff-nc__form">
+            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+            <label>Qui relancer
+                <select name="scope">
+                    <option value="late">Les fiches en retard (<?= (int) $ncLate ?>)</option>
+                    <option value="all">Toutes les fiches sans compte</option>
+                </select>
+            </label>
+            <label class="eff-nc__check"><input type="checkbox" name="discord" value="1"> Publier aussi le lien sur le salon Discord prévu pour les invitations</label>
+            <button type="submit" class="eff-nc__btn"<?= (int) $ncRemindable === 0 ? ' disabled' : '' ?>>Relancer en lot</button>
+            <span class="eff-nc__hint">Chaque personne reçoit son lien « créer mon compte » : par e-mail si on en connaît un, sinon le lien est prêt à copier dans <a href="<?= $h(effectifs_workspace_url('invitations')) ?>">Invitations</a>. Une personne relancée n’est pas relancée à nouveau avant 3 jours, et 50 personnes au plus par action.</span>
+        </form>
+        <?php endif; ?>
+    </section>
+
     <nav class="eff-nc__chips" aria-label="Filtrer par statut">
         <a href="<?= $h($base) ?>" class="<?= $f['status'] === '' ? 'is-on' : '' ?>">Tous <b><?= (int) $ncTotal ?></b></a>
         <?php foreach ($statuses as $key => $label): ?>
@@ -74,7 +106,7 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
         <div class="eff-nc__tablewrap" data-grid>
             <table class="eff-nc__table" data-grid-table>
                 <thead>
-                    <tr><th scope="col">Nom<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Indicatif<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Statut<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Origine<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Dernière activité<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col" data-nosort><span class="eff-sr">Actions</span></th></tr>
+                    <tr><th scope="col">Nom<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Indicatif<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Statut<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Origine<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Échéance du compte<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Dernière activité<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col" data-nosort><span class="eff-sr">Actions</span></th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($ncRows as $r): ?>
@@ -83,6 +115,7 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
                         <td><?= $h($r['callsign'] !== '' ? $r['callsign'] : '—') ?></td>
                         <td><span class="eff-nc__state eff-nc__state--<?= $h($r['status']) ?>"><?= $h($r['status_label']) ?></span></td>
                         <td><?= $h($r['source_label']) ?></td>
+                        <td><?php if (($r['due_label'] ?? '') !== ''): ?><span class="eff-nc__state eff-nc__due--<?= $h($r['due_state']) ?>"><?= $h($r['due_label']) ?></span><?php if (!empty($r['reminded_at'])): ?> <span class="eff-nc__hint">relancé le <?= $h($day((string) $r['reminded_at'])) ?></span><?php endif; ?><?php else: ?>—<?php endif; ?></td>
                         <td><?= $h($day((string) $r['last_activity'])) ?></td>
                         <td><a class="eff-nc__link" href="<?= $h($base . '?fiche=' . $r['id']) ?>#fiche">Gérer</a></td>
                     </tr>

@@ -13,6 +13,11 @@ use App\Core\Session;
 use App\Repositories\RosterFicheEventRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\MemberProfileInviteRepository;
+use App\Repositories\RosterAccountReminderRepository;
+use App\Services\Effectifs\AccountRequirementService;
+use App\Services\Effectifs\MemberProfileInviteSender;
+use App\Services\Effectifs\MemberProfileInviteService;
 use App\Services\Effectifs\NoAccountDirectory;
 use App\Services\Effectifs\RosterOnlyMemberService;
 use App\Services\Identity\UserIdentityMergeService;
@@ -201,6 +206,104 @@ final class EffectifsSansComptesController
         }
 
         return $this->back($result['created'] > 0, $msg);
+    }
+
+    /** POST /back-office/ressources/effectifs/sans-comptes/obligation : réglage « Compte obligatoire » de la communauté. */
+    public function saveRequirement(Request $request, array $params = []): Response
+    {
+        if (($denied = $this->guard($request, 'edit')) !== null) {
+            return $denied;
+        }
+        [$tenantId, $actorId] = $this->ids();
+        $svc = new AccountRequirementService();
+        $previous = $svc->load($tenantId);
+        $enabled = (string) $request->input('enabled', '') === '1';
+        $restrict = (string) $request->input('restrict', '') === '1';
+        try {
+            $new = $svc->save($tenantId, $enabled, AccountRequirementService::clampDays($request->input('days', AccountRequirementService::DEFAULT_DAYS)), $restrict, $previous);
+        } catch (\Throwable $e) {
+            error_log('[sans-compte] réglage obligation : ' . $e->getMessage());
+
+            return $this->back(false, 'Impossible d’enregistrer le réglage pour le moment.');
+        }
+        try {
+            Container::get(\App\Services\Audit\AuditService::class)->log('account_required_updated', $tenantId, $actorId, 'tenant', $tenantId, null, ($new['enabled'] ? 'actif;' . $new['days'] . 'j' : 'inactif') . ($new['restrict'] ? ';restriction' : ''));
+        } catch (\Throwable) {
+        }
+        if (!$new['enabled']) {
+            return $this->back(true, 'Compte obligatoire désactivé : plus aucune échéance n’est affichée.');
+        }
+
+        return $this->back(true, 'Compte obligatoire activé : ' . $new['days'] . ' jours à partir de la création de la fiche (ou d’aujourd’hui pour les fiches existantes).');
+    }
+
+    /** POST /back-office/ressources/effectifs/sans-comptes/relancer : rappel en lot (liens d’invitation existants). */
+    public function remind(Request $request, array $params = []): Response
+    {
+        if (($denied = $this->guard($request, 'edit')) !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canInviteMembers(Gate::getInstance())) {
+            return $this->back(false, 'Vous n’êtes pas habilité à inviter des membres.');
+        }
+        [$tenantId, $actorId] = $this->ids();
+        $invites = new MemberProfileInviteService();
+        if (!$invites->available()) {
+            return $this->back(false, 'Les liens d’invitation arrivent avec la prochaine mise à jour.');
+        }
+        $cfg = (new AccountRequirementService())->load($tenantId);
+        $reminders = new RosterAccountReminderRepository();
+        $now = new \DateTimeImmutable('now');
+        $directory = new NoAccountDirectory($this->users());
+        $rows = AccountRequirementService::decorate($directory->list($tenantId), $cfg, $reminders->forTenant($tenantId), $now);
+        $onlyLate = (string) $request->input('scope', 'late') !== 'all';
+        $targets = AccountRequirementService::remindable($rows, $onlyLate, $now);
+        if ($targets === []) {
+            return $this->back(false, 'Personne à relancer : aucune fiche concernée, ou déjà relancée depuis moins de ' . AccountRequirementService::REMIND_EVERY_DAYS . ' jours.');
+        }
+        $viaDiscord = (string) $request->input('discord', '') === '1';
+        $sender = new MemberProfileInviteSender($invites, $this->users());
+        $latest = [];
+        foreach ((new MemberProfileInviteRepository())->listForTenant($tenantId, 500) as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid > 0 && (!isset($latest[$uid]) || (int) $row['id'] > (int) $latest[$uid]['id'])) {
+                $latest[$uid] = $row;
+            }
+        }
+        $count = ['email' => 0, 'discord' => 0, 'link' => 0];
+        $failed = 0;
+        foreach ($targets as $t) {
+            $uid = (int) $t['id'];
+            try {
+                $row = $latest[$uid] ?? null;
+                if ($row === null || !MemberProfileInviteService::isUsable($row, $now)) {
+                    $issued = $invites->issue($tenantId, $uid, $actorId, 48, true);
+                    $row = $invites->findUsableByToken($issued['token']);
+                }
+                if ($row === null) {
+                    ++$failed;
+                    continue;
+                }
+                $channel = 'link';
+                if (!RosterOnlyMember::isRosterEmail((string) ($this->users()->findById($uid, $tenantId)['email'] ?? '')) && $sender->sendEmail($tenantId, $row, $actorId)['ok']) {
+                    $channel = 'email';
+                } elseif ($viaDiscord && $sender->sendDiscord($tenantId, $row, $actorId)['ok']) {
+                    $channel = 'discord';
+                }
+                ++$count[$channel];
+                $reminders->record($tenantId, $uid, $actorId, $channel, $now->format('Y-m-d H:i:s'));
+                $this->events->record($tenantId, $uid, $actorId, 'invited', 'invite', 'relance « compte à créer » (' . $channel . ')');
+            } catch (\Throwable $e) {
+                error_log('[sans-compte] relance : ' . $e->getMessage());
+                ++$failed;
+            }
+        }
+        $msg = (count($targets) - $failed) . ' personne(s) relancée(s) : ' . $count['email'] . ' par e-mail, ' . $count['discord'] . ' sur Discord, ' . $count['link'] . ' avec un lien prêt à copier dans Invitations.';
+        if ($failed > 0) {
+            $msg .= ' ' . $failed . ' échec(s).';
+        }
+
+        return $this->back($failed < count($targets), $msg);
     }
 
     private function roster(): RosterOnlyMemberService

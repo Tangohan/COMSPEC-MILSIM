@@ -40,3 +40,5 @@
 .eff-dt__result h3 { margin: 0; }
 .eff-dt__inline { display: inline-flex; margin: 0; }
 @media (max-width: 40rem) { .eff-nc__filters > *, .eff-nc__form > * { flex: 1 1 100%; } }
+.eff-nc__due--pending { background: color-mix(in srgb, #d97706 18%, transparent); }
+.eff-nc__due--late { background: color-mix(in srgb, #dc2626 20%, transparent); font-weight: 600; }

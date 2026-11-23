@@ -1354,12 +1354,31 @@ class EffectifsWorkspaceController
                 }
             }
         }
+        $requirements = new \App\Services\Effectifs\AccountRequirementService();
+        $reqConfig = $requirements->load($tenantId);
+        $now = new \DateTimeImmutable('now');
+        $all = \App\Services\Effectifs\AccountRequirementService::decorate($all, $reqConfig, (new \App\Repositories\RosterAccountReminderRepository())->forTenant($tenantId), $now);
+        if ($selected !== null) {
+            foreach ($all as $r) {
+                if ($r['id'] === $ficheId) {
+                    $selected = $r;
+                    break;
+                }
+            }
+        }
         $counts = [];
+        $lateCount = 0;
         foreach ($all as $r) {
             $counts[$r['status']] = ($counts[$r['status']] ?? 0) + 1;
+            if ($r['due_state'] === \App\Services\Effectifs\AccountRequirementService::STATE_LATE) {
+                $lateCount++;
+            }
         }
 
         return $this->shell('admin.effectifs_workspace.sans_comptes', [
+            'ncReq' => $reqConfig,
+            'ncLate' => $lateCount,
+            'ncRemindable' => count(\App\Services\Effectifs\AccountRequirementService::remindable($all, false, $now)),
             'title' => 'Sans compte',
             'effectifsNav' => 'sans_comptes',
             'ncRows' => \App\Services\Effectifs\NoAccountDirectory::filter($all, $filters),
