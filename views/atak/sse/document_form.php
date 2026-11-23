@@ -29,6 +29,8 @@ $prefillType = (string) ($prefillType ?? ($document['document_type'] ?? 'note_an
 $prefillCaseId = (int) ($prefillCaseId ?? ($document['case_id'] ?? 0));
 $prefillTitle = (string) ($prefillTitle ?? ($document['title'] ?? ''));
 $prefillBody = (string) ($prefillBody ?? ($document['body'] ?? ''));
+$editorContext = is_array($editorContext ?? null) ? $editorContext : [];
+$bodyHtml = \App\Support\SseRichText::htmlOf($prefillBody);
 $prefillClass = (string) ($prefillClass ?? ($document['classification'] ?? 'confidentiel'));
 $prefillStatus = (string) ($prefillStatus ?? ($document['status'] ?? 'brouillon'));
 $authorPreview = (string) ($authorPreview ?? (\App\Core\Session::get('sse_guest_label') ?? \App\Core\Session::get('display_name') ?? 'Rédacteur'));
@@ -44,58 +46,46 @@ $typeHints = [
     'diffusion' => 'Version destinée à une diffusion contrôlée — déjà caviardée si besoin.',
 ];
 
-$previewDoc = [
-    'reference_code' => $isEdit ? (string) ($document['reference_code'] ?? 'DOC-····') : 'DOC-···· (brouillon)',
-    'title' => $prefillTitle,
-    'body' => $prefillBody,
-    'classification' => $prefillClass,
-    'classification_label' => $classifications[$prefillClass] ?? 'Secret (S)',
-    'status' => $prefillStatus,
-    'status_label' => $statusLabels[$prefillStatus] ?? 'Brouillon',
-    'document_type' => $prefillType,
-    'document_type_label' => $typeLabels[$prefillType] ?? 'Document',
-    'author_label' => $isEdit ? (string) ($document['author_label'] ?? $authorPreview) : $authorPreview,
-    'case_reference' => '',
-    'created_at' => date('Y-m-d H:i:s'),
+$docId = $isEdit ? (int) ($document['id'] ?? 0) : 0;
+$edCfg = [
+    'templates' => $editorContext['templates'] ?? [],
+    'fields' => $editorContext['fields'] ?? [],
+    'serverDraft' => $editorContext['serverDraft'] ?? null,
+    'draftUrl' => (string) ($editorContext['draftUrl'] ?? ''),
 ];
-foreach ($cases as $c) {
-    if ((int) ($c['id'] ?? 0) === $prefillCaseId && empty($c['is_folder'])) {
-        $previewDoc['case_reference'] = (string) (($c['reference_code'] ?? '') . ' — ' . ($c['title'] ?? ''));
-        break;
-    }
-}
+$ico = static function (string $d): string {
+    return '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="' . $d . '" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+};
+$paletteText = \App\Support\SseRichText::TEXT_COLORS;
+$paletteMark = \App\Support\SseRichText::HIGHLIGHT_COLORS;
+$btn = static function (string $cmd, string $label, string $inner, bool $toggle = false) use ($h): string {
+    return '<button type="button" class="sse-ed__btn" data-cmd="' . $h($cmd) . '" title="' . $h($label) . '" aria-label="' . $h($label) . '"'
+        . ($toggle ? ' aria-pressed="false"' : '') . '>' . $inner . '</button>';
+};
 ?>
+
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-doc-editor.css')) ?>">
 
 <section class="sse-desk-hero sse-desk-hero--compact" aria-labelledby="sse-doc-form-title">
     <div class="sse-desk-hero__main">
-        <div class="sse-desk-hero__kicker">
+        <h1 id="sse-doc-form-title"><?= $isEdit ? 'Modifier le document' : 'Nouveau document' ?></h1>
+        <p class="sse-desk-hero__lead">
             <span class="interest-hero__ref"><?= $isEdit ? $h($document['reference_code'] ?? 'DOC') : 'ATH-SSE-BROUILLON' ?></span>
             <?php if ($isEdit): ?>
                 <span class="badge"><?= $h($document['status_label'] ?? '') ?></span>
             <?php else: ?>
                 <span class="badge badge--gray">Nouveau brouillon</span>
             <?php endif; ?>
-        </div>
-        <h1 id="sse-doc-form-title"><?= $isEdit ? 'Modifier le document' : 'Nouveau document' ?></h1>
-        <p class="sse-desk-hero__lead">
-            Rédigez à gauche ; l’aperçu papier à droite reprend la présentation officielle.
-            Conservez la classification au niveau réel du contenu — la diffusion plus large
+            Rédigez directement sur la feuille. Conservez la classification au niveau réel du contenu : la diffusion plus large
             se fait ensuite via caviardage et validation.
         </p>
     </div>
 </section>
 
-<form method="post" action="<?= $h($action) ?>" class="sse-doc-workspace" id="sse-doc-form">
+<form method="post" action="<?= $h($action) ?>" class="sse-ed-form" id="sse-doc-form">
     <?= \App\Core\Csrf::field() ?>
 
-    <section class="panel sse-doc-workspace__editor sse-desk-panel sse-desk-editor">
-        <div class="panel-header">
-            <div class="panel-title">
-                <span class="panel-index">19.11</span>
-                Fiche document
-            </div>
-            <div class="panel-meta"><?= $isEdit ? 'Mise à jour' : 'Création' ?></div>
-        </div>
+    <section class="panel sse-desk-panel sse-ed-meta" aria-label="Fiche du document">
         <div class="panel-body">
             <div class="sse-form-grid">
                 <div>
@@ -131,130 +121,238 @@ foreach ($cases as $c) {
                         <?php foreach ($cases as $c): ?>
                             <?php if (!empty($c['is_folder'])) { continue; } ?>
                             <option value="<?= (int) ($c['id'] ?? 0) ?>" <?= $prefillCaseId === (int) ($c['id'] ?? 0) ? 'selected' : '' ?>
-                                data-label="<?= $h(($c['reference_code'] ?? '') . ' — ' . ($c['title'] ?? '')) ?>">
+                                data-ref="<?= $h($c['reference_code'] ?? '') ?>">
                                 <?= $h(($c['reference_code'] ?? '') . ' — ' . ($c['title'] ?? '')) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <?php if ($isEdit && (int) ($document['id'] ?? 0) > 0): ?>
+                    <?php if ($isEdit && $docId > 0): ?>
                         <?= \App\Services\Sse\Attach\SseAttachWindow::button('document', (int) $document['id'], ['label' => 'Rattacher à une piste, une personne…', 'class' => 'btn btn--ghost btn--sm']) ?>
                     <?php endif; ?>
                 </div>
             </div>
-
             <label for="title">Intitulé</label>
             <input id="title" name="title" type="text" required maxlength="240"
                    value="<?= $h($prefillTitle) ?>"
                    placeholder="Ex. Flash — découverte cache armes secteur Nord">
-
-            <label for="body">Corps du document</label>
-            <div class="sse-desk-tools">
-                <button class="btn btn--ghost btn--sm" type="button" id="sse-mask-btn">
-                    Masquer le passage sélectionné
-                </button>
-                <?php if ($libraryEntries !== []): ?>
-                    <button class="btn btn--sm" type="button" id="sse-lib-btn" aria-haspopup="dialog">
-                        Insérer une mention
-                    </button>
-                <?php endif; ?>
-                <span class="muted">Le passage masqué devient une barre noire sur la feuille, sa longueur reste visible.</span>
-            </div>
-            <?php if ($libraryEntries !== []): ?>
-                <div class="sse-lib-suggest" id="sse-lib-suggest" hidden>
-                    <span class="sse-lib-suggest__label">Proposé pour ce document</span>
-                    <div class="sse-lib-suggest__row" id="sse-lib-suggest-row"></div>
-                </div>
-            <?php endif; ?>
-            <div class="sse-desk-paper">
-                <textarea id="body" name="body" rows="26" required
-                          placeholder="Structurez le produit : situation, faits, analyse, recommandations."><?= $h($prefillBody) ?></textarea>
-            </div>
-            <input type="hidden" name="inserted_mentions" id="sse-lib-trace" value="">
-            <?php if ($libraryEntries !== []): ?>
-                <p class="sse-lib-inserted" id="sse-lib-inserted" hidden>
-                    Mentions insérées : <span id="sse-lib-inserted-list"></span>.
-                    Le texte porté au document est conservé tel quel, même si la mention centrale est modifiée plus tard.
-                </p>
-            <?php endif; ?>
-            <p class="muted sse-desk-footnote">
-                Changez de type pour recharger le modèle guidé (si le corps n’a pas encore été personnalisé).
-                Évitez les noms en clair si une diffusion large est prévue.
-                Pour une version expurgée à partir d’un dossier, utilisez aussi l’écran de déclassification.
-            </p>
-
-            <div class="toolbar-actions sse-desk-actions">
-                <button class="btn" type="submit"><?= $isEdit ? 'Enregistrer' : 'Créer le brouillon' ?></button>
-                <a class="btn btn--ghost" href="<?= $h($isEdit ? url('atak/sse/documents/' . (int) $document['id']) : url('atak/sse/documents')) ?>">Annuler</a>
-            </div>
         </div>
     </section>
 
-    <?php if ($libraryEntries !== []): ?>
-    <div class="sse-lib" id="sse-lib" hidden>
-        <div class="sse-lib__backdrop" data-lib-close></div>
-        <section class="sse-lib__panel" role="dialog" aria-modal="true" aria-labelledby="sse-lib-title">
-            <header class="sse-lib__head">
-                <div>
-                    <h2 id="sse-lib-title">Insérer une mention officielle</h2>
-                </div>
-                <button type="button" class="sse-lib__close" data-lib-close aria-label="Fermer la bibliothèque">×</button>
-            </header>
-            <div class="sse-lib__search">
-                <label class="sr-only" for="sse-lib-q">Rechercher une mention</label>
-                <input id="sse-lib-q" type="search" autocomplete="off"
-                       placeholder="Chercher un code (RENS-03) ou un mot : recoupé, source, identité incertaine, caviardage…">
-                <span class="sse-lib__count" id="sse-lib-count"></span>
-            </div>
-            <div class="sse-lib__body">
-                <nav class="sse-lib__rail" aria-label="Familles de mentions">
-                    <button type="button" class="is-active" data-lib-cat="">Toutes</button>
-                    <?php foreach ($libraryCategories as $key => $label): ?>
-                        <?php if (!isset($libraryUsedCategories[$key])) { continue; } ?>
-                        <button type="button" data-lib-cat="<?= $h($key) ?>"><?= $h($label) ?></button>
-                    <?php endforeach; ?>
-                </nav>
-                <div class="sse-lib__list" id="sse-lib-list" tabindex="0"></div>
-            </div>
-            <footer class="sse-lib__foot">
-                <span class="muted">
-                    Le texte inséré reste modifiable. Les variables sans valeur connue restent visibles entre accolades
-                    pour être complétées à la main.
-                </span>
-                <a class="link" href="<?= $h(url('atak/sse/bibliotheque')) ?>" target="_blank" rel="noopener">Administrer la bibliothèque</a>
-            </footer>
-        </section>
-    </div>
-    <?php endif; ?>
+    <section class="sse-ed" id="sse-ed" data-doc-id="<?= $docId ?>" aria-label="Éditeur de document">
+        <div class="sse-ed__class" id="sse-ed-class" role="status" data-level="<?= $h($prefillClass) ?>">
+            <span class="sse-ed__class-tag">Classification</span>
+            <strong><?= $h(mb_strtoupper($classifications[$prefillClass] ?? 'Confidentiel', 'UTF-8')) ?></strong>
+            <span class="sse-ed__class-note">Ce document est classifié : ne le diffusez pas hors canal.</span>
+        </div>
 
-    <aside class="sse-doc-workspace__preview" aria-label="Aperçu papier">
-        <div class="sse-doc-preview-label">Aperçu officiel</div>
-        <?php
-        $document = $previewDoc;
-        $livePreview = true;
-        require __DIR__ . '/partials/document_paper.php';
-        ?>
-    </aside>
+        <div class="sse-ed__bar" id="sse-ed-bar" role="toolbar" aria-label="Mise en forme du document" aria-controls="sse-ed-sheet">
+            <div class="sse-ed__group" role="group" aria-label="Historique">
+                <?= $btn('undo', 'Annuler (Ctrl+Z)', $ico('M5 4L2 7l3 3M2 7h7a4 4 0 010 8H6')) ?>
+                <?= $btn('redo', 'Rétablir (Ctrl+Y)', $ico('M11 4l3 3-3 3M14 7H7a4 4 0 000 8h3')) ?>
+            </div>
+            <div class="sse-ed__group" role="group" aria-label="Style de paragraphe">
+                <select class="sse-ed__select" data-cmd="block" aria-label="Style de paragraphe">
+                    <option value="p">Corps de texte</option>
+                    <option value="h2">Titre 1</option>
+                    <option value="h3">Titre 2</option>
+                    <option value="h4">Titre 3</option>
+                    <option value="blockquote">Citation</option>
+                </select>
+            </div>
+            <div class="sse-ed__group" role="group" aria-label="Caractères">
+                <?= $btn('bold', 'Gras (Ctrl+B)', '<b aria-hidden="true">G</b>', true) ?>
+                <?= $btn('italic', 'Italique (Ctrl+I)', '<i aria-hidden="true">I</i>', true) ?>
+                <?= $btn('underline', 'Souligné (Ctrl+U)', '<u aria-hidden="true">S</u>', true) ?>
+                <?= $btn('strike', 'Barré', '<s aria-hidden="true">B</s>', true) ?>
+                <span class="sse-ed__pophost">
+                    <button type="button" class="sse-ed__btn" title="Couleur du texte" aria-label="Couleur du texte" aria-haspopup="true" aria-expanded="false" aria-controls="sse-ed-pop-color"><span aria-hidden="true" class="sse-ed__sw-a">A</span></button>
+                    <div class="sse-ed__pop" id="sse-ed-pop-color" role="group" aria-label="Couleur du texte" hidden>
+                        <?php foreach ($paletteText as $c): ?>
+                            <button type="button" class="sse-ed__sw" data-cmd="color" data-value="<?= $h($c) ?>" style="background:<?= $h($c) ?>" title="<?= $h($c) ?>" aria-label="Couleur <?= $h($c) ?>"></button>
+                        <?php endforeach; ?>
+                    </div>
+                </span>
+                <span class="sse-ed__pophost">
+                    <button type="button" class="sse-ed__btn" title="Surlignage" aria-label="Surlignage" aria-haspopup="true" aria-expanded="false" aria-controls="sse-ed-pop-hilite"><span aria-hidden="true" class="sse-ed__sw-h">ab</span></button>
+                    <div class="sse-ed__pop" id="sse-ed-pop-hilite" role="group" aria-label="Surlignage" hidden>
+                        <?php foreach ($paletteMark as $c): ?>
+                            <button type="button" class="sse-ed__sw" data-cmd="hilite" data-value="<?= $h($c) ?>" style="background:<?= $h($c) ?>" title="<?= $h($c) ?>" aria-label="Surlignage <?= $h($c) ?>"></button>
+                        <?php endforeach; ?>
+                    </div>
+                </span>
+                <?= $btn('clear', 'Effacer la mise en forme', $ico('M3 3l10 10M13 3L3 13')) ?>
+            </div>
+            <div class="sse-ed__group" role="group" aria-label="Listes et alignement">
+                <?= $btn('ul', 'Liste à puces', $ico('M6 4h8M6 8h8M6 12h8M2.5 4h.5M2.5 8h.5M2.5 12h.5'), true) ?>
+                <?= $btn('ol', 'Liste numérotée', $ico('M6 4h8M6 8h8M6 12h8M2 3.5h1.5v3M2 9.5h2l-2 2.5h2'), true) ?>
+                <?= $btn('align-left', 'Aligner à gauche', $ico('M2 3h12M2 6.5h8M2 10h12M2 13.5h8'), true) ?>
+                <?= $btn('align-center', 'Centrer', $ico('M2 3h12M4 6.5h8M2 10h12M4 13.5h8'), true) ?>
+                <?= $btn('align-right', 'Aligner à droite', $ico('M2 3h12M6 6.5h8M2 10h12M6 13.5h8'), true) ?>
+                <?= $btn('align-justify', 'Justifier', $ico('M2 3h12M2 6.5h12M2 10h12M2 13.5h12'), true) ?>
+                <select class="sse-ed__select sse-ed__select--narrow" data-cmd="lineheight" aria-label="Interligne">
+                    <option value="1">Interligne 1</option>
+                    <option value="1.15">1,15</option>
+                    <option value="1.5">1,5</option>
+                    <option value="2">2</option>
+                </select>
+            </div>
+            <div class="sse-ed__group" role="group" aria-label="Insertion">
+                <span class="sse-ed__pophost">
+                    <button type="button" class="sse-ed__btn" title="Tableau" aria-label="Tableau" aria-haspopup="true" aria-expanded="false" aria-controls="sse-ed-pop-table"><?= $ico('M2 3h12v10H2zM2 7h12M2 10h12M6 3v10M10 3v10') ?></button>
+                    <div class="sse-ed__pop sse-ed__pop--table" id="sse-ed-pop-table" role="group" aria-label="Tableau" hidden>
+                        <label for="sse-ed-rows">Lignes</label>
+                        <input type="number" id="sse-ed-rows" min="1" max="20" value="3">
+                        <label for="sse-ed-cols">Colonnes</label>
+                        <input type="number" id="sse-ed-cols" min="1" max="8" value="3">
+                        <button type="button" class="btn btn--sm" data-cmd="table-insert">Insérer le tableau</button>
+                        <hr>
+                        <button type="button" class="btn btn--ghost btn--sm" data-cmd="row-add">Ajouter une ligne</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-cmd="row-del">Supprimer la ligne</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-cmd="col-add">Ajouter une colonne</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-cmd="col-del">Supprimer la colonne</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-cmd="table-del">Supprimer le tableau</button>
+                    </div>
+                </span>
+                <?= $btn('hr', 'Séparateur horizontal', $ico('M2 8h12')) ?>
+                <?= $btn('pagebreak', 'Saut de page', $ico('M3 2v4h10V2M3 14v-4h10v4M1 8h2M6 8h4M13 8h2')) ?>
+                <?= $btn('redact', 'Caviarder le passage sélectionné', '<span aria-hidden="true" class="sse-ed__redact-ico">▮▮</span>') ?>
+                <select class="sse-ed__select sse-ed__select--narrow" data-cmd="field" aria-label="Insérer un champ du dossier">
+                    <option value="">Champ du dossier…</option>
+                    <option value="nom">Nom du rédacteur</option>
+                    <option value="grade">Grade du rédacteur</option>
+                    <option value="date">Date du jour</option>
+                    <option value="dossier">Référence du dossier</option>
+                    <option value="classification">Classification</option>
+                </select>
+                <?php if ($libraryEntries !== []): ?>
+                    <button class="sse-ed__btn sse-ed__btn--text" type="button" id="sse-lib-btn" aria-haspopup="dialog">Mention</button>
+                <?php endif; ?>
+            </div>
+            <div class="sse-ed__group sse-ed__group--end" role="group" aria-label="Sortie">
+                <?= $btn('print', 'Imprimer la feuille', $ico('M4 6V2h8v4M4 12H2V6h12v6h-2M4 10h8v4H4z')) ?>
+                <?php if ($isEdit && $docId > 0): ?>
+                    <a class="sse-ed__btn sse-ed__btn--text" href="<?= $h(url('atak/sse/documents/' . $docId . '/pdf')) ?>" title="Exporter la dernière version enregistrée en PDF">PDF</a>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="sse-ed__notice" id="sse-ed-restore" role="alert" hidden>
+            <span>Un brouillon automatique plus récent existe pour ce document.</span>
+            <button type="button" class="btn btn--sm" id="sse-ed-restore-yes">Restaurer le brouillon</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="sse-ed-restore-no">Ignorer</button>
+        </div>
+
+        <?php if ($libraryEntries !== []): ?>
+            <div class="sse-lib-suggest" id="sse-lib-suggest" hidden>
+                <span class="sse-lib-suggest__label">Proposé pour ce document</span>
+                <div class="sse-lib-suggest__row" id="sse-lib-suggest-row"></div>
+            </div>
+        <?php endif; ?>
+
+        <div class="sse-ed__desk" id="sse-ed-desk">
+            <div class="sse-ed__zoomer" id="sse-ed-zoomer" data-zoom="1">
+                <div class="sse-ed__ruler" id="sse-ed-ruler" aria-hidden="true"></div>
+                <div class="sse-ed__sheet" id="sse-ed-sheet" contenteditable="true" role="textbox" aria-multiline="true"
+                     aria-label="Corps du document" spellcheck="true" lang="fr"><?= $bodyHtml ?></div>
+            </div>
+        </div>
+
+        <div class="sse-ed__status">
+            <span><span id="sse-ed-words">0</span> mots</span>
+            <span><span id="sse-ed-pages">1</span> page(s) A4</span>
+            <span id="sse-ed-save" role="status" aria-live="polite"></span>
+            <label class="sse-ed__zoom" for="sse-ed-zoom">Zoom
+                <select id="sse-ed-zoom">
+                    <?php foreach ([50, 75, 100, 125, 150, 200] as $z): ?>
+                        <option value="<?= $z ?>" <?= $z === 100 ? 'selected' : '' ?>><?= $z ?> %</option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </div>
+
+        <div id="sse-ed-msgs" hidden>
+            <span data-msg="ready">Prêt.</span>
+            <span data-msg="typing">Modifications non enregistrées…</span>
+            <span data-msg="saved-local">Brouillon enregistré sur cet appareil</span>
+            <span data-msg="saved-server">Brouillon enregistré sur le serveur</span>
+            <span data-msg="empty">Le document est vide : rédigez le corps avant d’enregistrer.</span>
+            <span data-msg="field-nom">Nom du rédacteur</span>
+            <span data-msg="field-grade">Grade du rédacteur</span>
+            <span data-msg="field-date"><?= $h(date('d/m/Y')) ?></span>
+            <span data-msg="field-dossier">Référence du dossier</span>
+            <span data-msg="field-classification">Classification</span>
+        </div>
+        <script type="application/json" id="sse-ed-cfg"><?= json_encode($edCfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+    </section>
+
+    <textarea id="body" name="body" hidden aria-hidden="true" tabindex="-1"><?= $h(\App\Support\SseRichText::MARK . $bodyHtml) ?></textarea>
+    <input type="hidden" name="inserted_mentions" id="sse-lib-trace" value="">
+    <?php if ($libraryEntries !== []): ?>
+        <p class="sse-lib-inserted" id="sse-lib-inserted" hidden>
+            Mentions insérées : <span id="sse-lib-inserted-list"></span>.
+            Le texte porté au document est conservé tel quel, même si la mention centrale est modifiée plus tard.
+        </p>
+    <?php endif; ?>
+    <p class="muted sse-desk-footnote">
+        Changez de type pour recharger le modèle guidé (si le corps n’a pas encore été personnalisé).
+        Le passage caviardé devient une barre noire à l’affichage et dans le PDF, sa longueur reste visible.
+        Évitez les noms en clair si une diffusion large est prévue.
+        Pour une version expurgée à partir d’un dossier, utilisez aussi l’écran de déclassification.
+    </p>
+
+    <div class="toolbar-actions sse-desk-actions">
+        <button class="btn" type="submit"><?= $isEdit ? 'Enregistrer' : 'Créer le brouillon' ?></button>
+        <a class="btn btn--ghost" href="<?= $h($isEdit ? url('atak/sse/documents/' . $docId) : url('atak/sse/documents')) ?>">Annuler</a>
+    </div>
 </form>
 
+<?php if ($libraryEntries !== []): ?>
+<div class="sse-lib" id="sse-lib" hidden>
+    <div class="sse-lib__backdrop" data-lib-close></div>
+    <section class="sse-lib__panel" role="dialog" aria-modal="true" aria-labelledby="sse-lib-title">
+        <header class="sse-lib__head">
+            <div>
+                <h2 id="sse-lib-title">Insérer une mention officielle</h2>
+            </div>
+            <button type="button" class="sse-lib__close" data-lib-close aria-label="Fermer la bibliothèque">×</button>
+        </header>
+        <div class="sse-lib__search">
+            <label class="sr-only" for="sse-lib-q">Rechercher une mention</label>
+            <input id="sse-lib-q" type="search" autocomplete="off"
+                   placeholder="Chercher un code (RENS-03) ou un mot : recoupé, source, identité incertaine, caviardage…">
+            <span class="sse-lib__count" id="sse-lib-count"></span>
+        </div>
+        <div class="sse-lib__body">
+            <nav class="sse-lib__rail" aria-label="Familles de mentions">
+                <button type="button" class="is-active" data-lib-cat="">Toutes</button>
+                <?php foreach ($libraryCategories as $key => $label): ?>
+                    <?php if (!isset($libraryUsedCategories[$key])) { continue; } ?>
+                    <button type="button" data-lib-cat="<?= $h($key) ?>"><?= $h($label) ?></button>
+                <?php endforeach; ?>
+            </nav>
+            <div class="sse-lib__list" id="sse-lib-list" tabindex="0"></div>
+        </div>
+        <footer class="sse-lib__foot">
+            <span class="muted">
+                Le texte inséré reste modifiable. Les variables sans valeur connue restent visibles entre accolades
+                pour être complétées à la main.
+            </span>
+            <a class="link" href="<?= $h(url('atak/sse/bibliotheque')) ?>" target="_blank" rel="noopener">Administrer la bibliothèque</a>
+        </footer>
+    </section>
+</div>
+<?php endif; ?>
+
+<script src="<?= $h(asset_url('assets/js/sse-doc-editor.js')) ?>"></script>
 <script>
 (function () {
-    var templates = <?= json_encode($bodyTemplates, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?> || {};
     var typeLabels = <?= json_encode($typeLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?> || {};
-    var classLabels = <?= json_encode($classifications, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?> || {};
-    var statusLabels = <?= json_encode($statusLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?> || {};
     var hints = <?= json_encode($typeHints, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?> || {};
     var typeEl = document.getElementById('document_type');
-    var classEl = document.getElementById('classification');
-    var statusEl = document.getElementById('status');
     var titleEl = document.getElementById('title');
-    var bodyEl = document.getElementById('body');
-    var caseEl = document.getElementById('case_id');
     var hintEl = document.getElementById('sse-type-hint');
-    var paper = document.querySelector('[data-sse-doc-paper]');
-    if (!typeEl || !bodyEl || !paper) return;
-
-    var lastTemplate = bodyEl.value;
-    var bodyMount = document.getElementById('sse-doc-paper-body');
+    var ed = window.SseDocEditor;
+    if (!typeEl || !ed) return;
 
     function esc(s) {
         return String(s == null ? '' : s)
@@ -262,225 +360,8 @@ foreach ($cases as $c) {
             .replace(/"/g, '&quot;');
     }
 
-    function escMasked(s) {
-        return esc(s).replace(/\[\[(.*?)\]\]/g, function (all, inner) {
-            var raw = String(inner).trim();
-            var sized = raw.match(/^#(\d{1,3})$/);
-            var width = sized ? parseInt(sized[1], 10) : raw.length;
-            width = Math.max(3, Math.min(90, width));
-            return '<span class="sse-doc-paper__redact" style="display:inline-block;width:'
-                + width + 'ch;height:0.95em;background:#0b1220"></span>';
-        });
-    }
-
-    function bodyToHtml(raw) {
-        var lines = String(raw || '').replace(/\r\n|\r/g, '\n').split('\n');
-        var out = [];
-        var inWarn = false;
-        var titles = {
-            'FLASH RENSEIGNEMENT': 1,
-            'COMPTE RENDU D’EXPLOITATION': 1,
-            "COMPTE RENDU D'EXPLOITATION": 1,
-            'NOTE D’ANALYSE': 1,
-            "NOTE D'ANALYSE": 1,
-            'SYNTHÈSE DE SITUATION': 1,
-            'SYNTHESE DE SITUATION': 1,
-            'VERSION DE DIFFUSION': 1
-        };
-        function closeWarn() {
-            if (inWarn) { out.push('</aside>'); inWarn = false; }
-        }
-        lines.forEach(function (line) {
-            var trim = line.replace(/\s+$/g, '');
-            var t = trim.trim();
-            if (!t) { out.push('<p class="sse-doc-paper__spacer">&nbsp;</p>'); return; }
-            if (/^[═─\-_=]{6,}$/.test(t)) {
-                if (inWarn) { return; }
-                var major = t.indexOf('═') !== -1 || t.indexOf('===') === 0;
-                out.push(major
-                    ? '<hr class="sse-doc-paper__rule sse-doc-paper__rule--major">'
-                    : '<hr class="sse-doc-paper__rule">');
-                return;
-            }
-            if (t === '—' || t === '--' || t === '-' || t === '• —') {
-                out.push('<p class="sse-doc-paper__fill" aria-hidden="true"><span></span></p>');
-                return;
-            }
-            var up = t.toUpperCase();
-            if (titles[up] || titles[t]) {
-                closeWarn();
-                out.push('<h1 class="sse-doc-paper__doc-title">' + escMasked(t) + '</h1>');
-                return;
-            }
-            if (/^AVERTISSEMENT$/i.test(t)) {
-                closeWarn();
-                out.push('<aside class="sse-doc-paper__warn" aria-label="Avertissement">');
-                out.push('<h2 class="sse-doc-paper__section sse-doc-paper__section--warn">' + escMasked(t) + '</h2>');
-                inWarn = true;
-                return;
-            }
-            if (/^\d+\.\s+.+/.test(t)
-                || (t === up && t.length < 80 && t.indexOf(':') === -1 && t.charAt(0) !== '─')) {
-                closeWarn();
-                var numbered = t.match(/^(\d+)\.\s+(.+)$/);
-                if (numbered) {
-                    out.push('<h2 class="sse-doc-paper__section">'
-                        + '<span class="sse-doc-paper__section-num">' + esc(numbered[1]) + '</span>'
-                        + '<span class="sse-doc-paper__section-lab">' + escMasked(numbered[2]) + '</span>'
-                        + '</h2>');
-                } else {
-                    out.push('<h2 class="sse-doc-paper__section">' + escMasked(t) + '</h2>');
-                }
-                return;
-            }
-            var hint = t.match(/^\((.+)\)\s*$/);
-            if (hint) {
-                out.push('<p class="sse-doc-paper__hint">' + escMasked(hint[1]) + '</p>');
-                return;
-            }
-            var field = t.match(/^([^:]{2,80}):\s*(.*)$/);
-            if (field && t.length < 120) {
-                var lab = field[1].replace(/\s+$/g, '');
-                var val = (field[2] || '').trim();
-                if (!val || val === '—' || val === '-') {
-                    out.push('<p class="sse-doc-paper__field">'
-                        + '<span class="sse-doc-paper__field-lab">' + escMasked(lab) + '</span>'
-                        + '<span class="sse-doc-paper__field-val sse-doc-paper__field-val--empty"></span>'
-                        + '</p>');
-                } else {
-                    out.push('<p class="sse-doc-paper__field">'
-                        + '<span class="sse-doc-paper__field-lab">' + escMasked(lab) + '</span>'
-                        + '<span class="sse-doc-paper__field-val">' + escMasked(val) + '</span>'
-                        + '</p>');
-                }
-                return;
-            }
-            if (t.indexOf('• ') === 0 || t.indexOf('- ') === 0 || /^H\d+\s/.test(t)) {
-                var bullet = t.replace(/^[•\-]\s+/, '');
-                if (bullet === '—' || bullet === '-' || !bullet) {
-                    out.push('<p class="sse-doc-paper__bullet sse-doc-paper__bullet--empty">'
-                        + '<span class="sse-doc-paper__bullet-mark">•</span>'
-                        + '<span class="sse-doc-paper__field-val--empty"></span></p>');
-                } else {
-                    out.push('<p class="sse-doc-paper__bullet">'
-                        + '<span class="sse-doc-paper__bullet-mark">•</span>'
-                        + '<span>' + escMasked(bullet) + '</span></p>');
-                }
-                return;
-            }
-            out.push('<p class="sse-doc-paper__p">' + escMasked(t) + '</p>');
-        });
-        closeWarn();
-        return out.join('\n') || '<p class="sse-doc-paper__muted">Le corps du document apparaîtra ici.</p>';
-    }
-
-    var classThemeKeys = ['interne', 'encadrement', 'confidentiel', 'tres_restreint'];
-    var channelByClass = {
-        interne: 'CANAL INTERNE SSE',
-        encadrement: 'CANAL ENCADREMENT — CIRCULATION LIMITÉE',
-        confidentiel: 'CANAL PROTÉGÉ — REMISE EN MAIN PROPRE',
-        tres_restreint: 'CANAL RÉSERVÉ — TRANSMISSION CHIFFRÉE UNIQUEMENT'
-    };
-
-    function applyClassificationTheme(code) {
-        var key = classThemeKeys.indexOf(code) >= 0 ? code : 'confidentiel';
-        paper.setAttribute('data-classification', key);
-        Array.prototype.forEach.call(
-            paper.querySelectorAll('.sse-doc-paper'),
-            function (article) {
-                classThemeKeys.forEach(function (k) {
-                    article.classList.remove('sse-doc-paper--' + k);
-                });
-                article.classList.add('sse-doc-paper--' + key);
-                article.setAttribute('data-classification', key);
-            }
-        );
-        var channelEl = paper.querySelector('.sse-doc-paper__caveat-main');
-        if (channelEl && channelByClass[key]) {
-            channelEl.textContent = channelByClass[key];
-        }
-    }
-
-    function syncMeta() {
-        if (hintEl) {
-            hintEl.textContent = hints[typeEl.value] || 'Choisissez le format adapté au destinataire.';
-        }
-        var wm = paper.querySelector('.sse-doc-paper__watermark');
-        var classCode = classEl.value || 'confidentiel';
-        var classLab = classLabels[classCode] || classEl.options[classEl.selectedIndex].text;
-        applyClassificationTheme(classCode);
-        Array.prototype.forEach.call(
-            paper.querySelectorAll('.sse-doc-paper__banner strong'),
-            function (el) { el.textContent = String(classLab).toUpperCase(); }
-        );
-        Array.prototype.forEach.call(
-            paper.querySelectorAll('.sse-doc-paper__stamp--class'),
-            function (el) { el.textContent = String(classLab).toUpperCase(); }
-        );
-        if (wm) wm.textContent = String(classLab).toUpperCase();
-
-        var typeLab = typeLabels[typeEl.value] || typeEl.options[typeEl.selectedIndex].text;
-        var statusLab = statusLabels[statusEl.value] || statusEl.options[statusEl.selectedIndex].text;
-        var refno = paper.querySelector('.sse-doc-paper__refno');
-        if (refno) {
-            var ref = <?= json_encode($previewDoc['reference_code'], JSON_UNESCAPED_UNICODE) ?>;
-            refno.textContent = 'N° ' + ref + ' / SSE / ' + String(typeLab).toUpperCase();
-        }
-        var meta = paper.querySelector('.sse-doc-paper__meta-right');
-        if (meta && meta.children[1]) {
-            meta.children[1].textContent = typeLab + ' · ' + statusLab;
-        }
-        var refs = paper.querySelector('.sse-doc-paper__refs');
-        if (refs) {
-            var title = (titleEl.value || '').trim();
-            var caseOpt = caseEl.options[caseEl.selectedIndex];
-            var caseLab = caseEl.value ? (caseOpt.getAttribute('data-label') || caseOpt.text) : '';
-            var html = title
-                ? '<p><span>OBJET</span> : ' + esc(title) + '</p>'
-                : '<p><span>OBJET</span> : <em class="sse-doc-paper__muted">(intitulé à renseigner)</em></p>';
-            html += '<p><span>RÉFÉRENCE</span> : ' + esc(<?= json_encode($previewDoc['reference_code'], JSON_UNESCAPED_UNICODE) ?>) + '</p>';
-            if (caseLab) html += '<p><span>DOSSIER</span> : ' + esc(caseLab) + '</p>';
-            refs.innerHTML = html;
-        }
-        if (bodyMount) bodyMount.innerHTML = bodyToHtml(bodyEl.value);
-    }
-
     typeEl.addEventListener('change', function () {
-        var next = templates[typeEl.value] || '';
-        if (!next) { syncMeta(); return; }
-        var cur = bodyEl.value;
-        var untouched = !cur.trim() || cur === lastTemplate
-            || Object.keys(templates).some(function (k) { return templates[k] === cur; });
-        if (untouched) {
-            bodyEl.value = next;
-            lastTemplate = next;
-        }
-        syncMeta();
-    });
-
-    var maskBtn = document.getElementById('sse-mask-btn');
-    if (maskBtn) {
-        maskBtn.addEventListener('click', function () {
-            var start = bodyEl.selectionStart;
-            var end = bodyEl.selectionEnd;
-            if (start === end) {
-                bodyEl.focus();
-                return;
-            }
-            var selected = bodyEl.value.slice(start, end);
-            bodyEl.value = bodyEl.value.slice(0, start) + '[[' + selected + ']]' + bodyEl.value.slice(end);
-            bodyEl.focus();
-            bodyEl.setSelectionRange(start, end + 4);
-            syncMeta();
-        });
-    }
-
-    ['input', 'change'].forEach(function (ev) {
-        titleEl.addEventListener(ev, syncMeta);
-        bodyEl.addEventListener(ev, syncMeta);
-        classEl.addEventListener(ev, syncMeta);
-        statusEl.addEventListener(ev, syncMeta);
-        caseEl.addEventListener(ev, syncMeta);
+        if (hintEl) hintEl.textContent = hints[typeEl.value] || 'Choisissez le format adapté au destinataire.';
     });
 
     // ── Bibliothèque rédactionnelle ─────────────────────────────────────────
@@ -588,7 +469,7 @@ foreach ($cases as $c) {
 
         function renderSuggestions() {
             if (!suggestBox || !suggestRow) return;
-            var text = bodyEl.value + ' ' + titleEl.value;
+            var text = ed.text() + ' ' + titleEl.value;
             var codes = (typeCodes[typeEl.value] || []).slice();
             (serverSuggestions || []).forEach(function (s) {
                 if (s && s.code) codes.unshift(s.code);
@@ -643,22 +524,10 @@ foreach ($cases as $c) {
         function insertMention(code) {
             var mention = byCode[code];
             if (!mention) return;
-            var value = bodyEl.value;
-            var pos = typeof bodyEl.selectionStart === 'number' ? bodyEl.selectionStart : value.length;
-            var before = value.slice(0, pos);
-            var after = value.slice(pos);
-            var lead = (before === '' || /\n\s*\n$/.test(before)) ? '' : (/\n$/.test(before) ? '\n' : '\n\n');
-            var tail = (after === '' || /^\s*\n/.test(after)) ? '\n' : '\n\n';
-            var block = lead + mention.content + tail;
-
-            bodyEl.value = before + block + after;
-            var caret = pos + block.length;
-            bodyEl.focus();
-            bodyEl.setSelectionRange(caret, caret);
+            ed.insertText(mention.content);
 
             inserted.push({ code: mention.code, version: mention.version, text: mention.content });
             renderInserted();
-            syncMeta();
             renderSuggestions();
         }
 
@@ -712,8 +581,8 @@ foreach ($cases as $c) {
             if (e.key === 'Escape' && !libRoot.hidden) closeLibrary();
         });
 
+        ed.onChange(renderSuggestions);
         ['input', 'change'].forEach(function (ev) {
-            bodyEl.addEventListener(ev, renderSuggestions);
             titleEl.addEventListener(ev, renderSuggestions);
             typeEl.addEventListener(ev, renderSuggestions);
         });
@@ -723,11 +592,9 @@ foreach ($cases as $c) {
         renderInserted();
     }
 
-    syncMeta();
+
 })();
 </script>
-<?php
-?>
 <?php if ($isEdit) { \App\Services\Sse\Attach\SseAttachWindow::render(); } ?>
 <?php
 $sseContent = ob_get_clean();
