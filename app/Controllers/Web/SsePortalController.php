@@ -56,6 +56,7 @@ use App\Services\Media\ImageCompressionService;
 use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\SseAnalyticalCatalog;
+use App\Support\SseCreationBrief;
 use App\Support\SseDocumentTemplates;
 use App\Support\SseRichText;
 use App\Support\SseTextVariables;
@@ -754,7 +755,7 @@ final class SsePortalController
             'canManage' => true,
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
-        ]);
+        ] + $this->creationLevels('encadrement'));
     }
 
     public function caseStore(Request $request, array $params = []): Response
@@ -765,18 +766,44 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/dossiers'));
         }
 
+        $title = trim((string) $request->input('title', ''));
+        if ($title === '') {
+            Session::flash('error', 'Indiquez un intitulé pour le dossier.');
+
+            return Response::redirect(url('atak/sse/dossiers/nouveau'));
+        }
+        $isFolder = (string) $request->input('case_type', 'affaire') === 'classeur';
+        $parentId = (int) $request->input('parent_id', 0);
+        if ($parentId > 0) {
+            $parent = $this->requireCase($parentId);
+            if ($parent === null || empty($parent['is_folder'])) {
+                Session::flash('error', 'Le classeur choisi est introuvable ou n’est pas un classeur.');
+
+                return Response::redirect(url('atak/sse/dossiers/nouveau'));
+            }
+        }
+        $marks = [];
+        if (!$isFolder) {
+            $theme = SseCreationBrief::pick((string) $request->input('theme', ''), SseCreationBrief::CASE_THEMES, '');
+            $urgency = SseCreationBrief::pick((string) $request->input('urgency', ''), SseCreationBrief::CASE_URGENCY, '');
+            $marks = [
+                'Thème' => $theme !== '' ? SseCreationBrief::CASE_THEMES[$theme]['label'] : '',
+                'Urgence' => $urgency !== '' ? SseCreationBrief::CASE_URGENCY[$urgency]['label'] : '',
+            ];
+        }
         $unlockPlain = trim((string) $request->input('unlock_code', ''));
         $id = $this->cases->create([
             'tenant_id' => $this->tenantId(),
-            'title' => (string) $request->input('title', ''),
-            'summary' => (string) $request->input('summary', ''),
-            'classification' => (string) $request->input('classification', 'encadrement'),
+            'title' => $title,
+            'summary' => SseCreationBrief::composeSummary($marks, (string) $request->input('summary', '')),
+            'classification' => $this->creationClassification($request, 'encadrement'),
             'status' => 'ouvert',
-            'parent_id' => (int) $request->input('parent_id', 0),
+            'is_folder' => $isFolder,
+            'parent_id' => $parentId,
             'created_by' => (int) Session::get('user_id') ?: null,
             'unlock_code_hash' => $unlockPlain !== '' ? hash('sha256', strtoupper($unlockPlain)) : null,
         ]);
-        Session::flash('success', 'Dossier ouvert.');
+        Session::flash('success', $isFolder ? 'Classeur créé.' : 'Dossier ouvert.');
 
         return Response::redirect(url('atak/sse/dossiers/' . $id));
     }
@@ -3030,7 +3057,7 @@ final class SsePortalController
             'seedCaseId' => (int) $request->query('case', 0),
             'canManage' => true,
             'activeNav' => 'toiles',
-        ]);
+        ] + $this->creationLevels('confidentiel'));
     }
 
     public function meshStore(Request $request, array $params = []): Response
@@ -3052,15 +3079,25 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/toiles/nouveau'));
         }
+        $meshType = SseCreationBrief::pick((string) $request->input('mesh_type', ''), SseCreationBrief::MESH_TYPES, '');
+        $start = (string) $request->input('start', '');
+        if ($start === 'dossier' && $caseId < 1) {
+            Session::flash('error', 'Choisissez le dossier dont vous voulez reprendre les entités et les liens.');
+
+            return Response::redirect(url('atak/sse/toiles/nouveau'));
+        }
         $id = $this->meshes->create([
             'tenant_id' => $this->tenantId(),
             'title' => $title,
-            'summary' => (string) $request->input('summary', ''),
+            'summary' => SseCreationBrief::composeSummary(
+                ['Type de toile' => $meshType !== '' ? SseCreationBrief::MESH_TYPES[$meshType]['label'] : ''],
+                (string) $request->input('summary', '')
+            ),
             'case_id' => $caseId > 0 ? $caseId : null,
-            'classification' => (string) $request->input('classification', 'encadrement'),
+            'classification' => $this->creationClassification($request, 'confidentiel'),
             'created_by' => (int) Session::get('user_id') ?: null,
         ]);
-        $seed = !empty($request->input('seed_from_case')) && $caseId > 0;
+        $seed = ($start === 'dossier' || !empty($request->input('seed_from_case'))) && $caseId > 0;
         if ($seed) {
             $stats = $this->meshService->seedFromCase($id, $caseId, $this->tenantId());
             Session::flash(
@@ -3711,12 +3748,38 @@ final class SsePortalController
         return $this->portalView('atak.sse.object_create', [
             'title' => 'Créer un objet',
             'type' => (string) $request->query('type', 'person'),
+            'typeSeeded' => (string) $request->query('type', '') !== '',
             'kinds' => SseMeshRepository::KIND_LABELS,
             'metaSchema' => SseMeshRepository::metaSchema(),
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
+            'meshes' => $this->attachableMeshes(),
+            'cases' => $this->cases->listForTenant($this->tenantId(), $this->access->caseScope(), ['is_folder' => false]),
             'canManage' => true,
             'activeNav' => 'objets',
-        ]);
+        ] + $this->creationLevels('confidentiel'));
+    }
+
+    /**
+     * Toiles ouvertes qui peuvent accueillir un nouvel objet : celles de la communauté, hors toiles closes,
+     * et sans les toiles liées à un dossier hors du périmètre de la session.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function attachableMeshes(): array
+    {
+        $scope = $this->access->caseScope();
+
+        return array_values(array_filter(
+            $this->meshes->listForTenant($this->tenantId()),
+            static function (array $m) use ($scope): bool {
+                if (in_array((string) ($m['status'] ?? ''), ['clos', 'archive'], true)) {
+                    return false;
+                }
+                $caseId = (int) ($m['case_id'] ?? 0);
+
+                return $caseId < 1 || $scope === null || in_array($caseId, $scope, true);
+            }
+        ));
     }
 
     public function objectStore(Request $request, array $params = []): Response
@@ -3742,9 +3805,31 @@ final class SsePortalController
                 $meta[(string) $k] = trim((string) $v);
             }
         }
+        if (isset($meta['etat'])) {
+            $meta['etat'] = SseCreationBrief::pick($meta['etat'], SseCreationBrief::OBJECT_STATES, '');
+            if (!in_array($kind, SseCreationBrief::PHYSICAL_KINDS, true)) {
+                unset($meta['etat']);
+            }
+        }
         $freeDetail = trim((string) $request->input('detail', ''));
         if ($freeDetail !== '') {
             $meta['precision'] = mb_substr($freeDetail, 0, 2000);
+        }
+
+        $targetMeshId = (int) $request->input('mesh_id', 0);
+        if ($targetMeshId > 0) {
+            $allowed = array_map(static fn (array $m): int => (int) ($m['id'] ?? 0), $this->attachableMeshes());
+            if (!in_array($targetMeshId, $allowed, true)) {
+                Session::flash('error', 'La toile choisie est introuvable, close ou hors de votre périmètre.');
+
+                return Response::redirect($back);
+            }
+        }
+        $caseId = (int) $request->input('case_id', 0);
+        if ($targetMeshId < 1 && $caseId > 0 && $this->requireCase($caseId) === null) {
+            Session::flash('error', 'Dossier introuvable ou hors périmètre.');
+
+            return Response::redirect($back);
         }
 
         $imageUpload = $this->storeObjectImageUpload();
@@ -3763,6 +3848,9 @@ final class SsePortalController
 
         $metaLines = SseMeshRepository::formatMetaLines($kind, $meta);
         $detailParts = $metaLines;
+        if (!empty($meta['etat']) && isset(SseCreationBrief::OBJECT_STATES[$meta['etat']])) {
+            $detailParts[] = 'État : ' . SseCreationBrief::OBJECT_STATES[$meta['etat']]['label'];
+        }
         if ($freeDetail !== '') {
             $detailParts[] = mb_strlen($freeDetail) > 100
                 ? mb_substr($freeDetail, 0, 97) . '…'
@@ -3787,13 +3875,16 @@ final class SsePortalController
                     $this->persons->addPhoto($personId, $this->tenantId(), ['image_path' => $meta['image_path']]);
                 }
             }
-            $meshId = $this->meshes->create([
-                'tenant_id' => $this->tenantId(),
-                'title' => 'Investigation — ' . $label,
-                'summary' => 'Toile ouverte depuis la création d’objet « ' . $label . ' ».',
-                'classification' => (string) $request->input('classification', 'confidentiel'),
-                'created_by' => (int) Session::get('user_id') ?: null,
-            ]);
+            $meshId = $targetMeshId > 0
+                ? $targetMeshId
+                : $this->meshes->create([
+                    'tenant_id' => $this->tenantId(),
+                    'title' => 'Investigation — ' . $label,
+                    'summary' => 'Toile ouverte depuis la création d’objet « ' . $label . ' ».',
+                    'case_id' => $caseId > 0 ? $caseId : null,
+                    'classification' => $this->creationClassification($request, 'confidentiel'),
+                    'created_by' => (int) Session::get('user_id') ?: null,
+                ]);
             $this->meshes->addNode($meshId, $this->tenantId(), [
                 'kind' => $kind,
                 'label' => $label,
@@ -3801,8 +3892,8 @@ final class SsePortalController
                 'meta_json' => SseMeshRepository::encodeMetaJson($meta),
                 'ref_type' => $personId !== null ? 'person' : null,
                 'ref_id' => $personId,
-                'pos_x' => 420,
-                'pos_y' => 260,
+                'pos_x' => $targetMeshId > 0 ? random_int(120, 700) : 420,
+                'pos_y' => $targetMeshId > 0 ? random_int(120, 420) : 260,
             ]);
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -3815,7 +3906,9 @@ final class SsePortalController
             return Response::redirect($back);
         }
 
-        $okMsg = 'Objet créé avec ses caractéristiques, placé dans une nouvelle investigation.';
+        $okMsg = $targetMeshId > 0
+            ? 'Objet créé avec ses caractéristiques, ajouté à la toile choisie.'
+            : 'Objet créé avec ses caractéristiques, placé dans une nouvelle investigation.';
         if ($kind === 'person') {
             $okMsg .= ' Sa fiche est disponible au registre des personnes et peut être rattachée à un dossier.';
         }
@@ -5272,6 +5365,24 @@ final class SsePortalController
         }
 
         return $case;
+    }
+
+    /** Niveau de diffusion d'une création : valeur connue, jamais au-dessus de l'habilitation de la session. */
+    private function creationClassification(Request $request, string $fallback): string
+    {
+        return SseCreationBrief::capClassification(
+            (string) $request->input('classification', ''),
+            $fallback,
+            $this->clearance->maxLevel()
+        );
+    }
+
+    /** @return array{maxLevel:string, classDefault:string} plafond de la session et niveau coché par défaut */
+    private function creationLevels(string $fallback): array
+    {
+        $max = $this->clearance->maxLevel();
+
+        return ['maxLevel' => $max, 'classDefault' => SseCreationBrief::capClassification($fallback, $fallback, $max)];
     }
 
     private function canManage(): bool
