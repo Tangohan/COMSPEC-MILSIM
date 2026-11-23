@@ -402,7 +402,7 @@ switch (_act) do {
         };
         // 6. Pont radio.
         private _vb = ["bridge", []] call _g;
-        private _canBridge = _setOn && {_linkOn} && {["voiceOk", false] call _g} && {_carried} && {_radios isNotEqualTo []};
+        private _canBridge = _setOn && {_linkOn} && {["voiceOk", false] call _g} && {_carried} && {["hasMpu"] call comspec_atak_native_fnc_mpu5} && {_radios isNotEqualTo []};
         if (_vb isEqualTo []) then {
             ["bridge", "KO", "Pont radio", "Le pont radio est le câble audio entre votre radio et la MPU5 : sans lui, la radio garde sa portée normale (exemple : AN/PRC-152 non reliée, aucun relais).",
                 "Activer le pont radio : bouton ci-dessous, ou ACE Téléphone ATAK › Radio de données › Relier ma radio à la MPU5 (voix).", "non ponté", ["", "bridge"] select _canBridge] call _add;
