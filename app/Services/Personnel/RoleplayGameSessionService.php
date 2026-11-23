@@ -246,6 +246,19 @@ final class RoleplayGameSessionService
         return ['ok' => true];
     }
 
+    /**
+     * Ferme le temps encore ouvert d'un participant (départ annoncé par l'app Session du téléphone) et note l'heure de
+     * départ ; même règle que leave(), sans résoudre le joueur depuis la charge utile du mod.
+     *
+     * @param array<string, mixed> $member ligne de roleplay_game_session_members
+     */
+    public function leaveMember(int $tenantId, array $member, string $now): void
+    {
+        $this->closeOpenSegment($tenantId, $member, 'leave', $now);
+        $this->sessions->updateMember($tenantId, (int) $member['id'], ['left_at' => $now]);
+        $this->refreshMember($tenantId, (int) $member['session_id'], (int) $member['id']);
+    }
+
     public function refreshMember(int $tenantId, int $sessionId, int $memberId): void
     {
         $session = $this->sessions->findById($tenantId, $sessionId);
