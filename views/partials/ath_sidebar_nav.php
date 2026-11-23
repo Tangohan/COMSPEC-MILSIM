@@ -125,6 +125,10 @@ $isFullTenant = ($tenantType ?? \App\Services\Community\TenantTypeConfig::TYPE_F
 
 // ——— EFFECTIFS ———
 $membersChildren = array_values(array_filter([
+    // Vue plein écran « logiciel » : profils Bureau des effectifs et Complet seulement.
+    \App\Services\Community\TenantTypeConfig::rosterBureauMode((string) ($tenantType ?? \App\Services\Community\TenantTypeConfig::TYPE_FULL))
+        ? ['label' => 'Bureau des effectifs', 'href' => effectifs_desk_url(), 'active' => $navAt(effectifs_desk_path())]
+        : null,
     ['label' => 'Liste des membres', 'href' => effectifs_workspace_url(), 'active' => $p === $effPath || $boNavUsers],
     ['label' => 'Affectations', 'href' => effectifs_workspace_url('affectations'), 'active' => $navAt($effPath . '/affectations')],
     // Chaîne de commandement : la chaîne, l’adéquation de l’organisation, ses échelons attendus et la doctrine des

@@ -28,7 +28,7 @@ $bhRows = [
             <li><b>Import et export CSV</b> : travaillez dans Excel, réimportez avec un rapport ligne par ligne.</li>
         </ul>
         <div class="bhero__actions">
-            <a class="bhero__btn bhero__btn--main" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le Bureau des effectifs <span aria-hidden="true">→</span></a>
+            <a class="bhero__btn bhero__btn--main" href="<?= htmlspecialchars(effectifs_desk_url(), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le Bureau des effectifs <span aria-hidden="true">→</span></a>
             <button type="button" class="bhero__btn" data-pil-dismiss>Masquer</button>
         </div>
     </div>
