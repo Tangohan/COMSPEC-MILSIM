@@ -4,8 +4,10 @@ use App\Support\MilitarySpecialtyLabels as Labels;
 $h = static fn (mixed $s): string => htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 ?>
 <div class="max-w-6xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900">Nomenclatures militaires</h1>
-    <p class="text-sm text-slate-600">Références communes aux communautés : pays, armée, système de codes et niveaux documentés. Un code métier est distinct d’un grade, d’une qualification et d’une affectation.</p>
+    <header class="pa-head space-y-2">
+        <h1 class="text-2xl font-black text-slate-900">Nomenclatures militaires</h1>
+        <p class="text-sm text-slate-600">Références communes aux communautés : pays, armée, système de codes et niveaux documentés. Un code métier est distinct d’un grade, d’une qualification et d’une affectation.</p>
+    </header>
     <p><a href="<?= $h(url('admin/system/military-referential')) ?>">Revenir au référentiel des unités</a></p>
     <?php if (empty($specialtyReady)): ?><p>Les nomenclatures seront disponibles après le passage de la migration 4910 dans la console des migrations.</p><?php endif; ?>
     <?php foreach (($specialtyCatalog ?? []) as $code): ?>

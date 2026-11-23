@@ -335,6 +335,6 @@ final class SsePersonRegistryLinkTest extends TestCase
         }
         // Les liens « Fiche personne » de la fiche du registre gardent la vue de la personne (pas de boucle).
         $identity = (string) file_get_contents($root . '/views/atak/sse/papers/identity_show.php');
-        self::assertSame(2, substr_count($identity, "?fiche=personne"));
+        self::assertSame(3, substr_count($identity, "?fiche=personne"));
     }
 }

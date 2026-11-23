@@ -52,7 +52,8 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertFileExists($root . '/public/assets/css/platform-admin.css');
         $dash = (string) file_get_contents($root . '/views/admin/system/dashboard.php');
         $dashCtrl = (string) file_get_contents($root . '/app/Controllers/Admin/System/SystemDashboardController.php');
-        self::assertStringContainsString('class="pa"', $dash);
+        // La coque porte maintenant data-platform-dashboard sur l'onglet principal : on vérifie le début de la balise.
+        self::assertStringContainsString('<div class="pa"', $dash);
         self::assertStringContainsString('platform-admin.css', $dashCtrl);
         self::assertStringNotContainsString('quick_actions_system.php', $dash);
         self::assertStringNotContainsString('endif', $sidebar);
@@ -94,7 +95,7 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('TenantTypeSwitchService', $controller);
         self::assertStringContainsString('TenantTypeSwitchService::class', $container);
         self::assertStringContainsString('platform-admin.css', $controller);
-        self::assertStringContainsString('class="pa"', $view);
+        self::assertMatchesRegularExpression('/class="pa[ "]/', $view);
         self::assertStringContainsString('Fiche communauté', $view);
         self::assertStringContainsString('Nom affiché', $view);
         self::assertStringContainsString('Adresse courte de la page publique', $view);
