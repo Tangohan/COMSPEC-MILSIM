@@ -587,6 +587,7 @@ $tactPackVersion = (string) (($steam['version'] ?? '') !== '' ? $steam['version'
         <?php
         $doctrine_pending = is_array($doctrine_pending ?? null) ? $doctrine_pending : [];
         require base_path('views/partials/dashboard_doctrine_pending.php');
+        require base_path('views/partials/dashboard_promotions.php');
         require base_path('views/partials/dashboard_mini_articles.php');
         ?>
 

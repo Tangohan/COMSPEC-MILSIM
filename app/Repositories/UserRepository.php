@@ -2934,7 +2934,7 @@ class UserRepository
 
                 return is_array($grade) ? \App\Support\GradeSelectOptions::label($grade) : null;
             };
-            $actor = (int) (\App\Core\Session::get('user_id') ?? 0);
+            $actor = MemberGradeChangeRepository::currentActor() ?? (int) (\App\Core\Session::get('user_id') ?? 0);
             $history->record(
                 $tenantId,
                 $userId,
