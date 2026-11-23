@@ -7,6 +7,11 @@
 
 ## 1. Méthode et sources de référence
 
+**Recherche documentaire : 17 novembre 2026.** Complément : [nomenclatures France,
+Royaume-Uni et OTAN](referentiels/SPECIALITES-MILITAIRES-PAR-PAYS.md). Le
+[dossier d’audit et de schéma proposé](technical/specialites-militaires-proposition.md)
+décrit l’intégration RH/LMS implémentée après validation du schéma, disponible après la migration 4910.
+
 | Périmètre | Source primaire à vérifier | Usage dans ces fiches |
 |---|---|---|
 | U.S. Air Force | [Air Force Enlisted Classification Directory (AFECD), portail myFSS](https://myfss.us.af.mil/USAFCommunity/s/knowledge-detail?pid=kA08300000000sfCAA) et [Air Force recruiting — Special Warfare](https://www.airforce.com/careers/special-warfare-and-combat-support/special-warfare) | AFSC, mission, conditions d’accès et pipeline public |
@@ -26,6 +31,79 @@
 4. Les minima chiffrés (ASVAB, examen médical, test physique, âge, engagement) ne sont pas
    recopiés ici : ils changent plus vite que la doctrine. Ils doivent être relevés dans l’AFECD ou
    le DA PAM daté, puis confirmés par le canal officiel de recrutement.
+
+### Nomenclature USAF : code de famille et niveau individuel
+
+| Système | Code publié de la spécialité | Intitulé officiel | Abrégé usuel |
+|---|---|---|---|
+| AFSC enlisted | `1Z2X1` | Combat Control | CCT |
+| AFSC enlisted | `1Z1X1` | Pararescue | PJ |
+| AFSC enlisted | `1Z3X1` | Tactical Air Control Party | TACP |
+| AFSC enlisted | `1Z4X1` | Special Reconnaissance | SR |
+
+Ces quatre codes sont confirmés par la [publication institutionnelle USAF sur le champ 1Z,
+effective au 31 octobre 2019](https://www.af.mil/News/Article/2039651/air-force-improves-efficiencies-for-special-warfare-airmen/)
+et par le [catalogue de recrutement Air Force](https://www.airforce.com/careers/career-finder).
+L’abrégé d’un métier ne constitue pas un autre code de spécialité.
+
+Le [DAFMAN 36-2100, tableau de construction des AFSC enlisted](https://static.e-publishing.af.mil/production/1/af_a1/publication/dafman36-2100/dafman36-2100.pdf)
+place le niveau au **quatrième caractère** du code de base à cinq caractères :
+
+| Caractère de niveau | Appellation officielle | Sens pour la lecture du dossier |
+|---|---|---|
+| `1` | Helper | Entrée dans la spécialité, formation initiale. |
+| `3` | Apprentice | Formation initiale de spécialité acquise. |
+| `5` | Journeyman | Compétence professionnelle consolidée par la formation et l’expérience. |
+| `7` | Craftsman | Expertise technique et capacité d’encadrement. |
+| `9` | Superintendent | Supervision et gestion élargies du domaine professionnel. |
+| `0` | Chief Enlisted Manager | Code de gestion de carrière ; ne pas le traiter comme un niveau inférieur à `1`. |
+
+Ainsi, `1Z2X1` est une notation de catalogue ; dans `1Z251`, le `5` désigne le niveau
+Journeyman. Cet exemple explique la syntaxe : la liste des codes effectivement attribuables
+et les conditions de passage relèvent de l’AFECD et du CFETP applicables. Ne pas générer
+toutes les variantes par remplacement de `X` : des regroupements de carrière peuvent modifier
+le code, notamment aux niveaux supérieurs. Un niveau métier ne vaut ni grade, ni JTAC,
+ni affectation Special Tactics. Les AFSC d’officiers ont une autre construction : la règle
+enlisted `1/3/5/7/9` ne s’applique pas à `19ZXA`, `19ZXB` ou `19ZXC`.
+
+**Limite de vérification.** Le tableau des niveaux du DAFMAN a été retrouvé dans l’index
+public de la source officielle ; le téléchargement intégral renvoie HTTP 403 dans cet
+environnement. L’édition AFECD courante n’a pas été consultée dans myFSS. Aucune liste
+exhaustive de variantes individuelles n’est donc déclarée vérifiée ici.
+
+### Nomenclature Army : métiers, options d’engagement et statuts
+
+| Système | Code exact | Intitulé officiel / nature | Point d’attention |
+|---|---|---|---|
+| Warrant officer MOS | `153A` | Rotary Wing Aviator (Aircraft Nonspecific) | Code aviation sans désignation d’appareil ; ne signifie pas « pilote du 160th ». |
+| Warrant officer MOS | `153E` | MH-60 Pilot | Spécialité sur appareil ; distincte d’une qualification de mission DAP. |
+| Warrant officer MOS | `152C` | OH-6 Pilot | Conserver l’intitulé publié ; ne pas le rebaptiser automatiquement « MH-6 ». |
+| Warrant officer MOS | `154E` | MH-47 Pilot | Spécialité sur appareil, distincte de l’affectation au régiment. |
+| MOS enlisted | `15T` | UH-60 Helicopter Repairer | Maintenance / fonctions d’équipage selon qualifications ; ce n’est pas un MOS de pilote. |
+| Option d’engagement présentée sous MOS | `18X` | Special Forces Candidate | Candidature au parcours ; ne certifie pas la réussite de la sélection ou la qualification SF. |
+| MOS enlisted | `18B` | Special Forces Weapons Sergeant | Spécialité SF armes. |
+| MOS enlisted | `18C` | Special Forces Engineer Sergeant | Spécialité SF génie. |
+| MOS enlisted | `18D` | Special Forces Medical Sergeant | Spécialité SF santé. |
+| MOS enlisted | `18E` | Special Forces Communications Sergeant | Spécialité SF transmissions. |
+
+Sources primaires : [USAREC — 153A](https://recruiting.army.mil/ISO/AWOR/153A/),
+[DA PAM 611-21, chapitre 8, section B, fichier publié le 4 décembre 2025, § 8-152 à 8-154](https://api.army.mil/e2/c/downloads/2025/12/04/720183c2/chapter-8b-wo-specifications.pdf),
+[HRC — Aviation MOS, rubrique 15T](https://www.hrc.army.mil/content/48),
+[GoArmy — 18X](https://www.goarmy.com/careers-and-jobs/ground-forces/firearms-ammunition/18x-special-forces-candidate)
+et [DA PAM 600-25, CMF 18, 7 février 2025, chapitre 4](https://api.army.mil/e2/c/downloads/2025/02/07/4a45e99c/cmf-18-da-pam-600-25-7-feb-25.pdf).
+Les deux documents Army ont été téléchargés et lus sur les passages concernés.
+
+Le **MOS de base**, le **skill level**, les **SQI** (Special Qualification Identifiers)
+et les **ASI** (Additional Skill Identifiers) sont des composantes distinctes. Exemple HRC :
+`15T1O` est un MOSC de niveau `1`, avec la lettre `O` en dernière position ; `15T` reste
+le code de base. Ne pas appliquer les niveaux AFSC à l’Army : le document CMF 18 distingue
+notamment `18B3` et `18B4`, puis `18Z5` et `18Z6` pour d’autres responsabilités.
+
+Enfin, le [160th SOAR — warrant officers](https://go160thsoar.com/warrant-officer/)
+publie un processus de candidature et d’évaluation séparé de la qualification MOS.
+Les [métiers enlisted et le Green Platoon](https://go160thsoar.com/enlisted/) constituent
+également un parcours propre au régiment. Un code MOS valide ne doit donc jamais attribuer
+automatiquement une unité, un poste navigant ou une qualification dans ATHENA.
 
 ---
 
@@ -175,8 +253,10 @@ les autres appuis. Le contrôle terminal n’est exécuté que par le personnel 
 
 **U.S. Army Aviation, Career Management Field 15.** L’affectation au **160th Special Operations
 Aviation Regiment (Airborne)** n’est pas un MOS. Les aviateurs sont officiers ou warrant officers ;
-le code exact est celui publié pour leur qualification (par exemple les spécialités warrant officer
-de voilure tournante), et non un code inventé « pilote MH-6/MH-60/MH-47 ».
+les codes warrant officer comprennent notamment **153A** (Rotary Wing Aviator, Aircraft
+Nonspecific), **153E** (MH-60 Pilot) et **154E** (MH-47 Pilot). Ils sont à distinguer du
+**15T** (UH-60 Helicopter Repairer), métier enlisted de maintenance pouvant comporter des
+fonctions d’équipage. Les sources et limites de ces codes figurent en section 1.
 
 ### Résumé de la mission
 

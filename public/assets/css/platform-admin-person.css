@@ -1,0 +1,42 @@
+.person .pa__frame { max-width: 1320px; }
+.person .pa-hero__row > div { min-width: 0; overflow-wrap: anywhere; }
+.person .pa-hero__lead { color: #c9d8d1; }
+.person .pa-tabs { margin-bottom: 1rem; }
+.person [id] { scroll-margin-block-start: 5rem; }
+.person [hidden] { display: none; }
+.person-badges, .person-row-actions { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; }
+.person-row-actions { margin-block-start: .9rem; }
+.person-metrics, .person-columns, .person-facts {
+  display: grid;
+  gap: .85rem;
+}
+.person-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  margin: 0 0 1rem;
+}
+.person-metrics dd { margin: .45rem 0 0; font-weight: 750; font-size: clamp(1rem, 1.6vw, 1.35rem); }
+.person-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.person-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); margin: .8rem 0 0; }
+.person-facts dd, .person-facts p { margin: .2rem 0 0; overflow-wrap: anywhere; }
+.person-label, .person-facts dt { color: var(--pa-muted); font-size: .85rem; font-weight: 700; }
+.person-facts .person-row-actions { grid-column: 1 / -1; }
+.person-heading { margin: 0 0 .7rem; font-size: 1.2rem; font-weight: 800; }
+.person-list, .person-activity { list-style: none; padding: 0; margin: .65rem 0 0; }
+.person-list li, .person-activity li { border-top: 1px solid var(--pa-line); padding: .55rem 0; overflow-wrap: anywhere; }
+.person-activity li { display: grid; gap: .18rem; }
+.person-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.person-activity .pu-link, .person .pa-card__help .pu-link { color: var(--pa-tone-mint-fg); }
+.person-alert, .person-merge-option {
+  padding: .7rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 8px;
+}
+.person-alert { margin-block-start: .65rem; background: var(--pa-tone-rose-bg); color: var(--pa-tone-rose-fg); overflow-wrap: anywhere; }
+.person-merge-option { display: flex; gap: .55rem; background: var(--pa-surface-2); cursor: pointer; }
+.person-merge-option:has(:checked) { border-color: var(--pa-mint); }
+.person-input { max-width: 100%; min-width: 0; background: var(--pa-surface); color: var(--pa-ink); padding: .45rem .55rem; border: 1px solid var(--pa-line); border-radius: 7px; }
+.person-input::placeholder { color: var(--pa-muted); opacity: 1; }
+
+@media (max-width: 760px) {
+  .person-columns { grid-template-columns: minmax(0, 1fr); }
+}

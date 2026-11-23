@@ -104,8 +104,15 @@ final class SseIdentityDossierService
         ));
         $mentions = $readable ? ($this->safe(fn (): array => (new SseFileRepository())->activeMentionsFor($tenantId, [$id], [])) ?? []) : [];
         $timeline = $this->timeline->build($tenantId, $identity, $access, $lang, $filter);
+        $seekRecords = [];
+        if ($readable && ($access->canSeeTruth() || !in_array((string) ($identity['kind'] ?? ''), ['cover', 'forged'], true))) {
+            $seekRecords = $this->safe(fn (): array => (new SseFileRepository())->seekFor($tenantId, [
+                'identity_ids' => [$id], 'limit' => 20,
+            ])) ?? [];
+        }
 
         return [
+            'seekRecords' => $seekRecords,
             'wantedReady' => $ready,
             'wantedReadable' => $readable,
             'wantedConfig' => $config,

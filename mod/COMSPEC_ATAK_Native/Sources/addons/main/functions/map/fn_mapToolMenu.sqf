@@ -339,7 +339,7 @@ switch (_key) do {
         } else {
             _s set ["mapClearArm", -10];
             ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
-            { _s set [_x, []]; } forEach ["mapMeasure", "mapHouses", "mapHeights", "mapFlat", "mapLos", "jtacTool"];
+            { _s set [_x, []]; } forEach ["mapMeasure", "mapHouses", "mapHeights", "mapFlat", "mapFlatTxt", "mapLos", "jtacTool"];
             ["INFO", "Mesures et relevés effacés", 2, 10] call comspec_atak_native_fnc_notify;
         };
     };

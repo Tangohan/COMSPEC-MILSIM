@@ -965,7 +965,9 @@ if ((count _measure) >= 2) then {
 // Zones plates
 {
     _map drawEllipse [_x,12,12,0,[0.36,0.78,0.42,0.9],""];
-    _map drawIcon [_dot,[0.36,0.78,0.42,1],_x,10 * _tk,10 * _tk,0,format ["LZ %1",_forEachIndex + 1],2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+    _map drawIcon [_dot,[0.36,0.78,0.42,1],_x,10 * _tk,10 * _tk,0,"",2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+    // Étiquette « Z1 grille » (texte calculé au clic, fn_mapToolRun), masquée en vue éloignée.
+    if (_lod > 0) then { _curLbls pushBack [_x, format ["Z%1 %2", _forEachIndex + 1, (_state getOrDefault ["mapFlatTxt", []]) param [_forEachIndex, ""]], [0.36, 0.78, 0.42, 1], 5]; };
 } forEach (_state getOrDefault ["mapFlat",[]]);
 
 // Ligne de vue
@@ -1140,13 +1142,37 @@ if (_lay) then {
         } forEach _uL;
         private _ubg = _LF get "bg";
         private _ulight = _LF get "light";
+        // Petit format (mini ou porté), réglage joueur « Afficher ma grille sous l'indicatif » (comspec_atak_native_mini_grid,
+        // absent = affichée) : ma grille, au format du bandeau de la carte, en seconde ligne de mon indicatif. La place est
+        // comptée dans la plaque (fn_mapLbl « plate », largeur mesurée sur « 0000 0000 ») au lieu d'être superposée. Texte
+        // refait seulement quand ma position (au mètre), le format ou l'état du GPS change ; position inconnue
+        // (pas de fix, GPS éteint) : « ---- ---- » plutôt qu'une ancienne valeur.
+        private _miniGrid = (missionNamespace getVariable ["comspec_atak_native_mini_grid", true]) isNotEqualTo false && {(([] call comspec_atak_native_fnc_layoutGet) get "mini")};
+        private _mgTxt = "";
+        if (_miniGrid) then {
+            private _gst = (([] call comspec_atak_native_fnc_ewEffects) param [6, "FIX"]);
+            private _mgK = [round (_selfGps select 0), round (_selfGps select 1), (["band"] call comspec_atak_native_fnc_mapPrefs) get "grid", profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6], _gst];
+            private _mgC = uiNamespace getVariable ["COMSPEC_ATAK_MiniGridCache", []];
+            if ((count _mgC) isEqualTo 2 && {(_mgC select 0) isEqualTo _mgK}) then {
+                _mgTxt = _mgC select 1;
+            } else {
+                _mgTxt = ["---- ----", ["grid", [_selfGps, ""]] call comspec_atak_native_fnc_mapPrefs] select !(_gst in ["NOFIX", "ACQ", "OFF"]);
+                _mgTxt = ["cut", _mgTxt, 18] call comspec_atak_native_fnc_mapFmt;
+                uiNamespace setVariable ["COMSPEC_ATAK_MiniGridCache", [_mgK, _mgTxt]];
+            };
+        };
         {
             _x params ["_e", "_more"];
             _e params ["_up", "_id", "_p", "_cs", "_crewN", "_col", "_sh"];
             private _n = _crewN + _more;
             private _t = _cs + (["", format [" +%1", _n]] select (_n > 0));
             private _tc = [[1, 1, 1, (_col select 3) max 0.7], [0.04, 0.05, 0.05, 1]] select _ulight;
-            private _pl = ["plate", [[[_t, _fontU, _fsU, _tc]], _ubg, 3, [[], [_col select 0, _col select 1, _col select 2, 1]] select ((count _ubg) > 0)]] call comspec_atak_native_fnc_mapLbl;
+            private _pLines = [[_t, _fontU, _fsU, _tc]];
+            if (_miniGrid && {_up < 1} && {_mgTxt isNotEqualTo ""}) then {
+                private _dim = _pal get "lblDim";
+                _pLines pushBack [_mgTxt, "EtelkaMonospacePro", _lfs get "u2", [[_dim select 0, _dim select 1, _dim select 2, 1], [0.2, 0.24, 0.24, 1]] select _ulight, _mgTxt regexReplace ["[0-9]", "0"]];
+            };
+            private _pl = ["plate", [_pLines, _ubg, 3, [[], [_col select 0, _col select 1, _col select 2, 1]] select ((count _ubg) > 0)]] call comspec_atak_native_fnc_mapLbl;
             ["add", [_up, _p, _id, _sh, _sh, _pl, _up < 2]] call comspec_atak_native_fnc_mapLbl;
         } forEach _keep;
     };

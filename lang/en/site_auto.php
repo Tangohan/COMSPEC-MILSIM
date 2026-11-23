@@ -6,6 +6,11 @@ declare(strict_types=1);
 // Tenu par tools/i18n/site_i18n.py (extract, merge). %1, %2... : valeurs insérées par la vue.
 
 return [
+    // Modèles de maintenance et commande des animations dans l’administration.
+    '2) Modèles de texte et contenu' => '2) Message templates and content',
+    'Chaque modèle existe en français et en anglais et s’affiche dans la langue du visiteur. Vous pouvez aussi rédiger un message personnalisé.' => 'Each template is available in French and English and follows the visitor’s language. You can also write a custom message.',
+    'Animations (défilement des fonds, apparition du texte, radar, voyants)' => 'Animations (background slideshow, text entrance, radar, status lights)',
+    'Photos de terrain en fondu, message en blanc en bas de l’écran. Le style par défaut.' => 'Crossfading field photos with a white message at the bottom of the screen. The default style.',
     // JNET : rédaction d’un message (composeur, annuaire en fenêtre, confirmation d’envoi).
     'Aucun e-mail ne part au-delà de %1 destinataires : le message reste dans la messagerie.' => 'No e-mail is sent beyond %1 recipients: the message stays in the mailbox.',
     'Aucun résultat dans l’annuaire.' => 'No result in the directory.',
@@ -68738,6 +68743,10 @@ return [
     'Fiche classée dans le dossier (la note libre du classement fait office de motif).' => 'Record filed in the case (the free note of the filing serves as the reason).',
     'Fiche de renseignement rattachée au dossier.' => 'Intelligence note attached to the case.',
     'Fiche de renseignement rattachée au dossier d’intérêt.' => 'Intelligence note attached to the interest case.',
+    'Élément rattaché au dossier d’intérêt.' => 'Item attached to the interest case.',
+    'Dossier constitué à partir du dossier d’intérêt.' => 'Case constituted from the interest case.',
+    'Investigation rattachée au dossier.' => 'Investigation attached to the case.',
+    'Élément cité dans l’investigation.' => 'Item referenced in the investigation.',
     'Document de rédaction rattaché au dossier.' => 'Drafted document attached to the case.',
     'Transmission classée au dossier (le moyen du classement n’est pas enregistré).' => 'Transmission filed in the case (the means of filing was not recorded).',
     'Transmission classée au dossier d’intérêt.' => 'Transmission filed in the interest case.',

@@ -1,0 +1,16 @@
+.pa-picker { display: grid; gap: .4rem; margin-block: .7rem; }
+.pa-picker[hidden], [data-entity-fallback][hidden] { display: none; }
+.pa-picker label { font-weight: 750; }
+.pa-picker input {
+  width: 100%; min-width: 0; padding: .55rem .75rem;
+  color: var(--pa-ink); background: var(--pa-surface-2); border: 1px solid var(--pa-line); border-radius: 9px;
+}
+.pa-picker input::placeholder { color: var(--pa-muted); opacity: 1; }
+.pa-picker p { margin: 0; }
+.pa-picker__results { display: grid; gap: .35rem; list-style: none; margin: 0; padding: 0; max-height: 15rem; overflow: auto; }
+.pa-picker__results button {
+  display: grid; gap: .15rem; width: 100%; text-align: left; padding: .5rem .65rem; cursor: pointer;
+  overflow-wrap: anywhere; border: 1px solid var(--pa-line); border-radius: 8px; color: var(--pa-ink); background: var(--pa-surface);
+}
+.pa-picker__results button:hover { background: var(--pa-surface-2); border-color: var(--pa-mint); }
+.pa-picker :is(button, input):focus-visible { outline: 2px solid var(--pa-mint); outline-offset: -2px; }

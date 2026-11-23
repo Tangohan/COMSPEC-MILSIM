@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 class EmailTokenRepository
 {
     private PDO $pdo;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo ?? Database::getPdo();
     }
 
     public function deletePendingForUserPurpose(int $userId, string $purpose): void
@@ -28,11 +29,52 @@ class EmailTokenRepository
         $this->pdo->prepare('DELETE FROM email_tokens WHERE id = ?')->execute([$id]);
     }
 
-    public function deleteOtherPendingForUserPurpose(int $userId, string $purpose, int $keepId): void
+    public function deleteOlderPendingForUserPurpose(int $userId, string $purpose, int $keepId): void
     {
         $this->pdo->prepare(
-            'DELETE FROM email_tokens WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL AND id <> ?'
+            'DELETE FROM email_tokens WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL AND id < ?'
         )->execute([$userId, $purpose, $keepId]);
+    }
+
+    /** @return array{token_id: int, wait: int} */
+    public function reserveResend(
+        int $tenantId,
+        int $userId,
+        string $purpose,
+        string $email,
+        string $tokenHash,
+        \DateTimeInterface $expires,
+        int $cooldown,
+        bool $requirePendingAccount = false
+    ): array {
+        $this->pdo->beginTransaction();
+        try {
+            $lock = SqlText::isMysqlFamily($this->pdo) ? ' FOR UPDATE' : '';
+            $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ?' . $lock);
+            $stmt->execute([$userId]);
+            $account = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$account || !empty($account['deleted_at']) || !empty($account['is_service_account'])
+                || strtolower(trim((string) $account['email'])) !== $email
+                || ($requirePendingAccount && (($account['status'] ?? '') !== 'pending_verification' || !empty($account['email_verified_at'])))) {
+                $this->pdo->commit();
+
+                return ['token_id' => 0, 'wait' => 0];
+            }
+            $last = $this->getLatestTokenCreatedAtForUserPurpose($userId, $purpose);
+            $wait = $last === null ? 0 : max(0, $last->getTimestamp() + $cooldown - time());
+            $tokenId = $wait > 0 ? 0 : $this->create(
+                $tenantId, $userId, $purpose, $tokenHash, bin2hex(random_bytes(16)), $expires
+            );
+            $this->pdo->commit();
+
+            return ['token_id' => $tokenId, 'wait' => $wait];
+        } catch (\Throwable $error) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $error;
+        }
     }
 
     public function create(

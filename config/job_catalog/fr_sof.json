@@ -4044,6 +4044,7 @@
   },
   {
    "id": "fr-marine-fusilier-marin",
+   "specialty_refs": ["fr-marine-fusil"],
    "branch": "navy",
    "command": "FORFUSCO",
    "formation": "Fusiliers marins",
@@ -4052,8 +4053,8 @@
     "en": "Marine fusilier units (Navy bases and sites), Marine Fusiliers and Commandos Force (FORFUSCO)"
    },
    "type": "operator",
-   "code": "",
-   "code_system": "",
+   "code": "FUSIL",
+   "code_system": "SPECIALITE",
    "name": {
     "fr": "Fusilier marin",
     "en": "Marine Fusilier (Naval Force Protection)"
@@ -7488,6 +7489,7 @@
   },
   {
    "id": "fr-air-fca-commando-parachutiste",
+   "specialty_refs": ["fr-aae-341x"],
    "branch": "air_force",
    "command": "CFA",
    "formation": "Commandos parachutistes de l'air",
@@ -7496,8 +7498,8 @@
     "en": "French Air and Space Force parachute commandos (protection squadrons and Air Parachute Commandos)"
    },
    "type": "operator",
-   "code": "",
-   "code_system": "",
+   "code": "341X",
+   "code_system": "SPECIALITE",
    "name": {
     "fr": "Commando parachutiste de l'air (sous-officier)",
     "en": "Air Force Parachute Commando (NCO)"
@@ -7553,6 +7555,7 @@
   },
   {
    "id": "fr-air-fca-equipier-parachutiste",
+   "specialty_refs": ["fr-aae-341x"],
    "branch": "air_force",
    "command": "CFA",
    "formation": "Commandos parachutistes de l'air",
@@ -7561,8 +7564,8 @@
     "en": "French Air and Space Force parachute commandos (first posting: Orange Air Base 115)"
    },
    "type": "operator",
-   "code": "",
-   "code_system": "",
+   "code": "341X",
+   "code_system": "SPECIALITE",
    "name": {
     "fr": "Équipier parachutiste de l'air (militaire du rang)",
     "en": "Air Force Paratrooper (enlisted)"

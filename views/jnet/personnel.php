@@ -127,17 +127,18 @@ $face = static function (array $p) use ($h): string {
                 $grade = trim((string) ($p['grade'] ?? ''));
                 $unit = trim((string) ($p['unit'] ?? ''));
                 $fn = trim((string) ($p['function'] ?? ''));
+                $specialties = trim((string) ($p['specialties'] ?? ''));
                 $isOff = ($p['duty'] ?? '') === 'off';
                 $fil = is_array($p['fil'] ?? null) ? $p['fil'] : null;
                 $chain = $fil !== null ? implode(' › ', array_map('strval', (array) $fil['chain'])) : '';
-                $search = mb_strtolower(implode(' ', array_filter([$name, $callsign, $grade, $unit, $fn, $chain, (string) ($p['role'] ?? '')])));
+                $search = mb_strtolower(implode(' ', array_filter([$name, $callsign, $grade, $unit, $fn, $specialties, $chain, (string) ($p['role'] ?? '')])));
                 ?>
                 <li class="pe-item" data-pe-item data-name="<?= $h($name) ?>" data-grade="<?= $h($grade) ?>" data-rank="<?= (int) ($p['grade_rank'] ?? 999) ?>" data-unit="<?= $h($unit) ?>" data-chain="<?= $h($chain) ?>" data-fn="<?= $h($fn) ?>" data-duty="<?= $isOff ? 'off' : 'on' ?>" data-q="<?= $h($search) ?>"<?= empty($p['match']) ? ' hidden' : '' ?>>
                     <a class="pe-open" href="<?= $h((string) ($p['href'] ?? '#')) ?>"><span class="ja-sr">Ouvrir la fiche de <?= $h($name) ?></span></a>
                     <span class="pe-av" aria-hidden="true"><?= $face($p) ?></span>
                     <span class="pe-id"><b><?= $h($name) ?></b><?php if ($callsign !== '' && strcasecmp($callsign, $name) !== 0): ?><small class="ja-mono"><?= $h($callsign) ?></small><?php elseif ($callsign !== '' || $name !== ''): ?><small class="pe-noname">Nom non renseigné</small><?php endif; ?></span>
                     <span class="pe-grade"><?= $grade !== '' ? $h($grade) : '<i class="pe-none">—</i>' ?></span>
-                    <span class="pe-fn"><?= $fn !== '' ? $h($fn) : '<i class="pe-none">—</i>' ?></span>
+                    <span class="pe-fn"><?= $fn !== '' ? $h($fn) : '<i class="pe-none">—</i>' ?><?php if ($specialties !== ''): ?><small title="Spécialités confirmées ; niveaux professionnels distincts du grade et des qualifications."><br>Spécialités : <?= $h($specialties) ?></small><?php endif; ?></span>
                     <span class="pe-unit">
                         <?php if ($unit === ''): ?><i class="pe-none">—</i>
                         <?php elseif ($fil !== null): ?><a href="<?= $h((string) $fil['href']) ?>"><?= $h($unit) ?></a><?php if ($chain !== ''): ?><small><?= $h($chain) ?></small><?php endif; ?>

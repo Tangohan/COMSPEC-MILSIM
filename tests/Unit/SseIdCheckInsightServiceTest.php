@@ -363,7 +363,7 @@ final class SseIdCheckInsightServiceTest extends TestCase
             {
             }
 
-            public function tooManyAttempts(string $key, int $maxAttempts, int $decaySeconds): bool
+            public function tooManyAttempts(string $key, int $maxAttempts, int $decaySeconds, bool $strict = false): bool
             {
                 return false;
             }

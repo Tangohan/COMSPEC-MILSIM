@@ -1145,7 +1145,39 @@ final class SseIdentityRegistryController
 
             return Response::redirect(url(self::BASE . '/identites'));
         }
-        $person = ($identity['person_id'] ?? 0) > 0 ? $this->persons->findById((int) $identity['person_id'], $tenantId) : null;
+        $person = null;
+        $relatedDossiers = [];
+        $personId = (int) ($identity['person_id'] ?? 0);
+        if ($this->canSeeTruth() || !in_array($identity['kind'], ['cover', 'forged'], true)) {
+            if ($personId > 0) {
+                try {
+                    $detail = (new \App\Services\Sse\SsePersonWorkService())->detail(
+                        \App\Services\Sse\SsePersonViewer::fromSession($this->access, $this->clearance), $personId
+                    );
+                    $person = $detail['person'] ?? null;
+                } catch (\Throwable $e) {
+                    error_log('Fiche identité : personne liée indisponible : ' . $e->getMessage());
+                }
+            }
+            try {
+                $graph = new \App\Services\Sse\Links\SseLinkGraph(
+                    new \App\Services\Sse\Links\SseLinkSessionViewer($this->access, $this->clearance)
+                );
+                $roots = [['identity', (int) $identity['id']]];
+                if ($person !== null) {
+                    $roots[] = ['person', $personId];
+                }
+                foreach ($roots as [$type, $rootId]) {
+                    foreach ($graph->resolve($type, (string) $rootId, 1)['nodes'] as $node) {
+                        if (empty($node['restricted']) && in_array($node['type'], ['case', 'interest'], true)) {
+                            $relatedDossiers[$node['key']] = $node;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log('Fiche identité : dossiers liés indisponibles : ' . $e->getMessage());
+            }
+        }
         // Photo et signature d'un membre : TRÈS SECRET (TS) (photo_path vidé si refusé, route protégée si autorisé ; affichage seulement).
         $identity = \App\Services\Sse\SseMemberImageGate::forSession()->maskIdentity($tenantId, $identity);
 
@@ -1207,6 +1239,7 @@ final class SseIdentityRegistryController
             'title' => $identity['ref'] . ' — ' . $identity['display_name'],
             'identity' => $identity,
             'person' => $person,
+            'relatedDossiers' => array_values($relatedDossiers),
             'documents' => $this->documents->list($tenantId, ['identity_id' => (int) $identity['id']]),
             'countries' => $this->countries->listForTenant($tenantId),
             'papersTab' => 'identites',

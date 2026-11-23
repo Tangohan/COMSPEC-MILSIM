@@ -47,6 +47,17 @@ final class SystemMilitaryReferentialController
         ]);
     }
 
+    public function specialties(Request $request, array $params = []): Response
+    {
+        $catalog = new \App\Repositories\MilitarySpecialtyRepository();
+        return Response::view('layout.main', [
+            'content' => 'admin.system.military_specialties',
+            'title' => 'Nomenclatures militaires',
+            'specialtyReady' => $catalog->ready(),
+            'specialtyCatalog' => $catalog->catalog(),
+        ]);
+    }
+
     public function create(Request $request, array $params = []): Response
     {
         if (!$this->repo->tablesReady()) {

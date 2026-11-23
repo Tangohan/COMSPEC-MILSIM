@@ -47,6 +47,7 @@ $legalActiveSection = $legalActiveSection ?? '';
                     <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.home'), ENT_QUOTES, 'UTF-8') ?></a>
                     <a href="<?= htmlspecialchars($legalActivePage === 'site' ? '#' : url('legal/site'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.legal'), ENT_QUOTES, 'UTF-8') ?></a>
                     <a href="<?= htmlspecialchars($legalActivePage === 'site' ? '#cgu' : url('legal/site') . '#cgu', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.cgu_cgv'), ENT_QUOTES, 'UTF-8') ?></a>
+                    <a href="<?= htmlspecialchars(url('code-de-conduite'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('conduct.nav'), ENT_QUOTES, 'UTF-8') ?></a>
                     <a href="<?= htmlspecialchars(url('demande-donnees'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.your_rights'), ENT_QUOTES, 'UTF-8') ?></a>
                     <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.login'), ENT_QUOTES, 'UTF-8') ?></a>
                 </nav>

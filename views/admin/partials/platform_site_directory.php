@@ -51,6 +51,7 @@ $item = static function (string $href, string $title, string $desc) use ($h): vo
             </div>
             <ul class="pa-map__list">
                 <?php
+                $item(url('admin/system/securite'), 'Surveillance de la sécurité', 'Échecs de connexion, comptes ciblés et pics de trafic');
                 $item(url('admin/users'), 'Comptes utilisateurs', 'Activation et désactivation');
                 $item(url('admin/roles'), 'Rôles système', 'Habilitations du site');
                 $item(url('admin/site-roles'), 'Affectations rôles site', 'Qui tient un rôle plateforme');

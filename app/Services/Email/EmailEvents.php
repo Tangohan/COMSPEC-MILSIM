@@ -44,6 +44,8 @@ final class EmailEvents
     public const EMAIL_VERIFICATION = 'EMAIL_VERIFICATION';
     public const COMMUNITY_INVITATION = 'COMMUNITY_INVITATION';
     public const PASSWORD_RESET = 'PASSWORD_RESET';
+    public const PLATFORM_BAN_APPEAL_LINK = 'PLATFORM_BAN_APPEAL_LINK';
+    public const PLATFORM_BAN_APPEAL_SUBMITTED = 'PLATFORM_BAN_APPEAL_SUBMITTED';
     /** Compte créé par l’admin communauté : lien pour définir le mot de passe. */
     public const TENANT_USER_SETUP = 'TENANT_USER_SETUP';
     public const COMMUNITY_CONTACT = 'COMMUNITY_CONTACT';
@@ -217,6 +219,8 @@ final class EmailEvents
         self::EMAIL_VERIFICATION,
         self::COMMUNITY_INVITATION,
         self::PASSWORD_RESET,
+        self::PLATFORM_BAN_APPEAL_LINK,
+        self::PLATFORM_BAN_APPEAL_SUBMITTED,
         self::TENANT_USER_SETUP,
         self::COMMUNITY_CONTACT,
         self::PROFILE_INCOMPLETE_REMINDER,

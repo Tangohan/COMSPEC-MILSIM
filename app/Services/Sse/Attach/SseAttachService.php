@@ -198,6 +198,9 @@ final class SseAttachService
             $t = $p['target'];
             $column = $this->legacy->write($tenant, $s['type'], (int) $s['id'], $t['type'], (int) $t['id'], $uid, $plan['reason'], $p['label'] !== '' ? $p['label'] : $s['title']);
             if (!$ready) {
+                if ($column === null) {
+                    return ['ok' => false, 'error' => 'Le rattachement n’a pas pu être enregistré. Rechargez puis réessayez.', 'created' => [], 'count' => $count];
+                }
                 $this->audit('attach.add', 0, $plan['reason'], null, ['from' => $s['key'], 'to' => $t['key'], 'legacy' => $column, 'degraded' => true]);
                 $legacyOnly[] = ['source' => $s['key'], 'target' => $t['key']];
                 ++$count;
@@ -385,6 +388,15 @@ final class SseAttachService
     /** @param array<string, mixed> $s @param array<string, mixed> $t */
     private function legacyHolds(array $s, array $t): bool
     {
+        if (in_array([$s['type'], $t['type']], [['case', 'interest'], ['interest', 'case']], true)) {
+            $interestId = (int) ($s['type'] === 'interest' ? $s['id'] : $t['id']);
+            $caseId = (string) ($s['type'] === 'case' ? $s['id'] : $t['id']);
+            try {
+                return $this->db->fetchOne("SELECT id FROM sse_interest_case_links WHERE tenant_id = :t AND interest_case_id = :i AND link_type = 'case' AND target_id = :c", ['t' => $this->viewer->tenantId(), 'i' => $interestId, 'c' => $caseId]) !== null;
+            } catch (\Throwable) {
+                return false;
+            }
+        }
         if ($s['type'] === 'person') {
             try {
                 return $this->db->fetchOne('SELECT id FROM sse_case_persons WHERE tenant_id = :t AND case_id = :c AND person_id = :p', ['t' => $this->viewer->tenantId(), 'c' => (int) $t['id'], 'p' => (int) $s['id']]) !== null;
@@ -775,14 +787,25 @@ final class SseAttachService
                 $tagNames[$t['id']] = $t;
             }
             $rows = $this->repo()->forTarget($this->viewer->tenantId(), $type, $id);
+            // Une liaison doit être consultable depuis ses deux extrémités.
+            $byId = [];
+            foreach (array_merge($rows, $this->repo()->forSource($this->viewer->tenantId(), $type, $id)) as $row) {
+                $byId[(int) $row['id']] = $row;
+            }
+            $rows = array_values($byId);
+            usort($rows, static fn (array $a, array $b): int =>
+                [(string) $b['created_at'], (int) $b['id']] <=> [(string) $a['created_at'], (int) $a['id']]);
             $names = $this->dir->userNames(array_map(static fn (array $r): int => (int) ($r['created_by_user_id'] ?? 0), $rows));
             foreach ($rows as $row) {
-                $src = $graph->see((string) $row['source_type'], (string) $row['source_id']);
+                $outgoing = (string) $row['source_type'] === $type && (string) $row['source_id'] === $id;
+                $otherType = (string) $row[$outgoing ? 'target_type' : 'source_type'];
+                $otherId = (string) $row[$outgoing ? 'target_id' : 'source_id'];
+                $src = $graph->see($otherType, $otherId);
                 if ($src === null) {
                     $items[] = ['restricted' => true, 'id' => 0];
                     continue;
                 }
-                $level = $this->dir->levelOf((string) $row['source_type'], (string) $row['source_id']);
+                $level = $this->dir->levelOf($otherType, $otherId);
                 $tags = [];
                 foreach (SseAttachmentRepository::unpackTags((string) $row['tags']) as $tid) {
                     if (isset($tagNames[$tid])) {
@@ -795,6 +818,8 @@ final class SseAttachService
                 $natures[(string) $row['nature']] = A::NATURES[(string) $row['nature']] ?? $nature;
                 $items[] = [
                     'restricted' => false, 'id' => (int) $row['id'], 'key' => (string) $src['key'], 'type' => (string) $src['type'], 'type_label' => (string) $src['type_label'],
+                    'source_key' => C::ref((string) $row['source_type'], (string) $row['source_id']),
+                    'outgoing' => $outgoing,
                     'ref' => (string) $src['ref'], 'title' => (string) $src['title'], 'label' => (string) $row['label'], 'href' => (string) $src['href'],
                     'nature' => (string) $row['nature'], 'nature_label' => $nature, 'nature_custom' => (string) $row['nature_label'],
                     'reason' => (string) $row['reason'], 'note' => (string) $row['note'],

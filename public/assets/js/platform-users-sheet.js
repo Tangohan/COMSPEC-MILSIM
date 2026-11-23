@@ -90,6 +90,7 @@
     var selectAll = document.querySelector('[data-pu-select-all]');
     var counter = document.querySelector('[data-pu-selected-count]');
     var exportBtn = document.querySelector('[data-pu-export-selection]');
+    var bulkBtn = document.querySelector('[data-pu-bulk-open]');
     function refreshSelection() {
         var n = picks.filter(function (p) { return p.checked; }).length;
         if (counter) {
@@ -97,6 +98,7 @@
             counter.textContent = '· ' + n + (n > 1 ? ' sélectionnées' : ' sélectionnée');
         }
         if (exportBtn) { exportBtn.disabled = n === 0; }
+        if (bulkBtn) { bulkBtn.disabled = n === 0; }
         if (selectAll) {
             selectAll.checked = n > 0 && n === picks.length;
             selectAll.indeterminate = n > 0 && n < picks.length;

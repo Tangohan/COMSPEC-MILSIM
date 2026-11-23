@@ -28,7 +28,7 @@ final class SseAttachLegacy
     ];
 
     /** Types d'éléments liés d'un dossier d'intérêt (SseInterestCaseCatalog::LINK_TYPES). */
-    private const INTEREST_TYPES = ['person' => 'person', 'identity' => 'identity', 'site' => 'site', 'transmission' => 'transmission', 'note' => 'fiche', 'doc_issue' => 'document', 'case' => 'case'];
+    private const INTEREST_TYPES = ['person' => 'person', 'identity' => 'identity', 'site' => 'site', 'transmission' => 'transmission', 'note' => 'fiche', 'document' => 'document', 'case' => 'case'];
 
     private Database $db;
 
@@ -40,6 +40,7 @@ final class SseAttachLegacy
     public static function handles(string $sourceType, string $targetType): bool
     {
         return isset(self::COLUMNS[$sourceType][$targetType]) || ($sourceType === 'person' && $targetType === 'case')
+            || ($sourceType === 'interest' && $targetType === 'case')
             || ($targetType === 'interest' && isset(self::INTEREST_TYPES[$sourceType]));
     }
 
@@ -50,6 +51,10 @@ final class SseAttachLegacy
      */
     public function write(int $tenantId, string $sourceType, int $sourceId, string $targetType, int $targetId, ?int $userId, string $reason, string $label = '', bool $force = false): ?string
     {
+        if ($sourceType === 'interest' && $targetType === 'case') {
+            // Même lien métier, quel que soit l'écran depuis lequel il est posé.
+            return $this->write($tenantId, 'case', $targetId, 'interest', $sourceId, $userId, $reason, '', $force);
+        }
         $done = null;
         try {
             if (isset(self::COLUMNS[$sourceType][$targetType])) {
@@ -93,6 +98,9 @@ final class SseAttachLegacy
     /** Retire la trace historique, seulement si elle désignait cette cible. */
     public function remove(int $tenantId, string $sourceType, int $sourceId, string $targetType, int $targetId): ?string
     {
+        if ($sourceType === 'interest' && $targetType === 'case') {
+            return $this->remove($tenantId, 'case', $targetId, 'interest', $sourceId);
+        }
         $done = null;
         try {
             if (isset(self::COLUMNS[$sourceType][$targetType])) {

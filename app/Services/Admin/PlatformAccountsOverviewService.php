@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use App\Core\Database;
+use App\Services\Audit\AuditAction;
 use App\Support\PortalAccessChoice;
 use App\Support\ShortCache;
+use DateTimeImmutable;
 use PDO;
 
 /**
@@ -42,6 +44,104 @@ final class PlatformAccountsOverviewService
     public function overview(int $limit = 6): array
     {
         return ShortCache::remember('admin:accounts-overview:v1:' . $limit, self::CACHE_TTL, fn (): array => $this->compute($limit));
+    }
+
+    /** @return list<array{signup_day: ?string, age_band: string, login_band: string, total: int}> */
+    public function engagement(DateTimeImmutable $start, DateTimeImmutable $end): array
+    {
+        $from = $start->format('Y-m-d');
+        $until = $end->format('Y-m-d');
+
+        return ShortCache::remember("admin:account-engagement:v1:{$from}:{$until}", self::CACHE_TTL, function () use ($from, $until): array {
+            [$where, $params] = $this->accountPredicate();
+            $accounts = $this->db()->prepare(
+                "SELECT CASE WHEN first_at >= ? AND first_at < ? THEN DATE(first_at) END AS signup_day,
+                        CASE WHEN first_at IS NULL THEN 'unknown'
+                             WHEN first_at > UTC_TIMESTAMP() - INTERVAL 30 DAY THEN 'new'
+                             WHEN first_at > UTC_TIMESTAMP() - INTERVAL 180 DAY THEN 'established'
+                             ELSE 'old' END AS age_band,
+                        CASE WHEN last_at IS NULL THEN 'never'
+                             WHEN last_at >= UTC_TIMESTAMP() - INTERVAL 30 DAY THEN 'recent'
+                             WHEN last_at >= UTC_TIMESTAMP() - INTERVAL 90 DAY THEN '30'
+                             WHEN last_at >= UTC_TIMESTAMP() - INTERVAL 180 DAY THEN '90'
+                             ELSE '180' END AS login_band,
+                        COUNT(*) AS total
+                 FROM (
+                     SELECT MIN(u.created_at) AS first_at, MAX(u.last_login_at) AS last_at
+                     FROM users u WHERE {$where} AND TRIM(u.email) <> ''
+                     GROUP BY LOWER(TRIM(u.email))
+                 ) AS people
+                 GROUP BY signup_day, age_band, login_band"
+            );
+            $accounts->execute([$from, $until, ...$params]);
+
+            return $accounts->fetchAll(PDO::FETCH_ASSOC);
+        });
+    }
+
+    /** @return array{signed_in: int, returned: int, one_day: int, two_to_three: int, four_to_six: int, seven_plus: int, average_days: float} */
+    public function observedReturns(string $from, string $until): array
+    {
+        return ShortCache::remember("admin:account-returns:v2:{$from}:{$until}", self::CACHE_TTL, function () use ($from, $until): array {
+            [$where, $params] = $this->accountPredicate();
+            $stmt = $this->db()->prepare(
+                "SELECT COUNT(*) AS signed_in, SUM(login_days >= 2) AS returned,
+                        SUM(login_days = 1) AS one_day, SUM(login_days BETWEEN 2 AND 3) AS two_to_three,
+                        SUM(login_days BETWEEN 4 AND 6) AS four_to_six, SUM(login_days >= 7) AS seven_plus,
+                        AVG(login_days) AS average_days
+                 FROM (
+                     SELECT COUNT(DISTINCT DATE(a.created_at)) AS login_days
+                     FROM users u INNER JOIN audit_logs a ON a.user_id = u.id
+                     WHERE {$where} AND TRIM(u.email) <> ''
+                       AND a.action = ? AND a.created_at >= ? AND a.created_at < ?
+                     GROUP BY LOWER(TRIM(u.email))
+                 ) AS logins"
+            );
+            $stmt->execute([...$params, AuditAction::AUTH_LOGIN_SUCCESS, $from, $until]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return [
+                'signed_in' => (int) $row['signed_in'],
+                'returned' => (int) $row['returned'],
+                'one_day' => (int) $row['one_day'],
+                'two_to_three' => (int) $row['two_to_three'],
+                'four_to_six' => (int) $row['four_to_six'],
+                'seven_plus' => (int) $row['seven_plus'],
+                'average_days' => (float) $row['average_days'],
+            ];
+        });
+    }
+
+    /** @return array{total: int, activated: int, returned: int} */
+    public function signupFollowup(string $from, string $until): array
+    {
+        return ShortCache::remember("admin:signup-followup:v1:{$from}:{$until}", self::CACHE_TTL, function () use ($from, $until): array {
+            [$where, $params] = $this->accountPredicate();
+            $stmt = $this->db()->prepare(
+                "WITH eligible AS (
+                     SELECT u.id, LOWER(TRIM(u.email)) AS person, u.created_at
+                     FROM users u WHERE {$where} AND TRIM(u.email) <> ''
+                 ), cohort AS (
+                     SELECT person, MIN(created_at) AS signup_at
+                     FROM eligible GROUP BY person
+                     HAVING signup_at >= ? AND signup_at < ?
+                 )
+                 SELECT COUNT(*) AS total, SUM(activated) AS activated, SUM(returned) AS returned
+                 FROM (
+                     SELECT c.person, MAX(a.user_id IS NOT NULL) AS activated,
+                            MAX(CASE WHEN DATE(a.created_at) > DATE(c.signup_at) THEN 1 ELSE 0 END) AS returned
+                     FROM cohort c JOIN eligible e ON e.person = c.person
+                     LEFT JOIN audit_logs a ON a.user_id = e.id AND a.action = ?
+                         AND a.created_at >= c.signup_at
+                         AND a.created_at < DATE(c.signup_at) + INTERVAL 8 DAY
+                     GROUP BY c.person
+                 ) AS followup"
+            );
+            $stmt->execute([...$params, $from, $until, AuditAction::AUTH_LOGIN_SUCCESS]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return ['total' => (int) $row['total'], 'activated' => (int) $row['activated'], 'returned' => (int) $row['returned']];
+        });
     }
 
     /** @return array<string, mixed> */
