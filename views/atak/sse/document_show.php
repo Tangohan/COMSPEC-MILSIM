@@ -101,6 +101,52 @@ $statusClass = match ($status) {
     </div>
 </div>
 
+<?php
+$signatures = is_array($signatures ?? null) ? $signatures : [];
+$canSign = (bool) ($canSign ?? false);
+$signerName = (string) ($signerName ?? '');
+?>
+<?php if ($signatures !== [] || $canSign): ?>
+<section class="sse-doc-sign panel sse-desk-panel" aria-labelledby="sse-doc-sign-title">
+    <div class="panel-header"><div class="panel-title"><span class="panel-index">19.13</span><span id="sse-doc-sign-title">Signature</span></div></div>
+    <div class="panel-body">
+        <?php if ($signatures !== []): ?>
+            <p class="sse-desk-hint"><span aria-hidden="true">&#128274;</span> Ce document est signé : il est verrouillé en lecture seule. Chaque signature porte l’empreinte SHA-256 du contenu au moment de la signature.</p>
+        <?php endif; ?>
+        <?php if ($canSign): ?>
+            <form method="post" action="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/signer')) ?>" class="sse-doc-sign__form" id="sse-doc-sign-form">
+                <?= \App\Core\Csrf::field() ?>
+                <p>Vous signez en tant que <strong><?= $h($signerName !== '' ? $signerName : 'utilisateur connecté') ?></strong>. Une signature est personnelle : personne d’autre ne peut l’apposer à votre place. Après signature, le document ne peut plus être modifié.</p>
+                <fieldset class="sse-doc-sign__ink">
+                    <legend>Couleur de l’encre</legend>
+                    <?php foreach (['#0b1220' => 'Noir', '#1d4ed8' => 'Bleu', '#15803d' => 'Vert'] as $inkHex => $inkName): ?>
+                        <label><input type="radio" name="sigpad_ink" value="<?= $h($inkHex) ?>" <?= $inkHex === '#0b1220' ? 'checked' : '' ?>> <?= $h($inkName) ?></label>
+                    <?php endforeach; ?>
+                </fieldset>
+                <?php
+                $sigpad = ['id' => 'sse-doc-sigpad', 'name' => 'signature_data_url', 'label' => 'Votre signature', 'required' => true, 'theme' => 'dark', 'background' => 'transparent', 'name_hint' => $signerName];
+                require dirname(__DIR__, 2) . '/partials/signature_pad.php';
+                ?>
+                <button class="btn" type="submit">Signer et verrouiller le document</button>
+            </form>
+            <script>
+            (function () {
+                document.querySelectorAll('input[name="sigpad_ink"]').forEach(function (r) {
+                    r.addEventListener('change', function () {
+                        var pad = window.ComspecSignaturePad && window.ComspecSignaturePad.get('sse-doc-sigpad');
+                        if (!pad || !r.checked) { return; }
+                        pad.ink = r.value;
+                        pad.redraw();
+                        pad.refresh(true);
+                    });
+                });
+            })();
+            </script>
+        <?php endif; ?>
+    </div>
+</section>
+<?php endif; ?>
+
 <section class="sse-doc-read panel sse-desk-panel">
     <div class="panel-header">
         <div class="panel-title">
