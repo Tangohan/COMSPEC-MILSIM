@@ -53,7 +53,10 @@ final class SseRichText
     private const ALIGN = ['left', 'right', 'center', 'justify'];
 
     /** sse-hint : texte d'aide grisé des modèles (span), à remplacer ; il n'apparaît ni sur le papier ni dans le PDF. */
-    private const CLASSES = ['sse-pagebreak', 'sse-field', 'sse-hint'];
+    private const CLASSES = ['sse-pagebreak', 'sse-field', 'sse-hint', 'sse-media'];
+
+    /** Jeton d'une image jointe : « <communauté>_<16 hexadécimaux> » (fichier du stockage privé, servi par une route contrôlée). */
+    public const MEDIA_TOKEN = '/^[0-9]{1,10}_[a-f0-9]{16}$/';
 
     public static function isRich(string $body): bool
     {
@@ -176,7 +179,7 @@ final class SseRichText
             if (!str_contains($attrs, 'sse-pagebreak')) {
                 $attrs = str_replace(' class="sse-field"', '', $attrs);
             }
-            if (str_contains($attrs, 'sse-pagebreak')) {
+            if (str_contains($attrs, 'sse-pagebreak') || str_contains($attrs, 'sse-media')) {
                 return '<div' . $attrs . '></div>';
             }
         }
@@ -203,6 +206,17 @@ final class SseRichText
         if (isset($classes['sse-pagebreak']) && $tag !== 'div') {
             unset($classes['sse-pagebreak']);
         }
+        // Image jointe : un bloc vide qui ne porte qu'un jeton valide ; l'image est ajoutée à l'affichage, jamais enregistrée ici.
+        $media = '';
+        if (isset($classes['sse-media'])) {
+            $tok = trim($el->getAttribute('data-media'));
+            if ($tag === 'div' && preg_match(self::MEDIA_TOKEN, $tok) === 1) {
+                $media = $tok;
+                unset($classes['sse-pagebreak'], $classes['sse-field'], $classes['sse-hint']);
+            } else {
+                unset($classes['sse-media']);
+            }
+        }
         if (isset($classes['sse-field']) && $tag !== 'span') {
             unset($classes['sse-field']);
         }
@@ -223,6 +237,9 @@ final class SseRichText
         }
         if ($field !== '') {
             $out .= ' data-field="' . $field . '"';
+        }
+        if ($media !== '') {
+            $out .= ' data-media="' . $media . '"';
         }
         // Verrou : seule la valeur « 1 » survit, sur un bloc ou un texte en ligne ; aucun autre attribut data-*.
         if (trim($el->getAttribute('data-lock')) === '1' && in_array($tag, self::LOCKABLE, true)) {
