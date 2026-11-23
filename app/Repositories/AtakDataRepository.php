@@ -3218,10 +3218,14 @@ class AtakDataRepository
         $keepCallsign = $callsign;
         if ($existing && $occupancy) {
             $prevCs = trim((string) ($existing['callsign'] ?? ''));
-            $prevSource = strtolower(trim((string) ($existing['source'] ?? '')));
-            if ($prevCs !== '' && ($prevSource === 'manifest' || $prevCs !== $callsign)) {
+            if ($prevCs !== '' && $prevCs !== $callsign && !self::occupancyMayRename($existing, $data)) {
                 $keepCallsign = $prevCs;
             }
+        }
+        if ($existing && $keepCallsign !== trim((string) ($existing['callsign'] ?? ''))
+            && !$this->freeAirCallsign($tenantId, $mapId, $keepCallsign, (int) $existing['id'])) {
+            // Indicatif déjà porté par un autre appareil encore actif : on garde l'ancien plutôt que d'échouer.
+            $keepCallsign = trim((string) ($existing['callsign'] ?? ''));
         }
         $fields = [
             'mission_id' => $data['mission_id'] ?? $data['missionId'] ?? null,
@@ -3274,8 +3278,8 @@ class AtakDataRepository
             $fields['vehicle_id'] = null;
         }
         if ($existing) {
-            // En mode occupation : ne pas écraser l’indicatif déjà connu du manifeste.
-            if (!$occupancy && $keepCallsign !== trim((string) ($existing['callsign'] ?? ''))) {
+            // Occupation : l'indicatif du manifeste n'est remplacé que par celui choisi par le pilote (occupancyMayRename).
+            if ($keepCallsign !== trim((string) ($existing['callsign'] ?? ''))) {
                 $fields['callsign'] = $keepCallsign;
             }
             $set = implode(', ', array_map(fn ($k) => "`$k` = ?", array_keys($fields)));
@@ -3313,6 +3317,51 @@ class AtakDataRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? self::presentAirAssetRow($row) : $row;
+    }
+
+    /**
+     * Une remontée d'occupation peut-elle renommer l'appareil déjà connu ? Oui pour le même appareil (même vehicle_id)
+     * quand l'indicatif vient du pilote (callsign_explicit : choisi dans l'ATAK natif) ou que l'indicatif connu venait
+     * lui-même de l'occupation (groupe Arma renommé). Jamais sur un rapprochement par la seule position : deux appareils
+     * proches ne doivent pas échanger leurs indicatifs. Avant ce correctif, l'indicatif de la première remontée
+     * (souvent le groupe Arma par défaut « Alpha 1-3 ») restait figé pour toute la session.
+     *
+     * @param array<string, mixed> $existing
+     * @param array<string, mixed> $data
+     */
+    public static function occupancyMayRename(array $existing, array $data): bool
+    {
+        $vehicleId = trim((string) ($data['vehicle_id'] ?? $data['vehicleId'] ?? ''));
+        if ($vehicleId === '' || $vehicleId !== trim((string) ($existing['vehicle_id'] ?? ''))) {
+            return false;
+        }
+        $flag = $data['callsign_explicit'] ?? false;
+        if ($flag === true || $flag === 1 || $flag === '1' || $flag === 'true') {
+            return true;
+        }
+
+        return strtolower(trim((string) ($existing['source'] ?? ''))) !== \App\Services\Tactical\AtakAirAssetMergeService::SOURCE_MANIFEST;
+    }
+
+    /**
+     * L'indicatif est-il libre pour cet appareil (clé unique tenant, carte, indicatif) ? Une ligne périmée qui le porte
+     * (appareil disparu depuis plus de AIR_ASSET_TTL_SECONDS) est supprimée ; une ligne encore active le garde.
+     */
+    private function freeAirCallsign(int $tenantId, int $mapId, string $callsign, int $selfId): bool
+    {
+        $stmt = $this->pdo()->prepare('SELECT id, updated_at FROM atak_air_assets WHERE tenant_id = ? AND map_id = ? AND callsign = ? AND id <> ?');
+        $stmt->execute([$tenantId, $mapId, $callsign, $selfId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return true;
+        }
+        $updated = strtotime((string) ($row['updated_at'] ?? '')) ?: 0;
+        if ($updated >= time() - self::AIR_ASSET_TTL_SECONDS) {
+            return false;
+        }
+        $this->pdo()->prepare('DELETE FROM atak_air_assets WHERE id = ?')->execute([(int) $row['id']]);
+
+        return true;
     }
 
     /**

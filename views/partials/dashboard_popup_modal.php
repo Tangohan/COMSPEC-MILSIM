@@ -120,7 +120,8 @@ $popupLoggedIn = (bool) \App\Core\Session::get('user_id');
         if (a.body) {
             var desc = document.createElement('p');
             desc.className = 'dash-popup-panel__desc';
-            desc.textContent = a.body;
+            // Adresses http(s) du texte rendues cliquables (passerelle des liens externes : 10 s pour valider la sortie).
+            if (window.AthenaLinks) { window.AthenaLinks.linkify(desc, a.body); } else { desc.textContent = a.body; }
             body.appendChild(desc);
         }
 

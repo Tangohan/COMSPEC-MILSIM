@@ -55,7 +55,7 @@ jobs:
           COMSPEC_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=comspec_test;charset=utf8mb4"
           COMSPEC_TEST_MYSQL_USER: root
           COMSPEC_TEST_MYSQL_PASS: root
-        run: vendor/bin/phpunit --filter 'PlatformUsersDirectoryMysqlTest|AtakMarkerCycleReadMysqlTest|CommunitySeedsStrictMysqlTest|RecentTablesCollationMysqlTest|SseFileProfileMysqlTest|RoleplaySessionAppMysqlTest'
+        run: vendor/bin/phpunit --filter 'PlatformUsersDirectoryMysqlTest|AtakMarkerCycleReadMysqlTest|CommunitySeedsStrictMysqlTest|RecentTablesCollationMysqlTest|SseFileProfileMysqlTest|AtakAirAssetRenameMysqlTest|GameSyncFreshnessMysqlTest|RoleplaySessionAppMysqlTest'
       # Base complète installée de zéro (schema.sql, étapes historiques, file active) dans une base séparée.
       - name: Base de test complète
         env:

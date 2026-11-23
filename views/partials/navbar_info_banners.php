@@ -136,7 +136,7 @@ if ($json === false) {
     if (a.body) {
       var desc = document.createElement('span');
       desc.className = 'banner-desc';
-      desc.textContent = a.body;
+      if (window.AthenaLinks) { window.AthenaLinks.linkify(desc, a.body); } else { desc.textContent = a.body; }
       content.appendChild(desc);
     }
     if (a.cta_url && a.cta_label) {
@@ -223,7 +223,7 @@ if ($json === false) {
     if (a.body) {
       var desc = document.createElement('div');
       desc.className = 'nib-important-desc';
-      desc.textContent = a.body;
+      if (window.AthenaLinks) { window.AthenaLinks.linkify(desc, a.body); } else { desc.textContent = a.body; }
       body.appendChild(desc);
     }
     if (a.cta_url && a.cta_label) {

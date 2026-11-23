@@ -31,9 +31,9 @@
 [h3]Signaler un bug : envoyer ses logs[/h3]
 [olist]
 [*]Reproduisez le problème, puis quittez Arma (ou laissez-le ouvert, ça marche aussi).
-[*]Dans le dossier du mod (Workshop › COMSPEC ATAK), double-cliquez [b]Envoyer_mes_logs.bat[/b].
-[*]Un fichier [b]COMSPEC_logs_date_heure.zip[/b] apparaît sur votre Bureau : il contient les deux derniers logs d'Arma (.rpt) et les deux derniers logs de COMSPEC Link. Les mots de passe, jetons et liens de webhook sont masqués.
-[*]Postez ce zip sur le Discord COMSPEC avec : ce que vous faisiez, l'app concernée, solo / serveur, et les autres mods chargés.
+[*]Ouvrez le dossier [b]%LOCALAPPDATA%\Arma 3[/b] (collez-le dans la barre d'adresse de l'Explorateur).
+[*]Prenez les deux derniers fichiers [b].rpt[/b] et, dans le sous-dossier [b]COMSPEC\logs[/b], les deux derniers journaux de COMSPEC Link. Avant de les poster, ouvrez-les et retirez tout mot de passe, jeton ou lien de webhook.
+[*]Postez ces fichiers sur le Discord COMSPEC avec : ce que vous faisiez, l'app concernée, solo / serveur, et les autres mods chargés.
 [/olist]
 [quote]Problème de liaison avec Athena ? Menu Échap › [b]Dépannage liaison[/b] : diagnostic immédiat, causes probables et corrections proposées.[/quote]
 
@@ -73,9 +73,9 @@
 [h3]Reporting a bug: sending your logs[/h3]
 [olist]
 [*]Reproduce the problem, then quit Arma (leaving it open also works).
-[*]In the mod folder (Workshop › COMSPEC ATAK), double-click [b]Envoyer_mes_logs.bat[/b].
-[*]A [b]COMSPEC_logs_date_time.zip[/b] file appears on your Desktop: it holds the last two Arma logs (.rpt) and the last two COMSPEC Link logs. Passwords, tokens and webhook links are masked.
-[*]Post the zip on the COMSPEC Discord with: what you were doing, which app, solo or server, and your other loaded mods.
+[*]Open the [b]%LOCALAPPDATA%\Arma 3[/b] folder (paste it in the Explorer address bar).
+[*]Take the last two [b].rpt[/b] files and, from the [b]COMSPEC\logs[/b] subfolder, the last two COMSPEC Link logs. Before posting, open them and remove any password, token or webhook link.
+[*]Post those files on the COMSPEC Discord with: what you were doing, which app, solo or server, and your other loaded mods.
 [/olist]
 [quote]Athena link problem? Escape menu › [b]Link troubleshooting[/b]: instant diagnosis, likely causes and suggested fixes.[/quote]
 

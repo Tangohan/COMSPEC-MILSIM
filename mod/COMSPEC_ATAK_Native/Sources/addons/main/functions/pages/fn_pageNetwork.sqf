@@ -499,10 +499,16 @@ if (_mpuOn) then {
     if (["mpu", "Radio de données", _mpuSum, ["MPU5 Wave Relay : elle améliore le réseau du téléphone", "MPU5 Wave Relay : sans elle, pas de réseau de données"] select _mpuReq] call _fold) then {
         // État : une ligne par maillon (radio, téléphone, maillage), pastille de couleur en tête.
         private _dot = { params ["_st", "_t"]; format ["<t color='%1'>●</t> %2", _hex get _st, _t] };
+        // Liaison réaliste : la radio de données portée peut être une radio ACRE2 / TFAR ordinaire (portative, longue portée)
+        // et non une MPU5 : son vrai nom est affiché (retour de jeu : « MPU5 allumée » alors qu'aucune MPU5 n'est sur soi).
+        private _gv = _v getOrDefault ["gear", []];
+        private _rn = if (_gv isNotEqualTo [] && {!((_gv param [2, ""]) in ["RADIOMPU", "MPU"])}) then { _gv param [3, ""] } else { "" };
+        private _carOff = ["MPU5 sur vous : éteinte", format ["%1 · radio sur vous : éteinte", _rn]] select (_rn isNotEqualTo "");
+        private _carOn = ["MPU5 sur vous : allumée", format ["%1 · radio sur vous : allumée", _rn]] select (_rn isNotEqualTo "");
         private _l1 = switch (true) do {
             case (!_has): { ["bad", "Aucune MPU5 sur vous"] call _dot };
-            case (!_on): { ["bad", [format ["MPU5 posée à %1 m : éteinte", _v get "posedD"], "MPU5 sur vous : éteinte"] select (_v get "carried")] call _dot };
-            default { ["ok", format ["%1 · canal %2 (%3 MHz) · portée %4", [format ["MPU5 posée à %1 m : allumée", _v get "posedD"], "MPU5 sur vous : allumée"] select (_v get "carried"),
+            case (!_on): { ["bad", [format ["MPU5 posée à %1 m : éteinte", _v get "posedD"], _carOff] select (_v get "carried")] call _dot };
+            default { ["ok", format ["%1 · canal %2 (%3 MHz) · portée %4", [format ["MPU5 posée à %1 m : allumée", _v get "posedD"], _carOn] select (_v get "carried"),
                 _v get "chan", _v get "freq", [_v get "range"] call _dist]] call _dot };
         };
         private _battHex = switch (true) do { case ((_v get "batt") <= 5): { "#e5483a" }; case ((_v get "batt") <= 20): { "#f2ab33" }; default { "#5cc76b" }; };

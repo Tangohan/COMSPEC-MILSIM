@@ -328,7 +328,7 @@ switch (_act) do {
             ["enabled", call _enabled], ["bridge", missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]], ["radios", call _radios],
             ["ok", _me isNotEqualTo []], ["why", _why], ["hops", _me param [5, 0]], ["mode", _mode], ["peers", _peers],
             ["tfMult", (missionNamespace getVariable ["COMSPEC_ATAK_VoiceTf", []]) param [2, -1]],
-            ["carried", ["has", [player]] call comspec_atak_native_fnc_mpu5]
+            ["carried", ["hasMpu"] call comspec_atak_native_fnc_mpu5]
         ]
     };
     case "tick": {

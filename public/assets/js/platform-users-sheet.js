@@ -131,7 +131,7 @@
     if (!dlg || typeof dlg.showModal !== 'function') { return; }
     var title = document.getElementById('pu-confirm-title');
     var body = document.getElementById('pu-confirm-body');
-    var kicker = document.getElementById('pu-confirm-kicker');
+    var kicker = document.getElementById('pu-confirm-tag');
     var typeWrap = document.getElementById('pu-confirm-type-wrap');
     var typeInput = document.getElementById('pu-confirm-type');
     var typeExpected = document.getElementById('pu-confirm-type-expected');

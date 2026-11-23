@@ -70,6 +70,7 @@
 .mp-file details { padding-top: 12px; font-size: 14px; }
 .mp-file summary { cursor: pointer; }
 .mp-file code { display: block; overflow-wrap: anywhere; margin-top: 8px; color: var(--muted); }
+.mp-file .mp-note { margin: 14px 0 0; padding: 10px 12px; border-left: 2px solid #ffd184; background: var(--surface); font-size: 13px; color: var(--muted); }
 .mp-admin, .mp-install { scroll-margin-top: 72px; }
 .mp-admin { border-top: 1px solid var(--line); padding-top: 28px; }
 .mp-admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }

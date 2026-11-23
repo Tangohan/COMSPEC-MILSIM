@@ -225,6 +225,7 @@ class CfgFunctions {
             class aceLoadoutsRepair {};
             class uplinkHold {};
             class extDirect {};
+            class syncMark {};
             class extFast {};
             class startLogSession {};
             class logTransmission {};

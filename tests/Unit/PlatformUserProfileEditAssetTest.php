@@ -95,7 +95,7 @@ final class PlatformUserProfileEditAssetTest extends TestCase
         self::assertStringContainsString("admin/users/' . \$uid . '/edit", $list);
         self::assertStringContainsString('Modifier', $list);
         self::assertStringContainsString("admin/users/' . \$uid . '/edit", $person);
-        self::assertStringContainsString('Modifier la fiche', $person);
+        self::assertStringContainsString('Modifier le compte', $person);
         self::assertStringContainsString('Membre actif', $list);
         self::assertStringContainsString('E-mail pas encore vérifié', $list);
         self::assertStringContainsString('Compte actif', $person);
