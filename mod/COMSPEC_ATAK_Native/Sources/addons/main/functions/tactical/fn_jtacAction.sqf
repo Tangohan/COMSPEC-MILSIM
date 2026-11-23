@@ -255,7 +255,7 @@ switch (_act) do {
         private _m = _s getOrDefault ["msn", createHashMap];
         // Même appareil : nouveau brief de la même mission (correction) ; sinon nouvelle mission.
         if ((count _m) isEqualTo 0 || {(_m getOrDefault ["step", 0]) >= 7}) then {
-            _m = createHashMapFromArray [["id", format ["%1-%2", getPlayerUID player, round (diag_tickTime * 1000)]], ["air", _air], ["log", []]];
+            _m = createHashMapFromArray [["id", format ["%1-%2", getPlayerUID player, (round (diag_tickTime * 1000)) toFixed 0]], ["air", _air], ["log", []]];
             _s set ["msn", _m];
         };
         _m set ["air", _air];
@@ -475,11 +475,13 @@ switch (_act) do {
         } forEach (_s getOrDefault ["dest", []]);
         {
             private _t = toUpper (trim _x);
-            if (_t isNotEqualTo "" && {(_dest findIf { (toUpper (_x select 0)) isEqualTo _t }) < 0}) then {
-                private _ki = _known findIf { (toUpper (_x select 1)) isEqualTo _t };
+            // Clé d'indicatif (fn_airBrief "key") : « TIGER6 » tapé trouve l'appareil « TIGER 6 » ou « Tiger-6 ».
+            private _tk = ["key", _t] call comspec_atak_native_fnc_airBrief;
+            if (_tk isNotEqualTo "" && {(_dest findIf { (["key", _x select 0] call comspec_atak_native_fnc_airBrief) isEqualTo _tk }) < 0}) then {
+                private _ki = _known findIf { (["key", _x select 1] call comspec_atak_native_fnc_airBrief) isEqualTo _tk };
                 private _who = if (_ki >= 0) then { (_known select _ki) select 0 } else {
                     private _side = side group player;
-                    (allPlayers select { alive _x && {side group _x isEqualTo _side} && {(toUpper ([_x] call comspec_atak_native_fnc_unitCallsign)) isEqualTo _t} }) param [0, objNull]
+                    (allPlayers select { alive _x && {side group _x isEqualTo _side} && {(["key", [_x] call comspec_atak_native_fnc_unitCallsign] call comspec_atak_native_fnc_airBrief) isEqualTo _tk} }) param [0, objNull]
                 };
                 _dest pushBack [_t, _who];
             };
