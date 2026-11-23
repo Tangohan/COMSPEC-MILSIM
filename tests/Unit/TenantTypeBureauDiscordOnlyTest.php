@@ -69,7 +69,7 @@ final class TenantTypeBureauDiscordOnlyTest extends TestCase
         $export = RosterOnlyMemberService::parseCsv("Nom affiché,Indicatif,E-mail,Grade\nJohn Doe,Bravo,x@y.z,CPL\n");
         self::assertNull($export['error']);
         self::assertSame('John Doe', $export['rows'][0]['display_name']);
-        self::assertArrayNotHasKey('email', $export['rows'][0]);
+        self::assertSame('x@y.z', $export['rows'][0]['email'], 'l’e-mail du tableur est maintenant lu');
 
         self::assertNotNull(RosterOnlyMemberService::parseCsv("Foo;Bar\n1;2\n")['error']);
     }

@@ -1155,10 +1155,11 @@ class EffectifsWorkspaceController
             $this->personnelAssignmentRepository,
             $this->gradeRepository,
             $this->unitRepository,
+            \App\Services\Effectifs\RosterFicheEmailService::forUsers($this->userRepository),
         );
         $result = $service->import($tenantId, $actorId, $parsed['rows']);
 
-        $msg = $result['created'] . ' fiche(s) créée(s).';
+        $msg = $result['created'] . ' fiche(s) créée(s)' . ($result['updated'] > 0 ? ', ' . $result['updated'] . ' mise(s) à jour' : '') . '.';
         if ($result['skipped'] !== []) {
             $msg .= ' ' . count($result['skipped']) . ' ligne(s) ignorée(s) : ' . implode(' ', array_slice($result['skipped'], 0, 5));
             if (count($result['skipped']) > 5) {
@@ -1171,7 +1172,7 @@ class EffectifsWorkspaceController
         if ($result['unknown_units'] !== []) {
             $msg .= ' Unités inconnues (créez-les dans l’organigramme, puis réimportez ou affectez à la main) : ' . implode(', ', array_slice($result['unknown_units'], 0, 8)) . '.';
         }
-        Session::flash($result['created'] > 0 ? 'success' : 'error', $msg);
+        Session::flash($result['created'] + $result['updated'] > 0 ? 'success' : 'error', $msg);
         try {
             $this->adminAuditService->logUserUpdated($tenantId, $actorId, $actorId, 'import_tableur', (string) $result['created']);
         } catch (\Throwable) {
@@ -1187,12 +1188,7 @@ class EffectifsWorkspaceController
         if ($denied !== null) {
             return $denied;
         }
-        $fh = fopen('php://temp', 'r+');
-        fputcsv($fh, ['Prénom', 'Nom', 'Indicatif', 'Grade', 'Affectation', 'Steam ID'], ';', '"', '\\');
-        fputcsv($fh, ['Jean', 'Martin', 'Alpha 1-1', 'SGT', '1re Section', ''], ';', '"', '\\');
-        rewind($fh);
-        $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');
-        fclose($fh);
+        $csv = \App\Services\Effectifs\RosterOnlyMemberService::templateCsv();
 
         return (new Response())
             ->setStatusCode(200)
@@ -1315,22 +1311,12 @@ class EffectifsWorkspaceController
         $tenantId = (int) Session::get('tenant_id');
         $gate = Gate::getInstance();
         $directory = new \App\Services\Effectifs\NoAccountDirectory($this->userRepository);
-        $all = $directory->list($tenantId);
-        $filters = [
-            'q' => mb_substr(trim((string) $request->query('q', '')), 0, 80, 'UTF-8'),
-            'status' => (string) $request->query('statut', ''),
-            'source' => (string) $request->query('origine', ''),
-            'sort' => (string) $request->query('tri', 'activite'),
-        ];
-        if (!isset(\App\Services\Effectifs\NoAccountDirectory::STATUSES[$filters['status']])) {
-            $filters['status'] = '';
-        }
-        if (!isset(\App\Services\Effectifs\NoAccountDirectory::SOURCES[$filters['source']])) {
-            $filters['source'] = '';
-        }
+        $everyone = $directory->list($tenantId, true);
+        $all = array_values(array_filter($everyone, static fn (array $r): bool => $r['status'] !== \App\Services\Effectifs\NoAccountDirectory::STATUS_ACCOUNT));
+        $filters = $this->sansComptesFilters($request);
         $ficheId = (int) $request->query('fiche', 0);
         $selected = null;
-        foreach ($all as $r) {
+        foreach ($everyone as $r) {
             if ($r['id'] === $ficheId) {
                 $selected = $r;
                 break;
@@ -1355,14 +1341,17 @@ class EffectifsWorkspaceController
             }
         }
         $counts = [];
-        foreach ($all as $r) {
+        foreach ($everyone as $r) {
             $counts[$r['status']] = ($counts[$r['status']] ?? 0) + 1;
         }
 
         return $this->shell('admin.effectifs_workspace.sans_comptes', [
             'title' => 'Sans compte',
             'effectifsNav' => 'sans_comptes',
-            'ncRows' => \App\Services\Effectifs\NoAccountDirectory::filter($all, $filters),
+            'ncRows' => \App\Services\Effectifs\NoAccountDirectory::filter($everyone, $filters),
+            'ncImportReport' => Session::getFlash('nc_import_report'),
+            'ncEmailReady' => (new \App\Repositories\RosterFicheEmailRepository())->available(),
+            'ncExpiredCount' => count(array_filter($all, static fn (array $r): bool => !empty($r['invite_expired']) && $r['email'] !== '')),
             'ncTotal' => count($all),
             'ncCounts' => $counts,
             'ncFilters' => $filters,
@@ -1374,6 +1363,55 @@ class EffectifsWorkspaceController
             'ncCanInvite' => EffectifsLmsAccess::canInviteMembers($gate) && (new \App\Services\Effectifs\MemberProfileInviteService())->available(),
             'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    /** @return array{q: string, status: string, source: string, sort: string} */
+    private function sansComptesFilters(Request $request): array
+    {
+        $filters = [
+            'q' => mb_substr(trim((string) $request->query('q', '')), 0, 80, 'UTF-8'),
+            'status' => (string) $request->query('statut', ''),
+            'source' => (string) $request->query('origine', ''),
+            'sort' => (string) $request->query('tri', 'activite'),
+        ];
+        if (!isset(\App\Services\Effectifs\NoAccountDirectory::STATUSES[$filters['status']])) {
+            $filters['status'] = '';
+        }
+        if (!isset(\App\Services\Effectifs\NoAccountDirectory::SOURCES[$filters['source']])) {
+            $filters['source'] = '';
+        }
+
+        return $filters;
+    }
+
+    /** Effectifs › Sans compte › Exporter : le tableau filtré en CSV (mêmes colonnes que l'import, Excel). */
+    public function sansComptesExport(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $rows = \App\Services\Effectifs\NoAccountDirectory::filter(
+            (new \App\Services\Effectifs\NoAccountDirectory($this->userRepository))->list($tenantId, true),
+            $this->sansComptesFilters($request)
+        );
+        $service = new \App\Services\Effectifs\RosterOnlyMemberService(
+            $this->userRepository,
+            \App\Core\Container::get(\App\Repositories\UserProfileRepository::class),
+            $this->personnelProfileRepository,
+            $this->personnelAssignmentRepository,
+            $this->gradeRepository,
+            $this->unitRepository,
+        );
+        $csv = $service->exportCsv($tenantId, array_map(static fn (array $r): int => (int) $r['id'], $rows), (new \App\Repositories\RosterFicheEmailRepository())->mapForTenant($tenantId));
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="sans-compte-' . date('Y-m-d') . '.csv"')
+            ->header('Cache-Control', 'no-store')
+            ->setBody($csv);
     }
 
     /** Effectifs › Tableaux : constructeur de tableaux de données (source, colonnes, filtres, tri, regroupement). */
