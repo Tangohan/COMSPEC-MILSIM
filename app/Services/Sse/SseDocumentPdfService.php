@@ -7,6 +7,8 @@ namespace App\Services\Sse;
 use App\Core\Response;
 use App\Support\Pdf\AthenaPdfTheme as Theme;
 use App\Support\Pdf\SsePdfNotice;
+use App\Support\Pdf\SseThemedTcpdf;
+use App\Support\SseDocumentMarkings;
 use App\Support\SseRichText;
 use App\Support\TrainingCertificatePdfEngine;
 
@@ -42,7 +44,18 @@ final class SseDocumentPdfService
         $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $ref = (string) ($doc['reference_code'] ?? '');
         $classLabel = (string) ($doc['classification_label'] ?? 'Confidentiel');
-        $pdf = Theme::tcpdf([
+        $holders = [];
+        try {
+            foreach (SseDocumentMarkings::forDocument($doc, '')['routing'] ?? [] as $row) {
+                if (trim((string) ($row['holder'] ?? '')) !== '') {
+                    $holders[] = trim((string) $row['holder']);
+                }
+            }
+        } catch (\Throwable) {
+            $holders = [];
+        }
+        $caseRef = trim((string) ($doc['case_reference'] ?? ''));
+        $pdf = SseThemedTcpdf::themed([
             'kind' => (string) ($doc['document_type_label'] ?? 'Document SSE'),
             'reference' => $ref !== '' ? $ref : 'Athena SSE',
             'tenant_id' => $tenantId,
@@ -51,16 +64,12 @@ final class SseDocumentPdfService
             'note' => 'Reproduction interdite sans accord du chef de bureau',
             'title' => (string) ($doc['title'] ?? $ref),
             'band_bottom' => true,
-        ]);
+        ], (string) ($doc['sheet_theme'] ?? ''), $classLabel . ($caseRef !== '' ? ' · ' . $caseRef : ''),
+            $holders !== [] ? implode(', ', array_slice($holders, 0, 4)) : Theme::t('Diffusion restreinte'), $classLabel);
         if ($pdf === null) {
             throw new \RuntimeException('TCPDF indisponible');
         }
-        $fields = [
-            'dossier' => (string) ($doc['case_reference'] ?? ''),
-            'classification' => $classLabel,
-            'reference' => $ref,
-            'titre' => (string) ($doc['title'] ?? ''),
-        ];
+        $fields = SseDocumentFieldValues::for($doc);
         $meta = [];
         foreach ([
             'Référence' => $ref,
@@ -85,7 +94,8 @@ final class SseDocumentPdfService
         $hasOwnHeader = SseRichText::hasTemplateHeader((string) ($doc['body'] ?? ''));
         $bodyPage = $pdf->getPage();
         $pdf->writeAthenaHtml(
-            ($hasOwnHeader ? '' : '<h1 style="font-size:16pt">' . $h($doc['title'] ?? '') . '</h1>'
+            $pdf->bodyCss()
+            . ($hasOwnHeader ? '' : '<h1 style="font-size:16pt">' . $h($doc['title'] ?? '') . '</h1>'
                 . '<p style="font-size:8pt;color:#475569">' . implode(' &nbsp;·&nbsp; ', $meta) . '</p><hr>')
             . '<div style="font-size:10pt">' . $bodyHtml . '</div>'
         );

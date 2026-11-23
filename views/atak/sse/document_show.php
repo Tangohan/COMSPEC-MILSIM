@@ -16,6 +16,7 @@ $statusClass = match ($status) {
 ?>
 
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-doc-editor.css')) ?>">
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-doc-themes.css')) ?>">
 
 <section class="sse-desk-hero" aria-labelledby="sse-doc-show-title">
     <div class="sse-desk-hero__main">

@@ -47,12 +47,21 @@ $typeHints = [
 ];
 
 $docId = $isEdit ? (int) ($document['id'] ?? 0) : 0;
+$prefillTheme = \App\Support\SseSheetThemes::normalize((string) ($prefillTheme ?? ($document['sheet_theme'] ?? '')));
+$sheetThemes = \App\Support\SseSheetThemes::all();
+$modelCode = (string) ($modelCode ?? '');
+$canUnlock = (bool) ($canUnlock ?? false);
+$wmText = mb_strtoupper($classifications[$prefillClass] ?? 'Confidentiel', 'UTF-8');
+$refText = $isEdit ? (string) ($document['reference_code'] ?? '') : '';
 $models = is_array($editorContext['models'] ?? null) ? $editorContext['models'] : [];
 $edCfg = [
     'models' => array_map(static fn (array $m): array => [
         'code' => (string) $m['code'], 'label' => (string) $m['label'], 'body' => (string) $m['body'],
         'document_type' => (string) ($m['document_type'] ?? ''), 'classification' => (string) ($m['classification'] ?? ''),
+        'theme' => (string) ($m['theme'] ?? ''),
     ], $models),
+    'canUnlock' => $canUnlock,
+    'refText' => $refText,
     'templateUrl' => (string) ($editorContext['templateUrl'] ?? ''),
     'fields' => $editorContext['fields'] ?? [],
     'serverDraft' => $editorContext['serverDraft'] ?? null,
@@ -77,10 +86,12 @@ $classHints = [
 $fieldList = [
     'nom' => 'Nom du rédacteur', 'grade' => 'Grade du rédacteur', 'date' => 'Date du jour', 'reference' => 'Référence du document',
     'dossier' => 'Référence du dossier', 'classification' => 'Classification', 'titre' => 'Intitulé du document',
+    'type' => 'Type de document', 'id_fiche' => 'Numéro d’identification de la fiche', 'nom_code' => 'Nom de code de la fiche', 'dse' => 'Numéro DSE de la fiche',
 ];
 ?>
 
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-doc-editor.css')) ?>">
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-doc-themes.css')) ?>">
 
 <section class="sse-desk-hero sse-desk-hero--compact" aria-labelledby="sse-doc-form-title">
     <div class="sse-desk-hero__main">
@@ -131,6 +142,18 @@ $fieldList = [
                             <option value="<?= $h($k) ?>" <?= $prefillClass === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="sse-ed-themefield">
+                    <fieldset class="sse-ed__themes" id="sse-ed-themes">
+                        <legend>Thème de la feuille</legend>
+                        <?php foreach ($sheetThemes as $tk => $tv): ?>
+                            <label class="sse-ed__theme" title="<?= $h($tv['description']) ?>">
+                                <input type="radio" name="sheet_theme" value="<?= $h($tk) ?>" <?= $prefillTheme === $tk ? 'checked' : '' ?>>
+                                <span class="sse-ed__theme-sw" style="background:<?= $h($tv['paper']) ?>" aria-hidden="true"><i style="background:<?= $h($tv['band_bg']) ?>"></i></span>
+                                <?= $h($tv['label']) ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </fieldset>
                 </div>
                 <div>
                     <label for="status">État</label>
@@ -250,6 +273,8 @@ $fieldList = [
                 <?= $btn('hr', 'Séparateur horizontal', $ico('M2 8h12')) ?>
                 <?= $btn('pagebreak', 'Saut de page', $ico('M3 2v4h10V2M3 14v-4h10v4M1 8h2M6 8h4M13 8h2'), false, 'Saut de page') ?>
                 <?= $btn('redact', 'Caviarder le passage sélectionné', '<span aria-hidden="true" class="sse-ed__redact-ico">▮▮</span>', false, 'Caviarder') ?>
+                <?= $btn('lock', 'Verrouiller le bloc du curseur : il ne pourra plus être modifié', $ico('M4 7h8v6H4zM6 7V5a2 2 0 014 0v2'), false, 'Verrouiller') ?>
+                <?php if ($canUnlock): ?><?= $btn('unlock', 'Déverrouiller le bloc sélectionné (cliquez d’abord sur le bloc verrouillé)', $ico('M4 7h8v6H4zM6 7V5a2 2 0 013.6-1.2'), false, 'Déverrouiller') ?><?php endif; ?>
                 <select class="sse-ed__select sse-ed__select--narrow" data-cmd="field" aria-label="Insérer un champ du dossier">
                     <option value="">Champ du dossier…</option>
                     <option value="nom">Nom du rédacteur</option>
@@ -289,11 +314,11 @@ $fieldList = [
             <div class="sse-ed__desk" id="sse-ed-desk">
                 <div class="sse-ed__zoomer" id="sse-ed-zoomer" data-zoom="1">
                     <div class="sse-ed__ruler" id="sse-ed-ruler" aria-hidden="true"></div>
-                    <div class="sse-ed__page" id="sse-ed-page" data-level="<?= $h($prefillClass) ?>">
-                        <div class="sse-ed__pband sse-ed__pband--top" aria-hidden="true"><?= $h(mb_strtoupper($classifications[$prefillClass] ?? 'Confidentiel', 'UTF-8')) ?></div>
+                    <div class="sse-ed__page <?= $h(\App\Support\SseSheetThemes::cssClass($prefillTheme)) ?>" id="sse-ed-page" data-level="<?= $h($prefillClass) ?>" data-wm="<?= $h($wmText . ($refText !== '' ? ' · ' . $refText : '')) ?>">
+                        <div class="sse-ed__pband sse-ed__pband--top" data-stamp="<?= $h($wmText) ?>" aria-hidden="true"><?= $h($wmText) ?></div>
                         <div class="sse-ed__sheet" id="sse-ed-sheet" contenteditable="true" role="textbox" aria-multiline="true"
                              aria-label="Corps du document" spellcheck="true" lang="fr"><?= $bodyHtml ?></div>
-                        <div class="sse-ed__pband sse-ed__pband--bottom" aria-hidden="true"><?= $h(mb_strtoupper($classifications[$prefillClass] ?? 'Confidentiel', 'UTF-8')) ?></div>
+                        <div class="sse-ed__pband sse-ed__pband--bottom" data-foot="<?= $h($refText) ?>" aria-hidden="true"><?= $h(mb_strtoupper($classifications[$prefillClass] ?? 'Confidentiel', 'UTF-8')) ?></div>
                     </div>
                 </div>
             </div>
@@ -380,6 +405,14 @@ $fieldList = [
             <span data-msg="model-saved">Modèle enregistré : il apparaît dans la galerie.</span>
             <span data-msg="model-error">Modèle non enregistré : vérifiez le nom et le contenu, le nombre de modèles est limité.</span>
             <span data-msg="page-label">Page</span>
+            <span data-msg="page-of">sur</span>
+            <span data-msg="lock-title">Texte verrouillé</span>
+            <span data-msg="lock-forbidden">Ce texte est verrouillé : seul un administrateur SSE peut le modifier.</span>
+            <span data-msg="lock-refused">Modification annulée : le texte verrouillé ne peut pas être changé.</span>
+            <span data-msg="field-type">Type de document</span>
+            <span data-msg="field-id_fiche">Numéro d’identification</span>
+            <span data-msg="field-nom_code">Nom de code</span>
+            <span data-msg="field-dse">Numéro DSE</span>
             <span data-msg="btn-use">Utiliser</span>
             <span data-msg="btn-insert">Insérer ici</span>
             <span data-msg="field-reference">Référence du document</span>
@@ -394,6 +427,7 @@ $fieldList = [
     </section>
 
     <textarea id="body" name="body" hidden aria-hidden="true" tabindex="-1"><?= $h(\App\Support\SseRichText::MARK . $bodyHtml) ?></textarea>
+    <input type="hidden" name="model_code" id="sse-model-code" value="<?= $h($modelCode) ?>">
     <input type="hidden" name="inserted_mentions" id="sse-lib-trace" value="">
     <?php if ($libraryEntries !== []): ?>
         <p class="sse-lib-inserted" id="sse-lib-inserted" hidden>

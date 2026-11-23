@@ -30,12 +30,7 @@ $dateSrc = (string) ($document['validated_at'] ?? $document['updated_at'] ?? $do
 $dateFr = $dateSrc !== '' ? date('d/m/Y', strtotime($dateSrc) ?: time()) : date('d/m/Y');
 $bodyHtml = $livePreview
     ? ''
-    : \App\Repositories\SseDocumentRepository::bodyToHtml((string) ($document['body'] ?? ''), [
-        'dossier' => (string) ($document['case_reference'] ?? ''),
-        'classification' => (string) ($document['classification_label'] ?? ''),
-        'reference' => $ref,
-        'titre' => $title,
-    ]);
+    : \App\Repositories\SseDocumentRepository::bodyToHtml((string) ($document['body'] ?? ''), \App\Services\Sse\SseDocumentFieldValues::for($document));
 $isValidated = in_array((string) ($document['status'] ?? ''), ['valide', 'archive'], true);
 $isArchived = (string) ($document['status'] ?? '') === 'archive';
 $marks = \App\Support\SseDocumentMarkings::forDocument($document, $unitLabel);
@@ -51,7 +46,7 @@ $sealBottom = (string) ($chrome['seal_bottom'] ?? 'RENSEIGNEMENT');
 $footerDisclaimer = \App\Support\SseDocumentChromeCatalog::footerText($chrome['footer'] ?? '');
 ?>
 <div class="sse-doc-paper-chrome" data-sse-doc-paper data-classification="<?= $h($classCode) ?>" data-paper-style="<?= $h($paperStyle) ?>">
-    <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?> sse-doc-paper-style--<?= $h($paperStyle) ?>" aria-label="Aperçu du document" data-classification="<?= $h($classCode) ?>">
+    <article class="sse-doc-paper sse-doc-paper--<?= $h($classCode) ?> sse-doc-paper-style--<?= $h($paperStyle) ?> <?= $h(\App\Support\SseSheetThemes::cssClass((string) ($document['sheet_theme'] ?? ''))) ?>" aria-label="Aperçu du document" data-classification="<?= $h($classCode) ?>">
         <div class="sse-doc-paper__wear" aria-hidden="true"></div>
         <div class="sse-doc-paper__banner">
             <span><?= $h((string) ($chrome['banner'] ?? 'CUI — EXPLOITATION TERRAIN')) ?></span>

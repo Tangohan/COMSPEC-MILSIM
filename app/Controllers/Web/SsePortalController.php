@@ -57,7 +57,9 @@ use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\SseAnalyticalCatalog;
 use App\Support\SseCreationBrief;
+use App\Support\SseDocumentLocks;
 use App\Support\SseDocumentTemplates;
+use App\Support\SseSheetThemes;
 use App\Support\SseRichText;
 use App\Support\SseTextVariables;
 use App\Services\Sse\SseAccessPolicy;
@@ -4128,6 +4130,9 @@ final class SsePortalController
             'prefillClass' => $model['classification'],
             'prefillStatus' => 'brouillon',
             'modelLabel' => $model['label'],
+            'modelCode' => SseDocumentTemplates::exists((string) $model['code']) ? (string) $model['code'] : '',
+            'prefillTheme' => SseSheetThemes::defaultForTemplate((string) $model['code']),
+            'canUnlock' => $this->canUnlock(),
             'canManage' => true,
             'editorContext' => $this->editorContext(0, $case),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
@@ -4286,6 +4291,14 @@ final class SsePortalController
 
             return Response::redirect(url('atak/sse/documents/nouveau'));
         }
+        // Texte verrouillé du modèle choisi : il doit arriver intact (le client ne fait que le rendre non modifiable).
+        $modelCode = (string) $request->input('model_code', '');
+        if (!$this->canUnlock() && SseDocumentTemplates::exists($modelCode)
+            && SseDocumentLocks::violations(SseDocumentTemplates::body($modelCode), SseRichText::htmlOf($body)) !== []) {
+            Session::flash('error', 'Le texte verrouillé du modèle (en-tête, mentions obligatoires) a été modifié : enregistrement refusé.');
+
+            return Response::redirect(url('atak/sse/documents/nouveau'));
+        }
 
         $userId = (int) Session::get('user_id') ?: null;
         $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur');
@@ -4297,6 +4310,7 @@ final class SsePortalController
             'body' => $body,
             'classification' => (string) $request->input('classification', 'confidentiel'),
             'status' => (string) $request->input('status', 'brouillon'),
+            'sheet_theme' => (string) $request->input('sheet_theme', ''),
             'created_by' => $userId,
             'updated_by' => $userId,
             'author_label' => $author,
@@ -4369,6 +4383,7 @@ final class SsePortalController
             'libraryCategories' => SseTextTemplateRepository::categories(),
             'contextualSuggestions' => $this->contextualSuggestionsForCase($case),
             'canManage' => true,
+            'canUnlock' => $this->canUnlock(),
             'editorContext' => $this->editorContext($id, $case, (string) ($doc['reference_code'] ?? '')),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
@@ -4411,6 +4426,12 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/documents/' . $id . '/modifier'));
         }
 
+        if (!$this->canUnlock() && SseDocumentLocks::violations(SseRichText::htmlOf((string) ($doc['body'] ?? '')), SseRichText::htmlOf($body)) !== []) {
+            Session::flash('error', 'Un texte verrouillé ne peut être modifié que par un administrateur SSE : enregistrement refusé.');
+
+            return Response::redirect(url('atak/sse/documents/' . $id . '/modifier'));
+        }
+
         $status = SseDocumentRepository::normalizeStatus((string) $request->input('status', $doc['status']));
         $payload = [
             'title' => $title,
@@ -4427,6 +4448,9 @@ final class SsePortalController
         }
 
         $this->documents->update($id, $this->tenantId(), $payload);
+        if ($request->input('sheet_theme', null) !== null) {
+            $this->documents->setTheme($id, $this->tenantId(), (string) $request->input('sheet_theme', ''));
+        }
         $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur');
         $mentions = $this->recordLibraryUses($request, $id, $caseId, $author, (int) Session::get('user_id') ?: null);
         $this->drafts()->discard($this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey(), $id);
@@ -4679,6 +4703,7 @@ final class SsePortalController
             $models[] = [
                 'code' => $code, 'label' => $meta['label'], 'description' => $meta['description'], 'own' => false,
                 'document_type' => $meta['document_type'], 'classification' => $meta['classification'],
+                'theme' => SseSheetThemes::defaultForTemplate($code),
                 'body' => SseDocumentTemplates::body($code, $this->modelContext($case, $meta['classification'], $reference)),
             ];
         }
@@ -4694,8 +4719,8 @@ final class SsePortalController
             'models' => $models,
             'fields' => [
                 'nom' => $author['nom'], 'grade' => $author['grade'], 'date' => date('d/m/Y'),
-                'reference' => $reference !== '' ? $reference : 'ATH-SSE-BROUILLON',
-            ],
+                'reference' => $reference !== '' ? $reference : 'Attribuée à l’enregistrement',
+            ] + \App\Services\Sse\SseDocumentFieldValues::identifiers($this->tenantId(), $docId),
             'serverDraft' => $draft,
             'draftUrl' => url('atak/sse/documents/brouillon'),
             'templateUrl' => url('atak/sse/documents/modeles'),
@@ -5388,6 +5413,12 @@ final class SsePortalController
     private function canManage(): bool
     {
         return SseAccessPolicy::sessionAllows('dossiers', SseAccessCatalog::LEVEL_WRITE, ['guest' => $this->access->isGuest(), 'tenant_id' => $this->tenantId()]);
+    }
+
+    /** Déverrouiller ou modifier un texte verrouillé : rédacteur habilité ET administrateur SSE (droit de délégation). */
+    private function canUnlock(): bool
+    {
+        return $this->canManage() && $this->canGrant();
     }
 
     private function canGrant(): bool

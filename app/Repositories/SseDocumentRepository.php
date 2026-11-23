@@ -175,7 +175,11 @@ final class SseDocumentRepository
         $tenantId = (int) ($data['tenant_id'] ?? 0);
         $ref = trim((string) ($data['reference_code'] ?? ''));
         if ($ref === '') {
-            $ref = $this->nextReference($tenantId);
+            try {
+                $ref = (new \App\Services\Sse\SseDocumentReference())->next($tenantId, self::normalizeType((string) ($data['document_type'] ?? 'note_analyse')));
+            } catch (\Throwable) {
+                $ref = $this->nextReference($tenantId); // compteur absent (étape 5070 non passée) : ancien format
+            }
         }
 
         $documentId = (int) $this->db->insert(
@@ -202,6 +206,9 @@ final class SseDocumentRepository
         );
         $title = trim((string) ($data['title'] ?? ''));
         \App\Services\Sse\SseIdentifierService::onCreated($tenantId, 'document', $documentId, $title === 'Sans titre' ? '' : $title);
+        if (isset($data['sheet_theme'])) {
+            $this->setTheme($documentId, $tenantId, (string) $data['sheet_theme']);
+        }
 
         return $documentId;
     }
@@ -259,6 +266,19 @@ final class SseDocumentRepository
         ) > 0;
     }
 
+    /** Thème de feuille ; sans la colonne (étape 5070 non passée) le document garde le thème classique. */
+    public function setTheme(int $id, int $tenantId, string $theme): bool
+    {
+        try {
+            return $this->db->execute(
+                'UPDATE sse_documents SET sheet_theme = :th WHERE id = :id AND tenant_id = :t',
+                ['th' => \App\Support\SseSheetThemes::normalize($theme), 'id' => $id, 't' => $tenantId]
+            ) >= 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     private function nextReference(int $tenantId): string
     {
         $year = date('Y');
@@ -306,6 +326,7 @@ final class SseDocumentRepository
             'classification_label' => SseCaseRepository::classificationLabel($class),
             'status' => $status,
             'status_label' => self::statusLabel($status),
+            'sheet_theme' => \App\Support\SseSheetThemes::normalize((string) ($row['sheet_theme'] ?? '')),
             'author_label' => $row['author_label'] ?? null,
             'created_by' => isset($row['created_by']) ? (int) $row['created_by'] : null,
             'updated_by' => isset($row['updated_by']) ? (int) $row['updated_by'] : null,

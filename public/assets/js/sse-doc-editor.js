@@ -21,7 +21,8 @@
     try { cfg = JSON.parse(document.getElementById('sse-ed-cfg').textContent) || {}; } catch (e) { cfg = {}; }
     var TEXT_COLORS = ['#0b1220', '#475569', '#b91c1c', '#b45309', '#1d4ed8', '#15803d'];
     var HILITE_COLORS = ['#fef08a', '#fed7aa', '#fecaca', '#bfdbfe', '#bbf7d0', '#e2e8f0'];
-    var FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre'];
+    var FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre', 'type', 'id_fiche', 'nom_code', 'dse'];
+    var LOCKABLE = /^(p|div|span|h2|h3|h4|blockquote|ul|ol|table)$/;
     var PAGE_PX = 1122.5; // 297 mm at 96 dpi
 
     function msg(name) {
@@ -107,6 +108,7 @@
                 if (v && /^\d{1,2}$/.test(v) && parseInt(v, 10) >= 2 && parseInt(v, 10) <= 20) { attrs += ' ' + a + '="' + parseInt(v, 10) + '"'; }
             });
         }
+        if (node.getAttribute('data-lock') === '1' && LOCKABLE.test(tag)) { attrs += ' data-lock="1"'; }
         var style = cleanStyle(node.getAttribute('style'), tag);
         if (name === 'mark' && style.indexOf('background-color') < 0) { style += 'background-color:' + HILITE_COLORS[0] + ';'; }
         if (style) { attrs += ' style="' + style + '"'; }
@@ -333,6 +335,10 @@
             var c = byId('classification');
             return c && c.selectedIndex >= 0 ? c.options[c.selectedIndex].text : '';
         }
+        if (name === 'type') {
+            var ty = byId('document_type');
+            return ty && ty.selectedIndex >= 0 ? ty.options[ty.selectedIndex].text : '';
+        }
         if (name === 'titre') {
             var tt = byId('title');
             return tt ? tt.value.trim() : '';
@@ -351,7 +357,7 @@
     function refreshFields() {
         each(sheet.querySelectorAll('.sse-field'), function (el) {
             var n = el.getAttribute('data-field');
-            if (n === 'classification' || n === 'dossier' || n === 'titre') {
+            if (n === 'classification' || n === 'dossier' || n === 'titre' || n === 'reference' || n === 'type' || n === 'id_fiche' || n === 'nom_code' || n === 'dse') {
                 var v = fieldValue(n);
                 if (v && el.textContent !== v) { el.textContent = v; }
             }
@@ -487,6 +493,8 @@
                 snapshot(false); changed(true); closePops(null); break;
             case 'clear': exec('removeFormat', null, false); break;
             case 'pagebreak': insertPageBreak(); break;
+            case 'lock': lockSelection(true); break;
+            case 'unlock': lockSelection(false); break;
             case 'redact': redactSelection(); break;
             case 'table-insert':
                 var rows = Math.max(1, Math.min(20, parseInt(byId('sse-ed-rows').value, 10) || 3));
@@ -563,8 +571,73 @@
         }
     });
 
+    /* ---------- locked text (data-lock) : islands the server also enforces ---------- */
+    var lockRef = [], lockGoodHtml = '', selectedLock = null;
+    function lockedBlocks() { return sheet.querySelectorAll('[data-lock="1"]'); }
+    function lockSig() {
+        var out = [];
+        each(lockedBlocks(), function (el) {
+            var c = el.cloneNode(true);
+            each(c.querySelectorAll('.sse-field'), function (f) { f.textContent = ''; });
+            out.push(c.textContent.replace(/\s+/g, ' ').trim());
+        });
+        return out;
+    }
+    function lockSetup() {
+        each(lockedBlocks(), function (el) { el.setAttribute('contenteditable', 'false'); el.setAttribute('title', msg('lock-title')); });
+    }
+    function lockSnapshot() { lockSetup(); lockRef = lockSig(); lockGoodHtml = sheet.innerHTML; }
+    /* Without the right to unlock, any change that alters, moves or removes a locked block is cancelled on the spot. */
+    function lockGuard() {
+        if (cfg.canUnlock || !lockRef.length) { lockSnapshot(); return true; }
+        var now = lockSig(), i = 0, j = 0;
+        for (; i < lockRef.length; i++) {
+            while (j < now.length && now[j] !== lockRef[i]) { j++; }
+            if (j >= now.length) { break; }
+            j++;
+        }
+        if (i < lockRef.length) {
+            restoring = true;
+            sheet.innerHTML = lockGoodHtml;
+            restoring = false;
+            lockSetup();
+            stateText('lock-refused');
+            return false;
+        }
+        lockSnapshot();
+        return true;
+    }
+    function lockSelection(on) {
+        restoreSelection();
+        var r = currentRange();
+        var n = r ? r.startContainer : null;
+        while (n && n.parentNode !== sheet) { n = n.parentNode; }
+        var el = on ? n : selectedLock;
+        if (!el || el.nodeType !== 1 || !LOCKABLE.test(el.nodeName.toLowerCase())) { return; }
+        if (on) { el.setAttribute('data-lock', '1'); }
+        else if (cfg.canUnlock) { el.removeAttribute('data-lock'); el.removeAttribute('contenteditable'); el.removeAttribute('title'); el.classList.remove('is-selected'); selectedLock = null; }
+        else { stateText('lock-forbidden'); return; }
+        lockSnapshot();
+        snapshot(false);
+        changed(true);
+    }
+    sheet.addEventListener('click', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-lock="1"]') : null;
+        if (selectedLock) { selectedLock.classList.remove('is-selected'); }
+        selectedLock = el && sheet.contains(el) ? el : null;
+        if (selectedLock) { selectedLock.classList.add('is-selected'); }
+    });
+    sheet.addEventListener('beforeinput', function (e) {
+        if (cfg.canUnlock || String(e.inputType || '').indexOf('delete') !== 0) { return; }
+        var r = currentRange();
+        if (!r) { return; }
+        var hit = false;
+        each(lockedBlocks(), function (el) { if (r.intersectsNode(el)) { hit = true; } });
+        if (hit) { e.preventDefault(); stateText('lock-forbidden'); }
+    });
+
     /* ---------- editing events ---------- */
-    sheet.addEventListener('input', function () { normalizeRoot(); changed(false); });
+    sheet.addEventListener('input', function () { normalizeRoot(); if (!lockGuard()) { return; } changed(false); });
     sheet.addEventListener('keyup', function () { rememberSelection(); refreshState(); });
     sheet.addEventListener('mouseup', function () { rememberSelection(); refreshState(); });
     document.addEventListener('selectionchange', function () { if (document.activeElement === sheet) { rememberSelection(); } });
@@ -699,10 +772,23 @@
         var strong = b.querySelector('strong');
         if (strong) { strong.textContent = label.toUpperCase(); }
         each(root.querySelectorAll('.sse-ed__pband'), function (pb) { pb.textContent = label.toUpperCase(); });
+        each(root.querySelectorAll('.sse-ed__pband--top'), function (pb) { pb.setAttribute('data-stamp', label.toUpperCase()); });
         var pg = byId('sse-ed-page');
-        if (pg) { pg.setAttribute('data-level', c.value); }
+        if (pg) { pg.setAttribute('data-level', c.value); pg.setAttribute('data-wm', label.toUpperCase() + (cfg.refText ? ' · ' + cfg.refText : '')); }
         b.setAttribute('data-level', c.value);
     }
+
+    /* ---------- sheet theme (paper, bands, watermark, typeface), saved with the document ---------- */
+    function setTheme(id) {
+        var pg = byId('sse-ed-page');
+        var found = false;
+        each(document.querySelectorAll('input[name="sheet_theme"]'), function (r) { if (r.value === id) { r.checked = true; found = true; } });
+        if (!found || !pg) { return; }
+        pg.className = pg.className.replace(/(^|\s)sse-theme--[a-z_]+/g, '').trim() + ' sse-theme--' + id;
+    }
+    each(document.querySelectorAll('input[name="sheet_theme"]'), function (r) {
+        r.addEventListener('change', function () { if (r.checked) { setTheme(r.value); dirty = true; scheduleAutosave(); } });
+    });
 
     /* ---------- submit ---------- */
     function submitForm() {
@@ -874,6 +960,7 @@
         if (!m) { return; }
         if (mode === 'insert') {
             insertHtml(cleanHtml(m.body));
+            lockSnapshot();
             initHints();
             scheduleOutline();
             return;
@@ -890,6 +977,10 @@
             if (cl) { cl.value = m.classification; cl.dispatchEvent(new Event('change', { bubbles: true })); }
         }
         refreshFields();
+        lockSnapshot();
+        var mc = byId('sse-model-code');
+        if (mc) { mc.value = /^perso-/.test(code) ? '' : code; }
+        if (m.theme) { setTheme(m.theme); }
         snapshot(false);
         changed(true);
         sheet.focus();
@@ -980,11 +1071,13 @@
         if (!pageEl) { return; }
         each(pageEl.querySelectorAll('.sse-ed__pgmark'), function (m) { pageEl.removeChild(m); });
         var pages = Math.max(1, Math.ceil((sheet.scrollHeight - 2) / PAGE_PX));
+        var foot = pageEl.querySelector('.sse-ed__pband--bottom');
+        if (foot) { foot.setAttribute('data-foot', (cfg.refText ? cfg.refText + ' · ' : '') + msg('page-label') + ' ' + pages + ' ' + msg('page-of') + ' ' + pages); }
         for (var k = 1; k < pages; k++) {
             var m = document.createElement('div');
             m.className = 'sse-ed__pgmark';
             m.style.top = Math.round(k * PAGE_PX) + 'px';
-            m.setAttribute('data-label', msg('page-label') + ' ' + (k + 1));
+            m.setAttribute('data-label', msg('page-label') + ' ' + (k + 1) + ' ' + msg('page-of') + ' ' + pages);
             m.setAttribute('aria-hidden', 'true');
             pageEl.appendChild(m);
         }
@@ -1030,6 +1123,7 @@
     /* ---------- init ---------- */
     document.execCommand && (function () { try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) { /* ignore */ } })();
     each(sheet.querySelectorAll('.sse-field'), function (el) { el.setAttribute('contenteditable', 'false'); });
+    lockSnapshot();
     each(sheet.querySelectorAll('.sse-pagebreak'), function (el) { el.setAttribute('contenteditable', 'false'); });
     if (!sheet.firstChild) { sheet.innerHTML = '<p><br></p>'; }
     lastSnap = { html: sheet.innerHTML, sel: null };
