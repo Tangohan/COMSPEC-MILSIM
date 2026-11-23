@@ -94,15 +94,6 @@ html[data-bo-theme="dark"] .au-restriction {
 .au-restriction__close:hover { background: #ffffff30; }
 .au-restriction__close:focus-visible { outline-color: #fff; }
 
-.au-restriction__kicker {
-  margin: 0 0 .25rem;
-  color: #ffe0e7;
-  font-size: .75rem;
-  font-weight: 750;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
 .au-restriction h2 {
   margin: 0;
   font: 800 clamp(1.3rem, 4.5vw, 1.95rem)/1.2 "Inter", var(--ds-font);
@@ -125,6 +116,18 @@ html[data-bo-theme="dark"] .au-restriction {
 }
 
 #login-restriction-message { margin: 0; white-space: pre-line; line-height: 1.55; }
+
+.au-restriction__effects { margin: 0; color: var(--restriction-muted); line-height: 1.5; }
+
+.au-restriction__appeal .au-restriction__status {
+  margin: .35rem 0 .7rem;
+  padding: .6rem .8rem;
+  border: 1px solid var(--restriction-border);
+  border-radius: .6rem;
+  background: var(--restriction-panel);
+  color: var(--restriction-ink);
+  font-weight: 650;
+}
 
 .au-restriction__facts {
   display: grid;

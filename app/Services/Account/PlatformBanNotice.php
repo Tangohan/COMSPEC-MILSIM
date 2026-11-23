@@ -57,7 +57,7 @@ final class PlatformBanNotice
         return $this->rule === '' && $this->message === '' && !$this->appealClosed;
     }
 
-    /** @return array{id:int, rule:string, rule_url:string, message:string, end:string, appeal_closed:bool, locale:string} */
+    /** @return array{id:int, rule:string, rule_url:string, message:string, end:string, start:string, permanent:bool, appeal_closed:bool, appeal:array{state:string, received:string}|null, locale:string} */
     public static function publicDetails(array $ban, string $locale = 'fr'): array
     {
         $rule = trim((string) ($ban['rule_reference'] ?? ''));
@@ -81,8 +81,68 @@ final class PlatformBanNotice
             'locale' => $locale,
             'message' => self::displayMessage((string) ($ban['public_reason'] ?? ''), $appealClosed, $locale),
             'end' => self::endLabel($ban['ends_at'] ?? null, $locale),
+            'start' => self::dateLabel($ban['created_at'] ?? null, $locale),
+            'permanent' => empty($ban['ends_at']),
             'appeal_closed' => $appealClosed,
+            'appeal' => null,
         ];
+    }
+
+    /**
+     * Avis affiché à la connexion (fenêtre de suspension) : décision publique et suivi de la contestation éventuelle.
+     *
+     * @param array<string, mixed> $ban ligne platform_account_bans
+     * @return array<string, mixed>
+     */
+    public static function forLogin(array $ban, string $locale = 'fr'): array
+    {
+        $notice = self::publicDetails($ban, $locale);
+        try {
+            $appeals = new \App\Repositories\PlatformBanAppealRepository();
+            $notice['appeal'] = $appeals->ready() ? self::appealProgress($appeals->find((int) $ban['id']), $locale) : null;
+        } catch (\Throwable) {
+            // Le suivi est un confort : l’avis de suspension s’affiche sans lui.
+        }
+
+        return $notice;
+    }
+
+    /**
+     * Suivi d’une contestation pour la personne concernée : reçue, puis décision. Aucun nom de modérateur ni note interne.
+     *
+     * @param array<string, mixed>|null $appeal ligne platform_ban_appeals
+     * @return array{state: string, received: string}|null
+     */
+    public static function appealProgress(?array $appeal, string $locale = 'fr'): ?array
+    {
+        if ($appeal === null) {
+            return null;
+        }
+        $state = match ((string) ($appeal['decision'] ?? '')) {
+            'lift' => 'accepted',
+            'uphold' => 'upheld',
+            default => 'received',
+        };
+
+        return ['state' => $state, 'received' => self::dateLabel($appeal['created_at'] ?? null, $locale)];
+    }
+
+    /** Date UTC de la base, affichée à l’heure de Paris. Vide si la date est absente ou illisible. */
+    public static function dateLabel(?string $utc, string $locale = 'fr'): string
+    {
+        if ($utc === null || $utc === '') {
+            return '';
+        }
+        try {
+            $date = (new DateTimeImmutable($utc, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Europe/Paris'));
+        } catch (\Exception) {
+            return '';
+        }
+
+        return \__('moderation.end_date', [
+            'date' => $date->format($locale === 'en' ? 'j M Y' : 'd/m/Y'),
+            'time' => $date->format('H:i'),
+        ], $locale);
     }
 
     public static function displayMessage(string $message, bool $appealClosed, string $locale = 'fr'): string
@@ -124,12 +184,6 @@ final class PlatformBanNotice
             return \__('moderation.no_end', [], $locale);
         }
 
-        $date = (new DateTimeImmutable($endsAt, new DateTimeZone('UTC')))
-            ->setTimezone(new DateTimeZone('Europe/Paris'));
-
-        return \__('moderation.end_date', [
-            'date' => $date->format($locale === 'en' ? 'j M Y' : 'd/m/Y'),
-            'time' => $date->format('H:i'),
-        ], $locale);
+        return self::dateLabel($endsAt, $locale) ?: \__('moderation.no_end', [], $locale);
     }
 }

@@ -46,6 +46,8 @@ final class EmailEvents
     public const PASSWORD_RESET = 'PASSWORD_RESET';
     public const PLATFORM_BAN_APPEAL_LINK = 'PLATFORM_BAN_APPEAL_LINK';
     public const PLATFORM_BAN_APPEAL_SUBMITTED = 'PLATFORM_BAN_APPEAL_SUBMITTED';
+    /** Accusé de réception et décision d'une contestation de bannissement, envoyés à la personne sanctionnée. */
+    public const PLATFORM_BAN_APPEAL_UPDATE = 'PLATFORM_BAN_APPEAL_UPDATE';
     /** Compte créé par l’admin communauté : lien pour définir le mot de passe. */
     public const TENANT_USER_SETUP = 'TENANT_USER_SETUP';
     public const COMMUNITY_CONTACT = 'COMMUNITY_CONTACT';
@@ -221,6 +223,7 @@ final class EmailEvents
         self::PASSWORD_RESET,
         self::PLATFORM_BAN_APPEAL_LINK,
         self::PLATFORM_BAN_APPEAL_SUBMITTED,
+        self::PLATFORM_BAN_APPEAL_UPDATE,
         self::TENANT_USER_SETUP,
         self::COMMUNITY_CONTACT,
         self::PROFILE_INCOMPLETE_REMINDER,

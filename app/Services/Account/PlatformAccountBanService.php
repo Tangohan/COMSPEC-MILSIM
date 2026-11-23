@@ -437,5 +437,29 @@ final class PlatformAccountBanService
         foreach ($statuses as $id => $status) {
             $st->execute([$status, ...$params, (int) $id]);
         }
+        if ($closeSessions) {
+            $this->revokeGameSessions(array_map('intval', array_keys($statuses)));
+        }
+    }
+
+    /**
+     * Les sessions du jeu et du mod ATAK (jeton d’accès, jeton de reprise) sont révoquées avec le bannissement :
+     * sans cela, un jeton émis avant la sanction restait utilisable jusqu’à trente jours.
+     *
+     * @param list<int> $userIds
+     */
+    private function revokeGameSessions(array $userIds): void
+    {
+        $userIds = array_values(array_filter($userIds, static fn (int $id): bool => $id > 0));
+        if ($userIds === []) {
+            return;
+        }
+        try {
+            $in = implode(',', array_fill(0, count($userIds), '?'));
+            $st = $this->pdo()->prepare('UPDATE game_sessions SET revoked_at = ? WHERE revoked_at IS NULL AND user_id IN (' . $in . ')');
+            $st->execute([gmdate('Y-m-d H:i:s'), ...$userIds]);
+        } catch (\PDOException) {
+            // Table absente (base ancienne ou sans module jeu) : le contrôle du statut à chaque requête reste en place.
+        }
     }
 }

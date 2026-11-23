@@ -16,6 +16,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Account\PlatformAccountBanService;
 use App\Services\Account\PlatformAutomaticBanService;
+use App\Services\Account\PlatformBanAppealMailer;
 use App\Services\Account\PlatformBanNotice;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
@@ -253,7 +254,12 @@ final class SystemPlatformBansController
         }
 
         AuditService::logPlatformAction(AuditAction::USER_BAN_APPEAL_REVIEWED, ['ban_id' => $banId, 'decision' => $decision]);
-        Session::flash('success', 'Décision et réponse enregistrées. La personne peut les consulter via son lien confidentiel.');
+        // La personne est prévenue qu'une réponse l'attend ; le texte reste sur la page protégée par lien confidentiel.
+        $notified = $ban !== null && (new PlatformBanAppealMailer())->notify($ban, $decision);
+        Session::flash('success', 'Décision et réponse enregistrées. '
+            . ($notified
+                ? 'La personne a reçu un e-mail et peut lire la réponse via son lien confidentiel.'
+                : 'L’e-mail d’information n’a pas pu partir : la personne peut lire la réponse en demandant un lien confidentiel.'));
 
         return $this->back(0, 'contestations');
     }
