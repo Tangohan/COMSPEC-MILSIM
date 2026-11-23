@@ -1245,7 +1245,7 @@ if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["
 if (hasInterface) then { ["comspec_atak_native_compromise", { params [["_k", ""], ["_v", []]]; if (_k in ["revoke", "ownerReset"]) then { [_k, _v] call comspec_atak_native_fnc_compromise; } else { ["event", [_k, _v]] call comspec_atak_native_fnc_compromise; }; }] call CBA_fnc_addEventHandler; };
 // Centre Zeus : relevé à la demande, chaque joueur ne répond qu'au serveur (fn_zeusState).
 if (hasInterface) then {
-    ["comspec_atak_native_zeusStatePoll", { ["poll"] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_zeusStatePoll", { ["poll", _this] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusStateData", { ["data", _this select 0] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusObjectOpen", { ["open", _this] call comspec_atak_native_fnc_zeusObject; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusStateDenied", { ["denied"] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
