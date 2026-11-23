@@ -1361,3 +1361,15 @@ jnet/liens/nouveau?src=	chemin d'URL, pas un texte	views/jnet/unit_space.php
 jnet/courrier/nouveau?membre=	chemin d'URL, pas un texte	views/jnet/commun/_voie.php
 %1 rapprochement(s) de Cerbère à valider	nom propre « Cerbère » dans la traduction anglaise (le contrôle y voit un accent)	views/atak/sse/partials/case_progress.php
 %1 Proposés par Cerbère	nom propre « Cerbère » dans la traduction anglaise (le contrôle y voit un accent)	views/atak/sse/_attach_window.php
+atak/sse/fiches/nouvelle?from=lead:	chemin d’URL (aucun texte à traduire)	views/atak/sse/lead_show.php
+atak/sse/fiches/nouvelle?from=mesh:	chemin d’URL (aucun texte à traduire)	views/atak/sse/mesh_show.php
+Cerbère-Classification	nom propre « Cerbère »	views/atak/sse/_attached_section.php
+Cerbère	nom propre « Cerbère »	views/atak/sse/_cerbere_widget.php
+Cerbère	nom propre « Cerbère »	views/atak/sse/_links_widget.php
+Cerbère	nom propre « Cerbère »	views/atak/sse/case_correlations.php
+Cerbères	nom propre « Cerbère »	views/atak/sse/cerberes.php
+?onglet=historique&historique=tout	paramètres d’URL (aucun texte à traduire)	views/atak/sse/interest_case_show.php
+M-TER-90|Réseau de passeurs|Smuggling ring|Anime un réseau de passeurs.|Runs a smuggling ring.|medium	données d’exemple bilingues déjà séparées par « | »	views/atak/sse/papers/wanted_settings.php
+courrier|Courrier de cellule|Cell courier|surveillance|medium|unknown|M-TRF-06|A-OBS A-REP	données d’exemple bilingues déjà séparées par « | »	views/atak/sse/papers/wanted_settings.php
+Cerbère-Tri	nom propre « Cerbère »	views/atak/sse/triage.php
+Cerbère	nom propre « Cerbère »	views/atak/sse/workspace/_inbox.php

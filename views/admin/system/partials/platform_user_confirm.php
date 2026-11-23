@@ -1,6 +1,6 @@
     <dialog id="pu-confirm" class="pu-dialog" aria-labelledby="pu-confirm-title">
         <form method="dialog" class="pu-dialog__form">
-            <p class="pu-dialog__kicker" id="pu-confirm-kicker">Confirmer</p>
+            <p class="pu-dialog__tag" id="pu-confirm-tag">Confirmer</p>
             <h3 id="pu-confirm-title" class="pu-dialog__title"></h3>
             <ul class="pu-dialog__facts" id="pu-confirm-body"></ul>
             <label class="pu-dialog__field" id="pu-confirm-type-wrap" hidden>
