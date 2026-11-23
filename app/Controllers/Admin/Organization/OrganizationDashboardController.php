@@ -103,13 +103,17 @@ class OrganizationDashboardController
         }
 
         $tenantName = '';
+        $bureauHero = false;
         try {
             $tenantRow = \App\Core\Container::get(TenantRepository::class)->findById($tenantId);
             if ($tenantRow !== null) {
                 $tenantName = (string) ($tenantRow['name'] ?? '');
+                // Présentation du mode bureau des effectifs : types « Bureau des effectifs » et « Complet » seulement.
+                $bureauHero = \App\Services\Community\TenantTypeConfig::rosterBureauMode((string) ($tenantRow['tenant_type'] ?? 'full'));
             }
         } catch (\Throwable) {
             $tenantName = '';
+            $bureauHero = false;
         }
         $metrics = $this->metrics->getOrganizationMetrics($tenantId);
         $recent = [];
@@ -322,7 +326,7 @@ class OrganizationDashboardController
             'boSkipPageHead' => true,
             'boPageAction' => 'Publier une annonce',
             'boPageActionUrl' => url('back-office/alerts'),
-            'backOfficePageCss' => array_merge(['back-office-bands.css', 'back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css', 'back-office-widgets.css', 'platform-messages.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
+            'backOfficePageCss' => array_merge(['back-office-bands.css', 'back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css', 'back-office-widgets.css', 'platform-messages.css'], $bureauHero ? ['back-office-bureau-hero.css'] : [], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
             'home' => $home,
             'platformMessages' => $platformMessages,
             'canAckPlatformMessages' => true,
@@ -330,6 +334,8 @@ class OrganizationDashboardController
             'pilotage' => $pilotage,
             'skipGlobalAlertBanners' => true,
             'tenantName' => $tenantName,
+            'bureauHero' => $bureauHero,
+            'bureauHeroViewerId' => $viewerId,
             'initialSetupBanner' => $initialSetupBanner,
             'configurationUpdateBadge' => $configurationUpdateBadge,
             'discordInviteMissing' => $discordInviteMissing,
