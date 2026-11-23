@@ -66,10 +66,7 @@ if (!is_string($lmsModuleEntryJson) || $lmsModuleEntryJson === '') {
                 <ul class="lms-entry-modal__rights-list" data-lms-entry-rights></ul>
             </section>
 
-            <label class="lms-entry-modal__skip">
-                <input type="checkbox" data-lms-entry-skip>
-                <span>Ne plus afficher pour ce module</span>
-            </label>
+            <p class="lms-entry-modal__replay-hint">Ce message ne s’affichera plus. Le bouton « Revoir le tutoriel » le rouvre à tout moment.</p>
         </div>
         <div class="lms-entry-modal__foot">
             <button type="button" class="lms-entry-modal__btn lms-entry-modal__btn--ghost" data-lms-entry-dismiss data-lms-entry-secondary>
