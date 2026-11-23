@@ -28,6 +28,7 @@ final class RateLimitMiddleware
 
     /** Contrôles N3 en ligne d'un papier par appelant et par minute (un par contrôle d'un joueur). */
     public const IDENTITY_LOOKUP_MAX_PER_MIN = 240;
+    public const DSE_RESOLVE_MAX_PER_MIN = 30;
 
     public const LOGIN_MAX_REQUESTS_PER_IP = 30;
     public const LOGIN_WINDOW_SECONDS = 300;
@@ -103,6 +104,11 @@ final class RateLimitMiddleware
         }
         if ($method === 'GET' && $path === '/api/sse/identity/documents/lookup') {
             return [self::IDENTITY_LOOKUP_MAX_PER_MIN, 60, 'rl:sse_idlookup:' . $this->gameActorKey($uid, $ip)];
+        }
+
+        // Résolution d'un DSE : plafond serré par acteur (session ou clé du jeu), contre l'énumération des numéros.
+        if ($method === 'GET' && str_starts_with($path, '/api/sse/v1/dse/')) {
+            return [self::DSE_RESOLVE_MAX_PER_MIN, 60, 'rl:sse_dse:' . $this->gameActorKey($uid, $ip)];
         }
 
         // Sondages GET de l'API pendant une partie : plafond large, seulement contre un client emballé (boucle sans

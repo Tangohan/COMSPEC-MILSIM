@@ -178,7 +178,7 @@ final class SseDocumentRepository
             $ref = $this->nextReference($tenantId);
         }
 
-        return (int) $this->db->insert(
+        $documentId = (int) $this->db->insert(
             'INSERT INTO sse_documents (
                 tenant_id, reference_code, case_id, document_type, title, body,
                 classification, status, created_by, updated_by, author_label
@@ -200,6 +200,10 @@ final class SseDocumentRepository
                 'author_label' => $this->nullIfEmpty($data['author_label'] ?? null),
             ]
         );
+        $title = trim((string) ($data['title'] ?? ''));
+        \App\Services\Sse\SseIdentifierService::onCreated($tenantId, 'document', $documentId, $title === 'Sans titre' ? '' : $title);
+
+        return $documentId;
     }
 
     /**

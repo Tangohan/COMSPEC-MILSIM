@@ -186,6 +186,7 @@ require __DIR__ . '/_subnav.php';
 
     <?php require dirname(__DIR__) . '/_sheet_menu.php'; ?>
     <?php \App\Services\Sse\Links\SseLinksWidget::render('identity', (int) $identity['id']); ?>
+<?php \App\Services\Sse\SseIdentifierWidget::render('identity', (int) $identity['id']); ?>
     <?php \App\Services\Sse\Attach\SseAttachWindow::section('identity', (int) $identity['id']); ?>
 
     <?php if ($notice !== null): ?>
