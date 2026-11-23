@@ -22,6 +22,20 @@
 .sse-ed__sheet span[data-lock="1"]::after { position: static; margin-left: 2px; }
 .sse-ed__sheet [data-lock="1"].is-selected { outline: 2px solid #1d4ed8; }
 
+/* Images jointes et signatures */
+.sse-ed__sheet .sse-media, .sse-rich .sse-media, .sse-rich figure.sse-media { margin: 0.6em 0; text-align: center; }
+.sse-ed__sheet .sse-media img, .sse-rich .sse-media img { max-width: 100%; max-height: 90mm; height: auto; }
+.sse-ed__sheet .sse-media { cursor: default; outline: 1px dashed #94a3b8; outline-offset: 2px; }
+.sse-doc-paper__signed { margin: 1.2rem 0 0; }
+.sse-doc-paper__sig { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; margin: 0.6rem 0; padding: 0.6rem; border: 1px solid #94a3b8; border-radius: 4px; background: rgba(255, 255, 255, 0.6); }
+.sse-doc-paper__sig img { width: 190px; max-width: 100%; height: auto; }
+.sse-doc-paper__sig figcaption { display: grid; gap: 0.15rem; font-size: 0.8rem; color: #0f172a; }
+.sse-doc-paper__sig-hash { font-family: "JetBrains Mono", "Courier New", monospace; font-size: 0.72rem; color: #475569; }
+.sse-doc-paper__sig .is-valid { color: #166534; }
+.sse-doc-paper__sig .is-invalid { color: #b91c1c; font-weight: 700; }
+.sse-doc-sign__ink { display: flex; gap: 1rem; margin: 0.6rem 0; padding: 0; border: 0; }
+.sse-doc-sign__ink legend { font-size: 0.8rem; margin-bottom: 0.3rem; }
+
 /* ---- Classique ---- */
 
 .sse-ed__page.sse-theme--classique .sse-ed__sheet,

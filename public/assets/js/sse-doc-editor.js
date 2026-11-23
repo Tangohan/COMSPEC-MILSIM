@@ -23,6 +23,7 @@
     var HILITE_COLORS = ['#fef08a', '#fed7aa', '#fecaca', '#bfdbfe', '#bbf7d0', '#e2e8f0'];
     var FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre', 'type', 'id_fiche', 'nom_code', 'dse'];
     var LOCKABLE = /^(p|div|span|h2|h3|h4|blockquote|ul|ol|table)$/;
+    var MEDIA_TOKEN = /^[0-9]{1,10}_[a-f0-9]{16}$/;
     var PAGE_PX = 1122.5; // 297 mm at 96 dpi
 
     function msg(name) {
@@ -93,6 +94,10 @@
         var cls = (node.getAttribute('class') || '').split(/\s+/);
         var attrs = '';
         if (tag === 'div' && cls.indexOf('sse-pagebreak') >= 0) { return '<div class="sse-pagebreak"></div>'; }
+        if (tag === 'div' && cls.indexOf('sse-media') >= 0) {
+            var tok = node.getAttribute('data-media') || '';
+            return MEDIA_TOKEN.test(tok) ? '<div class="sse-media" data-media="' + tok + '"></div>' : '';
+        }
         if (tag === 'span' && cls.indexOf('sse-field') >= 0) {
             var f = (node.getAttribute('data-field') || '').toLowerCase();
             if (FIELDS.indexOf(f) >= 0) {
@@ -365,6 +370,54 @@
         });
     }
 
+    /* ---------- images and logos : uploaded to the private store, the page only keeps a token ---------- */
+    function mediaBlock(token) {
+        return '<div class="sse-media" data-media="' + token + '" contenteditable="false"><img src="' + esc((cfg.mediaUrl || '') + '/' + token) + '" alt="' + esc(msg('media-alt')) + '"></div><p><br></p>';
+    }
+    function showMedia() {
+        each(sheet.querySelectorAll('.sse-media'), function (el) {
+            var tok = el.getAttribute('data-media') || '';
+            el.setAttribute('contenteditable', 'false');
+            if (MEDIA_TOKEN.test(tok) && !el.querySelector('img')) {
+                var im = document.createElement('img');
+                im.setAttribute('src', (cfg.mediaUrl || '') + '/' + tok);
+                im.setAttribute('alt', msg('media-alt'));
+                el.appendChild(im);
+            }
+        });
+    }
+    function uploadMedia(file) {
+        if (!file || !cfg.mediaUrl) { return; }
+        if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { stateText('media-type'); return; }
+        if (file.size > 3 * 1024 * 1024) { stateText('media-size'); return; }
+        var data = new FormData();
+        var tk = form.querySelector('input[name="_csrf_token"]');
+        data.append('_csrf_token', tk ? tk.value : '');
+        data.append('image', file);
+        stateText('media-sending');
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', cfg.mediaUrl);
+        xhr.onload = function () {
+            var r = null;
+            try { r = JSON.parse(xhr.responseText); } catch (e) { r = null; }
+            if (xhr.status === 200 && r && r.ok && MEDIA_TOKEN.test(r.token || '')) {
+                restoreSelection();
+                insertHtml(mediaBlock(r.token));
+                stateText('ready');
+            } else {
+                var el = document.querySelector('#sse-ed-msgs [data-msg="media-error"]');
+                if (el && r && r.error) { el.setAttribute('data-detail', r.error); }
+                stateText('media-error');
+            }
+        };
+        xhr.onerror = function () { stateText('media-error'); };
+        xhr.send(data);
+    }
+    var mediaInput = byId('sse-ed-media-file');
+    if (mediaInput) {
+        mediaInput.addEventListener('change', function () { if (mediaInput.files && mediaInput.files[0]) { uploadMedia(mediaInput.files[0]); } mediaInput.value = ''; });
+    }
+
     function insertPageBreak() {
         insertHtml('<div class="sse-pagebreak" contenteditable="false"></div><p><br></p>');
     }
@@ -493,6 +546,7 @@
                 snapshot(false); changed(true); closePops(null); break;
             case 'clear': exec('removeFormat', null, false); break;
             case 'pagebreak': insertPageBreak(); break;
+            case 'media': rememberSelection(); if (mediaInput) { mediaInput.click(); } break;
             case 'lock': lockSelection(true); break;
             case 'unlock': lockSelection(false); break;
             case 'redact': redactSelection(); break;
@@ -1123,6 +1177,7 @@
     /* ---------- init ---------- */
     document.execCommand && (function () { try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) { /* ignore */ } })();
     each(sheet.querySelectorAll('.sse-field'), function (el) { el.setAttribute('contenteditable', 'false'); });
+    showMedia();
     lockSnapshot();
     each(sheet.querySelectorAll('.sse-pagebreak'), function (el) { el.setAttribute('contenteditable', 'false'); });
     if (!sheet.firstChild) { sheet.innerHTML = '<p><br></p>'; }

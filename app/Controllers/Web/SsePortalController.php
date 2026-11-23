@@ -4339,9 +4339,21 @@ final class SsePortalController
             return Response::redirect(url('atak/sse/documents'));
         }
 
+        $sigs = (new \App\Services\Sse\SseDocumentSignatureService())->forDocument($this->tenantId(), $id);
+        $userId = (int) (Session::get('user_id') ?: 0);
+        $already = false;
+        foreach ($sigs as $sg) {
+            $already = $already || (int) $sg['user_id'] === $userId;
+        }
+        $signer = $this->editorAuthor();
+
         return $this->portalView('atak.sse.document_show', [
             'title' => (string) ($doc['title'] ?? 'Document'),
             'document' => $doc,
+            'signatures' => $sigs,
+            'signatureChecks' => \App\Services\Sse\SseDocumentSignatureService::verify($doc, $sigs),
+            'canSign' => $this->canManage() && $userId > 0 && !$already,
+            'signerName' => trim(implode(' ', array_filter([$signer['grade'], $signer['nom']]))),
             'canManage' => $this->canManage(),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
@@ -4362,6 +4374,11 @@ final class SsePortalController
             Session::flash('error', 'Document introuvable.');
 
             return Response::redirect(url('atak/sse/documents'));
+        }
+        if ((new \App\Services\Sse\SseDocumentSignatureService())->isSigned($this->tenantId(), $id)) {
+            Session::flash('error', 'Ce document est signé : il est verrouillé en lecture seule.');
+
+            return Response::redirect(url('atak/sse/documents/' . $id));
         }
         if (in_array((string) $doc['status'], ['valide', 'archive'], true)) {
             Session::flash('error', 'Ce document est figé. Ouvrez une nouvelle version si besoin.');
@@ -4404,6 +4421,11 @@ final class SsePortalController
             Session::flash('error', 'Document introuvable.');
 
             return Response::redirect(url('atak/sse/documents'));
+        }
+        if ((new \App\Services\Sse\SseDocumentSignatureService())->isSigned($this->tenantId(), $id)) {
+            Session::flash('error', 'Ce document est signé : il est verrouillé en lecture seule.');
+
+            return Response::redirect(url('atak/sse/documents/' . $id));
         }
         if (in_array((string) $doc['status'], ['valide', 'archive'], true)) {
             Session::flash('error', 'Ce document est figé et ne peut plus être modifié.');
@@ -4645,6 +4667,87 @@ final class SsePortalController
         );
 
         return (new \App\Services\Sse\SseDocumentPdfService())->export($doc, $this->tenantId(), (string) $request->query('lecture', '') === '1', \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
+    }
+
+    /** Signature au pad de l'utilisateur connecté : toujours la sienne (identité prise dans la session, jamais dans le formulaire). */
+    public function documentSign(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = Response::redirect(url('atak/sse/documents/' . $id));
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return $back;
+        }
+        $doc = $this->documents->findById($id, $this->tenantId());
+        if ($doc === null || (!empty($doc['case_id']) && $this->requireCase((int) $doc['case_id']) === null)) {
+            Session::flash('error', 'Document introuvable.');
+
+            return Response::redirect(url('atak/sse/documents'));
+        }
+        $userId = (int) (Session::get('user_id') ?: 0);
+        $author = $this->editorAuthor();
+        $label = trim(implode(' ', array_filter([$author['grade'], $author['nom']])));
+        $r = (new \App\Services\Sse\SseDocumentSignatureService())->sign($doc, $this->tenantId(), $userId, $label, (string) $request->input('signature_data_url', ''));
+        Session::flash(!empty($r['ok']) ? 'success' : 'error', !empty($r['ok']) ? 'Document signé et verrouillé en lecture seule.' : (string) ($r['error'] ?? 'Signature refusée.'));
+
+        return $back;
+    }
+
+    /** Image d'une signature, servie aux seuls lecteurs du document (même communauté, même périmètre de dossier). */
+    public function documentSignatureImage(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())->setStatusCode(404)->header('Cache-Control', 'no-store')->setBody('Not found');
+        $id = (int) ($params['id'] ?? 0);
+        $doc = $this->documents->findById($id, $this->tenantId());
+        if ($doc === null || (!empty($doc['case_id']) && $this->requireCase((int) $doc['case_id']) === null)) {
+            return $notFound();
+        }
+        $svc = new \App\Services\Sse\SseDocumentSignatureService();
+        foreach ($svc->forDocument($this->tenantId(), $id) as $sig) {
+            if ((int) $sig['id'] !== (int) ($params['sig'] ?? 0)) {
+                continue;
+            }
+            $abs = $svc->imageFile($sig, $this->tenantId());
+            $mime = $abs !== null ? \App\Support\SseImageStorage::verifiedMime($abs) : null;
+            if ($abs === null || $mime === null) {
+                return $notFound();
+            }
+
+            return (new Response())->header('Content-Type', $mime)->header('Content-Length', (string) filesize($abs))
+                ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff')
+                ->setBody((string) file_get_contents($abs));
+        }
+
+        return $notFound();
+    }
+
+    /** Envoi d'une image ou d'un logo pour un document (JSON : jeton à poser dans le corps). */
+    public function documentMediaUpload(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $r = (new \App\Services\Sse\SseDocumentMedia())->storeUpload($_FILES['image'] ?? null, $this->tenantId());
+        if (empty($r['ok']) || !isset($r['token'])) {
+            return Response::json(['ok' => false, 'error' => !empty($r['none']) ? 'Choisissez une image.' : (string) ($r['error'] ?? 'Image refusée.')], 422);
+        }
+
+        return Response::json(['ok' => true, 'token' => $r['token'], 'url' => url('atak/sse/documents/medias/' . $r['token'])]);
+    }
+
+    /** Image jointe : réservée à la communauté qui l'a envoyée, derrière la connexion au portail SSE. */
+    public function documentMediaImage(Request $request, array $params = []): Response
+    {
+        $abs = \App\Services\Sse\SseDocumentMedia::fileFor((string) ($params['token'] ?? ''), $this->tenantId());
+        $mime = $abs !== null ? \App\Support\SseImageStorage::verifiedMime($abs) : null;
+        if ($abs === null || $mime === null) {
+            return (new Response())->setStatusCode(404)->header('Cache-Control', 'no-store')->setBody('Not found');
+        }
+
+        return (new Response())->header('Content-Type', $mime)->header('Content-Length', (string) filesize($abs))
+            ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff')->header('Referrer-Policy', 'no-referrer')
+            ->setBody((string) file_get_contents($abs));
     }
 
     private function drafts(): \App\Repositories\SseDocumentDraftRepository

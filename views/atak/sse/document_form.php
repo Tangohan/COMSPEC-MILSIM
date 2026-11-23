@@ -62,6 +62,7 @@ $edCfg = [
     ], $models),
     'canUnlock' => $canUnlock,
     'refText' => $refText,
+    'mediaUrl' => url('atak/sse/documents/medias'),
     'templateUrl' => (string) ($editorContext['templateUrl'] ?? ''),
     'fields' => $editorContext['fields'] ?? [],
     'serverDraft' => $editorContext['serverDraft'] ?? null,
@@ -273,6 +274,7 @@ $fieldList = [
                 <?= $btn('hr', 'Séparateur horizontal', $ico('M2 8h12')) ?>
                 <?= $btn('pagebreak', 'Saut de page', $ico('M3 2v4h10V2M3 14v-4h10v4M1 8h2M6 8h4M13 8h2'), false, 'Saut de page') ?>
                 <?= $btn('redact', 'Caviarder le passage sélectionné', '<span aria-hidden="true" class="sse-ed__redact-ico">▮▮</span>', false, 'Caviarder') ?>
+                <?= $btn('media', 'Insérer une image ou un logo (PNG, JPEG ou WebP, 3 Mo au plus)', $ico('M2 3h12v10H2zM2 11l4-4 3 3 2-2 3 3M10.5 6a1 1 0 100 .1'), false, 'Image') ?>
                 <?= $btn('lock', 'Verrouiller le bloc du curseur : il ne pourra plus être modifié', $ico('M4 7h8v6H4zM6 7V5a2 2 0 014 0v2'), false, 'Verrouiller') ?>
                 <?php if ($canUnlock): ?><?= $btn('unlock', 'Déverrouiller le bloc sélectionné (cliquez d’abord sur le bloc verrouillé)', $ico('M4 7h8v6H4zM6 7V5a2 2 0 013.6-1.2'), false, 'Déverrouiller') ?><?php endif; ?>
                 <select class="sse-ed__select sse-ed__select--narrow" data-cmd="field" aria-label="Insérer un champ du dossier">
@@ -406,6 +408,11 @@ $fieldList = [
             <span data-msg="model-error">Modèle non enregistré : vérifiez le nom et le contenu, le nombre de modèles est limité.</span>
             <span data-msg="page-label">Page</span>
             <span data-msg="page-of">sur</span>
+            <span data-msg="media-alt">Image jointe</span>
+            <span data-msg="media-type">Image refusée : PNG, JPEG ou WebP seulement.</span>
+            <span data-msg="media-size">Image trop lourde : 3 Mo au plus.</span>
+            <span data-msg="media-sending">Envoi de l’image…</span>
+            <span data-msg="media-error">Image refusée : vérifiez le format et la taille.</span>
             <span data-msg="lock-title">Texte verrouillé</span>
             <span data-msg="lock-forbidden">Ce texte est verrouillé : seul un administrateur SSE peut le modifier.</span>
             <span data-msg="lock-refused">Modification annulée : le texte verrouillé ne peut pas être changé.</span>
@@ -427,6 +434,7 @@ $fieldList = [
     </section>
 
     <textarea id="body" name="body" hidden aria-hidden="true" tabindex="-1"><?= $h(\App\Support\SseRichText::MARK . $bodyHtml) ?></textarea>
+    <input type="file" id="sse-ed-media-file" accept="image/png,image/jpeg,image/webp" hidden tabindex="-1" aria-hidden="true">
     <input type="hidden" name="model_code" id="sse-model-code" value="<?= $h($modelCode) ?>">
     <input type="hidden" name="inserted_mentions" id="sse-lib-trace" value="">
     <?php if ($libraryEntries !== []): ?>

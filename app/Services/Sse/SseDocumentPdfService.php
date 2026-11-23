@@ -88,7 +88,7 @@ final class SseDocumentPdfService
             $noticePage = $pdf->getPage();
         }
         $pdf->AddPage();
-        $bodyHtml = SseRichText::toPdfHtml((string) ($doc['body'] ?? ''), $fields);
+        $bodyHtml = SseDocumentMedia::expand(SseRichText::toPdfHtml((string) ($doc['body'] ?? ''), $fields), $tenantId > 0 ? $tenantId : (int) ($doc['tenant_id'] ?? 0), 'pdf');
         // Un document issu d'un modèle porte déjà son en-tête (service, bandeau, référence, dossier, date, rédacteur) :
         // il garde sa mise en page, sans second titre. Le bandeau de classification haut et bas de chaque page vient du gabarit.
         $hasOwnHeader = SseRichText::hasTemplateHeader((string) ($doc['body'] ?? ''));
@@ -99,6 +99,8 @@ final class SseDocumentPdfService
                 . '<p style="font-size:8pt;color:#475569">' . implode(' &nbsp;·&nbsp; ', $meta) . '</p><hr>')
             . '<div style="font-size:10pt">' . $bodyHtml . '</div>'
         );
+
+        $this->writeSignatures($pdf, $doc, $tenantId > 0 ? $tenantId : (int) ($doc['tenant_id'] ?? 0));
 
         if ($noticePage > 0) {
             SsePdfNotice::fillReserved($pdf, $noticePage, [
@@ -121,5 +123,50 @@ final class SseDocumentPdfService
         }
 
         return (string) $pdf->Output('', 'S');
+    }
+
+    /**
+     * Signatures au pad : image, nom, date, début de l'empreinte SHA-256 et concordance avec le contenu actuel.
+     *
+     * @param array<string,mixed> $doc
+     */
+    private function writeSignatures(\App\Support\Pdf\SseThemedTcpdf $pdf, array $doc, int $tenantId): void
+    {
+        if ($tenantId < 1 || (int) ($doc['id'] ?? 0) < 1) {
+            return;
+        }
+        try {
+            $svc = new SseDocumentSignatureService();
+            $sigs = $svc->forDocument($tenantId, (int) $doc['id']);
+        } catch (\Throwable) {
+            return;
+        }
+        if ($sigs === []) {
+            return;
+        }
+        $checks = SseDocumentSignatureService::verify($doc, $sigs);
+        $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $pdf->writeAthenaHtml('<br><h3>' . $h(Theme::t('Signatures')) . '</h3>');
+        foreach ($sigs as $sig) {
+            if ($pdf->GetY() > $pdf->getPageHeight() - 62) {
+                $pdf->AddPage();
+            }
+            $y = $pdf->GetY();
+            $file = $svc->imageFile($sig, $tenantId);
+            if ($file !== null) {
+                try {
+                    $pdf->Image($file, 17, $y + 1, 48, 0, 'PNG', '', '', true, 300, '', false, false, 0, false, false, false);
+                } catch (\Throwable) {
+                    // image illisible : la mention écrite reste
+                }
+            }
+            $when = date(Theme::isEnglish() ? 'm/d/Y H:i' : 'd/m/Y H:i', strtotime((string) $sig['signed_at']) ?: time());
+            $ok = !empty($checks[(int) $sig['id']]);
+            $pdf->SetXY(70, $y + 2);
+            $pdf->writeHTMLCell(120, 0, 70, $y + 2, '<p style="font-size:8.5pt"><b>' . $h(Theme::t('Signé par')) . ' ' . $h($sig['signer_label']) . '</b> · ' . $h($when)
+                . '<br><span style="font-size:7pt">SHA-256 ' . $h(substr((string) $sig['doc_hash'], 0, 24)) . '… · '
+                . $h(Theme::t($ok ? 'empreinte concordante' : 'empreinte différente : document modifié depuis')) . '</span></p>', 0, 1, false, true, 'L');
+            $pdf->SetY(max($pdf->GetY(), $y + 24));
+        }
     }
 }
