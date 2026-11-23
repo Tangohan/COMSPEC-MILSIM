@@ -53,6 +53,54 @@ $ph = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         </div>
     </section>
 
+    <?php
+    $region = is_array($accountRegion ?? null) ? $accountRegion : null;
+    $currentRegion = (string) ($region['region_code'] ?? '');
+    ?>
+    <section class="account-hub__panel" aria-labelledby="privacy-region-heading" id="region">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Facultatif</p>
+            <h2 id="privacy-region-heading" class="account-hub__panel-title">Ma région</h2>
+            <p class="account-hub__panel-desc">
+                Indiquer votre région aide l’équipe d’Athena à savoir d’où viennent les comptes, par exemple pour choisir des événements ou des serveurs.
+                Seule la région que vous choisissez est enregistrée. Elle n’est jamais déduite de votre adresse IP, que Athena ne conserve pas pour cela,
+                et elle n’est jamais affichée à d’autres membres. Les administrateurs ne la voient que dans des totaux : les régions de moins de
+                <?= (int) \App\Support\AccountRegions::PRIVACY_THRESHOLD ?> comptes sont masquées.
+            </p>
+            <p class="account-hub__panel-desc">
+                Base légale : votre consentement (article 6.1.a du RGPD). Vous pouvez le retirer et effacer votre région à tout moment ici ;
+                elle figure dans l’export de vos données ci-dessus et disparaît avec la suppression de votre compte.
+            </p>
+        </div>
+        <div class="account-hub__panel-body">
+            <form method="post" action="<?= htmlspecialchars(url('account/donnees/region'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__form-grid">
+                <?= \App\Core\Csrf::field() ?>
+                <div>
+                    <label class="account-hub__label" for="account-region">Région</label>
+                    <select id="account-region" name="region">
+                        <option value="">Ne pas indiquer</option>
+                        <?php foreach (\App\Support\AccountRegions::groups() as $groupLabel => $items): ?>
+                            <optgroup label="<?= $ph($groupLabel) ?>">
+                                <?php foreach ($items as $code => $label): ?>
+                                    <option value="<?= $ph($code) ?>"<?= $currentRegion === $code ? ' selected' : '' ?>><?= $ph($label) ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="account-hub__label"><input type="checkbox" name="consent" value="1"> J’accepte que cette région soit enregistrée et comptée dans des statistiques anonymes.</label>
+                </div>
+                <div>
+                    <button type="submit" name="action" value="enregistrer" class="account-hub__btn account-hub__btn--ink">Enregistrer ma région</button>
+                    <?php if ($currentRegion !== ''): ?>
+                        <button type="submit" name="action" value="effacer" class="account-hub__btn account-hub__btn--ghost">Effacer ma région</button>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+    </section>
+
     <section class="account-hub__panel" aria-labelledby="privacy-more-heading">
         <div class="account-hub__panel-head">
             <p class="account-hub__panel-kicker">Autres demandes</p>

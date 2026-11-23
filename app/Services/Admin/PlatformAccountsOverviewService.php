@@ -79,6 +79,45 @@ final class PlatformAccountsOverviewService
         });
     }
 
+    /**
+     * Répartition des comptes par région déclarée. Agrégée, jamais nominative : les régions de moins de
+     * AccountRegions::PRIVACY_THRESHOLD comptes sont masquées (voir AccountRegions::applyThreshold). Une personne
+     * (même e-mail sur plusieurs communautés) compte une fois ; les fiches sans compte ne comptent pas.
+     *
+     * @return array{available: bool, total: int, rows: list<array{code: string, label: string, count: int}>, others: int, none: int}
+     */
+    public function regionBreakdown(): array
+    {
+        return ShortCache::remember('admin:account-regions:v1', self::CACHE_TTL, function (): array {
+            $empty = ['available' => false, 'total' => 0, 'rows' => [], 'others' => 0, 'none' => 0];
+            if (!$this->hasTable('user_regions')) {
+                return $empty;
+            }
+            [$where, $params] = $this->accountPredicate();
+            $st = $this->db()->prepare(
+                "SELECT region_code, COUNT(*) AS total
+                 FROM (
+                     SELECT LOWER(TRIM(u.email)) AS person, MAX(ur.region_code) AS region_code
+                     FROM users u LEFT JOIN user_regions ur ON ur.user_id = u.id
+                     WHERE {$where} AND TRIM(u.email) <> '' AND LOWER(u.email) NOT LIKE '%@sans-compte.invalid'
+                     GROUP BY LOWER(TRIM(u.email))
+                 ) AS people
+                 GROUP BY region_code"
+            );
+            $st->execute($params);
+            $counts = [];
+            $total = 0;
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $total += (int) $row['total'];
+                if ($row['region_code'] !== null && $row['region_code'] !== '') {
+                    $counts[(string) $row['region_code']] = (int) $row['total'];
+                }
+            }
+
+            return ['available' => true, 'total' => $total] + \App\Support\AccountRegions::applyThreshold($counts, $total);
+        });
+    }
+
     /** @return array{signed_in: int, returned: int, one_day: int, two_to_three: int, four_to_six: int, seven_plus: int, average_days: float} */
     public function observedReturns(string $from, string $until): array
     {

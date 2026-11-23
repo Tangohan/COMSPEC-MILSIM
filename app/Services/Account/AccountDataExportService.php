@@ -31,6 +31,7 @@ final class AccountDataExportService
         private TrainingCertificateRepository $trainingCertificateRepository,
         private CommunityEventRepository $communityEventRepository,
         private TenantMessageRepository $tenantMessageRepository,
+        private ?\App\Repositories\UserRegionRepository $userRegionRepository = null,
     ) {}
 
     /** @return string Contenu binaire du ZIP. */
@@ -51,6 +52,7 @@ final class AccountDataExportService
         $zip->addFromString('formations.csv', $this->trainingCsv($userId, $tenantId));
         $zip->addFromString('evenements.csv', $this->eventsCsv($userId, $tenantId));
         $zip->addFromString('messages.csv', $this->messagesCsv($userId, $tenantId));
+        $zip->addFromString('region.csv', $this->regionCsv($userId));
         $zip->addFromString('lisez_moi.txt', $this->readme());
         $zip->close();
 
@@ -60,13 +62,26 @@ final class AccountDataExportService
         return $body !== false ? $body : '';
     }
 
+    /** Région déclarée dans « Mes données » (jamais une adresse IP). Fichier vide d'information si aucune. */
+    private function regionCsv(int $userId): string
+    {
+        $row = ($this->userRegionRepository ??= new \App\Repositories\UserRegionRepository())->get($userId);
+        $rows = $row === null ? [] : [[
+            'region' => \App\Support\AccountRegions::label($row['region_code']),
+            'code' => $row['region_code'],
+            'declared_at' => $row['updated_at'],
+        ]];
+
+        return $this->csvFromRows($rows, ['Région', 'Code', 'Enregistrée le'], ['region', 'code', 'declared_at']);
+    }
+
     private function readme(): string
     {
         return "Export de vos données personnelles Athena\n"
             . "Généré le " . date('d/m/Y H:i') . ".\n\n"
             . "Ce dossier contient les données que vous avez fournies ou générées sur cette "
             . "communauté : profil, dossier personnel, formations, participations aux "
-            . "événements et messages internes.\n\n"
+            . "événements et messages internes, ainsi que la région que vous avez éventuellement déclarée (region.csv).\n\n"
             . "Pour une demande de rectification, d'effacement complet ou toute autre demande "
             . "RGPD, utilisez le formulaire dédié depuis la page « Mentions légales » du site.\n";
     }
