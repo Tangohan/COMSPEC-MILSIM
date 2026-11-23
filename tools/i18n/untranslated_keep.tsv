@@ -1361,3 +1361,28 @@ jnet/liens/nouveau?src=	chemin d'URL, pas un texte	views/jnet/unit_space.php
 jnet/courrier/nouveau?membre=	chemin d'URL, pas un texte	views/jnet/commun/_voie.php
 %1 rapprochement(s) de Cerbère à valider	nom propre « Cerbère » dans la traduction anglaise (le contrôle y voit un accent)	views/atak/sse/partials/case_progress.php
 %1 Proposés par Cerbère	nom propre « Cerbère » dans la traduction anglaise (le contrôle y voit un accent)	views/atak/sse/_attach_window.php
+(aucun)	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Adresse numérique (IP) au lieu d’un nom de site.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Aucun signal d’alerte repéré. Cela ne prouve pas que le site est sûr : vérifiez qu’il est bien celui que vous attendez.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Ce lien mène vers un autre site. Vérifiez l’adresse avant de continuer.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Cite « %1 » sans appartenir à %2.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Comment lire une adresse web	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Connexion non chiffrée (http) : ce que vous saisissez peut être lu en route.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Dans le doute, n’entrez jamais de mot de passe, de code ou de paiement : ouvrez le site vous-même depuis un favori.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Délai écoulé : vous êtes resté sur Athena. Aucune page externe n’a été ouverte.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Il vous reste %1 s pour valider. Sans réponse, vous restez sur Athena.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Lien raccourci : la destination finale est cachée.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+L’adresse contient un « @ » : le vrai site est	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+L’adresse contient un « @ » : le vrai site est %1.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Méfiez-vous des noms qui imitent une marque (steam-offre.com, discord-nitro.xyz) : seul le nom de domaine compte, pas les mots autour.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Ne plus me demander pour	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Ne plus me demander pour %1 pendant cette session	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Nom de site avec des caractères inhabituels : il peut imiter un autre site (homographe).	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Nom de site très long avec beaucoup de sous-domaines : méthode courante pour masquer le vrai site.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Rester sur Athena	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Site réel	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Un lien raccourci (bit.ly, t.co…) cache sa destination. Un cadenas ou « https » prouve seulement que la connexion est chiffrée, pas que le site est honnête.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Vous quittez Athena	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+pendant cette session	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+s pour valider. Sans réponse, vous restez sur Athena.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+» sans appartenir à	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js

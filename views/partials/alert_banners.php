@@ -116,7 +116,8 @@ if (empty($GLOBALS['__dsfr_service_css'])) {
 
     if (a.body) {
       var body = document.createElement('p');
-      body.textContent = a.body;
+      // Adresses http(s) du texte rendues cliquables (passerelle des liens externes : 10 s pour valider la sortie).
+      if (window.AthenaLinks) { window.AthenaLinks.linkify(body, a.body); } else { body.textContent = a.body; }
       el.appendChild(body);
     }
 
