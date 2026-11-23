@@ -1400,3 +1400,9 @@ s pour valider. Sans réponse, vous restez sur Athena.	dictionnaire FR/EN intég
 » sans appartenir à	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
 Aucun signal d’alerte repéré	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
 Cela ne prouve pas que le site est sûr : vérifiez qu’il est bien celui que vous attendez.	dictionnaire FR/EN intégré au script, choisi selon la langue de la page	public/assets/js/athena-external-links.js
+Bandeau du portail	libellés identiques à ceux du portail (alert_banners, dashboard_popup_modal), dictionnaire propre au script	public/assets/js/alert-preview.js
+Bandeau défilant « Attention »	libellés identiques à ceux du portail (alert_banners, dashboard_popup_modal), dictionnaire propre au script	public/assets/js/alert-preview.js
+Barre sous le menu : attention	libellés identiques à ceux du portail (alert_banners, dashboard_popup_modal), dictionnaire propre au script	public/assets/js/alert-preview.js
+Barre sous le menu : critique	libellés identiques à ceux du portail (alert_banners, dashboard_popup_modal), dictionnaire propre au script	public/assets/js/alert-preview.js
+Barre sous le menu : information	libellés identiques à ceux du portail (alert_banners, dashboard_popup_modal), dictionnaire propre au script	public/assets/js/alert-preview.js
+Barre sous le menu : succès	libellés identiques à ceux du portail (alert_banners, dashboard_popup_modal), dictionnaire propre au script	public/assets/js/alert-preview.js
