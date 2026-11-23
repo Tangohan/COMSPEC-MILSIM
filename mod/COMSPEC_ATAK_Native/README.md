@@ -127,4 +127,4 @@ Rendus « 3D oblique » et « Plan » : mosaïque par hauteur (sans `--no-mosaic
 
 ## Envoyer ses logs
 
-Dans le dossier du mod, double-cliquez sur `Envoyer_mes_logs.bat`. Il prépare `COMSPEC_logs_<date>.zip` sur le Bureau avec les deux derniers `.rpt` d'Arma (`%LOCALAPPDATA%\Arma 3`) et les deux derniers journaux COMSPEC Link (`%LOCALAPPDATA%\Arma 3\COMSPEC\logs`). Les mots de passe, jetons et liens de webhook sont masqués dans la copie. Il reste à glisser le .zip dans un sujet bugs ou help du Discord.
+Prenez les deux derniers `.rpt` d'Arma (`%LOCALAPPDATA%\Arma 3`) et les deux derniers journaux COMSPEC Link (`%LOCALAPPDATA%\Arma 3\COMSPEC\logs`). Avant de les poster, ouvrez-les et retirez tout mot de passe, jeton ou lien de webhook. Il reste à les glisser dans un sujet bugs ou help du Discord.

@@ -155,10 +155,11 @@ final class AtakUnitCardAssetTest extends TestCase
         $sorted = $order;
         sort($sorted);
         self::assertSame($sorted, $order);
-        // Indicatifs et « Sur mon téléphone » ne disparaissent pas : OUTILS > AFFICHAGE.
-        self::assertStringContainsString('["LABELS", "map_labels"', $map);
-        self::assertStringContainsString('["PHONE", "app_athena"', $map);
+        // Indicatifs et « Sur mon téléphone » ne disparaissent pas : table des outils (OUTILS > AFFICHER, PARTAGER).
         $menu = $this->read('functions/map/fn_mapToolMenu.sqf');
+        self::assertStringContainsString('["LABELS", "AFFICHER", "Indicatifs des unités"', $menu);
+        self::assertStringContainsString('["PHONE", "PARTAGER", "Sur mon téléphone"', $menu);
+        self::assertStringContainsString('["build", [', $map);
         self::assertStringContainsString('case "LABELS"', $menu);
         self::assertStringContainsString('["open", "carte"] call comspec_atak_native_fnc_mobileQr', $menu);
         // Un seul bouton OUTILS, dans la barre.
@@ -168,9 +169,12 @@ final class AtakUnitCardAssetTest extends TestCase
     public function testNumberKeysFollowTheToolMenu(): void
     {
         $menu = $this->read('functions/map/fn_mapToolMenu.sqf');
-        self::assertStringContainsString('["ROUTE", "WP", "SEARCH", "MEASURE", "HEIGHT", "LOS", "FLAT", "IPTGT", "LINE"]', $menu);
+        // Raccourcis portés par la table (« 1 » à « 9 » puis « 0 ») : mêmes numéros qu'avant pour les neuf premiers.
+        foreach (['ROUTE' => '1', 'WP' => '2', 'SEARCH' => '3', 'MEASURE' => '4', 'HEIGHT' => '5', 'LOS' => '6', 'FLAT' => '7', 'IPTGT' => '8', 'LINE' => '9', 'DRAW' => '0'] as $id => $k) {
+            self::assertMatchesRegularExpression('/\["' . $id . '", "[A-Z]+", "[^"]+", "[^"]+", "\w+", "(?:outil|action)", "' . $k . '"/u', $menu, $id);
+        }
         self::assertStringContainsString('["key", _key - 1] call comspec_atak_native_fnc_mapToolMenu', $this->read('functions/ui/fn_displayLoad.sqf'));
-        self::assertStringContainsString('["numbered"] call comspec_atak_native_fnc_mapToolMenu', $this->read('functions/pages/fn_pageMap.sqf'));
+        self::assertStringContainsString('["key2", _key - 1] call comspec_atak_native_fnc_mapToolMenu', $this->read('functions/ui/fn_displayLoad.sqf'));
     }
 
     public function testSquadBarIsDrawnInTheThreePlacesAtOneHertz(): void

@@ -43,6 +43,7 @@ $loggedIn = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title><?= $h($title ?? '9-LINE') ?></title>
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-nine-line.css?v=<?= $h($ver('css/atak-nine-line.css')) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/game-sync-freshness.css?v=<?= $h($ver('css/game-sync-freshness.css')) ?>">
 </head>
 <body class="nl-page">
 <svg class="nl-sprite" aria-hidden="true" focusable="false">
@@ -76,6 +77,7 @@ $loggedIn = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
 </div></header>
 
 <section class="hero"><div class="w">
+  <?php if ($loggedIn): ?><div class="gsync gsync--dark" data-game-sync data-base="<?= $h($base) ?>" hidden></div><?php endif; ?>
   <div class="htop">
     <div>
       <div class="kk"><i></i>ATAK · JTAC · <span id="nl-kick">Appui aérien rapproché</span></div>
@@ -215,5 +217,6 @@ $loggedIn = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
   ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 </script>
 <script src="<?= $h($base) ?>/assets/js/atak-nine-line.js?v=<?= $h($ver('js/atak-nine-line.js')) ?>" defer></script>
+<script src="<?= $h($base) ?>/assets/js/game-sync-freshness.js?v=<?= $h($ver('js/game-sync-freshness.js')) ?>" defer></script>
 </body>
 </html>

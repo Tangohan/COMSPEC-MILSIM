@@ -60,6 +60,53 @@ switch (_tab) do {
     };
     case "NET": {
         private _q = [] call comspec_atak_native_fnc_linkQuality;
+        // Synchronisation par flux (fn_syncMark de connect) : dernière réponse de COMSPEC Link par commande, regroupée par
+        // flux ; « remis » = pris en charge par la DLL (file d'envoi), pas forcément encore reçu par Athena. Lu au rendu.
+        private _marks = missionNamespace getVariable ["COMSPEC_SyncMarks", createHashMap];
+        private _agoTxt = { params ["_t"]; if (_t < 0) exitWith { "jamais" }; private _s = round (diag_tickTime - _t); if (_s < 120) exitWith { format ["il y a %1 s", _s] }; format ["il y a %1 min", floor (_s / 60)] };
+        private _pendN = 0;
+        { _pendN = _pendN + ({ _x isEqualTo false } count (values (missionNamespace getVariable [_x, createHashMap]))); } forEach ["COMSPEC_ExtPending", "COMSPEC_ATAK_ExtPending"];
+        private _profPend = (missionNamespace getVariable ["COMSPEC_ATAK_ProfileDirty", false]) || {missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]};
+        _rows append [
+            ["section", "Synchronisation par flux", "Dernière réponse de COMSPEC Link"],
+            ["info", "Liaison", format ["%1 · %2 · Athena %3", ["RELAIS", "SATELLITE"] select ((["get"] call comspec_atak_native_fnc_linkMode) isEqualTo "sat"), [missionNamespace getVariable ["COMSPEC_LinkState", "—"]] call _esc, ["non prête", "prête"] select (missionNamespace getVariable ["COMSPEC_AthenaReady", false])]],
+            ["info", "Écritures en attente", format ["%1 en cours · %2 en file sans réseau · profil %3", _pendN, count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]), ["enregistré", "à enregistrer"] select _profPend]]
+        ];
+        private _known = [];
+        {
+            _x params ["_lab", "_cmds"];
+            _known append _cmds;
+            private _bits = [];
+            {
+                private _e = _marks getOrDefault [_x, []];
+                if (_e isNotEqualTo []) then {
+                    _e params ["_okAt", "_failAt", "_err", "", "", "_heldAt"];
+                    private _verb = ["remis", "lu"] select ((_x select [0, 3]) isEqualTo "Get");
+                    if (_okAt >= 0) then { _bits pushBack format ["%1 %2", _verb, [_okAt] call _agoTxt]; };
+                    if (_failAt > _okAt) then { _bits pushBack format ["<t color='%1'>échec %2 (%3)</t>", COMSPEC_ATAK_Th get "hexAlert", [_failAt] call _agoTxt, [_err] call _esc]; };
+                    if (_heldAt > (_okAt max _failAt)) then { _bits pushBack format ["<t color='%1'>retenu %2</t>", COMSPEC_ATAK_Th get "hexWarn", [_heldAt] call _agoTxt]; };
+                };
+            } forEach _cmds;
+            _rows pushBack ["info", _lab, ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>rien depuis l'arrivée</t>", _bits joinString " · "] select ((count _bits) > 0)];
+        } forEach [
+            ["Position (BFT)", ["UpdatePosition"]], ["Fiche opérateur", ["OperatorSync", "SyncProfile"]], ["Équipes", ["Squad.Sync"]],
+            ["Aéronefs", ["SendFlightManifest"]], ["Marqueurs et tracés", ["SendMarker", "GetMarkers", "GetMapShapes"]],
+            ["Ordres", ["GetOrders", "UpdateOrderStatus"]], ["Messages", ["SendChat", "GetChatMessages"]],
+            ["Comptes rendus", ["SubmitTacticalReport"]], ["Photos", ["StageCapture", "NotifyNewPhoto"]],
+            ["Briefs air (9-LINE)", ["GetCASForCallsign", "SendCASState"]], ["Alertes", ["GetTacticalAlerts", "GetMedicalAlerts"]],
+            ["TOC", ["BriefingPlan.Push"]], ["Heures de jeu", ["ReportPlaytime"]], ["Relais", ["UpdateRelay"]],
+            ["Qualifications et portrait", ["GetPlayerAvatarInfo"]]
+        ];
+        // Autres commandes vues (les 12 plus récentes) : nom de la commande et heure de sa dernière réponse.
+        private _other = (keys _marks) select { !(_x in _known) };
+        if (_other isNotEqualTo []) then {
+            _other = _other apply { [((_marks get _x) select 0) max ((_marks get _x) select 1), _x] };
+            _other sort false;
+            _rows pushBack ["text", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", ((_other select [0, 12]) apply {
+                _x params ["_t", "_c"];
+                format ["%1 · %2", [_c] call _esc, [_t] call _agoTxt]
+            }) joinString "<br/>"]];
+        };
         _rows append [
             ["info", "Débit", format ["%1 · %2 kbit/s · %3 ms · perte %4 %%", _q get "label", _q get "kbps", _q get "latency", _q get "loss"]],
             ["info", "File sans réseau", str count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])],

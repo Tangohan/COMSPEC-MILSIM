@@ -418,6 +418,7 @@
         + '<small>' + raw(a.model || '') + (TYPES[a.aircraft_type] ? ' · ' + esc(TYPES[a.aircraft_type]) : '') + (a.map_name ? ' · ' + raw(a.map_name) : '') + '</small>'
         + (who.length ? '<small>' + who.join(' · ') + '</small>' : '')
         + (facts.length ? '<span class="fx">' + raw(facts.join(' · ')) + ' · ' + esc(ago(a.age_s)) + '</span>' : '')
+        + (a.cs_changed ? '<span class="fx">' + esc(fmt('Indicatif changé (avant : %1)', a.cs_changed.from)) + ' · ' + esc(ago(a.cs_changed.age_s)) + '</span>' : '')
         + rename + '</span></label>';
     }).join('') + '</div>';
   }
@@ -746,7 +747,7 @@
     }).catch(function () { return { ok: false, error: 'Connexion au site impossible. Réessayez dans un instant.' }; });
   }
   function getJson(path) {
-    return fetch(base + path, { credentials: 'include', headers: { Accept: 'application/json' } }).then(function (r) {
+    return fetch(base + path, { credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' } }).then(function (r) {
       if (r.status === 401 || r.redirected) throw new Error('login');
       return r.json();
     });
@@ -773,9 +774,35 @@
       if (err && err.message === 'login') $('nl-selected').innerHTML = '<p class="hint">Connectez-vous à Athena pour voir les 9-LINE.</p>';
     });
   }
+  /**
+   * Indicatif changé en jeu (même appareil, même id) : la sélection suit le nouvel indicatif et la carte de l'appareil
+   * affiche « Indicatif changé il y a Xs (avant : …) » pendant 10 minutes.
+   */
+  var csById = {};
+  var csChanged = {};
+  function trackCallsigns(list) {
+    var now = Date.now();
+    list.forEach(function (a) {
+      var prev = csById[a.id];
+      if (prev && prev !== a.callsign) {
+        csChanged[a.id] = { from: prev, at: now };
+        if (selected[prev] && !selected[a.callsign]) {
+          selected[a.callsign] = selected[prev];
+          if (!selected[a.callsign].manual) selected[a.callsign].label = a.label || a.callsign;
+          delete selected[prev];
+          sent = false;
+          refresh();
+        }
+      }
+      csById[a.id] = a.callsign;
+      var c = csChanged[a.id];
+      a.cs_changed = c && now - c.at < 600000 ? { from: c.from, age_s: Math.round((now - c.at) / 1000) } : null;
+    });
+  }
   function pollAircraft() {
     return getJson('/9-line/appareils').then(function (j) {
       aircraft = (j && j.items) || [];
+      trackCallsigns(aircraft);
       if (!renaming) renderAircraft();
       renderDest();
     }).catch(function () {});
@@ -921,4 +948,9 @@
   setInterval(function () { if (!document.hidden) pollRoster(); }, 60000);
   setInterval(function () { if (!document.hidden) pollFeed(); }, 5000);
   setInterval(function () { if (!document.hidden) pollAircraft(); }, 5000);
+  // Retour sur l'onglet ou reprise du réseau (téléphone en veille, changement d'antenne) : relecture immédiate.
+  function resume() { if (!document.hidden) { pollFeed(); pollAircraft(); } }
+  document.addEventListener('visibilitychange', resume);
+  window.addEventListener('online', resume);
+  window.addEventListener('pageshow', function (e) { if (e.persisted) resume(); });
 })();

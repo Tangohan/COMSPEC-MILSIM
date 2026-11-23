@@ -36,5 +36,7 @@ private _json = [_snap] call comspec_atak_native_fnc_json;
     };
     missionNamespace setVariable ["COMSPEC_ATAK_SquadSyncLast", [dayTime, _state, _n]];
     ["INFO", "SQUAD", format ["Squad.Sync %1 équipe(s) : %2", _n, _state]] call comspec_atak_native_fnc_log;
+    // Échec réseau : signature oubliée pour réessayer au prochain passage (20 à 30 s) au lieu d'attendre 5 min.
+    if ((_state select [0, 6]) isEqualTo "ERREUR") then { missionNamespace setVariable ["COMSPEC_ATAK_SquadSyncSig", ["", diag_tickTime]]; };
 };
 true
