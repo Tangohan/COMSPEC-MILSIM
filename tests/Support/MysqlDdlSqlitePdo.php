@@ -45,7 +45,8 @@ final class MysqlDdlSqlitePdo extends PDO
             $this->ddl[] = $sql;
         }
 
-        return parent::exec($statement);
+        // INSERT IGNORE (MySQL) s'écrit INSERT OR IGNORE en SQLite.
+        return parent::exec((string) preg_replace('/\bINSERT\s+IGNORE\s+INTO\b/i', 'INSERT OR IGNORE INTO', $statement));
     }
 
     private function change(string $sqlite): int|false

@@ -419,7 +419,7 @@ final class SseImagesPrivateStorageTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $nginx = (string) file_get_contents($root . '/docs/nginx.example.conf');
-        self::assertMatchesRegularExpression('#location ~\* \^/uploads/sse-id-\(photos\|signatures\|backgrounds\)/#', $nginx);
+        self::assertMatchesRegularExpression('#location ~\* \^/uploads/sse-id-\(photos\|signatures\|backgrounds\)\(/\|\$\)#', $nginx);
         self::assertStringContainsString('return 404;', $nginx);
         $htaccess = (string) file_get_contents($root . '/public/.htaccess');
         self::assertMatchesRegularExpression('#RewriteRule \^uploads/sse-id-\(photos\|signatures\|backgrounds\)/ - \[R=404,L\]#', $htaccess);

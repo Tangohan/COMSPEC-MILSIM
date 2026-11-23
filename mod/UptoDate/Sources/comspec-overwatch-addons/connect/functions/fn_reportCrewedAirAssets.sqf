@@ -61,13 +61,16 @@ if (_airAssets isEqualTo []) exitWith { false };
         if (!(_n isEqualType "")) then { _n = str _n };
         _n
     }) joinString "|";
+    // Indicatif choisi par le pilote dans la signature : un changement remonte au prochain passage (3 s), sans
+    // attendre le battement de 7 s ni un déplacement.
     private _sig = format [
-        "%1|%2|%3|%4|%5",
+        "%1|%2|%3|%4|%5|%6",
         round (_pos select 0),
         round (_pos select 1),
         round _heading,
         _crewN,
-        _crewNames
+        _crewNames,
+        _x getVariable ["COMSPEC_ATAK_AirCs", ""]
     ];
     private _lastSig = _x getVariable ["COMSPEC_AirOccSig", ""];
     private _airGap = 2.5 max _sendBack;
@@ -93,6 +96,8 @@ if (_airAssets isEqualTo []) exitWith { false };
     };
     if (!(_callsign isEqualType "")) then { _callsign = str _callsign; };
     _callsign = trim _callsign;
+    // Indicatif donné à l'appareil (pilote ou véhicule) : Athena le préfère à celui déjà connu (groupe Arma par défaut).
+    private _csExplicit = _callsign isNotEqualTo "" && {!((toLower _callsign) in ["unknown", "inconnu"])};
     if (_callsign isEqualTo "" || {(toLower _callsign) in ["unknown", "inconnu"]}) then {
         private _grp = group (effectiveCommander _x);
         if (isNull _grp && {_crew isNotEqualTo []}) then { _grp = group (_crew select 0); };
@@ -153,6 +158,7 @@ if (_airAssets isEqualTo []) exitWith { false };
         ["mapId", 1],
         ["callsign", _callsign],
         ["call_sign", _callsign],
+        ["callsign_explicit", _csExplicit],
         ["model", _model],
         ["aircraft_type", _aircraftType],
         ["source", "occupancy"],

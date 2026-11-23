@@ -111,7 +111,8 @@ switch (_act) do {
                 private _setOn = (missionNamespace getVariable ["comspec_atak_native_mpu_voice", true]) isEqualTo true;
                 private _real = ["active"] call comspec_atak_native_fnc_mpuLink;
                 private _gate = ["gate"] call comspec_atak_native_fnc_relayNet;
-                private _has = ["has", [player]] call comspec_atak_native_fnc_mpu5;
+                // Le pont radio exige une vraie MPU5 sur soi : en liaison réaliste, "has" accepte toute radio de données (ACRE2, TFAR).
+                private _has = ["hasMpu"] call comspec_atak_native_fnc_mpu5;
                 private _b = missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []];
                 (missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) params [["_me", []], "", ["_why", ""], ["_peers", []]];
                 private _same = { _x param [3, false] } count _peers;

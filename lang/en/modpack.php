@@ -63,7 +63,7 @@ return [
     'workshop_link' => 'What happened on Steam?',
     'workshop_title' => 'The modpack moves to direct download',
     'workshop_intro' => 'The COMSPEC modpack was removed from the Steam Workshop. You can now get the RAR archive directly from ATHENA.',
-    'workshop_cause' => 'Mass reporting may have played a role, but the reason for the removal has yet to be confirmed.',
+    'workshop_cause' => 'Steam reports an antivirus flag (“item being flagged by AV”). The elements that may be the cause are being checked and Steam’s review is pending; the exact reason is not confirmed yet.',
     'workshop_updates' => 'Use the guide on this page to install the modpack and come back for new releases. Steam does not update mods installed manually.',
     'workshop_continue' => 'View the modpack',
     'workshop_close' => 'Close',
@@ -108,4 +108,8 @@ return [
     'js_sending' => 'Uploading the archive…',
     'js_finalizing' => 'Archive received. Verifying and publishing…',
     'js_failed' => 'The upload failed.',
+    'verify' => 'Verify the archive',
+    'verify_detail' => 'After downloading, compare the SHA-256 checksum of your file with the one shown above. In PowerShell:',
+    'verify_cmd' => 'Get-FileHash .\COMSPEC.rar -Algorithm SHA256',
+    'av_note' => 'An antivirus may flag the pack: it contains unsigned extensions (DLLs), loaded by Arma 3 for the link with Athena. If the checksum matches, the file is the one published here. If in doubt, ask on Discord before running it.',
 ];

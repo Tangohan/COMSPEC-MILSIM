@@ -34,10 +34,10 @@ if (_dataBar) then {
 };
 
 // Boussole
-// (masquée tant que le menu Outils est ouvert : le menu prend toute la hauteur à gauche)
+// (le menu Outils est à droite, près de la barre : la boussole reste)
 private _search = uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap];
 private _searchOpen = _interactive && {_search getOrDefault ["open", false]} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0};
-if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0) && {!(_interactive && {_s getOrDefault ["mapToolsOpen", false]})} && {!_searchOpen}) then {
+if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0) && {!_searchOpen}) then {
     // Style choisi dans Réglages > Carte : CLASSIC (rose fixe, aiguille qui tourne, défaut), CARD (cadran
     // qui tourne, le haut reste l'avant), ARROW (aiguille seule), TAPE (bandeau de cap gradué).
     private _cStyle = profileNamespace getVariable ["COMSPEC_ATAK_CompassStyle", "CLASSIC"];
@@ -331,88 +331,13 @@ if (_interactive) then {
     _sbt ctrlAddEventHandler ["ButtonClick", { ["toggle"] call comspec_atak_native_fnc_mapSearch; }];
     _ov set ["tool_search", _sbt];
 
-    // Menu des outils carte, au-dessus du bouton
+    // Menu OUTILS : rangé par intention, décrit par la table de fn_mapToolMenu et dessiné par elle à l'ouverture (jamais par
+    // image). Ancré à gauche de la barre d'outils, sous la pastille de l'outil actif ; fermé par ✕, Échap, un second appui
+    // sur OUTILS ou un clic sur la carte hors du panneau (pas par un glisser : fn_mapMouseButtonUp).
+    _s set ["mapToolsRect", []];
     if (_s getOrDefault ["mapToolsOpen", false]) then {
-        // Outils rangés par usage ; une ligne « # » est un titre de section.
-        private _items = [
-            ["#", "", "NAVIGATION"],
-            ["ROUTE", "map_route", "GPS : itinéraire"],
-            ["WP", "app_waypoints", "Points de passage"],
-            ["SEARCH", "app_osint", "Rechercher (IMEI, numéro, balise)"],
-            ["#", "", "MESURER"],
-            ["MEASURE", "map_measure", "Mesure A-B"],
-            ["HEIGHT", "map_height", "Hauteur"],
-            ["LOS", "map_los", "Ligne de vue"],
-            ["FLAT", "map_flat", "Terrain plat"],
-            ["IPTGT", "app_jtac", "JTAC : IP » cible (cap magnétique)"],
-            ["#", "", "DESSINER"],
-            ["LINE", "map_measure", "Tracer un trait"],
-            ["DRAW", "map_labels", "Dessin libre"],
-            ["HOUSES", "map_house", "Marquer bâtiments"],
-            ["#", "", "AFFICHAGE"],
-            ["DISTANCE", "map_distance", "Distance"],
-            ["COMPASS", "map_compass", "Boussole"],
-            ["GRID", "map_grid", format ["Grille %1 chiffres", profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]]],
-            ["ZONES", "map_grid", "Zones tactiques"],
-            ["SIGINT", "map_los", "Goniométrie (émetteurs)"],
-            ["LABELS", "map_labels", "Indicatifs des unités"],
-            ["PHONE", "app_athena", "Sur mon téléphone (QR code)"],
-            ["CLEAR", "map_clear", "Tout effacer"]
-        ];
-        // Drone appairé et en état : ses ordres se donnent aussi depuis la carte.
-        private _drn = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
-        if (!isNull _drn && {alive _drn}) then { _items insert [0, [["#", "", "DRONE"], ["DRONE", "app_drone", "Drone : ordres sur la carte"]]]; };
-        private _rh = _fs * 1.55;
-        private _mwid = _panW;
-        // Autant de lignes que la hauteur le permet, puis une seconde colonne.
-        private _bottom = _tby - _pad;
-        private _perCol = (floor ((_bottom - _by - _pad) / _rh)) max 1;
-        private _cols = ceil ((count _items) / _perCol);
-        private _rows = ceil ((count _items) / _cols);
-        private _my0 = _bottom - _rh * _rows;
-        private _bg = ["COMSPEC_RscMapPanel", [_bx + _pad, _my0 - _pad / 2, _mwid * _cols + _pad / 2 * (_cols - 1), _rh * _rows + _pad / 2]] call _mk;
-        _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.97];
-        private _mode = _s getOrDefault ["mapMode", "SELECT"];
-        {
-            _x params ["_key", "_icon", "_label"];
-            private _col = floor (_forEachIndex / _rows);
-            private _y0 = _my0 + (_forEachIndex mod _rows) * _rh;
-            private _bx = _bx + _col * (_mwid + _pad / 2);
-            if (_key isEqualTo "#") then {
-                // Titre de section
-                private _h = ["COMSPEC_RscText", [_bx + _pad * 1.5, _y0 + _rh * 0.25, _mwid - _pad * 2, _rh * 0.75], _label] call _mk;
-                _h ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
-                _h ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
-                _h ctrlSetTextColor (COMSPEC_ATAK_Th get "mapDim");
-                private _ln = ["COMSPEC_RscText", [_bx + _pad * 1.5, _y0 + _rh - pixelH, _mwid - _pad * 2, pixelH]] call _mk;
-                _ln ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.25]);
-                continue;
-            };
-            private _active = switch (_key) do {
-                case "DISTANCE": { _s getOrDefault ["mapDistance", true] };
-                case "COMPASS": { (["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0 };
-                case "GRID": { (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) > 6 };
-                case "ZONES": { profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true] };
-                case "SIGINT": { profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true] };
-                case "LABELS": { (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0 };
-                default { _mode isEqualTo _key };
-            };
-            if (_active && {_key isEqualTo _mode}) then {
-                private _hl = ["COMSPEC_RscText", [_bx + _pad, _y0, _mwid, _rh]] call _mk;
-                _hl ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.16]);
-            };
-            private _ic = ["COMSPEC_RscIcon", [_bx + _pad * 1.5, _y0 + _rh * 0.15, _rh * 0.7 / _ratio, _rh * 0.7], _dir + _icon + ".paa"] call _mk;
-            _ic ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _active);
-            // Les neuf premiers outils portent leur numéro : la même touche quand la carte est ouverte (fn_mapToolMenu).
-            private _kn = (["numbered"] call comspec_atak_native_fnc_mapToolMenu) find _key;
-            if (_kn >= 0) then { _label = format ["%1  %2", _kn + 1, (_label) call comspec_atak_native_fnc_tr]; };
-            private _t = ["COMSPEC_RscText", [_bx + _pad * 2.5 + _rh * 0.7 / _ratio, _y0, _mwid - _pad * 2 - _rh * 0.7 / _ratio, _rh], _label] call _mk;
-            _t ctrlSetFontHeight _fs;
-            _t ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _active);
-            private _b = ["COMSPEC_RscButtonOverlay", [_bx + _pad, _y0, _mwid, _rh]] call _mk;
-            _b setVariable ["key", _key];
-            _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [_c getVariable "key"] call comspec_atak_native_fnc_mapToolMenu; }];
-        } forEach _items;
+        private _mTop = _by + _pad + ([0, _fs * 1.5 + _pad] select ((_s getOrDefault ["mapMode", "SELECT"]) isNotEqualTo "SELECT"));
+        ["build", [_bx + _mw - _toolCol - _pad / 2, _mTop, _tby - _pad, _mw, _mh, _font, _fs, _ratio, _pad]] call comspec_atak_native_fnc_mapToolMenu;
     };
 
     // Barre d'outils à droite (taille choisie dans Réglages > Carte : petite, normale, grande ; _tbScale, lu plus haut).
@@ -474,6 +399,8 @@ if (_interactive) then {
     private _tx = _bx + _mw - _iw - _pad;
     private _ty0 = _by + _pad + _ih * 0.5;
     ["COMSPEC_RscMapPanel", [_tx - _pad / 2, _ty0 - _pad / 2, _iw + _pad, _ih * (count _tools) + _pad]] call _mk;
+    // Zone de la barre : un clic de la carte dessous n'agit pas sur la carte (fn_mapMouseButtonUp).
+    _s set ["mapToolbarRect", [_tx - _pad / 2, _ty0 - _pad / 2, _iw + _pad, _ih * (count _tools) + _pad]];
     {
         _x params ["_key", "_icon", "_tip", "_code"];
         // Bouton centrer / suivre : un fond posé derrière l'icône dit sans ambiguïté que la carte suit.
@@ -482,6 +409,12 @@ if (_interactive) then {
             _fbg ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapActive");
             _fbg ctrlShow false;
             _ov set ["tool_centerBg", _fbg];
+        };
+        // État reflété : outil en cours (MARQUEUR, PING : mêmes ids que mapMode) ou menu OUTILS ouvert / outil du menu actif.
+        private _tbMode = _s getOrDefault ["mapMode", "SELECT"];
+        if ((_key isEqualTo _tbMode) || {_key isEqualTo "menu" && {(_s getOrDefault ["mapToolsOpen", false]) || {(_tbMode isNotEqualTo "SELECT") && {((["table"] call comspec_atak_native_fnc_mapToolMenu) findIf { (_x select 0) isEqualTo _tbMode }) >= 0}}}}) then {
+            private _abg = ["COMSPEC_RscText", [_tx, _ty0 + _forEachIndex * _ih, _iw, _ih * 0.92]] call _mk;
+            _abg ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapActive");
         };
         private _b = ["COMSPEC_RscIconButton", [_tx, _ty0 + _forEachIndex * _ih, _iw, _ih * 0.92], [_dir + _icon + ".paa", _icon] select ((_icon select [0, 1]) isEqualTo "\")] call _mk;
         _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
@@ -835,7 +768,7 @@ if (_interactive) then {
         private _txt = ["COMSPEC_RscStructuredText", [_tx0, _by + _pad + _hh * 0.12, (_hw - (_tx0 - _hx) - _xw) max 0, _hh * 0.88]] call _mk;
         _txt ctrlSetFontHeight ((_fs * 0.92) max COMSPEC_ATAK_FontMin);
         _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexMapOk") + "'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexMapText") + "'>%2</t>  <t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%3</t>",
-            _name, _what, "glisser : déplacer la carte · clic droit : quitter" call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
+            _name, _what, "glisser : déplacer la carte · clic droit ou Échap : quitter" call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
         private _xb = ["COMSPEC_RscButton", [_hx + _hw - _xw, _by + _pad, _xw, _hh], "✕"] call _mk;
         _xb ctrlSetFontHeight _fs;
         _xb ctrlSetTooltip (("Quitter l'outil") call comspec_atak_native_fnc_tr);

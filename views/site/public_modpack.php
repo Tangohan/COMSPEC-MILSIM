@@ -83,6 +83,8 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
                 <div><dt><?= $e(__('modpack.reference')) ?></dt><dd><?= $e($expected ?? '—') ?></dd></div>
             </dl>
             <?php if ($published): ?><details><summary><?= $e(__('modpack.checksum')) ?></summary><code><?= $e($pack['sha256']) ?></code></details><?php endif; ?>
+            <?php if ($published): ?><details><summary><?= $e(__('modpack.verify')) ?></summary><p><?= $e(__('modpack.verify_detail')) ?></p><code><?= $e(__('modpack.verify_cmd')) ?></code></details><?php endif; ?>
+            <?php if ($published): ?><p class="mp-note"><?= $e(__('modpack.av_note')) ?></p><?php endif; ?>
             <?php if ($published && !empty($pack['release_notes'])): ?><details open><summary><?= $e(__('modpack.notes')) ?></summary><p><?= nl2br($e($pack['release_notes'])) ?></p></details><?php endif; ?>
         </section>
     </div>

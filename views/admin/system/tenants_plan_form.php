@@ -61,13 +61,15 @@ if (!isset($tabLabels[$tab])) {
 }
 $editUrl = (string) ($platformEditUrl ?? url('admin/tenants/' . $tenantId . '/edit'));
 $archived = is_array($platformTenantArchive ?? null);
+$alertTenants = !$archived && !\App\Support\PortalAccessChoice::isPlaceholderTenant($tenant) ? [$tenant] : [];
+$alertDefaultTenant = $tenantId;
 $fmtDate = static function (mixed $raw): string {
     $t = ($raw !== null && $raw !== '' && $raw !== false) ? strtotime((string) $raw) : false;
 
     return $t ? date('d/m/Y H:i', $t) : '—';
 };
 ?>
-<div class="pa">
+<div class="pa pu">
     <div class="pa__frame">
         <header class="pa-hero">
             <p class="pa-crumb">
@@ -100,6 +102,9 @@ $fmtDate = static function (mixed $raw): string {
                     <a class="pa-btn pa-btn--solid" href="<?= $h($publicUrl) ?>" target="_blank" rel="noopener">Page publique</a>
                 <?php endif; ?>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h($usersUrl) ?>">Comptes</a>
+                <?php if ($alertTenants !== []): ?>
+                    <button type="button" class="pa-btn pa-btn--ghost" data-community-alert-open aria-haspopup="dialog"><?= $h(__('admin_community_alert.open')) ?></button>
+                <?php endif; ?>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/formules-offertes') . '?tenant_id=' . $tenantId) ?>">Offrir une formule</a>
                 <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/audit')) ?>">Journal d’audit</a>
             </div>
@@ -124,4 +129,5 @@ $fmtDate = static function (mixed $raw): string {
             </div>
         </div>
     </div>
+    <?php require base_path('views/admin/system/partials/platform_community_alert_dialog.php'); ?>
 </div>

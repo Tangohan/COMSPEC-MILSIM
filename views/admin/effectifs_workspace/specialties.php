@@ -19,8 +19,7 @@ $postFields = static function (string $action) use ($h, $csrf, $targetId): void 
 ?>
 <div class="eff-specialties">
     <header class="eff-page-head">
-        <p class="eff-page-kicker">Personnel · Référentiels nationaux</p>
-        <h1 class="eff-page-title">Spécialités militaires</h1>
+        <h2 class="eff-page-title">Spécialités militaires</h2>
         <p class="eff-page-lead">Identifiez un métier dans son pays et son armée, puis précisez le niveau détenu ou l’objectif de formation.</p>
     </header>
     <?php foreach (['success', 'error'] as $flashKey): $flash = \App\Core\Session::getFlash($flashKey); if ($flash): ?>

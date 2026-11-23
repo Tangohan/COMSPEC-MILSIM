@@ -159,7 +159,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 // Mesure des performances (fn_perfLog, 4.4.0), par joueur, décochée par défaut : lignes [COMSPEC perf] dans le RPT
 // (ouverture du téléphone et des apps, dessin de la carte, bilan toutes les 10 s). Rien à l'écran ; aucun coût décochée.
 ["comspec_atak_native_perf_log", "CHECKBOX",
-    ["Mesure des performances (journal)", "Décoché par défaut. Coché : le journal du jeu (fichier RPT) note le temps d'ouverture du téléphone et de chaque app, le coût du dessin de la carte toutes les 5 s, un bilan toutes les 10 s et les appels lents à la DLL. Rien ne s'affiche à l'écran. Exemple : active-le, ouvre le téléphone puis la carte, puis envoie ton journal avec Envoyer_mes_logs.bat. Décoche-le ensuite."],
+    ["Mesure des performances (journal)", "Décoché par défaut. Coché : le journal du jeu (fichier RPT) note le temps d'ouverture du téléphone et de chaque app, le coût du dessin de la carte toutes les 5 s, un bilan toutes les 10 s et les appels lents à la DLL. Rien ne s'affiche à l'écran. Exemple : active-le, ouvre le téléphone puis la carte, puis envoie ton journal (fichier RPT) sur le Discord. Décoche-le ensuite."],
     ["COMSPEC", "ATAK · Debug"], false, 0,
     {
         if (!hasInterface) exitWith {};
@@ -1245,7 +1245,7 @@ if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["
 if (hasInterface) then { ["comspec_atak_native_compromise", { params [["_k", ""], ["_v", []]]; if (_k in ["revoke", "ownerReset"]) then { [_k, _v] call comspec_atak_native_fnc_compromise; } else { ["event", [_k, _v]] call comspec_atak_native_fnc_compromise; }; }] call CBA_fnc_addEventHandler; };
 // Centre Zeus : relevé à la demande, chaque joueur ne répond qu'au serveur (fn_zeusState).
 if (hasInterface) then {
-    ["comspec_atak_native_zeusStatePoll", { ["poll"] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_zeusStatePoll", { ["poll", _this] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusStateData", { ["data", _this select 0] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusObjectOpen", { ["open", _this] call comspec_atak_native_fnc_zeusObject; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusStateDenied", { ["denied"] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;

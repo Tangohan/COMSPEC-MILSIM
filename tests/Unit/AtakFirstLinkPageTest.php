@@ -24,7 +24,8 @@ final class AtakFirstLinkPageTest extends TestCase
         self::assertStringContainsString('@COMSPEC_ATAK_Native', $view);
         self::assertStringContainsString('$lierUrl', $view);
         self::assertStringContainsString('data-version-url', $view);
-        self::assertStringContainsString('Envoyer_mes_logs.bat', $view);
+        self::assertStringNotContainsString('Envoyer_mes_logs', $view);
+        self::assertStringContainsString('%LOCALAPPDATA%', $view);
         self::assertStringContainsString('Dépannage liaison', $view);
         self::assertStringContainsString('PortalHost::host()', $view);
         self::assertStringNotContainsString('athena.ttrd.fr', $view);
