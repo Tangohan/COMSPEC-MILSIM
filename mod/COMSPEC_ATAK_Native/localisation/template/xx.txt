@@ -3389,6 +3389,8 @@
 ["MPU5 sur vous : éteinte", "", "MPU5 on you: off"],
 ["MPU5 posée à %1 m : allumée", "", "MPU5 placed %1 m away: on"],
 ["MPU5 sur vous : allumée", "", "MPU5 on you: on"],
+["radio sur vous : éteinte", "", "radio on you: off"],
+["radio sur vous : allumée", "", "radio on you: on"],
 ["canal %1 (%2 MHz)", "", "channel %1 (%2 MHz)"],
 ["rechange sur vous", "", "spare on you"],
 ["Téléphone relié par câble EUD", "", "Phone linked by EUD cable"],
