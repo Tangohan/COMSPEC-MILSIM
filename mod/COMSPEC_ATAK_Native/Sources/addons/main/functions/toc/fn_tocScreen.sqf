@@ -424,6 +424,8 @@ switch (_mode) do {
             if ((_px findIf { (_x getVariable ["COMSPEC_ATAK_TocPanel", 0]) isEqualTo _k }) < 0) then {
                 private _rv = createVehicle ["Land_HelipadEmpty_F", getPosATL _h, [], 0, "CAN_COLLIDE"];
                 _rv attachTo [_h, [0, 0, 1.5]];
+                // Support invisible de la dalle : pas dans la liste d'objets éditables du Zeus (fn_zeusHide).
+                ["add", [_rv]] call comspec_atak_native_fnc_zeusHide;
                 _rv setVariable ["COMSPEC_ATAK_TocHost", _h, true];
                 _rv setVariable ["COMSPEC_ATAK_TocPanel", _k, true];
                 _rv setVariable ["COMSPEC_ATAK_TocOwned", true, true];

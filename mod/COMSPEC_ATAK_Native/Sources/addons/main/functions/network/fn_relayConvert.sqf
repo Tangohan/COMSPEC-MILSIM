@@ -128,6 +128,8 @@ switch (_mode) do {
             if (_cls isEqualTo "") then { _cls = (getModelInfo _t) select 0; };
             private _pr = createVehicle ["Land_HelipadEmpty_F", getPosATL _t, [], 0, "CAN_COLLIDE"];
             _pr setPosATL [(getPosATL _t) select 0, (getPosATL _t) select 1, 0];
+            // Support invisible : jamais dans la liste d'objets éditables du Zeus (fn_zeusHide).
+            ["add", [_pr]] call comspec_atak_native_fnc_zeusHide;
             [_pr, _t, _cls, [_t] call _height] call _register;
             _proxies pushBack [_pr, _t];
         } forEach (_sorted select [0, 60]);

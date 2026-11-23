@@ -30,7 +30,10 @@ $dateSrc = (string) ($document['validated_at'] ?? $document['updated_at'] ?? $do
 $dateFr = $dateSrc !== '' ? date('d/m/Y', strtotime($dateSrc) ?: time()) : date('d/m/Y');
 $bodyHtml = $livePreview
     ? ''
-    : \App\Repositories\SseDocumentRepository::bodyToHtml((string) ($document['body'] ?? ''));
+    : \App\Repositories\SseDocumentRepository::bodyToHtml((string) ($document['body'] ?? ''), [
+        'dossier' => (string) ($document['case_reference'] ?? ''),
+        'classification' => (string) ($document['classification_label'] ?? ''),
+    ]);
 $isValidated = in_array((string) ($document['status'] ?? ''), ['valide', 'archive'], true);
 $isArchived = (string) ($document['status'] ?? '') === 'archive';
 $marks = \App\Support\SseDocumentMarkings::forDocument($document, $unitLabel);

@@ -71,6 +71,8 @@ private _spawn = {
         _o enableSimulationGlobal false;
         _o allowDamage false;
         _o setPosASL _pos;
+        // Nœud simulé : pas dans la liste d'objets éditables du Zeus (fn_zeusHide).
+        ["add", [_o]] call comspec_atak_native_fnc_zeusHide;
         _o setVariable ["COMSPEC_ATAK_MeshSim", _side, true];
         _o setVariable ["COMSPEC_ATAK_MeshNode", [[_key, round _range, _o], [], [], [], []], true];
         _o setVariable ["COMSPEC_ATAK_CsCustom", format ["SIM-%1", (count _list) + _i], true];

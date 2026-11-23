@@ -72,6 +72,9 @@ if (!hasInterface) then {
 ["init"] call comspec_atak_native_fnc_meshTools;
 // Nœuds simulés du maillage : événement refusé tant que le mode développeur est décoché (fn_devMeshSim).
 ["init"] call comspec_atak_native_fnc_devMeshSim;
+// Objets d'appui du mod cachés du Zeus (fn_zeusHide) : demandes des clients, puis balayage de ceux qui se réinscrivent.
+["comspec_atak_native_zeusHide", { params [["_objs", []]]; ["add", [_objs]] call comspec_atak_native_fnc_zeusHide; }] call CBA_fnc_addEventHandler;
+[{ ["sweep"] call comspec_atak_native_fnc_zeusHide; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
 ["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.
