@@ -73246,4 +73246,10 @@ return [
     'Actions sur %1' => 'Actions on %1',
     'Aucune mention.' => 'No mention.',
     'Réponses au debriefing%1.' => 'Responses to the debrief%1.',
+    'Ligne de vol › À valider' => 'Flight line › To validate',
+    'Proposition créée au prochain relevé du mod, puis à valider ici ou dans' => 'Proposal created at the next mod reading, then to validate here or in',
+    'Validation réservée aux instructeurs de la filière.' => 'Validation is reserved for the track’s instructors.',
+    'Valider %1 après vol d’évaluation' => 'Validate %1 after the evaluation flight',
+    '(collez-le dans la barre d\'adresse de l\'Explorateur) et prenez les deux derniers fichiers' => '(paste it in the File Explorer address bar) and take the last two files',
+    '. Retirez tout mot de passe ou jeton, puis glissez-les dans le salon bugs ou help du Discord.' => '. Remove any password or token, then drop them in the Discord bugs or help channel.',
 ];
