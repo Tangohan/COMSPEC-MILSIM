@@ -173,7 +173,7 @@ $cdxManageUrl = \App\Controllers\Web\SseDetectionController::manageUrlForSession
             </details>
         </div>
     </header>
-    <?php AppServicesSseSseIdentifierWidget::render($src === 'cr' ? 'report' : 'field_note', (int) $it['id']); ?>
+    <?php \App\Services\Sse\SseIdentifierWidget::render($src === 'cr' ? 'report' : 'field_note', (int) $it['id']); ?>
 
     <section class="rmt-cycle<?= $delay['late'] ? ' is-late' : '' ?>" aria-label="Cycle de prise en compte">
         <ol class="rmt-steps">
