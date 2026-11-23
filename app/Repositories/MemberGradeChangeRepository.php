@@ -21,9 +21,14 @@ class MemberGradeChangeRepository
     public const SOURCE_ELEVATION = 'elevation';
     /** Correction de dossier validée (ou appliquée directement) par le bureau des effectifs. */
     public const SOURCE_CORRECTION = 'correction';
+    /** Changement de grade planifié à une date, appliqué par la tâche automatique member_grade_schedule. */
+    public const SOURCE_SCHEDULED = 'scheduled';
 
     /** Origine appliquée aux changements enregistrés pendant withSource(). */
     private static ?string $currentSource = null;
+
+    /** Auteur imposé pendant withSource() (tâche automatique : pas de session, l'auteur est celui qui a planifié). */
+    private static ?int $currentActor = null;
 
     private ?bool $tableReady = null;
 
@@ -44,15 +49,24 @@ class MemberGradeChangeRepository
      * @param callable(): T $fn
      * @return T
      */
-    public static function withSource(string $source, callable $fn): mixed
+    public static function withSource(string $source, callable $fn, ?int $actorUserId = null): mixed
     {
         $previous = self::$currentSource;
+        $previousActor = self::$currentActor;
         self::$currentSource = $source;
+        self::$currentActor = $actorUserId !== null && $actorUserId > 0 ? $actorUserId : null;
         try {
             return $fn();
         } finally {
             self::$currentSource = $previous;
+            self::$currentActor = $previousActor;
         }
+    }
+
+    /** Auteur imposé par withSource(), ou null : l'auteur est alors la personne connectée. */
+    public static function currentActor(): ?int
+    {
+        return self::$currentActor;
     }
 
     public static function currentSource(): string
@@ -125,7 +139,7 @@ class MemberGradeChangeRepository
         if ($tenantId < 1 || $userId < 1 || $fromGradeId === $toGradeId || !$this->ensureTable()) {
             return false;
         }
-        $source = in_array($source ?? self::currentSource(), [self::SOURCE_MANUAL, self::SOURCE_ELEVATION, self::SOURCE_CORRECTION], true)
+        $source = in_array($source ?? self::currentSource(), [self::SOURCE_MANUAL, self::SOURCE_ELEVATION, self::SOURCE_CORRECTION, self::SOURCE_SCHEDULED], true)
             ? ($source ?? self::currentSource())
             : self::SOURCE_MANUAL;
         $clip = static fn (?string $v): ?string => ($v = trim((string) $v)) === '' ? null : mb_substr($v, 0, 150);

@@ -68,6 +68,8 @@ final class CronSchedule
         'access_register_expiry' => 60,
         'personnel_auto_advancement' => 1440,
         'advancement_seniority' => 1440,
+        // Grades planifiés : un passage tous les quarts d'heure suffit (date et heure choisies par les RH).
+        'member_grade_schedule' => 15,
         // Passage borné à 90 s : le stock de photos se résorbe d'heure en heure.
         'photo_compress' => 60,
         // Fins d'essai fondateur et de formule offerte : e-mail une fois par fin.
