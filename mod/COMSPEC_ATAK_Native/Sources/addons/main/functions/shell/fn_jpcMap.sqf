@@ -54,12 +54,12 @@ switch (_act) do {
         if (!_show || {_mw <= 0} || {_mh <= 0}) exitWith {
             { _x ctrlShow false; } forEach ([_pic, _me] + _icons);
             // Hors page Carte : la caméra ne rend plus rien (pas de coût).
-            if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _name]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; missionNamespace setVariable ["COMSPEC_ATAK_JpcMapCam", objNull]; };
+            if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _name]; camDestroy _cam; ["keep"] call comspec_atak_native_fnc_tocRtt; missionNamespace setVariable ["COMSPEC_ATAK_JpcMapCam", objNull]; };
         };
         // Image dans l'image coupée (Options vidéo) : la vue aérienne serait noire, on montre la carte d'ensemble du
         // terrain (pictureMap) avec un rappel, sans caméra.
         if ((["check", "JPC"] call comspec_atak_native_fnc_pipCheck) isNotEqualTo "") exitWith {
-            if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _name]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; missionNamespace setVariable ["COMSPEC_ATAK_JpcMapCam", objNull]; };
+            if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _name]; camDestroy _cam; ["keep"] call comspec_atak_native_fnc_tocRtt; missionNamespace setVariable ["COMSPEC_ATAK_JpcMapCam", objNull]; };
             private _pm = getText (configFile >> "CfgWorlds" >> worldName >> "pictureMap");
             if (_last isNotEqualTo ["pip", _mx, _my, _mw, _mh]) then {
                 _pic ctrlSetText ((_pm) call comspec_atak_native_fnc_tr);

@@ -97,7 +97,7 @@ private _place = {
 };
 private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
-    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; };
+    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _cam; ["keep"] call comspec_atak_native_fnc_tocRtt; };
     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCam", objNull];
     ["pose", false] call comspec_atak_native_fnc_photoCam;
     private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPfh", -1];
@@ -311,7 +311,7 @@ switch (_act) do {
         private _light = _sh getOrDefault ["light", objNull];
         if (!isNull _light) then { deleteVehicle _light; };
         private _shot = _sh getOrDefault ["cam", objNull];
-        if (!isNull _shot) then { _shot cameraEffect ["Terminate", "Back"]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _shot; };
+        if (!isNull _shot) then { _shot cameraEffect ["Terminate", "Back"]; camDestroy _shot; ["keep"] call comspec_atak_native_fnc_tocRtt; };
         private _hidden = _sh getOrDefault ["hidden", []];
         { if (!isNull _x) then { _x ctrlShow true; }; } forEach _hidden;
         private _hud = _sh getOrDefault ["hud", []];

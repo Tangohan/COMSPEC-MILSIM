@@ -94,7 +94,7 @@ private _prevTex = {
     private _key = str [_pos, _dir];
     private _pc = missionNamespace getVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
     if (!isNull _pc && {(([_pc, "key", ""] call comspec_atak_native_fnc_camVar)) isEqualTo _key}) exitWith { ([_pc, "tex", ""] call comspec_atak_native_fnc_camVar) };
-    if (!isNull _pc) then { _pc cameraEffect ["Terminate", "Back", ([_pc, "r2t", ""] call comspec_atak_native_fnc_camVar)]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _pc; };
+    if (!isNull _pc) then { _pc cameraEffect ["Terminate", "Back", ([_pc, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _pc; ["keep"] call comspec_atak_native_fnc_tocRtt; };
     private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePrevN", 0]) + 1) mod 4;
     missionNamespace setVariable ["COMSPEC_ATAK_DronePrevN", _n];
     private _name = format ["comspec_droneprev%1", _n];
@@ -116,7 +116,7 @@ private _prevTex = {
             private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             if ((_st getOrDefault ["dronePhEdit", -1]) >= 0 && {(_st getOrDefault ["activePage", ""]) isEqualTo "DRONE"} && {!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}) exitWith {};
             private _c = missionNamespace getVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
-            if (!isNull _c) then { _c cameraEffect ["Terminate", "Back", ([_c, "r2t", ""] call comspec_atak_native_fnc_camVar)]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _c; };
+            if (!isNull _c) then { _c cameraEffect ["Terminate", "Back", ([_c, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _c; ["keep"] call comspec_atak_native_fnc_tocRtt; };
             missionNamespace setVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
             [missionNamespace getVariable ["COMSPEC_ATAK_DronePrevPfh", -1]] call CBA_fnc_removePerFrameHandler;
             missionNamespace setVariable ["COMSPEC_ATAK_DronePrevPfh", -1];

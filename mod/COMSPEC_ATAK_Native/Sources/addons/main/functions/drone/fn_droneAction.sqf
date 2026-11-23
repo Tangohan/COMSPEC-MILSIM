@@ -590,7 +590,7 @@ private _camOpen = {
 };
 private _camClose = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
-    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", "comspec_dronecam"] call comspec_atak_native_fnc_camVar)]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; };
+    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", "comspec_dronecam"] call comspec_atak_native_fnc_camVar)]; camDestroy _cam; ["keep"] call comspec_atak_native_fnc_tocRtt; };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCam", objNull];
     [missionNamespace getVariable ["COMSPEC_ATAK_DroneCamPfh", -1]] call CBA_fnc_removePerFrameHandler;
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", -1];
