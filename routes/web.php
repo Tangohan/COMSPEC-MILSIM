@@ -1540,9 +1540,12 @@ return function (Router $router) {
     $router->get('/atak/sse/rapports', [SsePortalController::class, 'reportsHub'], $mwSsePortal);
     $router->get('/atak/sse/documents', [SsePortalController::class, 'documentsIndex'], $mwSsePortal);
     $router->get('/atak/sse/documents/nouveau', [SsePortalController::class, 'documentCreateForm'], $mwSsePortal);
+    $router->get('/atak/sse/documents/brouillon', [SsePortalController::class, 'documentDraftShow'], $mwSsePortal);
+    $router->post('/atak/sse/documents/brouillon', [SsePortalController::class, 'documentDraftSave'], $mwSsePortal);
     $router->post('/atak/sse/documents', [SsePortalController::class, 'documentStore'], $mwSsePortal);
     $router->get('/atak/sse/documents/{id}', [SsePortalController::class, 'documentShow'], $mwSsePortal);
     $router->get('/atak/sse/documents/{id}/modifier', [SsePortalController::class, 'documentEditForm'], $mwSsePortal);
+    $router->get('/atak/sse/documents/{id}/pdf', [SsePortalController::class, 'documentPdf'], $mwSsePortal);
     $router->post('/atak/sse/documents/{id}', [SsePortalController::class, 'documentUpdate'], $mwSsePortal);
     $router->post('/atak/sse/documents/{id}/statut', [SsePortalController::class, 'documentStatus'], $mwSsePortal);
     $router->get('/atak/sse/bibliotheque', [SsePortalController::class, 'textLibraryIndex'], $mwSsePortal);

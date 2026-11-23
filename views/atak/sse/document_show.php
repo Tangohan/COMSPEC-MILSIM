@@ -15,6 +15,8 @@ $statusClass = match ($status) {
 };
 ?>
 
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-doc-editor.css')) ?>">
+
 <section class="sse-desk-hero" aria-labelledby="sse-doc-show-title">
     <div class="sse-desk-hero__main">
         <div class="sse-desk-hero__kicker">
@@ -73,6 +75,7 @@ $statusClass = match ($status) {
                     Version de diffusion
                 </a>
             <?php endif; ?>
+            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/documents/' . (int) $document['id'] . '/pdf')) ?>" style="width:100%">Exporter en PDF</a>
             <button class="btn btn--ghost" type="button" data-copy-body style="width:100%">Copier le corps</button>
         </div>
         <div class="interest-hero__source">
@@ -113,7 +116,7 @@ $statusClass = match ($status) {
         $livePreview = false;
         require __DIR__ . '/partials/document_paper.php';
         ?>
-        <pre id="sse-doc-body-raw" class="sr-only" aria-hidden="true"><?= $h($document['body'] ?? '') ?></pre>
+        <pre id="sse-doc-body-raw" class="sr-only" aria-hidden="true"><?= $h(\App\Support\SseRichText::isRich((string) ($document['body'] ?? '')) ? \App\Support\SseRichText::plainText((string) $document['body']) : ($document['body'] ?? '')) ?></pre>
     </div>
 </section>
 

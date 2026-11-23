@@ -649,8 +649,16 @@ TXT,
         return is_string($converted) ? $converted : $escaped;
     }
 
-    public static function bodyToHtml(string $body): string
+    /**
+     * @param array<string,string> $fields valeurs à jour des champs dynamiques d'un corps riche
+     */
+    public static function bodyToHtml(string $body, array $fields = []): string
     {
+        if (\App\Support\SseRichText::isRich($body)) {
+            $rich = \App\Support\SseRichText::toPaperHtml($body, $fields);
+
+            return $rich !== '' ? $rich : '<p class="sse-doc-paper__muted">Le corps du document apparaîtra ici.</p>';
+        }
         $body = str_replace(["\r\n", "\r"], "\n", $body);
         $lines = explode("\n", $body);
         $html = [];

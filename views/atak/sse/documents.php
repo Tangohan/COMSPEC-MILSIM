@@ -79,6 +79,9 @@ $whenLabel = static function (?string $raw): string {
 };
 
 $excerpt = static function (string $body): string {
+    if (\App\Support\SseRichText::isRich($body)) {
+        $body = \App\Support\SseRichText::plainText($body);
+    }
     $clean = preg_replace('/\[\[[^\]]*\]\]/u', '[caviardé]', $body) ?? $body;
     $clean = preg_replace('/^\s*[A-ZÉÈÀÇ0-9 \-]{3,}\s*$/mu', ' ', $clean) ?? $clean;
     $clean = trim(preg_replace('/\s+/u', ' ', $clean) ?? '');
