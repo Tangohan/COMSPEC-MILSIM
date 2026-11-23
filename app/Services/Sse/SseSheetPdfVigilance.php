@@ -1209,7 +1209,7 @@ trait SseSheetPdfVigilance
     private function validityStrip(array $a): void
     {
         $pdf = $this->pdf;
-        $pdf->setPage(1);
+        $pdf->setPage(1 + $this->off);
         $d = $this->d;
         $l = self::MARGIN;
         $y = self::V_STRIP_Y;
@@ -1260,7 +1260,7 @@ trait SseSheetPdfVigilance
         $issuer = trim((string) ($d['issuer'] ?? ''));
         $cell($x, $l + self::CONTENT_W - $x, $this->v('issued_by'), $issuer !== '' ? $issuer : ((string) $d['service'] !== '' ? (string) $d['service'] : (string) $d['authority'][$this->lang]));
         $pdf->SetLineWidth(0.25);
-        $pdf->setPage($this->pages);
+        $pdf->setPage($this->pages + $this->off);
         if ($this->pages === 1) {
             $this->y = self::BOTTOM;
         }

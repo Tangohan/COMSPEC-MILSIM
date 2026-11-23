@@ -127,7 +127,7 @@ final class AthenaPdfTheme
      * Métadonnées normalisées (communauté et logo résolus).
      *
      * @param array<string, mixed> $meta
-     * @return array{kind: string, reference: string, community: string, logo: ?string, classification: string, audience: string, generated_by: string, note: string, title: string, generated_at: string}
+     * @return array{kind: string, reference: string, community: string, logo: ?string, classification: string, audience: string, generated_by: string, note: string, title: string, generated_at: string, band_bottom: bool}
      */
     public static function meta(array $meta): array
     {
@@ -154,6 +154,7 @@ final class AthenaPdfTheme
             'note' => trim((string) ($meta['note'] ?? '')),
             'title' => trim((string) ($meta['title'] ?? '')) !== '' ? trim((string) $meta['title']) : $kind,
             'generated_at' => (string) ($meta['generated_at'] ?? date('Y-m-d H:i')),
+            'band_bottom' => !empty($meta['band_bottom']),
         ];
     }
 
