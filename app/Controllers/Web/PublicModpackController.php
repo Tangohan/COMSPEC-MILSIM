@@ -11,13 +11,18 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Middleware\AuthMiddleware;
 use App\Repositories\PublicModpackRepository;
+use App\Services\Modpack\ModpackBundle;
+use App\Services\Modpack\ModpackItems;
 use App\Services\Modpack\ModpackUpload;
 use App\Services\Modpack\ModpackVersion;
 
 final class PublicModpackController
 {
-    public function __construct(private PublicModpackRepository $packs = new PublicModpackRepository())
-    {
+    public function __construct(
+        private PublicModpackRepository $packs = new PublicModpackRepository(),
+        private ?ModpackItems $items = null,
+    ) {
+        $this->items ??= ModpackItems::default();
     }
 
     public function index(Request $request): Response
@@ -47,6 +52,8 @@ final class PublicModpackController
             'activity' => $activity,
             'admin' => $admin,
             'ready' => $ready,
+            'items' => $this->items->all(),
+            'itemsReady' => array_map(fn (array $item): bool => $this->items->isDownloadable($item), $this->items->all()),
             'notice' => $admin ? Session::getFlash('public_modpack_notice') : null,
         ])->header('Cache-Control', 'private, no-store')->setStatusCode($ready ? 200 : 503);
     }
@@ -278,6 +285,107 @@ final class PublicModpackController
                 fclose($slot);
             }
         });
+    }
+
+    /** Un seul mod du manifeste : GET /modpacks/telecharger-mod?mod=sse */
+    public function downloadItem(Request $request): Response
+    {
+        return $this->serveBundle([$request->queryString('mod')]);
+    }
+
+    /** Sélection groupée : GET /modpacks/telecharger-selection?mods[]=sse&mods[]=sof_base */
+    public function downloadSelection(Request $request): Response
+    {
+        $mods = $request->query('mods');
+        $ids = is_array($mods) ? array_values($mods) : [];
+        if (count($ids) > count($this->items->all())) {
+            return $this->error(400, __('modpack.selection_invalid'));
+        }
+
+        return $this->serveBundle($ids);
+    }
+
+    /** @param list<mixed> $ids */
+    private function serveBundle(array $ids): Response
+    {
+        try {
+            $pack = $this->packs->current();
+        } catch (\PDOException $e) {
+            error_log('Public modpack: ' . $e->getMessage());
+            return $this->error(503, __('modpack.archive_unavailable'));
+        }
+        $max = (int) ($pack['max_downloads'] ?? 0);
+        if ($max === 0) {
+            return $this->error(503, __('modpack.download_paused'))->header('Retry-After', '60');
+        }
+
+        try {
+            $this->prepareStorage();
+            [$slot, $active] = $this->reserveDownload($max);
+            if ($slot === null) {
+                return $this->error(429, __('modpack.download_busy'))->header('Retry-After', '20');
+            }
+            try {
+                $bundle = (new ModpackBundle($this->items))->build($ids, $this->directory());
+            } catch (\Throwable $e) {
+                fclose($slot);
+                throw $e;
+            }
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage() === 'unknown_item' || $e->getMessage() === 'unavailable_item' ? 404 : 400, __('modpack.selection_invalid'));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage() === 'too_large' ? 413 : 503, __('modpack.archive_unavailable'));
+        }
+        $file = @fopen($bundle['path'], 'rb');
+        if (!$file) {
+            fclose($slot);
+            @unlink($bundle['path']);
+            return $this->error(503, __('modpack.archive_unavailable'));
+        }
+        $this->packs->countDownload();
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+        $speed = $active >= (int) $pack['throttle_at'] ? (int) $pack['throttle_mib'] * 1048576 : 0;
+        $length = $bundle['bytes'];
+        $path = $bundle['path'];
+
+        return (new Response())->setStatusCode(200)
+            ->header('Content-Type', 'application/zip')
+            ->header('Content-Disposition', 'attachment; filename="' . $bundle['name'] . '"')
+            ->header('Content-Length', (string) $length)
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('Cache-Control', 'no-store, no-transform')
+            ->header('X-Accel-Buffering', 'no')
+            ->setBodyStream(static function () use ($file, $slot, $length, $speed, $path): void {
+                set_time_limit(0);
+                @ini_set('zlib.output_compression', '0');
+                while (ob_get_level() > 0 && @ob_end_flush()) {
+                }
+                $sent = 0;
+                $started = microtime(true);
+                try {
+                    while ($sent < $length && !connection_aborted()) {
+                        $chunk = fread($file, min(262144, $length - $sent));
+                        if ($chunk === false || $chunk === '') {
+                            break;
+                        }
+                        $sent += strlen($chunk);
+                        if ($speed > 0) {
+                            $wait = $sent / $speed - (microtime(true) - $started);
+                            if ($wait > 0) {
+                                usleep((int) ($wait * 1000000));
+                            }
+                        }
+                        echo $chunk;
+                        flush();
+                    }
+                } finally {
+                    fclose($file);
+                    fclose($slot);
+                    @unlink($path);
+                }
+            });
     }
 
     /** @return array{0: resource|null, 1: int} */
