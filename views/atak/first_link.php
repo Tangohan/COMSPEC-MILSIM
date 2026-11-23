@@ -344,7 +344,7 @@ $icon = static function (string $name): string {
                             <span class="fl-tool__icon"><?= $icon('file') ?></span>
                             <div>
                                 <h3 class="fl-method__title">Envoyer mes logs</h3>
-                                <p class="fl-copy">Dans le dossier du mod, double-cliquez sur <b translate="no">Envoyer_mes_logs.bat</b>. Un fichier <span translate="no">COMSPEC_logs_&lt;date&gt;.zip</span> apparaît sur le Bureau, mots de passe et jetons masqués. Glissez-le dans le salon bugs ou help du Discord.</p>
+                                <p class="fl-copy">Ouvrez <b translate="no">%LOCALAPPDATA%\Arma 3</b> (collez-le dans la barre d'adresse de l'Explorateur) et prenez les deux derniers fichiers <span translate="no">.rpt</span>. Retirez tout mot de passe ou jeton, puis glissez-les dans le salon bugs ou help du Discord.</p>
                             </div>
                         </div>
                     </div>
