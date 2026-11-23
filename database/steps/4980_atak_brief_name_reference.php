@@ -41,28 +41,14 @@ if (!$briefRefSchema->tableExists('atak_nine_line')) {
 }
 
 if (!$briefRefSchema->tableExists('atak_brief_refs')) {
-    $pdo->exec($briefRefMysql
-        ? "CREATE TABLE IF NOT EXISTS atak_brief_refs (
-            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            tenant_id INT UNSIGNED NOT NULL,
-            ref_day DATE NOT NULL,
-            seq INT UNSIGNED NOT NULL,
-            ref VARCHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-            created_at DATETIME NOT NULL,
-            PRIMARY KEY (id),
-            UNIQUE KEY uq_brief_refs_ref (tenant_id, ref),
-            UNIQUE KEY uq_brief_refs_day_seq (tenant_id, ref_day, seq)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-        : 'CREATE TABLE IF NOT EXISTS atak_brief_refs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tenant_id INTEGER NOT NULL,
-            ref_day TEXT NOT NULL,
-            seq INTEGER NOT NULL,
-            ref TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            UNIQUE (tenant_id, ref),
-            UNIQUE (tenant_id, ref_day, seq)
-        )');
+    $briefRefEngine = $briefRefMysql ? ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci' : '';
+    $briefRefId = $briefRefMysql ? 'id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY' : 'id INTEGER PRIMARY KEY AUTOINCREMENT';
+    $briefRefCode = $briefRefMysql ? 'VARCHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL' : 'TEXT NOT NULL';
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS atak_brief_refs ('
+        . $briefRefId . ', tenant_id INT NOT NULL, ref_day DATE NOT NULL, seq INT NOT NULL, ref ' . $briefRefCode . ', created_at DATETIME NOT NULL, '
+        . 'CONSTRAINT uq_brief_refs_ref UNIQUE (tenant_id, ref), CONSTRAINT uq_brief_refs_day_seq UNIQUE (tenant_id, ref_day, seq))' . $briefRefEngine
+    );
     $briefRefDone[] = 'atak_brief_refs';
 }
 
