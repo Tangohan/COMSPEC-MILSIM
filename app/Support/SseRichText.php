@@ -53,9 +53,12 @@ final class SseRichText
     private const ALIGN = ['left', 'right', 'center', 'justify'];
 
     /** sse-hint : texte d'aide grisé des modèles (span), à remplacer ; il n'apparaît ni sur le papier ni dans le PDF. */
-    private const CLASSES = ['sse-pagebreak', 'sse-field', 'sse-hint', 'sse-media'];
+    private const CLASSES = ['sse-pagebreak', 'sse-field', 'sse-hint', 'sse-media', 'sse-data'];
 
     /** Jeton d'une image jointe : « <communauté>_<16 hexadécimaux> » (fichier du stockage privé, servi par une route contrôlée). */
+    /** Source d'un bloc de données insérées (ORBAT, fiche membre, effectif) : « type:numéro ». */
+    public const DATA_SRC = '/^(unit|roster|member):[0-9]{1,10}$/';
+
     public const MEDIA_TOKEN = '/^[0-9]{1,10}_[a-f0-9]{16}$/';
 
     public static function isRich(string $body): bool
@@ -217,6 +220,17 @@ final class SseRichText
                 unset($classes['sse-media']);
             }
         }
+        // Bloc de données insérées : un div qui garde sa source ; la classification minimale est recalculée par le serveur.
+        $dataSrc = '';
+        if (isset($classes['sse-data'])) {
+            $src = trim($el->getAttribute('data-src'));
+            if ($tag === 'div' && preg_match(self::DATA_SRC, $src) === 1) {
+                $dataSrc = $src;
+                unset($classes['sse-pagebreak'], $classes['sse-field'], $classes['sse-hint'], $classes['sse-media']);
+            } else {
+                unset($classes['sse-data']);
+            }
+        }
         if (isset($classes['sse-field']) && $tag !== 'span') {
             unset($classes['sse-field']);
         }
@@ -240,6 +254,9 @@ final class SseRichText
         }
         if ($media !== '') {
             $out .= ' data-media="' . $media . '"';
+        }
+        if ($dataSrc !== '') {
+            $out .= ' data-src="' . $dataSrc . '"';
         }
         // Verrou : seule la valeur « 1 » survit, sur un bloc ou un texte en ligne ; aucun autre attribut data-*.
         if (trim($el->getAttribute('data-lock')) === '1' && in_array($tag, self::LOCKABLE, true)) {
@@ -509,6 +526,7 @@ final class SseRichText
             $html
         );
         $html = str_replace(' data-lock="1"', '', $html);
+        $html = (string) preg_replace('~ data-src="[^"]*"~', '', $html);
         $html = (string) preg_replace('~<div class="sse-pagebreak"></div>~', '<br pagebreak="true"/>', $html);
         $html = (string) preg_replace('~<table(?: data-lock="1")?>~', '<table border="1" cellpadding="4" cellspacing="0" style="border-color:#94a3b8">', $html);
         $html = (string) preg_replace('~<hr>~', '<hr style="height:1px;color:#94a3b8">', $html);

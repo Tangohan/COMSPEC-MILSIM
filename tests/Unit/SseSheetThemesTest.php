@@ -37,7 +37,7 @@ final class SseSheetThemesTest extends TestCase
             // Seul le code du fichier est contrôlé : le commentaire d'en-tête dit justement qu'aucun nom réel n'est utilisé.
             $text = (string) preg_replace('~/\*.*?\*/~s', '', $text);
             self::assertDoesNotMatchRegularExpression('/\b(CIA|NSA|FBI|DoD|Langley|Fort Meade|Pentagon|KGB|MI6|DGSE)\b/i', $text, basename($file));
-            self::assertDoesNotMatchRegularExpression('/<svg|data:image|->Image\(/i', $text, basename($file) . ' : ni logo ni emblème');
+            self::assertDoesNotMatchRegularExpression('/<svg|data:image/i', $text, basename($file) . ' : aucun emblème intégré (seul le logo déjà enregistré par la communauté peut figurer)');
         }
     }
 

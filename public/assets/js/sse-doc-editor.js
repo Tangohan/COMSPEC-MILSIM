@@ -24,6 +24,8 @@
     var FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre', 'type', 'id_fiche', 'nom_code', 'dse'];
     var LOCKABLE = /^(p|div|span|h2|h3|h4|blockquote|ul|ol|table)$/;
     var MEDIA_TOKEN = /^[0-9]{1,10}_[a-f0-9]{16}$/;
+    var DATA_SRC = /^(unit|roster|member):[0-9]{1,10}$/;
+    var CLASS_ORDER = ['interne', 'encadrement', 'confidentiel', 'tres_restreint'];
     var PAGE_PX = 1122.5; // 297 mm at 96 dpi
 
     function msg(name) {
@@ -112,6 +114,9 @@
                 var v = node.getAttribute(a);
                 if (v && /^\d{1,2}$/.test(v) && parseInt(v, 10) >= 2 && parseInt(v, 10) <= 20) { attrs += ' ' + a + '="' + parseInt(v, 10) + '"'; }
             });
+        }
+        if (tag === 'div' && cls.indexOf('sse-data') >= 0 && DATA_SRC.test(node.getAttribute('data-src') || '')) {
+            attrs += ' class="sse-data" data-src="' + node.getAttribute('data-src') + '"';
         }
         if (node.getAttribute('data-lock') === '1' && LOCKABLE.test(tag)) { attrs += ' data-lock="1"'; }
         var style = cleanStyle(node.getAttribute('style'), tag);
@@ -418,6 +423,103 @@
         mediaInput.addEventListener('change', function () { if (mediaInput.files && mediaInput.files[0]) { uploadMedia(mediaInput.files[0]); } mediaInput.value = ''; });
     }
 
+    /* ---------- community data (ORBAT extract, member card, unit roster) : read through the server, which applies the visibility rules ---------- */
+    var dataLoaded = false;
+    function getJson(url, done) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onload = function () {
+            var r = null;
+            try { r = JSON.parse(xhr.responseText); } catch (e) { r = null; }
+            done(xhr.status, r);
+        };
+        xhr.onerror = function () { done(0, null); };
+        xhr.send();
+    }
+    function setDataMsg(name, extra) {
+        var el = byId('sse-ed-data-msg');
+        if (el) { el.textContent = name ? msg(name) + (extra || '') : ''; }
+    }
+    function fillSelect(id, rows, label) {
+        var sel = byId(id);
+        if (!sel) { return; }
+        sel.innerHTML = '';
+        rows.forEach(function (row) {
+            var o = document.createElement('option');
+            o.value = String(row.id);
+            o.textContent = label(row);
+            sel.appendChild(o);
+        });
+    }
+    function loadDataLists() {
+        if (dataLoaded || !cfg.dataUrl) { return; }
+        dataLoaded = true;
+        setDataMsg('data-loading');
+        getJson(cfg.dataUrl, function (status, r) {
+            if (status !== 200 || !r || !r.ok) { dataLoaded = false; setDataMsg('data-error'); return; }
+            fillSelect('sse-ed-data-unit', r.units || [], function (u) { return new Array(u.depth + 1).join('— ') + u.name; });
+            fillSelect('sse-ed-data-member', r.members || [], function (m) { return m.label + ' (' + m.unit + ')'; });
+            setDataMsg((r.units || []).length ? '' : 'data-none');
+        });
+    }
+    function raiseClassification(min) {
+        var c = byId('classification');
+        if (!c || CLASS_ORDER.indexOf(min) <= CLASS_ORDER.indexOf(c.value)) { return false; }
+        c.value = min;
+        c.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+    }
+    function insertData() {
+        var kind = (document.querySelector('input[name="sse-ed-data-kind"]:checked') || {}).value || 'orbat';
+        var sel = byId(kind === 'membre' ? 'sse-ed-data-member' : 'sse-ed-data-unit');
+        if (!sel || !sel.value || !cfg.dataUrl) { setDataMsg('data-none'); return; }
+        setDataMsg('data-loading');
+        getJson(cfg.dataUrl + '/' + kind + '/' + sel.value, function (status, r) {
+            if (status !== 200 || !r || !r.ok || !r.html) {
+                setDataMsg(status === 403 ? 'data-forbidden' : 'data-error');
+                return;
+            }
+            restoreSelection();
+            insertHtml(cleanHtml(r.html) + '<p><br></p>');
+            lockSnapshot();
+            var raised = raiseClassification(r.classification);
+            setDataMsg(raised ? 'data-inserted-raised' : 'data-inserted');
+            changed(true);
+        });
+    }
+    var dataBtn = byId('sse-ed-data-insert');
+    if (dataBtn) {
+        dataBtn.addEventListener('mousedown', function () { rememberSelection(); });
+        dataBtn.addEventListener('click', insertData);
+    }
+    var dataTab = root.querySelector('[data-side-tab="data"]');
+    if (dataTab) { dataTab.addEventListener('click', loadDataLists); }
+
+    /* community logo: copied once into the private image store, then inserted like any image */
+    function insertLogo() {
+        if (!cfg.logoUrl) { return; }
+        var data = new FormData();
+        var tk = form.querySelector('input[name="_csrf_token"]');
+        data.append('_csrf_token', tk ? tk.value : '');
+        stateText('media-sending');
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', cfg.logoUrl);
+        xhr.onload = function () {
+            var r = null;
+            try { r = JSON.parse(xhr.responseText); } catch (e) { r = null; }
+            if (xhr.status === 200 && r && r.ok && MEDIA_TOKEN.test(r.token || '')) {
+                restoreSelection();
+                insertHtml(mediaBlock(r.token));
+                stateText('ready');
+            } else {
+                stateText(xhr.status === 404 ? 'logo-none' : 'media-error');
+            }
+        };
+        xhr.onerror = function () { stateText('media-error'); };
+        xhr.send(data);
+    }
+
     function insertPageBreak() {
         insertHtml('<div class="sse-pagebreak" contenteditable="false"></div><p><br></p>');
     }
@@ -546,6 +648,12 @@
                 snapshot(false); changed(true); closePops(null); break;
             case 'clear': exec('removeFormat', null, false); break;
             case 'pagebreak': insertPageBreak(); break;
+            case 'logo': rememberSelection(); insertLogo(); break;
+            case 'sign': (function () {
+                var after = byId('sse-after');
+                if (after) { after.value = 'sign'; }
+                submitForm();
+            })(); break;
             case 'media': rememberSelection(); if (mediaInput) { mediaInput.click(); } break;
             case 'lock': lockSelection(true); break;
             case 'unlock': lockSelection(false); break;

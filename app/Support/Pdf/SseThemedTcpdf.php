@@ -103,14 +103,26 @@ final class SseThemedTcpdf extends AthenaTcpdf
         // Bloc d'identification.
         $this->SetFillColorArray(SseSheetThemes::rgb($t['head_bg']));
         $this->Rect($l, 8.5, $r - $l, 15, 'F');
+        // Logo de la communauté (celui déjà enregistré pour elle), sur une pastille claire pour rester lisible sur tous les thèmes.
+        $x = $l + 3;
+        if ($m['logo'] !== null) {
+            try {
+                $this->SetFillColor(255, 255, 255);
+                $this->RoundedRect($l + 2, 9.5, 13, 13, 1.2, '1111', 'F');
+                $this->Image($m['logo'], $l + 2.6, 10.1, 11.8, 11.8, '', '', '', true, 300, '', false, false, 0, 'CM');
+                $x = $l + 18;
+            } catch (\Throwable) {
+                $x = $l + 3;
+            }
+        }
         $this->SetTextColorArray(SseSheetThemes::rgb($t['head_fg']));
         $this->SetFont($sans, 'B', 13);
-        $this->SetXY($l + 3, 10.2);
+        $this->SetXY($x, 10.2);
         $this->Cell(90, 6.5, 'ATHENA · BUREAU SSE', 0, 0, 'L', false, '', 1);
         if ($m['community'] !== '') {
             $this->SetFont($sans, '', 7);
-            $this->SetXY($l + 3, 17.2);
-            $this->Cell(95, 4, $m['community'], 0, 0, 'L', false, '', 1);
+            $this->SetXY($x, 17.2);
+            $this->Cell(95 - ($x - $l - 3), 4, $m['community'], 0, 0, 'L', false, '', 1);
         }
         if ($m['kind'] !== '') {
             $this->SetFont($sans, 'B', 6.8);

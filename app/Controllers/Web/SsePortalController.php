@@ -4302,13 +4302,14 @@ final class SsePortalController
 
         $userId = (int) Session::get('user_id') ?: null;
         $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur');
+        $classification = $this->raisedClassification($body, (string) $request->input('classification', 'confidentiel'));
         $docId = $this->documents->create([
             'tenant_id' => $this->tenantId(),
             'case_id' => $caseId > 0 ? $caseId : null,
             'document_type' => (string) $request->input('document_type', 'note_analyse'),
             'title' => $title,
             'body' => $body,
-            'classification' => (string) $request->input('classification', 'confidentiel'),
+            'classification' => $classification,
             'status' => (string) $request->input('status', 'brouillon'),
             'sheet_theme' => (string) $request->input('sheet_theme', ''),
             'created_by' => $userId,
@@ -4319,9 +4320,9 @@ final class SsePortalController
         $mentions = $this->recordLibraryUses($request, (int) $docId, $caseId, $author, $userId);
         $this->drafts()->discard($this->tenantId(), (int) $userId, $this->draftGuestKey(), 0);
 
-        Session::flash('success', 'Document créé et placé en atelier.' . $mentions);
+        Session::flash('success', 'Document créé et placé en atelier.' . $mentions . $this->classWarning);
 
-        return Response::redirect(url('atak/sse/documents/' . $docId));
+        return Response::redirect(url('atak/sse/documents/' . $docId) . ((string) $request->input('after', '') === 'sign' ? '#sse-doc-sign-title' : ''));
     }
 
     public function documentShow(Request $request, array $params = []): Response
@@ -4459,7 +4460,7 @@ final class SsePortalController
             'title' => $title,
             'body' => $body,
             'document_type' => (string) $request->input('document_type', $doc['document_type']),
-            'classification' => (string) $request->input('classification', $doc['classification']),
+            'classification' => $this->raisedClassification($body, (string) $request->input('classification', $doc['classification'])),
             'status' => $status,
             'case_id' => $caseId > 0 ? $caseId : null,
             'updated_by' => (int) Session::get('user_id') ?: null,
@@ -4476,9 +4477,9 @@ final class SsePortalController
         $author = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? 'Opérateur');
         $mentions = $this->recordLibraryUses($request, $id, $caseId, $author, (int) Session::get('user_id') ?: null);
         $this->drafts()->discard($this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey(), $id);
-        Session::flash('success', 'Document enregistré.' . $mentions);
+        Session::flash('success', 'Document enregistré.' . $mentions . $this->classWarning);
 
-        return Response::redirect(url('atak/sse/documents/' . $id));
+        return Response::redirect(url('atak/sse/documents/' . $id) . ((string) $request->input('after', '') === 'sign' ? '#sse-doc-sign-title' : ''));
     }
 
     /**
@@ -4748,6 +4749,97 @@ final class SsePortalController
         return (new Response())->header('Content-Type', $mime)->header('Content-Length', (string) filesize($abs))
             ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff')->header('Referrer-Policy', 'no-referrer')
             ->setBody((string) file_get_contents($abs));
+    }
+
+    /**
+     * Classification imposée par les données insérées : le serveur recalcule le minimum depuis data-src (jamais depuis le client)
+     * et relève la classification du document s'il le faut, avec un avertissement.
+     */
+    private string $classWarning = '';
+
+    private function raisedClassification(string $body, string $requested): string
+    {
+        $requested = SseCaseRepository::normalizeClassification($requested);
+        $html = SseRichText::htmlOf($body);
+        if (!str_contains($html, 'data-src="')) {
+            return $requested;
+        }
+        try {
+            $min = \App\Services\Sse\SseDocumentDataService::forSession($this->tenantId())->minimumFor($html);
+        } catch (\Throwable $e) {
+            error_log('[sse.donnees] classification non calculée : ' . $e->getMessage());
+
+            return $requested;
+        }
+        $final = \App\Services\Sse\SseDocumentDataService::maxClassification($requested, $min);
+        if ($final !== $requested) {
+            $this->classWarning = ' Classification relevée à « ' . SseCaseRepository::classificationLabel($final) . ' » : le document contient des données d’ORBAT ou de membres de ce niveau.';
+        }
+
+        return $final;
+    }
+
+    /** Menu « Insérer des données » : unités et membres que le rédacteur peut voir (règles de confidentialité de l'ORBAT). */
+    public function documentDataIndex(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || (int) (Session::get('user_id') ?: 0) < 1) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        try {
+            $svc = \App\Services\Sse\SseDocumentDataService::forSession($this->tenantId());
+
+            return Response::json(['ok' => true, 'units' => $svc->selectableUnits(), 'members' => $svc->selectableMembers()]);
+        } catch (\Throwable $e) {
+            error_log('[sse.donnees] ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'Données indisponibles.'], 500);
+        }
+    }
+
+    /** Bloc de données prêt à insérer : orbat, effectif (unité) ou membre. Refus si hors périmètre. */
+    public function documentDataInsert(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || (int) (Session::get('user_id') ?: 0) < 1) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $svc = \App\Services\Sse\SseDocumentDataService::forSession($this->tenantId());
+            $r = match ((string) ($params['type'] ?? '')) {
+                'orbat' => $svc->orbatExtract($id),
+                'effectif' => $svc->unitRosterTable($id),
+                'membre' => $svc->memberCard($id),
+                default => ['ok' => false, 'error' => 'Type de données inconnu.'],
+            };
+        } catch (\Throwable $e) {
+            error_log('[sse.donnees] ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'Données indisponibles.'], 500);
+        }
+        if (empty($r['ok'])) {
+            return Response::json(['ok' => false, 'error' => (string) ($r['error'] ?? 'Hors de votre périmètre.')], 403);
+        }
+
+        return Response::json(['ok' => true, 'html' => SseRichText::sanitize((string) $r['html']), 'classification' => $r['classification'], 'label' => $r['label']]);
+    }
+
+    /** Logo de la communauté, copié dans le stockage privé des images de documents (mêmes contrôles qu'un envoi). */
+    public function documentMediaLogo(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $file = \App\Support\Pdf\AthenaPdfTheme::meta(['tenant_id' => $this->tenantId()])['logo'] ?? null;
+        $bytes = is_string($file) && is_file($file) ? (string) @file_get_contents($file) : '';
+        if ($bytes === '') {
+            return Response::json(['ok' => false, 'error' => 'Aucun logo enregistré pour cette communauté : envoyez une image.'], 404);
+        }
+        $r = (new \App\Services\Sse\SseDocumentMedia())->storeBytes($bytes, $this->tenantId());
+        if (empty($r['ok']) || !isset($r['token'])) {
+            return Response::json(['ok' => false, 'error' => (string) ($r['error'] ?? 'Logo refusé.')], 422);
+        }
+
+        return Response::json(['ok' => true, 'token' => $r['token'], 'url' => url('atak/sse/documents/medias/' . $r['token'])]);
     }
 
     private function drafts(): \App\Repositories\SseDocumentDraftRepository

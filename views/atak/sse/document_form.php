@@ -63,6 +63,8 @@ $edCfg = [
     'canUnlock' => $canUnlock,
     'refText' => $refText,
     'mediaUrl' => url('atak/sse/documents/medias'),
+    'logoUrl' => url('atak/sse/documents/medias/logo'),
+    'dataUrl' => url('atak/sse/documents/donnees'),
     'templateUrl' => (string) ($editorContext['templateUrl'] ?? ''),
     'fields' => $editorContext['fields'] ?? [],
     'serverDraft' => $editorContext['serverDraft'] ?? null,
@@ -275,6 +277,8 @@ $fieldList = [
                 <?= $btn('pagebreak', 'Saut de page', $ico('M3 2v4h10V2M3 14v-4h10v4M1 8h2M6 8h4M13 8h2'), false, 'Saut de page') ?>
                 <?= $btn('redact', 'Caviarder le passage sélectionné', '<span aria-hidden="true" class="sse-ed__redact-ico">▮▮</span>', false, 'Caviarder') ?>
                 <?= $btn('media', 'Insérer une image ou un logo (PNG, JPEG ou WebP, 3 Mo au plus)', $ico('M2 3h12v10H2zM2 11l4-4 3 3 2-2 3 3M10.5 6a1 1 0 100 .1'), false, 'Image') ?>
+                <?= $btn('logo', 'Insérer le logo de la communauté', $ico('M3 13V6l5-3 5 3v7M6 13V9h4v4'), false, 'Logo') ?>
+                <?= $btn('sign', 'Enregistrer puis signer le document avec le pad (le document sera verrouillé)', $ico('M2 12c2-5 3-8 4-8s0 6 2 6 2-3 3-3 1 2 3 2M2 14h12'), false, 'Signer') ?>
                 <?= $btn('lock', 'Verrouiller le bloc du curseur : il ne pourra plus être modifié', $ico('M4 7h8v6H4zM6 7V5a2 2 0 014 0v2'), false, 'Verrouiller') ?>
                 <?php if ($canUnlock): ?><?= $btn('unlock', 'Déverrouiller le bloc sélectionné (cliquez d’abord sur le bloc verrouillé)', $ico('M4 7h8v6H4zM6 7V5a2 2 0 013.6-1.2'), false, 'Déverrouiller') ?><?php endif; ?>
                 <select class="sse-ed__select sse-ed__select--narrow" data-cmd="field" aria-label="Insérer un champ du dossier">
@@ -330,6 +334,7 @@ $fieldList = [
                     <button type="button" role="tab" data-side-tab="outline" aria-selected="true">Plan</button>
                     <button type="button" role="tab" data-side-tab="fields" aria-selected="false" tabindex="-1">Champs</button>
                     <button type="button" role="tab" data-side-tab="models" aria-selected="false" tabindex="-1">Modèles</button>
+                    <button type="button" role="tab" data-side-tab="data" aria-selected="false" tabindex="-1">Données</button>
                 </div>
 
                 <div class="sse-ed__panel" data-side-panel="outline" role="tabpanel">
@@ -348,6 +353,22 @@ $fieldList = [
                             </li>
                         <?php endforeach; ?>
                     </ul>
+                </div>
+
+                <div class="sse-ed__panel" data-side-panel="data" role="tabpanel" hidden>
+                    <p class="sse-ed__panel-lead">Insère un extrait des données de la communauté. Vous ne voyez que ce que vos droits sur l’ORBAT vous permettent de voir. Le bloc est figé, daté et verrouillé ; la classification du document est relevée si les données l’exigent.</p>
+                    <fieldset class="sse-ed__datakind">
+                        <legend>Que voulez-vous insérer ?</legend>
+                        <label><input type="radio" name="sse-ed-data-kind" value="orbat" checked> Extrait d’ORBAT d’une unité</label>
+                        <label><input type="radio" name="sse-ed-data-kind" value="effectif"> Tableau des membres d’une unité</label>
+                        <label><input type="radio" name="sse-ed-data-kind" value="membre"> Fiche d’un membre</label>
+                    </fieldset>
+                    <label for="sse-ed-data-unit">Unité</label>
+                    <select id="sse-ed-data-unit"></select>
+                    <label for="sse-ed-data-member">Membre</label>
+                    <select id="sse-ed-data-member"></select>
+                    <button type="button" class="btn btn--sm" id="sse-ed-data-insert">Insérer au curseur</button>
+                    <p class="sse-ed__model-msg" id="sse-ed-data-msg" role="status" aria-live="polite"></p>
                 </div>
 
                 <div class="sse-ed__panel" data-side-panel="models" role="tabpanel" hidden>
@@ -409,6 +430,13 @@ $fieldList = [
             <span data-msg="page-label">Page</span>
             <span data-msg="page-of">sur</span>
             <span data-msg="media-alt">Image jointe</span>
+            <span data-msg="logo-none">Aucun logo enregistré pour la communauté : envoyez une image avec « Image ».</span>
+            <span data-msg="data-loading">Chargement…</span>
+            <span data-msg="data-error">Données indisponibles pour le moment.</span>
+            <span data-msg="data-none">Aucune donnée visible avec vos droits.</span>
+            <span data-msg="data-forbidden">Ces données sont hors de votre périmètre.</span>
+            <span data-msg="data-inserted">Bloc inséré : il est daté et verrouillé.</span>
+            <span data-msg="data-inserted-raised">Bloc inséré. La classification du document a été relevée au niveau de ces données.</span>
             <span data-msg="media-type">Image refusée : PNG, JPEG ou WebP seulement.</span>
             <span data-msg="media-size">Image trop lourde : 3 Mo au plus.</span>
             <span data-msg="media-sending">Envoi de l’image…</span>
@@ -435,6 +463,7 @@ $fieldList = [
 
     <textarea id="body" name="body" hidden aria-hidden="true" tabindex="-1"><?= $h(\App\Support\SseRichText::MARK . $bodyHtml) ?></textarea>
     <input type="file" id="sse-ed-media-file" accept="image/png,image/jpeg,image/webp" hidden tabindex="-1" aria-hidden="true">
+    <input type="hidden" name="after" id="sse-after" value="">
     <input type="hidden" name="model_code" id="sse-model-code" value="<?= $h($modelCode) ?>">
     <input type="hidden" name="inserted_mentions" id="sse-lib-trace" value="">
     <?php if ($libraryEntries !== []): ?>

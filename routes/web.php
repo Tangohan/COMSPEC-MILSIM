@@ -1551,6 +1551,9 @@ return function (Router $router) {
     $router->post('/atak/sse/documents/modeles/{id}/supprimer', [SsePortalController::class, 'documentTemplateDelete'], $mwSsePortal);
     $router->post('/atak/sse/documents', [SsePortalController::class, 'documentStore'], $mwSsePortal);
     $router->post('/atak/sse/documents/medias', [SsePortalController::class, 'documentMediaUpload'], $mwSsePortal);
+    $router->post('/atak/sse/documents/medias/logo', [SsePortalController::class, 'documentMediaLogo'], $mwSsePortal);
+    $router->get('/atak/sse/documents/donnees', [SsePortalController::class, 'documentDataIndex'], $mwSsePortal);
+    $router->get('/atak/sse/documents/donnees/{type}/{id}', [SsePortalController::class, 'documentDataInsert'], $mwSsePortal);
     $router->get('/atak/sse/documents/medias/{token}', [SsePortalController::class, 'documentMediaImage'], $mwSsePortal);
     $router->get('/atak/sse/documents/{id}', [SsePortalController::class, 'documentShow'], $mwSsePortal);
     $router->post('/atak/sse/documents/{id}/signer', [SsePortalController::class, 'documentSign'], $mwSsePortal);
