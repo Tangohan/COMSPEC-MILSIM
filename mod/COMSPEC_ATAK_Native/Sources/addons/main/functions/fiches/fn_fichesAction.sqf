@@ -24,6 +24,7 @@
       ["shareBt", [réf, uid]]  envoie la référence par Bluetooth (app Bluetooth, appareil appairé à portée)
       ["shareSms", [réf, nom]] envoie la référence par SMS à un joueur
       ["receive", [de, réf, titre, genre, niveau, voie]] range une fiche reçue (Bluetooth ou SMS) dans « Reçues »
+      ["dseFind", texte]       résout un numéro DSE (saisi ou collé) : ID, nom de code, nom de fiche, IA reliée (tâche de fond) ; ["dseClear"] efface
       ["inbox"]                fiches reçues  ·  ["status", texte] pose la ligne d'état  ·  ["title", réf] titre court d'une fiche
 */
 params [["_act", "list"], ["_arg", ""]];
@@ -422,6 +423,59 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_FichesInbox", _in select [0, 20]];
         call _render;
         true
+    };
+    // Numéro DSE (docs/technical/ICD-SSE-DSE.md) : la fiche d'un DSE saisi ou collé, par le canal SubmitIdCheck (kind « sse_dse »), qui
+    // applique côté site les règles de GET /api/sse/v1/dse/{dse} : communauté du jeton de jeu, inconnu = même réponse pour tout refus,
+    // débit borné, journal. Résultat dans l'état : fichesDse [dse, type, n° d'identification, nom de code, nom de fiche, IA, camp, catégorie],
+    // fichesDseErr (message clair, "" si tout va bien), fichesDseQ (texte saisi). Aucun toast : ligne d'état et ligne d'erreur de l'écran.
+    case "dseFind": {
+        if (!canSuspend) exitWith { ["dseFind", _arg] spawn comspec_atak_native_fnc_fichesAction; false };
+        if !(_arg isEqualType "") then { _arg = ""; };
+        private _q = toUpper (trim (((_arg regexReplace ["[^A-Za-z0-9 -]", ""]) select [0, 24])));
+        _s set ["fichesDseQ", _q];
+        private _fail = {
+            params ["_t"];
+            _s set ["fichesDse", []];
+            _s set ["fichesDseErr", _t];
+            [_t] call _say;
+            call _render;
+            false
+        };
+        if (_q isEqualTo "") exitWith { [("Saisissez ou collez un numéro DSE (DSE-K7M4QX).") call comspec_atak_native_fnc_tr] call _fail };
+        if (_s getOrDefault ["fichesDseBusy", false] && {(diag_tickTime - (_s getOrDefault ["fichesDseAt", -100])) < 30}) exitWith { false };
+        if !([] call comspec_atak_native_fnc_bridge) exitWith { [("COMSPEC Overwatch n'est pas chargé : le DSE se résout sur Athena par lui.") call comspec_atak_native_fnc_tr] call _fail };
+        if (([] call comspec_atak_native_fnc_athenaMode) isEqualTo "off") exitWith { [("ATAK local : pas de liaison Athena, impossible de résoudre un DSE.") call comspec_atak_native_fnc_tr] call _fail };
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_FichesDll", ""]) isEqualTo "no") exitWith { [("COMSPEC Link trop ancien : mettez-le à jour.") call comspec_atak_native_fnc_tr] call _fail };
+        _s set ["fichesDseBusy", true];
+        _s set ["fichesDseAt", diag_tickTime];
+        _s set ["fichesDseErr", ""];
+        [("Recherche du DSE sur Athena…") call comspec_atak_native_fnc_tr] call _say;
+        call _render;
+        private _raw = [format ['{"kind":"sse_dse","dse":"%1"}', _q]] call _call;
+        _s set ["fichesDseBusy", false];
+        private _p = [_raw] call _parsePage;
+        if (_p isNotEqualTo [] && {(_p param [1, ""]) isEqualTo "dse"}) exitWith {
+            private _r = (_p select [2, 8]) apply { [_x] call _dec };
+            _s set ["fichesDse", _r];
+            _s set ["fichesDseQ", _r param [0, _q]];
+            _s set ["fichesDseErr", ""];
+            [format [("DSE %1 trouvé.") call comspec_atak_native_fnc_tr, _r param [0, _q]]] call _say;
+            call _render;
+            true
+        };
+        private _why = switch (true) do {
+            case ((_raw find "not_found") >= 0): { format [("DSE %1 inconnu : vérifiez le numéro (ni 0, ni O, ni 1, ni I), ou il vient d'une autre communauté.") call comspec_atak_native_fnc_tr, _q] };
+            case ((_raw find "rate_limited") >= 0): { ("Trop de recherches de DSE : réessayez dans une minute.") call comspec_atak_native_fnc_tr };
+            case ((_raw find "invalid_response") >= 0 || {(_raw find "http_") >= 0}): { ("Athena n'a pas compris la recherche : le site est-il à jour ?") call comspec_atak_native_fnc_tr };
+            default { ([_raw] call _errText) call comspec_atak_native_fnc_tr };
+        };
+        [_why] call _fail
+    };
+    case "dseClear": {
+        _s set ["fichesDse", []];
+        _s set ["fichesDseErr", ""];
+        _s set ["fichesDseQ", ""];
+        call _render;
     };
     default { false };
 };

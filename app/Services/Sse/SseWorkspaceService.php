@@ -320,6 +320,30 @@ final class SseWorkspaceService
         $limit = max(5, min(60, $limit));
         $perSource = max(5, (int) ceil($limit / 3));
 
+        // Identifiants SSE (numéro d'identification, nom de code, DSE, nom de fiche) : en tête, avec les droits de lecture de chaque donnée.
+        try {
+            $identifiers = new SseIdentifierService();
+            foreach ($identifiers->search($tenantId, $q, $perSource) as $row) {
+                $type = (string) $row['entity_type'];
+                $def = SseIdentifierService::TYPES[$type] ?? null;
+                if ($def === null) {
+                    continue;
+                }
+                $entity = SseIdentifierAccess::entityRow($tenantId, $type, (int) $row['entity_id']);
+                if ($entity === null || !SseIdentifierAccess::canRead($type, $entity)) {
+                    continue;
+                }
+                $out[] = [
+                    'type' => $def['label'],
+                    'ref' => (string) $row['ident_no'],
+                    'label' => (string) $row['sheet_name'],
+                    'hint' => $row['codename'] . ' · ' . $row['dse'],
+                    'href' => url(sprintf($def['href'], (int) $row['entity_id'])),
+                ];
+            }
+        } catch (\Throwable) {
+        }
+
         try {
             foreach ($this->persons->searchForTenant($tenantId, $q, $perSource) as $p) {
                 $out[] = [

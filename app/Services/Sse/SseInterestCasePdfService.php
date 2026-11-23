@@ -6,6 +6,7 @@ namespace App\Services\Sse;
 
 use App\Core\Response;
 use App\Support\Pdf\AthenaPdfTheme as Theme;
+use App\Support\Pdf\SsePdfNotice;
 use App\Support\SseInterestMarkup;
 use App\Support\TrainingCertificatePdfEngine;
 
@@ -18,13 +19,13 @@ final class SseInterestCasePdfService
     /**
      * @param array<string, mixed> $detail résultat de SseInterestCaseService::detail
      */
-    public function export(array $detail, string $communityLabel = ''): Response
+    public function export(array $detail, string $communityLabel = '', bool $withNotice = true): Response
     {
-        return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($detail, $communityLabel): Response {
+        return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($detail, $communityLabel, $withNotice): Response {
             if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
             }
-            $binary = $this->binary($detail, $communityLabel);
+            $binary = $this->binary($detail, $communityLabel, $withNotice);
             $slug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($detail['case']['reference_code'] ?? 'dossier'));
 
             return (new Response())
@@ -36,7 +37,7 @@ final class SseInterestCasePdfService
     }
 
     /** @param array<string, mixed> $detail */
-    public function binary(array $detail, string $communityLabel = ''): string
+    public function binary(array $detail, string $communityLabel = '', bool $withNotice = true): string
     {
         $case = $detail['case'];
         $ref = (string) $case['reference_code'];
@@ -53,8 +54,15 @@ final class SseInterestCasePdfService
         if ($pdf === null) {
             throw new \RuntimeException('TCPDF indisponible');
         }
+        $noticePage = 0;
+        if ($withNotice) {
+            $pdf->AddPage();
+            $noticePage = $pdf->getPage();
+        }
         $pdf->AddPage();
+        $bodyPage = $pdf->getPage();
         $pdf->writeAthenaHtml($this->html($detail));
+        $graphPage = $pdf->getNumPages();
         (new SseInterestCasePdfGraph())->draw($pdf, (array) ($detail['graph'] ?? []));
         foreach ((array) ($detail['media'] ?? []) as $media) {
             $path = $this->imagePath((string) ($media['path'] ?? ''), (int) ($case['tenant_id'] ?? 0));
@@ -80,6 +88,28 @@ final class SseInterestCasePdfService
             $pdf->AddPage();
             $pdf->writeAthenaHtml('<h2>Pièce photographique</h2><p>' . $this->escape($media['subject'] ?? '') . ' · ' . $this->escape($media['caption'] ?? '') . '</p>');
             $pdf->Image($path, 16, max(65, $pdf->GetY() + 5), 178, 175, '', '', '', true, 150, '', false, false, 0, 'CM');
+        }
+
+        if ($noticePage > 0) {
+            $toc = [['label' => Theme::t('Notice du document'), 'page' => $noticePage], ['label' => Theme::t('Synthèse'), 'page' => $bodyPage]];
+            if ($pdf->getNumPages() > $graphPage) {
+                $toc[] = ['label' => Theme::t('Graphe, pièces photographiques'), 'page' => $graphPage + 1];
+            }
+            SsePdfNotice::fillReserved($pdf, $noticePage, [
+                'lang' => Theme::isEnglish() ? 'en' : 'fr',
+                'type' => 'interest',
+                'title' => (string) ($case['temporary_designation'] ?? $ref),
+                'ref' => $ref,
+                'level' => (string) ($detail['export_classification'] ?? $case['classification'] ?? ''),
+                'generated_at' => date(Theme::isEnglish() ? 'm/d/Y H:i' : 'd/m/Y H:i'),
+                'ids' => [[['Priorité', 'Priority'], (string) ($case['priority_code'] ?? '')]],
+                'issuer' => $communityLabel,
+                'period' => trim((string) ($case['created_at'] ?? '')) !== '' ? substr((string) $case['created_at'], 0, 10) . ' → ' . substr((string) ($case['updated_at'] ?? $case['created_at']), 0, 10) : '',
+                'version' => (string) ($case['status_label'] ?? ''),
+                'fingerprint' => SsePdfNotice::fingerprint([$case, $detail['field_notes'] ?? [], $detail['graph'] ?? []]),
+                'redaction' => null,
+                'toc' => $toc,
+            ]);
         }
 
         return (string) $pdf->Output('', 'S');

@@ -98,11 +98,17 @@ final class SseUsClassificationTest extends TestCase
         return $s;
     }
 
-    /** Contenu décompressé de tous les flux d'un PDF (couleurs de remplissage, rectangles). */
+    /**
+     * Contenu décompressé de tous les flux d'un PDF (couleurs de remplissage, rectangles).
+     *
+     * TCPDF écrit toujours « stream\n … \nendstream ». Le motif « \r?\n » avant « endstream » mangeait l'octet 0x0D qui termine, environ
+     * une fois sur deux cent cinquante-six, un flux compressé : le flux ne se décompressait plus et la page semblait sans bandeau
+     * (échec intermittent « 2 est égal ou supérieur à 4 »).
+     */
     private static function streams(string $pdf): string
     {
         $out = '';
-        if (preg_match_all('~stream\r?\n(.*?)\r?\nendstream~s', $pdf, $m) > 0) {
+        if (preg_match_all('~stream\n(.*?)\nendstream~s', $pdf, $m) > 0) {
             foreach ($m[1] as $raw) {
                 $plain = @gzuncompress($raw);
                 $out .= $plain !== false ? $plain : '';
@@ -219,6 +225,7 @@ final class SseUsClassificationTest extends TestCase
             foreach (['fr', 'en'] as $lang) {
                 $res = $svc->preview(1, $this->subject($p), 'profile', ['lang' => $lang, 'classification' => $level, 'faces' => '2'], self::access());
                 self::assertTrue($res['ok'], implode(' | ', $res['errors']));
+                self::assertTrue($res['notice'] ?? false, "$level $lang : la notice est la première page");
                 $content = self::streams((string) $res['bytes']);
                 [$r, $g, $b] = SseUsClassification::rgb($level);
                 $fill = sprintf('%.6F %.6F %.6F rg', $r / 255, $g / 255, $b / 255);

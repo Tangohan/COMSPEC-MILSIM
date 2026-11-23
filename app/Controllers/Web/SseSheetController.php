@@ -483,6 +483,7 @@ final class SseSheetController
             'lang' => D::lang($request->inputString('lang', 'fr')),
             'classification' => $request->inputString('classification'),
             'faces' => $request->inputString('faces', 'auto'),
+            'avec_notice' => $request->inputString('avec_notice', '1'),
             'validity' => $request->inputString('validity'),
             'threat' => $request->inputString('threat'),
             'armed' => $request->inputString('armed'),

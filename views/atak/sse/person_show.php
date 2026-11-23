@@ -78,6 +78,7 @@ $pid = (int) ($person['id'] ?? 0);
 <?php require __DIR__ . '/_sheet_menu.php'; ?>
 <?php require __DIR__ . '/_person_registry.php'; ?>
 <?php \App\Services\Sse\Links\SseLinksWidget::render('person', $pid); ?>
+<?php \App\Services\Sse\SseIdentifierWidget::render('person', $pid); ?>
 <?php \App\Services\Sse\Attach\SseAttachWindow::section('person', $pid); ?>
 
 <div class="iw-confidence" style="margin-bottom:12px">

@@ -181,7 +181,7 @@ final class SseWantedNoticeColorPdfTest extends TestCase
     {
         $needle = sprintf('%.6F %.6F %.6F rg', $rgb[0] / 255, $rgb[1] / 255, $rgb[2] / 255);
         $n = 0;
-        if (preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $pdf, $m) > 0) {
+        if (preg_match_all('/stream\n(.*?)\nendstream/s', $pdf, $m) > 0) {
             foreach ($m[1] as $stream) {
                 $plain = @gzuncompress($stream);
                 // Un flux dont le dernier octet compressé est un retour chariot le perd dans l'expression ci-dessus : on le rend.
