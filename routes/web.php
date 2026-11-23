@@ -1248,6 +1248,7 @@ return function (Router $router) {
     $router->post('/atak/sse/workspace/analyse/constats/{id}', [SseIntelligenceWorkspaceController::class, 'analysisFindingDecide'], $mwSsePortal);
     $router->get('/atak/sse/recherche', [SsePortalController::class, 'search'], $mwSsePortal);
     $router->get('/atak/sse/recherche/suggestions', [SsePortalController::class, 'searchSuggest'], $mwSsePortal);
+    $router->post('/atak/sse/identifiants/{type}/{id}', [\App\Controllers\Web\SseIdentifiersController::class, 'update'], $mwSsePortal);
     $router->get('/atak/sse/identites', [SsePortalController::class, 'identitiesIndex'], $mwSsePortal);
     // Page Personnes (vue de travail) : actions groupées et réglage avant /{id} ; tiroir d'aperçu et actions d'une fiche.
     $router->post('/atak/sse/identites/lot', [\App\Controllers\Web\SsePersonWorkController::class, 'batch'], $mwSsePortal);
@@ -3908,6 +3909,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/v1/inbox/decide', [SseIntelApiController::class, 'inboxDecide']);
     $router->get('/api/sse/v1/graph', [SseIntelApiController::class, 'graphIndex']);
     $router->get('/api/sse/v1/search', [SseIntelApiController::class, 'searchIndex']);
+    $router->get('/api/sse/v1/dse/{dse}', [\App\Controllers\Api\SseDseApiController::class, 'resolve']);
     $router->get('/api/sse/v1/entities', [SseIntelApiController::class, 'entitiesIndex']);
     $router->get('/api/sse/v1/entities/{uuid}', [SseIntelApiController::class, 'entitiesShow']);
     $router->get('/api/sse/v1/events', [SseIntelApiController::class, 'eventsIndex']);
