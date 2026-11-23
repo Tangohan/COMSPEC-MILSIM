@@ -166,10 +166,10 @@ final class SseDocumentTemplates
             . '<tr><th colspan="2" style="text-align:left;' . $shade . '">ATHENA · Bureau de renseignement (SSE)</th>'
             . '<th colspan="2" style="text-align:right;' . $shade . '">' . self::e($kind) . '</th></tr>'
             . '<tr><td colspan="4" style="text-align:center;color:#b91c1c;"><strong>CLASSIFICATION : ' . self::field('classification', $c) . '</strong></td></tr>'
-            . '<tr><td>' . self::bold('Référence') . '</td><td>' . self::field('reference', $c) . '</td>'
-            . '<td>' . self::bold('Dossier') . '</td><td>' . self::field('dossier', $c) . '</td></tr>'
-            . '<tr><td>' . self::bold('Date') . '</td><td>' . self::field('date', $c) . '</td>'
-            . '<td>' . self::bold('Rédacteur') . '</td><td>' . self::field('grade', $c) . ' ' . self::field('nom', $c) . '</td></tr>'
+            . '<tr><td style="background-color:#e2e8f0;">' . self::bold('Référence') . '</td><td>' . self::field('reference', $c) . '</td>'
+            . '<td style="background-color:#e2e8f0;">' . self::bold('Dossier') . '</td><td>' . self::field('dossier', $c) . '</td></tr>'
+            . '<tr><td style="background-color:#e2e8f0;">' . self::bold('Date') . '</td><td>' . self::field('date', $c) . '</td>'
+            . '<td style="background-color:#e2e8f0;">' . self::bold('Rédacteur') . '</td><td>' . self::field('grade', $c) . ' ' . self::field('nom', $c) . '</td></tr>'
             . '</tbody></table>';
     }
 
