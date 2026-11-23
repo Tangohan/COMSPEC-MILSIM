@@ -127,6 +127,7 @@ final class AccountPurgeService
      */
     private const OWNERSHIP_DELETE_TABLES = [
         'user_profiles',
+        'user_regions',
         'user_legal_identities',
         'personnel_profiles',
         'personnel_profile_specialty_codes',

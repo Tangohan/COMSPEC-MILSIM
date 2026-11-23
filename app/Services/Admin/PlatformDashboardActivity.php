@@ -109,6 +109,13 @@ final class PlatformDashboardActivity
             // Le journal des connexions est indépendant du registre des comptes.
         }
 
+        $regions = null;
+        try {
+            $regions = $overview->regionBreakdown();
+        } catch (\Throwable) {
+            // La répartition par région est facultative.
+        }
+
         $followup = null;
         $cohortStart = $start->modify('-7 days');
         $cohortEnd = $end->modify('-7 days');
@@ -151,6 +158,7 @@ final class PlatformDashboardActivity
             'engagement' => $engagement,
             'returns' => $returns,
             'followup' => $followup,
+            'regions' => $regions,
             'cohortLabel' => $cohortStart->format('d/m/Y') . ' – ' . $cohortEnd->modify('-1 day')->format('d/m/Y'),
             'communities' => $communities,
             'communityRanking' => $communityRanking,
