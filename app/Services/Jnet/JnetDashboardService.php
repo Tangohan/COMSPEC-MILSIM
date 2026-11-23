@@ -728,11 +728,13 @@ final class JnetDashboardService
 
         // Prénom, nom et trigramme du personnage (user_profiles) : la même source que la fiche et l'annuaire.
         $raw = (new \App\Services\Personnel\MemberNameService())->withIdentities($tenantId, $raw);
+        $specialtiesByUser = $this->visibleSpecialties($tenantId, $raw);
         $cards = [];
         foreach ($raw as $row) {
             $id = (int) ($row['id'] ?? 0);
             // Le roster enrichi n'a pas le prénom ni le nom d'état civil de l'annuaire : on garde ceux de la ligne d'annuaire.
             $e = ($byId[$id] ?? []) + $row;
+            $e['specialties'] = $specialtiesByUser[$id] ?? [];
             $cards[] = $this->normalizePersonCard($e);
         }
 
@@ -741,6 +743,28 @@ final class JnetDashboardService
         });
 
         return $cards;
+    }
+
+    /** L'annuaire n'expose que les spécialités des personnes dont l'identité et l'affectation restent visibles. */
+    private function visibleSpecialties(int $tenantId, array $rows): array
+    {
+        try {
+            $ids = array_values(array_filter(array_map(static fn (array $r): int =>
+                empty($r['anonymized']) && empty($r['assignment_redacted']) ? (int) ($r['id'] ?? 0) : 0, $rows)));
+            if ($ids === []) return [];
+            $visibility = $this->units->personnelVisibilityByUserIdsForTenant($tenantId, $ids);
+            $caps = \App\Support\OrgVisibilityCapabilities::fromGate(Gate::getInstance());
+            $ids = array_values(array_filter($ids, static function (int $id) use ($visibility, $caps): bool {
+                $meta = $visibility[$id] ?? [];
+                $level = (string) ($meta['visibility_level'] ?? \App\Support\VisibilityLevel::NORMAL);
+                return !$caps->shouldHidePersonnelCompletely($level) && !$caps->shouldAnonymizePersonnel($level)
+                    && !$caps->shouldRedactAssignment((string) ($meta['assignment_visibility'] ?? \App\Support\VisibilityLevel::NORMAL));
+            }));
+            return $ids === [] ? [] : (new \App\Services\Personnel\MilitarySpecialtyService())->confirmedForMembers($tenantId, $ids);
+        } catch (\Throwable $e) {
+            error_log('[jnet] spécialités indisponibles : ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -1250,6 +1274,8 @@ final class JnetDashboardService
             'unit_id' => (int) ($row['unit_id'] ?? 0),
             'grade_rank' => (int) ($row['grade_sort_order'] ?? 999),
             'function' => $function,
+            'specialties' => empty($row['anonymized']) && empty($row['assignment_redacted'])
+                ? \App\Support\MilitarySpecialtyLabels::summary((array) ($row['specialties'] ?? [])) : '',
             'role' => (string) ($row['role_name'] ?? ''),
             'status' => (string) ($row['status'] ?? 'active'),
             'duty' => $duty,

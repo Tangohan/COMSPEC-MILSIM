@@ -29,6 +29,36 @@ L’**ORBAT** est une représentation de la **structure** de la communauté : un
 
 Une rubrique peut regrouper des **guides** (complétude du dossier, usage du forum, présentation des référentiels métier) pour harmoniser les pratiques au sein de la communauté.
 
+### Lire les spécialités militaires
+
+Le catalogue de référence peut indiquer un **code métier national** (AFSC, MOS, spécialité
+Marine, etc.). Ce code décrit un métier ou une famille de métiers ; il se distingue du
+**grade**, de l’**emploi occupé**, de l’**affectation à une unité** et des **qualifications**
+détenues. Par exemple, `1Z2X1` désigne la spécialité Combat Control ; une qualification
+JTAC doit être enregistrée séparément. `18X` désigne un candidat Special Forces.
+
+Les niveaux et codes ne se transposent pas automatiquement d’un pays à l’autre. Voir les
+[codes américains](../REFERENTIEL-METIERS-OPERATIONS-SPECIALES-US.md) et les
+[nomenclatures France, Royaume-Uni et OTAN](../referentiels/SPECIALITES-MILITAIRES-PAR-PAYS.md).
+Après la mise à jour du site, **Bureau effectifs → Spécialités militaires** permet de
+rechercher une référence par pays, code ou métier. Chaque fiche explique le code, son
+système, ses niveaux et ses sources. Une mention « historique » ou « à vérifier » indique
+les limites de la référence ; un code de famille contenant un `X` n’est pas transformé
+automatiquement en code individuel.
+
+Depuis la fiche d’un membre, ouvrez **Spécialités militaires** puis choisissez un code :
+
+1. Renseignez le niveau s’il est connu ; sinon laissez-le vide.
+2. Enregistrez une **déclaration** si la vérification n’est pas terminée.
+3. Un gestionnaire de dossier peut **confirmer** la référence vérifiée, éventuellement
+   avec une qualification du même dossier comme preuve. La confirmation concerne la simulation.
+4. Utilisez **Archiver** pour conserver la trace d’une spécialité qui n’est plus détenue.
+
+Les références d’un **emploi** se règlent depuis sa fiche et ne sont pas attribuées à ses
+titulaires. L’annuaire et l’ORBAT affichent les spécialités confirmées des personnes déjà
+visibles, séparément de leur grade et de leur emploi. Les informations encore déclarées
+ou archivées restent dans le suivi RH.
+
 ## Matricule et identifiants internes
 
 Selon la configuration, un **matricule** ou identifiant interne peut être **généré** automatiquement ou attribué par un gestionnaire — utile pour les documents et la corrélation avec l’ORBAT.

@@ -29,6 +29,9 @@ final class RateLimitMiddleware
     /** Contrôles N3 en ligne d'un papier par appelant et par minute (un par contrôle d'un joueur). */
     public const IDENTITY_LOOKUP_MAX_PER_MIN = 240;
 
+    public const LOGIN_MAX_REQUESTS_PER_IP = 30;
+    public const LOGIN_WINDOW_SECONDS = 300;
+
     public function __construct(
         private FileRateLimiter $limiter = new FileRateLimiter()
     ) {
@@ -44,7 +47,17 @@ final class RateLimitMiddleware
             return $next($request);
         }
         [$max, $window, $rateKey] = $rules;
-        if ($this->limiter->tooManyAttempts($rateKey, $max, $window)) {
+        $strict = $method === 'POST' && in_array($path, ['/login', '/forgot-password', '/reset-password'], true);
+        try {
+            $limited = $this->limiter->tooManyAttempts($rateKey, $max, $window, $strict);
+        } catch (\RuntimeException) {
+            error_log('Authentication rate limit storage unavailable');
+            return (new Response())->setStatusCode(503)
+                ->header('Retry-After', '30')
+                ->header('Cache-Control', 'no-store')
+                ->setBody('Service de connexion temporairement indisponible.');
+        }
+        if ($limited) {
             // Temps qui reste avant la remise à zéro de la fenêtre fixe, et non la fenêtre entière (NET-027) : la DLL
             // et Tacmap attendaient jusqu'à 60 s de trop. Plafond de 120 s gardé : rien n'est annoncé plus long qu'avant.
             $retry = max(1, min(120, $this->limiter->secondsUntilReset($rateKey, $window)));
@@ -153,7 +166,7 @@ final class RateLimitMiddleware
         }
 
         $routes = [
-            '/login' => [30, 300],
+            '/login' => [self::LOGIN_MAX_REQUESTS_PER_IP, self::LOGIN_WINDOW_SECONDS],
             '/login/select-community' => [40, 300],
             '/forgot-password' => [10, 3600],
             '/reset-password' => [20, 3600],

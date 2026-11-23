@@ -129,6 +129,7 @@ final class AccountPurgeService
         'user_profiles',
         'user_legal_identities',
         'personnel_profiles',
+        'personnel_profile_specialty_codes',
         'user_profile_display_settings',
         'personnel_extras',
         'personnel_media',

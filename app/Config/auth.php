@@ -24,6 +24,4 @@ return [
     // Vide = storage/sessions dans l'application (exclu du sync FTP).
     'session_save_path' => trim((string) env('SESSION_SAVE_PATH', '')),
     'password_algo' => PASSWORD_ARGON2ID,
-    'login_max_attempts' => 5,
-    'login_lockout_minutes' => 15,
 ];

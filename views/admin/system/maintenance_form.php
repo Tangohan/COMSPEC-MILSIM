@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Support\MaintenanceMessages;
+
 $r = $maintenanceRule;
 $row = $r ?? [];
 $isEdit = $r !== null;
@@ -31,28 +33,9 @@ if ($scopeRaw === '' || $scopeRaw === 'global') {
     $scopeCustom = $scopeRaw;
 }
 
-$presets = [
-    'standard' => [
-        'label' => 'Mise à jour planifiée',
-        'title' => 'Nous revenons bientôt',
-        'message' => "Athena est momentanément fermé le temps d’une mise à jour. Nous simplifions la gestion des communautés : un accès plus clair par membre, des rôles mieux alignés, des dossiers plus simples à suivre.\n\nVos données restent en sécurité. Vous n’avez rien à faire de votre côté. Pendant cette période, le site et les outils associés restent inaccessibles.\n\nMerci de votre patience, et de la confiance que vous accordez à Athena.",
-    ],
-    'security' => [
-        'label' => 'Sécurisation',
-        'title' => 'Sécurisation en cours',
-        'message' => "Nous renforçons la sécurité de la plateforme. L’accès est temporairement suspendu.\n\nVos informations restent protégées. Merci de patienter jusqu’à la réouverture.",
-    ],
-    'infra' => [
-        'label' => 'Réseau et hébergement',
-        'title' => 'Intervention réseau',
-        'message' => "Une intervention sur le réseau et l’hébergement est en cours. Le portail peut rester inaccessible le temps des contrôles.\n\nNous rouvrons dès que tout est rétabli.",
-    ],
-    'hotfix' => [
-        'label' => 'Correctif urgent',
-        'title' => 'Correctif en cours',
-        'message' => "Un correctif urgent est en cours. Athena sera de nouveau disponible dès qu’il sera terminé.\n\nMerci de votre patience.",
-    ],
-];
+$editorLanguage = function_exists('locale') ? locale() : 'fr';
+$presets = MaintenanceMessages::presets($editorLanguage);
+$editorContent = MaintenanceMessages::resolve((string) ($row['title'] ?? ''), (string) ($row['message'] ?? ''), $editorLanguage);
 $currentPreset = (string) ($row['message_preset'] ?? 'standard');
 if (!isset($presets[$currentPreset])) {
     $currentPreset = 'standard';
@@ -95,7 +78,8 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-black text-slate-900">2) Message préfait + contenu</h2>
+            <h2 class="text-lg font-black text-slate-900">2) Modèles de texte et contenu</h2>
+            <p class="mt-2 text-sm text-slate-600">Chaque modèle existe en français et en anglais et s’affiche dans la langue du visiteur. Vous pouvez aussi rédiger un message personnalisé.</p>
             <div class="mt-4 flex flex-wrap gap-2" id="preset-buttons">
                 <?php foreach ($presets as $key => $preset): ?>
                     <button type="button" data-preset-key="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" data-title="<?= htmlspecialchars($preset['title'], ENT_QUOTES, 'UTF-8') ?>" data-message="<?= htmlspecialchars($preset['message'], ENT_QUOTES, 'UTF-8') ?>" class="rounded-full border px-3 py-1.5 text-xs font-semibold <?= $currentPreset === $key ? 'border-emerald-600 bg-emerald-50 text-emerald-900' : 'border-slate-300 text-slate-700' ?>">
@@ -107,10 +91,10 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
 
             <div class="mt-5 grid gap-4">
                 <label class="text-sm font-bold text-slate-700">Titre
-                    <input type="text" name="title" id="maint-title" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5" value="<?= htmlspecialchars((string) ($row['title'] ?? 'Nous revenons bientôt'), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="text" name="title" id="maint-title" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5" value="<?= htmlspecialchars($editorContent['title'], ENT_QUOTES, 'UTF-8') ?>">
                 </label>
                 <label class="text-sm font-bold text-slate-700">Message
-                    <textarea name="message" id="maint-message" rows="6" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5"><?= htmlspecialchars((string) ($row['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <textarea name="message" id="maint-message" rows="8" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5"><?= htmlspecialchars($editorContent['message'], ENT_QUOTES, 'UTF-8') ?></textarea>
                     <span class="mt-1.5 block text-xs font-medium text-slate-500">Markdown pris en charge : titres, listes, gras, liens, séparateur <code>---</code>, libellés FR / EN.</span>
                 </label>
             </div>
@@ -136,11 +120,11 @@ $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
                     </div>
                     <div>
                         <div class="mt-preview" data-maint-preview-frame-wrap>
-                            <iframe title="Aperçu de la page de maintenance" class="mt-preview__frame" data-maint-preview-frame loading="lazy" src="<?= htmlspecialchars(url('admin/maintenance/apercu') . '?' . http_build_query(['variant' => $currentVariant, 'title' => (string) ($row['title'] ?? ''), 'message' => (string) ($row['message'] ?? ''), 'animation' => $currentAnimation ? '1' : '0']), ENT_QUOTES, 'UTF-8') ?>"></iframe>
+                            <iframe title="Aperçu de la page de maintenance" class="mt-preview__frame" data-maint-preview-frame loading="lazy" src="<?= htmlspecialchars(url('admin/maintenance/apercu') . '?' . http_build_query(['variant' => $currentVariant, 'title' => $editorContent['title'], 'message' => $editorContent['message'], 'animation' => $currentAnimation ? '1' : '0']), ENT_QUOTES, 'UTF-8') ?>"></iframe>
                         </div>
                         <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
                             <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-800">
-                                <input type="checkbox" name="ui_animation" value="1" <?= $currentAnimation ? 'checked' : '' ?> class="rounded border-slate-300 text-emerald-600" data-maint-preview> Animations (apparition du texte, radar, voyants)
+                                <input type="checkbox" name="ui_animation" value="1" <?= $currentAnimation ? 'checked' : '' ?> class="rounded border-slate-300 text-emerald-600" data-maint-preview> Animations (défilement des fonds, apparition du texte, radar, voyants)
                             </label>
                             <a href="#" class="text-sm font-semibold text-emerald-700 hover:text-emerald-900" target="_blank" rel="noopener" data-maint-preview-open>Ouvrir l’aperçu en grand ↗</a>
                         </div>

@@ -689,12 +689,13 @@ class Container
                     self::get(\App\Services\EmailService::class)
                 )
             ),
+            \App\Services\Email\OpsMailDigestService::class => new \App\Services\Email\OpsMailDigestService(
+                new \App\Repositories\EmailDigestRepository(),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Services\Email\MailBudgetGate::class)
+            ),
             \App\Services\Cron\Jobs\OpsMailDigestCronJob::class => new \App\Services\Cron\Jobs\OpsMailDigestCronJob(
-                new \App\Services\Email\OpsMailDigestService(
-                    new \App\Repositories\EmailDigestRepository(),
-                    self::get(\App\Services\EmailService::class),
-                    self::get(\App\Services\Email\MailBudgetGate::class)
-                )
+                self::get(\App\Services\Email\OpsMailDigestService::class)
             ),
             \App\Repositories\AtakReportRoutingRepository::class => new \App\Repositories\AtakReportRoutingRepository(),
             \App\Services\Tactical\AtakBridgeModulesService::class => new \App\Services\Tactical\AtakBridgeModulesService(),

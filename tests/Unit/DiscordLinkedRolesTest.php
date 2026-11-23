@@ -83,4 +83,35 @@ final class DiscordLinkedRolesTest extends TestCase
         self::assertStringContainsString('user_discord_links', (string) file_get_contents($root . '/migrations/20261025000002_user_discord_links.sql'));
         self::assertStringContainsString("'discord_linked_roles_sync' => 60", (string) file_get_contents($root . '/app/Services/Cron/CronSchedule.php'));
     }
+
+    public function testRegistrationRequestsRoleSyncAndKeepsOnlyEncryptedTokens(): void
+    {
+        $requests = [];
+        $settings = [
+            DiscordLinkedRoles::SETTING_CLIENT_ID => '123456789012345678',
+            DiscordLinkedRoles::SETTING_SECRET => SecretCipher::encrypt('test-client-secret'),
+        ];
+        $service = new DiscordLinkedRoles(
+            static function (string $method, string $url, array $headers, ?string $body) use (&$requests): array {
+                $requests[] = [$method, $url, $body];
+                $payload = str_ends_with($url, '/oauth2/token')
+                    ? ['access_token' => 'access-test', 'refresh_token' => 'refresh-test', 'expires_in' => 3600]
+                    : ['id' => '432109876543210987', 'username' => 'Viper', 'email' => 'viper@example.test', 'verified' => true];
+
+                return ['status' => 200, 'body' => json_encode($payload, JSON_THROW_ON_ERROR)];
+            },
+            static fn (string $key): string => $settings[$key] ?? '',
+        );
+        self::assertStringContainsString('scope=identify%20email%20role_connections.write', $service->loginAuthorizeUrl('state', 'challenge', true));
+        $identity = $service->loginIdentity('code', 'verifier', true);
+        self::assertSame('432109876543210987', $identity['link']['discord_user_id']);
+        self::assertStringStartsWith('sc1:', $identity['link']['access_token']);
+        self::assertSame('refresh-test', SecretCipher::decrypt($identity['link']['refresh_token']));
+        self::assertStringContainsString('code_verifier=verifier', $requests[0][2]);
+        self::assertCount(2, $requests);
+
+        $identity = $service->loginIdentity('another-code', 'verifier');
+        self::assertArrayNotHasKey('link', $identity);
+        self::assertStringEndsWith('/token/revoke', $requests[4][1]);
+    }
 }

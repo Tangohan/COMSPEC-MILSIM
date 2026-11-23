@@ -285,7 +285,7 @@ $examplePreview = \App\Support\QualificationExamples::numberPreview($v('certific
                 </div>
             </section>
 
-            <?php require __DIR__ . '/_obtention.php'; ?>
+            <?php (static function ($obtention): void { require __DIR__ . '/_obtention.php'; })($obtention ?? null); ?>
 
             <div class="rq-submit">
                 <p data-rq-dirty-note><?= $isEdit ? 'Les attributions existantes gardent leurs dates ; les nouvelles règles s’appliquent aux prochaines.' : 'Après la création : insigne, niveaux, prérequis et droits associés.' ?></p>
@@ -502,3 +502,11 @@ $examplePreview = \App\Support\QualificationExamples::numberPreview($v('certific
     <?php endif; ?>
 </div>
 <script src="<?= $e(asset_url('assets/js/referentiel-qualifications.js')) ?>" defer></script>
+<?php if ($isEdit): ?>
+<section class="rq rq-card" aria-labelledby="rq-specialties-title">
+    <h2 id="rq-specialties-title">Objectifs de spécialité militaire</h2>
+    <p>Cette qualification peut contribuer à un métier national et à un niveau visé. Réussir une formation Academy ou obtenir le brevet ne confirme pas automatiquement une spécialité au dossier : les RH valident cette étape séparément.</p>
+    <?php if (($specialtyTargets ?? []) !== []): ?><ul><?php foreach ($specialtyTargets as $spTarget): ?><li><?= $e(\App\Support\MilitarySpecialtyLabels::title($spTarget)) ?><?php if (($spTarget['level_code'] ?? '') !== '' && $spTarget['level_code'] !== null): ?> · Niveau visé <?= $e($spTarget['level_code']) ?><?php endif; ?></li><?php endforeach; ?></ul><?php else: ?><p>Aucun objectif associé.</p><?php endif; ?>
+    <a class="rq-btn" href="<?= $e(effectifs_workspace_url('specialites') . '?qualification=' . $defId) ?>">Choisir une spécialité et lire les explicatifs</a>
+</section>
+<?php endif; ?>

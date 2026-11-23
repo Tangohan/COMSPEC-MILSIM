@@ -15,12 +15,11 @@ use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\Email\EmailTokenPurpose;
+use App\Services\Email\RegistrationVerificationResend;
 use App\Services\EmailService;
 
 final class VerifyEmailController
 {
-    private const RESEND_COOLDOWN_SEC = 90;
-
     public function __construct(
         private EmailTokenRepository $emailTokens,
         private UserRepository $userRepository,
@@ -169,6 +168,7 @@ final class VerifyEmailController
             'email' => (string) $email,
             'error' => Session::getFlash('error'),
             'warning' => Session::getFlash('warning'),
+            'info' => Session::getFlash('info'),
             'success' => Session::getFlash('success'),
         ]);
     }
@@ -223,66 +223,20 @@ final class VerifyEmailController
 
         $sent = 0;
         $rateLimited = false;
-        $lastMailError = null;
-        $attemptedSend = false;
-
+        $failed = false;
+        $resend = new RegistrationVerificationResend($this->emailTokens, $this->emailService);
         foreach ($pending as $row) {
-            $uid = (int) $row['id'];
-            $last = $this->emailTokens->getLatestTokenCreatedAtForUserPurpose($uid, EmailTokenPurpose::REGISTER_CONFIRM);
-            if ($last !== null && (time() - $last->getTimestamp()) < self::RESEND_COOLDOWN_SEC) {
-                $rateLimited = true;
-
-                continue;
-            }
-
             $tenantId = (int) $row['tenant_id'];
             $tenant = $this->tenantRepository->findById($tenantId);
-            $tenantName = email_community_label(is_array($tenant) ? $tenant : null, (string) ($tenant['name'] ?? ''));
-            $rawToken = bin2hex(random_bytes(32));
-            $tokenHash = hash('sha256', $rawToken);
-            $expires = new \DateTimeImmutable('+' . EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES . ' minutes');
-            $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
-            try {
-                // Créer avant l'envoi empêche qu'un message délivré immédiatement pointe
-                // vers un jeton qui n'existe pas encore.
-                $tokenId = $this->emailTokens->create(
-                    $tenantId,
-                    $uid,
-                    EmailTokenPurpose::REGISTER_CONFIRM,
-                    $tokenHash,
-                    bin2hex(random_bytes(16)),
-                    $expires
-                );
-            } catch (\Throwable $e) {
-                error_log('[verify-email.resend.token] ' . $e->getMessage());
-                $attemptedSend = true;
-                $lastMailError = 'token';
-                continue;
+            $tenantName = email_community_label($tenant, (string) ($tenant['name'] ?? ''));
+            $result = $resend->send($row, $tenantId, $tenantName);
+            if ($result['sent']) {
+                $sent++;
+            } elseif ($result['wait'] > 0) {
+                $rateLimited = true;
+            } else {
+                $failed = true;
             }
-            $attemptedSend = true;
-            $ok = $this->emailService->sendUserRegisterConfirmation(
-                $email,
-                (string) ($row['display_name'] ?? 'Membre'),
-                $tenantName,
-                $verifyUrl,
-                EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES,
-                $tenantId
-            );
-            if (!$ok) {
-                // Ne pas invalider l'ancien lien et ne pas appliquer le cooldown à un
-                // message qui n'est jamais parti.
-                $this->emailTokens->deleteById($tokenId);
-                $lastMailError = trim((string) ($this->emailService->getLastSendError() ?? ''));
-
-                continue;
-            }
-
-            $this->emailTokens->deleteOtherPendingForUserPurpose(
-                $uid,
-                EmailTokenPurpose::REGISTER_CONFIRM,
-                $tokenId
-            );
-            $sent++;
         }
 
         if ($sent > 0) {
@@ -298,13 +252,7 @@ final class VerifyEmailController
             return Response::redirect($back);
         }
 
-        if ($attemptedSend && $lastMailError !== null && $lastMailError !== '') {
-            Session::flash('error', 'L’e-mail n’a pas pu être envoyé. Réessayez dans quelques minutes ou contactez le support.');
-
-            return Response::redirect($back);
-        }
-
-        if ($attemptedSend) {
+        if ($failed) {
             Session::flash('error', 'L’e-mail n’a pas pu être envoyé pour le moment. Réessayez dans quelques minutes ou contactez le support.');
 
             return Response::redirect($back);

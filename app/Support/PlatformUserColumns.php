@@ -26,6 +26,8 @@ final class PlatformUserColumns
 
     public const DEFAULT = ['nom', 'indicatif', 'email', 'communautes', 'etat', 'connexion_site', 'connexion_jeu', 'creation'];
 
+    public const ROSTER = ['nom', 'indicatif', 'communautes', 'creation'];
+
     /** Anciennes clés restées valides (liens enregistrés) => clés actuelles. */
     public const ALIASES = ['connexion' => ['connexion_site', 'connexion_jeu']];
 

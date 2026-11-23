@@ -109,7 +109,7 @@
             chips($('[data-ra-recents-list]'), ctx.recents || [], true);
             show($('[data-ra-recents]'), (ctx.recents || []).length > 0);
             if (!ctx.ready) { banner(L('degraded')); } else if (!ctx.can_attach) { banner(ctx.deny || L('readonly')); }
-            st.scope = ctx.scopes[0] || '';
+            st.scope = ctx.scopes.indexOf(opts.scope) >= 0 ? opts.scope : (ctx.scopes[0] || '');
             load(false);
             var q = $('[data-ra-q]');
             if (wide()) { q.focus(); }
@@ -908,7 +908,7 @@
         }
         var owner = btn.closest('dialog[open]');
         if (owner && owner.close) { owner.close(); }
-        open(pieces, { move: parseInt(btn.getAttribute('data-ra-move') || '0', 10) || 0, opener: btn });
+        open(pieces, { move: parseInt(btn.getAttribute('data-ra-move') || '0', 10) || 0, opener: btn, scope: btn.getAttribute('data-ra-initial-scope') || '' });
     });
 
     // Fenêtres simples des pages Pistes et de la section : ouvrir par identifiant, fermer la fenêtre courante.

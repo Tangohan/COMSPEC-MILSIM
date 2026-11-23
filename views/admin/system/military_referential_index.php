@@ -16,6 +16,7 @@ $fc = $filterCountry ?? '';
             <p class="text-sm text-slate-600 mt-1 max-w-2xl">Organisations, commandements et unités de forces spéciales. Les données sont en base et servent à l’affiliation des communautés.</p>
         </div>
         <div class="flex flex-wrap gap-3">
+            <a href="<?= url('admin/system/military-referential/specialties') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Codes de spécialité et niveaux</a>
             <a href="<?= url('admin/system/military-referential/create') ?>" class="inline-flex items-center px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-emerald-600 transition-colors">Nouvelle entité</a>
             <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Retour</a>
         </div>

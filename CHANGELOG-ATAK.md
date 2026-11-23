@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Codes de spécialité militaire et niveaux expliqués (site, 17 novembre 2026)
+
+### Résumé joueur
+Type : nouveauté
+FR : Les spécialités militaires ont leurs codes, leurs sources et leurs explications
+- Le bureau effectifs présente les références américaines, françaises et britanniques et explique leurs niveaux.
+- Les RH peuvent déclarer, confirmer ou archiver une spécialité sur une fiche membre, et la relier à un emploi ou à un objectif de formation.
+- L’annuaire et l’organigramme affichent les spécialités confirmées des personnes visibles.
+EN : Military specialties now include codes, sources and explanations
+- The personnel office presents American, French and British references and explains their skill levels.
+- HR staff can declare, confirm or archive a member’s specialty and link references to jobs or training goals.
+- The directory and organisation chart display confirmed specialties for visible members.
+
+### Détail technique
+- Migration additive 4910, six tables nationales/RH/LMS, 31 codes sourcés et niveaux AFSC documentaires non attribués automatiquement.
+- Références d’emploi et objectifs pédagogiques distincts des affectations, des grades et des qualifications ; isolation par communauté, contrôle des niveaux, audit transactionnel.
+- Import idempotent conservant les corrections, les archives et les données existantes ; nettoyage des attributions personnelles lors des purges de compte.
+
 ## Réglette d'effectif plus sobre et masquable (ATAK natif 4.31.0.AG - Washington)
 
 ### Résumé joueur

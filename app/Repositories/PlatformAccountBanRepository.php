@@ -19,6 +19,8 @@ use WeakMap;
 final class PlatformAccountBanRepository
 {
     private ?PDO $pdo;
+    private ?bool $noticesReady = null;
+    private ?bool $appealClosureReady = null;
 
     /** @var callable(): int */
     private $clock;
@@ -90,6 +92,34 @@ final class PlatformAccountBanRepository
         return $this->ready() && self::$state !== null && (self::$state[$this->pdo()]['ends'] ?? false);
     }
 
+    public function supportsNotices(): bool
+    {
+        if ($this->noticesReady === null) {
+            try {
+                $this->noticesReady = $this->pdo()->query(
+                    'SELECT rule_reference, public_reason, source_tenant_id, batch_ref FROM platform_account_bans WHERE 1 = 0'
+                ) !== false;
+            } catch (\PDOException) {
+                $this->noticesReady = false;
+            }
+        }
+
+        return $this->noticesReady;
+    }
+
+    public function supportsAppealClosure(): bool
+    {
+        if ($this->appealClosureReady === null) {
+            try {
+                $this->appealClosureReady = $this->pdo()->query('SELECT appeal_closed FROM platform_account_bans WHERE 1 = 0') !== false;
+            } catch (\PDOException) {
+                $this->appealClosureReady = false;
+            }
+        }
+
+        return $this->appealClosureReady;
+    }
+
     /** Prédicat « décision pas encore arrivée à échéance » (sans effet tant que la colonne manque). */
     private function notExpiredSql(string $alias = ''): string
     {
@@ -119,6 +149,7 @@ final class PlatformAccountBanRepository
      * @param list<int> $indicatorIds
      * @param array<int, string> $statusSnapshot user_id => statut avant bannissement
      * @param string|null $endsAt date de fin (UTC, « Y-m-d H:i:s ») ; null = sans fin
+     * @param array{rule_reference: ?string, public_reason: ?string, source_tenant_id: ?int, batch_ref: ?string, appeal_closed?: bool}|null $notice
      */
     public function create(
         string $email,
@@ -128,7 +159,8 @@ final class PlatformAccountBanRepository
         array $indicatorIds,
         array $statusSnapshot,
         ?int $actorId,
-        ?string $endsAt = null
+        ?string $endsAt = null,
+        ?array $notice = null
     ): int {
         if (!$this->ready()) {
             return 0;
@@ -149,6 +181,16 @@ final class PlatformAccountBanRepository
             $fields .= ', ends_at';
             $marks .= ', ?';
             $values[] = $endsAt;
+        }
+        if ($notice !== null) {
+            $fields .= ', rule_reference, public_reason, source_tenant_id, batch_ref';
+            $marks .= ', ?, ?, ?, ?';
+            array_push($values, $notice['rule_reference'], $notice['public_reason'], $notice['source_tenant_id'], $notice['batch_ref']);
+        }
+        if (!empty($notice['appeal_closed'])) {
+            $fields .= ', appeal_closed';
+            $marks .= ', ?';
+            $values[] = 1;
         }
         $st = $this->pdo()->prepare('INSERT INTO platform_account_bans (' . $fields . ') VALUES (' . $marks . ')');
         $st->execute($values);
@@ -171,6 +213,60 @@ final class PlatformAccountBanRepository
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function latestForEmail(string $email): ?array
+    {
+        $stmt = $this->pdo()->prepare('SELECT * FROM platform_account_bans WHERE email_norm = ? ORDER BY id DESC LIMIT 1');
+        $stmt->execute([self::normalizeEmail($email)]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->pdo()->prepare('SELECT * FROM platform_account_bans WHERE id = ?');
+        $stmt->execute([$id]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function setAppealClosed(int $id, bool $closed): bool
+    {
+        $flag = (int) $closed;
+        $stmt = $this->pdo()->prepare('UPDATE platform_account_bans SET appeal_closed = ? WHERE id = ? AND appeal_closed <> ?');
+        $stmt->execute([$flag, $id, $flag]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    /** @return list<array{batch_ref: string, tenant_name: ?string, source_tenant_id: ?int, total: int, remaining: int, created_at: string}> */
+    public function recentBatches(): array
+    {
+        $stmt = $this->pdo()->query(
+            'SELECT b.batch_ref, b.source_tenant_id, MAX(t.name) AS tenant_name, COUNT(*) AS total,
+                    SUM(CASE WHEN b.lifted_at IS NULL AND ' . $this->notExpiredSql('b') . ' THEN 1 ELSE 0 END) AS remaining,
+                    MIN(b.created_at) AS created_at
+             FROM platform_account_bans b LEFT JOIN tenants t ON t.id = b.source_tenant_id
+             WHERE b.batch_ref IS NOT NULL GROUP BY b.batch_ref, b.source_tenant_id
+             ORDER BY created_at DESC LIMIT 25'
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return list<array{id: int, email_norm: string}> */
+    public function activeBatch(string $batch): array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT id, email_norm FROM platform_account_bans WHERE batch_ref = ? AND lifted_at IS NULL AND ' . $this->notExpiredSql()
+            . ' ORDER BY id'
+        );
+        $stmt->execute([$batch]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -264,8 +360,9 @@ final class PlatformAccountBanRepository
         }
         $limit = max(1, min(300, $limit));
         $ends = $this->supportsEndDate() ? 'b.ends_at, b.lift_note' : 'NULL AS ends_at, NULL AS lift_note';
+        $appealClosed = $this->supportsAppealClosure() ? 'b.appeal_closed' : '0 AS appeal_closed';
         $st = $this->pdo()->prepare(
-            "SELECT b.id, b.email_norm, b.reason, b.created_at, b.lifted_at, {$ends},
+            "SELECT b.id, b.email_norm, b.reason, b.created_at, b.lifted_at, {$ends}, {$appealClosed},
                     b.banned_by_user_id, b.lifted_by_user_id,
                     ab.display_name AS banned_by_name, ab.callsign AS banned_by_callsign,
                     al.display_name AS lifted_by_name, al.callsign AS lifted_by_callsign

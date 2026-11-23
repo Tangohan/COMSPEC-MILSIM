@@ -66,25 +66,34 @@ final class UserDiscordLinkRepository
     /**
      * @param array{discord_user_id:string, discord_username:string, access_token:string, refresh_token:string, expires_at:string} $row
      */
-    public function save(int $userId, array $row): void
+    public function save(int $userId, array $row, bool $replace = true): bool
     {
-        // Un compte Discord ne sert qu'à un compte du site : une nouvelle liaison remplace l'ancienne.
-        $this->pdo()->prepare('DELETE FROM user_discord_links WHERE discord_user_id = ? AND user_id <> ?')
-            ->execute([$row['discord_user_id'], $userId]);
-        $this->pdo()->prepare(
-            'INSERT INTO user_discord_links (user_id, discord_user_id, discord_username, access_token, refresh_token, expires_at, linked_at, last_error)
-             VALUES (?, ?, ?, ?, ?, ?, NOW(), \'\')
-             ON DUPLICATE KEY UPDATE discord_user_id = VALUES(discord_user_id), discord_username = VALUES(discord_username),
-                 access_token = VALUES(access_token), refresh_token = VALUES(refresh_token), expires_at = VALUES(expires_at),
-                 linked_at = NOW(), last_error = \'\''
-        )->execute([
+        if ($replace) {
+            $this->pdo()->prepare('DELETE FROM user_discord_links WHERE discord_user_id = ? AND user_id <> ?')
+                ->execute([$row['discord_user_id'], $userId]);
+            $write = "VALUES (?, ?, ?, ?, ?, ?, NOW(), '')
+                      ON DUPLICATE KEY UPDATE discord_user_id = VALUES(discord_user_id), discord_username = VALUES(discord_username),
+                          access_token = VALUES(access_token), refresh_token = VALUES(refresh_token), expires_at = VALUES(expires_at),
+                          linked_at = NOW(), last_error = ''";
+        } else {
+            $write = "SELECT ?, ?, ?, ?, ?, ?, NOW(), ''
+                      WHERE NOT EXISTS (SELECT 1 FROM user_discord_links WHERE discord_user_id = ?)";
+        }
+        $stmt = $this->pdo()->prepare(
+            "INSERT INTO user_discord_links (user_id, discord_user_id, discord_username, access_token, refresh_token, expires_at, linked_at, last_error)
+             {$write}"
+        );
+        $stmt->execute([
             $userId,
             $row['discord_user_id'],
             mb_substr($row['discord_username'], 0, 64),
             $row['access_token'],
             $row['refresh_token'],
             $row['expires_at'],
+            ...($replace ? [] : [$row['discord_user_id']]),
         ]);
+
+        return $stmt->rowCount() > 0;
     }
 
     public function updateTokens(int $userId, string $access, string $refresh, string $expiresAt): void
@@ -108,9 +117,9 @@ final class UserDiscordLinkRepository
     public function staleUserIds(int $olderThanHours, int $limit): array
     {
         $st = $this->pdo()->prepare(
-            'SELECT user_id FROM user_discord_links
-             WHERE synced_at IS NULL OR synced_at < (NOW() - INTERVAL ' . max(1, $olderThanHours) . ' HOUR)
-             ORDER BY synced_at IS NOT NULL, synced_at ASC LIMIT ' . max(1, $limit)
+            "SELECT link.user_id FROM user_discord_links link INNER JOIN users u ON u.id = link.user_id
+             WHERE u.status = 'active' AND (link.synced_at IS NULL OR link.synced_at < (NOW() - INTERVAL " . max(1, $olderThanHours) . ' HOUR))
+             ORDER BY link.synced_at IS NOT NULL, link.synced_at ASC LIMIT ' . max(1, $limit)
         );
         $st->execute();
 

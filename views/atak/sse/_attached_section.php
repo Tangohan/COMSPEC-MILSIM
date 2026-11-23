@@ -43,7 +43,7 @@ $linkIcon = 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1|M14 10a4 4 0 0 0-
                     <h2 id="<?= $h($uid) ?>-t">Éléments rattachés</h2>
                     <?php if ((string) $target['ref'] !== ''): ?><span class="ras-band__index" translate="no">/ <?= $h($target['ref']) ?></span><?php endif; ?>
                 </div>
-                <p class="ras-band__lead">Ce qui a été versé ici, avec le motif, la nature et l’auteur de chaque rattachement.</p>
+                <p class="ras-band__lead">Les éléments liés à cette fiche, avec le motif, la nature et l’auteur de chaque rattachement.</p>
             </div>
             <div class="ras-band__meta">
                 <?php if (is_array($latest) && (string) $latest['date'] !== ''): ?>
@@ -100,7 +100,7 @@ $linkIcon = 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1|M14 10a4 4 0 0 0-
         </div>
         <ul class="ras-list" data-ras-list>
             <?php foreach ($visible as $it):
-                $shown = (string) $it['label'] !== '' ? (string) $it['label'] : (string) $it['title'];
+                $shown = empty($it['outgoing']) && (string) $it['label'] !== '' ? (string) $it['label'] : (string) $it['title'];
                 $tagIds = implode(' ', array_map(static fn (array $t): string => (string) $t['id'], (array) $it['tags']));
                 $tagNames = implode(', ', array_map(static fn (array $t): string => (string) $t['name'], (array) $it['tags']));
                 ?>
@@ -112,7 +112,7 @@ $linkIcon = 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1|M14 10a4 4 0 0 0-
                             <span class="ras-item__type"><?= $h($it['type_label']) ?></span>
                             <a class="ra-mono" href="<?= $h($it['href']) ?>" translate="no"><?= $h($it['ref'] !== '' ? $it['ref'] : $it['title']) ?></a>
                             <strong translate="no"><?= $h($shown) ?></strong>
-                            <?php if ((string) $it['label'] !== '' && (string) $it['label'] !== (string) $it['title']): ?><span class="ras-item__orig" translate="no" title="Titre de la pièce">(<?= $h($it['title']) ?>)</span><?php endif; ?>
+                            <?php if (empty($it['outgoing']) && (string) $it['label'] !== '' && (string) $it['label'] !== (string) $it['title']): ?><span class="ras-item__orig" translate="no" title="Titre de la pièce">(<?= $h($it['title']) ?>)</span><?php endif; ?>
                         </p>
                         <p class="ras-item__why"><span class="ras-nature"><?= $h($it['nature_label']) ?></span> <span translate="no"><?= $h($it['reason']) ?></span></p>
                         <p class="ras-item__meta">
@@ -129,7 +129,7 @@ $linkIcon = 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1|M14 10a4 4 0 0 0-
                                 <summary class="ra-btn ra-btn--ghost ra-btn--sm" aria-label="Actions sur <?= $h($it['ref'] !== '' ? $it['ref'] : $shown) ?>">Actions</summary>
                                 <div class="ras-menu__list">
                                     <button type="button" data-ras-dialog="<?= $h($uid) ?>-edit">Modifier le rattachement</button>
-                                    <button type="button" data-ra-open data-ra-pieces="<?= $h($it['key']) ?>" data-ra-move="<?= (int) $it['id'] ?>">Déplacer vers une autre cible</button>
+                                    <button type="button" data-ra-open data-ra-pieces="<?= $h($it['source_key'] ?? $it['key']) ?>" data-ra-move="<?= (int) $it['id'] ?>">Déplacer vers une autre cible</button>
                                     <button type="button" class="is-danger" data-ras-dialog="<?= $h($uid) ?>-detach">Détacher</button>
                                 </div>
                             </details>

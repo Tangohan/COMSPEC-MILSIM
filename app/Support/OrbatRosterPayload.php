@@ -310,6 +310,12 @@ final class OrbatRosterPayload
             $root = self::attachGrades($root, self::attempt('trigrammes', static fn (): array => \App\Services\Personnel\MemberNameSettings::forTenant($tenantId)['trigrams_enabled']
                 ? (new \App\Services\Personnel\MemberNameService())->trigramsFor($tenantId, $personIds)
                 : [], []), 'trigram');
+            // Après tous les masques : les personnes anonymisées ont perdu leurs identifiants.
+            $visiblePersonIds = self::collectPersonIds($root);
+            $specialties = $visiblePersonIds === [] ? [] : self::attempt('spécialités confirmées', static fn (): array =>
+                (new \App\Services\Personnel\MilitarySpecialtyService())->confirmedForMembers($tenantId, $visiblePersonIds), []);
+            $specialtyLabels = array_map(static fn (array $rows): string => MilitarySpecialtyLabels::summary($rows, true), $specialties);
+            $root = self::attachGrades($root, $specialtyLabels, 'specialty');
             // Noms d’unités et postes générés par Athena dans la langue du lecteur (personnalisés par la communauté).
             $root = \App\Services\I18n\GeneratedLabels::localizeOrbat($root, $tenantId, array_column($flat, 'slug', 'id'));
         }

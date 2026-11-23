@@ -119,6 +119,12 @@ final class SseFieldNoteController
         $lang = self::lang();
         $kindSettings = $this->tagService->kinds($tenantId);
         $activeKinds = $this->tagService->activeKinds($tenantId);
+        $originRef = (string) ((is_array($draft) ? $draft['origin_ref'] ?? null : null) ?? $request->query('from', ''));
+        $origin = $originRef !== '' ? $this->noteOrigin($originRef) : null;
+        if ($originRef !== '' && $origin === null) {
+            Session::flash('error', 'La piste ou l’investigation d’origine est introuvable ou inaccessible.');
+            return Response::redirect(url('atak/sse/fiches'));
+        }
 
         return Response::view('atak.sse.field_note_composer', [
             'title' => 'Nouvelle fiche de renseignement',
@@ -140,7 +146,8 @@ final class SseFieldNoteController
             'observedInputValue' => date('Y-m-d\TH:i'),
             'errors' => is_array($errors) ? $errors : [],
             'draft' => is_array($draft) ? $draft : [],
-            'cancelUrl' => url('atak/sse/fiches'),
+            'noteOrigin' => $origin,
+            'cancelUrl' => $origin['href'] ?? url('atak/sse/fiches'),
             'submitUrl' => url('atak/sse/fiches'),
         ]);
     }
@@ -152,6 +159,13 @@ final class SseFieldNoteController
             Session::flash('error', 'Action non autorisée ou session expirée. Reprenez la rédaction.');
 
             return Response::redirect(url('atak/sse/fiches/nouvelle'));
+        }
+
+        $originRef = trim((string) $request->input('origin_ref', ''));
+        $origin = $originRef !== '' ? $this->noteOrigin($originRef) : null;
+        if ($originRef !== '' && ($origin === null || !\App\Services\Sse\Attach\SseAttachService::ready())) {
+            Session::flash('error', 'Le contexte de rédaction est inaccessible ou les rattachements sont indisponibles. Reprenez depuis la piste ou l’investigation.');
+            return Response::redirect(url('atak/sse/fiches'));
         }
 
         $input = [
@@ -188,6 +202,7 @@ final class SseFieldNoteController
         if ($errors !== []) {
             Session::flash('sse_field_note_errors', $errors);
             Session::flash('sse_field_note_draft', [
+                'origin_ref' => $originRef,
                 'tags' => $selection,
                 'body' => $input['body'],
                 'title' => $input['title'],
@@ -215,6 +230,16 @@ final class SseFieldNoteController
         }
 
         $message = 'Fiche ' . (string) ($created['note']['reference_code'] ?? '') . ' transmise au bureau SSE.';
+        if ($origin !== null) {
+            $attached = (new \App\Services\Sse\Attach\SseAttachService(new \App\Services\Sse\Links\SseLinkSessionViewer()))->attach(
+                ['note:' . $noteId], [$originRef], ['reason' => 'Fiche rédigée depuis la piste ou l’investigation', 'nature' => 'filed_in']
+            );
+            if (!empty($attached['ok'])) {
+                $message .= ' Elle est rattachée à ' . $origin['title'] . '.';
+            } else {
+                Session::flash('error', 'La fiche est enregistrée mais son rattachement a échoué. Utilisez « Rattacher à… » pour le reprendre.');
+            }
+        }
         if (!empty($_FILES['pieces'])) {
             $batch = $this->noteService->attachUploadedBatch($tenantId, $noteId, $_FILES['pieces'], [
                 'author_label' => $input['author_label'],
@@ -473,6 +498,22 @@ final class SseFieldNoteController
         Session::flash('success', 'Suivi enregistré : ' . SseFieldNoteCatalog::statusLabel($status) . '.');
 
         return Response::redirect($back);
+    }
+
+    /** Une origine existante, visible et modifiable dans la communauté de la session. */
+    private function noteOrigin(string $ref): ?array
+    {
+        $parsed = \App\Support\SseLinkCatalog::parseRef($ref);
+        if ($parsed === null || !in_array($parsed['type'], ['lead', 'mesh'], true)) {
+            return null;
+        }
+        $viewer = new \App\Services\Sse\Links\SseLinkSessionViewer();
+        $section = \App\Support\SseLinkCatalog::TYPES[$parsed['type']]['section'];
+        if ($viewer->isGuest() || !$viewer->canWrite($section)) {
+            return null;
+        }
+
+        return (new \App\Services\Sse\Links\SseLinkGraph($viewer))->see($parsed['type'], $parsed['id']);
     }
 
     /** Retour autorisé après un suivi : uniquement le tableau de bord identité (chemin relatif, jamais un lien externe). */

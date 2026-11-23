@@ -9,6 +9,7 @@ use App\Repositories\AccountPurgeRequestRepository;
 use App\Repositories\AtakModReportRepository;
 use App\Repositories\ContentReportRepository;
 use App\Repositories\PlanPaymentRequestRepository;
+use App\Repositories\PlatformBanAppealRepository;
 use App\Repositories\UserRepository;
 use App\Services\Watch\LoadLevel;
 use App\Services\Watch\WatchState;
@@ -49,6 +50,15 @@ final class PlatformHomeService
             $this->card('purge', 'admin/users#demandes-purge', function (): array {
                 $repo = new AccountPurgeRequestRepository($this->pdo());
                 if (!$repo->tableExists()) {
+                    throw new \RuntimeException('table absente');
+                }
+                $n = $repo->countPending();
+
+                return [$n > 0 ? 'warn' : 'ok', $n, []];
+            }),
+            $this->card('appeals', 'admin/sanctions#contestations', function (): array {
+                $repo = new PlatformBanAppealRepository($this->pdo());
+                if (!$repo->ready()) {
                     throw new \RuntimeException('table absente');
                 }
                 $n = $repo->countPending();
@@ -161,6 +171,7 @@ final class PlatformHomeService
     public static function quickLinks(): array
     {
         return [
+            ['key' => 'security', 'href' => 'admin/system/securite'],
             ['key' => 'users', 'href' => 'admin/users'],
             ['key' => 'tenants', 'href' => 'admin/tenants'],
             ['key' => 'plans', 'href' => 'admin/system/subscription-plans'],

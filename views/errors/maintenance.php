@@ -2,70 +2,45 @@
 
 declare(strict_types=1);
 
+use App\Services\I18n\LocaleService;
+use App\Services\I18n\Translator;
 use App\Support\MaintenanceMarkdown;
+use App\Support\MaintenanceMessages;
 use App\Support\MaintenanceThemes;
 
 $appLabel = $appName ?? (function_exists('config') ? (string) config('app.name', 'Athena') : 'Athena');
-$rawTitle = trim((string) ($title ?? ''));
-$rawMessage = trim((string) ($message ?? ''));
-$genericTitles = [
-    '',
-    'Maintenance en cours',
-    'Maintenance globale en cours',
-    'Maintenance sécurité en cours',
-    'Maintenance opérationnelle',
-    'Intervention infrastructure',
-    'Intervention en cours',
-    'Déploiement correctif urgent',
-    'Sécurisation en cours',
-    'Intervention réseau',
-    'Correctif en cours',
-    'Nous revenons bientôt',
-];
-$genericMessages = [
-    '',
-    'Le service est momentanément indisponible.',
-    'Maintenance en cours. Merci de réessayer dans quelques minutes.',
-    "Nos équipes déploient une mise à jour stratégique.\nLe service revient très bientôt.",
-];
-
-$useBrandTitle = in_array($rawTitle, $genericTitles, true);
-$pageHeading = $useBrandTitle ? 'Nous revenons bientôt' : $rawTitle;
-
-$defaultMarkdown = <<<'MD'
-Athena est momentanément fermé le temps d’une mise à jour. Nous simplifions la gestion des communautés : un accès plus clair par membre, des rôles mieux alignés, des dossiers plus simples à suivre.
-
-Vos données restent en sécurité. Vous n’avez rien à faire de votre côté. Pendant cette période, le site et les outils associés restent inaccessibles.
-
-Merci de votre patience, et de la confiance que vous accordez à Athena.
-MD;
-
-$messageMarkdown = ($rawMessage !== '' && !in_array($rawMessage, $genericMessages, true))
-    ? $rawMessage
-    : $defaultMarkdown;
-
-$bodyHtml = MaintenanceMarkdown::toHtml($messageMarkdown);
+// Cette vue est aussi servie avant LocaleMiddleware (maintenance globale et fichier 503).
+$maintenanceLanguage = LocaleService::fromQuery()
+    ?? ($GLOBALS['__app_site_lang'] ?? $GLOBALS['__app_locale'] ?? (new LocaleService())->resolve());
+$maintenanceTranslator = new Translator();
+$text = static fn (string $key, array $replace = []): string => $maintenanceTranslator->get('maintenance.' . $key, $replace, $maintenanceLanguage);
+$escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+$content = MaintenanceMessages::resolve((string) ($title ?? ''), (string) ($message ?? ''), $maintenanceLanguage);
+$pageHeading = $content['title'];
+$bodyHtml = MaintenanceMarkdown::toHtml($content['message']);
 
 $endsLabel = '';
 if (!empty($endsAt)) {
     $ts = strtotime((string) $endsAt);
     if ($ts !== false) {
-        $endsLabel = date('d/m/Y à H:i', $ts);
+        $endsLabel = date($text('date_format'), $ts);
     }
 }
 
 $homeUrl = function_exists('url') ? url('') : '/';
 $base = function_exists('url') ? rtrim((string) url(''), '/') : '';
-$heroSrc = ($base !== '' ? $base : '') . '/assets/images/fog-team.jpg';
-$pageTitle = $useBrandTitle ? 'Maintenance' : $rawTitle;
+$backgroundBase = $base . '/assets/images/home/';
+$backgroundScript = $base . '/assets/js/maintenance-backgrounds.js?v=' . (int) filemtime(__DIR__ . '/../../public/assets/js/maintenance-backgrounds.js');
+$pageTitle = $text('page_title');
 // Apparence choisie dans l’administration (Photo de terrain, Clair et sobre, Nuit radar, Tableau de situation).
 $uiVariant = MaintenanceThemes::normalize($uiVariant ?? null);
 $uiAnimation = !isset($uiAnimation) || (bool) $uiAnimation;
 $previewMode = !empty($previewMode);
 $bodyClasses = 'theme-' . $uiVariant . ($uiAnimation ? '' : ' no-anim') . ($previewMode ? ' is-preview' : '');
+$hasPhotos = in_array($uiVariant, ['military', 'status'], true);
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= $escape($maintenanceLanguage) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,15 +78,44 @@ $bodyClasses = 'theme-' . $uiVariant . ($uiAnimation ? '' : ' no-anim') . ($prev
             flex-direction: column;
             overflow: hidden;
         }
+        .stage__photos {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
         .stage__photo {
             position: absolute;
             inset: 0;
-            background: url('<?= htmlspecialchars($heroSrc, ENT_QUOTES, 'UTF-8') ?>') center / cover no-repeat;
-            filter: grayscale(0.45) brightness(0.42) contrast(1.05);
+            opacity: 0;
+            transition: opacity 1.6s ease-in-out;
+            filter: grayscale(0.45) brightness(0.85) contrast(1.05);
+        }
+        .stage__photo.is-active { opacity: 1; }
+        .stage__photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             transform: scale(1.04);
             animation: drift 28s ease-in-out infinite alternate;
-            pointer-events: none;
         }
+        .background-toggle {
+            position: absolute;
+            z-index: 3;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid rgba(247, 247, 243, 0.25);
+            border-radius: 0.4rem;
+            background: rgba(5, 5, 5, 0.65);
+            color: var(--ink);
+            font: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .is-preview .background-toggle { top: 3.5rem; }
+        .background-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+        .backgrounds-paused .stage__photo img { animation-play-state: paused; }
+        [hidden] { display: none !important; }
         .stage__veil {
             position: absolute;
             inset: 0;
@@ -274,9 +278,11 @@ $bodyClasses = 'theme-' . $uiVariant . ($uiAnimation ? '' : ' no-anim') . ($prev
             to { transform: scale(1.08) translate3d(-1.2%, -0.6%, 0); }
         }
         @media (prefers-reduced-motion: reduce) {
-            .sheet, .headline, .copy, .actions, .stage__photo, .stage__radar, .status__dot {
+            .background-toggle { display: none; }
+            .sheet, .headline, .copy, .actions, .stage__photo img, .stage__radar, .status__dot {
                 animation: none !important;
             }
+            .stage__photo { transition: none; }
         }
         .no-anim *, .no-anim *::before, .no-anim *::after {
             animation: none !important;
@@ -404,41 +410,52 @@ $bodyClasses = 'theme-' . $uiVariant . ($uiAnimation ? '' : ' no-anim') . ($prev
 </head>
 <body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
     <?php if ($previewMode): ?>
-        <p class="preview-bar" role="status">Aperçu : rien n’est en ligne, le site reste ouvert.</p>
+        <p class="preview-bar" role="status"><?= $escape($text('preview')) ?></p>
     <?php endif; ?>
     <main class="stage">
-        <div class="stage__photo" aria-hidden="true"></div>
+        <?php if ($hasPhotos): ?>
+            <div class="stage__photos" data-maintenance-backgrounds data-base="<?= $escape($backgroundBase) ?>" aria-hidden="true">
+                <div class="stage__photo is-active"><img src="<?= $escape($backgroundBase) ?>hero-1-1920.webp" srcset="<?= $escape($backgroundBase) ?>hero-1-960.webp 960w, <?= $escape($backgroundBase) ?>hero-1-1920.webp 1920w" sizes="100vw" alt="" fetchpriority="high" decoding="async"></div>
+                <div class="stage__photo"><img alt="" sizes="100vw" decoding="async"></div>
+            </div>
+            <?php if ($uiAnimation): ?>
+                <button class="background-toggle" type="button" data-background-toggle data-pause-label="<?= $escape($text('pause_background')) ?>" data-resume-label="<?= $escape($text('resume_background')) ?>" aria-pressed="false" hidden><?= $escape($text('pause_background')) ?></button>
+            <?php endif; ?>
+        <?php endif; ?>
         <div class="stage__veil" aria-hidden="true"></div>
         <div class="stage__radar" aria-hidden="true"></div>
         <div class="panel">
             <div class="sheet">
                 <h1 class="headline"><?= htmlspecialchars($pageHeading, ENT_QUOTES, 'UTF-8') ?></h1>
                 <?php if ($uiVariant === 'status'): ?>
-                    <div class="status" aria-label="État des services">
-                        <div class="status__row"><span>Site Athena</span><span class="status__state"><span class="status__dot" aria-hidden="true"></span>En maintenance</span></div>
-                        <div class="status__row"><span>Téléphone ATAK en jeu</span><span class="status__state"><span class="status__dot status__dot--wait" aria-hidden="true"></span>En attente du site</span></div>
-                        <div class="status__row"><span>Vos données</span><span class="status__state"><span class="status__dot status__dot--ok" aria-hidden="true"></span>Protégées</span></div>
-                        <div class="status__row"><span>Réouverture</span><span class="status__state"><?= htmlspecialchars($endsLabel !== '' ? $endsLabel : 'Dès que possible', ENT_QUOTES, 'UTF-8') ?></span></div>
+                    <div class="status" aria-label="<?= $escape($text('status.label')) ?>">
+                        <div class="status__row"><span><?= $escape($text('status.site')) ?></span><span class="status__state"><span class="status__dot" aria-hidden="true"></span><?= $escape($text('status.maintenance')) ?></span></div>
+                        <div class="status__row"><span><?= $escape($text('status.tools')) ?></span><span class="status__state"><span class="status__dot status__dot--wait" aria-hidden="true"></span><?= $escape($text('status.waiting')) ?></span></div>
+                        <div class="status__row"><span><?= $escape($text('status.data')) ?></span><span class="status__state"><span class="status__dot status__dot--ok" aria-hidden="true"></span><?= $escape($text('status.protected')) ?></span></div>
+                        <div class="status__row"><span><?= $escape($text('status.reopening')) ?></span><span class="status__state"><?= $escape($endsLabel !== '' ? $endsLabel : $text('status.unknown')) ?></span></div>
                     </div>
                 <?php endif; ?>
                 <?php if (!empty($loggedOut)): ?>
-                    <p class="notice" role="status">Vous avez été déconnecté pour la durée de la maintenance. Reconnectez-vous une fois le site rouvert.</p>
+                    <p class="notice" role="status"><?= $escape($text('logged_out')) ?></p>
                 <?php endif; ?>
                 <div class="copy">
                     <?= $bodyHtml ?>
                     <?php if ($endsLabel !== ''): ?>
-                        <p>Réouverture prévue le <strong><?= htmlspecialchars($endsLabel, ENT_QUOTES, 'UTF-8') ?></strong>.</p>
+                        <p><?= $escape($text('reopening', ['date' => $endsLabel])) ?></p>
                     <?php endif; ?>
                 </div>
                 <div class="actions">
-                    <a class="cta" href="<?= htmlspecialchars((string) $homeUrl, ENT_QUOTES, 'UTF-8') ?>">Réessayer</a>
-                    <p class="hint">Aucune action n’est demandée de votre part.</p>
+                    <a class="cta" href="<?= htmlspecialchars((string) $homeUrl, ENT_QUOTES, 'UTF-8') ?>"><?= $escape($text('retry')) ?></a>
+                    <p class="hint"><?= $escape($text('hint')) ?></p>
                     <?php if (!empty($adminLoginUrl)): ?>
-                        <a class="admin-link" href="<?= htmlspecialchars((string) $adminLoginUrl, ENT_QUOTES, 'UTF-8') ?>">Connexion administrateur</a>
+                        <a class="admin-link" href="<?= htmlspecialchars((string) $adminLoginUrl, ENT_QUOTES, 'UTF-8') ?>"><?= $escape($text('admin_login')) ?></a>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
     </main>
+    <?php if ($hasPhotos && $uiAnimation): ?>
+        <script src="<?= $escape($backgroundScript) ?>" defer></script>
+    <?php endif; ?>
 </body>
 </html>

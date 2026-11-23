@@ -41,6 +41,29 @@ class ModerationRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /** @param non-empty-list<int> $userIds */
+    public function countConfirmedPlatformRestrictions(array $userIds, string $since, ?string $after, int $triggerId): int
+    {
+        if ($userIds === [] || !$this->hasSanctionScopeColumn()) {
+            return 0;
+        }
+        $ids = implode(',', array_fill(0, count($userIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) AS total, MAX(id = ?) AS trigger_found FROM moderation_actions
+             WHERE target_user_id IN ({$ids}) AND sanction_scope = 'platform'
+               AND action_type IN ('suspend', 'ban') AND revoked_at IS NULL AND created_at >= ?"
+             . ($after !== null ? ' AND created_at > ?' : '')
+        );
+        $values = [$triggerId, ...$userIds, $since];
+        if ($after !== null) {
+            $values[] = $after;
+        }
+        $stmt->execute($values);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return !empty($row['trigger_found']) ? (int) $row['total'] : 0;
+    }
+
     /** @return list<array<string, mixed>> */
     public function listRecentActions(int $tenantId, int $limit = 100, ?string $sanctionScope = null): array
     {

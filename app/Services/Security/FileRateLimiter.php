@@ -12,9 +12,9 @@ final class FileRateLimiter
     /**
      * Incrémente le compteur et indique si le plafond est dépassé.
      */
-    public function tooManyAttempts(string $key, int $maxAttempts, int $decaySeconds): bool
+    public function tooManyAttempts(string $key, int $maxAttempts, int $decaySeconds, bool $strict = false): bool
     {
-        return $this->hit($key, $decaySeconds) > $maxAttempts;
+        return $this->mutate($key, $decaySeconds, true, $strict) > $maxAttempts;
     }
 
     /**
@@ -77,24 +77,27 @@ final class FileRateLimiter
         return @unlink($path);
     }
 
-    private function mutate(string $key, int $decaySeconds, bool $increment): int
+    private function mutate(string $key, int $decaySeconds, bool $increment, bool $strict = false): int
     {
         $dir = base_path('storage/cache/ratelimit');
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
-            return 0;
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return $this->storageFailure($strict);
         }
         $path = $dir . '/' . hash('sha256', $key) . '.json';
         $now = time();
         $fp = @fopen($path, 'c+');
         if ($fp === false) {
-            return 0;
+            return $this->storageFailure($strict);
         }
         try {
             if (!flock($fp, LOCK_EX)) {
-                return 0;
+                return $this->storageFailure($strict);
             }
             rewind($fp);
             $raw = stream_get_contents($fp);
+            if ($raw === false) {
+                return $this->storageFailure($strict);
+            }
             $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
             if (!is_array($data)) {
                 $data = ['window_start' => $now, 'count' => 0];
@@ -108,18 +111,27 @@ final class FileRateLimiter
             if ($increment) {
                 $count++;
                 $payload = json_encode(['window_start' => $start, 'count' => $count], JSON_THROW_ON_ERROR);
-                ftruncate($fp, 0);
-                rewind($fp);
-                fwrite($fp, $payload);
-                fflush($fp);
+                if (!rewind($fp) || fwrite($fp, $payload) !== strlen($payload)
+                    || !ftruncate($fp, strlen($payload)) || !fflush($fp)) {
+                    return $this->storageFailure($strict);
+                }
             }
 
             return $count;
         } catch (\Throwable) {
-            return 0;
+            return $this->storageFailure($strict);
         } finally {
             flock($fp, LOCK_UN);
             fclose($fp);
         }
+    }
+
+    private function storageFailure(bool $strict): int
+    {
+        if ($strict) {
+            throw new \RuntimeException('Rate limit storage unavailable.');
+        }
+
+        return 0;
     }
 }

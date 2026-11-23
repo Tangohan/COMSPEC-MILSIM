@@ -171,6 +171,20 @@ final class RateLimitRetryAfterTest extends TestCase
         self::assertSame(1, $limiter->secondsUntilReset($key, 60), 'compteur illisible : 1 s');
     }
 
+    public function testLoginPostStopsWhenTheCounterCannotBeOpened(): void
+    {
+        $counter = $this->counterPath('rl:/login:POST:' . $this->ip);
+        self::assertTrue(mkdir($counter, 0755, true));
+        try {
+            $response = $this->throughMiddleware('POST', '/login');
+            self::assertSame(503, $response->statusCode());
+            self::assertSame('30', $response->headerValue('Retry-After'));
+            self::assertSame('no-store', $response->headerValue('Cache-Control'));
+        } finally {
+            rmdir($counter);
+        }
+    }
+
     private function throughMiddleware(string $method, string $path): \App\Core\Response
     {
         $_SERVER['REQUEST_METHOD'] = $method;
