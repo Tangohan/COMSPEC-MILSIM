@@ -821,6 +821,39 @@ $heroPosterUrl = $heroImages[0]['src'];
             </div>
         </section>
 
+        <!-- Modpack Arma 3 -->
+        <section class="relative overflow-hidden border-y border-white/10 bg-black text-white hi-block" aria-labelledby="modpack-heading" id="modpack">
+            <div class="hi-wrap">
+                <div class="grid gap-10 lg:grid-cols-12 lg:items-center lg:gap-16">
+                    <div class="hi-section-head lg:col-span-5">
+                        <p class="hi-kicker text-emerald-300"><?= $e(__('home.mp_kicker')) ?></p>
+                        <h2 id="modpack-heading" class="hi-h2 whitespace-pre-line"><?= $e(__('home.mp_title')) ?></h2>
+                        <p class="hi-lead text-white/75"><?= $e(__('home.mp_body')) ?></p>
+                        <div class="hi-cta-row hi-cta-row--stack pt-4">
+                            <a href="<?= $e(url('modpacks')) ?>" class="hi-cta hi-cta-solid"><?= $e(__('home.mp_cta')) ?></a>
+                            <a href="<?= $e(url('modpacks') . '#installation') ?>" class="hi-cta hi-cta-ghost"><?= $e(__('home.mp_cta_guide')) ?></a>
+                        </div>
+                    </div>
+                    <ul class="grid gap-4 sm:grid-cols-3 lg:col-span-7">
+                        <?php
+                        $mpPoints = [
+                            ['t' => __('home.mp_p1_t'), 'b' => __('home.mp_p1_b')],
+                            ['t' => __('home.mp_p2_t'), 'b' => __('home.mp_p2_b')],
+                            ['t' => __('home.mp_p3_t'), 'b' => __('home.mp_p3_b')],
+                        ];
+                        foreach ($mpPoints as $i => $point):
+                        ?>
+                        <li class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                            <span class="grid h-9 w-9 place-items-center rounded-full bg-emerald-400/15 text-sm font-black text-emerald-300"><?= (int) $i + 1 ?></span>
+                            <h3 class="mt-4 text-sm font-black uppercase tracking-wide text-emerald-300"><?= $e($point['t']) ?></h3>
+                            <p class="mt-2 text-sm leading-relaxed text-white/70"><?= $e($point['b']) ?></p>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
         <!-- Confiance / isolation -->
         <section class="border-y border-white/10 bg-black text-white hi-block" aria-labelledby="trust-heading">
             <div class="hi-wrap">

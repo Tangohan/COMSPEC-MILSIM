@@ -17,6 +17,13 @@ $previous = (int) ($activity['previous'] ?? 0);
 $delta = $recent - $previous;
 $size = (int) ($pack['bytes'] ?? 0);
 $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZone('UTC')) : null;
+$sizeLabel = $published ? ($size >= 1073741824 ? $number($size / 1073741824, 2) . ' ' . __('modpack.gib') : ($size >= 1048576 ? $number($size / 1048576, 1) . ' ' . __('modpack.mib') : $number($size) . ' ' . __('modpack.bytes'))) : '';
+$dateLabel = $date ? $date->setTimezone(new DateTimeZone('Europe/Paris'))->format($english ? 'j M Y' : 'd/m/Y') : '';
+$shaShort = $published && preg_match('/\A[a-f0-9]{64}\z/', (string) ($pack['sha256'] ?? '')) === 1 ? substr($pack['sha256'], 0, 8) . '…' . substr($pack['sha256'], -8) : '';
+// Notes de version : première ligne = titre, le reste dans un cadre défilant.
+$noteLines = $published && !empty($pack['release_notes']) ? preg_split('/\R/', trim((string) $pack['release_notes']), 2) : [];
+$noteHead = (string) ($noteLines[0] ?? '');
+$noteBody = trim((string) ($noteLines[1] ?? ''));
 ?>
 <div class="mp" lang="<?= $e(locale()) ?>" translate="no">
 <div id="contenu" class="mp-wrap">
@@ -38,6 +45,14 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
                 <a class="mp-guide" href="#installation"><?= $e(__('modpack.guide')) ?> <span class="mp-arrow" aria-hidden="true"></span></a>
                 <?php if ($admin && $ready): ?><a class="mp-guide" href="#administration"><?= $e(__('modpack.admin')) ?> <span class="mp-arrow" aria-hidden="true"></span></a><?php endif; ?>
             </div>
+            <?php if ($published): ?>
+            <ul class="mp-meta" aria-label="<?= $e(__('modpack.file_details')) ?>">
+                <li>v<?= $e($pack['version']) ?></li>
+                <li><?= $e($sizeLabel) ?> · RAR</li>
+                <li><?= $e($dateLabel) ?></li>
+                <?php if ($shaShort !== ''): ?><li class="mp-hash" title="SHA-256"><span>SHA-256</span> <code><?= $e($shaShort) ?></code></li><?php endif; ?>
+            </ul>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -65,8 +80,7 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
 
     <?php if ($outdated): ?><p class="mp-alert"><?= $e(__('modpack.outdated_detail', ['version' => $pack['version'], 'reference' => $expected])) ?></p><?php endif; ?>
 
-    <div class="mp-details">
-        <section id="installation" class="mp-install">
+    <section id="installation" class="mp-install">
             <h2><?= $e(__('modpack.install')) ?></h2>
             <ol>
                 <li><div><strong><?= $e(__('modpack.check')) ?></strong><p><?= $e(__('modpack.check_detail')) ?></p></div></li>
@@ -74,7 +88,9 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
                 <li><div><strong><?= $e(__('modpack.local_mods')) ?></strong><p><?= $e(__('modpack.local_mods_detail')) ?></p></div></li>
                 <li><div><strong><?= $e(__('modpack.activate')) ?></strong><p><?= $e(__('modpack.activate_detail')) ?></p></div></li>
             </ol>
-        </section>
+    </section>
+
+    <div class="mp-details">
         <section class="mp-file">
             <h2><?= $e(__('modpack.file_details')) ?></h2>
             <dl>
@@ -86,8 +102,14 @@ $date = $published ? new DateTimeImmutable($pack['published_at'], new DateTimeZo
             <?php if ($published): ?><details><summary><?= $e(__('modpack.checksum')) ?></summary><code><?= $e($pack['sha256']) ?></code></details><?php endif; ?>
             <?php if ($published): ?><details><summary><?= $e(__('modpack.verify')) ?></summary><p><?= $e(__('modpack.verify_detail')) ?></p><code><?= $e(__('modpack.verify_cmd')) ?></code></details><?php endif; ?>
             <?php if ($published): ?><p class="mp-note"><?= $e(__('modpack.av_note')) ?></p><?php endif; ?>
-            <?php if ($published && !empty($pack['release_notes'])): ?><details open><summary><?= $e(__('modpack.notes')) ?></summary><p><?= nl2br($e($pack['release_notes'])) ?></p></details><?php endif; ?>
         </section>
+        <?php if ($noteLines !== []): ?>
+        <section class="mp-notes" aria-labelledby="mp-notes-title">
+            <h2 id="mp-notes-title"><?= $e(__('modpack.notes')) ?></h2>
+            <p class="mp-notes-head"><?= $e($noteHead) ?></p>
+            <?php if ($noteBody !== ''): ?><div class="mp-notes-body" tabindex="0"><?= nl2br($e($noteBody)) ?></div><?php endif; ?>
+        </section>
+        <?php endif; ?>
     </div>
 
     <section id="securite" class="mp-trust" aria-labelledby="mp-trust-title">

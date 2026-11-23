@@ -41,6 +41,7 @@ $psfColumns = [
             ['href' => url('nouveautes'), 'label' => __('site.changelog')],
             ['href' => url('sse'), 'label' => __('site.sse')],
             ['href' => url('atak-natif'), 'label' => __('site.atak_native')],
+            ['href' => url('modpacks'), 'label' => __('modpack.nav')],
             ['href' => url('contribuer'), 'label' => __('site.contrib_crumb')],
             ['href' => \App\Support\PublicLinks::discordInviteUrl(), 'label' => __('home.footer_discord'), 'external' => true],
         ],
