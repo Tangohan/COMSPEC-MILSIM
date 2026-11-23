@@ -48,7 +48,7 @@ class OrganizationAdminMiddleware
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/recruitment/reference-format') && ($gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage'))) {
                 $scopedOrgAccess = true;
-            } elseif (str_starts_with($path, '/back-office/ressources/effectifs') && (
+            } elseif ((str_starts_with($path, '/back-office/ressources/effectifs') || str_starts_with($path, '/back-office/bureau-effectifs')) && (
                 // Garder en phase avec EffectifsLmsAccess::allows() — personnel.profile.view exclu
                 // volontairement (voir ce fichier pour le pourquoi).
                 $gate->allows('organization.effectifs.hub.view')

@@ -2670,6 +2670,9 @@ return function (Router $router) {
     $router->post('/back-office/ressources/recrutement/automod/restore-access', [RecruitmentWorkspaceController::class, 'automodRestoreAccess'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/recrutement/automod/escalate', [RecruitmentWorkspaceController::class, 'automodEscalateToPlatform'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs', [EffectifsWorkspaceController::class, 'roster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Bureau des effectifs en vue dédiée plein écran (modèle « mode tableur ») : lecture seule, profils Bureau des effectifs et Complet.
+    $router->get('/back-office/bureau-effectifs', [\App\Controllers\Admin\EffectifsDeskController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/bureau-effectifs/donnees', [\App\Controllers\Admin\EffectifsDeskController::class, 'data'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/nouveau', [EffectifsWorkspaceController::class, 'newMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/nouveau/verifier', [\App\Controllers\Admin\EffectifsInvitesController::class, 'checkNewMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

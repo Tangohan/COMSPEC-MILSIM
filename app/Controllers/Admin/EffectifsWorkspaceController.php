@@ -1105,48 +1105,50 @@ class EffectifsWorkspaceController
         if ($denied !== null) {
             return $denied;
         }
+        // Depuis le Bureau des effectifs plein écran, on y revient (le rapport d'import s'y affiche).
+        $back = (string) $request->input('return_to', '') === 'bureau-effectifs' ? effectifs_desk_url() : effectifs_workspace_url();
         $tenantId = (int) Session::get('tenant_id');
         $actorId = (int) Session::get('user_id');
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(effectifs_workspace_url());
+            return Response::redirect($back);
         }
         $tenant = $this->tenantRepository->findById($tenantId);
         if (!\App\Services\Community\TenantTypeConfig::rosterBureauMode((string) ($tenant['tenant_type'] ?? 'full'))) {
             Session::flash('error', 'L’import de tableur est réservé aux profils « Bureau des effectifs » et « Complet ».');
 
-            return Response::redirect(effectifs_workspace_url());
+            return Response::redirect($back);
         }
         if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
             Session::flash('error', 'Il faut le droit de modifier les fiches pour importer un tableur.');
 
-            return Response::redirect(effectifs_workspace_url());
+            return Response::redirect($back);
         }
         $file = $_FILES['roster_file'] ?? null;
         if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             Session::flash('error', 'Choisissez un fichier CSV (dans Excel : Fichier → Enregistrer sous → CSV).');
 
-            return Response::redirect(effectifs_workspace_url());
+            return Response::redirect($back);
         }
         $tmp = (string) ($file['tmp_name'] ?? '');
         $content = $tmp !== '' && is_readable($tmp) && (int) ($file['size'] ?? 0) <= 2 * 1024 * 1024 ? (string) file_get_contents($tmp) : '';
         if ($content === '') {
             Session::flash('error', 'Fichier illisible ou trop lourd (2 Mo au plus).');
 
-            return Response::redirect(effectifs_workspace_url());
+            return Response::redirect($back);
         }
         $parsed = \App\Services\Effectifs\RosterOnlyMemberService::parseCsv($content);
         if ($parsed['error'] !== null) {
             Session::flash('error', $parsed['error']);
 
-            return Response::redirect(effectifs_workspace_url());
+            return Response::redirect($back);
         }
         $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
         if (!$gate->canAddMember($tenantId)) {
             Session::flash('error', 'Limite de membres du plan atteinte.');
 
-            return Response::redirect(effectifs_workspace_url());
+            return Response::redirect($back);
         }
         $service = new \App\Services\Effectifs\RosterOnlyMemberService(
             $this->userRepository,
@@ -1178,7 +1180,7 @@ class EffectifsWorkspaceController
         } catch (\Throwable) {
         }
 
-        return Response::redirect(effectifs_workspace_url());
+        return Response::redirect($back);
     }
 
     /** Modèle CSV vierge pour l’import du Bureau des effectifs (s’ouvre dans Excel). */
@@ -6476,5 +6478,45 @@ class EffectifsWorkspaceController
 
             return [];
         }
+    }
+
+    /**
+     * Bureau des effectifs plein écran (EffectifsDeskController) : toutes les fiches du tableur de la communauté, sans
+     * pagination (200 par lecture, 2 000 au plus), enrichies comme la liste des membres, avec l'identité affichable,
+     * les unités et leurs codes. Lecture seule ; la communauté est celle de la session.
+     *
+     * @return array{rows: list<array<string, mixed>>, identities: array<int, array<string, mixed>>, units: list<array<string, mixed>>, unit_codes: array<int, array<string, mixed>>, commanders: array<int, string>, truncated: bool}
+     */
+    public function deskRoster(int $tenantId): array
+    {
+        $users = [];
+        $truncated = false;
+        for ($offset = 0; $offset < 2000; $offset += 200) {
+            $chunk = $this->userRepository->listForTenant($tenantId, null, null, null, 200, $offset, true, null, null);
+            $users = array_merge($users, $chunk);
+            if (count($chunk) < 200) {
+                break;
+            }
+            $truncated = $offset + 200 >= 2000;
+        }
+        $rows = $this->attachRosterFieldData($tenantId, $this->enrichRosterRows($tenantId, $users), false);
+        $ids = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+        $unitsRaw = $this->unitRepository->allForTenant($tenantId);
+        $meta = $this->unitRepository->hierarchyMetaByUnitId($tenantId);
+        $units = [];
+        foreach ($unitsRaw as $u) {
+            $uid = (int) ($u['id'] ?? 0);
+            $u['assignment_path'] = trim((string) ($meta[$uid]['path'] ?? '')) !== '' ? trim((string) $meta[$uid]['path']) : trim((string) ($u['name'] ?? ''));
+            $units[] = $u;
+        }
+
+        return [
+            'rows' => $rows,
+            'identities' => $this->rosterIdentities($tenantId, $ids),
+            'units' => $units,
+            'unit_codes' => (new UnitCodeService())->sync($tenantId)['units'],
+            'commanders' => $this->safeCommanderLabels($tenantId, $unitsRaw),
+            'truncated' => $truncated,
+        ];
     }
 }

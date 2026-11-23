@@ -23,7 +23,7 @@ final class BureauHeroDashboardAssetTest extends TestCase
         self::assertStringContainsString('_bureau_hero.php', $dash);
 
         self::assertStringContainsString('Ouvrir le Bureau des effectifs', $hero);
-        self::assertStringContainsString('effectifs_workspace_url()', $hero);
+        self::assertStringContainsString('effectifs_desk_url()', $hero);
         self::assertStringContainsString('data-pil-dismissable', $hero);
         self::assertStringContainsString('data-pil-dismiss>Masquer', $hero);
         self::assertStringContainsString('aria-hidden="true"', $hero);
