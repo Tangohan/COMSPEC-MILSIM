@@ -134,7 +134,7 @@ class CfgFunctions {
             class adminAllowed {}; class adminServer {}; class adminClient {}; class pageAdmin {};
         };
         class zeus { file="z\comspec_atak_native\addons\main\functions\zeus";
-            class zeusState {}; class zeusCentre {}; class zeusObject {}; class zeusFx {}; class zeusJam {}; class zeusServer {}; class zeusClient {}; class zeusOverlay {}; class zeusMenu {}; class moduleZeusControl {}; class moduleZeusJammer {};
+            class zeusState {}; class zeusHide {}; class zeusCentre {}; class zeusObject {}; class zeusFx {}; class zeusJam {}; class zeusServer {}; class zeusClient {}; class zeusOverlay {}; class zeusMenu {}; class moduleZeusControl {}; class moduleZeusJammer {};
         };
         // Traçage d'un numéro (app GE, onglet TRAÇAGE) : calculs purs, serveur qui fait foi, téléphone.
         class trace { file="z\comspec_atak_native\addons\main\functions\trace";

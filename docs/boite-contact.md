@@ -1,12 +1,12 @@
 # Boîte de contact de la plateforme
 
 Administration du site, Communication, **Boîte de contact** : les e-mails reçus sur l'adresse de contact (par défaut
-`contact@athena.ttrd.fr`) arrivent dans le site, rangés en fils de discussion. Vous y répondez depuis le site ; la réponse
+`contact@athena-comspec.eu`) arrivent dans le site, rangés en fils de discussion. Vous y répondez depuis le site ; la réponse
 part de la même adresse. Réservée à l'administrateur de la plateforme.
 
 ## 1. Créer la boîte (une fois)
 
-1. hPanel (Hostinger), Courriels, domaine `athena.ttrd.fr` : créer la boîte `contact@athena.ttrd.fr` (forfait Free Business Email).
+1. hPanel (Hostinger), Courriels, domaine `athena-comspec.eu` : créer la boîte `contact@athena-comspec.eu` (forfait Free Business Email).
 2. Choisir un mot de passe fort. Il ne se commite jamais : il va uniquement dans le fichier `.env` du serveur.
 
 ## 2. Clés à renseigner dans le `.env` du serveur
@@ -14,7 +14,7 @@ part de la même adresse. Réservée à l'administrateur de la plateforme.
 | Clé | Rôle | Défaut |
 | --- | --- | --- |
 | `CONTACT_MAIL_PASSWORD` | Mot de passe de la boîte. **Seule clé obligatoire** : sans elle, l'écran affiche « Boîte non configurée » et le site ne se connecte à rien. | aucun |
-| `CONTACT_MAIL_ADDRESS` | Adresse de la boîte, expéditeur des réponses et Reply-To des e-mails automatiques. | `contact@athena.ttrd.fr` |
+| `CONTACT_MAIL_ADDRESS` | Adresse de la boîte, expéditeur des réponses et Reply-To des e-mails automatiques. | `contact@athena-comspec.eu` |
 | `CONTACT_MAIL_USER` | Identifiant IMAP et SMTP. | la valeur de `CONTACT_MAIL_ADDRESS` |
 | `CONTACT_MAIL_IMAP_HOST` | Serveur de lecture. | `imap.hostinger.com` |
 | `CONTACT_MAIL_IMAP_PORT` | Port IMAP, TLS implicite. | `993` |
@@ -39,11 +39,11 @@ messages envoyés avec le compte d'une communauté ne sont pas modifiés.
 
 ## 4. Délivrabilité : enregistrements DNS à vérifier
 
-Dans la zone DNS de `athena.ttrd.fr` (hPanel, Domaines, Zone DNS), sans doublon :
+Dans la zone DNS de `athena-comspec.eu` (hPanel, Domaines, Zone DNS), sans doublon :
 
 - **SPF** : un seul enregistrement TXT `v=spf1 …` à la racine du domaine, qui inclut Hostinger (valeur donnée par hPanel, du type `include:_spf.mail.hostinger.com`). Deux enregistrements SPF invalident les deux.
 - **DKIM** : activer la signature dans hPanel (Courriels, DKIM, y compris « DKIM personnalisé ») et ajouter les enregistrements proposés (CNAME ou TXT). Vérifier qu'ils répondent avant d'envoyer.
-- **DMARC** : un enregistrement TXT `_dmarc.athena.ttrd.fr`, par exemple `v=DMARC1; p=none; rua=mailto:<adresse de rapports>`, à durcir (`quarantine`) quand les rapports sont propres.
+- **DMARC** : un enregistrement TXT `_dmarc.athena-comspec.eu`, par exemple `v=DMARC1; p=none; rua=mailto:<adresse de rapports>`, à durcir (`quarantine`) quand les rapports sont propres.
 
 Test simple : envoyer un message depuis la boîte vers une adresse de test et lire les en-têtes (`spf=pass`, `dkim=pass`, `dmarc=pass`).
 
