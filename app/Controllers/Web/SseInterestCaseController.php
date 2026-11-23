@@ -211,7 +211,7 @@ final class SseInterestCaseController
             return Response::redirect(url('atak/sse/interet'));
         }
 
-        return $this->pdf->export($detail, (string) (Session::get('tenant_name') ?? ''));
+        return $this->pdf->export($detail, (string) (Session::get('tenant_name') ?? ''), \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
     }
 
     // ------------------------------------------------------------------ Création, modification

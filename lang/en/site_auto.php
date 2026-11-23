@@ -73356,4 +73356,11 @@ return [
     'Une ligne qui correspond à une fiche sans compte (même indicatif, sinon même nom) la met à jour, cellules vides ignorées ; un compte existant n’est jamais modifié.' => 'A row that matches a record without an account (same callsign, otherwise same name) updates it, empty cells are ignored; an existing account is never modified.',
     'invitation expirée' => 'invitation expired',
     'À rattacher plus tard' => 'To be attached later',
+    'Page de garde' => 'Cover page',
+    'Notice du document' => 'About this document',
+    'Planches photographiques' => 'Photo plates',
+    'Flash opérationnel' => 'Operational flash',
+    'Preuves recensées' => 'Recorded evidence',
+    'Graphe, pièces photographiques' => 'Graph, photo exhibits',
+    'Pièces images' => 'Image exhibits',
 ];
