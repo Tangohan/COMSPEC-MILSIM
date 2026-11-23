@@ -57,6 +57,13 @@ $cursusUrl = url('back-office/referentiels/qualifications/cursus-pilote');
 $logbookUrl = static fn (int $uid): string => url('back-office/referentiels/qualifications/cursus-pilote/carnet/' . $uid);
 $retour = 'back-office/espace-aerien' . ($aeroView !== 'ligne' ? '?vue=' . $aeroView : '');
 $queue = $aero['queue'] ?? [];
+// Vue Pilotes : un palier en attente se valide depuis la carte du pilote (même proposition que la file « À valider »).
+$queueByPilot = [];
+foreach ($queue as $it) {
+    if ($it['kind'] === 'rule') {
+        $queueByPilot[(int) $it['user_id'] . '|' . (string) $it['code']] = $it;
+    }
+}
 $counts = $aero['log_counts'] ?? [];
 
 $aeroTab = $aeroView;
@@ -286,6 +293,25 @@ $aeroTabCounts = ['ligne' => count($queue), 'carnet' => (int) ($counts['declared
                     <?php else: ?><span>Vers <b><?= $h((string) $nx['code']) ?></b> · <?= $h($fh((float) $nx['hours'])) ?> / <?= $h($fh((float) $nx['target'])) ?></span><span><?= (int) $nx['pct'] ?> %</span>
                     <?php endif; ?>
                 </div>
+                <?php if ($nx !== null && ($nx['state'] === Eng::PENDING || $nx['state'] === Eng::ELIGIBLE)):
+                    $qi = $queueByPilot[$uid . '|' . (string) $nx['code']] ?? null;
+                    ?>
+                <div class="aero-qi__acts aero-pval">
+                    <?php if ($qi === null): ?>
+                    <small class="aero-hint">Proposition créée au prochain relevé du mod, puis à valider ici ou dans <a href="<?= $h(url('back-office/espace-aerien')) ?>">Ligne de vol › À valider</a>.</small>
+                    <?php elseif ($qi['mine']): ?>
+                    <small class="aero-hint">Votre propre proposition : un autre instructeur doit la traiter.</small>
+                    <?php elseif (!$qi['can']): ?>
+                    <small class="aero-hint">Validation réservée aux instructeurs de la filière.</small>
+                    <?php elseif ($allowed): ?>
+                    <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote/propositions/' . (int) $qi['item']['award_id'])) ?>">
+                        <?= \App\Core\Csrf::field() ?><input type="hidden" name="retour" value="<?= $h($retour) ?>">
+                        <button type="submit" name="decision" value="valider" class="aero-btn sm pri">Valider <?= $h((string) $nx['code']) ?> après vol d’évaluation</button>
+                        <button type="submit" name="decision" value="ajourner" class="aero-btn sm">Ajourner</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
                 <?php else: ?>
                 <div class="aero-nx"><span>Appareil hors cursus</span></div>
                 <?php endif; ?>
