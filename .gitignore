@@ -110,3 +110,6 @@ mod/COMSPEC_ATAK_Native/publisher/_backup_ws_*
 # Claude Code : fichiers locaux
 .claude/worktrees/
 .claude/settings.local.json
+
+# Local Windows scripts in the mod tree
+/mod/**/*.[bB][aA][tT]
