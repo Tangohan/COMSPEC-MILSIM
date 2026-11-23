@@ -40,7 +40,7 @@ $tabs = [
 ];
 // Profils simplifiés : retirer les onglets sans usage (même liste que le menu latéral).
 $effTenantType = function_exists('navigation_current_tenant_type') ? navigation_current_tenant_type() : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
-$effRosterOnly = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts($effTenantType);
+$effRosterOnly = \App\Services\Community\TenantTypeConfig::rosterBureauMode($effTenantType);
 $effCanSuivi = \App\Support\EffectifsLmsAccess::canViewSuivi(\App\Core\Gate::getInstance());
 $tabs = array_values(array_filter($tabs, static function (array $tab) use ($effTenantType, $effCanSuivi): bool {
     if ($tab[0] === 'suivi' && !$effCanSuivi) {
@@ -95,7 +95,7 @@ foreach ($tabs as $tab) {
 $memberUnitCode = is_array($effMemberUnitCode ?? null) ? $effMemberUnitCode : null;
 $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8'];
 ?>
-<div class="bo-eff-workspace bo-eff-workspace--v2" data-effectifs-workspace>
+<div class="bo-eff-workspace bo-eff-workspace--v2<?= $effRosterOnly ? ' bo-eff-workspace--bureau' : '' ?>" data-effectifs-workspace>
     <?php if ($isMember): ?>
     <header class="bo-eff-head bo-eff-head--compact">
         <div class="bo-eff-head__copy">
@@ -127,7 +127,7 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
                     <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2v8m-3.5-3.5L8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Exporter
                 </a>
                 <a class="bo-eff-hb" href="<?= $h(effectifs_workspace_url('nouveau')) ?>">
-                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><?= $effRosterOnly ? 'Ajouter une fiche' : 'Ajouter un membre' ?>
+                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><?= $effRosterOnly && \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly($effTenantType) ? 'Ajouter une fiche' : 'Ajouter un membre' ?>
                 </a>
             </div>
             <?php endif; ?>
@@ -197,7 +197,11 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
 
     <?php if ($effRosterOnly): ?>
     <aside class="bo-eff-bureau" aria-label="Bureau des effectifs">
+        <?php if (\App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly($effTenantType)): ?>
         <p>Bureau des effectifs : vous tenez le registre comme un tableur. Vos membres n’ont pas besoin de compte, seuls ceux qui gèrent les fiches se connectent. Le recrutement se fait sur votre Discord, pas sur le site.</p>
+        <?php else: ?>
+        <p>Mode bureau : le registre se tient comme un tableur. Les fiches sans compte et l’import de tableur s’ajoutent aux comptes existants, et le recrutement reste ouvert sur le site.</p>
+        <?php endif; ?>
     </aside>
     <?php require __DIR__ . '/_roster_import.php'; ?>
     <?php endif; ?>
@@ -250,7 +254,7 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
                 <kbd>Ctrl K</kbd>
             </button>
             <?php if ($isMember): ?>
-            <a class="bo-eff-quick__page bo-eff-quick__page--solid" href="<?= $h(effectifs_workspace_url('nouveau')) ?>"><?= $effRosterOnly ? 'Ajouter une fiche' : 'Ajouter un membre' ?></a>
+            <a class="bo-eff-quick__page bo-eff-quick__page--solid" href="<?= $h(effectifs_workspace_url('nouveau')) ?>"><?= $effRosterOnly && \App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly($effTenantType) ? 'Ajouter une fiche' : 'Ajouter un membre' ?></a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

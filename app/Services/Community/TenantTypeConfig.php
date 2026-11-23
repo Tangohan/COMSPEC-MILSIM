@@ -563,6 +563,16 @@ final class TenantTypeConfig
     }
 
     /**
+     * Mode bureau du registre (fiches sans compte, import et export de tableur, grille « logiciel ») :
+     * propre au profil « Bureau des effectifs », ouvert aussi au profil « Complet ». Reste cloisonné par
+     * communauté (le type est celui de la communauté en cours) ; « Carte ATAK » n'y a pas accès.
+     */
+    public static function rosterBureauMode(string $tenantType): bool
+    {
+        return in_array(self::normalizeType($tenantType), [self::TYPE_EFFECTIFS, self::TYPE_FULL], true);
+    }
+
+    /**
      * Modules du portail, dans l’ordre d’affichage des comparatifs (libellé + ce qu’ils apportent).
      * « admin » et « equipment » sont présents dans tous les profils.
      *
