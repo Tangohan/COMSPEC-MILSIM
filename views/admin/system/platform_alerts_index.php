@@ -111,6 +111,52 @@ $visibleNow = (int) ($stats['visible_now'] ?? 0);
             <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800" role="alert"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
 
+        <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="pa-preview-heading">
+            <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/dsfr-service.css'), ENT_QUOTES, 'UTF-8') ?>">
+            <link rel="stylesheet" href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6">
+                <div class="min-w-0">
+                    <h2 id="pa-preview-heading" class="text-base font-black text-slate-900">Aperçu réel des types d’alertes</h2>
+                    <p class="mt-0.5 text-xs text-slate-500">Chaque type tel que le voit un visiteur, au format choisi. Texte d’exemple : rien n’est publié.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <label class="text-xs font-semibold text-slate-600" for="ap-style">Format</label>
+                    <select id="ap-style" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                        <?php foreach (\App\Support\AlertDisplayStyle::platformOptions() as $apValue => $apLabel): ?>
+                        <option value="<?= htmlspecialchars((string) $apValue, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $apLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <label class="text-xs font-semibold text-slate-600" for="ap-theme">Fond</label>
+                    <select id="ap-theme" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                        <option value="light">Clair</option>
+                        <option value="dark">Sombre</option>
+                    </select>
+                </div>
+            </div>
+            <div id="ap-gallery" class="grid gap-4 px-4 py-4 sm:px-6 md:grid-cols-2" data-kinds="<?= htmlspecialchars((string) json_encode(array_map(static fn ($k, $l): array => [$k, $l], array_keys(\App\Support\PlatformAlertPresentation::kindOptions()), array_values(\App\Support\PlatformAlertPresentation::kindOptions())), JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>"></div>
+            <script src="<?= htmlspecialchars(asset_url('assets/js/alert-preview.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+            <script>
+            (function () {
+                var box = document.getElementById('ap-gallery');
+                var style = document.getElementById('ap-style');
+                var theme = document.getElementById('ap-theme');
+                if (!box || !window.AthenaAlertPreview) { return; }
+                var kinds = [];
+                try { kinds = JSON.parse(box.getAttribute('data-kinds') || '[]'); } catch (e) { kinds = []; }
+                function draw() {
+                    window.AthenaAlertPreview.gallery(box, kinds, {
+                        styles: [style.value], theme: theme.value,
+                        body: 'Voici à quoi ressemble ce type d’annonce chez vos visiteurs. Plus d’infos : https://athena-comspec.eu/modpacks',
+                        cta_label: 'En savoir plus', cta_url: '#'
+                    });
+                }
+                style.addEventListener('change', draw);
+                theme.addEventListener('change', draw);
+                draw();
+            })();
+            </script>
+        </section>
+
         <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="pa-list-heading">
             <div class="flex flex-col gap-2 border-b border-slate-100 border-l-[3px] border-l-emerald-600 bg-slate-50/80 px-4 sm:px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
