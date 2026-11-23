@@ -2583,7 +2583,36 @@ class UserRepository
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
 
-        return $this->withTenantMemberNumbers($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], $tenantId);
+        $rows = $this->withCommunityIdentity($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [], $tenantId);
+
+        return $this->withTenantMemberNumbers($rows, $tenantId);
+    }
+
+    /**
+     * Indicatif et nom affichés de CETTE communauté (user_community_profiles), comme la fiche (findById, puis
+     * overlayCommunityProfile) : sans cela, la liste montrait users.callsign (valeur du compte d'origine)
+     * quand la fiche montrait l'indicatif de la communauté.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withCommunityIdentity(array $rows, int $tenantId): array
+    {
+        if ($rows === [] || !$this->hasCommunityMembershipTable() || !$this->tableExists('user_community_profiles')) {
+            return $rows;
+        }
+        $ids = array_values(array_unique(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows)));
+        $st = $this->pdo()->prepare(
+            'SELECT user_id, display_name, callsign FROM user_community_profiles
+             WHERE tenant_id = ? AND user_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')'
+        );
+        $st->execute(array_merge([$tenantId], $ids));
+        $byUser = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $p) {
+            $byUser[(int) $p['user_id']] = $p;
+        }
+
+        return UserIdentityMergeRules::overlayCommunityIdentity($rows, $byUser);
     }
 
     /**
@@ -2720,6 +2749,12 @@ class UserRepository
             }
             if ($this->hasTenantMemberNumberColumn()) {
                 $searchBits .= " OR (u.tenant_member_number IS NOT NULL AND TRIM(u.tenant_member_number) <> '' AND u.tenant_member_number LIKE ?)";
+                $params[] = $term;
+            }
+            if ($this->hasCommunityMembershipTable() && $this->tableExists('user_community_profiles')) {
+                // L'indicatif affiché est celui de la communauté : la recherche doit le trouver.
+                $searchBits .= ' OR EXISTS (SELECT 1 FROM user_community_profiles cps WHERE cps.user_id = u.id AND cps.tenant_id = ' . (int) $tenantId . ' AND (cps.callsign LIKE ? OR cps.display_name LIKE ?))';
+                $params[] = $term;
                 $params[] = $term;
             }
             $parts[] = '(' . $searchBits . ')';
