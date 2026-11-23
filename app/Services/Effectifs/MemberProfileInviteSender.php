@@ -124,6 +124,10 @@ final class MemberProfileInviteSender
         }
         $user = $this->users->findById((int) $invite['user_id'], $tenantId) ?? [];
         $email = trim((string) ($user['email'] ?? ''));
+        if (RosterOnlyMember::isRosterEmail($email)) {
+            // Fiche sans compte : l'adresse rattachée par le gestionnaire, s'il y en a une.
+            $email = (new \App\Repositories\RosterFicheEmailRepository())->find($tenantId, (int) $invite['user_id']);
+        }
         if ($email === '' || RosterOnlyMember::isRosterEmail($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ['ok' => false, 'message' => 'Aucune adresse e-mail connue pour ce membre : copiez le lien ou envoyez-le sur Discord.'];
         }

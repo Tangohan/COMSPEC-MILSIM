@@ -13,7 +13,11 @@ use App\Core\Session;
 use App\Repositories\RosterFicheEventRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\MemberProfileInviteRepository;
+use App\Services\Effectifs\MemberProfileInviteSender;
+use App\Services\Effectifs\MemberProfileInviteService;
 use App\Services\Effectifs\NoAccountDirectory;
+use App\Services\Effectifs\RosterFicheEmailService;
 use App\Services\Effectifs\RosterOnlyMemberService;
 use App\Services\Identity\UserIdentityMergeService;
 use App\Support\EffectifsLmsAccess;
@@ -63,6 +67,12 @@ final class EffectifsSansComptesController
         if ($callsign !== '' && $this->users()->callsignExistsInTenant($tenantId, $callsign)) {
             return $this->back(false, 'L’indicatif « ' . $callsign . ' » est déjà porté dans la communauté.');
         }
+        $emails = RosterFicheEmailService::forUsers($this->users());
+        $email = $this->text($request, 'email', 190);
+        $emailCheck = $emails->check($tenantId, 0, $email);
+        if (!$emailCheck['ok']) {
+            return $this->back(false, $emailCheck['message']);
+        }
         $plan = Container::get(\App\Services\Platform\FeatureGateService::class);
         if (!$plan->canAddMember($tenantId)) {
             return $this->back(false, 'Limite de membres du plan atteinte.');
@@ -80,6 +90,12 @@ final class EffectifsSansComptesController
             return $this->back(false, 'Impossible de créer la fiche pour le moment.');
         }
         $this->events->record($tenantId, $id, $actorId, 'created', 'manual', $display);
+        if ($emailCheck['email'] !== '') {
+            $attached = $emails->apply($tenantId, $id, $actorId, $emailCheck['email']);
+            if (!$attached['ok']) {
+                return $this->back(true, 'Fiche créée, mais l’e-mail n’a pas pu être rattaché : ' . $attached['message'], $id);
+            }
+        }
 
         return $this->back(true, 'Fiche créée. Vous pouvez maintenant l’inviter à créer son compte.', $id);
     }
@@ -104,6 +120,13 @@ final class EffectifsSansComptesController
         if ($callsign !== '' && $this->users()->callsignExistsInTenant($tenantId, $callsign, $id)) {
             return $this->back(false, 'L’indicatif « ' . $callsign . ' » est déjà porté dans la communauté.', $id);
         }
+        $emails = RosterFicheEmailService::forUsers($this->users());
+        $emailCheck = RosterOnlyMember::isRosterEmail((string) ($row['email'] ?? '')) && $request->input('email') !== null
+            ? $emails->check($tenantId, $id, $this->text($request, 'email', 190))
+            : null;
+        if ($emailCheck !== null && !$emailCheck['ok']) {
+            return $this->back(false, $emailCheck['message'], $id);
+        }
         $changes = [];
         $before = [(string) ($row['display_name'] ?? ''), (string) ($row['callsign'] ?? '')];
         $data = ['display_name' => $display !== '' ? $display : ($row['display_name'] ?? null), 'callsign' => $callsign !== '' ? $callsign : null];
@@ -120,7 +143,15 @@ final class EffectifsSansComptesController
         if ($before[1] !== (string) ($data['callsign'] ?? '')) {
             $changes[] = 'indicatif « ' . $before[1] . ' » → « ' . ($data['callsign'] ?? '') . ' »';
         }
-        $this->events->record($tenantId, $id, $actorId, 'edited', '', $changes !== [] ? implode(' ; ', $changes) : 'aucun changement');
+        if ($changes !== []) {
+            $this->events->record($tenantId, $id, $actorId, 'edited', '', implode(' ; ', $changes));
+        }
+        if ($emailCheck !== null) {
+            $res = $emails->apply($tenantId, $id, $actorId, $emailCheck['email']);
+            if (!$res['ok']) {
+                return $this->back(false, 'Fiche corrigée, mais ' . lcfirst($res['message']), $id);
+            }
+        }
 
         return $this->back(true, 'Fiche corrigée.', $id);
     }
@@ -188,11 +219,12 @@ final class EffectifsSansComptesController
         }
         $result = $this->roster()->import($tenantId, $actorId, $parsed['rows'], function (int $id, string $name) use ($tenantId, $actorId): void {
             $this->events->record($tenantId, $id, $actorId, 'imported', 'import', $name);
+        }, function (int $id, string $changes) use ($tenantId, $actorId): void {
+            $this->events->record($tenantId, $id, $actorId, 'edited', 'import', 'tableur : ' . $changes);
         });
-        $msg = $result['created'] . ' fiche(s) créée(s).';
-        if ($result['skipped'] !== []) {
-            $msg .= ' ' . count($result['skipped']) . ' ligne(s) ignorée(s) : ' . implode(' ', array_slice($result['skipped'], 0, 5)) . (count($result['skipped']) > 5 ? ' …' : '');
-        }
+        $refused = count(array_filter($result['lines'], static fn (array $l): bool => $l['result'] === 'refused'));
+        $msg = $result['created'] . ' fiche(s) créée(s), ' . $result['updated'] . ' mise(s) à jour, ' . $refused . ' ligne(s) refusée(s). Le détail ligne par ligne est dans le rapport ci-dessous.';
+        Session::flash('nc_import_report', $result['lines']);
         if ($result['unknown_grades'] !== []) {
             $msg .= ' Grades non reconnus (laissés vides) : ' . implode(', ', array_slice($result['unknown_grades'], 0, 8)) . '.';
         }
@@ -200,7 +232,52 @@ final class EffectifsSansComptesController
             $msg .= ' Unités inconnues : ' . implode(', ', array_slice($result['unknown_units'], 0, 8)) . '.';
         }
 
-        return $this->back($result['created'] > 0, $msg);
+        return $this->back($result['created'] + $result['updated'] > 0, $msg);
+    }
+
+    /**
+     * POST /back-office/ressources/effectifs/sans-comptes/relancer : nouvelle invitation, en lot, pour les fiches dont
+     * le lien a expiré et dont l'e-mail est rattaché. Même mécanisme que « Inviter » : un lien à usage unique de 48 h,
+     * envoyé par e-mail. Rien d'automatique : c'est toujours un clic du gestionnaire.
+     */
+    public function remind(Request $request, array $params = []): Response
+    {
+        if (($denied = $this->guard($request, 'edit')) !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canInviteMembers(Gate::getInstance())) {
+            return $this->back(false, 'Vous n’êtes pas habilité à inviter des membres.');
+        }
+        [$tenantId, $actorId] = $this->ids();
+        $invites = new MemberProfileInviteService();
+        if (!$invites->available()) {
+            return $this->back(false, 'Les liens d’invitation seront disponibles après la prochaine mise à jour de la base.');
+        }
+        $targets = array_values(array_filter(
+            (new NoAccountDirectory($this->users()))->list($tenantId),
+            static fn (array $r): bool => !empty($r['invite_expired']) && $r['email'] !== ''
+        ));
+        if ($targets === []) {
+            return $this->back(false, 'Aucune invitation expirée à relancer (il faut aussi une adresse e-mail rattachée).');
+        }
+        $sender = new MemberProfileInviteSender($invites, $this->users());
+        $sent = 0;
+        $failed = 0;
+        foreach (array_slice($targets, 0, 100) as $t) {
+            try {
+                $issued = $invites->issue($tenantId, (int) $t['id'], $actorId, 48, true);
+                $row = $invites->findUsableByToken($issued['token']);
+                $ok = $row !== null && $sender->sendEmail($tenantId, $row, $actorId)['ok'];
+                $this->events->record($tenantId, (int) $t['id'], $actorId, 'invited', 'invite', 'relance en lot : nouveau lien (48 h)' . ($ok ? ', e-mail envoyé' : ', e-mail non parti'));
+                $ok ? ++$sent : ++$failed;
+            } catch (\Throwable $e) {
+                error_log('[sans-compte] relance : ' . $e->getMessage());
+                ++$failed;
+            }
+        }
+        $msg = $sent . ' invitation(s) relancée(s) par e-mail.' . ($failed > 0 ? ' ' . $failed . ' e-mail(s) non parti(s) : le nouveau lien est dans Invitations, à copier ou envoyer sur Discord.' : '');
+
+        return $this->back($sent > 0, $msg);
     }
 
     private function roster(): RosterOnlyMemberService
@@ -212,6 +289,7 @@ final class EffectifsSansComptesController
             Container::get(\App\Repositories\PersonnelAssignmentRepository::class),
             Container::get(\App\Repositories\GradeRepository::class),
             Container::get(\App\Repositories\UnitRepository::class),
+            RosterFicheEmailService::forUsers($this->users()),
         );
     }
 

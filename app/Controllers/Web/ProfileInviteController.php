@@ -8,6 +8,8 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\RosterFicheEmailRepository;
+use App\Repositories\RosterFicheEventRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Effectifs\MemberProfileInviteService;
@@ -110,7 +112,14 @@ final class ProfileInviteController
         $password = (string) $request->input('password', '');
         $confirm = (string) $request->input('password_confirmation', '');
         $updates = [];
+        $attached = RosterOnlyMember::isRosterEmail($currentEmail)
+            ? (new RosterFicheEmailRepository())->find($tenantId, (int) $user['id'])
+            : '';
         if (RosterOnlyMember::isRosterEmail($currentEmail)) {
+            if ($attached !== '' && ($typedEmail === '' || !hash_equals($attached, $typedEmail))) {
+                // Adresse rattachée par le gestionnaire : même preuve que pour un compte créé par l'administration.
+                return $this->back('Cette adresse ne correspond pas à celle enregistrée par votre gestionnaire.');
+            }
             if ($typedEmail === '' || !filter_var($typedEmail, FILTER_VALIDATE_EMAIL) || RosterOnlyMember::isRosterEmail($typedEmail)) {
                 return $this->back('Indiquez une adresse e-mail valide : elle servira à vous connecter.');
             }
@@ -139,6 +148,9 @@ final class ProfileInviteController
             $this->users()->activatePendingById((int) $user['id']);
         }
         $this->invites->markAccountReady($invite);
+        // La fiche existante devient le compte (même ligne : historique, grade, unité et matricule restent). Journal de la fiche.
+        (new RosterFicheEmailRepository())->remove($tenantId, (int) $user['id']);
+        (new RosterFicheEventRepository())->record($tenantId, (int) $user['id'], (int) $user['id'], 'account_created', 'invite', 'compte créé par le lien d’invitation');
 
         $fresh = $this->users()->findById((int) $user['id'], $tenantId);
         if ($fresh === null) {
@@ -213,6 +225,7 @@ final class ProfileInviteController
     {
         $tenant = $this->tenants->findById((int) $invite['tenant_id']) ?? [];
         $email = (string) ($user['email'] ?? '');
+        $attached = RosterOnlyMember::isRosterEmail($email) ? (new RosterFicheEmailRepository())->find((int) $invite['tenant_id'], (int) $user['id']) : '';
 
         return $this->noReferrer(Response::view('layout.main', [
             'title' => 'Compléter mon profil',
@@ -221,8 +234,8 @@ final class ProfileInviteController
             'inviteMode' => $mode,
             'inviteCommunity' => (string) ($tenant['name'] ?? 'la communauté'),
             'inviteName' => trim((string) ($user['callsign'] ?? '')) !== '' ? (string) $user['callsign'] : (string) ($user['display_name'] ?? ''),
-            'inviteNeedsEmail' => RosterOnlyMember::isRosterEmail($email),
-            'inviteEmailHint' => RosterOnlyMember::isRosterEmail($email) ? '' : MemberProfileInviteService::maskEmail($email),
+            'inviteNeedsEmail' => RosterOnlyMember::isRosterEmail($email) && $attached === '',
+            'inviteEmailHint' => RosterOnlyMember::isRosterEmail($email) ? MemberProfileInviteService::maskEmail($attached) : MemberProfileInviteService::maskEmail($email),
             'inviteExpiresAt' => (string) $invite['expires_at'],
             'inviteSingleUse' => !empty($invite['single_use']),
         ]));
