@@ -13,8 +13,8 @@ $escapeAppealList = static fn (string $value): string => htmlspecialchars($value
         <div class="ph-dialog__links">
             <?php foreach ($pendingAppeals as $appeal): ?>
                 <?php $id = (int) $appeal['ban_id']; ?>
-                <a href="<?= $escapeAppealList(url('admin/sanctions') . '?contestation=' . $id . '#contestation-' . $id) ?>">
-                    <strong><?= $escapeAppealList((string) ($appeal['display_label'] ?: $appeal['email_norm'])) ?> · Décision n° <?= $id ?></strong>
+                <a href="<?= $escapeAppealList(!empty($appeal['reference']) ? url('admin/sanctions/dossiers/' . $id) : url('admin/sanctions') . '?contestation=' . $id . '#contestation-' . $id) ?>">
+                    <strong><?= !empty($appeal['reference']) ? $escapeAppealList((string) $appeal['reference']) . ' · ' : '' ?><?= $escapeAppealList((string) ($appeal['display_label'] ?: $appeal['email_norm'])) ?> · Décision n° <?= $id ?></strong>
                     <span>Contestation reçue le <?= $escapeAppealList((string) $appeal['created_at']) ?> UTC</span>
                 </a>
             <?php endforeach; ?>

@@ -16,6 +16,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Account\PlatformAccountBanService;
 use App\Services\Account\PlatformAutomaticBanService;
+use App\Services\Account\PlatformBanAppealCaseService;
 use App\Services\Account\PlatformBanAppealMailer;
 use App\Services\Account\PlatformBanNotice;
 use App\Services\Audit\AuditAction;
@@ -222,6 +223,14 @@ final class SystemPlatformBansController
         if ($actor === 0 || !$this->featureReady() || $banId < 1 || !in_array($decision, ['lift', 'uphold'], true)
             || mb_strlen($reply) < 5 || mb_strlen($reply) > 2000) {
             Session::flash('error', 'Choisissez une décision et rédigez une réponse entre 5 et 2 000 caractères.');
+
+            return $this->back(0, 'contestations');
+        }
+
+        if ($this->appeals->casesReady()) {
+            // Dossiers : même chemin que la page de dossier (statut, fil, e-mail, journal avec la référence).
+            $result = (new PlatformBanAppealCaseService($this->appeals, $this->bans, $this->service))->decide($banId, $actor, $decision, $reply);
+            Session::flash($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Décision et réponse enregistrées.' : (string) ($result['error'] ?? 'Action impossible.'));
 
             return $this->back(0, 'contestations');
         }

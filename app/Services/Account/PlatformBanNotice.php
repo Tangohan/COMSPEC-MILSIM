@@ -57,7 +57,7 @@ final class PlatformBanNotice
         return $this->rule === '' && $this->message === '' && !$this->appealClosed;
     }
 
-    /** @return array{id:int, rule:string, rule_url:string, message:string, end:string, start:string, permanent:bool, appeal_closed:bool, appeal:array{state:string, received:string}|null, locale:string} */
+    /** @return array{id:int, rule:string, rule_url:string, message:string, end:string, start:string, permanent:bool, appeal_closed:bool, appeal:array{state:string, received:string, reference:string}|null, locale:string} */
     public static function publicDetails(array $ban, string $locale = 'fr'): array
     {
         $rule = trim((string) ($ban['rule_reference'] ?? ''));
@@ -111,20 +111,27 @@ final class PlatformBanNotice
      * Suivi d’une contestation pour la personne concernée : reçue, puis décision. Aucun nom de modérateur ni note interne.
      *
      * @param array<string, mixed>|null $appeal ligne platform_ban_appeals
-     * @return array{state: string, received: string}|null
+     * @return array{state: string, received: string, reference: string}|null
      */
     public static function appealProgress(?array $appeal, string $locale = 'fr'): ?array
     {
         if ($appeal === null) {
             return null;
         }
-        $state = match ((string) ($appeal['decision'] ?? '')) {
-            'lift' => 'accepted',
-            'uphold' => 'upheld',
-            default => 'received',
-        };
+        $state = (string) ($appeal['status'] ?? '');
+        if (!in_array($state, ['received', 'in_review', 'info_requested', 'accepted', 'upheld', 'closed'], true)) {
+            $state = match ((string) ($appeal['decision'] ?? '')) {
+                'lift' => 'accepted',
+                'uphold' => 'upheld',
+                default => 'received',
+            };
+        }
 
-        return ['state' => $state, 'received' => self::dateLabel($appeal['created_at'] ?? null, $locale)];
+        return [
+            'state' => $state,
+            'received' => self::dateLabel($appeal['created_at'] ?? null, $locale),
+            'reference' => (string) ($appeal['reference'] ?? ''),
+        ];
     }
 
     /** Date UTC de la base, affichée à l’heure de Paris. Vide si la date est absente ou illisible. */

@@ -1,0 +1,25 @@
+.ac .ac-filters { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem 1rem; }
+.ac .ac-filters .pu-dialog__field { min-width: 11rem; }
+.ac .ac-ref { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .02em; }
+.ac .ac-table tr.ac-unread th, .ac .ac-table tr.ac-unread td { font-weight: 700; }
+.ac .ac-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(16rem, 1fr); gap: 1rem; align-items: start; }
+.ac .ac-side { display: grid; gap: 1rem; }
+.ac .ac-thread { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .65rem; }
+.ac .ac-msg { padding: .65rem .85rem; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: .7rem; }
+.ac .ac-msg--user { margin-inline-end: 2rem; }
+.ac .ac-msg--staff { margin-inline-start: 2rem; background: color-mix(in srgb, currentColor 6%, transparent); }
+.ac .ac-msg--note { border-style: dashed; border-color: #b7791f; background: color-mix(in srgb, #b7791f 10%, transparent); }
+.ac .ac-msg__meta { margin: 0 0 .25rem; font-size: .85rem; opacity: .8; }
+.ac .ac-msg__body { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+.ac .ac-form { display: grid; gap: .6rem; margin-top: 1rem; }
+.ac .ac-form textarea { width: 100%; }
+.ac .ac-form--note { padding-top: 1rem; border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
+.ac .ac-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ac .ac-history { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.ac .ac-muted { opacity: .75; font-size: .9rem; }
+@media (max-width: 860px) { .ac .ac-layout { grid-template-columns: minmax(0, 1fr); } .ac .ac-msg--user, .ac .ac-msg--staff { margin-inline: 0; } }
+.ac .ac-layout > * { min-width: 0; }
+.ac .ps-case dd, .ac .ac-history li { overflow-wrap: anywhere; }
+.ac .pa-hero__title .ac-ref { margin-inline-start: .4em; }
+.ac textarea, .ac select { background: color-mix(in srgb, currentColor 6%, transparent); color: inherit; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); border-radius: .5rem; padding: .45rem .6rem; font: inherit; }
+.ac select option { color: #1b2430; background: #fff; }

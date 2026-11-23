@@ -161,6 +161,7 @@ $sections = [
         'lead' => 'Restrictions, files de modération et traçabilité.',
         'items' => array_values(array_filter([
             $canModerateMembers ? ['href' => url('back-office/moderation'), 'title' => 'Restrictions membres', 'desc' => 'Limitations d’activité dans la communauté (formations, documents, etc.).', 'keywords' => 'restriction sanction limitation membre'] : null,
+            ($gate->allows('admin.organization') || $gate->allows('admin.access')) ? ['href' => url('back-office/contestations'), 'title' => 'Contestations de bannissement', 'desc' => 'Dossiers des sanctions posées pour votre communauté : échanges avec la personne, précisions, notes internes.', 'keywords' => 'contestation recours bannissement dossier CTS'] : null,
             ['href' => url('back-office/audit'), 'title' => 'Journal d’activité', 'desc' => 'Traçabilité des actions administratives.', 'keywords' => 'journal audit trace historique log'],
             $canModerateReports ? ['href' => url('back-office/signalements'), 'title' => 'Signalements membres', 'desc' => 'Fiches, photos et contenus signalés par les membres.', 'keywords' => 'moderation signalement'] : null,
             $canModerateReports ? ['href' => url('back-office/content-moderation'), 'title' => 'Modération fichiers', 'desc' => 'Approbation des pièces jointes et médias.', 'keywords' => 'fichier media piece jointe approbation'] : null,

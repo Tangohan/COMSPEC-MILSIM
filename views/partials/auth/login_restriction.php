@@ -54,7 +54,7 @@ $restrictionText = static fn (string $key): string => $restrictionEscape(__($key
         <?php elseif ($restrictionProgress !== null): ?>
         <section class="au-restriction__appeal" aria-labelledby="login-restriction-appeal">
             <h3 id="login-restriction-appeal"><?= $restrictionText('auth.restriction_followup') ?></h3>
-            <p class="au-restriction__status" role="status"><?= $restrictionEscape(__('moderation.appeal_status_' . (string) $restrictionProgress['state'], ['date' => (string) $restrictionProgress['received']], $restrictionLanguage)) ?></p>
+            <p class="au-restriction__status" role="status"><?php if ((string) $restrictionProgress['reference'] !== ''): ?><strong><?= $restrictionText('moderation.case_reference') ?> <?= $restrictionEscape((string) $restrictionProgress['reference']) ?></strong><br><?php endif; ?><?= $restrictionEscape(__('moderation.appeal_status_' . (string) $restrictionProgress['state'], ['date' => (string) $restrictionProgress['received'], 'reference' => (string) $restrictionProgress['reference']], $restrictionLanguage)) ?></p>
             <p><?= $restrictionText('auth.restriction_followup_how') ?></p>
             <form method="post" action="<?= $restrictionEscape(url('contester-sanction/lien')) ?>" data-busy-form>
                 <?= \App\Core\Csrf::field() ?>

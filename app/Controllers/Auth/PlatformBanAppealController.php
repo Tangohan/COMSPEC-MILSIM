@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PlatformAccountBanRepository;
 use App\Repositories\PlatformBanAppealRepository;
+use App\Services\Account\PlatformBanAppealCaseService;
 use App\Services\Account\PlatformBanAppealMailer;
 use App\Services\Account\PlatformBanNotice;
 use App\Services\Audit\AuditAction;
@@ -65,11 +66,22 @@ final class PlatformBanAppealController
             ];
             $saved = $this->appeals->find((int) $ban['id']);
             if ($saved !== null) {
+                $progress = PlatformBanNotice::appealProgress($saved, $language);
                 $appeal = [
                     'decision' => $saved['decision'],
                     'reply' => $saved['public_reply'],
                     'statement' => $saved['statement'],
-                    'received' => PlatformBanNotice::appealProgress($saved, $language)['received'] ?? '',
+                    'received' => $progress['received'] ?? '',
+                    'reference' => (string) ($saved['reference'] ?? ''),
+                    'status' => $progress['state'] ?? 'received',
+                    'open' => PlatformBanAppealRepository::isOpen($saved),
+                    'updated' => PlatformBanNotice::dateLabel((string) ($saved['updated_at'] ?? ''), $language),
+                    // Notes internes exclues : la personne ne voit que le fil public, sans le nom des modérateurs.
+                    'messages' => array_map(static fn (array $m): array => [
+                        'mine' => ($m['author_type'] ?? '') === 'user',
+                        'body' => (string) $m['body'],
+                        'date' => PlatformBanNotice::dateLabel((string) $m['created_at'], $language),
+                    ], $this->appeals->messages((int) $ban['id'], false)),
                 ];
             }
         }
@@ -171,8 +183,9 @@ final class PlatformBanAppealController
         if ($submitted === null) {
             Session::flash('error', __('moderation.appeal_closed_message'));
         } elseif ($submitted) {
+            $reference = (string) (($this->appeals->find((int) $ban['id']) ?? [])['reference'] ?? '');
             try {
-                (new AuditService())->log(AuditAction::USER_BAN_APPEAL_SUBMITTED, 0, null, 'platform_account_ban', (int) $ban['id']);
+                (new AuditService())->log(AuditAction::USER_BAN_APPEAL_SUBMITTED, 0, null, 'platform_account_ban', (int) $ban['id'], null, $reference !== '' ? json_encode(['reference' => $reference]) ?: null : null);
             } catch (\Throwable $error) {
                 error_log('[ban_appeal.audit] ' . $error->getMessage());
             }
@@ -181,10 +194,40 @@ final class PlatformBanAppealController
             } catch (\Throwable) {
                 error_log('[ban_appeal] Impossible d’ajouter la contestation au récapitulatif.');
             }
-            (new PlatformBanAppealMailer($this->email))->notify($ban, PlatformBanAppealMailer::RECEIVED);
+            (new PlatformBanAppealMailer($this->email))->notify($ban, PlatformBanAppealMailer::RECEIVED, $reference !== '' ? $reference : null);
             Session::flash('success', __('moderation.appeal_received'));
         } else {
             Session::flash('success', __('moderation.appeal_already_received'));
+        }
+
+        return $this->back();
+    }
+
+    /** Réponse de la personne dans le fil de son dossier. */
+    public function reply(Request $request, array $params = []): Response
+    {
+        $ban = Csrf::verify($request) ? $this->authorizedBan() : null;
+        if ($ban === null) {
+            Session::flash('error', __('moderation.expired_appeal'));
+
+            return $this->back();
+        }
+        try {
+            $limit = new FileRateLimiter();
+            if ($limit->tooManyAttempts('ban-appeal-reply:ban:' . (int) $ban['id'], 10, 3600, true)
+                || $limit->tooManyAttempts('ban-appeal-reply:network:' . $request->ip(), 30, 3600, true)) {
+                Session::flash('error', __('moderation.too_many_attempts'));
+
+                return $this->back();
+            }
+        } catch (\Throwable) {
+            // Limiteur indisponible : la longueur et l'état du dossier restent contrôlés.
+        }
+        $result = (new PlatformBanAppealCaseService($this->appeals, $this->bans))->userReply((int) $ban['id'], $request->inputString('message'));
+        if ($result['ok']) {
+            Session::flash('success', __('moderation.reply_sent'));
+        } else {
+            Session::flash('error', ($result['error'] ?? '') === 'closed' ? __('moderation.case_closed_notice') : __('moderation.invalid_reply'));
         }
 
         return $this->back();
@@ -207,6 +250,13 @@ final class PlatformBanAppealController
     private function authorizedBan(): ?array
     {
         $hash = Session::get(self::SESSION_LINK);
+        if (!is_string($hash) && Session::get('user_id') && $this->appeals->ready()) {
+            // Personne connectée (sanction levée) : son dossier est accessible sans lien, par son adresse de compte.
+            $user = Container::get(\App\Repositories\UserRepository::class)->findById((int) Session::get('user_id'), null);
+            $ban = $user !== null ? $this->bans->latestForEmail((string) $user['email']) : null;
+
+            return $ban !== null && $this->appeals->find((int) $ban['id']) !== null ? $ban : null;
+        }
         if (!is_string($hash) || !$this->appeals->ready()) {
             return null;
         }
