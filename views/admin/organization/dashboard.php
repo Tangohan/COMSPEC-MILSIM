@@ -11,6 +11,8 @@ declare(strict_types=1);
  * @var int $configurationUpdateBadge
  * @var bool $discordInviteMissing
  * @var bool $discordBotNudge
+ * @var bool $bureauHero
+ * @var int $bureauHeroViewerId
  * @var int $missingMediaCount
  * @var array<string, mixed> $orgActivityChart
  * @var list<array<string, mixed>> $orgMessagesRecent
@@ -193,6 +195,8 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </div>
         </div>
     </header>
+
+    <?php if (!empty($bureauHero)) { require base_path('views/admin/organization/_bureau_hero.php'); } ?>
 
     <?php
     $pilChart = is_array($orgActivityChart ?? null) ? $orgActivityChart : [];

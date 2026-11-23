@@ -73813,4 +73813,13 @@ return [
     'Preuves recensées' => 'Recorded evidence',
     'Graphe, pièces photographiques' => 'Graph, photo exhibits',
     'Pièces images' => 'Image exhibits',
+    ': colonnes A, B, C, numéros de ligne, filtres et édition à plat.' => ': columns A, B, C, row numbers, filters and flat editing.',
+    ': invitez depuis la ligne, la fiche bascule en compte actif à l’inscription.' => ': invite from the row, the record switches to an active account at sign-up.',
+    ': travaillez dans Excel, réimportez avec un rapport ligne par ligne.' => ': work in Excel, re-import with a row-by-row report.',
+    ': une fiche suffit, sans échéance ni blocage, e-mail rattaché plus tard.' => ': a record is enough, no deadline or blocking, email attached later.',
+    'Gérez vos effectifs comme dans un tableur, que vos membres aient un compte ou non.' => 'Manage your roster like a spreadsheet, whether or not your members have an account.',
+    'Import et export CSV' => 'CSV import and export',
+    'Invitation envoyée' => 'Invitation sent',
+    'Invitation et compte actif' => 'Invitation and active account',
+    'Lefèvre' => 'Lefèvre',
 ];
