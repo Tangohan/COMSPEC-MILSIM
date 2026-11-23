@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "items": [
+    {"id":"atak","name":"COMSPEC ATAK","ico":"ATK","version":null,"folder":null,"source":null,"include":[],"requires":[],"in_pack":true,"workshop_url":null,"files":[]},
+    {"id":"sse","name":"COMSPEC SSE","ico":"SSE","version":"1.17.0","folder":"@COMSPEC_SSE","source":"mod/@COMSPEC_SSE","include":["addons/*.pbo","mod.cpp","logo.paa","logoSmall.paa","LICENSE.txt","CREDITS.md"],"requires":["CBA_A3","ACE3","COMSPEC ATAK"],"in_pack":false,"workshop_url":null,"files":[
+        {"path":"CREDITS.md","size":405,"sha256":"3d023bbe89cf159e9865d6eca8d268e6fed2c1aedd612240d2bd0d88639e4599"},
+        {"path":"LICENSE.txt","size":5655,"sha256":"6dfd99f60124ca1f1923b4aafcaf543c539125ed31a75f5d802023f8ac33a702"},
+        {"path":"addons/comspec_sse_analysis.pbo","size":122458,"sha256":"9c01a5a6ab665dd77f918b07849549087133c4aef0f61e5e2a9a4fe302486e07"},
+        {"path":"addons/comspec_sse_biometrics.pbo","size":200258,"sha256":"3a19971593396c09ee4ffba418e1f67d99c09a1496238a6f6f0ff54059b99a8a"},
+        {"path":"addons/comspec_sse_campaign.pbo","size":56632,"sha256":"b20b42cb0c99b4d693141ed5f864313393ce31b07702493210f3919a457e86d5"},
+        {"path":"addons/comspec_sse_compat_ace.pbo","size":9168,"sha256":"6c8bdfe901a673c890368dcfec9db0c5bc4678614f7cdadb970fd51ec22746c7"},
+        {"path":"addons/comspec_sse_compat_atak.pbo","size":69700,"sha256":"4acdf9062e1d0a1c912c00e1419907118ec5bc39c9a4744f24ffa417b90d382a"},
+        {"path":"addons/comspec_sse_compat_bii.pbo","size":39718,"sha256":"12dc16d1553c30b2a42a2420b92d2e8e883476043039485b030b846875e5b1c5"},
+        {"path":"addons/comspec_sse_core.pbo","size":117330,"sha256":"82b1f80d4b158c1103a3229216fa3917632b21dcdad03c4b55f055eba0ac03e7"},
+        {"path":"addons/comspec_sse_digital.pbo","size":25226,"sha256":"0dfa1a6fcedf5076eefb7305619bfe82dd951d6be6d2bb09d523bf5c508c3a47"},
+        {"path":"addons/comspec_sse_eden.pbo","size":109265,"sha256":"b417ffbed221a2682696403a5b5314fd042b1481e94cee0b5fd98b94d2302eea"},
+        {"path":"addons/comspec_sse_editor.pbo","size":765831,"sha256":"cd63936ec20b76b2df4befd5a49140ddd02f0010f51e11ebe5d52812817f917e"},
+        {"path":"addons/comspec_sse_evidence.pbo","size":572706,"sha256":"72c255ce3059199070651fb82a52f8c5164bf46dcc912250cc829b8c97e50c0e"},
+        {"path":"addons/comspec_sse_ext_example_documents.pbo","size":457552,"sha256":"a35a55c9c26bf93e04929a8b9c4bcc57c32cb812d8c6825f1846c3008b7d7cb5"},
+        {"path":"addons/comspec_sse_extensions.pbo","size":187293,"sha256":"157241495e11471ba730ccc044783f2679772c0e5b0fb5f68e1055f864407dec"},
+        {"path":"addons/comspec_sse_generator.pbo","size":220597,"sha256":"e7616b18125d0e3446a97026d46cb351801b4fba6b7615c64783bc7a7bfa5595"},
+        {"path":"addons/comspec_sse_guide.pbo","size":143218,"sha256":"bd864af72a87a91b7da71f31bc9cf86b4b95d9f21dd546cf1dd6ac2f9c2f157d"},
+        {"path":"addons/comspec_sse_ia_rp.pbo","size":1086642,"sha256":"6d1c3a662524442cf072b98510dcdf0087f00e1e2d293cc2bbf36029a9824b9c"},
+        {"path":"addons/comspec_sse_identity.pbo","size":11078395,"sha256":"9bcbe5c10df9f4b8d79ed7f18e3cd43332f82eebbc3272a8ebcb1f9709924950"},
+        {"path":"addons/comspec_sse_intel.pbo","size":78790,"sha256":"713c466b6a5a7d13b72ae12e2feac23dd14fe5f3cd56eca26f59b509e18163c9"},
+        {"path":"addons/comspec_sse_interaction.pbo","size":57366,"sha256":"991f59c30f685c242bc4e13aea99ee4e83ae434876f0e43ab0e19a6b78fb9418"},
+        {"path":"addons/comspec_sse_loadout.pbo","size":57497,"sha256":"c66a0a519f6d8d7cc945a936387f2671b6a0d399609b62f339f6cd16fdffddf6"},
+        {"path":"addons/comspec_sse_main.pbo","size":551694,"sha256":"6d1be79c79814dee6f5e2186bdfecd1d6acd8229314a69295676bdd2e88de802"},
+        {"path":"addons/comspec_sse_network.pbo","size":73084,"sha256":"8fca915014fccbf2393aae5fe915d1b640522924fb25bab90c3c5d5ccd0c089f"},
+        {"path":"addons/comspec_sse_ui.pbo","size":2496529,"sha256":"8af8fbe4fcd7cc0361c71a7f15eb7c63fd022ef3142f40db19d50cd062f5a807"},
+        {"path":"addons/comspec_sse_zeus.pbo","size":347514,"sha256":"1af11a77969b004093604ba3d2029a3b1cb41a51f8cb829756157f477881a31c"},
+        {"path":"logo.paa","size":174824,"sha256":"9360dd3301b64eba62654a679b15498c771554d564ca9ea5ea9c6861237d9ecb"},
+        {"path":"logoSmall.paa","size":174824,"sha256":"9360dd3301b64eba62654a679b15498c771554d564ca9ea5ea9c6861237d9ecb"},
+        {"path":"mod.cpp","size":876,"sha256":"923d70f936fb5424c733e96bc7557cd80338d43c6aaca6067a40f9ee3dbbda3d"}
+    ]},
+    {"id":"lobby","name":"COMSPEC Lobby","ico":"LBY","version":"0.4.0","folder":null,"source":null,"include":[],"requires":[],"in_pack":false,"workshop_url":null,"files":[]},
+    {"id":"flashbang","name":"COMSPEC Flashbang","ico":"FB","version":"1.0.2","folder":null,"source":null,"include":[],"requires":["CBA_A3"],"in_pack":false,"workshop_url":"https://steamcommunity.com/sharedfiles/filedetails/?id=3837805212","files":[]},
+    {"id":"sof_base","name":"COMSPEC Base SOF","ico":"SOF","version":null,"folder":"@COMSPEC_SOF_Base","source":"mod/COMSPEC_SOF_Base/@COMSPEC_SOF_Base","include":["addons/*.pbo","mod.cpp"],"requires":[],"in_pack":false,"workshop_url":null,"files":[
+        {"path":"addons/comspec_sof_main.pbo","size":26616126,"sha256":"9eb983936c6683b0355796fc6d89093a4a89e1e14e0534493e59eeeba3c24ee0"},
+        {"path":"mod.cpp","size":256,"sha256":"12380391e89d697402b2f5a3bee7a07025eb56e538e9a72431e822296f45e069"}
+    ]}
+  ]
+}

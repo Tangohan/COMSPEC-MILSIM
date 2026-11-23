@@ -57,7 +57,7 @@ final class ModpackTrustAssetTest extends TestCase
         self::assertStringContainsString('id="securite"', $view);
         self::assertStringContainsString('https://www.virustotal.com/gui/file/', $view);
         self::assertStringContainsString('https://www.virustotal.com/gui/home/upload', $view);
-        self::assertSame(2, substr_count($view, 'rel="noopener noreferrer nofollow"'));
+        self::assertSame(3, substr_count($view, 'rel="noopener noreferrer nofollow"'));
         self::assertStringContainsString("preg_match('/\\A[a-f0-9]{64}\\z/'", $view);
         self::assertStringContainsString("url('soutenir-atak')", $view);
         self::assertStringContainsString("__('modpack.check')", $view);
