@@ -56,6 +56,21 @@ EN : Military specialties now include codes, sources and explanations
 - Références d’emploi et objectifs pédagogiques distincts des affectations, des grades et des qualifications ; isolation par communauté, contrôle des niveaux, audit transactionnel.
 - Import idempotent conservant les corrections, les archives et les données existantes ; nettoyage des attributions personnelles lors des purges de compte.
 
+## Retrouver une fiche par son numéro DSE dans le téléphone (ATAK natif 4.32.0.AG - Washington)
+
+### Résumé joueur
+Type : nouveauté
+FR : Retrouve une fiche SSE par son numéro DSE
+- Dans l'app SSE, onglet Fiches, un nouvel onglet « DSE » te laisse saisir ou coller un numéro DSE donné par le portail Athena.
+- Le téléphone affiche le numéro d'identification, le nom de code, le nom de la fiche et l'IA reliée, ou te dit clairement pourquoi la recherche échoue (hors ligne, numéro inconnu, trop de recherches).
+EN : Find an SSE record by its DSE number
+- In the SSE app, Records tab, a new "DSE" tab lets you type or paste a DSE number issued by the Athena portal.
+- The phone shows the identification number, code name, record name and linked AI, or tells you plainly why the lookup failed (offline, unknown number, too many lookups).
+
+### Détail technique
+- Mod : `fn_fichesAction` cas `dseFind` / `dseClear` (tâche de fond, canal SubmitIdCheck, kind `sse_dse`, aucune nouvelle DLL), état `fichesDse*`, vue « DSE » de `fn_pageFiches` ; erreurs `not_found`, `rate_limited`, hors ligne, Link trop ancien.
+- Site : kind `sse_dse` ajouté au canal `POST /api/sse/identity/checks` (`GameSseFichesApiController::dse`) : mêmes règles que `GET /api/sse/v1/dse/{dse}` (communauté du jeton de jeu, 404 identique, 30 recherches par minute, journal `dse.resolve`). Contrat : `docs/technical/ICD-SSE-DSE.md`.
+- Badge radio de la fiche CKIN : sans objet, la fiche ne porte aucun libellé de radio (rien changé).
 ## Réglette d'effectif plus sobre et masquable (ATAK natif 4.31.0.AG - Washington)
 
 ### Résumé joueur

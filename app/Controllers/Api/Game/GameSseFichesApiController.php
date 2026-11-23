@@ -13,6 +13,9 @@ use App\Services\Security\FileRateLimiter;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseFichesGameService;
 use App\Services\Sse\SseIdCheckService;
+use App\Services\Sse\SseIdentifierAccess;
+use App\Services\Sse\SseIdentifierGenerator;
+use App\Services\Sse\SseIdentifierService;
 use App\Services\Sse\SseLoreService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\ShortCache;
@@ -34,12 +37,17 @@ final class GameSseFichesApiController
     public const RATE_WINDOW = 60;
     public const SHARE_MAX = 12;
     public const SHARE_WINDOW = 600;
+    /** Même plafond que la route GET du DSE : 30 recherches par minute et par acteur. */
+    public const DSE_MAX = 30;
+    public const DSE_WINDOW = 60;
     public const CACHE_TTL = 20;
     /** Une lecture de la liste n'est inscrite au journal qu'une fois par fenêtre (le détail et le partage, toujours). */
     public const AUDIT_LIST_WINDOW = 600;
 
     /** @var \Closure(string, int, int): bool */
     private \Closure $tooMany;
+
+    private ?SseIdentifierService $identifiers = null;
 
     /** @var \Closure(int): ?string */
     private \Closure $maintenance;
@@ -144,6 +152,9 @@ final class GameSseFichesApiController
         if (($body['kind'] ?? '') === SseFichesGameService::KIND_SHARE) {
             return $this->share($tenantId, $level, $who, $body);
         }
+        if (($body['kind'] ?? '') === SseFichesGameService::KIND_DSE) {
+            return $this->dse($tenantId, $who, self::text($body['dse'] ?? ''));
+        }
         $op = self::text($body['op'] ?? 'list');
         if ($op === 'detail') {
             $fiche = $this->service()->find($tenantId, $level, self::text($body['ref'] ?? ''));
@@ -230,6 +241,49 @@ final class GameSseFichesApiController
         return Response::json([
             'id' => 1,
             'ref' => SseLoreService::sqf([SseFichesGameService::VERSION, 'share', (string) $fiche['ref'], (string) $fiche['level'], true]),
+            'page' => 0, 'next' => 0, 'pages' => 1,
+        ]);
+    }
+
+    /**
+     * Numéro DSE saisi sur le téléphone (docs/technical/ICD-SSE-DSE.md) : mêmes règles que GET /api/sse/v1/dse/{dse} (communauté de la
+     * clé ou du jeton de jeu, introuvable = 404 identique pour tout refus, débit borné, journal). Réponse : page parseSimpleArray
+     * [version, "dse", dse, type, id d'identification, nom de code, nom de fiche, libellé IA, camp IA, catégorie IA].
+     *
+     * @param array{user: int, label: string, key: string} $who
+     */
+    private function dse(int $tenantId, array $who, string $input): Response
+    {
+        if (($this->tooMany)('sse_game_dse|' . $tenantId . '|' . $who['key'], self::DSE_MAX, self::DSE_WINDOW)) {
+            return Response::json(['error' => 'rate_limited', 'message' => 'Trop de recherches de DSE : réessayez dans une minute.', 'retry_after' => self::DSE_WINDOW], 429)
+                ->header('Retry-After', (string) self::DSE_WINDOW);
+        }
+        $service = $this->identifiers ??= new SseIdentifierService();
+        $normalized = SseIdentifierGenerator::normalizeDse($input);
+        $row = $normalized !== null ? $service->findByDse($tenantId, $input) : null;
+        $entity = $row !== null ? SseIdentifierAccess::entityRow($tenantId, (string) $row['entity_type'], (int) $row['entity_id']) : null;
+        $found = $row !== null && $entity !== null;
+        $service->journal([
+            'tenant_id' => $tenantId,
+            'actor_user_id' => $who['user'] > 0 ? $who['user'] : null,
+            'actor_label' => $who['label'],
+            'action' => 'dse.resolve',
+            'object_type' => $found ? (string) $row['entity_type'] : 'dse',
+            'object_id' => $found ? (int) $row['entity_id'] : 0,
+            'after' => ['found' => $found, 'dse' => $normalized ?? 'invalid', 'via' => 'phone'],
+        ]);
+        if (!$found) {
+            return Response::json(['error' => 'not_found', 'message' => 'DSE inconnu.'], 404);
+        }
+        $ai = !empty($row['ai_profile_id']) ? $service->aiProfile($tenantId, (int) $row['ai_profile_id']) : null;
+
+        return Response::json([
+            'id' => 1,
+            'ref' => SseLoreService::sqf([
+                SseFichesGameService::VERSION, 'dse', (string) $row['dse'], (string) $row['entity_type'], (string) $row['ident_no'],
+                (string) $row['codename'], (string) $row['sheet_name'],
+                $ai === null ? '' : (string) $ai['label'], $ai === null ? '' : (string) $ai['side'], $ai === null ? '' : (string) $ai['category'],
+            ]),
             'page' => 0, 'next' => 0, 'pages' => 1,
         ]);
     }

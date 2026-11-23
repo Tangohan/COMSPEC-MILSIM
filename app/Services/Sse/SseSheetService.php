@@ -116,7 +116,7 @@ final class SseSheetService
      * Prépare une fiche : textes assainis et résolus, données caviardées, contrôles de longueur et de fuite. Rien n'est écrit.
      *
      * @param array{person: ?array<string, mixed>, identity: ?array<string, mixed>, identities: list<array<string, mixed>>, person_id: ?int, identity_id: ?int, ref: string} $subject
-     * @param array<string, mixed> $input lang, classification, faces, validity, threat, armed, checks (liste de références), texts (clé => texte)
+     * @param array<string, mixed> $input lang, classification, faces, avec_notice (page explicative, activée par défaut), validity, threat, armed, checks (liste de références), texts (clé => texte)
      * @return array{ok: bool, errors: list<string>, data: ?array<string, mixed>, texts: array<string, string>, level: string, lang: string, faces: string, sensitive: list<string>, snapshot: array<string, mixed>, params: array<string, mixed>}
      */
     public function prepare(int $tenantId, array $subject, string $model, array $input, SseSheetAccess $access, string $ref = 'APERCU'): array
@@ -207,6 +207,7 @@ final class SseSheetService
         $sensitive = array_values(array_unique(array_merge($masked['shown'], T::categories($used))));
         $data = [
             'model' => $model, 'lang' => $lang, 'faces' => $faces, 'ref' => $ref,
+            'notice' => \App\Support\Pdf\SsePdfNotice::enabled($input['avec_notice'] ?? null),
             'title' => D::MODELS[$model]['label'], 'accent' => SseSheetPdf::ACCENTS[$model] ?? [55, 65, 81],
             'authority' => $authority, 'service' => $service,
             'issued_at' => $issued, 'issued_dt' => gmdate('Y-m-d H:i:s'), 'valid_until' => $validUntil, 'expires_at' => $expiresAt, 'until_lifted' => $model === 'vigilance' && ($term['lifted'] ?? false), 'classification' => $labels, 'level' => $level, 'visibility' => $required,

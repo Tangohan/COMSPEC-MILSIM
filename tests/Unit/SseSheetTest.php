@@ -255,13 +255,13 @@ final class SseSheetTest extends TestCase
                     self::assertTrue($res['ok'], "$model $pid $lang : " . implode(' | ', $res['errors']));
                     self::assertStringStartsWith('%PDF-', (string) $res['bytes']);
                     self::assertGreaterThanOrEqual(1, self::pages((string) $res['bytes']));
-                    self::assertLessThanOrEqual(SseSheetPdf::MAX_PAGES, $res['pages']);
+                    self::assertLessThanOrEqual(SseSheetPdf::MAX_PAGES + 1, $res['pages']); // + la page explicative
                 }
             }
         }
         // Textes très longs : le document reste borné et signale le débordement.
         $long = str_repeat('Phrase très longue avec des accents éàç. ', 40);
-        $res = $svc->preview(1, $this->subject($with), 'profile', ['faces' => '1', 'texts' => ['summary' => mb_substr($long, 0, 1500), 'assessment' => mb_substr($long, 0, 900), 'recommendations' => mb_substr($long, 0, 600)]], self::access());
+        $res = $svc->preview(1, $this->subject($with), 'profile', ['faces' => '1', 'avec_notice' => '0', 'texts' => ['summary' => mb_substr($long, 0, 1500), 'assessment' => mb_substr($long, 0, 900), 'recommendations' => mb_substr($long, 0, 600)]], self::access());
         self::assertTrue($res['ok'], implode(' | ', $res['errors']));
         self::assertSame(1, self::pages((string) $res['bytes']));
         self::assertNotSame([], $res['overflow']);

@@ -165,6 +165,7 @@ final class SsePersonRepository
         ]);
 
         $this->addCustodyEvent((int) ($data['tenant_id'] ?? 0), $id, null, 'capture', 'Personne enregistrée', (string) ($data['submitter_callsign'] ?? ''));
+        \App\Services\Sse\SseIdentifierService::onCreated((int) ($data['tenant_id'] ?? 0), 'person', $id);
 
         return $id;
     }

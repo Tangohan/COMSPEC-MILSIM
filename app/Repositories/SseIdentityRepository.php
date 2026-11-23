@@ -86,6 +86,7 @@ final class SseIdentityRepository
         }
         // Chronologie de l'identité : la création est notée (jamais bloquant).
         (new SseIdentityEventRepository($this->db))->tryAdd($tenantId, $id, 'identity.created', 'Identité créée.', ['ref' => SseIdentityCatalog::identityRef($id)]);
+        \App\Services\Sse\SseIdentifierService::onCreated($tenantId, 'identity', (int) $id);
 
         return $id;
     }
