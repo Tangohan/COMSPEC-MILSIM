@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS member_grade_schedules (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   finished_at DATETIME NULL,
-  finished_by INT UNSIGNED NULL COMMENT 'personne qui a annulé ; NULL si la tâche automatique',
+  finished_by INT UNSIGNED NULL COMMENT 'personne qui a annulé, NULL si la tâche automatique',
   PRIMARY KEY (id),
   UNIQUE KEY uq_mgs_open (tenant_id, user_id, open_slot),
   KEY idx_mgs_due (status, scheduled_for),
