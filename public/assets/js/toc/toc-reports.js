@@ -49,6 +49,9 @@ window.TocReports = (function () {
     var st = { items: [], counts: null, hidden: 0, readState: 'ok', truncated: false, loaded: false, loading: false, error: '', stamp: '', localRead: {}, key: null, detail: null, tab: 'rapport', plans: null };
     var dead = false;
     var seq = 0;
+    // Premier chargement en cours : renderPanel (toc-console) rappelle load() à chaque redessin tant que les rapports ne sont
+    // pas arrivés ; sans ce verrou load() -> refresh() -> renderPanel() -> load() bouclait jusqu'au dépassement de pile.
+    var busy = false;
 
     function savePrefs() {
       try { if (store) store.setItem(PREF, JSON.stringify({ family: f.family, unread: f.unread, period: f.period, allMaps: f.allMaps, priority: f.priority, status: f.status, sort: f.sort })); } catch (e) {}
@@ -73,10 +76,13 @@ window.TocReports = (function () {
     }
     function load(silent) {
       if (dead) return Promise.resolve();
+      if (busy && !silent) return Promise.resolve();
       var mine = ++seq;
-      st.loading = !silent && !st.loaded;
+      busy = !silent && !st.loaded;
+      st.loading = busy;
       if (st.loading) refresh();
       return ctx.api('/atak/toc/api/reports' + query()).then(function (j) {
+        busy = false;
         if (dead || mine !== seq || (j && j.notModified)) return;
         st.loading = false;
         if (!j || !j.ok) { st.error = ERRORS[j && j.error] || 'Rapports indisponibles pour le moment.'; st.loaded = true; refresh(); return; }
@@ -90,7 +96,7 @@ window.TocReports = (function () {
         if (st.readState === 'ok') st.localRead = {};
         refresh();
         if (ctx.onData) ctx.onData(st.items);
-      }).catch(function () { st.loading = false; st.error = 'Réseau indisponible : les rapports ne peuvent pas être relus.'; st.loaded = true; refresh(); });
+      }).catch(function () { busy = false; st.loading = false; st.error = 'Réseau indisponible : les rapports ne peuvent pas être relus.'; st.loaded = true; refresh(); });
     }
     function onStamp(stamp) {
       if (!stamp && st.stamp) return;
