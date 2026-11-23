@@ -342,6 +342,91 @@ final class SseAttachServiceTest extends TestCase
         self::assertSame('cerbere.link.case_single_open', $this->scalar('SELECT rule_code FROM sse_entity_links WHERE id = ' . $this->ids['link_case']));
     }
 
+    public function testInterestCaseAttachmentIsVisibleAtBothEndsAndUpdatesLegacyLinks(): void
+    {
+        $svc = $this->operator();
+        $interest = $this->ref('interest', 'interest1');
+        $case = $this->ref('case', 'case3');
+        $result = $svc->attach([$interest], [$case], ['reason' => 'Analyse préalable du dossier']);
+        self::assertTrue($result['ok'], (string) ($result['error'] ?? ''));
+        foreach ([['interest', 'interest1', $case], ['case', 'case3', $interest]] as [$type, $key, $other]) {
+            $items = $svc->attached($type, (string) $this->ids[$key])['items'];
+            $matches = array_values(array_filter($items, static fn (array $i): bool => ($i['key'] ?? '') === $other));
+            self::assertCount(1, $matches);
+            self::assertSame($interest, $matches[0]['source_key']);
+        }
+        self::assertSame(1, (int) $this->scalar("SELECT COUNT(*) FROM sse_interest_case_links WHERE interest_case_id = {$this->ids['interest1']} AND link_type = 'case' AND target_id = '{$this->ids['case3']}'"));
+    }
+
+    public function testIdentityCanSelectAndLinkAnExistingOrganization(): void
+    {
+        $svc = $this->operator();
+        $identity = $this->ref('identity', 'identity2');
+        $organization = $this->ref('organization', 'node1');
+        $sources = $svc->directory()->sources([$identity]);
+        $result = $svc->directory()->search($sources, ['scope' => 'organization', 'q' => 'Cellule Ouest']);
+        self::assertContains($organization, array_column($result['items'], 'key'));
+        $attached = $svc->attach([$identity], [$organization], ['reason' => 'Membre présumé de cette organisation']);
+        self::assertTrue($attached['ok'], (string) ($attached['error'] ?? ''));
+        self::assertContains($organization, array_column($svc->attached('identity', (string) $this->ids['identity2'])['items'], 'key'));
+        self::assertContains($identity, array_column($svc->attached('organization', (string) $this->ids['node1'])['items'], 'key'));
+    }
+
+    public function testWrittenNotesCanBeFiledInLeadAndInvestigationContexts(): void
+    {
+        $svc = $this->operator();
+        $note = $this->ref('note', 'note_free');
+        foreach ([['lead', 'lead2'], ['mesh', 'mesh1']] as [$type, $key]) {
+            $result = $svc->attach([$note], [$this->ref($type, $key)], ['reason' => 'Fiche rédigée depuis ce contexte']);
+            self::assertTrue($result['ok']);
+            self::assertContains($note, array_column($svc->attached($type, (string) $this->ids[$key])['items'], 'key'));
+        }
+    }
+
+    public function testInterestExportKeepsReadableNotesAndDropsRestrictedOnes(): void
+    {
+        $interest = $this->ref('interest', 'interest1');
+        $this->pdo->exec("UPDATE sse_field_notes SET body = 'Observation accessible du pont' WHERE id = " . $this->ids['note_free']);
+        self::assertTrue($this->manager()->attach([$this->ref('note', 'note_free')], [$interest], ['reason' => 'Pièce de cette affaire'])['ok']);
+        self::assertTrue($this->manager()->attach([$this->ref('note', 'note_secret')], [$interest], ['reason' => 'Pièce au-dessus de l’habilitation'])['ok']);
+        $actor = new \App\Services\Sse\SseInterestActor(1, 22, 'Analyste', true, true, false, true, false, 'encadrement');
+        $detail = (new \App\Services\Sse\SseInterestCaseExportContext())->enrich([
+            'case' => ['id' => $this->ids['interest1'], 'classification' => 'interne'],
+        ], $actor, SseAttachFixture::operator());
+        self::assertContains('Observation accessible du pont', array_column($detail['field_notes'], 'body'));
+        self::assertNotContains($this->ids['note_secret'], array_column($detail['field_notes'], 'id'));
+        self::assertArrayNotHasKey($this->ref('note', 'note_secret'), $detail['graph']['nodes']);
+    }
+
+    public function testHistoricInterestLinksFeedTheGraphWithoutRecreatingAttachments(): void
+    {
+        $stmt = $this->pdo->prepare("INSERT INTO sse_interest_case_links (tenant_id, interest_case_id, link_type, target_id, label, note, created_by, created_at) VALUES (1, ?, ?, ?, ?, ?, 22, '2026-11-17 12:00:00')");
+        $stmt->execute([$this->ids['interest1'], 'case', (string) $this->ids['case3'], 'Dossier', 'Enquête constituée']);
+        $stmt->execute([$this->ids['interest1'], 'fiche', (string) $this->ids['note_free'], 'Fiche', 'Observation liée']);
+        $graph = new SseLinkGraph(SseAttachFixture::operator());
+        $fromInterest = $graph->resolve('interest', (string) $this->ids['interest1'], 1);
+        self::assertArrayHasKey($this->ref('case', 'case3'), $fromInterest['nodes']);
+        self::assertArrayHasKey($this->ref('note', 'note_free'), $fromInterest['nodes']);
+        $fromCase = $graph->resolve('case', (string) $this->ids['case3'], 1);
+        self::assertArrayHasKey($this->ref('interest', 'interest1'), $fromCase['nodes']);
+    }
+
+    public function testInterestAndConstitutedCaseCanBeLinkedBeforeAttachmentMigration(): void
+    {
+        SseAttachSqlite::close();
+        $this->pdo = SseAttachSqlite::open(false);
+        $this->ids = SseAttachFixture::seed($this->pdo, false);
+        $svc = $this->operator();
+        $result = $svc->attach([$this->ref('interest', 'interest1')], [$this->ref('case', 'case3')], ['reason' => 'Analyse préalable de cette enquête']);
+        self::assertTrue($result['ok'], (string) ($result['error'] ?? ''));
+        self::assertTrue($result['degraded']);
+        self::assertSame(1, (int) $this->scalar("SELECT COUNT(*) FROM sse_interest_case_links WHERE interest_case_id = {$this->ids['interest1']} AND link_type = 'case'"));
+        $again = $svc->attach([$this->ref('interest', 'interest1')], [$this->ref('case', 'case3')], ['reason' => 'Même enquête déjà rattachée']);
+        self::assertFalse($again['ok']);
+        self::assertStringContainsString('déjà rattachés', $again['error']);
+        self::assertSame(0, $again['count']);
+    }
+
     public function testBatchAttachesEveryPieceToEveryTarget(): void
     {
         $svc = $this->operator();

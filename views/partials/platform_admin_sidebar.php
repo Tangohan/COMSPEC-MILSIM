@@ -97,6 +97,7 @@ $platformNav = [
     ]],
     ['key' => 'moderation', 'label' => 'Modération & sécurité', 'items' => [
         ['path' => 'admin/system/blocklist', 'label' => 'Liste de restriction', 'icon' => 'ban', 'access' => 'system', 'desc' => 'E-mails et réseaux bloqués sur tout le site'],
+        ['path' => 'admin/sanctions', 'label' => 'Bannissements et contestations', 'icon' => 'ban', 'access' => 'system', 'desc' => 'Décisions individuelles, par organisation ou automatiques et demandes de réexamen'],
         ['path' => 'admin/system/member-sanctions', 'label' => 'Sanctions du site', 'icon' => 'gavel', 'access' => 'system', 'desc' => 'Restrictions de compte, messagerie, modules'],
         ['path' => 'admin/system/noms-inappropries', 'label' => 'Noms inappropriés', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Mots floutés dans les noms d’unités, alertes à traiter'],
     ]],

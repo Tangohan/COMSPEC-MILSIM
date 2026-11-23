@@ -193,6 +193,7 @@ final class QualificationReferentielController
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.form',
             'title' => 'Modifier la qualification',
+            'specialtyTargets' => (new \App\Controllers\Admin\MilitarySpecialtyController())->qualificationPanel($tenantId, $id),
             'backOfficePageCss' => ['referentiel-qualifications.css'],
             'boSkipPageHead' => true,
             'qualificationExamples' => QualificationExamples::all(),

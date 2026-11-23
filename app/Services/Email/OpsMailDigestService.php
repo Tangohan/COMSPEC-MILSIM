@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Email;
 
 use App\Repositories\EmailDigestRepository;
+use App\Repositories\PlatformBanAppealRepository;
 use App\Services\EmailService;
 
 /**
@@ -21,7 +22,23 @@ final class OpsMailDigestService
         private EmailDigestRepository $items,
         private EmailService $email,
         private MailBudgetGate $gate,
+        private ?PlatformBanAppealRepository $appeals = null,
     ) {}
+
+    public function enqueueBanAppeal(): void
+    {
+        $event = EmailEvents::PLATFORM_BAN_APPEAL_SUBMITTED;
+        if (in_array($event, $this->gate->config()['muted'], true)) {
+            return;
+        }
+        foreach (MailBudgetGate::opsInboxes() as $to) {
+            try {
+                $this->items->add($to, $event, 'Nouvelle contestation de bannissement', '', null);
+            } catch (\Throwable) {
+                error_log('[ops_digest] Impossible de mettre une contestation en file.');
+            }
+        }
+    }
 
     /**
      * @param bool $force envoie tout de suite tout ce qui attend (bouton de la page d'administration)
@@ -33,6 +50,8 @@ final class OpsMailDigestService
         $memberDue = array_flip($this->items->recipientsDue($force ? 0 : MailBudget::MEMBER_DIGEST_MINUTES));
         $opsInboxes = array_flip(MailBudgetGate::opsInboxes());
         $out = ['recipients' => 0, 'emails' => 0, 'items' => 0];
+        $pendingAppealsLoaded = false;
+        $pendingAppeals = null;
         foreach (array_unique(array_merge($this->items->recipientsDue($minutes), array_keys($memberDue))) as $to) {
             $to = (string) $to;
             $rows = $this->items->pendingFor($to);
@@ -55,7 +74,19 @@ final class OpsMailDigestService
             }
             $out['recipients']++;
             $adminLink = url('admin/system/e-mails');
-            [$subject, $html, $text] = self::compose($rows, $adminLink);
+            if (!$pendingAppealsLoaded) {
+                $pendingAppealsLoaded = true;
+                try {
+                    $appeals = $this->appeals ??= new PlatformBanAppealRepository();
+                    if ($appeals->ready()) {
+                        $pendingAppeals = $appeals->countPending();
+                    }
+                } catch (\Throwable) {
+                    error_log('[ops_digest] Impossible de compter les contestations en attente.');
+                }
+            }
+            [$subject, $html, $text] = self::compose($rows, $adminLink, $pendingAppeals);
+            $reports = self::reportRows($rows);
             $ok = $this->email->send(
                 EmailEvents::OPS_DIGEST,
                 $to,
@@ -68,9 +99,9 @@ final class OpsMailDigestService
                 null,
                 false,
                 false,
-                [[
+                $reports === [] ? [] : [[
                     'name' => self::attachmentName(),
-                    'content' => self::attachmentText($rows, $adminLink),
+                    'content' => self::attachmentText($reports, $adminLink),
                     'mime' => 'text/plain; charset=UTF-8',
                 ]]
             );
@@ -138,40 +169,64 @@ final class OpsMailDigestService
      * @param list<array<string, mixed>> $rows
      * @return array{0:string, 1:string, 2:string} sujet, HTML, texte
      */
-    public static function compose(array $rows, string $adminLink): array
+    public static function compose(array $rows, string $adminLink, ?int $pendingAppeals = null): array
     {
+        $reports = self::reportRows($rows);
         $byEvent = [];
-        foreach ($rows as $r) {
+        foreach ($reports as $r) {
             $code = (string) ($r['event_code'] ?? '');
             $byEvent[$code] = ($byEvent[$code] ?? 0) + 1;
         }
         arsort($byEvent);
         $total = count($rows);
-        $groups = self::groupByCause($rows);
+        $groups = self::groupByCause($reports);
+        $newAppeals = $total - count($reports);
         $parts = [];
         foreach ($byEvent as $code => $n) {
             $parts[] = $n . ' × ' . MailBudget::label((string) $code);
         }
         $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
         $subject = '[' . $brand . '] Récapitulatif exploitation — ' . $total . ' alerte' . ($total > 1 ? 's' : '')
-            . (count($groups) < $total ? ' (' . count($groups) . ' cause' . (count($groups) > 1 ? 's' : '') . ')' : '');
+            . (count($groups) < count($reports) ? ' (' . count($groups) . ' cause' . (count($groups) > 1 ? 's' : '') . ')' : '');
 
         $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
-        $text = $total . ' alerte' . ($total > 1 ? 's' : '') . " regroupée(s) depuis le dernier récapitulatif :\n";
-        foreach ($parts as $p) {
-            $text .= '  - ' . $p . "\n";
+        $intro = $total === 1
+            ? '1 alerte regroupée depuis le dernier récapitulatif.'
+            : $total . ' alertes regroupées depuis le dernier récapitulatif.';
+        $text = $intro . "\n";
+        $html = '<p style="margin:0 0 12px;">' . $esc($intro) . '</p>';
+        if ($parts !== []) {
+            $html .= '<ul style="margin:0 0 16px;padding-left:18px;">';
+            foreach ($parts as $p) {
+                $text .= '  - ' . $p . "\n";
+                $html .= '<li>' . $esc($p) . '</li>';
+            }
+            $html .= '</ul>';
         }
-        $text .= "\nLe détail complet (pile d'appels, chaque occurrence) est dans le fichier .txt joint.\n";
-        $text .= 'Réglages et volume des envois : ' . $adminLink . "\n";
 
-        $html = '<p style="margin:0 0 12px;">' . $esc((string) $total) . ' alerte' . ($total > 1 ? 's' : '')
-            . ' regroupée(s) depuis le dernier récapitulatif.</p><ul style="margin:0 0 16px;padding-left:18px;">';
-        foreach ($parts as $p) {
-            $html .= '<li>' . $esc($p) . '</li>';
+        if ($newAppeals > 0 || $pendingAppeals !== null) {
+            $appealsLink = url('admin/sanctions') . '#contestations';
+            $heading = 'Contestations de bannissement';
+            $linkLabel = 'Ouvrir la file des contestations';
+            $new = $newAppeals === 1 ? '1 nouvelle demande dans ce récapitulatif.' : $newAppeals . ' nouvelles demandes dans ce récapitulatif.';
+            $pending = match ($pendingAppeals) {
+                null => 'Le nombre de demandes en attente est momentanément indisponible.',
+                0 => 'Aucune demande en attente de traitement.',
+                1 => '1 demande en attente de traitement.',
+                default => $pendingAppeals . ' demandes en attente de traitement.',
+            };
+            $text .= "\n" . $heading . "\n" . $new . "\n" . $pending . "\n" . $linkLabel . ' : ' . $appealsLink . "\n";
+            $html .= '<h3 style="margin:16px 0 4px;">' . $esc($heading) . '</h3>'
+                . '<p style="margin:0 0 12px;">' . $esc($new) . '<br>' . $esc($pending) . '<br>'
+                . '<a href="' . $esc($appealsLink) . '">' . $esc($linkLabel) . '</a></p>';
         }
-        $html .= '</ul><p style="margin:0 0 12px;color:#667085;font-size:13px;">Les alertes identiques sont regroupées'
-            . ' en une seule entrée. Le détail complet (pile d’appels, chaque occurrence) est dans le fichier .txt joint.</p>';
+        if ($reports !== []) {
+            $text .= "\nLe détail complet (pile d'appels, chaque occurrence) est dans le fichier .txt joint.\n";
+            $html .= '<p style="margin:0 0 12px;color:#667085;font-size:13px;">Les alertes identiques sont regroupées'
+                . ' en une seule entrée. Le détail complet (pile d’appels, chaque occurrence) est dans le fichier .txt joint.</p>';
+        }
+        $text .= 'Réglages et volume des envois : ' . $adminLink . "\n";
 
         foreach (array_slice($groups, 0, self::MAX_DETAILED) as $g) {
             $label = MailBudget::label($g['event_code']);
@@ -195,6 +250,17 @@ final class OpsMailDigestService
         $html .= '<p style="margin-top:16px;"><a href="' . $esc($adminLink) . '">Réglages et volume des envois</a></p>';
 
         return [$subject, $html, $text];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private static function reportRows(array $rows): array
+    {
+        return array_values(array_filter($rows, static fn (array $row): bool =>
+            ($row['event_code'] ?? '') !== EmailEvents::PLATFORM_BAN_APPEAL_SUBMITTED
+        ));
     }
 
     /**

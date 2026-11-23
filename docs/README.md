@@ -88,6 +88,8 @@ Doctrine d'emploi
 | Bug memory | `docs/bugs/` | Keep; not doctrine |
 | Release journal | `CHANGELOG-ATAK.md` | Product changelog |
 | Référentiel métiers SOF américains | [REFERENTIEL-METIERS-OPERATIONS-SPECIALES-US.md](REFERENTIEL-METIERS-OPERATIONS-SPECIALES-US.md) | Fiches CCT, PJ, TACP, 160th SOAR et cadrage historique du B Squadron |
+| Nomenclatures militaires par pays | [France, Royaume-Uni et OTAN](referentiels/SPECIALITES-MILITAIRES-PAR-PAYS.md) | Codes, familles, brevets et sources datées ; complément des AFSC/MOS américains |
+| Classification des spécialités RH/LMS | [Audit, schéma et intégration](technical/specialites-militaires-proposition.md) | Schéma validé, migration 4910 et usages des nomenclatures nationales |
 | Migration of old C2 notes | [_migration/DOCUMENT-MAPPING.md](_migration/DOCUMENT-MAPPING.md) | |
 | Archived C2 drafts | [archive/legacy-atak/](archive/legacy-atak/) | Absorbed, not authoritative |
 

@@ -15,7 +15,9 @@ use Throwable;
  * Une table n'est convertie (ALTER TABLE … CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci) que si :
  *  - elle existe et sa collation, ou celle d'une de ses colonnes texte, diffère de utf8mb4_unicode_ci ;
  *  - elle reste petite (estimation information_schema : MAX_ROWS lignes, MAX_BYTES octets au plus) ;
- *  - aucune de ses colonnes n'a de collation voulue (…_bin) ni d'autre jeu de caractères que utf8mb4.
+ *  - aucune de ses colonnes texte n'a de collation voulue (…_bin) ni d'autre jeu de caractères que utf8mb4.
+ * Les colonnes JSON natives sont exclues de ce contrôle : MySQL leur impose utf8mb4_bin et MariaDB représente JSON
+ * par un LONGTEXT utf8mb4_bin assorti d'un CHECK json_valid().
  * Sinon elle est laissée telle quelle avec un message [ATTENTION]. L'attente d'un verrou est bornée (lock_wait_timeout).
  * Idempotent : une table déjà en utf8mb4_unicode_ci n'est jamais touchée. Les grosses tables historiques ne sont jamais
  * listées : leurs jointures avec les tables récentes passent par SqlText::columnEquals().
@@ -153,21 +155,53 @@ final class TableCollationAligner
         return 'converted';
     }
 
-    /** @return array<string, string> colonne => collation, pour les colonnes texte hors utf8mb4_unicode_ci */
+    /** @return array<string, string> colonne => collation, pour les colonnes texte hors cible, JSON natif exclu */
     public function divergingColumns(string $table): array
     {
         $st = $this->pdo->prepare(
-            'SELECT COLUMN_NAME, COLLATION_NAME FROM information_schema.COLUMNS
+            'SELECT COLUMN_NAME, COLLATION_NAME, DATA_TYPE FROM information_schema.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLLATION_NAME IS NOT NULL AND COLLATION_NAME <> ?
              ORDER BY ORDINAL_POSITION'
         );
         $st->execute([$table, self::TARGET]);
+        $jsonAliases = null;
         $out = [];
-        foreach ($st->fetchAll(PDO::FETCH_NUM) ?: [] as [$column, $collation]) {
+        foreach ($st->fetchAll(PDO::FETCH_NUM) ?: [] as [$column, $collation, $dataType]) {
+            if (strtolower((string) $dataType) === 'json') {
+                continue;
+            }
+            if (strtolower((string) $dataType) === 'longtext' && str_ends_with((string) $collation, '_bin')) {
+                $jsonAliases ??= $this->mariaDbJsonAliasColumns($table);
+                if (isset($jsonAliases[(string) $column])) {
+                    continue;
+                }
+            }
             $out[(string) $column] = (string) $collation;
         }
 
         return $out;
+    }
+
+    /**
+     * MariaDB expose JSON comme LONGTEXT utf8mb4_bin. SHOW CREATE TABLE conserve le CHECK json_valid() qui permet de
+     * le distinguer d'un vrai LONGTEXT binaire, lequel doit continuer à bloquer la conversion automatique.
+     *
+     * @return array<string, true>
+     */
+    private function mariaDbJsonAliasColumns(string $table): array
+    {
+        try {
+            $quotedTable = '`' . str_replace('`', '``', $table) . '`';
+            $row = $this->pdo->query('SHOW CREATE TABLE ' . $quotedTable)->fetch(PDO::FETCH_NUM);
+            $create = is_array($row) ? (string) ($row[1] ?? '') : '';
+        } catch (Throwable) {
+            return [];
+        }
+        if ($create === '' || preg_match_all('/\\bjson_valid\\s*\\(\\s*`?([a-z0-9_]+)`?\\s*\\)/i', $create, $matches) === false) {
+            return [];
+        }
+
+        return array_fill_keys(array_map('strval', $matches[1]), true);
     }
 
     /**

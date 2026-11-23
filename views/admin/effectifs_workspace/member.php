@@ -1049,6 +1049,7 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
             <p>Ce qu’elle sait faire et ce qui lui a été décerné.</p>
         </header>
         <div class="eff-fm-cards">
+    <?php require __DIR__ . '/partials/member_specialties.php'; ?>
     <article class="eff-fm-card" id="qualifications">
         <div class="eff-fm-card__head">
             <h3>Qualifications</h3>

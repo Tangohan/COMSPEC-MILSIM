@@ -299,6 +299,7 @@ return function (Router $router) {
     $router->get('/cookies', [LegalController::class, 'cookies']);
     $router->get('/mentions-legales', [LegalController::class, 'legalNotice']);
     $router->get('/cgu', [LegalController::class, 'terms']);
+    $router->get('/code-de-conduite', [LegalController::class, 'conduct']);
     $router->get('/cgv', [LegalController::class, 'sales']);
     $router->get('/demande-donnees', [LegalController::class, 'gdprRequestForm']);
     $router->post('/demande-donnees', [LegalController::class, 'gdprRequestSubmit']);
@@ -456,6 +457,9 @@ return function (Router $router) {
     $router->post('/logout', [AuthController::class, 'logout']);
     $router->get('/forgot-password', [AuthController::class, 'showForgotPassword'], [GuestMiddleware::class]);
     $router->post('/forgot-password', [AuthController::class, 'sendResetLink'], [GuestMiddleware::class]);
+    $router->get('/contester-sanction', [\App\Controllers\Auth\PlatformBanAppealController::class, 'show']);
+    $router->post('/contester-sanction/lien', [\App\Controllers\Auth\PlatformBanAppealController::class, 'requestLink']);
+    $router->post('/contester-sanction/deposer', [\App\Controllers\Auth\PlatformBanAppealController::class, 'submit']);
     $router->get('/reset-password', [AuthController::class, 'showResetPassword'], [GuestMiddleware::class]);
     $router->post('/reset-password', [AuthController::class, 'processResetPassword'], [GuestMiddleware::class]);
     $router->get('/evenements', [CommunityEventsController::class, 'index'], [AuthMiddleware::class]);
@@ -1141,9 +1145,14 @@ return function (Router $router) {
     $router->post('/equipment/configurateur/pre-kits', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'savePrekit'], [AuthMiddleware::class]);
     $router->post('/equipment/configurateur/pre-kits/{id}/supprimer', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'deletePrekit'], [AuthMiddleware::class]);
     $router->get('/equipment/{slug}', [EquipmentController::class, 'show'], [AuthMiddleware::class]);
-    // Modpacks retirés : les mods sont servis par le Steam Workshop, les anciennes adresses mènent au guide d'installation.
-    foreach (['/modpacks', '/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
-        $router->get($legacyModpack, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('atak/mod')), [AuthMiddleware::class]);
+    $modpack = \App\Controllers\Web\PublicModpackController::class;
+    $router->get('/modpacks', [$modpack, 'index']);
+    $router->get('/modpacks/telecharger', [$modpack, 'download']);
+    $router->post('/modpacks/bloc', [$modpack, 'uploadBlock'], [AuthMiddleware::class]);
+    $router->post('/modpacks/publier', [$modpack, 'publish'], [AuthMiddleware::class]);
+    $router->post('/modpacks/reglages', [$modpack, 'configure'], [AuthMiddleware::class]);
+    foreach (['/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
+        $router->get($legacyModpack, fn () => \App\Core\Response::redirect(url('modpacks')));
     }
     /*
      * Ancien LMS « Formations » : ses pages sont servies par l'Academy (mêmes contrôleurs, mêmes droits, mêmes données).
@@ -1297,6 +1306,8 @@ return function (Router $router) {
     $router->get('/atak/sse/avis/detections', [\App\Controllers\Web\SseWantedNoticeController::class, 'detections'], $mwSsePortal);
     $router->post('/atak/sse/avis/detections/{id}/statut', [\App\Controllers\Web\SseWantedNoticeController::class, 'detectionStatus'], $mwSsePortal);
     $router->get('/atak/sse/avis/{id}/pdf', [\App\Controllers\Web\SseWantedNoticeController::class, 'pdf'], $mwSsePortal);
+    $router->get('/atak/sse/avis/{id}/modifier', [\App\Controllers\Web\SseWantedNoticeController::class, 'editForm'], $mwSsePortal);
+    $router->post('/atak/sse/avis/{id}/modifier', [\App\Controllers\Web\SseWantedNoticeController::class, 'updateNotice'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/lever', [\App\Controllers\Web\SseWantedNoticeController::class, 'lift'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/renouveler', [\App\Controllers\Web\SseWantedNoticeController::class, 'renew'], $mwSsePortal);
     $router->post('/atak/sse/avis/{id}/prolonger', [\App\Controllers\Web\SseWantedNoticeController::class, 'extend'], $mwSsePortal);
@@ -1770,6 +1781,7 @@ return function (Router $router) {
     $router->post('/admin/system/donnees/action', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Charge de l'application (requêtes par route et par communauté, erreurs, tendance), seuils d'alerte et priorité sous charge.
+    $router->get('/admin/system/securite', [\App\Controllers\Admin\System\SystemSecurityController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/surcharge', [\App\Controllers\Admin\System\SystemLoadController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/surcharge/reglages', [\App\Controllers\Admin\System\SystemLoadController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Activités anormales détectées dans les envois du mod : alertes à décider par un humain, jamais de blocage automatique.
@@ -1807,6 +1819,7 @@ return function (Router $router) {
     $router->get('/admin/system/alerts', [SystemPlatformAlertsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/messages-communautes', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/messages-communautes/create', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/cible', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'storeTargeted'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/messages-communautes/apercu', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/messages-communautes', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/messages-communautes/{id}/edit', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1820,6 +1833,7 @@ return function (Router $router) {
     $router->post('/admin/system/cooperation/catalog/{id}/update', [SystemCooperationCatalogController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cooperation/catalog/{id}/delete', [SystemCooperationCatalogController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/military-referential', [SystemMilitaryReferentialController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/military-referential/specialties', [SystemMilitaryReferentialController::class, 'specialties'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/military-referential/create', [SystemMilitaryReferentialController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/military-referential', [SystemMilitaryReferentialController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/military-referential/{id}/edit', [SystemMilitaryReferentialController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1960,6 +1974,10 @@ return function (Router $router) {
     $router->get('/admin/system/administrateurs-site', [SystemUsersController::class, 'platformAdmins'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/platform-admin', [SystemUsersController::class, 'setPlatformAdmin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/person', [SystemUsersController::class, 'showPerson'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/users/ip-partagees', [SystemUsersController::class, 'sharedIps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/relancer-verification', [SystemUsersController::class, 'resendVerification'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/selection/apercu', [SystemUsersController::class, 'previewBulkAction'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/selection/appliquer', [SystemUsersController::class, 'applyBulkAction'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/donnees', [SystemUsersDataController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/export', [SystemUsersController::class, 'exportCsv'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/export', [SystemUsersController::class, 'exportCsv'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1982,6 +2000,13 @@ return function (Router $router) {
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin', [SystemDashboardController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/statistiques/pdf', [SystemDashboardController::class, 'statisticsPdf'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/sanctions', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/organisation', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'banOrganization'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/lots/lever', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'liftBatch'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/contestations/{id}', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'review'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/contestations/{id}/acces', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'updateAppealAccess'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/automatique', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'saveAutomation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Recherche globale (comptes et communautés), réservée aux administrateurs du site.
     $router->get('/admin/recherche', [\App\Controllers\Admin\System\SystemAdminSearchController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/analytics', [SystemAnalyticsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -2640,6 +2665,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/importer', [EffectifsWorkspaceController::class, 'importRoster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/modele-tableur', [EffectifsWorkspaceController::class, 'rosterTemplate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'duplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/specialites', [EffectifsWorkspaceController::class, 'specialties'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/specialites', [\App\Controllers\Admin\MilitarySpecialtyController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/doublons', [EffectifsWorkspaceController::class, 'saveDuplicateSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'saveAccessRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

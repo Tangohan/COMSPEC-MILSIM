@@ -207,6 +207,10 @@ $conf = ['exact' => 'r', 'probable' => 'a', 'possible' => 'b'];
                     <?php endforeach; ?>
                 </div>
                 <?php if (!$hasLinks): ?><p>Aucune adresse, aucun véhicule, aucun téléphone ni personne liée aux fichiers.</p><?php endif; ?>
+                <?php if ($canManage): ?>
+                    <button type="button" class="btn btn--ghost" data-ra-open data-ra-pieces="<?= $h('identity:' . $iid) ?>" data-ra-initial-scope="organization">Lier à une organisation</button>
+                <?php endif; ?>
+                <?php \App\Services\Sse\Attach\SseAttachWindow::section('identity', $iid); ?>
             </section>
 
             <section class="fx-ds" id="mentions">

@@ -183,6 +183,20 @@ final class PlatformUsersDirectoryMysqlTest extends TestCase
         self::assertSame(2, $sorted['total']);
     }
 
+    public function testRosterProfilesHaveTheirOwnListAndNeverCountAsInactiveAccounts(): void
+    {
+        $this->pdo->exec("INSERT INTO users (id, tenant_id, email, password_hash, display_name, status, created_at)
+            VALUES (5, 2, 'fiche-membre@SANS-COMPTE.INVALID', 'x', 'Fiche Bureau', 'active', '2024-01-01')");
+        $this->pdo->exec("INSERT INTO user_community_memberships (user_id, tenant_id, status) VALUES (5, 2, 'active')");
+        $repo = new UserRepository($this->pdo);
+        $roster = $repo->listGroupedAccountsForPlatformDirectory('Bureau', 'fiches', 2, 1, 50, null, ['sort' => 'creation']);
+        self::assertSame(['fiche-membre@sans-compte.invalid'], $this->emails($roster));
+        self::assertSame(1, $roster['total']);
+        self::assertSame(4, $repo->listGroupedAccountsForPlatformDirectory()['total']);
+        self::assertSame(2, $repo->listGroupedAccountsForPlatformDirectory(null, 'inactifs')['total']);
+        self::assertSame([], $repo->inactiveEmailsForPlatformSelection(['fiche-membre@sans-compte.invalid'], 'jamais'));
+    }
+
     public function testInactiveCategoryFallsBackToTheSiteDateWhenGameSessionsAreMissing(): void
     {
         $this->pdo->exec('DROP TABLE game_sessions');

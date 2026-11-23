@@ -468,6 +468,18 @@ class PersonnelController
 
         $caps = OrgVisibilityCapabilities::fromGate($gate);
         $results = $this->applyDirectoryVisibilityFilter($tenantId, $results, $caps);
+        // Une spécialité peut identifier une personne ou son domaine d'emploi : aucun enrichissement sur les lignes masquées.
+        $specialtyUserIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), array_values(array_filter(
+            $results, static fn (array $r): bool => empty($r['anonymized']) && empty($r['assignment_redacted'])
+        )));
+        $specialtiesByUserId = [];
+        if ($specialtyUserIds !== []) {
+            try {
+                $specialtiesByUserId = (new \App\Services\Personnel\MilitarySpecialtyService())->confirmedForMembers($tenantId, $specialtyUserIds);
+            } catch (\Throwable $e) {
+                error_log('[annuaire] spécialités indisponibles : ' . $e->getMessage());
+            }
+        }
 
         $userIds = [];
         $legacyRoleIdByUserId = [];
@@ -498,6 +510,7 @@ class PersonnelController
             'results' => $results,
             'rolesByUserId' => $rolesByUserId,
             'badgesByUserId' => $badgesByUserId,
+            'specialtiesByUserId' => $specialtiesByUserId,
             'canEditPersonnel' => $this->canStaffEditPersonnel(),
             'currentUserId' => (int) ($user['id'] ?? 0),
             'tenantName' => $tenantName,

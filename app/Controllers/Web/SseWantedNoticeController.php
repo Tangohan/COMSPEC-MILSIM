@@ -204,6 +204,77 @@ final class SseWantedNoticeController
 
     // ------------------------------------------------------------ Lever un avis
 
+    public function editForm(Request $request, array $params = []): Response
+    {
+        $r = $this->r();
+        if (!$r->canManage()) {
+            return $this->denied(url(self::BASE), self::NEED_MANAGE);
+        }
+        $notice = $this->notices->find($r->tenantId(), (int) ($params['id'] ?? 0));
+        if ($notice === null) {
+            return $this->flashBack('error', 'Avis introuvable.', url(self::BASE));
+        }
+
+        return $this->renderEditForm($notice);
+    }
+
+    public function updateNotice(Request $request, array $params = []): Response
+    {
+        $r = $this->r();
+        $notice = $this->notices->find($r->tenantId(), (int) ($params['id'] ?? 0));
+        if ($notice === null) {
+            return $this->flashBack('error', 'Avis introuvable.', url(self::BASE));
+        }
+        if (!self::csrfOk($request) || !$r->canManage()) {
+            return $this->denied(url(self::BASE), self::NEED_MANAGE);
+        }
+        $input = [];
+        foreach (['notice_type', 'threat_level', 'armed', 'reason', 'instructions', 'zone', 'last_seen_place', 'last_seen_at', 'contact_label', 'contact_detail', 'expires_at', 'change_reason', 'version'] as $field) {
+            $input[$field] = $request->inputString($field);
+        }
+        $config = $this->settings->get($r->tenantId());
+        $tz = (string) ($config['process']['timezone'] ?? 'UTC');
+        $utc = $input;
+        foreach (['last_seen_at', 'expires_at'] as $field) {
+            $utc[$field] = self::localToUtc($input[$field], $tz);
+        }
+        if ($request->inputString('refresh_physical') === '1') {
+            $input['refresh_physical'] = '1';
+            $identity = $this->identities->find((int) $notice['identity_id'], $r->tenantId());
+            if ($identity !== null && !$this->isMemberIdentity($r->tenantId(), $identity)) {
+                $profile = (new \App\Repositories\SseFileRecordRepository())->profile($r->tenantId(), (int) $identity['id']);
+                foreach ((array) ($profile['visibility'] ?? []) as $field => $visibility) {
+                    if (($visibility['v'] ?? 'known') === 'hidden') {
+                        $profile[$field] = null;
+                    }
+                }
+                $utc['physical'] = SseWantedPhysical::fromProfile($profile, false);
+            }
+        }
+        $result = $this->service->amend($r->tenantId(), (int) $notice['id'], $utc, $r);
+        if (!$result['ok']) {
+            return $this->renderEditForm($notice, $input, $result['errors'], 422);
+        }
+
+        return $this->flashBack('success', ($result['state'] ?? '') === 'pending'
+            ? 'Avis mis à jour et soumis à validation avant diffusion. L’état précédent est conservé dans l’historique.'
+            : 'Avis mis à jour. L’état précédent et le motif sont conservés dans l’historique.', url(self::PAPERS . '/' . (int) $notice['identity_id']) . '#avis');
+    }
+
+    private function renderEditForm(array $notice, array $old = [], array $errors = [], int $status = 200): Response
+    {
+        $r = $this->r();
+        $config = $this->settings->get($r->tenantId());
+        $history = (new \App\Repositories\SseIdentityEventRepository())->listForIdentity($r->tenantId(), (int) $notice['identity_id'], ['notice.updated']);
+
+        return $this->page('atak.sse.papers.wanted_edit', [
+            'title' => 'Modifier l’avis ' . $notice['ref'], 'notice' => $notice, 'old' => $old, 'errors' => $errors,
+            'wantedTypes' => C::types($config), 'timezoneName' => (string) ($config['process']['timezone'] ?? 'UTC'),
+            'version' => SseWantedService::amendToken($notice),
+            'history' => array_values(array_filter($history, static fn (array $e): bool => (int) ($e['notice_id'] ?? 0) === (int) $notice['id'])),
+        ], $status);
+    }
+
     public function lift(Request $request, array $params = []): Response
     {
         $r = $this->r();

@@ -37,6 +37,73 @@ class LoginAttemptRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /** Temporisation calculée à partir du dernier échec pour cette adresse et cette IP. */
+    public function retryDelay(string $email, string $ip): int
+    {
+        $emailEq = SqlText::equals($this->pdo, 'email');
+        $ipEq = SqlText::equals($this->pdo, 'ip');
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) AS failures, TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()) AS elapsed
+             FROM login_attempts
+             WHERE ' . $emailEq . ' AND ' . $ipEq . ' AND success = 0
+               AND created_at >= NOW() - INTERVAL 15 MINUTE'
+        );
+        $stmt->execute([$email, $ip]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $failures = (int) ($row['failures'] ?? 0);
+        if ($failures < 5) {
+            return 0;
+        }
+
+        $cooldown = min(120, 15 * ($failures - 4));
+
+        return max(0, $cooldown - max(0, (int) $row['elapsed']));
+    }
+
+    /** @return array{sources: list<array<string, mixed>>, targets: list<array<string, mixed>>, successful: list<array<string, mixed>>} */
+    public function securitySignals(): array
+    {
+        $sources = $this->pdo->query(
+            "SELECT ip, COUNT(*) AS failures, COUNT(DISTINCT NULLIF(email, '')) AS targets,
+                    MAX(created_at) AS last_seen
+             FROM login_attempts
+             WHERE success = 0 AND ip NOT IN ('', '0.0.0.0', '::') AND created_at >= NOW() - INTERVAL 15 MINUTE
+             GROUP BY ip
+             HAVING COUNT(*) >= 10
+             ORDER BY failures DESC, last_seen DESC, ip
+             LIMIT 20"
+        );
+        $targets = $this->pdo->query(
+            "SELECT email, COUNT(*) AS failures, COUNT(DISTINCT ip) AS sources,
+                    MAX(created_at) AS last_seen
+             FROM login_attempts
+             WHERE success = 0 AND email <> '' AND ip NOT IN ('', '0.0.0.0', '::')
+               AND created_at >= NOW() - INTERVAL 24 HOUR
+             GROUP BY email
+             HAVING COUNT(*) >= 5 AND COUNT(DISTINCT ip) >= 3
+             ORDER BY failures DESC, last_seen DESC, email
+             LIMIT 20"
+        );
+
+        $successful = $this->pdo->query(
+            "SELECT email, COUNT(*) AS logins, COUNT(DISTINCT ip) AS sources,
+                    MAX(created_at) AS last_seen
+             FROM login_attempts
+             WHERE success = 1 AND email <> '' AND ip NOT IN ('', '0.0.0.0', '::')
+               AND created_at >= NOW() - INTERVAL 1 HOUR
+             GROUP BY email
+             HAVING COUNT(DISTINCT ip) >= 3
+             ORDER BY sources DESC, last_seen DESC, email
+             LIMIT 20"
+        );
+
+        return [
+            'sources' => $sources->fetchAll(PDO::FETCH_ASSOC),
+            'targets' => $targets->fetchAll(PDO::FETCH_ASSOC),
+            'successful' => $successful->fetchAll(PDO::FETCH_ASSOC),
+        ];
+    }
+
     /**
      * Adresses réseau d’où cette adresse e-mail s’est connectée avec succès (plus récente d’abord).
      *

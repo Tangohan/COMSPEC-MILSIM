@@ -64,6 +64,7 @@ final class SseIdentityApiController
         private ?SseFileQueryService $files = null,
         private ?\App\Services\Sse\SseCheckPaperImageService $paperImages = null,
         private ?\Closure $uploadReader = null,
+        private ?\App\Controllers\Api\Game\GameSseFichesApiController $gameFiches = null,
     ) {
         $this->gameWatch ??= new SseIdWatchFromGameService();
         $this->pack ??= new SseIdentityPackService();
@@ -177,11 +178,16 @@ final class SseIdentityApiController
     /** POST /api/sse/identity/checks */
     public function checksStore(Request $request, array $params = []): Response
     {
+        $body = $this->jsonBody();
+        // Les fiches ont leur propre garde et leur propre filtrage par habilitation.
+        // Le niveau exigé pour les contrôles d'identité ne doit pas bloquer les avis internes.
+        if (in_array($body['kind'] ?? null, [\App\Services\Sse\SseFichesGameService::KIND, \App\Services\Sse\SseFichesGameService::KIND_SHARE], true)) {
+            return ($this->gameFiches ??= new \App\Controllers\Api\Game\GameSseFichesApiController())->kindResponse($body);
+        }
         $tenantId = $this->guard($request, SseCaseRepository::CLASS_COMMAND);
         if ($tenantId instanceof Response) {
             return $tenantId;
         }
-        $body = $this->jsonBody();
         if ($body === []) {
             return Response::json(['error' => 'payload_empty', 'message' => 'Contrôle vide.'], 422);
         }
@@ -191,11 +197,6 @@ final class SseIdentityApiController
         // Catalogue du mod SSE (ICD-SSE-CATALOGUE-001) : lecture seule, communauté de la clé ou de la session seulement.
         if (($body['kind'] ?? null) === \App\Services\Sse\SseGameCatalogueService::KIND) {
             return (new \App\Controllers\Api\Game\GameSseCatalogueApiController())->kindResponse($body);
-        }
-        // Fiches du portail pour le téléphone (ICD-SSE-FICHES-001) : lecture filtrée par l'habilitation du porteur, avis d'un contrôle,
-        // journal d'un partage. Même canal, aucune nouvelle DLL.
-        if (in_array($body['kind'] ?? null, [\App\Services\Sse\SseFichesGameService::KIND, \App\Services\Sse\SseFichesGameService::KIND_SHARE], true)) {
-            return (new \App\Controllers\Api\Game\GameSseFichesApiController())->kindResponse($body);
         }
         // Alertes SSE (ICD-SSE-ALERTES-001) : avis, notices et fiches de vigilance lus, émis, levés et signalés depuis le jeu.
         if (($body['kind'] ?? null) === \App\Services\Sse\SseAlertGameService::KIND) {

@@ -355,6 +355,29 @@ class TenantAnalyticsRepository
         return $out;
     }
 
+    /** @return list<array{id: int, slug: string, name: string, events: int, actors: int}>|null */
+    public function getCommunityUsageForReport(string $from, string $until): ?array
+    {
+        if (!$this->hasUsageEvents() || !$this->hasTable('tenants')) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT t.id, t.slug, t.name, COALESCE(usage_totals.events, 0) AS events,
+                    COALESCE(usage_totals.actors, 0) AS actors
+             FROM tenants t
+             LEFT JOIN (
+                 SELECT tenant_id, COUNT(*) AS events, COUNT(DISTINCT actor_user_id) AS actors
+                 FROM usage_analytics_events WHERE created_at >= ? AND created_at < ?
+                 GROUP BY tenant_id
+             ) AS usage_totals ON usage_totals.tenant_id = t.id
+             WHERE t.created_at < ? OR t.created_at IS NULL
+             ORDER BY events DESC, t.id'
+        );
+        $stmt->execute([$from, $until, $until]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /**
      * @return list<array{day: string, events: int}>
      */

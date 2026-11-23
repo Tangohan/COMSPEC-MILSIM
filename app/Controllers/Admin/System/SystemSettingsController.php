@@ -282,12 +282,16 @@ class SystemSettingsController
                     'value' => $this->yn((bool) ($auth['session_secure_cookie'] ?? false)),
                 ],
                 [
-                    'label' => 'Tentatives de connexion avant temporisation',
-                    'value' => (string) (int) ($auth['login_max_attempts'] ?? 0),
+                    'label' => 'Requêtes de connexion par IP et par méthode',
+                    'value' => (string) \App\Middleware\RateLimitMiddleware::LOGIN_MAX_REQUESTS_PER_IP,
                 ],
                 [
-                    'label' => 'Durée de la temporisation (minutes)',
-                    'value' => (string) (int) ($auth['login_lockout_minutes'] ?? 0),
+                    'label' => 'Fenêtre de limitation par IP (secondes)',
+                    'value' => (string) \App\Middleware\RateLimitMiddleware::LOGIN_WINDOW_SECONDS,
+                ],
+                [
+                    'label' => 'Temporisation après échecs de connexion',
+                    'value' => 'Après 5 échecs en 15 minutes pour une même adresse e-mail et IP, de 15 à 120 secondes.',
                 ],
             ],
         ];

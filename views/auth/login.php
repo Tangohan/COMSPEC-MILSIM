@@ -11,6 +11,9 @@ $athena_header_current = 'login';
 <html lang="<?= htmlspecialchars(html_lang(), ENT_QUOTES, 'UTF-8') ?>">
 <head>
 <?php $authTitle = $title ?? __('auth.title_login'); require base_path('views/partials/auth/head.php'); ?>
+<?php if (is_array($loginRestriction ?? null)): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/login-restriction.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<?php endif; ?>
 </head>
 <body class="ds-page ds-page--split ds-page--auth">
 <a class="ds-skip" href="#contenu"><?= $t('common.skip_to_content') ?></a>
@@ -42,6 +45,10 @@ $athena_header_current = 'login';
             <?php $flash_variant = 'info'; $flash_message = $info; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
     </div>
+
+    <?php if (is_array($loginRestriction ?? null)): ?>
+        <?php require base_path('views/partials/auth/login_restriction.php'); ?>
+    <?php endif; ?>
 
     <?php if ($pendingVerificationEmail !== null && $pendingVerificationEmail !== ''): ?>
     <div class="ds-callout au-callout">
@@ -83,6 +90,9 @@ $athena_header_current = 'login';
     </form>
 
     <?php $discordNext = null; $discordHrefOverride = null; require base_path('views/partials/auth/discord_button.php'); ?>
+    <div class="ds-alt au-alt">
+        <a class="au-link" href="<?= htmlspecialchars(url('contester-sanction'), ENT_QUOTES, 'UTF-8') ?>">Consulter ou contester un bannissement</a>
+    </div>
 
     <div class="au-divider"><span><?= $t('auth.login_new_here') ?></span></div>
     <div class="au-alt-actions">
@@ -96,5 +106,8 @@ $athena_header_current = 'login';
 <?php require base_path('views/partials/cookie_banner.php'); ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/auth_forms.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php if (is_array($loginRestriction ?? null)): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/login-restriction.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>
 </body>
 </html>

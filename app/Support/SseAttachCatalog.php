@@ -154,7 +154,7 @@ final class SseAttachCatalog
      *
      * @var list<array{0: string, 1: string}>
      */
-    public const LEGACY_PAIRS = [['note', 'case'], ['document', 'case'], ['transmission', 'case'], ['person', 'case']];
+    public const LEGACY_PAIRS = [['note', 'case'], ['document', 'case'], ['transmission', 'case'], ['person', 'case'], ['case', 'interest'], ['interest', 'case']];
 
     public static function isSource(string $type): bool
     {

@@ -4095,6 +4095,7 @@
 ["Aucune zone interdite à moins de 500 m.", "No restricted zone within 500 m."],
 ["Aucune zone interdite.", "No no-fly zone."],
 ["Aucune zone plate trouvée à 200 m", "No flat area found within 200 m"],
+["%1 zone(s) plate(s) · cliquez l'une d'elles pour poser la LZ", "%1 flat area(s) · click one to place the LZ"],
 ["Aucune équipe de feu", "No fire team"],
 ["Aucune équipe de feu dans ce groupe. Créez la première : Alpha, Bravo…", "No fire team in this squad. Create the first one: Alpha, Bravo…"],
 ["Aucune équipe de feu dans le camp. Créez-en dans l'app Groupe, onglet ÉQUIPES.", "No fire team on the side. Create some in the Squad app, TEAMS tab."],
@@ -25173,7 +25174,7 @@
 ["Afficher ma grille sous l'indicatif (mode petit)", "Show my grid under the callsign (small mode)"],
 ["En mode petit (téléphone porté ou miniature), votre position en grille s'affiche sous votre indicatif sur la carte, au format choisi pour le bandeau de la carte. Sans position (GPS éteint ou sans fix) : « ---- ---- ». Décochez pour n'afficher que l'indicatif.", "In small mode (carried or miniature phone), your grid position is shown under your callsign on the map, in the format chosen for the map banner. With no position (GPS off or no fix): ---- ----. Untick to show the callsign only."],
 ["Grille sous l'indicatif (mode petit)", "Grid under the callsign (small mode)"],
-["Votre position en grille sous votre indicatif sur la carte, en petit format", "Your grid position under your callsign on the map, in small format"]
+["Votre position en grille sous votre indicatif sur la carte, en petit format", "Your grid position under your callsign on the map, in small format"],
 ["Identité protégée", "Protected identity"],
 ["satellite", "satellite"],
 ["[CAVIARDÉ]", "[REDACTED]"]

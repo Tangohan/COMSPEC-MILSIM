@@ -69,6 +69,7 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
 <?php else: ?>
     <article class="dos-card">
         <h3>Avis <span translate="no"><?= $h($notice['ref']) ?></span> · <?= $h(W::typeLabel((string) $notice['notice_type'], $wantedConfig, $dlang)) ?></h3>
+        <?php if ($canWanted): ?><p><a class="btn btn--ghost" href="<?= $h(url('atak/sse/avis/' . (int) $notice['id'] . '/modifier')) ?>">Modifier / historique</a></p><?php endif; ?>
         <?php $nm = $noticeMeta[(int) $notice['id']] ?? null; $nmSvc = is_array($nm['service'] ?? null) ? $nm['service'] : []; ?>
         <div class="dos-card__body">
             <?php if (($nm['state'] ?? 'live') === 'pending'): ?>
@@ -96,7 +97,7 @@ $codeBadges = static function (array $list, string $kindLabel) use ($h, $dlang):
                 <dt>Dernier lieu connu</dt><dd class="<?= ($notice['last_seen_place'] ?? null) === null ? 'is-empty' : '' ?>" translate="no"><?= $h(($notice['last_seen_place'] ?? null) !== null ? $notice['last_seen_place'] . ($notice['last_seen_at'] !== null ? ' · ' . $fmt($notice['last_seen_at']) : '') : 'Inconnu') ?></dd>
                 <dt>Service demandeur</dt><dd translate="no"><span class="ws-svc-line"><span class="ws-svc-name"><?php if ($nmSvc !== []): ?><i style="background:<?= $h($nmSvc['color'] ?? '#1F3A5F') ?>"></i><?php endif; ?><?= $h(trim((string) ($notice['contact_label'] ?? '') . (($notice['contact_detail'] ?? null) !== null ? ' — ' . $notice['contact_detail'] : '')) ?: '—') ?></span><?php if (($nm['service_code'] ?? null) !== null): ?><span class="ws-badge"><?= $h($nm['service_code']) ?></span><?php endif; ?></span></dd>
                 <?php if (($nm['classification'] ?? null) !== null): ?><dt>Classification</dt><dd translate="no"><?= $h(SseUsClassification::abbr((string) $nm['classification'])) ?></dd><?php endif; ?>
-                <?php $lineage = []; if (($nm['parent_notice_id'] ?? null) !== null) { foreach ($notices as $pn) { if ((int) $pn['id'] === (int) $nm['parent_notice_id']) { $lineage[] = 'Renouvelle l’avis ' . $pn['ref'] . ' (' . $fmt($pn['issued_at']) . ')'; } } } foreach ($nm['history'] ?? [] as $ev) { $lineage[] = 'Prolongé le ' . $fmt((string) ($ev['at'] ?? '')) . ' jusqu’au ' . $fmt((string) ($ev['to'] ?? '')) . ' : ' . (string) ($ev['reason'] ?? ''); } ?>
+                <?php $lineage = []; if (($nm['parent_notice_id'] ?? null) !== null) { foreach ($notices as $pn) { if ((int) $pn['id'] === (int) $nm['parent_notice_id']) { $lineage[] = 'Renouvelle l’avis ' . $pn['ref'] . ' (' . $fmt($pn['issued_at']) . ')'; } } } foreach ($nm['history'] ?? [] as $ev) { $lineage[] = ($ev['kind'] ?? '') === 'updated' ? 'Mis à jour le ' . $fmt((string) ($ev['at'] ?? '')) . ' par ' . (string) ($ev['by'] ?? '') . ' : ' . (string) ($ev['reason'] ?? '') : 'Prolongé le ' . $fmt((string) ($ev['at'] ?? '')) . ' jusqu’au ' . $fmt((string) ($ev['to'] ?? '')) . ' : ' . (string) ($ev['reason'] ?? ''); } ?>
                 <?php if ($lineage !== []): ?><dt>Versions</dt><dd><ul class="ws-versions"><?php foreach ($lineage as $ln): ?><li translate="no"><?= $h($ln) ?></li><?php endforeach; ?></ul></dd><?php endif; ?>
                 <dt>Autorité émettrice</dt><dd translate="no"><?= $h($notice['authority'] ?? '—') ?></dd>
                 <dt>Émis le</dt><dd><?= $h($fmt($notice['issued_at'])) ?></dd>

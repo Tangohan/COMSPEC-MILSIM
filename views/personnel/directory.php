@@ -21,6 +21,7 @@ $query = trim((string) ($query ?? ''));
 $results = is_array($results ?? null) ? $results : [];
 $rolesByUserId = is_array($rolesByUserId ?? null) ? $rolesByUserId : [];
 $badgesByUserId = is_array($badgesByUserId ?? null) ? $badgesByUserId : [];
+$specialtiesByUserId = is_array($specialtiesByUserId ?? null) ? $specialtiesByUserId : [];
 $canEditPersonnel = !empty($canEditPersonnel);
 $currentUserId = (int) ($currentUserId ?? 0);
 $tenantName = trim((string) ($tenantName ?? ''));
@@ -172,6 +173,8 @@ foreach ($results as $row) {
         'unitKey' => $unitKey,
         'unitTooltip' => $unitTooltip !== '' ? $unitTooltip : ($unitName !== '' ? 'Unité : ' . $unitName : ''),
         'function' => trim((string) ($row['primary_role'] ?? '')),
+        'specialties' => empty($row['anonymized']) && empty($row['assignment_redacted'])
+            ? \App\Support\MilitarySpecialtyLabels::summary($specialtiesByUserId[$uid] ?? []) : '',
         'seniority' => $seniority,
         'avatar' => $avatar,
         'href' => url('personnel/' . rawurlencode($slug !== '' ? $slug : (string) $uid)),
@@ -286,7 +289,7 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                 $pct = $sen !== null ? max(4, (int) round($sen['days'] / $maxDays * 100)) : 0;
                 $search = mb_strtolower(implode(' ', [
                     $p['name'], $p['fullName'], $p['legalName'], $p['pseudo'], $p['trigram'], $p['character'], $p['callsign'], $p['matricule'],
-                    $p['grade'], $p['unitName'], $p['unitCode'], $p['function'],
+                    $p['grade'], $p['unitName'], $p['unitCode'], $p['function'], $p['specialties'],
                 ]), 'UTF-8');
                 $roleNames = array_values(array_filter(array_map(static fn ($r) => trim((string) ($r['name'] ?? '')), $p['roles'])));
                 $badgeNames = array_values(array_filter(array_map(static fn ($b) => trim((string) ($b['name'] ?? '')), $p['badges'])));
@@ -347,6 +350,7 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                 <div class="pd-card__assign">
                     <p class="pd-unit" title="<?= $e($p['unitTooltip']) ?>"><?= $p['unitRedacted'] ? \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::ASSIGNMENT_RESTRICTED, null, true) : ($p['unitName'] !== '' ? $e(\App\Support\UnitAbbreviation::standalone($p['unitName'])) : '<span class="pd-muted">Non affecté</span>') ?></p>
                     <?php if ($p['function'] !== ''): ?><p class="pd-function"><?= $e($p['function']) ?></p><?php endif; ?>
+                    <?php if ($p['specialties'] !== ''): ?><p class="pd-sub" title="Spécialités confirmées ; niveaux professionnels distincts du grade et des qualifications.">Spécialités : <?= $e($p['specialties']) ?></p><?php endif; ?>
                     <?php if ($roleNames !== []): ?>
                     <ul class="pd-roles" title="<?= $e(implode(' · ', $roleNames)) ?>">
                         <?php foreach (array_slice($p['roles'], 0, 3) as $r):

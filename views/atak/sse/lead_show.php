@@ -36,6 +36,7 @@ $when = static function (?string $d): string {
     <div class="page-heading__actions">
         <a class="btn btn--ghost" href="<?= $h(url('atak/sse/pistes')) ?>">Toutes les pistes</a>
         <?php if (!empty($canWrite)): ?>
+            <a class="btn" href="<?= $h(url('atak/sse/fiches/nouvelle?from=lead:' . $lid)) ?>">Rédiger une fiche</a>
             <button type="button" class="btn" data-ras-show="lead-edit" aria-haspopup="dialog">Modifier la piste</button>
         <?php endif; ?>
     </div>

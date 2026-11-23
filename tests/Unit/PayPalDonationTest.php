@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Controllers\Web\AtakSupportController;
+use App\Core\ExceptionHandler;
+use App\Core\Request;
+use App\Repositories\AtakDonationRepository;
+use App\Repositories\UserRepository;
+use App\Services\Billing\AtakDonationFulfillmentService;
+use App\Services\Billing\StripeCheckoutService;
 use App\Support\PayPalDonation;
 use PHPUnit\Framework\TestCase;
 
@@ -48,5 +55,38 @@ final class PayPalDonationTest extends TestCase
         self::assertStringContainsString('PayPalDonation::accountUrl(', $service);
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/AtakSupportController.php');
         self::assertStringContainsString('PayPalDonation::accountUrl()', $controller);
+    }
+
+    public function testQrEndpointReturnsAnImageWithTheApplicationErrorHandler(): void
+    {
+        $controller = new AtakSupportController(
+            $this->createStub(AtakDonationRepository::class),
+            $this->createStub(StripeCheckoutService::class),
+            $this->createStub(AtakDonationFulfillmentService::class),
+            $this->createStub(UserRepository::class),
+        );
+
+        $previousLevel = error_reporting(E_ALL);
+        ExceptionHandler::register();
+        try {
+            $response = $controller->paypalQr(new Request());
+        } finally {
+            restore_error_handler();
+            restore_exception_handler();
+            error_reporting($previousLevel);
+        }
+
+        self::assertSame(200, $response->statusCode());
+        self::assertSame('public, max-age=3600', $response->headerValue('Cache-Control'));
+        $mime = $response->headerValue('Content-Type');
+        if (extension_loaded('gd')) {
+            self::assertSame('image/png', $mime);
+        }
+        if ($mime === 'image/png') {
+            self::assertStringStartsWith("\x89PNG\r\n\x1a\n", $response->body());
+        } else {
+            self::assertStringStartsWith('image/svg+xml', (string) $mime);
+            self::assertStringContainsString('<svg', $response->body());
+        }
     }
 }
