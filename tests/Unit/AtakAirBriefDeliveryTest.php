@@ -231,7 +231,7 @@ final class AtakAirBriefDeliveryTest extends TestCase
         self::assertNull($this->briefs->lineDelivery(self::OTHER, 'CAS-1-600'), 'communauté étanche');
 
         $api = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
-        foreach (['public function casRead', 'public function casDelivery', "->acknowledge(\$r, \$ref, 'read', \$by)", '->lineDelivery($r, $ref)', 'AirBriefService::normalizeRef('] as $needle) {
+        foreach (['public function casRead', 'public function casDelivery', "->acknowledge(\$r, \$ref, 'read', \$by)", '->lineDelivery($r, $ref)', 'AirBriefService::normalizeLookup('] as $needle) {
             self::assertStringContainsString($needle, $api, $needle);
         }
     }

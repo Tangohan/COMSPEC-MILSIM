@@ -55,7 +55,7 @@ final class NineLineBoardService
      *
      * @return list<array<string, mixed>>
      */
-    public function history(int $tenantId, int $userId, bool $manager, ?int $mapId = null, int $limit = self::HISTORY_LIMIT): array
+    public function history(int $tenantId, int $userId, bool $manager, ?int $mapId = null, int $limit = self::HISTORY_LIMIT, string $authorLabel = ''): array
     {
         $sql = 'SELECT n.*, m.label AS map_name FROM atak_nine_line n LEFT JOIN atak_maps m ON m.id = n.map_id WHERE n.tenant_id = ?';
         $params = [$tenantId];
@@ -75,7 +75,7 @@ final class NineLineBoardService
         $authors = $this->authorSpecs($tenantId, $rows);
         $out = [];
         foreach ($rows as $row) {
-            $item = $this->present($row, $userId, $manager);
+            $item = $this->present($row, $userId, $manager, $authorLabel);
             $item['recipients'] = $recipients[(int) $row['id']] ?? [];
             // Pastille de la demande : état le plus avancé de ses destinataires (AirBriefService::deliverySummary).
             $item['delivery'] = AirBriefService::deliverySummary($item['recipients']);
@@ -226,12 +226,12 @@ final class NineLineBoardService
      * @param list<string|array{callsign?: mixed, label?: mixed, crew?: mixed}> $aircraft destinataires (indicatifs)
      * @return array<string, mixed>
      */
-    public function create(int $tenantId, int $userId, string $author, string $kind, array $lines, array $aircraft, int $mapId, string $remarks = ''): array
+    public function create(int $tenantId, int $userId, string $author, string $kind, array $lines, array $aircraft, int $mapId, string $remarks = '', string $name = ''): array
     {
         $kind = CasNineLineRepository::normalizeKind($kind);
         $recipients = AirBriefService::normalizeRecipients($aircraft);
         $labels = array_map(static fn (array $r): string => $r['callsign'], $recipients);
-        $payload = ['assigned_aircraft' => self::aircraftLabel($labels), 'remarks' => trim($remarks)];
+        $payload = ['assigned_aircraft' => self::aircraftLabel($labels), 'remarks' => trim($remarks), 'name' => BriefReference::cleanName($name)];
         for ($n = 1; $n <= 9; $n++) {
             $payload['line' . $n] = $n <= self::LINE_COUNT[$kind] ? trim((string) ($lines[$n] ?? '')) : '';
         }
@@ -274,6 +274,32 @@ final class NineLineBoardService
         }
 
         return mb_substr(implode(', ', $clean), 0, 128);
+    }
+
+    /** Brief rédigé en jeu sous l'indicatif de ce membre : son auteur pour le renommer (la suppression reste au compte ou aux responsables). */
+    private function isAuthorLabel(array $row, string $label): bool
+    {
+        $key = AirBriefService::callsignKey($label);
+
+        return $key !== '' && $key !== 'jtac' && $key === AirBriefService::callsignKey($row['author'] ?? '');
+    }
+
+    /**
+     * Renomme un brief (auteur ou responsable, tant qu'il n'est pas clos) ; nom vide : retiré.
+     *
+     * @return array{result: 'ok'|'not_found'|'forbidden'|'closed'|'invalid'|'unavailable', row: ?array<string, mixed>, error?: string}
+     */
+    public function rename(int $tenantId, int $id, int $userId, bool $manager, string $authorLabel, string $name): array
+    {
+        $row = $this->find($tenantId, $id);
+        if ($row === null) {
+            return ['result' => 'not_found', 'row' => null];
+        }
+        if (!self::canDelete($row, $userId, $manager) && !$this->isAuthorLabel($row, $authorLabel)) {
+            return ['result' => 'forbidden', 'row' => $row];
+        }
+
+        return $this->repo()->renameCas($tenantId, $id, $name);
     }
 
     /** Un 9-LINE de cette communauté, ou null. */
@@ -528,7 +554,7 @@ final class NineLineBoardService
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */
-    private function present(array $row, int $userId, bool $manager): array
+    private function present(array $row, int $userId, bool $manager, string $authorLabel = ''): array
     {
         $kind = CasNineLineRepository::normalizeKind($row['mission_kind'] ?? CasNineLineRepository::KIND_CAS);
         $item = [
@@ -545,6 +571,10 @@ final class NineLineBoardService
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => (string) ($row['updated_at'] ?? ''),
             'can_delete' => self::canDelete($row, $userId, $manager),
+            'brief_ref' => (string) ($row['brief_ref'] ?? ''),
+            'brief_name' => (string) ($row['brief_name'] ?? ''),
+            'closed' => BriefReference::isClosed($row),
+            'can_rename' => !BriefReference::isClosed($row) && (self::canDelete($row, $userId, $manager) || $this->isAuthorLabel($row, $authorLabel)),
         ];
         for ($n = 1; $n <= 9; $n++) {
             $item['line' . $n] = (string) ($row['line' . $n] ?? '');

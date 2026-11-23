@@ -339,7 +339,7 @@ final class AirBriefService
     /**
      * Livraison d'une demande (GET /api/cas/{id}/delivery) : null si elle n'existe pas dans cette communauté.
      *
-     * @return array{id: int, ref: string, delivery: array<string, mixed>, recipients: list<array<string, mixed>>}|null
+     * @return array{id: int, ref: string, brief_ref: string, brief_name: string, delivery: array<string, mixed>, recipients: list<array<string, mixed>>}|null
      */
     public function lineDelivery(int $tenantId, string $ref): ?array
     {
@@ -351,7 +351,14 @@ final class AirBriefService
         $rec = $this->forLines($tenantId, [$id])[$id] ?? [];
         $mission = trim((string) ($line['mission_id'] ?? ''));
 
-        return ['id' => $id, 'ref' => $mission !== '' ? $mission : (string) $id, 'delivery' => self::deliverySummary($rec), 'recipients' => $rec];
+        return [
+            'id' => $id,
+            'ref' => $mission !== '' ? $mission : (string) $id,
+            'brief_ref' => (string) ($line['brief_ref'] ?? ''),
+            'brief_name' => (string) ($line['brief_name'] ?? ''),
+            'delivery' => self::deliverySummary($rec),
+            'recipients' => $rec,
+        ];
     }
 
     /**
@@ -364,6 +371,22 @@ final class AirBriefService
         $ref = trim(rawurldecode($raw));
 
         return preg_match('/^[A-Za-z0-9._+\-]{1,128}$/', $ref) === 1 ? $ref : null;
+    }
+
+    /**
+     * Désignation d'un brief reçue dans l'adresse : identifiant ou référence (normalizeRef), sinon nom libre du brief
+     * (« Pont nord », espaces et accents permis, nettoyé comme à l'enregistrement). Null : illisible.
+     */
+    public static function normalizeLookup(string $raw): ?string
+    {
+        $ref = self::normalizeRef($raw);
+        if ($ref !== null) {
+            return $ref;
+        }
+        $decoded = rawurldecode($raw);
+        $name = BriefReference::cleanName($decoded);
+
+        return $name !== '' && $name === trim($decoded) ? $name : null;
     }
 
     /**
@@ -388,8 +411,52 @@ final class AirBriefService
         $st = $this->db()->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND mission_id = ? ORDER BY id DESC LIMIT 1');
         $st->execute([$tenantId, mb_substr($ref, 0, 128)]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (is_array($row)) {
+            return $row;
+        }
 
-        return is_array($row) ? $row : null;
+        return $this->findByBriefLabel($tenantId, $ref);
+    }
+
+    /**
+     * Brief désigné par sa référence automatique (« CAS-23-04 », dite « cas 23 04 ») ou par son nom libre (clé de
+     * comparaison de callsignKey : casse, accents, espaces et tirets ignorés). Plusieurs briefs de même nom : le plus
+     * récent encore ouvert, sinon le plus récent. Colonnes absentes (étape 4980) : null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByBriefLabel(int $tenantId, string $label): ?array
+    {
+        try {
+            $code = BriefReference::parse($label);
+            if ($code !== null) {
+                $st = $this->db()->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND brief_ref = ? ORDER BY id DESC LIMIT 1');
+                $st->execute([$tenantId, $code]);
+                $row = $st->fetch(PDO::FETCH_ASSOC);
+
+                return is_array($row) ? $row : null;
+            }
+            $key = self::callsignKey($label);
+            if ($key === '') {
+                return null;
+            }
+            $st = $this->db()->prepare("SELECT * FROM atak_nine_line WHERE tenant_id = ? AND brief_name IS NOT NULL AND brief_name <> '' ORDER BY id DESC LIMIT 300");
+            $st->execute([$tenantId]);
+            $first = null;
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                if (self::callsignKey($r['brief_name']) !== $key) {
+                    continue;
+                }
+                if (!BriefReference::isClosed($r)) {
+                    return $r;
+                }
+                $first ??= $r;
+            }
+
+            return $first;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -610,6 +677,8 @@ final class AirBriefService
             'remarks' => self::remarks($r),
             'status' => $status,
             'recipient' => $recipient,
+            'brief_name' => (string) ($r['brief_name'] ?? ''),
+            'brief_ref' => (string) ($r['brief_ref'] ?? ''),
         ];
     }
 
@@ -732,6 +801,8 @@ final class AirBriefService
                 'status' => $this->bestStatus($tenantId, $id),
                 'recipient' => (string) ($r['assigned_aircraft'] ?? ''),
                 'source' => self::source($r),
+                'brief_name' => (string) ($r['brief_name'] ?? ''),
+                'brief_ref' => (string) ($r['brief_ref'] ?? ''),
             ];
             if (count($out) >= self::AUTHORED_MAX) {
                 break;
@@ -782,7 +853,7 @@ final class AirBriefService
 
     /**
      * Boîte du pilote en tableau SQF (parseSimpleArray) : [[ref, id, format, émetteur, HH:MM, [lignes], remarques,
-     * statut, destinataire], ...], textes coupés pour tenir sous INBOX_MAX_BYTES (on retire les plus anciennes sinon).
+     * statut, destinataire, (source, nom, référence automatique)], ...], textes coupés pour tenir sous INBOX_MAX_BYTES (on retire les plus anciennes sinon).
      *
      * @param list<array<string, mixed>> $items
      */
@@ -806,13 +877,32 @@ final class AirBriefService
                 $q($it['remarks'] ?? '', 300),
                 $q($it['status'] ?? 'sent', 10),
                 $q($it['recipient'] ?? '', 40),
-            ], isset($it['source']) ? [$q($it['source'], 6)] : [])) . ']';
+            ], self::sqfExtras($it, $q))) . ']';
         }
         while ($parts !== [] && strlen('[' . implode(',', $parts) . ']') > $maxBytes) {
             array_pop($parts);
         }
 
         return '[' . implode(',', $parts) . ']';
+    }
+
+    /**
+     * Colonnes facultatives de la fin d'un brief SQF : source (10e), nom libre (11e), référence automatique (12e). Un brief
+     * sans nom ni référence garde exactement l'ancienne forme (la DLL et les anciens mods lisent les 9 premières colonnes).
+     *
+     * @param array<string, mixed> $it
+     * @return list<string>
+     */
+    private static function sqfExtras(array $it, \Closure $q): array
+    {
+        $name = trim((string) ($it['brief_name'] ?? ''));
+        $ref = trim((string) ($it['brief_ref'] ?? ''));
+        $hasSource = isset($it['source']);
+        if ($name === '' && $ref === '') {
+            return $hasSource ? [$q($it['source'], 6)] : [];
+        }
+
+        return [$q($it['source'] ?? '', 6), $q($name, BriefReference::NAME_MAX), $q($ref, 24)];
     }
 
     /** Remarques transmises avec la demande (colonne remarks), sinon tirées de la géométrie du jeu (FAH, danger close). */

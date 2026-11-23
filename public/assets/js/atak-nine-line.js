@@ -100,6 +100,7 @@
   var historyMap = 0;
   var renaming = '';
   var sent = false;
+  var lastRef = '';
   var calcVal = null;
   var csrf = String(cfg.csrf || '');
   var jtac = String(cfg.jtac || '');
@@ -228,13 +229,14 @@
   // ---------- Brouillon (ce navigateur seulement) ----------
   var saveTimer = null;
   function snapshot() {
-    var d = { kind: kind, free: isFree(), lines: {}, remarks: $('nl-remarks').value };
+    var d = { kind: kind, free: isFree(), lines: {}, remarks: $('nl-remarks').value, name: $('nl-name').value };
     for (var n = 1; n <= MAX; n++) d.lines[n] = field(n).value;
     return d;
   }
   function restore(d) {
     for (var n = 1; n <= MAX; n++) field(n).value = d.lines && d.lines[n] ? String(d.lines[n]) : '';
     $('nl-remarks').value = d.remarks ? String(d.remarks) : '';
+    $('nl-name').value = d.name ? String(d.name) : '';
     freeBox.checked = !!d.free;
     return DEFS[d.kind] ? d.kind : 'cas';
   }
@@ -252,6 +254,7 @@
   function clearLines() {
     for (var n = 1; n <= MAX; n++) { field(n).value = ''; setError(n, ''); }
     $('nl-remarks').value = '';
+    $('nl-name').value = '';
     if (kind === 'fiveline') field(1).value = myCallsign() + ', 5-LINE';
   }
 
@@ -261,6 +264,8 @@
     var count = lineCount(k);
     var req = opts.draft && !isFree() ? (REQUIRED[k] || []) : [];
     var b = '';
+    if (it.brief_ref) b += '<div class="tr"><span class="n">#</span><div><span class="k">Référence</span><span class="v">' + raw(it.brief_ref) + '</span></div></div>';
+    if (it.brief_name) b += '<div class="tr"><span class="n">«</span><div><span class="k">Nom</span><span class="v">' + raw(it.brief_name) + '</span></div></div>';
     if (it.author) b += '<div class="tr"><span class="n">›</span><div><span class="k">De</span><span class="v">' + raw(it.author) + (opts.draft ? '' : authorCheck(it)) + '</span></div></div>';
     for (var n = 1; n <= count; n++) {
       var v = String(it['line' + n] || '').trim();
@@ -319,7 +324,7 @@
     var missing = c.req - c.reqOk;
     $('nl-draft-state').textContent = !c.filled ? (free ? 'Brouillon vide · saisie libre, aucune ligne obligatoire' : 'Brouillon vide · lignes obligatoires marquées')
       : (free || !missing ? fmt('%1 ligne(s) saisie(s) · prête à transmettre', c.filled) : fmt('%1 ligne(s) saisie(s) · %2 obligatoire(s) manquante(s)', c.filled, missing));
-    var draft = { mission_kind: kind, author: myCallsign(), remarks: $('nl-remarks').value.trim() };
+    var draft = { mission_kind: kind, author: myCallsign(), remarks: $('nl-remarks').value.trim(), brief_name: $('nl-name').value.trim() };
     for (var i = 1; i <= c.count; i++) draft['line' + i] = value(i);
     $('nl-tx-title').textContent = def.tag + ' · ' + def.type;
     var pill = $('nl-tx-state');
@@ -574,6 +579,10 @@
     if (k === 'medevac') return (it.line1 || '?') + ' · ' + (it.line3 || '');
     return (it.line1 || 'IP') + ' → ' + (it.line6 || '?');
   }
+  /** Ce que pilote et JTAC s'annoncent : référence puis nom. */
+  function briefTag(it) {
+    return (it.brief_ref ? '<b class="bref">' + raw(it.brief_ref) + '</b>' : '') + (it.brief_name ? ' <i class="bname">' + raw(it.brief_name) + '</i>' : '');
+  }
   function ackShort(list) {
     if (!list || !list.length) return '';
     var n = { done: 0, wilco: 0, unable: 0, read: 0, received: 0, sent: 0 };
@@ -606,6 +615,7 @@
     $('nl-selected').innerHTML = '<div class="tx"><div class="txh"><h3 translate="no">' + esc(DEFS[k].tag + ' · ' + DEFS[k].type) + '</h3>'
       + '<span class="pill ' + (cur.id === items[0].id ? 'rdy' : '') + '"><i></i>' + esc(cur.id === items[0].id ? 'Dernier reçu' : 'Sélectionné') + '</span></div>'
       + '<div class="txb">' + txRows(cur, {}) + '</div>' + acks(cur.recipients)
+      + (cur.can_rename ? '<div class="txf"><button type="button" class="btn2 sm" data-rename-brief="' + cur.id + '">' + esc(cur.brief_name ? 'Renommer' : 'Nommer') + '</button></div>' : '')
       + '<div class="txf"><span>' + (cur.assigned_aircraft ? esc('À') + ' ' + raw(cur.assigned_aircraft) : esc('Tous les appareils à l’écoute')) + '</span>'
       + '<span>' + (cur.map_name ? raw(cur.map_name) + ' · ' : '') + raw(when(cur.updated_at || cur.created_at)) + '</span></div></div>';
     list.innerHTML = items.map(function (it) {
@@ -613,7 +623,7 @@
       return '<li class="' + (it.id === cur.id ? 'on' : '') + '">'
         + '<button type="button" class="hm" data-show="' + it.id + '">'
         + '<span class="hk" translate="no">' + esc(DEFS[kindOf(it)].tag) + '</span>'
-        + '<span class="hw">' + raw(summary(it)) + '</span>'
+        + '<span class="hw">' + briefTag(it) + ' ' + raw(summary(it)) + '</span>'
         + '<small>' + raw(it.author || 'JTAC') + authorCheck(it) + ' · ' + raw(when(it.updated_at || it.created_at))
         + (it.assigned_aircraft ? ' · ' + raw(it.assigned_aircraft) : '') + (ak ? ' · ' + esc(ak) : '') + '</small></button>'
         + '<span class="ha"><button type="button" class="btn2 sm" data-reuse="' + it.id + '">Reprendre</button>'
@@ -621,6 +631,22 @@
         + '</span></li>';
     }).join('');
   }
+  function renameBrief(it) {
+    var v = window.prompt('Nom du brief (40 caractères, vide pour le retirer)', it.brief_name || '');
+    if (v === null) return;
+    var fd = new FormData();
+    fd.append('name', v);
+    post('/9-line/' + it.id + '/nom', fd).then(function (r) {
+      if (!r.ok) { toast(r.error || 'Renommage impossible.', null, true); return; }
+      toast(r.brief_name ? fmt('Brief nommé : %1', r.brief_name) : 'Nom retiré.');
+      pollFeed();
+    });
+  }
+  $('nl-selected').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-rename-brief]');
+    var it = b && items.filter(function (x) { return x.id === Number(b.getAttribute('data-rename-brief')); })[0];
+    if (it) renameBrief(it);
+  });
   $('nl-history').addEventListener('click', function (e) {
     var show = e.target.closest('[data-show]');
     var reuse = e.target.closest('[data-reuse]');
@@ -821,6 +847,7 @@
     for (var n = lineCount() + 1; n <= MAX; n++) fd.delete('line' + n);
     if (!isFree()) fd.delete('free');
     if (kind === 'fiveline') fd.delete('remarks');
+    if (!fd.get('name') || !String(fd.get('name')).trim()) fd.delete('name');
     destList().forEach(function (cs) { fd.append('aircraft[]', cs); });
     var btn = $('nl-submit');
     btn.disabled = true;
@@ -828,20 +855,23 @@
     post('/9-line', fd).then(function (r) {
       if (!r.ok) {
         btn.disabled = false;
-        if (r.errors) Object.keys(r.errors).forEach(function (k) { setError(Number(k), r.errors[k]); });
+        if (r.errors) Object.keys(r.errors).forEach(function (k) { if (k !== 'name') setError(Number(k), r.errors[k]); });
         toast(r.error || 'Envoi impossible.', null, true);
         return;
       }
       sent = true;
       pinned = null;
       refresh();
-      toast(to ? fmt('%1 transmis à %2 appareil(s) : le pilote le reçoit dans BRIEFS AIR, son accusé s’affiche dans l’historique.', DEFS[kind].tag, to) : fmt('%1 transmis à tous les appareils à l’écoute.', DEFS[kind].tag));
+      lastRef = r.brief_ref || '';
+      toast((to ? fmt('%1 transmis à %2 appareil(s) : le pilote le reçoit dans BRIEFS AIR, son accusé s’affiche dans l’historique.', DEFS[kind].tag, to) : fmt('%1 transmis à tous les appareils à l’écoute.', DEFS[kind].tag)) + (lastRef ? ' ' + fmt('Référence %1.', lastRef) : ''));
       pollFeed();
     });
   });
   function radioText() {
     var def = DEFS[kind];
     var out = [def.tag + ' ' + def.type + ' · DE ' + myCallsign()];
+    if (sent && lastRef) out.push('REF : ' + lastRef);
+    if ($('nl-name').value.trim()) out.push('NOM : ' + $('nl-name').value.trim());
     for (var n = 1; n <= lineCount(); n++) out.push(n + '. ' + def.lines[n - 1][0].toUpperCase() + ' : ' + (value(n) || '—'));
     var rem = kind !== 'fiveline' ? $('nl-remarks').value.trim() : '';
     if (rem) out.push('REMARQUES : ' + rem);

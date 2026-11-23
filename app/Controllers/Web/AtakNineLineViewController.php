@@ -13,6 +13,7 @@ use App\Services\Audit\AuditService;
 use App\Services\Personnel\MemberNameService;
 use App\Services\Tactical\AirBriefService;
 use App\Services\Tactical\AirCrewSpecialtyService;
+use App\Services\Tactical\BriefReference;
 use App\Services\Tactical\NineLineBoardService;
 use App\Services\Qr\QrPngGenerator;
 use App\Support\AtakPlanAccess;
@@ -84,7 +85,7 @@ final class AtakNineLineViewController
         $mapId = (int) $request->queryString('carte', '0');
         $manager = self::isManager();
         try {
-            $items = $this->board()->history($tenantId, $userId, $manager, $mapId > 0 ? $mapId : null);
+            $items = $this->board()->history($tenantId, $userId, $manager, $mapId > 0 ? $mapId : null, NineLineBoardService::HISTORY_LIMIT, self::authorFor($tenantId, $userId));
             $maps = $this->board()->historyMaps($tenantId);
         } catch (\Throwable) {
             $items = [];
@@ -156,8 +157,13 @@ final class AtakNineLineViewController
         $rawAircraft = $request->input('aircraft', []);
         $aircraft = is_array($rawAircraft) ? array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $rawAircraft) : [];
         $mapId = (int) $request->inputString('map_id', '1');
+        $name = BriefReference::cleanName($request->inputString('name'));
+        $nameError = BriefReference::nameError($name);
+        if ($nameError !== null) {
+            return Response::json(['ok' => false, 'error' => $nameError, 'errors' => ['name' => $nameError]], 422);
+        }
         try {
-            $row = $this->board()->create($tenantId, $userId, self::authorFor($tenantId, $userId), $kind, $lines, $aircraft, $mapId, $remarks);
+            $row = $this->board()->create($tenantId, $userId, self::authorFor($tenantId, $userId), $kind, $lines, $aircraft, $mapId, $remarks, $name);
         } catch (\Throwable) {
             return Response::json(['ok' => false, 'error' => 'Enregistrement impossible pour le moment. Réessayez dans un instant.'], 503);
         }
@@ -170,7 +176,13 @@ final class AtakNineLineViewController
             'target' => $lines[$kind === CasNineLineRepository::KIND_FIVE ? 3 : 6] ?? '',
         ]);
 
-        return Response::json(['ok' => true, 'id' => $id, 'recipients' => $row['recipients'] ?? []], 201);
+        return Response::json([
+            'ok' => true,
+            'id' => $id,
+            'brief_ref' => (string) ($row['brief_ref'] ?? ''),
+            'brief_name' => (string) ($row['brief_name'] ?? ''),
+            'recipients' => $row['recipients'] ?? [],
+        ], 201);
     }
 
     /** POST /9-line/indicatif : indicatif JTAC de ce membre (vide = son indicatif Athena). */
@@ -219,6 +231,36 @@ final class AtakNineLineViewController
         self::audit('atak.nine_line.aircraft_callsign', $tenantId, $userId, null, ['callsign' => $reported], ['label' => $label]);
 
         return Response::json(['ok' => true, 'callsign' => $reported, 'label' => $label !== '' ? $label : $reported]);
+    }
+
+    /** POST /9-line/{id}/nom : nom libre du brief (vide : retiré), par son auteur ou un responsable, tant qu'il n'est pas clos. */
+    public function rename(Request $request, array $params = []): Response
+    {
+        $ctx = $this->context(true, $request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId] = $ctx;
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $res = $this->board()->rename($tenantId, $id, $userId, self::isManager(), self::authorFor($tenantId, $userId), $request->inputString('name'));
+        } catch (\Throwable) {
+            return Response::json(['ok' => false, 'error' => 'Renommage impossible pour le moment. Réessayez dans un instant.'], 503);
+        }
+        $fail = [
+            'not_found' => ['Ce 9-LINE n’existe plus.', 404],
+            'forbidden' => ['Seuls son auteur et les responsables peuvent renommer ce 9-LINE.', 403],
+            'closed' => ['Ce 9-LINE est clos : son nom ne change plus.', 409],
+            'invalid' => [(string) ($res['error'] ?? 'Nom refusé.'), 422],
+            'unavailable' => ['Le nom des briefs n’est pas encore activé sur ce serveur (mise à jour SQL en attente).', 503],
+        ][$res['result']] ?? null;
+        if ($fail !== null) {
+            return Response::json(['ok' => false, 'error' => $fail[0]], $fail[1]);
+        }
+        $row = $res['row'] ?? [];
+        self::audit('atak.nine_line.renamed', $tenantId, $userId, $id, [], ['brief_ref' => (string) ($row['brief_ref'] ?? ''), 'brief_name' => (string) ($row['brief_name'] ?? '')]);
+
+        return Response::json(['ok' => true, 'id' => $id, 'brief_ref' => (string) ($row['brief_ref'] ?? ''), 'brief_name' => (string) ($row['brief_name'] ?? '')]);
     }
 
     /** POST /9-line/{id}/delete : par son auteur ou un responsable, dans la communauté de la session. */

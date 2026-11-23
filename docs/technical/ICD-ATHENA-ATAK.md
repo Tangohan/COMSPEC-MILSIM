@@ -377,6 +377,14 @@ JSON body passed through from SQF (`NormalizeArmaJson`). Schema is report-specif
 
 Not a full NATO 9-line CAS form. Request path from SQF is order/chat (`fn_casRequestSubmit` → `issueOrder`).
 
+Brief name and reference (migration 4980, additive; briefs created before it have neither):
+
+- Every brief gets an automatic reference at creation, server side: `CAS-<DD>-<NN>` (`MED-` for MEDEVAC), `NN` counted per day and per community, never reused (registry table `atak_brief_refs`, unique per community). The game never chooses it.
+- Optional free name (40 characters max, cleaned): `name` in `POST /api/cas`; renamed by its author while the brief is open with `PATCH /api/cas/{id}` `{"name": "...", "by": "<author>"}` (403 `author_only`, 409 `closed`, 422 `invalid`); web: `POST /9-line/{id}/nom`.
+- Lookup by name or reference (`CAS-23-04`, `cas 23 4`, `Pont nord`): `GET /api/cas?q=...`, and `{id}` of `GET|PATCH /api/cas/{id}`, `POST /api/cas/{id}/status|read`, `GET /api/cas/{id}/delivery` accept an id, a `mission_id`, a reference or a name (most recent open brief of that name).
+- Pilot inbox / `~jtac|` SQF array: columns 10 to 12 appended only when the brief has a name or a reference: `source` (empty for the inbox), `name`, `reference`. Without them the nine historical columns are unchanged.
+- Acknowledgement format is unchanged (`WILCO:HOG 21`); the reference is only shown on screen.
+
 Status PATCH example:
 
 ```json
