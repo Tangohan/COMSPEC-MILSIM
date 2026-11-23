@@ -1963,7 +1963,7 @@ final class SsePortalController
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
 
-        return $this->pdf->export($tenantId, $id, $level);
+        return $this->pdf->export($tenantId, $id, $level, false, \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
     }
 
     public function personsIndex(Request $request, array $params = []): Response
@@ -4374,7 +4374,7 @@ final class SsePortalController
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
 
-        return (new \App\Services\Sse\SseDocumentPdfService())->export($doc, $this->tenantId(), (string) $request->query('lecture', '') === '1');
+        return (new \App\Services\Sse\SseDocumentPdfService())->export($doc, $this->tenantId(), (string) $request->query('lecture', '') === '1', \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
     }
 
     private function drafts(): \App\Repositories\SseDocumentDraftRepository
@@ -4771,7 +4771,7 @@ final class SsePortalController
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
 
-        return $this->pdf->export($tenantId, $id, $level, true);
+        return $this->pdf->export($tenantId, $id, $level, true, \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
     }
 
     public function collecteHub(Request $request, array $params = []): Response

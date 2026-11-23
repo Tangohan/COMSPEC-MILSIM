@@ -6,6 +6,7 @@ namespace App\Services\Sse;
 
 use App\Core\Response;
 use App\Support\Pdf\AthenaPdfTheme as Theme;
+use App\Support\Pdf\SsePdfNotice;
 use App\Support\SseRichText;
 use App\Support\TrainingCertificatePdfEngine;
 
@@ -18,13 +19,13 @@ final class SseDocumentPdfService
     /**
      * @param array<string,mixed> $doc document hydraté (SseDocumentRepository::findById)
      */
-    public function export(array $doc, int $tenantId, bool $inline = false): Response
+    public function export(array $doc, int $tenantId, bool $inline = false, bool $withNotice = true): Response
     {
-        return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($doc, $tenantId, $inline): Response {
+        return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($doc, $tenantId, $inline, $withNotice): Response {
             if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
             }
-            $binary = $this->build($doc, $tenantId);
+            $binary = $this->build($doc, $tenantId, $withNotice);
             $slug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($doc['reference_code'] ?? 'document')) ?: 'document';
 
             return (new Response())
@@ -36,7 +37,7 @@ final class SseDocumentPdfService
     }
 
     /** @param array<string,mixed> $doc */
-    public function build(array $doc, int $tenantId): string
+    public function build(array $doc, int $tenantId, bool $withNotice = true): string
     {
         $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $ref = (string) ($doc['reference_code'] ?? '');
@@ -69,12 +70,38 @@ final class SseDocumentPdfService
             }
         }
 
+        $noticePage = 0;
+        if ($withNotice) {
+            $pdf->AddPage();
+            $noticePage = $pdf->getPage();
+        }
         $pdf->AddPage();
+        $bodyPage = $pdf->getPage();
         $pdf->writeAthenaHtml(
             '<h1 style="font-size:16pt">' . $h($doc['title'] ?? '') . '</h1>'
             . '<p style="font-size:8pt;color:#475569">' . implode(' &nbsp;·&nbsp; ', $meta) . '</p><hr>'
             . '<div style="font-size:10pt">' . SseRichText::toPdfHtml((string) ($doc['body'] ?? ''), $fields) . '</div>'
         );
+
+        if ($noticePage > 0) {
+            SsePdfNotice::fillReserved($pdf, $noticePage, [
+                'lang' => Theme::isEnglish() ? 'en' : 'fr',
+                'type' => 'document',
+                'title' => (string) ($doc['title'] ?? $ref),
+                'ref' => $ref,
+                'level' => (string) ($doc['classification'] ?? ''),
+                'generated_at' => date(Theme::isEnglish() ? 'm/d/Y H:i' : 'd/m/Y H:i'),
+                'ids' => [[['Dossier', 'Case'], (string) ($doc['case_reference'] ?? '')], [['Rédigé par', 'Written by'], (string) ($doc['author_label'] ?? '')]],
+                'period' => (string) ($doc['updated_at'] ?? ''),
+                'version' => (string) ($doc['status_label'] ?? ''),
+                'fingerprint' => SsePdfNotice::fingerprint([$doc['title'] ?? '', $doc['body'] ?? '', $ref, $doc['updated_at'] ?? '']),
+                'redaction' => null,
+                'toc' => [
+                    ['label' => Theme::t('Notice du document'), 'page' => $noticePage],
+                    ['label' => (string) ($doc['title'] ?? $ref), 'page' => $bodyPage],
+                ],
+            ]);
+        }
 
         return (string) $pdf->Output('', 'S');
     }
