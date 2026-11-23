@@ -60,17 +60,41 @@ EN : Military specialties now include codes, sources and explanations
 
 ### Résumé joueur
 Type : nouveauté
-FR : Retrouve une fiche SSE par son numéro DSE
-- Dans l'app SSE, onglet Fiches, un nouvel onglet « DSE » te laisse saisir ou coller un numéro DSE donné par le portail Athena.
-- Le téléphone affiche le numéro d'identification, le nom de code, le nom de la fiche et l'IA reliée, ou te dit clairement pourquoi la recherche échoue (hors ligne, numéro inconnu, trop de recherches).
-EN : Find an SSE record by its DSE number
-- In the SSE app, Records tab, a new "DSE" tab lets you type or paste a DSE number issued by the Athena portal.
-- The phone shows the identification number, code name, record name and linked AI, or tells you plainly why the lookup failed (offline, unknown number, too many lookups).
+FR : Grosse mise à jour : JTAC, carte, Zeus, radio et fiches SSE
+- JTAC et CAS : nouvelle fiche de check-in CAS à 9 lignes (onglet CKIN de l'app JTAC) à envoyer au pilote, copier ou verser au compte rendu ; tu peux donner un nom à un 9-LINE, il reçoit une référence automatique (CAS-23-04) que le pilote et toi pouvez vous annoncer ; le pilote reçoit enfin l'alerte « 9 LIGNES reçues », même à pied, et l'indicatif qu'il choisit est respecté.
+- Carte : le menu OUTILS est rangé par rubriques (Aller, Mesurer, Planifier, Dessiner, Afficher) et tu peux déplacer la carte sans fermer l'outil actif ; la zone plate ne pose qu'une LZ à la fois et affiche sa grille ; en petit format, ta grille s'affiche sous ton indicatif (réglable dans Réglages).
+- Zeus : le Centre Zeus peut forcer le relevé d'un joueur ou de toute la sélection ; la caméra du Zeus ne repasse plus en première personne à cause des caméras du téléphone ; les supports invisibles et les sphères du mod n'encombrent plus la liste d'objets du Zeus.
+- SSE, radio et sécurité : nouvel onglet « DSE » dans l'app SSE pour retrouver une fiche par son numéro, et l'app SSE est corrigée (QR entier, grilles alignées, valeurs caviardées lisibles) ; une radio ACRE2 ordinaire n'est plus prise pour une MPU-5 ; le logo du mod disparaît de l'écran de chargement ; le lanceur d'envoi des journaux est retiré (envoie les deux derniers journaux à la main).
+EN : Big update: JTAC, map, Zeus, radio and SSE records
+- JTAC and CAS: new 9-line CAS check-in sheet (CKIN tab of the JTAC app) to send to the pilot, copy or file into the report; you can name a 9-LINE and it gets an automatic reference (CAS-23-04) the pilot and you can call out; the pilot finally receives the "9 LINES received" alert, even on foot, and the callsign they choose is respected.
+- Map: the TOOLS menu is sorted by topic (Go, Measure, Plan, Draw, Show) and you can pan the map without closing the active tool; the flat zone tool places one LZ at a time and shows its grid; in small format, your grid shows under your callsign (optional in Settings).
+- Zeus: the Zeus Centre can force a report from one player or the whole selection; the Zeus camera no longer jumps back to first person because of the phone cameras; the mod's invisible supports and spheres no longer clutter the Zeus object list.
+- SSE, radio and security: new "DSE" tab in the SSE app to find a record by its number, and the SSE app is fixed (full QR code, aligned grids, readable redacted values); an ordinary ACRE2 radio is no longer taken for an MPU-5; the mod logo is gone from the loading screen; the log-sending launcher is removed (send your last two logs by hand).
 
 ### Détail technique
 - Mod : `fn_fichesAction` cas `dseFind` / `dseClear` (tâche de fond, canal SubmitIdCheck, kind `sse_dse`, aucune nouvelle DLL), état `fichesDse*`, vue « DSE » de `fn_pageFiches` ; erreurs `not_found`, `rate_limited`, hors ligne, Link trop ancien.
 - Site : kind `sse_dse` ajouté au canal `POST /api/sse/identity/checks` (`GameSseFichesApiController::dse`) : mêmes règles que `GET /api/sse/v1/dse/{dse}` (communauté du jeton de jeu, 404 identique, 30 recherches par minute, journal `dse.resolve`). Contrat : `docs/technical/ICD-SSE-DSE.md`.
 - Badge radio de la fiche CKIN : sans objet, la fiche ne porte aucun libellé de radio (rien changé).
+- Regroupement 4.32.0 : les PR natives fusionnées depuis la 4.31.0 n'ont porté ni version ni `main.pbo` ; elles sortent toutes avec cette version. Détail par PR :
+- #1838 : app SSE, corrections d'interface communes (QR limité à la zone visible, marge basse, grilles équilibrées, barre d'onglets à hauteur variable, textes du portail normalisés, un seul bandeau de classification).
+- #1839 : outil zone plate, une seule LZ par pose (anti-rebond 400 ms, pas de re-pose près d'une LZ), grille dans l'étiquette et le marqueur.
+- #1840 : grille sous l'indicatif en mode petit (réglage `comspec_atak_native_mini_grid`, coché par défaut).
+- #1841 : app JTAC, onglet CKIN (fiche de check-in CAS 9 lignes), reprise du 9-LINE depuis le TOC ; export PDF côté site.
+- #1842 : alerte de brief 9 lignes fiable pour le pilote (relevé de la boîte hors siège d'aéronef, indicatifs comparés par clé, diagnostic dans BRIEFS AIR) ; champ `delivery` côté site.
+- #1843 : indicatif d'avion du pilote conservé (`callsign_explicit`), section « Synchronisation par flux » de l'app Debug, nouvel essai de `fn_squadSync`, relecture des qualifications toutes les 15 min.
+- #1844 : menu OUTILS rangé par intention (table unique dans `fn_mapToolMenu`), glisser de carte distinct du clic, l'outil actif n'est plus fermé.
+- #1846 : Centre Zeus, « Forcer le relevé » (événements CBA via le serveur, anti-abus 5 s par joueur, raison probable d'une absence de réponse).
+- #1847 : virgule manquante dans `en.txt` (CI), aucun effet visible.
+- #1858 : retrait du suivi Git des `.bat` sous `mod/` et règle `.gitignore` (alerte antivirus Workshop).
+- #1878 : après chaque `cameraEffect` vers une texture, appel de `fn_tocRtt "keep"` pour rendre la vue au Zeus.
+- #1880 : branchements `Extended_DisplayLoad` du logo de chargement retirés de `config.cpp`.
+- #1881 : lanceur d'envoi des journaux retiré (texte du réglage CBA et documentation changés), les deux DLL d'extension restent à examiner.
+- #1884 : pont voix MPU5 proposé seulement avec une vraie MPU5 (`fn_mpuVoice`, `fn_pageNetwork`), radio nommée dans « Radio de données ».
+- #1891 : remise au vert de la CI (appel du Zeus après `camDestroy`, test SSE tolérant l'absence des scripts de build).
+- #1893 : `fn_zeusHide` retire héliports invisibles et sphères de tous les curateurs, balayage serveur de 30 s.
+- #1899 : nom libre du 9-LINE et référence automatique `CAS-<JJ>-<NN>` (migration `4980_atak_brief_name_reference` côté site) ; colonnes 10 à 12 de la boîte de briefs.
+- #1908 : recherche de fiche par DSE (détail ci-dessus).
+
 ## Réglette d'effectif plus sobre et masquable (ATAK natif 4.31.0.AG - Washington)
 
 ### Résumé joueur
