@@ -382,3 +382,157 @@
     border-bottom: 1px dotted #475569;
 }
 .sse-ed__sheet .sse-hint, .sse-rich .sse-hint, .sse-tpl-thumb .sse-hint { color: #475569; background: #f1f5f9; font-style: italic; }
+
+/* ===== v4 : la feuille gagne sur les règles de la coque SSE (body.sse-iw .sx-main td, th, p...) ===== */
+/* Les règles de la coque (body.sse-iw .sx-main td, th : couleur claire, nowrap, bordure basse) ont une spécificité supérieure
+   à celle de la feuille seule : chaque règle est donc doublée avec le même préfixe. Texte sombre explicite sur la feuille
+   blanche, quel que soit le thème, y compris les textes d'aide et les champs ajoutés par l'éditeur. */
+.sse-ed__sheet,
+.sse-rich,
+body.sse-iw .sx-main .sse-ed__sheet,
+body.sse-iw .sx-main .sse-rich {
+    color: #0f172a;
+}
+.sse-ed__sheet p,
+.sse-ed__sheet li,
+.sse-ed__sheet h3,
+.sse-ed__sheet h4,
+.sse-ed__sheet blockquote,
+.sse-ed__sheet strong,
+.sse-ed__sheet em,
+.sse-ed__sheet span,
+.sse-ed__sheet u,
+.sse-ed__sheet s,
+.sse-ed__sheet sub,
+.sse-ed__sheet sup,
+.sse-rich p,
+.sse-rich li,
+.sse-rich h3,
+.sse-rich h4,
+.sse-rich blockquote,
+.sse-rich strong,
+.sse-rich em,
+.sse-rich span,
+.sse-rich u,
+.sse-rich s,
+.sse-rich sub,
+.sse-rich sup,
+body.sse-iw .sx-main .sse-ed__sheet p,
+body.sse-iw .sx-main .sse-ed__sheet li,
+body.sse-iw .sx-main .sse-ed__sheet h3,
+body.sse-iw .sx-main .sse-ed__sheet h4,
+body.sse-iw .sx-main .sse-ed__sheet blockquote,
+body.sse-iw .sx-main .sse-ed__sheet strong,
+body.sse-iw .sx-main .sse-ed__sheet em,
+body.sse-iw .sx-main .sse-ed__sheet span,
+body.sse-iw .sx-main .sse-ed__sheet u,
+body.sse-iw .sx-main .sse-ed__sheet s,
+body.sse-iw .sx-main .sse-ed__sheet sub,
+body.sse-iw .sx-main .sse-ed__sheet sup,
+body.sse-iw .sx-main .sse-rich p,
+body.sse-iw .sx-main .sse-rich li,
+body.sse-iw .sx-main .sse-rich h3,
+body.sse-iw .sx-main .sse-rich h4,
+body.sse-iw .sx-main .sse-rich blockquote,
+body.sse-iw .sx-main .sse-rich strong,
+body.sse-iw .sx-main .sse-rich em,
+body.sse-iw .sx-main .sse-rich span,
+body.sse-iw .sx-main .sse-rich u,
+body.sse-iw .sx-main .sse-rich s,
+body.sse-iw .sx-main .sse-rich sub,
+body.sse-iw .sx-main .sse-rich sup {
+    color: inherit;
+}
+.sse-ed__sheet h2,
+.sse-rich h2,
+body.sse-iw .sx-main .sse-ed__sheet h2,
+body.sse-iw .sx-main .sse-rich h2 {
+    color: #0b1220;
+}
+.sse-ed__sheet table,
+.sse-rich table,
+body.sse-iw .sx-main .sse-ed__sheet table,
+body.sse-iw .sx-main .sse-rich table {
+    min-width: 0;
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+}
+.sse-ed__sheet th,
+.sse-ed__sheet td,
+.sse-rich th,
+.sse-rich td,
+body.sse-iw .sx-main .sse-ed__sheet th,
+body.sse-iw .sx-main .sse-ed__sheet td,
+body.sse-iw .sx-main .sse-rich th,
+body.sse-iw .sx-main .sse-rich td {
+    padding: 0.3em 0.55em;
+    border: 1px solid #94a3b8;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.45;
+    letter-spacing: normal;
+    text-transform: none;
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+}
+.sse-ed__sheet th,
+.sse-rich th,
+body.sse-iw .sx-main .sse-ed__sheet th,
+body.sse-iw .sx-main .sse-rich th {
+    background-color: #e2e8f0;
+    font-weight: 700;
+}
+.sse-ed__sheet td,
+.sse-rich td,
+body.sse-iw .sx-main .sse-ed__sheet td,
+body.sse-iw .sx-main .sse-rich td {
+    background-color: transparent;
+    font-weight: 400;
+}
+.sse-ed__sheet tr:hover,
+.sse-ed__sheet tbody tr:hover,
+.sse-rich tr:hover,
+.sse-rich tbody tr:hover,
+body.sse-iw .sx-main .sse-ed__sheet tr:hover,
+body.sse-iw .sx-main .sse-ed__sheet tbody tr:hover,
+body.sse-iw .sx-main .sse-rich tr:hover,
+body.sse-iw .sx-main .sse-rich tbody tr:hover {
+    background: none;
+}
+.sse-ed__sheet td[style*="#e2e8f0"],
+.sse-rich td[style*="#e2e8f0"],
+body.sse-iw .sx-main .sse-ed__sheet td[style*="#e2e8f0"],
+body.sse-iw .sx-main .sse-rich td[style*="#e2e8f0"] {
+    width: 1%;
+    white-space: nowrap;
+    background-color: #e2e8f0;
+}
+.sse-ed__sheet .sse-field,
+.sse-rich .sse-field,
+body.sse-iw .sx-main .sse-ed__sheet .sse-field,
+body.sse-iw .sx-main .sse-rich .sse-field {
+    color: inherit;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    border-bottom: 1px dotted #475569;
+}
+.sse-ed__sheet .sse-hint,
+.sse-rich .sse-hint,
+body.sse-iw .sx-main .sse-ed__sheet .sse-hint,
+body.sse-iw .sx-main .sse-rich .sse-hint {
+    color: #475569;
+    background: #f1f5f9;
+    font-style: italic;
+}
+
+/* champs de la barre d'outils : la coque donne une hauteur et un remplissage qui coupaient le texte */
+.sse-ed__select, .sse-ed__status select, .sse-ed__pop input,
+body.sse-iw .sx-main .sse-ed__select, body.sse-iw .sx-main .sse-ed__status select, body.sse-iw .sx-main .sse-ed__pop input {
+    height: 2.1rem;
+    padding: 0 0.4rem;
+    line-height: 1.2;
+}

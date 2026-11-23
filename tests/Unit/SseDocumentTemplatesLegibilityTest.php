@@ -93,4 +93,63 @@ final class SseDocumentTemplatesLegibilityTest extends TestCase
         self::assertGreaterThanOrEqual(4.5, self::contrast(self::INK, '#e2e8f0'), 'libellés');
         self::assertGreaterThanOrEqual(4.5, self::contrast('#b91c1c', self::PAPER), 'ligne de classification');
     }
+    /** @return array<string,string> sélecteur (un par ligne de la liste) => déclarations, pour les règles du bloc v4 */
+    private static function v4Rules(): array
+    {
+        $css = self::css();
+        $start = strpos($css, '/* ===== v4');
+        self::assertNotFalse($start, 'bloc v4 présent');
+        preg_match_all('/([^{}]+)\{([^}]*)\}/', substr($css, (int) $start), $m, PREG_SET_ORDER);
+        $rules = [];
+        foreach ($m as $r) {
+            foreach (explode(',', (string) preg_replace('~/\*.*?\*/~s', '', $r[1])) as $sel) {
+                $sel = trim((string) preg_replace('/\s+/', ' ', $sel));
+                if ($sel !== '') {
+                    $rules[$sel] = ($rules[$sel] ?? '') . $r[2];
+                }
+            }
+        }
+
+        return $rules;
+    }
+
+    public function testSheetRulesBeatTheShellRulesBySpecificity(): void
+    {
+        // La coque pose « body.sse-iw .sx-main td { color: rgba(238, 242, 240, .78) } » (spécificité 0,2,2) : une règle de feuille
+        // sans ce préfixe perd. Chaque règle de texte de la feuille existe donc aussi avec le préfixe de la coque.
+        $rules = self::v4Rules();
+        foreach (['.sse-ed__sheet', '.sse-rich'] as $base) {
+            foreach (['', ' td', ' th', ' p', ' strong', ' span', ' .sse-field', ' .sse-hint', ' h2'] as $tail) {
+                self::assertArrayHasKey('body.sse-iw .sx-main ' . $base . $tail, $rules, $base . $tail . ' avec le préfixe de la coque');
+                self::assertArrayHasKey($base . $tail, $rules, $base . $tail . ' sans préfixe');
+            }
+            foreach (['td', 'th'] as $cell) {
+                $decl = $rules['body.sse-iw .sx-main ' . $base . ' ' . $cell];
+                self::assertStringContainsString('color: #0f172a;', $decl, $cell . ' : couleur sombre explicite');
+                self::assertStringContainsString('text-transform: none;', $decl);
+                self::assertStringContainsString('white-space: normal;', $decl, $cell . ' : la coque pose nowrap sur les th');
+            }
+        }
+    }
+
+    public function testShellStylesheetsStillUseTheSelectorsTheSheetBeats(): void
+    {
+        // Garde-fou : si la coque change de sélecteur (plus spécifique), ce test dit de relire le bloc v4.
+        $ui = (string) file_get_contents(__DIR__ . '/../../public/assets/css/sse_ui.css');
+        self::assertStringContainsString('body.sse-iw .sx-main td {', $ui);
+        self::assertStringContainsString('body.sse-iw .sx-main th {', $ui);
+        self::assertStringNotContainsString('.sx-main td !important', $ui);
+        self::assertDoesNotMatchRegularExpression('/\.sx-main\s+(td|th)[^{]*\{[^}]*!important/', $ui, 'aucun !important de la coque sur td ou th');
+    }
+
+    public function testAssetsAreVersionedByTheBuildSoAnOldSheetCannotStayCached(): void
+    {
+        foreach (['document_form', 'document_show', 'document_templates'] as $view) {
+            $src = (string) file_get_contents(__DIR__ . '/../../views/atak/sse/' . $view . '.php');
+            self::assertStringContainsString("asset_url('assets/css/sse-doc-editor.css')", $src, $view);
+        }
+        $helpers = (string) file_get_contents(__DIR__ . '/../../app/Support/helpers.php');
+        self::assertStringContainsString("'v=' . rawurlencode(", $helpers, 'asset_url ajoute ?v= avec l’identifiant du déploiement');
+        self::assertStringContainsString('BuildVersion::id()', $helpers);
+    }
 }
