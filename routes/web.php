@@ -877,6 +877,7 @@ return function (Router $router) {
     $router->post('/account/sessions/fermer-les-autres', [AccountController::class, 'revokeOtherSessions'], [AuthMiddleware::class]);
     $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/account/donnees/export', [AccountPrivacyController::class, 'export'], [AuthMiddleware::class]);
+    $router->post('/account/donnees/region', [AccountPrivacyController::class, 'saveRegion'], [AuthMiddleware::class]);
     $router->post('/account/donnees/supprimer', [AccountPrivacyController::class, 'requestDeletion'], [AuthMiddleware::class]);
     $router->post('/account/donnees/annuler-suppression', [AccountPrivacyController::class, 'cancelDeletion'], [AuthMiddleware::class]);
     $router->get('/rh/charte', [HrCharterController::class, 'show'], [AuthMiddleware::class]);

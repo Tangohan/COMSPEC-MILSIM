@@ -36,6 +36,19 @@ if ($engagement !== null) {
         $loginPoints[] = ['label' => $label, 'recent' => $engagement['lastLogins'][$key] ?? 0, 'total' => $totalAccounts];
     }
 }
+$regions = $activity['regions'] ?? null;
+$regionPoints = [];
+if (is_array($regions) && !empty($regions['available'])) {
+    foreach ($regions['rows'] as $row) {
+        $regionPoints[] = ['label' => $row['label'], 'recent' => $row['count'], 'total' => $regions['total']];
+    }
+    if ($regions['others'] > 0) {
+        $regionPoints[] = ['label' => 'Autres régions (effectifs trop faibles pour être détaillés)', 'recent' => $regions['others'], 'total' => $regions['total']];
+    }
+    if ($regions['none'] > 0) {
+        $regionPoints[] = ['label' => 'Région non indiquée', 'recent' => $regions['none'], 'total' => $regions['total']];
+    }
+}
 ?>
 <article class="ph-chart" aria-labelledby="ph-chart-returns">
     <div class="ph-chart__head">
@@ -59,6 +72,7 @@ if ($engagement !== null) {
     'signup-followup' => ['Première semaine après l’inscription', 'Inscriptions du ' . $activity['cohortLabel'] . ' · suivi complet jusqu’à J7, selon les connexions enregistrées.', $followupPoints, $followup !== null, 'Aucune inscription sur les dates observées.'],
     'age' => ['Connexions selon l’ancienneté', 'Part des comptes de chaque tranche d’âge dont la dernière connexion remonte à 30 jours ou moins.', $agePoints, $engagement !== null, ''],
     'inactivity' => ['Temps depuis la dernière connexion', 'Répartition actuelle de tous les comptes selon leur dernière connexion enregistrée.', $loginPoints, $engagement !== null, ''],
+    'regions' => ['Comptes par région', 'Région que les personnes ont choisi d’indiquer, en totaux uniquement. Les régions de moins de 5 comptes sont masquées.', $regionPoints, is_array($regions) && !empty($regions['available']), 'Aucun compte n’a encore indiqué de région.'],
 ] as $chartKey => [$title, $description, $points, $available, $emptyMessage]): ?>
     <article class="ph-chart" aria-labelledby="ph-chart-<?= $h($chartKey) ?>">
         <div class="ph-chart__head">

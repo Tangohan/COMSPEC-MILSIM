@@ -89,6 +89,25 @@ $table = static function (array $rows) use ($h): void {
     <?php endif; ?>
 <?php endif; ?>
 
+    <h2>Comptes par région</h2>
+    <p class="note">Région que les personnes ont choisi d’indiquer, en totaux uniquement. Les régions de moins de <?= (int) \App\Support\AccountRegions::PRIVACY_THRESHOLD ?> comptes sont masquées.</p>
+    <?php $regionData = $activity['regions'] ?? null; ?>
+    <?php if (!is_array($regionData) || empty($regionData['available'])): ?>
+        <p>Indisponible.</p>
+    <?php else: ?>
+        <?php
+        $regionRows = [];
+        foreach ($regionData['rows'] as $row) {
+            $regionRows[$row['label']] = $number($row['count']) . ' (' . $share($row['count'], $regionData['total']) . ')';
+        }
+        if ($regionData['others'] > 0) {
+            $regionRows['Autres régions (effectifs trop faibles pour être détaillés)'] = $number($regionData['others']) . ' (' . $share($regionData['others'], $regionData['total']) . ')';
+        }
+        $regionRows['Région non indiquée'] = $number($regionData['none']) . ' (' . $share($regionData['none'], $regionData['total']) . ')';
+        $table($regionRows);
+        ?>
+    <?php endif; ?>
+
 <h2>Évolution quotidienne</h2>
 <?php
 $daily = ['Inscriptions' => $signups, 'Téléchargements' => $activity['downloads']];
