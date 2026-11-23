@@ -1,0 +1,89 @@
+/* Bandeau discret « Données du jeu il y a Xs » (game-sync-freshness.js) : pages 9-LINE, TOC web, outils opérateur.
+   Hérite de la couleur du texte de la page ; seuls le point d'état et le fond léger changent (thèmes clair et sombre). */
+.gsync {
+  --gsync-live: #15803d;
+  --gsync-late: #b45309;
+  --gsync-stale: #b91c1c;
+  --gsync-none: #64748b;
+  --gsync-bg: rgba(100, 116, 139, 0.08);
+  --gsync-line: rgba(100, 116, 139, 0.28);
+  font-size: 13px;
+  line-height: 1.4;
+  color: inherit;
+  margin: 0 0 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .gsync {
+    --gsync-live: #4ade80;
+    --gsync-late: #fbbf24;
+    --gsync-stale: #f87171;
+    --gsync-none: #94a3b8;
+    --gsync-bg: rgba(148, 163, 184, 0.1);
+    --gsync-line: rgba(148, 163, 184, 0.3);
+  }
+}
+:root[data-theme="dark"] .gsync,
+.layout-dark .gsync,
+.gsync.gsync--dark {
+  --gsync-live: #4ade80;
+  --gsync-late: #fbbf24;
+  --gsync-stale: #f87171;
+  --gsync-none: #94a3b8;
+  --gsync-bg: rgba(148, 163, 184, 0.1);
+  --gsync-line: rgba(148, 163, 184, 0.3);
+}
+.gsync[hidden] { display: none; }
+.gsync details { background: var(--gsync-bg); border: 1px solid var(--gsync-line); border-radius: 6px; }
+.gsync summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.gsync summary::-webkit-details-marker { display: none; }
+.gsync summary::after { content: "▾"; margin-left: auto; opacity: 0.6; }
+.gsync details[open] summary::after { content: "▴"; }
+.gsync .gsync-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--gsync-none); }
+.gsync[data-state="live"] .gsync-dot { background: var(--gsync-live); }
+.gsync[data-state="late"] .gsync-dot { background: var(--gsync-late); }
+.gsync[data-state="stale"] .gsync-dot { background: var(--gsync-stale); }
+.gsync ul { margin: 0; padding: 4px 12px 10px; list-style: none; display: grid; gap: 4px; }
+.gsync li { display: flex; justify-content: space-between; gap: 12px; }
+.gsync li span:last-child { opacity: 0.8; font-variant-numeric: tabular-nums; text-align: right; }
+.gsync li[data-state="late"] span:last-child { color: var(--gsync-late); opacity: 1; }
+.gsync li[data-state="stale"] span:last-child { color: var(--gsync-stale); opacity: 1; }
+.gsync .gsync-note { padding: 0 12px 10px; margin: 0; opacity: 0.75; }
+/* Variante en menu déroulant (barre du TOC) : le détail s'ouvre par-dessus la page. */
+.gsync.gsync--float { margin: 4px 0 0; }
+.gsync--float details { position: relative; }
+.gsync--float summary { min-height: 44px; padding: 0 10px; }
+.gsync--float .gsync-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 60;
+  min-width: 280px;
+  max-width: calc(100vw - 32px);
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid var(--gsync-line);
+  border-radius: 6px;
+  padding-top: 8px;
+}
+:root[data-theme="dark"] .gsync--float .gsync-pop,
+.gsync--dark.gsync--float .gsync-pop { background: #0b1220; color: #e2e8f0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .gsync--float .gsync-pop { background: #0b1220; color: #e2e8f0; }
+}
+/* Page explicitement claire (outils opérateur) : couleurs claires même si le système est en sombre. */
+.layout-light .gsync:not(.gsync--dark) {
+  --gsync-live: #15803d;
+  --gsync-late: #b45309;
+  --gsync-stale: #b91c1c;
+  --gsync-none: #64748b;
+  --gsync-bg: rgba(100, 116, 139, 0.08);
+  --gsync-line: rgba(100, 116, 139, 0.28);
+}

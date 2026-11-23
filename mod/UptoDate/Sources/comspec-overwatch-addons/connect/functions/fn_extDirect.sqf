@@ -8,11 +8,13 @@
     de fond (spawn) et l'appel rend tout de suite ["", 0, 0] : jamais d'attente sur le fil du jeu.
 */
 params [["_ext", "COMSPECExtension"], ["_cmd", ""], ["_args", []]];
-if ([_cmd] call comspec_overwatch_connect_fnc_uplinkHold) exitWith { ["", 0, 0] };
+// Instrumentation (fn_syncMark, page Debug du téléphone) : retenu, puis dernière réponse par commande.
+if ([_cmd] call comspec_overwatch_connect_fnc_uplinkHold) exitWith { [_cmd, "HELD"] call comspec_overwatch_connect_fnc_syncMark; ["", 0, 0] };
 if ([_cmd] call comspec_overwatch_connect_fnc_extFast) exitWith {
     private _pt = diag_tickTime;
     private _r = _ext callExtension [_cmd, _args];
     if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; };
+    if (_ext isEqualTo "COMSPECExtension") then { [_cmd, _r] call comspec_overwatch_connect_fnc_syncMark; };
     _r
 };
 if (canSuspend) exitWith { [_ext, _cmd, _args] call comspec_overwatch_connect_fnc_extAwait };
