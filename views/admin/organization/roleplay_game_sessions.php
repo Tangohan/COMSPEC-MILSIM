@@ -31,6 +31,8 @@ $tabs = is_array($sessionTabs ?? null) ? $sessionTabs : ['a-venir' => 'upcoming'
 $suggested = is_array($sessionSuggestedEvents ?? null) ? $sessionSuggestedEvents : [];
 $eventsById = is_array($sessionEventsById ?? null) ? $sessionEventsById : [];
 $events = is_array($sessionEvents ?? null) ? $sessionEvents : [];
+/** Codes de session actifs (session prévue ou en cours) : id => « K7M-4QX ». */
+$codes = is_array($sessionCodes ?? null) ? $sessionCodes : [];
 $base = url('back-office/roleplay/sessions');
 $syncOn = !empty($cfg['sync_enabled']);
 
@@ -188,6 +190,7 @@ $stateButton = static function (int $id, string $state, string $label, string $c
                     <span><?= $h($kind[0]) ?> · <?= $h((string) ($s['hour_category'] ?? '')) ?></span>
                     <?php if (trim((string) ($s['server_name'] ?? '')) !== ''): ?><span>Serveur : <?= $h((string) $s['server_name']) ?></span><?php endif; ?>
                     <?php if ($event !== null): ?><span>Événement : <?= $h((string) ($event['title'] ?? '')) ?></span><?php endif; ?>
+                    <?php if (isset($codes[$id])): ?><span>Code de session : <strong class="rps-code-inline"><?= $h($codes[$id]) ?></strong></span><?php endif; ?>
                 </div>
                 <div class="rps-card__meta">
                     <?php if ($phase === Board::UPCOMING): ?>

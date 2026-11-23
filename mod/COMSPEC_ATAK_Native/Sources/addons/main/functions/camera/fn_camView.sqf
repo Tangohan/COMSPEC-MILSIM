@@ -11,7 +11,7 @@ if !(["camOk", [_obj, "fixed"]] call comspec_atak_native_fnc_deviceGuard) exitWi
 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
 if (isNull _cam) then {
     _cam = "camera" camCreate (getPosATL _obj);
-    _cam cameraEffect ["Internal", "Back", "comspec_livecam"];
+    _cam cameraEffect ["Internal", "Back", "comspec_livecam"]; ["keep"] call comspec_atak_native_fnc_tocRtt;
     _cam camSetFov 0.75;
     missionNamespace setVariable ["COMSPEC_ATAK_LivecamCam", _cam];
 };
