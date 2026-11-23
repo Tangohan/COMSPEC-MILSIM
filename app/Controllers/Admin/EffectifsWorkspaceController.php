@@ -1897,6 +1897,8 @@ class EffectifsWorkspaceController
             'assignmentNeedsRepair' => $assignmentNeedsRepair,
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'canManageGrades' => EffectifsLmsAccess::canManageGrades($gate),
+            'gradeSchedules' => $this->gradeSchedulesForMember($tenantId, (int) $row['id']),
+            'gradeSchedulesReady' => \App\Core\Container::get(\App\Repositories\MemberGradeScheduleRepository::class)->tableExists(),
             'canRequestElevation' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients !== [],
             'elevationNoRecipients' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients === [],
             'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
@@ -2903,6 +2905,86 @@ class EffectifsWorkspaceController
         }
 
         return $out;
+    }
+
+    /** Planifie, modifie (schedule_id fourni) ou annule (action=cancel) un changement de grade à une date. Mêmes droits que « Changer le grade ». */
+    public function scheduleMemberGrade(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        if (!EffectifsLmsAccess::canManageGrades(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier le grade.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectAfterMemberAction($request, $id));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        if ($id < 1 || $this->userRepository->findById($id, $tenantId) === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $service = \App\Core\Container::get(\App\Services\Personnel\MemberGradeScheduleService::class);
+        $scheduleId = (int) $request->input('schedule_id', 0);
+        $action = (string) $request->input('schedule_action', 'save');
+        try {
+            if ($scheduleId > 0 && !$this->scheduleBelongsToMember($tenantId, $scheduleId, $id)) {
+                throw new \RuntimeException('Ce changement de grade n’est plus à venir.');
+            }
+            if ($action === 'cancel') {
+                $service->cancel($tenantId, $scheduleId, $actorId);
+                $this->adminAuditService->logUserUpdated($tenantId, $actorId, $id, 'grade_planifie_annule', (string) $scheduleId);
+                Session::flash('success', 'Changement de grade planifié annulé.');
+            } else {
+                $args = [
+                    $tenantId,
+                    $scheduleId > 0 ? $scheduleId : $id,
+                    (int) $request->input('grade_id', 0),
+                    (string) $request->input('scheduled_date', ''),
+                    (string) $request->input('scheduled_time', ''),
+                    (string) $request->input('reason', ''),
+                    $actorId,
+                ];
+                if ($scheduleId > 0) {
+                    $service->update(...$args);
+                    $this->adminAuditService->logUserUpdated($tenantId, $actorId, $id, 'grade_planifie_modifie', (string) $scheduleId);
+                    Session::flash('success', 'Changement de grade planifié modifié.');
+                } else {
+                    $newId = $service->schedule($tenantId, $id, $args[2], $args[3], $args[4], $args[5], $actorId);
+                    $this->adminAuditService->logUserUpdated($tenantId, $actorId, $id, 'grade_planifie', (string) $newId);
+                    Session::flash('success', 'Changement de grade planifié.');
+                }
+            }
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        return Response::redirect($this->redirectAfterMemberAction($request, $id));
+    }
+
+    private function scheduleBelongsToMember(int $tenantId, int $scheduleId, int $userId): bool
+    {
+        $row = \App\Core\Container::get(\App\Repositories\MemberGradeScheduleRepository::class)->find($scheduleId, $tenantId);
+
+        return $row !== null && (int) $row['user_id'] === $userId;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function gradeSchedulesForMember(int $tenantId, int $userId): array
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\Personnel\MemberGradeScheduleService::class)->forMember($tenantId, $userId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /** Langue de jeu du joueur (langue principale + autres langues comprises) dans la communauté. */

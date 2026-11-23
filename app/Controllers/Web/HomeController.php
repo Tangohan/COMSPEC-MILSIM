@@ -209,6 +209,7 @@ class HomeController
         $dashboardAnnounceItems = [];
         $dashboardPopupItems = [];
         $dashboardMiniArticles = [];
+        $dashboardPromotions = null;
         $missionBriefing = null;
         $dashboardTesterProgram = null;
         $candidateEnlistmentTracking = [];
@@ -781,6 +782,19 @@ class HomeController
                     || $gate->allows('admin.access')
                     || $gate->allows('site.support');
 
+                // Promotions à venir et récentes : réservées à celles et ceux qui peuvent changer un grade.
+                if (!$dashboardIsDefaultTenant && \App\Support\EffectifsLmsAccess::canManageGrades($gate)) {
+                    try {
+                        $gradeSchedules = \App\Core\Container::get(\App\Services\Personnel\MemberGradeScheduleService::class);
+                        $dashboardPromotions = [
+                            'upcoming' => $gradeSchedules->upcoming($tid, 5),
+                            'recent' => $gradeSchedules->recent($tid, 3),
+                        ];
+                    } catch (\Throwable) {
+                        $dashboardPromotions = null;
+                    }
+                }
+
                 if ($gate->allows('documents.view') || $gate->allows('doctrine.view')) {
                     try {
                         // Une seule passe : dashboardSummary() fournit déjà les actions en attente (mêmes 6 éléments).
@@ -930,6 +944,7 @@ class HomeController
             'doctrine_pending' => $doctrinePending,
             'document_inbox_summary' => $documentInboxSummary,
             'dashboard_mini_articles' => $dashboardMiniArticles,
+            'dashboard_promotions' => $dashboardPromotions,
             'dashboard_ui_tour' => $this->dashboardUiTourPayload($currentUser),
         ]);
     }

@@ -24,6 +24,8 @@ $canManageStatus = (bool) ($canManageStatus ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
 $canManageRoles = (bool) ($canManageRoles ?? false);
 $canManageGrades = (bool) ($canManageGrades ?? false);
+$gradeSchedules = is_array($gradeSchedules ?? null) ? $gradeSchedules : [];
+$gradeSchedulesReady = !empty($gradeSchedulesReady);
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? ($m['community_name'] ?? 'Communauté')));
@@ -926,6 +928,7 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
                     $geHow = match ($ge['source']) {
                         'elevation' => 'Élévation validée',
                         'correction' => 'Correction de dossier validée',
+                        'scheduled' => 'Changement planifié',
                         default => 'Changement de grade',
                     };
                     if ($ge['actor_label'] !== '') {
@@ -976,6 +979,87 @@ $panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($
                 <button type="submit" class="eff-btn eff-btn--primary">Enregistrer le grade</button>
             </form>
         </details>
+        <?php if ($gradeSchedulesReady): ?>
+        <?php
+        $schedAction = htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/grade/planifier'), ENT_QUOTES, 'UTF-8');
+        $schedPending = null;
+        foreach ($gradeSchedules as $schedRow) {
+            if ((string) ($schedRow['status'] ?? '') === 'pending') {
+                $schedPending = $schedRow;
+                break;
+            }
+        }
+        $schedGradeSelect = static function (string $selectId, int $selected) use ($gradeGroups, $h): string {
+            $out = '<select id="' . $h($selectId) . '" name="grade_id" required><option value="">Choisir un grade</option>';
+            foreach ($gradeGroups as $gradeGroup) {
+                $out .= '<optgroup label="' . $h($gradeGroup['label']) . '">';
+                foreach ($gradeGroup['grades'] as $g) {
+                    $gid = (int) ($g['id'] ?? 0);
+                    $out .= '<option value="' . $gid . '"' . ($selected === $gid ? ' selected' : '') . '>' . $h(\App\Support\GradeSelectOptions::label($g)) . '</option>';
+                }
+                $out .= '</optgroup>';
+            }
+
+            return $out . '</select>';
+        };
+        ?>
+        <?php if ($schedPending !== null): ?>
+            <?php $schedTs = strtotime((string) $schedPending['scheduled_for']) ?: 0; ?>
+            <p class="eff-fm-hint" id="grade-planifie">Grade planifié : <b><?= $h((string) ($schedPending['to_label'] ?? '')) ?></b> le <?= $h(date('d/m/Y', $schedTs)) ?> à <?= $h(date('H:i', $schedTs)) ?>. Motif : <?= $h((string) ($schedPending['reason'] ?? '')) ?></p>
+            <details class="eff-card__edit">
+                <summary>Modifier le grade planifié</summary>
+                <form method="post" action="<?= $schedAction ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="return_to" value="member">
+                    <input type="hidden" name="schedule_id" value="<?= (int) $schedPending['id'] ?>">
+                    <label for="eff-sched-edit-grade">Grade visé</label>
+                    <?= $schedGradeSelect('eff-sched-edit-grade', (int) $schedPending['to_grade_id']) ?>
+                    <label for="eff-sched-edit-date">Date</label>
+                    <input id="eff-sched-edit-date" type="date" name="scheduled_date" value="<?= $h(date('Y-m-d', $schedTs)) ?>" min="<?= $h(date('Y-m-d')) ?>" required>
+                    <label for="eff-sched-edit-time">Heure</label>
+                    <input id="eff-sched-edit-time" type="time" name="scheduled_time" value="<?= $h(date('H:i', $schedTs)) ?>">
+                    <label for="eff-sched-edit-reason">Motif</label>
+                    <input id="eff-sched-edit-reason" type="text" name="reason" maxlength="400" value="<?= $h((string) ($schedPending['reason'] ?? '')) ?>" required>
+                    <button type="submit" class="eff-btn eff-btn--primary">Enregistrer les modifications</button>
+                </form>
+            </details>
+            <form method="post" action="<?= $schedAction ?>" class="eff-card__form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_to" value="member">
+                <input type="hidden" name="schedule_id" value="<?= (int) $schedPending['id'] ?>">
+                <input type="hidden" name="schedule_action" value="cancel">
+                <button type="submit" class="eff-btn">Annuler le grade planifié</button>
+            </form>
+        <?php else: ?>
+        <details class="eff-card__edit">
+            <summary>Planifier un changement de grade</summary>
+            <form method="post" action="<?= $schedAction ?>" class="eff-card__form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_to" value="member">
+                <label for="eff-sched-grade">Grade visé</label>
+                <?= $schedGradeSelect('eff-sched-grade', 0) ?>
+                <label for="eff-sched-date">Date</label>
+                <input id="eff-sched-date" type="date" name="scheduled_date" min="<?= $h(date('Y-m-d')) ?>" required>
+                <label for="eff-sched-time">Heure</label>
+                <input id="eff-sched-time" type="time" name="scheduled_time" value="08:00">
+                <label for="eff-sched-reason">Motif</label>
+                <input id="eff-sched-reason" type="text" name="reason" maxlength="400" required>
+                <p class="eff-card__hint">Le grade change tout seul à l’échéance, avec votre nom dans la frise des grades. Vous pouvez modifier ou annuler tant que la date n’est pas passée.</p>
+                <button type="submit" class="eff-btn eff-btn--primary">Planifier le grade</button>
+            </form>
+        </details>
+        <?php endif; ?>
+        <?php
+        $schedPast = array_values(array_filter($gradeSchedules, static fn (array $r): bool => in_array((string) ($r['status'] ?? ''), ['applied', 'cancelled'], true)));
+        ?>
+        <?php if ($schedPast !== []): ?>
+            <ul class="eff-fm-hint">
+                <?php foreach (array_slice($schedPast, 0, 3) as $past): ?>
+                    <li><?= $h((string) ($past['to_label'] ?? '')) ?> · <?= $h($fmtDate((string) $past['scheduled_for'])) ?> · <?= (string) $past['status'] === 'applied' ? 'Appliqué' : 'Annulé' ?><?= trim((string) ($past['status_reason'] ?? '')) !== '' ? ' : ' . $h((string) $past['status_reason']) : '' ?></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        <?php endif; ?>
         <?php endif; ?>
     </article>
     <article class="eff-fm-card" id="anciennete">
