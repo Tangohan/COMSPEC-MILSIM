@@ -49,6 +49,7 @@ final class SseDocumentPdfService
             'audience' => (string) ($doc['status_label'] ?? ''),
             'note' => 'Reproduction interdite sans accord du chef de bureau',
             'title' => (string) ($doc['title'] ?? $ref),
+            'band_bottom' => true,
         ]);
         if ($pdf === null) {
             throw new \RuntimeException('TCPDF indisponible');
@@ -56,6 +57,8 @@ final class SseDocumentPdfService
         $fields = [
             'dossier' => (string) ($doc['case_reference'] ?? ''),
             'classification' => $classLabel,
+            'reference' => $ref,
+            'titre' => (string) ($doc['title'] ?? ''),
         ];
         $meta = [];
         foreach ([
@@ -70,10 +73,14 @@ final class SseDocumentPdfService
         }
 
         $pdf->AddPage();
+        $bodyHtml = SseRichText::toPdfHtml((string) ($doc['body'] ?? ''), $fields);
+        // Un document issu d'un modèle porte déjà son en-tête (service, bandeau, référence, dossier, date, rédacteur) :
+        // il garde sa mise en page, sans second titre. Le bandeau de classification haut et bas de chaque page vient du gabarit.
+        $hasOwnHeader = SseRichText::hasTemplateHeader((string) ($doc['body'] ?? ''));
         $pdf->writeAthenaHtml(
-            '<h1 style="font-size:16pt">' . $h($doc['title'] ?? '') . '</h1>'
-            . '<p style="font-size:8pt;color:#475569">' . implode(' &nbsp;·&nbsp; ', $meta) . '</p><hr>'
-            . '<div style="font-size:10pt">' . SseRichText::toPdfHtml((string) ($doc['body'] ?? ''), $fields) . '</div>'
+            ($hasOwnHeader ? '' : '<h1 style="font-size:16pt">' . $h($doc['title'] ?? '') . '</h1>'
+                . '<p style="font-size:8pt;color:#475569">' . implode(' &nbsp;·&nbsp; ', $meta) . '</p><hr>')
+            . '<div style="font-size:10pt">' . $bodyHtml . '</div>'
         );
 
         return (string) $pdf->Output('', 'S');

@@ -33,6 +33,8 @@ $bodyHtml = $livePreview
     : \App\Repositories\SseDocumentRepository::bodyToHtml((string) ($document['body'] ?? ''), [
         'dossier' => (string) ($document['case_reference'] ?? ''),
         'classification' => (string) ($document['classification_label'] ?? ''),
+        'reference' => $ref,
+        'titre' => $title,
     ]);
 $isValidated = in_array((string) ($document['status'] ?? ''), ['valide', 'archive'], true);
 $isArchived = (string) ($document['status'] ?? '') === 'archive';

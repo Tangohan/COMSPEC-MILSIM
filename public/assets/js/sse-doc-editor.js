@@ -21,7 +21,7 @@
     try { cfg = JSON.parse(document.getElementById('sse-ed-cfg').textContent) || {}; } catch (e) { cfg = {}; }
     var TEXT_COLORS = ['#0b1220', '#475569', '#b91c1c', '#b45309', '#1d4ed8', '#15803d'];
     var HILITE_COLORS = ['#fef08a', '#fed7aa', '#fecaca', '#bfdbfe', '#bbf7d0', '#e2e8f0'];
-    var FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification'];
+    var FIELDS = ['nom', 'grade', 'date', 'dossier', 'classification', 'reference', 'titre'];
     var PAGE_PX = 1122.5; // 297 mm at 96 dpi
 
     function msg(name) {
@@ -97,6 +97,9 @@
             if (FIELDS.indexOf(f) >= 0) {
                 return '<span class="sse-field" data-field="' + f + '">' + esc(node.textContent) + '</span>';
             }
+        }
+        if (tag === 'span' && cls.indexOf('sse-hint') >= 0 && cls.indexOf('sse-field') < 0) {
+            return '<span class="sse-hint">' + esc(node.textContent) + '</span>';
         }
         if (tag === 'td' || tag === 'th') {
             ['colspan', 'rowspan'].forEach(function (a) {
@@ -251,6 +254,8 @@
         var w = byId('sse-ed-words'), p = byId('sse-ed-pages');
         if (w) { w.textContent = String(words); }
         if (p) { p.textContent = String(pages); }
+        var hc = byId('sse-ed-hints');
+        if (hc) { hc.textContent = String(sheet.querySelectorAll('.sse-hint').length); }
     }
     function normalizeRoot() {
         if (!sheet.firstChild || (sheet.childNodes.length === 1 && sheet.firstChild.nodeName === 'BR')) {
@@ -328,6 +333,10 @@
             var c = byId('classification');
             return c && c.selectedIndex >= 0 ? c.options[c.selectedIndex].text : '';
         }
+        if (name === 'titre') {
+            var tt = byId('title');
+            return tt ? tt.value.trim() : '';
+        }
         if (name === 'dossier') {
             var k = byId('case_id');
             return k && k.value ? (k.options[k.selectedIndex].getAttribute('data-ref') || '') : '';
@@ -342,7 +351,7 @@
     function refreshFields() {
         each(sheet.querySelectorAll('.sse-field'), function (el) {
             var n = el.getAttribute('data-field');
-            if (n === 'classification' || n === 'dossier') {
+            if (n === 'classification' || n === 'dossier' || n === 'titre') {
                 var v = fieldValue(n);
                 if (v && el.textContent !== v) { el.textContent = v; }
             }
@@ -626,6 +635,7 @@
     function stateText(name, extra) {
         var el = byId('sse-ed-save');
         if (el) { el.textContent = msg(name) + (extra || ''); }
+        root.setAttribute('data-save', name);
     }
     function clock() {
         var d = new Date();
@@ -679,7 +689,7 @@
         if (el) { el.addEventListener('change', function () { refreshFields(); dirty = true; scheduleAutosave(); syncClassBanner(); }); }
     });
     var titleEl = byId('title');
-    if (titleEl) { titleEl.addEventListener('input', function () { dirty = true; scheduleAutosave(); }); }
+    if (titleEl) { titleEl.addEventListener('input', function () { dirty = true; scheduleAutosave(); refreshFields(); refreshFieldList(); }); }
 
     /* classification banner (always visible in the editor) */
     function syncClassBanner() {
@@ -688,6 +698,9 @@
         var label = c.options[c.selectedIndex] ? c.options[c.selectedIndex].text : '';
         var strong = b.querySelector('strong');
         if (strong) { strong.textContent = label.toUpperCase(); }
+        each(root.querySelectorAll('.sse-ed__pband'), function (pb) { pb.textContent = label.toUpperCase(); });
+        var pg = byId('sse-ed-page');
+        if (pg) { pg.setAttribute('data-level', c.value); }
         b.setAttribute('data-level', c.value);
     }
 
@@ -711,26 +724,272 @@
         dirty = false;
     });
 
-    /* ---------- template switching ---------- */
-    var typeEl = byId('document_type');
-    var lastTemplate = sheet.innerHTML;
-    if (typeEl && cfg.templates && !docId) {
-        typeEl.addEventListener('change', function () {
-            var next = cfg.templates[typeEl.value];
-            if (!next) { return; }
-            var cur = sheet.innerHTML;
-            var untouched = !sheetText().trim() || cur === lastTemplate;
-            if (!untouched) {
-                for (var k in cfg.templates) { if (Object.prototype.hasOwnProperty.call(cfg.templates, k) && cfg.templates[k] === cur) { untouched = true; } }
-            }
-            if (untouched) {
-                sheet.innerHTML = next;
-                lastTemplate = next;
-                snapshot(false);
-                changed(true);
-            }
+    /* ---------- classification picker (segmented buttons driving the hidden select) ---------- */
+    var classPick = byId('sse-ed-classpick');
+    function syncClassPick() {
+        var c = byId('classification');
+        if (!classPick || !c) { return; }
+        each(classPick.querySelectorAll('[data-class-pick]'), function (b) {
+            b.setAttribute('aria-pressed', b.getAttribute('data-class-pick') === c.value ? 'true' : 'false');
         });
     }
+    if (classPick) {
+        classPick.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('[data-class-pick]') : null;
+            var c = byId('classification');
+            if (!b || !c) { return; }
+            c.value = b.getAttribute('data-class-pick');
+            c.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        var classSel = byId('classification');
+        if (classSel) { classSel.addEventListener('change', syncClassPick); }
+        syncClassPick();
+    }
+
+    /* ---------- status chips (saved, draft, locked) ---------- */
+    var statusSel = byId('status');
+    function syncStatusChip() {
+        var chip = byId('sse-ed-chip-status');
+        if (chip && statusSel && statusSel.selectedIndex >= 0) { chip.textContent = statusSel.options[statusSel.selectedIndex].text; }
+    }
+    if (statusSel) { statusSel.addEventListener('change', syncStatusChip); syncStatusChip(); }
+
+    /* ---------- template hints (grey guidance text, replaced as soon as the author writes over it) ---------- */
+    function initHints() {
+        each(sheet.querySelectorAll('.sse-hint'), function (h) {
+            if (!h.hasAttribute('data-hint')) { h.setAttribute('data-hint', h.textContent); }
+        });
+    }
+    function hintCount() { return sheet.querySelectorAll('.sse-hint').length; }
+    function settleHints() {
+        var o = null, any = false;
+        each(sheet.querySelectorAll('.sse-hint'), function (h) {
+            var orig = h.getAttribute('data-hint');
+            if (orig === null) { h.setAttribute('data-hint', h.textContent); return; }
+            if (h.textContent === orig) { return; }
+            if (!any) { o = offsets(); any = true; }
+            var parent = h.parentNode;
+            if (h.textContent === '') {
+                parent.removeChild(h);
+                if (parent !== sheet && parent.childNodes.length === 0) { parent.appendChild(document.createElement('br')); }
+                return;
+            }
+            while (h.firstChild) { parent.insertBefore(h.firstChild, h); }
+            parent.removeChild(h);
+        });
+        if (any) { setOffsets(o); }
+    }
+    function selectHint(h) {
+        var r = document.createRange();
+        r.selectNodeContents(h);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        rememberSelection();
+    }
+    function selectHintAtCaret() {
+        var r = currentRange();
+        if (!r || !r.collapsed) { return; }
+        var h = closest(r.startContainer, '.sse-hint');
+        if (h) { selectHint(h); }
+    }
+    function gotoNextHint() {
+        var all = sheet.querySelectorAll('.sse-hint');
+        if (!all.length) { return; }
+        var r = currentRange() || savedRange;
+        var target = all[0];
+        if (r) {
+            for (var i = 0; i < all.length; i++) {
+                var after = document.createRange();
+                after.selectNode(all[i]);
+                if (r.compareBoundaryPoints(Range.START_TO_START, after) < 0) { target = all[i]; break; }
+            }
+        }
+        sheet.focus();
+        selectHint(target);
+        if (target.scrollIntoView) { target.scrollIntoView({ block: 'center' }); }
+    }
+    function clearHints() {
+        restoreSelection();
+        each(sheet.querySelectorAll('.sse-hint'), function (h) {
+            var parent = h.parentNode;
+            parent.removeChild(h);
+            if (parent !== sheet && parent.childNodes.length === 0) { parent.appendChild(document.createElement('br')); }
+        });
+        snapshot(false);
+        changed(true);
+    }
+    sheet.addEventListener('click', selectHintAtCaret);
+    sheet.addEventListener('keyup', function (e) { if (e.key === 'Tab') { selectHintAtCaret(); } });
+    sheet.addEventListener('input', settleHints);
+
+    /* ---------- side panel: outline, fields, models ---------- */
+    var side = byId('sse-ed-side');
+    var outlineEl = byId('sse-ed-outline');
+    var outlineTimer = null;
+    function refreshOutline() {
+        if (!outlineEl) { return; }
+        outlineEl.innerHTML = '';
+        var heads = sheet.querySelectorAll('h2,h3,h4');
+        each(heads, function (hd, i) {
+            var li = document.createElement('li');
+            li.className = 'sse-ed__ol sse-ed__ol--' + hd.nodeName.toLowerCase();
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.setAttribute('data-outline', String(i));
+            b.textContent = (hd.textContent || '').replace(/\s+/g, ' ').trim() || '…';
+            li.appendChild(b);
+            outlineEl.appendChild(li);
+        });
+        var empty = byId('sse-ed-outline-empty');
+        if (empty) { empty.hidden = heads.length > 0; }
+    }
+    function scheduleOutline() {
+        window.clearTimeout(outlineTimer);
+        outlineTimer = window.setTimeout(refreshOutline, 300);
+    }
+    function refreshFieldList() {
+        each(root.querySelectorAll('[data-field-value]'), function (el) {
+            el.textContent = fieldValue(el.getAttribute('data-field-value')) || '—';
+        });
+    }
+    function setSideTab(name) {
+        if (!side) { return; }
+        each(side.querySelectorAll('[data-side-tab]'), function (t) {
+            var on = t.getAttribute('data-side-tab') === name;
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+            t.setAttribute('tabindex', on ? '0' : '-1');
+        });
+        each(side.querySelectorAll('[data-side-panel]'), function (p) { p.hidden = p.getAttribute('data-side-panel') !== name; });
+        try { window.localStorage.setItem('sse-ed-side', name); } catch (e) { /* ignore */ }
+    }
+    var modelIndex = {};
+    each(cfg.models || [], function (m) { modelIndex[m.code] = m; });
+    function setModelMsg(name) {
+        var el = byId('sse-ed-model-msg');
+        if (el) { el.textContent = name ? msg(name) : ''; }
+    }
+    function applyModel(code, mode) {
+        var m = modelIndex[code];
+        if (!m) { return; }
+        if (mode === 'insert') {
+            insertHtml(cleanHtml(m.body));
+            initHints();
+            scheduleOutline();
+            return;
+        }
+        var cur = sheetText().trim();
+        if (cur && !window.confirm(msg('confirm-replace'))) { return; }
+        sheet.innerHTML = cleanHtml(m.body) || '<p><br></p>';
+        initHints();
+        var t = byId('title');
+        if (t && !t.value.trim() && m.label) { t.value = m.label; }
+        if (m.document_type) { var ty = byId('document_type'); if (ty) { ty.value = m.document_type; } }
+        if (m.classification) {
+            var cl = byId('classification');
+            if (cl) { cl.value = m.classification; cl.dispatchEvent(new Event('change', { bubbles: true })); }
+        }
+        refreshFields();
+        snapshot(false);
+        changed(true);
+        sheet.focus();
+        gotoNextHint();
+    }
+    function saveAsModel() {
+        var name = byId('sse-ed-model-name'), descr = byId('sse-ed-model-descr'), shared = byId('sse-ed-model-shared');
+        if (!name || !name.value.trim()) { setModelMsg('model-need-name'); if (name) { name.focus(); } return; }
+        if (!sheetText().trim()) { setModelMsg('empty'); return; }
+        var data = new FormData();
+        data.append('_csrf_token', (form.querySelector('input[name="_csrf_token"]') || {}).value || '');
+        data.append('title', name.value.trim());
+        data.append('description', descr ? descr.value.trim() : '');
+        data.append('body', MARK + cleanSheet());
+        data.append('document_type', (byId('document_type') || {}).value || 'note_analyse');
+        data.append('classification', (byId('classification') || {}).value || 'confidentiel');
+        data.append('shared', shared && shared.checked ? '1' : '0');
+        setModelMsg('model-saving');
+        fetch(cfg.templateUrl, { method: 'POST', body: data, credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (!j || !j.ok) { setModelMsg('model-error'); return; }
+                var list = byId('sse-ed-models');
+                var code = 'perso-' + j.id;
+                modelIndex[code] = { code: code, label: name.value.trim(), body: cleanSheet(), document_type: (byId('document_type') || {}).value, classification: (byId('classification') || {}).value };
+                if (list) {
+                    var li = document.createElement('li');
+                    li.className = 'sse-ed__model';
+                    li.setAttribute('data-model', code);
+                    var s = document.createElement('strong'); s.textContent = name.value.trim();
+                    var p = document.createElement('span'); p.textContent = descr ? descr.value.trim() : '';
+                    var acts = document.createElement('span'); acts.className = 'sse-ed__model-actions';
+                    [['replace', 'btn btn--sm'], ['insert', 'btn btn--ghost btn--sm']].forEach(function (d) {
+                        var bt = document.createElement('button');
+                        bt.type = 'button'; bt.className = d[1];
+                        bt.setAttribute('data-model-use', code); bt.setAttribute('data-mode', d[0]);
+                        bt.textContent = d[0] === 'replace' ? msg('btn-use') : msg('btn-insert');
+                        acts.appendChild(bt);
+                    });
+                    li.appendChild(s); li.appendChild(p); li.appendChild(acts);
+                    list.insertBefore(li, list.firstChild);
+                }
+                setModelMsg('model-saved');
+                name.value = ''; if (descr) { descr.value = ''; }
+            })
+            .catch(function () { setModelMsg('model-error'); });
+    }
+    if (side) {
+        side.addEventListener('click', function (e) {
+            var t = e.target.closest ? e.target.closest('button') : null;
+            if (!t) { return; }
+            if (t.hasAttribute('data-side-tab')) { setSideTab(t.getAttribute('data-side-tab')); return; }
+            if (t.hasAttribute('data-outline')) {
+                var heads = sheet.querySelectorAll('h2,h3,h4');
+                var h = heads[parseInt(t.getAttribute('data-outline'), 10)];
+                if (h) { h.scrollIntoView({ block: 'start' }); placeCaret(h, true); sheet.focus(); }
+                return;
+            }
+            if (t.hasAttribute('data-insert-field')) { insertField(t.getAttribute('data-insert-field')); return; }
+            if (t.hasAttribute('data-model-use')) { applyModel(t.getAttribute('data-model-use'), t.getAttribute('data-mode') || 'replace'); return; }
+            var act = t.getAttribute('data-act');
+            if (act === 'next-hint') { gotoNextHint(); }
+            else if (act === 'clear-hints') { clearHints(); }
+            else if (act === 'save-model') { saveAsModel(); }
+        });
+        side.addEventListener('mousedown', function (e) {
+            // keeps the caret in the sheet when an insertion button is pressed
+            if (e.target.closest && e.target.closest('button[data-insert-field],button[data-model-use],button[data-act]')) { rememberSelection(); }
+        });
+        var toggle = root.querySelector('[data-side-toggle]');
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                var closed = root.classList.toggle('is-side-closed');
+                toggle.setAttribute('aria-expanded', closed ? 'false' : 'true');
+            });
+        }
+        var saved = 'outline';
+        try { saved = window.localStorage.getItem('sse-ed-side') || saved; } catch (e) { /* ignore */ }
+        if (!side.querySelector('[data-side-tab="' + saved + '"]')) { saved = 'outline'; }
+        setSideTab(saved);
+    }
+    listeners.push(scheduleOutline);
+    listeners.push(refreshFieldList);
+
+    /* ---------- page markers (A4 boundaries) and classification bands ---------- */
+    var pageEl = byId('sse-ed-page');
+    function pageMarks() {
+        if (!pageEl) { return; }
+        each(pageEl.querySelectorAll('.sse-ed__pgmark'), function (m) { pageEl.removeChild(m); });
+        var pages = Math.max(1, Math.ceil((sheet.scrollHeight - 2) / PAGE_PX));
+        for (var k = 1; k < pages; k++) {
+            var m = document.createElement('div');
+            m.className = 'sse-ed__pgmark';
+            m.style.top = Math.round(k * PAGE_PX) + 'px';
+            m.setAttribute('data-label', msg('page-label') + ' ' + (k + 1));
+            m.setAttribute('aria-hidden', 'true');
+            pageEl.appendChild(m);
+        }
+    }
+    listeners.push(pageMarks);
 
     /* ---------- draft restore notice ---------- */
     function offerRestore() {
@@ -745,6 +1004,7 @@
         notice.hidden = false;
         byId('sse-ed-restore-yes').onclick = function () {
             sheet.innerHTML = pick.html;
+            initHints();
             if (pick.title && titleEl && !titleEl.value.trim()) { titleEl.value = pick.title; }
             notice.hidden = true;
             snapshot(false);
@@ -777,8 +1037,12 @@
     refreshUndoButtons();
     syncClassBanner();
     refreshFields();
+    initHints();
+    refreshOutline();
+    refreshFieldList();
     layoutBreaks();
     counters();
+    pageMarks();
     stateText('ready');
     offerRestore();
     root.setAttribute('data-ready', '1');
