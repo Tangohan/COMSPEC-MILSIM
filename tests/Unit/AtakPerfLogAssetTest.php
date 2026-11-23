@@ -40,7 +40,7 @@ final class AtakPerfLogAssetTest extends TestCase
     public function testPerfLogSettingIsOffAndOnlyWritesTheRpt(): void
     {
         $pre = $this->read('XEH_preInit.sqf');
-        self::assertMatchesRegularExpression('/\["comspec_atak_native_perf_log", "CHECKBOX",\s*\["Mesure des performances \(journal\)", "[^"]*Exemple : active-le, ouvre le téléphone puis la carte, puis envoie ton journal avec Envoyer_mes_logs\.bat[^"]*"\],\s*\["COMSPEC", "ATAK · Debug"\], false, 0,/', $pre);
+        self::assertMatchesRegularExpression('/\["comspec_atak_native_perf_log", "CHECKBOX",\s*\["Mesure des performances \(journal\)", "[^"]*Exemple : active-le, ouvre le téléphone puis la carte, puis envoie ton journal \(fichier RPT\) sur le Discord[^"]*"\],\s*\["COMSPEC", "ATAK · Debug"\], false, 0,/', $pre);
         self::assertStringContainsString('class perfLog {};', $this->read('config.cpp'));
 
         $log = $this->read('functions/core/fn_perfLog.sqf');
