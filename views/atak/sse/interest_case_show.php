@@ -88,42 +88,46 @@ $unarchiveVersion = (int) $c['version'];
         </div>
     <?php endif; ?>
 
-    <header class="di-hero">
+    <header class="di-hero di-hero--<?= $diH(strtolower((string) ($c['priority_code'] ?? 'P4'))) ?>">
         <div class="di-hero__top">
             <div class="di-hero__title">
+                <p class="di-hero__ref"><span class="di-mono"><?= $diH($c['reference_code']) ?></span><span>ouvert le <?= $diH($diDate($c['created_at'])) ?><?php if (!empty($creator_label)): ?> par <?= $diH($creator_label) ?><?php endif; ?></span></p>
                 <h1><?= $diH($c['temporary_designation']) ?></h1>
-                <p class="di-lead"><span class="di-mono"><?= $diH($c['reference_code']) ?></span> <span>· ouvert le <?= $diH($diDate($c['created_at'])) ?></span><?php if (!empty($creator_label)): ?> <span>par <?= $diH($creator_label) ?></span><?php endif; ?></p>
-                <p class="di-lead">Hypothèse de travail : aucune identité confirmée sans validation humaine.</p>
                 <div class="di-hero__badges">
                     <?= $diStatus($c) ?>
                     <?= $diPrio($c) ?>
-                    <?= $diClass($c) ?>
+                    <span class="di-tag di-tag--class di-tag--class-<?= $diH($c['classification'] ?? 'interne') ?>"><?= $diH($c['classification_label'] ?? '') ?></span>
                     <?php if (!empty($c['type_label'])): ?><span class="di-tag"><?= $diH($c['type_label']) ?></span><?php endif; ?>
-                    <?php foreach ($c['tag_list'] as $tag): ?><span class="di-tag">#<?= $diH($tag) ?></span><?php endforeach; ?>
+                    <?php foreach ($c['tag_list'] as $tag): ?><span class="di-tag di-tag--soft">#<?= $diH($tag) ?></span><?php endforeach; ?>
                 </div>
+                <p class="di-hero__note">Hypothèse de travail : aucune identité confirmée sans validation humaine.</p>
             </div>
             <div class="di-hero__actions">
                 <?php if ($canWrite): ?>
-                    <button type="button" class="di-btn" data-di-open="di-edit"><?= $diIcon('edit') ?><span>Modifier</span></button>
-                    <?php if ($next_statuses !== []): ?><button type="button" class="di-btn" data-di-open="di-status"><?= $diIcon('flow') ?><span>Changer l’état</span></button><?php endif; ?>
+                    <div class="di-actions di-actions--main">
+                        <?php if ($next_statuses !== []): ?><button type="button" class="di-btn di-btn--primary" data-di-open="di-status"><?= $diIcon('flow') ?><span>Changer l’état</span></button><?php endif; ?>
+                        <button type="button" class="di-btn" data-di-open="di-edit"><?= $diIcon('edit') ?><span>Modifier</span></button>
+                    </div>
                 <?php endif; ?>
-                <?php if (!$isTrashed && !empty($caps['watchers']) && $actor->userId !== null): ?>
-                    <form method="post" action="<?= $diH($base . '/abonnement') ?>">
-                        <?= \App\Core\Csrf::field() ?>
-                        <input type="hidden" name="watch" value="<?= !empty($watching) ? '0' : '1' ?>">
-                        <button type="submit" class="di-btn" aria-pressed="<?= !empty($watching) ? 'true' : 'false' ?>"><?= $diIcon('eye') ?><?= !empty($watching) ? 'Ne plus suivre' : 'Suivre' ?></button>
-                    </form>
-                <?php endif; ?>
-                <?php if ($canExportPdf): ?><a class="di-btn" href="<?= $diH($base . '/pdf') ?>"><?= $diIcon('pdf') ?><span>PDF</span></a><?php endif; ?>
-                <?php if (!$isTrashed && $c['status'] === 'archive' && $actor->canDelete): ?>
-                    <form method="post" action="<?= $diH($base . '/desarchiver') ?>"><?= \App\Core\Csrf::field() ?><input type="hidden" name="version" value="<?= $unarchiveVersion ?>"><button type="submit" class="di-btn"><?= $diIcon('restore') ?><span>Sortir des archives</span></button></form>
-                <?php endif; ?>
-                <?php if (!$isTrashed && $actor->canDelete && !empty($caps['columns'])): ?>
-                    <button type="button" class="di-btn di-btn--danger" data-di-open="di-trash"><?= $diIcon('trash') ?><span>Supprimer</span></button>
-                <?php endif; ?>
+                <div class="di-actions di-actions--more">
+                    <?php if (!$isTrashed && !empty($caps['watchers']) && $actor->userId !== null): ?>
+                        <form method="post" action="<?= $diH($base . '/abonnement') ?>">
+                            <?= \App\Core\Csrf::field() ?>
+                            <input type="hidden" name="watch" value="<?= !empty($watching) ? '0' : '1' ?>">
+                            <button type="submit" class="di-btn di-btn--ghost" aria-pressed="<?= !empty($watching) ? 'true' : 'false' ?>"><?= $diIcon('eye') ?><span><?= !empty($watching) ? 'Ne plus suivre' : 'Suivre' ?></span></button>
+                        </form>
+                    <?php endif; ?>
+                    <?php if ($canExportPdf): ?><a class="di-btn di-btn--ghost" href="<?= $diH($base . '/pdf') ?>"><?= $diIcon('pdf') ?><span>PDF</span></a><?php endif; ?>
+                    <?php if (!$isTrashed && $c['status'] === 'archive' && $actor->canDelete): ?>
+                        <form method="post" action="<?= $diH($base . '/desarchiver') ?>"><?= \App\Core\Csrf::field() ?><input type="hidden" name="version" value="<?= $unarchiveVersion ?>"><button type="submit" class="di-btn di-btn--ghost"><?= $diIcon('restore') ?><span>Sortir des archives</span></button></form>
+                    <?php endif; ?>
+                    <?php if (!$isTrashed && $actor->canDelete && !empty($caps['columns'])): ?>
+                        <button type="button" class="di-btn di-btn--danger di-btn--quiet" data-di-open="di-trash"><?= $diIcon('trash') ?><span>Supprimer</span></button>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
-        <dl class="di-facts">
+        <dl class="di-facts di-facts--tiles">
             <div><dt>Responsable</dt><dd><?= !empty($c['assignee_label']) ? $diH($c['assignee_label']) : '<span class="di-muted-text">Non attribué</span>' ?></dd></div>
             <div><dt>Échéance</dt><dd><?php if (!empty($c['due_at'])): ?><span class="<?= !empty($c['is_overdue']) ? 'di-late' : '' ?>"><?= $diH($diDate($c['due_at'], 'd/m/Y')) ?><?= !empty($c['is_overdue']) ? ' · en retard' : '' ?></span><?php else: ?><span class="di-muted-text">Aucune</span><?php endif; ?></dd></div>
             <div><dt>Confiance dans le signalement</dt><dd><?= $diH($c['confidence_label']) ?></dd></div>
@@ -160,15 +164,15 @@ $unarchiveVersion = (int) $c['version'];
             <div>
                 <section class="di-panel">
                     <div class="di-panel__head"><h2>Identité observée et provenance</h2><p>Ce qui est signalé, sans valeur d’identification.</p></div>
-                    <dl class="di-facts">
-                        <div><dt>Alias supposé</dt><dd><?= $diH($c['suspected_alias'] ?: '—') ?></dd></div>
-                        <div><dt>Affiliation</dt><dd><?= $diH($c['suspected_affiliation'] ?: '—') ?></dd></div>
-                        <div><dt>Sexe apparent</dt><dd><?= $diH($c['apparent_sex'] ?: '—') ?></dd></div>
-                        <div><dt>Âge estimé</dt><dd><?= $diH($c['estimated_age_range'] ?: '—') ?></dd></div>
-                        <div><dt>Nationalité</dt><dd><?= $diH($c['suspected_nationality'] ?: '—') ?></dd></div>
-                        <div><dt>Mission</dt><dd><?= $diH($c['mission_label'] ?: '—') ?></dd></div>
-                        <div><dt>Acquisition</dt><dd><?= $diH($diDate((string) ($c['acquisition_at'] ?? '')) ?: '—') ?></dd></div>
-                        <div><dt>Source</dt><dd><?= $diH($c['source_label'] ?: '—') ?><?= !empty($c['source_reliability']) ? ' (' . $diH($c['source_reliability']) . ')' : '' ?></dd></div>
+                    <dl class="di-facts di-facts--panel">
+                        <div><dt>Alias supposé</dt><dd><?= $diV($c['suspected_alias']) ?></dd></div>
+                        <div><dt>Affiliation</dt><dd><?= $diV($c['suspected_affiliation']) ?></dd></div>
+                        <div><dt>Sexe apparent</dt><dd><?= $diV($c['apparent_sex']) ?></dd></div>
+                        <div><dt>Âge estimé</dt><dd><?= $diV($c['estimated_age_range']) ?></dd></div>
+                        <div><dt>Nationalité</dt><dd><?= $diV($c['suspected_nationality']) ?></dd></div>
+                        <div><dt>Mission</dt><dd><?= $diV($c['mission_label']) ?></dd></div>
+                        <div><dt>Acquisition</dt><dd><?= $diV($diDate((string) ($c['acquisition_at'] ?? ''))) ?></dd></div>
+                        <div><dt>Source</dt><dd><?= $diV($c['source_label']) ?><?= !empty($c['source_reliability']) ? ' (' . $diH($c['source_reliability']) . ')' : '' ?></dd></div>
                     </dl>
                 </section>
                 <section class="di-panel">
@@ -177,7 +181,7 @@ $unarchiveVersion = (int) $c['version'];
                         <p><strong>Dossier constitué</strong> : <a href="<?= $diH(url('atak/sse/dossiers/' . (int) $constitutedCase['id'])) ?>"><?= $diH($constitutedCase['reference_code'] ?? '') ?> — <?= $diH($constitutedCase['title'] ?? '') ?></a></p>
                         <p class="di-sub">L’instruction se poursuit dans le dossier ; ce dossier d’intérêt en garde la genèse.</p>
                     <?php elseif ($canWrite): ?>
-                        <div class="di-hero__actions">
+                        <div class="di-actions">
                             <form method="post" action="<?= $diH($base . '/constituer') ?>">
                                 <?= \App\Core\Csrf::field() ?>
                                 <button class="di-btn di-btn--primary" type="submit" <?= $cdBlocked('constitute') ? 'disabled' : '' ?>>Constituer le dossier</button>
@@ -398,13 +402,16 @@ $unarchiveVersion = (int) $c['version'];
                 </form>
             <?php endif; ?>
             <?php if ($updates === []): ?>
-                <p class="di-muted-text di-mt-16">Aucune note pour le moment.</p>
+                <p class="di-muted-text di-mt-16 di-hollow">Aucune note pour le moment.</p>
             <?php else: ?>
-                <ol class="di-timeline di-mt-20">
-                    <?php foreach ($updates as $u): ?>
-                        <li>
-                            <div class="di-timeline__head"><strong><?= $diH($u['author_label'] ?? 'Analyste') ?></strong><time class="di-sub" datetime="<?= $diH($u['created_at'] ?? '') ?>"><?= $diH($diDate((string) ($u['created_at'] ?? ''))) ?></time></div>
-                            <p><?= nl2br($diH($u['body'] ?? '')) ?></p>
+                <ol class="di-notes di-mt-20">
+                    <?php foreach ($updates as $u): $author = (string) ($u['author_label'] ?? 'Analyste'); ?>
+                        <li class="di-note">
+                            <span class="di-note__avatar" aria-hidden="true"><?= $diH(mb_strtoupper(mb_substr(trim($author) !== '' ? trim($author) : 'A', 0, 1))) ?></span>
+                            <div class="di-note__body">
+                                <div class="di-note__head"><strong><?= $diH($author) ?></strong><time class="di-sub" datetime="<?= $diH($u['created_at'] ?? '') ?>"><?= $diH($diDate((string) ($u['created_at'] ?? ''))) ?></time></div>
+                                <p><?= nl2br($diH($u['body'] ?? '')) ?></p>
+                            </div>
                         </li>
                     <?php endforeach; ?>
                 </ol>
@@ -416,7 +423,7 @@ $unarchiveVersion = (int) $c['version'];
     <section class="di-pane" role="tabpanel" id="di-panel-acces" aria-labelledby="di-tab-acces" <?= $activeTab === 'acces' ? '' : 'hidden' ?>>
         <section class="di-panel">
             <div class="di-panel__head"><h2>Qui peut ouvrir ce dossier</h2><p>La classification fixe le niveau d’habilitation requis ; la diffusion peut le restreindre à des personnes nommées.</p></div>
-            <dl class="di-facts">
+            <dl class="di-facts di-facts--tiles">
                 <div><dt>Classification</dt><dd><?= $diClass($c) ?></dd></div>
                 <div><dt>Niveau requis</dt><dd><?= $diH(\App\Services\Sse\SseClearanceService::whoCanOpen((string) $c['classification'])) ?></dd></div>
                 <div><dt>Abonnés</dt><dd><?= (int) ($watchers_count ?? 0) ?> personne(s)</dd></div>

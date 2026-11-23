@@ -47,8 +47,13 @@ $typeHints = [
 ];
 
 $docId = $isEdit ? (int) ($document['id'] ?? 0) : 0;
+$models = is_array($editorContext['models'] ?? null) ? $editorContext['models'] : [];
 $edCfg = [
-    'templates' => $editorContext['templates'] ?? [],
+    'models' => array_map(static fn (array $m): array => [
+        'code' => (string) $m['code'], 'label' => (string) $m['label'], 'body' => (string) $m['body'],
+        'document_type' => (string) ($m['document_type'] ?? ''), 'classification' => (string) ($m['classification'] ?? ''),
+    ], $models),
+    'templateUrl' => (string) ($editorContext['templateUrl'] ?? ''),
     'fields' => $editorContext['fields'] ?? [],
     'serverDraft' => $editorContext['serverDraft'] ?? null,
     'draftUrl' => (string) ($editorContext['draftUrl'] ?? ''),
@@ -58,10 +63,21 @@ $ico = static function (string $d): string {
 };
 $paletteText = \App\Support\SseRichText::TEXT_COLORS;
 $paletteMark = \App\Support\SseRichText::HIGHLIGHT_COLORS;
-$btn = static function (string $cmd, string $label, string $inner, bool $toggle = false) use ($h): string {
-    return '<button type="button" class="sse-ed__btn" data-cmd="' . $h($cmd) . '" title="' . $h($label) . '" aria-label="' . $h($label) . '"'
-        . ($toggle ? ' aria-pressed="false"' : '') . '>' . $inner . '</button>';
+$btn = static function (string $cmd, string $label, string $inner, bool $toggle = false, string $text = '') use ($h): string {
+    return '<button type="button" class="sse-ed__btn' . ($text !== '' ? ' sse-ed__btn--labelled' : '') . '" data-cmd="' . $h($cmd) . '" title="' . $h($label) . '" aria-label="' . $h($label) . '"'
+        . ($toggle ? ' aria-pressed="false"' : '') . '>' . $inner . ($text !== '' ? '<span class="sse-ed__lbl">' . $h($text) . '</span>' : '') . '</button>';
 };
+$isLocked = $isEdit && in_array((string) ($document['status'] ?? ''), ['valide', 'archive'], true);
+$classHints = [
+    'interne' => 'Information sensible, non classifiée',
+    'encadrement' => 'Réservé à l’encadrement',
+    'confidentiel' => 'Besoin d’en connaître',
+    'tres_restreint' => 'Cercle très restreint',
+];
+$fieldList = [
+    'nom' => 'Nom du rédacteur', 'grade' => 'Grade du rédacteur', 'date' => 'Date du jour', 'reference' => 'Référence du document',
+    'dossier' => 'Référence du dossier', 'classification' => 'Classification', 'titre' => 'Intitulé du document',
+];
 ?>
 
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse-doc-editor.css')) ?>">
@@ -75,9 +91,11 @@ $btn = static function (string $cmd, string $label, string $inner, bool $toggle 
                 <span class="badge"><?= $h($document['status_label'] ?? '') ?></span>
             <?php else: ?>
                 <span class="badge badge--gray">Nouveau brouillon</span>
+                <?php if (!empty($modelLabel)): ?><span class="badge">Modèle : <?= $h($modelLabel) ?></span><?php endif; ?>
             <?php endif; ?>
-            Rédigez directement sur la feuille. Conservez la classification au niveau réel du contenu : la diffusion plus large
-            se fait ensuite via caviardage et validation.
+            Écrivez directement sur la page : remplacez le texte grisé, gardez la classification au niveau réel du contenu.
+            La diffusion plus large se fait ensuite par caviardage et validation.
+            <?php if (!$isEdit): ?><a href="<?= $h(url('atak/sse/documents/nouveau' . ($prefillCaseId > 0 ? '?case_id=' . $prefillCaseId : ''))) ?>">Choisir un autre modèle</a><?php endif; ?>
         </p>
     </div>
 </section>
@@ -97,9 +115,18 @@ $btn = static function (string $cmd, string $label, string $inner, bool $toggle 
                     </select>
                     <p class="sse-desk-hint" id="sse-type-hint"><?= $h($typeHints[$prefillType] ?? 'Choisissez le format adapté au destinataire.') ?></p>
                 </div>
-                <div>
-                    <label for="classification">Classification</label>
-                    <select id="classification" name="classification" required>
+                <div class="sse-ed-classfield">
+                    <span class="sse-ed-classfield__label" id="sse-ed-classpick-label">Classification</span>
+                    <div class="sse-ed__classpick" id="sse-ed-classpick" role="group" aria-labelledby="sse-ed-classpick-label">
+                        <?php foreach ($classifications as $k => $lab): ?>
+                            <button type="button" class="sse-ed__classbtn" data-class-pick="<?= $h($k) ?>" data-level="<?= $h($k) ?>" aria-pressed="<?= $prefillClass === $k ? 'true' : 'false' ?>">
+                                <strong><?= $h(\App\Support\SseUsClassification::SCALE[$k]['abbr'] ?? $k) ?></strong>
+                                <span><?= $h($lab) ?></span>
+                                <small><?= $h($classHints[$k] ?? '') ?></small>
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
+                    <select id="classification" name="classification" class="sse-ed__sr" tabindex="-1" aria-hidden="true" required>
                         <?php foreach ($classifications as $k => $lab): ?>
                             <option value="<?= $h($k) ?>" <?= $prefillClass === $k ? 'selected' : '' ?>><?= $h($lab) ?></option>
                         <?php endforeach; ?>
@@ -143,6 +170,13 @@ $btn = static function (string $cmd, string $label, string $inner, bool $toggle 
             <span class="sse-ed__class-tag">Classification</span>
             <strong><?= $h(mb_strtoupper($classifications[$prefillClass] ?? 'Confidentiel', 'UTF-8')) ?></strong>
             <span class="sse-ed__class-note">Ce document est classifié : ne le diffusez pas hors canal.</span>
+        </div>
+
+        <div class="sse-ed__state" id="sse-ed-state" aria-label="État du document">
+            <span class="sse-ed__chip sse-ed__chip--save"><i aria-hidden="true"></i><span id="sse-ed-save" role="status" aria-live="polite"></span></span>
+            <span class="sse-ed__chip">Étape : <strong id="sse-ed-chip-status"><?= $h($isEdit ? ($document['status_label'] ?? '') : ($statusLabels[$prefillStatus] ?? 'Brouillon')) ?></strong></span>
+            <span class="sse-ed__chip sse-ed__chip--lock" data-locked="<?= $isLocked ? '1' : '0' ?>"><?= $ico('M4 7V5a4 4 0 018 0v2M3 7h10v7H3z') ?> <?= $isLocked ? 'Verrouillé' : 'Modifiable' ?></span>
+            <button type="button" class="sse-ed__btn sse-ed__btn--text sse-ed__side-toggle" data-side-toggle aria-expanded="true">Panneau latéral</button>
         </div>
 
         <div class="sse-ed__bar" id="sse-ed-bar" role="toolbar" aria-label="Mise en forme du document" aria-controls="sse-ed-sheet">
@@ -198,7 +232,7 @@ $btn = static function (string $cmd, string $label, string $inner, bool $toggle 
             </div>
             <div class="sse-ed__group" role="group" aria-label="Insertion">
                 <span class="sse-ed__pophost">
-                    <button type="button" class="sse-ed__btn" title="Tableau" aria-label="Tableau" aria-haspopup="true" aria-expanded="false" aria-controls="sse-ed-pop-table"><?= $ico('M2 3h12v10H2zM2 7h12M2 10h12M6 3v10M10 3v10') ?></button>
+                    <button type="button" class="sse-ed__btn sse-ed__btn--labelled" title="Tableau" aria-label="Tableau" aria-haspopup="true" aria-expanded="false" aria-controls="sse-ed-pop-table"><?= $ico('M2 3h12v10H2zM2 7h12M2 10h12M6 3v10M10 3v10') ?><span class="sse-ed__lbl">Tableau</span></button>
                     <div class="sse-ed__pop sse-ed__pop--table" id="sse-ed-pop-table" role="group" aria-label="Tableau" hidden>
                         <label for="sse-ed-rows">Lignes</label>
                         <input type="number" id="sse-ed-rows" min="1" max="20" value="3">
@@ -214,22 +248,24 @@ $btn = static function (string $cmd, string $label, string $inner, bool $toggle 
                     </div>
                 </span>
                 <?= $btn('hr', 'Séparateur horizontal', $ico('M2 8h12')) ?>
-                <?= $btn('pagebreak', 'Saut de page', $ico('M3 2v4h10V2M3 14v-4h10v4M1 8h2M6 8h4M13 8h2')) ?>
-                <?= $btn('redact', 'Caviarder le passage sélectionné', '<span aria-hidden="true" class="sse-ed__redact-ico">▮▮</span>') ?>
+                <?= $btn('pagebreak', 'Saut de page', $ico('M3 2v4h10V2M3 14v-4h10v4M1 8h2M6 8h4M13 8h2'), false, 'Saut de page') ?>
+                <?= $btn('redact', 'Caviarder le passage sélectionné', '<span aria-hidden="true" class="sse-ed__redact-ico">▮▮</span>', false, 'Caviarder') ?>
                 <select class="sse-ed__select sse-ed__select--narrow" data-cmd="field" aria-label="Insérer un champ du dossier">
                     <option value="">Champ du dossier…</option>
                     <option value="nom">Nom du rédacteur</option>
                     <option value="grade">Grade du rédacteur</option>
                     <option value="date">Date du jour</option>
+                    <option value="reference">Référence du document</option>
                     <option value="dossier">Référence du dossier</option>
                     <option value="classification">Classification</option>
+                    <option value="titre">Intitulé du document</option>
                 </select>
                 <?php if ($libraryEntries !== []): ?>
                     <button class="sse-ed__btn sse-ed__btn--text" type="button" id="sse-lib-btn" aria-haspopup="dialog">Mention</button>
                 <?php endif; ?>
             </div>
             <div class="sse-ed__group sse-ed__group--end" role="group" aria-label="Sortie">
-                <?= $btn('print', 'Imprimer la feuille', $ico('M4 6V2h8v4M4 12H2V6h12v6h-2M4 10h8v4H4z')) ?>
+                <?= $btn('print', 'Imprimer la feuille', $ico('M4 6V2h8v4M4 12H2V6h12v6h-2M4 10h8v4H4z'), false, 'Imprimer') ?>
                 <?php if ($isEdit && $docId > 0): ?>
                     <a class="sse-ed__btn sse-ed__btn--text" href="<?= $h(url('atak/sse/documents/' . $docId . '/pdf')) ?>" title="Exporter la dernière version enregistrée en PDF">PDF</a>
                 <?php endif; ?>
@@ -249,18 +285,80 @@ $btn = static function (string $cmd, string $label, string $inner, bool $toggle 
             </div>
         <?php endif; ?>
 
-        <div class="sse-ed__desk" id="sse-ed-desk">
-            <div class="sse-ed__zoomer" id="sse-ed-zoomer" data-zoom="1">
-                <div class="sse-ed__ruler" id="sse-ed-ruler" aria-hidden="true"></div>
-                <div class="sse-ed__sheet" id="sse-ed-sheet" contenteditable="true" role="textbox" aria-multiline="true"
-                     aria-label="Corps du document" spellcheck="true" lang="fr"><?= $bodyHtml ?></div>
+        <div class="sse-ed__work">
+            <div class="sse-ed__desk" id="sse-ed-desk">
+                <div class="sse-ed__zoomer" id="sse-ed-zoomer" data-zoom="1">
+                    <div class="sse-ed__ruler" id="sse-ed-ruler" aria-hidden="true"></div>
+                    <div class="sse-ed__page" id="sse-ed-page" data-level="<?= $h($prefillClass) ?>">
+                        <div class="sse-ed__pband sse-ed__pband--top" aria-hidden="true"><?= $h(mb_strtoupper($classifications[$prefillClass] ?? 'Confidentiel', 'UTF-8')) ?></div>
+                        <div class="sse-ed__sheet" id="sse-ed-sheet" contenteditable="true" role="textbox" aria-multiline="true"
+                             aria-label="Corps du document" spellcheck="true" lang="fr"><?= $bodyHtml ?></div>
+                        <div class="sse-ed__pband sse-ed__pband--bottom" aria-hidden="true"><?= $h(mb_strtoupper($classifications[$prefillClass] ?? 'Confidentiel', 'UTF-8')) ?></div>
+                    </div>
+                </div>
             </div>
+
+            <aside class="sse-ed__side" id="sse-ed-side" aria-label="Panneau du document">
+                <div class="sse-ed__tabs" role="tablist" aria-label="Contenu du panneau">
+                    <button type="button" role="tab" data-side-tab="outline" aria-selected="true">Plan</button>
+                    <button type="button" role="tab" data-side-tab="fields" aria-selected="false" tabindex="-1">Champs</button>
+                    <button type="button" role="tab" data-side-tab="models" aria-selected="false" tabindex="-1">Modèles</button>
+                </div>
+
+                <div class="sse-ed__panel" data-side-panel="outline" role="tabpanel">
+                    <p class="sse-ed__panel-lead">Les titres de votre document. Cliquez pour aller à la section.</p>
+                    <ol class="sse-ed__outline" id="sse-ed-outline"></ol>
+                    <p class="sse-ed__empty" id="sse-ed-outline-empty" hidden>Aucun titre pour l’instant. Choisissez « Titre 1 » ou « Titre 2 » dans la barre d’outils pour structurer le document.</p>
+                </div>
+
+                <div class="sse-ed__panel" data-side-panel="fields" role="tabpanel" hidden>
+                    <p class="sse-ed__panel-lead">Un champ se met à jour tout seul : dossier, classification, intitulé, référence. Placez le curseur dans la page, puis cliquez.</p>
+                    <ul class="sse-ed__fields">
+                        <?php foreach ($fieldList as $fk => $fl): ?>
+                            <li>
+                                <button type="button" class="btn btn--ghost btn--sm" data-insert-field="<?= $h($fk) ?>"><?= $h($fl) ?></button>
+                                <span class="sse-ed__fieldval" data-field-value="<?= $h($fk) ?>"></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+
+                <div class="sse-ed__panel" data-side-panel="models" role="tabpanel" hidden>
+                    <p class="sse-ed__panel-lead">Partez d’un modèle : « Utiliser » remplace la page, « Insérer ici » ajoute le modèle à l’endroit du curseur.</p>
+                    <div class="sse-ed__hintbar">
+                        <button type="button" class="btn btn--ghost btn--sm" data-act="next-hint">Texte d’aide suivant</button>
+                        <button type="button" class="btn btn--ghost btn--sm" data-act="clear-hints">Retirer les textes d’aide</button>
+                    </div>
+                    <ul class="sse-ed__models" id="sse-ed-models">
+                        <?php foreach ($models as $m): ?>
+                            <li class="sse-ed__model" data-model="<?= $h($m['code']) ?>">
+                                <strong><?= $h($m['label']) ?></strong>
+                                <?php if (trim((string) ($m['description'] ?? '')) !== ''): ?><span><?= $h($m['description']) ?></span><?php endif; ?>
+                                <span class="sse-ed__model-actions">
+                                    <button type="button" class="btn btn--sm" data-model-use="<?= $h($m['code']) ?>" data-mode="replace">Utiliser</button>
+                                    <button type="button" class="btn btn--ghost btn--sm" data-model-use="<?= $h($m['code']) ?>" data-mode="insert">Insérer ici</button>
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <fieldset class="sse-ed__savemodel">
+                        <legend>Enregistrer ce document comme modèle</legend>
+                        <label for="sse-ed-model-name">Nom du modèle</label>
+                        <input type="text" id="sse-ed-model-name" maxlength="120" autocomplete="off">
+                        <label for="sse-ed-model-descr">Description (facultatif)</label>
+                        <input type="text" id="sse-ed-model-descr" maxlength="300" autocomplete="off">
+                        <label class="sse-ed__check"><input type="checkbox" id="sse-ed-model-shared"> Partager avec ma communauté</label>
+                        <button type="button" class="btn btn--sm" data-act="save-model">Enregistrer le modèle</button>
+                        <p class="sse-ed__model-msg" id="sse-ed-model-msg" role="status" aria-live="polite"></p>
+                    </fieldset>
+                </div>
+            </aside>
         </div>
 
         <div class="sse-ed__status">
             <span><span id="sse-ed-words">0</span> mots</span>
             <span><span id="sse-ed-pages">1</span> page(s) A4</span>
-            <span id="sse-ed-save" role="status" aria-live="polite"></span>
+            <span><span id="sse-ed-hints">0</span> texte(s) d’aide à remplacer</span>
             <label class="sse-ed__zoom" for="sse-ed-zoom">Zoom
                 <select id="sse-ed-zoom">
                     <?php foreach ([50, 75, 100, 125, 150, 200] as $z): ?>
@@ -276,6 +374,16 @@ $btn = static function (string $cmd, string $label, string $inner, bool $toggle 
             <span data-msg="saved-local">Brouillon enregistré sur cet appareil</span>
             <span data-msg="saved-server">Brouillon enregistré sur le serveur</span>
             <span data-msg="empty">Le document est vide : rédigez le corps avant d’enregistrer.</span>
+            <span data-msg="confirm-replace">Remplacer tout le contenu de la page par ce modèle ?</span>
+            <span data-msg="model-need-name">Donnez un nom au modèle.</span>
+            <span data-msg="model-saving">Enregistrement du modèle…</span>
+            <span data-msg="model-saved">Modèle enregistré : il apparaît dans la galerie.</span>
+            <span data-msg="model-error">Modèle non enregistré : vérifiez le nom et le contenu, le nombre de modèles est limité.</span>
+            <span data-msg="page-label">Page</span>
+            <span data-msg="btn-use">Utiliser</span>
+            <span data-msg="btn-insert">Insérer ici</span>
+            <span data-msg="field-reference">Référence du document</span>
+            <span data-msg="field-titre">Intitulé du document</span>
             <span data-msg="field-nom">Nom du rédacteur</span>
             <span data-msg="field-grade">Grade du rédacteur</span>
             <span data-msg="field-date"><?= $h(date('d/m/Y')) ?></span>
@@ -294,7 +402,6 @@ $btn = static function (string $cmd, string $label, string $inner, bool $toggle 
         </p>
     <?php endif; ?>
     <p class="muted sse-desk-footnote">
-        Changez de type pour recharger le modèle guidé (si le corps n’a pas encore été personnalisé).
         Le passage caviardé devient une barre noire à l’affichage et dans le PDF, sa longueur reste visible.
         Évitez les noms en clair si une diffusion large est prévue.
         Pour une version expurgée à partir d’un dossier, utilisez aussi l’écran de déclassification.

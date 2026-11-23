@@ -760,6 +760,7 @@ class Container
                     new \App\Services\Cron\Jobs\AccessRegisterExpiryCronJob(self::get(TenantRepository::class)),
                     self::get(\App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\MemberGradeScheduleCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PhotoCompressCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlanEndWarningCronJob::class),
                     self::get(\App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob::class),
@@ -1336,6 +1337,17 @@ class Container
             \App\Repositories\PersonnelAssignmentRepository::class => new \App\Repositories\PersonnelAssignmentRepository(),
             \App\Repositories\PersonnelServiceHistoryRepository::class => new \App\Repositories\PersonnelServiceHistoryRepository(),
             \App\Repositories\GradeRepository::class => new \App\Repositories\GradeRepository(),
+            \App\Repositories\MemberGradeScheduleRepository::class => new \App\Repositories\MemberGradeScheduleRepository(),
+            \App\Services\Personnel\MemberGradeScheduleService::class => new \App\Services\Personnel\MemberGradeScheduleService(
+                self::get(\App\Repositories\MemberGradeScheduleRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
+                self::get(\App\Services\Personnel\PersonnelServiceHistoryWriter::class),
+            ),
+            \App\Services\Cron\Jobs\MemberGradeScheduleCronJob::class => new \App\Services\Cron\Jobs\MemberGradeScheduleCronJob(
+                self::get(\App\Services\Personnel\MemberGradeScheduleService::class)
+            ),
             \App\Repositories\TenantMatriculeConfigRepository::class => new \App\Repositories\TenantMatriculeConfigRepository(),
             \App\Services\Personnel\MatriculeService::class => new \App\Services\Personnel\MatriculeService(
                 self::get(\App\Repositories\TenantMatriculeConfigRepository::class),

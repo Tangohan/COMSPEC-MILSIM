@@ -13,6 +13,8 @@ $diStatusTone = static fn (string $status): string => match (true) {
     $status === 'archive' => 'archived',
     default => 'closed',
 };
+/** Valeur d'un fait : le texte, ou un tiret discret quand il est vide. */
+$diV = static fn (mixed $v): string => trim((string) $v) !== '' ? $diH($v) : '<span class="di-muted-text">—</span>';
 $diDate = static function (?string $raw, string $format = 'd/m/Y H:i'): string {
     $raw = trim((string) $raw);
     $ts = $raw !== '' ? strtotime($raw) : false;

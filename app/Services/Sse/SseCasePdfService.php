@@ -9,6 +9,7 @@ use App\Core\Session;
 use App\Repositories\SseCaseRepository;
 use App\Support\Pdf\AthenaPdfTheme as Theme;
 use App\Support\Pdf\AthenaTcpdf;
+use App\Support\Pdf\SsePdfNotice;
 use App\Support\SseDocumentMarkings;
 use App\Support\TrainingCertificatePdfEngine;
 
@@ -47,8 +48,9 @@ final class SseCasePdfService
      * (réservée aux appels déjà encadrés). Un PDF circule seul une fois transmis.
      *
      * `$inline` : lecture à l'écran plutôt que téléchargement.
+     * `$withNotice` : page explicative après la page de garde (désactivable pour les usages automatiques qui comptent les pages).
      */
-    public function export(int $tenantId, int $caseId, ?string $releaseLevel = null, bool $inline = false): Response
+    public function export(int $tenantId, int $caseId, ?string $releaseLevel = null, bool $inline = false, bool $withNotice = true): Response
     {
         $data = $releaseLevel === null
             ? $this->reports->gather($caseId, $tenantId)
@@ -82,13 +84,14 @@ final class SseCasePdfService
             $flash,
             $initial,
             $inline,
-            $releaseLevel
+            $releaseLevel,
+            $withNotice
         ): Response {
             if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return (new Response())->setStatusCode(503)->setBody('<p>Export PDF indisponible pour le moment.</p>');
             }
 
-            $binary = $this->buildPdfBinary($case, $people, $sites, $notes, $evidence, $relations, $flash, $initial, $releaseLevel, $tenantId);
+            $binary = $this->buildPdfBinary($case, $people, $sites, $notes, $evidence, $relations, $flash, $initial, $releaseLevel, $tenantId, $withNotice);
             $refSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) ($case['reference_code'] ?? 'sse'));
             $levelSlug = $releaseLevel !== null
                 ? preg_replace('/[^a-zA-Z0-9_-]+/', '-', $releaseLevel)
@@ -126,7 +129,8 @@ final class SseCasePdfService
         string $flash,
         string $initial,
         ?string $releaseLevel = null,
-        int $tenantId = 0
+        int $tenantId = 0,
+        bool $withNotice = true
     ): string {
         $redactedLabel = '';
         $hidden = [];
@@ -169,6 +173,14 @@ final class SseCasePdfService
         // —— Page de garde ——
         $pdf->AddPage();
         $pdf->writeAthenaHtml($this->coverHtml($case, $redactedLabel, $generatedAt, $people, $sites, $notes, $evidence));
+        $toc = [['label' => Theme::t('Page de garde'), 'page' => 1]];
+        $noticePage = 0;
+        if ($withNotice) {
+            // Page réservée juste après la page de garde ; remplie en dernier, quand les numéros de page sont connus.
+            $pdf->AddPage();
+            $noticePage = $pdf->getPage();
+            $toc[] = ['label' => Theme::t('Notice du document'), 'page' => $noticePage];
+        }
 
         $sections = [
             ['01', 'Flash opérationnel', fn (): string => $this->reportSheet('Flash opérationnel', $flash)],
@@ -179,11 +191,40 @@ final class SseCasePdfService
             ['06', 'Notes classifiées', fn (): string => $this->notesHtml($notes)],
             ['07', 'Preuves recensées', fn (): string => $this->evidenceHtml($evidence)],
         ];
-        foreach ($sections as [$num, $label, $body]) {
-            $pdf->AddPage();
-            $pdf->writeAthenaHtml($this->sectionBanner($redactedLabel, $num, $label) . $body());
+        foreach ($sections as $i => [$num, $label, $body]) {
+            // Une section courte ne force plus une page presque vide : elle suit la précédente s'il reste de la place.
+            $newPage = $i === 0 || $pdf->GetY() > $pdf->getPageHeight() - 95.0;
+            if ($newPage) {
+                $pdf->AddPage();
+            } else {
+                $pdf->writeAthenaHtml(Theme::spacer(4));
+            }
+            $toc[] = ['label' => $num . ' · ' . Theme::t($label), 'page' => $pdf->getPage()];
+            $pdf->Bookmark($num . ' ' . $label, 0, -1, $pdf->getPage());
+            $pdf->writeAthenaHtml($this->sectionBanner($newPage ? $redactedLabel : '', $num, $label) . $body());
         }
+        $pagesBefore = $pdf->getNumPages();
         $this->appendEvidenceImages($pdf, $evidence, $redactedLabel);
+        if ($pdf->getNumPages() > $pagesBefore) {
+            $toc[] = ['label' => Theme::t('Planches photographiques'), 'page' => $pagesBefore + 1];
+        }
+        if ($noticePage > 0) {
+            SsePdfNotice::fillReserved($pdf, $noticePage, [
+                'lang' => Theme::isEnglish() ? 'en' : 'fr',
+                'type' => 'case',
+                'title' => (string) ($case['title'] ?? ''),
+                'ref' => $ref,
+                'level' => (string) ($case['classification'] ?? ''),
+                'generated_at' => $generatedAt,
+                'ids' => [[['Dossier n°', 'Case no.'], (string) ($case['id'] ?? '')]],
+                'issuer' => trim((string) (Session::get('tenant_name') ?? '')),
+                'period' => $this->periodOf($case),
+                'version' => $version,
+                'fingerprint' => SsePdfNotice::fingerprint([$case, $people, $sites, $notes, $evidence, $relations, $flash, $initial, $releaseLevel]),
+                'redaction' => $releaseLevel === null ? null : ['level' => $releaseLevel],
+                'toc' => $toc,
+            ]);
+        }
 
         try {
             return (string) $pdf->Output('', 'S');
@@ -193,6 +234,16 @@ final class SseCasePdfService
             }
             $this->tempFiles = [];
         }
+    }
+
+    /** @param array<string,mixed> $case */
+    private function periodOf(array $case): string
+    {
+        $fmt = static fn (string $v): string => ($ts = strtotime($v)) !== false && $v !== '' ? date(Theme::isEnglish() ? 'm/d/Y' : 'd/m/Y', $ts) : '';
+        $from = $fmt((string) ($case['created_at'] ?? ''));
+        $to = $fmt((string) ($case['updated_at'] ?? ''));
+
+        return $from === '' ? '' : ($to !== '' && $to !== $from ? $from . ' → ' . $to : $from);
     }
 
     /**

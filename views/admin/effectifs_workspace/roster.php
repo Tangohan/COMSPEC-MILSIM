@@ -1035,6 +1035,13 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                 </tbody>
             </table>
         </div>
+        <?php if (!empty($effRosterOnly)): ?>
+        <p class="eff-bur-status" role="status">
+            <span>Mode bureau</span>
+            <span><b><?= (int) $total ?></b> fiche<?= $total > 1 ? 's' : '' ?></span>
+            <span>Page <b><?= (int) $page ?></b> / <b><?= (int) $totalPages ?></b></span>
+        </p>
+        <?php endif; ?>
 
         <div class="eff-catalog-foot">
             <p style="margin:0">

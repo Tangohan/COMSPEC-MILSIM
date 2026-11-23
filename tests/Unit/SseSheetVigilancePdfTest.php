@@ -154,7 +154,7 @@ final class SseSheetVigilancePdfTest extends TestCase
      */
     private function issue(array $subject, array $input = []): array
     {
-        $res = (new SseSheetService())->issue(1, $subject, 'vigilance', $input + ['lang' => 'fr', 'classification' => 'confidentiel', 'faces' => 'auto', 'validity' => 14, 'reasons' => ['M-INS-01'], 'measures' => ['A-NOI', 'A-QRF', 'A-REP']], self::access());
+        $res = (new SseSheetService())->issue(1, $subject, 'vigilance', $input + ['lang' => 'fr', 'avec_notice' => '0', 'classification' => 'confidentiel', 'faces' => 'auto', 'validity' => 14, 'reasons' => ['M-INS-01'], 'measures' => ['A-NOI', 'A-QRF', 'A-REP']], self::access());
         self::assertTrue($res['ok'], implode(' | ', $res['errors']));
         self::assertStringStartsWith('%PDF-', (string) $res['bytes']);
 

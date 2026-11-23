@@ -34,6 +34,6 @@ final class SseDocumentPdfTest extends TestCase
             self::assertStringContainsString($needle, $text, $needle);
         }
         self::assertStringNotContainsString('alert(1)', $text);
-        self::assertMatchesRegularExpression('~/Count 2~', $pdf, 'le saut de page produit une seconde page');
+        self::assertMatchesRegularExpression('~/Count 3~', $pdf, 'la page explicative, puis le corps sur deux pages (le saut de page en produit une seconde)');
     }
 }

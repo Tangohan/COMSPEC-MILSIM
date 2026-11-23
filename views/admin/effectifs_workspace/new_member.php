@@ -39,7 +39,8 @@ if ($selectedAccess < 1) {
         }
     }
 }
-$accountDefault = $o('roster_only', $rosterOnly ? '1' : '0');
+// « Complet » garde l’invitation par compte par défaut ; la fiche sans compte reste un choix.
+$accountDefault = $o('roster_only', $rosterOnly && !empty($nmRosterDefault) ? '1' : '0');
 // Étape « Accès et statut » : habilitation et position de service (NewMemberAccessStatus::form, mêmes règles que la fiche).
 $accessStatus = is_array($nmAccessStatus ?? null) ? $nmAccessStatus : [];
 $clearance = is_array($accessStatus['clearance'] ?? null) ? $accessStatus['clearance'] : ['can' => false, 'options' => [], 'default' => ''];

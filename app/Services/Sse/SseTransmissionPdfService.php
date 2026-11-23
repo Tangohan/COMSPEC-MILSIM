@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseIntelEventRepository;
 use App\Support\Pdf\AthenaPdfTheme as Theme;
+use App\Support\Pdf\SsePdfNotice;
 use App\Support\SseTransmissionView;
 use App\Support\TrainingCertificatePdfEngine;
 
@@ -677,8 +678,15 @@ final class SseTransmissionPdfService
         if ($pdf === null) {
             throw new \RuntimeException('TCPDF indisponible');
         }
+        $noticePage = 0;
+        if (($meta['notice'] ?? true) !== false) {
+            $pdf->AddPage();
+            $noticePage = $pdf->getPage();
+        }
         $pdf->AddPage();
+        $bodyPage = $pdf->getPage();
         $pdf->writeAthenaHtml($html);
+        $pagesBefore = $pdf->getNumPages();
 
         if ($images !== []) {
             $pdf->AddPage();
@@ -714,6 +722,25 @@ final class SseTransmissionPdfService
                     $y += $h + 9;
                 }
             }
+        }
+
+        if ($noticePage > 0) {
+            $toc = [['label' => Theme::t('Notice du document'), 'page' => $noticePage], ['label' => $title, 'page' => $bodyPage]];
+            if ($images !== []) {
+                $toc[] = ['label' => Theme::t('Pièces images'), 'page' => $pagesBefore + 1];
+            }
+            SsePdfNotice::fillReserved($pdf, $noticePage, [
+                'lang' => Theme::isEnglish() ? 'en' : 'fr',
+                'type' => 'transmission',
+                'title' => $title,
+                'ref' => $footerRef,
+                'level' => 'interne',
+                'generated_at' => date(Theme::isEnglish() ? 'm/d/Y H:i' : 'd/m/Y H:i'),
+                'issuer' => $community,
+                'fingerprint' => SsePdfNotice::fingerprint([$html, $title, $footerRef, array_column($images, 'label')]),
+                'redaction' => null,
+                'toc' => $toc,
+            ]);
         }
 
         return (string) $pdf->Output('', 'S');

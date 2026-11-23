@@ -222,11 +222,14 @@ final class SseFieldNoteRepository
             $values[$textField] = $text !== '' ? $text : null;
         }
 
-        return (int) $this->db->insert(
+        $noteId = (int) $this->db->insert(
             'INSERT INTO sse_field_notes (' . implode(',', $fields) . ')
              VALUES (:' . implode(',:', $fields) . ')',
             $values
         );
+        \App\Services\Sse\SseIdentifierService::onCreated($tenantId, 'field_note', $noteId, (string) ($values['title'] ?? ''));
+
+        return $noteId;
     }
 
     /**

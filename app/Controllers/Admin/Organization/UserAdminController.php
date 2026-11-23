@@ -309,7 +309,7 @@ class UserAdminController
         $professionalCategoryCode = trim((string) $request->input('professional_category_code')) ?: null;
 
         $tenantTypeRow = $this->tenantRepository->findById($tenantId);
-        $rosterWithoutAccounts = \App\Services\Community\TenantTypeConfig::rosterWithoutAccounts((string) ($tenantTypeRow['tenant_type'] ?? 'full'));
+        $rosterWithoutAccounts = \App\Services\Community\TenantTypeConfig::rosterBureauMode((string) ($tenantTypeRow['tenant_type'] ?? 'full'));
         if ($rosterWithoutAccounts && ($request->input('roster_only') === '1' || $email === '')) {
             return $this->storeRosterOnlyMember($request, $tenantId, $actorUserId, $createUrl, $gradeId, $rights, $accessStatusForm);
         }

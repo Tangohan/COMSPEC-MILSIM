@@ -17,10 +17,10 @@
     air-sol passe par la liaison de données de l'appareil : ni retenu hors réseau (relais hors de portée en vol), ni la
     boîte Athena suspendue.
     Params : [action, argument]
-      "send", [format ("9" | "5" | "C" fiche de check-in CKIN, fn_jtacCkin), lignes, remarques, destinataires [[indicatif, véhicule ou unité]...], ref, libre]  (JTAC)
+      "send", [format ("9" | "5" | "C" fiche de check-in CKIN, fn_jtacCkin), lignes, remarques, destinataires [[indicatif, véhicule ou unité]...], ref, libre, nom du brief]  (JTAC)
       "track", [ref, format, résumé, [indicatifs]]   suivi d'un envoi fait ailleurs (mission CAS de l'app JTAC)
       "recv", [genre, ref, données, indicatif, unité]   réception de l'événement CBA
-      "store", [ref, id Athena, format, émetteur, unité, heure, lignes, remarques, destinataire, source, statut]
+      "store", [ref, id Athena, format, émetteur, unité, heure, lignes, remarques, destinataire, source, statut, nom du brief, référence Athena (CAS-23-04)]
       "poll", forcé (bool)       boîte Athena du pilote (forcé : relance 3 s après, la DLL rend le relevé précédent)
       "tick"                     toutes les 4 s : relève la boîte quand il le faut (voir plus haut)
       "names" → noms interrogés (indicatif de l'appareil, dernier indicatif d'appareil, indicatif Athena, indicatif ATAK,
@@ -143,13 +143,14 @@ switch (_act) do {
     case "label": { (createHashMapFromArray [["SENT", "ENVOYÉ"], ["RECEIVED", "REÇU"], ["READ", "LU"], ["WILCO", "WILCO"], ["UNABLE", "UNABLE"], ["DONE", "CLÔTURÉ"]]) getOrDefault [toUpper _arg, toUpper _arg] };
 
     case "track": {
-        _arg params [["_ref", ""], ["_fmt", "9"], ["_sum", ""], ["_labels", []]];
+        _arg params [["_ref", ""], ["_fmt", "9"], ["_sum", ""], ["_labels", []], ["_name", ""]];
         private _sent = missionNamespace getVariable [_sentKey, []];
         private _i = _sent findIf { (_x get "ref") isEqualTo _ref };
         private _e = if (_i >= 0) then { _sent deleteAt _i } else { createHashMapFromArray [["ref", _ref], ["dest", createHashMap]] };
         _e set ["fmt", _fmt];
         _e set ["at", [] call _hhmm];
         _e set ["sum", _sum];
+        _e set ["name", _name];
         private _d = _e get "dest";
         { _d set [_x, "SENT"]; } forEach _labels;
         _sent = [_e] + _sent;
@@ -157,7 +158,9 @@ switch (_act) do {
         _ref
     };
     case "send": {
-        _arg params [["_fmt", "9"], ["_lines", []], ["_rem", ""], ["_dest", []], ["_ref", ""], ["_free", false]];
+        _arg params [["_fmt", "9"], ["_lines", []], ["_rem", ""], ["_dest", []], ["_ref", ""], ["_free", false], ["_name", ""]];
+        // Nom libre du brief (40 caractères) : repris par Athena, qui attribue la référence (CAS-23-04) et la rend aux pilotes.
+        _name = [_name, 40] call _clean;
         // Id sûr ([A-Za-z0-9-]) : un nombre >= 1e6 passé à format donne « 6.35867e+06 », rejeté en 404 par Athena.
         if (_ref isEqualTo "") then { _ref = format ["CAS-%1-%2", (getPlayerUID player) select [9], (round (diag_tickTime * 1000)) toFixed 0]; };
         private _from = ["jtacCs"] call comspec_atak_native_fnc_airBrief;
@@ -177,10 +180,10 @@ switch (_act) do {
         private _sum = if (_fmt isEqualTo "C") then { format ["%1 | %2", _lines param [0, "-"], _lines param [16, "-"]] } else {
             format ["%1 | %2", _lines param [[5, 2] select (_fmt isEqualTo "5"), "-"], _lines param [[4, 3] select (_fmt isEqualTo "5"), "-"]]
         };
-        ["track", [_ref, _fmt, _sum, _labels]] call comspec_atak_native_fnc_airBrief;
+        ["track", [_ref, _fmt, _sum, _labels, _name]] call comspec_atak_native_fnc_airBrief;
         {
             _x params ["_u", "_lbl"];
-            [{ params ["_u", "_p"]; ["comspec_atak_native_airBrief", _p, _u] call CBA_fnc_targetEvent; }, [_u, ["brief", _ref, [_fmt, _lines, _rem, _lbl], _from, player]], format ["JTAC %1 pour %2", [_fmt] call _fmtName, _lbl], 1] call comspec_atak_native_fnc_netSend;
+            [{ params ["_u", "_p"]; ["comspec_atak_native_airBrief", _p, _u] call CBA_fnc_targetEvent; }, [_u, ["brief", _ref, [_fmt, _lines, _rem, _lbl, _name], _from, player]], format ["JTAC %1 pour %2", [_fmt] call _fmtName, _lbl], 1] call comspec_atak_native_fnc_netSend;
         } forEach _units;
         // Athena (page /9-line, pilotes reliés hors de portée du jeu) : même ref, destinataires par indicatif. La fiche de
         // check-in (CKIN) reste en jeu : la page /9-line ne connaît que les 9-LINE et 5-LINE.
@@ -193,6 +196,8 @@ switch (_act) do {
                 _mapId, [_from] call _esc, ["CAS", "5LINE"] select (_fmt isEqualTo "5"), ["9line", "5line"] select (_fmt isEqualTo "5"), ["false", "true"] select _free, _ref, [_rem] call _esc,
                 _lj joinString ",",
                 (_labels apply { format ['"%1"', [_x] call _esc] }) joinString ","];
+            // Nom libre : champ "name" du corps (le format SQF s'arrête à %9).
+            if (_name isNotEqualTo "") then { _json = format ['{"name":"%1",%2', [_name] call _esc, _json select [1]]; };
             [{ _this spawn { params ["_json"]; (["COMSPECExtension", "SubmitNineLine", [_json]] call comspec_atak_native_fnc_extAwait); }; }, [_json], format ["JTAC %1 vers Athena", [_fmt] call _fmtName], 1] call comspec_atak_native_fnc_netSend;
         };
         ["SUCCESS", format ["%1 envoyé à %2", [_fmt] call _fmtName, _labels joinString ", "], 4, 40] call comspec_atak_native_fnc_notify;
@@ -204,8 +209,8 @@ switch (_act) do {
         if (!hasInterface) exitWith {};
         switch (_kind) do {
             case "brief": {
-                _data params [["_fmt", "9"], ["_lines", []], ["_rem", ""], ["_to", ""]];
-                ["store", [_ref, 0, _fmt, _from, _unit, [] call _hhmm, _lines, _rem, _to, "game", ""]] call comspec_atak_native_fnc_airBrief;
+                _data params [["_fmt", "9"], ["_lines", []], ["_rem", ""], ["_to", ""], ["_name", ""]];
+                ["store", [_ref, 0, _fmt, _from, _unit, [] call _hhmm, _lines, _rem, _to, "game", "", _name, ""]] call comspec_atak_native_fnc_airBrief;
             };
             case "ack": {
                 _data params [["_st", ""], ["_to", ""]];
@@ -218,7 +223,7 @@ switch (_act) do {
                 // Mission clôturée par le pilote : demande FIRES court terminée, son marqueur est retiré (fn_firesQuick).
                 if ((toUpper _st) isEqualTo "DONE") then { ["closed", _ref] call comspec_atak_native_fnc_firesQuick; };
                 if ((toUpper _st) in ["WILCO", "UNABLE", "DONE"]) then {
-                    [["TACTICAL", "WARNING"] select ((toUpper _st) isEqualTo "UNABLE"), format ["%1 : %2 (%3 de %4)", _to, toUpper _st, [_e get "fmt"] call _fmtName, _e get "at"], 6, 85, "JTAC"] call comspec_atak_native_fnc_notify;
+                    [["TACTICAL", "WARNING"] select ((toUpper _st) isEqualTo "UNABLE"), format ["%1 : %2 (%3 de %4%5)", _to, toUpper _st, [_e get "fmt"] call _fmtName, _e get "at", ["", format [" · %1", _e getOrDefault ["name", ""]]] select ((_e getOrDefault ["name", ""]) isNotEqualTo "")], 6, 85, "JTAC"] call comspec_atak_native_fnc_notify;
                     [] call comspec_atak_native_fnc_vibrate;
                 };
                 // Relais vers Athena (page /9-line du JTAC) : le pilote n'est pas forcément relié lui-même.
@@ -239,7 +244,9 @@ switch (_act) do {
         };
     };
     case "store": {
-        _arg params [["_ref", ""], ["_aid", 0], ["_fmt", "9"], ["_from", ""], ["_unit", objNull], ["_at", ""], ["_lines", []], ["_rem", ""], ["_to", ""], ["_src", "game"], ["_status", ""]];
+        _arg params [["_ref", ""], ["_aid", 0], ["_fmt", "9"], ["_from", ""], ["_unit", objNull], ["_at", ""], ["_lines", []], ["_rem", ""], ["_to", ""], ["_src", "game"], ["_status", ""], ["_name", ""], ["_aref", ""]];
+        _name = [_name, 40] call _clean;
+        _aref = [_aref, 24] call _clean;
         if (_ref isEqualTo "" && {_aid > 0}) then { _ref = str _aid; };
         if (_ref isEqualTo "") exitWith { false };
         if (_ref in (missionNamespace getVariable ["COMSPEC_ATAK_AirGone", []])) exitWith { false };
@@ -249,6 +256,10 @@ switch (_act) do {
             // Déjà reçu (jeu puis Athena) : on complète ; nouveau brief du même JTAC (correction) : relu.
             private _b = _in select _i;
             if (_aid > 0) then { _b set ["aid", _aid]; };
+            // Nom et référence : Athena les rend au relevé (le brief reçu en jeu les ignore encore) ; un nom changé se met à jour.
+            if (_aref isNotEqualTo "") then { _b set ["aref", _aref]; };
+            if (_src isEqualTo "athena") then { _b set ["name", _name]; };
+            if (_src isEqualTo "game" && {_name isNotEqualTo ""}) then { _b set ["name", _name]; };
             if (!isNull _unit) then { _b set ["unit", _unit]; };
             if (_src isEqualTo "game" && {(_b get "lines") isNotEqualTo _lines}) then {
                 _b set ["lines", _lines];
@@ -264,7 +275,7 @@ switch (_act) do {
         };
         private _st = toUpper _status;
         private _b = createHashMapFromArray [["ref", _ref], ["aid", _aid], ["fmt", _fmt], ["from", _from], ["unit", _unit], ["at", _at],
-            ["lines", _lines], ["rem", _rem], ["to", _to], ["src", _src], ["read", ([_st] call _rank) >= 2], ["ack", ["", _st] select (_st in ["WILCO", "UNABLE", "DONE"])]];
+            ["lines", _lines], ["rem", _rem], ["to", _to], ["src", _src], ["name", _name], ["aref", _aref], ["read", ([_st] call _rank) >= 2], ["ack", ["", _st] select (_st in ["WILCO", "UNABLE", "DONE"])]];
         _in = [_b] + _in;
         missionNamespace setVariable [_inboxKey, _in select [0, 20]];
         // Déjà lu ailleurs (reconnexion) : pas de nouvelle alerte.
@@ -284,6 +295,9 @@ switch (_act) do {
             default { [_lines param [5, ""], format ["IP %1", _lines param [0, ""]]] };
         }) select { !((trim _x) in ["", "-", "IP", "IP -"]) };
         private _head = (createHashMapFromArray [["5", "5 LIGNES reçues de %1"], ["M", "MEDEVAC reçu de %1"], ["C", "CHECK-IN reçu de %1"]]) getOrDefault [_fmt, "9 LIGNES reçues de %1"];
+        // Nom du brief et référence : le pilote et le JTAC se les annoncent à la radio.
+        private _tag = [_aref, _name] select { _x isNotEqualTo "" };
+        if (_tag isNotEqualTo []) then { _head = _head + format [" [%1]", ((_tag joinString " · ") splitString "%") joinString ""]; };
         ["WARNING", [format [_head, _from], format [_head + " — %2", _from, _what joinString " · "]] select (_what isNotEqualTo []), 10, 85, ["JTAC", "PILOT"] select ((["on"] call comspec_atak_native_fnc_pilotMode) && {["crew"] call comspec_atak_native_fnc_pilotMode})] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_vibrate;
         // Téléphone rangé (en vol) : le vibreur ne joue pas, on entend quand même l'arrivée.
@@ -428,10 +442,12 @@ switch (_act) do {
             isNil {
                 {
                     if (_x isEqualType [] && {(count _x) >= 6}) then {
-                        _x params [["_ref", ""], ["_aid", 0], ["_kind", "9line"], ["_from", ""], ["_at", ""], ["_lines", []], ["_rem", ""], ["_st", ""], ["_to", ""]];
+                        _x params [["_ref", ""], ["_aid", 0], ["_kind", "9line"], ["_from", ""], ["_at", ""], ["_lines", []], ["_rem", ""], ["_st", ""], ["_to", ""], ["_srcCol", ""], ["_name", ""], ["_aref", ""]];
+                        if !(_name isEqualType "") then { _name = ""; };
+                        if !(_aref isEqualType "") then { _aref = ""; };
                         if !(_aid isEqualType 0) then { _aid = 0; };
                         private _fmt = switch (toLower _kind) do { case "5line": { "5" }; case "medevac": { "M" }; default { "9" }; };
-                        ["store", [_ref, _aid, _fmt, _from, objNull, _at, _lines, _rem, _to, "athena", _st]] call comspec_atak_native_fnc_airBrief;
+                        ["store", [_ref, _aid, _fmt, _from, objNull, _at, _lines, _rem, _to, "athena", _st, _name, _aref]] call comspec_atak_native_fnc_airBrief;
                     };
                 } forEach _arr;
             };

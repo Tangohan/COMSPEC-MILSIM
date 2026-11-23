@@ -1,0 +1,191 @@
+/*
+ * Effectifs — « mode bureau » (profils Bureau des effectifs et Complet).
+ * Reprise du design « Bureau effectifs — mode tableur » : barre d'onglets à filet vert,
+ * barre d'outils à plat, grille de tableur (lettres de colonnes, numéros de ligne, en-tête
+ * à filet noir, chiffres en chasse fixe), ligne survolée vert très clair, barre d'état.
+ * Tout est limité à .bo-eff-workspace--bureau : les autres profils ne changent pas.
+ * Jetons : --ath-* du portail quand ils existent, valeurs du design en repli.
+ */
+
+.bo-eff-workspace--bureau {
+  --bur-ink: var(--ath-ink, #0c1116);
+  --bur-ink-2: #3c474c;
+  --bur-muted: var(--ath-muted, #6d7a80);
+  --bur-line: var(--ath-line, #e3e8ea);
+  --bur-line-soft: #edf0f1;
+  --bur-surface: var(--ath-surface, #ffffff);
+  --bur-gutter: var(--ath-table-head, #f3f6f7);
+  --bur-gutter-ink: #8c979b;
+  --bur-hover: var(--ath-row-hover, #f2fbf7);
+  --bur-sel: #eef9f3;
+  --bur-accent: #0b8a5c;
+  --bur-accent-ink: #0b6b47;
+  --bur-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ——— Onglets : filet vert sous l'onglet actif ——— */
+.bo-eff-workspace.bo-eff-workspace--bureau .bo-eff-tabs .bo-eff-tab {
+  border-radius: 0;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau .bo-eff-tabs .bo-eff-tab.is-active {
+  color: var(--bur-accent-ink);
+  box-shadow: inset 0 -3px 0 var(--bur-accent);
+  font-weight: 900;
+}
+
+/* ——— Barre d'outils à plat ——— */
+.bo-eff-workspace.bo-eff-workspace--bureau .eff-rl-tools,
+.bo-eff-workspace.bo-eff-workspace--bureau .eff-bulkbar {
+  background: var(--bur-surface);
+  border: 1px solid var(--bur-line);
+  border-radius: 0;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau .eff-rl-cols__btn,
+.bo-eff-workspace.bo-eff-workspace--bureau .eff-catalog__btn {
+  border-radius: 0;
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau .eff-catalog__btn--primary {
+  background: var(--bur-ink);
+  border-color: var(--bur-ink);
+  color: #fff;
+}
+
+/* ——— Grille de tableur ——— */
+.bo-eff-workspace.bo-eff-workspace--bureau .eff-sheets--das {
+  border: 1px solid var(--bur-line);
+  border-radius: 0;
+  background: var(--bur-surface);
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table {
+  border-collapse: separate;
+  border-spacing: 0;
+  counter-reset: bur-row;
+  font-variant-numeric: tabular-nums;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table thead tr {
+  counter-reset: bur-col;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafb;
+  color: var(--bur-ink-2);
+  border-right: 1px solid var(--bur-line-soft);
+  border-bottom: 2px solid var(--bur-ink);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table thead th:not(.eff-das__check) {
+  counter-increment: bur-col;
+}
+/* Lettre de colonne (A, B, C…) au-dessus de l'intitulé : les colonnes masquées ne comptent pas. */
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table thead th:not(.eff-das__check)::before {
+  content: counter(bur-col, upper-alpha);
+  display: block;
+  margin: 0 0 2px;
+  font-family: var(--bur-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--bur-gutter-ink);
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody td {
+  border-right: 1px solid var(--bur-line-soft);
+  border-bottom: 1px solid var(--bur-line-soft);
+  font-weight: 600;
+  color: var(--bur-ink);
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row:nth-child(even) td {
+  background: #fbfcfc;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row:hover td {
+  background: var(--bur-hover);
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row:has(.eff-bulk-check:checked) td {
+  background: var(--bur-sel);
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table .eff-das__num,
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table .eff-rl-mle {
+  font-family: var(--bur-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table .eff-mq-gh td {
+  background: #f6f8f9;
+  border-top: 1px solid var(--bur-ink);
+  border-bottom: 1px solid var(--bur-ink);
+}
+
+/* Numéro de ligne dans la gouttière (compteur CSS, rien à ajouter au HTML). */
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row {
+  counter-increment: bur-row;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row > td:first-child {
+  position: relative;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row > td:first-child::before {
+  content: counter(bur-row);
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bur-gutter);
+  border-right: 1px solid var(--bur-line);
+  color: var(--bur-gutter-ink);
+  font-family: var(--bur-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row > td:first-child {
+  padding-left: 2.9rem;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row:has(.eff-bulk-check:checked) > td:first-child::before {
+  background: var(--bur-accent);
+  color: #fff;
+}
+
+/* ——— Barre d'état ——— */
+.bo-eff-workspace.bo-eff-workspace--bureau .eff-bur-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.1rem;
+  margin: 0;
+  padding: 0.35rem 0.8rem;
+  background: #0b0e0f;
+  color: #f4f4f0;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.bo-eff-workspace.bo-eff-workspace--bureau .eff-bur-status b {
+  font-family: var(--bur-mono);
+  color: #12d18e;
+}
+
+/* ——— Adaptatif : sous 760 px, pas de gouttière, la grille défile ——— */
+@media (max-width: 760px) {
+  .bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row > td:first-child::before {
+    display: none;
+  }
+  .bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row > td:first-child {
+    padding-left: revert;
+  }
+}
+
+/* Mode nuit : on ne force pas les fonds clairs. */
+html[data-theme="dark"] .bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table thead th,
+html[data-theme="dark"] .bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table tbody tr.eff-mq-row:nth-child(even) td,
+html[data-theme="dark"] .bo-eff-workspace.bo-eff-workspace--bureau #eff-roster-table.eff-das__table .eff-mq-gh td {
+  background: var(--ath-table-head, #12181c);
+  color: inherit;
+}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Support\Pdf\AthenaPdfTheme;
+use App\Support\Pdf\SsePdfNotice;
 use App\Support\SseUsClassification;
 use App\Support\SseSheetText;
 use App\Support\TrainingCertificatePdfEngine;
@@ -108,6 +109,9 @@ final class SseSheetPdf
 
     private int $pages = 1;
 
+    /** Pages placées avant la fiche : 1 avec la notice (page explicative), 0 sans. */
+    private int $off = 0;
+
     /** Numéro du dernier paragraphe titré. */
     private int $n = 0;
 
@@ -121,7 +125,7 @@ final class SseSheetPdf
      * PDF de la fiche, ou null si le moteur PDF ou ses polices manquent.
      *
      * @param Sheet $d
-     * @return array{bytes: string, pages: int, overflow: list<string>, redaction: array{total: int, by: array<string, int>}}|null
+     * @return array{bytes: string, pages: int, notice: bool, overflow: list<string>, redaction: array{total: int, by: array<string, int>}}|null
      */
     public function render(array $d): ?array
     {
@@ -145,7 +149,7 @@ final class SseSheetPdf
         });
     }
 
-    /** @param Sheet $d @return array{bytes: string, pages: int, overflow: list<string>} */
+    /** @param Sheet $d @return array{bytes: string, pages: int, notice: bool, overflow: list<string>} */
     private function draw(array $d): array
     {
         $this->d = $d;
@@ -155,6 +159,7 @@ final class SseSheetPdf
         $this->none = [];
         $this->n = 0;
         $this->pages = 1;
+        $this->off = SsePdfNotice::enabled($d['notice'] ?? null) ? 1 : 0;
         $this->rxCounts = [];
         $this->rxMeasuring = 0;
         $pdf = new class ('P', 'mm', 'A4', true, 'UTF-8', false) extends \TCPDF {
@@ -177,6 +182,11 @@ final class SseSheetPdf
         $pdf->SetCellPadding(0);
         $pdf->setCellHeightRatio(1.22);
 
+        if ($this->off === 1) {
+            // Page explicative : réservée ici, dessinée à la fin (le sommaire connaît alors les numéros de page).
+            $pdf->AddPage();
+            $this->band(true);
+        }
         $pdf->AddPage();
         if ($d['model'] === 'vigilance') {
             $this->vigilanceFront();
@@ -198,12 +208,17 @@ final class SseSheetPdf
             $this->newPage();
         }
         $this->about();
-        for ($p = 1; $p <= $this->pages; ++$p) {
+        if ($this->off === 1) {
+            $pdf->setPage(1);
+            $this->notice();
+        }
+        $total = $this->pages + $this->off;
+        for ($p = 1; $p <= $total; ++$p) {
             $pdf->setPage($p);
             $this->footer($p);
         }
 
-        return ['bytes' => (string) $pdf->Output('fiche.pdf', 'S'), 'pages' => $this->pages, 'overflow' => array_values(array_unique($this->overflow))];
+        return ['bytes' => (string) $pdf->Output('fiche.pdf', 'S'), 'pages' => $total, 'notice' => $this->off === 1, 'overflow' => array_values(array_unique($this->overflow))];
     }
 
     // ------------------------------------------------------------------ Pages
@@ -846,11 +861,42 @@ final class SseSheetPdf
         $this->y = max($this->y + 5.0, $pdf->GetY()) + 3.0;
     }
 
+    /** Page explicative (page 1) : dessinée après la fiche, avec le sommaire des pages. */
+    private function notice(): void
+    {
+        $d = $this->d;
+        $pdf = $this->pdf;
+        $model = in_array($d['model'], ['identification', 'vigilance', 'profile', 'control'], true) ? (string) $d['model'] : 'profile';
+        $lang = $this->lang === 1 ? 'en' : 'fr';
+        $toc = [['label' => $this->lang === 1 ? 'About this document' : 'Notice du document', 'page' => 1], ['label' => $d['title'][$this->lang], 'page' => 2]];
+        for ($p = 2; $p <= $this->pages; ++$p) {
+            $toc[] = ['label' => $d['title'][$this->lang] . ' · ' . $this->t('cont')[$this->lang], 'page' => $p + 1];
+        }
+        $expiry = ($d['valid_until'] ?? null) !== null ? $this->date((string) $d['valid_until']) : '';
+        $pdf->SetAutoPageBreak(false, 0);
+        SsePdfNotice::draw($pdf, [
+            'lang' => $lang,
+            'type' => $model,
+            'title' => $d['title'][$this->lang],
+            'ref' => (string) $d['ref'],
+            'level' => $this->level(),
+            'generated_at' => (string) $d['generated_at'],
+            'ids' => [[['GDH (DTG)', 'DTG'], $this->dtg()]],
+            'issuer' => (string) ($d['service'] !== '' ? $d['service'] . ' — ' . $d['authority'][$this->lang] : $d['authority'][$this->lang]),
+            'period' => $expiry !== '' ? ($this->lang === 1 ? 'Valid until ' : 'Valable jusqu’au ') . $expiry : '',
+            'version' => $d['classification'][$this->lang] . (!empty($d['copy_level']) ? ' · ' . ($this->lang === 1 ? 'copy at ' : 'copie à ') . SseUsClassification::abbr((string) $d['copy_level']) : ''),
+            'fingerprint' => SsePdfNotice::fingerprint(array_diff_key($d, ['emblem' => 1, 'generated_at' => 1, 'issued_dt' => 1, 'notice' => 1])),
+            'redaction' => ['level' => $this->level(), 'required' => is_array($d['visibility'] ?? null) ? $d['visibility'] : null, 'masked' => (int) ($this->rxKnown['total'] ?? 0)],
+            'toc' => $toc,
+            'geometry' => ['x' => self::MARGIN, 'y' => self::BAND_H + 6.0, 'w' => self::CONTENT_W, 'bottom' => 270.0],
+        ]);
+    }
+
     /** Bloc de la dernière page : autorité de classification (compact, sans page dédiée). */
     private function about(): void
     {
         $pdf = $this->pdf;
-        $pdf->setPage($this->pages);
+        $pdf->setPage($this->pages + $this->off);
         $d = $this->d;
         $need = 13.0;
         if (self::BOTTOM - $this->y < $need) {
@@ -961,7 +1007,7 @@ final class SseSheetPdf
         }
         $pdf->SetFont($this->sans, 'B', 7.6);
         $pdf->SetXY(150.0, 275.0);
-        $pdf->Cell(48.0, 3.6, $this->t('page')[$this->lang] . ' ' . $page . ' ' . ($this->lang === 1 ? 'of' : 'sur') . ' ' . $this->pages, 0, 1, 'R');
+        $pdf->Cell(48.0, 3.6, $this->t('page')[$this->lang] . ' ' . $page . ' ' . ($this->lang === 1 ? 'of' : 'sur') . ' ' . ($this->pages + $this->off), 0, 1, 'R');
         $pdf->SetFont($this->sans, '', 6.4);
         $pdf->SetTextColor(...self::MUTED);
         $pdf->SetXY(150.0, 279.4);

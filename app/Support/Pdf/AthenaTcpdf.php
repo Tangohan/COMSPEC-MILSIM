@@ -10,7 +10,7 @@ namespace App\Support\Pdf;
  */
 class AthenaTcpdf extends \TCPDF
 {
-    /** @var array{kind: string, reference: string, community: string, logo: ?string, classification: string, audience: string, generated_by: string, note: string, title: string, generated_at: string} */
+    /** @var array{kind: string, reference: string, community: string, logo: ?string, classification: string, audience: string, generated_by: string, note: string, title: string, generated_at: string, band_bottom: bool} */
     public array $athenaMeta;
 
     /**
@@ -21,7 +21,7 @@ class AthenaTcpdf extends \TCPDF
     public static array $lastStamp = ['headers' => 0, 'footers' => 0];
 
     /**
-     * @param array{kind: string, reference: string, community: string, logo: ?string, classification: string, audience: string, generated_by: string, note: string, title: string, generated_at: string} $meta
+     * @param array{kind: string, reference: string, community: string, logo: ?string, classification: string, audience: string, generated_by: string, note: string, title: string, generated_at: string, band_bottom: bool} $meta
      */
     public static function make(array $meta): self
     {
@@ -158,5 +158,18 @@ class AthenaTcpdf extends \TCPDF
         $pages = $this->getAliasNumPage() . ' / ' . $this->getAliasNbPages();
         $this->SetXY($l + ($r - $l) * 0.62, $y + 1.6);
         $this->Cell(($r - $l) * 0.38, 4, ($m['reference'] !== '' ? $m['reference'] . ' · ' : '') . $pages, 0, 0, 'R');
+
+        // Bandeau de classification en bas de page (en option) : le même texte que le bandeau du haut, sur chaque page.
+        if ($m['band_bottom'] && $m['classification'] !== '') {
+            $by = $this->getPageHeight() - 6.4;
+            $this->SetFillColorArray(AthenaPdfTheme::rgb(AthenaPdfTheme::INK));
+            $this->Rect($l, $by, $r - $l, 4.6, 'F');
+            $this->SetFont(AthenaPdfTheme::sans(), 'B', 6.2);
+            $this->setFontSpacing(0.3);
+            $this->SetTextColor(255, 255, 255);
+            $this->SetXY($l + 3, $by);
+            $this->Cell($r - $l - 6, 4.6, mb_strtoupper($m['classification'], 'UTF-8'), 0, 0, 'C', false, '', 1);
+            $this->setFontSpacing(0);
+        }
     }
 }

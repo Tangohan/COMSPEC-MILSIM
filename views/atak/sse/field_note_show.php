@@ -502,6 +502,7 @@ $sseExtraScripts = ($sseExtraScripts ?? '') . '<script defer src="' . $h(asset_u
                 <h2 class="fnr-panel__title">Liaisons</h2>
                 <p class="fnr-desc">Les personnes, papiers et dossiers reliés à cette fiche, à la main ou par Cerbère.</p>
                 <?php \App\Services\Sse\Links\SseLinksWidget::render('note', $noteId); ?>
+<?php \App\Services\Sse\SseIdentifierWidget::render('field_note', $noteId); ?>
                 <?php \App\Services\Sse\Attach\SseAttachWindow::section('note', $noteId, ['slim' => true]); ?>
             </section>
         </aside>

@@ -15,6 +15,7 @@ use App\Repositories\SseCaseRepository;
 use App\Repositories\SseCaseMapRepository;
 use App\Repositories\SseCrossDecisionRepository;
 use App\Repositories\SseDocumentRepository;
+use App\Repositories\SseDocumentTemplateRepository;
 use App\Repositories\SseEntityIndexRepository;
 use App\Repositories\SseIntelEventRepository;
 use App\Repositories\SseInterestCaseRepository;
@@ -56,6 +57,7 @@ use App\Services\Sse\SseWorkspaceService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\SseAnalyticalCatalog;
 use App\Support\SseCreationBrief;
+use App\Support\SseDocumentTemplates;
 use App\Support\SseRichText;
 use App\Support\SseTextVariables;
 use App\Services\Sse\SseAccessPolicy;
@@ -89,6 +91,7 @@ final class SsePortalController
         private ?SseTextTemplateRepository $textLibrary = null,
         private ?SseDocumentPrefabRepository $documentPrefabs = null,
         private ?\App\Repositories\SseDocumentDraftRepository $documentDrafts = null,
+        private ?SseDocumentTemplateRepository $documentTemplates = null,
         private ?SseCaseMapRepository $caseMaps = null,
         private ?SseAnalyticalRepository $analytical = null,
         private ?SseContextualMentionService $contextualMentions = null,
@@ -1990,7 +1993,7 @@ final class SsePortalController
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
 
-        return $this->pdf->export($tenantId, $id, $level);
+        return $this->pdf->export($tenantId, $id, $level, false, \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
     }
 
     public function personsIndex(Request $request, array $params = []): Response
@@ -4079,8 +4082,33 @@ final class SsePortalController
 
         $type = SseDocumentRepository::normalizeType((string) $request->query('type', 'note_analyse'));
         $caseId = (int) $request->query('case_id', 0);
-        $body = SseDocumentRepository::bodyTemplate($type);
         $case = $caseId > 0 ? $this->requireCase($caseId) : null;
+        $modelCode = trim((string) $request->query('modele', ''));
+
+        if ($modelCode === '') {
+            return $this->portalView('atak.sse.document_templates', [
+                'title' => 'Nouveau document SSE',
+                'models' => $this->modelCards($case),
+                'groups' => SseDocumentTemplates::GROUPS,
+                'caseId' => $caseId,
+                'caseRef' => (string) ($case['reference_code'] ?? ''),
+                'preferredType' => $request->query('type') !== null ? $type : '',
+                'typeLabels' => SseDocumentRepository::TYPE_LABELS,
+                'canManage' => true,
+                'activeNav' => 'documents',
+            ]);
+        }
+
+        $model = $this->resolveModel($modelCode, $case);
+        if ($model === null) {
+            Session::flash('error', 'Ce modèle est introuvable.');
+
+            return Response::redirect(url('atak/sse/documents/nouveau' . ($caseId > 0 ? '?case_id=' . $caseId : '')));
+        }
+        $title = $model['code'] === SseDocumentTemplates::BLANK ? '' : $model['label'];
+        if ($title !== '' && $case !== null && trim((string) ($case['title'] ?? '')) !== '') {
+            $title = mb_substr($title . ' — ' . trim((string) $case['title']), 0, 240);
+        }
 
         return $this->portalView('atak.sse.document_form', [
             'title' => 'Nouveau document SSE',
@@ -4089,21 +4117,146 @@ final class SsePortalController
             'statusLabels' => SseDocumentRepository::STATUS_LABELS,
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
             'cases' => $this->cases->listForTenant($this->tenantId(), $this->access->caseScope()),
-            'bodyTemplates' => SseDocumentRepository::bodyTemplatesByType(),
+            'bodyTemplates' => [],
             'libraryEntries' => $this->libraryForEditor($case),
             'libraryCategories' => SseTextTemplateRepository::categories(),
             'contextualSuggestions' => $this->contextualSuggestionsForCase($case),
-            'prefillType' => $type,
+            'prefillType' => $model['document_type'],
             'prefillCaseId' => $caseId,
-            'prefillTitle' => '',
-            'prefillBody' => $body,
-            'prefillClass' => 'confidentiel',
+            'prefillTitle' => $title,
+            'prefillBody' => SseRichText::MARK . $model['body'],
+            'prefillClass' => $model['classification'],
             'prefillStatus' => 'brouillon',
+            'modelLabel' => $model['label'],
             'canManage' => true,
-            'editorContext' => $this->editorContext(0),
+            'editorContext' => $this->editorContext(0, $case),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
         ]);
+    }
+
+    /** Enregistre le document en cours comme modèle personnel (JSON). */
+    public function documentTemplateStore(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Action non autorisée.'], 403);
+        }
+        $id = $this->templates()->create($this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey(), [
+            'title' => (string) $request->input('title', ''),
+            'description' => (string) $request->input('description', ''),
+            'body' => (string) $request->input('body', ''),
+            'document_type' => (string) $request->input('document_type', 'note_analyse'),
+            'classification' => (string) $request->input('classification', 'confidentiel'),
+            'shared' => (string) $request->input('shared', '') === '1',
+        ]);
+        if ($id === null) {
+            return Response::json(['ok' => false, 'error' => 'Modèle non enregistré : intitulé et contenu sont requis, et le nombre de modèles par rédacteur est limité à ' . SseDocumentTemplateRepository::MAX_PER_USER . '.'], 422);
+        }
+
+        return Response::json(['ok' => true, 'id' => $id]);
+    }
+
+    public function documentTemplateDelete(Request $request, array $params = []): Response
+    {
+        $back = Response::redirect(url('atak/sse/documents/nouveau'));
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return $back;
+        }
+        $ok = $this->templates()->delete((int) ($params['id'] ?? 0), $this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey());
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Modèle supprimé.' : 'Seul l’auteur d’un modèle peut le supprimer.');
+
+        return $back;
+    }
+
+    private function templates(): SseDocumentTemplateRepository
+    {
+        return $this->documentTemplates ??= new SseDocumentTemplateRepository();
+    }
+
+    /**
+     * Champs dynamiques posés dans un modèle : rédacteur, grade, date du jour, dossier, classification, référence.
+     *
+     * @param array<string,mixed>|null $case
+     * @return array<string,string>
+     */
+    private function modelContext(?array $case, string $classification = 'confidentiel', string $reference = ''): array
+    {
+        $author = $this->editorAuthor();
+
+        return [
+            'nom' => $author['nom'], 'grade' => $author['grade'], 'date' => date('d/m/Y'),
+            'dossier' => (string) ($case['reference_code'] ?? ''),
+            'classification' => SseCaseRepository::CLASSIFICATION_LABELS[$classification] ?? '',
+            'reference' => $reference,
+        ];
+    }
+
+    /**
+     * Modèle choisi : catalogue (code) ou modèle personnel (« perso-12 »), corps prêt pour l'éditeur.
+     *
+     * @param array<string,mixed>|null $case
+     * @return array{code:string,label:string,description:string,document_type:string,classification:string,body:string}|null
+     */
+    private function resolveModel(string $code, ?array $case): ?array
+    {
+        if (preg_match('/^perso-(\d{1,9})$/', $code, $m) === 1) {
+            $row = $this->templates()->findVisible((int) $m[1], $this->tenantId(), (int) (Session::get('user_id') ?: 0), $this->draftGuestKey());
+            if ($row === null) {
+                return null;
+            }
+
+            return [
+                'code' => $code, 'label' => (string) $row['title'], 'description' => (string) $row['description'],
+                'document_type' => SseDocumentRepository::normalizeType((string) $row['document_type']),
+                'classification' => SseCaseRepository::normalizeClassification((string) $row['classification']),
+                'body' => SseRichText::htmlOf((string) $row['body']),
+            ];
+        }
+        if (!SseDocumentTemplates::exists($code)) {
+            return null;
+        }
+        $meta = SseDocumentTemplates::CATALOGUE[$code];
+
+        return [
+            'code' => $code, 'label' => $meta['label'], 'description' => $meta['description'],
+            'document_type' => $meta['document_type'], 'classification' => $meta['classification'],
+            'body' => SseDocumentTemplates::body($code, $this->modelContext($case, $meta['classification'])),
+        ];
+    }
+
+    /**
+     * Cartes de la galerie : catalogue puis modèles personnels et partagés, avec l'aperçu réel de chaque modèle.
+     *
+     * @param array<string,mixed>|null $case
+     * @return list<array<string,mixed>>
+     */
+    private function modelCards(?array $case): array
+    {
+        $cards = [];
+        $caseFields = ['dossier' => (string) ($case['reference_code'] ?? '')];
+        foreach (SseDocumentTemplates::CATALOGUE as $code => $meta) {
+            $body = SseDocumentTemplates::body($code, $this->modelContext($case, $meta['classification']));
+            $cards[] = [
+                'code' => $code, 'label' => $meta['label'], 'description' => $meta['description'], 'group' => $meta['group'],
+                'icon' => $meta['icon'], 'document_type' => $meta['document_type'], 'classification' => $meta['classification'],
+                'preview' => SseRichText::toPreviewHtml(SseRichText::MARK . $body, $caseFields),
+                'own' => false, 'deletable' => false, 'id' => 0, 'shared' => false,
+            ];
+        }
+        $uid = (int) (Session::get('user_id') ?: 0);
+        foreach ($this->templates()->listVisible($this->tenantId(), $uid, $this->draftGuestKey()) as $row) {
+            $cards[] = [
+                'code' => 'perso-' . $row['id'], 'label' => (string) $row['title'], 'description' => (string) $row['description'],
+                'group' => $row['mine'] ? 'perso' : 'communaute', 'icon' => 'M8 2l1.8 3.7 4 .6-2.9 2.8.7 4L8 11.2 4.4 13.1l.7-4L2.2 6.3l4-.6z',
+                'document_type' => (string) $row['document_type'], 'classification' => (string) $row['classification'],
+                'preview' => SseRichText::toPreviewHtml((string) $row['body'], $caseFields),
+                'own' => (bool) $row['mine'], 'deletable' => (bool) $row['mine'], 'id' => (int) $row['id'], 'shared' => (bool) $row['shared'],
+            ];
+        }
+
+        return $cards;
     }
 
     public function documentStore(Request $request, array $params = []): Response
@@ -4216,7 +4369,7 @@ final class SsePortalController
             'libraryCategories' => SseTextTemplateRepository::categories(),
             'contextualSuggestions' => $this->contextualSuggestionsForCase($case),
             'canManage' => true,
-            'editorContext' => $this->editorContext($id),
+            'editorContext' => $this->editorContext($id, $case, (string) ($doc['reference_code'] ?? '')),
             'documentChrome' => $this->documentPrefabs->activeChrome($this->tenantId()),
             'activeNav' => 'documents',
         ]);
@@ -4467,7 +4620,7 @@ final class SsePortalController
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
 
-        return (new \App\Services\Sse\SseDocumentPdfService())->export($doc, $this->tenantId(), (string) $request->query('lecture', '') === '1');
+        return (new \App\Services\Sse\SseDocumentPdfService())->export($doc, $this->tenantId(), (string) $request->query('lecture', '') === '1', \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
     }
 
     private function drafts(): \App\Repositories\SseDocumentDraftRepository
@@ -4512,12 +4665,46 @@ final class SsePortalController
      *
      * @return array<string,mixed>
      */
-    private function editorContext(int $docId): array
+    private function editorContext(int $docId, ?array $case = null, string $reference = ''): array
     {
-        $templates = [];
-        foreach (SseDocumentRepository::bodyTemplatesByType() as $type => $text) {
-            $templates[$type] = SseRichText::fromLegacyText((string) $text);
+        $userId = (int) (Session::get('user_id') ?: 0);
+        $author = $this->editorAuthor();
+        $draft = $this->drafts()->find($this->tenantId(), $userId, $this->draftGuestKey(), $docId);
+        if (is_array($draft)) {
+            $draft['body'] = SseRichText::htmlOf((string) ($draft['body'] ?? ''));
         }
+
+        $models = [];
+        foreach (SseDocumentTemplates::CATALOGUE as $code => $meta) {
+            $models[] = [
+                'code' => $code, 'label' => $meta['label'], 'description' => $meta['description'], 'own' => false,
+                'document_type' => $meta['document_type'], 'classification' => $meta['classification'],
+                'body' => SseDocumentTemplates::body($code, $this->modelContext($case, $meta['classification'], $reference)),
+            ];
+        }
+        foreach ($this->templates()->listVisible($this->tenantId(), $userId, $this->draftGuestKey()) as $row) {
+            $models[] = [
+                'code' => 'perso-' . $row['id'], 'label' => (string) $row['title'], 'description' => (string) $row['description'],
+                'own' => (bool) $row['mine'], 'document_type' => (string) $row['document_type'],
+                'classification' => (string) $row['classification'], 'body' => SseRichText::htmlOf((string) $row['body']),
+            ];
+        }
+
+        return [
+            'models' => $models,
+            'fields' => [
+                'nom' => $author['nom'], 'grade' => $author['grade'], 'date' => date('d/m/Y'),
+                'reference' => $reference !== '' ? $reference : 'ATH-SSE-BROUILLON',
+            ],
+            'serverDraft' => $draft,
+            'draftUrl' => url('atak/sse/documents/brouillon'),
+            'templateUrl' => url('atak/sse/documents/modeles'),
+        ];
+    }
+
+    /** @return array{nom:string,grade:string} rédacteur courant */
+    private function editorAuthor(): array
+    {
         $userId = (int) (Session::get('user_id') ?: 0);
         $name = (string) (Session::get('sse_guest_label') ?? Session::get('display_name') ?? '');
         $grade = '';
@@ -4531,17 +4718,8 @@ final class SsePortalController
                 $grade = '';
             }
         }
-        $draft = $this->drafts()->find($this->tenantId(), $userId, $this->draftGuestKey(), $docId);
-        if (is_array($draft)) {
-            $draft['body'] = SseRichText::htmlOf((string) ($draft['body'] ?? ''));
-        }
 
-        return [
-            'templates' => $templates,
-            'fields' => ['nom' => $name, 'grade' => $grade, 'date' => date('d/m/Y')],
-            'serverDraft' => $draft,
-            'draftUrl' => url('atak/sse/documents/brouillon'),
-        ];
+        return ['nom' => $name, 'grade' => $grade];
     }
 
     public function documentStatus(Request $request, array $params = []): Response
@@ -4864,7 +5042,7 @@ final class SsePortalController
             (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Portail')
         );
 
-        return $this->pdf->export($tenantId, $id, $level, true);
+        return $this->pdf->export($tenantId, $id, $level, true, \App\Support\Pdf\SsePdfNotice::enabled($request->query('avec_notice')));
     }
 
     public function collecteHub(Request $request, array $params = []): Response

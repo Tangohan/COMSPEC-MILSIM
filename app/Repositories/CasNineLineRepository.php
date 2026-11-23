@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Services\Tactical\BriefReference;
 use App\Support\LazyDatabaseConnection;
 
 use PDO;
@@ -74,6 +75,112 @@ class CasNineLineRepository
         }
 
         return $this->hasRemarks;
+    }
+
+    private ?bool $hasBriefRef = null;
+
+    /** Colonnes brief_name et brief_ref (étape 4980) et registre des références. */
+    public function hasBriefRefColumns(): bool
+    {
+        if ($this->hasBriefRef === null) {
+            try {
+                $this->pdo()->query('SELECT brief_name, brief_ref FROM atak_nine_line LIMIT 1');
+                $this->pdo()->query('SELECT ref FROM atak_brief_refs LIMIT 1');
+                $this->hasBriefRef = true;
+            } catch (\Throwable) {
+                $this->hasBriefRef = false;
+            }
+        }
+
+        return $this->hasBriefRef;
+    }
+
+    /**
+     * Pose la référence automatique (jamais réutilisée : registre atak_brief_refs) et le nom facultatif d'un brief
+     * qui vient d'être créé. Sans l'étape 4980, ou en cas d'échec : le brief reste sans référence, la création ne tombe pas.
+     */
+    private function assignBriefRef(int $tenantId, int $id, string $kind, mixed $name): void
+    {
+        if ($id < 1 || !$this->hasBriefRefColumns()) {
+            return;
+        }
+        try {
+            $day = new \DateTimeImmutable('now');
+            $date = $day->format('Y-m-d');
+            $pdo = $this->pdo();
+            $ref = BriefReference::allocate(
+                $kind,
+                $day,
+                function () use ($pdo, $tenantId, $date): int {
+                    $st = $pdo->prepare('SELECT MAX(seq) FROM atak_brief_refs WHERE tenant_id = ? AND ref_day = ?');
+                    $st->execute([$tenantId, $date]);
+
+                    return (int) $st->fetchColumn();
+                },
+                function (string $ref, int $seq) use ($pdo, $tenantId, $date, $day): bool {
+                    try {
+                        $pdo->prepare('INSERT INTO atak_brief_refs (tenant_id, ref_day, seq, ref, created_at) VALUES (?, ?, ?, ?, ?)')
+                            ->execute([$tenantId, $date, $seq, $ref, $day->format('Y-m-d H:i:s')]);
+
+                        return true;
+                    } catch (\PDOException $e) {
+                        if ((string) $e->getCode() === '23000') {
+                            return false;
+                        }
+                        throw $e;
+                    }
+                }
+            );
+            $clean = BriefReference::cleanName($name);
+            if (BriefReference::nameError($clean) !== null) {
+                $clean = '';
+            }
+            $pdo->prepare('UPDATE atak_nine_line SET brief_ref = ?, brief_name = ? WHERE tenant_id = ? AND id = ?')
+                ->execute([$ref, $clean !== '' ? $clean : null, $tenantId, $id]);
+        } catch (\Throwable $e) {
+            error_log('[cas] référence du brief : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Nom d'un brief (vide : retiré), tant qu'il n'est pas clos.
+     *
+     * @return array{result: 'ok'|'not_found'|'closed'|'invalid'|'unavailable', row: ?array<string, mixed>, error?: string}
+     */
+    public function renameCas(int $tenantId, int $id, mixed $name): array
+    {
+        $row = $this->getCas($tenantId, $id);
+        if ($row === null) {
+            return ['result' => 'not_found', 'row' => null];
+        }
+        if (!$this->hasBriefRefColumns()) {
+            return ['result' => 'unavailable', 'row' => $row];
+        }
+        if (BriefReference::isClosed($row) || $this->hasClosedRecipient($tenantId, $id)) {
+            return ['result' => 'closed', 'row' => $row];
+        }
+        $clean = BriefReference::cleanName($name);
+        $err = BriefReference::nameError($clean);
+        if ($err !== null) {
+            return ['result' => 'invalid', 'row' => $row, 'error' => $err];
+        }
+        $this->pdo()->prepare('UPDATE atak_nine_line SET brief_name = ? WHERE tenant_id = ? AND id = ?')
+            ->execute([$clean !== '' ? $clean : null, $tenantId, $id]);
+
+        return ['result' => 'ok', 'row' => $this->getCas($tenantId, $id)];
+    }
+
+    /** Un pilote a clos la mission (statut « done » d'un destinataire). */
+    private function hasClosedRecipient(int $tenantId, int $id): bool
+    {
+        try {
+            $st = $this->pdo()->prepare('SELECT 1 FROM atak_nine_line_recipients WHERE tenant_id = ? AND nine_line_id = ? AND status = ? LIMIT 1');
+            $st->execute([$tenantId, $id, 'done']);
+
+            return (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function hasGeoColumn(): bool
@@ -315,6 +422,7 @@ class CasNineLineRepository
             $this->pdo()->prepare('UPDATE atak_nine_line SET geo_json = ? WHERE tenant_id = ? AND id = ?')
                 ->execute([json_encode($geo, JSON_UNESCAPED_UNICODE), $tenantId, $id]);
         }
+        $this->assignBriefRef($tenantId, $id, $kind, $payload['name'] ?? $payload['brief_name'] ?? $payload['briefName'] ?? '');
         $row = $this->getCas($tenantId, $id);
         return $row ?? [];
     }
@@ -418,6 +526,8 @@ class CasNineLineRepository
         $row['assignedAircraft'] = $row['assigned_aircraft'] ?? null;
         $row['mission_kind'] = self::normalizeKind($row['mission_kind'] ?? self::KIND_CAS);
         $row['missionKind'] = $row['mission_kind'];
+        $row['briefRef'] = (string) ($row['brief_ref'] ?? '');
+        $row['briefName'] = (string) ($row['brief_name'] ?? '');
         return $row;
     }
 }
