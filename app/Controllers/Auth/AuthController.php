@@ -104,7 +104,7 @@ class AuthController
         $notice = [];
         if ($ban !== null) {
             $language = $this->emailService->recipientLocale((string) $ban['email_norm']) === 'en' ? 'en' : 'fr';
-            $notice = PlatformBanNotice::publicDetails($ban, $language);
+            $notice = PlatformBanNotice::forLogin($ban, $language);
         }
         Session::flash('login_access_restriction', $notice);
 

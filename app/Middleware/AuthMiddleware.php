@@ -45,6 +45,13 @@ class AuthMiddleware
         }
         if (($user['status'] ?? '') !== 'active') {
             $this->clearAuthSession();
+            // Session ouverte avant un bannissement du site : même avis que lors d'une connexion, avec le moyen de contester.
+            $notice = $this->platformBanNotice((string) ($user['email'] ?? ''));
+            if ($notice !== null) {
+                Session::flash('login_access_restriction', $notice);
+
+                return Response::redirect(url('login'), 303)->header('Cache-Control', 'private, no-store');
+            }
             Session::flash('error', 'Ce compte n’est plus actif.');
 
             return Response::redirect(url('login'));
@@ -88,7 +95,7 @@ class AuthMiddleware
             $resolver = Container::get(\App\Services\Moderation\ModerationRestrictionResolver::class);
             if ($resolver->isAccountLocked($tenantId, $userId)) {
                 $this->clearAuthSession();
-                Session::flash('error', 'Votre accès à cette communauté est restreint (compte verrouillé).');
+                Session::flash('error', 'Votre accès à cette communauté est restreint : son administration a verrouillé votre compte. Contactez-la pour en connaître le motif. Ce n’est pas un bannissement de la plateforme Athena.');
 
                 return Response::redirect(url('login'));
             }
@@ -210,6 +217,26 @@ class AuthMiddleware
         Session::set($gate::SESSION_AFTER, $path . ($query !== '' ? '?' . $query : ''));
 
         return Response::redirect(url('lier'));
+    }
+
+    /**
+     * Avis de suspension du site pour cette adresse, ou null s'il n'y en a pas (fiche désactivée pour une autre raison).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function platformBanNotice(string $email): ?array
+    {
+        try {
+            $ban = (new \App\Repositories\PlatformAccountBanRepository())->findActiveForEmail($email);
+            if ($ban === null) {
+                return null;
+            }
+            $language = Container::get(\App\Services\EmailService::class)->recipientLocale((string) $ban['email_norm']) === 'en' ? 'en' : 'fr';
+
+            return \App\Services\Account\PlatformBanNotice::forLogin($ban, $language);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function clearAuthSession(): void

@@ -12,7 +12,6 @@
   color: #f5fbf9;
   margin-bottom: 1.15rem;
 }
-.appeal-hero .ds-kicker { color: #addecf; margin: 0 0 .45rem; }
 .appeal-hero h1 { margin: 0; font: 800 clamp(1.75rem, 4vw, 2.65rem)/1.15 "Inter", var(--ds-font); }
 .appeal-hero p:last-child { margin: .65rem 0 0; color: #dcece6; }
 .appeal-state { padding: .4rem .75rem; border: 1px solid #7cb4a5; border-radius: 999px; font-weight: 700; }

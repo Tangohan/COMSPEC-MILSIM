@@ -475,7 +475,8 @@ final class ComspecApiKeyAuth
         $tid = Session::get('tenant_id');
         if ($uid !== null && $uid !== '' && $tid !== null && $tid !== '') {
             if ((int) $uid > 0 && (int) $tid > 0) {
-                return true;
+                // Les API tactiques ne passent pas par AuthMiddleware : un compte banni ou désactivé perd l'accès ici aussi.
+                return self::userIsActive((int) $uid);
             }
         }
 
@@ -521,6 +522,22 @@ final class ComspecApiKeyAuth
         return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
     }
 
+    /** Fiche encore active (ni bannie, ni désactivée, ni fusionnée). Base indisponible : refus et état « non vérifié ». */
+    private static function userIsActive(int $userId): bool
+    {
+        try {
+            $st = \App\Core\Database::getPdo()->prepare('SELECT status FROM users WHERE id = ?');
+            $st->execute([$userId]);
+            $status = $st->fetchColumn();
+        } catch (\Throwable) {
+            self::$verificationUnavailable = true;
+
+            return false;
+        }
+
+        return $status !== false && strtolower(trim((string) $status)) === 'active';
+    }
+
     /** Session jeu Overwatch : le tenant est lu côté serveur, jamais fourni par le client. */
     private static function acceptGameSessionToken(string $presented): bool
     {
@@ -545,8 +562,12 @@ final class ComspecApiKeyAuth
         if ($tid < 1) {
             return false;
         }
-        self::$matchedTenantId = $tid;
         $uid = (int) ($row['user_id'] ?? 0);
+        // Bannissement ou désactivation après l'émission du jeton : il cesse de valoir tout de suite.
+        if ($uid > 0 && !self::userIsActive($uid)) {
+            return false;
+        }
+        self::$matchedTenantId = $tid;
         self::$matchedUserId = $uid > 0 ? $uid : null;
         $steam = trim((string) ($row['steam_id'] ?? ''));
         self::$matchedSteamId = $steam !== '' ? $steam : null;

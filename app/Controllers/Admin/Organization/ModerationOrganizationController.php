@@ -61,6 +61,12 @@ final class ModerationOrganizationController
 
             return Response::redirect(url('back-office/moderation'));
         }
+        // Cloisonnement : un administrateur de communauté ne sanctionne que les membres de sa communauté.
+        if (!$this->userRepository->isMemberOfTenant($targetId, $tenantId)) {
+            Session::flash('error', 'Cette personne n’est pas membre de votre communauté.');
+
+            return Response::redirect(url('back-office/moderation'));
+        }
 
         if ($type === 'warn') {
             try {

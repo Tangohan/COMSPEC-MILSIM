@@ -1049,7 +1049,7 @@ class AtakApiController
         }
 
         $status = strtolower(trim((string) ($user['status'] ?? 'active')));
-        if (in_array($status, ['banned', 'disabled', 'suspended', 'deleted'], true)) {
+        if (\App\Support\AccountAccessStatus::deniesGame($status)) {
             $this->activityLog?->recordAuthAttempt($tenantId, false, 'Liaison en jeu refusée — compte non autorisé', [
                 'reason' => 'account_disabled',
                 'method' => 'steam',
@@ -4259,7 +4259,7 @@ class AtakApiController
                 ], 403);
             }
             $status = strtolower(trim((string) ($user['status'] ?? 'active')));
-            if (in_array($status, ['banned', 'disabled', 'suspended', 'deleted'], true)) {
+            if (\App\Support\AccountAccessStatus::deniesGame($status)) {
                 $this->activityLog?->recordAuthAttempt($tenantId, false, 'Initialisation jeu refusée — compte non autorisé', [
                     'reason' => 'account_disabled',
                 ]);
@@ -4291,7 +4291,7 @@ class AtakApiController
         } elseif ($identifiedViaGameSession) {
             $user = $userFromGameSession;
             $status = strtolower(trim((string) ($user['status'] ?? 'active')));
-            if (in_array($status, ['banned', 'disabled', 'suspended', 'deleted'], true)) {
+            if (\App\Support\AccountAccessStatus::deniesGame($status)) {
                 $this->activityLog?->recordAuthAttempt($tenantId, false, 'Initialisation jeu refusée — compte non autorisé', [
                     'reason' => 'account_disabled',
                 ]);

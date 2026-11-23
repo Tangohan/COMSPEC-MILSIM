@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PlatformAccountBanRepository;
 use App\Repositories\PlatformBanAppealRepository;
+use App\Services\Account\PlatformBanAppealMailer;
 use App\Services\Account\PlatformBanNotice;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
@@ -60,7 +61,7 @@ final class PlatformBanAppealController
         if ($ban !== null) {
             $language = $this->noticeLanguage((string) $ban['email_norm']);
             $notice = PlatformBanNotice::publicDetails($ban, $language) + [
-                'active' => empty($ban['lifted_at']) && (empty($ban['ends_at']) || $ban['ends_at'] > gmdate('Y-m-d H:i:s')),
+                'active' => self::isActive($ban),
             ];
             $saved = $this->appeals->find((int) $ban['id']);
             if ($saved !== null) {
@@ -68,6 +69,7 @@ final class PlatformBanAppealController
                     'decision' => $saved['decision'],
                     'reply' => $saved['public_reply'],
                     'statement' => $saved['statement'],
+                    'received' => PlatformBanNotice::appealProgress($saved, $language)['received'] ?? '',
                 ];
             }
         }
@@ -143,6 +145,21 @@ final class PlatformBanAppealController
 
             return $this->back();
         }
+        // Une sanction levée ou échue n'a plus rien à contester : pas de dossier inutile pour la modération.
+        if (!self::isActive($ban)) {
+            Session::flash('error', __('moderation.restriction_ended_message'));
+
+            return $this->back();
+        }
+        try {
+            if ((new FileRateLimiter())->tooManyAttempts('ban-appeal-submit:network:' . $request->ip(), 10, 3600, true)) {
+                Session::flash('error', __('moderation.too_many_attempts'));
+
+                return $this->back();
+            }
+        } catch (\Throwable) {
+            // Limiteur indisponible : le dépôt reste limité à une contestation par décision.
+        }
         $statement = trim($request->inputString('statement'));
         if (mb_strlen($statement) < 10 || mb_strlen($statement) > 4000) {
             Session::flash('error', __('moderation.invalid_statement'));
@@ -164,12 +181,19 @@ final class PlatformBanAppealController
             } catch (\Throwable) {
                 error_log('[ban_appeal] Impossible d’ajouter la contestation au récapitulatif.');
             }
+            (new PlatformBanAppealMailer($this->email))->notify($ban, PlatformBanAppealMailer::RECEIVED);
             Session::flash('success', __('moderation.appeal_received'));
         } else {
             Session::flash('success', __('moderation.appeal_already_received'));
         }
 
         return $this->back();
+    }
+
+    /** @param array<string, mixed> $ban */
+    private static function isActive(array $ban): bool
+    {
+        return empty($ban['lifted_at']) && (empty($ban['ends_at']) || $ban['ends_at'] > gmdate('Y-m-d H:i:s'));
     }
 
     private function noticeLanguage(string $address): string

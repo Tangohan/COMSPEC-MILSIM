@@ -130,7 +130,7 @@ final class AtakArmaWriteGuard
                 ], 403);
             }
             $status = strtolower(trim((string) ($user['status'] ?? 'active')));
-            if (in_array($status, ['banned', 'disabled', 'suspended', 'deleted'], true)) {
+            if (\App\Support\AccountAccessStatus::deniesGame($status)) {
                 $this->log($tenantId, false, 'Accès jeu refusé — compte non autorisé', [
                     'reason' => 'account_disabled',
                 ]);

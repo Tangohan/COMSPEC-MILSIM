@@ -21,7 +21,6 @@ $athena_header_current = 'login';
 <main class="appeal-shell" id="contenu">
     <header class="appeal-hero">
         <div>
-            <p class="ds-kicker"><?= $t('auth.restriction_heading') ?></p>
             <h1><?= $e($authTitle) ?></h1>
             <p><?= $t($notice === null ? 'moderation.appeal_intro' : 'moderation.decision_intro') ?></p>
         </div>
@@ -66,7 +65,13 @@ $athena_header_current = 'login';
                 <h2 id="ban-notice-title"><?= $t('moderation.decision_reference', ['id' => $notice['id']]) ?></h2>
                 <p class="appeal-message"><?= $e($notice['message']) ?></p>
                 <dl class="appeal-facts">
-                    <?php if ($notice['active']): ?>
+                    <div><dt><?= $t('auth.restriction_scope') ?></dt><dd><?= $t('auth.restriction_scope_platform') ?></dd></div>
+                    <?php if ($notice['start'] !== ''): ?>
+                        <div><dt><?= $t('auth.restriction_start') ?></dt><dd><?= $e($notice['start']) ?></dd></div>
+                    <?php endif; ?>
+                    <?php if ($notice['permanent']): ?>
+                        <div><dt><?= $t('auth.restriction_duration') ?></dt><dd><?= $t('moderation.permanent') ?></dd></div>
+                    <?php else: ?>
                         <div><dt><?= $t('moderation.restriction_end') ?></dt><dd><?= $e($notice['end']) ?></dd></div>
                     <?php endif; ?>
                     <?php if ($notice['rule'] !== ''): ?>
@@ -83,7 +88,12 @@ $athena_header_current = 'login';
                     <?php endif; ?>
                 </dl>
             </section>
-            <?php if ($appeal === null && !empty($notice['appeal_closed'])): ?>
+            <?php if ($appeal === null && !$notice['active']): ?>
+                <section class="appeal-card" aria-labelledby="ban-ended-title">
+                    <h2 id="ban-ended-title"><?= $t('moderation.restriction_ended') ?></h2>
+                    <p><?= $t('moderation.restriction_ended_message') ?></p>
+                </section>
+            <?php elseif ($appeal === null && !empty($notice['appeal_closed'])): ?>
                 <section class="appeal-card" aria-labelledby="ban-appeal-closed-title">
                     <h2 id="ban-appeal-closed-title"><?= $t('moderation.appeal_closed_title') ?></h2>
                     <p><?= $t('moderation.appeal_closed_message') ?></p>
@@ -104,7 +114,10 @@ $athena_header_current = 'login';
             <?php else: ?>
                 <section class="appeal-card" aria-labelledby="ban-followup-title">
                     <h2 id="ban-followup-title"><?= $t('moderation.follow_up') ?></h2>
-                    <p class="appeal-review"><?= $t(match ($appeal['decision']) {
+                    <?php if ((string) $appeal['received'] !== ''): ?>
+                        <p><?= $t('moderation.received_on') ?> <?= $e($appeal['received']) ?></p>
+                    <?php endif; ?>
+                    <p class="appeal-review" role="status"><?= $t(match ($appeal['decision']) {
                         'lift' => 'moderation.appeal_accepted',
                         'uphold' => 'moderation.decision_upheld',
                         default => 'moderation.review_pending',
