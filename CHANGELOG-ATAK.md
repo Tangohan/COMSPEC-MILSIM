@@ -56,6 +56,24 @@ EN : Military specialties now include codes, sources and explanations
 - Références d’emploi et objectifs pédagogiques distincts des affectations, des grades et des qualifications ; isolation par communauté, contrôle des niveaux, audit transactionnel.
 - Import idempotent conservant les corrections, les archives et les données existantes ; nettoyage des attributions personnelles lors des purges de compte.
 
+## Le bouton LiveConf se cache avec l'interface Zeus (ATAK natif 4.32.1.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : Le bouton LiveConf se cache avec l'interface Zeus
+- Quand tu masques l'interface du Zeus avec la touche Retour arrière (ou par le menu), le bouton disparaît aussi : tes captures d'écran sont propres.
+- Le bouton « CENTRE ZEUS » devient « LiveConf » : il affiche seulement le logo du mod et ce nom.
+- Le Centre Zeus s'appelle LiveConf partout (titre, touche, menu Zeus, réglages) ; le clic ouvre toujours le même écran.
+EN : The LiveConf button hides with the Zeus interface
+- When you hide the Zeus interface with the Backspace key (or from the menu), the button disappears too: your screenshots stay clean.
+- The "ZEUS CENTRE" button becomes "LiveConf": it only shows the mod logo and that name.
+- The Zeus Centre is called LiveConf everywhere (title, key, Zeus menu, settings); clicking it still opens the same screen.
+
+### Détail technique
+- `fn_zeusCentre` : le bouton (`COMSPEC_RscButton`, texte et infobulle « LiveConf ») est accompagné d'un `COMSPEC_RscPicture` (`data\logo_athena.paa`, dans le PBO). Nouveau cas `ath` : l'ATH est visible si un contrôle natif du display 312 (arbre ou liste, idc >= 0, groupes parents compris) est affiché et non fondu ; le bouton et son logo suivent par `ctrlShow`. Appelé par un PFH CBA de 0,25 s (s'arrête avec le display 312) et, après la touche Retour arrière (DIK 14, KeyDown), à 0,1 s et 0,5 s.
+- Libellés renommés en « LiveConf » : bouton, titre du Centre, touche CBA, entrée du menu ZEN, fermeture, réglages « bouton » et « étiquettes 3D », message « fermé ». Noms internes inchangés. Section « CENTRE ZEUS » de l'onglet SERVEUR conservée (autre élément).
+- DLL inchangée (`LINK_VERSION_STR` 2.0.128), `main.pbo` à reconstruire.
+
 ## Retrouver une fiche par son numéro DSE dans le téléphone (ATAK natif 4.32.0.AG - Washington)
 
 ### Résumé joueur

@@ -92,8 +92,8 @@ final class AtakZeusCentreLayoutTest extends TestCase
     public function testEveryControlHasAnOwnerAndTheTabShowsOnlyItsOwn(): void
     {
         $c = $this->centre();
-        // Trois créations seulement : le bouton CENTRE ZEUS de l'écran Zeus et les deux branches de _mk.
-        self::assertSame(3, substr_count($c, 'ctrlCreate ['));
+        // Quatre créations seulement : le bouton LiveConf et son logo sur l'écran Zeus, et les deux branches de _mk.
+        self::assertSame(4, substr_count($c, 'ctrlCreate ['));
         self::assertStringContainsString('(_own get _who) pushBack _c;', $c);
         foreach (['_mk', '_btn', '_stx'] as $fn) {
             preg_match_all('/\] call ' . $fn . '\b/', $c, $all, PREG_OFFSET_CAPTURE);
