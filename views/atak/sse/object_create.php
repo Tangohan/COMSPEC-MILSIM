@@ -1,246 +1,226 @@
 <?php
 declare(strict_types=1);
 ob_start();
+
+use App\Support\SseCreationBrief;
+use App\Support\SseWizardUi;
+
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $type = (string) ($type ?? 'person');
 $kinds = is_array($kinds ?? null) ? $kinds : [];
 /** @var array<string, array{hint:string, fields:list<array<string,mixed>>}> $metaSchema */
 $metaSchema = is_array($metaSchema ?? null) ? $metaSchema : [];
 $classifications = is_array($classifications ?? null) ? $classifications : [];
+$meshes = is_array($meshes ?? null) ? $meshes : [];
+$cases = is_array($cases ?? null) ? $cases : [];
+$maxLevel = (string) ($maxLevel ?? 'interne');
+$classDefault = (string) ($classDefault ?? 'confidentiel');
+$typeSeeded = (bool) ($typeSeeded ?? false);
 if ($type === '' || !isset($kinds[$type])) {
     $type = array_key_first($kinds) ?: 'person';
 }
-$typeIcons = [
-    'person' => 'ID',
-    'alias' => 'AL',
-    'organization' => 'OR',
-    'site' => 'SI',
-    'vehicle' => 'VE',
-    'weapon' => 'AR',
-    'phone' => 'TE',
-    'terminal' => 'TM',
-    'document' => 'DO',
-    'event' => 'EV',
-    'report' => 'CR',
-    'photo' => 'PH',
-    'biometric' => 'BIO',
-    'seizure' => 'SA',
-    'custom' => 'EL',
-];
+$kindOptions = [];
+foreach ($kinds as $k => $lab) {
+    $kindOptions[$k] = [
+        'label' => SseCreationBrief::OBJECT_KINDS[$k]['label'] ?? $lab,
+        'desc' => SseCreationBrief::OBJECT_KINDS[$k]['desc'] ?? '',
+    ];
+}
+$physicalWhen = 'kind=' . implode('|', SseCreationBrief::PHYSICAL_KINDS);
+$stepTitles = ['Catégorie et état', 'Description', 'Rattachements', 'Classification et accès', 'Vérifier et créer'];
+$wzCancelUrl = url('atak/sse/operations');
+$wzSubmits = [['label' => 'Créer l’objet']];
+$sseExtraStyles = '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse_wizard.css')) . '">';
 ?>
 
-<header class="sse-obj-create__hero">
-    <div>
+<div class="wz">
+    <header class="wz-intro">
         <h1>Nouvel objet</h1>
-        <p class="sse-obj-create__lead">
-            Décrivez un élément réutilisable : identité, site, véhicule, pièce… Il pourra ensuite
-            être rattaché à un dossier, une investigation, la chronologie ou la carte.
-        </p>
-    </div>
-    <aside class="sse-obj-create__aside" aria-label="Rappel">
-        <strong>Ce n’est pas une preuve</strong>
-        <span>La fiche sert à organiser l’exploitation. L’identification formelle reste une décision humaine.</span>
-    </aside>
-</header>
+        <p>Décrivez un élément réutilisable : identité, site, véhicule, pièce… Il sera placé dans une toile d’investigation, où vous pourrez le relier à d’autres éléments.</p>
+    </header>
 
-<form method="post" action="<?= $h(url('atak/sse/objets/creer')) ?>" id="sse-object-create" class="sse-obj-create" enctype="multipart/form-data">
-    <?= \App\Core\Csrf::field() ?>
+    <form method="post" action="<?= $h(url('atak/sse/objets/creer')) ?>" id="sse-object-create" data-sse-wizard data-wz-key="object" enctype="multipart/form-data" novalidate>
+        <?= \App\Core\Csrf::field() ?>
+        <?= SseWizardUi::progress($stepTitles) ?>
+        <?php require __DIR__ . '/partials/wizard_banners.php'; ?>
 
-    <section class="sse-obj-create__card" aria-labelledby="obj-step-1">
-        <header class="sse-obj-create__card-head">
-            <span class="sse-obj-create__step">01</span>
-            <div>
-                <h2 id="obj-step-1">Type et diffusion</h2>
-                <p>Choisissez la nature de l’objet et le niveau de diffusion de la fiche.</p>
+        <section class="wz-step" data-wz-step aria-labelledby="wz-obj-t1">
+            <h2 class="wz-step__title" id="wz-obj-t1" data-wz-step-title>Catégorie et état</h2>
+            <p class="wz-step__lead">De quel genre d’élément s’agit-il ? La suite s’adapte à votre choix.</p>
+            <div class="wz-alert" data-wz-alert role="alert" hidden>Un choix est nécessaire avant de continuer.</div>
+            <?= SseWizardUi::cards('kind', 'Catégorie d’objet', $kindOptions, $type, [
+                'required' => true,
+                'compact' => true,
+                'seeded' => $typeSeeded,
+                'help' => 'Choisissez la catégorie la plus précise. Si rien ne convient, « Élément libre » accepte tout.',
+                'error' => 'Choisissez la catégorie de l’objet.',
+            ]) ?>
+            <?= SseWizardUi::cards('meta[etat]', 'État de conservation', SseCreationBrief::OBJECT_STATES, 'non_verifie', [
+                'compact' => true,
+                'when' => $physicalWhen,
+                'hint' => 'Utile pour un objet physique ou un support : il dit dans quel état il a été trouvé.',
+            ]) ?>
+        </section>
+
+        <section class="wz-step" data-wz-step aria-labelledby="wz-obj-t2">
+            <h2 class="wz-step__title" id="wz-obj-t2" data-wz-step-title>Description</h2>
+            <p class="wz-step__lead">Renseignez ce qui est connu et laissez le reste vide.</p>
+            <div class="wz-alert" data-wz-alert role="alert" hidden>Corrigez le champ signalé avant de continuer.</div>
+            <p class="wz-reminder"><strong>Ce n’est pas une preuve.</strong> La fiche sert à organiser l’exploitation ; l’identification formelle reste une décision humaine.</p>
+            <div class="wz-field" data-wz-field="label" data-wz-rules="required min:2">
+                <label for="label">Libellé / désignation <span class="wz-flag wz-flag--req">obligatoire</span></label>
+                <p class="wz-hint" id="label-hint">Le nom court sous lequel l’objet apparaîtra sur la toile.</p>
+                <input id="label" name="label" type="text" maxlength="200" autocomplete="off"
+                       placeholder="Ex. Identité 01 — convoyeur secteur Nord" aria-describedby="label-hint">
+                <?= SseWizardUi::errors('label', [
+                    'required' => 'Indiquez un libellé pour l’objet.',
+                    'min' => 'Le libellé est trop court : écrivez au moins 2 caractères.',
+                ]) ?>
             </div>
-        </header>
 
-        <fieldset class="sse-obj-create__types">
-            <legend class="sse-obj-create__label">Type d’objet</legend>
-            <div class="sse-obj-create__type-grid" role="radiogroup" aria-label="Type d’objet">
-                <?php foreach ($kinds as $k => $lab): ?>
-                    <?php $checked = $type === $k; ?>
-                    <label class="sse-obj-create__type<?= $checked ? ' is-active' : '' ?>">
-                        <input
-                            type="radio"
-                            name="kind"
-                            value="<?= $h($k) ?>"
-                            <?= $checked ? 'checked' : '' ?>
-                            required
-                        >
-                        <span class="sse-obj-create__type-code" aria-hidden="true"><?= $h($typeIcons[$k] ?? 'OB') ?></span>
-                        <span class="sse-obj-create__type-lab"><?= $h($lab) ?></span>
-                    </label>
+            <div class="object-meta-host" id="object-meta-host">
+                <?php foreach ($metaSchema as $kindKey => $schema): ?>
+                    <?php
+                    $fields = is_array($schema['fields'] ?? null) ? $schema['fields'] : [];
+                    $hint = (string) ($schema['hint'] ?? '');
+                    $active = $type === $kindKey;
+                    ?>
+                    <fieldset class="object-meta<?= $active ? ' is-active' : '' ?>" data-kind="<?= $h($kindKey) ?>"
+                              data-wz-when="kind=<?= $h($kindKey) ?>"<?= $active ? '' : ' hidden disabled' ?>>
+                        <legend>Caractéristiques — <?= $h($kinds[$kindKey] ?? $kindKey) ?></legend>
+                        <?php if ($hint !== ''): ?>
+                            <p class="wz-hint"><?= $h($hint) ?></p>
+                        <?php endif; ?>
+                        <div class="wz-grid">
+                            <?php foreach ($fields as $field): ?>
+                                <?php
+                                $fname = (string) ($field['name'] ?? '');
+                                if ($fname === '') {
+                                    continue;
+                                }
+                                $fid = 'meta_' . $kindKey . '_' . $fname;
+                                $flabel = (string) ($field['label'] ?? $fname);
+                                $ftype = (string) ($field['type'] ?? 'text');
+                                $placeholder = (string) ($field['placeholder'] ?? '');
+                                $options = is_array($field['options'] ?? null) ? $field['options'] : [];
+                                $rows = max(3, (int) ($field['rows'] ?? 4));
+                                ?>
+                                <div class="wz-field<?= $ftype === 'textarea' ? ' object-meta-field--full' : '' ?>">
+                                    <label for="<?= $h($fid) ?>"><?= $h($flabel) ?></label>
+                                    <?php if ($ftype === 'select'): ?>
+                                        <select id="<?= $h($fid) ?>" name="meta[<?= $h($fname) ?>]">
+                                            <option value="">— Choisir —</option>
+                                            <?php foreach ($options as $ok => $olab): ?>
+                                                <option value="<?= $h($ok) ?>"><?= $h($olab) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    <?php elseif ($ftype === 'textarea'): ?>
+                                        <textarea id="<?= $h($fid) ?>" name="meta[<?= $h($fname) ?>]" rows="<?= $rows ?>" maxlength="12000"
+                                                  placeholder="<?= $h($placeholder) ?>"></textarea>
+                                    <?php else: ?>
+                                        <input id="<?= $h($fid) ?>" name="meta[<?= $h($fname) ?>]" type="text" maxlength="200"
+                                               placeholder="<?= $h($placeholder) ?>">
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </fieldset>
                 <?php endforeach; ?>
             </div>
-        </fieldset>
 
-        <div class="sse-obj-create__row">
-            <div class="sse-obj-create__field">
-                <label class="sse-obj-create__label" for="classification">Niveau de diffusion</label>
-                <select id="classification" name="classification">
-                    <?php foreach ($classifications as $k => $lab): ?>
-                        <option value="<?= $h($k) ?>" <?= $k === 'confidentiel' ? 'selected' : '' ?>><?= $h($lab) ?></option>
-                    <?php endforeach; ?>
-                </select>
+            <div class="wz-field" data-wz-field="detail">
+                <label for="detail">Précision libre <span class="wz-flag">facultatif</span></label>
+                <textarea id="detail" name="detail" rows="3" maxlength="2000" placeholder="Complément non couvert par les champs ci-dessus"></textarea>
             </div>
-            <div class="sse-obj-create__field sse-obj-create__field--grow">
-                <label class="sse-obj-create__label" for="label">Libellé / désignation</label>
-                <input id="label" name="label" type="text" required maxlength="200" placeholder="Ex. Identité 01 — convoyeur secteur Nord" autocomplete="off">
+
+            <div class="wz-field object-image-upload">
+                <label class="wz-drop" for="object_image"><b>Joindre une image</b>
+                    Photo, scan ou capture (facultatif). JPEG, PNG, WebP ou GIF ; les fichiers de plus de 5 Mo sont compressés automatiquement.</label>
+                <input id="object_image" name="image" type="file"
+                       accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                       data-sse-image-target-bytes="5000000" data-sse-image-upload-max-bytes="25000000">
+                <p class="wz-hint" id="object-image-hint">Envoi accepté jusqu’à 25 Mo.</p>
+                <p class="wz-hint" id="object-image-status" role="status" hidden></p>
+                <div class="object-image-preview" id="object-image-preview" hidden>
+                    <img id="object-image-preview-img" alt="Aperçu de l’image sélectionnée">
+                </div>
             </div>
-        </div>
+        </section>
 
-        <div class="sse-obj-create__field">
-            <label class="sse-obj-create__label" for="detail">Précision libre <span>(optionnel)</span></label>
-            <textarea id="detail" name="detail" rows="3" maxlength="2000" placeholder="Complément non couvert par les champs ci-dessous"></textarea>
-        </div>
-    </section>
-
-    <section class="sse-obj-create__card sse-obj-create__card--meta" aria-labelledby="obj-step-2">
-        <header class="sse-obj-create__card-head">
-            <span class="sse-obj-create__step">02</span>
-            <div>
-                <h2 id="obj-step-2">Caractéristiques</h2>
-                <p>Champs adaptés au type sélectionné — renseignez ce qui est connu, laissez le reste vide.</p>
-            </div>
-        </header>
-
-        <div class="object-meta-host" id="object-meta-host">
-            <?php foreach ($metaSchema as $kindKey => $schema): ?>
-                <?php
-                $fields = is_array($schema['fields'] ?? null) ? $schema['fields'] : [];
-                $hint = (string) ($schema['hint'] ?? '');
-                $active = $type === $kindKey;
-                ?>
-                <fieldset
-                    class="object-meta<?= $active ? ' is-active' : '' ?>"
-                    data-kind="<?= $h($kindKey) ?>"
-                    <?= $active ? '' : 'hidden' ?>
-                    <?= $active ? '' : 'disabled' ?>
-                >
-                    <legend>Caractéristiques — <?= $h($kinds[$kindKey] ?? $kindKey) ?></legend>
-                    <?php if ($hint !== ''): ?>
-                        <p class="sse-note"><?= $h($hint) ?></p>
-                    <?php endif; ?>
-                    <div class="sse-form-grid">
-                        <?php foreach ($fields as $field): ?>
-                            <?php
-                            $fname = (string) ($field['name'] ?? '');
-                            if ($fname === '') {
-                                continue;
-                            }
-                            $fid = 'meta_' . $kindKey . '_' . $fname;
-                            $flabel = (string) ($field['label'] ?? $fname);
-                            $ftype = (string) ($field['type'] ?? 'text');
-                            $placeholder = (string) ($field['placeholder'] ?? '');
-                            $options = is_array($field['options'] ?? null) ? $field['options'] : [];
-                            $rows = max(3, (int) ($field['rows'] ?? 4));
-                            $isWide = $ftype === 'textarea';
-                            ?>
-                            <div class="<?= $isWide ? 'object-meta-field--full' : '' ?>">
-                                <label for="<?= $h($fid) ?>"><?= $h($flabel) ?></label>
-                                <?php if ($ftype === 'select'): ?>
-                                    <select id="<?= $h($fid) ?>" name="meta[<?= $h($fname) ?>]">
-                                        <option value="">— Choisir —</option>
-                                        <?php foreach ($options as $ok => $olab): ?>
-                                            <option value="<?= $h($ok) ?>"><?= $h($olab) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                <?php elseif ($ftype === 'textarea'): ?>
-                                    <textarea
-                                        id="<?= $h($fid) ?>"
-                                        name="meta[<?= $h($fname) ?>]"
-                                        rows="<?= $rows ?>"
-                                        maxlength="12000"
-                                        placeholder="<?= $h($placeholder) ?>"
-                                    ></textarea>
-                                <?php else: ?>
-                                    <input
-                                        id="<?= $h($fid) ?>"
-                                        name="meta[<?= $h($fname) ?>]"
-                                        type="text"
-                                        maxlength="200"
-                                        placeholder="<?= $h($placeholder) ?>"
-                                    >
-                                <?php endif; ?>
-                            </div>
+        <section class="wz-step" data-wz-step aria-labelledby="wz-obj-t3">
+            <h2 class="wz-step__title" id="wz-obj-t3" data-wz-step-title>Rattachements</h2>
+            <p class="wz-step__lead">Un objet vit dans une toile. Placez-le dans une toile existante, ou laissez le portail en ouvrir une pour lui.</p>
+            <div class="wz-alert" data-wz-alert role="alert" hidden>Corrigez le champ signalé avant de continuer.</div>
+            <?php if ($meshes === []): ?>
+                <div class="wz-empty">Aucune toile ouverte n’est disponible : une nouvelle toile dédiée sera créée avec l’objet.</div>
+            <?php else: ?>
+                <div class="wz-field" data-wz-field="mesh_id">
+                    <label for="mesh_id">Toile d’accueil <span class="wz-flag">facultatif</span></label>
+                    <p class="wz-hint" id="mesh_id-hint">Par défaut, une nouvelle toile est créée pour l’objet.</p>
+                    <select id="mesh_id" name="mesh_id" aria-describedby="mesh_id-hint">
+                        <option value="">Nouvelle toile dédiée</option>
+                        <?php foreach ($meshes as $m): ?>
+                            <option value="<?= (int) $m['id'] ?>" data-class="<?= $h($m['classification'] ?? '') ?>">
+                                <?= $h(($m['reference_code'] ?? '') . ' — ' . ($m['title'] ?? '')) ?>
+                            </option>
                         <?php endforeach; ?>
-                    </div>
-                </fieldset>
-            <?php endforeach; ?>
-        </div>
-    </section>
+                    </select>
+                </div>
+            <?php endif; ?>
+            <?php if ($cases !== []): ?>
+                <div class="wz-field"<?= $meshes === [] ? '' : ' data-wz-when="mesh_id="' ?> data-wz-field="case_id">
+                    <label for="case_id">Dossier d’affaire de la nouvelle toile <span class="wz-flag">facultatif</span></label>
+                    <p class="wz-hint" id="case_id-hint">Seuls les dossiers de votre périmètre sont proposés.</p>
+                    <select id="case_id" name="case_id" data-wz-follow aria-describedby="case_id-hint">
+                        <option value="">Aucun</option>
+                        <?php foreach ($cases as $c): ?>
+                            <option value="<?= (int) $c['id'] ?>" data-class="<?= $h($c['classification'] ?? '') ?>">
+                                <?= $h(($c['reference_code'] ?? '') . ' — ' . ($c['title'] ?? '')) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+        </section>
 
-    <section class="sse-obj-create__card" aria-labelledby="obj-step-3">
-        <header class="sse-obj-create__card-head">
-            <span class="sse-obj-create__step">03</span>
-            <div>
-                <h2 id="obj-step-3">Illustration</h2>
-                <p>Photo, scan ou capture — optionnel. Les fichiers lourds sont compressés automatiquement.</p>
-            </div>
-        </header>
+        <section class="wz-step" data-wz-step aria-labelledby="wz-obj-t4">
+            <h2 class="wz-step__title" id="wz-obj-t4" data-wz-step-title>Classification et accès</h2>
+            <p class="wz-step__lead">Le niveau de diffusion décide qui pourra ouvrir la toile qui contient l’objet, dans le périmètre de votre communauté.</p>
+            <div class="wz-alert" data-wz-alert role="alert" hidden>Un choix est nécessaire avant de continuer.</div>
+            <p class="wz-inherit" data-wz-when="mesh_id!=">L’objet rejoint une toile existante : il garde le niveau de diffusion de cette toile.</p>
+            <?php
+            $classLegend = 'Niveau de diffusion de la nouvelle toile';
+            $classWhen = 'mesh_id=';
+            require __DIR__ . '/partials/wizard_classification.php';
+            ?>
+        </section>
 
-        <div class="object-image-upload sse-obj-create__upload">
-            <label class="sse-obj-create__drop" for="object_image">
-                <span class="sse-obj-create__drop-title">Joindre une image</span>
-                <span class="sse-obj-create__drop-hint">JPEG, PNG, WebP ou GIF · compression au-delà de 5 Mo</span>
-            </label>
-            <input
-                id="object_image"
-                name="image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
-                data-sse-image-target-bytes="5000000"
-                data-sse-image-upload-max-bytes="25000000"
-            >
-            <p class="sse-note" id="object-image-hint">Envoi accepté jusqu’à 25 Mo ; au-delà de 5 Mo, compression automatique.</p>
-            <p class="sse-note" id="object-image-status" hidden></p>
-            <div class="object-image-preview" id="object-image-preview" hidden>
-                <img id="object-image-preview-img" alt="Aperçu de l’image sélectionnée">
-            </div>
-        </div>
-    </section>
+        <section class="wz-step" data-wz-step aria-labelledby="wz-obj-t5">
+            <h2 class="wz-step__title" id="wz-obj-t5" data-wz-step-title>Vérifier et créer</h2>
+            <p class="wz-step__lead">Relisez avant de créer. Chaque ligne se corrige en un clic.</p>
+            <dl class="wz-sum">
+                <div class="wz-sum__row" data-wz-from="kind"><dt>Catégorie</dt><dd data-wz-val></dd><button type="button" class="wz-linkbtn" data-wz-goto="1">Modifier</button></div>
+                <div class="wz-sum__row" data-wz-from="meta[etat]" data-wz-row-when="<?= $h($physicalWhen) ?>"><dt>État de conservation</dt><dd data-wz-val></dd><button type="button" class="wz-linkbtn" data-wz-goto="1">Modifier</button></div>
+                <div class="wz-sum__row" data-wz-from="label"><dt>Libellé</dt><dd data-wz-val></dd><button type="button" class="wz-linkbtn" data-wz-goto="2">Modifier</button></div>
+                <div class="wz-sum__row" data-wz-from="detail"><dt>Précision</dt><dd data-wz-val></dd><button type="button" class="wz-linkbtn" data-wz-goto="2">Modifier</button></div>
+                <div class="wz-sum__row" data-wz-from="image"><dt>Image</dt><dd data-wz-val></dd><button type="button" class="wz-linkbtn" data-wz-goto="2">Modifier</button></div>
+                <?php if ($meshes !== []): ?>
+                    <div class="wz-sum__row" data-wz-from="mesh_id"><dt>Toile d’accueil</dt><dd data-wz-val></dd><button type="button" class="wz-linkbtn" data-wz-goto="3">Modifier</button></div>
+                <?php endif; ?>
+                <?php if ($cases !== []): ?>
+                    <div class="wz-sum__row" data-wz-from="case_id" data-wz-row-when="mesh_id="><dt>Dossier lié</dt><dd data-wz-val></dd><button type="button" class="wz-linkbtn" data-wz-goto="3">Modifier</button></div>
+                <?php endif; ?>
+                <div class="wz-sum__row" data-wz-from="classification" data-wz-row-when="mesh_id="><dt>Niveau de diffusion</dt><dd data-wz-val></dd><button type="button" class="wz-linkbtn" data-wz-goto="4">Modifier</button></div>
+            </dl>
+        </section>
 
-    <footer class="sse-obj-create__actions">
-        <button class="btn" type="submit">Créer et ouvrir dans une investigation</button>
-        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/operations')) ?>">Annuler</a>
-    </footer>
-</form>
-
+        <?php require __DIR__ . '/partials/wizard_nav.php'; ?>
+    </form>
+</div>
+<script src="<?= $h(asset_url('assets/js/sse-wizard.js')) ?>"></script>
 <script>
 (function () {
-    var host = document.getElementById('object-meta-host');
     var form = document.getElementById('sse-object-create');
-
-    function currentKind() {
-        var checked = form && form.querySelector('input[name="kind"]:checked');
-        return checked ? checked.value : '';
-    }
-
-    function syncMeta() {
-        if (!host) return;
-        var kind = currentKind();
-        host.querySelectorAll('.object-meta').forEach(function (fs) {
-            var on = fs.getAttribute('data-kind') === kind;
-            fs.classList.toggle('is-active', on);
-            fs.hidden = !on;
-            fs.disabled = !on;
-        });
-        if (form) {
-            form.querySelectorAll('.sse-obj-create__type').forEach(function (lab) {
-                var input = lab.querySelector('input[type="radio"]');
-                lab.classList.toggle('is-active', !!(input && input.checked));
-            });
-        }
-    }
-
-    if (form) {
-        form.querySelectorAll('input[name="kind"]').forEach(function (radio) {
-            radio.addEventListener('change', syncMeta);
-        });
-    }
-    syncMeta();
-
     var fileInput = document.getElementById('object_image');
     var preview = document.getElementById('object-image-preview');
     var previewImg = document.getElementById('object-image-preview-img');
