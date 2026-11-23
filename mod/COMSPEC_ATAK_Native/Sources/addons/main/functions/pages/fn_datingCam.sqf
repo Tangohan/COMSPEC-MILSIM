@@ -34,7 +34,7 @@ private _pose = {
 };
 private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DateCam", objNull];
-    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; };
+    if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", ([_cam, "r2t", ""] call comspec_atak_native_fnc_camVar)]; camDestroy _cam; ["keep"] call comspec_atak_native_fnc_tocRtt; };
     missionNamespace setVariable ["COMSPEC_ATAK_DateCam", objNull];
     ["stop"] call comspec_atak_native_fnc_blackStage;
     private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_DateCamPfh", -1];

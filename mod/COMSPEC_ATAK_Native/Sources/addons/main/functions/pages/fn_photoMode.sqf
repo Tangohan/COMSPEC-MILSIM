@@ -223,7 +223,7 @@ switch (toUpper _mode) do {
         private _ph = missionNamespace getVariable ["COMSPEC_ATAK_SelfiePhone", objNull];
         if (!isNull _ph && {(isObjectHidden _ph) isNotEqualTo _natural}) then { _ph hideObject _natural; };
         if (_natural) exitWith {
-            if (!isNull _cam) then { _cam cameraEffect ["terminate", "back"]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; _st set ["cam", objNull]; };
+            if (!isNull _cam) then { _cam cameraEffect ["terminate", "back"]; camDestroy _cam; ["keep"] call comspec_atak_native_fnc_tocRtt; _st set ["cam", objNull]; };
         };
         if (isNull _cam) then {
             _cam = "camera" camCreate (ASLToAGL _tPos);
@@ -578,7 +578,7 @@ switch (toUpper _mode) do {
         ["restore", "sortie du plein écran"] call comspec_atak_native_fnc_photoCam;
         ["INFO", "PHOTO", format ["Plein écran : fermeture (joueur vivant %1, véhicule %2, téléphone gardé %3, réouverture %4)", alive player, vehicle player isNotEqualTo player, [] call comspec_atak_native_fnc_hasDevice, _arg isNotEqualTo true]] call comspec_atak_native_fnc_log;
         private _cam = _st getOrDefault ["cam", objNull];
-        if (!isNull _cam) then { _cam cameraEffect ["terminate", "back"]; ["keep"] call comspec_atak_native_fnc_tocRtt; camDestroy _cam; };
+        if (!isNull _cam) then { _cam cameraEffect ["terminate", "back"]; camDestroy _cam; ["keep"] call comspec_atak_native_fnc_tocRtt; };
         _st set ["cam", objNull];
         _st set ["selfie", false];
         _st set ["zoom", 1];

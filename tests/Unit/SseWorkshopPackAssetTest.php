@@ -16,6 +16,11 @@ final class SseWorkshopPackAssetTest extends TestCase
     public function testBuildScriptsPointAtAddonBuilderLikeOverwatch(): void
     {
         $root = $this->sseRoot();
+        // Les scripts .bat ne sont plus suivis par Git depuis le signalement antivirus du Workshop (#1858) : le test
+        // ne vaut que sur un poste qui les a gardés en local.
+        if (!is_file($root . DIRECTORY_SEPARATOR . 'build_pbo.bat') || !is_file($root . DIRECTORY_SEPARATOR . 'build_mod.bat')) {
+            self::markTestSkipped('build_pbo.bat et build_mod.bat ne sont plus suivis par Git (#1858).');
+        }
         $build = (string) file_get_contents($root . DIRECTORY_SEPARATOR . 'build_pbo.bat');
         $wrapper = (string) file_get_contents($root . DIRECTORY_SEPARATOR . 'build_mod.bat');
 
