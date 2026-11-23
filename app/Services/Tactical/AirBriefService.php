@@ -25,6 +25,10 @@ use PDO;
  * - Boîte relevée par le téléphone du pilote : le brief passe « livré » (received_at, indicatif interrogé polled_as,
  *   dernier relevé last_polled_at : migration 4910), puis « lu » et « acquitté » par ses accusés (delivery()).
  * - Demande affectée à un appareil par assigned_aircraft seulement (sans destinataire) : trouvée aussi par la boîte.
+ * - Briefs d'un JTAC : GET /api/cas?assignedTo=~jtac|nom1|nom2 (même fonction GetCASForCallsign de la DLL) : 9-LINE et
+ *   5-LINE rédigés par ces indicatifs (ou par le membre dont c'est l'indicatif JTAC) sur le TOC web, la version mobile ou en
+ *   jeu, pour la carte courante, repris dans l'app JTAC du téléphone (« RÉCUPÉRER DEPUIS LE TOC / MOBILE ») ; même tableau
+ *   SQF avec, en dixième colonne, la source (« web » ou « jeu »).
  *
  * Tables absentes (migration 3720 pas encore passée) : tout se replie sans erreur (aucun destinataire, aucun indicatif) ;
  * colonnes de livraison absentes (4910) : statut et horodatages tenus quand même, sans indicatif interrogé ni dernier relevé.
@@ -38,6 +42,14 @@ final class AirBriefService
 
     /** Préfixe de la boîte du pilote dans assignedTo (les anciens appels gardent l'égalité stricte). */
     public const INBOX_PREFIX = '~air|';
+
+    /** Préfixe des briefs rédigés par un JTAC (reprise dans l'app JTAC du téléphone). */
+    public const AUTHORED_PREFIX = '~jtac|';
+
+    /** Briefs d'un JTAC : 12 dernières heures, 8 au plus. */
+    public const AUTHORED_WINDOW_SECONDS = 43200;
+
+    public const AUTHORED_MAX = 8;
 
     /** Boîte du pilote : demandes des 3 dernières heures, 6 au plus, réponse sous 6 500 octets. */
     public const INBOX_WINDOW_SECONDS = 10800;
@@ -654,6 +666,110 @@ final class AirBriefService
         return $n;
     }
 
+    /**
+     * 9-LINE et 5-LINE rédigés par ces indicatifs (auteur, ou membre dont c'est l'indicatif JTAC enregistré), sur cette
+     * carte (0 : toutes), les plus récents d'abord : ref, id, format, auteur, heure, lignes, remarques, statut le plus avancé
+     * des destinataires, destinataires, source (« web » : TOC web ou version mobile, « jeu » : app JTAC en jeu).
+     *
+     * @param list<string> $names
+     * @return list<array<string, mixed>>
+     */
+    public function authored(int $tenantId, int $mapId, array $names, ?int $now = null): array
+    {
+        $keys = [];
+        foreach ($names as $n) {
+            $k = self::key((string) $n);
+            if ($k !== '' && !in_array($k, ['operateur', 'pilote', 'unknown', 'inconnu', 'jtac'], true)) {
+                $keys[$k] = true;
+            }
+        }
+        if ($keys === [] || $tenantId < 1) {
+            return [];
+        }
+        $users = [];
+        if ($this->hasCallsignsTable()) {
+            $st = $this->db()->prepare('SELECT owner_key, callsign FROM atak_brief_callsigns WHERE tenant_id = ? AND scope = ?');
+            $st->execute([$tenantId, 'jtac']);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                if (isset($keys[self::key((string) $r['callsign'])]) && (int) $r['owner_key'] > 0) {
+                    $users[(int) $r['owner_key']] = true;
+                }
+            }
+        }
+        $now ??= time();
+        $sql = 'SELECT * FROM atak_nine_line WHERE tenant_id = ? AND created_at >= ?' . ($mapId > 0 ? ' AND map_id = ?' : '') . ' ORDER BY id DESC LIMIT 200';
+        $args = [$tenantId, date('Y-m-d H:i:s', $now - self::AUTHORED_WINDOW_SECONDS)];
+        if ($mapId > 0) {
+            $args[] = $mapId;
+        }
+        $st = $this->db()->prepare($sql);
+        $st->execute($args);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $kind = CasNineLineRepository::normalizeKind($r['mission_kind'] ?? 'cas');
+            if ($kind === CasNineLineRepository::KIND_MEDEVAC) {
+                continue;
+            }
+            $uid = (int) ($r['author_user_id'] ?? 0);
+            if (!isset($keys[self::key((string) ($r['author'] ?? ''))]) && !($uid > 0 && isset($users[$uid]))) {
+                continue;
+            }
+            $id = (int) $r['id'];
+            $count = $kind === CasNineLineRepository::KIND_FIVE ? 5 : 9;
+            $lines = [];
+            for ($i = 1; $i <= $count; $i++) {
+                $lines[] = (string) ($r['line' . $i] ?? '');
+            }
+            $mission = trim((string) ($r['mission_id'] ?? ''));
+            $out[] = [
+                'ref' => $mission !== '' ? $mission : (string) $id,
+                'id' => $id,
+                'format' => self::format($kind),
+                'from' => (string) ($r['author'] ?? 'JTAC'),
+                'time' => date('H:i', strtotime((string) ($r['created_at'] ?? '')) ?: $now),
+                'lines' => $lines,
+                'remarks' => self::remarks($r),
+                'status' => $this->bestStatus($tenantId, $id),
+                'recipient' => (string) ($r['assigned_aircraft'] ?? ''),
+                'source' => self::source($r),
+            ];
+            if (count($out) >= self::AUTHORED_MAX) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /** « web » (TOC web, version mobile : auteur membre du site) ou « jeu » (ref de l'app JTAC, CAS-…). @param array<string, mixed> $row */
+    public static function source(array $row): string
+    {
+        if ((int) ($row['author_user_id'] ?? 0) > 0) {
+            return 'web';
+        }
+
+        return preg_match('/^CAS-\d/', trim((string) ($row['mission_id'] ?? ''))) === 1 ? 'jeu' : 'web';
+    }
+
+    /** Statut le plus avancé des destinataires d'une demande (« sent » sans destinataire connu). */
+    private function bestStatus(int $tenantId, int $id): string
+    {
+        if (!$this->hasRecipientsTable()) {
+            return 'sent';
+        }
+        $st = $this->db()->prepare('SELECT status FROM atak_nine_line_recipients WHERE tenant_id = ? AND nine_line_id = ?');
+        $st->execute([$tenantId, $id]);
+        $best = 'sent';
+        foreach ($st->fetchAll(PDO::FETCH_COLUMN) ?: [] as $s) {
+            $s = (string) $s;
+            if (isset(self::RANK[$s]) && self::RANK[$s] > self::RANK[$best]) {
+                $best = $s;
+            }
+        }
+
+        return $best;
+    }
+
     /** 9line, 5line ou medevac (format lu par le jeu). */
     public static function format(string $kind): string
     {
@@ -680,7 +796,7 @@ final class AirBriefService
         $parts = [];
         foreach ($items as $it) {
             $lines = array_map(static fn ($l): string => $q($l), is_array($it['lines'] ?? null) ? $it['lines'] : []);
-            $parts[] = '[' . implode(',', [
+            $parts[] = '[' . implode(',', array_merge([
                 $q($it['ref'] ?? '', 60),
                 (string) (int) ($it['id'] ?? 0),
                 $q($it['format'] ?? '9line', 10),
@@ -690,7 +806,7 @@ final class AirBriefService
                 $q($it['remarks'] ?? '', 300),
                 $q($it['status'] ?? 'sent', 10),
                 $q($it['recipient'] ?? '', 40),
-            ]) . ']';
+            ], isset($it['source']) ? [$q($it['source'], 6)] : [])) . ']';
         }
         while ($parts !== [] && strlen('[' . implode(',', $parts) . ']') > $maxBytes) {
             array_pop($parts);

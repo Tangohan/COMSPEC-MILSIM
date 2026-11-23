@@ -12985,6 +12985,21 @@ class AtakApiController
                 ->header('Cache-Control', 'no-store')
                 ->setBody($body);
         }
+        // Briefs rédigés par le JTAC (TOC web, version mobile, jeu) : assignedTo=~jtac|nom1|nom2, repris dans l'app JTAC du téléphone.
+        if (is_string($assignedTo) && str_starts_with($assignedTo, \App\Services\Tactical\AirBriefService::AUTHORED_PREFIX)) {
+            $names = array_slice(explode('|', substr($assignedTo, strlen(\App\Services\Tactical\AirBriefService::AUTHORED_PREFIX))), 0, 8);
+            try {
+                $body = \App\Services\Tactical\AirBriefService::inboxSqf((new \App\Services\Tactical\AirBriefService())->authored($tenantId, (int) $mapId, $names));
+            } catch (\Throwable) {
+                $body = '[]';
+            }
+
+            return (new Response())
+                ->setStatusCode(200)
+                ->header('Content-Type', 'text/plain; charset=UTF-8')
+                ->header('Cache-Control', 'no-store')
+                ->setBody($body);
+        }
         try {
             $rows = $this->casRepo->listCas($tenantId, $mapId, $assignedTo, $status, CasNineLineRepository::KIND_CAS);
 

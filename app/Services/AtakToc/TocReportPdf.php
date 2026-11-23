@@ -51,6 +51,16 @@ final class TocReportPdf
         if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded() || !TrainingCertificatePdfEngine::tcpdfCertificateFontsReady()) {
             return null;
         }
+        // Check-in CAS versé par l'app JTAC du téléphone : la fiche « 9 LINE CLOSE AIR SUPPORT BRIEF » remplie, bandeau de
+        // classification seulement si le rapport en porte une.
+        if (is_array($r['cas_ckin'] ?? null)) {
+            [$banner, $rgb] = self::banner($r);
+
+            return (new CasCheckinSheetPdf())->render($r['cas_ckin'], [
+                'lang' => (string) ($opts['lang'] ?? 'fr'), 'banner' => $banner === 'UNCLASSIFIED' ? '' : $banner, 'rgb' => $rgb,
+                'ref' => strtoupper((string) ($r['key'] ?? '')), 'dtg' => (string) ($r['dtg'] ?? ''),
+            ]);
+        }
 
         return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(fn (): string => $this->draw($r, $opts));
     }

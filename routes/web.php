@@ -806,6 +806,8 @@ return function (Router $router) {
     $router->post('/atak/toc/api/reports/{key}/ack', [$tocReports, 'ack'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/reports/{key}/attach', [$tocReports, 'attach'], $mwAtakMemberOnly);
     $router->get('/atak/toc/reports/{key}/export.pdf', [$tocReports, 'pdf'], $mwAtakMemberOnly);
+    // Fiche de check-in CAS vierge (app JTAC du téléphone, onglet CKIN : la même fiche remplie sort par export.pdf).
+    $router->get('/atak/toc/cas-checkin.pdf', [$tocReports, 'casCheckinBlank'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/reset', [$tocApi, 'reset'], $mwAtakMemberOnly);
     // Suppression, corbeille de 15 minutes et purge de la carte du poste TOC (docs/TOC-WEB.md) : droits vérifiés par le contrôleur.
     $tocElements = \App\Controllers\Api\AtakTocElementsApiController::class;

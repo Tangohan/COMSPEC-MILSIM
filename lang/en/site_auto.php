@@ -72671,6 +72671,8 @@ return [
     'déjà en utf8mb4_unicode_ci,' => 'already in utf8mb4_unicode_ci,',
     'laissée(s) telle(s) quelle(s).' => 'left unchanged.',
     'table(s) historique(s) en' => 'historical table(s) in',
+    'Fiche CAS 9 lignes (PDF)' => 'CAS 9-line form (PDF)',
+    'Fiche CAS vierge' => 'Blank CAS form',
     '[air-brief] communauté %1, demande %2 : destinataire « %3 » sans appareil connu (aucun pilote relié sous cet indicatif)' => '[air-brief] community %1, request %2: recipient “%3” has no known aircraft (no pilot linked under this callsign)',
     '[INFO] Table atak_nine_line_recipients absente (étape 3720) : rien à ajouter.' => '[INFO] Table atak_nine_line_recipients missing (step 3720): nothing to add.',
     '[OK] Ajouté à atak_nine_line_recipients :' => '[OK] Added to atak_nine_line_recipients:',

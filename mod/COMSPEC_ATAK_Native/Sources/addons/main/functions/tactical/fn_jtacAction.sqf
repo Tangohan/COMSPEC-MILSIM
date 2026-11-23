@@ -9,7 +9,7 @@
     Appareil sans joueur (ou appels passés à la radio) : le JTAC note lui-même les appels du pilote (« radio »).
 
       "save"                          garde la saisie (avant un redessin)     "tick" : rafraîchit le contrôle en cours
-      "tab", clé | "view", clé        onglet (SIT, BRIEF, CTRL, LOG) | vue JTAC ou ÉQUIPAGE
+      "tab", clé | "view", clé        onglet (CKIN, SIT, BRIEF, CTRL, LOG) | vue JTAC ou ÉQUIPAGE
       "code", n | "lock" | "unlock"   code laser ACE, cible verrouillée (laser ou visée), cible effacée
       "pick", "tgt" | "ip"            cible ou IP pointés sur la carte ; "picked", position (retour de la carte)
       "air", netId | "type", n | "method", t | "ord", nom | "mark", m   appareil et plan d'attaque
@@ -29,6 +29,7 @@
       "setCs" | "csPick", texte       indicatif JTAC (profil)               "prefill" / "clearFree" : lignes libres
       "destToggle", netId | "destPlayers" | "mapPlayers"   destinataires, bascules « Joueurs uniquement »
       "sendAir"                       envoie le brief aux pilotes choisis (et indicatifs saisis)
+    Reprise depuis le TOC web / la version mobile : fn_jtacTocImport ; fiche de check-in CAS (onglet CKIN) : fn_jtacCkin.
       "airOpen", ref | "airAck", [ref, statut] | "airDel", ref | "airReadAll" | "airDelAll"   (pilote) espace BRIEFS AIR
       "setAirCs" | "airCsPick", texte (pilote) indicatif de son aéronef
 */
@@ -103,6 +104,8 @@ private _emit = {
     true
 };
 private _save = {
+    // Fiche CKIN affichée : sa saisie est gardée elle aussi (changement d'onglet, de vue).
+    ["save"] call comspec_atak_native_fnc_jtacCkin;
     if (_s getOrDefault ["clearing", false]) exitWith {};
     private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
     {

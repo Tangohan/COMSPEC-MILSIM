@@ -11,6 +11,8 @@
                poser la cible ou l'IP d'un appui sur la carte
       CTRL     état de la mission, readback, géométrie de l'appareil (FAH), marquage, autorisation de tir, BDA
       LOG      les appels radio de la mission, horodatés
+      CKIN     fiche de check-in CAS à compléter (fiche blanche « 9 LINE CLOSE AIR SUPPORT BRIEF ») : brouillon, copie
+               en texte, envoi au pilote, versement au compte rendu, historique de la partie (fn_pageJtacCkin, fn_jtacCkin)
     En paysage (hors mini), la carte tactique reste affichée à gauche des onglets SITU, 9-LINE et CTRL.
     Vue ÉQUIPAGE (joueur à bord d'un appareil qui a reçu un brief) : le 9-LINE reçu et les appels du pilote.
     Actions : fn_jtacAction ; 9-LINE : fn_jtacLines ; check-in : fn_jtacAir ; géométrie : fn_jtacGeometry.
@@ -145,7 +147,7 @@ if (_view isEqualTo "AIR") exitWith {
     private _open = _s getOrDefault ["airOpen", ""];
     private _bi = _inbox findIf { (_x get "ref") isEqualTo _open };
     private _ico = "\z\comspec_atak_native\addons\main\data\app_jtac.paa";
-    private _fmtName = { params ["_f"]; (createHashMapFromArray [["5", "5-LINE"], ["M", "MEDEVAC"]]) getOrDefault [_f, "9-LINE"] };
+    private _fmtName = { params ["_f"]; (createHashMapFromArray [["5", "5-LINE"], ["M", "MEDEVAC"], ["C", "CHECK-IN"]]) getOrDefault [_f, "9-LINE"] };
     if (_bi >= 0) then {
         // Lecture : une ligne par carte, valeur en gros (lisible en vol), puis WILCO / UNABLE.
         private _b = _inbox select _bi;
@@ -154,6 +156,7 @@ if (_view isEqualTo "AIR") exitWith {
         private _fmt = _b getOrDefault ["fmt", "9"];
         private _labels = switch (_fmt) do {
             case "5": { ["Observateur / ordre d'alerte", "Position et marquage des amis", "Position de la cible", "Description et marquage de la cible", "Remarques et restrictions"] };
+            case "C": { ["labels"] call comspec_atak_native_fnc_jtacCkin };
             case "M": { ["Point de prise en charge", "Fréquence et indicatif", "Patients par urgence", "Matériel spécial", "Patients couchés / valides", "Sécurité de la zone", "Marquage de la zone", "Nationalité des patients", "Contamination / terrain"] };
             default { ["IP / BP", "Cap", "Distance", "Altitude cible", "Description", "Position cible", "Marquage", "Amis", "Dégagement"] };
         };
@@ -168,6 +171,8 @@ if (_view isEqualTo "AIR") exitWith {
         private _lines = _b getOrDefault ["lines", []];
         {
             private _v = trim (_lines param [_forEachIndex, ""]);
+            // Fiche de check-in (CKIN) : seuls les champs remplis.
+            if (_fmt isEqualTo "C" && {_v in ["", "-"]}) then { continue; };
             _rows pushBack ["text", format ["<t size='0.75' color='%1'>%2 · %3</t><br/>%4", _grey, _forEachIndex + 1, toUpper _x,
                 [[_v, "-"] select (_v isEqualTo ""), ["#ffffff", _grey] select (_v in ["", "-"]), 1.45, true] call _mono], [[0.045, 0.058, 0.052, 1], [0.035, 0.046, 0.041, 1]] select ((_forEachIndex mod 2) isEqualTo 1)];
         } forEach _labels;
@@ -200,7 +205,11 @@ if (_view isEqualTo "AIR") exitWith {
                 private _ack = _b getOrDefault ["ack", ""];
                 private _fmt = _b getOrDefault ["fmt", "9"];
                 private _lines = _b getOrDefault ["lines", []];
-                private _what = if (_fmt isEqualTo "5") then { format ["%1 · %2", _lines param [2, "-"], _lines param [3, "-"]] } else { format ["%1 · %2", _lines param [5, "-"], _lines param [4, "-"]] };
+                private _what = switch (true) do {
+                    case (_fmt isEqualTo "C"): { format ["%1 · %2", _lines param [0, "-"], _lines param [16, "-"]] };
+                    case (_fmt isEqualTo "5"): { format ["%1 · %2", _lines param [2, "-"], _lines param [3, "-"]] };
+                    default { format ["%1 · %2", _lines param [5, "-"], _lines param [4, "-"]] };
+                };
                 private _rgb = switch (true) do {
                     case (_ack isEqualTo "UNABLE"): { [0.9, 0.28, 0.23, 1] };
                     case (_ack isEqualTo "WILCO"): { [0.36, 0.78, 0.42, 1] };
@@ -291,10 +300,12 @@ if (_hasM) then {
         ["", ["DANGER CLOSE", _red, 0.85, true] call _mono] select (_mb getOrDefault ["dc", false]), [0.03, 0.04, 0.035, 1]];
     _rows pushBack ([_m] call _steps);
 };
-_rows pushBack ["segment", "", [["SITU", "SIT"], ["9/5-LINE", "BRIEF"], ["CARTE", "MAP"], ["CTRL", "CTRL"], ["LOG", "LOG"]] apply { [_x select 0, ["tab", _x select 1] call _act, _tab isEqualTo (_x select 1)] }];
+// CKIN en tête : la fiche de check-in CAS, premier geste quand un appareil arrive en station.
+_rows pushBack ["segment", "", [["CKIN", "CKIN"], ["SITU", "SIT"], ["9/5-LINE", "BRIEF"], ["CARTE", "MAP"], ["CTRL", "CTRL"], ["LOG", "LOG"]] apply { [_x select 0, ["tab", _x select 1] call _act, _tab isEqualTo (_x select 1)] }];
 
 switch (_tab) do {
     case "MAP": {};
+    case "CKIN": { _rows append ([] call comspec_atak_native_fnc_pageJtacCkin); };
     case "BRIEF": {
         private _fmt = _s getOrDefault ["fmt", "9"];
         private _free = _s getOrDefault ["free", false];
@@ -305,6 +316,8 @@ switch (_tab) do {
             ["5-LINE", ["fmt", "5"] call _act, _fmt isEqualTo "5", "Brief CAS court (hélicoptère d'attaque) : observateur, amis, cible, description, remarques"],
             ["MEDEVAC", ["medevac"] call _act, false, "Ouvre la demande MEDEVAC de l'app Médical"]
         ]];
+        // Reprise des 9-LINE et 5-LINE rédigés sur le TOC web ou la version mobile (fn_jtacTocImport).
+        _rows append (["rows"] call comspec_atak_native_fnc_jtacTocImport);
         // Indicatif du JTAC : ligne Observateur, auteur sur Athena, alertes et accusés des pilotes.
         _rows pushBack ["field", "jCs", "Indicatif JTAC", _s getOrDefault ["jCs", ["jtacCs"] call _ab], "OK", ["setCs"] call _act, false];
         _rows pushBack ["segment", "", ["HAMMER", "WARHAWK", "SPARTAN", "JTAC"] apply { [_x, ["csPick", format ["%1 11", _x]] call _act, false, "Indicatif JTAC courant"] }];
@@ -593,7 +606,8 @@ switch (_tab) do {
                 ["#c9d4cf", _green] select _isSel, _ci get "callsign", _grey, _ci get "type", _crewTxt,
                 [format ["%1FT %2KT %3NM %4 FUEL %5", _ci get "alt", _ci get "kts", ((_x distance2D player) / 1852) toFixed 1, [player getDir _x] call _card, (str (_ci get "fuel")) + "%" + (["", " TGP"] select (_ci get "tgp"))], "#c9d4cf", 0.72] call _mono,
                 [[_ords joinString "  ", "pas d'armement air-sol"] select ((count _ords) isEqualTo 0), [_amber, _grey] select ((count _ords) isEqualTo 0), 0.72] call _mono],
-                [[["CHOISIR", "CHOISI"] select _isSel, ["air", _x call BIS_fnc_netId] call _act, _isSel]]];
+                [[["CHOISIR", "CHOISI"] select _isSel, ["air", _x call BIS_fnc_netId] call _act, _isSel],
+                 ["CKIN", compile format ["['pickAir', %1] call comspec_atak_native_fnc_jtacCkin;", str (_x call BIS_fnc_netId)], false, true, "Fiche de check-in CAS de cet appareil (onglet CKIN)"]]];
         } forEach (_airs select [0, 8]);
         if (!isNull _air) then { _rows pushBack ["big", [["PRÉPARER LE 9-LINE", ["tab", "BRIEF"] call _act, "green", true]]]; };
     };
