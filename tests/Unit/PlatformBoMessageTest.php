@@ -272,6 +272,53 @@ final class PlatformBoMessageTest extends TestCase
         self::assertSame([], $this->repo()->stats());
     }
 
+    public function testQuickAlertTargetsOnlyTheChosenCommunityAndPreservesTracking(): void
+    {
+        $tenants = $this->createStub(TenantRepository::class);
+        $tenants->method('findById')->willReturnMap([
+            [2, self::tenant(2, 'free', 'effectifs') + ['name' => 'Alpha', 'slug' => 'alpha']],
+            [3, self::tenant(3) + ['name' => 'Bravo', 'slug' => 'bravo', 'settings' => ['platform_archive' => ['archived_at' => '2026-01-01']]]],
+        ]);
+        $repo = $this->repo();
+        $audit = $this->auditSpy();
+        $gate = Gate::getInstance();
+        $controller = new SystemPlatformBoMessagesController($repo, $tenants, $this->createStub(SubscriptionPlanRepository::class), $gate, $audit);
+        $_SESSION = ['user_id' => 10, '_csrf_token' => 'tok'];
+        $_POST = ['tenant_id' => '2', 'duration_days' => '7', 'level' => 'urgent', 'title_fr' => 'Contrôle de test',
+            'body_fr' => 'Merci de vérifier vos réglages.', 'title_en' => 'Test alert', 'target_mode' => 'all', 'target_tenants' => ['3'], 'is_active' => '0'];
+
+        $gate->setPermissions([]);
+        self::assertSame(403, $controller->storeTargeted(new Request())->statusCode());
+        $gate->setPlatformAdmin(true);
+        self::assertSame(419, $controller->storeTargeted(new Request())->statusCode());
+        $_POST['_csrf_token'] = 'tok';
+        $_POST['tenant_id'] = '3';
+        self::assertSame(422, $controller->storeTargeted(new Request())->statusCode());
+        $_POST['tenant_id'] = '2';
+        $_POST['duration_days'] = '42';
+        self::assertSame(422, $controller->storeTargeted(new Request())->statusCode());
+        self::assertSame([], $repo->listAll());
+        $_POST['duration_days'] = '7';
+
+        $response = $controller->storeTargeted(new Request());
+        self::assertSame(201, $response->statusCode());
+        $data = json_decode($response->body(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('#message-1', $data['tracking_url']);
+        $notice = $repo->find(1);
+        self::assertSame('tenants', $notice['target_mode']);
+        self::assertSame('[2]', $notice['target_json']);
+        self::assertNull($notice['starts_at']);
+        self::assertNotEmpty($notice['ends_at']);
+
+        $service = new PlatformBoMessageService($repo);
+        self::assertSame([], $service->forTenant(self::tenant(3), 8, 'fr'));
+        $visible = $service->forTenant(self::tenant(2), 8, 'en', markSeen: true);
+        self::assertSame('Test alert', $visible[0]['title']);
+        self::assertTrue($visible[0]['ackable']);
+        self::assertSame(1, $repo->stats()[1]['seen']);
+        self::assertSame('platform.bo_message_created', $audit->calls[0][0]);
+    }
+
     public function testAdminControllerRequiresPlatformAdminAndCsrf(): void
     {
         $tenants = $this->createMock(TenantRepository::class);

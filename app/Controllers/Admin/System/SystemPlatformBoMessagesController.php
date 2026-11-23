@@ -121,6 +121,38 @@ final class SystemPlatformBoMessagesController
         return Response::redirect(url(self::BASE));
     }
 
+    /** Publication immédiate depuis l’annuaire ou la fiche communauté. */
+    public function storeTargeted(Request $request, array $params = []): Response
+    {
+        if (($deny = $this->deny($request, true)) !== null) {
+            return $deny;
+        }
+        $tenantId = (int) filter_var($request->inputString('tenant_id'), FILTER_VALIDATE_INT);
+        $tenant = $tenantId > 1 ? $this->tenants->findById($tenantId) : null;
+        if ($tenant === null || \App\Support\PortalAccessChoice::isPlaceholderTenant($tenant)
+            || \App\Services\Community\TenantArchiveState::isArchived($tenant)) {
+            return Response::json(['ok' => false, 'error' => __('admin_community_alert.unavailable_tenant')], 422);
+        }
+        try {
+            $d = $this->normalize($request, null, targetTenantId: $tenantId);
+            if ($d['error'] !== null) {
+                return Response::json(['ok' => false, 'error' => $d['error']], 422);
+            }
+            $id = $this->repo->create($d['data'], (int) Session::get('user_id'));
+        } catch (\Throwable $e) {
+            error_log('[messages-plateforme] publication ciblée : ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => __('admin_community_alert.publish_failed')], 503);
+        }
+        $this->audit(AuditAction::PLATFORM_BO_MESSAGE_CREATED, $id, [], $this->snapshot($d['data']));
+
+        return Response::json([
+            'ok' => true,
+            'message' => __('admin_community_alert.publish_success', ['community' => community_display_name($tenant)]),
+            'tracking_url' => url(self::BASE) . '#message-' . $id,
+        ], 201);
+    }
+
     public function update(Request $request, array $params = []): Response
     {
         if (($deny = $this->deny($request)) !== null) {
@@ -321,7 +353,7 @@ final class SystemPlatformBoMessagesController
      *
      * @return array{data: array<string, mixed>, error: ?string}
      */
-    private function normalize(Request $request, ?int $exceptId, bool $lenient = false): array
+    private function normalize(Request $request, ?int $exceptId, bool $lenient = false, ?int $targetTenantId = null): array
     {
         $in = static fn (string $k): mixed => $request->input($k);
         $arr = static fn (string $k): array => is_array($request->input($k)) ? $request->input($k) : [];
@@ -335,17 +367,28 @@ final class SystemPlatformBoMessagesController
         $ends = PlatformBoMessage::parseDateTime($in('ends_at'));
         $active = $in('is_active') === '1' || $in('is_active') === 'on' || $in('is_active') === 1;
 
-        $knownTenants = array_map(static fn (array $t): int => (int) $t['id'], $this->tenantList());
-        $knownPlans = array_keys($this->planNames());
-        $target = PlatformBoMessage::normalizeTarget(
-            $in('target_mode'),
-            $arr('target_tenants'),
-            $arr('target_plans'),
-            $arr('target_types'),
-            $knownTenants,
-            array_values(array_filter($knownPlans, static fn (string $s): bool => $s !== '')),
-            array_keys(self::TYPES)
-        );
+        if ($targetTenantId !== null) {
+            $days = $request->inputString('duration_days');
+            if (!in_array($days, ['7', '14', '30'], true)) {
+                return ['data' => [], 'error' => __('admin_community_alert.invalid_duration')];
+            }
+            $target = ['mode' => PlatformBoMessage::MODE_TENANTS, 'values' => [$targetTenantId], 'error' => null];
+            $starts = null;
+            $ends = (new \DateTimeImmutable())->modify('+' . $days . ' days')->format('Y-m-d H:i:s');
+            $active = true;
+        } else {
+            $knownTenants = array_map(static fn (array $t): int => (int) $t['id'], $this->tenantList());
+            $knownPlans = array_keys($this->planNames());
+            $target = PlatformBoMessage::normalizeTarget(
+                $in('target_mode'),
+                $arr('target_tenants'),
+                $arr('target_plans'),
+                $arr('target_types'),
+                $knownTenants,
+                array_values(array_filter($knownPlans, static fn (string $s): bool => $s !== '')),
+                array_keys(self::TYPES)
+            );
+        }
 
         $data = [
             'level' => PlatformBoMessage::level(is_scalar($in('level')) ? (string) $in('level') : ''),
@@ -365,7 +408,9 @@ final class SystemPlatformBoMessagesController
 
         $error = null;
         if ($titleFr === '' && $titleEn === '') {
-            $error = 'Le titre est obligatoire (en français ou en anglais).';
+            $error = $targetTenantId === null ? 'Le titre est obligatoire (en français ou en anglais).' : __('admin_community_alert.title_required');
+        } elseif ($targetTenantId !== null && $data['body_fr'] === '' && $data['body_en'] === '') {
+            $error = __('admin_community_alert.body_required');
         } elseif ($urlRaw !== '' && $url === null) {
             $error = 'Adresse du bouton invalide : utilisez une adresse complète en https:// (ou http://).';
         } elseif ($url !== null && $labelFr === '' && $labelEn === '') {
@@ -378,7 +423,7 @@ final class SystemPlatformBoMessagesController
             $error = $target['error'];
         } elseif ($active && !$lenient && $this->repo->countActive($exceptId) >= PlatformBoMessage::MAX_ACTIVE
             && ($ends === null || strtotime($ends) >= time())) {
-            $error = 'Limite atteinte : trop de messages actifs. Désactivez-en un d’abord.';
+            $error = $targetTenantId === null ? 'Limite atteinte : trop de messages actifs. Désactivez-en un d’abord.' : __('admin_community_alert.active_limit');
         }
         return ['data' => $data, 'error' => $error];
     }

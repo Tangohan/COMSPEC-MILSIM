@@ -1816,6 +1816,7 @@ return function (Router $router) {
     $router->get('/admin/system/alerts', [SystemPlatformAlertsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/messages-communautes', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/messages-communautes/create', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/cible', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'storeTargeted'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/messages-communautes/apercu', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/messages-communautes', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/messages-communautes/{id}/edit', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

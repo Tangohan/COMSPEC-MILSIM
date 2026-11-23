@@ -28,6 +28,7 @@ use App\Support\CsvSafe;
 use App\Support\PlatformUserColumns;
 use App\Support\PlatformUsersDirectoryQuery;
 use App\Support\PortalAccessChoice;
+use App\Support\RosterOnlyMember;
 use App\Repositories\AccountPurgeRequestRepository;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\LoginAttemptRepository;
@@ -87,7 +88,8 @@ final class SystemUsersController
         $this->banService()->expireDue(null, 50);
 
         $filters = PlatformUsersDirectoryQuery::normalize($request->queryParams());
-        $columns = $filters['cols'] ?? PlatformUserColumns::DEFAULT;
+        $isRoster = $filters['status'] === 'fiches';
+        $columns = $isRoster ? PlatformUserColumns::ROSTER : ($filters['cols'] ?? PlatformUserColumns::DEFAULT);
         $page = $filters['page'];
         $perPage = $filters['par'];
 
@@ -114,7 +116,7 @@ final class SystemUsersController
         ));
 
         return Response::view('layout.main', [
-            'title' => 'Comptes utilisateurs',
+            'title' => $isRoster ? __('admin_community_alert.roster') : 'Comptes utilisateurs',
             'content' => 'admin.system.users',
             'isPlatformAdminShell' => true,
             'backOfficePageCss' => ['platform-admin-users.css', 'platform-admin-network.css'],
@@ -125,13 +127,13 @@ final class SystemUsersController
             'platformUsersFilters' => $filters,
             'platformUserColumns' => $columns,
             'platformTenants' => $realTenants,
-            'pendingPurgeRequests' => $this->purgeRequests->listPending(50),
-            'pendingPurgeRequestsCount' => $this->purgeRequests->countPending(),
+            'pendingPurgeRequests' => $isRoster ? [] : $this->purgeRequests->listPending(50),
+            'pendingPurgeRequestsCount' => $isRoster ? 0 : $this->purgeRequests->countPending(),
             'platformBansCount' => $this->bans()->countActive(),
             'platformInactiveCount' => $inactiveCount,
-            'platformBanSupportsEnd' => $this->bans()->supportsEndDate(),
-            'platformBanSupportsNotice' => $this->bans()->supportsNotices(),
-            'platformBanSupportsAppealClosure' => $this->bans()->supportsAppealClosure(),
+            'platformBanSupportsEnd' => !$isRoster && $this->bans()->supportsEndDate(),
+            'platformBanSupportsNotice' => !$isRoster && $this->bans()->supportsNotices(),
+            'platformBanSupportsAppealClosure' => !$isRoster && $this->bans()->supportsAppealClosure(),
         ]);
     }
 
@@ -162,10 +164,12 @@ final class SystemUsersController
             }
         }
         $filters = PlatformUsersDirectoryQuery::normalize($request->all());
-        $columns = $filters['cols'] ?? PlatformUserColumns::DEFAULT;
+        $columns = $filters['status'] === 'fiches' ? PlatformUserColumns::ROSTER : ($filters['cols'] ?? PlatformUserColumns::DEFAULT);
 
         $groups = [];
         if ($selected !== []) {
+            $isRoster = $filters['status'] === 'fiches';
+            $selected = array_values(array_filter($selected, static fn (string $email): bool => RosterOnlyMember::isRosterEmail($email) === $isRoster));
             $groups = $this->users->platformDirectoryGroupsByEmails($selected);
         } else {
             $limit = self::EXPORT_MAX_ROWS;
@@ -194,7 +198,11 @@ final class SystemUsersController
 
         $header = [];
         foreach ($columns as $col) {
-            $header[] = $col === 'volume' ? 'Données reçues 30 jours (octets)' : PlatformUserColumns::LABELS[$col];
+            $header[] = match (true) {
+                $col === 'volume' => 'Données reçues 30 jours (octets)',
+                $col === 'creation' && $filters['status'] === 'fiches' => __('admin_community_alert.profile_created'),
+                default => PlatformUserColumns::LABELS[$col],
+            };
         }
         $rows = [];
         foreach ($groups as $g) {
@@ -231,7 +239,7 @@ final class SystemUsersController
         return (new Response())
             ->setStatusCode(200)
             ->header('Content-Type', 'text/csv; charset=UTF-8')
-            ->header('Content-Disposition', 'attachment; filename="comptes-' . gmdate('Y-m-d') . '.csv"')
+            ->header('Content-Disposition', 'attachment; filename="' . ($filters['status'] === 'fiches' ? 'fiches-effectifs-' : 'comptes-') . gmdate('Y-m-d') . '.csv"')
             ->header('Cache-Control', 'no-store')
             ->setBody($csv);
     }
@@ -644,7 +652,7 @@ final class SystemUsersController
             $group = $groups[$email] ?? null;
             $memberships = array_filter($group['memberships'] ?? [], static fn (array $row): bool => empty($row['deleted_at']));
             $ids = [];
-            if (\App\Support\RosterOnlyMember::isRosterEmail($email)) {
+            if (RosterOnlyMember::isRosterEmail($email)) {
                 $reason = 'Fiche sans compte de connexion.';
             } elseif ($memberships === []) {
                 $reason = 'Compte absent, supprimé ou technique.';

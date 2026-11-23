@@ -13,7 +13,7 @@ use App\Repositories\UserRepository;
  */
 final class PlatformUsersDirectoryQuery
 {
-    public const STATUSES = ['active', 'inactive', 'pending_verification', 'deleted', 'no_org', 'banned', 'inactifs'];
+    public const STATUSES = ['active', 'inactive', 'pending_verification', 'deleted', 'no_org', 'banned', 'inactifs', 'fiches'];
 
     public const PER_PAGE = [25, 50, 100];
 
@@ -51,6 +51,15 @@ final class PlatformUsersDirectoryQuery
         $cols = isset($src['cols_set']) ? PlatformUserColumns::normalize(is_array($src['cols'] ?? null) ? $src['cols'] : []) : (
             is_array($src['cols'] ?? null) ? PlatformUserColumns::normalize($src['cols']) : null
         );
+
+        if ($status === 'fiches') {
+            $inactif = $sanction = '';
+            $cols = null;
+            if (!in_array($tri, PlatformUserColumns::ROSTER, true)) {
+                $tri = '';
+                $sens = 'asc';
+            }
+        }
 
         return [
             'q' => $q,

@@ -544,3 +544,15 @@ html[data-bo-theme="dark"] .pu {
 @media (max-width: 380px) {
   .ph-grid--actions, .ph-grid--health, .ph-grid--figures { grid-template-columns: 1fr; }
 }
+
+[data-community-alert-dialog] [hidden] { display: none !important; }
+[data-community-alert-fields] { display: grid; gap: .7rem; }
+[data-community-alert-fields] summary { cursor: pointer; font-weight: 700; }
+[data-community-alert-dialog] .pu-dialog__title { margin: 0; }
+[data-community-alert-dialog] .pu-dialog__buttons { flex-wrap: wrap; }
+.pu-community-alert__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: .7rem;
+}
+.pu-community-alert__options select { max-inline-size: 100%; }

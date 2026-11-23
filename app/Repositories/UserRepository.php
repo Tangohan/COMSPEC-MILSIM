@@ -3529,6 +3529,9 @@ class UserRepository
         $parts[] = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@deleted.invalid');
         $parts[] = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@merged.invalid');
 
+        $hasLoginAccount = SqlText::normalizedNotLikeLiteral($pdo, 'u.email', '%@' . \App\Support\RosterOnlyMember::EMAIL_DOMAIN);
+        $parts[] = $status === 'fiches' ? 'NOT (' . $hasLoginAccount . ')' : $hasLoginAccount;
+
         $selectedEmails = $options['emails'] ?? null;
         if ($selectedEmails !== null) {
             $emails = $selectedEmails;
