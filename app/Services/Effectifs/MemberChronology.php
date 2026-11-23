@@ -110,6 +110,7 @@ final class MemberChronology
             $how = match ((string) ($g['source'] ?? '')) {
                 'elevation' => 'Élévation validée',
                 'correction' => 'Correction de dossier validée',
+                'scheduled' => 'Changement planifié',
                 default => 'Changement de grade',
             };
             $add('grade', (string) ($g['date'] ?? ''), (string) ($g['to_label'] ?? ''), ($detail !== '' ? $detail . ' · ' : '') . $how . ($by !== '' ? ' par ' . $by : ''));
