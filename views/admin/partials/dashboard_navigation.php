@@ -26,6 +26,8 @@ foreach ($homeQuickLinks as $quickLink) {
     <a href="#hub-moderation">À traiter</a>
     <a href="#hub-sante">Santé</a>
     <a href="#hub-plateforme">Indicateurs</a>
+    <a href="#hub-modules">Modules</a>
+    <a href="#hub-journal">Journal</a>
     <a href="#hub-statistiques">Statistiques et PDF</a>
     <button type="button" class="pa-btn pa-btn--solid" data-dashboard-open="ph-tools-dialog" aria-haspopup="dialog">Outils <kbd aria-hidden="true">Ctrl K</kbd></button>
 </nav>

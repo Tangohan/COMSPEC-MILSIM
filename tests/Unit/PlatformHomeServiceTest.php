@@ -58,13 +58,13 @@ final class PlatformHomeServiceTest extends TestCase
         $keys = array_column((new PlatformHomeService($this->emptyDatabase()))->actions(), 'key');
 
         // « appeals » (contestations de bannissement) est venu après le plan initial, entre la purge et les paiements.
-        self::assertSame(['mod_reports', 'purge', 'appeals', 'payments', 'migrations', 'abuse', 'reports'], $keys);
+        self::assertSame(['mod_reports', 'purge', 'appeals', 'payments', 'migrations', 'abuse', 'reports', 'contact'], $keys);
     }
 
     public function testEveryCardLeadsToAnAdminPage(): void
     {
         $service = new PlatformHomeService($this->emptyDatabase());
-        $cards = array_merge($service->actions(), $service->health(), $service->figures(), PlatformHomeService::quickLinks());
+        $cards = array_merge($service->actions(), $service->health(), $service->figures(), PlatformHomeService::quickLinks(), PlatformHomeService::modules());
         foreach ($cards as $card) {
             self::assertMatchesRegularExpression('#^(admin(/|\?|$)|back-office/signalements$)#', $card['href'], $card['key']);
         }
@@ -79,12 +79,15 @@ final class PlatformHomeServiceTest extends TestCase
             'homeHealth' => $service->health(),
             'homeFigures' => $service->figures(),
             'homeQuickLinks' => PlatformHomeService::quickLinks(),
+            'homeModules' => PlatformHomeService::modules(),
+            'adminRecentActivity' => [],
+            'adminRecentActivityError' => 'Activité récente indisponible.',
             'adminPlatformEnvLabel' => 'Test',
             'adminPlatformEnvRaw' => 'testing',
         ])->body();
 
         $positions = [];
-        foreach (['id="hub-moderation"', 'id="hub-sante"', 'id="hub-plateforme"', 'id="ph-search-dialog"'] as $needle) {
+        foreach (['id="hub-moderation"', 'id="hub-sante"', 'id="hub-plateforme"', 'id="hub-modules"', 'id="hub-journal"', 'id="ph-search-dialog"'] as $needle) {
             $pos = strpos($html, $needle);
             self::assertNotFalse($pos, $needle);
             $positions[] = $pos;
