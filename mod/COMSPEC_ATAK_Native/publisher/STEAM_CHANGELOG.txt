@@ -1,3 +1,17 @@
+[h1]COMSPEC ATAK 4.32.0 Washington — retrouver une fiche par son numéro DSE / find a record by its DSE number[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Numéro DSE[/b] : dans l'app SSE, onglet Fiches, le nouvel onglet « DSE » te laisse saisir ou coller un numéro DSE du portail Athena. Le téléphone affiche le numéro d'identification, le nom de code, le nom de la fiche et l'IA reliée, ou explique pourquoi la recherche échoue (hors ligne, numéro inconnu, trop de recherches).
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]DSE number[/b]: in the SSE app, Records tab, the new "DSE" tab lets you type or paste a DSE number from the Athena portal. The phone shows the identification number, code name, record name and linked AI, or explains why the lookup failed (offline, unknown number, too many lookups).
+[/list]
+
 [h1]COMSPEC ATAK 4.31.0 Washington — réglette d'effectif plus sobre et masquable / cleaner, hideable squad strip[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

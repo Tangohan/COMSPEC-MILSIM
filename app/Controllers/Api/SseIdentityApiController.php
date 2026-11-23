@@ -181,7 +181,7 @@ final class SseIdentityApiController
         $body = $this->jsonBody();
         // Les fiches ont leur propre garde et leur propre filtrage par habilitation.
         // Le niveau exigé pour les contrôles d'identité ne doit pas bloquer les avis internes.
-        if (in_array($body['kind'] ?? null, [\App\Services\Sse\SseFichesGameService::KIND, \App\Services\Sse\SseFichesGameService::KIND_SHARE], true)) {
+        if (in_array($body['kind'] ?? null, [\App\Services\Sse\SseFichesGameService::KIND, \App\Services\Sse\SseFichesGameService::KIND_SHARE, \App\Services\Sse\SseFichesGameService::KIND_DSE], true)) {
             return ($this->gameFiches ??= new \App\Controllers\Api\Game\GameSseFichesApiController())->kindResponse($body);
         }
         $tenantId = $this->guard($request, SseCaseRepository::CLASS_COMMAND);

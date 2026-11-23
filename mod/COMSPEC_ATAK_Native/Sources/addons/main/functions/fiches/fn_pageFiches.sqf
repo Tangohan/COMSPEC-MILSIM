@@ -306,8 +306,44 @@ _rows pushBack ["segment", "", [
     [format ["TOUTES (%1)", count _all], { ["viewSet", "ALL"] call comspec_atak_native_fnc_fichesAction; }, _view isEqualTo "ALL"],
     [format ["AVIS (%1)", _nAvis], { ["viewSet", "avis"] call comspec_atak_native_fnc_fichesAction; }, _view isEqualTo "avis"],
     [format ["FICHES (%1)", (count _all) - _nAvis], { ["viewSet", "sheets"] call comspec_atak_native_fnc_fichesAction; }, _view isEqualTo "sheets"],
-    [format ["REÇUES (%1)", count _inbox], { ["viewSet", "inbox"] call comspec_atak_native_fnc_fichesAction; }, _view isEqualTo "inbox"]
+    [format ["REÇUES (%1)", count _inbox], { ["viewSet", "inbox"] call comspec_atak_native_fnc_fichesAction; }, _view isEqualTo "inbox"],
+    ["DSE", { ["viewSet", "dse"] call comspec_atak_native_fnc_fichesAction; }, _view isEqualTo "dse"]
 ]];
+
+// Numéro DSE (Dossier Synchronisé Eden) : saisir ou coller le numéro d'une fiche pour lire son ID, son nom de code et son nom de fiche.
+if (_view isEqualTo "dse") exitWith {
+    private _dseRes = _s getOrDefault ["fichesDse", []];
+    private _dseErr = _s getOrDefault ["fichesDseErr", ""];
+    _rows pushBack ["section", "Numéro DSE", "Dossier Synchronisé Eden : donné par le portail Athena, il retrouve une fiche"];
+    _rows pushBack ["field", "fichesDseQ", "DSE (DSE-K7M4QX)", _s getOrDefault ["fichesDseQ", ""], "CHERCHER", {
+        ["dseFind", ["fichesDseQ"] call comspec_atak_native_fnc_formValue] call comspec_atak_native_fnc_fichesAction;
+    }, true];
+    if (_s getOrDefault ["fichesDseBusy", false]) then { _rows pushBack ["skeleton", 1, "Recherche du DSE…"]; };
+    if (_dseErr isNotEqualTo "") then {
+        _rows pushBack ["text", format ["<t color='%1'>%2</t>", _warn, [_dseErr] call _esc], [0.18, 0.12, 0.03, 1]];
+    };
+    if ((count _dseRes) >= 5) then {
+        _dseRes params ["_dse", "_dType", "_dId", "_dCode", "_dSheet", ["_dAi", ""], ["_dSide", ""], ["_dCat", ""]];
+        private _typeNames = createHashMapFromArray [["person", "Personne"], ["identity", "Identité du registre"], ["field_note", "Fiche de renseignement"],
+            ["report", "Compte rendu"], ["document", "Document"]];
+        _rows pushBack ["section", "Fiche trouvée", _typeNames getOrDefault [_dType, _dType]];
+        _rows pushBack ["info", "Numéro d'identification", [_dId] call _esc];
+        _rows pushBack ["info", "Nom de code", [_dCode] call _esc];
+        _rows pushBack ["info", "DSE", [_dse] call _esc];
+        _rows pushBack ["info", "Nom de la fiche", [_dSheet] call _esc];
+        _rows pushBack ["info", "IA reliée", [[format ["%1 (%2, %3)", _dAi, _dSide, _dCat], ("Aucune") call comspec_atak_native_fnc_tr] select (_dAi isEqualTo "")] call _esc];
+        _rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", _muted, ("Le contenu de la fiche se lit sur le portail Athena, selon votre habilitation.") call comspec_atak_native_fnc_tr]];
+    } else {
+        if (_dseErr isEqualTo "" && {!(_s getOrDefault ["fichesDseBusy", false])}) then {
+            _rows pushBack ["empty", _d + "ui_search.paa", "Aucun DSE recherché", "Collez le numéro DSE d'une fiche (Ctrl+V) puis appuyez sur CHERCHER."];
+        };
+    };
+    _rows pushBack ["buttons", [["EFFACER", { ["dseClear"] call comspec_atak_native_fnc_fichesAction; }]]];
+    _rows pushBack ([_viewerMark] call _banner);
+    _rows pushBack ([] call _footer);
+    [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    true
+};
 
 if (_view isEqualTo "inbox") exitWith {
     _rows pushBack ["section", "Fiches reçues", "Référence seulement : la fiche s'ouvre dans votre liste, selon votre habilitation"];
