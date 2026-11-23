@@ -75,8 +75,8 @@ final class AccountRequirementServiceTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $registry = (string) file_get_contents($root . '/database/steps/registry.php');
-        self::assertSame(1, substr_count($registry, "'5000_roster_account_requirement.php'"));
-        self::assertFileExists($root . '/database/steps/5000_roster_account_requirement.php');
+        self::assertSame(1, substr_count($registry, "'5000_roster_account_reminders.php'"));
+        self::assertFileExists($root . '/database/steps/5000_roster_account_reminders.php');
         preg_match_all("/'file' => '(\\d+)_/", $registry, $m);
         self::assertSame(count($m[1]), count(array_unique($m[1])), 'aucun numéro d’étape répété');
     }
