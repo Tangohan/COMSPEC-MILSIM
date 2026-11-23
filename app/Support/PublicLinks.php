@@ -9,7 +9,7 @@ namespace App\Support;
  */
 final class PublicLinks
 {
-    public const DISCORD_INVITE_URL = 'https://discord.gg/CCpJA6Nks';
+    public const DISCORD_INVITE_URL = 'https://discord.gg/KFB2TsJVXn';
 
     /**
      * Invitation Discord COMSPEC. Surchargeable par PUBLIC_DISCORD_INVITE_URL, seulement si

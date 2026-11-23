@@ -135,6 +135,6 @@ explained with an example.
 
 ## Support, credits, license
 
-- Bug: post your last two `.rpt` files (`%LOCALAPPDATA%\Arma 3`, remove any password or token first) on the COMSPEC Discord (https://discord.gg/CCpJA6Nks). Escape menu › Link troubleshooting diagnoses the link.
+- Bug: post your last two `.rpt` files (`%LOCALAPPDATA%\Arma 3`, remove any password or token first) on the COMSPEC Discord (https://discord.gg/KFB2TsJVXn). Escape menu › Link troubleshooting diagnoses the link.
 - Credits: ideas inspired by Better CAS Environment (BCE, Aaren) and the map tools of Simple Map Tools (POLPOX), no code reused; Chinese translation RickLeo and MOYA; fonts Barlow Condensed, B612, Rajdhani, Share Tech (SIL OFL 1.1).
 - License: © 2026 COMSPEC, COMSPEC license (all rights reserved): personal use from the official Workshop page; copying, modifying, repacking and redistributing are forbidden without written permission.

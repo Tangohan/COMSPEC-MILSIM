@@ -44,7 +44,7 @@ Liez votre compte : positions, comptes rendus et photos arrivent sur le poste we
 Abonnez-vous à CBA_A3 et à ce mod, chargez-les sur le serveur, ajoutez la clé [b]keys\comspec_atak_native.bikey[/b]. Après une mise à jour, quittez Arma complètement.
 
 [h2]Support et licence[/h2]
-Bug : postez vos deux derniers [b].rpt[/b] (%LOCALAPPDATA%\Arma 3) sur le [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et redistribution interdites. Idées inspirées de BCE (Aaren) et Simple Map Tools (POLPOX), sans code repris. Chinois : RickLeo et MOYA.
+Bug : postez vos deux derniers [b].rpt[/b] (%LOCALAPPDATA%\Arma 3) sur le [url=https://discord.gg/KFB2TsJVXn]Discord COMSPEC[/url]. © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et redistribution interdites. Idées inspirées de BCE (Aaren) et Simple Map Tools (POLPOX), sans code repris. Chinois : RickLeo et MOYA.
 
 [hr][/hr]
 [img]https://athena-comspec.eu/assets/workshop/atak-natif/en/banniere.png[/img]
@@ -93,4 +93,4 @@ Link your account: positions, reports and photos reach the web command post; ACE
 Subscribe to CBA_A3 and this mod, load them on the server, add the [b]keys\comspec_atak_native.bikey[/b] key. After an update, quit Arma completely.
 
 [h2]Support and license[/h2]
-Bug: post your last two [b].rpt[/b] files (%LOCALAPPDATA%\Arma 3) on the [url=https://discord.gg/CCpJA6Nks]COMSPEC Discord[/url]. © 2026 COMSPEC, COMSPEC license: personal use from this Workshop page; copying, modifying and redistributing are forbidden. Ideas inspired by BCE (Aaren) and Simple Map Tools (POLPOX), no code reused. Chinese: RickLeo and MOYA.
+Bug: post your last two [b].rpt[/b] files (%LOCALAPPDATA%\Arma 3) on the [url=https://discord.gg/KFB2TsJVXn]COMSPEC Discord[/url]. © 2026 COMSPEC, COMSPEC license: personal use from this Workshop page; copying, modifying and redistributing are forbidden. Ideas inspired by BCE (Aaren) and Simple Map Tools (POLPOX), no code reused. Chinese: RickLeo and MOYA.

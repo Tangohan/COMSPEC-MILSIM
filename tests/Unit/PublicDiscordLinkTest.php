@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class PublicDiscordLinkTest extends TestCase
 {
-    private const INVITE = 'https://discord.gg/CCpJA6Nks';
+    private const INVITE = 'https://discord.gg/KFB2TsJVXn';
 
     protected function setUp(): void
     {
