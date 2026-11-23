@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Effectifs;
 
 use App\Repositories\MemberProfileInviteRepository;
+use App\Repositories\RosterFicheEmailRepository;
 use App\Repositories\RosterFicheEventRepository;
 use App\Repositories\UserRepository;
 use App\Support\RosterOnlyMember;
@@ -21,11 +22,14 @@ final class NoAccountDirectory
     public const STATUS_FICHE = 'fiche';
     public const STATUS_INVITEE = 'invitee';
     public const STATUS_PENDING = 'en_attente';
+    /** Compte créé depuis la fiche : la personne n'est plus « sans compte », la ligne reste consultable. */
+    public const STATUS_ACCOUNT = 'compte';
 
     public const STATUSES = [
-        self::STATUS_FICHE => 'Fiche sans compte',
-        self::STATUS_INVITEE => 'Invitation en cours',
+        self::STATUS_FICHE => 'Sans compte',
+        self::STATUS_INVITEE => 'Invitation envoyée',
         self::STATUS_PENDING => 'Compte à activer',
+        self::STATUS_ACCOUNT => 'Compte actif',
     ];
 
     public const SOURCES = [
@@ -39,6 +43,7 @@ final class NoAccountDirectory
         private ?UserRepository $users = null,
         private ?RosterFicheEventRepository $events = null,
         private ?MemberProfileInviteRepository $invites = null,
+        private ?RosterFicheEmailRepository $emails = null,
     ) {
         $this->users ??= \App\Core\Container::get(UserRepository::class);
         $this->events ??= new RosterFicheEventRepository();
@@ -76,22 +81,29 @@ final class NoAccountDirectory
     }
 
     /**
-     * @return list<array{id: int, name: string, callsign: string, status: string, status_label: string, source: string, source_label: string, last_activity: string, created_at: string, grade_id: int}>
+     * $withConverted ajoute les personnes dont le compte a été créé depuis leur fiche (statut « Compte actif »).
+     *
+     * @return list<array{id: int, name: string, callsign: string, email: string, status: string, status_label: string, invite_id: int, invite_at: string, invite_expired: bool, grade_id: int, source: string, source_label: string, last_activity: string, created_at: string}>
      */
-    public function list(int $tenantId): array
+    public function list(int $tenantId, bool $withConverted = false): array
     {
         if ($tenantId < 1) {
             return [];
         }
         $rows = $this->users->allForTenant($tenantId);
-        $inviteByUser = $this->latestInviteStatus($tenantId);
+        $invitesByUser = $this->latestInvites($tenantId);
+        $emails = ($this->emails ??= new RosterFicheEmailRepository())->mapForTenant($tenantId);
+        $converted = $withConverted ? $this->events->accountCreatedMap($tenantId) : [];
         $candidates = [];
         foreach ($rows as $u) {
             $id = (int) ($u['id'] ?? 0);
             if ($id < 1) {
                 continue;
             }
-            $st = self::classify($u, $inviteByUser[$id] ?? null);
+            $st = self::classify($u, $invitesByUser[$id]['status'] ?? null);
+            if ($st === null && isset($converted[$id]) && !in_array(strtolower(trim((string) ($u['status'] ?? ''))), ['merged', 'deleted', 'left', 'banned'], true)) {
+                $st = self::STATUS_ACCOUNT;
+            }
             if ($st !== null) {
                 $candidates[$id] = [$u, $st];
             }
@@ -110,10 +122,16 @@ final class NoAccountDirectory
                 (string) ($u['last_login_at'] ?? ''),
                 (string) ($u['created_at'] ?? '')
             );
+            $inv = $invitesByUser[$id] ?? null;
+            $realEmail = RosterOnlyMember::isRosterEmail((string) ($u['email'] ?? '')) ? '' : trim((string) ($u['email'] ?? ''));
             $out[] = [
                 'id' => $id,
                 'name' => $name !== '' ? $name : ('Fiche #' . $id),
                 'callsign' => trim((string) ($u['callsign'] ?? '')),
+                'email' => $st === self::STATUS_ACCOUNT || $st === self::STATUS_PENDING ? $realEmail : (string) ($emails[$id] ?? ''),
+                'invite_id' => $inv !== null ? (int) $inv['id'] : 0,
+                'invite_at' => $inv !== null ? (string) $inv['sent_at'] : '',
+                'invite_expired' => $inv !== null && $inv['status'] === MemberProfileInviteService::STATUS_EXPIRED && $st === self::STATUS_FICHE,
                 'status' => $st,
                 'status_label' => self::STATUSES[$st],
                 'source' => $source !== '' ? $source : 'legacy',
@@ -143,11 +161,14 @@ final class NoAccountDirectory
             if ($status !== '' && $r['status'] !== $status) {
                 return false;
             }
+            if ($status === '' && $r['status'] === self::STATUS_ACCOUNT) {
+                return false;
+            }
             if ($source !== '' && $r['source'] !== $source) {
                 return false;
             }
 
-            return $q === '' || str_contains(mb_strtolower($r['name'] . ' ' . $r['callsign'], 'UTF-8'), $q);
+            return $q === '' || str_contains(mb_strtolower($r['name'] . ' ' . $r['callsign'] . ' ' . ($r['email'] ?? ''), 'UTF-8'), $q);
         }));
         $sort = (string) ($f['sort'] ?? 'activite');
         usort($rows, static function (array $a, array $b) use ($sort): int {
@@ -161,8 +182,8 @@ final class NoAccountDirectory
         return $rows;
     }
 
-    /** @return array<int, string> */
-    private function latestInviteStatus(int $tenantId): array
+    /** @return array<int, array{id: int, status: string, sent_at: string}> dernier lien de chaque personne */
+    private function latestInvites(int $tenantId): array
     {
         try {
             $svc = new MemberProfileInviteService();
@@ -178,7 +199,11 @@ final class NoAccountDirectory
                 }
             }
 
-            return array_map(static fn (array $r): string => $svc->statusOf($r), $best);
+            return array_map(static fn (array $r): array => [
+                'id' => (int) $r['id'],
+                'status' => $svc->statusOf($r),
+                'sent_at' => (string) (($r['last_sent_at'] ?? '') !== '' ? $r['last_sent_at'] : ($r['created_at'] ?? '')),
+            ], $best);
         } catch (\Throwable) {
             return [];
         }

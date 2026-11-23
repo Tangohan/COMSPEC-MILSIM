@@ -45,6 +45,18 @@ final class EffectifsInvitesController
         if ($user === null) {
             return $this->reply($request, false, 'Membre introuvable.', $back);
         }
+        if ((string) $request->input('return_to', '') === 'sans-comptes' && \App\Support\RosterOnlyMember::isRosterEmail((string) ($user['email'] ?? ''))) {
+            // Depuis « Sans compte » : l'e-mail n'est exigé qu'ici. Saisi dans le formulaire, il est rattaché à la fiche.
+            $typed = trim((string) $request->input('email', ''));
+            if ($typed !== '') {
+                $attach = \App\Services\Effectifs\RosterFicheEmailService::forUsers($this->users())->apply($tenantId, $userId, $actorId, $typed);
+                if (!$attach['ok']) {
+                    return $this->reply($request, false, $attach['message'], $back);
+                }
+            } elseif ((new \App\Repositories\RosterFicheEmailRepository())->find($tenantId, $userId) === '') {
+                return $this->reply($request, false, 'Indiquez l’adresse e-mail de la personne pour l’inviter à créer son compte.', $back);
+            }
+        }
         try {
             $issued = $this->invites->issue(
                 $tenantId,
@@ -70,7 +82,7 @@ final class EffectifsInvitesController
                 $ok = $ok && $res['ok'];
             }
         }
-        (new \App\Repositories\RosterFicheEventRepository())->record($tenantId, $userId, $actorId, 'invited', 'invite', 'lien créé (' . MemberProfileInviteService::normalizeHours($request->input('duration_hours', 48)) . ' h)');
+        (new \App\Repositories\RosterFicheEventRepository())->record($tenantId, $userId, $actorId, 'invited', 'invite', ((string) $request->input('relance', '') === '1' ? 'relance : nouveau lien (' : 'lien créé (') . MemberProfileInviteService::normalizeHours($request->input('duration_hours', 48)) . ' h)');
         Session::flash('profile_invite_new', $issued['id']);
 
         return $this->reply($request, $ok, implode(' ', $messages), $back, ['invite_id' => $issued['id'], 'url' => $issued['url']]);

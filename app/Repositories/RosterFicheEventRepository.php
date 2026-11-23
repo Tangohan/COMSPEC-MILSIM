@@ -13,7 +13,7 @@ use PDO;
  */
 class RosterFicheEventRepository
 {
-    public const EVENTS = ['created', 'edited', 'invited', 'merged', 'imported', 'note'];
+    public const EVENTS = ['created', 'edited', 'invited', 'merged', 'imported', 'note', 'account_created'];
     public const SOURCES = ['manual', 'import', 'invite', 'legacy'];
 
     private ?PDO $pdo;
@@ -108,5 +108,29 @@ class RosterFicheEventRepository
         }
 
         return $out;
+    }
+
+    /**
+     * Personnes dont le compte a été créé depuis leur fiche : identifiant => date du premier événement « account_created ».
+     *
+     * @return array<int, string>
+     */
+    public function accountCreatedMap(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        try {
+            $st = $this->pdo()->prepare("SELECT user_id, MIN(created_at) AS at FROM roster_fiche_events WHERE tenant_id = ? AND event = 'account_created' GROUP BY user_id");
+            $st->execute([$tenantId]);
+            $out = [];
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                $out[(int) $r['user_id']] = (string) $r['at'];
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }

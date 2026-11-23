@@ -33,3 +33,11 @@ Les deux DLL d'extension (`COMSPECATAKNativeExtension_x64.dll`, `COMSPECExtensio
 - Ne signez pas à la main un fichier déjà signé par erreur : relancez la compilation pour repartir d'une DLL propre.
 - Avec un fichier PFX, `signtool` reçoit le mot de passe en argument (visible un instant dans la liste des processus de votre poste) : préférez importer le PFX dans le magasin Windows de votre compte, puis `-Thumbprint`.
 - Si le certificat est sur un jeton matériel, `signtool` demande le code PIN à chaque exécution : c'est normal.
+
+## Certificat auto-signé (essai, usage interne)
+
+`New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=COMSPEC' -CertStoreLocation Cert:\CurrentUser\My -NotAfter (Get-Date).AddYears(3)` crée en quelques secondes un certificat gratuit, puis `.	ools\sign-mod-dlls.ps1 -Thumbprint <empreinte> -AllowUntrusted` signe les DLL.
+
+Ce que cela change : l'intégrité (toute modification du fichier invalide la signature) et l'identité affichée dans les propriétés du fichier. Ce que cela ne change **pas** : les antivirus et Steam ne traitent pas un certificat auto-signé comme un éditeur reconnu, donc il ne réduit pas les faux positifs ; Windows affiche « éditeur inconnu » ailleurs que sur le poste qui a créé le certificat, sauf à y installer la racine manuellement. Une signature ne survit pas à une recompilation : elle est à refaire à chaque build.
+
+Pour retirer un certificat d'essai du magasin : `Remove-Item Cert:\CurrentUser\My\<empreinte>`.

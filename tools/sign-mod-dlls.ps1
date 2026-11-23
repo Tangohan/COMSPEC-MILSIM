@@ -26,7 +26,8 @@ param(
     [string]$Thumbprint,
     [string]$TimestampUrl = 'http://timestamp.digicert.com',
     [string]$ModDir = (Join-Path $PSScriptRoot '..\mod\COMSPEC_ATAK_Native\@COMSPEC_ATAK_Native'),
-    [string]$SignTool
+    [string]$SignTool,
+    [switch]$AllowUntrusted
 )
 
 $ErrorActionPreference = 'Stop'
@@ -76,7 +77,10 @@ Write-Host ''
 Write-Host 'Vérification :'
 foreach ($d in $dlls) {
     $sig = Get-AuthenticodeSignature -LiteralPath $d
-    if ($sig.Status -ne 'Valid') { throw "Signature invalide pour $d : $($sig.Status)" }
+    # Certificat auto-signé : la signature est bien posée mais sa racine n'est pas de confiance sur les autres postes
+    # (statut UnknownError / NotTrusted) ; -AllowUntrusted l'accepte, à utiliser en connaissance de cause.
+    $okStatus = if ($AllowUntrusted) { @('Valid', 'UnknownError', 'NotTrusted') } else { @('Valid') }
+    if ($sig.Status -notin $okStatus) { throw "Signature invalide pour $d : $($sig.Status)" }
     $hash = (Get-FileHash -LiteralPath $d -Algorithm SHA256).Hash.ToLower()
     '{0}  signé par « {1} »  SHA-256 {2}' -f (Split-Path $d -Leaf), $sig.SignerCertificate.Subject, $hash
 }

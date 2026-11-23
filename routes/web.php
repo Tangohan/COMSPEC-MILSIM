@@ -2664,6 +2664,8 @@ return function (Router $router) {
     // Personnes sans compte (liste, création, correction, rattachement, import) et tableaux de données de tout.
     $router->get('/back-office/ressources/effectifs/sans-comptes', [EffectifsWorkspaceController::class, 'sansComptes'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/sans-comptes/creer', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/sans-comptes/export.csv', [EffectifsWorkspaceController::class, 'sansComptesExport'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/relancer', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'remind'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/sans-comptes/importer', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'import'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/sans-comptes/{id}/modifier', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/sans-comptes/{id}/rattacher', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'attach'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
