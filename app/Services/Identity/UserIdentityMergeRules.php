@@ -337,6 +337,31 @@ final class UserIdentityMergeRules
     }
 
     /**
+     * Applique l'indicatif et le nom de la fiche communauté sur des lignes de liste (même règle que la fiche membre).
+     *
+     * @param list<array<string, mixed>> $rows lignes users (clé id)
+     * @param array<int, array<string, mixed>> $profilesByUser fiches communauté indexées par user_id
+     * @return list<array<string, mixed>>
+     */
+    public static function overlayCommunityIdentity(array $rows, array $profilesByUser): array
+    {
+        foreach ($rows as &$row) {
+            $profile = $profilesByUser[(int) ($row['id'] ?? 0)] ?? null;
+            if (!is_array($profile)) {
+                continue;
+            }
+            foreach (['display_name', 'callsign'] as $key) {
+                if (array_key_exists($key, $profile) && self::shouldOverlayCommunityField($key, $profile[$key], $profile, $row)) {
+                    $row[$key] = $profile[$key];
+                }
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
      * @param list<array<string, mixed>> $rows
      * @return array<string, mixed>|null
      */
