@@ -19,7 +19,8 @@ final class TocReportsLoadGuardAssetTest extends TestCase
 
         self::assertStringContainsString('var busy = false;', $js);
         self::assertStringContainsString('if (busy && !silent) return Promise.resolve();', $js);
-        self::assertSame(2, substr_count($js, 'busy = false;'), 'le verrou est levé à la réponse et sur l’échec réseau');
+        // Déclaration, puis levée du verrou à la réponse et sur l’échec réseau.
+        self::assertSame(3, substr_count($js, 'busy = false;'));
         // Le verrou est posé avant le redessin, sinon renderPanel() relancerait load() depuis refresh().
         self::assertLessThan(
             strpos($js, 'if (st.loading) refresh();'),
