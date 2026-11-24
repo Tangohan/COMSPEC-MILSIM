@@ -117,6 +117,14 @@ class AuthMiddleware
             }
         }
 
+        // Dernière activité réelle : au plus une écriture par heure et par session (l'heure du dernier rafraîchissement
+        // est gardée en session, aucune requête de plus entre-temps). Même en cas d'échec, on ne réessaie pas avant une heure.
+        $activityNow = time();
+        if (\App\Support\UserActivity::shouldTouch(Session::get(\App\Support\UserActivity::SESSION_KEY), $activityNow)) {
+            Session::set(\App\Support\UserActivity::SESSION_KEY, $activityNow);
+            \App\Support\UserActivity::touch(\App\Core\Database::getPdo(), $userId);
+        }
+
         $steamStep = self::steamConflictStep($request, $user);
         if ($steamStep instanceof Response) {
             return $steamStep;

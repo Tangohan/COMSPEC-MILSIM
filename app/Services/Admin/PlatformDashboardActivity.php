@@ -109,6 +109,13 @@ final class PlatformDashboardActivity
             // Le journal des connexions est indépendant du registre des comptes.
         }
 
+        $tracking = null;
+        try {
+            $tracking = $overview->activityTracking();
+        } catch (\Throwable) {
+            // La mention de mise en service du suivi est facultative.
+        }
+
         $regions = null;
         try {
             $regions = $overview->regionBreakdown();
@@ -159,6 +166,7 @@ final class PlatformDashboardActivity
             'returns' => $returns,
             'followup' => $followup,
             'regions' => $regions,
+            'activityTracking' => $tracking,
             'cohortLabel' => $cohortStart->format('d/m/Y') . ' – ' . $cohortEnd->modify('-1 day')->format('d/m/Y'),
             'communities' => $communities,
             'communityRanking' => $communityRanking,
