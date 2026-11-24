@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Services\Audit\AuditAction;
 use App\Support\PortalAccessChoice;
 use App\Support\ShortCache;
+use App\Support\UserActivity;
 use DateTimeImmutable;
 use PDO;
 
@@ -21,7 +22,7 @@ use PDO;
 final class PlatformAccountsOverviewService
 {
     public const CACHE_TTL = 300;
-    /** Tranches affichées : nombre de jours sans connexion. */
+    /** Tranches affichées : nombre de jours sans activité (la plus récente de la connexion et de la dernière activité). */
     public const INACTIVITY_DAYS = [30, 90, 180];
 
     private ?PDO $pdo;
@@ -43,7 +44,7 @@ final class PlatformAccountsOverviewService
      */
     public function overview(int $limit = 6): array
     {
-        return ShortCache::remember('admin:accounts-overview:v1:' . $limit, self::CACHE_TTL, fn (): array => $this->compute($limit));
+        return ShortCache::remember('admin:accounts-overview:v2:' . $limit, self::CACHE_TTL, fn (): array => $this->compute($limit));
     }
 
     /** @return list<array{signup_day: ?string, age_band: string, login_band: string, total: int}> */
@@ -52,8 +53,9 @@ final class PlatformAccountsOverviewService
         $from = $start->format('Y-m-d');
         $until = $end->format('Y-m-d');
 
-        return ShortCache::remember("admin:account-engagement:v1:{$from}:{$until}", self::CACHE_TTL, function () use ($from, $until): array {
+        return ShortCache::remember("admin:account-engagement:v2:{$from}:{$until}", self::CACHE_TTL, function () use ($from, $until): array {
             [$where, $params] = $this->accountPredicate();
+            $seen = $this->lastSeenSql('u');
             $accounts = $this->db()->prepare(
                 "SELECT CASE WHEN first_at >= ? AND first_at < ? THEN DATE(first_at) END AS signup_day,
                         CASE WHEN first_at IS NULL THEN 'unknown'
@@ -67,7 +69,7 @@ final class PlatformAccountsOverviewService
                              ELSE '180' END AS login_band,
                         COUNT(*) AS total
                  FROM (
-                     SELECT MIN(u.created_at) AS first_at, MAX(u.last_login_at) AS last_at
+                     SELECT MIN(u.created_at) AS first_at, MAX({$seen}) AS last_at
                      FROM users u WHERE {$where} AND TRIM(u.email) <> ''
                      GROUP BY LOWER(TRIM(u.email))
                  ) AS people
@@ -76,6 +78,25 @@ final class PlatformAccountsOverviewService
             $accounts->execute([$from, $until, ...$params]);
 
             return $accounts->fetchAll(PDO::FETCH_ASSOC);
+        });
+    }
+
+    /**
+     * Mise en service du suivi de la dernière activité : plus ancienne users.last_active_at relevée. « available »
+     * est faux tant que la colonne n'existe pas (étape user_last_active non passée) ; « since » est null tant que
+     * personne n'a encore été relevé.
+     *
+     * @return array{available: bool, since: ?string}
+     */
+    public function activityTracking(): array
+    {
+        return ShortCache::remember('admin:account-activity-since:v1', self::CACHE_TTL, function (): array {
+            if (!$this->hasColumn('users', 'last_active_at')) {
+                return ['available' => false, 'since' => null];
+            }
+            $since = $this->db()->query('SELECT MIN(last_active_at) FROM users WHERE last_active_at IS NOT NULL')->fetchColumn();
+
+            return ['available' => true, 'since' => is_string($since) && $since !== '' ? $since : null];
         });
     }
 
@@ -253,17 +274,19 @@ final class PlatformAccountsOverviewService
 
     /**
      * Comptes par tranche d’inactivité (cumulées : « plus de 90 jours » inclut « plus de 180 jours ») et
-     * les plus anciens inactifs (dernière connexion connue la plus ancienne).
+     * les plus anciens inactifs (dernière activité connue la plus ancienne). La dernière activité est la plus récente de
+     * users.last_login_at et users.last_active_at (rafraîchie au plus une fois par heure, voir UserActivity).
      *
      * @return array{available: bool, total: int, buckets: array<string, int>, oldest: list<array<string, mixed>>}
      */
     public function inactivity(int $limit = 6, ?int $now = null): array
     {
         $empty = ['available' => false, 'total' => 0, 'buckets' => [], 'oldest' => []];
-        if (!$this->hasColumn('users', 'last_login_at')) {
+        if (!$this->hasColumn('users', 'last_login_at') && !$this->hasColumn('users', 'last_active_at')) {
             return $empty;
         }
         $now ??= time();
+        $seen = $this->lastSeenSql('u');
         [$where, $params] = $this->accountPredicate();
         $cutoffs = [];
         $sums = [];
@@ -271,7 +294,7 @@ final class PlatformAccountsOverviewService
             $cutoffs[$days] = date('Y-m-d H:i:s', $now - $days * 86400);
             $sums[] = "SUM(CASE WHEN g.last_at IS NOT NULL AND g.last_at < ? THEN 1 ELSE 0 END) AS d{$days}";
         }
-        $grouped = "SELECT LOWER(TRIM(u.email)) AS email_key, MAX(u.last_login_at) AS last_at, MAX(u.id) AS user_id
+        $grouped = "SELECT LOWER(TRIM(u.email)) AS email_key, MAX({$seen}) AS last_at, MAX(u.id) AS user_id
                     FROM users u WHERE {$where} GROUP BY LOWER(TRIM(u.email))";
 
         $stmt = $this->db()->prepare(
@@ -408,6 +431,16 @@ final class PlatformAccountsOverviewService
     private function hasColumn(string $table, string $column): bool
     {
         return $this->probe("SELECT {$column} FROM {$table} WHERE 1 = 0");
+    }
+
+    /** Expression SQL « dernière activité » de l'alias : GREATEST des deux dates, colonne absente tolérée (avant migration). */
+    private function lastSeenSql(string $alias): string
+    {
+        return UserActivity::lastSeenSql(
+            $alias,
+            $this->hasColumn('users', 'last_login_at'),
+            $this->hasColumn('users', 'last_active_at')
+        );
     }
 
     private function hasTable(string $table): bool

@@ -30,6 +30,7 @@ EN : The Athena portal address is no longer a setting
 - Écrire pour un joueur : des phrases complètes qui disent ce qui change pour lui, avec le nom des apps et des menus tels qu'il les voit. Jamais de nom de fonction, de variable, de fichier, de clé d'API ou de secret, pas de numéro de PR, pas de lien, pas de « recompiler la DLL ».
 - Le titre de l'entrée garde la version (« (ATAK natif 1.72.0) », « (COMSPEC Link 2.0.80) », « site ») : la carte en tire le champ Version.
 - Aperçu avant de fusionner : `python3 .github/scripts/discord_changelog.py --preview 1.72.0` (les termes techniques repérés sont signalés).
+- **Date** : sous le titre de chaque entrée, une ligne `<!-- date: AAAA-MM-JJ -->` (jour de la sortie). La page publique « Notre histoire » s'en sert pour ranger la version ; un test échoue si elle manque (ATAK natif 4.x et suivants).
 - Pour ne rien annoncer : label `discord:skip` ou `[skip discord]` dans le titre de la PR.
 
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
@@ -72,6 +73,7 @@ EN : Military specialties now include codes, sources and explanations
 - Import idempotent conservant les corrections, les archives et les données existantes ; nettoyage des attributions personnelles lors des purges de compte.
 
 ## Le bouton LiveConf se cache avec l'interface Zeus (ATAK natif 4.32.1.AG - Washington)
+<!-- date: 2026-11-23 -->
 
 ### Résumé joueur
 Type : correctif
@@ -90,6 +92,7 @@ EN : The LiveConf button hides with the Zeus interface
 - DLL inchangée (`LINK_VERSION_STR` 2.0.128), `main.pbo` à reconstruire.
 
 ## Retrouver une fiche par son numéro DSE dans le téléphone (ATAK natif 4.32.0.AG - Washington)
+<!-- date: 2026-11-23 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -129,6 +132,7 @@ EN : Big update: JTAC, map, Zeus, radio and SSE records
 - #1908 : recherche de fiche par DSE (détail ci-dessus).
 
 ## Réglette d'effectif plus sobre et masquable (ATAK natif 4.31.0.AG - Washington)
+<!-- date: 2026-11-16 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -144,6 +148,7 @@ EN : Cleaner squad strip, and you can hide it
 - Réglage client `comspec_atak_native_map_squadbar` (défaut vrai) : rectangle et place dans `_hud` non posés si décoché, `mapTick` efface une fois puis ne touche plus rien. Test `AtakSquadBarSettingAssetTest`.
 
 ## Une seule app SSE dans le téléphone (ATAK natif 4.30.0.AG - Washington)
+<!-- date: 2026-11-16 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -162,6 +167,7 @@ EN : One SSE app now groups every SSE feature
 - Migration unique par partie des épingles et récentes ; inventaire dans `docs/dev/ATAK-APPS-SSE-REGROUPEMENT.md` ; test `AtakSseAppAssetTest`.
 
 ## Pack 4.29.0 Washington : Avis et vigilance, liaison satellite ou relais, téléphone plus fluide, photo du papier au contrôle (ATAK natif 4.29.0.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.4.0)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -196,6 +202,7 @@ EN : New Alerts and vigilance app, satellite link and a smoother phone
 ---
 
 ## Liaison satellite sans relais, app ATHENA sans vide, carte et accueil rangés, kit de terminal de véhicule retiré (ATAK natif 4.28.0.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -226,6 +233,7 @@ EN : The phone works without relays, and several screens are tidied up
 ---
 
 ## Photo du joueur de retour, fonction et grade sur le dossier de l'écran des rôles (ATAK natif 4.27.1.AG - Washington, COMSPEC Link 2.0.128, COMSPEC Lobby 0.3.1)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : correctif
@@ -251,6 +259,7 @@ EN : Your photo shows again, and the role screen dossier shows your real role
 ---
 
 ## App Fiches : plus de mention « document de fiction » sous les fiches (ATAK natif 4.27.0.AG - Washington, COMSPEC Link 2.0.127)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : patch
@@ -273,6 +282,7 @@ EN : Phone records no longer carry a "fiction" notice
 ---
 
 ## Contrôle d'identité : la photo du papier remonte sur Athena (ATAK natif 4.26.0.AG - Washington, COMSPEC Link 2.0.127)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -301,6 +311,7 @@ EN : You can attach a photo of the paper to your identity check
 ---
 
 ## Compte non lié sans rafales d'envois, comptes rendus avec envoi visible et RENVOYER (ATAK natif 4.25.0.AG - Washington, COMSPEC Link 2.0.126)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -328,6 +339,7 @@ EN : Unlinked account: the phone stops insisting, and reports show their sending
 ---
 
 ## Carte du téléphone : plus de symboles d'alliés empilés en traînée (ATAK natif 4.24.3.AG - Washington, COMSPEC Link 2.0.126)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : correctif
@@ -353,6 +365,7 @@ EN : An ally is no longer shown dozens of times on the phone map
 ---
 
 ## Drones : « Démarrer et décoller » adapté à chaque drone, tous les drones d'Arma 3 et le RQ-11 Raven (ATAK natif 4.24.2.AG - Washington, COMSPEC Link 2.0.126)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : correctif
@@ -376,6 +389,7 @@ EN : The "Start and Takeoff" button no longer throws drones into the ground
 - **À tester en jeu** : Darter, Greyhawk, Ababil, Sentinel, Falcon, Pelican, Raven (mod), UGV (bouton absent) ; piste, herbe, sous un toit ; lancement face à un mur.
 
 ## App BDA : l'échec d'envoi à Athena se voit et le bilan se renvoie (ATAK natif 4.24.1.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : correctif
@@ -398,6 +412,7 @@ EN : BDA app: you can see whether your BDA reached Athena, and resend it
 
 ---
 ## Poste TOC : suppression des marqueurs, corbeille de 15 minutes et purge de la carte, retrait des marqueurs supprimés dans le jeu (ATAK natif 4.24.0.AG - Washington, COMSPEC Link 2.0.126)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -423,6 +438,7 @@ EN : A marker deleted by the TOC post also disappears from your map
 ---
 
 ## Poste TOC web : notifier, faire sonner, localiser et trianguler un téléphone en jeu (ATAK natif 4.23.0.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -445,6 +461,7 @@ EN : The TOC station can notify you on your phone, make it ring and locate it
 - Tests : `PhoneTriangulationTest`, `AtakTocPhoneServiceTest`, `AtakTocPhoneApiTest`, `AtakTocPhoneWiringTest`. Non essayé en jeu.
 
 ## App Fiches : les fiches du portail SSE se lisent sur le téléphone et se partagent (ATAK natif 4.22.0.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -471,6 +488,7 @@ EN : Portal records can be read on the phone and shared between teammates
 - **Contrôle d'identité** : `SseIdentityApiController` renvoie déjà `wanted` à l'envoi d'un contrôle, mais COMSPEC Link ne relaie que `OK|id|réf`. Plutôt que changer la DLL (version, attestation, reconstruction), le pack SSE interroge le même canal (`op: "wanted"`) juste après la transmission : `fn_idWantedCheck`.
 - Tests : `tests/Unit/SseFichesGameTest.php`, `tests/Unit/AtakFichesAssetTest.php`. **Non essayé en jeu** : rendu de l'écran, Bluetooth, SMS, relecture hors ligne.
 ## Appui aérien (CAS) : les accusés du pilote ne partent plus avec un identifiant invalide (ATAK natif 4.21.2.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : correctif
@@ -491,6 +509,7 @@ EN : Air support acknowledgements are no longer refused by Athena
 - Tests : `tests/Unit/AtakCasRefFormatTest.php`. Non essayé en jeu.
 
 ## Calque « Zones Athena » : le masquer ne fait plus disparaître les marqueurs de zone (ATAK natif 4.21.1.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : correctif
@@ -509,6 +528,7 @@ EN : Hiding zones on the ATAK map no longer makes their markers disappear
 - Tests : `tests/Unit/AtakZoneLayerNonDestructiveAssetTest.php`. Non essayé en jeu.
 
 ## SEEK II et modules SSE : les listes viennent du site de la communauté (ATAK natif 4.21.0.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -534,6 +554,7 @@ EN : SEEK II and SSE modules, lists now come from your community's site
 ---
 
 ## SEEK II : lecteur d'empreintes animé, mini-jeux facultatifs, terminal réductible, blessures prises en compte (ATAK natif 4.20.0.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -562,6 +583,7 @@ EN : SEEK II, a reader that comes alive: fingers, cables, iris and injuries
 ---
 
 ## SEEK II : la signature se trace à la souris, vocabulaire forces spéciales (ATAK natif 4.19.0.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -589,6 +611,7 @@ EN : SEEK II, sign the record with the mouse
 ---
 
 ## Mode Essentiel : un bouton réduit le téléphone aux apps de base (ATAK natif 4.18.0.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -616,6 +639,7 @@ EN : Essential mode, a phone cut down to the basics with one button
 - Aucune notification, aucun toast, aucun hint, aucun `systemChat`. Non essayé en jeu (aucun test en jeu possible dans ce fil) : voir la liste « à vérifier en jeu » de la PR. Tests : `tests/Unit/AtakEssentialModeAssetTest.php`.
 
 ## Appareil photo : la prise de vue ne laisse plus l'écran et le menu d'actions bloqués (ATAK natif 4.17.1.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : correctif
@@ -641,6 +665,7 @@ EN : Camera: taking a photo no longer leaves you stuck
 - Non essayé en jeu. Test : `tests/Unit/AtakPhotoModeCleanupAssetTest.php`.
 
 ## Carte : mini-apps épinglées, interface renforcée, correctifs et dessin allégé (ATAK natif 4.17.0.AG - Washington)
+<!-- date: 2026-11-15 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -672,6 +697,7 @@ EN : Mini apps on the map and a stronger interface
 - Non essayé en jeu (aucun test en jeu possible dans ce fil) : voir la liste « à vérifier en jeu » de la PR. Tests : `tests/Unit/Atak4170WaveAssetTest.php`, `tests/Unit/AtakPinnedAppMapAssetTest.php`.
 
 ## Carte : épinglez Messages, SMS ou Ordres à côté des coordonnées (ATAK natif 4.16.0.AG - Washington)
+<!-- date: 2026-11-14 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -697,6 +723,7 @@ EN : Pin an app on the map
 - Non essayé en jeu (aucun test en jeu possible dans ce fil) : à regarder en plein écran et en mini, avec bandeau NEW, CLASSIC, COMPACT et masqué, bandeau en haut, et avec la fiche d'une unité sélectionnée. Test : `tests/Unit/AtakPinnedAppMapAssetTest.php`.
 
 ## Appareil photo : le flash ne brûle plus les photos (ATAK natif 4.15.2.AG - Washington)
+<!-- date: 2026-11-14 -->
 
 ### Résumé joueur
 Type : correctif
@@ -715,6 +742,7 @@ EN : The camera flash is much softer
 - Valeurs choisies par le calcul, non essayées en jeu : le réglage sert à les corriger sans nouvelle version. Test : `tests/Unit/AtakPhotoFlashAssetTest.php`.
 
 ## Sécurité : chaque version du mod a sa propre preuve (ATAK natif 4.15.1.AG - Washington, COMSPEC Link 2.0.125)
+<!-- date: 2026-11-14 -->
 
 ### Résumé joueur
 Type : patch
@@ -737,6 +765,7 @@ EN : Security update, nothing changes in game
 - Tests : `tests/Unit/OfficialClientAttestationTest.php`, `tests/Unit/AtakReleaseInfoTest.php`. Non essayé contre le serveur de production.
 
 ## Pack 4.15.0 Washington : bouton Synchroniser à l'écran des rôles, images gardées sur le PC, correctifs (ATAK natif 4.15.0.AG - Washington, COMSPEC Link 2.0.124, COMSPEC Lobby 0.3.0)
+<!-- date: 2026-11-14 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -764,6 +793,7 @@ EN : Your dossier syncs better, images stay on your PC
 - Non essayé en jeu. Tests : `tests/Unit/AtakLoadingLogoAssetTest.php`, `tests/Unit/LobbyModAssetTest.php`, `tests/Unit/AtakPack4150AssetTest.php`.
 
 ## L'écran de chargement ATHENA laisse la place à celui des autres mods (ATAK natif 4.14.1.AG - Washington)
+<!-- date: 2026-11-14 -->
 
 ### Résumé joueur
 Type : correctif
@@ -782,6 +812,7 @@ EN : The ATHENA loading screen no longer replaces another mod's
 - Test : `tests/Unit/AtakLoadingLogoAssetTest.php`.
 
 ## Écran de chargement au logo ATHENA, votre dossier Athena à l'écran des rôles (ATAK natif 4.14.0.AG - Washington, COMSPEC Lobby 0.2.0)
+<!-- date: 2026-11-14 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -803,6 +834,7 @@ EN : ATHENA loading screen and your dossier on the role screen
 - Tests : `tests/Unit/LobbyModAssetTest.php`, `tests/Unit/AtakLoadingLogoAssetTest.php`.
 
 ## Goniométrie recoupée, plans diffusés par zone, vérification de la configuration, liaison faible (ATAK natif, regroupé dans 4.13.0)
+<!-- date: 2026-11-14 -->
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
@@ -851,6 +883,7 @@ EN : Check another player's papers, and present your own
 - Essais hors jeu : `python mod/@COMSPEC_SSE/tools/test_id_p2p.py`, `tests/Unit/SseIdentityP2pAssetTest.php`. En jeu : `mod/@COMSPEC_SSE/tools/test_id_p2p.sqf`.
 
 ## Les réglages d'icônes marchent sur le petit téléphone (ATAK natif, regroupé dans 4.13.0)
+<!-- date: 2026-11-14 -->
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : correctif
@@ -873,6 +906,7 @@ EN : Icon settings now apply to the small phone too
 
 ---
 ## Le TOC voit qui parle sur quelle fréquence (ATAK natif, regroupé dans 4.13.0)
+<!-- date: 2026-11-14 -->
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
@@ -896,6 +930,7 @@ EN : The TOC sees who is talking on the radio, and on which frequency
 - Non vu en jeu : voir la fin de l'audit.
 
 ## Les caméras IP apparaissent dans Vidéo live et dans le TOC (ATAK natif, regroupé dans 4.13.0)
+<!-- date: 2026-11-14 -->
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : correctif
@@ -915,6 +950,7 @@ EN : IP cameras placed in the editor finally show up
 - Journal serveur, une ligne par caméra : `[COMSPEC CAM] caméra | classe=… nom=… camp=… lives=oui/non toc=oui/non raison=…`.
 - Test : `AtakCameraRegistryAssetTest`.
 ## L'app WAVE RELAY et les relais refaits (ATAK natif, regroupé dans 4.13.0)
+<!-- date: 2026-11-14 -->
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
@@ -983,6 +1019,7 @@ EN : A TOC console and operation plans on Athena
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
 
 ## Pack 4.13.0 Washington : goniométrie recoupée, plans diffusés par zone, vérification de la configuration, relais et TOC refaits (ATAK natif 4.13.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-14 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1017,6 +1054,7 @@ EN : Direction finding that locates, relays redone, configuration check
 ---
 
 ## Pack 4.12.0 Washington : postes, droits et journal de la salle TOC, TOC pilotable par script (ATAK natif 4.12.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-14 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1047,6 +1085,7 @@ EN : ATAK 4.12.0: stations, rights and journal of the TOC room
 - Non vérifié en jeu.
 
 ## Pack 4.11.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.11.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1083,6 +1122,7 @@ EN : ATAK 4.11.0: the TOC works without a phone
 - Reste à brancher dans les fichiers de la console et des écrans : formulaires de saisie et tableau des ordres à l'écran, pied d'écran, escouades proposées (tous les groupes), diapositives choisies au poste, ORBAT du jeu dans l'onglet ORBAT. Non vérifié en jeu.
 
 ## Pack 4.9.0 Washington : console du poste TOC refaite, tout le TOC sans téléphone (ATAK natif 4.9.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1109,6 +1149,7 @@ EN : ATAK 4.9.0: the TOC station console is rebuilt, and it works without a phon
 - Non vérifié en jeu : tout le rendu de la console, les raccourcis clavier, le zoom par boutons, l'échelle et le nord, le suivi et la trace, le compte rendu et la demande créés au poste, les commandes du mur avec la 4.8.0.
 
 ## Pack 4.8.0 Washington : tableau des écrans TOC (Eden, Zeus, en jeu), mode BROADCAST et mire, écrans qui ne clignotent plus, textes des bandeaux lisibles, menu des écrans refait (ATAK natif 4.8.0.AG - Washington, COMSPEC Link 2.0.123)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1147,6 +1188,7 @@ EN : ATAK 4.8.0: one table to set up every TOC screen, a broadcast mode with a t
 - Non fait : aperçus en direct et glisser-déposer dans le tableau, vue de suivi 3D, zoom et calques propres à chaque dalle d'une disposition, vidéo d'une caméra recopiée par une diffusion, blocs blancs sur la carte du PC du poste (`fn_tocLaptop.sqf`, tenu par la branche de l'app du poste), rectangle clair en haut à gauche de la vue satellite (cause non trouvée : les contrôles du HUD sont seulement créés hors cadre et sans couleur), paliers de qualité par distance et audit de charge du reste du mod.
 
 ## Pack 4.7.2 Washington : le poste TOC sur le PC s'affiche de nouveau (ATAK natif 4.7.2.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : correctif
@@ -1165,6 +1207,7 @@ EN : ATAK 4.7.2: the TOC post shows on the PC again
 - Non vérifié en jeu.
 
 ## Pack 4.7.1 Washington : menu ACE des écrans du TOC réparé, écran qui se règle tout seul à la pose, salle TOC posée en entier (ATAK natif 4.7.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : correctif
@@ -1186,6 +1229,7 @@ EN : ATAK 4.7.1: the ACE menu of TOC screens is back, and a placed screen sets i
 - Non vérifié en jeu : menu ACE revenu sur chaque modèle, réglage automatique (Eden, Zeus, serveur dédié, serveur sans le mod, joueur arrivé en cours de partie), salle complète posée objet par objet.
 
 ## Pack 4.7.0 Washington : relais, antennes et caméras refaits en 3D, salle TOC complète posée en entier, texte à LED et écrans géants, bris d'écran réalistes, poste TOC relié à Athena (ATAK natif 4.7.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1251,6 +1295,7 @@ COMSPEC Link inchangé (2.0.123) : aucune source de la DLL n'a changé depuis la
 - Non vérifié en jeu (voir le chapitre 3 de l'audit) : `model.cfg` sur modèles non binarisés (sections, animations), alpha test, distances de LOD, particules.
 
 ## Pack 4.6.0 Washington : écrans TOC réglables dans Eden et Zeus, écrans allumés avec un serveur plus ancien, carte photo fluide, zoom de la carte mini centré (ATAK natif 4.6.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1290,6 +1335,7 @@ Retour de TTRD du 11/11 (4.5.0, serveur dédié plus ancien) : mur d'images noir
 - `comspec_zoomUntil` : le suivi image par image (`fn_mapOnDraw`) et le recentrage de `fn_statusUpdate` se taisent pendant le zoom. Auto-contrôle `["check"] call comspec_atak_native_fnc_mapZoomAim`. Test : `AtakMapMiniZoomFollowAssetTest`.
 
 ## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1328,6 +1374,7 @@ EN : ATAK 4.5.0: a professional-looking TOC and a satellite that becomes an ISR 
 - À tester en jeu : rendu des capteurs (BHOT `[7]`, fusions), lisibilité du HUD sur image claire et sombre, traits tournés des contours, molette et glisser dans le groupe de découpe, écrans muraux à 3-6 m, ENVOYER sur une dalle.
 
 ## SSE 1.9.1 : tuto des extensions lisible, fenêtre « IA de la zone » réparée, fenêtres qui s'arrêtaient à moitié (SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : correctif
@@ -1369,6 +1416,7 @@ EN : SSE 1.9.1: windows that show in full again
 - Renommages seuls, aucun autre changement. Non vu en jeu (analyse statique, `hemtt check` ATAK et SSE sans nouvelle erreur).
 
 ## Pack 4.4.1 Washington : écrans TOC visibles et bien rendus, PC du poste lisible, carte CLASSIQUE, page MPU5, note de service et versions au Centre Zeus (ATAK natif 4.4.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : correctif
@@ -1450,6 +1498,7 @@ EN : ATAK 4.4.1: TOC screens that show up, a readable laptop and a faithful CLAS
 - `fn_editorAi.sqf` et `fn_tocDraw.sqf` : versions de `fix/sse-ia-zone-volets` et `fix/toc-pc-ui` gardées (les doublons de casse y étaient déjà retirés). Détecteur `tools/sqf_case_shadow_check.py --all` relancé après fusion : `_r` (valeur) écrasait l'aide `_R` dans `fn_tocBoard` (texte gauche / droite, renommés `_txtL` / `_txtR`) et dans `fn_tocScreen` `_place2` (`_rect`) ; 0 BREAKS. Pour la règle du test `SqfCaseInsensitiveShadowAssetTest` (fichier entier), les autres valeurs `_r` de ces deux fichiers sont devenues `_rv`. Exception temporaire `fn_docExtWindow.sqf` retirée de `tools/sqf_case_shadow_allowlist.txt`.
 
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1564,6 +1613,7 @@ EN : SSE 1.9.0: more natural AIs, real papers and redone Zeus tools
 
 
 ## Pack 4.4.0 Washington : salle TOC en jeu, sang sur l'écran, carte Classique, traçage d'un numéro, ATHENA Configuration (ATAK natif 4.4.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.0)
+<!-- date: 2026-11-11 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1697,6 +1747,7 @@ Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé), aucune migration. Non vu e
 
 
 ## SSE 1.8.0 : IA qui répondent à beaucoup plus de questions, réponses écrites par le maître du jeu (SSE 1.8.0)
+<!-- date: 2026-11-10 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1725,6 +1776,7 @@ EN : AIs understand three times more questions, and the game master can write th
 - **Non vu en jeu** (autotest non lancé sur consigne) : rendu de la fenêtre « Réponses de l'IA » et du bouton de l'atelier, enregistrement Eden par `set3DENAttribute`, nouveaux ordres (recul, approche, arme posée), coût réel en jeu ; étapes écrites dans `scripts/ia_rp.sqf` (« ia_rp_reponse_perso_attribut », « ia_rp_reponse_perso_zeus », « ia_rp_question_perso », « ia_rp_cadre_civil ») et dans `fn_iarpSelfTest`.
 
 ## Pack 4.3.0 Washington : apps à l'horizontale, carte lisible, drones armés, centre Zeus, IA qui répondent juste, vrais papiers et passage aux fichiers (ATAK natif 4.3.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.7.0)
+<!-- date: 2026-11-10 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -1876,6 +1928,7 @@ EN : Equipment configurator: favourites, pre-kits and weight in kg
 - `LoadoutValidator::orphanMagazines` : avertissement pour un chargeur (balles, roquettes) rangé qui ne va dans aucune arme de la tenue (pas pour les grenades à main ni les explosifs, rien si une arme n'a pas de liste connue).
 
 ## Pack 4.2.1 Washington : téléphone plus fluide, apps plus claires, réseau relais qui explique ses coupures, coques plus nettes, IA qui comprennent mieux (ATAK natif 4.2.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.6.1)
+<!-- date: 2026-11-10 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -2066,6 +2119,7 @@ EN : Your in-game ID card is your Athena one, and the site explains what is wron
 - Non vérifié : rendu en jeu, multijoueur (Take / Put d'un client distant, ramassage sur un corps), DLL. Autotest `sse_papier_lie` (sse.sqf), non exécuté.
 
 ## Pack 4.2.0 Washington : carte tactique, contacts, SMS, bilan de l'année, YouTube, couverture importée, réglages expliqués (ATAK natif 4.2.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.6.0)
+<!-- date: 2026-11-09 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -2134,6 +2188,7 @@ EN : ATAK 4.2.0: tactical map, redrawn contacts, SMS app, year in review, import
 ---
 
 ## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
+<!-- date: 2026-11-09 -->
 
 
 ### Résumé joueur
@@ -2199,6 +2254,7 @@ EN : Found documents finally look like real paper
 ---
 
 ## Pack 4.1.0 Washington : verrouillage et code, carte tactique, mode pilote, réseau réaliste, profils IA, licence (ATAK natif 4.1.0.AG - Washington, COMSPEC Link 2.0.121, SSE 1.5.0)
+<!-- date: 2026-11-08 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -2666,6 +2722,7 @@ EN : Explosives app rebuilt, new network detonator
 ---
 
 ## Pack 4.0.0 Washington : nouveaux objets, réseau plus réaliste, interface refaite, app C2 retirée (ATAK natif 4.0.0.AG - Washington, COMSPEC Link 2.0.120)
+<!-- date: 2026-11-08 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -2776,6 +2833,7 @@ EN : ATAK 4.0.0 Washington: wrist GPS, deployable antennas, redesigned interface
 - **Maillage, lot 8 : nettoyage** (`fn_meshRead`, `fn_mpu5`, `fn_mpuLink`, `fn_mpuVoice`, `fn_meshGroups`, `fn_devMeshSim`) : une seule variable publique par joueur, `COMSPEC_ATAK_MeshNode`, sur changement et au plus toutes les 2 s, à la place de `MpuNode`, `Mpu5`, `MpuVoice`, `VoiceNet` et `Talkgroup` (ces dernières restent locales au joueur). Liaison réaliste décochée : `Mpu5` et `VoiceNet` passent aussi par cette variable. Notice : `docs/technical/reseau-mesh-notice-joueur.md`. Aucun test en jeu sur l'ensemble des lots : à faire en une seule fois.
 
 ## Pack 3.0.5 : optimisation de COMSPEC Link, temps des DLL mesurés dans Debug › PERFS (ATAK natif 3.0.5.AG - Austin, COMSPEC Link 2.0.119)
+<!-- date: 2026-11-03 -->
 
 ### Résumé joueur
 Type : performance
@@ -2819,6 +2877,7 @@ EN : ATAK 3.0.5: the Athena link does less work and can be measured
 - **À tester en jeu** : Debug › PERFS après quelques instants (sections DLL native et COMSPEC Link, appels / moy / p95 / pire, bouton RAZ DLL ; téléphone en anglais : RESET DLL) ; app Recherchés « Actualiser » (liste fraîche) et terminal SEEK / biométrie du SSE (liste servie sans attente, à jour en 5 min) ; journal COMSPEC_*.log toujours écrit (lignes horodatées) ; tenue Athena volumineuse (morceaux) ; notification reçue puis expirée (toast affiché puis retiré) ; Réglages › contrôle d'intégrité (versions, « DLL d'une autre version » absent).
 
 ## Pack 3.1.0 (suite) : interface du téléphone refaite, un seul système de design, thèmes sombre / jour / nuit JVN (ATAK natif 3.1.0.AG - Austin)
+<!-- date: 2026-11-08 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -2854,6 +2913,7 @@ EN : ATAK 3.1.0: the phone is easier to read, consistent from app to app, with t
 - **Performance** : Debug › PERFS après 2 min sur la carte en mini et sur l'accueil : aucun rendu de page supplémentaire par rapport à 3.0.3 (le thème ne redessine qu'au changement).
 
 ## Pack 3.0.3 : suivi de COMSPEC IDENTITY, téléphone traduit pour les apps du SSE, Recherchés garde les BOLO locaux (ATAK natif 3.0.3.AG - Austin)
+<!-- date: 2026-11-03 -->
 
 ### Résumé joueur
 Type : correctif
@@ -2872,6 +2932,7 @@ EN : ATAK 3.0.3: COMSPEC IDENTITY apps in English, Wanted keeps the mission BOLO
 - **À tester en jeu** : BOLO posé au Zeus ou par le module SSE → app Recherchés → ACTUALISER : le BOLO reste, marqué BOLO local ; recherché aussi connu d'Athena affiché une fois ; téléphone en anglais : Contrôle ID et Ma couverture traduits, recherche « cover » / « couverture ».
 
 ## Pack 3.0.2 : COMSPEC IDENTITY lot 2, fiches de contrôle partagées en Bluetooth et en NFC, alertes vibreur seul, Contrôle ID sur le vrai téléphone (ATAK natif 3.0.2.AG - Austin)
+<!-- date: 2026-11-03 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -2903,6 +2964,7 @@ EN : ATAK 3.0.2: shared identity check sheets, vibrate-only alerts, ID Check on 
 - **À tester en jeu** : app Contrôle ID du SSE → partager une fiche en Bluetooth (deux joueurs appairés, 15 m) puis en NFC (moins de 2 m, Bluetooth éteint chez l'un), acceptation, vue dédiée (photo, niveaux, CARTE, JOINDRE À UNE FRM), FRM envoyée avec photo puis visible sur la fiche du contrôle sur Athena ; notification vibreur seul (aucun son, aucun bandeau, écran verrouillé et montre sans bandeau, entrée au centre de notifications) ; SPOTREP pré-rempli par le SSE ; QR code Sur mon téléphone de l'app Contrôle ID ; Bluetooth existant (photos, musique, données, fiches SEEK et SSE) inchangé.
 
 ## Pack 3.0.1 : optimisation, moins de travail à chaque image sur la carte, les zones et les routes (ATAK natif 3.0.1.AG - Austin)
+<!-- date: 2026-11-03 -->
 
 ### Résumé joueur
 Type : performance
@@ -2927,6 +2989,7 @@ EN : ATAK 3.0.1: lighter map, Zones and Routes
 - **À tester en jeu** : carte plein écran et téléphone porté avec plusieurs plans Zones et routes affichés (fluidité, dessin identique), bandeau du curseur sur une zone, app Zones (aperçu du découpage, aimant), app Routes et suivi de route, barre d'état (réseau, batterie, heure, RAM, logo Link, cloche), mode MARQUEUR (aperçu au point de pose), explosifs en séquence (T-), traits épais / fléchés, Debug › PERFS (section « Carte et papiers SSE » après 30 s), menu ACE « Mes papiers » du SSE ; clics de la carte (2.9.40), pages superposées et cockpit (2.9.41) inchangés.
 
 ## Pack 3.0.0 : COMSPEC IDENTITY, le contrôle d'identité sur le terrain, et tout ce que la génération 2.9 a apporté (ATAK natif 3.0.0.AG - Austin, COMSPEC Link 2.0.118)
+<!-- date: 2026-11-03 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -2983,6 +3046,7 @@ EN :
 - Sans le SSE : aucune app Contrôle ID, aucune erreur au démarrage.
 
 ## Pack 2.9.41 : ATAK visible au-dessus des cockpits, téléphone réparé après la descente, thèmes de nommage des axes et des zones (ATAK natif 2.9.41.AG - Denver)
+<!-- date: 2026-11-03 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3021,6 +3085,7 @@ EN : ATAK above cockpits, phone that reopens, code names of your choice
 - **Nouveau plan à partir d'ici** : bandeau DÉCOUPER / TRACER ; RECTANGLE et CERCLE en clic-glisser puis en deux clics ; POLYGONE 4 clics + Entrée.
 
 ## Pack 2.9.40 : marqueurs aux vraies couleurs, carte qui ne se fige plus après le menu du clic droit, pages qui ne se superposent plus (ATAK natif 2.9.40.AG - Denver)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3042,6 +3107,7 @@ EN : Markers in their true colours, map and pages fixed
 - **Zones** (`fn_navigate`) : outil et points du tracé remis à zéro en quittant l'app (journal `[MAP]`).
 
 ## Pack 2.9.39 : Sur mon téléphone (QR code vers les apps mobiles), briefs air aux pilotes, rôle affiché (ATAK natif 2.9.39.AG - Denver, COMSPEC Link 2.0.117)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3063,6 +3129,7 @@ EN : Your apps on your real phone, air briefs to pilots, a single displayed role
 - **Rôle affiché** (`fn_displayRole`, connect `fn_getUnitRole` / `fn_setUnitRole` / `fn_getUnitsList` / `fn_fillZeusGroupId`) et **briefs air** (`fn_airBrief`, `fn_vehicleKeys`, `AirBriefService`, étape 3720) : voir leurs PR. connect 1.6.32.
 
 ## Pack 2.9.38 : annuler partout, app Zones refaite (polygone aimanté, couleurs, onglets), plans et routes partagés au camp (ATAK natif 2.9.38.AG - Denver)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3123,6 +3190,7 @@ EN : Undo everywhere, Zones app redesigned, plans shared with the whole side
 ---
 
 ## Pack 2.9.37 : optimisation, moins de saccades et de redessins (ATAK natif 2.9.37.AG - Denver)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : performance
@@ -3156,6 +3224,7 @@ EN : The phone and the Athena link use far less
 ---
 
 ## Pack 2.9.36 : app Zones sans automatisme, menu Zones au clic droit, bandeau du curseur (ATAK natif 2.9.36.AG - Denver)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : patch
@@ -3183,6 +3252,7 @@ EN : Zones app: nothing changes on its own any more, and a Zones menu on right-c
 ---
 
 ## Pack 2.9.35 : app Zones (battleplan), bandeau du curseur et point GPS personnalisables (ATAK natif 2.9.35.AG - Denver, COMSPEC Link 2.0.116)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3225,6 +3295,7 @@ EN : New Zones app for the battleplan, cursor strip and GPS point your way
 - **Mon point GPS** : chaque forme, couleur, taille ; cône de cap ; trace 2 / 10 min ; indicatif TOUJOURS / JAMAIS ; carte plein écran et mini ; images par seconde inchangées.
 
 ## Pack 2.9.34 : app Routes, bandeau du curseur de la carte refait, app Réseau lisible (ATAK natif 2.9.34.AG - Denver, COMSPEC Link 2.0.116)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3270,6 +3341,7 @@ EN : New Routes app, map cursor bar redesigned, readable Network app
 - **Athena** : relevé de temps de jeu et de distances d'une partie sur serveur dédié : champ `server_name` reçu par le site.
 
 ## Pack 2.9.33 : écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5, diagnostic de l'arsenal ACE (ATAK natif 2.9.33.AG - Denver, COMSPEC Link 2.0.116)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3299,6 +3371,7 @@ EN : Screens and video projector fixed, radio voice over the MPU5 mesh
 - **Arsenal** : ouvrir l'arsenal qui paraissait vide, relever la ligne `[COMSPEC ATAK NATIVE][INFO][ARSENAL]` du RPT et le texte du bouton « Objets : Tous / Favoris » en bas.
 
 ## Pack 2.9.32 : retrait du repli radio tactique en données, seule la MPU5 relie le téléphone (ATAK natif 2.9.32.AG - Denver, COMSPEC Link 2.0.116)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3327,6 +3400,7 @@ EN : Tactical radio data fallback removed: only the MPU5 links the phone to the 
 - **Migration** : radio ACRE / TFAR branchée en mode ancien, puis Zeus / admin coche la liaison réaliste en cours de mission : message « Liaison radio tactique retirée : reliez une MPU5 », plus de radio reliée.
 
 ## Pack 2.9.31 : appui feu typé, MPU5 et liaison téléphone-radio réalistes, écrans et vidéoprojecteur COMSPEC (ATAK natif 2.9.31.AG - Denver, COMSPEC Link 2.0.116)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3366,6 +3440,7 @@ EN : Typed fire support, a real MPU5 radio, new screens and video projector
 - **Vidéoprojecteur** : ACE › Vidéoprojecteur › Projecteur COMSPEC › Allumer, Projeter sur… un tableau blanc sur trépied puis mural à moins de 15 m : diapositives, affichage TOC, carte, caméra ; image à la bonne taille et inclinaison ; éteint, détruit, tourné ailleurs ou quelqu'un / un mur / un véhicule entre l'objectif et le tableau → tableau blanc ; attribut Eden « Allumé au lancement » ; vu pareil par un deuxième joueur et un arrivant.
 
 ## Pack 2.9.30 : photos cherchées au bon endroit, réglage « Dossier des captures d'écran » (ATAK natif 2.9.30.AG - Denver, COMSPEC Link 2.0.116)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3399,6 +3474,7 @@ EN : Your photos are looked for in the right place, and you can choose the folde
 - Aucun gel à la première photo (mode Profilage : plus de pic `DLL NotifyNewPhoto`).
 
 ## Pack 2.9.29 : ordres aux IA réparés, écrans sur trépied, montre Garmin, état Athena juste, Tenues Athena plus lisibles (ATAK natif 2.9.29.AG - Denver, COMSPEC Link 2.0.115)
+<!-- date: 2026-11-02 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3440,6 +3516,7 @@ EN : AI orders, large screens, watch, Athena app and loadouts: all working again
 - **Tenues Athena** (connect) : ouvrir l'arsenal ACE › panneau Tenues : icônes nettes (aucun carré blanc), textes lisibles en petite interface ; flèches, Page préc./suiv., Début/Fin, Entrée (enfiler), Suppr (confirmation), Ctrl+C sur une carte ; fiche avec poids estimé, remplissage tenue / gilet / sac, munitions et matériel ; recherche par nom de pièce (arme, gilet) ; squelette pendant le chargement, boutons réseau grisés pendant une opération.
 
 ## Pack 2.9.28 : moins d'à-coups en partie, mode profilage des saccades (ATAK natif 2.9.28.AG - Denver, COMSPEC Link 2.0.114)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : performance
@@ -3473,6 +3550,7 @@ EN : Fewer hitches in game and a mode to measure stutters
 
 
 ## Pack 2.9.27 : recherche d'apps instantanée, réglages sans rechargement, « Écouter » dans l'app Musique (ATAK natif 2.9.27.AG - Denver, COMSPEC Link 2.0.114)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3503,6 +3581,7 @@ EN : Instant app search and apps that no longer reload on every click
 - Autres apps en formulaire (Réglages des apps, Drone, JTAC, Athena) : un clic qui redessine garde la position de la liste ; changer d'onglet repart en haut.
 
 ## Pack 2.9.26 : Tenues refaites, ordres aux IA, jeu sans Athena, note de licence, tracé par les routes (ATAK natif 2.9.26.AG - Denver, COMSPEC Link 2.0.114)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3532,6 +3611,7 @@ EN : Clearer loadouts, AI orders, play without Athena and road routing
 - Note `docs/bugs/2026-11-01-mode-local-faux-messages-athena.md`. Link inchangé ; connect ne change pas pour cette partie.
 
 ## Pack 2.9.25 : menus d'écran uniques, diapositives sur les écrans, PC du poste en PIP (ATAK natif 2.9.25.AG - Denver, COMSPEC Link 2.0.114)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3554,6 +3634,7 @@ EN : The post screens work again
 - Note `docs/bugs/2026-11-01-ecrans-ace-double-ecran-noir.md`.
 
 ## Pack 2.9.24 : Academy en jeu, caméras en direct sur les écrans TOC (ATAK natif 2.9.24.AG - Denver, COMSPEC Link 2.0.113)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3577,6 +3658,7 @@ EN : Your Academy courses in game, and live cameras on the post screens
 - Connexion : Link renvoie `ERR|client_untrusted` aussi pour PairStart / PairStatus / RedeemRecoveryCode ; `fn_athenaStatus` / `fn_athenaLink` / connect affichent le message pack non officiel ; onglet PORTAIL retiré de `fn_pageAthena` (`RedeemGameLink` gardé pour Overwatch connect et les anciennes versions).
 
 ## Pack 2.9.23 : carte de la montre stable (ATAK natif 2.9.23.AG - Denver, COMSPEC Link 2.0.112)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3590,6 +3672,7 @@ EN : The watch map no longer flickers
 - Link inchangé 2.0.112 ; note `docs/bugs/2026-11-01-montre-carte-clignote.md`
 
 ## Pack 2.9.22 : transmissions sans à-coups (ATAK natif 2.9.22.AG - Denver, COMSPEC Link 2.0.112)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : performance
@@ -3618,6 +3701,7 @@ EN : No more stutter while talking to Athena
 - Link 2.0.112 : rappel refusé par Arma (file pleine, retour négatif) renvoyé jusqu'à ~9 s ; sondages `ServePollGet` en HTTP async (plus de fil du pool bloqué) ; `OpenAthenaLink`, ménage des captures, relevés terrain/scène/géo et `MusicList` / `MusicOpenFolder` hors du fil du jeu
 
 ## Pack 2.9.21 : plus de gel, tenues ACE réparées, liaison vraiment coupée (ATAK natif 2.9.21.AG - Denver, COMSPEC Link 2.0.111)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : patch
@@ -3639,6 +3723,7 @@ EN : Smooth phone, reliable ACE loadouts
 - Notes de bug : `docs/bugs/2026-11-01-*` ; DevDispatch UPDATE #1216
 
 ## Pack 2.9.20 : Vue 3D de la carte en chantier (ATAK natif 2.9.20.AG - Denver, COMSPEC Link 2.0.110)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : patch
@@ -3654,6 +3739,7 @@ EN : Map 3D view temporarily unavailable
 - Link inchangé 2.0.110 ; DevDispatch UPDATE #1204
 
 ## Pack 2.9.19 : file d’envoi élargie et envois hors fil jeu (ATAK natif 2.9.19.AG - Denver, COMSPEC Link 2.0.110)
+<!-- date: 2026-10-28 -->
 
 ### Résumé joueur
 Type : performance
@@ -3671,6 +3757,7 @@ EN : Smoother link under load
 - Link 2.0.110 ; DevDispatch UPDATE #1203
 
 ## Pack 2.9.18 : connexion et relevé carte hors fil jeu (ATAK natif 2.9.18.AG - Denver, COMSPEC Link 2.0.109)
+<!-- date: 2026-10-28 -->
 
 ### Résumé joueur
 Type : performance
@@ -3687,6 +3774,7 @@ EN : Smoother login and map capture
 - Link 2.0.109 ; DevDispatch UPDATE #1202
 
 ## Pack 2.9.17 : file d’envoi messagerie / CAS et modules signés (ATAK natif 2.9.17.AG - Denver, COMSPEC Link 2.0.108)
+<!-- date: 2026-10-28 -->
 
 ### Résumé joueur
 Type : performance
@@ -3705,6 +3793,7 @@ EN : Smoother link and signed modules
 ---
 
 ## Pack 2.9.16 : carnet de vol, Garmin Instinct et liaison (ATAK natif 2.9.16.AF - Denver, COMSPEC Link 2.0.107)
+<!-- date: 2026-10-28 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3726,6 +3815,7 @@ EN : Flight logbook and Instinct watches
 ---
 
 ## Pack 2.9.11 : heures de vol par appareil (ATAK natif 2.9.11.AE - Denver)
+<!-- date: 2026-10-28 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3744,6 +3834,7 @@ EN : Flight hours and airframe models
 ---
 
 ## Pack 2.9.10 : NINE LINE et carte web par QR (ATAK natif 2.9.10.AE - Denver, COMSPEC Link 2.0.103)
+<!-- date: 2026-10-28 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3765,6 +3856,7 @@ EN : NINE LINE pad and web map via QR
 ---
 
 ## Pack 2.9.9 : apps, écrans ACE et carte sans doublon (ATAK natif 2.9.9.AE - Denver, COMSPEC Link 2.0.102)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3784,6 +3876,7 @@ EN : App groups, ACE screens and a map without duplicates
 - UPDATE DevDispatch #1185–#1189.
 
 ## Moins d’à-coups en combat et à la liaison (ATAK natif 2.9.6.AB - Denver, COMSPEC Link 2.0.101)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : performance
@@ -3801,6 +3894,7 @@ EN : The picture holds up better while shooting and when you go down
 - UPDATE DevDispatch #1181–#1183.
 
 ## Pack du téléphone (ATAK natif 2.9.5.AB - Denver, COMSPEC Link 2.0.100)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3819,6 +3913,7 @@ EN : The watch, live video and camera move forward
 - Regroupe les comportements livrés de 2.9.0 à 2.9.5, détaillés dans les entrées suivantes. Rien de ces versions n’avait encore été fusionné.
 
 ## Photo : le flou des visages aussi dans le téléphone (ATAK natif 2.9.5.AB - Denver, COMSPEC Link 2.0.100)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3834,6 +3929,7 @@ EN : Face blur can be set in the small viewfinder too
 - `fn_photoCam` `blur` : même cycle que la touche B du plein écran (`COMSPEC_ATAK_BlurType`). Le plein écran l’appelle.
 
 ## Carte : cercles de précision masquables (ATAK natif 2.9.4.AB - Denver, COMSPEC Link 2.0.100)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3852,6 +3948,7 @@ EN : Accuracy circles can be hidden
 - Calque profil `COMSPEC_ATAK_AccRings`, section Forces du volet Situation. Affiché par défaut.
 
 ## Vidéo live : focale réglable (ATAK natif 2.9.3.AB - Denver, COMSPEC Link 2.0.100)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3870,6 +3967,7 @@ EN : Live video can zoom out
 - `fn_camView` : les caméras fixes utilisent la même focale.
 
 ## Montre reliée au téléphone porté (ATAK natif 2.9.2.AB - Denver, COMSPEC Link 2.0.100)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3886,6 +3984,7 @@ EN : The watch sees the phone as soon as it is on
 - `fn_watch` : la liaison ne lit plus `COMSPEC_ATAK_Bt` `on`. Elle suit `canUse` et le mode furtif. L’objet divers dans le sac était déjà accepté par `items player`.
 
 ## Distances : Actualiser et lisibilité (ATAK natif 2.9.1.AB - Denver, COMSPEC Link 2.0.100)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3906,6 +4005,7 @@ EN : Distances — Refresh now sends to the site, clearer text
 - `PlayerBatchExceedsSession` : sans Steam / JSON illisible, ne bloque plus l’envoi (le portail filtre).
 
 ## Montre : carte et lecteur (ATAK natif 2.9.0.AB - Denver, COMSPEC Link 2.0.99)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -3927,6 +4027,7 @@ EN : The watch shows the map, my point, my allies, and the player
 - Cadran : ligne du bas remplacée par le morceau en cours.
 
 ## Téléphone porté, écrans et liaison (ATAK natif 2.8.3.AB - Denver, COMSPEC Link 2.0.99)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3947,6 +4048,7 @@ EN : The phone keeps the account identity and reconnects by itself
 - Les pages ouvertes depuis le jeu sont limitées à la liaison, la carte et la 9-LINE du portail.
 
 ## Diapositives sur les écrans (ATAK natif 2.8.2.AB - Denver, COMSPEC Link 2.0.99)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3963,6 +4065,7 @@ EN : A cast slide shows on the field screen
 - Écrans `COMSPEC_BriefingScreens` peints par le même chemin.
 
 ## Correctifs de démarrage (ATAK natif 2.8.1.AB - Denver, COMSPEC Link 2.0.99)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : correctif
@@ -3981,6 +4084,7 @@ EN : The phone, Zeus and the arsenal no longer fail while loading
 - `fn_arsenalOverlayRefresh` : colonne `params` sans nom remplacée par `_gap`.
 
 ## Montre Garmin et téléphones en objets (ATAK natif 2.8.0.AB - Denver, COMSPEC Link 2.0.99)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4000,6 +4104,7 @@ EN : The watch is no longer a white circle, and each phone is an item
 - Téléphones : une classe d’objet par modèle et, pour le S7, par couleur (`comspec_phoneModel`, `comspec_phoneTint`). `fn_phoneCarried` alimente l’affichage, le dos, le gilet, le selfie et le socle. Les réglages « Modèle » et « Couleur de la coque » sont retirés du téléphone et du menu d’interaction.
 
 ## Regroupement : montre Garmin, radio avec le téléphone, diapositives Google, module officiel (ATAK natif 2.7.0.AB - Denver, COMSPEC Link 2.0.99)
+<!-- date: 2026-10-27 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4024,6 +4129,7 @@ EN : The Garmin watch shows its face again, and only the official pack can reach
 - À tester en jeu : montre (boîtier et cadran, les quatre coloris) ; alternat radio téléphone en plein écran ; diapositive Google dans Briefing puis sur un écran ; message de batterie vide ; liaison avec le pack officiel, et refus d’une copie une fois le poste à jour.
 
 ## Regroupement : diapositives sur les écrans, Live Presentation (FENRIR), JVN hors ligne, floutage des visages, textes lisibles, 131 correctifs (ATAK natif 2.6.0.AB - Denver, COMSPEC Link 2.0.98)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4046,6 +4152,7 @@ EN : Slides on screens, clearer text and 131 fixes
 - À tester en jeu : diapositive diffusée sur TV/projecteur/ordinateur et Google Slides (DLL 2.0.98 obligatoire) ; présentation FENRIR avec et sans le mod ; JVN avec service Athéna « Non », mode local, puis Athena relié ; selfie et photo de groupe floutés ; textes en petit et plein écran ; première sortie du téléphone sans compte relié ; app Musique avec une DLL absente ; filtres du lanceur en paysage, portrait et sans app épinglée ; en anglais, notification de synchro après coupure, compte rendu du Resynch, liaison Athena par code et App Store sur une app absente.
 
 ## Diapositives visibles sur les écrans COMSPEC et diapositives Google dans le téléphone (partie du regroupement 2.6.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4069,6 +4176,7 @@ EN : Slides finally show on in-game screens
 ---
 
 ## Compatibilité avec le mod Live Presentation de FENRIR dans l'app Briefing (partie du regroupement 2.6.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4092,6 +4200,7 @@ EN : The Briefing app can read presentations from FENRIR's Live Presentation mod
 - Traductions EN ajoutées dans `i18n/en.txt`.
 
 ## Textes du téléphone : plus de texte coupé, sous-menus et boutons lisibles (partie du regroupement 2.6.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4115,6 +4224,7 @@ EN : Clearer phone text
 - `main.pbo` : entrées modifiées remplacées dans le PBO Windows de 2.5.0 (fichiers texte en CRLF), version 2.5.1.
 
 ## Infos tactiques dans les JVN : marchent sans Athena et se règlent dans le téléphone (partie du regroupement 2.6.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4135,6 +4245,7 @@ EN : NVG situation display now actually shows up
 - À tester en jeu : service Athéna « Non », mode local avec TOC, puis Athena relié ; JVN vanilla, ACE, CUP ; case CBA seule, puis interrupteur du téléphone.
 
 ## Floutage des visages : les photos du téléphone partent enfin floutées (partie du regroupement 2.6.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4158,6 +4269,7 @@ EN : Faces are finally blurred on phone photos
 - À tester en jeu : selfie (app Photo et plein écran), photo d'un allié à 5-20 m, d'un allié derrière un mur (doit rester net), d'un allié dans un véhicule, d'une tête au bord de l'image ; réglage « Tout le monde » avec un ennemi ; vérifier sur Athena (Remontées / Overwatch web) et dans le RPT la ligne « Floutage ».
 
 ## Regroupement : App Store, montre Garmin en 4 coloris, iPhone 17 Pro, Tinder chasse aux HVT, écrans TOC, CR de fin d'op, carte MapTac, radios ACRE/TFAR, dossiers médicaux, 153 correctifs (ATAK natif 2.5.0.AB - Denver, COMSPEC Link 2.0.97)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4180,6 +4292,7 @@ Un seul numéro pour tout le lot : ATAK natif 2.5.0 (après 2.4.1 sur main ; le 
 - Non inclus (prochain lot) : lots d'audit `claude/project-thread-ryy13x-mpauth` (réserve bloquante B3 de la contre-expertise v3 : essais en jeu avant fusion) et `claude/project-thread-ryy13x-cleanup` (essai des textures en jeu demandé), PERF-011 et l'échelle de reprise de la DLL (non poussés).
 
 ## GPS en bâtiment moins imprécis (partie du regroupement 2.5.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4199,6 +4312,7 @@ EN : GPS stays accurate inside buildings
 - `fn_ewDraw` : le cercle de précision est centré sur la position de mon icône de la même image (`COMSPEC_ATAK_SelfGpsPos`).
 
 ## Nouveau téléphone : iPhone 17 Pro en coque durcie olive (partie du regroupement 2.5.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4225,6 +4339,7 @@ Version provisoire : le lot natif suivant la renumérote (STOP MERGE, regroupée
 - main.pbo **pas reconstruit** dans cette PR : il le sera au lot natif (HEMTT ou `build_mod.bat`). Test PHP : les PAA de l'iPhone 17 Pro (coques, dos) existent.
 
 ## App Médical : dossiers médicaux de l'unité dans le téléphone (partie du regroupement 2.5.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4246,6 +4361,7 @@ EN : The unit's medical records in the Medical app
 - Numéro ATAK natif attribué par le regroupement (docs/VERSIONING.md).
 
 ## CR de fin d'opération imposé dans le téléphone, à remplir ou à lire (partie du regroupement 2.5.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4270,6 +4386,7 @@ EN : The end-of-operation report opens on your phone
 - Site : back-office « CR des joueurs (fin d'op) » (PR site séparée).
 
 ## Écrans TOC persistants, PC du poste de commandement et IA équipées d'un ATAK (partie du regroupement 2.5.0)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4303,6 +4420,7 @@ EN : In-game TOC screens and AI really linked to the ATAK network
 ---
 
 ## Correctif de sécurité : liaison Athena, relais ATAK, Windows en français (ATAK natif 2.4.1.AB - Denver, COMSPEC Link 2.0.96)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4332,6 +4450,7 @@ Correctif seul de la 2.4.0 publiée (audit d'ingénierie, SEC-001, DLL-003, DLL-
 ---
 
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4400,6 +4519,7 @@ EN : Confidential ATAK markers and conditional radio relays
 - Réglage `comspec_atak_native_marker_channel` inchangé (Global par défaut) : en mode carte d'Arma, Global reste visible par tous les camps.
 
 ## Refus d'Athena : plus de demandes en boucle, Dépannage liaison qui donne la bonne correction (Overwatch connect 1.6.17)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4479,6 +4599,7 @@ EN : Athena is now translated with the community
 - Rôles liés Discord (Linked Roles) : `DiscordLinkedRoles` (OAuth `identify role_connections.write`, conditions compte Athena / membre d'une communauté / nombre de communautés / ancienneté, nom des communautés sur le profil), `/discord/roles-lies` (adresse de vérification) et retour, panneau Discord dans Mon compte › Préférences, réglages Application ID + secret client chiffré dans Intégrations › Plateforme, tâche automatique quotidienne `discord_linked_roles_sync`. Migration `20261025000002_user_discord_links.sql`. Dans le portail des développeurs Discord : OAuth2 › Redirects = `/discord/roles-lies/retour` ; puis la condition « Compte Athena » sur le rôle Athena verified (Paramètres du serveur › Rôles › Liens).
 
 ## App Admin dans le téléphone : parc ATAK de la communauté, ATAK de la partie et debug de l'IA, pour la gestion et les Zeus (regroupé dans ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4504,6 +4625,7 @@ EN : New Admin app for community managers and Zeus
 - À tester en jeu : app visible en Zeus et invisible pour un joueur ; relevé EN JEU avec plusieurs joueurs ; effets Zeus depuis l'app ; parc ATHENA avec un compte gestionnaire relié (bloquer puis lever, message reçu, compromission puis levée) ; DEBUG IA après qu'une IA ennemie a ramassé un téléphone (traque visible, ARRÊTER LA TRAQUE, REPRENDRE LE TÉLÉPHONE).
 
 ## Nouveaux logos ATHENA sur le site et dans le téléphone (regroupé dans ATAK natif 2.4.0.AB - Denver)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4574,6 +4696,7 @@ EN : Play without Athena, with a real TOC laptop in game
 ---
 
 ## Jeu plus fluide, app Drone réparée, choix des données envoyées à Athena (regroupé dans ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
+<!-- date: 2026-10-26 -->
 
 ### Résumé joueur
 Type : performance
@@ -4601,6 +4724,7 @@ EN : No more small stutter every two seconds, the Drone app responds again
 ---
 
 ## Regroupement : marquage depuis le flux d'un drone du camp, GPS sans position périmée, connexion Athena du natif, matériel SSE reconnu, pack photo de la carte (ATAK natif 2.3.6.AB - Denver)
+<!-- date: 2026-10-20 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4633,6 +4757,7 @@ EN : Mark what the drone sees, more honest GPS, Athena sign-in fixed
 ---
 
 ## Regroupement : bandeau de la carte, arsenal ACE réparé, briefing et CAS dans le téléphone, ancien menu ACE retiré, diapositives Athena, Connexion Athena dans Eden (SSE), chargement plus fluide (ATAK natif 2.3.5.AB - Denver)
+<!-- date: 2026-10-19 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4678,6 +4803,7 @@ EN : Clearer map, arsenal fixed, nothing over the game any more
 ---
 
 ## Drone : le flux DRONES DU CAMP suit la vue du terminal UAV (ATAK natif 2.3.4.AB - Denver)
+<!-- date: 2026-10-19 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4695,6 +4821,7 @@ EN : Live video now shows what the drone operator sees
 - main.pbo reconstruit avec HEMTT, `verify_build.py` OK. Link inchangé (2.0.90).
 
 ## Regroupement : flux nacelle des drones du camp dans Vidéo Live, drone retiré de la flotte rendu au terminal UAV, contrôle des PBO au build (ATAK natif 2.3.3.AB - Denver)
+<!-- date: 2026-10-19 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4716,6 +4843,7 @@ EN : Live video now shows friendly drones' cameras
 ---
 
 ## Drone : terminal UAV vanilla réparé, manette de pilotage dans l'app Drone (ATAK natif 2.3.2.AB - Denver)
+<!-- date: 2026-10-19 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4738,6 +4866,7 @@ EN : The UAV terminal works again, and the Drone app has a controller
 ---
 
 ## Crédits : logo ATAK à la place du logo SOAR (ATAK natif 2.3.1.AB - Denver)
+<!-- date: 2026-10-19 -->
 
 ### Résumé joueur
 Type : correctif
@@ -4753,6 +4882,7 @@ EN : The COMSPEC ATAK logo at the top of the Credits app
 ---
 
 ## Regroupement : profils de réalisme Milsim, positions BFT par points, GPS naturel, carte satellite, radio MPU5 et voix ACRE2, brouilleurs d'autres mods (ATAK natif 2.3.0.AB - Denver, COMSPEC Link 2.0.90)
+<!-- date: 2026-10-19 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4797,6 +4927,7 @@ Brouilleurs d'autres mods, API brouilleur, télémètre vers la carte (PR #957) 
 Aucune DLL ni migration : COMSPEC Link reste en 2.0.90.
 
 ## Regroupement : Samsung S23 durci, drone refait et plus léger, ATAK compromis visible, touches dans le téléphone (ATAK natif 2.2.1.AB - Denver, COMSPEC Link 2.0.90)
+<!-- date: 2026-10-19 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -4877,6 +5008,7 @@ EN : A compromised ATAK finally shows it
 - À tester en jeu : compromission manuelle depuis /admin/parc-atak et automatique, logo rouge, carte dégradée, levée de la compromission.
 
 ## Regroupement : réseau qui suit la météo et la charge, français complet, Resynch qui renvoie tout, Réglages, fluidité, nettoyage et correctifs (ATAK natif 2.2.0.AB - Denver, COMSPEC Link 2.0.89)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5173,6 +5305,7 @@ EN : Admin notices now reach the phone
 
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
+<!-- date: 2026-10-18 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5327,6 +5460,7 @@ EN : A more realistic radio network, and a guide to understand it
 ---
 
 ## Regroupement : mode hors connexion, points de passage, fond photo de la carte (ATAK natif 2.0.1.AB - Denver, COMSPEC Link 2.0.87)
+<!-- date: 2026-10-18 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5386,6 +5520,7 @@ EN : Waypoints redone, faster and easier to read
 ---
 
 ## Regroupement : marqueurs, relais, Bluetooth, app Garmin, sang et santé, téléphone, flou des visages, kits par rôle, Reco, JTAC (ATAK natif 1.97.0, COMSPEC Link 2.0.87)
+<!-- date: 2026-10-18 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5524,6 +5659,7 @@ Version provisoire : le fil de regroupement attribue le numéro du lot (docs/VER
 ---
 
 ## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5571,6 +5707,7 @@ Regroupe #833, #834 et #836 (une seule version : ATAK natif 1.96.0, COMSPEC Link
 ---
 
 ## Regroupement : drone comme Vidéo Live, téléphone en main pour les photos, carte plus lisible, antenne, numéro de build (ATAK natif 1.95.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5650,6 +5787,7 @@ Regroupe #820, #822, #825, #826, #827, #829, #830 et #831 (une seule version : A
 ---
 
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5684,6 +5822,7 @@ EN : ATAK items finally have real 3D models, and the relay towers look far more 
 ---
 
 ## Regroupement : Zeus sur les ATAK, Comptes rendus, nouveaux terminaux, carte, drone, mise à jour (ATAK natif 1.93.0, COMSPEC Link 2.0.85)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5797,6 +5936,7 @@ EN : Athena no longer cuts your sends during an update
 - Le volet mod (502/504 en alerte, ligne ZEN, dump) est dans une PR à part, livrée avec le regroupement ATAK.
 
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
+<!-- date: 2026-10-14 -->
 
 ### Résumé joueur
 Type : correctif
@@ -5820,6 +5960,7 @@ EN : The COMSPEC ATAK menu in the Eden editor works again
 - À tester en jeu (Eden) : menu COMSPEC ATAK > Aide : poser un relais (fenêtre lisible, défilement, Fermer, Échap) ; TBR avec et sans relais posés (liste, Aller, Sélectionner, double clic, Fermer, Échap) ; la souris et la caméra d'Eden répondent après fermeture.
 
 ## Regroupement : images dans le téléphone, ordres au drone, plan de briefing, app Groupe, mode PETIT (ATAK natif 1.91.0, COMSPEC Link 2.0.84)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5901,6 +6042,7 @@ Une seule version pour 8 PR regroupées (#782, #783, #785, #786, #787, #788, #78
 - Non testé en jeu.
 
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : patch
@@ -5917,6 +6059,7 @@ EN : A test to fix the black drone picture in the phone
 - Seul commit de la PR #771 resté hors du regroupement #777. Non testé en jeu.
 
 ## Langues ajoutées par la communauté (ATAK natif 1.89.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -5942,6 +6085,7 @@ EN : The phone can be translated into other languages by the community
 - main.pbo reconstruit avec HEMTT. COMSPEC Link reste en 2.0.83. Non testé en jeu : à vérifier, le choix de langue (Français, English, Auto) marche comme avant, et un mod de test construit depuis l'exemple ajoute bien sa langue.
 
 ## Regroupement : IA ennemie et ATAK perdus, drone, pylônes relais, SEEK, Zeus (ATAK natif 1.88.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6009,6 +6153,7 @@ Non testé en jeu. Retours de TTRD : « le tuto zeus et le module relever route 
 - À tester en jeu : poser « Relever routes et villes » dans Zeus (message attendu), « Tutoriel : manuel du Zeus » (fenêtre au-dessus de Zeus), l'app SSE en portrait et paysage.
 
 ## Regroupement : JTAC, Messages, Musique, Signaler un problème (ATAK natif 1.87.0, COMSPEC Link 2.0.83)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6060,6 +6205,7 @@ Non testé en jeu. Retour de TTRD : défilement pénible en bas de l'onglet LECT
 - À vérifier en jeu : onglet LECTURE en plein écran paysage (pochette carrée à gauche), ouverture / fermeture des 4 sections, curseurs de volume dans « Son », portrait mini.
 
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : patch
@@ -6078,6 +6224,7 @@ EN : Barlow Condensed on trial
 - À tester en jeu : Réglages > Police > BARLOW (TEST) ; accueil, notifications, Réglages, petits textes sous les valeurs ; retour ROBOTO.
 
 ## JTAC : la fiche 9-LINE se complète toute seule (ATAK natif 1.85.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6102,6 +6249,7 @@ Non testé en jeu. Demande de TTRD : « On peut pas tout compléter ? » (captur
 - À tester en jeu : fiche avec cible verrouillée, laser allumé sans verrouiller, IP posé à la main puis IP AUTO, description et menaces avec ennemis connus ou non, saisie d'une valeur puis changement de cible (la saisie reste, les propositions suivent).
 
 ## Retour à la police du jeu sur le téléphone (ATAK natif 1.84.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6119,6 +6267,7 @@ EN : The phone gets its usual font back
 - À vérifier en jeu : textes du téléphone nets et entiers (écran d'accueil, notifications, tuiles), choix Purista dans Réglages > Police.
 
 ## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6144,6 +6293,7 @@ Non testé en jeu. Demandes de TTRD : « T'as pas du tout changé les font », �
 - Les 6 polices, en mode mini (portrait, paysage) et plein écran ; aucun libellé qui déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur) ; textes de la carte.
 
 ## Gouttes de pluie sur l'écran désactivées (ATAK natif 1.82.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : patch
@@ -6159,6 +6309,7 @@ EN : No more raindrops on the phone screen for now
 - À vérifier en jeu : sous la pluie, téléphone sorti, plus aucune goutte ; poussière et traces toujours visibles.
 
 ## Grande mise à jour regroupée : téléphone, vidéo par relais, Athena (ATAK natif 1.81.0, COMSPEC Link 2.0.82, site)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6332,6 +6483,7 @@ Non testé en jeu. Demande de TTRD : « un engrenage paramétrage pour pouvoir m
 ---
 
 ## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.79.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6354,6 +6506,7 @@ Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Pas
 - Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
 
 ## Module Zeus et Eden « Relever routes et villes » (ATAK natif 1.78.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6371,6 +6524,7 @@ Non testé en jeu. Demande de TTRD : un module Zeus et Eden dédié aux routes e
 - Les réglages de communauté « Lieux » et « Routes » (modules du mod) restent respectés.
 
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6394,6 +6548,7 @@ Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, s
 - Textes traduits en anglais (dictionnaire i18n/en.txt).
 
 ## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6419,6 +6574,7 @@ Non testé en jeu. Demande de TTRD : « JTAC l'app a une UI pas encore assez ré
 - À tester en jeu : onglets JTAC en portrait et paysage (mini et plein écran, échelle réglable), pose cible/IP sur la carte, cône FAH et cercle RED, vue équipage avec brief reçu, rafraîchissement CTRL toutes les 3 s (la carte garde sa vue), langue anglaise.
 
 ## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6438,6 +6594,7 @@ Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de m
 - Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
 
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des addons > COMSPEC.
 - Le réglage **Langue / Language** (Auto, Français, English) est maintenant tout en haut de la liste COMSPEC, onglet Client, au-dessus des sections « ATAK · … ». Il était rangé dans la section « ATAK · Langue / Language », au milieu de la liste, où on ne le trouvait pas.
@@ -6446,6 +6603,7 @@ Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des ad
 - Changer de langue en cours de partie : le téléphone se redessine et les menus CBA COMSPEC sont retraduits à leur prochaine ouverture, sans relancer la mission (avant, il fallait relancer la mission).
 
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6460,6 +6618,7 @@ Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détress
 - Le bloc PANIQUE affiche « Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi. » (anglais : « Alerts all operators of your distress. You must press twice in a row to confirm sending. »).
 
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6482,6 +6641,7 @@ Non testé en jeu. Demande de TTRD : personne n'héberge son propre Athena, l'ad
 - À vérifier en jeu : onglet COMPTE du téléphone (code et Steam), fenêtre Connexion Athena d'Overwatch (code, Steam), et que la liaison reste active après un redémarrage d'Arma.
 
 ## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.71.0, COMSPEC Link 2.0.80)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : performance
@@ -6510,6 +6670,7 @@ Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouv
 - Journal : lignes `[PERF]` (durées du preInit, du postInit client et serveur, arrivée en jeu, parcours de config, dictionnaire, fiche opérateur, reprise de session) et `Image figée : N ms` pour toute image de plus de 400 ms, avec arsenal, téléphone et carte ouverts ou non.
 
 ## Correctif « Include file ...\ui\controls.hpp not found » au lancement (ATAK natif 1.70.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6526,6 +6687,7 @@ EN : Arma startup error fixed
 - `LINK_VERSION_STR` passe à 2.0.79 pour suivre la DLL de #710 (sinon le téléphone signalait la DLL comme périmée).
 
 ## Serveurs de jeu : l'adresse du serveur est retrouvée (COMSPEC Link 2.0.79, site)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6547,6 +6709,7 @@ Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) ; pas de main.
 - COMSPEC Link 2.0.79 : le serveur dédié donne aussi son port de jeu (`-port`, 2302 par défaut) ; le client ajoute l'adresse de lancement (`-connect`/`-port` du lanceur Arma ou `+connect` de Steam) quand le serveur n'en diffuse pas.
 
 ## Mod ou DLL périmés signalés dans le téléphone, dernière version publiée sur Athena (ATAK natif 1.69.0, COMSPEC Link 2.0.78)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6572,6 +6735,7 @@ Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) ; pas de migration.
 - `build_mod.bat` supprime une sortie HEMTT `comspec_atak_native_main.pbo` / `_towers.pbo` copiée par erreur à côté de main.pbo.
 
 ## Carte : effacer le champ de vision et les zones interdites au drone (ATAK natif 1.68.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6592,6 +6756,7 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un champ de visio
 - Un seul champ de vision existe à la fois par joueur : en poser un nouveau remplace le précédent.
 
 ## Intro au démarrage désactivée (ATAK natif 1.67.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6613,6 +6778,7 @@ Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, 
 - À vérifier en jeu : lancer Arma, rien de COMSPEC sur l'écran de démarrage, menu principal normal.
 
 ## Taille du téléphone en plein écran réglable (ATAK natif 1.66.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6634,6 +6800,7 @@ Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est t
 ---
 
 ## Pylônes relais 3D destructibles (ATAK natif 1.65.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6658,6 +6825,7 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes
 - Outils : `tools/gen_tower_textures.py` (textures raccordables) et `tools/model_relay_towers.py` (modèles, ruines, aperçus).
 
 ## Connexion Athena : « invalid_url » mieux géré (ATAK natif 1.64.0, COMSPEC Link 2.0.77)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6679,6 +6847,7 @@ Non testé en jeu. Capture de TTRD : l'onglet COMPTE affichait « Athena n'a pas
 - À vérifier en jeu : onglet COMPTE, un code s'affiche. Sinon, envoyer la ligne « PairStart ... » du journal COMSPEC.
 
 ## App JTAC : formulaire 9-LINE lisible (ATAK natif 1.63.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6702,6 +6871,7 @@ Non testé en jeu. Demande de TTRD : « Ça faut améliorer le JTAC » (capture 
 - À vérifier en jeu : onglet BRIEF en portrait et en paysage, saisie dans les champs (texte gardé après un redessin), lisibilité de nuit, vue ÉQUIPAGE.
 
 ## Intro au démarrage : plus de conflit avec le menu, nouveau son (ATAK natif 1.62.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6722,6 +6892,7 @@ EN : Startup intro: no more clash with the menu, new sound
 - Marque des écrans de chargement : textes affichés même quand les fonctions ne sont pas encore compilées.
 
 ## Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement » (ATAK natif 1.61.0)
+<!-- date: 2026-11-01 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6744,6 +6915,7 @@ Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, 
 ---
 
 ## Gestes : doigt d'honneur corrigé, désactivé par défaut (ATAK natif 1.60.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : correctif
@@ -6766,6 +6938,7 @@ EN : Gestures: middle finger fixed and off by default
 ---
 
 ## Musique : les morceaux mis en ligne sur le site apparaissent sans redémarrer (ATAK natif 1.59.0)
+<!-- date: 2026-10-13 -->
 
 ### Résumé joueur
 Type : nouveauté
@@ -6790,6 +6963,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - Les journaux techniques restent en français.
 
 ## Relais du réseau ATAK : module Eden/Zeus, tutoriel, passerelles de véhicule coupées (ATAK natif 1.57.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les relais, un tuto dans Eden, couper par défaut les relais véhicule / mât de commandement.
 - Passerelles de véhicule et PC mobile à mât : nouveau réglage serveur « Passerelles de véhicule et PC mobile », **désactivé par défaut** (plus d'action ACE, celles ouvertes se referment). Un véhicule relais voulu par la mission se fait avec le module synchronisé au véhicule.
@@ -6832,6 +7006,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - Reste en français : réglages CBA de l'addon connect, journaux techniques, mod SSE.
 
 ## Relais : couverture réseau, triangulation, champs de vision ; calques de la carte qui disent ce qu'ils montrent (ATAK natif 1.53.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : triangulation par les relais, portée et couverture des relais, perte de réseau et débit, aperçu des champs de vision, et les relais invisibles sur la carte.
 - **Relais sur la carte** (calque Wave Relay) : tous les relais Overwatch de la mission (plus seulement le plus proche) avec leur nom, leur portée en cercle et leur débit, les relais détruits barrés en gris, les passerelles de véhicule et PC mobiles. Le maillage se raccroche à n'importe quel relais (un équipier près d'un autre relais n'est plus « isolé »).
@@ -6842,6 +7017,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - À vérifier en jeu : relais et portées visibles sur la carte, couverture sur une mission avec relais (et brouilleur), LOCALISER un équipier balise coupée, champ de vision depuis un point, un équipier et le drone, chaque calque allumé puis éteint.
 
 ## Messagerie refaite (ATAK natif 1.52.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Demande de TTRD : « améliorer l'UI de la messagerie ». Pas de DLL à recompiler, pas de migration.
 - **Liste des conversations** : canaux Athena puis messages directs, avec icône, initiales ou photo de l'opérateur, dernier message, heure et pastille de non-lus ; + CANAL dans le bandeau d'état (Athena connecté, hors réseau…).
@@ -6871,6 +7047,7 @@ Non testé en jeu. Retours de TTRD. Pas de DLL à recompiler, pas de migration.
 - **Tablette du véhicule** : c'est une tablette commune pour ceux qui n'ont pas d'ATAK. Un joueur qui a son téléphone garde son téléphone en montant dans un véhicule équipé (plus de bascule vers la tablette VT-10 ni de message « Tablette du véhicule disponible »). Sans téléphone, rien ne change.
 
 ## Télécommande drone sur son vrai téléphone (QR code), caméra de nuit, portée (ATAK natif 1.50.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Addon connect mis à jour (comspec_overwatch_connect.pbo reconstruit). Demande de TTRD : « tu scannes le QR code sur l'ordi ou dans le jeu, et ça ouvre le menu des boutons du drone sur ton téléphone IRL ».
 - Site : nouvelle page **/telecommande-drone**, faite pour un téléphone (connexion Athena demandée la première fois). Choix du drone (les siens d'abord), état (mode, hauteur, vitesse, batterie), gros boutons : décoller, stationnaire, me suivre, retour au pilote, RTB, atterrir ; rôle du drone (me suivre, CQB, garde, recherche, aucun) ; altitude et vitesse ; essaim (tous me suivre, CQB, garde, recherche, stationnaire, RTB, atterrir) ; photo, veille, reprendre, forcer ; journal des ordres. Mêmes ordres que le poste (POST /api/atak/web-commands/uav, nouveaux ordres `role` et `swarm`).
@@ -6884,6 +7061,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Addon connect mis
 - **Performances du flux drone** (retour de TTRD : « le jeu rame ») : l'image du drone arrête d'être rendue 1,5 s après avoir quitté l'écran (avant 3 s), et la caméra est libérée après 20 s (avant 60 s). Toutes les 30 s, le journal Arma (RPT, ligne `[PERF]`) note les images par seconde et les caméras qui rendent dans une texture (drone, aperçu du cliché, viseur photo, live cam, carte JPC) : de quoi voir laquelle coûte, avec Envoyer_mes_logs.bat.
 
 ## Taille de la barre d'outils et style de boussole au choix (ATAK natif 1.49.0)
+<!-- date: 2026-11-01 -->
 
 - Réglages de la carte : taille de la barre d'outils et style de la boussole au choix. Non testé en jeu.
 
@@ -6903,6 +7081,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - **App Photo, viseur figé** (retour de TTRD : « on dirait que le visu reste sur place ») : la caméra du viseur restait à l'endroit où l'app avait été ouverte, et le joueur s'y voyait de loin. Elle suit maintenant les yeux du joueur à chaque image (même méthode que le plein écran). Un déclenchement interrompu ne fige plus le viseur plus de 5 s.
 
 ## App JTAC refaite : contrôle CAS réaliste du check-in au BDA (ATAK natif 1.47.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Demande de TTRD : « JTAC faut une refonte complète, réaliste de l'app ». Pas de DLL à recompiler, pas de migration.
 - Onglet SITUATION : cible verrouillée au laser, à la visée ou pointée sur la carte (grille 10 chiffres, altitude en ft MSL, amis les plus proches) ; appareils amis en station avec leur fiche de check-in lue sur l'appareil (armement restant, carburant, altitude, vitesse, nacelle).
@@ -6912,6 +7091,7 @@ Non testé en jeu. Demande de TTRD : « JTAC faut une refonte complète, réalis
 - À vérifier en jeu : à deux joueurs (JTAC au sol, pilote en vol), un passage complet jusqu'au BDA ; fiche de check-in sur plusieurs appareils (avion, hélicoptère, armements de mods) ; DANGER CLOSE avec amis près de la cible ; IP et cible pointées sur la carte ; ABORT puis nouvelle passe ; rafraîchissement de l'onglet CONTRÔLE sans saccade.
 
 ## Relief refaite : champ de vision, heatmap, ligne de vue, bâtiments vus (ATAK natif 1.45.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Demande de TTRD : « Relief faut améliorer l'app : LIGNE DE VUE, HEATMAP, BÂTIMENT VISIBLE ». Pas de DLL à recompiler, pas de migration.
 - **Écran** dans la famille de l'app Reco, en turquoise : en-tête (altitude, grille, pastille du calque carte cliquable), quatre tuiles d'outil, réglages en boutons, chiffres en tuiles.
@@ -6924,6 +7104,7 @@ Non testé en jeu. Demande de TTRD : « Relief faut améliorer l'app : LIGNE DE 
 À tester en jeu : chaque outil en ville et en campagne ; champ de vision avec bâtiments et arbres (temps de calcul à 2 km) ; heatmap par rapport à moi sur une colline ; ligne de vue derrière un mur, un arbre et une crête ; outil LIGNE DE VUE de la carte puis retour dans Relief ; bâtiments vus à 1 km (temps de calcul) et leurs couleurs sur la carte.
 
 ## Doigt d'honneur libre, qui suit la cible (ATAK natif 1.44.0)
+<!-- date: 2026-10-12 -->
 
 Non testé en jeu. Demande de TTRD : « un doigt d'honneur libre, qui suit vraiment le curseur et les joueurs, comme GTA ». Pas de DLL à recompiler, pas de migration. Le doigt d'honneur classique (geste de 2,4 s) reste tel quel.
 - Nouvelle touche CBA « Doigt d'honneur libre (maintenir) » (COMSPEC ATAK, non attribuée par défaut) : tant qu'elle est maintenue, bras gauche tendu, dos de la main vers la cible, majeur levé, petit coup sec en boucle. Action ACE perso « Doigt d'honneur libre (6 s) ».
@@ -6940,6 +7121,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration.
 - Étiquettes de la carte : indicatifs et textes des marqueurs en blanc cerné de noir, un peu plus grands, au lieu de la couleur de l'unité avec une ombre légère. Cartouches plein écran plus grands, deuxième ligne plus claire. Même règle pour l'app Plan.
 
 ## Selfie : le téléphone dans la main, l'objectif sur le téléphone (ATAK natif 1.43.0)
+<!-- date: 2026-10-12 -->
 
 Non testé en jeu. Retour de TTRD après essai : « anime OK et manque le S7 dans la main », la main passait aussi devant l'image. Pas de DLL à recompiler, pas de migration.
 - Pendant le selfie, le téléphone du profil (S7 par défaut, coque teintée comme sur le JPC ; autres modèles du profil, la tablette à touches devient un S7) est tenu dans la main droite, en paysage, écran vers le visage. Objet global accroché à l'os de la main : il suit le bras et les autres joueurs le voient. Il redescend avec le bras puis disparaît.
@@ -6947,6 +7129,7 @@ Non testé en jeu. Retour de TTRD après essai : « anime OK et manque le S7 dan
 - À vérifier en jeu : téléphone bien dans la paume (ni décalé ni traversant les doigts). Réglage sans recompiler, dans la console : `COMSPEC_ATAK_SelfiePhoneAttach = ["righthand", [x, y, z], vectorDir, vectorUp]` (valeur actuelle `["righthand", [0.013, -0.05, -0.066], [0.941, -0.134, 0.311], [0.293, 0.782, -0.55]]`), puis repasser en selfie.
 
 ## ALERTES refaite, SALUTE dans sa propre app (ATAK natif 1.42.0)
+<!-- date: 2026-10-12 -->
 
 Non testé en jeu. Demande de TTRD : reprendre le style de l'app Reco pour les Alertes, bouton panique prioritaire, compte rendu SALUTE hors des Alertes. Pas de DLL à recompiler, pas de migration.
 - **Alertes** : en-tête rouge (heure, ma grille, pastille CAMP + POSTE ou CAMP SEULEMENT selon Athena). **PANIQUE** en tête, sur toute la largeur : grand bouton rouge sombre, rouge vif quand il est armé (« Appuyez encore dans les 5 secondes pour ENVOYER »), toujours deux appuis. Alertes rapides en trois tuiles à icône (CONTACT, FIN DE CONTACT, APPAREIL ABATTU). Journal en cartes de la couleur de l'alerte, bouton CARTE sur chacune.
@@ -6956,6 +7139,7 @@ Non testé en jeu. Demande de TTRD : reprendre le style de l'app Reco pour les A
 À tester en jeu : PANIQUE (un appui arme, le deuxième envoie, retour au repos après 5 s ; reçue par un autre joueur du camp) ; les trois alertes rapides ; app SALUTE : saisir, ICI / VISÉ / MAINTENANT sans perdre la saisie, envoyer avec moins de deux champs (refusé) puis complet ; le SALUTE apparaît dans les deux journaux ; affichage en portrait et en mode petit.
 
 ## Drone : flotte de 4 drones, rôles, essaim, garde rapprochée ; repérage automatique en réglage admin (ATAK natif 1.39.0)
+<!-- date: 2026-10-12 -->
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone.
 - **Flotte** : jusqu'à 4 drones appairés au même téléphone. Appairer un autre drone garde le premier, qui continue seul son ordre. Un seul est « piloté » (caméra, onglets VOL, TÂCHES, CIBLES) ; PILOTER dans le nouvel onglet FLOTTE change de drone. Désappairer ou perdre le drone piloté passe au suivant.
@@ -6967,6 +7151,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demande
 - À vérifier en jeu : deux drones appairés, PILOTER, rôles mélangés (CQB + surveiller), essaim qui suit sans collision, garde avec le réglage activé, RTB d'un drone en arrière-plan hors liaison.
 
 ## Connexion Athena : e-mail et mot de passe proposés à côté du code (ATAK natif 1.38.0)
+<!-- date: 2026-10-12 -->
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : « propose quand même la connexion par mail et mot de passe ».
 - **App Athena, onglet COMPTE** (celui qui s'ouvre par défaut) : sous le code à autoriser sur le site, une section « Ou avec e-mail et mot de passe » permet de se connecter directement avec les identifiants du compte Athena, sans passer par le site. Même connexion que l'onglet E-MAIL (qui garde le code reçu par e-mail pour un mot de passe oublié).
@@ -6987,6 +7172,7 @@ Non testé en jeu. Corrections tirées du journal Arma (.rpt) envoyé par TTRD.
 - **Reco** refaite : en-tête façon FRS en ambre, tuiles QUOI à icône, FIABILITÉ, OÙ (MA POSITION, SOUS MON REGARD, distance et azimut), OBSERVATION avec compteur 140, ENVOYER, dernières notes en cartes colorées.
 
 ## Drone : zones interdites, app Marquer tracking, raccourcis, journal en fil (ATAK natif 1.36.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone (après 1.31.0).
 - **Suivi (ME SUIVRE, escorte)** : le drone ne tourne plus en rond autour d'un joueur immobile. Il garde le cap de la dernière marche et, à moins de 15 m de sa place, reste en stationnaire, caméra sur le joueur, jusqu'à ce qu'il reparte.
@@ -7009,6 +7195,7 @@ Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) et `run-migrat
 - Réglage de mission « Tinder : profils HVT et SSE » (Jamais, Rare, Parfois, Souvent) et module Zeus « Tinder : profil HVT / SSE » (type, prénom, bio, chance de match). En Eden : `this setVariable ["COMSPEC_ATAK_TinderKind", "HVT", true];`.
 
 ## Gestes : doigt d'honneur et selfie (ATAK natif 1.34.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Demande de TTRD : « une animation pour faire des doigts d'honneur et une animation pour le selfie ». Pas de DLL à recompiler, pas de migration.
 - Deux animations maison (fichiers `anim/*.rtm`, générés par `tools/gen_gestures.py`, sans reprise d'un autre mod). Aperçus filaires : `tools/gen_gestures.py --preview dossier`.
@@ -7027,6 +7214,7 @@ Non testé en jeu. Pas de DLL à recompiler. Côté site : la table `atak_order_
 - Site : tâches transmises en cartes (étapes Transmis, Vu, Reçu, En cours, Terminé ; réponses de chaque joueur ; filtre En cours, Créées en jeu, Toutes), tâches créées en jeu listées. Rejeux : jour, début, fin et durée de chaque session, heures locales. Fiche personnel et fiche ATAK : temps passé dans chaque rôle.
 
 ## Drone : flux réparé, caméra, titre des clichés, caméra d'un équipier sur la carte (ATAK natif 1.31.0)
+<!-- date: 2026-11-01 -->
 
 Non testé en jeu. Retours de TTRD après le test du 12 octobre au soir. Pas de DLL à recompiler, pas de migration.
 - Flux du drone : le filtre NO DATA restait affiché en permanence, avec « true » écrit dessous. La fonction de la neige renvoyait toujours `true` au lieu de la raison de la coupure : n'importe quel flux passait pour coupé. Elle renvoie maintenant la vraie raison (vide quand le flux passe).
@@ -7083,6 +7271,7 @@ Non testé en jeu. Demande de TTRD : l'app Photo doit s'ouvrir sur l'appareil ph
 - Sans « Image dans l'image » (PiP) dans les options vidéo d'Arma, le viseur l'indique et propose le plein écran.
 
 ## Volet rapide redessiné, portrait opérateur du site (ATAK natif 1.17.0)
+<!-- date: 2026-10-12 -->
 
 Non testé en jeu. Demande de TTRD : « Améliore l'UI du menu et affiche l'image de l'opérateur issue du web ».
 - Volet Réglages rapides (tiré de la barre d'état) : en tête, la fiche de l'opérateur avec son portrait Athena encadré (couleur d'accent quand Athena est en ligne), indicatif, grade et nom, unité et communauté ; à droite l'heure en grand, la date du jour et l'état de la liaison Athena.

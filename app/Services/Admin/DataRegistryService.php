@@ -81,6 +81,17 @@ final class DataRegistryService
         return $this->tables[$table];
     }
 
+    private function hasUsersColumn(string $column): bool
+    {
+        try {
+            $this->pdo()->query("SELECT {$column} FROM users WHERE 1 = 0");
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /** Sous-requête scalaire si la table existe, sinon la valeur de repli. */
     private function sub(string $table, string $sql, string $fallback = '0'): string
     {
@@ -110,6 +121,7 @@ final class DataRegistryService
     {
         $terminals = $this->sub('atak_terminals', 'SELECT COUNT(*) FROM atak_terminals a WHERE a.user_id = u.id');
         $profiles = $this->sub('operator_game_profiles', 'SELECT COUNT(*) FROM operator_game_profiles o WHERE o.user_id = u.id');
+        $lastActive = $this->hasUsersColumn('last_active_at') ? 'u.last_active_at' : 'NULL';
         $lastGame = $this->sub('operator_game_profiles', 'SELECT MAX(o.last_seen_at) FROM operator_game_profiles o WHERE o.user_id = u.id', 'NULL');
         $sessions = $this->sub('game_sessions', 'SELECT COUNT(*) FROM game_sessions g WHERE g.user_id = u.id AND g.revoked_at IS NULL AND g.refresh_expires_at > UTC_TIMESTAMP()');
         // Autre personne (autre e-mail) : les fiches d'une même personne dans plusieurs communautés ne sont pas un doublon.
@@ -117,7 +129,7 @@ final class DataRegistryService
 
         return [
             'sql' => "SELECT u.id, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.callsign, ''), u.email) AS label, u.email, u.callsign,
-                    u.tenant_id, t.name AS tenant_name, u.status, u.steam_id, u.created_at, u.last_login_at, u.deleted_at,
+                    u.tenant_id, t.name AS tenant_name, u.status, u.steam_id, u.created_at, u.last_login_at, {$lastActive} AS last_active_at, u.deleted_at,
                     {$terminals} AS terminals, {$profiles} AS profiles, {$sessions} AS sessions, {$lastGame} AS last_game,
                     IF(u.steam_id IS NULL OR u.steam_id = '', 0, {$dupes}) AS steam_dupes
                 FROM users u LEFT JOIN tenants t ON t.id = u.tenant_id",
@@ -136,6 +148,7 @@ final class DataRegistryService
                 ['key' => 'profiles', 'label' => 'Profils jeu', 'type' => 'num'],
                 ['key' => 'last_game', 'label' => 'Vu en jeu', 'type' => 'date'],
                 ['key' => 'last_login_at', 'label' => 'Dernière connexion', 'type' => 'date'],
+                ['key' => 'last_active_at', 'label' => 'Dernière activité', 'type' => 'date'],
                 ['key' => 'created_at', 'label' => 'Créé', 'type' => 'date'],
                 ['key' => 'flags', 'label' => 'Signaux', 'type' => 'tags', 'filter' => false, 'sortable' => false],
                 ['key' => 'open', 'label' => 'Fiche', 'type' => 'link', 'filter' => false, 'sortable' => false],
@@ -200,7 +213,7 @@ final class DataRegistryService
                     FROM {$table} WHERE {$steamCol} IS NOT NULL AND {$steamCol} <> '' GROUP BY {$group}";
             }
         };
-        $add('users', 'steam_id', 'last_login_at', 'fiche', 'callsign');
+        $add('users', 'steam_id', $this->hasUsersColumn('last_active_at') ? 'GREATEST(COALESCE(last_login_at, last_active_at), COALESCE(last_active_at, last_login_at))' : 'last_login_at', 'fiche', 'callsign');
         $add('operator_game_profiles', 'steam_id', 'last_seen_at', 'profil', 'callsign');
         $add('game_sessions', 'steam_id', 'COALESCE(last_seen_at, created_at)', 'session');
         $add('game_player_mods', 'steam_id', 'last_seen', 'mods');

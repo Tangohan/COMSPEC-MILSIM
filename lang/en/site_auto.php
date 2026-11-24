@@ -74121,4 +74121,12 @@ return [
     'Accès réservé aux administrateurs de la communauté.' => 'Access reserved for community administrators.',
     'Affiché en jeu, pas encore acquitté' => 'Shown in game, not yet acknowledged',
     'Affiché en jeu, validation non demandée' => 'Shown in game, no acknowledgement requested',
+    'Activité selon l’ancienneté' => 'Activity by account age',
+    'Avant la mise en service de ce suivi, seule la dernière connexion est connue. Mesurée depuis le' => 'Before this tracking went live, only the last sign-in is known. Measured since',
+    'Le suivi de l’activité n’est pas encore en service : ces graphiques reposent sur la dernière connexion seulement.' => 'Activity tracking is not live yet: these charts rely on the last sign-in only.',
+    'Mesurée depuis la mise en service de ce suivi : aucune activité n’est encore relevée, les graphiques reposent sur la dernière connexion.' => 'Measured since this tracking went live: no activity has been recorded yet, the charts rely on the last sign-in.',
+    'Part des comptes de chaque tranche d’âge dont la dernière activité (connexion ou visite) remonte à 30 jours ou moins.' => 'Share of the accounts in each age band whose last activity (sign-in or visit) is 30 days old or less.',
+    'Répartition actuelle de tous les comptes selon leur dernière activité enregistrée (connexion ou visite, relevée au plus une fois par heure).' => 'Current breakdown of all accounts by their last recorded activity (sign-in or visit, recorded at most once an hour).',
+    'Temps depuis la dernière activité' => 'Time since last activity',
+    'dernière activité %2' => 'last activity %2',
 ];

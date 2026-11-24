@@ -154,7 +154,7 @@ final class PlatformHomeService
      */
     public function figures(): array
     {
-        return ShortCache::remember('admin_home:figures', self::FIGURES_TTL, fn (): array => [
+        return ShortCache::remember('admin_home:figures:v2', self::FIGURES_TTL, fn (): array => [
             $this->card('communities', 'admin/tenants', function (): array {
                 $new = $this->int('SELECT COUNT(*) FROM tenants WHERE id > 1 AND created_at >= (NOW() - INTERVAL 30 DAY)');
                 $before = $this->int('SELECT COUNT(*) FROM tenants WHERE id > 1 AND created_at >= (NOW() - INTERVAL 60 DAY) AND created_at < (NOW() - INTERVAL 30 DAY)');
@@ -163,7 +163,9 @@ final class PlatformHomeService
             }),
             $this->card('active', 'admin/users', function (): array {
                 $human = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u');
-                $active = $this->int("SELECT COUNT(*) FROM users u WHERE {$human} AND u.last_login_at IS NOT NULL AND u.last_login_at >= (NOW() - INTERVAL 30 DAY)");
+                // Dernière activité : la plus récente de la connexion et de l'activité relevée (colonne absente tolérée).
+                $seen = \App\Support\UserActivity::lastSeenSql('u', $this->hasUserColumn('last_login_at'), $this->hasUserColumn('last_active_at'));
+                $active = $this->int("SELECT COUNT(*) FROM users u WHERE {$human} AND {$seen} >= (NOW() - INTERVAL 30 DAY)");
                 $new = $this->int("SELECT COUNT(*) FROM users u WHERE {$human} AND u.created_at >= (NOW() - INTERVAL 30 DAY)");
                 $before = $this->int("SELECT COUNT(*) FROM users u WHERE {$human} AND u.created_at >= (NOW() - INTERVAL 60 DAY) AND u.created_at < (NOW() - INTERVAL 30 DAY)");
 
@@ -289,6 +291,17 @@ final class PlatformHomeService
     private function pdo(): PDO
     {
         return $this->pdo ??= Database::getPdo();
+    }
+
+    private function hasUserColumn(string $column): bool
+    {
+        try {
+            $this->pdo()->query("SELECT {$column} FROM users WHERE 1 = 0");
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function int(string $sql): int
