@@ -460,6 +460,7 @@ return function (Router $router) {
     $router->get('/contester-sanction', [\App\Controllers\Auth\PlatformBanAppealController::class, 'show']);
     $router->post('/contester-sanction/lien', [\App\Controllers\Auth\PlatformBanAppealController::class, 'requestLink']);
     $router->post('/contester-sanction/deposer', [\App\Controllers\Auth\PlatformBanAppealController::class, 'submit']);
+    $router->post('/contester-sanction/repondre', [\App\Controllers\Auth\PlatformBanAppealController::class, 'reply']);
     $router->get('/reset-password', [AuthController::class, 'showResetPassword'], [GuestMiddleware::class]);
     $router->post('/reset-password', [AuthController::class, 'processResetPassword'], [GuestMiddleware::class]);
     $router->get('/evenements', [CommunityEventsController::class, 'index'], [AuthMiddleware::class]);
@@ -2025,6 +2026,13 @@ return function (Router $router) {
     $router->post('/admin/sanctions/lots/lever', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'liftBatch'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/sanctions/contestations/{id}', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'review'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/sanctions/contestations/{id}/acces', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'updateAppealAccess'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/sanctions/dossiers', [\App\Controllers\Admin\System\BanAppealCaseController::class, 'platformIndex'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/sanctions/dossiers/export', [\App\Controllers\Admin\System\BanAppealCaseController::class, 'platformExport'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/sanctions/dossiers/{id}', [\App\Controllers\Admin\System\BanAppealCaseController::class, 'platformShow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/sanctions/dossiers/{id}/{action}', [\App\Controllers\Admin\System\BanAppealCaseController::class, 'platformAct'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/back-office/contestations', [\App\Controllers\Admin\System\BanAppealCaseController::class, 'communityIndex'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/contestations/{id}', [\App\Controllers\Admin\System\BanAppealCaseController::class, 'communityShow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/contestations/{id}/{action}', [\App\Controllers\Admin\System\BanAppealCaseController::class, 'communityAct'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/admin/sanctions/automatique', [\App\Controllers\Admin\System\SystemPlatformBansController::class, 'saveAutomation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Recherche globale (comptes et communautés), réservée aux administrateurs du site.
     $router->get('/admin/recherche', [\App\Controllers\Admin\System\SystemAdminSearchController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

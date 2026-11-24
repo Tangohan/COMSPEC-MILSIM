@@ -111,6 +111,38 @@ $athena_header_current = 'login';
                         <button type="submit" class="ds-btn ds-btn--primary au-btn" data-busy-label="<?= $t('moderation.sending') ?>"><?= $t('moderation.submit_appeal') ?></button>
                     </form>
                 </section>
+            <?php elseif ($appeal['messages'] !== []): ?>
+                <section class="appeal-card appeal-case" aria-labelledby="ban-followup-title">
+                    <h2 id="ban-followup-title"><?= $t('moderation.thread_title') ?></h2>
+                    <dl class="appeal-facts appeal-case__facts">
+                        <div><dt><?= $t('moderation.case_reference') ?></dt><dd class="appeal-case__ref"><?= $e($appeal['reference']) ?></dd></div>
+                        <div><dt><?= $t('moderation.follow_up') ?></dt><dd><span class="appeal-badge appeal-badge--<?= $e($appeal['status']) ?>" role="status"><?= $t('moderation.case_status_' . $appeal['status']) ?></span></dd></div>
+                        <?php if ((string) $appeal['received'] !== ''): ?><div><dt><?= $t('moderation.case_opened') ?></dt><dd><?= $e($appeal['received']) ?></dd></div><?php endif; ?>
+                        <?php if ((string) $appeal['updated'] !== ''): ?><div><dt><?= $t('moderation.case_updated') ?></dt><dd><?= $e($appeal['updated']) ?></dd></div><?php endif; ?>
+                    </dl>
+                    <?php if ($appeal['status'] === 'info_requested'): ?><p class="appeal-alert"><?= $t('moderation.info_requested_notice') ?></p><?php endif; ?>
+                    <ol class="appeal-thread" aria-label="<?= $t('moderation.thread_title') ?>">
+                        <?php foreach ($appeal['messages'] as $message): ?>
+                            <li class="appeal-msg<?= $message['mine'] ? ' appeal-msg--mine' : '' ?>">
+                                <p class="appeal-msg__meta"><strong><?= $t($message['mine'] ? 'moderation.author_you' : 'moderation.author_staff') ?></strong> · <time><?= $e($message['date']) ?></time></p>
+                                <p class="appeal-message"><?= $e($message['body']) ?></p>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                    <?php if ($appeal['open']): ?>
+                        <form class="ds-form rg-form" method="post" action="<?= $e(url('contester-sanction/repondre')) ?>" data-busy-form>
+                            <?= Csrf::field() ?>
+                            <div class="rg-field">
+                                <label class="rg-label" for="ban-appeal-reply"><?= $t('moderation.reply_label') ?></label>
+                                <textarea class="rg-input" id="ban-appeal-reply" name="message" rows="5" required minlength="2" maxlength="4000" aria-describedby="ban-appeal-reply-help"></textarea>
+                                <p class="rg-hint" id="ban-appeal-reply-help"><?= $t('moderation.reply_hint') ?></p>
+                            </div>
+                            <button type="submit" class="ds-btn ds-btn--primary au-btn" data-busy-label="<?= $t('moderation.sending') ?>"><?= $t('moderation.reply_button') ?></button>
+                        </form>
+                    <?php else: ?>
+                        <p class="appeal-alert"><?= $t('moderation.case_closed_notice') ?></p>
+                    <?php endif; ?>
+                </section>
             <?php else: ?>
                 <section class="appeal-card" aria-labelledby="ban-followup-title">
                     <h2 id="ban-followup-title"><?= $t('moderation.follow_up') ?></h2>

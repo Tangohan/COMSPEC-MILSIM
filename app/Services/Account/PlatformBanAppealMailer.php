@@ -19,15 +19,18 @@ final class PlatformBanAppealMailer
     public const RECEIVED = 'received';
     public const LIFTED = 'lift';
     public const UPHELD = 'uphold';
+    public const REPLY = 'reply';
+    public const INFO = 'info';
+    public const CLOSED = 'closed';
 
     public function __construct(private ?EmailService $email = null)
     {
     }
 
     /** @param array<string, mixed> $ban ligne platform_account_bans */
-    public function notify(array $ban, string $kind): bool
+    public function notify(array $ban, string $kind, ?string $reference = null): bool
     {
-        if (!in_array($kind, [self::RECEIVED, self::LIFTED, self::UPHELD], true)) {
+        if (!in_array($kind, [self::RECEIVED, self::LIFTED, self::UPHELD, self::REPLY, self::INFO, self::CLOSED], true)) {
             return false;
         }
         $address = PlatformAccountBanRepository::normalizeEmail((string) ($ban['email_norm'] ?? ''));
@@ -42,11 +45,12 @@ final class PlatformBanAppealMailer
                 EmailEvents::PLATFORM_BAN_APPEAL_UPDATE,
                 'platform_ban_appeal_update',
                 $address,
-                \__('moderation.mail_update_subject_' . $kind, [], $language),
+                \__('moderation.mail_update_subject_' . $kind, [], $language) . ($reference ? ' · ' . $reference : ''),
                 [
                     'updateKind' => $kind,
                     'appealUrl' => url('contester-sanction'),
                     'appealLanguage' => $language,
+                    'reference' => $reference,
                 ],
                 forceImmediate: true,
                 locale: $language,

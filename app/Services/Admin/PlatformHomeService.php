@@ -57,14 +57,14 @@ final class PlatformHomeService
 
                 return [$n > 0 ? 'warn' : 'ok', $n, []];
             }),
-            $this->card('appeals', 'admin/sanctions#contestations', function (): array {
+            $this->card('appeals', 'admin/sanctions/dossiers', function (): array {
                 $repo = new PlatformBanAppealRepository($this->pdo());
                 if (!$repo->ready()) {
                     throw new \RuntimeException('table absente');
                 }
                 $n = $repo->countPending();
 
-                return [$n > 0 ? 'warn' : 'ok', $n, []];
+                return [$n > 0 ? 'warn' : 'ok', $n, ['unread' => $repo->casesReady() ? $repo->countUnread() : 0]];
             }),
             $this->card('payments', 'admin/paiements', function (): array {
                 $repo = new PlanPaymentRequestRepository($this->pdo());

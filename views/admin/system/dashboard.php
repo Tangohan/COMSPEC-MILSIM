@@ -116,7 +116,7 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                 <?php elseif ($key === 'purge'): ?>
                     <span class="ph-tile__note">en attente de décision</span>
                 <?php elseif ($key === 'appeals'): ?>
-                    <span class="ph-tile__note">en attente de réexamen</span>
+                    <span class="ph-tile__note">dossiers ouverts · <?= $h((int) ($x['unread'] ?? 0)) ?> non lu(s)</span>
                 <?php elseif ($key === 'payments'): ?>
                     <span class="ph-tile__note">déclarés · le plus ancien attend depuis <?= $h((int) ($x['days'] ?? 0)) ?> jour(s)</span>
                 <?php elseif ($key === 'migrations'): ?>
@@ -194,6 +194,8 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                     <h2 id="ph-actions-title" class="ph-block__title">À traiter</h2>
                     <div class="ph-console-actions">
                         <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h(url('admin/sanctions')) ?>">Bannissements</a>
+                        <?php $appealOpen = 0; $appealUnread = 0; foreach ($homeActions as $ac) { if (($ac['key'] ?? '') === 'appeals') { $appealOpen = (int) ($ac['n'] ?? 0); $appealUnread = (int) (($ac['extra']['unread'] ?? 0)); } } ?>
+                        <a class="pa-btn pa-btn--ghost pa-btn--sm" href="<?= $h(url('admin/sanctions/dossiers')) ?>">Contestations<?= $appealOpen > 0 ? ' <span class="pa-pill pa-pill--' . ($appealUnread > 0 ? 'rose' : 'amber') . '">' . $appealOpen . ($appealUnread > 0 ? ' · ' . $appealUnread . ' non lu(s)' : '') . '</span>' : '' ?></a>
                         <button type="button" class="pa-btn pa-btn--ghost pa-btn--sm" data-dashboard-open="ph-journal-dialog" aria-haspopup="dialog">Journal récent</button>
                         <noscript><a href="<?= $h(url('admin/audit')) ?>">Journal d’audit</a></noscript>
                     </div>
@@ -292,7 +294,7 @@ $tile = static function (array $c, string $mode) use ($h, $nf, $tileLabels, $loa
                     <form method="dialog"><button class="pa-btn pa-btn--ghost">Fermer</button></form>
                 </div>
                 <div class="ph-dialog__result" data-dashboard-appeals="<?= $h(url('admin') . '?fragment=contestations') ?>" aria-live="polite"></div>
-                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/sanctions') . '#contestations') ?>">Voir toutes les contestations</a>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h(url('admin/sanctions/dossiers')) ?>">Voir tous les dossiers</a>
             </dialog>
             <dialog class="ph-dialog ph-dialog--wide" id="ph-search-dialog" aria-labelledby="ph-search-title">
                 <div class="ph-dialog__head">

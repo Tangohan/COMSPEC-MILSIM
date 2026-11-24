@@ -19,7 +19,7 @@ $bSupportsEnd = $supportsEnd;
             <div class="pa-hero__actions">
                 <button type="button" class="pa-btn pa-btn--solid" data-pu-open="ps-ban-account" aria-haspopup="dialog">Bannir un compte</button>
                 <a class="pa-btn pa-btn--ghost" href="#organisation">Bannir par organisation</a>
-                <a class="pa-btn pa-btn--ghost" href="#contestations">Examiner les contestations</a>
+                <a class="pa-btn pa-btn--ghost" href="<?= $h($base . '/dossiers') ?>">Dossiers de contestation</a>
             </div>
         </header>
         <?php if ($success): ?><p class="pa-flash pa-flash--ok" role="status"><?= $h($success) ?></p><?php endif; ?>
@@ -152,7 +152,8 @@ $bSupportsEnd = $supportsEnd;
                     <?php if ($appeals === []): ?><p class="pa-empty-state"><?= $showReviewed ? 'Aucune demande traitée.' : 'Aucune demande en attente.' ?></p><?php endif; ?>
                     <?php foreach ($appeals as $appeal): ?>
                         <details class="ps-preview" id="contestation-<?= (int) $appeal['ban_id'] ?>"<?= (int) ($focusedAppeal ?? 0) === (int) $appeal['ban_id'] ? ' open' : '' ?>>
-                            <summary><strong>Décision n° <?= (int) $appeal['ban_id'] ?></strong> · <?= $h($appeal['email_norm']) ?> · <?= $h($appeal['created_at']) ?> UTC</summary>
+                            <summary><strong><?= !empty($appeal['reference']) ? $h($appeal['reference']) . ' · ' : '' ?>Décision n° <?= (int) $appeal['ban_id'] ?></strong> · <?= $h($appeal['email_norm']) ?> · <?= $h($appeal['created_at']) ?> UTC</summary>
+                            <?php if (!empty($appeal['reference'])): ?><p><a class="pa-btn pa-btn--line" href="<?= $h($base . '/dossiers/' . (int) $appeal['ban_id']) ?>">Ouvrir le dossier <?= $h($appeal['reference']) ?></a></p><?php endif; ?>
                             <dl class="ps-case">
                                 <div><dt>Date de fin</dt><dd><?= $h(PlatformBanNotice::endLabel($appeal['ends_at'])) ?></dd></div>
                                 <div><dt>Motif interne</dt><dd><?= $h($appeal['reason']) ?></dd></div>
