@@ -4,7 +4,7 @@
     barre de durée et bouton OK ; vibration. Téléphone rangé : l'alerte attend deux minutes et s'affiche à la
     prochaine ouverture, puis pendant sa durée. Redessinée devant après chaque rendu de page (fn_fx « raise »).
     Params :
-      [titre, message, auteur, couleur RGBA, durée s]   nouvelle alerte (remplace la précédente)
+      [titre, message, auteur, couleur RGBA, durée s, id d'avis?]   nouvelle alerte (remplace la précédente) ; avec un id d'avis à valider, OK vaut COMPRIS
       ["draw"]                                          redessine l'alerte en cours (sinon rien)
       ["close"]                                         bouton OK
 */
@@ -55,7 +55,12 @@ if (_this isEqualTo ["draw"]) exitWith {
     _ok ctrlSetPosition [_ax + _w * 0.3, _y + _h - _font * 1.7, _w * 0.4, _font * 1.35];
     _ok ctrlSetText (("OK") call comspec_atak_native_fnc_tr);
     _ok ctrlSetFontHeight _fs;
-    _ok ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_fullAlert; }] call comspec_atak_native_fnc_nextFrame; }];
+    _ok ctrlAddEventHandler ["ButtonClick", { [{
+        // Avis de l'administration à valider : OK vaut COMPRIS (Athena le note « lu »), sans passer par l'app Alertes.
+        private _aid = ((uiNamespace getVariable ["COMSPEC_ATAK_FullAlert", []]) param [8, ""]);
+        ["close"] call comspec_atak_native_fnc_fullAlert;
+        if (_aid isEqualType "" && {_aid isNotEqualTo ""}) then { ["ack", _aid] call comspec_atak_native_fnc_adminNotices; };
+    }] call comspec_atak_native_fnc_nextFrame; }];
     private _ctrls = [_bg, _bar, _t, _ok];
     { _x ctrlCommit 0; } forEach _ctrls;
     // La barre blanche se vide pendant le temps restant.
@@ -66,7 +71,7 @@ if (_this isEqualTo ["draw"]) exitWith {
     [] call comspec_atak_native_fnc_overlayRaise;
     true
 };
-params [["_title", "ALERTE"], ["_msg", ""], ["_from", ""], ["_rgba", [0.55, 0.08, 0.06, 0.92]], ["_dur", 10]];
+params [["_title", "ALERTE"], ["_msg", ""], ["_from", ""], ["_rgba", [0.55, 0.08, 0.06, 0.92]], ["_dur", 10], ["_ackId", ""]];
 if (!hasInterface) exitWith { false };
 // Événements rejoués par la synchro serveur (arrivée en cours de partie) : pas d'alerte.
 if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith { false };
@@ -79,6 +84,6 @@ private _esc = {
 _title = _title call _esc;
 _msg = _msg call _esc;
 _from = _from call _esc;
-uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, (["now"] call comspec_atak_native_fnc_clockFmt), -1]];
+uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_title, _msg, _from, _rgba, _dur max 1, diag_tickTime, (["now"] call comspec_atak_native_fnc_clockFmt), -1, _ackId]];
 ["draw"] call comspec_atak_native_fnc_fullAlert;
 true

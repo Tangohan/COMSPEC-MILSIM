@@ -74119,4 +74119,6 @@ return [
     'Action impossible.' => 'Action not possible.',
     'Décision et réponse enregistrées.' => 'Decision and reply saved.',
     'Accès réservé aux administrateurs de la communauté.' => 'Access reserved for community administrators.',
+    'Affiché en jeu, pas encore acquitté' => 'Shown in game, not yet acknowledged',
+    'Affiché en jeu, validation non demandée' => 'Shown in game, no acknowledgement requested',
 ];

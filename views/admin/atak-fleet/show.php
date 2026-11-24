@@ -57,7 +57,8 @@ $messageState = static function (array $msg): array {
         return ['Expiré', 'slate'];
     }
     if (!empty($msg['delivered_at'])) {
-        return ['Affiché en jeu', 'blue'];
+        // Affiché n'est pas lu : le joueur valide par OK sur le bandeau ou COMPRIS dans l'app Alertes.
+        return [array_key_exists('require_ack', $msg) && (int) $msg['require_ack'] === 0 ? 'Affiché en jeu, validation non demandée' : 'Affiché en jeu, pas encore acquitté', 'blue'];
     }
 
     return ['En attente', 'amber'];
@@ -431,7 +432,7 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                             </div>
                             <p class="paf-msg__body"><?= nl2br($h((string) $msg['body'])) ?></p>
                             <p class="paf-muted">Le <?= $h($fmtDate($msg['created_at'] ?? null)) ?> par <?= $h($v($msg['actor_callsign'] ?? $msg['actor_name'] ?? '')) ?><?= !empty($msg['acked_at']) ? ' · lu le ' . $h($fmtDate($msg['acked_at'])) : '' ?></p>
-                            <?php if ($stLabel === 'En attente' || $stLabel === 'Affiché en jeu'): ?>
+                            <?php if ($stLabel === 'En attente' || str_starts_with($stLabel, 'Affiché en jeu')): ?>
                             <form method="post" action="<?= $h($base . '/message/annuler') ?>">
                                 <?= $hidden ?>
                                 <input type="hidden" name="message_id" value="<?= (int) $msg['id'] ?>">
