@@ -2502,8 +2502,16 @@ class UserRepository
 
     public function updateLastLogin(int $userId): void
     {
-        $stmt = $this->pdo()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?');
-        $stmt->execute([$userId]);
+        // La connexion compte aussi comme une activité (users.last_active_at, absente avant l'étape user_last_active).
+        try {
+            $stmt = $this->pdo()->prepare('UPDATE users SET last_login_at = NOW(), last_active_at = NOW() WHERE id = ?');
+            $stmt->execute([$userId]);
+        } catch (\PDOException) {
+            $stmt = $this->pdo()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?');
+            $stmt->execute([$userId]);
+        }
+        // Évite une seconde écriture de last_active_at dans l'heure qui suit, dans cette session.
+        \App\Core\Session::set(\App\Support\UserActivity::SESSION_KEY, time());
     }
 
     public function allForTenant(int $tenantId): array

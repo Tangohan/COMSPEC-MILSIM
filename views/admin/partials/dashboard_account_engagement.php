@@ -8,7 +8,7 @@ $followup = $activity['followup'];
 $percentage = static fn (int $count, int $total): ?float => $total > 0 ? round(100 * $count / $total, 1) : null;
 $percentLabel = static fn (?float $value): string => $value === null ? '—' : number_format($value, 1, ',', ' ') . ' %';
 $ageLabels = ['new' => 'Moins de 30 j', 'established' => '30 à moins de 180 j', 'old' => '180 j et plus'];
-$loginLabels = ['recent' => '0 à 30 j', '30' => 'Plus de 30 à 90 j', '90' => 'Plus de 90 à 180 j', '180' => 'Plus de 180 j', 'never' => 'Jamais connecté'];
+$loginLabels = ['recent' => '0 à 30 j', '30' => 'Plus de 30 à 90 j', '90' => 'Plus de 90 à 180 j', '180' => 'Plus de 180 j', 'never' => 'Aucune activité enregistrée'];
 $agePoints = [];
 $loginPoints = [];
 $frequencyPoints = [];
@@ -34,6 +34,17 @@ if ($engagement !== null) {
     $totalAccounts = array_sum($engagement['lastLogins']);
     foreach ($loginLabels as $key => $label) {
         $loginPoints[] = ['label' => $label, 'recent' => $engagement['lastLogins'][$key] ?? 0, 'total' => $totalAccounts];
+    }
+}
+$tracking = $activity['activityTracking'] ?? null;
+$trackingNote = '';
+if (is_array($tracking)) {
+    if (empty($tracking['available'])) {
+        $trackingNote = ' Le suivi de l’activité n’est pas encore en service : ces graphiques reposent sur la dernière connexion seulement.';
+    } elseif ($tracking['since'] === null) {
+        $trackingNote = ' Mesurée depuis la mise en service de ce suivi : aucune activité n’est encore relevée, les graphiques reposent sur la dernière connexion.';
+    } elseif (strtotime((string) $tracking['since']) > time() - 180 * 86400) {
+        $trackingNote = ' Avant la mise en service de ce suivi, seule la dernière connexion est connue. Mesurée depuis le ' . date('d/m/Y', (int) strtotime((string) $tracking['since']));
     }
 }
 $regions = $activity['regions'] ?? null;
@@ -70,8 +81,8 @@ if (is_array($regions) && !empty($regions['available'])) {
 <?php foreach ([
     'frequency' => ['Fréquence de connexion', 'Nombre de jours distincts avec une connexion réussie sur la période.', $frequencyPoints, $returns !== null, 'Aucune connexion enregistrée sur la période.'],
     'signup-followup' => ['Première semaine après l’inscription', 'Inscriptions du ' . $activity['cohortLabel'] . ' · suivi complet jusqu’à J7, selon les connexions enregistrées.', $followupPoints, $followup !== null, 'Aucune inscription sur les dates observées.'],
-    'age' => ['Connexions selon l’ancienneté', 'Part des comptes de chaque tranche d’âge dont la dernière connexion remonte à 30 jours ou moins.', $agePoints, $engagement !== null, ''],
-    'inactivity' => ['Temps depuis la dernière connexion', 'Répartition actuelle de tous les comptes selon leur dernière connexion enregistrée.', $loginPoints, $engagement !== null, ''],
+    'age' => ['Activité selon l’ancienneté', 'Part des comptes de chaque tranche d’âge dont la dernière activité (connexion ou visite) remonte à 30 jours ou moins.' . $trackingNote, $agePoints, $engagement !== null, ''],
+    'inactivity' => ['Temps depuis la dernière activité', 'Répartition actuelle de tous les comptes selon leur dernière activité enregistrée (connexion ou visite, relevée au plus une fois par heure).' . $trackingNote, $loginPoints, $engagement !== null, ''],
     'regions' => ['Comptes par région', 'Région que les personnes ont choisi d’indiquer, en totaux uniquement. Les régions de moins de 5 comptes sont masquées.', $regionPoints, is_array($regions) && !empty($regions['available']), 'Aucun compte n’a encore indiqué de région.'],
 ] as $chartKey => [$title, $description, $points, $available, $emptyMessage]): ?>
     <article class="ph-chart" aria-labelledby="ph-chart-<?= $h($chartKey) ?>">

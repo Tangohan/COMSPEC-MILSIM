@@ -129,8 +129,8 @@ $ovBucketLabels = [
                     <?php $community = (string) ($u['community_name'] ?? ''); ?>
                     <li>
                         <a class="pa-feed__title" href="<?= $hv($ovPersonUrl($u)) ?>"><?= $hv($ovName($u)) ?></a>
-                        <time title="Dernière connexion"><?= $hv($ovDate((string) ($u['last_login_at'] ?? ''))) ?></time>
-                        <span class="pa-feed__meta"><?= $hv($community !== '' ? $community : 'Sans communauté') ?> · dernière connexion <?= $hv($ovAgo((string) ($u['last_login_at'] ?? ''))) ?></span>
+                        <time title="Dernière activité"><?= $hv($ovDate((string) ($u['last_login_at'] ?? ''))) ?></time>
+                        <span class="pa-feed__meta"><?= $hv($community !== '' ? $community : 'Sans communauté') ?> · dernière activité <?= $hv($ovAgo((string) ($u['last_login_at'] ?? ''))) ?></span>
                     </li>
                 <?php endforeach; ?>
             </ul>

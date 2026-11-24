@@ -32,7 +32,7 @@ final class AdminDashboardMetricsService
      */
     public function getSystemMetrics(): array
     {
-        return $this->cached('sys_metrics_v1', function (): array {
+        return $this->cached('sys_metrics_v2', function (): array {
             $kpis = [];
             $kpis[] = $this->kpi('tenants', 'Tenants', fn () => $this->scalarInt('SELECT COUNT(*) FROM tenants'));
             $kpis[] = $this->kpi('users_active_7d', 'Utilisateurs actifs (7 j.)', fn () => $this->countUsersActiveSince(7));
@@ -173,10 +173,24 @@ final class AdminDashboardMetricsService
 
     private function countUsersActiveSince(int $days): int
     {
+        // Dernière activité : la plus récente de la connexion et de l'activité relevée (colonne absente tolérée).
+        $seen = \App\Support\UserActivity::lastSeenSql('users', $this->hasUserColumn('last_login_at'), $this->hasUserColumn('last_active_at'));
+
         return $this->scalarInt(
-            'SELECT COUNT(*) FROM users WHERE last_login_at IS NOT NULL AND last_login_at >= DATE_SUB(NOW(), INTERVAL ? DAY)',
+            "SELECT COUNT(*) FROM users WHERE {$seen} IS NOT NULL AND {$seen} >= DATE_SUB(NOW(), INTERVAL ? DAY)",
             [$days]
         );
+    }
+
+    private function hasUserColumn(string $column): bool
+    {
+        try {
+            $this->pdo->query("SELECT {$column} FROM users WHERE 1 = 0");
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function loginFailureRate24h(): string
