@@ -25,6 +25,47 @@ final class OperationalCapabilityService
         private PersonnelCareerEventRepository $careerEvents,
     ) {}
 
+    private const AVAILABILITY_ENUM = ['AVAILABLE', 'LIMITED', 'ABSENT', 'LOA', 'RESERVE', 'MEDICAL', 'SUSPENDED'];
+
+    /**
+     * Ramène le statut opérateur libre (« Actif », « En formation », « Réserve »…) vers l'ENUM
+     * personnel_operational_capability.availability. Une valeur hors ENUM faisait échouer l'INSERT
+     * (SQL strict : « Data truncated for column 'availability' ») pour chaque membre concerné.
+     */
+    public static function normalizeAvailability(string $raw): string
+    {
+        $key = strtoupper(trim(strtr($raw, [
+            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'î' => 'i', 'ï' => 'i',
+            'ô' => 'o', 'ù' => 'u', 'û' => 'u', 'ç' => 'c',
+            'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'À' => 'A', 'Â' => 'A', 'Î' => 'I', 'Ô' => 'O', 'Û' => 'U', 'Ç' => 'C',
+        ])));
+        $key = preg_replace('/[\s\-]+/', '_', $key) ?? $key;
+        if ($key === '') {
+            return 'AVAILABLE';
+        }
+        if (in_array($key, self::AVAILABILITY_ENUM, true)) {
+            return $key;
+        }
+        $map = [
+            'ACTIF' => 'AVAILABLE',
+            'ACTIVE' => 'AVAILABLE',
+            'DISPONIBLE' => 'AVAILABLE',
+            'DEPLOYABLE' => 'AVAILABLE',
+            'EN_FORMATION' => 'LIMITED',
+            'NON_DEPLOYABLE' => 'LIMITED',
+            'RESERVISTE' => 'RESERVE',
+            'INDISPONIBLE' => 'ABSENT',
+            'INACTIF' => 'ABSENT',
+            'INACTIVE' => 'ABSENT',
+            'LEAVE' => 'LOA',
+            'CONGE' => 'LOA',
+            'SUSPENDU' => 'SUSPENDED',
+        ];
+
+        /* Texte libre inconnu : on ne bloque pas le membre ; la valeur ne doit jamais atteindre l'ENUM. */
+        return $map[$key] ?? 'AVAILABLE';
+    }
+
     public function snapshotForUser(int $tenantId, int $userId): PersonnelCapabilityAxes
     {
         $user = $this->users->findById($userId, $tenantId) ?? [];
@@ -62,19 +103,7 @@ final class OperationalCapabilityService
         }
 
         $blocking = [];
-        $availability = strtoupper(trim((string) ($profile['operator_status'] ?? 'AVAILABLE')));
-        if ($availability === '') {
-            $availability = 'AVAILABLE';
-        }
-        /* Map free-text legacy toward enum-ish codes when possible. */
-        $availabilityMap = [
-            'ACTIVE' => 'AVAILABLE',
-            'DEPLOYABLE' => 'AVAILABLE',
-            'NON_DEPLOYABLE' => 'LIMITED',
-            'LEAVE' => 'LOA',
-            'INACTIVE' => 'ABSENT',
-        ];
-        $availability = $availabilityMap[$availability] ?? $availability;
+        $availability = self::normalizeAvailability((string) ($profile['operator_status'] ?? ''));
 
         if (in_array($availability, ['SUSPENDED', 'MEDICAL', 'ABSENT', 'LOA'], true)) {
             $blocking[] = 'AVAILABILITY_' . $availability;

@@ -41,6 +41,7 @@ final class PersonnelCapabilityCronJob implements CronJobInterface
         $users = 0;
         $nonCurrent = 0;
         $errors = 0;
+        $firstError = null;
 
         if (!$this->schemaReady($pdo)) {
             return [
@@ -78,25 +79,56 @@ final class PersonnelCapabilityCronJob implements CronJobInterface
                         ++$users;
                     } catch (\Throwable $e) {
                         ++$errors;
-                        $details[] = 'user ' . $userId . ': ' . $e->getMessage();
+                        $firstError ??= self::describeError($e);
+                        $details[] = 'membre #' . $userId . ' : ' . self::describeError($e);
                     }
                 }
             } catch (\Throwable $e) {
                 ++$errors;
-                $details[] = 'tenant ' . $tenantId . ': ' . $e->getMessage();
+                $firstError ??= self::describeError($e);
+                $details[] = 'tenant #' . $tenantId . ' : ' . self::describeError($e);
             }
         }
 
         return [
             'ok' => $errors === 0,
-            'summary' => sprintf(
-                '%d membre(s) recalculé(s), %d non-current, %d erreur(s).',
-                $users,
-                $nonCurrent,
-                $errors
-            ),
+            'summary' => self::buildSummary($users, $nonCurrent, $errors, $firstError),
             'details' => $details,
         ];
+    }
+
+    /**
+     * « non-current » est une information métier (qualifications à repratiquer), pas une erreur.
+     */
+    public static function buildSummary(int $users, int $nonCurrentQualifications, int $errors, ?string $firstError): string
+    {
+        $out = sprintf(
+            '%d membre(s) recalculé(s), %d qualification(s) non-current (info), %d erreur(s)',
+            $users,
+            $nonCurrentQualifications,
+            $errors
+        );
+        if ($errors > 0 && $firstError !== null && $firstError !== '') {
+            $out .= ' — 1re cause : ' . $firstError;
+        }
+
+        return $out . '.';
+    }
+
+    /**
+     * Nom de la cause + message tronqué, sans valeur de donnée (valeurs entre quotes masquées).
+     */
+    public static function describeError(\Throwable $e): string
+    {
+        $msg = preg_replace("/(value|valeur):\s*'[^']*'/i", "$1: '…'", $e->getMessage()) ?? '';
+        $msg = preg_replace('/\s+/', ' ', trim($msg)) ?? '';
+        if (mb_strlen($msg) > 160) {
+            $msg = mb_substr($msg, 0, 157) . '…';
+        }
+        $parts = explode('\\', $e::class);
+        $class = (string) end($parts);
+
+        return $class . ' : ' . $msg;
     }
 
     private function schemaReady(PDO $pdo): bool
