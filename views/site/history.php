@@ -366,7 +366,7 @@ $tagLabel = static function (string $product) use ($products): string {
                                 <li class="nh-p--<?= $e($p) ?>">
                                     <span class="nh-current__name"><?= $e($products[$p]) ?></span>
                                     <span class="nh-current__v"><?= $e($cv['version'] ?? '') ?></span>
-                                    <time datetime="<?= $e($cv['date'] ?? '') ?>"><?= $e($dateLabel(is_string($cv['date'] ?? null) ? $cv['date'] : null)) ?></time>
+                                    <?php if (is_string($cv['date'] ?? null) && $cv['date'] !== ''): ?><time datetime="<?= $e($cv['date'] ?? '') ?>"><?= $e($dateLabel(is_string($cv['date'] ?? null) ? $cv['date'] : null)) ?></time><?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
