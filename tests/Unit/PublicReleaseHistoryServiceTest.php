@@ -221,6 +221,19 @@ BB);
         self::assertSame([], PublicReleaseHistoryService::tokens('Vague 2026.08c', false));
     }
 
+    public function testSourceVersionsAndDateCommentOverrideJournalOrder(): void
+    {
+        file_put_contents($this->root . '/CHANGELOG-ATAK.md', "## Ancienne (ATAK natif 2.9.0.AB)\n<!-- date: 2026-09-01 -->\n\nTexte.\n\n## Récente (ATAK natif 4.1.0.AG)\n<!-- date: 2026-11-20 -->\n\nTexte.\n");
+        @mkdir($this->root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main', 0775, true);
+        file_put_contents($this->root . '/' . PublicReleaseHistoryService::SOURCE_FILES['atak'], "#define VERSION_STR \"4.1.0\"\n#define LINK_VERSION_STR \"2.0.9\"\n");
+        $h = (new PublicReleaseHistoryService($this->root, $this->root . '/cache2', static fn (): array => []))->history(true);
+        self::assertSame('4.1.0', $h['releases'][0]['tags'][0]['version']);
+        self::assertSame('2026-11-20', $h['releases'][0]['date']);
+        $cur = array_column($h['current'], 'version', 'product');
+        self::assertSame('4.1.0', $cur['atak']);
+        self::assertSame('2.0.9', $cur['link']);
+    }
+
     private function service(): PublicReleaseHistoryService
     {
         return new PublicReleaseHistoryService($this->root, $this->root . '/cache', static fn (): array => [

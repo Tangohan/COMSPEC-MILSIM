@@ -14,7 +14,12 @@ use App\Support\PackCodenameCatalog;
  *  - CHANGELOG-ATAK.md : titres d'entrée (versions, parfois la date) et bloc « Résumé joueur » FR / EN ;
  *  - docs/dev/STEAM-CHANGELOG-<date>-<produit>-<version>.md : date de publication et texte joueur ;
  *  - bulletins UPDATE de DevDispatchCatalog : date, titre, résumé et numéro (versions lues dans la ligne « SIZE ») ;
- *  - storage/app_version.json : version actuelle du portail et son nom de ville.
+ *  - storage/app_version.json : version actuelle du portail et son nom de ville ;
+ *  - sources du mod (script_component.hpp, config.cpp, script_mod.hpp) : version « en service » de chaque produit,
+ *    jamais déduite de la date des entrées du journal.
+ *
+ * Date d'une entrée du journal : dans son titre (« 2026-09-20 »), sinon sur une ligne `<!-- date: AAAA-MM-JJ -->`
+ * placée sous le titre. Sans date, elle hérite (au mois) de l'entrée datée plus ancienne : à éviter.
  *
  * Seuls des textes destinés aux joueurs sortent d'ici ; les phrases d'atelier (noms de fichiers, outils internes)
  * sont écartées. Rien n'est calculé à chaque visite : le résultat est gardé dans storage/cache et recalculé
@@ -50,7 +55,14 @@ final class PublicReleaseHistoryService
         'portal' => 'portal',
     ];
 
-    private const CACHE_FORMAT = 3;
+    /** Fichiers où le dépôt écrit la version de chaque produit. */
+    public const SOURCE_FILES = [
+        'atak' => 'mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp',
+        'overwatch' => 'mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp',
+        'sse' => 'mod/@COMSPEC_SSE/addons/core/script_mod.hpp',
+    ];
+
+    private const CACHE_FORMAT = 4;
 
     private const SUMMARY_MAX = 220;
 
@@ -274,15 +286,33 @@ final class PublicReleaseHistoryService
             foreach ($rel['filters'] as $f) {
                 $counts[$f]++;
             }
-            // Version en service = celle de la sortie la plus récente qui cite le produit (liste déjà triée).
+            // Version en service par défaut = la plus haute citée pour le produit (jamais la plus récente par date :
+            // une entrée sans date exacte ne doit pas passer devant une version plus basse mais datée).
             foreach ($rel['tags'] as $t) {
                 $product = $t['product'];
-                if ($product !== 'athena' && !isset($current[$product])) {
+                if ($product === 'athena') {
+                    continue;
+                }
+                if (!isset($current[$product]) || version_compare(self::versionKey($t['version']), self::versionKey($current[$product]['version'])) > 0) {
                     $current[$product] = ['product' => $product, 'label' => self::PRODUCTS[$product], 'version' => $t['version'], 'date' => $rel['date']];
                 }
             }
         }
         unset($rel);
+
+        // Les sources du mod font foi : la version affichée est celle que les joueurs ont réellement.
+        foreach ($this->sourceVersions() as $product => $version) {
+            $date = null;
+            foreach ($out as $rel) {
+                foreach ($rel['tags'] as $t) {
+                    if ($t['product'] === $product && self::versionKey($t['version']) === self::versionKey($version)) {
+                        $date = $rel['date'];
+                        break 2;
+                    }
+                }
+            }
+            $current[$product] = ['product' => $product, 'label' => self::PRODUCTS[$product], 'version' => $version, 'date' => $date];
+        }
 
         $orderedCurrent = [];
         foreach (array_keys(self::PRODUCTS) as $product) {
@@ -323,6 +353,10 @@ final class PublicReleaseHistoryService
                 continue;
             }
             $date = preg_match('/\b(20\d{2}-\d{2}-\d{2})\b/', $heading, $m) === 1 ? $m[1] : null;
+            if (preg_match('/^<!--\s*date\s*:\s*(20\d{2}-\d{2}-\d{2})\s*-->[ \t]*$/m', $body, $dm) === 1) {
+                $date ??= $dm[1];
+                $body = (string) preg_replace('/^<!--\s*date\s*:[^>]*-->[ \t]*\n?/m', '', $body);
+            }
             $isPart = preg_match('/partie du regroupement|regroupé dans/iu', $heading) === 1;
 
             $resume = self::playerSummary($body);
@@ -775,12 +809,38 @@ final class PublicReleaseHistoryService
         }
     }
 
+    /**
+     * Version en service de chaque produit, lue dans les sources du dépôt (une source absente est omise).
+     *
+     * @return array<string, string>
+     */
+    public function sourceVersions(): array
+    {
+        $out = [];
+        $hpp = $this->read(self::SOURCE_FILES['atak']);
+        if (preg_match('/#define\s+VERSION_STR\s+"(\d+\.\d+\.\d+)"/', $hpp, $m) === 1) {
+            $out['atak'] = $m[1];
+        }
+        if (preg_match('/#define\s+LINK_VERSION_STR\s+"(\d+\.\d+\.\d+)"/', $hpp, $m) === 1) {
+            $out['link'] = $m[1];
+        }
+        if (preg_match('/versionStr\s*=\s*"(\d+\.\d+\.\d+)"/', $this->read(self::SOURCE_FILES['overwatch']), $m) === 1) {
+            $out['overwatch'] = $m[1];
+        }
+        if (preg_match('/versionStr\s*=\s*"(\d+\.\d+\.\d+)"/', $this->read(self::SOURCE_FILES['sse']), $m) === 1) {
+            $out['sse'] = $m[1];
+        }
+
+        return $out;
+    }
+
     /** Empreinte des sources : le cache est recalculé dès qu'une d'elles change. */
     private function signature(): string
     {
         $files = [
             $this->root() . '/CHANGELOG-ATAK.md',
             $this->root() . '/storage/app_version.json',
+            ...array_map(fn (string $f): string => $this->root() . '/' . $f, array_values(self::SOURCE_FILES)),
             ...(glob($this->root() . '/docs/dev/STEAM-CHANGELOG-*.md') ?: []),
         ];
         if ($this->updatesProvider === null) {
