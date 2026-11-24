@@ -214,4 +214,14 @@ final class AtakAdminFleetTest extends TestCase
             self::assertArrayHasKey($info[0], $en);
         }
     }
+    public function testImposedMessageAckIsWiredToBannerOkAndLabelsDistinguishDisplayedFromRead(): void
+    {
+        $banner = $this->read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/ui/fn_fullAlert.sqf');
+        self::assertStringContainsString('["ack", _aid] call comspec_atak_native_fnc_adminNotices', $banner);
+        $notices = $this->read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/shell/fn_adminNotices.sqf');
+        self::assertStringContainsString('_needAck isEqualTo true', $notices);
+        $view = $this->read('views/admin/atak-fleet/show.php');
+        self::assertStringContainsString('Affiché en jeu, pas encore acquitté', $view);
+        self::assertStringContainsString('Lu par le joueur', $view);
+    }
 }

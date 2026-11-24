@@ -200,7 +200,7 @@ switch (_act) do {
     case "state";
     case "show": {
         if (!hasInterface) exitWith {};
-        _arg params [["_id", ""], ["_kind", "message"], "", ["_title", ""], ["_body", ""], "", "", ["_meta", ""]];
+        _arg params [["_id", ""], ["_kind", "message"], "", ["_title", ""], ["_body", ""], ["_needAck", false], "", ["_meta", ""]];
         (["style", _arg] call comspec_atak_native_fnc_adminNotices) params ["_t", "_msg", "_rgba", "_type"];
         // Compromission déclarée (manuelle) : mode « terminal compromis » ; levée ou certificat neuf : retour à la normale.
         private _m = ["meta", _meta] call comspec_atak_native_fnc_compromiseView;
@@ -227,7 +227,8 @@ switch (_act) do {
         if (_act isEqualTo "state") exitWith { call _render; };
         // Détail donné par Athena (motif, référence, numéro) sous le texte de l'avis.
         private _detail = [_msg, format ["%1 · %2", _msg, _body]] select (_kind isNotEqualTo "message" && {_body isNotEqualTo ""});
-        [toUpper _t, _detail, _from, _rgba, 14] call comspec_atak_native_fnc_fullAlert;
+        // Retour du propriétaire : les messages restaient « Affiché en jeu » car seul COMPRIS (app Alertes) validait ; OK du bandeau valide aussi.
+        [toUpper _t, _detail, _from, _rgba, 14, ["", _id] select (_needAck isEqualTo true)] call comspec_atak_native_fnc_fullAlert;
         [_type, format ["%1 : %2", _t, _detail], 12, 95, "ALERTS"] call comspec_atak_native_fnc_notify;
         call _render;
     };

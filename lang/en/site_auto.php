@@ -74119,6 +74119,8 @@ return [
     'Action impossible.' => 'Action not possible.',
     'Décision et réponse enregistrées.' => 'Decision and reply saved.',
     'Accès réservé aux administrateurs de la communauté.' => 'Access reserved for community administrators.',
+    'Affiché en jeu, pas encore acquitté' => 'Shown in game, not yet acknowledged',
+    'Affiché en jeu, validation non demandée' => 'Shown in game, no acknowledgement requested',
     'Activité selon l’ancienneté' => 'Activity by account age',
     'Avant la mise en service de ce suivi, seule la dernière connexion est connue. Mesurée depuis le' => 'Before this tracking went live, only the last sign-in is known. Measured since',
     'Le suivi de l’activité n’est pas encore en service : ces graphiques reposent sur la dernière connexion seulement.' => 'Activity tracking is not live yet: these charts rely on the last sign-in only.',

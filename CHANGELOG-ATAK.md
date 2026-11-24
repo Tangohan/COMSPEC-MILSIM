@@ -39,6 +39,21 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Les messages imposés par l'administration passent enfin en « lu » (ATAK natif 4.32.2.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : Les messages de l'administration sont enfin notés comme lus
+- Quand un message ou un avis de l'administration s'affiche en bandeau sur ton téléphone, le bouton OK vaut désormais COMPRIS : l'administration voit que tu l'as lu.
+- Avant, il fallait ouvrir l'app Alertes et appuyer sur COMPRIS, ce que presque personne ne faisait.
+EN : Administration messages are now marked as read
+- When an administration message or notice appears as a banner on your phone, the OK button now counts as acknowledging it: the administration sees that you read it.
+- Before, you had to open the Alerts app and press COMPRIS, which almost nobody did.
+
+### Détail technique
+- Cause : le bandeau (fn_fullAlert) n'avait qu'un OK qui fermait sans rien envoyer ; seul COMPRIS de l'app Alertes (4 cartes au plus) envoyait « AdminControl.Ack acked ». Les messages restaient donc à « delivered » (Affiché en jeu).
+- fn_fullAlert accepte un 6e paramètre (id d'avis) ; fn_adminNotices « show » le passe quand la validation est demandée.
+- Site : fiche joueur, statut « Affiché en jeu, pas encore acquitté » (ou « validation non demandée »).
 ## Codes de spécialité militaire et niveaux expliqués (site, 17 novembre 2026)
 
 ### Résumé joueur
